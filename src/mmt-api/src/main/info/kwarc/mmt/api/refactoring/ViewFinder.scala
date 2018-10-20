@@ -230,7 +230,7 @@ class ViewFinder extends frontend.Extension {
     (ths,judg)
   }
 
-  def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
+  def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report),controller)
 
   def addArchives(a1 : Archive, a2 : Archive, hasher : Hasher) : Unit = {
     var lf = a1.root / "viewfinder_order"
@@ -742,7 +742,7 @@ object DefinitionExpander extends Preprocessor {
     }
   }
 
-  private lazy val simplifier = controller.simplifier.objectLevel
+  private lazy val simplifier = controller.simplifier
 
   override def apply(th: DeclaredTheory): DeclaredTheory = {
     val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,TermContainer(None))

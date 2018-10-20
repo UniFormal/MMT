@@ -62,13 +62,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def doObject(obj : DeclaredObject) : Unit = {
     if (dones contains obj) return ()
-    if (obj.name.toString == "IsNonTrivial") {
-      print("")
-    }
-    obj.dependencies foreach doObject
-    if (obj.name.toString == "IsNonTrivial") {
-      print("")
-    }
+    obj.dependencies.foreach(doObject)
     val (deps,cs) = obj match {
       case df : DefinedFilter =>
         var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),Some(df.defi),None))

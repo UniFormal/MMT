@@ -4,6 +4,7 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
+import info.kwarc.mmt.MitM.VRESystem.VRESystem
 import ontology._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
 import info.kwarc.mmt.api.web.WebQuery
@@ -15,7 +16,7 @@ import utils._
 import valuebases._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 
 import scala.collection.mutable.HashSet
 import scala.util.Try
@@ -24,9 +25,11 @@ class Plugin extends frontend.Plugin {
   val theory = MitM.mathpath
   val dependencies = List("info.kwarc.mmt.lf.Plugin")
   override def start(args: List[String]) {
-    controller.backend.addStore(LMFDBStore)
+    controller.backend.addStore(new LMFDBStore {
+      def debug(s: String) = report("lmfdb", s)
+    })
     controller.extman.addExtension(new ImplementsRuleGenerator)
-    controller.extman.addExtension(LMFDBSystem)
+    controller.extman.addExtension(new LMFDBSystem)
   }
 }
 
@@ -166,7 +169,7 @@ trait LMFDBBackend {
   /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query:String) : List[JSON] = {
     // get the url
-    val url = LMFDB.uri / s"$db?_format=json$query"
+    val url = LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
 
     debug(s"attempting to retrieve json from $url")
 
@@ -176,14 +179,26 @@ trait LMFDBBackend {
     )
   }
 
-  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit) : GlobalName = schema.getDeclarations.filter(d => {
-    d.metadata.getValues(Metadata.implements).collect{
-      case OMLIT(uri: URI, _) => uri
-      // case UnknownOMLIT(uri : String,_) => URI(uri)
-    }.contains(URI(forSymbol.toString))
-  }).map(_.path).headOption.getOrElse({
-    err(s"no implementor found for $forSymbol in ${schema.path}"); null
-  })
+  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : GlobalName = {
+    collectImplementMetaData(schema, forSymbol).map(_.path).headOption.getOrElse({
+      err(s"no implementor found for $forSymbol in ${schema.path}")
+      null
+    })
+  }
+
+  protected def collectImplementMetaData(schema: DeclaredTheory, forSymbol: GlobalName)(implicit controller: Controller): List[Declaration] = {
+    val parents = Nil /*schema.metadata.getValues(Metadata.extend)
+      .collect({ case OMID(path: MPath) => controller.getTheory(path)})
+      .flatMap(collectImplementMetaData(_, forSymbol))*/
+
+    val current = schema.getDeclarations.filter({ d =>
+        d.metadata.getValues(Metadata.implements)
+          .collect({ case OMLIT(uri: URI, _) => uri})
+          .contains(URI(forSymbol.toString))
+    })
+
+    parents ::: current
+  }
 
   protected def getKey(schema : DeclaredTheory) : String = {
     def err(s: String) = throw BackendError(s,schema.path)
@@ -237,10 +252,7 @@ trait LMFDBBackend {
 
 
 
-object LMFDBStore extends Storage with LMFDBBackend {
-
-  def debug(s : String): Unit = {}
-
+abstract class LMFDBStore extends Storage with LMFDBBackend {
   def load(path: Path)(implicit controller: Controller) {
 
     val db = DB.fromPath(path, allowSchemaPath = false).getOrElse {
@@ -309,7 +321,9 @@ object LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-object LMFDBSystem extends VRESystem("lmfdb",Systems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+  def warmup(): Unit = {}
+
   val namespace = LMFDB.path
 
   def debug(s : String): Unit = log(s)
@@ -384,18 +398,19 @@ object LMFDBSystem extends VRESystem("lmfdb",Systems.lmfdbsym) with LMFDBBackend
       (db, JSONObject())
     case Comprehension(domain: Query, varname: LocalName, pred: Prop) =>
       val (db, q) = translateQuery(domain, e)
-      (db, translateProp(varname, pred, db))
+      (db, translateProp(varname, pred, db)(controller))
     case _ =>
       error("Unable to translate query into an lmfdb query, evaluation failed")
   }
 
   /** translates a proposition (about a given variable assumed to be an lmfdb query) into an lmfdb query */
-  private def translateProp(varname: LocalName, p : Prop, db:DB) : JSONObject = p match {
+  private def translateProp(varname: LocalName, p : Prop, db:DB)(implicit controller: Controller) : JSONObject = p match {
     case Holds(Bound(`varname`), Equals(q, l, r)) =>
 
       // match the symbol that is being applied
       val symbol = l match {
         case Apply(OMS(s), OMV(`q`)) => s
+        case OMA(OMS(s), List(OMV(`q`))) => s
         case o@_ =>
           error(s"Unable to translate predicated into an lmfdb field selector. Expected LF Application, on the left hand side $o. ")
       }

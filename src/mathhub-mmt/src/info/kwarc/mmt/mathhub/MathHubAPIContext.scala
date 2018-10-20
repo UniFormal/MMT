@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.metadata.{HasMetaData, MetaData}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
+import info.kwarc.mmt.api.ontology.Statistics
 import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
@@ -315,20 +316,16 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
   /** builds a reference to a view */
   private def buildViewReference(view: View) : Option[IViewRef] = Some(
     IViewRef(
-      getDocumentRef(view.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
-        .getOrElse(return buildFailure(view.path.toPath, "getDocumentRef(view.parent)")), /* parent */
       view.path.toPath, /* id */
-      view.name.last.toPath /* name */
+      view.name.toPath /* name */
     )
   )
 
   /** builds a reference to a theory */
   private def buildTheoryReference(theory: Theory) : Option[ITheoryRef] = Some(
     ITheoryRef(
-      getDocumentRef(theory.path.^.toPath).map(Some(_)) // TODO: is parent working properly?
-        .getOrElse(return buildFailure(theory.path.toPath, "getDocumentRef(theory.parent)")), /* parent */
       theory.path.toPath, /* id */
-      theory.name.last.toPath /* name */
+      theory.name.toPath /* name */
     )
   )
 
@@ -378,7 +375,9 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val archives = mathHub.entries_.collect({case archive: LMHHubArchiveEntry if archive.group == ref.id => archive.id })
 
     Some(IGroup(
-      ref.id, ref.name, ref.title, ref.teaser,
+      ref.id, ref.name,
+      getStats(ref.id),
+      ref.title, ref.teaser,
 
       description,
       responsible,
@@ -402,7 +401,9 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
         .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)"))
 
     Some(IArchive(
-      ref.parent, ref.id, ref.name, ref.title, ref.teaser,
+      ref.parent, ref.id, ref.name,
+      getStats(ref.id),
+      ref.title, ref.teaser,
 
       description,
       responsible,
@@ -451,6 +452,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IDocument(
       ref.parent, ref.id, ref.name,
+      getStats(ref.id),
 
       decls
     ))
@@ -463,6 +465,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IOpaqueElement(
       ref.parent, ref.id, ref.name,
+      getStats(ref.id),
 
       opaque.format,
       opaque.raw.toString
@@ -524,7 +527,8 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val source: Option[String] = getSourceOf(theory)
 
     Some(ITheory(
-      ref.parent, ref.id, ref.name,
+      ref.id, ref.name,
+      getStats(ref.id),
 
       presentation,
       source,
@@ -548,7 +552,8 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val source: Option[String] = getSourceOf(view)
 
     Some(IView(
-      ref.parent, ref.id, ref.name,
+      ref.id, ref.name,
+      getStats(ref.id),
 
       presentation,
       source,
@@ -558,6 +563,13 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     ))
   }
 
+
+  // endregion
+
+  // region "Statistics"
+
+  // TODO: Build statistics in a cached form
+  private def getStats(path: String): Option[List[IStatistic]] = None
 
   // endregion
 }

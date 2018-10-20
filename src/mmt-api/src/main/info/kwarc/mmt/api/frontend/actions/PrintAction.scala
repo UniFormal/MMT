@@ -7,7 +7,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 /** an action that responds to the user */
-private[actions] trait ResponsiveAction extends Action {
+trait ResponsiveAction extends Action {
   /** prints a response to the caller */
   def respond(x: Any*) = controller.report.apply("user", x.map(_.toString).mkString(", "))
 }

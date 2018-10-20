@@ -183,7 +183,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           log("flattening yields " + d.path)
         }
         var previous: Option[LocalName] = None
-        thy.dfC.normalize {d => objectLevel(d, mod.getInnerContext, rules, false)}
+        thy.dfC.normalize {d => objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)}
         thy.dfC.normalized.foreach {dfS =>
           //TODO mod.getInnerContext is too small for nested theories
           dfS match {
@@ -282,7 +282,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             // in views v:  mor = v|_fromThy where p --OMINST(p,pArgs)--> fromThy --OMINST--> v.from --v--> target; newIndlude is a defined structure
             val newMor = OMCOMP(OMINST(p,pArgs), mor)
             val newMor1 = Morph.simplify(newMor)(lup)
-            val newMorN = oS(newMor1, innerCont, rules, false)
+            val newMorN = oS(newMor1, SimplificationUnit(innerCont, false, true), rules)
             val newInclude = parent match {
               case thy: DeclaredTheory =>
                 val newArgs = newMorN match {
@@ -298,7 +298,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             utils.listmap(alreadyIncluded, p) match {
               // if an include for domain p already exists, we have to check equality
               case Some(existingMor) =>
-                val existingMorN = oS(existingMor, innerCont, rules, false)
+                val existingMorN = oS(existingMor, SimplificationUnit(innerCont, false, true), rules)
                 val eq = Morph.equal(existingMorN,newMorN, OMMOD(p))(lup)
                 if (eq) {
                   // if equal, we can ignore the new include

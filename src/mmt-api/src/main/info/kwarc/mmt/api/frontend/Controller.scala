@@ -316,14 +316,10 @@ class Controller extends ROController with ActionHandling with Logger {
   // ******************************* lookup of MMT URIs
 
   /** a lookup that uses only the current memory data structures */
-  val localLookup = new LookupWithNotFoundHandler(library) with FailingNotFoundHandler {
-    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = library.forDeclarationsInScope(mod)(f)
-  }
+  val localLookup = library.asLocalLookup
 
   /** a lookup that uses the previous in-memory version (ignoring the current one) */
-  val previousLocalLookup = new LookupWithNotFoundHandler(memory.previousContent) with FailingNotFoundHandler {
-    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = memory.previousContent.forDeclarationsInScope(mod)(f)
-  }
+  val previousLocalLookup = memory.previousContent.asLocalLookup
 
   /** a lookup that loads missing modules dynamically */
   val globalLookup = new LookupWithNotFoundHandler(library) {
@@ -331,6 +327,7 @@ class Controller extends ROController with ActionHandling with Logger {
       code
     }
 
+    // TODO naively wrapping this in 'iterate' may duplicate side effects
     def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = iterate {
       library.forDeclarationsInScope(mod)(f)
     }
@@ -535,11 +532,13 @@ class Controller extends ROController with ActionHandling with Logger {
               memory.content.add(nw, at)
               // load extension providing semantics for a Module
               nw match {
-                case m: Module =>
-                  if (!extman.get(classOf[Plugin]).exists(_.theory == m.path)) {
-                    getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m.path).foreach {sc =>
-                      log("loading semantic extension for " + m.path)
-                      extman.addExtension(sc.cls, sc.args)
+                case t: DeclaredTheory =>
+                  TheoryExp.metas(OMMOD(t.path), all=true)(globalLookup) foreach {m =>
+                    if (!extman.get(classOf[Plugin]).exists(_.theory == m)) {
+                      getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m).foreach {sc =>
+                        log("loading semantic extension for " + m)
+                        extman.addExtension(sc.cls, sc.args)
+                      }
                     }
                   }
                 case _ =>

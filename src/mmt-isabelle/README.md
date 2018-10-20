@@ -9,6 +9,30 @@ https://isabelle.sketis.net/devel/release_snapshot or a repository clone
 from http://isabelle.in.tum.de/repos/isabelle -- see also its
 `README_REPOSITORY` file with the all-important **Quick start in 30min**.
 
+In particular, the following versions from Oct-2018 should fit together:
+
+  * Isabelle/742c88258cf8
+  * AFP/854bc290d72b
+  * MMT/1b24663b4c4e
+  * MathHub/MMT/urtheories/703627a3213f
+
+The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
+should be available over some months; it corresponds to Isabelle/742c88258cf8.
+
+
+## Side-conditions and potential problems
+
+* Ubuntu Linux 18.04: the kernel update linux-image-4.15.0-36-generic introduces
+  a timing problem with socket communication in the Isabelle Prover IDE that
+  affects all Isabelle versions since 2013. Loading big sessions becomes very
+  slow. This can be avoided by downgrading to linux-image-4.15.0-34-generic or
+  by including the changeset Isabelle/6ededdc829bb.
+
+* Java 8: too many CPU cores (e.g. 20, 40, 80) degrade the performance to a
+  point where it is almost unusable. Java 11 works much better in this respect,
+  but requires a more recent Isabelle repository version
+  (e.g. Isabelle/9dabb405a3ba).
+
 
 ## Setup
 
@@ -86,10 +110,10 @@ The subsequent setup works well for hardware with 64 GB of main memory:
 
 Examples:
 
-      isabelle mmt_import -a -X doc
-      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X very_slow
+      isabelle mmt_import -a -X doc -X no_doc
+      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X slow
+      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X very_slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
 of Formal Proofs as Isabelle component (using a suitable `init_component`
@@ -110,7 +134,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X slow
+      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x Diophantine_Eqns_Lin_Hom -x HLDE
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,

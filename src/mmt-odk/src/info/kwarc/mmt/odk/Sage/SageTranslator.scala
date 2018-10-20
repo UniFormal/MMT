@@ -6,11 +6,13 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.lf.Arrow
+import info.kwarc.mmt.lf.{Arrow, Typed}
+import info.kwarc.mmt.odk.LFX.ModelsOf
 
 import scala.collection.mutable
 import scala.util.Try
@@ -35,7 +37,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     ParsedCategory(s,Nil,Nil,Nil,"INTERNAL",JSONObject(Nil))
   }) */
 
-  val topdoc = new Document(DPath({Sage._base / bt.inFile.name}.uri.setExtension("omdoc")),root = true)
+  val topdoc = new Document(DPath({Sage._base / bt.inFile.name}.uri.setExtension("")),root = true)
   controller.add(topdoc)
 
   val axth = controller.getO(Sage._base ? LocalName("Axioms")) match {
@@ -49,7 +51,21 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   val structh = Theory.empty(Sage._base,LocalName("Structures"), Some(Sage.theory))
   add(structh)
   add(MRef(topdoc.path,structh.path))
-  val docs : mutable.HashMap[DPath,Document] = mutable.HashMap((Sage.docpath,topdoc))
+  val sagedoc = controller.getO(Sage.docpath / "sage").getOrElse({
+    val nd = new Document(Sage.docpath / "sage",true)
+    controller add nd
+    nd
+  }).asInstanceOf[Document]
+  val docs : mutable.HashMap[String,Document] = mutable.HashMap(("",topdoc),("sage",sagedoc))
+
+  def getDoc(d : List[String]) : Document = docs.getOrElseUpdate(d.mkString("."), {
+      val dpath = d.foldLeft(Sage.docpath)((d,s) => d / s)
+      val ndoc = new Document(dpath, root = (dpath.^ == dpath))
+      if (ndoc.parentOpt.isDefined) getDoc(d.init)
+      controller.add(ndoc)
+      //controller add new DRef(topdoc.path,)
+      ndoc
+    })
 
   private def add(se : StructuralElement) : Unit = Try(controller.getO(se.path)) match {
     case scala.util.Success(Some(_)) =>
@@ -64,67 +80,77 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     //if (m.optional) addOpaque("(Optional)", th, sec)
   }
 
+  private def doFunction(f : SageFunction) = {
+    val parent = theories.getOrElseUpdate(f.steps.init.mkString("."),{
+      val pt = Theory.empty(f.theory.parent,f.theory.name,Some(Sage.theory))
+      controller add pt
+      val pdoc = getDoc(f.document)
+      controller add MRef(pdoc.path,pt.path)
+      pt
+    })
+    val c = Constant(parent.toTerm,f.name,Nil,Some(doArity(f.arity)),None,Some("Function"))
+    add(c)
+  }
+
   private def doSageObject(obj : SageObject) : Unit = obj match {
     case pc : ParsedClass => doClass(pc)
     case pc : ParsedCategory => doCategory(pc)
   }
 
   private def doClass(clss : ParsedClass) =
-    theories.getOrElse(clss.name, {
-      implicit val th = Theory.empty(clss.path.parent, clss.path.name, Some(Sage.theory))
-      controller.add(th)
+    theories.getOrElse(clss.n, {
+      implicit val th = Theory.empty(clss.theory.parent, clss.theory.name, Some(Sage.theory))
+      controller add th
 
-      val doc = docs.getOrElse(th.parent, {
-        val ndoc = new Document(DPath(th.parent.uri.setExtension("omdoc")), root = true)
-        controller.add(ndoc)
-        //controller add new DRef(topdoc.path,)
-        docs(th.parent) = ndoc
-        ndoc
-      })
+      val doc = getDoc(clss.document)
       controller.add(MRef(doc.path, th.path))
 
       controller.add(PlainInclude(axth.path, th.path))
       controller.add(PlainInclude(structh.path, th.path))
-      theories(clss.name) = th
+      theories(clss.n) = th
 
       clss.includes foreach (s => doSageObject(sobject(s)))
       clss.includes foreach (s => controller add PlainInclude(theories(s).path, th.path))
 
       implicit var sec: Option[String] = None
 
-
       if (clss.methods.nonEmpty) {
         sec = Some("Methods")
         controller add new Document(th.path.toDPath / sec.get, root = false)
         clss.methods foreach doMethod
       }
+
+      val parent = theories.getOrElseUpdate(clss.steps.init.mkString("."), {
+        val pt = Theory.empty(clss.classes_theory.parent,clss.classes_theory.name,Some(Sage.theory))
+        controller add pt
+        val pdoc = getDoc(clss.classes_document)
+        controller add MRef(pdoc.path,pt.path)
+        pt
+      })
+      val c = Constant(parent.toTerm, clss.name,Nil,Some(OMS(Typed.ktype)),Some(ModelsOf(th.toTerm)),Some("Class"))
+      controller add c
     }
     )
 
   private def doCategory(cat : ParsedCategory): Unit =
-  theories.getOrElse(cat.name, {
-    implicit val th = Theory.empty(cat.path.parent, cat.path.name, Some(Sage.theory))
+  theories.getOrElse(cat.n, {
+    // val doc = getDoc(cat.path.parent)
+    implicit val th = Theory.empty(cat.theory.parent, cat.theory.name, Some(Sage.theory))
     controller.add(th)
 
-    val doc = docs.getOrElse(th.parent,{
-      val ndoc = new Document(DPath(th.parent.uri.setExtension("omdoc")),root = true)
-      controller.add(ndoc)
-      //controller add new DRef(topdoc.path,)
-      docs(th.parent) = ndoc
-      ndoc
-    })
+    val doc = getDoc(cat.document)
     controller.add(MRef(doc.path,th.path))
 
     if (cat.gap != "") println(th.path + " ~> " + cat.gap)
 
     controller.add(PlainInclude(axth.path, th.path))
     controller.add(PlainInclude(structh.path, th.path))
-    theories(cat.name) = th
+    theories(cat.n) = th
 
     cat.includes foreach (s => doSageObject(sobject(s)))
     cat.includes foreach (s => controller add PlainInclude(theories(s).path,th.path))
     val importedaxioms = cat.includes.map(sobject).flatMap{case s : ParsedCategory => s.axioms}.distinct
-    val importedstructs = (cat.includes ::: cat.structure.filterNot(_ == cat.name)).map(sobject).flatMap{case s :ParsedCategory => s.structure}.distinct
+    val importedstructs = (cat.includes ::: cat.structure.filterNot(_ == cat.steps.last)).map(sobject).flatMap{case s :ParsedCategory => s.structure}.distinct
     val newaxioms = cat.axioms.filter(!importedaxioms.contains(_))
     val newstructs = cat.structure.filter(s => !importedstructs.contains(s) && allstructures.contains(Structure(s)))
 
@@ -178,15 +204,16 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     ls foreach {
       case pc @ ParsedCategory(name,_,axioms,_,_,_,_,_,_,_,_) =>
         allaxioms :::= (axioms map Axiom).reverse
-        if (pc.isStructure) allstructures ::= Structure(pc.name)
+        if (pc.isStructure) allstructures ::= Structure(pc.steps.last)
         intcategories += ((name,pc))
       case pc @ ParsedClass(name,_,_,_) =>
         intclasses += ((name,pc))
+      case _ =>
     }
     allaxioms = allaxioms.distinct
     allstructures = allstructures.distinct
     // TODO weird hack around weird bug
-    add(Constant(axth.toTerm,LocalName("Dummy"),Nil,None,None,None))
+    // add(Constant(axth.toTerm,LocalName("Dummy"),Nil,None,None,None))
 
     allaxioms foreach (ax => {
       val c = Constant(axth.toTerm,LocalName(ax.name),Nil,Some(OMS(Sage.prop)),None,None)
@@ -202,6 +229,9 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
         doCategory(cat)
       case pc : ParsedClass =>
         doClass(pc)
+      case fun : SageFunction =>
+        doFunction(fun)
+      case _ =>
     }
     val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
       throw GeneralError(s"no mmt checker found")
@@ -211,6 +241,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     //println(axth)
     //index(doc)
     //index(catdoc)
+    theories.values.toList.sortBy(_.path.toString) foreach (t => controller add MRef(topdoc.path,t.path))
     docs.values foreach index
     missings.distinct.foreach(m => println("Missing: " + m))
   }

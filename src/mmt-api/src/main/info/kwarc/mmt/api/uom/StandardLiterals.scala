@@ -15,6 +15,7 @@ object Product {
      t.pairOps(f.toLeft compose left, f.toRight compose right)
    }
 }
+
 class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    def asString = "(" + left.asString + "*" + right.asString + ")"
    override def valid(u: Any) = u match {
@@ -79,6 +80,10 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
        case (Some(eL), Some(eR)) => Some(Product.tensor(eL,eR))
        case _ => None
      }
+   }
+   override def subtype(that: SemanticType) = that match {
+     case p: Product => (p.left subtype left) && (p.right subtype right)
+     case _ => false
    }
 }
 
@@ -149,6 +154,8 @@ abstract class Subtype(val of: SemanticType) extends SemanticType {
    def incl = Unary(this, of){x => x}
 
    override def embed(into: SemanticType) = super.embed(into) orElse {of.embed(into) map {e => incl compose e}}
+   override def subtype(that: SemanticType) =
+     (of subtype that) || super.subtype(that)
 }
 abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSemanticType[U] {
   val cls = of.cls
@@ -348,7 +355,7 @@ object Arithmetic {
   }
 
   object Succ extends InvertibleUnary(Z,Z, {case Z(x) => x+1}, {case Z(x) => Some(x-1)}) {
-    alsoHasType(N =>: N)
+    alsoHasType(N =>: StandardPositive)
   }
 
   object Plus extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x+y}) with Commutative {

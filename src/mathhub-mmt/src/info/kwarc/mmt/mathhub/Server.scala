@@ -4,7 +4,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.text.DateFormat
 
-import info.kwarc.mmt.api.utils.{JSONConverter, MMTSystem}
+import info.kwarc.mmt.api.utils.{JSONArray, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
 class Server extends ServerExtension("mathhub"){
@@ -49,8 +49,7 @@ class Server extends ServerExtension("mathhub"){
     case None => ServerResponse("Not found", "text", ServerResponse.statusCodeNotFound)
   }
   def toResponse(results: List[IResponse]): ServerResponse = {
-    import IAPIObjectItem._
-    ServerResponse.JsonResponse(JSONConverter.toJSON(results))
+    ServerResponse.JsonResponse(JSONArray(results.map(_.toJSON): _*))
   }
 
 

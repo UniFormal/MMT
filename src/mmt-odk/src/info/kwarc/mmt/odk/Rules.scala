@@ -6,27 +6,29 @@ import objects._
 import uom._
 import utils._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.odk.Singular.SingularImporter
-import info.kwarc.mmt.mitm.MitM._
 import SemanticOperator._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MitM.MitM
 
-object IntegerLiterals extends RepresentedRealizedType(z,Z)
-object NatLiterals extends RepresentedRealizedType(n,N)
-object PosLiterals extends RepresentedRealizedType(p,P)
+import scala.collection.mutable
 
-object NatSucc extends RealizedOperator(succ, n =>: n, Arithmetic.Succ, N =>: N)
+object IntegerLiterals extends RepresentedRealizedType(MitM.z,MitM.Z)
+object NatLiterals extends RepresentedRealizedType(MitM.n,MitM.N)
+object PosLiterals extends RepresentedRealizedType(MitM.p,MitM.P)
 
+object NatSucc extends RealizedOperator(MitM.succ, MitM.n =>: MitM.synType(MitM.n), Arithmetic.Succ, MitM.N =>: MitM.N)
+
+/* FR: This is already part of Arithmetic.Succ
 object NatSuccInverse extends InverseOperator(MitM.succ) {
   def unapply(l: OMLIT): Option[List[OMLIT]] = l match {
     case NatLiterals(u : BigInt) if u>0 => Some(List(NatLiterals.of(u-1)))
     case _ => None
   }
 }
+*/
 
 object StringLiterals extends RepresentedRealizedType(OMS(MitM.string),StandardString)
 
@@ -77,6 +79,106 @@ object LFX {
   }
 
   object RecExp extends RecordLike("Recexp")
+
+  object ModelsOf extends LFRecSymbol("ModelsOf") {
+    // val path2 = Records.path ? "ModelsOfUnary"
+    // val term2 = OMS(path2)
+    def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
+    def apply(t : Term) = OMA(this.term,List(t))
+    def unapply(t : Term) : Option[Term] = t match {
+      case OMA(this.term, List(tm)) => Some(tm)
+      // case OMA(this.term2,List(OMMOD(mp))) => Some(OMMOD(mp))
+      case OMA(this.term, OMMOD(mp) :: args) => Some(OMPMOD(mp,args))
+      case _ => None
+    }
+  }
+
+  object Lists {
+    val baseURI = LFX.ns / "Datatypes"
+    val th = baseURI ? "ListSymbols"
+  }
+
+  object ListNil {
+    val path = Lists.th ? "nil"
+    val term = OMS(path)
+  }
+
+  object Append {
+    val path2 = Lists.th ? "ls"
+    val term2 = OMS(path2)
+    val path = Lists.th ? "append"
+    val term = OMS(path)
+    def apply(a: Term, ls : Term) : Term = OMA(this.term,List(a,ls))
+    def unapply(tm : Term) : Option[(Term,Term)] = tm match {
+      case OMA(this.term,List(a,ls)) => Some((a,ls))
+      case OMA(this.term2,args) if args.nonEmpty =>
+        if (args.length==1) Some((args.head,ListNil.term))
+        else Some((args.head,OMA(this.term2,args.tail)))
+      case _ => None
+    }
+  }
+
+  object LFList {
+    val path = Lists.th ? "ls"
+    val term = OMS(path)
+    def apply(tms : List[Term]) : Term = OMA(this.term,tms)
+    def unapply(ls : Term) : Option[List[Term]] = ls match {
+      case OMA(this.term,args) => Some(args)
+      case Append(a,lsi) => unapply(lsi).map(a :: _)
+      case _ => None
+    }
+  }
+
+  object SigmaTypes {
+    val baseURI = LFX.ns / "Sigma"
+    val thname = "Symbols"
+    val path = baseURI ? thname
+    def lfssymbol(name : String) = path ? name
+  }
+
+  class LFSigmaSymbol(name:String) {
+    val path = SigmaTypes.path ? name
+    val term = OMS(path)
+  }
+
+  object Sigma extends LFSigmaSymbol("Sigma") {
+    def apply(name : LocalName, tp : Term, body : Term) = OMBIND(this.term, OMV(name) % tp, body)
+    def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
+    def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
+      case OMBIND(OMS(this.path), Context(VarDecl(n,None,Some(a),None,_), rest @ _*), s) =>
+        val newScope = if (rest.isEmpty)
+          s
+        else
+          apply(Context(rest:_*), s)
+        Some(n,a,newScope)
+      case OMA(Product.term,args) if args.length >= 2 =>
+        val name = OMV.anonymous
+        if (args.length > 2)
+          Some((name, args.head, OMA(Product.term, args.tail)))
+        else
+          Some((name,args.head,args.tail.head))
+      case _ => None
+    }
+  }
+
+  object Product extends LFSigmaSymbol("Product") {
+    def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
+    def apply(in: List[Term], out: Term) = if (in.isEmpty) out else OMA(this.term, in ::: List(out))
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(this.term, hd :: tl) if tl.nonEmpty => Some((hd, apply(tl.init, tl.last)))
+      case _ => None
+    }
+  }
+
+  object Tuple extends LFSigmaSymbol("Tuple") {
+    def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
+    def apply(in: List[Term]) = OMA(this.term, in)
+    def unapply(t : Term) : Option[(Term,Term)] = t match {
+      case OMA(this.term,ls) if ls.length==2 => Some(ls.head,ls(1))
+      case OMA(this.term, hd :: tl) if tl.nonEmpty => Some((hd, apply(tl)))
+      case _ => None
+    }
+  }
 }
 
 class UniverseInference extends ChangeListener {
@@ -223,6 +325,7 @@ class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) exten
     Some(true)
   }
 }
+
 
 object subtypeJudg {
   val name = "subtypeJudge"

@@ -414,11 +414,14 @@ sealed abstract class DeclaredObject extends GAPObject {
   val locations : (String,Int)
   private lazy val steps = locations._1.replace("/home/makx/ac/gap/","").split("/").toList//.map(SimpleStep).toList
   private lazy val subpath : LocalName = if (steps.length>1) LocalName(steps.init.map(SimpleStep)) else LocalName("")
-
+/*
   lazy val parent : MPath = {if (subpath != LocalName("")) GAP._base / subpath else GAP._base } ? {
     if (steps.nonEmpty) LocalName(steps.last.split("\\.").toList.head) else
       throw new ParseError("No theory name deducible from " + name)
   }
+  lazy val path = parent ? name
+  */
+  lazy val parent : MPath = GAP.importbase ? "lib"
   lazy val path = parent ? name
   def getInner = List(this)
   def toTerm = OMS(path)

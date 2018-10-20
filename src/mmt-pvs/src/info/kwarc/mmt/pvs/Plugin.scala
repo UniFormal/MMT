@@ -2,8 +2,8 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import checking._
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardNat, StandardRat, StandardString}
+import modules.{DeclaredModule, DeclaredTheory}
+import uom._
 import notations.{HOAS, NestedHOASNotation}
 import objects._
 import objects.Conversions._

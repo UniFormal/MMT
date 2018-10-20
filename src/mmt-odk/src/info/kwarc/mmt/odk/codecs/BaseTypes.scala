@@ -6,7 +6,8 @@ import uom._
 import utils._
 import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.mitm.MitM
+import info.kwarc.mmt.MitM.MitM
+import info.kwarc.mmt.odk.LFX.{Append, LFList, ListNil}
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
@@ -53,7 +54,7 @@ object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standar
   }
 }
 
-object TMList extends ListCodec[JSON](Codecs.standardList, MitM.list, MitM.nil, MitM.cons) {
+object TMList extends ListCodec[JSON](Codecs.standardList, LFList.path, ListNil.path, Append.path) {
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
     case JSONArray(js@_*) => js.toList
@@ -149,23 +150,29 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
     // and then make an actual polynomial term
     case JSONString(s) =>
       val factorMap = extractPolyFactors(parsePoly(s))
-      val varname = factorMap.keys.head
-      constructPolynomial(varname, factorMap(varname))
-    case _ => throw new Exception("not a polynomial")
+      if(factorMap.keys.nonEmpty){
+        val varname = factorMap.keys.head
+        constructPolynomial(varname, factorMap(varname))
+      } else {
+        constructPolynomial("x", List(0))
+      }
+    // case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
+    case _ => throw new Exception(s"not a polynomial: Expected a JSONString, but got a ${c.getClass}: ${c.toCompactString}")
   }
 
   // Constructs a polynomial out of a list of rational numbers
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
-    NatRules.NatLit(ls.length),
+    NatLiterals(ls.length),
+    OMS(MitM.rationalRing),
     StringLiterals.apply(varName),
-    Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
+    LFList(ls.map(_.toBigInt).map(IntegerLiterals.of))
   )
 
   // turns a polynomial into a list of rational numbers
   private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
-    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: Sequences.flatseq(ls @ _*) :: Nil) =>
-      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
+    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: LFList(ls) :: Nil) =>
+      (vname, ls.map({ case IntegerLiterals(bi: BigInt) => BigDecimal(bi)}))
     case _ => throw new Exception("not a polynomial")
   }
 
@@ -202,7 +209,9 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
 
     // find all the individual parts
     var partRE = """\*?([aA-zZ])(?:\^([+-]?\d+(?:\.\d+)?))?""".r
-    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m => (m.group(1), BigDecimal(m.group(2))))
+    val theParts = partRE.findAllMatchIn(factorRE.replaceAllIn(s, "")).map(m =>
+      (m.group(1), BigDecimal(Option(m.group(2)).getOrElse("1")))
+    )
 
     // return the extracted factor and list
     (theFactor, theParts.toList)
@@ -225,15 +234,25 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
 
   /** given a parsed set of factors, returns a map of poly factors */
   private def extractPolyFactors(parts: List[(BigDecimal, List[(String, BigDecimal)])]): Map[String, List[BigDecimal]] = {
-    val map = mutable.Map[String, mutable.Buffer[BigDecimal]]() // the map of a single polynomial
+    val map = mutable.Map[String, mutable.ListBuffer[BigDecimal]]() // the map of a single polynomial
+
+    val powers = parts.flatMap(fl => fl._2.map(_._2))
+    val maxIndex = if(powers.isEmpty) 0 else powers.max.toIntExact
+
+    def setPower(variable: String, power: Int, value: BigDecimal): Unit = {
+      if(!map.contains(variable)){
+        map(variable) = mutable.ListBuffer.fill(maxIndex + 1)(BigDecimal(0))
+      }
+      map(variable)(power) = value
+    }
 
     // create appropriate buffers for each variable
     parts.foreach(part => {
+      if(part._2.isEmpty){
+        setPower("x", 0, part._1)
+      }
       part._2.foreach(sd => {
-        if(!map.contains(sd._1)){
-          map(sd._1) = mutable.Buffer[BigDecimal]()
-        }
-        map(sd._1)(sd._2.toIntExact) = part._1
+        setPower(sd._1, sd._2.toIntExact, part._1)
       })
     })
 

@@ -25,6 +25,7 @@ trait SolverAlgorithms {self: Solver =>
    private lazy val inferenceRules = rules.getOrdered(classOf[InferenceRule])
    private lazy val subtypingRules = rules.getOrdered(classOf[SubtypingRule])
    private lazy val typingRules = rules.getOrdered(classOf[TypingRule])
+   private lazy val inferAndTypingRules = rules.getOrdered(classOf[InferenceAndTypingRule])
    private lazy val typebasedsolutionRules = rules.getOrdered(classOf[TypeBasedSolutionRule])
    private lazy val universeRules = rules.getOrdered(classOf[UniverseRule])
    private lazy val inhabitableRules = rules.getOrdered(classOf[InhabitableRule])
@@ -70,7 +71,7 @@ trait SolverAlgorithms {self: Solver =>
           case Free(con,t) =>
             inferType(t, covered)(stack++con, history) map {tp => Free(con, tp)}
           case Unknown(u,args) =>
-            getVar(u).tp map {tp => OMA(tp, args)}
+            getVar(u).tp map {tp => OMAorAny(tp, args)}
           case OMV(x) =>
              history += "lookup in context"
              val vd = getVar(x)
@@ -192,7 +193,7 @@ trait SolverAlgorithms {self: Solver =>
    def findUniqueInhabitant(tp: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
       typebasedsolutionRules.foreach {rule =>
         if (rule.applicable(tp)) {
-          history += "calling type-based solution rule " + rule.getClass
+          history += "calling type-based solution rule " + rule
           val res = rule.solve(this)(tp)
           res foreach {r => return res}
         }
@@ -290,7 +291,8 @@ trait SolverAlgorithms {self: Solver =>
      implicit val stack = j.stack
      safeSimplifyUntilRuleApplicable(j.wfo, inhabitableRules) match {
         case (uS, Some(rule)) =>
-          history += "Applying InhabitableRule " + rule.toString
+          log(rule.toString)
+          history += "applying inhabitable rule: " + rule.toString
           rule(this)(uS)
         case (uS, None) =>
            history += "inferring universe"
@@ -318,19 +320,25 @@ trait SolverAlgorithms {self: Solver =>
      // try to solve the type of an unknown
      val solved = solveTyping(j)
      if (solved) return solved
+     // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term): Boolean = {
         log("Checking by inference")
          val hisbranch = history.branch
          inferType(tm)(stack, hisbranch) match {
-            case Some(itp) =>
-               check(Subtyping(stack, itp, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
+            case Some(tmI) =>
+               checkAfterInference(tmI, tpS)
             case None =>
                delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
          }
      }
+     // continuation if we have inferred the type of tm
+     def checkAfterInference(tmI: Term, tpS: Term): Boolean = {
+        check(Subtyping(stack, tmI, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
+     }
      // the foundation-independent cases
      tp match {
        case Free(con,t) =>
+         //TODO this would require type-checking when reducing OMA(free(G,B),args)
          return checkTyping(Typing(stack++con, OMA(tm, con.map(_.toTerm)), t))
        case _ =>
      }
@@ -374,21 +382,33 @@ trait SolverAlgorithms {self: Solver =>
          logAndHistoryGroup{safeSimplifyUntilRuleApplicable(tp,typingRules)} match {
            case (tpS, Some(rule)) =>
              try {
-                log("Applying TypingRule " + rule.toString)
-                history += "Applying TypingRule " + rule.toString
+                history += "applying typing rule " + rule.toString
                 rule(this)(tm, tpS)
              } catch {
                case TypingRule.SwitchToInference =>
                  checkByInference(tpS)
                case rule.DelayJudgment(msg) =>
-                 log("Delaying judgment " + j)
                  delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
              }
            case (tpS, None) =>
-              // either this is an atomic type, or no typing rule is known
-              checkByInference(tpS)
+             //  either this is an atomic type, or no typing rule is known
+             // try finding a rule based on the term
+             safeSimplifyUntilRuleApplicable(tm,inferAndTypingRules) match {
+               case (tmS, Some(rule)) =>
+                 try {
+                   rule(this, tmS, Some(tpS), false) match {
+                     case (_,Some(b)) => b
+                     case (Some(tI),None) => checkAfterInference(tI, tpS)
+                     case (None,None) => checkByInference(tpS)
+                   }
+                 } catch {
+                    case TypingRule.SwitchToInference =>
+                      checkByInference(tpS)
+                 }
+               case (_, None) =>
+                checkByInference(tpS)
+             }
          }
-
      }
    }
 
@@ -397,7 +417,8 @@ trait SolverAlgorithms {self: Solver =>
     * @param j the judgement
     * @return false if the Judgment is definitely not provable; true if it has been proved or delayed
     *
-    * pre: context, terms, and (if given) type are covered; if type is given, both typing judgments are covered
+    * pre: context, terms, and (if given) type are covered; if type is given, both typing judgments are covered;
+    *   even if type is not given, both terms have the same type
     *
     * post: equality is covered
     */
@@ -408,16 +429,14 @@ trait SolverAlgorithms {self: Solver =>
       implicit val stack = j.stack
       val tm1S = simplify(tm1)
       val tm2S = simplify(tm2)
-      // this is a bit awkward, but we need to marks stable terms as such so that rules can use the information 
-      safeSimplifyOne(tm1S)
-      safeSimplifyOne(tm2S)
       // 1) foundation-independent cases, e.g., identical terms, solving unknowns
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) =>
            if (l1.value != l2.value)
              return error(s"$l1 and $l2 are inequal literals")
            else {
-             // TODO return true if a common value is a literal of the two distinct syntactic types
+             // precondition guarantees that arguments have the same type even if they have different semantic types (i.e., due to subtyping of semantic types)
+             return true
            }
          case (OML(n1, tp1, df1, _, f1), OML(n2, tp2, df2, _, f2)) =>
             if (n1 != n2)
@@ -516,16 +535,16 @@ trait SolverAlgorithms {self: Solver =>
               differentShape
             } else {
               val subeq = (subs1 zip subs2) forall {case (s1,s2) =>
-                checkEquality(Equality(stack, s1.target, s2.target,None))(history + "comparing arguments")
+                check(Equality(stack, s1.target, s2.target,None))(history + "comparing arguments")
               }
               if (!subeq) return subeq
-              val conteq = checkEqualityContext(EqualityContext(stack, cont1, cont2, true))(history + "comparing bindings")
+              val conteq = check(EqualityContext(stack, cont1, cont2, true))(history + "comparing bindings")
               if (!conteq) return conteq
               val sub2to1 = (cont2 alpha cont1).get // defined due to guard above 
               var i = 0
               val argseq = (args1 zip args2) map {case (a1,a2) =>
                 i += 1
-                checkEquality(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
+                check(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
               }
               argseq.forall(_ == true) // comparing all arguments is inefficient if an early argument has an error, but may help make sense of the error
             }
@@ -534,33 +553,6 @@ trait SolverAlgorithms {self: Solver =>
        }
      }
    }
-
-       /* old version with dubious congruence reasoning
-       // if we failed to prove equality, we have multiple options:
-       (changed, t2Final) match {
-          // t1 expanded, t2 cannot be expanded anymore --> keep expanding t1
-          case (true, true)      => checkEqualityTermBased(t1S::terms1, terms2, true, flipped)
-          // t1 expanded, t2 can still be expanded --> continue expanding t2
-          case (true, false)     => checkEqualityTermBased(terms2, t1S::terms1, false, ! flipped)
-          // t1 cannot be expanded anymore but t2 can ---> continue expanding t2
-          case (false, false)    => checkEqualityTermBased(terms2, terms1, true, ! flipped)
-          // neither term can be expanded --> try congruence rule as last resort
-          case (false, true)     =>
-             // if necessary, we undo the flipping of t1 and t2
-             val s1 = if (flipped) terms2.head else t1S
-             val s2 = if (flipped) t1S else terms2.head
-             val s12Vars = s1.freeVars ::: s2.freeVars
-             val minCont = stack.context.minimalSubContext(s12Vars)
-             val j = Equality(Stack(minCont), s1, s2, Some(tp))
-             val unknownsLeft = j.freeVars.toList intersect solution.map(_.name)
-             // only incomplete congruence reasoning is left, we delay it if there is any hope to avoid it
-             val nextStep = () => checkEqualityCongruence(TorsoForm.fromHeadForm(s1,unknownsLeft), TorsoForm.fromHeadForm(s2,unknownsLeft), unknownsLeft.nonEmpty)
-             if (unknownsLeft.nonEmpty) {
-               delay(j, Some(nextStep))
-             } else {
-               nextStep()
-             }
-       }*/
 
   /* ********************** end of equality checking methods ***************************/
 
@@ -578,13 +570,7 @@ trait SolverAlgorithms {self: Solver =>
      val tp2 = headNormalize(j.tp2)
      // optimization for reflexivity
      if (tp1 hasheq tp2) return true
-     // old attempt, catches more reflexivity, but is too aggressive
-     // val congruenceLeafs = makeCongClos.apply(Equality(j.stack,j.tp1,j.tp2,None))
-     // val obviouslyEqual = tryToCheckWithoutDelay(congruenceLeafs :_*)
-     // if (obviouslyEqual contains true) {
-     //   return true
-     // }
-     val r = solveSubtyping(j)
+     val r = solveSubtyping(j.copy(tp1=tp1, tp2=tp2))
      if (r) return true
      // foundation-independent cases
      (tp1, tp2) match {
@@ -598,7 +584,6 @@ trait SolverAlgorithms {self: Solver =>
      // otherwise, apply a subtyping rule
      history += "not obviously equal, trying subtyping"
      subtypingRules foreach {r =>
-       history += "trying " + r.toString
        if (r.applicable(tp1,tp2)) {
           history += "applying subtyping rule " + r.toString + " to " + presentObj(tp1) + " <: " + presentObj(tp2)
           try {
@@ -614,23 +599,28 @@ trait SolverAlgorithms {self: Solver =>
      check(Equality(j.stack, tp1, tp2, None))
   }
 
-   /* ********************** simplification ******************************************************/
+  /* ********************** simplification ******************************************************/
 
-   /**
+  /**
     * unsafe via ObjectSimplifier
     * this subsumes substituting for solved unknowns before simplifier expands defined variables
     */
-   def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = {
-      val solutionNoDefs = solution map {vd => vd.copy(df = None)} // avoid expanding solved unknowns
-      val tS = controller.simplifier(t, constantContext ++ solutionNoDefs ++ stack.context, rules, expDef = false)
+  private def simplify(t : Obj, expDef: Boolean, fullRec: Boolean)(implicit stack: Stack, history: History): t.ThisType = {
+      val su = SimplificationUnit(constantContext ++ solution ++ stack.context, expDef, fullRec)
+      val tS = controller.simplifier(t, su, rules)
       if (tS != t)
         history += ("simplified: " + presentObj(t) + " ~~> " + presentObj(tS))
-      // TODO stability does not consider simplifier-only simplification rules yet; so even stable terms can be simplifiable here
-      // retaining the stability flag sounds reasonable; but is it always correct?
-      if (Stability.is(t))
-        Stability.set(tS)
       tS
-   }
+  }
+   
+  /** special case simplify: no expansion, full recursion */
+  def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType = simplify(t, false, true)
+   
+  /** special case of simplify: expansion, limited recursion */
+  private def headNormalize(t: Term)(implicit stack: Stack, history: History): Term = {
+    if (Stability.is(t)) t
+    else simplify(t, true, false)
+  }
 
    /** simplifies one step overall */
    private def safeSimplifyOne(tm: Term)(implicit stack: Stack, history: History): Term = {
@@ -673,14 +663,13 @@ trait SolverAlgorithms {self: Solver =>
           var simp: CannotSimplify = Simplifiability.NoRecurse
           computationRules foreach {rule =>
             if (rule.applicable(tm)) {
-              history += "trying " + rule.toString
               val ret = rule(this)(tm, false)(stack,history)
               ret match {
                 case Simplify(tmS) =>
                   log("applied computation rule " + rule.toString + " to " + presentObj(tm))
                   log("~~>" + presentObj(tmS))
                   history += "applied computation rule " + rule.toString
-                  history += ("simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS))
+                  history += "simplified: " + presentObj(tm) + " ~~> " + presentObj(tmS)
                   return tmS
                 case cannot: CannotSimplify =>
                   simp = simp join cannot
@@ -688,10 +677,7 @@ trait SolverAlgorithms {self: Solver =>
             }
           }
           // no applicable rule: check stability
-          val recursePositions = simp match {
-            case RecurseOnly(p) => p.distinct
-            case Recurse => 1 to tm.subobjects.length
-          }
+          val recursePositions = simp.getPositions(tm.subobjects.length)
           // invariant: tm simplifies to result
           var subobjsLeft: List[Obj] = subs ::: con ::: args
           var subobjsNew: List[Obj] = Nil
@@ -796,18 +782,6 @@ trait SolverAlgorithms {self: Solver =>
    private def safeSimplifyUntilRuleApplicable[R <: CheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
       safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.heads contains h)})
 
-      
-  /** alternates safeSimplifyOne and simplify until head-normal; does not necessarily terminate */
-  private def headNormalize(t: Term)(implicit stack: Stack, history: History): Term = {
-    if (Stability.is(t))
-      return t
-    val tS = simplify(safeSimplifyOne(t))
-    if (tS hasheq t)
-      tS
-    else {            
-      headNormalize(tS)
-    }
-  }
       
   /* ********************** methods for contexts ***************************/
 

@@ -143,20 +143,4 @@ class RuleBasedChecker extends ObjectChecker {
       }
       CheckingResult(success, Some(solver.getPartialSolution), resultTerm)
    }
-   /**
-    * A Traverser that reduces all redexes introduced by solving unknowns.
-    */
-   /*
-    private object SimplifyInferred extends Traverser[RuleSet] {
-      def traverse(t: Term)(implicit con : Context, rules: RuleSet) : Term = {
-         t match {
-            case OMA(OMS(parser.ObjectParser.oneOf), uom.OMLiteral.OMI(i) :: args) =>
-               Traverser(this, args(i.toInt))
-            case _ if parser.SourceRef.get(t).isEmpty =>
-               controller.simplifier(t, con, rules, false)
-            case _ =>
-               Traverser(this, t)
-         }
-      }
-   }*/
 }

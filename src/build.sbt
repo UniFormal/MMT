@@ -128,17 +128,23 @@ lazy val excludedProjects = {
 // Main MMT Projects
 // =================================
 
-// building API documentation
+// the aggregating meta project, used for manual testing
+// and building api documentation
 lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
   exclusions(excludedProjects).
-  aggregate(
+  aggregatesAndDepends(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got,
       tiscaf, lfcatalog,
       jedit
-  ).settings(
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter
+  ).
+  settings(
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter,
+    // add the test folder to the test sources
+    // but don't actually run any of them
+    scalaSource in Test := baseDirectory.value / "test",
+    test := {}
   )
 
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.

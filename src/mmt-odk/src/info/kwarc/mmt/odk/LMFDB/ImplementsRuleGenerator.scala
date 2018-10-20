@@ -67,19 +67,8 @@ class ImplementsRuleGenerator extends ChangeListener {
  * @param rhs the right hand side
  */
 // TODO Needs to be reimplemented
-class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends DepthRule(impl, LFX.RecExp.path) {
+class ImplementsRule(val from: Constant, recordType: Term, impl: GlobalName) extends SimplificationRule(impl) {
     override def toString = s"$impl(record) ~~> ${from.name}(record)"
 
-    def apply : Rewrite = {(bef,inn,aft) => /*
-       if (aft.nonEmpty)
-          NoChange
-       else inn match {
-          // ignoring before, which might contain, e.g., implicit arguments
-          case tp :: fields if tp == recordType =>
-             val t = Getfield(Recexp(fields), from.name)
-             GlobalChange(t)
-          case _ => NoChange
-       } */ NoChange
-    }
-
+    def apply(c: Context, t: Term) = Simplifiability.NoRecurse
 }

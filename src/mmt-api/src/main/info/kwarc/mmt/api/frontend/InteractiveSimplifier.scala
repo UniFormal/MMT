@@ -10,7 +10,7 @@ import interpreter._
 //should be redone with a clean step-based/interactive object simplifier
 class InteractiveSimplifier(controller : Controller, intp : ILoop) {
   private var uom = controller.simplifier
-  var uomLog: List[(UOMState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
+  var uomLog: List[(SimplifierState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
   def current = uomLog.head
   def rule = current._3
   var topTerm : Term = null

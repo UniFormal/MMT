@@ -72,7 +72,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
-      private var _bounds = new ListMap[LocalName,List[TypeBound]] 
+      private var _bounds = new ListMap[LocalName,List[TypeBound]] //TODO bounds should be saved as a part of the context (that may require an artificial symbol)
       /** tracks the delayed constraints, in any order */
       private var _delayed : List[DelayedConstraint] = Nil
       /** tracks the errors in reverse order of encountering */
@@ -498,7 +498,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
          val vd = solved.copy(df = Some(valueS))
-         setNewSolution(left ::: vd :: rightS)
+         val newSolution = left ::: vd :: rightS
+         setNewSolution(newSolution)
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>
@@ -518,8 +519,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the the overall check succeeds
     */
    protected def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      log("solving type of " + name + " as " + presentObj(value))
-      history += "solving type of " + name + " as " + value
+      lazy val msg = "solving type of " + name + " as " + presentObj(value) 
+      log(msg)
+      history += msg
       val newSolution = simplify(substituteSolution(value))(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
@@ -580,7 +582,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    protected def typeCheckSolution(vd: VarDecl)(implicit history: History): Boolean = {
       (vd.tp, vd.df) match {
          case (Some(FreeOrAny(tpCon,tp)), Some(FreeOrAny(dfCon,df))) =>
-           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking solution of metavariable against solved type")
+           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking equality of contexts of solution of of metavariable and type")
+           if (!eqCon) return false
            val subs = (tpCon alpha dfCon).getOrElse(return false)
            check(Typing(Stack(tpCon), df ^? subs, tp))(history + "checking solution of metavariable against solved type")
          case _ => true
@@ -594,7 +597,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      var toEnd = Context(it)
      var toEndNames = List(name)
      rest.foreach {vd =>
-       if (utils.disjoint(vd.freeVars, toEndNames)) {
+       val vdVars = vd.freeVars ::: state.bounds(vd.name).flatMap(_.bound.freeVars)
+       if (utils.disjoint(vdVars, toEndNames)) {
          // no dependency: move over vd
          toLeft = toLeft ++ vd
        } else {
@@ -624,7 +628,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             case Some(vIndex) => // v declared in solution
                if (vIndex > mIndex)
                   false // but before m
-               // TODO switching to the commented-out code might help solving them cases
+               // TODO switching to the commented-out code might help solving some cases
                else true // v == m || solution(v).df.isDefined // after m but not solved yet
          }
       }

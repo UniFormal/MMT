@@ -2,6 +2,7 @@ package info.kwarc.mmt.reflection
 
 import info.kwarc.mmt.api._
 import checking._
+import uom._
 import objects._
 import objects.Conversions._
 

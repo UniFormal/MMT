@@ -27,26 +27,24 @@ class Association(monoid: Boolean, semilattice: Boolean) extends ParametricRule 
       case _ => throw ParseError("arguments must be identifier and (if monoid) term")
     }
     // TODO check type of op
-    new BreadthRule(op) {
-      val apply: Rewrite = as => {
-        as match {
-          case NoSeqs(l) =>
+    new SimplificationRule(op) {
+      def apply(c: Context, t: Term) = t match {
+        case ApplySpine(OMS(o), NoSeqs(l)) =>
             var lF = l.flatMap {
               case t if neutOpt contains t => Nil // neutrality
-              case ApplySpine(OMS(this.head), NoSeqs(xs)) => xs // associativity
+              case ApplySpine(OMS(op), NoSeqs(xs)) => xs // associativity
               case x => List(x)
             }
             if (semilattice)
               lF = lF.distinct // idempotence (in the presence of commutativity)
             val nF = lF.length
-            if (neutOpt.isDefined && nF == 0) GlobalChange(neutOpt.get)
-            else if (nF == 1) GlobalChange(lF.head)
-            else if (nF != l.length) LocalChange(NoSeqs(lF))
-            else NoChange
-          case _ =>
-            //TODO we can still do something in this case
-            NoChange
-        }
+            if (neutOpt.isDefined && nF == 0) Simplify(neutOpt.get)
+            else if (nF == 1) Simplify(lF.head)
+            else if (nF != l.length) Simplify(ApplySpine(OMS(op), NoSeqs(lF) :_*))
+            else Recurse
+        case _ =>
+          //TODO we can still do something in this case
+          Simplifiability.NoRecurse
       }
     }
   }
