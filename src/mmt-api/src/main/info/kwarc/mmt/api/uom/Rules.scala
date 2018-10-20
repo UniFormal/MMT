@@ -69,20 +69,26 @@ class AbbrevRule(h: GlobalName, val term: Term) extends SimplificationRule(h) {
  * to allow for using the same rewrite rule in different contexts (where different solution rules for matching may be available),
  * this class must be provided with a Matcher before producing an actual rule 
  */
-class RewriteRule(h: GlobalName, templateVars: Context, template: Term, val rhs: Term) {
+// TODO this is barely used so far (once in Mizar)
+class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val rhs: Term) extends TermTransformationRule {
   /** 
    * @param matcher the matcher to use
    * @return the simplification rule
    */
-  def makeRule(matcher: Matcher) = new SimplificationRule(h) {
+  def makeRule(matcher: Matcher) = new SimplificationRule(head) {
     def apply(goalContext: Context, goal: Term) = {
       matcher(goalContext, goal, templateVars, template) match {
         case MatchSuccess(sub) =>
           Simplify(rhs ^? sub)
         case _ =>
-          Recurse
+          Recurse // TODO this is terrible for stability
       }
     }
+  }
+  
+  def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
+    val rule = makeRule(matcher)
+    rule(goalContext, goal).get
   }
 }
 
@@ -99,4 +105,4 @@ trait TermTransformationRule extends SimplifierRule {
  *
  *  separating these rules is important to avoid cycles during simplification
  */
-abstract class ComplificationRule extends TermTransformationRule
+trait ComplificationRule extends TermTransformationRule
