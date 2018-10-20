@@ -54,7 +54,7 @@ private object InternalDeclarationUtil {
         case OMBIND(Pi.term, con, body) => preCon(con) + " "+iterPre(body)
         case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")
         case Arrow(a, b) => "("+iterPre(a) + " -> " + iterPre(b)+")"
-        case OMS(target) => "OMS("+target.toPath+")"
+        case OMS(target) => "OMS("+target.name+")"
         case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg1) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
         case OMV(n) => "OMV("+n.toString()+")"
         case OML(n, tp, df, _, _) => n.toString()+(if(tp != None) ": "+iterPre(tp.get) else "")+(if (df != None) " = "+iterPre(df.get) else "")
@@ -70,7 +70,6 @@ private object InternalDeclarationUtil {
   }
   object Eq {
     val path = theory ? "EQUAL"
-    def apply(s: Term, t: Term) = ApplySpine(OMS(path), s, t) // TODO just temporarily to make things compile, will produce ill-typed content
     def apply(a: Term, s: Term, t: Term) = Ded(ApplySpine(OMS(path), a, s, t))
   }
   object Neq {

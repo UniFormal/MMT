@@ -83,7 +83,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
       val proof = p.applyTo(y)
       val y_lifted = ApplyGeneral(OMS(g), List(T.toTerm, f.toTerm, y, proof))
       val y_mapped = ApplyGeneral(f.toTerm, List(x.toTerm))
-      Pi(List(T, f, x), Arrow(proof, Eq(y_lifted, y_mapped)))
+      Pi(List(T, f, x), Arrow(proof, Eq(y_lifted, y_mapped,T.toTerm)))
     }
     makeConst(uniqueLN(name getOrElse "inverse"), Ltp)
   }
