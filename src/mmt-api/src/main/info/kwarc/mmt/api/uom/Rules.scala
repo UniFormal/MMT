@@ -3,112 +3,100 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
 
-/** The return type of a simplification rule
- * @see DepthRule
- * @see BreadthRule)
- */
-abstract class Change {
-   /** corresponds to Option.orelse */
-   def orelse(that: => Change): Change = if (this == NoChange) that else this
+/** super class of all rules used by simplification */
+trait SimplifierRule extends SyntaxDrivenRule
+
+/** rules for simplifying expressions */
+abstract class SimplificationRule(val head: GlobalName) extends SimplifierRule {
+  def apply(context: Context, t: Term): Simplifiability
 }
 
-/** A LocalChange leaves the structure of a term unchanged, but changes its arguments
- * @param inside the new argument list
- * For the precise meaning of this Change, see DepthRule and BreadthRule.
- */
-case class LocalChange(inside: List[Term]) extends Change
-
-/** A GlobalChange changes the structure of a term.
- * @param it the new term
- */
-case class GlobalChange(it: Term) extends Change
-/** no change */
-case object NoChange extends Change
-
-/** super class of all rules used by the [[UOM]] */
-trait UOMRule extends SyntaxDrivenRule
-
-/** an arbitrary rewrite/computation/simplification rule */
-// TDOO this should become part of UOMRule, breadth/depth rules should be instances
-trait TermTransformationRule extends UOMRule {
-  /** try to apply this return, result result if applicable */
-  def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term]
+/** return type of applying a simplification rule to a term t*/
+sealed abstract class Simplifiability {
+  def get: Option[Term]
 }
 
-/** a rule that should only be used during complification
- *
- *  separating these rules is important to avoid cycles during simplification
- */
-trait ComplificationRule extends TermTransformationRule
-
-/** A DepthRule looks one level deep into the structure of one of the arguments of an operator
- *
- * It is applicable to a term of the form
- * {{{
- * OMA(outer, before ::: OMA(inner, inside) :: after)
- * }}}
- * A LocalChange replaces OMA(inner,inside).
- */
-abstract class DepthRule(val outer: GlobalName, val inner: GlobalName) extends UOMRule {
-   val head = outer
-   /** a Rewrite takes the triple (before, inside, after) and returns a simplification Result */
-   type Rewrite = (List[Term], List[Term], List[Term]) => Change
-   /** the implementation of the simplification rule */
-   def apply : Rewrite
+/** simplify t to result */
+case class Simplify(result: Term) extends Simplifiability {
+  def get = Some(result)
 }
 
-/** A DepthRuleUnary is the special case of a DepthRule where the outer operator is unary */
-abstract class DepthRuleUnary(outer: GlobalName, inner: GlobalName) extends DepthRule(outer, inner) {
-   /** a RewriteUnary takes only "inside" as an argument because "before" and "after" are empty */
-   type RewriteUnary = List[Term] => Change
-   /** the implementation of the simplification rule */
-   val applyUnary : RewriteUnary
-   val apply : Rewrite = (before, inside, after) => applyUnary(inside)
+/** this rule cannot be applied to t at toplevel */
+sealed abstract class CannotSimplify extends Simplifiability {
+  def get = None
+  /** a bounded semi-lattice, ordered by uncertainty about stability; least/neutral element: NoRecurse, greatest/attractive element Recurse */ 
+  def join(that: CannotSimplify): CannotSimplify = (this,that) match {
+    case (Recurse, _) | (_, Recurse) => Recurse 
+    case (RecurseOnly(p1),RecurseOnly(p2)) => RecurseOnly(p1:::p2)
+  }
+  
+  /** get all positions, up to top */
+  def getPositions(top: Int): Seq[Int]
 }
 
-/** A BreadthRule looks at all arguments of an operator, but usually does not look inside them
- *
- * It is applicable to a term of the form
- * {{{
- * OMA(op, args)
- * }}}
- * A LocalChange replaces args.
+/** this rule cannot become applicable unless a subterm in one of the given positions is simplified; the first argument has position 1 */
+case class RecurseOnly(positions: List[Int]) extends CannotSimplify {
+   def getPositions(top: Int) = positions.distinct
+}
+
+/** this rule might become applicable if any subterm is simplified
+ *  
+ *  this should be returned by default; it replaces the return value "None" from the previous ComputationRule.apply method that returned Option[Term]
  */
-abstract class BreadthRule(val head: GlobalName) extends UOMRule {
-   /** a Rewrite takes the arguments args and returns a simplification Result */
-   type Rewrite = List[Term] => Change
-   /** the implementation of the simplification rule */
-   val apply: Rewrite
+case object Recurse extends CannotSimplify {
+   def getPositions(top: Int) = 1 to top
+}
+
+
+object Simplifiability {
+  /** this rule cannot become applicable no matter what and how subterms are simplified */
+  val NoRecurse = RecurseOnly(Nil) 
 }
 
 /** An AbbrevRule expands a symbol into a term */
-class AbbrevRule(val head: GlobalName, val term: Term) extends UOMRule
+class AbbrevRule(h: GlobalName, val term: Term) extends SimplificationRule(h) {
+  def apply(context: Context, t: Term) =
+    if (t == OMS(h)) Simplify(term) else Simplifiability.NoRecurse
+}
 
-/** a transformation based on matching the input term
- *  @param templateVars the free variables to fill in through matching
- *  @param template the left-hand side
+/**
+ * a general rewrite rule
+ * 
+ * @param templateVars the free variables to fill in through matching
+ * @param template the left-hand side
+ * @param ths the right-hand side (relative to the template variables)
+ * 
+ * to allow for using the same rewrite rule in different contexts (where different solution rules for matching may be available),
+ * this class must be provided with a Matcher before producing an actual rule 
  */
-abstract class MatchingRule(templateVars: Context, template: Term) extends TermTransformationRule {
-  /**
-   *  @param goal the term that was matched
-   *  @param templateSolution the substitution for the template variables
-   *  @return the transformed term
+class RewriteRule(h: GlobalName, templateVars: Context, template: Term, val rhs: Term) {
+  /** 
+   * @param matcher the matcher to use
+   * @return the simplification rule
    */
-  def makeResult(goal: Term, templateSolution: Substitution): Option[Term]
-  def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
-    matcher(goalContext, goal, templateVars, template) match {
-      case MatchSuccess(sub) => makeResult(goal, sub)
-      case _ => None
+  def makeRule(matcher: Matcher) = new SimplificationRule(h) {
+    def apply(goalContext: Context, goal: Term) = {
+      matcher(goalContext, goal, templateVars, template) match {
+        case MatchSuccess(sub) =>
+          Simplify(rhs ^? sub)
+        case _ =>
+          Recurse
+      }
     }
   }
 }
 
 /**
- * a general rewrite rule
- * @param result the right-hand side (relative to the template variables)
+ * general purpose transformation rule
+ * //TODO this is barely used and should be merged with SimplificationRule
  */
-class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, val result: Term)
-  extends MatchingRule(templateVars, template) {
-
-  def makeResult(goal: Term, sub: Substitution) = Some(result ^? sub)
+trait TermTransformationRule extends SimplifierRule {
+  /** try to apply this, return result if applicable */
+  def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term]
 }
+
+/** the term transformation rules that should be used for complification
+ *
+ *  separating these rules is important to avoid cycles during simplification
+ */
+abstract class ComplificationRule extends TermTransformationRule

@@ -72,7 +72,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
-      private var _bounds = new ListMap[LocalName,List[TypeBound]] 
+      private var _bounds = new ListMap[LocalName,List[TypeBound]] //TODO bounds should be saved as a part of the context (that may require an artificial symbol)
       /** tracks the delayed constraints, in any order */
       private var _delayed : List[DelayedConstraint] = Nil
       /** tracks the errors in reverse order of encountering */
@@ -498,7 +498,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
          val vd = solved.copy(df = Some(valueS))
-         setNewSolution(left ::: vd :: rightS)
+         val newSolution = left ::: vd :: rightS
+         setNewSolution(newSolution)
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>
@@ -596,7 +597,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      var toEnd = Context(it)
      var toEndNames = List(name)
      rest.foreach {vd =>
-       if (utils.disjoint(vd.freeVars, toEndNames)) {
+       val vdVars = vd.freeVars ::: state.bounds(vd.name).flatMap(_.bound.freeVars)
+       if (utils.disjoint(vdVars, toEndNames)) {
          // no dependency: move over vd
          toLeft = toLeft ++ vd
        } else {
@@ -626,7 +628,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             case Some(vIndex) => // v declared in solution
                if (vIndex > mIndex)
                   false // but before m
-               // TODO switching to the commented-out code might help solving them cases
+               // TODO switching to the commented-out code might help solving some cases
                else true // v == m || solution(v).df.isDefined // after m but not solved yet
          }
       }

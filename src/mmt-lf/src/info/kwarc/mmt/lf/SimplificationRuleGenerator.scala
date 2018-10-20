@@ -38,6 +38,7 @@ class SimplificationRuleGenerator extends ChangeListener {
   /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */
   protected val SimplifyTag = "Simplify"
   protected val SolutionTag = "Solve"
+  protected val under = List(Apply.path)
   private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag
 
   private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
@@ -176,7 +177,7 @@ class SimplificationRuleGenerator extends ChangeListener {
        case OuterInnerTerm(n) =>
          // create and add the rule
          val desc = ruleName.toPath + ": " + present(t1) + "  ~~>  " + present(t2)
-         val rule = new GeneratedDepthRule(c, desc, n, t2)
+         val rule = new GeneratedDepthRule(c, desc, under, n, t2)
          val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
          ruleConst.setOrigin(GeneratedBy(this))
          controller.add(ruleConst)
@@ -244,7 +245,7 @@ class SimplificationRuleGenerator extends ChangeListener {
  * @param names structure of the left hand side
  * @param rhs the right hand side
  */
-class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerNames, val rhs: Term) extends DepthRule(names.outer, names.inner) {
+class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalName], names: OuterInnerNames, val rhs: Term) extends SimplificationRule(names.outer) {
     override def toString = desc
     /** timestamp to avoid regenerating this rule when 'from' has not changed */
     val validSince = from.tpC.lastChangeAnalyzed
@@ -257,43 +258,76 @@ class GeneratedDepthRule(val from: Constant, desc: String, names: OuterInnerName
           case (n,l) => (n, l.map(_._2))
        }
     }
-
-    def apply : Rewrite = {
-        // input term is outer(before, inner(inside), after)
-        (before : List[Term],inside : List[Term],after : List[Term]) => {
-          // drop implicit arguments from before, inside, and after
-          val (explBf, explAf) = names.explArgsOuter(before, after)
-          val explIn = names.explArgsInner(inside)
-          // match the remaining explicit arguments against bfrNames, insNames, aftNames
-          if (explBf.length != names.before.length ||
-              explAf.length != names.after.length ||
-              explIn.length != names.inside.length) {
-            // mismatch: inequal number
-            NoChange
-          } else {
-             // for each non-linearity constraint, check that the corresponding elements of 'all' are identical
-             // and if so, add a case to the substitution subs
-             val all = explBf ::: explIn ::: explAf
-             var subs = Substitution()
-             val matchesNonlinearityConstraints = nonlinearityConstraints.forall {case (v, is) =>
-                val first::others = is // Nil impossible by definition of nonlinearityConstraints
-                val t = all(first)
-                // use the first position to extend the substitution
-                subs = subs ++ Sub(v,t)
-                // check that all remaining positions are indeed equal
-                others.forall(i => all(i) hasheq t)
+    
+    private val App = new notations.OMAUnder(under)
+    /** object for matching the inner term */
+    private class InnerTermMatcher(matchRules: List[InverseOperator]) {
+       /**
+        * unifies matching OMA, strict OMS, OMS, literals that can be the result of applying a realized operator
+        * @return list of matches: arguments, flag signaling whether the inner term is an OMS
+        */
+       def matches(t: Term): List[(List[Term], Boolean)] = t match {
+          case App(OMS(p), inside) if p == names.inner =>
+            List((inside, false))
+          case OMS(p) if p == names.inner =>
+            List((Nil, true))
+          case l: OMLIT =>
+             // This case inverts any known injective function that returns this literal.
+             // That is needed, e.g., to match the literal against the constant zero.
+             // It's unclear how helpful it is in general.
+             // TODO Can this introduce a cycle?
+             matchRules.flatMap {m =>
+                m.unapply(l) match {
+                   case None =>
+                     Nil
+                   case Some(args) =>
+                     List((args, args.isEmpty))
+                }
              }
-             // TODO we also need to substitute for those variables that only occur in implicit arguments
-             if (! matchesNonlinearityConstraints) {
-                // mismatch: non-linearity constraints not met
-                // TODO simplification further down the term may make the constraints true without this rule being rechecked
-                NoChange
-             } else {
-                // subs contains the needed substitution
-                val rhsS = rhs ^? subs
-                GlobalChange(rhsS)
-             }
-          }
+          case _ => Nil
+       }
+    }
+    private val itm = new InnerTermMatcher(Nil)
+   
+    def apply(c: Context, t: Term): Simplifiability = {
+        t match {
+          case App(OMS(outer),args) if outer == names.outer =>
+            args.zipWithIndex foreach {case (arg,i) =>
+              itm.matches(arg) foreach {case (inside, _) =>
+                val before = args.take(i)
+                val after = args.drop(i+1)
+                // drop implicit arguments from before, inside, and after
+                val (explBf, explAf) = names.explArgsOuter(before, after)
+                val explIn = names.explArgsInner(inside)
+                // match the remaining explicit arguments against bfrNames, insNames, aftNames
+                if (explBf.length == names.before.length &&
+                    explAf.length == names.after.length &&
+                    explIn.length == names.inside.length) {
+                    // for each non-linearity constraint, check that the corresponding elements of 'all' are identical
+                    // and if so, add a case to the substitution subs
+                   val all = explBf ::: explIn ::: explAf
+                   var subs = Substitution()
+                   val matchesNonlinearityConstraints = nonlinearityConstraints.forall {case (v, is) =>
+                      val first::others = is // Nil impossible by definition of nonlinearityConstraints
+                      val t = all(first)
+                      // use the first position to extend the substitution
+                      subs = subs ++ Sub(v,t)
+                      // check that all remaining positions are indeed equal
+                      others.forall(i => all(i) hasheq t)
+                   }
+                   // TODO we also need to substitute for those variables that only occur in implicit arguments
+                   // TODO simplification further down the term may make the linearity constraints true without this rule being rechecked
+                   if (matchesNonlinearityConstraints) {
+                      // subs contains the needed substitution
+                      val rhsS = rhs ^? subs
+                      return Simplify(rhsS)
+                   }
+                }
+              }
+            }
+            Recurse
+          case _ =>
+            Simplifiability.NoRecurse
         }
    }
 }

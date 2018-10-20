@@ -438,7 +438,7 @@ object ComplexTerm {
      val conI = con.map(_.asInstanceOf[VarDecl])
      val argsI = args.map {
        case t: Term => t
-       case _ => throw ImplementationError("term expected")
+       case o => throw ImplementationError("term expected, found: " + o)
      }
      ComplexTerm(p, subsI, conI, argsI)
    }

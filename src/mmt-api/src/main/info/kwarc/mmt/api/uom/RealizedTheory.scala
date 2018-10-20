@@ -60,6 +60,9 @@ abstract class RealizationInScala extends RealizedTheory(None) {
    lazy val _path = _domain._path
    /** the name of the modelled theory */
    lazy val _name = _domain._name
+   
+   /** the HOAS apply operators in applications */
+   val under: List[GlobalName]
 
    declare {add(symbols.PlainInclude(_path, path))}
 
@@ -100,7 +103,6 @@ abstract class RealizationInScala extends RealizedTheory(None) {
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
            } catch {
-             case Unimplemented(f) => log("unimplemented " + f + "\n")
              case e: Error => log("error :" + e.toString + "\n")
            }
       }
@@ -152,7 +154,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
        }
        rule(inv, invertTag)
      } else {
-        val synTp = SynOpType(Nil, aTypes.map(_.synType), rType.synType)
+        val synTp = SynOpType(under, aTypes.map(_.synType), rType.synType)
         val semOp = new SemanticOperator(aTypes.map(_.semType) =>: rType.semType) {
           def apply(args: List[Any]) = fun.app(args)
         }
@@ -164,7 +166,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
 
    /** typed variant, experimental, not used by ScalaExporter yet */
    def functionT[U,V](op:GlobalName, argType1: RepresentedRealizedType[U], rType: RepresentedRealizedType[V])(comp: U => V) {
-      val synTp = SynOpType(Nil, List(argType1.synType), rType.synType)
+      val synTp = SynOpType(under, List(argType1.synType), rType.synType)
       val semOp = new SemanticOperator(List(argType1.semType) =>: rType.semType) {
         def apply(args: List[Any]) = args(0) match {
             case argType1.semType(x) => comp(x)

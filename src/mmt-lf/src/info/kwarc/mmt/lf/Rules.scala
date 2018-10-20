@@ -191,7 +191,8 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                     // we return the inferred type and (if expected type provided) the type check result
                     val tmIS = solver.substituteSolution(tmI)
                     (Some(tmIS), checkResult)
-                  case None => (None, None)
+                  case None =>
+                    (None, None)
                 }
               case None =>
                 history += "failed"
@@ -221,11 +222,11 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
             val aN = solver.substituteSolution(a2) // both a1 and a2 may contain unknowns, which may have been solved when checking a1==a2
-            solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
+            solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2))
          case (tm, Pi(x2, a2, b)) =>
             val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
-            solver.check(j)(history + "type checking rule for Pi")
+            solver.check(j)
       }
    }
 }

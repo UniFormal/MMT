@@ -38,7 +38,7 @@ object RealizedValue {
   }
 }
 /** A RealizedOperator couples a syntactic function (a Constant) with a semantic function (a Scala function) */
-case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends BreadthRule(synOp) {
+case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: SemanticOperator, semTp: SemOpType) extends SimplificationRule(synOp) {
   /** basic type-checking */
   override def init {
      semOp.init
@@ -49,35 +49,27 @@ case class RealizedOperator(synOp: GlobalName, synTp: SynOpType, semOp: Semantic
   }
 
    val arity = synTp.arity
+   private val under = synTp.under
+   private val underL = under.length
 
    private val argTypes: List[RealizedType] = (synTp.args zip semTp.args) map {case (syn,sem) => RealizedType(syn,sem)}
    private val retType : RealizedType = RealizedType(synTp.ret, semTp.ret)
 
-   private def applicable(args: List[Term]): Boolean = {
-      if (args.length != argTypes.length) return false
-      (args zip argTypes).forall {
-         //case (l: OMLIT, lt) => l.rt == lt
-         case (l,lt) if lt.unapply(l).isDefined => true
-         case _ => false
+   private val App = new notations.OMAUnder(under)
+   
+   def apply(context: Context, t: Term): Simplifiability = {
+      t match {
+        case App(OMS(`synOp`),args) if args.length == arity =>
+          val argsV = (args zip argTypes).zipWithIndex map {case ((a,aT),i) =>
+             aT.unapply(a).getOrElse {
+               return RecurseOnly(List(underL+i))
+             }
+          }
+          val tS = retType of semOp(argsV)
+          Simplify(tS)
+        case _ =>
+          Simplifiability.NoRecurse
       }
-   }
-
-   def apply(args: List[Term]): OMLIT = {
-      if (args.length != arity)
-        throw ImplementationError("illegal argument number")
-      val argsV = (argTypes zip args) map {case (aT, a) =>
-        aT.unapply(a).getOrElse {
-          throw ImplementationError("illegal argument type")
-        }
-      }
-      retType of semOp(argsV)
-   }
-
-   val apply: Rewrite = (args: List[Term]) => {
-     if (applicable(args))
-        GlobalChange(apply(args))
-     else
-        NoChange
    }
 
    /** the inversion rule if the semantic operator is invertible */
@@ -178,7 +170,7 @@ object RealizedOperator {
  *  counterpart to a [[RealizedOperator]] for the partial inverse
  *  This is also possible if head is injective. See [[lf.SolutionRules]] for the non-injective case.
  */
-abstract class InverseOperator(val head: GlobalName) extends UOMRule {
+abstract class InverseOperator(val head: GlobalName) extends SimplifierRule {
    /** takes the result of applying 'head' and returns the list of arguments */
    def unapply(l: OMLIT): Option[List[OMLIT]]
 }

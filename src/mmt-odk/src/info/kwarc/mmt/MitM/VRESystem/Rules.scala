@@ -1,12 +1,15 @@
 package info.kwarc.mmt.MitM.VRESystem
 
-import info.kwarc.mmt.MitM.VRESystem.VRESystem
-import info.kwarc.mmt.MitM.{MitM, MitMSystems, VRESystem}
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.{ContentPath, GlobalName, RuleSet}
+import info.kwarc.mmt.api._
+import checking._
+import objects._
+import ontology._
+import uom._
+
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
+
+import info.kwarc.mmt.MitM._
+
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.{Plugin, StringLiterals}
 

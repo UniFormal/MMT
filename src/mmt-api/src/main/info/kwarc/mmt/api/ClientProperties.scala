@@ -67,7 +67,12 @@ class BooleanClientProperty[-C <: ClientProperties](p: URI) extends ClientProper
 }
 
 
-class TermProperty[A](p: URI) extends ClientProperty[Obj, A](p)
+class TermProperty[A](p: URI) extends ClientProperty[Obj, A](p) {
+  def eraseDeep(o: Obj) {
+    erase(o)
+    o.subobjects foreach {case (_,so) => eraseDeep(so)}
+  }
+}
 class BooleanTermProperty(p: URI) extends BooleanClientProperty[Obj](p)
 
 object TermProperty {

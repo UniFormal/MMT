@@ -271,7 +271,7 @@ object ExpandRep extends ComputationRule(rep.path) {
 }
 
 /** inverse of ExpandRep, useful for complification */
-object ContractRep extends TermTransformationRule with ComplificationRule {
+object ContractRep extends ComplificationRule {
   val head = rep.path
   def apply(matcher: Matcher, c: Context, t: Term) = {
     t match {

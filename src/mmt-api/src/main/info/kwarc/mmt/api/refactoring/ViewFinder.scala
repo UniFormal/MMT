@@ -742,7 +742,7 @@ object DefinitionExpander extends Preprocessor {
     }
   }
 
-  private lazy val simplifier = controller.simplifier.objectLevel
+  private lazy val simplifier = controller.simplifier
 
   override def apply(th: DeclaredTheory): DeclaredTheory = {
     val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,TermContainer(None))
