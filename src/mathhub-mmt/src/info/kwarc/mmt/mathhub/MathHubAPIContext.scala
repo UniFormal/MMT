@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.metadata.{HasMetaData, MetaData}
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
+import info.kwarc.mmt.api.ontology.Statistics
 import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
@@ -374,7 +375,9 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val archives = mathHub.entries_.collect({case archive: LMHHubArchiveEntry if archive.group == ref.id => archive.id })
 
     Some(IGroup(
-      ref.id, ref.name, ref.title, ref.teaser,
+      ref.id, ref.name,
+      getStats(ref.id),
+      ref.title, ref.teaser,
 
       description,
       responsible,
@@ -398,7 +401,9 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
         .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)"))
 
     Some(IArchive(
-      ref.parent, ref.id, ref.name, ref.title, ref.teaser,
+      ref.parent, ref.id, ref.name,
+      getStats(ref.id),
+      ref.title, ref.teaser,
 
       description,
       responsible,
@@ -447,6 +452,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IDocument(
       ref.parent, ref.id, ref.name,
+      getStats(ref.id),
 
       decls
     ))
@@ -459,6 +465,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IOpaqueElement(
       ref.parent, ref.id, ref.name,
+      getStats(ref.id),
 
       opaque.format,
       opaque.raw.toString
@@ -521,6 +528,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(ITheory(
       ref.id, ref.name,
+      getStats(ref.id),
 
       presentation,
       source,
@@ -545,6 +553,7 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IView(
       ref.id, ref.name,
+      getStats(ref.id),
 
       presentation,
       source,
@@ -554,6 +563,13 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     ))
   }
 
+
+  // endregion
+
+  // region "Statistics"
+
+  // TODO: Build statistics in a cached form
+  private def getStats(path: String): Option[List[IStatistic]] = None
 
   // endregion
 }

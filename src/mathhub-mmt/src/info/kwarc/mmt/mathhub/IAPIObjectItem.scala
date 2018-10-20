@@ -27,6 +27,7 @@ trait IReferencable extends IAPIObjectItem {
 /** any concrete reference */
 trait IReference extends IAPIObjectItem {
   val ref: Boolean = true
+  val statistics: Option[List[IStatistic]] = None
 }
 
 
@@ -72,6 +73,7 @@ case class IGroupRef(
 case class IGroup(
                    override val id: String,
                    override val name: String,
+                   override val statistics: Option[List[IStatistic]],
                    override val title: IAPIObjectItem.HTML,
                    override val teaser: IAPIObjectItem.HTML,
 
@@ -134,6 +136,7 @@ case class IArchive(
                         override val parent: Some[IGroupRef],
                         override val id: String,
                         override val name: String,
+                        override val statistics: Option[List[IStatistic]],
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML,
 
@@ -191,6 +194,8 @@ case class IDocument(
                       override val id: IAPIObjectItem.URI,
                       override val name: String,
 
+                      override val statistics: Option[List[IStatistic]],
+
                       decls: List[INarrativeElement]
                     ) extends IDocumentItem with IReferencable with INarrativeElement {
   override def toJSONBuffer: JSONObjectBuffer = {
@@ -230,6 +235,8 @@ case class IOpaqueElement(
                            override val parent: Some[IDocumentRef],
                            override val id: String,
                            override val name: String,
+
+                           override val statistics: Option[List[IStatistic]],
 
                            contentFormat: String,
                            content: String
@@ -284,7 +291,7 @@ case class ITheoryRef(
 /** a reference to a view */
 case class IViewRef(
                      override val id: IAPIObjectItem.URI,
-                     override val name: String
+                     override val name: String,
                      ) extends IModuleRef {
   val kind: String = "view"
 }
@@ -313,6 +320,8 @@ case class ITheory(
                     override val id: IAPIObjectItem.URI,
                     override val name: String,
 
+                    override val statistics: Option[List[IStatistic]],
+
                     override val presentation: IAPIObjectItem.HTML,
                     override val source: Option[String],
 
@@ -333,6 +342,8 @@ case class ITheory(
 case class IView(
                   override val id: IAPIObjectItem.URI,
                   override val name: String,
+
+                  override val statistics: Option[List[IStatistic]],
 
                   override val presentation: IAPIObjectItem.HTML,
                   override val source: Option[String],
@@ -355,6 +366,17 @@ case class IView(
 //
 // Other responses
 //
+
+case class IStatistic(key: String, value: Int) extends IResponse {
+  override def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("key", JSONString(key))
+    buffer.add("value", JSONInt(value))
+
+    buffer
+  }
+}
 
 /** a version information about MMT */
 case class IMMTVersionInfo(
@@ -396,6 +418,9 @@ trait IAPIObjectItem extends IResponse {
   /** the parent of this object, if any */
   val parent: Option[IReference]
 
+  /** statistics of this element (if any) */
+  val statistics: Option[List[IStatistic]]
+
   /** serializes this object into a JSON Object */
   override final def toJSON: JSON = {
     val buffer = toJSONBuffer
@@ -406,6 +431,7 @@ trait IAPIObjectItem extends IResponse {
     buffer.add("id", JSONString(id))
     buffer.add("name", JSONString(name))
     buffer.add("parent", parent.map(_.toJSON).getOrElse(JSONNull))
+    buffer.addO("statistics", statistics.map(s => JSONArray(s.map(_.toJSON) :_*)))
 
     buffer.result()
   }
