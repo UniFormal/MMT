@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mathhub
+package info.kwarc.mmt.mathhub.library
 
 /**
   * this file contains data structures used for the MathHub API

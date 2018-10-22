@@ -1,17 +1,15 @@
-package info.kwarc.mmt.mathhub
+package info.kwarc.mmt.mathhub.library
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.lmh.{LMHHubGroupEntry, _}
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
-import info.kwarc.mmt.api.metadata.{HasMetaData, MetaData}
+import info.kwarc.mmt.api.metadata.HasMetaData
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
-import info.kwarc.mmt.api.ontology.Statistics
-import info.kwarc.mmt.api.presentation.StringBuilder
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.presentation.HTMLExporter
-import info.kwarc.mmt.api.utils.{File, URI, mmt}
+import info.kwarc.mmt.api.presentation.{HTMLExporter, StringBuilder}
+import info.kwarc.mmt.api.utils.{File, mmt}
 
 import scala.collection.mutable
 

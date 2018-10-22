@@ -1,99 +1,51 @@
 package info.kwarc.mmt.mathhub
 
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-import java.text.DateFormat
-
-import info.kwarc.mmt.api.utils.{JSONArray, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.mathhub.library._
+import info.kwarc.mmt.mathhub.logger.LogServer
 
-class Server extends ServerExtension("mathhub"){
+class Server extends ServerExtension("mathhub") with ContentServer with LogServer {
   override val logPrefix: String = "mathhub"
+
+  override def start(args: List[String]): Unit = {
+    startLogServer()
+  }
+
+  override def destroy: Unit = {
+    stopLogServer()
+  }
 
   def apply(request: ServerRequest): ServerResponse = try {
     applyActual(request)
   } catch {
-    case e: Exception => ServerResponse(
-      e.getMessage, "text", ServerResponse.statusCodeInternalServerError
-    )
+    case PathNotFound(p) =>
+      ServerResponse(s"API Route not found: $p", "text/plain", ServerResponse.statusCodeNotFound)
+    case e: Exception =>
+      ServerResponse(
+        e.getMessage, "text", ServerResponse.statusCodeInternalServerError
+      )
   }
 
   def applyActual(request: ServerRequest) : ServerResponse = request.pathForExtension match {
-    case "version" :: Nil =>
-      toResponse(getMMTVersion)
+    // both content and version go into the content plugin
+    // TODO: Refactor this in the future
+    case "content" :: l => applyContent(l, request)
+    case "version" :: Nil => applyContent(List("version"), request)
 
-    case "content" :: "uri" :: Nil =>
-      toResponse(getURI(request.parsedQuery.string("uri", return missingParameter("uri"))))
-    case "content" :: "groups" :: Nil =>
-      toResponse(getGroups())
-    case "content" :: "group" :: Nil =>
-      toResponse(getGroup(request.parsedQuery.string("id", return missingParameter("id"))))
-    case "content" :: "archive" :: Nil =>
-      toResponse(getArchive(request.parsedQuery.string("id", return missingParameter("id"))))
-    case "content" :: "document" :: Nil =>
-      toResponse(getDocument(request.parsedQuery.string("id", return missingParameter("id"))))
-    case "content" :: "module" :: Nil =>
-      toResponse(getModule(request.parsedQuery.string("id", return missingParameter("id"))))
+    // the log server
+    case "log" :: l => applyLog(l, request)
 
-    // fallback: Not Found
-    case path => ServerResponse(s"API Route not found: ${path.mkString("/")}", "text/plain", ServerResponse.statusCodeNotFound)
+    case _ => throw PathNotFound(request)
   }
 
   def missingParameter(name: String) : ServerResponse = {
     ServerResponse(s"Missing GET parameter: $name", "text/plain", ServerResponse.statusCodeBadRequest)
   }
 
-  /** turns an object into a server response */
-  def toResponse(result: Option[IResponse]): ServerResponse = result match {
-    case Some(r) => ServerResponse.fromJSON(r.toJSON)
-    case None => ServerResponse("Not found", "text", ServerResponse.statusCodeNotFound)
-  }
-  def toResponse(results: List[IResponse]): ServerResponse = {
-    ServerResponse.JsonResponse(JSONArray(results.map(_.toJSON): _*))
-  }
+}
 
-
-  //
-  // API Methods
-  //
-
-  /** gets the version of the MMT System */
-  def getMMTVersion : Option[IMMTVersionInfo] = {
-    val versionNumber = MMTSystem.version.split(" ").head
-
-    val format = new java.text.SimpleDateFormat("yyyy/MM/dd HH:mm:ss")
-    val buildDate = MMTSystem.buildTime.map(format.parse).map(_.getTime.toString)
-
-    Some(IMMTVersionInfo(versionNumber, buildDate))
-  }
-
-  /** helper method to build a MathHubAPI Context
-    * TODO: Figure out global caching
-    */
-  private def context: MathHubAPIContext = new MathHubAPIContext(controller, this.report)
-
-  def getURI(uri: String) : Option[IReferencable] = {
-    log(s"getObject($uri)")
-    context.getObject(uri)
-  }
-  def getGroups() : List[IGroupRef] = {
-    log(s"getGroups()")
-    context.getGroups()
-  }
-  def getGroup(id: String) : Option[IGroup] = {
-    log(s"getGroup($id)")
-    context.getGroup(id)
-  }
-  def getArchive(id: String) : Option[IArchive] = {
-    log(s"getArchive($id)")
-    context.getArchive(id)
-  }
-  def getModule(id: String): Option[IModule] = {
-    log(s"getModule($id)")
-    context.getModule(id)
-  }
-  def getDocument(id: String): Option[IDocument] = {
-    log(s"getDocument($id)")
-    context.getDocument(id)
-  }
+/** exception that is thrown when a path is not found */
+case class PathNotFound(path: String) extends Throwable
+object PathNotFound {
+  def apply(request: ServerRequest): PathNotFound = PathNotFound(request.pathString)
 }
