@@ -45,7 +45,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     */
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType = {
       val context = su.context
-      log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
+      //log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
       val result: Obj = obj match {
          case t: Term =>
             val initState = new SimplifierState(t, su, rules, Nil)
@@ -77,8 +77,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
       def traverse(t: Term)(implicit context : Context, state: SimplifierState) : Term = {
-       log("traversing into " + controller.presenter.asString(t))
-       log("in context " + controller.presenter.asString(context))
+       //log("traversing into " + controller.presenter.asString(t))
+       //log("in context " + controller.presenter.asString(context))
        t match {
          /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
             However, there is a subtle problem: When looking up a type and simplifying it, the marker may be reintroduced on the previously checked term.
@@ -110,9 +110,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           val cb = callback(state)
           state.compRules.foreach {rule =>
             if (rule.applicable(t)) {
-              val ret = rule(cb)(t, true)(Stack(state.unit.context), NoHistory)
+              val ret = rule(cb)(t, true)(Stack(context), NoHistory)
               ret match {
                 case Simplify(tmS) =>
+                  log(rule.toString + ": " + t + " ~> " + tmS)
                   return traverse(tmS.from(t))
                 case cannot: CannotSimplify =>
                   recPosComp = recPosComp join cannot
@@ -177,6 +178,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          // expand abbreviations but not definitions
          case OMS(p) =>
            state.abbrevRules.filter(_.head == p) foreach {rule =>
+              log(rule.toString + ": " + t.toStr(true) + " ~> " + rule.term.toStr(true))
               return traverse(rule.term.from(t))
            }
            // TODO does not work yet; how does definition expansion interact with other steps?
@@ -204,19 +206,26 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
              Simple(t)
            }
          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-         case OMV(n) => context(n).df match {
-           case Some(d) =>
-             log("expanding and simplifying definition of variable " + n)
-             traverse(d)(context.before(n), state)
-           case None =>
-             //TODO awkward special case to avoid marking an unknown as stable
-             val isUnknown = n.steps.length > 1 && (n.steps.head match {
-               case SimpleStep(s) => s.startsWith("/")
-               case _ => false
-             })
-             if (isUnknown)
-               Stability.set(t)
-             t
+         case OMV(n) =>
+           val vdO = try {
+             context(n).df}
+           catch {case le: LookupError =>
+             // this should be impossible, but implementations errors are hard to trace if not caught here
+             throw ImplementationError("simplification was called on ill-formed context-object pair").setCausedBy(le)
+           }
+           vdO match {
+             case Some(d) =>
+               log("expanding and simplifying definition of variable " + n)
+               traverse(d)(context.before(n), state)
+             case None =>
+               //TODO awkward special case to avoid marking an unknown as stable
+               val isUnknown = n.steps.length > 1 && (n.steps.head match {
+                 case SimpleStep(s) => s.startsWith("/")
+                 case _ => false
+               })
+               if (isUnknown)
+                 Stability.set(t)
+               t
            }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>

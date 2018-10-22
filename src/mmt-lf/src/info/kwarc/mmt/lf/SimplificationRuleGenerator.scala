@@ -3,10 +3,94 @@ import info.kwarc.mmt.api._
 import frontend._
 import objects._
 import symbols._
+import libraries._
 import checking._
 import uom._
 import utils._
 import notations.ImplicitArg
+
+/** tree structure of a [[Term]] optimized for efficient matching */
+abstract class MatchStep
+/** a fixed term in the template, typically an OMS */
+case class CompareTo(pattern: Term, position: Int) extends MatchStep
+/** a template variable that is to be matched */
+case class SolveVariable(name: LocalName, position: Int) extends MatchStep
+/** an OMA whose children must be matched recursively */
+case class RecurseIntoOMA(children: List[MatchStep], position: Int) extends MatchStep {
+  val childLength = children.length
+}
+/** an object that does not have to be compared, typically an implicit argument */
+case object Skip extends MatchStep
+
+class MatchStepCompiler(lup: Lookup) {
+  /** compiles a term into it match steps for use in a [[StepWiseMatcher]] */
+  def apply(templateVars: Context, template: Term, pos: Int): MatchStep = template match {
+    case OMA(f,as) =>
+      val rec = (f::as).zipWithIndex map {case (t,p) => apply(templateVars, t,p)}
+      RecurseIntoOMA(rec, pos)
+    case OMV(n) => SolveVariable(n, pos)
+    case t =>
+      if (disjoint(t.freeVars, templateVars.map(_.name)))
+        CompareTo(t, pos)
+      else
+        return null
+  }
+}
+
+class StepWiseMatcher(templateVars: List[LocalName], templateStep: MatchStep) {
+  private class Solution(val name: LocalName) {
+    var value: Option[Term] = None
+    def toSub = Sub(name, value.getOrElse(throw ImplementationError("unmatched variable")))
+  }
+  
+  private def eqCheck(t1: Term, t2: Term) = t1 == t2
+  
+  def apply(context: Context, goal: Term): Any = {
+    // invariant: stepsLeft.length == termsLeft.length
+    var stepsLeft: List[MatchStep] = List(templateStep)
+    var termsLeft: List[Term] = List(goal)
+    var solutions: List[Solution] = templateVars map {n => new Solution(n)}
+    while (stepsLeft.nonEmpty) {
+      val term = termsLeft.head
+      termsLeft = termsLeft.tail
+      val step = stepsLeft.head
+      stepsLeft = stepsLeft.tail
+      step match {
+        case CompareTo(pat,pos) =>
+          if (eqCheck(termsLeft.head, pat)) {
+            termsLeft = termsLeft.tail
+          } else {
+            return RecurseOnly(List(pos))
+          }
+        case SolveVariable(n,pos) =>
+           solutions.find(_.name == n) match {
+             case Some(sol) =>
+              sol.value foreach {v =>
+                if (!eqCheck(term, v)) {
+                  return RecurseOnly(List(pos))
+                } else {
+                  sol.value = Some(term)
+                }
+              }
+             case None =>
+               throw ImplementationError("unknown variable")
+           }
+        case r: RecurseIntoOMA =>
+          term match {
+            case OMA(fun,args) if 1+args.length == r.childLength =>
+              termsLeft = fun::args:::termsLeft
+              stepsLeft = r.children ::: stepsLeft
+            case _ =>
+              return RecurseOnly(List(r.position))
+          }
+        case Skip =>
+      }
+    }
+    val subs = solutions.map(_.toSub)
+    Substitution(subs:_*)
+  }
+}
+
 
 /* idea: allow for custom typing rules that lift an object level typing relation in a way similar to quotientieng by an object level equality
  */
@@ -21,9 +105,10 @@ import notations.ImplicitArg
  *   outer(before,inner(inside),after)
  * where before, inside, after do not include the implicit arguments
  */
-case class OuterInnerNames(outer: GlobalName, inner: GlobalName,
-                           before: List[LocalName], inside: List[LocalName], after: List[LocalName],
-                           implArgsOuter: List[Int], implArgsInner: List[Int]) {
+case class OuterInnerNames(outer: GlobalName, implArgsOuter: List[Int], before: List[LocalName], 
+                           innerPos: Int, inner: GlobalName, implArgsInner: List[Int], inside: List[LocalName], 
+                           after: List[LocalName]
+                           ) {
    def explArgsOuter(allBefore: List[Term], allAfter: List[Term]): (List[Term],List[Term]) = {
       val b = allBefore.zipWithIndex.filterNot(p => implArgsOuter.contains(p._2)).map{_._1}
       val a = allAfter .zipWithIndex.filterNot(p => implArgsOuter.contains(p._2 + allBefore.length)).map{_._1}
@@ -31,6 +116,7 @@ case class OuterInnerNames(outer: GlobalName, inner: GlobalName,
    }
    def explArgsInner(allArgs: List[Term]): List[Term] =
       allArgs.zipWithIndex.filterNot(p => implArgsInner.contains(p._2)).map{_._1}
+   def outerArity = implArgsOuter.length+before.length+1+after.length
 }
 
 class SimplificationRuleGenerator extends ChangeListener {
@@ -115,6 +201,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            // we try to break args into bfr ::: OMA(inner, ins) ::: aft
            var bfr : List[LocalName] = Nil
            var inner : GlobalName = null
+           var innerPos: Int = -1
            var ins : List[LocalName] = Nil
            var aft : List[LocalName] = Nil
            var isBefore = true // true if we are in bfr, false if we are in aft
@@ -142,6 +229,7 @@ class SimplificationRuleGenerator extends ChangeListener {
                       }
                       if (isBefore) {
                          inner = inr
+                         innerPos = i
                          args.zipWithIndex foreach {case (a,j) =>
                             if (! implArgsInner.contains(j)) {
                                 a match {
@@ -161,7 +249,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            }
            if (isBefore)
               return None // no inner(vars) argument to outer
-           Some(OuterInnerNames(outer, inner, bfr.reverse, ins.reverse, aft.reverse, implArgsOuter, implArgsInner))
+           Some(OuterInnerNames(outer, implArgsOuter, bfr.reverse, innerPos, inner, implArgsInner, ins.reverse, aft.reverse))
          case _ => return None // no outer(...) term
       }
    }
@@ -169,21 +257,21 @@ class SimplificationRuleGenerator extends ChangeListener {
   /** @param args implicit ::: List(t1, t2) for a rule t1 ~> t2 */
   private def generateRule(c: symbols.Constant, args: List[Term]) {
      val t1 = args.init.last
-     val t2 = args.last
+     val rhs = args.last
      val ruleName = c.name / SimplifyTag
      log("generating rule " + ruleName)
      // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
      t1 match {
-       case OuterInnerTerm(n) =>
+       case OuterInnerTerm(names) =>
          // create and add the rule
-         val desc = ruleName.toPath + ": " + present(t1) + "  ~~>  " + present(t2)
-         val rule = new GeneratedDepthRule(c, desc, under, n, t2)
+         val desc = ruleName.toPath + ": " + present(t1) + "  ~~>  " + present(rhs)
+         val rule = new GeneratedDepthRule(c, desc, under, names, rhs)
          val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
          ruleConst.setOrigin(GeneratedBy(this))
          controller.add(ruleConst)
          log(desc)
          // check if we can also generate a SolutionRule
-         generateSolutionRule(c, n, t2)
+         generateSolutionRule(c, names, rhs)
       case _ => error(c, "type does not match")
     }
   }
@@ -277,11 +365,15 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
              // It's unclear how helpful it is in general.
              // TODO Can this introduce a cycle?
              matchRules.flatMap {m =>
-                m.unapply(l) match {
-                   case None =>
-                     Nil
-                   case Some(args) =>
-                     List((args, args.isEmpty))
+                if (m.head != names.inner)
+                  Nil
+                else {
+                  m.unapply(l) match {
+                     case None =>
+                       Nil
+                     case Some(args) =>
+                       List((args, args.isEmpty))
+                  }
                 }
              }
           case _ => Nil
@@ -291,11 +383,9 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
    
     def apply(c: Context, t: Term): Simplifiability = {
         t match {
-          case App(OMS(outer),args) if outer == names.outer =>
-            args.zipWithIndex foreach {case (arg,i) =>
+          case App(OMS(outer),args) if outer == names.outer && args.length == names.outerArity =>
+              val (before, arg::after) = args.splitAt(names.innerPos)
               itm.matches(arg) foreach {case (inside, _) =>
-                val before = args.take(i)
-                val after = args.drop(i+1)
                 // drop implicit arguments from before, inside, and after
                 val (explBf, explAf) = names.explArgsOuter(before, after)
                 val explIn = names.explArgsInner(inside)
@@ -324,8 +414,7 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
                    }
                 }
               }
-            }
-            Recurse
+              RecurseOnly(List(names.innerPos+under.length))
           case _ =>
             Simplifiability.NoRecurse
         }
