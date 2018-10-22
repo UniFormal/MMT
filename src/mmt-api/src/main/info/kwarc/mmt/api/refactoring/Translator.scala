@@ -179,13 +179,36 @@ object AcrossLibraryTranslator {
 
   // TODO --------------------------------------------------------------------------------
 
-  def trivial(ctrl : Controller) = new AcrossLibraryTranslator(ctrl,Nil,Nil,ctrl.backend.getArchives.head)
+  def trivial(ctrl : Controller) = new AcrossLibraryTranslator(ctrl,Nil,Nil,ArchiveTarget(ctrl.backend.getArchives.head))
+}
+
+trait TranslationTarget {
+  def inTarget(path: GlobalName, controller : Controller): Boolean
+}
+
+case class ArchiveTarget(archive : Archive) extends TranslationTarget {
+  def inTarget(path: GlobalName, controller : Controller): Boolean = (controller.backend.findOwningArchive(path.module) contains archive) || {
+    val fndPath = archive.foundation.getOrElse(return false)
+    val fnd = try {
+      val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
+      controller.simplifier(ret)
+      ret
+    } catch {
+      case e: Exception => return false
+    }
+    val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect {
+      case Success(th: DeclaredTheory) =>
+        controller.simplifier(th)
+        th
+    }
+    ths.flatMap(_.getDeclarations.map(_.path)) contains path
+  }
 }
 
 class AcrossLibraryTranslator(controller : Controller,
                               translations : List[AcrossLibraryTranslation],
                               groups: List[TranslationGroup],
-                              to : Archive) extends Logger/* extends ServerExtension("translate") */ {
+                              target : TranslationTarget) extends Logger/* extends ServerExtension("translate") */ {
   val report = controller.report
   override def logPrefix = "translator"
   val ctrl : Controller = controller
@@ -312,7 +335,6 @@ class AcrossLibraryTranslator(controller : Controller,
 
   def translate(tm: Term): (Term,List[GlobalName]) = {
     log("Translating " + controller.presenter.asString(tm))
-    implicit val target = to
     val tc = TermClass(tm)
     def st(tm: TermClass): List[Term] = tm.currentTerm :: tm.immediateSubterms.flatMap(st)
     origs = st(tc)
@@ -331,7 +353,7 @@ class AcrossLibraryTranslator(controller : Controller,
       case Fail =>
         val t = tc.revertPartially
         //TermClass.getAll.foreach(println)
-        val symbols = AcrossLibraryTranslator.getSymbols(t).filterNot(tc.inArchive(_,target)).distinct
+        val symbols = AcrossLibraryTranslator.getSymbols(t).filterNot(target.inTarget(_,controller)).distinct
         val missings = symbols /*.collect {
           case s if translate(OMS(s))._2.nonEmpty => s
         } */
@@ -417,7 +439,7 @@ class AcrossLibraryTranslator(controller : Controller,
         case Finished => Finished
         case Failed => Failed
         case _ => currentTerm match {
-          case OMS(p) if inArchive(p,to) =>
+          case OMS(p) if target.inTarget(p,controller) =>
             backtrackstack = backtrackstack.filterNot(p => p._2 == this && steps.exists(q => q._1 contains p._1))
             Finished
           case OMS(_) => stateVar
@@ -536,25 +558,6 @@ class AcrossLibraryTranslator(controller : Controller,
           // }
     }
 
-    // TODO (potentially) replace by better stuff ------------------------------------------------------------------------
-
-    def inArchive(path: GlobalName, target: Archive): Boolean = (controller.backend.findOwningArchive(path.module) contains target) || {
-      val fndPath = target.foundation.getOrElse(return false)
-      val fnd = try {
-        val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
-        controller.simplifier(ret)
-        ret
-      } catch {
-        case e: Exception => return false
-      }
-      val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect {
-        case Success(th: DeclaredTheory) =>
-          controller.simplifier(th)
-          th
-      }
-      ths.flatMap(_.getDeclarations.map(_.path)) contains path
-    }
-    // TODO --------------------------------------------------------------------------------------------------------------
   }
 }
 

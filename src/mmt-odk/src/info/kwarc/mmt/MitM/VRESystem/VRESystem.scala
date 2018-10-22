@@ -89,7 +89,7 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     case Some(v : DeclaredView) => List(v)
   }.flatten
 
-  private def translator(to : Archive,trls : List[AcrossLibraryTranslation]) = {
+  private def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
     val aligns = alignmentserver.getAll.collect {
       case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
     }
@@ -98,8 +98,8 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to)
   }
 
-  private lazy val translator_to = translator(archive,toTranslations)
-  private lazy val translator_from = translator(mitm,fromTranslations)
+  private lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
+  private lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
 
   def translateToSystem(t : Term) : Term = {
     val (res,succ) = translator_to.translate(t)

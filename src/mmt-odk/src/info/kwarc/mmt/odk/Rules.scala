@@ -233,7 +233,12 @@ class UniverseInference extends ChangeListener {
         case th : DeclaredTheory => th.getInnerContext
         case _ => return default
       }
-      val univ = Solver.infer(controller, context, c.tp.get, None)
+      val univ = try { Solver.infer(controller, context, c.tp.get, None) } catch {
+        case e : LookupError =>
+          println(controller.presenter.objectLevel.asString(c.tp.get))
+          println(c.tp.get)
+          throw e
+      }
       val ret = univ match {
         case Some(TypeLevel(i)) =>
           i

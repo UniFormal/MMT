@@ -43,7 +43,10 @@ object PolymorphicApplyTerm extends EliminationRule(Apply.path, OfType.path) {
    override def priority: Int = super.priority + 1
 
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = tm match {
-      case ApplySpine(Lambda(x, tpA, bd), arg :: rest) =>
+      case ApplySpine(lmd/*Lambda(x, tpA, bd)*/, arg :: rest) =>
+         val lm = solver.safeSimplifyUntil(lmd)(Lambda.unapply)._2
+         if (lm.isEmpty) return None
+         val (x,tpA,bd) = lm.get
          if (!covered) {
            solver.inferType(tpA)(stack, history + "checking type of bound variable").getOrElse(return None)
            solver.check(Typing(stack, arg, tpA, None))(history + "checking type of argument")

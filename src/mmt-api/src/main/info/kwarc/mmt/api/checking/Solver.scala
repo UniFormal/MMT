@@ -797,8 +797,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
              val mayhold = dc match {
                 case dj: DelayedJudgement =>
                    val j = dj.constraint
-                   log("activating: " + j.present)
                    val jP = prepareJ(j)
+                  log("activating: " + jP.present)
                    check(jP)(dj.history)
                 case di: DelayedInference =>
                     val tmP = prepare(di.tm)

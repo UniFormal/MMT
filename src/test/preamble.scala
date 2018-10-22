@@ -72,12 +72,13 @@ abstract class Test(archivepath : String,
       }
       if (gotoshell) {
         Future {
-          Run.disableFirstRun = true
-          Run.main(Array())
+          Thread.sleep(1000)
+          run
         }(scala.concurrent.ExecutionContext.global)
-        Thread.sleep(1000)
+        Run.disableFirstRun = true
+        Run.main(Array())
       }
-      run
+      else run
     } catch {
       case e: api.Error => println(e.toStringLong)
         sys.exit
