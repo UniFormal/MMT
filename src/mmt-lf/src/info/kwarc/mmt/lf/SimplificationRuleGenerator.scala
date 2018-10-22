@@ -333,7 +333,7 @@ class SimplificationRuleGenerator extends ChangeListener {
  * @param names structure of the left hand side
  * @param rhs the right hand side
  */
-class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalName], names: OuterInnerNames, val rhs: Term) extends SimplificationRule(names.outer) {
+class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalName], names: OuterInnerNames, val rhs: Term) extends MatchingSimplificationRule(names.outer) {
     override def toString = desc
     /** timestamp to avoid regenerating this rule when 'from' has not changed */
     val validSince = from.tpC.lastChangeAnalyzed
@@ -349,12 +349,12 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
     
     private val App = new notations.OMAUnder(under)
     /** object for matching the inner term */
-    private class InnerTermMatcher(matchRules: List[InverseOperator]) {
+    private class InnerTermMatcher(matchRules: Iterable[InverseOperator]) {
        /**
         * unifies matching OMA, strict OMS, OMS, literals that can be the result of applying a realized operator
         * @return list of matches: arguments, flag signaling whether the inner term is an OMS
         */
-       def matches(t: Term): List[(List[Term], Boolean)] = t match {
+       def matches(t: Term): Iterable[(List[Term], Boolean)] = t match {
           case App(OMS(p), inside) if p == names.inner =>
             List((inside, false))
           case OMS(p) if p == names.inner =>
@@ -379,9 +379,10 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
           case _ => Nil
        }
     }
-    private val itm = new InnerTermMatcher(Nil)
    
-    def apply(c: Context, t: Term): Simplifiability = {
+    def apply(c: Context, rules: RuleSet, t: Term): Simplifiability = {
+        val matchRules = rules.get(classOf[InverseOperator])
+        val itm = new InnerTermMatcher(matchRules)
         t match {
           case App(OMS(outer),args) if outer == names.outer && args.length == names.outerArity =>
               val (before, arg::after) = args.splitAt(names.innerPos)

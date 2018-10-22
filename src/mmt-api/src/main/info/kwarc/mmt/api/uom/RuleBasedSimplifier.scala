@@ -14,7 +14,7 @@ case class SimplifierState(t : Term, unit: SimplificationUnit, rules: RuleSet, p
   def exit(i : Int) : SimplifierState = copy(path = path.tail)
   override def toString = t.toString + "@" + path.mkString("_")
   /** precomputes the available simplification rules */
-  val simpRules = rules.get(classOf[SimplificationRule])
+  val simpRules = rules.get(classOf[MatchingSimplificationRule])
   /** precomputes the available rules */
   val compRules = rules.getOrdered(classOf[ComputationRule])
   /** precomputes the available rules */
@@ -122,7 +122,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           }
           var recPosSimp: CannotSimplify = Simplifiability.NoRecurse
           state.simpRules foreach {rule =>
-            val ret = rule(context, t)
+            val ret = rule(context, state.rules, t)
             ret match {
               case Simplify(tmS) =>
                 if (tmS == t) {

@@ -7,7 +7,13 @@ import objects._
 trait SimplifierRule extends SyntaxDrivenRule
 
 /** rules for simplifying expressions */
-abstract class SimplificationRule(val head: GlobalName) extends SimplifierRule {
+abstract class MatchingSimplificationRule(val head: GlobalName) extends SimplifierRule {
+  def apply(context: Context, rules: RuleSet, t: Term): Simplifiability
+}
+
+/** special case for rules that do not need to know about other rules */
+abstract class SimplificationRule(h: GlobalName) extends MatchingSimplificationRule(h) {
+  def apply(context: Context, rules: RuleSet, t: Term): Simplifiability = apply(context, t)
   def apply(context: Context, t: Term): Simplifiability
 }
 

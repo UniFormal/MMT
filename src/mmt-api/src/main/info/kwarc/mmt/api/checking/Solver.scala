@@ -852,12 +852,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(FreeOrAny(tpCon,tp)) =>
                 def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
-                  solve(vd.name, Free(tpCon, Hole(tp)))
+                  solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
                 }
                 history += "trying to find unique inhabitant " + vd.name + " of " + presentObj(tp)
                 findUniqueInhabitant(tp)(Stack(tpCon), history) match {
                   case Some(p) =>
-                    solve(vd.name, Free(tpCon,p))
+                    solve(vd.name, FreeOrAny(tpCon,p))
                   case None =>
                     tryAHole
                     error("unsolved (typed) unknown: " + vd.name)                    

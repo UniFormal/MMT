@@ -865,13 +865,13 @@ trait SolverAlgorithms {self: Solver =>
         case Unknown(m, as) =>
           val vars = isDistinctVarList(as).getOrElse(return false)
           // solve m with j.tm2
-          val mSol = Free(vars, j.tm2)
+          val mSol = FreeOrAny(vars, j.tm2)
           moveToRight(m)
           val remainingFreeVars = notAllowedInSolution(m, mSol)
           if (remainingFreeVars.isEmpty) {
              // we can solve m already, the remaining unknowns in tm2 can be filled in later
              val res = solve(m, mSol)
-             j.tpOpt foreach {case tp => solveType(m, Free(vars, tp))}
+             j.tpOpt foreach {case tp => solveType(m, FreeOrAny(vars, tp))}
              res
           } else {
              history += ("free variables remain: " + remainingFreeVars.mkString(", "))
@@ -906,7 +906,7 @@ trait SolverAlgorithms {self: Solver =>
          //foundation-independent case: direct solution of an unknown variable
          case Unknown(m, args) =>
             val vars = isDistinctVarList(args).getOrElse(return false)
-            val mTp = Free(vars, tp)
+            val mTp = FreeOrAny(vars, tp)
             moveToRight(m)
             val remainingFreeVars = notAllowedInSolution(m, mTp)
             if (remainingFreeVars.isEmpty) {
@@ -948,7 +948,7 @@ trait SolverAlgorithms {self: Solver =>
          //foundation-independent case: direct solution of an unknown variable
          case Unknown(m, args) =>
             val vars = isDistinctVarList(args).getOrElse(return false)
-            val mBd = Free(vars, bound)
+            val mBd = FreeOrAny(vars, bound)
             moveToRight(m)
             val remainingFreeVars = notAllowedInSolution(m, mBd)
             if (remainingFreeVars.isEmpty) {
