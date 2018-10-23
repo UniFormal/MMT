@@ -22,7 +22,7 @@ trait BigIntAsJSON {
       JSONString(i.toString)
   }
   def decodeRep(j: JSON): BigInt = j match {
-    case JSONInt(i) => BigInt(i)
+    case JSONInt(i) => i
     case JSONString(s) => BigInt(s)
     case _ => throw CodecNotApplicable
   }
@@ -40,8 +40,8 @@ object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.
 object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
   def encodeRep(b: java.lang.Boolean) = if (b) JSONInt(1) else JSONInt(0)
   def decodeRep(j: JSON) = j match {
-    case JSONInt(1) => true
-    case JSONInt(0) => false
+    case JSONInt(x) if x.toInt == 1 => true
+    case JSONInt(x) if x.toInt == 0 => false
     case _ => throw CodecNotApplicable
   }
 }

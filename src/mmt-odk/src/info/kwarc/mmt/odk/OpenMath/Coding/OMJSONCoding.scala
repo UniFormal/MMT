@@ -79,7 +79,7 @@ class OMJSONCoding extends OMCoding[JSON] {
     case "OMI" =>
       val id = parser.takeO[JSONString]("id").map(_.value)
 
-      lazy val integer = parser.takeO[JSONInt]("integer").map(i => BigInt(i.value))
+      lazy val integer = parser.takeO[JSONInt]("integer").map(_.value)
       lazy val decimalInteger = parser.takeO[JSONString]("decimalInteger").map(s => BigInt(s.value))
       lazy val hexInteger = parser.takeO[JSONString]("hexInteger").map(
         s => BigInt(java.lang.Long.parseUnsignedLong(s.value.toLowerCase, 16))
@@ -92,7 +92,7 @@ class OMJSONCoding extends OMCoding[JSON] {
     case "OMF" =>
       val id = parser.takeO[JSONString]("id").map(_.value)
 
-      lazy val float = parser.takeO[JSONFloat]("float").map(_.value)
+      lazy val float = parser.takeO[JSONFloat]("float").map(_.value.toDouble)
       lazy val decimal = parser.takeO[JSONString]("decimal").map(s => s.value.trim.toDouble)
       lazy val hexadecimal = parser.takeO[JSONString]("hexadecimal").map(
         s => OMCoding.hex2Double(s.value.trim)

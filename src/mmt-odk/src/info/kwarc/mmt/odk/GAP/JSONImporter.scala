@@ -157,7 +157,7 @@ class GAPJSONImporter extends Importer {
       val locobj = try { obj.getAsList(classOf[JSONObject],"locations").head } catch {
         case e : Exception => obj.getAs(classOf[JSONObject],"location")
       }
-      (locobj.getAsString("file"),locobj.getAsInt("line"))
+      (locobj.getAsString("file"),locobj.getAsInt("line").toInt)
     }
     // TODO: don't just take the head!
 
@@ -229,7 +229,7 @@ class GAPJSONImporter extends Importer {
       case JSONString(s) => s
       case _ => throw new ParseError("GAP_Method: filters is not an Array of Arrays of Strings!")
     }.filter(redfilter(op)))
-    val rank = obj.getAsInt("rank")
+    val rank = obj.getAsInt("rank").toInt
     ParsedMethod(op,filters,comment,rank)
   }
 

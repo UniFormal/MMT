@@ -23,17 +23,17 @@ object JSONConverter {
     def fromJSONOption(j: JSON): Option[JSON] = Some(j)
   }
 
-  implicit object convertIn extends JSONConverter[Int] {
-    def toJSON(i: Int) = JSONInt(i)
-    def fromJSONOption(j : JSON): Option[Int] = j match {
+  implicit object convertIn extends JSONConverter[BigInt] {
+    def toJSON(i: BigInt) = JSONInt(i)
+    def fromJSONOption(j : JSON): Option[BigInt] = j match {
       case JSONInt(x) => Some(x)
       case _ => None
     }
   }
 
-  implicit object convertDouble extends JSONConverter[Double] {
-    def toJSON(d: Double) = JSONFloat(d)
-    def fromJSONOption(j : JSON): Option[Double] = j match {
+  implicit object convertDouble extends JSONConverter[BigDecimal] {
+    def toJSON(d: BigDecimal) = JSONFloat(d)
+    def fromJSONOption(j : JSON): Option[BigDecimal] = j match {
       case JSONFloat(x) => Some(x)
       case _ => None
     }

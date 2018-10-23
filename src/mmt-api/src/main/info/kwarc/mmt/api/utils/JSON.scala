@@ -30,9 +30,17 @@ case object Infinity extends JSONNumber {
   val value = "Infinity"
 }
 
-case class JSONInt(value: Int) extends JSONNumber
+case class JSONInt(value: BigInt) extends JSONNumber
+object JSONInt {
+  def apply(value: Int): JSONInt = JSONInt(BigInt(value))
+  def apply(value: Long): JSONInt = JSONInt(BigInt(value))
+}
 
-case class JSONFloat(value: Double) extends JSONNumber
+case class JSONFloat(value: BigDecimal) extends JSONNumber
+object JSONFloat {
+  def apply(value: Float): JSONFloat = JSONFloat(BigDecimal(value))
+  def apply(value: Double): JSONFloat = JSONFloat(BigDecimal(value))
+}
 
 case class JSONBoolean(value: Boolean) extends JSONValue
 
@@ -104,8 +112,12 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   } catch {
     case e : Exception => ""
   }
-  def getAsInt(s : String) : Int = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+  def getAsInt(s : String) : BigInt = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
     case j: JSONInt => j.value
+    case _ => throw ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
+  }
+  def getAsFloat(s : String) : BigDecimal = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+    case j: JSONFloat => j.value
     case _ => throw ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
   }
   def getAsList[A](cls: Class[A],s : String) : List[A] = {
@@ -193,9 +205,9 @@ object JSON {
       val List(sgn, main, frac, exp) = mt.subgroups
       val jn = if (frac == null && exp == null) {
          val f = if (sgn == null) 1 else -1
-         JSONInt(f * main.toInt)
+         JSONInt(f * BigInt(main))
       } else
-         JSONFloat(mt.matched.toDouble)
+         JSONFloat(BigDecimal(mt.matched))
       jn
    }
 
