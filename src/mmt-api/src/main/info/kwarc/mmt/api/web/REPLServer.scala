@@ -23,7 +23,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
-    val ps = ParsingStream(path.uri, scope, NamespaceMap(doc.path), interpreter.format, buffer)
+    val ps = ParsingStream(path.uri, scope, doc.nsMap, interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
@@ -220,7 +220,8 @@ class REPLServer extends ServerExtension("repl") {
   // SESSION MANAGEMENT
 
   private def createSession(path: DPath, id: String) : REPLSession = {
-    val doc = new Document(path, root=true)
+    val nsMap = controller.getNamespaceMap(path)
+    val doc = new Document(path, root=true, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
     val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {

@@ -23,7 +23,7 @@ stex-omdoc info.kwarc.mmt.stex.STeXImporter
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
 
-foobar     info.kwarc.mmt.api.archives.DummyBuildTarget
+dummy     info.kwarc.mmt.api.archives.DummyBuildTarget
 
 mmttex     info.kwarc.mmt.latex.MMTTeX
 
@@ -36,5 +36,6 @@ http://cds.omdoc.org/urtheories?LF info.kwarc.mmt.lf.Plugin
 #namespaces
 ur         http://cds.omdoc.org/urtheories
 odk        http://www.opendreamkit.org/
+mitm       http://mathhub.info/MitM
 syn        http://latin.omdoc.org/logics/syntax
 models     http://models.latin.omdoc.org/
