@@ -10,7 +10,8 @@ import utils._
 
 /** common functionality of importers */
 trait GeneralImporter extends Extension {
-  
+   val key: String
+ 
   /** index a document
     * @param a the archive   
     * @param doc the document to index
@@ -18,6 +19,7 @@ trait GeneralImporter extends Extension {
     * The produced narration file will be in the location given by sourcePath.
     */
   private[archives] def indexDocument(a: Archive, doc: Document) {
+    ImporterAnnotator.update(doc, key)
     // write narration file
     val docPath = doc.path.dropPrefix(DPath(a.narrationBase)) match {
       case Some(suffix) =>
@@ -39,6 +41,7 @@ trait GeneralImporter extends Extension {
 
   /** index a module */
   private def indexModule(a: Archive, mod: Module) {
+    ImporterAnnotator.update(mod, key)
     // write content file
     writeToContent(a, mod)
     // write relational file
@@ -76,8 +79,6 @@ trait GeneralImporter extends Extension {
  * Importers that handle each source file individually should subclass [[Importer]] instead, which is also a build target.
  */
 abstract class NonTraversingImporter extends GeneralImporter {
-  val key: String
-  
   /**
    * The main method to be called on every document.
    * doc.path must be of the form a.narrationBase/sourcePath  
@@ -205,6 +206,9 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     }
   }
 }
+
+/** used to annotate the [[Importer]] to any imported document of module */
+object ImporterAnnotator extends metadata.StringAnnotator(DPath(mmt.baseURI) ? "metadata" ? "importedby")
 
 /** a trivial importer that reads OMDoc documents and indexes them */
 class OMDocImporter extends Importer {

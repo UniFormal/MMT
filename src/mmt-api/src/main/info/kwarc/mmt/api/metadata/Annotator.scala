@@ -10,7 +10,7 @@ import objects._
  *
  * instantiate with the key and then apply the methods to instances of HasMetaData
  */
-abstract class Annotator[A](key: GlobalName) {
+abstract class Annotator[A](val key: GlobalName) {
   /** convert from A into objects to allow ascription as metadata */
   def fromObject(o: Obj) : A
   /** convert from objects to A when reading from metadata */
@@ -22,4 +22,10 @@ abstract class Annotator[A](key: GlobalName) {
   def delete(e: HasMetaData) {
      e.metadata.delete(key)
   }
+}
+
+class StringAnnotator(key: GlobalName) extends Annotator[String](key) {
+  private val Str = uom.OMLiteral.OMSTR 
+  def fromObject(o: Obj) = Str.unapply(o.asInstanceOf[Term]).get
+  def toObject(s: String) = Str(s)  
 }
