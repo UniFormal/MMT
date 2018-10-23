@@ -14,6 +14,19 @@ sealed abstract class JSON {
 
   /** turns this JSON object into a formatted string */
   def toFormattedString(indent: String): String
+  
+  /** derefences a path in a JSON element */
+  def apply(selectors: JSON.Selector*): Option[JSON] = {
+    val oneStep = selectors.headOption match {
+      case None => return Some(this)
+      case Some(s) => (this,s) match {
+        case (j: JSONObject, Left(s)) => j(s)
+        case (j: JSONArray, Right(i)) => if (i >= 0 && i < j.values.length) Some(j(i)) else None
+        case _ => None
+      }
+    }
+    oneStep flatMap {j => j(selectors.tail:_*)}
+  }
 }
 
 case object JSONNull extends JSON {
@@ -68,6 +81,8 @@ case class JSONArray(values: JSON*) extends JSON {
   
   // needed for Python bridge
   def iterator = values.iterator
+  
+  def apply(i: Int) = values(i)
 }
 
 object JSONArray {
@@ -134,7 +149,6 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
       case j => throw ParseError("getAs Error: A=" + cls.toString + ", j:" + j.getClass + " = " + j)
     }
   }
-  
 }
 
 object JSONObject {
@@ -154,6 +168,9 @@ object JSON {
 
    case class JSONError(s: String) extends java.lang.Exception(s)
 
+   /** to select a field in an JSONObjcet or a value in a JSONArray */
+   type Selector = Union[String,Int]
+   
    def parse(s: String) : JSON = {
       val u = new Unparsed(s, msg => throw JSONError(msg))
       val j = parse(u)
