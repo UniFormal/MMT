@@ -58,7 +58,7 @@ class CachingReportHandler(override val id: String, val maxSize: Int = 10000) ex
 case class LogEntry(uuid: String, time: Long, indent: Int, caller: String, prefix: String, parts: List[String]) {
   def toJSON: JSON = JSONObject(
     "uuid" -> JSONString(uuid),
-    "time" -> JSONInt(time.toInt), // TODO: Breaks in 2036
+    "time" -> JSONInt(time),
 
     "caller" -> JSONString(caller),
     "indent" -> JSONInt(indent),
