@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.SymbolicExpressionParser
 import info.kwarc.mmt.lf.ApplySpine
 import utils._
 
@@ -125,7 +126,7 @@ class IMPSImportTask(val controller  : Controller,
                 println("   > adding multiple number " + j.toString)
               }
 
-              val ln : LocalName = LocalName(ensemble.baseTheory.name.toString + "-" + j.toString + "-tuples")
+              val ln : LocalName = LocalName(ensemble.baseTheory.name.toString + "-" + j.toString + "-TUPLES")
 
               val nu_multiple = new DeclaredTheory(bt.narrationDPath,
                 ln,
@@ -187,6 +188,7 @@ class IMPSImportTask(val controller  : Controller,
             if      (recursiveIncludes(List(t1)).contains(t2)) t1
             else if (recursiveIncludes(List(t2)).contains(t1)) t2
             else {
+              ??!("!!! Actual theory union between " + t1.name + " and " + t2.name)
               val union = new DeclaredTheory(bt.narrationDPath,
                 LocalName(t1.name.toString + "_union_" + t2.name.toString),
                 Some(IMPSTheory.QCT.quasiLutinsPath),
@@ -201,16 +203,25 @@ class IMPSImportTask(val controller  : Controller,
             }
           }
 
+          val allJSONTranslations : List[JSONObject] = tState.jsons.flatMap(j => j.getAsList(classOf[JSONObject],"translations"))
+
           for (permutation <- permutations)
           {
             val targets : List[DeclaredTheory] = permutation.map(p => candidates(p))
             val target  : DeclaredTheory       = targets.tail.foldRight(targets.head)(tUnion)
             val source  : DeclaredTheory       = ensemble.multipleMap(permutation.last + 1)
-            val vname   : LocalName            = LocalName(name + "_instance_" + permutation.mkString("_"))
+            val fooname : String               = source.name.toString + "-TO-" +target.name.toString
+            val vname   : LocalName            = LocalName(fooname.toUpperCase)
 
             if (tState.verbosity > 1) {
               println(" > adding view " + vname)
             }
+
+            val relevantTranslations : List[JSONObject] = allJSONTranslations.filter(j => j.getAsString("name").toLowerCase == fooname.toLowerCase)
+            println(" > [TES] " + relevantTranslations.length + " relevant translation(s)!")
+            assert(relevantTranslations.length == 1)
+            val theRelevantTranslation : JSONObject = relevantTranslations.head
+            val sep : SymbolicExpressionParser = new SymbolicExpressionParser
 
             val nu_view = new DeclaredView(bt.narrationDPath, vname, TermContainer(source.toTerm), TermContainer(target.toTerm), isImplicit = false)
             val mref : MRef = MRef(doc.path,nu_view.path)
@@ -280,6 +291,42 @@ class IMPSImportTask(val controller  : Controller,
                   }
                 }
                 renamed
+              }
+
+              val constpairsexps : List[JSONObject] = theRelevantTranslation.getAsList(classOf[JSONObject],"constant-pairs-sexp")
+              assert(constpairsexps.nonEmpty)
+
+              for (cmi <- constpairsexps.indices)
+              {
+                val constMapping : ArgConstAssoc = ensembleConsts.get.consts(cmi)
+                val sourceName   : String        = constMapping.nm.toString
+                val sourceConst  : Term          = getConstant(sourceName,ensemble.baseTheory).toTerm
+
+                for (targetConst <- constMapping.consts) {
+
+                  var trgt : IMPSMathExp = targetConst.o match
+                  {
+                    case scala.util.Right(cnst_name)      => IMPSMathSymbol(cnst_name.toString)
+                    case scala.util.Left((dfs,Some(ime))) => ime
+                    case scala.util.Left((dfs,None))      => ???
+                  }
+
+                  val target_term : Term = doMathExp(trgt,target,Nil)
+                  val target_tp   : Option[Term] = None
+                  val quelle      : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
+                  assert(quelle.isDefined)
+
+                  val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(renamer(sourceName)),List(doName(sourceName)),target_tp,Some(target_term),None)
+                  if (tState.verbosity > 1)
+                  {
+                    val disp : String = targetConst.o match {
+                      case scala.util.Left((df,_)) => renamer(df.toString)
+                      case scala.util.Right(xname) => renamer(xname.toString)
+                    }
+                    println(" >  adding ensemble-instance const-mapping: " + sourceName + " → " + disp)
+                  }
+                  controller add nu_const_map
+                }
               }
             }
           }
