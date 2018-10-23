@@ -9,7 +9,7 @@ c = api.objects.Context.empty()
 cc = c.M("++")(c)
 
 utils = api.utils 
-j = utils.JSONInt(5)
+j = utils.JSONBoolean(True)
 a = utils.JSONArray(Seq([j,j]))
 J = utils.JSONString
 o = utils.JSONObject(LMap({J("x"):j, J("y"):j}))
