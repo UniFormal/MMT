@@ -37,7 +37,7 @@ class MatchStepCompiler(lup: Lookup) {
   }
 }
 
-class StepWiseMatcher(templateVars: List[LocalName], templateStep: MatchStep) {
+class RewriteRule(h: GlobalName, templateVars: List[LocalName], templateStep: MatchStep, rhs: Term) extends SimplificationRule(h) {
   private class Solution(val name: LocalName) {
     var value: Option[Term] = None
     def toSub = Sub(name, value.getOrElse(throw ImplementationError("unmatched variable")))
@@ -45,7 +45,7 @@ class StepWiseMatcher(templateVars: List[LocalName], templateStep: MatchStep) {
   
   private def eqCheck(t1: Term, t2: Term) = t1 == t2
   
-  def apply(context: Context, goal: Term): Any = {
+  def apply(context: Context, goal: Term): Simplifiability = {
     // invariant: stepsLeft.length == termsLeft.length
     var stepsLeft: List[MatchStep] = List(templateStep)
     var termsLeft: List[Term] = List(goal)
@@ -86,8 +86,9 @@ class StepWiseMatcher(templateVars: List[LocalName], templateStep: MatchStep) {
         case Skip =>
       }
     }
-    val subs = solutions.map(_.toSub)
-    Substitution(subs:_*)
+    val subs = Substitution(solutions.map(_.toSub) :_*)
+    val res = rhs ^? subs
+    Simplify(res)
   }
 }
 

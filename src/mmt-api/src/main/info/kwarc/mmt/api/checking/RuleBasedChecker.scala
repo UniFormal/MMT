@@ -63,7 +63,7 @@ class RuleBasedChecker extends ObjectChecker {
       TermProperty.eraseAll(contmI) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
       val pr = ParseResult.fromTerm(contmI).copy(unknown = remUnknowns)
       //now report results, dependencies, errors
-      val success = solver.checkSucceeded
+      val success = mayHold && solver.checkSucceeded
       if (success) {
         // free variables may remain but their types are solved
         if (pr.free.exists({case IncludeVarDecl(_,_,_) => false case _ => true})) {
@@ -83,19 +83,26 @@ class RuleBasedChecker extends ObjectChecker {
          }
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
+         val cuS = cu.present(solver.presentObj)
          logGroup {
             solver.logState(logPrefix)
             val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
             (errors:::warnings) foreach {case SolverError(l,h) =>
-               val e = new InvalidUnit(cu, h.narrowDownError, cu.present(solver.presentObj)) {
+               val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
                  override val level = l
                }
                env.errorCont(e)
             }
             if (errors.isEmpty) {
-               solver.getConstraints foreach {dc =>
+               val constraints = solver.getConstraints 
+               constraints foreach {dc =>
                   val h = dc.history + "unresolved constraint"
-                  env.errorCont(InvalidUnit(cu, h, cu.present(solver.presentObj)))
+                  env.errorCont(InvalidUnit(cu, h, cuS))
+               }
+               if (constraints.isEmpty) {
+                 val h = new History(Nil)
+                 h += "check failed, but no error was returned and no constraints remain (this is likely because a rule forgot to generate an error message)"
+                 env.errorCont(InvalidUnit(cu, h, cuS))
                }
             }
          }
