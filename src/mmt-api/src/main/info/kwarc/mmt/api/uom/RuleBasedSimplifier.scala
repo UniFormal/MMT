@@ -414,6 +414,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
 
     val sO = state.unit.solverO
 
+    // TODO specify if this is allowed. Some ComputationRules call safeSimplifyUntil even if covered=true and may be surprised that all rules are applied.
     override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
       val s = if (sO.isDefined) sO.get.safeSimplifyUntil(tm)(simple) else simplify(tm)
       (s,simple(s))

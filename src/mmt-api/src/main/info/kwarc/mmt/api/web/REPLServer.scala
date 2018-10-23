@@ -76,6 +76,8 @@ object REPLServer {
   case object Start extends Command
   case object Restart extends Command
   case object Quit extends Command
+  // return the OMDoc representation of the current session
+  case object StoreOMDoc extends Command
   // mathematically relevant commands
   case class Input(command: String) extends Command
 
@@ -87,6 +89,7 @@ object REPLServer {
         case "show" => Show
         case "restart" => Restart
         case "quit" => Quit
+        case "finalize" => StoreOMDoc
         case s => Input(s)
       }
     }
@@ -95,8 +98,14 @@ object REPLServer {
   /** Response by a REPL session after executing a [[Command]] */
   abstract class REPLResponse
 
-  case class AdminResponse(message: String) extends REPLResponse
-
+  /** @param messages pairs on type and object */
+  case class MultiTypedResponse(messages: (String,String)*) extends REPLResponse
+  /** shortcut for a response with a single message */
+  object AdminResponse {
+    def apply(message: String) = MultiTypedResponse("message" -> message)
+  }
+  
+  
   abstract class ElementResponse extends REPLResponse {
     def element: StructuralElement
   }
@@ -144,9 +153,16 @@ class REPLServer extends ServerExtension("repl") {
       case Restart => restartSession(session)
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
+      case StoreOMDoc => storeOMDoc(session)
     }
   }
 
+  private def storeOMDoc(session: REPLSession) = {
+    val doc = session.doc
+    val msg = "stored document " + session.doc.path
+    MultiTypedResponse("message" -> msg, "omdoc" -> doc.toNodeResolved(controller.globalLookup).toString)
+  }
+  
   private def evalInSession(session: REPLSession, input: String) = {
     val firstPart = input.takeWhile(c => !c.isWhitespace)
     val rest = input.substring(firstPart.length).trim

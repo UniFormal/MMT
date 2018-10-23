@@ -45,8 +45,8 @@ trait Rules { this: Plugin =>
 
     private object IsQuery {
       def unapply(tm: Term) = tm match {
-        case OMA(OMS(MitMSystems.querysym), List(r)) => Some(r)
-        case ApplySpine(OMS(MitMSystems.querysym), List(r)) => Some(r)
+        case OMA(OMS(MitMSystems.querysym), List(r)) => Some(r)  // official
+        case ApplySpine(OMS(MitMSystems.querysym), List(r)) => Some(r) // shouldn't happen
         case _ => None
       }
     }
@@ -85,7 +85,7 @@ trait Rules { this: Plugin =>
 
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val (sys, subtm) = tm match {
-        case OMA(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case OMA(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t) // official
         case ApplySpine(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
         case _ => return Simplifiability.NoRecurse
       }

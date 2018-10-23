@@ -82,18 +82,26 @@ trait AlignmentBasedMitMTranslation { this : VRESystem =>
     a
   }
 
-  private lazy val links : List[DeclaredLink] = (archive.allContent ::: mitm.allContent).map(p => Try(controller.get(p)).toOption).collect {
-    case Some(th : DeclaredTheory) => th.getNamedStructures collect {
-      case s : DeclaredStructure => s
+  private lazy val links : List[DeclaredLink] = {
+    val content = (archive.allContent ::: mitm.allContent)
+     // the following takes very long
+    content.flatMap {p =>
+      val se = Try(controller.get(p)).toOption
+      se match {
+        case Some(th : DeclaredTheory) => th.getNamedStructures collect {
+          case s : DeclaredStructure => s
+        }
+        case Some(v : DeclaredView) => List(v)
+        case _ => Nil
+      }
     }
-    case Some(v : DeclaredView) => List(v)
-  }.flatten
+  }
 
   private def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
     val aligns = alignmentserver.getAll.collect {
       case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
     }
-    val linktrs : List[TranslationGroup]= links.map(l => LinkTranslation(l))
+    val linktrs : List[TranslationGroup] = links.map(l => LinkTranslation(l))
 
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to)
   }

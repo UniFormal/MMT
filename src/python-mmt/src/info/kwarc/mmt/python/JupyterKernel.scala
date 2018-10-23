@@ -86,7 +86,7 @@ class JupyterKernel extends Extension {
         try {
           val resp = repl(Some(session), comm)
           resp match {
-            case AdminResponse(s) => PythonParamDict("message" -> s)
+            case m: MultiTypedResponse => PythonParamDict(m.messages.toList)
             case e: ElementResponse =>
               val h = presenter.asString(e.element)
               PythonParamDict("element" -> h)
