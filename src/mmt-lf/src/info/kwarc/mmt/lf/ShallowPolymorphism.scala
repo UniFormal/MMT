@@ -26,14 +26,14 @@ object PLF {
  * But Haskrell restricts arguments to type variables to not contain Pi. It's unclear if/how this can be generalized to the MMT setting.
  */
 object ShallowPolymorphism extends InhabitableRule(Pi.path) with PiOrArrowRule {
-   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       tp match {
          case Pi(x,a,b) =>
             val historyArg = history + (x.toString + " must be typed by universe")
-            solver.inferTypeAndThen(a)(stack, historyArg + "infer type") {u =>
+            Some(solver.inferTypeAndThen(a)(stack, historyArg + "infer type") {u =>
                solver.check(Universe(stack, u))(historyArg + "check universe")
             } &&
-            solver.check(Inhabitable(stack++x%a, b))
+            solver.check(Inhabitable(stack++x%a, b)))
       }
    }
 }

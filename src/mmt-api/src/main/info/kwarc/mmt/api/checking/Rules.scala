@@ -109,7 +109,7 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
     *
     *  may throw SwitchToInference
     */
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean]
 }
 
 /**
@@ -269,7 +269,7 @@ abstract class UnaryTermRule(val head: GlobalName) extends CheckingRule {
     *  @param stack its context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean]
 }
 /** checks an [[Inhabitable]] judgement */
 abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)

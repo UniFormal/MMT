@@ -13,13 +13,13 @@ import info.kwarc.mmt.lf._
  * THY : Inhabitable
  */
 object TheoryTypeInhabitable extends InhabitableRule(ModExp.theorytype) {
-   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       tp match {
          case TheoryType(params) =>
             if (params.isEmpty)
-               true
+               Some(true)
             else
-               solver.check(IsTheory(stack, ComplexTheory(params)))
+               Some(solver.check(IsTheory(stack, ComplexTheory(params))))
       }
    }
 }
@@ -28,13 +28,13 @@ object TheoryTypeInhabitable extends InhabitableRule(ModExp.theorytype) {
  * THY : Universe
  */
 object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
-   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       tp match {
          case TheoryType(params) =>
             if (params.isEmpty)
-               true
+               Some(true)
             else
-               solver.check(IsTheory(stack, ComplexTheory(params)))
+               Some(solver.check(IsTheory(stack, ComplexTheory(params))))
       }
    }
 }
@@ -43,9 +43,9 @@ object TheoryTypeUniverse extends UniverseRule(ModExp.theorytype) {
  * MOR A B : Inhabitable
  */
 object MorphTypeInhabitable extends InhabitableRule(ModExp.morphtype) {
-   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       val MorphType(from,to) = tp
-      solver.check(IsTheory(stack, from)) && solver.check(IsTheory(stack, to))
+      Some(solver.check(IsTheory(stack, from)) && solver.check(IsTheory(stack, to)))
    }
 }
 
@@ -211,18 +211,18 @@ object MorphCheck extends TypingRule(ModExp.morphtype) {
          // all cases where the domain/codomain cannot be inferred
          case ComplexMorphism(subs) =>
             // subs must be total morphism from => to
-            check(solver)(subs, from, to, false)
+            Some(check(solver)(subs, from, to, false))
          case OMCOMP(Nil) =>
-            solver.check(Equality(stack,from,to,None))
+            Some(solver.check(Equality(stack,from,to,None)))
          case OMCOMP(m::ms) =>
             // there could be a ComplexMorphism in the last position, so we chain the expected type through
-            solver.inferTypeAndThen(m)(stack, history) {
+            Some(solver.inferTypeAndThen(m)(stack, history) {
                case MorphType(f,t) =>
                   solver.check(Equality(stack, from, f, None)) &&
                   solver.check(IsMorphism(stack, OMCOMP(ms), t,to))
                case _ =>
                   solver.error("")
-            }
+            })
          case _ => throw TypingRule.SwitchToInference
       }
    }

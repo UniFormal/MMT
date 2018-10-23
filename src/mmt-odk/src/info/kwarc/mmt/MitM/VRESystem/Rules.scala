@@ -27,7 +27,7 @@ trait Rules { this: Plugin =>
   }
 
   /** simplifies a given term using all known VREs */
-  def simplify(tm : Term, conO : Option[Context]): Term#ThisType = {
+  def simplify(tm : Term, conO : Option[Context]): Term = {
     val con = conO.getOrElse {
       controller.getTheory(MitM.mathpath).getInnerContext
     }

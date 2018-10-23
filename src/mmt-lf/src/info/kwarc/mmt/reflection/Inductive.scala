@@ -53,10 +53,10 @@ object ElimInfer extends InferenceRule(Terms.elim.path, OfType.path) {
  * p |- eval(t) : a  --->  |- q: formation(p,a)
  */
 object TypingRule extends TypingRule(Terms.formation.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack : Stack, history: History) : Boolean = {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack : Stack, history: History) : Option[Boolean] = {
     tp match {
       case Terms.formation(p,a) =>
-         solver.check(Typing(stack++Context(p), Terms.eval(tm), a))
+         Some(solver.check(Typing(stack++Context(p), Terms.eval(tm), a)))
     }
   }
 }

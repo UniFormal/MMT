@@ -213,7 +213,7 @@ object ApplyTerm extends GenericApplyTerm(StandardArgumentChecker)
 // TODO all typing rules of this style are in danger of accepting an expression if all eliminations are well-formed but the term itself is not
 //  e.g., [x:Int]sqrt(x) : Nat->Real  would check
 object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
             // this case is somewhat redundant, but allows reusing the variable name
@@ -222,11 +222,11 @@ object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
             val aN = solver.substituteSolution(a2) // both a1 and a2 may contain unknowns, which may have been solved when checking a1==a2
-            solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2))
+            Some(solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2)))
          case (tm, Pi(x2, a2, b)) =>
             val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
-            solver.check(j)
+            Some(solver.check(j))
       }
    }
 }

@@ -271,8 +271,7 @@ trait SolverAlgorithms {self: Solver =>
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack : Stack = j.stack
      tryAllRules(universeRules,j.univ) { (rule,tmS) =>
-       val b = rule(this)(tmS)
-       if (b) Some(b) else None
+         rule.apply(this)(tmS)
      }.getOrElse(delay(Universe(stack,j.univ)))
      /*
      safeSimplifyUntilRuleApplicable(j.univ, universeRules) match {
@@ -313,8 +312,7 @@ trait SolverAlgorithms {self: Solver =>
      */
      implicit val stack : Stack = j.stack
      tryAllRules(inhabitableRules,j.wfo) { (rule,tmS) =>
-       val b = rule(this)(tmS)
-       if (b) Some(b) else None
+       rule(this)(tmS)
      }.getOrElse {
        history += "inferring universe"
        inferType(j.wfo)(stack, history) match {
@@ -327,7 +325,7 @@ trait SolverAlgorithms {self: Solver =>
    }
 
   // private case class BreakTry[B](ret : B) extends Throwable
-  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(apply : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
+  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(rulecheck : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
     var done = false
     var rules = rulesS
     var ret : Option[B] = None
@@ -338,7 +336,7 @@ trait SolverAlgorithms {self: Solver =>
           history += "trying " + rule.toString
           log("trying " + rule.toString)
           ret = // try {
-            apply(rule, tmS)
+            rulecheck(rule, tmS)
           /* } catch {
             case BreakTry(r : B) => return Some(r)
             case e => throw e
@@ -432,6 +430,33 @@ trait SolverAlgorithms {self: Solver =>
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
          logAndHistoryGroup {
+           tryAllRules(typingRules,tp) { (rule,tpS) =>
+             try {
+               rule(this)(tm,tpS)
+             } catch {
+               case TypingRule.SwitchToInference =>
+                 return checkByInference(tpS)
+               case rule.DelayJudgment(msg) =>
+                 return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
+             }
+           }.getOrElse {
+             tryAllRules(inferAndTypingRules,tm) { (rule,tmS) =>
+               try {
+                 rule(this, tmS, Some(tp), false) match {
+                   case (_, Some(b)) => Some(b)
+                   case (Some(tI), None) => return checkAfterInference(tI, tp)
+                   case (None, None) => return checkByInference(tp)
+                 }
+               } catch {
+                 case TypingRule.SwitchToInference =>
+                   return checkByInference(tp)
+               }
+             }.getOrElse(checkByInference(tp))
+           }
+
+         }
+         /*
+         logAndHistoryGroup {
            safeSimplifyUntilRuleApplicable(tp, typingRules)
          } match {
            case (tpS, Some(rule)) =>
@@ -463,6 +488,7 @@ trait SolverAlgorithms {self: Solver =>
                  checkByInference(tpS)
              }
          }
+         */
      }
    }
 
