@@ -416,8 +416,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
 
     // TODO specify if this is allowed. Some ComputationRules call safeSimplifyUntil even if covered=true and may be surprised that all rules are applied.
     override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
-      val s = if (sO.isDefined) sO.get.safeSimplifyUntil(tm)(simple) else simplify(tm)
-      (s,simple(s))
+      if (sO.isDefined) sO.get.safeSimplifyUntil(tm)(simple) else {
+        val s = simplify(tm)
+        (s,simple(s))
+      }
     }
 
     override def inferType(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
