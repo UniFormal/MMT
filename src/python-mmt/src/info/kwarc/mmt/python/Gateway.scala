@@ -14,8 +14,8 @@ class Py4JGateway extends Extension {
   private var gatewayServer: GatewayServer = null
   
   override def start(args: List[String]) {
-    gatewayServer = new GatewayServer(controller)
-    gatewayServer.start()  
+    gatewayServer = new GatewayServer(controller, args.headOption.map(_.toInt).getOrElse(25333))
+    gatewayServer.start()
   }
   
   override def destroy {
