@@ -269,13 +269,19 @@ trait SolverAlgorithms {self: Solver =>
     */
    // TODO this should be removed; instead LF should use low-priority InhabitableRules that apply to any term
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
-     implicit val stack = j.stack
+     implicit val stack : Stack = j.stack
+     tryAllRules(universeRules,j.univ) { (rule,tmS) =>
+       val b = rule(this)(tmS)
+       if (b) Some(b) else None
+     }.getOrElse(delay(Universe(stack,j.univ)))
+     /*
      safeSimplifyUntilRuleApplicable(j.univ, universeRules) match {
         case (uS, Some(rule)) =>
           history += "Applying UniverseRule " + rule.toString
           rule(this)(uS)
         case (uS, None) => delay(Universe(stack, uS))
      }
+     */
    }
 
    /** proves an Inhabitable Judgment
@@ -288,6 +294,7 @@ trait SolverAlgorithms {self: Solver =>
     * post: j is covered
     */
    private def checkInhabitable(j : Inhabitable)(implicit history: History): Boolean = {
+     /*
      implicit val stack = j.stack
      safeSimplifyUntilRuleApplicable(j.wfo, inhabitableRules) match {
         case (uS, Some(rule)) =>
@@ -303,7 +310,51 @@ trait SolverAlgorithms {self: Solver =>
                 check(Universe(stack, univ))
           }
      }
+     */
+     implicit val stack : Stack = j.stack
+     tryAllRules(inhabitableRules,j.wfo) { (rule,tmS) =>
+       val b = rule(this)(tmS)
+       if (b) Some(b) else None
+     }.getOrElse {
+       history += "inferring universe"
+       inferType(j.wfo)(stack, history) match {
+         case None =>
+           delay(Inhabitable(stack, j.wfo))
+         case Some(univ) =>
+           check(Universe(stack, univ))
+       }
+     }
    }
+
+  // private case class BreakTry[B](ret : B) extends Throwable
+  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(apply : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
+    var done = false
+    var rules = rulesS
+    var ret : Option[B] = None
+    while (!done) {
+      safeSimplifyUntilRuleApplicable(term, rules) match {
+        case (tmS,Some(rule)) =>
+          done = true
+          history += "trying " + rule.toString
+          log("trying " + rule.toString)
+          ret = // try {
+            apply(rule, tmS)
+          /* } catch {
+            case BreakTry(r : B) => return Some(r)
+            case e => throw e
+          } */
+          if (ret.isEmpty) {
+            done = false
+            rules = dropJust(rules, rule)
+          }
+        case _ =>
+          done = true
+          history += "No rule applicable"
+          log("No rule applicable")
+      }
+    }
+    ret
+  }
 
   /** proves a Typing Judgement by bidirectional type checking
     *
@@ -320,26 +371,28 @@ trait SolverAlgorithms {self: Solver =>
      // try to solve the type of an unknown
      val solved = solveTyping(j)
      if (solved) return solved
+
      // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term): Boolean = {
-        log("Checking by inference")
-         val hisbranch = history.branch
-         inferType(tm)(stack, hisbranch) match {
-            case Some(tmI) =>
-               checkAfterInference(tmI, tpS)
-            case None =>
-               delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
-         }
+       log("Checking by inference")
+       val hisbranch = history.branch
+       inferType(tm)(stack, hisbranch) match {
+         case Some(tmI) =>
+           checkAfterInference(tmI, tpS)
+         case None =>
+           delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
+       }
      }
+
      // continuation if we have inferred the type of tm
      def checkAfterInference(tmI: Term, tpS: Term): Boolean = {
-        check(Subtyping(stack, tmI, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
+       check(Subtyping(stack, tmI, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
      }
      // the foundation-independent cases
      tp match {
-       case Free(con,t) =>
+       case Free(con, t) =>
          //TODO this would require type-checking when reducing OMA(free(G,B),args)
-         return checkTyping(Typing(stack++con, OMA(tm, con.map(_.toTerm)), t))
+         return checkTyping(Typing(stack ++ con, OMA(tm, con.map(_.toTerm)), t))
        case _ =>
      }
      tm match {
@@ -349,26 +402,26 @@ trait SolverAlgorithms {self: Solver =>
          val vd = getVar(x)
          vd.tp match {
            case None =>
-              // x cannot be an unknown because solveTyping would have applied
-              if (solution.isDeclared(x))
-                solveType(x, tp) //TODO: check for occurrences of bound variables?
-              else {
-                vd.df match {
-                  case None =>
-                    error("untyped, undefined variable type-checks against nothing: " + x)
-                  case Some(d) =>
-                    check(Typing(stack, d, tp))
-                }
-              }
+             // x cannot be an unknown because solveTyping would have applied
+             if (solution.isDeclared(x))
+               solveType(x, tp) //TODO: check for occurrences of bound variables?
+             else {
+               vd.df match {
+                 case None =>
+                   error("untyped, undefined variable type-checks against nothing: " + x)
+                 case Some(d) =>
+                   check(Typing(stack, d, tp))
+               }
+             }
            case Some(t) =>
-               check(Subtyping(stack, t, tp))
+             check(Subtyping(stack, t, tp))
          }
        case OMS(p) =>
          getType(p) match {
            case None => getDef(p) match {
              case None =>
-                checkByInference(tp)
-                //error("untyped, undefined constant type-checks against nothing: " + p.toString)
+               checkByInference(tp)
+             //error("untyped, undefined constant type-checks against nothing: " + p.toString)
              case Some(d) => check(Typing(stack, d, tp, j.tpSymb)) // expand defined constant
            }
            case Some(t) => check(Subtyping(stack, t, tp))
@@ -378,12 +431,13 @@ trait SolverAlgorithms {self: Solver =>
        // the foundation-dependent cases
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
-         log("finding applicable typing rule")
-         logAndHistoryGroup{safeSimplifyUntilRuleApplicable(tp,typingRules)} match {
+         logAndHistoryGroup {
+           safeSimplifyUntilRuleApplicable(tp, typingRules)
+         } match {
            case (tpS, Some(rule)) =>
              try {
-                history += "applying typing rule " + rule.toString
-                rule(this)(tm, tpS)
+               history += "applying typing rule " + rule.toString
+               rule(this)(tm, tpS)
              } catch {
                case TypingRule.SwitchToInference =>
                  checkByInference(tpS)
@@ -393,20 +447,20 @@ trait SolverAlgorithms {self: Solver =>
            case (tpS, None) =>
              //  either this is an atomic type, or no typing rule is known
              // try finding a rule based on the term
-             safeSimplifyUntilRuleApplicable(tm,inferAndTypingRules) match {
+             safeSimplifyUntilRuleApplicable(tm, inferAndTypingRules) match {
                case (tmS, Some(rule)) =>
                  try {
                    rule(this, tmS, Some(tpS), false) match {
-                     case (_,Some(b)) => b
-                     case (Some(tI),None) => checkAfterInference(tI, tpS)
-                     case (None,None) => checkByInference(tpS)
+                     case (_, Some(b)) => b
+                     case (Some(tI), None) => checkAfterInference(tI, tpS)
+                     case (None, None) => checkByInference(tpS)
                    }
                  } catch {
-                    case TypingRule.SwitchToInference =>
-                      checkByInference(tpS)
+                   case TypingRule.SwitchToInference =>
+                     checkByInference(tpS)
                  }
                case (_, None) =>
-                checkByInference(tpS)
+                 checkByInference(tpS)
              }
          }
      }
