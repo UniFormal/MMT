@@ -26,7 +26,7 @@ trait ObjectSimplifier extends Extension {self =>
  *  @param expandDefinitions if true, expand all definitions of constant (we speak of *deep* simplification) 
  *  @param fullRecursion if false, only recurse into subexpressions that contribute to head-normalizations 
  */
-case class SimplificationUnit(context: Context, expandDefinitions: Boolean, fullRecursion: Boolean) extends MMTTask {
+case class SimplificationUnit(context: Context, expandDefinitions: Boolean, fullRecursion: Boolean,solverO :Option[Solver] = None) extends MMTTask {
   def ++(c: Context) = copy(context = context ++ c)
 }
 
