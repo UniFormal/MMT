@@ -412,9 +412,15 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          return None
     }
 
+    val sO = state.unit.solverO
+
     override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
-      val s = simplify(tm)
+      val s = if (sO.isDefined) sO.get.safeSimplifyUntil(tm)(simple) else simplify(tm)
       (s,simple(s))
+    }
+
+    override def inferType(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+      if (sO.isDefined) sO.get.inferType(t,covered) else super.inferType(t, covered)
     }
   }
 }
