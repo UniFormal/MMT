@@ -160,7 +160,7 @@ class REPLServer extends ServerExtension("repl") {
   private def storeOMDoc(session: REPLSession) = {
     val doc = session.doc
     val msg = "stored document " + session.doc.path
-    MultiTypedResponse("message" -> msg, "omdoc" -> doc.toString)
+    MultiTypedResponse("message" -> msg, "omdoc" -> doc.toNodeResolved(controller.globalLookup).toString)
   }
   
   private def evalInSession(session: REPLSession, input: String) = {
