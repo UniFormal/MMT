@@ -27,7 +27,7 @@ class Plugin extends ServerExtension("activecomp") {
 
   /* handles listing all active computations */
   def handleActions(body : Body): ServerResponse = {
-    ServerResponse.JsonResponse(JSONObject.fromList(activeComputation.all.map(ac => (JSONString(ac.key), JSONString(ac.desc)))))
+    ServerResponse.JsonResponse(JSONObject(activeComputation.all.map(ac => (JSONString(ac.key), JSONString(ac.desc)))))
   }
 
   /** handles an active computation */

@@ -77,6 +77,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
       def traverse(t: Term)(implicit context : Context, state: SimplifierState) : Term = {
+       if (state.unit.isKilled) return t
        //log("traversing into " + controller.presenter.asString(t))
        //log("in context " + controller.presenter.asString(context))
        t match {

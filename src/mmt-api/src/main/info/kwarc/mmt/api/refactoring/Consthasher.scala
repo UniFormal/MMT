@@ -22,7 +22,7 @@ case class Consthash(iname:GlobalName, hash: List[Int], pars: List[Hasher.Target
 
   private[refactoring] def toJson = JSONObject(
     ("name",JSONString(name.toString)),
-    ("hash",JSONArray.fromList(hash.map(JSONInt(_)))),
+    ("hash",JSONArray(hash.map(JSONInt(_)):_*)),
     ("pars",JSONArray(pars.map(p => JSONString(p.toString)):_*)),
     ("isProp",JSONBoolean(isProp)) // TODO Definition
   )

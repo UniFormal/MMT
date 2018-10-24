@@ -10,7 +10,7 @@ import utils._
 
 /** common functionality of importers */
 trait GeneralImporter extends Extension {
-   val key: String
+   def key: String
  
   /** index a document
     * @param a the archive   

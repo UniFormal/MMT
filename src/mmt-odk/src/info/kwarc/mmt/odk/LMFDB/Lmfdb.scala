@@ -438,7 +438,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
       val rMap = translateProp(varname, right, db)
 
       // quiet assumption: no double keys
-      JSONObject.fromList(lMap.map ::: rMap.map)
+      JSONObject(lMap.map ::: rMap.map)
     case o@_ =>
       error(s"Unable to translate predicate into an lmfdb query, unsupported predicated $o. ")
   }

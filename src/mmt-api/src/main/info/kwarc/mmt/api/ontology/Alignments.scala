@@ -157,7 +157,7 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
   def toJSON = (JSONString("Argument"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
     (JSONString("to"), JSONString(to.toString)),
-    (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray.fromList(List(JSONInt(p._1), JSONInt(p._2))))))
+    (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray(JSONInt(p._1), JSONInt(p._2))):_*))
   )))
 
   def reverse = {

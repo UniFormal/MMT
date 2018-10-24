@@ -98,9 +98,9 @@ trait RelStoreStatistics { this: RelStore =>
 
   // TODO: Move this into a static object
   def statDescription : JSONArray = {
-    val prefs = JSONArray.fromList(StatPrefixType.all map(_.toJSON))
-    val entries = JSONArray.fromList(StatEntryType.all map(_.toJSON))
-    JSONArray.fromList(List(JSONObject("sorts of relations to the declaration" -> prefs), JSONObject("types of declarations" -> entries)))
+    val prefs = JSONArray(StatPrefixType.all map(_.toJSON):_*)
+    val entries = JSONArray(StatEntryType.all map(_.toJSON):_*)
+    JSONArray(List(JSONObject("sorts of relations to the declaration" -> prefs), JSONObject("types of declarations" -> entries)):_*)
   }
 }
 
@@ -138,8 +138,8 @@ case class Statistics(entries: List[(StatPrefixType, List[StatisticEntry])]) {
     * Returns a JSON representation of the statistics
     */
   def toJSON : JSONArray = {
-    val jstats = entries map {case (pre, substat) => JSONObject(pre.key -> JSONArray.fromList(substat.map(_.toJSON)))}
-    JSONArray.fromList(jstats)
+    val jstats = entries map {case (pre, substat) => JSONObject(pre.key -> JSONArray(substat.map(_.toJSON):_*))}
+    JSONArray(jstats:_*)
   }
 }
 

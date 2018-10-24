@@ -37,23 +37,10 @@ sealed abstract class JSONValue extends JSON {
    def value: Any
    def toFormattedString(indent: String): String = value.toString
 }
-sealed abstract class JSONNumber extends JSONValue
 
-case object Infinity extends JSONNumber {
-  val value = "Infinity"
-}
+case class JSONInt(value: BigInt) extends JSONValue
 
-case class JSONInt(value: BigInt) extends JSONNumber
-object JSONInt {
-  def apply(value: Int): JSONInt = JSONInt(BigInt(value))
-  def apply(value: Long): JSONInt = JSONInt(BigInt(value))
-}
-
-case class JSONFloat(value: BigDecimal) extends JSONNumber
-object JSONFloat {
-  def apply(value: Float): JSONFloat = JSONFloat(BigDecimal(value))
-  def apply(value: Double): JSONFloat = JSONFloat(BigDecimal(value))
-}
+case class JSONFloat(value: BigDecimal) extends JSONValue
 
 case class JSONBoolean(value: Boolean) extends JSONValue
 
@@ -86,9 +73,9 @@ case class JSONArray(values: JSON*) extends JSON {
 }
 
 object JSONArray {
-   implicit def toList(a: JSONArray) = a.values.toList
-   implicit def fromList(l: List[JSON]) = JSONArray(l :_*)
+   implicit def toList(j: JSONArray): List[JSON] = j.values.toList 
 }
+
 
 case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   def toFormattedString(indent: String): String = {
@@ -152,9 +139,17 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
 }
 
 object JSONObject {
-   implicit def toList(o: JSONObject) : List[(JSONString,JSON)] = o.map.toList
-   implicit def fromList(l: List[(JSONString,JSON)]) : JSONObject = JSONObject(l)
    def apply(cases: (String,JSON)*): JSONObject = JSONObject(cases.toList map {case (k,v) => (JSONString(k),v)})
+   implicit def toList(j: JSONObject): List[(JSONString,JSON)] = j.map 
+}
+
+
+object JSONConversions {
+   implicit def fromString(s: String) = JSONString(s)
+   implicit def fromInt(i: Int) = JSONInt(i)
+   implicit def fromList(l: List[(JSONString,JSON)]) : JSONObject = JSONObject(l)
+   implicit def fromList(l: List[JSON]) = JSONArray(l :_*)
+   implicit def fromConvertibleList[A <% JSON](l: List[A]) = JSONArray(l.map(implicitly[A => JSON]):_*)
 }
 
 object JSON {
@@ -212,11 +207,7 @@ object JSON {
       JSONBoolean(b)
    }
 
-   def parseNum(s: Unparsed): JSONNumber = {
-     if (s.remainder.startsWith("Infinity")) {
-       s.drop("Infinity")
-       return Infinity
-     }
+   def parseNum(s: Unparsed): JSONValue = {
       val e = "(?: e|e\\+|e-|E|E\\+|E-)"
       val mt = s.takeRegex(s"(-)?(\\d+)(\\.\\d+)?($e\\d+)?")
       val List(sgn, main, frac, exp) = mt.subgroups
