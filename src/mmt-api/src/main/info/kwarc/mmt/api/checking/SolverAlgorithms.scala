@@ -324,6 +324,30 @@ trait SolverAlgorithms {self: Solver =>
      }
    }
 
+  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],tm1 : Term,tm2 : Term)(condition : (A,Term,Term) => Boolean)(rulecheck : (A,Term,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
+    var done = false
+    var rules = rulesS
+    var ret : Option[B] = None
+    while (!done) {
+      safeSimplifyUntil(tm1,tm2)((t1,t2) => rules.find(condition(_,t1,t2))) match {
+        case (tm1S,tm2S,Some(rule)) =>
+          done = true
+          history += "trying " + rule.toString
+          log("trying " + rule.toString)
+          ret = rulecheck(rule,tm1S,tm2S)
+          if (ret.isEmpty) {
+            done = false
+            rules = dropJust(rules, rule)
+          }
+        case _ =>
+          done = true
+          history += "No rule applicable"
+          log("No rule applicable")
+      }
+    }
+    ret
+  }
+
   // private case class BreakTry[B](ret : B) extends Throwable
   private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(rulecheck : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
     var done = false
@@ -663,6 +687,20 @@ trait SolverAlgorithms {self: Solver =>
      }
      // otherwise, apply a subtyping rule
      history += "not obviously equal, trying subtyping"
+     tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S) =>
+       try {
+         rule(this)(tp1,tp2)
+       } catch {case e: MaytriggerBacktrack#Backtrack =>
+         history += e.getMessage
+         None
+       }
+     } match {
+       case Some(b) => b
+       case _ =>
+         history += "no applicable subtyping rules, falling back to checking equality"
+         check(Equality(j.stack, tp1, tp2, None))
+     }
+     /*
      subtypingRules foreach {r =>
        if (r.applicable(tp1,tp2)) {
           history += "applying subtyping rule " + r.toString + " to " + presentObj(tp1) + " <: " + presentObj(tp2)
@@ -673,10 +711,9 @@ trait SolverAlgorithms {self: Solver =>
           }
        }
      }
+     */
      // otherwise, we default to checking equality
      // in the absence of subtyping rules, this is the only option anyway
-     history += "no applicable subtyping rules, falling back to checking equality"
-     check(Equality(j.stack, tp1, tp2, None))
   }
 
   /* ********************** simplification ******************************************************/
