@@ -240,7 +240,7 @@ trait LMFDBBackend {
           err("metadata key 'constructor' not found in schema")
         } match {
           case t2: Term =>
-            DBTheory(t,t2)
+            DBTheory(t,t2) + th
           case _ =>
             err("metadata key 'constructor'  found in schema")
         }
