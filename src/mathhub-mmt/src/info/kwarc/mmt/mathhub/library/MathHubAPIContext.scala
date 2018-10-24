@@ -416,10 +416,13 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val ref = getDocumentRef(document.path.toPath)
       .getOrElse(return buildFailure(document.path.toPath, "getDocumentRef(document.id)"))
 
+    // (archive / archives.source / path).setExtension("mmt")
+
     // try to resolve the path to the document
-    val source = controller.backend.resolveLogical(URI(document.path.toPath)).map { case (archive, path) => IFileReference(
+    val source =
+      SourceRef.get(document).map(_.container).flatMap(controller.backend.resolveLogical).map { case (archive, path) => IFileReference(
       getArchiveRef(archive.id).getOrElse(return buildFailure(document.path.toPath, s"getArchiveRef(document.source)")),
-      path.mkString("/")
+        archive.root.relativize(archive / archives.source / path).toString
     )}
 
     // TODO: More tags here
