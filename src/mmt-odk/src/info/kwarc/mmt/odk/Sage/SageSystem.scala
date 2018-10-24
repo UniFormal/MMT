@@ -10,6 +10,7 @@ import info.kwarc.mmt.odk.OpenMath.OMSymbol
 import info.kwarc.mmt.odk.{IntegerLiterals, StringLiterals}
 import info.kwarc.mmt.sequences.Sequences
 
+/** translations to be used in SageSystem */
 object SageTranslations {
   private val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
   private val mitmnf = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
@@ -79,9 +80,9 @@ object SageTranslations {
   }
 }
 
-class SageSystem extends VREWithAlignmentAndSCSCP("Sage",MitMSystems.sagesym,OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None), "ODK/Sage") {
+/** external computation provided by SageMath */
+class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, MitMSystems.evaluateSym, "ODK/Sage") {
   import SageTranslations._
   override val toTranslations: List[AcrossLibraryTranslation] = multipolyTo :: numberfieldsTo :: super.toTranslations
   override val fromTranslations: List[AcrossLibraryTranslation] = multipolyFrom :: numberfieldsFrom :: super.fromTranslations
-
 }

@@ -33,6 +33,6 @@ trait LogServer {
       case _ => throw PathNotFound(request)
     }
 
-    ServerResponse.JsonResponse(JSONArray.fromList(entries.map(_.toJSON)))
+    ServerResponse.JsonResponse(JSONArray(entries.map(_.toJSON):_*))
   }
 }

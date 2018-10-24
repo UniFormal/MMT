@@ -8,13 +8,10 @@ import MitM.MitM._
 
 
 object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
-  def run : Unit = {
+  def run {
     // load the (default) configuration
-    //hl("mitm use")
+    hl("mitm use")
     
-    // FR's local test
-    hl("mitm use C:\\frabe\\MMT-devel\\src\\mmt-odk\\odk-field.json")
-
     // load a non-default configuration
     // see mmt-api/resources/mitm/config.default.json for an example
     //hl("mitm use /path/to/config.json")

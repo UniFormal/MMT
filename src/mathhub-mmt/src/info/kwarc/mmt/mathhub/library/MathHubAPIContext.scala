@@ -1,6 +1,7 @@
 package info.kwarc.mmt.mathhub.library
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.ImporterAnnotator
 import info.kwarc.mmt.api.archives.lmh.{LMHHubGroupEntry, _}
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
@@ -9,7 +10,7 @@ import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory, View}
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.presentation.{HTMLExporter, StringBuilder}
-import info.kwarc.mmt.api.utils.{File, mmt}
+import info.kwarc.mmt.api.utils.{File, URI, mmt}
 
 import scala.collection.mutable
 
@@ -415,6 +416,19 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
     val ref = getDocumentRef(document.path.toPath)
       .getOrElse(return buildFailure(document.path.toPath, "getDocumentRef(document.id)"))
 
+    // (archive / archives.source / path).setExtension("mmt")
+
+    // try to resolve the path to the document
+    val source =
+      SourceRef.get(document).map(_.container).flatMap(controller.backend.resolveLogical).map { case (archive, path) => IFileReference(
+      getArchiveRef(archive.id).getOrElse(return buildFailure(document.path.toPath, s"getArchiveRef(document.source)")),
+        archive.root.relativize(archive / archives.source / path).toString
+    )}
+
+    // TODO: More tags here
+    val tags = ImporterAnnotator.get(document).toList.filter(IDocument.knownTags.contains)
+
+
     // find all the declarations
     // TODO: Implement other types and section references
     val decls = document.getDeclarations.flatMap({
@@ -450,8 +464,11 @@ class MathHubAPIContext(val controller: Controller, val report: Report) extends 
 
     Some(IDocument(
       ref.parent, ref.id, ref.name,
-      getStats(ref.id),
 
+      tags, // TODO: Implement tags
+      source,
+
+      getStats(ref.id),
       decls
     ))
   }

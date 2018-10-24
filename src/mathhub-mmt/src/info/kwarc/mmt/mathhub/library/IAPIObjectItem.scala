@@ -194,6 +194,9 @@ case class IDocument(
                       override val id: IAPIObjectItem.URI,
                       override val name: String,
 
+                      tags: List[String],
+                      sourceRef: Option[IFileReference],
+
                       override val statistics: Option[List[IStatistic]],
 
                       decls: List[INarrativeElement]
@@ -202,10 +205,17 @@ case class IDocument(
     val buffer = super.toJSONBuffer
 
     buffer.add("decls", JSONArray(decls.map(_.toJSON):_*))
+    buffer.add("tags", JSONArray(tags.map(JSONString) :_*))
+    buffer.addO("sourceRef", sourceRef.map(_.toJSON))
 
     buffer
   }
 
+}
+
+object IDocument {
+  /** the list of known tags */
+  val knownTags = List("ipynb-omdoc")
 }
 
 trait IOpaqueElementItem extends IAPIObjectItem {
@@ -353,14 +363,10 @@ case class IView(
                   ) extends IModule {
   val kind: String = "theory"
 
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = super.toJSONBuffer
-
-    buffer.add("domain", domain.toJSON)
-    buffer.add("codomain", codomain.toJSON)
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
+    "domain" -> domain.toJSON,
+    "codomain" -> codomain.toJSON
+  )
 }
 
 //
@@ -368,14 +374,10 @@ case class IView(
 //
 
 case class IStatistic(key: String, value: Int) extends IResponse {
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("key", JSONString(key))
-    buffer.add("value", JSONInt(value))
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "key" -> JSONString(key),
+    "value" -> JSONInt(value),
+  )
 }
 
 /** a version information about MMT */
@@ -383,20 +385,29 @@ case class IMMTVersionInfo(
                             versionNumber: String,
                             buildDate: Option[String]
                           ) extends IResponse {
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("versionNumber", JSONString(versionNumber))
-    buffer.add("buildDate", buildDate.map(JSONString).getOrElse(JSONNull))
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "versionNumber" -> JSONString(versionNumber),
+    "buildDate" -> buildDate.map(JSONString).getOrElse(JSONNull)
+  )
 }
 
 
 //
 // Helper object
 //
+
+case class IFileReference(archive: IArchiveRef, path: String) extends IResponse {
+  def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("kind", JSONString("file"))
+    buffer.add("ref", JSONBoolean(true))
+    buffer.add("archive", archive.toJSON)
+    buffer.add("path", JSONString(path))
+
+    buffer
+  }
+}
 
 /**
   * Any object exposed by the API
