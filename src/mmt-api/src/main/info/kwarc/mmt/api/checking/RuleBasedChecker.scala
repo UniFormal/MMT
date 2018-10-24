@@ -81,6 +81,10 @@ class RuleBasedChecker extends ObjectChecker {
                tc.dependsOn += d
             }
          }
+        // report warnings
+        solver.getErrors.foreach{case SolverError(l,h) => env.errorCont(new InvalidUnit(cu,h.narrowDownError,cu.present(solver.presentObj)) {
+          override val level = l
+        })}
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
          val cuS = cu.present(solver.presentObj)

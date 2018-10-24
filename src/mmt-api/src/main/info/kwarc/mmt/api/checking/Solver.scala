@@ -251,7 +251,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** true if unsolved variables are left */
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
    /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
-   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
+   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.forall(_.level < Level.Error)
    /** the solution to the constraint problem
     *
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
