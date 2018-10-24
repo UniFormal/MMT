@@ -8,6 +8,7 @@ import info.kwarc.mmt.odk.{IntegerLiterals}
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 
+/** translation to be used in [[GAPSystem]] */
 object GAPTranslations {
   object AnyInt {
     def unapply(tm : Term) = tm match {
@@ -81,7 +82,8 @@ object GAPTranslations {
   }
 }
 
-class GAPSystem extends VREWithAlignmentAndSCSCP("GAP",MitMSystems.gapsym,OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None), "ODK/GAP") {
+/** external computation provided by the GAP system */
+class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, MitMSystems.evaluateSym, "ODK/GAP") {
   override val fromTranslations: List[AcrossLibraryTranslation] = GAPTranslations.fromPolynomials :: super.fromTranslations
   override val toTranslations: List[AcrossLibraryTranslation] = GAPTranslations.toPolynomials :: super.toTranslations
 }

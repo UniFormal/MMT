@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
+import info.kwarc.mmt.odk._
 import info.kwarc.mmt.odk.LFX.{LFList, LFRecSymbol}
 
 object MitM {
@@ -136,5 +136,7 @@ object MitMSystems {
   val singularsym: GlobalName = vretheory ? "SingularEval"
   val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
   val querysym: GlobalName = vretheory ? "ODKQuery"
+  
+  val evaluateSym = OpenMath.OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None)
 }
 

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.MitM.VRESystem
 
 import info.kwarc.mmt.MitM.Config.MitMSystemLocation
-import info.kwarc.mmt.api.Error
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.odk.OpenMath.Coding.OMMiTMCoding
@@ -10,9 +10,8 @@ import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
 
 /** A trait used for systems that use scscp */
-trait UsesSCSCP {
-  this: VRESystem =>
-
+trait UsesSCSCP extends VRESystem {
+  
   /** the head to wrap all calls to SCSCP in */
   val head: OMSymbol
 
@@ -23,7 +22,7 @@ trait UsesSCSCP {
   private def newCallId = s"$id:${java.lang.System.currentTimeMillis().toString}:${scala.util.Random.nextInt().toString}"
 
   /** the coding used to encode / decode MiTM objects */
-  protected lazy val coding = new OMMiTMCoding(controller)
+  private lazy val coding = new OMMiTMCoding(controller)
 
   /** makes a call to scscp */
   def scscpcall(t: Term): Term = {

@@ -47,6 +47,8 @@ object MMTNotebook {
 
   def apply(cells: List[Cell]) = Notebook(MMTLanguageInfo, NotebookMetadata(MMTKernelSpec), Notebook.format, cells)
   
+  def empty = MMTNotebook(Nil)
+  
   def inTheory(meta: Option[MPath], p: MPath) = {
     val metaS = meta.map(m => ": " + m.toPath).getOrElse("")
     val theoryHeader = MMTCell("theory Scratch : " + metaS + "=")

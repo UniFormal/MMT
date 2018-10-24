@@ -8,7 +8,7 @@ import MitM.MitM._
 
 
 object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
-  def run : Unit = {
+  def run {
     // load the (default) configuration
     hl("mitm use")
     

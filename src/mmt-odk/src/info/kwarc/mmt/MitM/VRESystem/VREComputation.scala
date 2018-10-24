@@ -15,18 +15,10 @@ import info.kwarc.mmt.odk.{Plugin, StringLiterals}
 
 import scala.util.Try
 
-trait Rules { this: Plugin =>
-  /** calls a single Virtual Research Environment */
-  def callVRE(t : Term, system : GlobalName): Term = {
-    val systems = controller.extman.get(classOf[VRESystem])
-    systems.find(_.sym == system) match {
-      case Some(s) =>
-        s.call(t)
-      case _ => ???
-    }
-  }
-
-  /** simplifies a given term using all known VREs */
+/** provides computation via external services */
+trait VREComputation { this: Plugin =>
+  
+  /** simplifies a given term using all known VREs, using special additional rules */
   def simplify(tm : Term, conO : Option[Context]): Term = {
     val con = conO.getOrElse {
       controller.getTheory(MitM.mathpath).getInnerContext
@@ -90,6 +82,16 @@ trait Rules { this: Plugin =>
         case _ => return Simplifiability.NoRecurse
       }
       Simplify(callVRE(simplify(subtm,Some(con)),sys))
+    }
+  }
+
+  /** calls a single Virtual Research Environment */
+  private def callVRE(t : Term, system : GlobalName): Term = {
+    val systems = controller.extman.get(classOf[VRESystem])
+    systems.find(_.sym == system) match {
+      case Some(s) =>
+        s.call(t)
+      case _ => ???
     }
   }
 }

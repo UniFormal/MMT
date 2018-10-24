@@ -7,10 +7,12 @@ import web._
 class NotebookGenerator extends ServerExtension("notebook") {
   def apply(request: ServerRequest) = {
      val p = Path.parse(request.query)
-     p match {
-       case p: MPath =>
-         val nb = MMTNotebook.inTheory(None, p)
-         ServerResponse.JsonResponse(nb.toJSON)
+     val nb = p.dropComp match {
+       case p: DPath =>
+         MMTNotebook.empty
+       case p: ContentPath =>
+         MMTNotebook.inTheory(None, p.module)
      } 
+     ServerResponse.JsonResponse(nb.toJSON)
   }
 }

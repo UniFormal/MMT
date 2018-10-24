@@ -64,6 +64,6 @@ case class LogEntry(uuid: String, time: Long, indent: Int, caller: String, prefi
     "indent" -> JSONInt(indent),
 
     "prefix" -> JSONString(prefix),
-    "parts" -> JSONArray.fromList(parts.map(JSONString))
+    "parts" -> JSONArray(parts.map(JSONString):_*)
   )
 }

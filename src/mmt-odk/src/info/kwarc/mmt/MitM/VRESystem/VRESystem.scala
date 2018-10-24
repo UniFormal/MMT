@@ -16,7 +16,7 @@ import info.kwarc.mmt.odk.Plugin
 
 import scala.util.Try
 
-/** a single VRESystem */
+/** base class for systems that provide external computation */
 abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExtension(id) {
   override val logPrefix: String = id
 
@@ -42,92 +42,29 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
   }
 }
 
+case class VREComputationStep(system: String, mitmIn: Term, systemIn: Term, systemOut: Term, mitmOut: Term) {
+  def toString(present: Term => String) = {
+    val terms = List("MitM input" -> mitmIn, system + " input" -> systemIn, system + " output" -> systemOut, "MitM output" -> mitmOut)
+    s"MitM computation via system $system\n" +
+    (terms.map{case (s,t) => s + ": " + present(t)}).mkString("\n")
+  }
+}
+
+/** main implementation of [[VRESystem]] */
 abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, val head: OMSymbol, archiveId : String)
-  extends VRESystem(id, sym) with AlignmentBasedMitMTranslation with UsesSCSCP {
+         extends VRESystem(id, sym) with UsesAlignments with UsesSCSCP {
   def location: MitMSystemLocation = odkPlugin.config.get(id)
 
   lazy val archive: Archive = controller.backend.getArchive(archiveId).getOrElse(throw GeneralError(s"Missing archive $archiveId"))
-  def call(t : Term): Term = translateToMitM(scscpcall(translateToSystem(t)))
-}
-
-object Translations {
-  val lftoOMA = new AcrossLibraryTranslation {
-    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case ApplySpine(f,ls) =>
-        true
-      case _ => false
-    }
-
-    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case ApplySpine(f,ls) =>
-        OMA(f,ls)
-    }
+  
+  private def present(t: Term) = controller.presenter.asString(t)
+  
+  def call(t : Term): Term = {
+    val tS = translateToSystem(t)
+    val tSC = scscpcall(tS)
+    val tSCM = translateToMitM(tSC)
+    val trace = VREComputationStep(id, t, tS, tSC, tSCM)
+    println(trace.toString(_.toString))
+    tSCM
   }
 }
-
-trait AlignmentBasedMitMTranslation { this : VRESystem =>
-
-  /** the mitm/smglom archive */
-  lazy val mitm : Archive = controller.backend.getArchive("MitM/smglom").getOrElse(throw GeneralError("Missing archive MiTM/smglom"))
-  /** the archive belonging to this system */
-  val archive : Archive
-
-  def complexTranslations : List[AcrossLibraryTranslation] = Nil
-  def toTranslations : List[AcrossLibraryTranslation] = Translations.lftoOMA :: Nil
-  def fromTranslations : List[AcrossLibraryTranslation] = Nil
-
-  lazy protected val alignmentserver: AlignmentsServer = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse {
-    val a = new AlignmentsServer
-    controller.extman.addExtension(a)
-    a
-  }
-
-  private lazy val links : List[DeclaredLink] = {
-    val content = (archive.allContent ::: mitm.allContent)
-     // the following takes very long
-    content.flatMap {p =>
-      val se = Try(controller.get(p)).toOption
-      se match {
-        case Some(th : DeclaredTheory) => th.getNamedStructures collect {
-          case s : DeclaredStructure => s
-        }
-        case Some(v : DeclaredView) => List(v)
-        case _ => Nil
-      }
-    }
-  }
-
-  private def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
-    val aligns = alignmentserver.getAll.collect {
-      case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
-    }
-    val linktrs : List[TranslationGroup] = links.map(l => LinkTranslation(l))
-
-    new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to)
-  }
-
-  private lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
-  private lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
-
-  def translateToSystem(t : Term) : Term = {
-    val (res,succ) = translator_to.translate(t)
-    succ.foreach(s => throw BackendError("could not translate symbol",s))
-    res
-  }
-  def translateToMitM(t : Term) : Term = {
-    val (res,succ) = translator_from.translate(t)
-    succ.foreach(s => throw BackendError("could not translate symbol", s))
-    res
-  }
-
-  def warmup(): Unit = {
-    // initialize the lazy vals
-    alignmentserver
-    translator_to
-    translator_from
-    print("")
-  }
-}
-
-
-
