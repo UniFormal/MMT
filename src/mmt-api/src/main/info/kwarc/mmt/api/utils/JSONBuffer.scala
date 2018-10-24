@@ -22,8 +22,21 @@ class JSONObjectBuffer {
     value.foreach(add(key,_))
   }
 
+  /** convenience method to add a bunch of values at once */
+  def apply(parts: (String, JSON)*): JSONObjectBuffer = {
+    parts.foreach({ case (s, j) => add(s, j)})
+    this
+  }
+
   def result(): JSONObject = {
     JSONObject(buffer.result() :_*)
+  }
+}
+
+object JSONObjectBuffer {
+  def apply(parts: (String, JSON)*): JSONObjectBuffer = {
+    val buffer = new JSONObjectBuffer
+    buffer(parts: _*)
   }
 }
 
