@@ -34,13 +34,12 @@ trait TagBuilder { this: Builder =>
 
     val entries = mathHub.entries()
       .collect({ case l: LMHHubArchiveEntry if l.tags.contains(ref.name) => l })
-    val e2 = entries
       .map({ e => getArchiveRef(e.id).getOrElse(return buildFailure(tag, s"getArchiveRef(tag.member[${e.id}]")) })
 
     Some(ITag(
       ref.id, ref.name,
       None,
-      e2
+      entries
     ))
   }
 }
