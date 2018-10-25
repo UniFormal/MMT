@@ -42,25 +42,31 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
             doPath(from)
         }
      }
-     
+     /** names of new declarations */
      def doName(l: LocalName) {
         span("name") {
           text(l.toString)
         }
      }
+     /** references to previous declarations */
      def doPath(p: Path) {
        span("uri", attributes = List(HTMLAttributes.href -> p.toPath)) {
          text(p.toString)
        }
      }
+     /** terms */
      def doTerm(t: Term) {
+       // handled via the provided object presenter
        oP(t, None)(rh)
      }
+     
+     /** concrete syntax: alphanumeric keywords */
      def doKeyword(k: String) {
        span("keyword") {
          text("theory")
        }
      }
+     /** concrete syntax: symbolic operators */
      def doOperator(s: String) {
         span("operator") {
           text(":")
