@@ -48,7 +48,7 @@ trait UsesAlignments extends VRESystem {
     }
   }*/
 
-  private def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
+  protected def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
     val aligns = alignmentserver.getAll.collect {
       case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
     }
@@ -56,8 +56,8 @@ trait UsesAlignments extends VRESystem {
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to)
   }
 
-  private lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
-  private lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
+  protected lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
+  protected lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
 
   def translateToSystem(t : Term) : Term = {
     val (res,succ) = translator_to.translate(t)

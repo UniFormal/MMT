@@ -49,7 +49,7 @@ object MitM {
   val monomial_con : GlobalName = polypath.parent ? "RationalPolynomials" ? "monomial_con"
   val multi_polycon : GlobalName = polypath.parent ? "RationalPolynomials" ? "multi_poly_con"
 
-  val orbit : GlobalName = (basepath / "smglom" / "algebra" / "permutationgroup") ? "GroupAction" ? "orbit"
+  val polyOrbit : GlobalName = (basepath / "smglom" / "algebra" / "permutationgroup") ? "GroupAction" ? "polynomialOrbit"
   val dihedralGroup : GlobalName = (basepath / "smglom" / "algebra" / "permutationgroup") ? "PermutationGroup" ? "dihedralGroup"
   val groebner : GlobalName = polypath.parent ? "RationalPolynomials" ? "groebner"
 

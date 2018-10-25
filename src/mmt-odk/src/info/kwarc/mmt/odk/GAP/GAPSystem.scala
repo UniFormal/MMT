@@ -31,12 +31,12 @@ object GAPTranslations {
   }
   val toPolynomials = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(MitM.multi_polycon),ring :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
+      case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
       case _ => false
     }
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(MitM.multi_polycon),ring :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+      case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
         var ivars : List[String] = Nil
         def get(s:String) = if (ivars.indexOf(s) != -1) ivars.indexOf(s)+1 else {
           ivars = ivars ::: List(s)
@@ -80,10 +80,46 @@ object GAPTranslations {
       }
     }
   }
+
+  val dihedral = GAP.importbase ? "lib" ? "DihedralGroup"
+  val ispermgroup = GAP.importbase ? "lib" ? "IsPermGroup"
+  val toDihedralGroup = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(MitM.dihedralGroup),AnyInt(_):: Nil) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(MitM.dihedralGroup),AnyInt(i):: Nil) =>
+        OMA(OMS(dihedral),OMS(ispermgroup) :: Integers.of(2*i) :: Nil)
+      case _ => ???
+    }
+  }
+
+  val fromDihedralGroup : AcrossLibraryTranslation = ???
+
+  val orbit = GAP.importbase ? "lib" ? "Orbit"
+  val onindet = GAP.importbase ? "lib" ? "OnIndeterminates"
+
+  val toPolyOrbit = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(MitM.polyOrbit), _ :: _ :: Nil) => true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(MitM.polyOrbit),group :: poly :: Nil) =>
+        OMA(OMS(orbit),group :: poly :: OMS(onindet):: Nil)
+      case _ => ???
+    }
+  }
+  val fromPolyOrbit : AcrossLibraryTranslation = ???
 }
 
 /** external computation provided by the GAP system */
 class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, MitMSystems.evaluateSym, "ODK/GAP") {
-  override val fromTranslations: List[AcrossLibraryTranslation] = GAPTranslations.fromPolynomials :: super.fromTranslations
-  override val toTranslations: List[AcrossLibraryTranslation] = GAPTranslations.toPolynomials :: super.toTranslations
+  import GAPTranslations._
+  override val fromTranslations: List[AcrossLibraryTranslation] = fromPolynomials :: super.fromTranslations
+  override val toTranslations: List[AcrossLibraryTranslation] = toPolyOrbit :: toDihedralGroup :: toPolynomials :: super.toTranslations
 }
