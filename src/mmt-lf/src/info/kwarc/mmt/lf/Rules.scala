@@ -321,7 +321,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               reduce(t ^? (x / s), rest)
             } else {
               history += "cannot beta-reduce at this point"
-              Recurse
+              RecurseOnly(1 :: Nil)
             }
          case (f, Nil) =>
            //all arguments were used, recurse in case f is again a redex
@@ -333,7 +333,11 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
          case(OMS(p),ls) =>
            val dfO = solver.lookup.getConstant(p).df
            dfO match {
-             case Some(df) => reduce(df,args)
+             case Some(df) => // TODO EXPERIMENTAL! What to do if defined, but definition is not a lambda?
+               val (dfS,opt) = solver.safeSimplifyUntil(df)(Lambda.unapply)
+               if (opt.isDefined) reduce(dfS,args)
+               else if (reduced) Simplify(ApplySpine(f,args :_*))
+               else RecurseOnly(1 :: Nil)
              case None =>
                if (reduced)
                  Simplify(ApplySpine(f,args : _*))
@@ -349,7 +353,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               if (reduced)
                 Simplify(ApplySpine(f,args : _*))
               else
-                Recurse
+                RecurseOnly(1 :: Nil)
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one

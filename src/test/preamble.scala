@@ -5,7 +5,8 @@ import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExpo
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
@@ -70,6 +71,14 @@ abstract class Test(archivepath : String,
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
+    val shell = if (gotoshell) Some(Future {
+      Run.disableFirstRun
+      Run.main(Array())
+    }(scala.concurrent.ExecutionContext.global)) else None
+    run
+    shell.foreach(f => Await.result(f,Duration.Inf))
+
+    /*
       if (gotoshell) {
         Future {
           Thread.sleep(1000)
@@ -79,6 +88,7 @@ abstract class Test(archivepath : String,
         Run.main(Array())
       }
       else run
+      */
     } catch {
       case e: api.Error =>
         println(e.toStringLong)
@@ -132,6 +142,6 @@ abstract class MagicTest(prefixes : String*) extends Test(
   prefixes.toList,
   MagicTest.alignments.map(_.toString).getOrElse(""),
   Some(8080),
-  false,
+  true,
   MagicTest.logfile.map(_.toString)
 )

@@ -84,6 +84,8 @@ trait CheckingRule extends SyntaxDrivenRule {
   def alternativeHeads: List[GlobalName] = Nil
   def heads = head::alternativeHeads
 
+  def canApply(t : Term) : Boolean = t.head.exists(heads.contains)
+
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
 }

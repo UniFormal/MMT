@@ -898,7 +898,7 @@ trait SolverAlgorithms {self: Solver =>
     *  @return (tmS, Some(r)) where tmS = tm and r from hs is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
    private def safeSimplifyUntilRuleApplicable[R <: CheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      safeSimplifyUntil[R](tm)(t => t.head flatMap {h => hs.find(_.heads contains h)})
+      safeSimplifyUntil[R](tm)(t => hs.find(_.canApply(t)))
 
       
   /* ********************** methods for contexts ***************************/
