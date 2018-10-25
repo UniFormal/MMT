@@ -3,7 +3,9 @@ package info.kwarc.mmt.odk.GAP
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 import info.kwarc.mmt.MitM.VRESystem.VREWithAlignmentAndSCSCP
 import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
-import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.refactoring._
 import info.kwarc.mmt.odk.{IntegerLiterals}
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
@@ -97,7 +99,7 @@ object GAPTranslations {
     }
   }
 
-  val fromDihedralGroup : AcrossLibraryTranslation = ???
+  def fromDihedralGroup : AcrossLibraryTranslation = ???
 
   val orbit = GAP.importbase ? "lib" ? "Orbit"
   val onindet = GAP.importbase ? "lib" ? "OnIndeterminates"
@@ -114,12 +116,16 @@ object GAPTranslations {
       case _ => ???
     }
   }
-  val fromPolyOrbit : AcrossLibraryTranslation = ???
+  def fromPolyOrbit : AcrossLibraryTranslation = ???
 }
 
 /** external computation provided by the GAP system */
-class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, MitMSystems.evaluateSym, "ODK/GAP") {
+class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.scscpHead, "ODK/GAP") {
   import GAPTranslations._
   override val fromTranslations: List[AcrossLibraryTranslation] = fromPolynomials :: super.fromTranslations
   override val toTranslations: List[AcrossLibraryTranslation] = toPolyOrbit :: toDihedralGroup :: toPolynomials :: super.toTranslations
+  
+  override protected lazy val translator_to = translator(new TranslationTarget {
+    override def inTarget(path: GlobalName, controller: Controller): Boolean = GAP._base <= path
+  },toTranslations)
 }

@@ -133,6 +133,7 @@ object MitMSystems {
   private val _basepath = DPath(URI("http","opendreamkit.org"))
   private val vretheory = _basepath ? "Systems"
 
+  /** marks a term for evaluation in a specific system */
   val evalSymbol: GlobalName = vretheory ? "Eval"
 
   val gapsym: GlobalName = vretheory ? "GAPEval"
@@ -141,6 +142,7 @@ object MitMSystems {
   val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
   val querysym: GlobalName = vretheory ? "ODKQuery"
   
+  /** kicks off a computation, and serves as default head of SCSCP servers */
   val evaluateSym = _basepath ? "scscp_transient_1" ? "MitM_Evaluate"
 }
 

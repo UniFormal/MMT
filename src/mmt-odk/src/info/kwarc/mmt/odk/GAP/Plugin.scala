@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import scala.collection.mutable
 
 object GAP {
-  val _base = DPath(URI.http colon "www.gap-system.org")
+  val _base = DPath(URI.https colon "www.gap-system.org")
   val theory = _base ? "Types"
   val importbase = _base / "mitm"
 
@@ -37,6 +37,22 @@ object GAP {
   def propfilt(tm : GAPProperty) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
   def propfilt(tm : GAPOperation) = Apply(OMS(theory ? "propertyFilter"),tm.toTerm)
   def catfilt(tm : GAPCategory) = Apply(OMS(theory ? "catFilter"),tm.toTerm)
+  
+  /*
+   * from scscp import SCSCPCLI
+     client = SCSCPCLI("localhost", port=26133)
+     res = client.heads.scscp2.get_allowed_heads([])
+     OMApplication(
+      elem=OMSymbol(name='symbol_set', cd='scscp1'),
+      arguments=[
+        OMSymbol(name='MitM_Evaluate', cd='scscp_transient_1'),
+        OMSymbol(name='MitM_Quit', cd='scscp_transient_1'),
+        OMSymbol(name='MitM_Evaluate', cd='lib', cdbase='https://www.gap-system.org/mitm/')])
+     But I can't it get to work with combinations names.
+   */
+  val scscpHead = DPath(URI("")) ? "scscp_transient_1" ? "MitM_Evaluate"
+  
+
 }
 
 object FilterRelations extends RelationalExtractor {

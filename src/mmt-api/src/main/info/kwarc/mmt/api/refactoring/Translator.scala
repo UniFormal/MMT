@@ -208,7 +208,7 @@ case class ArchiveTarget(archive : Archive) extends TranslationTarget {
 class AcrossLibraryTranslator(controller : Controller,
                               translations : List[AcrossLibraryTranslation],
                               groups: List[TranslationGroup],
-                              target : TranslationTarget) extends Logger/* extends ServerExtension("translate") */ {
+                              target : TranslationTarget,expandDefs : Boolean = true) extends Logger/* extends ServerExtension("translate") */ {
   val report = controller.report
   override def logPrefix = "translator"
   val ctrl : Controller = controller
@@ -242,8 +242,8 @@ class AcrossLibraryTranslator(controller : Controller,
   object DefinitionExpander extends AcrossLibraryTranslation {
     def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator) = tm match {
       case OMS(p) =>
-        controller.get(p) match {
-          case c: Constant if c.df.isDefined => true
+        controller.getO(p) match {
+          case Some(c: Constant) if c.df.isDefined => true
           case _ => false
         }
       case _ => false
@@ -362,7 +362,9 @@ class AcrossLibraryTranslator(controller : Controller,
     }
   }
 
-  private def findTranslations(tm: Term): List[AcrossLibraryTranslation] = (DefinitionExpander :: translations).filter(_.applicable(tm))
+  private def findTranslations(tm: Term): List[AcrossLibraryTranslation] = 
+    if (expandDefs) (DefinitionExpander :: translations).filter(_.applicable(tm))
+    else translations.filter(_.applicable(tm))
 
   object TermClass {
     private val store: mutable.HashMap[Term, TermClass] = mutable.HashMap.empty
