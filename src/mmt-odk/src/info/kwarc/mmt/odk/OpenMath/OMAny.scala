@@ -1,4 +1,6 @@
 package info.kwarc.mmt.odk.OpenMath
+
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils.URI
 
 import scala.collection.GenTraversableOnce
@@ -300,6 +302,10 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
   def === (other : OMSymbol): Boolean = {
     (other.name == name) && (other.cdbase.map(_.toString).getOrElse("") + cd == cdbase.map(_.toString).getOrElse("") + cd)
   }
+}
+
+object OMSymbol {
+  def apply(p: GlobalName): OMSymbol = OMSymbol(p.name.toPath, p.module.toPath, None, Some(p.doc.uri)) 
 }
 
 /**

@@ -4,7 +4,7 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
-import info.kwarc.mmt.MitM.VRESystem.VRESystem
+import info.kwarc.mmt.MitM.VRESystem._
 import ontology._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
 import info.kwarc.mmt.api.web.WebQuery
@@ -458,5 +458,5 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     ResultSet.fromElementList(getSubjectTo(db, query))
   }
 
-  override def call(t: Term): Term = ???
+  override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
 }

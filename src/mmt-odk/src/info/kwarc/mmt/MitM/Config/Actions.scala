@@ -1,7 +1,14 @@
+/* FR I moved the configuration to the MMT configuration, where it fits better.
+ * 
+ * Thus, this entire package is dead code except that it loads the 4 ODK system Plugins as a strange side effect.
+ * I moved that part to the ODK plugin, where it makes much more sense.
+ */
+
+/*
 package info.kwarc.mmt.MitM.Config
 
-import info.kwarc.mmt.MitM.Server.MiTMExtension
-import info.kwarc.mmt.MitM.VRESystem.VRESystem
+import info.kwarc.mmt.MitM.Server._
+import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.GeneralError
 import info.kwarc.mmt.api.frontend.actions.{Action, ActionCompanion, ActionState, ResponsiveAction}
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
@@ -40,10 +47,6 @@ trait Actions {
 
         // and start all the extensions
         log("starting system extensions")
-        controller.extman.addExtension(new LMFDB.Plugin)
-        controller.extman.addExtension(new GAP.Plugin)
-        controller.extman.addExtension(new Sage.Plugin)
-        controller.extman.addExtension(new Singular.Plugin)
 
         // and run the warmup code
         log("warming up caches, this might take some time. ")
@@ -74,7 +77,7 @@ trait Actions {
   }
 
 
-  object MitMConfigActionCompanion extends ActionCompanion("loads MiTM Configuration", "mitm use") with MiTMExtension {
+  object MitMConfigActionCompanion extends ActionCompanion("loads MiTM Configuration", "mitm use") with MitMExtension {
 
     import Action._
 
@@ -84,3 +87,4 @@ trait Actions {
 
 
 }
+*/

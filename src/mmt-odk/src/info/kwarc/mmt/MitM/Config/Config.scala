@@ -1,3 +1,7 @@
+// FR This is dead code now, see file Actions.scala
+
+/* 
+
 package info.kwarc.mmt.MitM.Config
 
 import info.kwarc.mmt.api.utils._
@@ -47,3 +51,5 @@ object MitMSystemLocation {
     MitMSystemLocation(hn, Option(port).getOrElse("26133").toInt)
   }
 }
+
+*/

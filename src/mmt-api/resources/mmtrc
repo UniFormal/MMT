@@ -39,3 +39,9 @@ odk        http://www.opendreamkit.org/
 mitm       http://mathhub.info/MitM
 syn        http://latin.omdoc.org/logics/syntax
 models     http://models.latin.omdoc.org/
+
+// entries for MitM systems, moved here from mitm/config.default.json
+#mitm
+GAP        localhost 26133
+Sage       localhost 26136
+Singular   localhost 26135

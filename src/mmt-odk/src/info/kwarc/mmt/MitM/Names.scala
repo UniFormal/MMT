@@ -137,6 +137,6 @@ object MitMSystems {
   val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
   val querysym: GlobalName = vretheory ? "ODKQuery"
   
-  val evaluateSym = OpenMath.OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None)
+  val evaluateSym = _basepath ? "scscp_transient_1" ? "MitM_Evaluate"
 }
 

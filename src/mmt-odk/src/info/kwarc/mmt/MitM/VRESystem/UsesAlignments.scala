@@ -1,18 +1,12 @@
 package info.kwarc.mmt.MitM.VRESystem
 
-import info.kwarc.mmt.MitM.Config.MitMSystemLocation
-import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.refactoring._
-import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.OpenMath.OMSymbol
-import info.kwarc.mmt.odk.Plugin
 
 import scala.util.Try
 

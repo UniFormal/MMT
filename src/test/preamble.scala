@@ -80,7 +80,8 @@ abstract class Test(archivepath : String,
       }
       else run
     } catch {
-      case e: api.Error => println(e.toStringLong)
+      case e: api.Error =>
+        println(e.toStringLong)
         sys.exit
     }
 
@@ -131,6 +132,6 @@ abstract class MagicTest(prefixes : String*) extends Test(
   prefixes.toList,
   MagicTest.alignments.map(_.toString).getOrElse(""),
   Some(8080),
-  true,
+  false,
   MagicTest.logfile.map(_.toString)
 )
