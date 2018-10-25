@@ -63,9 +63,10 @@ object  Widget {
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
   private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
-
+  
   override def start(args: List[String]) {
     super.start(args)
+    initOther(presenter)
     val extman = controller.extman
     repl = extman.get(classOf[REPLServer]).headOption getOrElse {
       val r = new REPLServer
