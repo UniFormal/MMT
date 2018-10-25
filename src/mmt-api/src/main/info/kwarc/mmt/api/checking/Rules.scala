@@ -129,7 +129,7 @@ abstract class SubtypingRule extends CheckingRule with MaytriggerBacktrack {
 /** applies to  op(args1) <: op(args2) */
 abstract class VarianceRule(val head: GlobalName) extends SubtypingRule {
   def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (ComplexTerm(this.head, _,_,_), ComplexTerm(this.head, _, _, _)) => true
+    case (ComplexTerm(a, _,_,_), ComplexTerm(b, _, _, _)) if this.heads.contains(a) && this.heads.contains(b) => true
     case _ => false
   }
 }
