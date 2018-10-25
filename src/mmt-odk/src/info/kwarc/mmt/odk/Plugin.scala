@@ -1,10 +1,13 @@
 package info.kwarc.mmt.odk
 
+
+
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.MitM.Server._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.MPath
-import info.kwarc.mmt.api.frontend.ChangeListener
+import info.kwarc.mmt.api.frontend._
+import actions._
 import info.kwarc.mmt.odk.OpenMath.CodingServer
 
 /** the plugin used for ODK */
@@ -25,6 +28,9 @@ class Plugin extends ChangeListener {
     controller.extman.addExtension(new GAP.Plugin)
     controller.extman.addExtension(new Sage.Plugin)
     controller.extman.addExtension(new Singular.Plugin)
+    
+    controller.extman.addExtension(Warmup)
+    controller.extman.addExtension(WarmupCompanion)
 
     // custom servers
     controller.extman.addExtension(new MitMComputationServer)
@@ -40,3 +46,17 @@ class Plugin extends ChangeListener {
     controller.extman.addExtension(MitM.preproc)
   }
 }
+
+/** action for caching in MitM systems */
+case object Warmup extends Action with MitMExtension {
+  def apply() {
+    controller.extman.get(classOf[VRESystem]).foreach({ v =>
+      log(s"warming up ${v.id}")
+      v.warmup()
+    })
+  }
+  
+  def toParseString = "mitm warmup"
+}
+
+object WarmupCompanion extends ObjectActionCompanion(Warmup, "warms up external MitM systems", "mitm warmup") with MitMExtension

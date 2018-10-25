@@ -60,7 +60,7 @@ trait Actions {
 
         log("Done, configuration applied. ")
 
-      // if things fail, remove the extensions a  again
+      // if things fail, remove the extensions again
       } catch {
         case e: Exception =>
           respond("Configuration loading failed: You should probably fix issues and restart MMT. ")
