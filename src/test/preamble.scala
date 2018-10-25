@@ -25,7 +25,7 @@ abstract class Test(archivepath : String,
                     logprefixes : List[String] = Nil,
                     alignmentspath : String = "",
                     serverport : Option[Int] = None,
-                    gotoshell : Boolean = true,
+                    val gotoshell : Boolean = true,
                     logfile : Option[String] = None) extends Logger {
   val controller = Run.controller
   def logPrefix = "user"
