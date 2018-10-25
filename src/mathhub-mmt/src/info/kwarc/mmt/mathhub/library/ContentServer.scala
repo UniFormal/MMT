@@ -2,6 +2,7 @@ package info.kwarc.mmt.mathhub.library
 
 import info.kwarc.mmt.api.utils.{JSONArray, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
+import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.{PathNotFound, Server}
 
 trait ContentServer { this: Server =>
@@ -15,6 +16,8 @@ trait ContentServer { this: Server =>
       toResponse(getGroups())
     case "group" :: Nil =>
       toResponse(getGroup(request.parsedQuery.string("id", return missingParameter("id"))))
+    case "tag" :: Nil =>
+      toResponse(getTag(request.parsedQuery.string("id", return missingParameter("id"))))
     case "archive" :: Nil =>
       toResponse(getArchive(request.parsedQuery.string("id", return missingParameter("id"))))
     case "document" :: Nil =>
@@ -64,6 +67,10 @@ trait ContentServer { this: Server =>
   private def getGroup(id: String) : Option[IGroup] = {
     log(s"getGroup($id)")
     context.getGroup(id)
+  }
+  private def getTag(id: String) : Option[ITag] = {
+    log(s"getTag($id)")
+    context.getTag(id)
   }
   private def getArchive(id: String) : Option[IArchive] = {
     log(s"getArchive($id)")

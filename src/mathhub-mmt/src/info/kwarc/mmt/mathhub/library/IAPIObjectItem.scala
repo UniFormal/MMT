@@ -92,6 +92,42 @@ case class IGroup(
   }
 }
 
+
+//
+// TagGroup
+//
+
+trait ITagItem extends IAPIObjectItem {
+  val kind: String = "tag"
+  val parent: Option[IReference] = None
+
+  /** a machine-readable ID of this tag, starts with an @ */
+  val id: String
+
+  /** the name of this tag */
+  val name: String
+
+  def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer()
+}
+
+/** a reference to a MathHub Archive */
+case class ITagRef(
+                      override val id: String,
+                      override val name: String
+                    ) extends ITagItem with IReference
+
+/** a full description of a MathHub Group */
+case class ITag(
+                   override val id: String,
+                   override val name: String,
+                   override val statistics: Option[List[IStatistic]],
+                   archives: List[IArchiveRef]
+                 ) extends ITagItem with IReferencable {
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "archives" -> JSONArray(archives.map(_.toJSON):_*)
+  )
+}
+
 //
 // Archive
 //
@@ -140,6 +176,8 @@ case class IArchive(
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML,
 
+                        tags: List[ITagRef],
+
                         description: IAPIObjectItem.HTML,
                         responsible: List[String],
                         narrativeRoot: IDocument
@@ -147,6 +185,7 @@ case class IArchive(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
+    buffer.add("tags", JSONArray(tags.map(_.toJSON):_*))
     buffer.add("description", JSONString(description))
     buffer.add("responsible", JSONArray(responsible.map(JSONString):_*))
     buffer.add("narrativeRoot", narrativeRoot.toJSON)

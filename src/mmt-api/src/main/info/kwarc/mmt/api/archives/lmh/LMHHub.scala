@@ -178,6 +178,13 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
 
     (metainf :: deps).distinct
   }
+
+  // TODO: Change meta-inf property used here
+  /** the list of tags associated with this archive */
+  def tags: List[String] = {
+    val mfTags = archive.properties.get("tags").map(stringToList(_, ",")).getOrElse(Nil)
+    (List("group/"+group) ::: mfTags).map(_.toLowerCase)
+  }
 }
 
 /** Error that is thrown when an archive on disk is not an actual archive */
