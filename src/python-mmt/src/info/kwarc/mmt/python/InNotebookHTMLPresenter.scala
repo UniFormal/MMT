@@ -1,6 +1,7 @@
 package info.kwarc.mmt.python
 
 import info.kwarc.mmt.api._
+import documents._
 import modules._
 import symbols._
 import objects._
@@ -19,6 +20,8 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      import htmlRh._
      def apply(e: StructuralElement) {
         e match {
+          case mr: MRef =>
+            apply(controller.get(mr.target))
           case thy: DeclaredTheory =>
             doKeyword("theory")
             doName(thy.name)
@@ -40,6 +43,7 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
           case Include(_, from, args) =>
             doKeyword("include")
             doPath(from)
+          case _ =>
         }
      }
      /** names of new declarations */
