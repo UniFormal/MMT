@@ -305,7 +305,7 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
 }
 
 object OMSymbol {
-  def apply(p: GlobalName): OMSymbol = OMSymbol(p.name.toPath, p.module.toPath, None, Some(p.doc.uri)) 
+  def apply(p: GlobalName): OMSymbol = OMSymbol(p.name.toPath, p.module.name.toPath, None, Some(p.doc.uri)) 
 }
 
 /**

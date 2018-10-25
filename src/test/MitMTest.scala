@@ -11,7 +11,7 @@ object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
     // load the (default) configuration
     // hl("mitm use")
     
-    // turn on scscp on localhost:26134
+    // turn on scscp on localhost:26134:
     hl("scscp on 26134")
     
     val gap = controller.extman.get(classOf[GAPSystem]).head
@@ -20,7 +20,7 @@ object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
     
     implicit val trace = new MitM.VRESystem.MitMComputationTrace
     
-    singular.call(tt)
+    gap.call(tt)
     
     println(trace.toString(t => controller.presenter.asString(t)))
     sys.exit
