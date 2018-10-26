@@ -435,13 +435,13 @@ case class IMMTVersionInfo(
 // Helper object
 //
 
-case class IFileReference(archive: IArchiveRef, path: String) extends IResponse {
+case class IFileReference(parent: IArchiveRef, path: String) extends IResponse {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
     buffer.add("kind", JSONString("file"))
     buffer.add("ref", JSONBoolean(true))
-    buffer.add("archive", archive.toJSON)
+    buffer.add("parent", parent.toJSON)
     buffer.add("path", JSONString(path))
 
     buffer
