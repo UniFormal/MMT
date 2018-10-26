@@ -98,10 +98,10 @@ class MitMComputation(controller: frontend.Controller) {
 
 
 /** used for tracing computation run by [[VREComputation]] */
-class MitMComputationTrace {
+class MitMComputationTrace(print: Boolean) {
   var steps: List[MitMTracePart] = Nil
   def +=(s: MitMTracePart) {
-    println(s)
+    if (print) println(s)
     steps ::= s
   }
   
@@ -109,7 +109,7 @@ class MitMComputationTrace {
 }
 
 /** dummy for ignoring the trace */
-object NoTrace extends MitMComputationTrace
+object NoTrace extends MitMComputationTrace(false)
 
 /** used in [[MitMComputationTrace]] */
 abstract class MitMTracePart {

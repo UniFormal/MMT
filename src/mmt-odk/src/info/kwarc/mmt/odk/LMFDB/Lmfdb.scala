@@ -4,6 +4,7 @@ package info.kwarc.mmt.odk.LMFDB
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
+import metadata.GlobalNameLinker
 import info.kwarc.mmt.MitM.VRESystem._
 import ontology._
 import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
@@ -40,11 +41,14 @@ object LMFDB {
    val uri = URI("http://beta.lmfdb.org") / "api"
 }
 
+
 object Metadata {
    val path = LMFDB.path ? "Metadata"
    val implements = path ? "implements"
+   val ImplementsLinker = new GlobalNameLinker(implements) 
    val extend = path ? "extends"
    val constructor = path ? "constructor"
+   val ConstructorLinker = new GlobalNameLinker(constructor)
    val key = path ? "key"
    val codec = path ? "codec"
 }
@@ -276,15 +280,15 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
   def load(path: Path)(implicit controller: Controller) {
 
     val db = DB.fromPath(path, allowSchemaPath = false).getOrElse {
-      throw NotApplicable("")
+      throw NotApplicable("not an LMFDB theory")
     }
 
-    path match {
+    path.dropComp match {
        case p: GlobalName => loadConstant(p, db)
        case mp : MPath =>
          val sch = Try(controller.getTheory(db.schemaPath)).toOption match {
            case Some(t : DeclaredTheory) => t
-           case _ => throw NotApplicable("")
+           case _ => throw NotApplicable("schema theory not found")
          }
         controller.library.getModules.find(_.path == mp).getOrElse {
           controller.add(Theory.empty(mp.parent,mp.name,sch.meta))

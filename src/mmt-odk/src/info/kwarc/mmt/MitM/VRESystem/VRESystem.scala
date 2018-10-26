@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
 
+import info.kwarc.mmt.MitM._
+
 /** base class for systems that provide external computation */
 abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExtension(id) {
   override val logPrefix: String = id
@@ -16,6 +18,12 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
 
   /** loads up the cache used by this VRESystem */
   def warmup(): Unit
+
+  /** builds the term that computes t via this system; if a trace is provided, the system is called right away */
+  def apply(t: Term): Term = MitMSystems.evalSymbol(OMS(sym), t)
+
+  /** like call */
+  def apply(trace: MitMComputationTrace, t: Term): Term = call(t)(trace)
 
   /** calls the system using a given term */
   def call(t : Term)(implicit trace: MitMComputationTrace) : Term

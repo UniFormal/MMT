@@ -108,6 +108,12 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case ComplexTerm(op,subs,cont,args) => logGroup {
           //log("state is" + init.t + " at " + init.path.toString)
           var recPosComp: CannotSimplify = Simplifiability.NoRecurse
+          // DELETE
+          args match {
+            case f :: _ if f.toString.endsWith("base_field_degree") =>
+              true
+            case _ =>
+          }
           val cb = callback(state)
           state.compRules.foreach {rule =>
             if (rule.applicable(t)) {
@@ -184,7 +190,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            }
            // TODO does not work yet; how does definition expansion interact with other steps?
            if (state.unit.expandDefinitions) {
-             controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */ flatMap {
+              val pC = controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */
+              pC flatMap {
               case c: Constant =>
                 normalizeConstant(c)
                 c.dfC.normalized

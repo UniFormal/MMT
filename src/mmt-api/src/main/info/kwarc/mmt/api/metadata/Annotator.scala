@@ -29,3 +29,15 @@ class StringAnnotator(key: GlobalName) extends Annotator[String](key) {
   def fromObject(o: Obj) = Str.unapply(o.asInstanceOf[Term]).get
   def toObject(s: String) = Str(s)  
 }
+
+/** special case where we link to an MMT URI, either as a URI or an OMID */
+class GlobalNameLinker(key: GlobalName) extends Annotator[GlobalName](key) {
+  def fromObject(o: Obj) = o match {
+    case OMS(p) => p
+    case uom.OMLiteral.URI(u) => Path.fromURI(u, NamespaceMap.empty) match {
+      case g: GlobalName => g
+      case _ => throw GeneralError("not a GlobalName")
+    }
+  }
+  def toObject(g: GlobalName) = OMS(g)  
+}

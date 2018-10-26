@@ -20,7 +20,7 @@ object EvalHandler extends MitMHandler(OMSymbol("mitmEval", "mitm_transient", No
   /** handles a single call to the SCSCP Handler */
   def eval(term: OMA, client: SCSCPServerClient, arguments: SCSCPCallArguments): Term = {
     log(s"client ${client.identifier} -> MiTM: ${term.toString}")
-    implicit val trace = new MitMComputationTrace
+    implicit val trace = new MitMComputationTrace(false)
     val result = mitmComp.simplify(term.args.head, None)
     log(s"MitM -> client ${client.identifier}: ${result.toString}")
     result
