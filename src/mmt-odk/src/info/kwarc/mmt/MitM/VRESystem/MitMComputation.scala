@@ -5,12 +5,10 @@ import checking._
 import objects._
 import ontology._
 import uom._
-
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-
 import info.kwarc.mmt.MitM._
-
 import info.kwarc.mmt.odk.LFX.LFList
+import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.{Plugin, StringLiterals}
 
 import scala.util.Try
@@ -21,7 +19,7 @@ class MitMComputation(controller: frontend.Controller) {
   /** simplifies a given term using all known VREs, using special additional rules */
   def simplify(tm : Term, conO : Option[Context])(implicit trace: MitMComputationTrace): Term = {
     val con = conO.getOrElse {
-      controller.getTheory(MitM.mathpath).getInnerContext
+      LMFDB.databases.foldLeft(Context(MitM.mathpath))((c,p) => c ++ Context(p))
     }
     val rs = RuleSet.collectRules(controller,con)
     rs.add(systemRule(con))

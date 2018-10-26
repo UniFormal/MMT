@@ -39,13 +39,21 @@ object LMFDB {
    val schemaPath = path / "schema"
    val dbPath = path / "db"
    val uri = URI("http://beta.lmfdb.org") / "api"
+
+  val databases = List(
+    dbPath ? "ec_curves",
+    dbPath ? "gps_transitive",
+    dbPath ? "hmf_fields",
+    dbPath ? "hmf_forms",
+    dbPath ? "hmf_hecke"
+  )
 }
 
 
 object Metadata {
    val path = LMFDB.path ? "Metadata"
    val implements = path ? "implements"
-   val ImplementsLinker = new GlobalNameLinker(implements) 
+   val ImplementsLinker = new GlobalNameLinker(implements)
    val extend = path ? "extends"
    val constructor = path ? "constructor"
    val ConstructorLinker = new GlobalNameLinker(constructor)
