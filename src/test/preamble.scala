@@ -25,8 +25,8 @@ abstract class Test(archivepath : String,
                     logprefixes : List[String] = Nil,
                     alignmentspath : String = "",
                     serverport : Option[Int] = None,
-                    val gotoshell : Boolean = true,
                     logfile : Option[String] = None) extends Logger {
+  val gotoshell: Boolean = true
   val controller = Run.controller
   def logPrefix = "user"
   def report = controller.report
@@ -142,6 +142,7 @@ abstract class MagicTest(prefixes : String*) extends Test(
   prefixes.toList,
   MagicTest.alignments.map(_.toString).getOrElse(""),
   Some(8080),
-  true,
   MagicTest.logfile.map(_.toString)
-)
+) {
+  override val gotoshell: Boolean = false
+}
