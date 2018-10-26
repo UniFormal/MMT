@@ -72,7 +72,7 @@ abstract class Test(archivepath : String,
         controller.handleLine("server on " + serverport.get)
       }
     val shell = if (gotoshell) Some(Future {
-      Run.disableFirstRun
+      Run.disableFirstRun = true
       Run.main(Array())
     }(scala.concurrent.ExecutionContext.global)) else None
     run
