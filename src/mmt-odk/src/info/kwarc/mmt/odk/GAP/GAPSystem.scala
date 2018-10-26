@@ -20,7 +20,7 @@ object GAPTranslations {
     }
   }
   object Poly {
-    val psym = GAP.importbase ? "lib" ? "PolynomialsByExtRep"
+    val psym = GAP.importbase ? "lib" ? "PolynomialByExtRep"
     val ratfunfam = GAP.importbase ? "lib" ? "RationalFunctionsFamily"
     val famobj = GAP.importbase ? "lib" ? "FamilyObj"
 
