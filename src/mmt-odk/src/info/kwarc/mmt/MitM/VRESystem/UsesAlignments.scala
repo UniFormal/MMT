@@ -1,12 +1,15 @@
 package info.kwarc.mmt.MitM.VRESystem
 
+import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.refactoring._
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{ApplySpine, Typed}
+import info.kwarc.mmt.odk.LFX
 
 import scala.util.Try
 
@@ -57,7 +60,12 @@ trait UsesAlignments extends VRESystem {
   }
 
   protected lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
-  protected lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
+  protected lazy val translator_from = translator(new TranslationTarget {
+    override def inTarget(path: GlobalName, controller: Controller): Boolean =
+      Typed._base <= path ||
+      LFX.ns <= path ||
+      MitM.basepath <= path
+  },fromTranslations)
 
   def translateToSystem(t : Term) : Term = {
     val (res,succ) = translator_to.translate(Translations.traverselftoOMA(t,Context.empty))

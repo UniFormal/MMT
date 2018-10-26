@@ -19,12 +19,22 @@ object GAPTranslations {
       case _ => None
     }
   }
+
+  object GAPList {
+    val gaplist = GAP.importbase ? "prim" ? "ListConstr"
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`gaplist`),ls) => Some(ls)
+      case _ => None
+    }
+  }
+
   object Poly {
     val psym = GAP.importbase ? "lib" ? "PolynomialByExtRep"
     val ratfunfam = GAP.importbase ? "lib" ? "RationalFunctionsFamily"
     val famobj = GAP.importbase ? "lib" ? "FamilyObj"
 
     def unapply(tm : Term) = tm match {
+      case OMA(OMS(`psym`),List(OMA(OMS(`ratfunfam`),List(OMA(OMS(`famobj`),List(_)))),GAPList(ls))) => Some(ls)
       case OMA(OMS(`psym`),List(OMA(OMS(`ratfunfam`),List(OMA(OMS(`famobj`),List(_)))),LFList(ls))) => Some(ls)
       case _ => None
     }
@@ -66,7 +76,7 @@ object GAPTranslations {
       if (ls.isEmpty) Nil
       else if (ls.length == 1) ???
       else {
-        val ils : List[Term] = LFList.unapply(ls.head).getOrElse(???)
+        val ils : List[Term] = LFList.unapply(ls.head).getOrElse(GAPList.unapply(ls.head).getOrElse(???))
         var i = 0
         var iret : List[(String,BigInt)] = Nil
         while (i < ils.length - 1) {
