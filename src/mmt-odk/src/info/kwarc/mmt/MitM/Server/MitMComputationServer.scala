@@ -38,9 +38,6 @@ class MitMComputationServer extends Extension with Actions {
       case e: java.net.BindException =>
         logError("Can not start SCSCP Server: Port already taken")
         return
-      case f: Exception =>
-        logError(s"SCSCP Server Error: $f")
-        return
     }
 
     Future {
@@ -50,7 +47,8 @@ class MitMComputationServer extends Extension with Actions {
         scscpServer = None
       } catch {
         case e: Exception =>
-          logError("SCSCP Server Error: " + e)
+          e.printStackTrace()
+          sys.exit(-1)
       }
 
     }
