@@ -30,7 +30,12 @@ trait BigIntAsJSON {
 
 
 object TMInt extends LiteralsCodec[BigInt,JSON](Codecs.standardInt, IntegerLiterals) with BigIntAsJSON
-object TMNat extends LiteralsCodec[BigInt,JSON](Codecs.standardNat, NatLiterals) with BigIntAsJSON
+object TMNat extends LiteralsCodec[BigInt,JSON](Codecs.standardNat, NatLiterals) with BigIntAsJSON {
+  override def encode(t: Term): JSON = t match {
+    case IntegerLiterals(i) if i >= 0 => super.encode(NatLiterals(i))
+    case _ => super.encode(t)
+  }
+}
 object TMPos extends LiteralsCodec[BigInt,JSON](Codecs.standardPos, PosLiterals) with BigIntAsJSON
 
 object TMString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.standardString, StringLiterals))
