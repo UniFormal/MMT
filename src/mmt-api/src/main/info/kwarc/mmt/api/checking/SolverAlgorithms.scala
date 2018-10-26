@@ -1109,7 +1109,7 @@ trait SolverAlgorithms {self: Solver =>
 
    /** tries to prove a goal, @return the proof term if successful */
    def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
-      prove(constantContext ++ solution ++ stack.context, conc)
+      prove(constantContext ++ /* solution ++ */ stack.context, conc)
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {

@@ -865,7 +865,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                     solve(vd.name, FreeOrAny(tpCon,p))
                   case None =>
                     tryAHole
-                    error("unsolved (typed) unknown: " + vd.name)                    
+                    error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }

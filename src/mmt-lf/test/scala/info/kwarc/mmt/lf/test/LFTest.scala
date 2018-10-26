@@ -77,7 +77,7 @@ object Orders {
     ,"sets/posetPowerset.mmt"
     ,"algebra/bands.mmt"
     ,"algebra/lattice.mmt"
-    ,"calculus/normedmetric.mmt"
+    ,"calculus/metric.mmt"
     ,"calculus/sequencesconvergence.mmt"
     ,"calculus/derivatives.mmt"
     ,"calculus/domains.mmt"
