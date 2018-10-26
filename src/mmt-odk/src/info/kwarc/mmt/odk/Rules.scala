@@ -93,6 +93,14 @@ object LFX {
     }
   }
 
+  object Getfield extends LFRecSymbol("Getfield") {
+    def apply(t:Term, f: LocalName) = OMA(this.term, List(t, OML(f)))
+    def unapply(t: Term) : Option[(Term,LocalName)] = t match {
+      case OMA(this.term, List(tm, OML(f,_,_,_,_))) => Some((tm, f))
+      case _ => None
+    }
+  }
+
   object Lists {
     val baseURI = LFX.ns / "Datatypes"
     val th = baseURI ? "ListSymbols"

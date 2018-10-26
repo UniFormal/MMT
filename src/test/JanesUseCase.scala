@@ -24,12 +24,20 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
     val o = OMA(OMS(MitM.polyOrbit),group :: poly :: Nil)
 
     // println(gap.translateToSystem(o))
-    gap.call(o)
-    println("\n--------------------\n")
+    // gap.call(o)
+    // println("\n--------------------\n")
+
+    // Singular.list (align mitm list)
+    // MitM.groebner align Singular.groebner
+    // Align Mitm.Integer Singular.integers
+
     
-    // val mitm = new MitMComputation(controller)
-    // mitm.simplify(OMA(OMS(MitMSystems.evalSymbol),OMS(MitMSystems.gapsym):: o :: Nil),None)
-    
+    val mitm = new MitMComputation(controller)
+    val togap = OMA(OMS(MitMSystems.evalSymbol),OMS(MitMSystems.gapsym):: o :: Nil)
+    val tosingular = OMA(OMS(MitMSystems.evalSymbol),OMS(MitMSystems.singularsym) :: OMA(OMS(MitM.groebner), togap :: Nil) :: Nil)
+    mitm.simplify(tosingular,None)
+
+
  
     // println(trace.toString(t => controller.presenter.asString(t)))
   }
