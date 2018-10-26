@@ -83,8 +83,8 @@ class JupyterKernel extends Extension {
         PythonParamDict()
       }
       case _ => {
-        val comm = REPLServer.Command.parse(req)
         try {
+          val comm = REPLServer.Command.parse(req)
           val resp = repl(Some(session), comm)
           resp match {
             case m: MultiTypedResponse => PythonParamDict(m.messages.toList)
@@ -97,7 +97,6 @@ class JupyterKernel extends Extension {
         catch {
           case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
           case e: Exception => PythonParamDict("element" ->(e.getClass.toString+e.getMessage))//(e.getStackTrace.foldRight(""){ (ste,s) => (s +"\n"+ ste.toString)}))
-
         }
       }
     }

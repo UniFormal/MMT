@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.odk.OpenMath.OMSymbol
 
 /** base class for systems that provide external computation */
 abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExtension(id) {
@@ -33,9 +34,11 @@ abstract class VRESystem(val id : String, val sym : GlobalName) extends QueryExt
 }
 
 /** main implementation of [[VRESystem]] */
-abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, val head: GlobalName, archiveId : String)
+abstract class VREWithAlignmentAndSCSCP(id : String, sym : GlobalName, headName: GlobalName, archiveId : String)
          extends VRESystem(id, sym) with UsesAlignments with UsesSCSCP {
   // def location: MitMSystemLocation = odkPlugin.config.get(id) // FR this belongs into UsesSCSCP, not here
+
+  val head: OMSymbol = OMSymbol(headName.name.toString, headName.module.name.toString, None, None)
 
   lazy val archive: Archive = controller.backend.getArchive(archiveId).getOrElse(throw GeneralError(s"Missing archive $archiveId"))
   

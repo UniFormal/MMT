@@ -75,7 +75,6 @@ trait UsesAlignments extends VRESystem {
     alignmentserver
     translator_to
     translator_from
-    print("")
   }
 }
 

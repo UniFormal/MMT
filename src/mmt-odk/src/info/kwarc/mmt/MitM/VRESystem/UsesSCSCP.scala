@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.web.ServerError
 import info.kwarc.mmt.odk.OpenMath.Coding.OMMiTMCoding
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
-import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
+import info.kwarc.mmt.odk.SCSCP.Protocol._
 
 /** A trait used for systems that use scscp
  * 
@@ -15,7 +15,7 @@ import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPRe
 trait UsesSCSCP extends VRESystem {
   
   /** the head to wrap all calls to SCSCP in */
-  val head: GlobalName
+  val head: OMSymbol
 
   // will be defined after running start
   private var location: SCSCPLocation = null
@@ -23,9 +23,7 @@ trait UsesSCSCP extends VRESystem {
   /** get the location of the scscp server from the MMT configuration */
   override def start(args: List[String]) {
     super.start(args)
-    val entry = controller.getConfig.getForeignEntries("mitm").filter(_.key == id).headOption
-    val defaultHost = "localhost"
-    val defaultPort = 1473
+    val entry = controller.getConfig.getForeignEntries("mitm").find(_.key == id)
     location = entry match {
       case Some(frontend.ForeignConf(_, _, values)) => values match {
         case host::portS::Nil =>
@@ -62,9 +60,13 @@ trait UsesSCSCP extends VRESystem {
     val ret = try {
       val om = coding.decodeExpression(t)
       trace += SCSCPSend(id, t, om)
-      val call = new SCSCPCall(OMSymbol(head), SCSCPCallArguments(newCallId, Some(SCSCPReturnObject), null), om)
-      val res = client(call).fetchExpression()
-      if (res == null) throw LocalError("SCSCP connection terminated before receiving result")
+      val call = new SCSCPCall(head, SCSCPCallArguments(newCallId, Some(SCSCPReturnObject), null), om)
+      val res = client(call).fetch() match {
+        case SCSCPObjectReturned(r, _) => r
+        case SCSCPTerminated(e, _) => throw LocalError("SCSCP call Error: "+e.toString)
+        case _ => throw LocalError("SCSCP Call returned unexpected result")
+
+      }
       res
     } catch {
       case e: Exception =>

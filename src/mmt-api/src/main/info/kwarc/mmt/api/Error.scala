@@ -107,7 +107,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 }
 
 object Error {
-  /** converts java exception to MMT error */
+  /** converts java exception to MMT error, identity on MMT errors */
   def apply(e: Exception): Error = e match {
     case e: Error => e
     case e: Exception => GeneralError("unknown error").setCausedBy(e)

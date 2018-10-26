@@ -40,6 +40,7 @@ class NotebookImporter extends Importer {
      val dpath = bt.narrationDPath
      val ps = new ParsingStream(sourceURL, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", ParsingStream.stringToReader(docS))
      val doc = controller.read(ps, interpret = false)(ErrorThrower)
+     SourceRef.update(doc, SourceRef(sourceURL, SourceRegion(SourcePosition(0, 0, 0), SourcePosition(s.length - 1, -1, -1))))
      index(doc)
      val mods = doc.getModules(controller.globalLookup)
      BuildSuccess(Nil, mods map LogicalDependency)
