@@ -3,7 +3,3 @@
 // turn on logging for console and lmh
 log console
 log+ lmh
-
-// setup the lmh root
-lmh root /content/
-mathpath archive /content/
