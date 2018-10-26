@@ -66,7 +66,7 @@ object LMHCloneCompanion extends ActionCompanion("clone specific versions of arc
 case class LMHInstall(spec: List[String]) extends LMHAction {
   def apply() {
     val resolved = mathHub.available(spec: _*)
-    resolved.foreach {case (id, version) => mathHub.installEntry(id, version, recursive=true) }
+    mathHub.installEntries(resolved, recursive=true)
   }
   def toParseString = s"lmh install ${spec.mkString(" ")}".trim
 }

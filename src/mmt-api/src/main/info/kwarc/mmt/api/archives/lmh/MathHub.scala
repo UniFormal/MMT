@@ -31,12 +31,16 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   protected def api_(page: Int): URI = {
     (remote / "api" / "v4" / "projects") ? s"per_page=100&page=$page"
   }
+  protected def groupmf_(name: String): URI = {
+    remote / name / "meta-inf" / "raw" / "master" / "GROUP_MANIFEST.MF"
+  }
   def localPath(id : String) : File = {
     val ret = (local / id).canonical
     // make sure dots in id do not cause trouble
     if (!(local <= ret)) throw GeneralError("local path escapes root path: " + ret)
     ret
   }
+  def hasGroup(name: String): Boolean = Try(io.Source.fromURL(groupmf_(name).toString)).isSuccess
 
   // GETTING and LOADING existing entries
 
@@ -210,36 +214,50 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   // code for installing new entries
   
   /** installs a new entry by cloning it from the server */
-  def installEntry(id: String, version: Option[String], recursive: Boolean = false, visited: List[LMHHubEntry] = Nil): Option[LMHHubEntry] = {
+  def installEntry(id: String, version: Option[String], recursive: Boolean = false): Option[LMHHubEntry] = {
+    installEntryInternal(id, version, recursive , Nil)._2
+  }
+
+
+  /** installs a list of new entries at once by cloning them from the server */
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false) {
+    var visits: List[LMHHubEntry] = Nil
+    entries.foreach({
+      case (id, version) =>
+        visits = installEntryInternal(id, version, recursive, visits)._1
+    })
+  }
+
+  private def installEntryInternal(id: String, version: Option[String], recursive: Boolean, visited: List[LMHHubEntry]): (List[LMHHubEntry], Option[LMHHubEntry]) = {
+    // everything we have visited so far
+    var visits: List[LMHHubEntry] = visited
+
     // if we visited this entry already, we do not want to re-install it
     // to prevent infinite recursion into this archive
     if(visited.exists(_.id.matches(id))){
       log(s"$id has already been installed and re-scanned for dependencies, skipping. ")
-      return None
+      return (visits, None)
     }
 
+    // install the actual archive
     installActual(id, version) match {
       case Some(entry: MathHubEntry) =>
+        // we have now visited ourself
+        visits = entry :: visits
+
+        // and if we are installing recursively, add the archives
         if (recursive) {
           entry match {
             case ae: MathHubArchiveEntry => {
               // Find the dependencies
-
               log(s"checking for dependencies of $id")
-
-              // the corresponding meta-inf repository
-              val metainf = ae.group + "/meta-inf"
-
-              // the dependencies
-              val depS = ae.archive.properties.getOrElse("dependencies", "")
-              val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
 
               // and install each of the sub-entries, and keeping track of all the archives we have already visited
               // failing silently
               ae.dependencies foreach {d =>
                 logGroup {
-                  log(s"installing dependency ${deps.mkString("")} of $id")
-                  installEntry(d, version = None, recursive = true, visited = entry :: visited)
+                  log(s"installing dependency $d of $id")
+                  visits = installEntryInternal(d, version, recursive = true, visited = visits)._1
                 }
               }
             }
@@ -247,9 +265,27 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
               log(s"$id is not an archive, skipping dependency check")
           }
         }
-        Some(entry)
+        (entry :: visits, Some(entry))
       case None =>
-        None
+        (visits, None)
+    }
+  }
+
+  private def installActual(id : String, version: Option[String]) : Option[MathHubEntry] = {
+    log(s"Attempting to install archive $id (version=$version)")
+
+    // if the archive is already installed, we should not install it again
+    // however we return it, so that we can scan dependencies again
+    val entry = getEntry(id)
+    if(entry.isDefined){
+      log(s"$id has already been installed at ${entry.get.root}, re-scanning dependencies. ")
+      return Some(MathHubEntry(entry.get.root))
+    }
+    // first try to install via git
+    val gitInstall = installGit(id, version)
+    // if that has failed, try to download normally
+    gitInstall orElse {
+      installGet(id, version)
     }
   }
  
@@ -310,23 +346,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     }
   }
 
-  private def installActual(id : String, version: Option[String]) : Option[MathHubEntry] = {
-    log(s"Attempting to install archive $id (version=$version)")
 
-    // if the archive is already installed, we should not install it again
-    // however we return it, so that we can scan dependencies again
-    val entry = getEntry(id)
-    if(entry.isDefined){
-      log(s"$id has already been installed at ${entry.get.root}, re-scanning dependencies. ")
-      return Some(MathHubEntry(entry.get.root))
-    }
-    // first try to install via git
-    val gitInstall = installGit(id, version)
-    // if that has failed, try to download normally
-    gitInstall orElse {
-      installGet(id, version)
-    }
-  }
 }
 
 object MathHub {
