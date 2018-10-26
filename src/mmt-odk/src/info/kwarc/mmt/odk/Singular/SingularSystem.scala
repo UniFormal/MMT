@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.{GlobalName, Path}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
 import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
-import info.kwarc.mmt.odk.IntegerLiterals
+import info.kwarc.mmt.odk.{IntegerLiterals, StringLiterals}
 
 object SingularTranslations {
   object AnyInt {
@@ -29,15 +29,18 @@ object SingularTranslations {
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case OMA(OMS(MitM.multi_polycon), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
         var length = -1
+        var names : List[String] = Nil
         val monoms = ls map { it =>
           val MitM.Monomial(vars,coeff,_) = it
+          names :::= vars.map(_._1)
           val args = coeff :: vars.sortBy(_._1).map(_._2)
           if (length == -1) length = args.length
           assert(length == args.length)
           OMA(OMS(monomials),args.map(Singular.Integers.apply))
         }
         val poly = OMA(OMS(`sdmp`),monoms)
-        OMA(OMS(`dmp`),r :: poly :: Nil)
+        val strs : List[Term] = names.distinct.sorted.map(s => StringLiterals(s))
+        OMA(OMS(`dmp`),OMA(r,strs) :: poly :: Nil)
     }
   }
 
@@ -56,7 +59,7 @@ object SingularTranslations {
     }
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(`dmp`),r :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
+      case OMA(OMS(`dmp`),OMA(r,_) :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
         val monomials = monoms.map{case Monomial(ls) => MitM.Monomial(ls.zipWithIndex.tail.map(p => ("x"+p._2.toString,p._1)),ls.head)}
         OMA(OMS(MitM.multi_polycon),r :: monomials)
     }
@@ -64,9 +67,11 @@ object SingularTranslations {
 }
 
 class SingularSystem extends VREWithAlignmentAndSCSCP("Singular",MitMSystems.singularsym, MitMSystems.evaluateSym, "ODK/Singular") {
-  val namespace = Path.parse("https://www.singular.uni-kl.de")
+  val namespace = Singular._base
   override protected lazy val translator_to = translator(new TranslationTarget {
-    override def inTarget(path: GlobalName, controller: Controller): Boolean = namespace <= path
+    override def inTarget(path: GlobalName, controller: Controller): Boolean = {
+      namespace <= path
+    }
   },toTranslations)
 
   import SingularTranslations._

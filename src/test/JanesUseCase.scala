@@ -11,6 +11,7 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
   def run {
     // turn on scscp on localhost:26134:
     hl("scscp on 26134")
+    hl("extension info.kwarc.mmt.api.ontology.AddAlignments /home/jazzpirate/work/Stuff/AlignmentsPublic/odk")
     
     val gap = controller.extman.get(classOf[GAPSystem]).head
     val sage = controller.extman.get(classOf[SageSystem]).head

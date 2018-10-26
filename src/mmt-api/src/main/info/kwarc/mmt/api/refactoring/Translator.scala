@@ -67,8 +67,8 @@ abstract class AcrossLibraryTranslation extends UniformTranslator {
 object AlignmentTranslation {
   def apply(alignment : FormalAlignment)(implicit controller : Controller) = {
     val (from,to) = (Try(controller.get(alignment.from.mmturi)),Try(controller.get(alignment.to.mmturi)))
-    if (from.toOption.isDefined && to.toOption.isDefined) new AlignmentTranslation(alignment)
-    else None
+    /* if (from.toOption.isDefined && to.toOption.isDefined) */ new AlignmentTranslation(alignment)
+    /* else None */
   }
   object None extends AlignmentTranslation(SimpleAlignment(ParseResult.free,ParseResult.free,false)) {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = false
