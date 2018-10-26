@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import checking._
 import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
 import objects._
 import objects.Conversions._
 
@@ -184,7 +184,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            }
            // TODO does not work yet; how does definition expansion interact with other steps?
            if (state.unit.expandDefinitions) {
-            controller.globalLookup.getO(p) flatMap {
+             controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */ flatMap {
               case c: Constant =>
                 normalizeConstant(c)
                 c.dfC.normalized
