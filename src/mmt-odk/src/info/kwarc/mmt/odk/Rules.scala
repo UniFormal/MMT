@@ -207,7 +207,10 @@ class UniverseInference extends ChangeListener {
     }
   }
 
-  private val default : BigInt = 100
+  private def default : BigInt = {
+    print("")
+    100
+  }
 
   def getUniverse(e : StructuralElement) : BigInt = e match {
     case ds: Structure =>
@@ -224,14 +227,14 @@ class UniverseInference extends ChangeListener {
         case Some(TypeLevel(j)) => j
         case _ =>
           val decs = th.getDeclarations.map(getUniverse)
-          if (decs.isEmpty) default else decs.max
+          if (decs.isEmpty) 0 else decs.max
       }
     case c : FinalConstant if c.tp.isDefined && c.df.isEmpty =>
       val parent = controller.get(c.parent)
       val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
       val context = parent match {
         case th : DeclaredTheory => th.getInnerContext
-        case _ => return default
+        case _ => return 0
       }
       val univ = try { Solver.infer(controller, context, c.tp.get, None) } catch {
         case e : LookupError =>
