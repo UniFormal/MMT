@@ -29,6 +29,15 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
               doOperator(":")
               doPath(m)
             }
+          case v: DeclaredView =>
+            doKeyword("view")
+            doName(v.name)
+            doOperator(":")
+            doTerm(v.from)
+            doOperator("-->")
+            doTerm(v.to)
+          case nm: NestedModule =>
+            apply(nm.module)
             // always empty in a notebook
           case c: Constant =>
             doName(c.name)
@@ -43,7 +52,21 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
           case Include(_, from, args) =>
             doKeyword("include")
             doPath(from)
-          case _ =>
+            val last = args.length
+            if (last != 0) {
+              doOperator("(")
+              args.zipWithIndex.foreach {case (a,i) =>
+                doTerm(a)
+                if (i != last) doOperator(",")
+              }
+              doOperator(")")
+            }
+          case s: DeclaredStructure =>
+            doKeyword("structure")
+            doName(s.name)
+            doOperator(":")
+            doTerm(s.from)
+          case se => text("object " + se.path)
         }
      }
      /** names of new declarations */
