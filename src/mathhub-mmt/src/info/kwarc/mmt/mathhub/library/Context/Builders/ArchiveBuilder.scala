@@ -42,6 +42,8 @@ trait ArchiveBuilder { this: Builder =>
   protected def buildArchive(entry: LMHHubArchiveEntry): Option[IArchive] = {
     val ref = getArchiveRef(entry.id).getOrElse(return buildFailure(entry.id, "getArchiveRef(archive.id)"))
 
+    val version = entry.version
+
     val tags = entry.tags.map(t => getTagRef("@" + t).getOrElse(return buildFailure(entry.id, s"getTagRef(archive.tag[@$t])")))
 
     // get the description file
@@ -60,6 +62,7 @@ trait ArchiveBuilder { this: Builder =>
       getStats(ref.id),
       ref.title, ref.teaser,
       tags,
+      version,
 
       description,
       responsible,

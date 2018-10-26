@@ -11,7 +11,7 @@ package info.kwarc.mmt.mathhub.library
 import info.kwarc.mmt.api.utils._
 
 /** anything returned by the API */
-trait IResponse {
+sealed trait IResponse {
   /** serializes this response into a JSONObject Buffer */
   protected def toJSONBuffer: JSONObjectBuffer
 
@@ -20,12 +20,12 @@ trait IResponse {
 }
 
 /** any object that is referencable */
-trait IReferencable extends IAPIObjectItem {
+sealed trait IReferencable extends IAPIObjectItem {
   val ref: Boolean = false
 }
 
 /** any concrete reference */
-trait IReference extends IAPIObjectItem {
+sealed trait IReference extends IAPIObjectItem {
   val ref: Boolean = true
   val statistics: Option[List[IStatistic]] = None
 }
@@ -34,8 +34,11 @@ trait IReference extends IAPIObjectItem {
 //
 // GROUP
 //
+/** an archive or a group reference */
+sealed trait IHubReference extends IReference
 
-trait IGroupItem extends IAPIObjectItem {
+
+sealed trait IGroupItem extends IAPIObjectItem {
   val kind: String = "group"
   val parent: Option[IReference] = None
 
@@ -67,7 +70,7 @@ case class IGroupRef(
                       override val name: String,
                       override val title: IAPIObjectItem.HTML,
                       override val teaser: IAPIObjectItem.HTML
-                    ) extends IGroupItem with IReference
+                    ) extends IGroupItem with IReference with IHubReference
 
 /** a full description of a MathHub Group */
 case class IGroup(
@@ -97,7 +100,7 @@ case class IGroup(
 // TagGroup
 //
 
-trait ITagItem extends IAPIObjectItem {
+sealed trait ITagItem extends IAPIObjectItem {
   val kind: String = "tag"
   val parent: Option[IReference] = None
 
@@ -132,7 +135,7 @@ case class ITag(
 // Archive
 //
 
-trait IArchiveItem extends IAPIObjectItem {
+sealed trait IArchiveItem extends IAPIObjectItem {
   val kind: String = "archive"
   val parent: Some[IGroupRef]
 
@@ -165,7 +168,7 @@ case class IArchiveRef(
                         override val name: String,
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML
-                      ) extends IArchiveItem with IReference with IDocumentParentRef
+                      ) extends IArchiveItem with IReference with IDocumentParentRef with IHubReference
 
 /** a full description of a MathHub Archive */
 case class IArchive(
@@ -177,6 +180,7 @@ case class IArchive(
                         override val teaser: IAPIObjectItem.HTML,
 
                         tags: List[ITagRef],
+                        version: Option[String],
 
                         description: IAPIObjectItem.HTML,
                         responsible: List[String],
@@ -186,6 +190,7 @@ case class IArchive(
     val buffer = super.toJSONBuffer
 
     buffer.add("tags", JSONArray(tags.map(_.toJSON):_*))
+    buffer.addO("version", version.map(JSONString))
     buffer.add("description", JSONString(description))
     buffer.add("responsible", JSONArray(responsible.map(JSONString):_*))
     buffer.add("narrativeRoot", narrativeRoot.toJSON)
@@ -199,13 +204,13 @@ case class IArchive(
 //
 
 /** a narrative element inside an archive */
-trait INarrativeElement extends IAPIObjectItem // TODO: URIS?
+sealed trait INarrativeElement extends IAPIObjectItem // TODO: URIS?
 
 /** anything that can be the parent of a document */
-trait IDocumentParentRef extends IReference
+sealed trait IDocumentParentRef extends IReference
 
 
-trait IDocumentItem extends IAPIObjectItem {
+sealed trait IDocumentItem extends IAPIObjectItem {
   val kind = "document"
   val parent: Some[IDocumentParentRef]
 
@@ -234,7 +239,7 @@ case class IDocument(
                       override val name: String,
 
                       tags: List[String],
-                      sourceRef: Option[IFileReference],
+                      sourceRef: Option[ISourceReference],
 
                       override val statistics: Option[List[IStatistic]],
 
@@ -257,7 +262,7 @@ object IDocument {
   val knownTags = List("ipynb-omdoc")
 }
 
-trait IOpaqueElementItem extends IAPIObjectItem {
+sealed trait IOpaqueElementItem extends IAPIObjectItem {
   val kind: String = "opaque"
   val parent: Some[IDocumentParentRef]
 
@@ -306,7 +311,7 @@ case class IOpaqueElement(
 // CONTENT
 //
 
-trait IModuleItem extends IAPIObjectItem {
+sealed trait IModuleItem extends IAPIObjectItem {
   /** there is no parent */
   val parent: Option[IReference] = None
 
@@ -326,7 +331,7 @@ trait IModuleItem extends IAPIObjectItem {
 }
 
 /** a reference to a module */
-trait IModuleRef extends IModuleItem with IReference with INarrativeElement
+sealed trait IModuleRef extends IModuleItem with IReference with INarrativeElement
 
 /** a reference to a theory */
 case class ITheoryRef(
@@ -346,7 +351,7 @@ case class IViewRef(
 }
 
 /** an actual module, i.e. a theory or a view */
-trait IModule extends IModuleItem with IReferencable {
+sealed trait IModule extends IModuleItem with IReferencable {
 
   /** presentation of this module as HTML */
   val presentation: IAPIObjectItem.HTML
@@ -435,14 +440,15 @@ case class IMMTVersionInfo(
 // Helper object
 //
 
-case class IFileReference(parent: IArchiveRef, path: String) extends IResponse {
+case class ISourceReference(parent: IHubReference, version: Option[String], path: Option[String]) extends IResponse {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("kind", JSONString("file"))
+    buffer.add("kind", JSONString("source"))
     buffer.add("ref", JSONBoolean(true))
     buffer.add("parent", parent.toJSON)
-    buffer.add("path", JSONString(path))
+    buffer.addO("version", version.map(JSONString))
+    buffer.addO("path", path.map(JSONString))
 
     buffer
   }
@@ -451,7 +457,7 @@ case class IFileReference(parent: IArchiveRef, path: String) extends IResponse {
 /**
   * Any object exposed by the API
   */
-trait IAPIObjectItem extends IResponse {
+sealed trait IAPIObjectItem extends IResponse {
 
   /** the kind of object this represents */
   val kind: String

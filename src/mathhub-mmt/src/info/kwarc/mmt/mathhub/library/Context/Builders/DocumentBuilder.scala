@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.{File, mmt}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentRef, IFileReference, IModuleRef}
+import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentRef, ISourceReference, IModuleRef}
 
 trait DocumentBuilder { this: Builder =>
   /** gets a reference to a document */
@@ -53,9 +53,10 @@ trait DocumentBuilder { this: Builder =>
 
     // try to resolve the path to the document
     val source =
-      SourceRef.get(document).map(_.container).flatMap(controller.backend.resolveLogical).map { case (archive, path) => IFileReference(
+      SourceRef.get(document).map(_.container).flatMap(controller.backend.resolveLogical).map { case (archive, path) => ISourceReference(
         getArchiveRef(archive.id).getOrElse(return buildFailure(document.path.toPath, s"getArchiveRef(document.source)")),
-        archive.root.relativize(archive / archives.source / path).toString
+        getArchive(archive.id).getOrElse(return buildFailure(document.path.toPath, s"getArchiveRef(document.version)")).version,
+        Some(archive.root.relativize(archive / archives.source / path).toString)
       )}
 
     // TODO: More tags here

@@ -106,8 +106,7 @@ case class LMHList(spec: List[String]) extends LMHAction with LocalAction with R
       case ae: LMHHubArchiveEntry => s"Archive ${ae.id}"
       case _ =>                      s"Repo    ${archive.id}"
     }
-    val version = archive.version.getOrElse("(unknown version)")
-
+    val version = archive.version.getOrElse("unknown version")
     respond(s"$name: $version in '${archive.root.toJava.toString}'")
   }
   def toParseString = s"lmh ls ${spec.mkString(" ")}".trim

@@ -44,8 +44,12 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   abstract class MathHubEntry(val root: File) extends LMHHubEntry {
     val hub: MathHub = MathHub.this
 
-    def version: Option[String] = hub.git(root, "show-ref", "HEAD") match {
+    def physicalVersion: Option[String] = hub.git(root, "show-ref", "HEAD") match {
       case ShellCommand.Success(op) => Some(op.split(" ").head)
+      case _ => None
+    }
+    def logicalVersion: Option[String] = hub.git(root, "symbolic-ref", "HEAD") match {
+      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length))
       case _ => None
     }
     def pull: Boolean = {

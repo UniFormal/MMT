@@ -135,8 +135,12 @@ trait LMHHubEntry extends Logger {
   def setRemote(remote : String) : Boolean
   /** fix the remote url of the archive */
   def fixRemote: Boolean = setRemote(hub.remoteURL(id))
-  /** returns the version of an installed archive */
-  def version: Option[String]
+  /** returns the physical version (a.k.a commit hash) of an installed archive */
+  def physicalVersion: Option[String]
+  /** returns the logical version (a.k.a branch) of an installed archive */
+  def logicalVersion: Option[String]
+  /** gets the version of an installed archive, a.k.a. the branch of the git commit hash */
+  def version: Option[String] = logicalVersion.map(Some(_)).getOrElse(physicalVersion)
 }
 
 /** Represents a simple LMHHub Directory entry */

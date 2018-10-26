@@ -4,6 +4,8 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library._
 import info.kwarc.mmt.mathhub.logger.LogServer
 
+import scala.util.Try
+
 class Server extends ServerExtension("mathhub") with ContentServer with LogServer {
   override val logPrefix: String = "mathhub"
 
@@ -20,9 +22,9 @@ class Server extends ServerExtension("mathhub") with ContentServer with LogServe
   } catch {
     case PathNotFound(p) =>
       ServerResponse(s"API Route not found: $p", "text/plain", ServerResponse.statusCodeNotFound)
-    case e: Exception =>
+    case t: Throwable =>
       ServerResponse(
-        e.getMessage, "text", ServerResponse.statusCodeInternalServerError
+        Option(t.getMessage).getOrElse("null"), "text", ServerResponse.statusCodeInternalServerError
       )
   }
 
