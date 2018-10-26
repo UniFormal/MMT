@@ -526,7 +526,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
          val existingSolution = solved.tp.get
-         check(Equality(Stack.empty, newSolution, existingSolution, None))(history + "solution for type must be equal to previously found solution")
+         // check(Equality(Stack.empty, newSolution, existingSolution, None))(history + "solution for type must be equal to previously found solution")
+         if (tryToCheckWithoutDelay(Subtyping(Stack.empty,newSolution,existingSolution)).contains(true)) {
+           setNewSolution(left ::: solved.copy(tp = Some(newSolution)) :: right)
+           true
+         }
+         else check(Subtyping(Stack.empty,existingSolution,newSolution))
       } else {
          val vd = solved.copy(tp = Some(newSolution))
          setNewSolution(left ::: vd :: right)
