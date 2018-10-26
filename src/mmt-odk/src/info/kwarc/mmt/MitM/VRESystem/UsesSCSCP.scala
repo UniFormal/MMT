@@ -89,7 +89,7 @@ case class SCSCPLocation(hostO: Option[String], portO: Option[Int]) {
 
 case class SCSCPSend(system: String, in: Term, sent: OMAny) extends MitMComputationStep {
   val header = s"SCSCP call to $system" 
-  val terms = List("sent" -> in, "received" -> sent)
+  val terms = List("in" -> in, "sent" -> sent)
 }
 
 case class SCSCPReceive(system: String, received: OMAny, out: Term) extends MitMComputationStep {
