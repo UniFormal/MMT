@@ -278,8 +278,11 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     // however we return it, so that we can scan dependencies again
     val entry = getEntry(id)
     if(entry.isDefined){
-      log(s"$id has already been installed at ${entry.get.root}, re-scanning dependencies. ")
-      return Some(MathHubEntry(entry.get.root))
+      log(s"$id has ")
+      log(s"$id has already been installed in ${entry.get.root}, updating and re-scanning dependencies. ")
+      val _entry = MathHubEntry(entry.get.root)
+      Try(_entry.pull).toOption.getOrElse({log(s"failed to pull $id, ignoring. ")})
+      return Some(_entry)
     }
     // first try to install via git
     val gitInstall = installGit(id, version)
