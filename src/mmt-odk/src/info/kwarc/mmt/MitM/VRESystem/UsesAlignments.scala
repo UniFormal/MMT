@@ -60,7 +60,7 @@ trait UsesAlignments extends VRESystem {
   protected lazy val translator_from = translator(ArchiveTarget(mitm),fromTranslations)
 
   def translateToSystem(t : Term) : Term = {
-    val (res,succ) = translator_to.translate(t)
+    val (res,succ) = translator_to.translate(Translations.traverselftoOMA(t,Context.empty))
     // succ.foreach(s => throw BackendError("could not translate symbol",s))
     res
   }
@@ -90,6 +90,13 @@ object Translations {
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case ApplySpine(f,ls) =>
         OMA(f,ls)
+    }
+  }
+
+  val traverselftoOMA = new StatelessTraverser {
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case ApplySpine(f,ls) => Traverser(this,OMA(f,ls))
+      case _ => Traverser(this,t)
     }
   }
 }

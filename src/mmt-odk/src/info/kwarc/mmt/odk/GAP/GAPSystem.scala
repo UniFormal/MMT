@@ -29,7 +29,7 @@ object GAPTranslations {
       case _ => None
     }
     def apply(ls : List[Term]) =
-      OMA(OMS(`psym`),List(OMA(OMS(`ratfunfam`),List(OMA(OMS(`famobj`),List(Integers.of(1))))),LFList(ls)))
+      OMA(OMS(`psym`),List(OMA(OMS(`ratfunfam`),List(OMA(OMS(`famobj`),List(Integers(1))))),LFList(ls)))
   }
   val toPolynomials = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
@@ -46,7 +46,7 @@ object GAPTranslations {
         }
         Poly(ls.flatMap{
           case MitM.Monomial(vars,coeff,_) =>
-            LFList(vars.flatMap(p => List(Integers.of(get(p._1)),Integers.of(p._2)))) :: Integers.of(coeff) :: Nil
+            LFList(vars.flatMap(p => List(Integers(get(p._1)),Integers(p._2)))) :: Integers(coeff) :: Nil
         })
     }
   }
@@ -94,7 +94,7 @@ object GAPTranslations {
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case OMA(OMS(MitM.dihedralGroup),AnyInt(i):: Nil) =>
-        OMA(OMS(dihedral),OMS(ispermgroup) :: Integers.of(2*i) :: Nil)
+        OMA(OMS(dihedral),OMS(ispermgroup) :: Integers(2*i) :: Nil)
       case _ => ???
     }
   }

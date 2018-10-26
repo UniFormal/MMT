@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.DeclaredModule
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.uom.{RealizedType, StandardBool, StandardDouble, StandardInt}
+import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 
@@ -90,5 +90,5 @@ class Plugin extends frontend.Plugin {
 }
 
 object Booleans extends RealizedType(OMS(GAP.theory ? "booleans"),StandardBool)
-object Integers extends RealizedType(OMS(GAP.theory ? "integers"),StandardInt)
+object Integers extends RepresentedRealizedType(OMS(GAP.theory ? "integers"),StandardInt)
 object Floats extends RealizedType(OMS(GAP.theory ? "floats"),StandardDouble)
