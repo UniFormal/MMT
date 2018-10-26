@@ -1,65 +1,32 @@
-import info.kwarc.mmt.api.{LocalName, Path}
+import info.kwarc.mmt.MitM.VRESystem.{MitMComputation, MitMComputationTrace}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.odk.NatLiterals
+
 import info.kwarc.mmt.odk.OpenMath.Coding.{OMMiTMCoding, OMXMLCoding}
 
 object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp") {
+  override val gotoshell: Boolean = false
   def run : Unit = {
     hl("extension info.kwarc.mmt.odk.LMFDB.Plugin")
 
-    // shortcut to swaerxh
-    def s(s: String): OMID = OMID(Path.parseMS(s, controller.getNamespaceMap))
+    // the query from sage (xml, but a string)
+    val sageQuery: String = """<OMA xmlns="http://www.openmath.org/OpenMath"><OMS cdbase="http://gl.mathhub.info/MMT/LFX/Datatypes" name="map" cd="ListSymbols"/><OMA><OMS cdbase="http://opendreamkit.org" name="ODKQuery" cd="Systems"/><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="I" cd="QMTQuery"/><OMSTR>lmfdb</OMSTR><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="SliceUntil" cd="QMTQuery"/><OMSTR>10</OMSTR><OMBIND><OMS cdbase="http://cds.omdoc.org/qmt" name="Comprehension" cd="QMTQuery"/><OMBVAR><OMV name="x"/></OMBVAR><OMA><OMS cdbase="http://cds.omdoc.org/mmt" name="MultiBody" cd="OpenMath"/><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="Related" cd="QMTQuery"/><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="Literal" cd="QMTQuery"/><OMS cdbase="http://www.lmfdb.org/db" name="" cd="hmf_forms"/></OMA><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="ToObject" cd="QMTRelationExp"/><OMS cdbase="http://cds.omdoc.org/qmt" name="Declares" cd="QMTBinaries"/></OMA></OMA><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="And" cd="QMTProp"/><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="Holds" cd="QMTProp"/><OMV name="x"/><OMBIND><OMS cdbase="http://cds.omdoc.org/qmt" name="Equals" cd="QMTJudgements"/><OMBVAR><OMV name="x"/></OMBVAR><OMA><OMS cdbase="http://cds.omdoc.org/mmt" name="MultiBody" cd="OpenMath"/><OMA><OMS cdbase="http://mathhub.info/MitM/smglom/algebra" name="base_field_degree" cd="HilbertNewforms"/><OMV name="x"/></OMA><OMI>2</OMI></OMA></OMBIND></OMA><OMA><OMS cdbase="http://cds.omdoc.org/qmt" name="Holds" cd="QMTProp"/><OMV name="x"/><OMBIND><OMS cdbase="http://cds.omdoc.org/qmt" name="Equals" cd="QMTJudgements"/><OMBVAR><OMV name="x"/></OMBVAR><OMA><OMS cdbase="http://cds.omdoc.org/mmt" name="MultiBody" cd="OpenMath"/><OMA><OMS cdbase="http://mathhub.info/MitM/smglom/algebra" name="dimension" cd="HilbertNewforms"/><OMV name="x"/></OMA><OMI>2</OMI></OMA></OMBIND></OMA></OMA></OMA></OMBIND></OMA></OMA></OMA><OMS cdbase="http://mathhub.info/MitM/smglom/algebra" name="base_field_degree" cd="HilbertNewforms"/></OMA>""".stripMargin
 
-    val degree = NatLiterals(3) // or whatever
-
-
-    // a *term* representing a query that finds a hecke form of degree 3
-    val queryTerm = QMTQuery.I(
-      OML(LocalName("lmfdb"), None, None),
-      OMBINDC(
-        OMID(QMTQuery.Comprehension),
-        Context(VarDecl(LocalName("x"), None, None, None, None)),
-        List(
-          QMTQuery.Related(
-            QMTQuery.Literal(s("http://www.lmfdb.org/db?hmf_forms")),
-            QMTRelationExp.ToObject(OMID(QMTBinaries.Declares))
-          ),
-          QMTProp.Holds(
-            OMV(LocalName("x")),
-            OMBINDC(
-              OMID(QMTJudgements.Equals),
-              Context(VarDecl(LocalName("x"),None, None, None, None)),
-              List(s("http://mathhub.info/MitM/smglom/algebra?HilbertNewforms?base_field_degree")(OMV(LocalName("x"))), degree)
-            )
-          ))
-      )
-    )
-
-    val mmtCoder = new OMMiTMCoding(controller)
+    // decode the xml
     val xmlCoder = new OMXMLCoding
+    val obj = xmlCoder.decode(scala.xml.XML.loadString(sageQuery))
 
+    // and turn it into MMT objects
+    val mitmCoder = new OMMiTMCoding(controller)
+    val term = mitmCoder.encode(obj).asInstanceOf[OMA]
 
-    val asXML = xmlCoder.encode(mmtCoder.decode(queryTerm))
-    print(asXML)
+    // create a mitm computation and controller
+    implicit val trace: MitMComputationTrace = new MitMComputationTrace
+    val mitmComp = new MitMComputation(controller)
 
+    // and run it
+    val result = mitmComp.simplify(term, None)
+    print(result)
 
-    val query = Query.parse(queryTerm)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
-    print(query)
-
-    val evaluated = controller.evaluator(query)
-    print(evaluated)
-
-
-
-    // load the (default) configuration
-    //hl("mitm use")
-
-    // load a non-default configuration
-    // see mmt-api/resources/mitm/config.default.json for an example
-    //hl("mitm use /path/to/config.json")
-
-    // turn on scscp on localhost:26134
-   //hl("scscp on 26134")
+    sys.exit(9)
   }
 }
