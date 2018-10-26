@@ -126,7 +126,7 @@ trait LMFDBBackend {
     * @param url
     * @return
     */
-  private def get_json_withnext(url : URI, next_key : String = "next") : List[JSON] = {
+  private def get_json_withnext(url : URI, getter: JSON => List[JSON], limit: Option[Int], next_key : String = "next") : List[JSON] = {
 
     // get the current page
     val data = get_json(url) match {
@@ -134,25 +134,47 @@ trait LMFDBBackend {
       case Some(x) => x
     }
 
-    // and iterate if possible
-    data match {
-      case j:JSONObject => j(next_key) match {
+    // get the next url
+    val nextUrl = data match {
+      case j: JSONObject => j(next_key) match {
         case Some(JSONString(s)) =>
           val nurl = url.resolve(s)
-          if(nurl != url){
-            data :: get_json_withnext(url.resolve(s))
-          } else {
-            List(data)
-          }
-
-        case _ => List(data)
+          if(nurl != url){ Some(nurl) } else { None }
+        case _ => None
       }
-      case _ => List(data)
+      case _ => None
+    }
+
+    // get the current data
+    val ary = getter(data)
+
+    // should we get more data?
+    val shouldGetNext = nextUrl match {
+      case Some(_) => limit match {
+        case Some(l) => ary.length < l
+        case None => true
+      }
+      case None => false
+    }
+
+    // if we have more elements, get them
+    if(shouldGetNext) {
+      ary ::: get_json_withnext(nextUrl.get, getter, limit.map(_ - ary.length), next_key)
+
+    // else take as many as the limit wants
+    } else {
+      limit match {
+        case Some(l) => ary.take(l)
+        case None => ary
+      }
     }
   }
 
   /** runs a mongo style lmfdb query */
-  protected def lmfdbquery(db: String, query: JSONObject) : List[JSON] = {
+  protected def lmfdbquery(db: String, from: Option[Int], until: Option[Int], query: JSONObject) : List[JSON] = {
+    val start = from.getOrElse(0)
+    val limit = until.map(_ - start)
+
     val queryParams = query.map.map(kv => {
       val key = kv._1.value
       val value = if(key.startsWith("_")){
@@ -163,20 +185,18 @@ trait LMFDBBackend {
 
       (key, value)
     })
-    lmfdbquery(db, "&"+WebQuery.encode(queryParams))
+    lmfdbquery(db, s"&_offset=${start}&${WebQuery.encode(queryParams)}", limit)
   }
 
   /** runs a simple lmfdb query */
-  protected def lmfdbquery(db:String, query:String) : List[JSON] = {
+  protected def lmfdbquery(db:String, query: String, limit: Option[Int]) : List[JSON] = {
     // get the url
     val url = LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
 
     debug(s"attempting to retrieve json from $url")
 
     // get all the data items
-    get_json_withnext(url).flatMap(
-      _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values
-    )
+    get_json_withnext(url, _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values.toList, limit)
   }
 
   protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : GlobalName = {
@@ -291,10 +311,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
       }
       // TODO
       val query = "&" + key + "=" + path.name.toString
-      val json = JSONObject(lmfdbquery(ndb.dbpath, query).flatMap { // TODO this flattening looks wrong
-        case a: JSONObject => a.map
-        case j => Nil
-      })
+      val json = lmfdbquery(ndb.dbpath, query, None).head.asInstanceOf[JSONObject]
       toOML(json,db,fields)
     }
     /*
@@ -333,11 +350,11 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   }
 
   private def getAll(db : DB) : List[GlobalName] = {
-    getSubjectTo(db, JSONObject())
+    getSubjectTo(db, None, None, JSONObject())
   }
 
   /** retrieves a set of urls from a database that are subject to a given condition */
-  private def getSubjectTo(db: DB, query : JSONObject) : List[GlobalName] = {
+  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject) : List[GlobalName] = {
     // get the schema theory, this is a DeclaredTheory by precondition
     val schema = controller.get(db.schemaPath) match {
       case dt:DeclaredTheory => dt
@@ -351,7 +368,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
 
     // get a list of data items returned
-    val datas : List[JSON] = lmfdbquery(db.dbpath, queryJS)
+    val datas : List[JSON] = lmfdbquery(db.dbpath, from, until, queryJS)
 
     // and now get a list of names
     val labels = datas.map({
@@ -381,7 +398,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     * @param substiution
     * @return
     */
-  private def translateQuery(q: Query, e:QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, JSONObject) = q match {
+  private def translateQuery(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, Option[Int], Option[Int], JSONObject) = q match {
     case Related(to: Query, ToObject(Declares)) =>
 
       // get the db instance from the path
@@ -395,10 +412,16 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
         error("Unable to assign lmfdb database. ")
       }
 
-      (db, JSONObject())
+      (db, None, None, JSONObject())
     case Comprehension(domain: Query, varname: LocalName, pred: Prop) =>
-      val (db, q) = translateQuery(domain, e)
-      (db, translateProp(varname, pred, db)(controller))
+      val (db, frm, until, q) = translateQuery(domain, e)
+      (db, frm, until, translateProp(varname, pred, db)(controller))
+    case Slice(qq, frm, until) =>
+      val (db, f, u, q) = translateQuery(qq, e)
+      if (f.nonEmpty || u.nonEmpty) {
+        error("Nested slicing not supported")
+      }
+      (db, frm, until, q)
     case _ =>
       error("Unable to translate query into an lmfdb query, evaluation failed")
   }
@@ -454,8 +477,8 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     * @return
     */
   override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
-    val (db, query) = translateQuery(q, e)
-    ResultSet.fromElementList(getSubjectTo(db, query))
+    val (db, frm, until, query) = translateQuery(q, e)
+    ResultSet.fromElementList(getSubjectTo(db, frm, until, query))
   }
 
   override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
