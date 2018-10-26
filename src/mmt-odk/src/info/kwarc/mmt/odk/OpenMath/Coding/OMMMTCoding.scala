@@ -33,6 +33,9 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
     case OMInteger(i,id) => OMI(i)
     case OMFloat(r,id) => OMF(r)
     case OMString(s,id) => OMSTR(s)
+    case OMSymbol("", cd, id, cdbase) => OMMOD(DPath(cdbase.get) ? cd )
+    case OMSymbol(name, cd, id, cdbase) => OMS(DPath(cdbase.get) ? cd ? name)
+
     case OMBytes(list,id) => ??? // TODO: What to do with bytes?
 
     // symbol
@@ -76,7 +79,8 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
   def decodeAnyVal(t : Term) : OMAnyVal = t match {
 
     // paths to symbols or modules
-    case OMID(GlobalName(MPath(parent, mname), name)) => OMSymbol(name.toPath, mname.toPath, None, Some(URI(parent.toPath)))
+    case OMID(GlobalName(MPath(parent, mname), name)) =>
+      OMSymbol(name.toPath, mname.toPath, None, Some(URI(parent.toPath)))
     case OMID(MPath(parent, mname)) => OMSymbol("", mname.toPath, None, Some(URI(parent.toPath)))
 
     // primitives
@@ -91,7 +95,6 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
     // TODO: Any other literals should be encoded as OMFOREIGN
 
 
-    case OMS(p) => OMSymbol(p.name.toString,p.module.toString,None,None)
     case OMV(name) => OMVariable(name.toString,None)
 
     // simple binding

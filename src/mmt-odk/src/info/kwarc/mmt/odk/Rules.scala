@@ -188,7 +188,7 @@ class UniverseInference extends ChangeListener {
     val path = (DPath(URI.http colon "gl.mathhub.info") / "MMT" / "LFX" / "TypedHierarchy") ? "Symbols" ? "TypeLevel"
     val term = OMS(path)
     def apply(i : BigInt) : Term = i match {
-      case _ if i == BigInt(1) => OMS(Typed.ktype)
+      case _ if i == BigInt(1) || i == BigInt(0) => OMS(Typed.ktype)
       case _ if i == BigInt(2) => OMS(Typed.kind)
       case _ if i < 1 =>
         require(i>=1)
@@ -248,11 +248,11 @@ class UniverseInference extends ChangeListener {
         case _ => default
       }
       ret
-    case _ : FinalConstant => 1
-    case _ => 1
+    case _ : FinalConstant => 0
+    case _ => 0
   }
 
-  override def onCheck(c: StructuralElement) : Unit = c match {
+  override def onCheck(e: StructuralElement) : Unit = e match {
     case c : FinalConstant =>
       c.tp match {
         case Some(tp) if c.df.isEmpty =>
@@ -271,7 +271,7 @@ class UniverseInference extends ChangeListener {
           if (parent.metadata.get(TypeLevel.path).isEmpty) parent.metadata.add(new MetaDatum(TypeLevel.path,TypeLevel(1)))
       }
     case ds : Structure =>
-      val parent = controller.get(c.parent) match {
+      val parent = controller.get(ds.parent) match {
         case dm : DeclaredModule => dm
         case _ => return ()
       }

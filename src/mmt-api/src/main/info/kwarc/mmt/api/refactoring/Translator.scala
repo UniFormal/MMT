@@ -347,7 +347,8 @@ class AcrossLibraryTranslator(controller : Controller,
         if (tc.state == Failed) throw Fail
       }
       tc.update
-      log("-------------- DONE ---------------")
+      log("-------------- DONE (Success) ---------------")
+      log(tc.currentTerm.toString)
       (tc.currentTerm,Nil)
     } catch {
       case Fail =>
@@ -357,7 +358,9 @@ class AcrossLibraryTranslator(controller : Controller,
         val missings = symbols /*.collect {
           case s if translate(OMS(s))._2.nonEmpty => s
         } */
-        log("-------------- DONE ---------------")
+        log("-------------- DONE (Failed) ---------------")
+        log(tc.currentTerm.toString)
+        log("Missing: " + missings.mkString(", "))
         (t,missings)
     }
   }
