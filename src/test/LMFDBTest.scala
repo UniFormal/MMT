@@ -24,6 +24,7 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "d
     val mitmCoder = new OMMiTMCoding(controller)
     val term = mitmCoder.encode(obj).asInstanceOf[OMA]
 
+    // The same term constructed directly
     val toobj = OMA(OMS(QMTRelationExp.ToObject),OMS(QMTBinaries.Declares) :: Nil)
     val related = OMA(OMS(QMTQuery.Related),OMA(OMS(QMTQuery.Literal),OMMOD(LMFDB.dbPath ? "hmf_forms"):: Nil) :: toobj :: Nil)
 
@@ -39,7 +40,9 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "d
 
     val term2 = LFX.Map(query,OMS((MitM.basepath / "smglom" / "algebra") ? "HilbertNewforms" ? "base_field_degree"))
 
+    // check that the constructed term is equal to the parsed one
     assert(term == term2)
+
     // create a mitm computation and controller
     implicit val trace: MitMComputationTrace = new MitMComputationTrace(false)
     val mitmComp = new MitMComputation(controller)
