@@ -378,17 +378,24 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
 
   /** retrieves a set of urls from a set of databases subject to a given set of conditions */
   private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int]): List[GlobalName] = {
+    // group queries by database
+    var groupedQueries = queries.groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
 
-    val results: List[GlobalName] = queries
+    // make sure that we actually query some objects within the primary database
+    if(!groupedQueries.contains(primary)){
+      groupedQueries = groupedQueries + ((primary, JSONObject()))
+    }
 
-      // group queries by database
-      .groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
+    // if we only have a single query in the join, run it
+    if(groupedQueries.size == 1){
+      return getSubjectTo(groupedQueries.head._1, from, until, groupedQueries.head._2).map(primary.dbPath ? _)
+    }
 
-      // execute them all
-      .map({case (d, q) => getSubjectTo(d, None, None, q)}).toList
+    // print the results
+    val results: List[GlobalName] = groupedQueries.map({case (d, q) => getSubjectTo(d, None, None, q)}).toList
 
 
-    // find labels found in each result
+    // do the join
     match {
       case Nil => Nil
       case h::t => h.filter({l => t.forall(_.contains(l))}).map(primary.dbPath ? _)
