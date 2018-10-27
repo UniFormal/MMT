@@ -1,7 +1,12 @@
+import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 import info.kwarc.mmt.MitM.VRESystem.{MitMComputation, MitMComputationTrace}
+import info.kwarc.mmt.api.{LocalName, utils}
 import info.kwarc.mmt.api.objects._
-
+import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.odk.LFX.LFList
+import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.OpenMath.Coding.{OMMiTMCoding, OMXMLCoding}
+import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
 
 object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "debug") {
   override val gotoshell: Boolean = false
@@ -19,12 +24,28 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "d
     val mitmCoder = new OMMiTMCoding(controller)
     val term = mitmCoder.encode(obj).asInstanceOf[OMA]
 
+    val toobj = OMA(OMS(QMTRelationExp.ToObject),OMS(QMTBinaries.Declares) :: Nil)
+    val related = OMA(OMS(QMTQuery.Related),OMA(OMS(QMTQuery.Literal),OMMOD(LMFDB.dbPath ? "hmf_forms"):: Nil) :: toobj :: Nil)
+
+    val deg = OMA(OMS((MitM.basepath / "smglom" / "algebra") ? "HilbertNewforms" ? "base_field_degree"),OMV("x"):: Nil)
+    val dim = OMA(OMS((MitM.basepath / "smglom" / "algebra") ? "HilbertNewforms" ? "dimension"),OMV("x"):: Nil)
+    val holds1 = OMA(OMS(QMTProp.Holds),OMV("x") :: OMBINDC(OMS(QMTJudgements.Equals),VarDecl(LocalName("x")),deg :: IntegerLiterals(2) :: Nil) :: Nil)
+    val holds2 = OMA(OMS(QMTProp.Holds),OMV("x") :: OMBINDC(OMS(QMTJudgements.Equals),VarDecl(LocalName("x")),dim :: IntegerLiterals(2) :: Nil) :: Nil)
+    val and = OMA(OMS(QMTProp.And),holds1 :: holds2 :: Nil)
+
+    val comp = OMBINDC(OMS(QMTQuery.Comprehension),VarDecl(LocalName("x")),related :: and :: Nil)
+    val slice = OMA(OMS(QMTQuery.SliceUntil),StringLiterals("10") :: comp :: Nil)
+    val query = OMA(OMS(MitMSystems.querysym),OMA(OMS(QMTQuery.I),StringLiterals("lmfdb") :: slice :: Nil) :: Nil)
+
+    val term2 = LFX.Map(query,OMS((MitM.basepath / "smglom" / "algebra") ? "HilbertNewforms" ? "base_field_degree"))
+
+    assert(term == term2)
     // create a mitm computation and controller
     implicit val trace: MitMComputationTrace = new MitMComputationTrace(false)
     val mitmComp = new MitMComputation(controller)
 
     // and run it
-    val result = mitmComp.simplify(term, None)
+    val result = mitmComp.simplify(term2, None)
     print("result: " + result)
 
     sys.exit(9)

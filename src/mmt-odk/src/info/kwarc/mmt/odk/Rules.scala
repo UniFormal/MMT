@@ -137,6 +137,16 @@ object LFX {
     }
   }
 
+  object Map {
+    val path = Lists.th ? "map"
+    val term = OMS(path)
+    def apply(ls: Term, f : Term) : Term = OMA(this.term,List(ls,f))
+    def unapply(tm : Term) : Option[(Term,Term)] = tm match {
+      case OMA(this.term,List(ls,f)) => Some((ls,f))
+      case _ => None
+    }
+  }
+
   object SigmaTypes {
     val baseURI = LFX.ns / "Sigma"
     val thname = "Symbols"
