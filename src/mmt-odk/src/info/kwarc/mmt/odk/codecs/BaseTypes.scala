@@ -161,7 +161,7 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
       } else {
         constructPolynomial("x", List(0))
       }
-    // case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
+    case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
     case _ => throw new Exception(s"not a polynomial: Expected a JSONString, but got a ${c.getClass}: ${c.toCompactString}")
   }
 
