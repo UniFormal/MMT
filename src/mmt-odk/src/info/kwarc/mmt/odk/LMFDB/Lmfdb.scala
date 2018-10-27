@@ -373,6 +373,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
 class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
   def warmup(): Unit = {}
 
+
   val namespace = LMFDB.path
 
   def debug(s : String): Unit = log(s)
@@ -418,6 +419,41 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     }
   }
 
+  private def constantFromJson(dbT : DBTheory,j : JSONObject)(implicit controller: Controller) : Option[GlobalName] = {
+    val (omls,path) = dbT.parents.headOption.map { case (db,schema) =>
+      val key = getKey(schema)
+      val cpath = db.dbPath ? j(key).map{case JSONString(st) => st}.getOrElse(???)
+      if (dbT.parents.head._2.isDeclared(cpath.name)) return Some(cpath)
+
+      log("materializing " + cpath)
+      val oldfields : List[OML] = dbT.parents.tail.map { case (idb,s) =>
+        //val ikey = getKey(s)
+        val idbT = getTP(idb)
+        val ipath = idb.dbPath ? cpath.name
+        controller.getO(ipath) match {
+          case Some(c : FinalConstant) =>
+            c.df match {
+              case Some(Apply(idbT.constructor,LFX.RecExp(bd))) =>
+                bd.fields
+            }
+          case _ => ???
+        }
+      }.reverse.flatten
+      val fields = schema.getConstants.flatMap {c =>
+        c.metadata.getValues(Metadata.codec).headOption.toList.collect {
+          case codecExp: Term =>
+            DBField(c.name.toString, LMFDBCoder.buildCodec(codecExp))
+        }
+      }
+      (oldfields ::: toOML(j,db,fields),cpath)
+    }.getOrElse(???)
+    val df = LFX.RecExp(omls : _*)
+
+    val c = Constant(OMMOD(path.module), path.name, Nil, Some(dbT.tp), Some(Apply(dbT.constructor,df)), None)
+    controller.add(c)
+    None
+  }
+
   /** retrieves a set of urls from a database that are subject to a given condition */
   private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject)(implicit controller: Controller) : List[String] = {
     // get the schema theory, this is a DeclaredTheory by precondition
@@ -430,11 +466,13 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     val key = getKey(schema)
 
     // build the query
-    val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
+    val queryJS = query // JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
 
     // get a list of data items returned
     val datas : List[JSON] = lmfdbquery(db.dbpath, from, until, queryJS)
 
+    val dbT = getTP(db)
+    datas foreach { case j : JSONObject => constantFromJson(dbT,j) }
     // TODO: Dennis: Create constant as a side effect
     // and now get a list of names
     val labels = datas.map({
