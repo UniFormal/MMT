@@ -10,7 +10,10 @@ import utils._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.odk.LFX
 
-
+/** generates rules for fields in schema-theories
+ *  These rules reduce F(a) is the result of F is stored as a field f in the record a
+ *  This happens when f is annotated with a special metadatum that links to F.
+ */
 class ImplementsRuleGenerator extends ChangeListener {
   override val logPrefix = "impl-rule-gen"
   
@@ -41,18 +44,19 @@ class ImplementsRuleGenerator extends ChangeListener {
          if (r.isDefined) return
          val impl = Metadata.ImplementsLinker.get(c).getOrElse(return)
          log("generating rule for " + c.path + " for " + impl)
-         val schemaThy = controller.getO(c.parent).getOrElse {
-           throw LocalError("schema theory not found")
-         }
+         val schemaThy = controller.localLookup.getDeclaredTheory(c.parent)
          val cons = Metadata.ConstructorLinker.get(schemaThy).getOrElse {
-          throw LocalError("no constructor annotation found in " + schemaThy.path)
+           throw LocalError("no constructor annotation found in " + schemaThy.path)
          }
          val ruleName = c.name / nameSuffix
          log("generating rule " + ruleName)
          val rule = new ImplementsRule(c, cons, impl)
-         val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO better type
+         val dbThy = LMFDBStore.getOrAddVirtualTheory(controller, schemaThy).getOrElse {
+           throw LocalError("could not obtain virtual theory for " + schemaThy.path)
+         }
+         val ruleConst = RuleConstant(dbThy.toTerm, ruleName, OMS(c.path), Some(rule)) //TODO better type
          ruleConst.setOrigin(GeneratedBy(this))
-         log("generated rule " + rule + " for " + c.path)
+         log("generated rule " + rule + " for " + c.path + ", added to " + dbThy.path)
          controller.add(ruleConst)
        case _ =>
     }

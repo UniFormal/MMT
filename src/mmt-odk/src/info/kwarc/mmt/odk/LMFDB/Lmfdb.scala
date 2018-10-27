@@ -67,35 +67,35 @@ case class DBTheory(tp : Term, constructor : Term, parents : List[(DB,DeclaredTh
     (DB.fromPath(th.path).getOrElse{throw BackendError("Not a schema theory",th.path)},th) :: parents)
 }
 
-class DB(suffix: LocalName, mod: LocalName) {
+case class DB(suffix: LocalName, mod: LocalName) {
    def schemaPath: MPath = (LMFDB.schemaPath / suffix) ? mod
    def dbPath: MPath = (LMFDB.dbPath / suffix) ? mod
    def dbpath: String = suffix.toString + "/" + mod.toString
 }
 
 object DB {
-
   // def schema2db(sPath : MPath) : MPath = fromPath(sPath).get.dbPath
   // def db2Schema(dbPath : MPath) : MPath = fromPath(dbPath).get.schemaPath
 
+  /** turn an LMFDB db or schema path into a DB object that repreesnts both
+   *  @param pth the path
+   *  @param allowDPBPath test if pth is a db path
+   *  @param allowSchemaPath test if pth is a schema path
+   */
   def fromPath(pth : Path, allowDBPath: Boolean = true, allowSchemaPath : Boolean = true) : Option[DB] = {
     // extract relevant components
     val (ndoc, mod, _) = pth.toTriple
-
     // if either of the components is empty, return
     if(ndoc.isEmpty || mod.isEmpty)
       return None
-
     // try to remove both of the prefixes
     val suffixS = if(allowSchemaPath) ndoc.get.dropPrefix(LMFDB.schemaPath) else None
     val suffixD = if(allowDBPath) ndoc.get.dropPrefix(LMFDB.dbPath) else None
-
     // if we have neither, we are not a valid theory
     if (suffixS.isEmpty && suffixD.isEmpty)
       return None
-
     // and get the db object
-    Some(new DB(suffixS.getOrElse({suffixD.get}), mod.get))
+    Some(DB(suffixS.getOrElse({suffixD.get}), mod.get))
   }
 }
 /**
@@ -139,13 +139,11 @@ trait LMFDBBackend {
     * @return
     */
   private def get_json_withnext(url : URI, getter: JSON => List[JSON], limit: Option[Int], next_key : String = "next") : List[JSON] = {
-
     // get the current page
     val data = get_json(url) match {
       case None => return Nil
       case Some(x) => x
     }
-
     // get the next url
     val nextUrl = data match {
       case j: JSONObject => j(next_key) match {
@@ -156,10 +154,8 @@ trait LMFDBBackend {
       }
       case _ => None
     }
-
     // get the current data
     val ary = getter(data)
-
     // should we get more data?
     val shouldGetNext = nextUrl match {
       case Some(_) => limit match {
@@ -168,11 +164,9 @@ trait LMFDBBackend {
       }
       case None => false
     }
-
     // if we have more elements, get them
     if(shouldGetNext) {
       ary ::: get_json_withnext(nextUrl.get, getter, limit.map(_ - ary.length), next_key)
-
     // else take as many as the limit wants
     } else {
       limit match {
@@ -186,7 +180,6 @@ trait LMFDBBackend {
   protected def lmfdbquery(db: String, from: Option[Int], until: Option[Int], query: JSONObject) : List[JSON] = {
     val start = from.getOrElse(0)
     val limit = until.map(_ - start)
-
     val queryParams = query.map.map(kv => {
       val key = kv._1.value
       val value = if(key.startsWith("_")){
@@ -194,7 +187,6 @@ trait LMFDBBackend {
       } else {
         s"py${kv._2.toString}"
       }
-
       (key, value)
     })
     lmfdbquery(db, s"&_offset=${start}&${WebQuery.encode(queryParams)}", limit)
@@ -204,9 +196,7 @@ trait LMFDBBackend {
   protected def lmfdbquery(db:String, query: String, limit: Option[Int]) : List[JSON] = {
     // get the url
     val url = LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
-
     debug(s"attempting to retrieve json from $url")
-
     // get all the data items
     get_json_withnext(url, _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values.toList, limit)
   }
@@ -222,13 +212,11 @@ trait LMFDBBackend {
     val parents = Nil /*schema.metadata.getValues(Metadata.extend)
       .collect({ case OMID(path: MPath) => controller.getTheory(path)})
       .flatMap(collectImplementMetaData(_, forSymbol))*/
-
     val current = schema.getDeclarations.filter({ d =>
         d.metadata.getValues(Metadata.implements)
           .collect({ case OMLIT(uri: URI, _) => uri})
           .contains(URI(forSymbol.toString))
     })
-
     parents ::: current
   }
 
@@ -282,25 +270,38 @@ trait LMFDBBackend {
   }
 }
 
+object LMFDBStore {
+  /** produces the db-theory for a given schema-theory */
+  def getOrAddVirtualTheory(controller: Controller, schemaTheory: DeclaredTheory): Option[DeclaredTheory] = {
+    val db = DB.fromPath(schemaTheory.path, allowDBPath = false).getOrElse(return None)
+    val dbp = db.dbPath
+    // create it if it is not in memory yet
+    controller.localLookup.getO(dbp) match {
+      case Some(dbt: DeclaredTheory) => Some(dbt)
+      case Some(_) => None
+      case None =>
+        val dbThy = Theory.empty(dbp.parent, dbp.name, schemaTheory.meta)
+        controller.add(dbThy)
+        Some(dbThy)
+    }
+  }
+}
 
 
 abstract class LMFDBStore extends Storage with LMFDBBackend {
   def load(path: Path)(implicit controller: Controller) {
-
     val db = DB.fromPath(path, allowSchemaPath = false).getOrElse {
       throw NotApplicable("not an LMFDB theory")
     }
-
     path.dropComp match {
        case p: GlobalName => loadConstant(p, db)
        case mp : MPath =>
-         val sch = Try(controller.getTheory(db.schemaPath)).toOption match {
+        // retrieving the schema-theory may already create the db-theory
+        val sch = Try(controller.getTheory(db.schemaPath)).toOption match {
            case Some(t : DeclaredTheory) => t
            case _ => throw NotApplicable("schema theory not found")
-         }
-        controller.library.getModules.find(_.path == mp).getOrElse {
-          controller.add(Theory.empty(mp.parent,mp.name,sch.meta))
         }
+        LMFDBStore.getOrAddVirtualTheory(controller, sch)
     }
   }
 

@@ -34,11 +34,11 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
     // val gapResult = test(gap, orbit)
       
     // ************* test the call to Singular only
-    val ideal = termFromFile(filename(gap))                    // use the expected Gap result
+    val ideal = termFromFile(filename(gap))                         // use the expected Gap result
     // val ideal = MitMSystems.evalSymbol(OMS(gap.sym), gapResult)  // use the Gap result from this run
     val groebner = MitM.groebner(ideal)
 
-    test(singular, groebner)
+    // val singularResult = test(singular, groebner)
     
     // ************* test the entire simplification    
     val mitm = new MitMComputation(controller)
@@ -47,7 +47,6 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
     val jane = singular(MitM.groebner(gap(orbit)))
     val janeResult = mitm.simplify(jane,None)(trace)
  
-    // println(trace.toString(t => controller.presenter.asString(t)))
   }
   
   def filename(sys: VRESystem) = "JanesUseCase_" + sys.id + "ResultExpected.om" 

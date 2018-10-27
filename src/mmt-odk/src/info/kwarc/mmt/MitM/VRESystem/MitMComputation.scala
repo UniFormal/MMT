@@ -18,13 +18,14 @@ class MitMComputation(controller: frontend.Controller) {
   
   /** simplifies a given term using all known VREs, using special additional rules */
   def simplify(tm : Term, conO : Option[Context])(implicit trace: MitMComputationTrace): Term = {
+    //TODO delete this, if databases can supply global context, it should be done generically
     val con = conO.getOrElse {
       LMFDB.databases.foldLeft(Context(MitM.mathpath))((c,p) => c ++ Context(p))
     }
     val rs = RuleSet.collectRules(controller,con)
     rs.add(systemRule(con))
     rs.add(queryRule)
-    controller.simplifier.apply(tm,con,rs,expDef=true)
+    controller.simplifier(tm,SimplificationUnit(con, true, true), rs)
   }
 
   /** a rule used to evaluate MMT queries */
