@@ -19,7 +19,6 @@ import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 
-import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.util.Try
 
@@ -72,6 +71,10 @@ case class DB(suffix: LocalName, mod: LocalName) {
    def schemaPath: MPath = (LMFDB.schemaPath / suffix) ? mod
    def dbPath: MPath = (LMFDB.dbPath / suffix) ? mod
    def dbpath: String = suffix.toString + "/" + mod.toString
+   /** the uri to a given query */
+   def queryurl(query: String): URI = {
+     LMFDB.uri / s"${dbpath.stripPrefix("/")}?_format=json$query"
+   }
 }
 
 object DB {
@@ -178,33 +181,13 @@ trait LMFDBBackend {
     }
   }
 
-  /** runs a mongo style lmfdb query */
-  protected def lmfdbquery(db: String, from: Option[Int], until: Option[Int], query: JSONObject) : List[JSON] = {
-    val start = from.getOrElse(0)
-    val limit = until.map(_ - start)
-    val queryParams = query.map.map(kv => {
-      val key = kv._1.value
-      val value = if(key.startsWith("_")){
-        kv._2.asInstanceOf[JSONString].value
-      } else {
-        s"py${kv._2.toString}"
-      }
-      (key, value)
-    })
-    lmfdbquery(db, s"&_offset=${start}&${WebQuery.encode(queryParams)}", limit)
-  }
-
   /** runs a simple lmfdb query */
-  protected def lmfdbquery(db:String, query: String, limit: Option[Int]) : List[JSON] = {
+  protected def lmfdbquery(db:DB, query: String, limit: Option[Int]) : List[JSON] = {
     // get the url
-    val url = lmfdburl(db, query)
+    val url = db.queryurl(query)
     debug(s"attempting to retrieve json from $url")
     // get all the data items
     get_json_withnext(url, _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values.toList, limit)
-  }
-
-  protected def lmfdburl(db: String, query: String): URI = {
-    LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
   }
 
   /** finds an implementor */
@@ -352,7 +335,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
       }
       // TODO
       val query = "&" + key + "=" + path.name.toString
-      val json = lmfdbquery(ndb.dbpath, query, None).head.asInstanceOf[JSONObject]
+      val json = lmfdbquery(ndb, query, None).head.asInstanceOf[JSONObject]
       toOML(json,db,fields)
     }
     /*
@@ -379,7 +362,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
   }
 }
 
-class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend {//QueryExtension("lmfdb") with LMFDBBackend {
+class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBackend with LMFDBQueryIterators with LMFDBQueryParser {//QueryExtension("lmfdb") with LMFDBBackend {
   def warmup(): Unit = {}
 
 
@@ -387,15 +370,9 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
 
   def debug(s : String): Unit = log(s)
 
-  private def error(msg: String) = {
+  protected def error(msg: String) = {
     throw ImplementationError("LMFDB QueryEvaluator() failed to evaluate query. " + msg)
   }
-
-  private def getAll(db : DB)(implicit controller: Controller) : List[GlobalName] = {
-    getSubjectTo(db, None, None, JSONObject()).map(db.dbPath ? _)
-  }
-
-
 
   /** retrieves a set of urls from a set of databases subject to a given set of conditions */
   private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int])(implicit controller: Controller): List[GlobalName] = {
@@ -478,74 +455,23 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     None
   }
 
-
-  type LQI = QueryIterator[List[(JSONObject, DB)], String]
-
-  def makeQueryIterator(queries: List[(JSONObject, DB)]): LQI = {
-    val queryIterators: List[LQI] = queries.map({case (d, j) => lmfdbIterator(d, j)})
-    queryIterators.reduce[LQI]({case (l: LQI, r: LQI) => new QueryIteratorJoin(l, r)})
+  /**
+    * Evaluates a Query using the lmfdb api
+    * @param q           Query to evaluate
+    * @param e           A QueryEvaluator to use for recursive queries
+    * @param substiution Substiution (Context) to apply QueryEvaluation in
+    * @return
+    */
+  override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
+    val (db, frm, until, query) = translateQuery(q, e)
+    val results = getSubjectToJoin(db, query, frm, until)(controller)
+    ResultSet.fromElementList(results)
   }
 
-  def lmfdbIterator(query: JSONObject, db: DB): LQI = {
-    val schema = controller.get(db.schemaPath) match {
-      case dt:DeclaredTheory => dt
-      case _ => error("Schema-Theory missing from controller")
-    }
+  override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
+}
 
-
-    val key = getKey(schema)
-    val theQuery = query.map :+ (JSONString("_sort"), JSONString(key))
-
-    val queryParams = theQuery.map(kv => {
-      val key = kv._1.value
-      val value = if(key.startsWith("_")){
-        kv._2.asInstanceOf[JSONString].value
-      } else {
-        s"py${kv._2.toString}"
-      }
-      (key, value)
-    })
-
-    val url = lmfdburl(db.dbpath, s"&${WebQuery.encode(queryParams)}")
-
-    new JSONURLIterator(url.toString, db, key)
-  }
-
-  /** retrieves a set of urls from a database that are subject to a given condition */
-  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject)(implicit controller: Controller) : List[String] = {
-    // get the schema theory, this is a DeclaredTheory by precondition
-    val schema = controller.get(db.schemaPath) match {
-      case dt:DeclaredTheory => dt
-      case _ => error("Schema-Theory missing from controller")
-    }
-
-    // get the key needed
-    val key = getKey(schema)
-
-    // build the query
-    val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
-
-    // get a list of data itemxs returned
-    val datas : List[JSON] = lmfdbquery(db.dbpath, from, until, queryJS)
-
-    val dbT = getTP(db)
-    //datas foreach { case j : JSONObject => constantFromJson(dbT,j) }
-    // TODO: Dennis: Create constant as a side effect
-    // and now get a list of names
-    val labels = datas.map({
-      case o : JSONObject => o(key).getOrElse {
-        error(s"Ill-formed JSON returned from database: Expected $key to be in returned objects, but only found ${o.map.map(_._1)}")
-      }
-      case u@_ => error(s"Ill-formed JSON returned from database: Expected return value to be an object, got $u")
-    })
-
-    // and return a list of globalnames in the db theory
-    labels.map {
-      case s : JSONString => s.value
-      case _ => error("Ill-formed JSON returned from database: Expected labels to be a list of strings. ")
-    }
-  }
-
+trait LMFDBQueryParser { this: LMFDBSystem =>
   /**
     * attempts to translate a query to an lmfdb query.
     *
@@ -559,7 +485,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     * @param substiution
     * @return
     */
-  private def translateQuery(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, Option[Int], Option[Int], List[(DB, String, JSON)]) = q match {
+  protected def translateQuery(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, Option[Int], Option[Int], List[(DB, String, JSON)]) = q match {
     case Related(to: Query, ToObject(Declares)) =>
 
       // get the db instance from the path
@@ -627,18 +553,4 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     case o@_ =>
       error(s"Unable to translate predicate into an lmfdb query, unsupported predicated $o. ")
   }
-
-  /**
-    * Evaluates a Query using the lmfdb api
-    * @param q           Query to evaluate
-    * @param e           A QueryEvaluator to use for recursive queries
-    * @param substiution Substiution (Context) to apply QueryEvaluation in
-    * @return
-    */
-  override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
-    val (db, frm, until, query) = translateQuery(q, e)
-    ResultSet.fromElementList(getSubjectToJoin(db, query, frm, until)(controller))
-  }
-
-  override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
 }

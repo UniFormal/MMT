@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
 
+import scala.util.Try
+
 /**
  * straightforward API for JSON objects
  */
@@ -341,6 +343,20 @@ object JSON {
     case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
     case c => c
   }.mkString
+}
+
+/** retrieve JSON from a URL */
+object JSONFromURL {
+  def apply(url: String) : Option[JSON] = {
+    println(s"getting json from ${url}")
+    Try(io.Source.fromURL(url)).toOption.map { a =>
+      Try(JSON.parse(a.toBuffer.mkString)) match {
+        case util.Failure(t: Throwable) =>
+          throw ParseError(url.toString).setCausedBy(t)
+        case util.Success(j) => j
+      }
+    }
+  }
 }
 
 /** converts between XML and JSON following the jsonML specification */
