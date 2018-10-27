@@ -20,6 +20,8 @@ object SingularTranslations {
   val monomials = Singular.polyd1CD ? "term"
   val sdmp = Singular.polyd1CD ? "SDMP"
   val dmp = Singular.polyd1CD ? "DMP"
+  val polyring = Singular.polyd1CD ? "poly_ring_d_named"
+
   val toPolynomials = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
       case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
@@ -38,9 +40,9 @@ object SingularTranslations {
           assert(length == args.length)
           OMA(OMS(monomials),args.map(Singular.Integers.apply))
         }
-        val poly = OMA(OMS(`sdmp`),monoms)
+        val poly = OMA(OMS(sdmp),monoms)
         val strs : List[Term] = names.distinct.sorted.map(s => StringLiterals(s))
-        OMA(OMS(`dmp`),OMA(r,strs) :: poly :: Nil)
+        OMA(OMS(dmp),OMA(OMS(polyring),r :: strs) :: poly :: Nil)
     }
   }
 
@@ -53,14 +55,18 @@ object SingularTranslations {
       }
     }
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(`dmp`),r :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
+      case OMA(OMS(`dmp`),OMA(OMS(`polyring`),_ :: _) :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
         true
       case _ => false
     }
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(`dmp`),OMA(r,_) :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
-        val monomials = monoms.map{case Monomial(ls) => MitM.Monomial(ls.zipWithIndex.tail.map(p => ("x"+p._2.toString,p._1)),ls.head)}
+      case OMA(OMS(`dmp`),OMA(OMS(`polyring`),r :: strs) :: OMA(OMS(`sdmp`),monoms) :: Nil) if monoms.forall(Monomial.unapply(_).isDefined) =>
+        val strings = strs.map(StringLiterals.unapply(_).getOrElse(???))
+        val monomials = monoms.map {
+          case Monomial(ls) => MitM.Monomial(ls.tail.zipWithIndex.map(p => (strings(p._2),p._1)),ls.head)
+        }
+        // val monomials = monoms.map{case Monomial(ls) => MitM.Monomial(ls.zipWithIndex.tail.map(p => ("x"+p._2.toString,p._1)),ls.head)}
         OMA(OMS(MitM.multi_polycon),r :: monomials)
     }
   }
