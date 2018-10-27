@@ -19,6 +19,7 @@ import info.kwarc.mmt.odk._
 import info.kwarc.mmt.lf.Apply
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 
+import scala.collection.mutable
 import scala.collection.mutable.HashSet
 import scala.util.Try
 
@@ -125,7 +126,7 @@ trait LMFDBBackend {
     * @return
     */
   private def get_json(url: URI) : Option[JSON] = {
-    // println(url) // for debug
+    println(url) // for debug
     val attempt = Try(io.Source.fromURL(url.toString))
     if (attempt.isFailure) None else {
       val json = Try(JSON.parse(attempt.get.toBuffer.mkString))
@@ -196,12 +197,17 @@ trait LMFDBBackend {
   /** runs a simple lmfdb query */
   protected def lmfdbquery(db:String, query: String, limit: Option[Int]) : List[JSON] = {
     // get the url
-    val url = LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
+    val url = lmfdburl(db, query)
     debug(s"attempting to retrieve json from $url")
     // get all the data items
     get_json_withnext(url, _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values.toList, limit)
   }
 
+  protected def lmfdburl(db: String, query: String): URI = {
+    LMFDB.uri / s"${db.stripPrefix("/")}?_format=json$query"
+  }
+
+  /** finds an implementor */
   protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : (DB, GlobalName) = {
     val symbol = collectImplementMetaData(schema, forSymbol).map(_.path).headOption.getOrElse({
       err(s"no implementor found for $forSymbol in ${schema.path}")
@@ -230,12 +236,15 @@ trait LMFDBBackend {
 
   /** find the extensions of db in reverse order, that is the smallest non-extending theory first */
   protected def findExtensions(db: DB)(implicit controller: Controller): List[DB] = {
+    // TODO: Tom: See if we have use getTP(db)
     // get the schema theory
     val schema = controller.getTheory(db.schemaPath)
 
+    // find the parents
     val parents = schema.metadata.getValues(Metadata.extend)
       .collect({ case OMID(path: MPath) => DB.fromPath(path, allowDBPath = false, allowSchemaPath = true)}).flatten
 
+    // and recursve
     parents.flatMap(findExtensions) ::: List(db)
   }
 
@@ -393,33 +402,46 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     // group the passed in queries by database
     val dbQueryMap = queries.groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
 
-    // make queries for each database within the extension
-    val groupedQueries = findExtensions(primary).map(db => (db, dbQueryMap.getOrElse(db, JSONObject())))
+    // generate all the queries we need
+    val groupedQueries = findExtensions(primary).map(db => (dbQueryMap.getOrElse(db, JSONObject()), db))
 
-    // if we only have a single query in the join, run it
-    if(groupedQueries.size == 1){
-      return getSubjectTo(groupedQueries.head._1, from, until, groupedQueries.head._2).map(primary.dbPath ? _)
+    // and make the iterator
+    val iterator = makeQueryIterator(groupedQueries)
+
+    // get all the results
+    val theResults = (from, until) match {
+      case (None, None) => iterator.all
+      case (Some(n), None) => iterator.drop(n).all
+      case (None, Some(m)) => iterator.take(m)
+      case (Some(n), Some(m)) => iterator.slice(n, m)
     }
 
-    // print the results
-    val results: List[GlobalName] = groupedQueries.map({case (d, q) => getSubjectTo(d, None, None, q)})
-
-    // do the join
-    match {
-      case Nil => Nil
-      case h::t => h.filter({l => t.forall(_.contains(l))}).map(primary.dbPath ? _)
+    val schema = controller.get(primary.schemaPath) match {
+      case dt:DeclaredTheory => dt
+      case _ => error("Schema-Theory missing from controller")
     }
+    val key = getKey(schema)
 
-    // and do the slicing
-    (from, until) match {
-      case (None, None) => results
-      case (Some(n), None) => results.drop(n)
-      case (None, Some(m)) => results.take(m)
-      case (Some(n), Some(m)) => results.slice(n, m)
-    }
+    theResults.map({l =>
+      // create all the constants as side effects
+      l.foreach({
+        case (j: JSONObject, db: DB) =>
+          constantFromJson(getTP(db), j)
+      })
+
+      // and build the global names
+      primary.dbPath ? l.last._1.getAsString(key)
+    })
   }
 
-  private def constantFromJson(dbT : DBTheory,j : JSONObject)(implicit controller: Controller) : Option[GlobalName] = {
+  /**
+    * builds a constant from some constructed json
+    * @param dbT
+    * @param j
+    * @param controller
+    * @return
+    */
+  private def constantFromJson(dbT : DBTheory, j : JSONObject)(implicit controller: Controller) : Option[GlobalName] = {
     val (omls,path) = dbT.parents.headOption.map { case (db,schema) =>
       val key = getKey(schema)
       val cpath = db.dbPath ? j(key).map{case JSONString(st) => st}.getOrElse(???)
@@ -447,11 +469,46 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
       }
       (oldfields ::: toOML(j,db,fields),cpath)
     }.getOrElse(???)
+
     val df = LFX.RecExp(omls : _*)
 
+    // create the constant and add it to the ontroller
     val c = Constant(OMMOD(path.module), path.name, Nil, Some(dbT.tp), Some(Apply(dbT.constructor,df)), None)
     controller.add(c)
     None
+  }
+
+
+  type LQI = QueryIterator[List[(JSONObject, DB)], String]
+
+  def makeQueryIterator(queries: List[(JSONObject, DB)]): LQI = {
+    val queryIterators: List[LQI] = queries.map({case (d, j) => lmfdbIterator(d, j)})
+    queryIterators.reduce[LQI]({case (l: LQI, r: LQI) => new QueryIteratorJoin(l, r)})
+  }
+
+  def lmfdbIterator(query: JSONObject, db: DB): LQI = {
+    val schema = controller.get(db.schemaPath) match {
+      case dt:DeclaredTheory => dt
+      case _ => error("Schema-Theory missing from controller")
+    }
+
+
+    val key = getKey(schema)
+    val theQuery = query.map :+ (JSONString("_sort"), JSONString(key))
+
+    val queryParams = theQuery.map(kv => {
+      val key = kv._1.value
+      val value = if(key.startsWith("_")){
+        kv._2.asInstanceOf[JSONString].value
+      } else {
+        s"py${kv._2.toString}"
+      }
+      (key, value)
+    })
+
+    val url = lmfdburl(db.dbpath, s"&${WebQuery.encode(queryParams)}")
+
+    new JSONURLIterator(url.toString, db, key)
   }
 
   /** retrieves a set of urls from a database that are subject to a given condition */
@@ -466,13 +523,13 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     val key = getKey(schema)
 
     // build the query
-    val queryJS = query // JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
+    val queryJS = JSONObject(query.map :+ (JSONString("_fields"), JSONString(key)))
 
-    // get a list of data items returned
+    // get a list of data itemxs returned
     val datas : List[JSON] = lmfdbquery(db.dbpath, from, until, queryJS)
 
     val dbT = getTP(db)
-    datas foreach { case j : JSONObject => constantFromJson(dbT,j) }
+    //datas foreach { case j : JSONObject => constantFromJson(dbT,j) }
     // TODO: Dennis: Create constant as a side effect
     // and now get a list of names
     val labels = datas.map({

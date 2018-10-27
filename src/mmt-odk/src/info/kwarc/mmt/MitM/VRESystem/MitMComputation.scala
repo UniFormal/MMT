@@ -7,14 +7,18 @@ import ontology._
 import uom._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.MitM._
+import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.{Plugin, StringLiterals}
 
-import scala.util.Try
+import scala.util.{Failure, Try}
 
 /** provides computation via all available [[VRESystem]]s */
-class MitMComputation(controller: frontend.Controller) {
+class MitMComputation(controller: frontend.Controller) extends Logger {
+  val logPrefix = "mitm"
+  val report: Report = controller.report
+
   
   /** simplifies a given term using all known VREs, using special additional rules */
   def simplify(tm : Term, conO : Option[Context])(implicit trace: MitMComputationTrace): Term = {
@@ -45,10 +49,23 @@ class MitMComputation(controller: frontend.Controller) {
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
       case IsQuery(q) =>
         val queryexts = controller.extman.get(classOf[QueryFunctionExtension])
-        val ret = Try(controller.evaluator(Query.parse(q)(queryexts,controller.relman))).toOption
-        ret match {
-          case Some(qr) => Simplify(resultToTerm(qr))
-          case _ => Simplifiability.NoRecurse
+
+        // parse the query or bail out
+        val parsed = Try(Query.parse(q)(queryexts,controller.relman)) match {
+          case util.Success(t: Query) => t
+          case util.Failure(t: Throwable) => {
+            log(GeneralError("throwable while trying to translate mitm query").setCausedBy(t).toStringLong)
+            return Simplifiability.NoRecurse
+          }
+        }
+
+        // evaluate the query or bail out
+        Try(controller.evaluator(parsed)) match {
+          case util.Success(qr: QueryResult) => Simplify(resultToTerm(qr))
+          case util.Failure(t: Throwable) => {
+            log(GeneralError("throwable while trying to evaluate mitm query").setCausedBy(t).toStringLong)
+            Simplifiability.NoRecurse
+          }
         }
       case _ => Simplifiability.NoRecurse
     }
