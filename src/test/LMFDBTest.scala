@@ -38,7 +38,7 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "d
     val slice = OMA(OMS(QMTQuery.SliceUntil),StringLiterals("10") :: comp :: Nil)
     val query = OMA(OMS(MitMSystems.querysym),OMA(OMS(QMTQuery.I),StringLiterals("lmfdb") :: slice :: Nil) :: Nil)
 
-    val term2 = LFX.Map(query,OMS((MitM.basepath / "smglom" / "algebra") ? "HeckeEigenvalues" ? "heckeEigenvalues"))
+    val term2 = LFX.Map(query,OMS((MitM.basepath / "smglom" / "algebra") ? "HeckeEigenvalues" ? "heckePolynomial"))
 
     // check that the constructed term is equal to the parsed one
     // assert(term == term2)
