@@ -15,6 +15,7 @@ object SageTranslations {
   private val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
   private val mitmnf = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
   private val poly = Sage.docpath ? "sage.rings.polynomial.polynomial_element" ? "Polynomial"
+  private val polyring = Sage.docpath ? ".rings.polynomial.polynomial_ring_constructor" ? "PolynomialRing"
   val numberfieldsTo = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
       case OMA(OMS(`mitmnf`),a::Nil) => true
@@ -78,6 +79,31 @@ object SageTranslations {
         })
     }
   }
+  val polyTo = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(MitM.polycons), _ :: StringLiterals(_) :: _ :: Nil) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(MitM.polycons),r :: x :: ls :: Nil) =>
+        OMA(OMA(OMS(polyring),r :: x :: Nil),ls :: Nil)
+    }
+  }
+  val polyFrom = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMA(OMS(`polyring`), _ :: _ :: Nil), _ :: Nil) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMA(OMS(`polyring`), r :: x :: Nil),ls :: Nil) =>
+        OMA(OMS(MitM.polycons),r :: x :: ls :: Nil)
+    }
+  }
+
 }
 
 /** external computation provided by SageMath */
