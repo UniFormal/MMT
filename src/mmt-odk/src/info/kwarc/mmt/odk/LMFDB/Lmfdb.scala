@@ -125,6 +125,7 @@ trait LMFDBBackend {
     * @return
     */
   private def get_json(url: URI) : Option[JSON] = {
+    // println(url) // for debug
     val attempt = Try(io.Source.fromURL(url.toString))
     if (attempt.isFailure) None else {
       val json = Try(JSON.parse(attempt.get.toBuffer.mkString))
@@ -201,17 +202,24 @@ trait LMFDBBackend {
     get_json_withnext(url, _.asInstanceOf[JSONObject]("data").get.asInstanceOf[JSONArray].values.toList, limit)
   }
 
-  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : GlobalName = {
-    collectImplementMetaData(schema, forSymbol).map(_.path).headOption.getOrElse({
+  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : (DB, GlobalName) = {
+    val symbol = collectImplementMetaData(schema, forSymbol).map(_.path).headOption.getOrElse({
       err(s"no implementor found for $forSymbol in ${schema.path}")
       null
     })
+
+    val db = DB.fromPath(symbol, allowDBPath = false, allowSchemaPath = true).getOrElse({
+      err(s"implementor $symbol (for $forSymbol) not in any schema theory")
+      null
+    })
+
+    (db, symbol)
   }
 
   protected def collectImplementMetaData(schema: DeclaredTheory, forSymbol: GlobalName)(implicit controller: Controller): List[Declaration] = {
-    val parents = Nil /*schema.metadata.getValues(Metadata.extend)
+    val parents = schema.metadata.getValues(Metadata.extend)
       .collect({ case OMID(path: MPath) => controller.getTheory(path)})
-      .flatMap(collectImplementMetaData(_, forSymbol))*/
+      .flatMap(collectImplementMetaData(_, forSymbol))
     val current = schema.getDeclarations.filter({ d =>
         d.metadata.getValues(Metadata.implements)
           .collect({ case OMLIT(uri: URI, _) => uri})
@@ -363,11 +371,40 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   }
 
   private def getAll(db : DB) : List[GlobalName] = {
-    getSubjectTo(db, None, None, JSONObject())
+    getSubjectTo(db, None, None, JSONObject()).map(db.dbPath ? _)
+  }
+
+
+
+  /** retrieves a set of urls from a set of databases subject to a given set of conditions */
+  private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int]): List[GlobalName] = {
+
+    val results: List[GlobalName] = queries
+
+      // group queries by database
+      .groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
+
+      // execute them all
+      .map({case (d, q) => getSubjectTo(d, None, None, q)}).toList
+
+
+    // find labels found in each result
+    match {
+      case Nil => Nil
+      case h::t => h.filter({l => t.forall(_.contains(l))}).map(primary.dbPath ? _)
+    }
+
+    // and do the slicing
+    (from, until) match {
+      case (None, None) => results
+      case (Some(n), None) => results.drop(n)
+      case (None, Some(m)) => results.take(m)
+      case (Some(n), Some(m)) => results.slice(n, m)
+    }
   }
 
   /** retrieves a set of urls from a database that are subject to a given condition */
-  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject) : List[GlobalName] = {
+  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject) : List[String] = {
     // get the schema theory, this is a DeclaredTheory by precondition
     val schema = controller.get(db.schemaPath) match {
       case dt:DeclaredTheory => dt
@@ -393,7 +430,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
 
     // and return a list of globalnames in the db theory
     labels.map {
-      case s : JSONString => db.dbPath ? s.value
+      case s : JSONString => s.value
       case _ => error("Ill-formed JSON returned from database: Expected labels to be a list of strings. ")
     }
   }
@@ -411,7 +448,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     * @param substiution
     * @return
     */
-  private def translateQuery(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, Option[Int], Option[Int], JSONObject) = q match {
+  private def translateQuery(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): (DB, Option[Int], Option[Int], List[(DB, String, JSON)]) = q match {
     case Related(to: Query, ToObject(Declares)) =>
 
       // get the db instance from the path
@@ -425,10 +462,12 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
         error("Unable to assign lmfdb database. ")
       }
 
-      (db, None, None, JSONObject())
+      (db, None, None, Nil)
+
     case Comprehension(domain: Query, varname: LocalName, pred: Prop) =>
       val (db, frm, until, q) = translateQuery(domain, e)
       (db, frm, until, translateProp(varname, pred, db)(controller))
+
     case Slice(qq, frm, until) =>
       val (db, f, u, q) = translateQuery(qq, e)
       if (f.nonEmpty || u.nonEmpty) {
@@ -440,7 +479,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   }
 
   /** translates a proposition (about a given variable assumed to be an lmfdb query) into an lmfdb query */
-  private def translateProp(varname: LocalName, p : Prop, db:DB)(implicit controller: Controller) : JSONObject = p match {
+  private def translateProp(varname: LocalName, p : Prop, db: DB)(implicit controller: Controller) : List[(DB, String, JSON)] = p match {
     case Holds(Bound(`varname`), Equals(q, l, r)) =>
 
       // match the symbol that is being applied
@@ -452,7 +491,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
       }
 
       // find the symbol that is implemented by the operation
-      val implementedSymbol = findImplementor(controller.getTheory(db.schemaPath), symbol, error)
+      val (actualDB, implementedSymbol) = findImplementor(controller.getTheory(db.schemaPath), symbol, error)
 
       // the name of the field to look for
       val field = implementedSymbol.name.toPath
@@ -467,20 +506,16 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
       val value = codec.encode(r)
 
       // and make it a JSONObject
-      JSONObject((field, value))
+      List((actualDB, field, value))
     case And(left, right) =>
       // and => we just join the query and all fields will need to be evaluated
       val lMap = translateProp(varname, left, db)
       val rMap = translateProp(varname, right, db)
 
-      // quiet assumption: no double keys
-      JSONObject(lMap.map ::: rMap.map)
+      lMap ::: rMap
     case o@_ =>
       error(s"Unable to translate predicate into an lmfdb query, unsupported predicated $o. ")
   }
-
-  // translate a literal object into a json object
-  private def term2JSON(tm : Term) : JSON = ???
 
   /**
     * Evaluates a Query using the lmfdb api
@@ -491,7 +526,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     */
   override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
     val (db, frm, until, query) = translateQuery(q, e)
-    ResultSet.fromElementList(getSubjectTo(db, frm, until, query))
+    ResultSet.fromElementList(getSubjectToJoin(db, query, frm, until))
   }
 
   override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
