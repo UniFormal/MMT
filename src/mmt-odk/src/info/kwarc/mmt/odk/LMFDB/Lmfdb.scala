@@ -228,6 +228,17 @@ trait LMFDBBackend {
     parents ::: current
   }
 
+  /** find the extensions of db in reverse order, that is the smallest non-extending theory first */
+  protected def findExtensions(db: DB)(implicit controller: Controller): List[DB] = {
+    // get the schema theory
+    val schema = controller.getTheory(db.schemaPath)
+
+    val parents = schema.metadata.getValues(Metadata.extend)
+      .collect({ case OMID(path: MPath) => DB.fromPath(path, allowDBPath = false, allowSchemaPath = true)}).flatten
+
+    parents.flatMap(findExtensions) ::: List(db)
+  }
+
   protected def getKey(schema : DeclaredTheory) : String = {
     def err(s: String) = throw BackendError(s,schema.path)
     // HACK HACK HACK; parse the ODK String
@@ -370,21 +381,19 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     throw ImplementationError("LMFDB QueryEvaluator() failed to evaluate query. " + msg)
   }
 
-  private def getAll(db : DB) : List[GlobalName] = {
+  private def getAll(db : DB)(implicit controller: Controller) : List[GlobalName] = {
     getSubjectTo(db, None, None, JSONObject()).map(db.dbPath ? _)
   }
 
 
 
   /** retrieves a set of urls from a set of databases subject to a given set of conditions */
-  private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int]): List[GlobalName] = {
-    // group queries by database
-    var groupedQueries = queries.groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
+  private def getSubjectToJoin(primary: DB, queries: List[(DB, String, JSON)], from: Option[Int], until: Option[Int])(implicit controller: Controller): List[GlobalName] = {
+    // group the passed in queries by database
+    val dbQueryMap = queries.groupBy(_._1).mapValues({l => JSONObject(l.map({ case (d, k, v) => (JSONString(k), v)}))})
 
-    // make sure that we actually query some objects within the primary database
-    if(!groupedQueries.contains(primary)){
-      groupedQueries = groupedQueries + ((primary, JSONObject()))
-    }
+    // make queries for each database within the extension
+    val groupedQueries = findExtensions(primary).map(db => (db, dbQueryMap.getOrElse(db, JSONObject())))
 
     // if we only have a single query in the join, run it
     if(groupedQueries.size == 1){
@@ -392,8 +401,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     }
 
     // print the results
-    val results: List[GlobalName] = groupedQueries.map({case (d, q) => getSubjectTo(d, None, None, q)}).toList
-
+    val results: List[GlobalName] = groupedQueries.map({case (d, q) => getSubjectTo(d, None, None, q)})
 
     // do the join
     match {
@@ -411,7 +419,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   }
 
   /** retrieves a set of urls from a database that are subject to a given condition */
-  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject) : List[String] = {
+  private def getSubjectTo(db: DB, from: Option[Int], until: Option[Int], query : JSONObject)(implicit controller: Controller) : List[String] = {
     // get the schema theory, this is a DeclaredTheory by precondition
     val schema = controller.get(db.schemaPath) match {
       case dt:DeclaredTheory => dt
@@ -427,6 +435,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     // get a list of data items returned
     val datas : List[JSON] = lmfdbquery(db.dbpath, from, until, queryJS)
 
+    // TODO: Dennis: Create constant as a side effect
     // and now get a list of names
     val labels = datas.map({
       case o : JSONObject => o(key).getOrElse {
@@ -533,7 +542,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     */
   override def evaluate(q: Query, e: QueryEvaluator)(implicit substiution: QueryEvaluator.QuerySubstitution): HashSet[List[BaseType]] = {
     val (db, frm, until, query) = translateQuery(q, e)
-    ResultSet.fromElementList(getSubjectToJoin(db, query, frm, until))
+    ResultSet.fromElementList(getSubjectToJoin(db, query, frm, until)(controller))
   }
 
   override def call(t: Term)(implicit trace: MitMComputationTrace): Term = throw LocalError("LMFDB is not callable") // TODO awkward
