@@ -31,17 +31,20 @@ object SingularTranslations {
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case OMA(OMS(MitM.multi_polycon), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
         var length = -1
-        var names : List[String] = Nil
+        val names : List[String] = ls.flatMap { it =>
+          val MitM.Monomial(vars,coeff,_) = it
+          vars.map(_._1)
+        }.distinct.sorted
         val monoms = ls map { it =>
           val MitM.Monomial(vars,coeff,_) = it
-          names :::= vars.map(_._1)
-          val args = coeff :: vars.sortBy(_._1).map(_._2)
+          // names :::= vars.map(_._1)
+          val args = coeff :: names.map(s => vars.find(_._1 == s).map(_._2).getOrElse(BigInt(0)))//vars.sortBy(_._1).map(_._2)
           if (length == -1) length = args.length
           assert(length == args.length)
           OMA(OMS(monomials),args.map(Singular.Integers.apply))
         }
         val poly = OMA(OMS(sdmp),monoms)
-        val strs : List[Term] = names.distinct.sorted.map(s => StringLiterals(s))
+        val strs : List[Term] = names.map(s => StringLiterals(s))
         OMA(OMS(dmp),OMA(OMS(polyring),r :: strs) :: poly :: Nil)
     }
   }

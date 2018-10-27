@@ -82,13 +82,6 @@ object GAPTranslations {
 /** external computation provided by the GAP system */
 class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.scscpHead, "ODK/GAP") {
   import GAPTranslations._
-  override val fromTranslations: List[AcrossLibraryTranslation] = fromPolynomials :: super.fromTranslations
-  override val toTranslations: List[AcrossLibraryTranslation] = toPolyOrbit :: toDihedralGroup :: toPolynomials :: super.toTranslations
-  
-  override protected lazy val translator_to = translator(new TranslationTarget {
-    override def inTarget(path: GlobalName, controller: Controller): Boolean = GAP._base <= path
-  },toTranslations)
-
 
   private object variables {
     private var ivars : List[String] = Nil
@@ -153,4 +146,12 @@ class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.
       }
     }
   }
+
+  override val fromTranslations: List[AcrossLibraryTranslation] = fromPolynomials :: super.fromTranslations
+  override val toTranslations: List[AcrossLibraryTranslation] = toPolyOrbit :: toDihedralGroup :: toPolynomials :: super.toTranslations
+  
+  override protected lazy val translator_to = translator(new TranslationTarget {
+    override def inTarget(path: GlobalName, controller: Controller): Boolean = GAP._base <= path
+  },toTranslations)
+
 }

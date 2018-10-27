@@ -2,8 +2,10 @@ package info.kwarc.mmt.odk.Sage
 
 import info.kwarc.mmt.MitM.VRESystem.VREWithAlignmentAndSCSCP
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
+import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator}
+import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
@@ -111,4 +113,8 @@ class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, M
   import SageTranslations._
   override val toTranslations: List[AcrossLibraryTranslation] = multipolyTo :: numberfieldsTo :: super.toTranslations
   override val fromTranslations: List[AcrossLibraryTranslation] = multipolyFrom :: numberfieldsFrom :: super.fromTranslations
+
+  override protected lazy val translator_to = translator(new TranslationTarget {
+    override def inTarget(path: GlobalName, controller: Controller): Boolean = Sage._base <= path
+  },toTranslations)
 }
