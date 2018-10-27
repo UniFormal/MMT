@@ -168,7 +168,7 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
   // Constructs a polynomial out of a list of rational numbers
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
-    NatLiterals(ls.length),
+    //NatLiterals(ls.length),
     OMS(MitM.rationalRing),
     StringLiterals.apply(varName),
     LFList(ls.map(_.toBigInt).map(IntegerLiterals.of))

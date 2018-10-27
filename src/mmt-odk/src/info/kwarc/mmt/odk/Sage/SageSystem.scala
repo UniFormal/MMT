@@ -111,8 +111,8 @@ object SageTranslations {
 /** external computation provided by SageMath */
 class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, MitMSystems.evaluateSym, "ODK/Sage") {
   import SageTranslations._
-  override val toTranslations: List[AcrossLibraryTranslation] = multipolyTo :: numberfieldsTo :: super.toTranslations
-  override val fromTranslations: List[AcrossLibraryTranslation] = multipolyFrom :: numberfieldsFrom :: super.fromTranslations
+  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: multipolyTo :: numberfieldsTo :: super.toTranslations
+  override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: multipolyFrom :: numberfieldsFrom :: super.fromTranslations
 
   override protected lazy val translator_to = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean = Sage._base <= path
