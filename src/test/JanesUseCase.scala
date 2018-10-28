@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.objects.{OMA, OMS}
 import info.kwarc.mmt.odk.OpenMath._
 
 object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
-  def newTrace = new VRESystem.MitMComputationTrace(Some(t => controller.presenter.asString(t)))
+  def newTrace = new VRESystem.MitMComputationTrace(Some(t => MitM.present(t, s => controller.presenter.asString(s))))
   
   // override val gotoshell = false
   def run {

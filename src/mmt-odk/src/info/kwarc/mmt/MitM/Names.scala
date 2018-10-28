@@ -2,7 +2,7 @@ package info.kwarc.mmt.MitM
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
+import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor,AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf._
@@ -47,6 +47,58 @@ object MitM {
     }
   }
 
+  /** convenience class for representing monomials */
+  case class MultiMonomialStructure(coefficient: BigInt, exponents: List[BigInt])
+  /** convenience class for representing polynomials */
+  case class MultiPolynomialStructure(baseRing: Term, varnames: List[String], monomials: List[MultiMonomialStructure]) {
+    val varTerms = varnames map StringLiterals.apply
+    def toTerm = {
+      val monomTerms = monomials.map {m =>
+         val powers = varnames zip m.exponents
+         Monomial(powers, m.coefficient, baseRing)  
+      }
+      multi_polycon(baseRing :: monomTerms :_*)
+    }
+  }
+  object MultiPolynomialStructure {
+    def fromTerm(tm: Term): Option[MultiPolynomialStructure] = tm match {
+      case OMA(OMS(MitM.multi_polycon), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        var length = -1
+        val names : List[String] = ls.flatMap { it =>
+          val MitM.Monomial(vars,coeff,_) = it
+          vars.map(_._1)
+        }.distinct.sorted
+        val monoms = ls map { it =>
+          val MitM.Monomial(vars,coeff,_) = it
+          // names :::= vars.map(_._1)
+          val args = names.map(s => vars.find(_._1 == s).map(_._2).getOrElse(BigInt(0)))//vars.sortBy(_._1).map(_._2)
+          if (length == -1) length = args.length
+          assert(length == args.length)
+          MultiMonomialStructure(coeff, args)
+        }
+        val mps = MultiPolynomialStructure(r,names,monoms)
+        Some(mps)
+      case _ => None
+    }
+  }
+  /** aligns a specific system's polynomials with MitM polynomials via [[MultiPolynomialStructure]] */
+  abstract class MultiPolynomialMatcher {self =>
+    def unapply(tm: Term): Option[MitM.MultiPolynomialStructure]
+    def apply(mps: MultiPolynomialStructure): Term
+    
+    def getAlignmentTo = new AcrossLibraryTranslation {
+      def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = MultiPolynomialStructure.fromTerm(tm).isDefined
+      def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = {
+        val mps = MultiPolynomialStructure.fromTerm(tm).get
+        self.apply(mps)
+      }
+    }
+    def getAlignmentFrom = new AcrossLibraryTranslation {
+       def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = self.unapply(tm).isDefined
+       def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = self.unapply(tm).get.toTerm
+    }
+  }  
+  
   object MultiPolynomial {
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`multi_polycon`), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>

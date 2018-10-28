@@ -19,7 +19,6 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
   val logPrefix = "mitm"
   val report: Report = controller.report
 
-  
   /** simplifies a given term using all known VREs, using special additional rules */
   def simplify(tm : Term, conO : Option[Context])(implicit trace: MitMComputationTrace): Term = {
     //TODO delete this, if databases can supply global context, it should be done generically
@@ -79,7 +78,6 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
         case _ => ???
       }
     }
-
   }
 
   /** a rule used to evaluate code within systems */
@@ -118,7 +116,7 @@ class MitMComputationTrace(present: Option[Term => String]) {
   var steps: List[MitMTracePart] = Nil
   def +=(s: MitMTracePart) {
     present foreach {p => 
-      println(s.toString(p))
+      println(s.toString(p) + "\n")
     }
     steps ::= s
   }

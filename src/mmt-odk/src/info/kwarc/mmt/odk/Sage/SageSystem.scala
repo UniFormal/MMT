@@ -18,6 +18,7 @@ object SageTranslations {
   private val mitmnf = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
   private val poly = Sage.docpath ? "sage.rings.polynomial.polynomial_element" ? "Polynomial"
   private val polyring = Sage.docpath ? "sage.rings.polynomial.polynomial_ring_constructor" ? "PolynomialRing"
+  
   val numberfieldsTo = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
       case OMA(OMS(`mitmnf`),a::Nil) => true
@@ -40,47 +41,32 @@ object SageTranslations {
         OMA(OMS(`mitmnf`),List(a))
     }
   }
-  val multipolyTo = new AcrossLibraryTranslation {
-    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(MitM.multi_polycon),ring :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
-      case _ => false
-    }
 
-    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(MitM.multi_polycon), ring :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
-        OMA(OMS(`poly`),ring :: LFList(ls.map{
-          case MitM.Monomial(vars,coeff,_) =>
-            LFList(LFList(vars.map(p => LFList(StringLiterals(p._1) :: IntegerLiterals(p._2) :: Nil))) :: IntegerLiterals(coeff) :: Nil)
-        }) :: Nil)
+  object PolyMatcher extends MitM.MultiPolynomialMatcher {
+    def apply(mps: MitM.MultiPolynomialStructure) = {
+      val dictitems = mps.monomials.map {m => Python.tuple(Python.tuple(m.exponents.map(IntegerLiterals.apply)), IntegerLiterals(m.coefficient))}
+      poly(polyring(mps.baseRing, Python.list(mps.varTerms :_*)), Python.dict(dictitems :_*))
     }
-  }
-  val multipolyFrom = new AcrossLibraryTranslation {
-    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(`poly`),ring:: LFList(ls) :: Nil) =>
-        ls forall {
-          case LFList(LFList(vars) :: IntegerLiterals(coeff) :: Nil) =>
-            vars forall {
-              case LFList(StringLiterals(v) :: IntegerLiterals(i) :: Nil) => true
-              case _ => false
-            }
-          case _ => false
+    def unapply(t: Term): Option[MitM.MultiPolynomialStructure] = t match {
+      case OMA(OMS(`poly`), OMA(OMS(`polyring`), baseRing :: OMA(OMS(Python.list), varTerms) :: Nil) :: OMA(OMS(Python.dict), dictitems) :: Nil) =>
+        val names = varTerms map {
+          case StringLiterals(s) => s
+          case _ => return None
         }
-      case _ => false
-    }
-
-    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(`poly`), ring :: LFList(ls) :: Nil) =>
-        OMA(OMS(MitM.multi_polycon), ring :: ls map {
-          case LFList(LFList(vars) :: IntegerLiterals(coeff) :: Nil) =>
-            MitM.Monomial(vars map {
-              case LFList(StringLiterals(v) :: IntegerLiterals(i) :: Nil) =>
-                (v, i)
-              case _ => ???
-            }, coeff, ring)
-          case _ => ???
-        })
+        val monoms = dictitems map {
+          case OMA(OMS(Python.tuple), List(OMA(OMS(Python.tuple), expTerms), IntegerLiterals(coeff))) =>
+            val exps = expTerms map {
+              case IntegerLiterals(e) => e
+              case _ => return None
+            }
+            MitM.MultiMonomialStructure(coeff, exps)
+        }
+        val mps = MitM.MultiPolynomialStructure(baseRing, names, monoms)
+        Some(mps)
+      case _ => None
     }
   }
+
   val polyTo = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
       case OMA(OMS(MitM.polycons), _ :: StringLiterals(_) :: _ :: Nil) =>
@@ -111,8 +97,8 @@ object SageTranslations {
 /** external computation provided by SageMath */
 class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, MitMSystems.evaluateSym, "ODK/Sage") {
   import SageTranslations._
-  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: multipolyTo :: numberfieldsTo :: super.toTranslations
-  override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: multipolyFrom :: numberfieldsFrom :: super.fromTranslations
+  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: PolyMatcher.getAlignmentTo :: numberfieldsTo :: super.toTranslations
+  override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: PolyMatcher.getAlignmentFrom :: numberfieldsFrom :: super.fromTranslations
 
   override protected lazy val translator_to = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean = Sage._base <= path
