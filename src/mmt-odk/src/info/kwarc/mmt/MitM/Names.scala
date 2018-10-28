@@ -45,6 +45,23 @@ object MitM {
     }
   }
 
+  object MultiPolynomial {
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`multi_polycon`), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case _ => None
+    }
+  }
+  def present(tm : Term, pres : Term => String) : String = tm match {
+    case LFList(ls) =>
+      "[ " + ls.map(present(_,pres)).mkString(", ") + " ]"
+    case MultiPolynomial(ring,monoms) =>
+      "(in " + pres(ring) + ":) " + monoms.map { case (vars,coeff,_) =>
+        coeff.toString + vars.map{case (s,i) => s + "^" + i}.mkString("")
+      }.mkString("+")
+    case _ => pres(tm)
+  }
+
   val monomials : GlobalName = polypath ? "monomial"
   val monomial_con : GlobalName = polypath.parent ? "RationalPolynomials" ? "monomial_con"
   val multi_polycon : GlobalName = polypath.parent ? "RationalPolynomials" ? "multi_poly_con"
