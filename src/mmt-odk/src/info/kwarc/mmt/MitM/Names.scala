@@ -9,6 +9,8 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.odk.LFX.{LFList, LFRecSymbol}
 
+import scala.math.BigInt
+
 object MitM {
   val basepath: DPath = DPath(URI("http","mathhub.info") / "MitM")
   private val path = basepath / "Foundation"
@@ -57,8 +59,12 @@ object MitM {
       "[ " + ls.map(present(_,pres)).mkString(", ") + " ]"
     case MultiPolynomial(ring,monoms) =>
       "(in " + pres(ring) + ":) " + monoms.map { case (vars,coeff,_) =>
-        coeff.toString + vars.map{case (s,i) => s + "^" + i}.mkString("")
-      }.mkString("+")
+        coeff.toString + "⋅" + vars.flatMap {
+          case (s,i) if i>1 => Some(s + "^" + i)
+          case (s,i) if i==1 => Some(s)
+          case (s,i) if i==0 => None
+        }.mkString("⋅")
+      }.mkString(" + ")
     case _ => pres(tm)
   }
 
