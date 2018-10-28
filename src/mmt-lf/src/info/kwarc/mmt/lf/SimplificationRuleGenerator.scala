@@ -9,91 +9,7 @@ import uom._
 import utils._
 import notations.ImplicitArg
 
-/** tree structure of a [[Term]] optimized for efficient matching */
-abstract class MatchStep
-/** a fixed term in the template, typically an OMS */
-case class CompareTo(pattern: Term, position: Int) extends MatchStep
-/** a template variable that is to be matched */
-case class SolveVariable(name: LocalName, position: Int) extends MatchStep
-/** an OMA whose children must be matched recursively */
-case class RecurseIntoOMA(children: List[MatchStep], position: Int) extends MatchStep {
-  val childLength = children.length
-}
-/** an object that does not have to be compared, typically an implicit argument */
-case object Skip extends MatchStep
-
-class MatchStepCompiler(lup: Lookup) {
-  /** compiles a term into it match steps for use in a [[StepWiseMatcher]] */
-  def apply(templateVars: Context, template: Term, pos: Int): MatchStep = template match {
-    case OMA(f,as) =>
-      val rec = (f::as).zipWithIndex map {case (t,p) => apply(templateVars, t,p)}
-      RecurseIntoOMA(rec, pos)
-    case OMV(n) => SolveVariable(n, pos)
-    case t =>
-      if (disjoint(t.freeVars, templateVars.map(_.name)))
-        CompareTo(t, pos)
-      else
-        return null
-  }
-}
-
-class RewriteRule(h: GlobalName, templateVars: List[LocalName], templateStep: MatchStep, rhs: Term) extends SimplificationRule(h) {
-  private class Solution(val name: LocalName) {
-    var value: Option[Term] = None
-    def toSub = Sub(name, value.getOrElse(throw ImplementationError("unmatched variable")))
-  }
-  
-  private def eqCheck(t1: Term, t2: Term) = t1 == t2
-  
-  def apply(context: Context, goal: Term): Simplifiability = {
-    // invariant: stepsLeft.length == termsLeft.length
-    var stepsLeft: List[MatchStep] = List(templateStep)
-    var termsLeft: List[Term] = List(goal)
-    var solutions: List[Solution] = templateVars map {n => new Solution(n)}
-    while (stepsLeft.nonEmpty) {
-      val term = termsLeft.head
-      termsLeft = termsLeft.tail
-      val step = stepsLeft.head
-      stepsLeft = stepsLeft.tail
-      step match {
-        case CompareTo(pat,pos) =>
-          if (eqCheck(termsLeft.head, pat)) {
-            termsLeft = termsLeft.tail
-          } else {
-            return RecurseOnly(List(pos))
-          }
-        case SolveVariable(n,pos) =>
-           solutions.find(_.name == n) match {
-             case Some(sol) =>
-              sol.value foreach {v =>
-                if (!eqCheck(term, v)) {
-                  return RecurseOnly(List(pos))
-                } else {
-                  sol.value = Some(term)
-                }
-              }
-             case None =>
-               throw ImplementationError("unknown variable")
-           }
-        case r: RecurseIntoOMA =>
-          term match {
-            case OMA(fun,args) if 1+args.length == r.childLength =>
-              termsLeft = fun::args:::termsLeft
-              stepsLeft = r.children ::: stepsLeft
-            case _ =>
-              return RecurseOnly(List(r.position))
-          }
-        case Skip =>
-      }
-    }
-    val subs = Substitution(solutions.map(_.toSub) :_*)
-    val res = rhs ^? subs
-    Simplify(res)
-  }
-}
-
-
-/* idea: allow for custom typing rules that lift an object level typing relation in a way similar to quotientieng by an object level equality
+/* idea: allow for custom typing rules that lift an object level typing relation in a way similar to quotienting by an object level equality
  */
 
 /**
@@ -170,17 +86,18 @@ class SimplificationRuleGenerator extends ChangeListener {
           return
        }
        tm match {
-           case FunType(ctx, scp) =>
+           case FunType(args, scp) =>
+              val context = FunType.argsAsContext(args)
               scp match {
                 case ApplySpine(OMS(eq), argls) if argls.length >= 2 =>
                     if (controller.globalLookup.getConstant(eq).rl == Some("Eq"))
-                       generateRule(c, argls)
+                       generateRule(c, context, argls)
                    else
                       error(e, "not of eq-args shape")
                case ApplySpine(OMS(ded), List(ApplySpine(OMS(eq), argls))) if argls.length >= 2 =>
                    if (controller.globalLookup.getConstant(ded).rl == Some("Judgment") &&
                        controller.globalLookup.getConstant(eq).rl == Some("Eq")) {
-                      generateRule(c, argls)
+                      generateRule(c, context, argls)
                    } else
                       error(e, "not of ded-eq-args shape")
                case _ =>
@@ -254,26 +171,38 @@ class SimplificationRuleGenerator extends ChangeListener {
          case _ => return None // no outer(...) term
       }
    }
+  
+  private lazy val msc = new MatchStepCompiler(controller.globalLookup)
 
   /** @param args implicit ::: List(t1, t2) for a rule t1 ~> t2 */
-  private def generateRule(c: symbols.Constant, args: List[Term]) {
-     val t1 = args.init.last
-     val rhs = args.last
+  private def generateRule(c: symbols.Constant, context: Context, args: List[Term]) {
      val ruleName = c.name / SimplifyTag
-     log("generating rule " + ruleName)
-     // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
-     t1 match {
-       case OuterInnerTerm(names) =>
-         // create and add the rule
-         val desc = ruleName.toPath + ": " + present(t1) + "  ~~>  " + present(rhs)
-         val rule = new GeneratedDepthRule(c, desc, under, names, rhs)
-         val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule))
+     def addSimpRule(r: Rule) {
+         val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(r))
          ruleConst.setOrigin(GeneratedBy(this))
          controller.add(ruleConst)
-         log(desc)
+         log("generated rule: " + r.toString)
+     }
+     val lhs = args.init.last
+     val rhs = args.last
+     log("generating rule " + ruleName)
+     // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
+     lhs match {
+       case OuterInnerTerm(names) =>
+         // create and add the rule
+         val desc = ruleName.toPath + ": " + present(lhs) + "  ~~>  " + present(rhs)
+         val rule = new GeneratedDepthRule(c, desc, under, names, rhs)
+         addSimpRule(rule)
          // check if we can also generate a SolutionRule
          generateSolutionRule(c, names, rhs)
-      case _ => error(c, "type does not match")
+      case _ =>
+         msc(context, lhs) match {
+           case Some(ms) =>
+             val rule = new RewriteRule(c.path, context.map(_.name), ms, rhs)
+             addSimpRule(rule)
+           case None =>
+             error(c, "type does not match")
+         }
     }
   }
 
@@ -421,6 +350,90 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
             Simplifiability.NoRecurse
         }
    }
+}
+
+/** tree structure of a [[Term]] optimized for efficient matching */
+abstract class MatchStep
+/** a fixed term in the template, typically an OMS */
+case class CompareTo(pattern: Term, position: Int) extends MatchStep
+/** a template variable that is to be matched */
+case class SolveVariable(name: LocalName, position: Int) extends MatchStep
+/** an OMA whose children must be matched recursively */
+case class RecurseIntoOMA(children: List[MatchStep], position: Int) extends MatchStep {
+  val childLength = children.length
+}
+/** an object that does not have to be compared, typically an implicit argument */
+case object Skip extends MatchStep
+
+class MatchStepCompiler(lup: Lookup) {
+  /** compiles a term into it match steps for use in a [[StepWiseMatcher]] */
+  private def applyR(templateVars: Context, template: Term, pos: Int): MatchStep = template match {
+    case OMA(f,as) =>
+      val rec = (f::as).zipWithIndex map {case (t,p) => applyR(templateVars, t,p)}
+      RecurseIntoOMA(rec, pos)
+    case OMV(n) => SolveVariable(n, pos)
+    case t =>
+      if (disjoint(t.freeVars, templateVars.map(_.name)))
+        CompareTo(t, pos)
+      else
+        return null
+  }
+  def apply(templateVars: Context, template: Term): Option[MatchStep] = Option(applyR(templateVars, template, 0))
+}
+
+class RewriteRule(h: GlobalName, templateVars: List[LocalName], templateStep: MatchStep, rhs: Term) extends SimplificationRule(h) {
+  private class Solution(val name: LocalName) {
+    var value: Option[Term] = None
+    def toSub = Sub(name, value.getOrElse(throw ImplementationError("unmatched variable")))
+  }
+  
+  private def eqCheck(t1: Term, t2: Term) = t1 == t2
+  
+  def apply(context: Context, goal: Term): Simplifiability = {
+    // invariant: stepsLeft.length == termsLeft.length
+    var stepsLeft: List[MatchStep] = List(templateStep)
+    var termsLeft: List[Term] = List(goal)
+    var solutions: List[Solution] = templateVars map {n => new Solution(n)}
+    while (stepsLeft.nonEmpty) {
+      val term = termsLeft.head
+      termsLeft = termsLeft.tail
+      val step = stepsLeft.head
+      stepsLeft = stepsLeft.tail
+      step match {
+        case CompareTo(pat,pos) =>
+          if (eqCheck(termsLeft.head, pat)) {
+            termsLeft = termsLeft.tail
+          } else {
+            return RecurseOnly(List(pos))
+          }
+        case SolveVariable(n,pos) =>
+           solutions.find(_.name == n) match {
+             case Some(sol) =>
+              sol.value foreach {v =>
+                if (!eqCheck(term, v)) {
+                  return RecurseOnly(List(pos))
+                } else {
+                  sol.value = Some(term)
+                }
+              }
+             case None =>
+               throw ImplementationError("unknown variable")
+           }
+        case r: RecurseIntoOMA =>
+          term match {
+            case OMA(fun,args) if 1+args.length == r.childLength =>
+              termsLeft = fun::args:::termsLeft
+              stepsLeft = r.children ::: stepsLeft
+            case _ =>
+              return RecurseOnly(List(r.position))
+          }
+        case Skip =>
+      }
+    }
+    val subs = Substitution(solutions.map(_.toSub) :_*)
+    val res = rhs ^? subs
+    Simplify(res)
+  }
 }
 
 /**

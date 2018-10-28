@@ -197,6 +197,7 @@ object Query {
 
     /** QueryFunction */
     // TODO: Parameters
+      // BUG? queryextensions are only needed for checking, not for parsing?
     case OMA(OMID(QMTQuery.QueryFunctionApply), str(name) :: q :: args) =>
       val fun = queryFunctions.find(_.name == name).getOrElse {
         throw ParseError("illegal function: " + name)

@@ -9,9 +9,10 @@ import GAP._
 import Singular._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.objects.{OMA, OMS}
+import info.kwarc.mmt.odk.OpenMath._
 
-object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","checkalign") {
-  def newTrace = new VRESystem.MitMComputationTrace(true)
+object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
+  def newTrace = new VRESystem.MitMComputationTrace(Some(t => controller.presenter.asString(t)))
   
   // override val gotoshell = false
   def run {
@@ -31,25 +32,32 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
     val orbit = MitM.polyOrbit(group, poly)
 
     // ************* test the call to Gap only
-    // val gapResult = test(gap, orbit)
+    val gapResult = test(gap, orbit)
       
     // ************* test the call to Singular only
-    val ideal = termFromFile(filename(gap))                         // use the expected Gap result
-    // val ideal = MitMSystems.evalSymbol(OMS(gap.sym), gapResult)  // use the Gap result from this run
+    //val ideal = termFromFile(filename(gap))                         // use the expected Gap result
+    val ideal = gapResult                                             // use the Gap result from this run
     val groebner = MitM.groebner(ideal)
 
-    // val singularResult = test(singular, groebner)
+    val singularResult = test(singular, groebner)
     
-    // ************* test the entire simplification    
+    // ************* test calling Sage only
+    //val singularResult = termFromFile(filename(singular))
+    //test(sage, singularResult) // Sage just reads the polynomials and send them back
+    
+    // ************* test the Singular/Gap simplification    
     val mitm = new MitMComputation(controller)
     val trace = newTrace
-    
     val jane = singular(MitM.groebner(gap(orbit)))
-    val janeResult = mitm.simplify(jane,None)(trace)
- 
-  }
+    
+    //trace += InitialTerm(jane)
+    //val janeResult = mitm.simplify(jane,None)(trace)
+    
+    
+    printTraceToFiles(trace, "Jane")
+}
   
-  def filename(sys: VRESystem) = "JanesUseCase_" + sys.id + "ResultExpected.om" 
+  def filename(sys: VRESystem) = "JanesUseCase_" + sys.id + "ResultExpected" 
     
   private def test(sys: VRESystem, t: Term, compare: Boolean = false, store: Boolean = false): Term = {
       val trace = newTrace
@@ -64,6 +72,29 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
       }
       computed
   }
+  
+  private def printTraceToFiles(trace: MitMComputationTrace, folder: String) {
+    trace.steps.reverse.zipWithIndex.foreach {case (s,i) => s match {
+      case SCSCPSend(sys, t, om) =>
+        val prefix = folder + "/" + i + "-scscp-send-to-" + sys
+        //termToFile(t, prefix)
+        omToFile(om, prefix)
+      case SCSCPReceive(sys, om, t) =>
+        val prefix = folder + "/" + i + "-scscp-receive-from-" + sys
+        //termToFile(t, prefix)
+        omToFile(om, prefix)
+      case AlignmentFromMitMStep(sys, tM, tS) =>
+        val prefix = folder + "/" + i + "-alignment-to-" + sys
+        termToFile(tM, prefix)
+      case AlignmentToMitMStep(sys, tS, tM) =>
+        val prefix = folder + "/" + i + "-alignment-from-" + sys
+        termToFile(tM, prefix)
+      case InitialTerm(t) =>
+        val prefix = folder + "/" + i + "-initial-term"
+        termToFile(t, prefix)
+      case _ =>
+    }}    
+  }
     
   private def termFromFile(f: String) = {
     val n = utils.xml.readFile(File(f))
@@ -71,7 +102,10 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp", "translator","ch
   }
 
   private def termToFile(t: Term, f: String) {
-    File.write(File(f), t.toNode.toString)
+    File.write(File(f+".mitm"), t.toNode.toString)
+  }
+  private def omToFile(om: OMAny, f: String) {
+    File.write(File(f+".openmath"), (new Coding.OMXMLCoding).encode(om).toString)
   }
     
 

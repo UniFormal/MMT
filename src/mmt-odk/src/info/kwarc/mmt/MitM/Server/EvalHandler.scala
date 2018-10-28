@@ -28,7 +28,7 @@ object EvalHandler extends MitMHandler(OMSymbol("mitmEval", "mitm_transient", No
     val (query, system) = matchSystem(term)
     val theQuery = if(system.isDefined) system.get.translateToMitM(query) else query
     log(s"client ${client.identifier} -> MiTM: ${term.toString}")
-    implicit val trace = new MitMComputationTrace(false)
+    implicit val trace = new MitMComputationTrace(None)
     val result = mitmComp.simplify(theQuery, None)
     log(s"MitM -> client ${client.identifier}: ${result.toString}")
     if (system.isDefined) system.get.translateToSystem(result) else result

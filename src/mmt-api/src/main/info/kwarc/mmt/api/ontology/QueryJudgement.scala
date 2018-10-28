@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.utils.xml
 import scala.xml.Node
 
 /**
-  * A Jugement that MMT evaluates in a dynamic fashion at runtime.
+  * A Judgement that MMT evaluates in a dynamic fashion at runtime.
   * Receives a single GlobalName as an argument
   *
   * @param varname
@@ -54,6 +54,8 @@ abstract class BinaryQueryJudgement(varname: LocalName, left : Term, right: Term
   protected def toJudgementImpl(stack: Stack, leftSub: Term, rightSub: Term) : Judgement
 }
 
+
+// BUG: judgments should not bind a variable
 
 /** semantic equality between two terms */
 case class Equals(varname : LocalName, left : Term, right: Term) extends BinaryQueryJudgement(varname, left, right) {

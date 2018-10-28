@@ -8,7 +8,8 @@ import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.OpenMath.Coding.{OMMiTMCoding, OMXMLCoding}
 import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
 
-object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "debug") {
+// "impl-rule-gen"
+object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "debug") {
   override val gotoshell: Boolean = false
   def run : Unit = {
     hl("extension info.kwarc.mmt.odk.LMFDB.Plugin")
@@ -44,7 +45,7 @@ object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "impl-rule-gen", "d
     // assert(term == term2)
 
     // create a mitm computation and controller
-    implicit val trace: MitMComputationTrace = new MitMComputationTrace(false)
+    implicit val trace: MitMComputationTrace = new MitMComputationTrace(None)
     val mitmComp = new MitMComputation(controller)
 
     // and run it

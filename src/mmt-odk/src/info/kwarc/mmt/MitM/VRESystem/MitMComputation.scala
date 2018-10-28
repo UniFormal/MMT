@@ -114,10 +114,12 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
 
 
 /** used for tracing computation run by [[VREComputation]] */
-class MitMComputationTrace(print: Boolean) {
+class MitMComputationTrace(present: Option[Term => String]) {
   var steps: List[MitMTracePart] = Nil
   def +=(s: MitMTracePart) {
-    if (print) println(s)
+    present foreach {p => 
+      println(s.toString(p))
+    }
     steps ::= s
   }
   
@@ -125,7 +127,7 @@ class MitMComputationTrace(print: Boolean) {
 }
 
 /** dummy for ignoring the trace */
-object NoTrace extends MitMComputationTrace(false)
+object NoTrace extends MitMComputationTrace(None)
 
 /** used in [[MitMComputationTrace]] */
 abstract class MitMTracePart {
@@ -164,4 +166,9 @@ case class AlignmentToMitMStep(system: String, extern: Term, mitm: Term) extends
 case class VRECallDetected(system: String, term: Term) extends MitMComputationStep {
   val header = "processing MitM call to system " + system
   val terms = List("term" -> term)
+}
+
+case class InitialTerm(term: Term) extends MitMComputationStep {
+  val header = "start"
+  val terms = List("initial term" -> term)
 }

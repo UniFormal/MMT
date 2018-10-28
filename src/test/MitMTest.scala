@@ -19,7 +19,7 @@ object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
     val sage = controller.extman.get(classOf[SageSystem]).head
     val singular = controller.extman.get(classOf[SingularSystem]).head
     
-    implicit val trace = new MitM.VRESystem.MitMComputationTrace(false)
+    implicit val trace = new MitM.VRESystem.MitMComputationTrace(None)
     
     singular.call(tt)
     
