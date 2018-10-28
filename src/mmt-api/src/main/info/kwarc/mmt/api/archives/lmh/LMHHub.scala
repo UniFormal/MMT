@@ -95,16 +95,17 @@ abstract class LMHHub extends Logger {
     * @param id ID of archive to install
     * @param version Optional version to be installed
     * @param recursive If set to false, do not install archive dependencies
+    * @param update If set to false, do not update already installed archives
     * @return the newly installed entry
     */
-  def installEntry(id: String, version: Option[String], recursive: Boolean = false) : Option[LMHHubEntry]
+  def installEntry(id: String, version: Option[String], recursive: Boolean = false, update: Boolean = true) : Option[LMHHubEntry]
 
   /**
     * Same as installEntry, but optimised for multiple entries at once
     * @param entries
     * @param recursive
     */
-  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false)
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true)
 
   /** get the default remote url for a repository with a given id */
   def remoteURL(id: String) : String

@@ -16,8 +16,8 @@ object ShellCommand {
 
   private def runInGeneral(dir: Option[File], env: Map[String,String], command: String*)(out: String => Unit): Result = {
     // running shell commands is always brittle; better always print what we're trying to do 
-    println("running command: " + command.mkString(" "))
-    println("in directory: " + dir.getOrElse(File(System.getProperty("user.dir"))).toString)
+    out("running command: " + command.mkString(" "))
+    out("in directory: " + dir.getOrElse(File(System.getProperty("user.dir"))).toString)
 
     val pb = new java.lang.ProcessBuilder(command: _*) // use .inheritIO() for debugging
     dir.foreach(d => pb.directory(d.toJava))

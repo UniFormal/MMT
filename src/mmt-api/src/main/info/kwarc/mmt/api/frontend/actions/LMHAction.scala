@@ -118,7 +118,11 @@ object LMHListCompanion extends ActionCompanion("show archives that are installe
 }
 
 
-case class LMHPull(spec: List[String]) extends LMHAction with LocalAction {
+case class LMHPull(spec: List[String]) extends LMHAction {
+  def apply: Unit = {
+    val updates = mathHub.entries(spec: _*).map({a => (a.id, None)})
+    mathHub.installEntries(updates, recursive = true)
+  }
   def applyActual(entry: LMHHubEntry) {entry.pull}
   def toParseString = s"lmh pull ${spec.mkString(" ")}".trim
 }
