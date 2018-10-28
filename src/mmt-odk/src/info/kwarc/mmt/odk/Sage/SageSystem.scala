@@ -15,18 +15,17 @@ import info.kwarc.mmt.sequences.Sequences
 /** translations to be used in SageSystem */
 object SageTranslations {
   private val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
-  private val mitmnf = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
   private val poly = Sage.docpath ? "sage.rings.polynomial.polynomial_element" ? "Polynomial"
   private val polyring = Sage.docpath ? "sage.rings.polynomial.polynomial_ring_constructor" ? "PolynomialRing"
   
   val numberfieldsTo = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(`mitmnf`),a::Nil) => true
+      case OMA(OMS(MitM.numberfield),a::Nil) => true
       case _ => false
     }
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(`mitmnf`),a::Nil) =>
+      case OMA(OMS(MitM.numberfield),a::Nil) =>
         OMA(OMS(`nf`),List(a,StringLiterals("x")))
     }
   }

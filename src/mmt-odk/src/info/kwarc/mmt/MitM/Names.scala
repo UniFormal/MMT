@@ -31,6 +31,8 @@ object MitM {
   val polycons: GlobalName = polypath.parent ? "RationalPolynomials" ? "poly_con"
 
   val rationalRing = (basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField2"
+  val numberfield = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
+  val galois = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "galoisGroup"
 
   object Monomial {
     def apply(vars : List[(String,BigInt)],coeff : BigInt, ring : Term = OMS(MitM.rationalRing)) =
