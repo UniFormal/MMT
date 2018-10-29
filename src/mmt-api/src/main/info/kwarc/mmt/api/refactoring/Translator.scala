@@ -135,6 +135,20 @@ class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibrar
   }
 }
 
+// TODO this should subclass Alignment, but the interface of Alignment is too hard to implement
+/** aligns a global function with a method that is accessed via projection on the first argument */
+case class DereferenceAlignment(from: LogicalReference, to: LogicalReference, dotOperator: GlobalName) {
+  def getTranslator = new AcrossLibraryTranslation {
+    def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) : Boolean = tm match {
+      case OMA(OMID(from.mmturi), _::_) => true
+      case _ => false
+    }
+    def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) : Term = tm match {
+      case OMA(OMID(from.mmturi), hd::tl) => OMA(dotOperator(hd, OML(to.mmturi.name)), tl)
+    }
+  }
+}
+
 abstract class TranslationGroup {
   def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) : List[(AcrossLibraryTranslation,Term)]
 }

@@ -35,12 +35,14 @@ sealed abstract class Alignment {
   val to: Reference
   var props: List[(String, String)] = Nil
 
+  //TODO this method should not be here - not all pairs of alignment can be concatenated
   def ->(that: Alignment): Alignment
 
   // def toJSON: (JSONString, JSONObject)
 
   var isGenerated = false
 
+  //TODO this method should not be here - not every alignment can be easily reverted
   def reverse: Alignment
 }
 

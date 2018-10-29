@@ -75,13 +75,35 @@ class JupyterKernel extends Extension {
     }
   }
 
+  private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
+  private def returnError(msg: String): PythonParamDict = PythonParamDict("element" -> msg)
+  
   def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = {
     import REPLServer._
-    req match{
-      case "active computation" => {
+    req match {
+      case "active computation" =>
         activeComputation(kernel)
         PythonParamDict()
-      }
+      case s if s.startsWith("mitm ") =>
+        // mitm EXP evaluates EXP using a MitM computation
+        val rest = s.substring(5)
+        val replSession = repl.getSessionOpt(session).getOrElse {
+          return returnError("session " + session + " not found")
+        }
+        val con = replSession.parseObject(rest)
+        val df = con.df.getOrElse {
+          return returnError("epxression was processed but no definiens was found afterwards")
+        }
+        import info.kwarc.mmt.MitM.VRESystem._
+        val mitm = new MitMComputation(controller)
+        val trace = new MitMComputationTrace(None)
+        val dfN = mitm.simplify(df, Some(objects.Context(con.parent)))(trace)
+        val dfNP = presenter.asString(dfN)
+        val result = if (controller.report.checkDebug) {
+          dfNP + "\n" + trace.toString(t => t.toString)
+        } else
+          dfNP
+        PythonParamDict("element" -> result)
       case _ => {
         try {
           val comm = REPLServer.Command.parse(req)
@@ -91,12 +113,11 @@ class JupyterKernel extends Extension {
             case e: ElementResponse =>
               val h = presenter.asString(e.element)
               PythonParamDict("element" -> h)
-
           }
         }
         catch {
           case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
-          case e: Exception => PythonParamDict("element" ->(e.getClass.toString+e.getMessage))//(e.getStackTrace.foldRight(""){ (ste,s) => (s +"\n"+ ste.toString)}))
+          case e: Exception => returnError(e)
         }
       }
     }

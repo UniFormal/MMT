@@ -11,6 +11,7 @@ object Python {
   val dict = cd ? "dict"
   val list = cd ? "list"
   val tuple = cd ? "tuple"
+  val dot = cd ? "getattr"
 }
 
 object Sage {

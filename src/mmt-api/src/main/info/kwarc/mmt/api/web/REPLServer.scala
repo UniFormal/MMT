@@ -45,7 +45,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
   }
 
   /** like parseStructure but for objects; the object is stored it as the definiens of a [[Constant]] declaration */
-  def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Declaration = {
+  def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Constant = {
     val scope = scopeOpt.getOrElse(currentScope)
     val mpath = scope match {
       case IsMod(m, _) => m
@@ -136,7 +136,7 @@ class REPLServer extends ServerExtension("repl") {
     applyActual(session, command)
   }
 
-  private def getSessionOpt(id: String) = sessions.find(_.id == id)
+  def getSessionOpt(id: String) = sessions.find(_.id == id)
   private def getSession(id: String) = getSessionOpt(id).getOrElse(throw LocalError("Unknown Session"))
 
   private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
