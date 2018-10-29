@@ -12,11 +12,10 @@ import utils._
 import scala.util.Try
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
+class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, errorCont: ErrorHandler) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
-  private val errorCont = ErrorThrower
   private var counter = 0
 
   /** parses a declaration in a specific point (default: current point) of the document associated with this session (also stores in in controller) */
@@ -115,7 +114,7 @@ object REPLServer {
 
 import REPLServer._
 
-class REPLServer extends ServerExtension("repl") {
+class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
   private lazy val presenter = controller.presenter
 
   private var sessions: List[REPLSession] = Nil
@@ -227,7 +226,7 @@ class REPLServer extends ServerExtension("repl") {
     val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
       throw LocalError("no parser found")
     }
-    val s = new REPLSession(doc, id, interpreter)
+    val s = new REPLSession(doc, id, interpreter, errorCont)
     sessions ::= s
     s
   }
