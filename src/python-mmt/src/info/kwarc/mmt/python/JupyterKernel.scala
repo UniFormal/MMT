@@ -98,6 +98,8 @@ class JupyterKernel extends Extension {
         val mitm = new MitMComputation(controller)
         val trace = new MitMComputationTrace(None)
         val dfN = mitm.simplify(df, Some(objects.Context(con.parent)))(trace)
+        con.dfC.normalized = Some(dfN)
+        controller.add(con)
         val dfNP = presenter.asString(dfN)
         val result = if (controller.report.checkDebug) {
           dfNP + "\n" + trace.toString(t => t.toString)
