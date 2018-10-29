@@ -24,20 +24,19 @@ object SingularTranslations {
 
   val toPolynomials = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
+      case MitM.MultiPolynomial(_,_) => true
       case _ => false
     }
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(MitM.multi_polycon), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+      case MitM.MultiPolynomial(r,ls) =>
         var length = -1
-        val names : List[String] = ls.flatMap { it =>
-          val MitM.Monomial(vars,coeff,_) = it
+        val names : List[String] = ls.flatMap { case (vars,coeff,_) =>
+          // val MitM.Monomial(vars,coeff,_) = it
           vars.map(_._1)
         }.distinct.sorted
         val strs : List[Term] = names.map(s => StringLiterals(s))
-        val monoms = ls map { it =>
-          val MitM.Monomial(vars,coeff,_) = it
+        val monoms = ls map { case (vars,coeff,_) =>
           // names :::= vars.map(_._1)
           val args = coeff :: names.map(s => vars.find(_._1 == s).map(_._2).getOrElse(BigInt(0)))//vars.sortBy(_._1).map(_._2)
           if (length == -1) length = args.length
@@ -70,7 +69,8 @@ object SingularTranslations {
           case Monomial(ls) => MitM.Monomial(ls.tail.zipWithIndex.map(p => (strings(p._2),p._1)),ls.head)
         }
         // val monomials = monoms.map{case Monomial(ls) => MitM.Monomial(ls.zipWithIndex.tail.map(p => ("x"+p._2.toString,p._1)),ls.head)}
-        OMA(OMS(MitM.multi_polycon),r :: monomials)
+        //OMA(OMS(MitM.multi_polycon),r :: monomials)
+        MitM.MultiPolynomial(r,monomials)
     }
   }
 }

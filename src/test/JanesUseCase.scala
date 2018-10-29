@@ -8,10 +8,10 @@ import GAP._
 import Singular._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.objects.{OMA, OMS}
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.OpenMath._
 
-object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
+object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","translator") {
   def newTrace = new VRESystem.MitMComputationTrace(Some(t => MitM.present(t, s => controller.presenter.asString(s))))
   
   // override val gotoshell = false
@@ -25,11 +25,11 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
     val singular = controller.extman.get(classOf[SingularSystem]).head
     
 
-    val group = MitM.dihedralGroup(IntegerLiterals(4))
+    val group = Apply(OMS(MitM.dihedralGroup),IntegerLiterals(4))
     val ring = OMS(MitM.rationalRing)
-    val poly = MitM.multi_polycon(ring,MitM.Monomial(List(("x1",1)),3,ring),MitM.Monomial(List(("x2",1)),2,ring))
+    val poly = MitM.MultiPolynomial(ring,List(MitM.Monomial(List(("x1",1)),3,ring),MitM.Monomial(List(("x2",1)),2,ring)))// MitM.multi_polycon(ring,MitM.Monomial(List(("x1",1)),3,ring),MitM.Monomial(List(("x2",1)),2,ring))
 
-    val orbit = ApplySpine(OMS(MitM.polyOrbit),OMS(MitM.rationalRing),group, poly)
+    val orbit = ApplySpine(OMS(MitM.polyOrbit),ring,group, poly)
 
     // ************* test the call to Gap only
     // val gapResult = test(gap, orbit)
@@ -48,7 +48,7 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
     // ************* test the Singular/Gap simplification    
     val mitm = new MitMComputation(controller)
     val trace = newTrace
-    val jane = singular(MitM.groebner(gap(orbit)))
+    val jane = singular(ApplySpine(OMS(MitM.groebner),ring,gap(orbit)))
      
     //trace += InitialTerm(jane)
     val janeResult = mitm.simplify(jane,None)(trace)

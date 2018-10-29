@@ -98,15 +98,15 @@ class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.
 
   val toPolynomials = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-      case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) => true
+      case MitM.MultiPolynomial(_,_) => true
       case _ => false
     }
 
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
-      case OMA(OMS(MitM.multi_polycon),_ :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+      case MitM.MultiPolynomial(_,ls) =>
         Poly(ls.flatMap{
-          case MitM.Monomial(vars,coeff,_) =>
+          case (vars,coeff,_) =>
             LFList(vars.flatMap(p => List(Integers(variables.get(p._1)),Integers(p._2)))) :: Integers(coeff) :: Nil
         })
     }
@@ -119,7 +119,7 @@ class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case Poly(ls) =>
-        OMA(OMS(MitM.multi_polycon),OMS(MitM.rationalRing) :: deconstruct(ls))
+        MitM.MultiPolynomial(OMS(MitM.rationalRing),deconstruct(ls))
       case _ => ???
     }
 

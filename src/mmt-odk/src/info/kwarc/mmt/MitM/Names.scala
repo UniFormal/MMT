@@ -36,10 +36,16 @@ object MitM {
 
   object Monomial {
     def apply(vars : List[(String,BigInt)],coeff : BigInt, ring : Term = OMS(MitM.rationalRing)) =
-      OMA(OMS(MitM.monomial_con),ring :: LFX.Tuple(LFList(vars.map(p => LFX.Tuple(StringLiterals(p._1),IntegerLiterals(p._2)))),
-        IntegerLiterals(coeff)):: Nil)
+      ApplySpine(OMS(MitM.monomial_con),ring :: LFX.Tuple(LFList(vars.map(p => LFX.Tuple(StringLiterals(p._1),IntegerLiterals(p._2)))),
+        IntegerLiterals(coeff)):: Nil :_*)
     def unapply(tm : Term) = tm match {
       case OMA(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IntegerLiterals(coeff)))) =>
+        val ils = ls.map {
+          case LFX.Tuple(StringLiterals(x),IntegerLiterals(i)) => (x,i)
+          case _ => ???
+        }
+        Some((ils,coeff,ring))
+      case ApplySpine(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IntegerLiterals(coeff)))) =>
         val ils = ls.map {
           case LFX.Tuple(StringLiterals(x),IntegerLiterals(i)) => (x,i)
           case _ => ???
@@ -64,14 +70,12 @@ object MitM {
   }
   object MultiPolynomialStructure {
     def fromTerm(tm: Term): Option[MultiPolynomialStructure] = tm match {
-      case OMA(OMS(MitM.multi_polycon), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+      case MitM.MultiPolynomial(r,ls) =>
         var length = -1
-        val names : List[String] = ls.flatMap { it =>
-          val MitM.Monomial(vars,coeff,_) = it
+        val names : List[String] = ls.flatMap { case (vars,_,_) =>
           vars.map(_._1)
         }.distinct.sorted
-        val monoms = ls map { it =>
-          val MitM.Monomial(vars,coeff,_) = it
+        val monoms = ls map { case (vars,coeff,_) =>
           // names :::= vars.map(_._1)
           val args = names.map(s => vars.find(_._1 == s).map(_._2).getOrElse(BigInt(0)))//vars.sortBy(_._1).map(_._2)
           if (length == -1) length = args.length
@@ -103,10 +107,16 @@ object MitM {
   
   object MultiPolynomial {
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`multi_polycon`), r :: ls) if ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+      case ApplySpine(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case OMA(OMS(`multi_polycon`), LFList(ls) :: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        val r = MitM.Monomial.unapply(ls.head).get._3
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case OMA(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty =>
         Some((r,ls.map(MitM.Monomial.unapply(_).get)))
       case _ => None
     }
+    def apply(r : Term,ls : List[Term]) = ApplySpine(OMS(multi_polycon),r,LFList(ls))
   }
   def present(tm : Term, pres : Term => String) : String = tm match {
     case LFList(ls) =>
