@@ -266,7 +266,7 @@ lazy val interviews = (project in file("mmt-interviews")).
 
 // using MMT from Python via Py4J, maintainer: Florian
 lazy val python = (project in file("python-mmt")).
-  dependsOn(api).
+  dependsOn(api,odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
   
