@@ -1,7 +1,6 @@
 import info.kwarc.mmt.api._
 import objects._
 import utils._
-
 import info.kwarc.mmt.MitM._
 import info.kwarc.mmt.odk._
 import Sage._
@@ -9,6 +8,7 @@ import GAP._
 import Singular._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.objects.{OMA, OMS}
+import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.OpenMath._
 
 object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
@@ -29,17 +29,17 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
     val ring = OMS(MitM.rationalRing)
     val poly = MitM.multi_polycon(ring,MitM.Monomial(List(("x1",1)),3,ring),MitM.Monomial(List(("x2",1)),2,ring))
 
-    val orbit = MitM.polyOrbit(group, poly)
+    val orbit = ApplySpine(OMS(MitM.polyOrbit),OMS(MitM.rationalRing),group, poly)
 
     // ************* test the call to Gap only
-    val gapResult = test(gap, orbit)
+    // val gapResult = test(gap, orbit)
       
     // ************* test the call to Singular only
     //val ideal = termFromFile(filename(gap))                         // use the expected Gap result
-    val ideal = gapResult                                             // use the Gap result from this run
-    val groebner = MitM.groebner(ideal)
+    //val ideal = gapResult                                             // use the Gap result from this run
+    // val groebner = MitM.groebner(ideal)
 
-    val singularResult = test(singular, groebner)
+    // val singularResult = test(singular, groebner)
     
     // ************* test calling Sage only
     //val singularResult = termFromFile(filename(singular))

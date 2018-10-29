@@ -8,6 +8,7 @@ import uom._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.MitM._
 import info.kwarc.mmt.api.frontend.{Logger, Report}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.{Plugin, StringLiterals}
@@ -84,17 +85,38 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
     override def alternativeHeads: List[GlobalName] = List(Apply.path)
 
     override def applicable(tm: Term): Boolean = tm match {
-      case OMA(OMS(MitMSystems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(MitMSystems.evalSymbol),List(OMS(_),_)) => true
+      case OMA(OMS(MitMSystems.evalSymbol),List(OMS(_),_)) | ApplySpine(OMS(MitMSystems.evalSymbol),List(_,OMS(_),_)) => true
       case _ => false
     }
 
     override def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val (sys, subtm) = tm match {
         case OMA(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t) // official
-        case ApplySpine(OMS(MitMSystems.evalSymbol),List(OMS(s),t)) => (s,t)
+        case ApplySpine(OMS(MitMSystems.evalSymbol),List(_,OMS(s),t)) => (s,t)
         case _ => return Simplifiability.NoRecurse
       }
-      Simplify(callVRE(simplify(subtm,Some(con)),sys))
+      Simplify(callVRE(dropImplicits(simplify(subtm,Some(con))),sys))
+    }
+
+    def dropImplicits(tm : Term) = {
+      //println("Term in: " + tm.toStr(true))
+      val ret = dropTrav(tm,())
+      //println("Term out: " + ret.toStr(true))
+      ret
+    }
+    val dropTrav = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case ApplySpine(OMS(p),args) => controller.getO(p) match {
+          case Some(c : Constant) if c.not.isDefined =>
+            val imps = c.not.get.arity.flatImplicitArguments(args.length).map(_.number -1)
+            val nargs = args.zipWithIndex.collect {
+              case (it,i) if !imps.contains(i) => it
+            }
+            ApplySpine(OMS(p),nargs:_*)
+          case _ => Traverser(this,t)
+        }
+        case _ => Traverser(this,t)
+      }
     }
   }
 

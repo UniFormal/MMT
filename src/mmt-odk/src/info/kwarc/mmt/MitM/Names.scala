@@ -207,7 +207,7 @@ object MitM {
 
 /** Symbols used for all the different Systems */
 object MitMSystems {
-  private val _basepath = DPath(URI("http","opendreamkit.org"))
+  private val _basepath = DPath(URI("http","www.opendreamkit.org"))
   private val vretheory = _basepath ? "Systems"
 
   /** marks a term for evaluation in a specific system */

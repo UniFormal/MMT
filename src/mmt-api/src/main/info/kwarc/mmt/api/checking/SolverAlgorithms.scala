@@ -328,9 +328,12 @@ trait SolverAlgorithms {self: Solver =>
     var done = false
     var rules = rulesS
     var ret : Option[B] = None
+    var (tm1S,tm2S) = (tm1,tm2)
     while (!done) {
-      safeSimplifyUntil(tm1,tm2)((t1,t2) => rules.find(condition(_,t1,t2))) match {
-        case (tm1S,tm2S,Some(rule)) =>
+      safeSimplifyUntil(tm1S,tm2S)((t1,t2) => rules.find(condition(_,t1,t2))) match {
+        case (t1S,t2S,Some(rule)) =>
+          tm1S = t1S
+          tm2S = t2S
           done = true
           history += "trying " + rule.toString
           log("trying " + rule.toString)
@@ -352,11 +355,13 @@ trait SolverAlgorithms {self: Solver =>
   private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(rulecheck : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
     var done = false
     var rules = rulesS
+    var tmS = term
     var ret : Option[B] = None
     while (!done) {
-      safeSimplifyUntilRuleApplicable(term, rules) match {
-        case (tmS,Some(rule)) =>
+      safeSimplifyUntilRuleApplicable(tmS, rules) match {
+        case (tS,Some(rule)) =>
           done = true
+          tmS = tS
           history += "trying " + rule.toString
           log("trying " + rule.toString)
           ret = // try {

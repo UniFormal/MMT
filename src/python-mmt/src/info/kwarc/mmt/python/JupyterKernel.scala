@@ -2,9 +2,11 @@ package info.kwarc.mmt.python
 
 
 import info.kwarc.mmt.api._
-import objects.Text // twiesing: not sure if this is the right import
+import objects.{OMS, Text}
 import web._
 import frontend._
+import info.kwarc.mmt.MitM.MitMSystems
+import info.kwarc.mmt.lf.ApplySpine
 import presentation._
 
 import scala.collection.JavaConverters._
@@ -65,6 +67,8 @@ class JupyterKernel extends Extension {
   private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
   private val logFile = utils.File("mmt-jupyter-kernel.log")
   private val errorCont = new ErrorWriter(logFile, None)
+
+  override def logPrefix: String = "jupyter"
   
   override def start(args: List[String]) {
     super.start(args)
@@ -80,7 +84,7 @@ class JupyterKernel extends Extension {
   private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
   private def returnError(msg: String): PythonParamDict = PythonParamDict("element" -> msg)
   
-  def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = {
+  def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = try {
     import REPLServer._
     req match {
       case "active computation" =>
@@ -99,7 +103,9 @@ class JupyterKernel extends Extension {
         import info.kwarc.mmt.MitM.VRESystem._
         val mitm = new MitMComputation(controller)
         val trace = new MitMComputationTrace(None)
+        // log(df.toString)
         val dfN = mitm.simplify(df, Some(objects.Context(con.parent)))(trace)
+        // log("Result: " + dfN)
         con.dfC.analyzed = Some(dfN)
         controller.add(con)
         val dfNP = presenter.asString(dfN)
@@ -126,6 +132,9 @@ class JupyterKernel extends Extension {
       }
     }
 
+  } catch {
+    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
+    case e: Exception => returnError(e)
   }
 
 
