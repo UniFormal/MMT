@@ -5,6 +5,7 @@ import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Writers.SCSCPWriter
 import java.net.Socket
 
+import info.kwarc.mmt.api.GeneralError
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.scscp1
@@ -121,6 +122,17 @@ class SCSCPServerClient(val socket: Socket, val server: SCSCPServer, val encodin
       case Some(Left(pi: SCSCPPi)) => processPi(pi)
       case Some(Right(om: OMObject)) => processOM(om)
       case _ =>
+    }
+  }
+
+  def processSafe(): Unit = {
+    try {
+      this.process()
+    } catch {
+      case t: Throwable => {
+        event(SCSCPClientException(t, this, this.server))
+        this.quit(Some("Client exception occurred: "+ GeneralError("Client exception occured").setCausedBy(t).toStringLong))
+      }
     }
   }
 
