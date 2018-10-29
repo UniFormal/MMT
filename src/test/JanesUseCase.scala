@@ -49,13 +49,13 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
     val mitm = new MitMComputation(controller)
     val trace = newTrace
     val jane = singular(MitM.groebner(gap(orbit)))
-    
+     
     //trace += InitialTerm(jane)
-    //val janeResult = mitm.simplify(jane,None)(trace)
+    val janeResult = mitm.simplify(jane,None)(trace)
+    test(sage, janeResult)
     
-    
-    printTraceToFiles(trace, "Jane")
-}
+    //printTraceToFiles(trace, "Jane")
+  }
   
   def filename(sys: VRESystem) = "JanesUseCase_" + sys.id + "ResultExpected" 
     
@@ -107,6 +107,4 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign") {
   private def omToFile(om: OMAny, f: String) {
     File.write(File(f+".openmath"), (new Coding.OMXMLCoding).encode(om).toString)
   }
-    
-
 }
