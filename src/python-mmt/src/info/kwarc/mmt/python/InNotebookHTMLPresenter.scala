@@ -90,7 +90,7 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      /** concrete syntax: alphanumeric keywords */
      def doKeyword(k: String) {
        span("keyword") {
-         text("theory")
+         text(k)
        }
      }
      /** concrete syntax: symbolic operators */
