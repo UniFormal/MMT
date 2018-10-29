@@ -37,7 +37,7 @@ object SageTranslations {
 
     override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
       case OMA(OMS(`nf`),a::_:: Nil) =>
-        OMA(OMS(`mitmnf`),List(a))
+        OMA(OMS(MitM.numberfield),List(a))
     }
   }
 
