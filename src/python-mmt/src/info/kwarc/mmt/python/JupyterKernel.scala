@@ -81,7 +81,7 @@ class JupyterKernel extends Extension {
     }
   }
 
-  private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
+  // private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
   private def returnError(msg: String): PythonParamDict = PythonParamDict("element" -> msg)
   
   def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = try {
@@ -115,7 +115,6 @@ class JupyterKernel extends Extension {
           dfNP
         PythonParamDict("element" -> result)
       case _ => {
-        try {
           val comm = REPLServer.Command.parse(req)
           val resp = repl(Some(session), comm)
           resp match {
@@ -124,17 +123,12 @@ class JupyterKernel extends Extension {
               val h = presenter.asString(e.element)
               PythonParamDict("element" -> h)
           }
-        }
-        catch {
-          case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
-          case e: Exception => returnError(e)
-        }
       }
     }
 
   } catch {
-    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
-    case e: Exception => returnError(e)
+    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" -> presenter.asString(e))
+    case e: Exception => PythonParamDict("element" -> presenter.asString(e))
   }
 
 

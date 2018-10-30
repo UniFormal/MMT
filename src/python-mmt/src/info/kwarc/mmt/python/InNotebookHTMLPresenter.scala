@@ -14,6 +14,17 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      val ps = new PresentationScope(htmlRh, rh)
      ps(e)
   }
+
+  def apply(e : Exception)(implicit rh : RenderingHandler): Unit = {
+    val htmlRh = utils.HTML(s => rh(s))
+    import htmlRh._
+    pre() { code() { text(Error(e).toStringLong) } }
+  }
+  def asString(e : Exception): String = {
+    val sb = new StringBuilder
+    apply(e)(sb)
+    "Error:\n" + sb.get
+  }
   
   /** local class so that we can import htmlRh and build HTML programmatically */
   private class PresentationScope(htmlRh: utils.HTML, rh : RenderingHandler) {
