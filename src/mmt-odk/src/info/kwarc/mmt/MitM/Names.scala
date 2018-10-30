@@ -35,19 +35,33 @@ object MitM {
   val galois = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "galoisGroup"
 
   object Monomial {
+    object IInt {
+      def unapply(tm : Term): Option[BigInt] = tm match {
+        case IntegerLiterals(i : BigInt) => Some(i)
+        case info.kwarc.mmt.api.objects.UnknownOMLIT(s, _) => unapply(IntegerLiterals.parse(s))
+        case _ => None
+      }
+    }
+    object SString {
+      def unapply(tm : Term): Option[String] = tm match {
+        case StringLiterals(s) => Some(s)
+        case info.kwarc.mmt.api.objects.UnknownOMLIT(s, _) => unapply(StringLiterals.parse(s))
+        case _ => None
+      }
+    }
     def apply(vars : List[(String,BigInt)],coeff : BigInt, ring : Term = OMS(MitM.rationalRing)) =
       ApplySpine(OMS(MitM.monomial_con),ring :: LFX.Tuple(LFList(vars.map(p => LFX.Tuple(StringLiterals(p._1),IntegerLiterals(p._2)))),
         IntegerLiterals(coeff)):: Nil :_*)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IntegerLiterals(coeff)))) =>
+      case OMA(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IInt(coeff)))) =>
         val ils = ls.map {
-          case LFX.Tuple(StringLiterals(x),IntegerLiterals(i)) => (x,i)
+          case LFX.Tuple(SString(x),IInt(i)) => (x,i)
           case _ => ???
         }
         Some((ils,coeff,ring))
-      case ApplySpine(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IntegerLiterals(coeff)))) =>
+      case ApplySpine(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IInt(coeff)))) =>
         val ils = ls.map {
-          case LFX.Tuple(StringLiterals(x),IntegerLiterals(i)) => (x,i)
+          case LFX.Tuple(SString(x),IInt(i)) => (x,i)
           case _ => ???
         }
         Some((ils,coeff,ring))
@@ -112,7 +126,7 @@ object MitM {
       case OMA(OMS(`multi_polycon`), LFList(ls) :: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
         val r = MitM.Monomial.unapply(ls.head).get._3
         Some((r,ls.map(MitM.Monomial.unapply(_).get)))
-      case OMA(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty =>
+      case OMA(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
         Some((r,ls.map(MitM.Monomial.unapply(_).get)))
       case _ => None
     }

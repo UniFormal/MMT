@@ -13,9 +13,10 @@ import info.kwarc.mmt.odk.OpenMath.OMSymbol
 /** translation to be used in [[GAPSystem]] */
 object GAPTranslations {
   object AnyInt {
-    def unapply(tm : Term) = tm match {
+    def unapply(tm : Term): Option[BigInt] = tm match {
       case Integers(i : BigInt) => Some(i)
       case IntegerLiterals(i : BigInt) => Some(i)
+      case info.kwarc.mmt.api.objects.UnknownOMLIT(s, _) => unapply(IntegerLiterals.parse(s))
       case _ => None
     }
   }

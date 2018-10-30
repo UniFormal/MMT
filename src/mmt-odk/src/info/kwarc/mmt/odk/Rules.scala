@@ -133,6 +133,7 @@ object LFX {
     def unapply(ls : Term) : Option[List[Term]] = ls match {
       case OMA(this.term,args) => Some(args)
       case Append(a,lsi) => unapply(lsi).map(a :: _)
+      case ListNil.term => Some(Nil)
       case _ => None
     }
   }
