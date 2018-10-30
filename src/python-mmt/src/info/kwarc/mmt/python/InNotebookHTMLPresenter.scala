@@ -96,7 +96,7 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
      /** concrete syntax: symbolic operators */
      def doOperator(s: String) {
         span("operator") {
-          text(":")
+          text(s)
         }
      }
   }
