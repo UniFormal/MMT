@@ -60,7 +60,7 @@ travisConfig := {
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
-      TravisJob("Check that the code compiles and the test runs run", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
+      TravisJob("Check that the code compiles and the test runs run", sbt("compile") ::: sbt("test"))
     ),
 
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(

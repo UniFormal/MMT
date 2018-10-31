@@ -142,6 +142,9 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
       event(SCSCPAddedClient(client, this))
     } catch {
       case p: ProtocolError =>
+      case t: Throwable =>
+        event(SCSCPNewClientException(t, this))
+
     }
   }
 
@@ -161,7 +164,7 @@ class SCSCPServer(val service_name: String, val service_version: String, val ser
   /** Processes all of the clients */
   private def processClients() {
     cleanupClients()
-    clients.foreach(_.process())
+    clients.foreach(_.processSafe())
   }
 
   /** Sends an info message to all clients attached to this server */

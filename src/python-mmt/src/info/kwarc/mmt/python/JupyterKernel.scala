@@ -2,11 +2,9 @@ package info.kwarc.mmt.python
 
 
 import info.kwarc.mmt.api._
-import objects.{OMS, Text}
+import objects.Text
 import web._
 import frontend._
-import info.kwarc.mmt.MitM.MitMSystems
-import info.kwarc.mmt.lf.ApplySpine
 import presentation._
 
 import scala.collection.JavaConverters._

@@ -174,6 +174,14 @@ lazy val mmt = (project in file("mmt")).
 
 // MMT is split into multiple subprojects to that are managed independently.
 
+val apiJars = Seq(
+  "scala-compiler.jar",
+  "scala-reflect.jar",
+  "scala-parser-combinators.jar",
+  "scala-xml.jar",
+  "xz.jar",
+).map(Utils.lib.toJava / _ )
+
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
@@ -182,19 +190,8 @@ lazy val api = (project in file("mmt-api")).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-reflect.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "xz.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-compiler.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "xz.jar",
-//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value % "test",
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value
+    unmanagedJars in Compile ++= apiJars,
+    unmanagedJars in Test ++= apiJars,
   )
 
 
