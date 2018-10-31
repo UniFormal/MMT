@@ -3,6 +3,7 @@ import scala.collection._
 
 case class File(toJava: java.io.File) {
    def /(s: String) = File(new java.io.File(toJava, s))
+   def canonical : File = File(toJava.getCanonicalPath)
    override def toString = toJava.toString
 }
 
