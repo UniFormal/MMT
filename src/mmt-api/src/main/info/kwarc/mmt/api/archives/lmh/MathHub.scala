@@ -272,17 +272,16 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   }
 
   private def installActual(id : String, version: Option[String], update: Boolean) : Option[MathHubEntry] = {
-    log(s"Attempting to install archive $id (version=$version)")
+    log(s"Attempting to install archive $id" + version.map("@" + _ ).getOrElse(""))
 
     // if the archive is already installed, we should not install it again
     // however we return it, so that we can scan dependencies again
     val entry = getEntry(id)
     if(entry.isDefined){
-      log(s"$id has ")
       val _entry = MathHubEntry(entry.get.root)
+      log(s"$id already installed in ${_entry.root}" + _entry.version.map("@" + _ ).getOrElse(""))
       if(update) {
-        log(s"$id has already been installed in ${entry.get.root}, updating and re-scanning dependencies. ")
-        Try(_entry.pull).toOption.getOrElse({log(s"failed to pull $id, ignoring. ")})
+        installUpdateEntry(_entry, version)
       } else {
         log(s"$id has already been installed in ${entry.get.root}, re-scanning dependencies. ")
       }
@@ -351,6 +350,25 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     } finally {
       zip.delete
     }
+  }
+
+  private def installUpdateEntry(entry: MathHubEntry, version: Option[String]): Unit = {
+    val id = entry.id
+
+    // if we have a given version, force checkout that version
+    if(version.isDefined){
+      log(s"checking out ${version.get}")
+      val vSuccess = git(entry.root, "checkout", "-f", version.get).success
+      if (!vSuccess) {
+        logError("checkout failed, Local version may differ from requested version. ")
+      }
+    }
+
+    // then pull
+    log(s"updating ${entry.root}")
+    Try(entry.pull).toOption.getOrElse({log(s"failed to pull $id, ignoring. ")})
+
+
   }
 
 
