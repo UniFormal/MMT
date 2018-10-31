@@ -200,7 +200,7 @@ lazy val api = (project in file("mmt-api")).
 
 // Some foundation-specific extensions. Maintainer: Florian
 lazy val lf = (project in file("mmt-lf")).
-  dependsOn(api % "compile -> compile; test -> test").
+  dependsOn(api).
   dependsOn(tiscaf).
   dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
