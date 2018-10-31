@@ -65,7 +65,8 @@ object  Widget {
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
   private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
-  private val logFile = utils.File("mmt-jupyter-kernel.log")
+  private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
+  logFile.createNewFile()
   private val errorCont = new ErrorWriter(logFile, None)
 
   override def logPrefix: String = "jupyter"
@@ -75,10 +76,16 @@ class JupyterKernel extends Extension {
     initOther(presenter)
     val extman = controller.extman
     repl = extman.get(classOf[REPLServer]).headOption getOrElse {
+      errorCont.open
       val r = new REPLServer(errorCont)
       extman.addExtension(r,Nil)
       r
     }
+  }
+
+  override def destroy: Unit = {
+    errorCont.close
+    super.destroy
   }
 
   // private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
