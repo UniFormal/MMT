@@ -136,6 +136,8 @@ trait LMHHubEntry extends Logger {
   val root: File
   /** check if this archive matches a given spec */
   def matches(spec : String): Boolean = LMHHub.matchesComponents(spec, id)
+  /** download information about archive versions from the remote */
+  def fetch: Boolean
   /** push the newest version of this archive to the remote */
   def push: Boolean
   /** pull the newest version of this archive from the remote */

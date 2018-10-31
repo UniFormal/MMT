@@ -56,6 +56,10 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length))
       case _ => None
     }
+    def fetch: Boolean = {
+      log(s"fetching $id")
+      hub.git(root, "fetch", "--all").success
+    }
     def pull: Boolean = {
       log(s"pulling $id")
       hub.git(root, "pull").success
@@ -355,6 +359,9 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   private def installUpdateEntry(entry: MathHubEntry, version: Option[String]): Unit = {
     val id = entry.id
 
+    // fetch the archive
+    Try(entry.fetch).toOption.getOrElse({log(s"failed to fetch $id, ignoring. ")})
+
     // if we have a given version, force checkout that version
     if(version.isDefined){
       log(s"checking out ${version.get}")
@@ -364,11 +371,9 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       }
     }
 
-    // then pull
+    // then pull (if we are on a semantic version)
     log(s"updating ${entry.root}")
     Try(entry.pull).toOption.getOrElse({log(s"failed to pull $id, ignoring. ")})
-
-
   }
 
 
