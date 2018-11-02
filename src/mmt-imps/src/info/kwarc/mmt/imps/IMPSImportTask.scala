@@ -278,6 +278,8 @@ class IMPSImportTask(val controller  : Controller,
 
             }
 
+            println("  [TES] Done with sort-mappings, onto constants!")
+
             if (ensembleConsts.isDefined) {
               assert(targetThys.isDefined)
               assert(targetMuls.isEmpty)
@@ -293,40 +295,36 @@ class IMPSImportTask(val controller  : Controller,
                 renamed
               }
 
-              val constpairsexps : List[JSONObject] = theRelevantTranslation.getAsList(classOf[JSONObject],"constant-pairs-sexp")
+              val constpairsexps : List[JSONString] = theRelevantTranslation.getAsList(classOf[JSONString],"constant-pairs-sexp")
               assert(constpairsexps.nonEmpty)
+
+              println("[tes]: " + constpairsexps)
 
               for (cmi <- constpairsexps.indices)
               {
-                val constMapping : ArgConstAssoc = ensembleConsts.get.consts(cmi)
-                val sourceName   : String        = constMapping.nm.toString
-                val sourceConst  : Term          = getConstant(sourceName,ensemble.baseTheory).toTerm
+                val leftExpStr  : String = constpairsexps(cmi).value.takeWhile(c => !c.isWhitespace).tail.trim.toLowerCase
+                val rightExpStr : String = constpairsexps(cmi).value.dropWhile(c => !c.isWhitespace).trim.init.toLowerCase
 
-                for (targetConst <- constMapping.consts) {
-
-                  var trgt : IMPSMathExp = targetConst.o match
-                  {
-                    case scala.util.Right(cnst_name)      => IMPSMathSymbol(cnst_name.toString)
-                    case scala.util.Left((dfs,Some(ime))) => ime
-                    case scala.util.Left((dfs,None))      => ???
-                  }
-
-                  val target_term : Term = doMathExp(trgt,target,Nil)
-                  val target_tp   : Option[Term] = None
-                  val quelle      : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
-                  assert(quelle.isDefined)
-
-                  val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(renamer(sourceName)),List(doName(sourceName)),target_tp,Some(target_term),None)
-                  if (tState.verbosity > 1)
-                  {
-                    val disp : String = targetConst.o match {
-                      case scala.util.Left((df,_)) => renamer(df.toString)
-                      case scala.util.Right(xname) => renamer(xname.toString)
-                    }
-                    println(" >  adding ensemble-instance const-mapping: " + sourceName + " → " + disp)
-                  }
-                  controller add nu_const_map
+                if (tState.verbosity > 1) {
+                  println(" >  adding ensemble-instance const-mapping: " + leftExpStr + " → " + rightExpStr)
                 }
+
+                val sourceName   : String = leftExpStr
+                val sourceConst  : Term   = getConstant(sourceName,ensemble.baseTheory).toTerm
+
+                val sexpParser   : SymbolicExpressionParser = new SymbolicExpressionParser
+                val sexp = sexpParser.parseAll(sexpParser.parseSEXP,rightExpStr)
+                assert(sexp.successful)
+
+                val trgt : IMPSMathExp = impsMathParser.makeSEXPFormula(sexp.get)
+
+                val target_term : Term = doMathExp(trgt,target,Nil)
+                val target_tp   : Option[Term] = None
+                val quelle      : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
+                assert(quelle.isDefined)
+
+                val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(renamer(sourceName)),List(doName(sourceName)),target_tp,Some(target_term),None)
+                controller add nu_const_map
               }
             }
           }
@@ -1896,8 +1894,10 @@ class IMPSImportTask(val controller  : Controller,
 
   def getConstant(name : String, thy : DeclaredTheory) : Constant =
   {
-    val con = thy.getConstants.find(c => c.name.toString.toLowerCase == name.toLowerCase)
-    if (con.isDefined) { con.get }
+    val con1 = thy.getConstants.find(c => c.name.toString.toLowerCase == name.toLowerCase)
+    val con2 = thy.getConstants.find(c => c.alias.map(_.toString.toLowerCase).contains(name))
+    if (con1.isDefined) { con1.get }
+    else if (con2.isDefined) { con2.get }
     else {
       val foundTheory = locateMathSymbolHome(name, thy)
       getConstant(name, foundTheory.get)
