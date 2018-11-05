@@ -271,13 +271,6 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   }
                 case _ =>
               }
-              // TODO we could throw a typing error here. But it's OK if the library succeeds on theories that aren't in scope.
-              // added for LMFDB queries, where LMFDB theories might not be in the context of the query
-              name.steps match {
-                case ComplexStep(q)::ln =>
-                  return get(OMMOD(q), ln, error)
-                case _ =>
-              }
             case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
               name.head match {
                 case s2@SimpleStep(_) if s == LocalName(s2) =>
@@ -295,6 +288,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                 case _ =>
               }
           }
+        }
+
+        // TODO we could throw a typing error here. But it's OK if the library succeeds on theories that aren't in scope.
+        // added for LMFDB queries, where LMFDB theories might not be in the context of the query
+        name.steps match {
+          case ComplexStep(q)::ln =>
+            return get(OMMOD(q), ln, error)
+          case _ =>
         }
         throw GetError("name " + name + " not found in " + cont)
       case TUnion(ts) => ts mapFind { t =>
