@@ -39,6 +39,7 @@ case class KernelSpec(displayName: String, language: String, name: String) {
 
 object Notebook {
   val format = NotebookFormat(4,2)
+  def MarkdownCell(s: String*) = Cell("markdown", 0, JSONObject(), s.toList, Nil)
 }
 
 object MMTNotebook {

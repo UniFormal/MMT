@@ -197,7 +197,7 @@ class ExtensionManager(controller: Controller) extends Logger {
        try {
          Class.forName(cls)
        } catch {case e: ClassNotFoundException =>
-         controller.backend.loadClass(cls).get
+         controller.backend.loadClass(cls).getOrElse(throw e)
        }
     } catch {
       case e: Throwable =>
