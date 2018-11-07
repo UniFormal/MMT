@@ -563,7 +563,7 @@ trait SolverAlgorithms {self: Solver =>
            val subs = (c2 alpha c1).getOrElse(return false)
            return eqCon && check(Equality(j.stack++c1, t1, t2 ^? subs, None))
          case _ =>
-           if (tm1S == tm2S) return true // TODO this should be hasheq, but that seems buggy
+           if (tm1S hasheq tm2S) return true
            // there is not much else that is definitely inequal: e.g., even two distinct variables could be equal if their type is term-irrelevant
       }
       // solve an unknown
