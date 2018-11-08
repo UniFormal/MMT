@@ -15,7 +15,7 @@ travisConfig := {
   ) ::: check.toList
 
   // convenience wrapper to tun a specific test class
-  def runTest(cls: String*) : List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
+  def runMainClass(cls: String*) : List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
 
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
@@ -63,13 +63,13 @@ travisConfig := {
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
-      TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+      TravisJob("Check mmt.jar generation and integration tests",
+        sbt("deploy", file("deploy/mmt.jar")) ::: runMainClass(
+          "info.kwarc.mmt.api.test.APITest",
+          "info.kwarc.mmt.lf.LFTest",
+          "info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest"
+        )),
       TravisJob("Check that unit tests run", sbt("test")),
-
-      TravisJob("Test mmt-api", runTest("info.kwarc.mmt.api.test.APITest")),
-      TravisJob("Test mmt-lf", runTest("info.kwarc.mmt.lf.LFTest")),
-      TravisJob("Test mmt-odk", runTest("info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest")),
-
     ),
 
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deployLFCatalog' targets work")(
