@@ -17,10 +17,10 @@ trait ArchiveTester extends BaseTester with ActionTester {
       false
     } else if(develEnv.contains("1")){
       true
-    }
-
     // else use the current git branch
-    MMTSystem.gitVersion.contains("devel")
+    } else {
+      MMTSystem.gitVersion.contains("devel")
+    }
   }
 
   /** set of archives to be installed */
