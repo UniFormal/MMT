@@ -62,7 +62,9 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
 
     // simply sho
     if(useArchiveDevel){
-      log("Using devel branch of selected archives")
+      log("Using devel version of selected archives")
+    } else {
+      log("Using default version of all archives")
     }
 
     // and show some information about MMT itself
