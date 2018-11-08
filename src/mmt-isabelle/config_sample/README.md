@@ -4,10 +4,8 @@ Example configuration
 Hardware
 ========
 
-* E.g. a cheap "cloud" node: 8 CPU cores, 64 GB RAM
-
-* Note that Java 8 does not work well with many cores: it is difficult to
-restrain it to a healthy amount of virtual "processors" (8..16).
+E.g. a cheap "cloud" node: 8 CPU cores, 64 GB RAM. More than 16 CPU cores
+does not make sense, but more memory may help.
 
 
 OS packages
