@@ -46,7 +46,7 @@ class FinderConfig(val finder : ViewFinder, protected val report : Report) exten
     fixing_var :::= al.map(finder.makeAlignment)
   }
 
-  // val translations = fixing.map(AlignmentTranslation.apply(_)(controller))
+  // val translations = fixing.map(AlignmentTranslation.apply(_,controller))
 
   def addJudgmentFrom(gn : GlobalName) = judg1_var = Some(gn)
   def addJudgmentTo(gn : GlobalName) = judg2_var = Some(gn)
@@ -124,7 +124,7 @@ class ViewFinder extends frontend.Extension {
   }
 
   private[refactoring] def makeAlignment(al : FormalAlignment) =
-    AlignmentTranslation(al)(controller)
+    AlignmentTranslation(al, controller)
 
   private def findJudgment(th:DeclaredTheory):Option[GlobalName] = {
 

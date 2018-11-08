@@ -66,7 +66,7 @@ class AlignmentsServer extends ServerExtension("align") {
     private val set = mutable.HashMap[(Reference,Reference),Alignment]()
 
     def toList = set.values.toList
-
+    
     def get(r : Reference, closure : Option[Alignment => Boolean] = None) : List[Alignment] = {
       var res : List[Reference] = List(r)
       def recurse(start : Alignment) : List[Alignment] = {
@@ -246,6 +246,8 @@ class AlignmentsServer extends ServerExtension("align") {
     val argls = """\((\d+),(\d+)\)(.*)""".r
     val direction = allpars.find(p ⇒ p._1 == "direction")
     val pars = allpars.filterNot(p => p._1 == "direction" || p._1 == "arguments")
+    val p1P = Path.parseMS(p1, nsMap)
+    val p2P = Path.parseMS(p2, nsMap)
     if (direction.isDefined) {
       if (allpars.exists(_._1 == "arguments")) {
         var args: List[(Int, Int)] = Nil
@@ -258,19 +260,23 @@ class AlignmentsServer extends ServerExtension("align") {
           case _ ⇒ throw new Exception("Malformed argument pair list: " + item._2)
         }
         val ret = if (direction.get._2 == "forward")
-          ArgumentAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), false, args, pars)
+          ArgumentAlignment(p1P, p2P, false, args, pars)
         else if (direction.get._1 == "backward")
-          ArgumentAlignment(Path.parseMS(p2, nsMap), Path.parseMS(p1, nsMap), false, args, pars)
+          ArgumentAlignment(p2P, p1P, false, args, pars)
         else
-          ArgumentAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), true, args, pars)
+          ArgumentAlignment(p1P, p2P, true, args, pars)
         ret
+      } else if (allpars.exists(_._1 == "dotoperator")) {
+        val dot = utils.listmap(allpars, "dotoperator").get
+        val dotP = Path.parseS(dot, nsMap)
+        DereferenceAlignment(p1P, p2P, dotP)
       } else {
         val ret = if (direction.get._2 == "forward")
-          SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), false, pars)
+          SimpleAlignment(p1P, p2P, false, pars)
         else if (direction.get._2 == "backward")
-          SimpleAlignment(Path.parseMS(p2, nsMap), Path.parseMS(p1, nsMap), false, pars)
+          SimpleAlignment(p2P, p1P, false, pars)
         else if (direction.get._2 == "both")
-          SimpleAlignment(Path.parseMS(p1, nsMap), Path.parseMS(p2, nsMap), true, pars)
+          SimpleAlignment(p1P, p2P, true, pars)
         else throw new Exception("unknown alignment direction: " + direction.get._2)
         ret
       }
