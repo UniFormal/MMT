@@ -14,6 +14,9 @@ travisConfig := {
     s"cd src && (cat /dev/null | sbt ++$ourScalaVersion $task) && cd .."
   ) ::: check.toList
 
+  // convenience wrapper to tun a specific test class
+  def runTest(cls: String*) : List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
+
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
   def identical(name: String) : Option[String] = Some("(git diff --quiet --exit-code \"" + name + "\")")
@@ -60,11 +63,16 @@ travisConfig := {
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
-      TravisJob("Check that the code compiles and the test runs run", sbt("compile") ::: sbt("test"))
+      TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+      TravisJob("Check that unit tests run", sbt("test")),
+
+      TravisJob("Test mmt-api", runTest("info.kwarc.mmt.api.test.APITest")),
+      TravisJob("Test mmt-lf", runTest("info.kwarc.mmt.lf.LFTest")),
+      TravisJob("Test mmt-odk", runTest("info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest")),
+
     ),
 
-    TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(
-      TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+    TravisStage("DeployCheck", "check that the 'apidoc' and 'deployLFCatalog' targets work")(
       TravisJob("Check lfcatalog.jar generation using `sbt deployLFCatalog`", sbt("deployLFCatalog", file("deploy/lfcatalog/lfcatalog.jar"))),
       TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
     ),

@@ -1,10 +1,9 @@
-package info.kwarc.mmt.api.test.utils
+package info.kwarc.mmt.api.test
 
-import info.kwarc.mmt.api.test.utils.testers._
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.test.testers._
+import info.kwarc.mmt.api.utils.MMTSystem.{Classes, DeployRunStyle, ThinJars}
+import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.doc.Setup
-
-import scala.util.Try
 
 /**
   * A class used for MMT Integration Tests which require a completly setup MMT environment to work
@@ -12,11 +11,19 @@ import scala.util.Try
   * @param neededExtensions List of extensions that should be needed
   */
 abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtensions : ExtensionSpec*) extends MMTUnitTest
-  with ExtensionTester with ArchiveTester with CheckTester {
+  with ExtensionTester with ArchiveTester with CheckTester{
 
-  lazy val rootFolder = File(s"test/${this.getClass.getCanonicalName}/target").canonical
-  lazy val contentFolder = rootFolder / "content"
-  lazy val systemFolder = rootFolder / "system"
+
+  /** the root folder to use for all test data */
+  lazy val rootFolder: File = {
+    val root = MMTSystem.runStyle match {
+      case d: DeployRunStyle => d.deploy / ".."
+      case _ => File("")
+    }
+    (root / "test" / this.getClass.getCanonicalName / "target").canonical
+  }
+  lazy val contentFolder: File = rootFolder / "content"
+  lazy val systemFolder: File = rootFolder / "system"
 
   /** runs the setup routine inside the MMT controller */
   private def runSetup(): Unit = {
@@ -55,7 +62,7 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
 
     // simply sho
     if(useArchiveDevel){
-      log("TEST_USE_DEVEL=1 was set, using devel branch of selected archives")
+      log("Using devel branch of selected archives")
     }
 
     // and show some information about MMT itself
@@ -63,9 +70,13 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
     handleLine("show lmh", showLog = true)
   }
 
-  /** run various setup code for tests, this method should be called to setup all the tests */
-  def bootstrapTests(): Unit = it should "bootstrap the controller" in {
+  /** initialize the test class */
+  override def init(): Unit = {
+    super.init()
+
     runSetup()
+    shouldLoadExtensions()
+    shouldInstallArchives()
   }
 
   val extensions: List[ExtensionSpec] = List(

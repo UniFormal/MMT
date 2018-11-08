@@ -18,7 +18,8 @@ import scala.util.Try
 class MathHub(val controller: Controller, var local: File, var remote: URI, var https: Boolean = true) extends LMHHub {
 
   /** implements git */
-  protected val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
+  protected lazy val git: Git = MMTSystem.git
+
   // PATHS
   def remoteURL(id : String): String = if(https) {
     "https://" + remote.authority.getOrElse("") + "/" + id + ".git"
@@ -49,11 +50,11 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     val hub: MathHub = MathHub.this
 
     def physicalVersion: Option[String] = hub.git(root, "show-ref", "HEAD") match {
-      case ShellCommand.Success(op) => Some(op.split(" ").head)
+      case ShellCommand.Success(op) => Some(op.split(" ").head.trim)
       case _ => None
     }
     def logicalVersion: Option[String] = hub.git(root, "symbolic-ref", "HEAD") match {
-      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length))
+      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length).trim)
       case _ => None
     }
     def fetch: Boolean = {
@@ -329,7 +330,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
         log(s"checking out ${version.get}")
         val vSuccess = git(lp, "checkout", "-f", version.get).success
         if (!vSuccess) {
-          logError("checkout failed, Local version may differ from requested version. ")
+          logError(s"checkout of $id failed, Local version may differ from requested version. ")
         }
       }
     }
@@ -367,7 +368,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       log(s"checking out ${version.get}")
       val vSuccess = git(entry.root, "checkout", "-f", version.get).success
       if (!vSuccess) {
-        logError("checkout failed, Local version may differ from requested version. ")
+        logError(s"checkout of $id failed, Local version may differ from requested version. ")
       }
     }
 

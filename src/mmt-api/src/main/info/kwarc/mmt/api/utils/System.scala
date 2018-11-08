@@ -4,6 +4,7 @@ import java.net.URLDecoder
 import java.util.jar.JarFile
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.lmh.{Git, UnixGit, WindowsGit}
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
@@ -72,6 +73,18 @@ object MMTSystem {
   /** the version of MMT being used */
   lazy val version: String = {
     Option(this.getClass.getPackage.getImplementationVersion).getOrElse(getResourceAsString("versioning/system.txt") + "--localchanges")
+  }
+
+  /** the git used by this MMT instance */
+  lazy val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
+
+  /** the git version (branch) used by mmt, if available */
+  lazy val gitVersion: Option[String] = runStyle match {
+    case d: DeployRunStyle => git(d.deploy, "symbolic-ref", "HEAD") match {
+      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length).trim)
+      case _ => None
+    }
+    case _ => None
   }
 
   /** the time when this version of MMT (if far jar built with sbt) was built */
