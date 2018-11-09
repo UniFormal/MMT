@@ -17,6 +17,11 @@ In particular, the following versions from Nov-2018 should fit together:
   * MathHub/MMT/urtheories/efe7963422a3 from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
+The corresponding OMDoc content is available here:
+
+  * https://gl.mathhub.info/Isabelle/Distribution (version 3faa7f9c7742)
+  * https://gl.mathhub.info/Isabelle/AFP (version 30a0dc372eaa)
+
 
 ## Setup
 
