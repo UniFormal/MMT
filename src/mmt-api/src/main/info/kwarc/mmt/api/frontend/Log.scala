@@ -133,6 +133,16 @@ class Report extends Logger {
     if (ind >= 1) ind -= 1
   }
 
+  /** enables logging for a set of groups within a block */
+  def withGroups[A](groups: String*)(a: => A): A = {
+    val theGroups = groups.filterNot(this.groups.contains) // the groups that we did not have beforehand
+    theGroups.foreach(this.groups += _)
+    try {
+      a
+    } finally {
+      theGroups.foreach(this.groups -= _)
+    }
+  }
 }
 
 object Report {

@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.test.MMTIntegrationTest
 import info.kwarc.mmt.api.test.testers._
 
 object LFTest extends MMTIntegrationTest(
-  TestArchive("MMT/urtheories", hasDevel = true),
-  TestArchive("MMT/examples", hasDevel = true),
+  "MMT/urtheories",
+  "MMT/examples",
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
