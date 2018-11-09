@@ -1,20 +1,11 @@
 package info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.test.testers.TestArchive
 import info.kwarc.mmt.api.utils.URI
 
 
 object APITest extends MMTIntegrationTest(
-  TestArchive("MMT/urtheories", hasDevel = true),
-//  ,"MMT/LATIN"
-//  ,"MMT/LFX"
-//  ,"MitM/smglom"
-//  ,"MitM/interfaces"
-//  ,"Mizar/MML"
-//  ,"HOLLight/basic"
-//  ,"PVS/Prelude"
-//  ,"PVS/NASA"
+  "MMT/urtheories"
 )(){
   def main(): Unit = {
     test("get a Constant", {

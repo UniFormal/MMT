@@ -10,9 +10,17 @@ import info.kwarc.mmt.doc.Setup
   * @param neededArchives List of archives that should be automatically installed
   * @param neededExtensions List of extensions that should be needed
   */
-abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtensions : ExtensionSpec*) extends MMTUnitTest
-  with ExtensionTester with ArchiveTester with CheckTester{
+abstract class MMTIntegrationTest(override val archives : String*)(neededExtensions : ExtensionSpec*)
+  extends MMTUnitTest with ExtensionTester with ArchiveTester with CheckTester {
 
+  // the extensions to be installed */
+  val extensions: List[ExtensionSpec] = List(
+    ExtensionSpec("info.kwarc.mmt.api.ontology.AlignmentsServer"),
+    ExtensionSpec("info.kwarc.mmt.api.web.JSONBasedGraphServer")
+  ) ::: neededExtensions.toList
+
+  /** the test program */
+  def main(): Unit
 
   /** the root folder to use for all test data */
   lazy val rootFolder: File = {
@@ -28,10 +36,6 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
   /** runs the setup routine inside the MMT controller */
   private def runSetup(): Unit = {
 
-    // configure folders we want to use for setup
-    // this is put into .../mmt-subproject/test/<test-class>/target
-    // and is thus automatically .gitignored
-
     // create a setup instance
     val setup = new Setup {
       override val log: String => Unit = s => report("setup", s.trim)
@@ -44,23 +48,13 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
     }
 
     log("Running automated setup")
-    logGroup {
-      // report.groups += "setup"
-      setup.setup(systemFolder, contentFolder, None, installContent = false)
-      // report.groups -= "setup"
-    }
-
-    /*
-    // this used to be the old flag to setup archive versions from HEAD
-    if(Try(sys.env("TEST_USE_ARCHIVE_HEAD")).toOption.contains("1")){
-      log("TEST_USE_ARCHIVE_HEAD=1 was set, using newest archive versions")
+    report.withGroups(/* "setup" */) {
       logGroup {
-        handleLine("lmh versioning disable")
+        setup.setup(systemFolder, contentFolder, None, installContent = false)
       }
     }
-    */
 
-    // simply sho
+
     if(useArchiveDevel){
       log("Using devel version of selected archives")
     } else {
@@ -80,11 +74,4 @@ abstract class MMTIntegrationTest(neededArchives : TestArchive*)(neededExtension
     shouldLoadExtensions()
     shouldInstallArchives()
   }
-
-  val extensions: List[ExtensionSpec] = List(
-    ExtensionSpec("info.kwarc.mmt.api.ontology.AlignmentsServer"),
-    ExtensionSpec("info.kwarc.mmt.api.web.JSONBasedGraphServer")
-  ) ::: neededExtensions.toList
-
-  val archives: List[TestArchive] = neededArchives.toList
 }
