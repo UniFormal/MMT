@@ -22,7 +22,7 @@ trait CheckTester extends BaseTester {
 
     try {
       // read the document in a task that can be cancelled by the stop method
-      val ps = ParsingStream.fromSourceFile(archive, FilePath(filename))
+      val ps = ParsingStream.fromSourceFile(archive, FilePath(filename),nsMapOpt = Some(controller.getNamespaceMap))
       val doc = controller.read(ps, true, true)(errorBuffer) match {
         case d: Document => d
         case _ => throw testError(s"Expected a document: $filename")
