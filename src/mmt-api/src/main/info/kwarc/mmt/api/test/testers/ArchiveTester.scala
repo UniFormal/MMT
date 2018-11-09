@@ -1,13 +1,27 @@
-package info.kwarc.mmt.api.test.utils.testers
+package info.kwarc.mmt.api.test.testers
 
 import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.utils.MMTSystem
 
 import scala.util.Try
 // import info.kwarc.mmt.api.archives.lmh.StandardVersioning
 
 /** trait implementing testing for archives */
 trait ArchiveTester extends BaseTester with ActionTester {
-  lazy protected val useArchiveDevel = Try(sys.env("TEST_USE_DEVEL")).toOption.contains("1")
+  lazy protected val useArchiveDevel = {
+
+    // look into the environment
+    // and use that version if defined
+    val develEnv = Try(sys.env("TEST_USE_DEVEL")).toOption
+    if(develEnv.contains("0")){
+      false
+    } else if(develEnv.contains("1")){
+      true
+    // else use the current git branch
+    } else {
+      MMTSystem.gitVersion.contains("devel")
+    }
+  }
 
   /** set of archives to be installed */
   val archives: List[TestArchive]
@@ -30,7 +44,7 @@ trait ArchiveTester extends BaseTester with ActionTester {
 
   /** check that a given archive gets installed properly */
   private def installArchive(archive: TestArchive): Unit = {
-    it should s"get archive ${archive.id}" in {
+    test(s"get archive ${archive.id}", {
       // and install the archive (optionally a development version)
       // controller.report.groups += "lmh"
       handleLine(s"lmh install ${archive.toLMHString(useArchiveDevel)}")
@@ -38,7 +52,7 @@ trait ArchiveTester extends BaseTester with ActionTester {
 
       // and it should not be null
       assert(getArchive(archive.id) != null)
-    }
+    })
   }
 
   /** check that all the archives get installed properly */

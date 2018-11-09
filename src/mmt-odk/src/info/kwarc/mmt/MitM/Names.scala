@@ -32,7 +32,6 @@ object MitM {
 
   val rationalRing = (basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField2"
   val numberfield = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
-  val galois = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "galoisGroup"
 
   object Monomial {
     object IInt {

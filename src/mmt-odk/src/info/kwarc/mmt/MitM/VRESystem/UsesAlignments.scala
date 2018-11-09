@@ -53,7 +53,7 @@ trait UsesAlignments extends VRESystem {
 
   protected def translator(to : TranslationTarget,trls : List[AcrossLibraryTranslation]) = {
     val aligns = alignmentserver.getAll.collect {
-      case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa)(controller)
+      case fa : FormalAlignment if fa.props.contains(("type","VRE" + this.id)) => AlignmentTranslation(fa,controller)
     }
     val linktrs : List[TranslationGroup] = links.map(l => LinkTranslation(l))
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to, false)

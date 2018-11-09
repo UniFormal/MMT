@@ -1,33 +1,25 @@
-package info.kwarc.mmt.lf.test
+package info.kwarc.mmt.lf
 
-import info.kwarc.mmt.api.archives.RedirectableDimension
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
-import info.kwarc.mmt.api.test.utils.testers._
-import info.kwarc.mmt.api.test.utils._
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.test.MMTIntegrationTest
+import info.kwarc.mmt.api.test.testers._
 
-class LFTest extends MMTIntegrationTest(
+object LFTest extends MMTIntegrationTest(
   TestArchive("MMT/urtheories", hasDevel = true),
   TestArchive("MMT/examples", hasDevel = true),
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
+  def main(): Unit = {
+    shouldClearTarget("MMT/urtheories", "bin")
+    shouldHandleLine("build MMT/urtheories scala-bin")
 
-  bootstrapTests()
+    shouldCheck("MMT/urtheories")()
 
-  shouldLoadExtensions()
-  shouldInstallArchives()
+    shouldClearTarget("MMT/examples", "bin")
+    shouldHandleLine("build MMT/examples scala-bin")
 
-
-  shouldClearTarget("MMT/urtheories", "bin")
-  shouldHandleLine("build MMT/urtheories scala-bin")
-
-  shouldCheck("MMT/urtheories")()
-
-  shouldClearTarget("MMT/examples", "bin")
-  shouldHandleLine("build MMT/examples scala-bin")
-
-  shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
+    shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
+  }
 }
 
 /*

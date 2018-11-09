@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.test.utils.testers
+package info.kwarc.mmt.api.test.testers
 
 /** trait implementing testing for extensions */
 trait ExtensionTester extends BaseTester {
@@ -8,10 +8,10 @@ trait ExtensionTester extends BaseTester {
 
   /** check that an extension gets loaded properly */
   private def shouldAddExtension(extension: ExtensionSpec): Unit = {
-    it should s"add extension ${extension.name}" in {
+    test(s"add extension ${extension.name}", {
       val ext = controller.extman.addExtension(extension.name, extension.args.toList)
       assert(ext != null)
-    }
+    })
   }
 
   /** checks that all extensions are loaded */

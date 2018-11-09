@@ -9,29 +9,13 @@ https://isabelle.sketis.net/devel/release_snapshot or a repository clone
 from http://isabelle.in.tum.de/repos/isabelle -- see also its
 `README_REPOSITORY` file with the all-important **Quick start in 30min**.
 
-In particular, the following versions from Oct-2018 should fit together:
+In particular, the following versions from Nov-2018 should fit together:
 
-  * Isabelle/742c88258cf8
-  * AFP/854bc290d72b
-  * MMT/1b24663b4c4e
-  * MathHub/MMT/urtheories/703627a3213f
-
-The frozen snapshot https://isabelle.sketis.net/devel/Isabelle_03-Oct-2018
-should be available over some months; it corresponds to Isabelle/742c88258cf8.
-
-
-## Side-conditions and potential problems
-
-* Ubuntu Linux 18.04: the kernel update linux-image-4.15.0-36-generic introduces
-  a timing problem with socket communication in the Isabelle Prover IDE that
-  affects all Isabelle versions since 2013. Loading big sessions becomes very
-  slow. This can be avoided by downgrading to linux-image-4.15.0-34-generic or
-  by including the changeset Isabelle/6ededdc829bb.
-
-* Java 8: too many CPU cores (e.g. 20, 40, 80) degrade the performance to a
-  point where it is almost unusable. Java 11 works much better in this respect,
-  but requires a more recent Isabelle repository version
-  (e.g. Isabelle/9dabb405a3ba).
+  * Isabelle/1bee990d443c from https://isabelle.in.tum.de/repos/isabelle
+  * AFP/1566e3fc3118 from https://bitbucket.org/isa-afp/afp-devel
+  * MMT/55f297239a45 from https://github.com/UniFormal/MMT/commits/devel
+  * MathHub/MMT/urtheories/efe7963422a3 from
+    https://gl.mathhub.info/MMT/urtheories/commits/devel
 
 
 ## Setup
@@ -198,9 +182,9 @@ names: if it is the same as the chapter name, the directory will be used at
 its root; otherwise the chapter becomes a sub-directory of the archive. The
 directories given via (multiple) `-A` options are recursively searched for
 MMT archives. If the result is empty, a fresh archive is initialized
-Isabelle system options `mmt_archive_dir` etc. Thus it is possible to use
-`isabelle mmt` without any archive options and get results into a default
-directory (`isabelle_test`), freshly initialized on demand.
+according to Isabelle system options `mmt_archive_dir` etc. Thus it is
+possible to use `isabelle mmt` without any archive options and get results
+into a default directory (`isabelle_test`), freshly initialized on demand.
 
 Options `-B`, `-D`, `-R`, `-X`, `-a`, `-d`, `-g`, `-x` with remaining
 non-option arguments provide the standard Isabelle vocabulary to specify
