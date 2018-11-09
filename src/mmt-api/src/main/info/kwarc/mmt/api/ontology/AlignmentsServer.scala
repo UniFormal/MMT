@@ -246,8 +246,8 @@ class AlignmentsServer extends ServerExtension("align") {
     val argls = """\((\d+),(\d+)\)(.*)""".r
     val direction = allpars.find(p ⇒ p._1 == "direction")
     val pars = allpars.filterNot(p => p._1 == "direction" || p._1 == "arguments")
-    val p1P = Path.parseMS(p1, nsMap)
-    val p2P = Path.parseMS(p2, nsMap)
+    lazy val p1P = Path.parseMS(p1, nsMap)
+    lazy val p2P = Path.parseMS(p2, nsMap)
     if (direction.isDefined) {
       if (allpars.exists(_._1 == "arguments")) {
         var args: List[(Int, Int)] = Nil
@@ -281,8 +281,8 @@ class AlignmentsServer extends ServerExtension("align") {
         ret
       }
     } else {
-      val from: URIReference = Try(LogicalReference(Path.parseMS(p1, nsMap))).getOrElse(PhysicalReference(URI(p1)))
-      val to: URIReference = Try(LogicalReference(Path.parseMS(p2, nsMap))).getOrElse(PhysicalReference(URI(p2)))
+      val from: URIReference = Try(LogicalReference(p1P)).getOrElse(PhysicalReference(URI(p1)))
+      val to: URIReference = Try(LogicalReference(p2P)).getOrElse(PhysicalReference(URI(p2)))
       val ret = InformalAlignment(from, to)
       ret.props = pars
       ret
