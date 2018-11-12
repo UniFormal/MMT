@@ -500,9 +500,11 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       } else {
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val vd = solved.copy(df = Some(valueS))
-         // val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
-         val newSolution = substituteSolution(left ::: vd :: right)
+         // val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of other variables
+         val newSolution = left ::: vd :: right
          setNewSolution(newSolution)
+         val newSolutionS = substituteSolution(newSolution)
+         setNewSolution(newSolutionS)         
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>
