@@ -23,8 +23,6 @@ case class SimplifierState(t : Term, unit: SimplificationUnit, rules: RuleSet, p
   val matchRules = rules.get(classOf[InverseOperator])
 }
 
-//TODO Simplifier should not be pragmatics-aware, instead each rule should have 'under' field
-
 import RuleBasedSimplifier._
 
 /** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
@@ -210,8 +208,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
          case OMV(n) =>
            val vdO = try {
-             context(n).df}
-           catch {case le: LookupError =>
+             context(n).df
+           } catch {case le: LookupError =>
              // this should be impossible, but implementations errors are hard to trace if not caught here
              throw ImplementationError("simplification was called on ill-formed context-object pair").setCausedBy(le)
            }

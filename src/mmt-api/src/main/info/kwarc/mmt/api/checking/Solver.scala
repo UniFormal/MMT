@@ -395,12 +395,13 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     private val unknowns = sub.map(_.name)
     def traverse(t: Term)(implicit con : Context, state : State) = t match {
       case Unknown(n, args) =>
+        val argsT = args map {a => traverse(a)}
         sub(n) match {
           case Some(t) =>
             val FreeOrAny(xs, s) = t
-            s ^? (xs /! args)
+            s ^? (xs /! argsT)
           case None =>
-            t
+            Unknown(n, argsT)
         }
       case _ =>
         if (t.freeVars exists {x => unknowns contains x})
