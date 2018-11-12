@@ -389,10 +389,12 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   /** substitutes some unknowns with solutions
    *  pre: solutions are of the form Free(xs,s) where xs.length is the number of arguments of the unknown 
    *  getSolution returns such a substitution
+   *  
    */
   // TODO this breaks structure sharing
   protected class SubstituteUnknowns(sub: Substitution) extends StatelessTraverser {
     private val unknowns = sub.map(_.name)
+    // con is ignored
     def traverse(t: Term)(implicit con : Context, state : State) = t match {
       case Unknown(n, args) =>
         val argsT = args map {a => traverse(a)}
