@@ -41,6 +41,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     if (!(local <= ret)) throw GeneralError("local path escapes root path: " + ret)
     ret
   }
+  /** checks if a group exists on the remote MathHub */
   def hasGroup(name: String): Boolean = Try(io.Source.fromURL(groupmf_(name).toString)).isSuccess
 
   // GETTING and LOADING existing entries

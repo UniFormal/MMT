@@ -333,7 +333,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, AddMathPathJavaCompanion, ReadCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
         MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
-        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHCloneCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
+        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
