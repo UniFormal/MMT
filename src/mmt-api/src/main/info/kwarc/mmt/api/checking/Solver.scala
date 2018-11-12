@@ -497,9 +497,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          check(Equality(Stack.empty, valueS, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution")
       } else {
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
-         val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
          val vd = solved.copy(df = Some(valueS))
-         val newSolution = left ::: vd :: rightS
+         // val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
+         val newSolution = substituteSolution(left ::: vd :: right)
          setNewSolution(newSolution)
          val r = typeCheckSolution(vd)
          if (!r) return false
