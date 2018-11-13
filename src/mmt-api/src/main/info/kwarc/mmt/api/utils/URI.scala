@@ -176,7 +176,8 @@ object URI {
   val file = scheme("file")
   /** the URI "http:" */
   val http = scheme("http")
-
+  /** the URI "https:" */
+  val https = scheme("https")
   /** returns a URI with no scheme or authority and relative path */
   def relative(path: String*): URI = URI(None, None, path.toList, abs = false)
 

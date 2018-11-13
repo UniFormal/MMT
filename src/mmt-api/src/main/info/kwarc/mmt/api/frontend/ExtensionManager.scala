@@ -15,6 +15,8 @@ import utils._
 import utils.MyList._
 import web._
 
+import scala.util.Try
+
 
 trait Extension extends Logger {
   /** the controller that this extension is added to; only valid after creation of the extension, i.e., will return null if used in a non-lazy val-field */
@@ -192,7 +194,11 @@ class ExtensionManager(controller: Controller) extends Logger {
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
     val clsJ = try {
-       Class.forName(cls)
+       try {
+         Class.forName(cls)
+       } catch {case e: ClassNotFoundException =>
+         controller.backend.loadClass(cls).getOrElse(throw e)
+       }
     } catch {
       case e: Throwable =>
         // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
@@ -206,7 +212,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
+      case e: Exception =>
+        throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
     ext
@@ -325,8 +332,8 @@ class ExtensionManager(controller: Controller) extends Logger {
         CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
         ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, AddMathPathJavaCompanion, ReadCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
-        MMTInfoCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
-        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHCloneCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
+        MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
+        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,

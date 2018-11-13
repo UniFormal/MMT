@@ -4,50 +4,46 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.{File,MMTSystem}
 import info.kwarc.mmt.api.web.Util
 
+/**
+ * A simple application that starts an MMT server and serves a given directory.
+ * This is called by the shell-script mmt_server, via which it is available as a tool from within Isabelle.
+ */
 object Server
 {
-  val default_output_dir = isabelle.Path.explode(Importer.Arguments.default_output_dir)
   val default_port: Int = 8080
 
   def main(args: Array[String])
   {
     isabelle.Command_Line.tool0 {
-      var output_dir = default_output_dir
+      var archive_dirs : List[isabelle.Path] = Nil
       var port = default_port
 
       val getopts = isabelle.Getopts("""
 Usage: isabelle mmt_server [OPTIONS]
 
   Options are:
-    -O DIR       output directory for MMT (default: """ + default_output_dir + """)
+    -A DIR       add archive directory
     -p PORT      server port (default: """ + default_port + """)
 
-  Start MMT HTTP server on localhost, using output directory as archive.
+  Start MMT HTTP server on localhost, using specified archive directories.
 """,
-        "O:" -> (arg => output_dir = isabelle.Path.explode(arg)),
+        "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
         "p:" -> (arg => port = isabelle.Value.Int.parse(arg)))
 
       val more_args = getopts(args)
       if (more_args.nonEmpty) getopts.usage()
 
-      if (!output_dir.is_dir) isabelle.error("Bad directory " + output_dir)
+      val options = isabelle.Options.init()
+      val progress = new isabelle.Console_Progress()
+
+      val (controller, _) =
+        Importer.init_environment(options, progress = progress, archive_dirs = archive_dirs)
+
       if (Util.isTaken(port)) isabelle.error("Port " + port + " already taken")
-
-      val controller = new Controller
-      for {
-        config <-
-          List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
-            MMTSystem.userConfigFile)
-        if config.exists
-      } controller.loadConfigFile(config, false)
-
-      controller.setHome(File(output_dir.file))
-
-      controller.handleLine("mathpath archive .")
       controller.handleLine("server on " + port)
 
-      println("Server http://127.0.0.1:" + port + " for archive " + output_dir.absolute)
-      println("Waiting for INTERRUPT signal ...")
+      progress.echo("Server http://127.0.0.1:" + port)
+      progress.echo("Waiting for INTERRUPT signal ...")
 
       try { isabelle.POSIX_Interrupt.exception { while(true) Thread.sleep(Integer.MAX_VALUE) } }
       catch { case isabelle.Exn.Interrupt() => }

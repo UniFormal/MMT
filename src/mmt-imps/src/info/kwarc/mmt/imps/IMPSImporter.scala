@@ -23,8 +23,8 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    tState.verbosity = 2
-    val targetSection : Section = impsLibrarySections.foundation
+    tState.verbosity = 3
+    val targetSection : Section = impsLibrarySections.metricSpacePairs
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -216,6 +216,7 @@ class IMPSImporter extends Importer
       }
     }
     index(doc)
+    println("> translation process imps-omdoc complete!")
     BuildSuccess(Nil, Nil)
   }
 
@@ -289,12 +290,26 @@ class NEWIMPSParser
   }
 }
 
+class TheoryEnsemble(nm : String, base : DeclaredTheory, fixed : List[DeclaredTheory], renamer: Int => String => String)
+{
+  val name           : String = nm
+  val baseTheory     : DeclaredTheory = base
+  val fixedTheories  : List[DeclaredTheory] = fixed
+  val replicaRenamer : Int => String => String = renamer
+
+  var replicaMap     : Map[Int,DeclaredTheory] = Map.empty
+  var multipleMap    : Map[Int,DeclaredTheory] = Map.empty
+
+  var interpretationsMap : Map[(Int,Int),DeclaredView] = Map.empty
+}
+
 /* Some things are convenient to carry around in state.
    See also: This exact thing, but in PVS */
 class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
   var theories_decl      : List[DeclaredTheory] = Nil
+  var ensembles          : List[TheoryEnsemble] = Nil
 
   var languages          : List[DFLanguage]     = Nil
 

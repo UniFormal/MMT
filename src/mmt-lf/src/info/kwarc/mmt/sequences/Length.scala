@@ -29,7 +29,7 @@ object Length {
       case Sequences.ellipsis(n,_,_) => Some(n)
       case Sequences.flatseq(as @ _*) => Some(NatRules.NatLit(as.length))
       case Sequences.index(_,_) => ONE
-      case OMS(p) => ONE
+      case OMS(p) => ONE // TODO expand definition?
       case OMV(x) =>
         val vd = context(x)
         vd.tp.flatMap {t => infer(context,t)} orElse vd.df.flatMap {t => infer(context,t)} orElse ONE

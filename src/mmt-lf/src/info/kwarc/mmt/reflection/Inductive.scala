@@ -2,6 +2,7 @@ package info.kwarc.mmt.reflection
 
 import info.kwarc.mmt.api._
 import checking._
+import uom._
 import objects._
 import objects.Conversions._
 
@@ -52,10 +53,10 @@ object ElimInfer extends InferenceRule(Terms.elim.path, OfType.path) {
  * p |- eval(t) : a  --->  |- q: formation(p,a)
  */
 object TypingRule extends TypingRule(Terms.formation.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack : Stack, history: History) : Boolean = {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack : Stack, history: History) : Option[Boolean] = {
     tp match {
       case Terms.formation(p,a) =>
-         solver.check(Typing(stack++Context(p), Terms.eval(tm), a))
+         Some(solver.check(Typing(stack++Context(p), Terms.eval(tm), a)))
     }
   }
 }
@@ -63,7 +64,8 @@ object TypingRule extends TypingRule(Terms.formation.path) {
 /**
  * p |- eval(t1) = eval(t2): a  --->  |- t1 = t2 : formation(p,a)
  */
-object Extensionality extends TypeBasedEqualityRule(Nil, Terms.formation.path) {
+object Extensionality extends ExtensionalityRule(Nil, Terms.formation.path) {
+  val introForm = Terms.formation
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = tp match {
      case Terms.formation(p, a) =>
         Some(solver.check(Equality(stack++Context(p), Terms.eval(tm1), Terms.eval(tm2), Some(a))))

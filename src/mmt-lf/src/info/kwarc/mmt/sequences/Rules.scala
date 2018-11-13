@@ -1,13 +1,11 @@
 package info.kwarc.mmt.sequences
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{checking, _}
 import checking._
 import uom._
 import objects._
 import objects.Conversions._
-
 import info.kwarc.mmt.lf._
-
 import Sequences._
 import Nat._
 import NatRules.NatLit
@@ -27,12 +25,12 @@ import NatRules.NatLit
  * |- type^n UNIV
  */
 object UniverseNType extends UniverseRule(rep.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
      val Sequences.rep(t,n) = tm
      solver.check(Typing(stack, n, OMS(nat)))(history.branch) //TODO already covered by precondition or universe rules?
      t match {
-       case OMS(Typed.ktype) => true
-       case _ => solver.error("not a universe: " + tm)
+       case OMS(Typed.ktype) => Some(true)
+       case _ => Some(solver.error("not a universe: " + tm))
      }
    }
 }
@@ -185,25 +183,25 @@ object IndexCompute extends ComputationRule(index.path) {
  *  applicable only if |a| simplifies to a literal
  */
 class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val equalLength = Length.checkEqual(solver, tm, tp).getOrElse {
       throw DelayJudgment("length not known")
     }
-    if (!equalLength) return false
+    if (!equalLength) return Some(false)
     val n = Length.infer(solver, tp).get
     val nS = solver.safeSimplifyUntil(n)(NatLit.unapply)._1
     nS match {
       case NatLit(nI) =>
-        (BigInt(0) until nI) forall {iI =>
+        Some((BigInt(0) until nI) forall {iI =>
           val iL = NatLit(iI)
           solver.check(Typing(stack, index(tm, iL), index(tp, iL)))
-        }
+        })
       case OMV(x) =>
         val i = pickFreshIndexVar(solver, tm)._1
         val iV = OMV(i)
         val iup = upBoundName(i)
         val newCon = stack ++ i%OMS(nat) ++ iup%lessType(iV, nS)
-        solver.check(Typing(newCon, index(tm, iV), index(tp, iV)))
+        Some(solver.check(Typing(newCon, index(tm, iV), index(tp, iV))))
       case _ => throw DelayJudgment("length not a literal")
     }
   }
@@ -222,7 +220,14 @@ object RepTypeCheck extends SequenceTypeCheck(rep.path)
  *
  *  applicable only if |a| simplifies to a literal
  */
-class SequenceEqualityCheck(op: GlobalName) extends TypeBasedEqualityRule(Nil, op) {
+class SequenceEqualityCheck(op: GlobalName) extends ExtensionalityRule(Nil, op) {
+  val introForm = new {def unapply(tm: Term) = tm match {
+    case Sequences.ellipsis(x) => Some(x)
+    case Sequences.rep(x) => Some(x)
+    case Sequences.flatseq(x) => Some(x)
+    case _ => None 
+  }}
+  
   def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val equalLength = List(tm1,tm2).map {tm => Length.checkEqual(solver,tm,tp).getOrElse {
       throw DelayJudgment("length not known")
@@ -266,7 +271,7 @@ object ExpandRep extends ComputationRule(rep.path) {
 }
 
 /** inverse of ExpandRep, useful for complification */
-object ContractRep extends TermTransformationRule with ComplificationRule {
+object ContractRep extends ComplificationRule {
   val head = rep.path
   def apply(matcher: Matcher, c: Context, t: Term) = {
     t match {
@@ -298,7 +303,7 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (argsE != args)
               Simplify(OMA(f, argsE))
             else
-              Recurse 
+              Simplifiability.NoRecurse
          // turn sequence variables into variable sequences
          case OMBINDC(binder, con, args) =>
             val (conE,subs) = ExpandEllipsis.applyCont(con)
@@ -307,8 +312,8 @@ class ExpandEllipsis(op: GlobalName) extends ComputationRule(op) {
             if (conE != con || argsE != args) {
               Simplify(OMBINDC(binder, conE, argsE))
             } else
-              Recurse
-         case _ => Recurse
+              Simplifiability.NoRecurse
+         case _ => Simplifiability.NoRecurse
       }
    }
 }
@@ -451,7 +456,7 @@ object SolveArity extends InferenceRule(Apply.path, OfType.path) {
       if (expNats.length != 1)
         throw Backtrack("can only solve for a single natural number") // TODO multiple nats; nats that do not occur at beginning
       val n = expNats.head._1.get
-      if (!Common.isUnknownTerm(solver, args.head))
+      if (solver.Unknown.unapply(args.head).isEmpty)
         throw Backtrack("arity already known")
       //val expLs = expTps map {case (_,tp) => Length.infer(solver, tp).getOrElse{return None}}
       // Length.infer(a) == None if a is bound variable with omitted type: heuristically assume length 1

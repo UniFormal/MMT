@@ -48,7 +48,12 @@ abstract class SemanticType extends SemanticObject {
     *  only the identity of this type by default, override as needed
     */
    def embed(into: SemanticType): Option[SemanticOperator.Unary] = if (this == into) Some(id) else None
-
+   /** subtype relation
+    *  only reflexivity by default, override as needed
+    *  invariant: if true, embed must return identity
+    */
+   def subtype(of: SemanticType): Boolean = this == of
+   
    /** the identify function of this type */
    def id = SemanticOperator.Unary(this,this)(x => x)
 

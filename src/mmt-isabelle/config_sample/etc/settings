@@ -1,0 +1,16 @@
+init_components "$USER_HOME/.isabelle/contrib" "$ISABELLE_HOME/Admin/components/main"
+
+init_component "$HOME/isabelle/MMT/repos/src/mmt-isabelle"
+init_component "$HOME/isabelle/afp-devel"
+
+ISABELLE_TOOL_JAVA_OPTIONS="-Djava.awt.headless=true -Disabelle.threads=6 -Xss16m -Xms4g -Xmx30g"
+
+ML_OPTIONS="--minheap 4g --maxheap 32g"
+
+ISABELLE_GHC="ghc"
+ISABELLE_MLTON="mlton"
+ISABELLE_OCAML="ocaml"
+ISABELLE_OCAMLC="ocamlc"
+ISABELLE_SMLNJ="sml"
+ISABELLE_SWIPL="swipl"
+

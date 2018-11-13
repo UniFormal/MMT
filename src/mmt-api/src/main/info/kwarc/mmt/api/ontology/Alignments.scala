@@ -35,12 +35,14 @@ sealed abstract class Alignment {
   val to: Reference
   var props: List[(String, String)] = Nil
 
+  /** the composition (diagram-order) of this with that (not necessarily inducing a translation) */
   def ->(that: Alignment): Alignment
 
   // def toJSON: (JSONString, JSONObject)
 
   var isGenerated = false
 
+  /** the reverse of this alignment (not necessarily inducing a translation) */
   def reverse: Alignment
 }
 
@@ -53,11 +55,11 @@ object ConceptPair {
   def apply(from : String, to : String) : ConceptPair = ConceptPair(ConceptReference(from),ConceptReference(to))
 }
 case class ConceptPair(from : ConceptReference, to : ConceptReference) extends Alignment {
-  def  ->(that : Alignment): Alignment = {
+  def ->(that : Alignment): Alignment = {
     val ret = that match {
       case ConceptPair(fr, t) => ConceptPair(from, t)
       case ca : ConceptAlignment => ConceptAlignment(from,ca.ref)
-      case _ => throw ImplementationError("missing case") //TODO
+      case _ => throw ImplementationError("not concatenatable")
     }
     ret.isGenerated = true
     ret
@@ -74,7 +76,8 @@ case class ConceptPair(from : ConceptReference, to : ConceptReference) extends A
 object ConceptAlignment{
   def apply(ref : Reference, con : String) : ConceptAlignment = ConceptAlignment(ref,ConceptReference(con))
 }
-case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
+case class ConceptAlignment private (from: Reference, to : Reference) extends Alignment {
+  // FR I made the constructor private because it is undocumented that not all arguments are legal
   require((from,to) match {
     case (ConceptReference(_),u : URIReference) => true
     case (u : URIReference,ConceptReference(_)) => true
@@ -83,6 +86,7 @@ case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
   val (concept,ref,right) = (from,to) match {
     case (ConceptReference(s),r: URIReference) => (s,r,false)
     case (r: URIReference,ConceptReference(s)) => (s,r,true)
+    case _ => throw ImplementationError("should be impossible due to assertion above")
   }
   def ->(that: Alignment): Alignment = {
     require (to == that.from)
@@ -92,7 +96,6 @@ case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
       case cp @ ConceptPair(ffr,tto) if right => ConceptAlignment(from,tto)
       case a : FormalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
       case a : InformalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
-      case _ => throw new Exception("incompatible alignments can't be composed: " + this + " and " + that)
     }
     ret.isGenerated = true
     ret
@@ -109,31 +112,57 @@ case class ConceptAlignment(from: Reference, to : Reference) extends Alignment {
 sealed abstract class FormalAlignment extends URIAlignment {
   val from: LogicalReference
   val to: LogicalReference
-  val invertible: Boolean
+  def invertible: Boolean = false
 
   def toTerm : Term = to match {
     case LogicalReference(t: GlobalName) ⇒ OMS(t)
     case LogicalReference(t: MPath)      ⇒ OMMOD(t)
   }
+  
+  def ->(that: Alignment): Alignment = {
+    val a = that match {
+      case fa: FormalAlignment => AlignmentConcatenation(this,fa)
+      case ua: URIAlignment => InformalAlignment(this.from, ua.to)
+      case ca: ConceptAlignment => ConceptAlignment(this.from, ca.to)
+      case cp: ConceptPair => throw ImplementationError("this would violate concatenatability")
+    }
+    a.isGenerated = true
+    a
+  }
+  
+  /** if this is invertible, the reverse must be a formal alignment as well */
+  def reverse: Alignment = {
+    val a = InformalAlignment(to, from)
+    a.isGenerated = true
+    a
+  }
 }
 
-case class SimpleAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean) extends FormalAlignment {
+case class AlignmentConcatenation(first: FormalAlignment, second: FormalAlignment) extends FormalAlignment {
+  isGenerated = true
+  val from = first.from
+  val to = second.to
+  override def invertible = first.invertible && second.invertible
+  override def reverse = second.reverse -> first.reverse
+}
+
+case class SimpleAlignment(from: LogicalReference, to: LogicalReference, override val invertible: Boolean) extends FormalAlignment {
 
   def toJSON = (JSONString("Simple"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
     (JSONString("to"), JSONString(to.toString))
   )))
 
-  def reverse = {
+  override def reverse = {
     val ret = if (invertible) SimpleAlignment(to, from, true) else InformalAlignment(to, from)
     ret.isGenerated = true
     ret.props = props
     ret
   }
 
-  def ->(that: Alignment): Alignment = {
+  override def ->(that: Alignment): Alignment = {
     require(to == that.from)
-    val ret = that match {
+    val ret: Alignment = that match {
       case ConceptAlignment(tfrom,tto) => ConceptAlignment(from,tto)
       case SimpleAlignment(tfrom, tto, inv) =>
         SimpleAlignment(from, tto, invertible && inv)
@@ -141,7 +170,7 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
         InformalAlignment(from,tto)
       case ArgumentAlignment(tfrom,tto,inv,arguments) =>
         ArgumentAlignment(from,tto,invertible && inv,arguments)
-      case _ => throw ImplementationError("missing case") //TODO
+      case _ => super.->(that) 
     }
     ret.isGenerated = true
     ret
@@ -152,15 +181,15 @@ case class SimpleAlignment(from: LogicalReference, to: LogicalReference, inverti
     props.filter(x ⇒ x._1 != "direction").map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 }
 
-case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, invertible: Boolean,
+case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, override val invertible: Boolean,
                              arguments: List[(Int, Int)]) extends FormalAlignment {
   def toJSON = (JSONString("Argument"), JSONObject(List(
     (JSONString("from"), JSONString(from.toString)),
     (JSONString("to"), JSONString(to.toString)),
-    (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray.fromList(List(JSONInt(p._1), JSONInt(p._2))))))
+    (JSONString("args"), JSONArray(arguments.map(p ⇒ JSONArray(JSONInt(p._1), JSONInt(p._2))):_*))
   )))
 
-  def reverse = {
+  override def reverse = {
     val ret = if (invertible) ArgumentAlignment(to, from, true, arguments.map(p ⇒ (p._2, p._1))) else
       InformalAlignment(to, from)
     ret.isGenerated = true
@@ -180,7 +209,7 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
     case Some((a,b)) => (a,b)
   }
 
-  def ->(that: Alignment): Alignment = {
+  override def ->(that: Alignment): Alignment = {
     require(to == that.from)
     val ret = that match {
       case SimpleAlignment(tfrom, tto, inv) =>
@@ -189,11 +218,18 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, inver
         InformalAlignment(from,tto)
       case ArgumentAlignment(tfrom,tto,inv,args2) =>
         ArgumentAlignment(from,tto,invertible && inv,combine(args2))
-      case _ => throw ImplementationError("missing case") //TODO
+      case _ => super.->(that)
     }
     ret.isGenerated = true
     ret
   }
+}
+
+/** aligns a global function with a method that is accessed via projection on the first argument */
+// TODO the dot operator should be obtained generically rather than be part of the alignment
+case class DereferenceAlignment(fromP: ContentPath, toP: ContentPath, dotOperator: GlobalName) extends FormalAlignment {
+  val from = LogicalReference(fromP)
+  val to = LogicalReference(toP)
 }
 
 case class InformalAlignment(from: URIReference, to: URIReference) extends URIAlignment {

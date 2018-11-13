@@ -2,9 +2,11 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
@@ -23,22 +25,27 @@ abstract class Test(archivepath : String,
                     logprefixes : List[String] = Nil,
                     alignmentspath : String = "",
                     serverport : Option[Int] = None,
-                    gotoshell : Boolean = true,
                     logfile : Option[String] = None) extends Logger {
+  val gotoshell: Boolean = true
   val controller = Run.controller
   def logPrefix = "user"
   def report = controller.report
 
-  // If you want to log additional stuff, just put it in this list
-
+  // setup logging
   controller.handleLine("log console")
-  if (logfile.isDefined) controller.handleLine("log html " + logfile.get)// /home/raupi/lmh/mmtlog.txt")
+  logfile.foreach(lf => controller.handleLine("log html " + lf))
   ("test" :: logprefixes) foreach (s => controller.handleLine("log+ " + s))
+
+  // add the archives
+  controller.handleLine("mathpath archive " + archivepath)
+  controller.handleLine("lmh root " + archivepath)
+
+  // add the plugins
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
   controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
   // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
-  controller.handleLine("mathpath archive " + archivepath)
+
   controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
 
 
@@ -64,13 +71,27 @@ abstract class Test(archivepath : String,
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
+    val shell = if (gotoshell) Some(Future {
+      Run.disableFirstRun = true
+      Run.main(Array())
+    }(scala.concurrent.ExecutionContext.global)) else None
+    run
+    shell.foreach(f => Await.result(f,Duration.Inf))
+
+    /*
       if (gotoshell) {
-        Future {Run.main(Array())}(scala.concurrent.ExecutionContext.global)
-        Thread.sleep(1000)
+        Future {
+          Thread.sleep(1000)
+          run
+        }(scala.concurrent.ExecutionContext.global)
+        Run.disableFirstRun = true
+        Run.main(Array())
       }
-      run
+      else run
+      */
     } catch {
-      case e: api.Error => println(e.toStringLong)
+      case e: api.Error =>
+        println(e.toStringLong)
         sys.exit
     }
 
@@ -79,41 +100,49 @@ abstract class Test(archivepath : String,
 }
 
 /**
-  * As an example, here's my default. All test files of mine just extend this:
+  * Auto-magical path-finder for all the development setups.
+  * If you use a custom folder, please add into the appropriate lists
   */
-abstract class DennisTest(prefixes : String*) extends Test(
-  "/home/jazzpirate/work/MathHub",
-  prefixes.toList,
-  "/home/jazzpirate/work/Stuff/AlignmentsPublic",
-  Some(8080),
-  true,
-  Some("/home/jazzpirate/work/mmtlog.html")
-) {
+object MagicTest {
+  lazy private val home = File(System.getProperty("user.home"))
+
+  /** the root for archives to use */
+  lazy val archiveRoot: File = {
+    List(
+      home / "work" / "MathHub", // Dennis
+      home / "Projects" / "gl.mathhub.info", // Tom
+      home / "Development" / "KWARC" / "content", // Jonas
+      home / "content", // Michael
+      File("C:") / "other" / "oaff",
+    ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
+  }
+
+  /** the root for alignments */
+  lazy val alignments: Option[File] = List(
+    home / "work" / "Stuff" / "AlignmentsPublic", // Dennis
+    archiveRoot / "alignments" / "Public", // if installed via lmh
+    archiveRoot / "Alignments" / "Public" // if manually installed into differently cased path
+  ).find(_.exists)
+
+  /** the logfile to use for MMT */
+  lazy val logfile: Option[File] = {
+    if((home / "work").exists){
+      Some(home / "work" / "mmtlog.html") // Dennis
+    } else {
+      None
+    }
+  }
 }
 
-abstract class TomTest(prefixes : String*) extends Test(
-  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub",
+/**
+  * A magic test configuration that automatically figures out the paths to everything
+  */
+abstract class MagicTest(prefixes : String*) extends Test(
+  MagicTest.archiveRoot.toString,
   prefixes.toList,
-  "/home/twiesing/Projects/KWARC/MathHub/localmh/MathHub/alignments/Public",
+  MagicTest.alignments.map(_.toString).getOrElse(""),
   Some(8080),
-  true,
-  None
-)
-
-abstract class JonasTest(prefixes: String*) extends Test(
-  "/home/jbetzend/Development/KWARC/content/",
-  prefixes.toList,
-  "",
-  None,
-  true,
-  None
-)
-
-abstract class MichaelTest(prefixes: String*) extends Test(
-  "/home/michael/content/",
-  prefixes.toList,
-  "",
-  Some(8080),
-  true,
-  None
-)
+  MagicTest.logfile.map(_.toString)
+) {
+  override val gotoshell: Boolean = false
+}

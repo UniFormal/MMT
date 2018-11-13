@@ -44,12 +44,12 @@ object Univ {
 
 /** the rule that makes type a valid universe */
 object UniverseType extends UniverseRule(Typed.ktype) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm == OMS(Typed.ktype)
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Boolean] = Some(tm == OMS(Typed.ktype))
 }
 
 /** the rule that makes kind a valid universe */
 object UniverseKind extends UniverseRule(Typed.kind) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm == OMS(Typed.kind)
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Boolean] = Some(tm == OMS(Typed.kind))
 }
 
 /** the type inference rule type:kind */
@@ -61,16 +61,16 @@ object UnivTerm extends InferenceRule(Typed.ktype, OfType.path) {
 }
 
 object TypeInhabitable extends InhabitableRule(Typed.ktype) {
-   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
-      case OMS(Typed.ktype) => true
-      case _ => false
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+      case OMS(Typed.ktype) => Some(true)
+      case _ => None
    }
 }
 
 object KindInhabitable extends InhabitableRule(Typed.kind) {
-   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean = term match {
-      case OMS(Typed.kind) => true
-      case _ => false
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+      case OMS(Typed.kind) => Some(true)
+      case _ => None
    }
 }
 

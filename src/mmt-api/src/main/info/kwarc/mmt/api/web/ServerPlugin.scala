@@ -531,8 +531,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   }
 
   def Writer(f: File) = {
-    f.up.toJava.mkdirs
-    new StandardPrintWriter(f)
+    File.Writer(f)
   }
 
   def write(f: File, s: String) {

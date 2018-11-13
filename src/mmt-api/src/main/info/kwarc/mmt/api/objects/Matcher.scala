@@ -2,12 +2,11 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import frontend._
 import checking._
+import uom._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.symbols._
 import Conversions._
 
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-
-import scala.util.Try
 
 /** matches a goal term against a template term and computes the unifying substitution if possible
  *  i.e., we try to find solution such that template ^ solution == goal
@@ -28,7 +27,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def report = controller.report
    private def presentObj(o: Obj) = controller.presenter.asString(o)
 
-   private val solutionRules = rules.get(classOf[SolutionRule])
+   private val solutionRules = rules.get(classOf[ValueSolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
 
    private var constantContext: Context = Context.empty
@@ -76,7 +75,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 
       def lookup = controller.globalLookup
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
-         controller.simplifier(t, stack.context, rules, false)
+         controller.simplifier(t, SimplificationUnit(stack.context,false,false), rules)
       def outerContext = constantContext ++ querySolution
 
       def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
@@ -84,7 +83,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
             Some(new AnonymousTheory(mt, Nil))
          // add include of codomain of mor
          case OMMOD(mp) =>
-            val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
+            val th = controller.globalLookup.getO(mp) match {
                case Some(th2: DeclaredTheory) => th2
                case _ => return None
             }
@@ -168,7 +167,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       // j is the equality judgment that we try to apply solution rules to
       var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
       // applies all the rules found by findSolvableVariable
-      def applyRules(rs: List[SolutionRule]) {
+      def applyRules(rs: List[ValueSolutionRule]) {
          rs.foreach {r =>
             j = r(j).getOrElse(return)._1
          }

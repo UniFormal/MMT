@@ -8,25 +8,29 @@ class BranchInfo(val history: History, val backtrack: Branchpoint)
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed
  *  @param incomplete pursuing this constraint is an incomplete reasoning step
  */
-abstract class DelayedConstraint(val incomplete: Boolean) {
-  protected val freeVars: scala.collection.Set[LocalName]
+abstract class DelayedConstraint {
+  def notTriedYet: Boolean
+  val freeVars: scala.collection.Set[LocalName]
   val branchInfo: BranchInfo
   def history = branchInfo.history
   def branch = branchInfo.backtrack
   /** @return true if a solved variable occurs free in this Constraint */
-  def isActivatable(solved: List[LocalName]) = solved exists {name => freeVars contains name}
+  def isActivatable(solved: List[LocalName]) = notTriedYet || (solved exists {name => freeVars contains name})
 }
 
 /** A wrapper around a Judgement to maintain meta-information while a constraint is delayed */
-class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo,
-                       incomplete: Boolean, val onActivation: Option[() => Boolean]) extends DelayedConstraint(incomplete) {
-  protected val freeVars = constraint.freeVars
+class DelayedJudgement(val constraint: Judgement, val branchInfo: BranchInfo, val notTriedYet: Boolean = false) extends DelayedConstraint {
+  val freeVars = constraint.freeVars
   override def toString = constraint.toString
 }
 
 /** A wrapper around a continuation function to be delayed until a certain type inference succeeds */
-class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint(false) {
-   protected val freeVars = scala.collection.immutable.ListSet(tm.freeVars:_*)
+class DelayedInference(val stack: Stack, val branchInfo: BranchInfo, val tm: Term, val cont: Term => Boolean) extends DelayedConstraint {
+   def notTriedYet = false
+   val freeVars = {
+     val vs = stack.context.freeVars ++ tm.freeVars
+     scala.collection.immutable.ListSet(vs :_*)
+   }
    override def toString = "delayed inference of "  + tm.toString
 }
 

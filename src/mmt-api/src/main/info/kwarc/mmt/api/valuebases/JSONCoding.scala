@@ -64,7 +64,7 @@ class BigIntCodec(id: GlobalName, synType: Term) extends LiteralsCodec[BigInt,JS
              case _ =>  throw CodecNotApplicable
            }
            val digits = jdigits.toList map {
-              case JSONInt(i) => i
+              case JSONInt(i) => i.toInt // .toInt works by precondition of being < 2^31
               case _ => throw CodecNotApplicable
            }
            splitter.assemble(sign, digits)

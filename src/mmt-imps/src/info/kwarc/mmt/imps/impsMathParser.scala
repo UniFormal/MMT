@@ -383,32 +383,6 @@ package object impsMathParser
           IMPSQCGroups(m,mul,e,inv)
         }
 
-        case SEXPAtom("nil") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCNil(e1)
-        }
-
-        case SEXPAtom("length") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCLength(e1)
-        }
-
-        case SEXPAtom("f-seq?") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCFseq(e1)
-        }
-
-          //More sequences QCs
-
         case SEXPAtom("finite-cardinality") =>
         {
           assert(s.args.length == 2)
@@ -440,6 +414,30 @@ package object impsMathParser
           val f : IMPSMathExp = makeSEXPFormula(s.args(2))
 
           IMPSQCInvariant(a,f)
+        }
+
+        case SEXPAtom("length") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCLength(e1)
+        }
+
+        case SEXPAtom("f-seq?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFseqQ(e1)
+        }
+
+        case SEXPAtom("nil") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCNil(e1)
         }
 
         case SEXPAtom("cons") =>

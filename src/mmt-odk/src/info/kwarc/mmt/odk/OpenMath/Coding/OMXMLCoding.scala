@@ -257,6 +257,8 @@ class OMXMLCoding extends OMCoding[Node] {
         ATTR_ID, id orNull
       )
     case OMSymbol(name, cd, id, cdbase) =>
+      val base = cdbase.map(b => if (b.toString.endsWith("/")) b.toString else b.toString + "/") orNull
+
       setAttr(
         <OMS></OMS>,
 
@@ -264,7 +266,7 @@ class OMXMLCoding extends OMCoding[Node] {
         ATTR_CD, cd,
 
         ATTR_ID, id orNull,
-        ATTR_CDBASE, cdbase.map(_.toString) orNull
+        ATTR_CDBASE, base
       )
     case OMVariable(name, id) =>
       setAttr(

@@ -79,8 +79,22 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def loadObjectO(p: MPath): Option[SemanticObject] = {
      stores.foreach {
        case rs: RealizationStorage =>
-          val obj = try {
+          try {
             return Some(rs.loadObject(p))
+          } catch {
+            case NotApplicable(_) =>
+          }
+       case _ =>
+     }
+     None
+  }
+  /** like load but tries to load a Java class */
+  def loadClass(cls: String): Option[Class[_]] = {
+     val p = SemanticObject.javaToMMT(cls)
+     stores.foreach {
+       case rs: RealizationStorage =>
+          try {
+            return Some(rs.loadClass(cls, p))
           } catch {
             case NotApplicable(_) =>
           }

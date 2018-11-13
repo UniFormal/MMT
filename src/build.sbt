@@ -1,9 +1,6 @@
 import scala.io.Source
 import sbt.Keys._
 
-import scala.sys.process.Process
-import scala.util.Try
-
 // =================================
 // META-DATA and Versioning
 // =================================
@@ -14,7 +11,6 @@ val now = {
   import java.util.Date
   new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
 }
-
 
 packageOptions in Global ++= Seq(
   // Specification Version can be any string, and hence includes the build time
@@ -93,9 +89,12 @@ def commonSettings(nameStr: String) = Seq(
       PathList("rootdoc.txt") | // 2 versions from from scala jars
       PathList("META-INF", _*) => // should never be merged anyway
       MergeStrategy.discard
-    // work around weird behavior of default strategy, which renames files for no apparent reason
-    case _ => MergeStrategy.singleOrError
-  }
+    // work around Florian's obsession with unmanaged jars
+    // otherwise, we wouldn't need this
+    case _ => MergeStrategy.first
+  },
+  // errors for assembly only
+  logLevel in assembly := Level.Error
 )
 
 /** settings reused by MMT projects */
@@ -127,17 +126,23 @@ lazy val excludedProjects = {
 // Main MMT Projects
 // =================================
 
-// building API documentation
+// the aggregating meta project, used for manual testing
+// and building api documentation
 lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
   exclusions(excludedProjects).
-  aggregate(
+  aggregatesAndDepends(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got,
       tiscaf, lfcatalog,
       jedit
-  ).settings(
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter
+  ).
+  settings(
+    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter,
+    // add the test folder to the test sources
+    // but don't actually run any of them
+    scalaSource in Test := baseDirectory.value / "test",
+    test := {}
   )
 
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
@@ -167,6 +172,14 @@ lazy val mmt = (project in file("mmt")).
 
 // MMT is split into multiple subprojects to that are managed independently.
 
+val apiJars = Seq(
+  "scala-compiler.jar",
+  "scala-reflect.jar",
+  "scala-parser-combinators.jar",
+  "scala-xml.jar",
+  "xz.jar",
+).map(Utils.lib.toJava / _ )
+
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
   settings(mmtProjectsSettings("mmt-api"): _*).
@@ -175,17 +188,8 @@ lazy val api = (project in file("mmt-api")).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-compiler.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-reflect.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar",
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-compiler.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-reflect.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-parser-combinators.jar",
-    unmanagedJars in Test += Utils.lib.toJava / "scala-xml.jar",
-//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % scalaVersion.value % "test",
-    libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "test",
-    libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "test"
+    unmanagedJars in Compile ++= apiJars,
+    unmanagedJars in Test ++= apiJars,
   )
 
 
@@ -257,7 +261,7 @@ lazy val interviews = (project in file("mmt-interviews")).
 
 // using MMT from Python via Py4J, maintainer: Florian
 lazy val python = (project in file("python-mmt")).
-  dependsOn(api).
+  dependsOn(api,odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
   
@@ -339,6 +343,7 @@ lazy val metamath = (project in file("mmt-metamath")).
   settings(mmtProjectsSettings("mmt-metamath"): _*)
 
 // plugin for reading isabelle. Author: Makarius Wenzel
+// This only works if an Isabelle environment is present. If not, we use an empty dummy project.
 lazy val isabelle_root =
   System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
 lazy val isabelle_jars =
@@ -394,7 +399,8 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
 //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test"
+      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test",
+      "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ),
     test := {} // disable tests for tiscaf
   )
@@ -408,7 +414,7 @@ lazy val lfcatalog = (project in file("lfcatalog")).
     publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
     deployLFCatalog := {
       assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
-    }.value, 
+    }.value,
     unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
   )
 

@@ -8,7 +8,7 @@ import utils.MyList.fromList
 
 object Common {
    /** checks that a type can be quantified over
-    *  to maximize extensibility, we allow a bound variables x:a if a:U:kind for some U
+    *  to maximize extensibility, we allow a bound variable x:a if a:U:kind for some U
     *
     *  in plain LF, this is only possible if U=type, i.e., if a:type
     *  other frameworks may want to reuse the LF typing rules with more options for U
@@ -16,14 +16,9 @@ object Common {
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
-     val tp = OMS(Typed.ktype)
      solver.inferTypeAndThen(a)(stack, h) {aT =>
-        if (aT == kind) {
-          solver.error("type of bound variable is too big: " + solver.presentObj(aT))
-        } else {
-          val iskind = solver.tryToCheckWithoutDelay(Typing(stack, aT, kind, Some(OfType.path)))
-          if (iskind contains true) true else solver.check(Subtyping(stack,aT,tp))
-        }
+        solver.check(Typing(stack, aT, kind, Some(OfType.path)))
+        // FR: this used to call aT<:type instead aT:kind, which makes no sense 
      }
    }
 
@@ -36,7 +31,7 @@ object Common {
       val tpS = solver.safeSimplifyUntil(tp)(Pi.unapply)._1
       tpS match {
          case Pi(x,a,b) => tpS
-         case ApplyGeneral(OMV(m), args) =>
+         case solver.Unknown(m, args) =>
            // check that tp is unknown applied to variables
            if (! solver.getUnsolvedVariables.isDeclared(m)) {
               return tpS
@@ -45,13 +40,13 @@ object Common {
               case OMV(u) =>
               case _ => return tpS
            }
-           val mD = OMV(m/"d")
-           val mC = OMV(m/"c")
-           val mV = OMV(m/"v")
-           val mSol = Pi(mV.name, ApplyGeneral(mD, args), ApplyGeneral(mC, args ::: List(mV)))
+           val mD = m/"d"
+           val mC = m/"c"
+           val mV = m/"v"
+           val mSol = Pi(mV, solver.Unknown(mD, args), solver.Unknown(mC, args ::: List(OMV(mV))))
            // if we have not done the variable transformation before, add the new unknowns
-           if (! solver.getPartialSolution.isDeclared(mD.name)) {
-              val newVars = Context(VarDecl(mD.name), VarDecl(mC.name))
+           if (! solver.getPartialSolution.isDeclared(mD)) {
+              val newVars = Context(VarDecl(mD), VarDecl(mC))
               solver.addUnknowns(newVars, Some(m))
            }
            history += ("trying to solve "+m+" as "+solver.presentObj(mSol))
@@ -63,25 +58,6 @@ object Common {
    }
    def pickFresh(solver: Solver, x: LocalName)(implicit stack: Stack) =
       Context.pickFresh(solver.constantContext ++ solver.getPartialSolution ++ stack.context, x)
-
-  /** true if a term is an unknown applied to arguments */
-  def isUnknownTerm(solver: Solver, t: Term) = t match {
-    case ApplyGeneral(OMV(u), _) => solver.getUnsolvedVariables.isDeclared(u)
-    case _ => false
-  }
-}
-
-/** matches an unknown applied to a list of variables */
-case class UnknownMatcher(solver: Solver) {
-  def unapply(t: Term): Option[(LocalName,List[LocalName])] = t match {
-    case ApplyGeneral(OMV(u), args) =>
-      if (!solver.getPartialSolution.isDeclared(u)) return None
-       val bvars = args map {
-         case OMV(n) => n
-         case _ => return None
-      }
-      Some((u, bvars))
-  }
 }
 
 import Common._
@@ -99,7 +75,7 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
         case Pi(x,a,b) =>
            if (!covered) isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
-           solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
+           solver.inferType(b ^? sub, covered)(stack ++ xn % a, history) flatMap {bT =>
               if (bT.freeVars contains xn) {
                  // usually an error, but xn may disappear later, especially when unknown in b are not solved yet
                  //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
@@ -114,14 +90,14 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
 
 /** Introduction: the type inference rule x:A|-t:B  --->  lambda x:A.t : Pi x:A.B
  * This rule works for B:U for any universe U
-  * */
+ */
 object LambdaTerm extends IntroductionRule(Lambda.path, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case Lambda(x,a,t) =>
-           if (!covered) isTypeLike(solver,a) // this used to be solver.inferType(a), which is not correct
+           if (!covered) isTypeLike(solver,a)
            val (xn,sub) = Common.pickFresh(solver, x)
-           solver.inferType(t ^? sub)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
+           solver.inferType(t ^? sub, covered)(stack ++ xn % a, history) map {b => Pi(xn,a,b)}
         case _ => None // should be impossible
       }
    }
@@ -149,39 +125,33 @@ object StandardArgumentChecker extends ArgumentChecker {
  *
  * This rule implements currying and all arguments at once
  */
-class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.path, OfType.path) {
-   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
+class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule(Apply.path, OfType.path) {
+   def apply(solver: Solver, tm: Term, tpO: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) : (Option[Term], Option[Boolean]) = {
       // calling Beta first could make this rule more reusable because it would avoid inferring the type of a possibly large lambda
-      // println(solver.presentObj(tm))
-      // auxiliary function that handles one argument at a time
-      def iterate(fT: Term, args: List[Term]): Option[Term] = {
-         (fT,args) match {
+
+      /* inspects the function type to extract the expected types of the arguments
+       * @param retType the type after applying to previous arguments
+       * @param args the remaining arguments
+       * @param argTypes the types of the previous arguments (reverse order)
+       * @return the types of all arguments 
+       */
+      def iterate(retType: Term, args: List[Term], argTypes: List[Term]): Option[(List[Term],Term)] = {
+         (retType,args) match {
            case (_, Nil) =>
-             history += "no arguments, type is: " + solver.presentObj(fT)
-             Some(fT)
+             Some((argTypes.reverse,retType))
            case (Pi(x,a,b), t::rest) =>
-              history += "function type is: " + solver.presentObj(fT)
-              history += "argument is: " + solver.presentObj(t)
-              val check = conforms(solver)(t, a, covered)(stack, history + "checking argument")
-              if (check) {
-                 history += "substituting argument in return type"
-                 // substitute for x and newly-solved unknowns (as solved by conforms) and simplify
-                 val bS = solver.substituteSolved(b ^? (x/t), true)
-                 iterate(bS, rest)
-              } else {
-                history += "argument check did not succeed: " + solver.presentObj(t) + ":" + solver.presentObj(a) + ", giving up for now"
-                None
-              }
+              val bS = b ^? (x/t)
+              iterate(bS, rest, a::argTypes)
            /*case ApplyGeneral(OMV(u), _) =>
               history += "does not look like a function type at this point"
               None*/
            case _ =>
-              val fTPi = Common.makePi(solver, fT)
-              if (fTPi != fT)
-                 iterate(fTPi, args)
+              val rTPi = Common.makePi(solver, retType)
+              if (rTPi != retType)
+                 iterate(rTPi, args, argTypes)
               else {
                 val unks = solver.getUnsolvedVariables
-                if (fTPi.freeVars.exists(unks.isDeclared)) {
+                if (rTPi.freeVars.exists(unks.isDeclared)) {
                    // this might be convertible into a function type once the unknown variable is solved
                    history += "does not look like a function type at this point"
                    solver.error("this is not a function type (type level rewriting is not supported)")
@@ -194,19 +164,44 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends EliminationRule(Apply.
       }
       tm match {
          case ApplySpine(f,args) =>
-            history += "inferring type of function " + solver.presentObj(f)
-            val fTOpt = solver.inferType(f, covered)(stack, history.branch)
+            val fTOpt = solver.inferType(f, covered)(stack, history + ("inferring type of function " + solver.presentObj(f)))
             fTOpt match {
               case Some(fT) =>
-                iterate(fT, args)
+                history += "function is " + solver.presentObj(f) + " of type " + solver.presentObj(fT)
+                iterate(fT, args, Nil) match {
+                  case Some((argTypes,tmI)) =>
+                    // It is not clear whether it is better to type-check the return type or the arguments first.
+                    // Conceivably the latter allows solving more unknowns early and localize errors.
+                    // But it can also introduce complex terms early, thus slowing down (factor 2  in experiments) checking and 
+                    // even lead to failures where beta-reductions substitutions to the arguments of unknowns.
+                    // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
+                    // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
+                    //val resCheckResult = tpO flatMap {tp =>
+                    //   solver.check(Subtyping(stack, tmI, tp))(history + "checking return type against expected type")
+                    //}
+                    val resCheckResult: Option[Boolean] = None
+                    // check the arguments
+                    // open question: should later arguments still be ckeched if an error is found?
+                    val argCheckResult = (args zip argTypes).zipWithIndex forall {case ((t,a),i) =>
+                      val aS = solver.substituteSolution(a) // previous checks may have solved some unknowns
+                      conforms(solver)(t, aS, covered)(stack, history + ("checking argument " + (i+1)))
+                    }
+                    // no point in returning a positive check result if this is internally ill-typed
+                    val checkResult = resCheckResult map {r => r && argCheckResult}
+                    // we return the inferred type and (if expected type provided) the type check result
+                    val tmIS = solver.substituteSolution(tmI)
+                    (Some(tmIS), checkResult)
+                  case None =>
+                    (None, None)
+                }
               case None =>
                 history += "failed"
                 //TODO commented out because it looks redundant, check if it's ever helpful
                 //args.foreach {t => solver.inferType(t)(stack, history.branch)} // inference of the argument may solve some variables
-                None
+                (None,None)
             }
          case _ =>
-            None // should be impossible
+            (None,None) // should be impossible
       }
    }
 }
@@ -218,33 +213,35 @@ object ApplyTerm extends GenericApplyTerm(StandardArgumentChecker)
 // TODO all typing rules of this style are in danger of accepting an expression if all eliminations are well-formed but the term itself is not
 //  e.g., [x:Int]sqrt(x) : Nat->Real  would check
 object PiType extends TypingRule(Pi.path) with PiOrArrowRule {
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
       (tm,tp) match {
          case (Lambda(x1,a1,t),Pi(x2,a2,b)) =>
             // this case is somewhat redundant, but allows reusing the variable name
+            // TODO this might check a1 >: a2 instead, but then a1 must be checked separately
             solver.check(Equality(stack,a1,a2,None))(history+"domains must be equal")
             val (xn,sub1) = Common.pickFresh(solver, x1)
             val sub2 = x2 / OMV(xn)
-            val nt = solver.substituteSolved(a2,true)
-           // seems to be necessary, in case a2 has only been solved during the equality check above...
-            solver.check(Typing(stack ++ xn % nt, t ^? sub1, b ^? sub2))(history + "type checking rule for Pi")
+            val aN = solver.substituteSolution(a2) // both a1 and a2 may contain unknowns, which may have been solved when checking a1==a2
+            Some(solver.check(Typing(stack ++ xn % aN, t ^? sub1, b ^? sub2)))
          case (tm, Pi(x2, a2, b)) =>
             val (xn,sub) = Common.pickFresh(solver, x2)
             val j = Typing(stack ++ xn % a2,  Apply(tm, xn), b ^? sub)
-            solver.check(j)(history + "type checking rule for Pi")
+            Some(solver.check(j))
       }
    }
 }
 
 /** equality-checking: the extensionality rule (equivalent to Eta) x:A|-f x = g x : B --->  f = g  : Pi x:A. B
  * If possible, the name of the new variable x is taken from f, g, or their type; otherwise, a fresh variable is invented. */
-object Extensionality extends TypeBasedEqualityRule(Nil, Pi.path) with PiOrArrowRule {
+object Extensionality extends ExtensionalityRule(Nil, Pi.path) with PiOrArrowRule {
+   val introForm = Lambda
+   
    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       val Pi(x, a, b) = tp
       // pick fresh variable name, trying to reuse existing name
       val xBase = (tm1, tm2) match {
          case (Lambda(x1, _, _), Lambda(x2,_,_)) if x1 == x2 => x1
-         case _ => x
+         case _ => if (x != OMV.anonymous) x else LocalName("x")
       }
       val (xn,_) = Context.pickFresh(stack.context, xBase)
       val tm1Eval = Apply(tm1, OMV(xn))
@@ -324,7 +321,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               reduce(t ^? (x / s), rest)
             } else {
               history += "cannot beta-reduce at this point"
-              Recurse
+              RecurseOnly(1 :: Nil)
             }
          case (f, Nil) =>
            //all arguments were used, recurse in case f is again a redex
@@ -335,11 +332,18 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
            }
          case(OMS(p),ls) =>
            val dfO = solver.lookup.getConstant(p).df
-           if (dfO.isDefined) reduce(dfO.get,args)
-           else if (reduced)
-             Simplify(ApplySpine(f,args : _*))
-           else
-             Simplifiability.NoRecurse
+           dfO match {
+             case Some(df) => // TODO EXPERIMENTAL! What to do if defined, but definition is not a lambda?
+               val (dfS,opt) = solver.safeSimplifyUntil(df)(Lambda.unapply)
+               if (opt.isDefined) reduce(dfS,args)
+               else if (reduced) Simplify(ApplySpine(f,args :_*))
+               else RecurseOnly(1 :: Nil)
+             case None =>
+               if (reduced)
+                 Simplify(ApplySpine(f,args : _*))
+               else
+                 Simplifiability.NoRecurse
+           }
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
@@ -349,7 +353,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               if (reduced)
                 Simplify(ApplySpine(f,args : _*))
               else
-                Recurse
+                RecurseOnly(1 :: Nil)
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
@@ -443,7 +447,7 @@ object DropTypeAttribution extends ComputationRule(TypeAttribution.path) {
 
 
 // experimental (requiring that torso is variable does not combine with other solution rules)
-object SolveMultiple extends SolutionRule(Apply.path) {
+object SolveMultiple extends ValueSolutionRule(Apply.path) {
    def applicable(tm1: Term) = tm1 match {
       case ApplySpine(OMV(_),_) => Some(0)
       case _ => None
@@ -473,24 +477,25 @@ object SolveMultiple extends SolutionRule(Apply.path) {
    }
 }
 
-/** solution: This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
- *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable.
- */
-object Solve extends SolutionRule(Apply.path) {
+trait ApplySolutionRule extends SolutionRule {
    def applicable(t: Term) = t match {
       case Apply(_, _) => Some(0)  // do not match for OMV(_) here: unknowns in function position belong to this rule even if the rule can't do anything
       case _ => None
    }
-   def apply(j: Equality): Option[(Equality, String)] = {
-      j.tm1 match {
+   
+   protected case class Isolation(newContext: Context, bound: LocalName, boundTp: Term, rest: Term)
+
+   /** returns Isolation(c, x, a, r) such that c, x:a |- tm = r x  and x not occurring in c, r */
+   protected def bind(context: Context, tm: Term, other: Term): Option[Isolation] = {
+      tm match {
          case Apply(t, OMV(x)) =>
-             val i = j.stack.context.lastIndexWhere(_.name == x)
+             val i = context.lastIndexWhere(_.name == x)
              if (i == -1) return None
              // dropped contains x and all variable declarations that depend on it
              var dropped = List(x) 
-             var newCon : Context = j.stack.context.take(i) // the resulting context
+             var newCon : Context = context.take(i) // the resulting context
              // iterate over the variables vd after x
-             j.stack.context.drop(i+1) foreach {vd =>
+             context.drop(i+1) foreach {vd =>
                 if (vd.freeVars.exists(dropped.contains)) {
                    // vd depends on x, we use weakening to drop vd as well
                    dropped ::= vd.name
@@ -503,13 +508,12 @@ object Solve extends SolutionRule(Apply.path) {
              if (t.freeVars.exists(dropped.contains))
                 // most important special case: x occurs free in t so that eta is not applicable
                 return None
-             if (j.tm2.freeVars.exists(dropped.filterNot(_ == x) contains _))
+             if (other.freeVars.exists(dropped.filterNot(_ == x) contains _))
                 return None
              // get the type of x and abstract over it
-             j.stack.context.variables(i).tp match {
+             context.variables(i).tp match {
                 case Some(a) =>
-                   val newStack = j.stack.copy(context = newCon)
-                   Some((Equality(newStack, t, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x"))
+                   Some(Isolation(newCon, x, a, t))
                 case _ => None
              }
          case _ => None
@@ -517,41 +521,26 @@ object Solve extends SolutionRule(Apply.path) {
    }
 }
 
-/** This rule tries to solve for an unkown by applying lambda-abstraction on both sides and eta-reduction on the left.
+/** solution: This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
  *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable.
  */
-object SolveType extends TypeSolutionRule(Apply.path) {
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
-      tm match {
-         case Apply(t, OMV(x)) =>
-             val i = stack.context.lastIndexWhere(_.name == x)
-             if (i == -1) return false
-             var dropped = List(x) // the variables that we will remove from the context
-             var newCon : Context = stack.context.take(i) // the resulting context
-             // iterate over the variables vd after x
-             stack.context.drop(i+1) foreach {vd =>
-                if (vd.freeVars.exists(dropped.contains _)) {
-                   // vd depends on x, we use weakening to drop vd as well
-                   dropped ::= vd.name
-                } else {
-                   // append vd to the new context
-                   newCon = newCon ++ vd
-                }
-             }
-             // check whether weakening is applicable: dropped variables may not occur in t or Lambda(x,a,tm2)
-             if (t.freeVars.exists(dropped.contains _))
-                // most important special case: x occurs free in t so that eta is not applicable
-                return false
-             if (tp.freeVars.exists(dropped.filterNot(_ == x) contains _))
-                return false
-             // get the type of x and abstract over it
-             stack.context.variables(i).tp match {
-                case Some(a) =>
-                   val newStack = stack.copy(context = newCon)
-                   solver.solveTyping(t, Pi(x, a, tp))(newStack, history + ("solving by binding " + x))
-                case _ => false
-             }
-         case _ => false
+object Solve extends ValueSolutionRule(Apply.path) with ApplySolutionRule {
+   def apply(j: Equality) = {
+      bind(j.stack.context, j.tm1, j.tm2) map {case Isolation(newCon, x, a, rest) =>
+        val newStack = j.stack.copy(context = newCon)
+        (Equality(newStack, rest, Lambda(x, a, j.tm2), j.tpOpt map {tp => Pi(x,a,tp)}), "binding x")
+      }
+   }
+}
+
+/** This rule tries to solve for an unknown by applying lambda-abstraction on both sides and eta-reduction on the left.
+ *  Its effect is, for example, that X x = t is reduced to X = lambda x.t where X is a meta- and x an object variable.
+ */
+object SolveType extends TypeSolutionRule(Apply.path) with ApplySolutionRule {
+   def apply(j: Typing) = {
+      bind(j.stack.context, j.tm, j.tp) map {case Isolation(newCon, x, a, rest) =>
+        val newStack = j.stack.copy(context = newCon)
+        (Typing(newStack, rest, Pi(x, a, j.tp)), "binding x")
       }
    }
 }

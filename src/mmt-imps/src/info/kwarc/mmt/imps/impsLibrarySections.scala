@@ -232,7 +232,7 @@ package object impsLibrarySections
 
   def metricSpaces : Section = Section(
     "metric-spaces",
-    List(foundation),
+    List(foundation,iterate),
     List("metric-spaces.t", "metric-space-supplements.t"),
     List("metric-spaces.json", "metric-spaces-0.json", "metric-spaces-1.json", "metric-spaces-2.json")
   )
@@ -276,7 +276,7 @@ package object impsLibrarySections
 
   def banachFixedPointTheorem : Section = Section(
     "banach-fixed-point-theorem",
-    List(partialOrders,metricSpaces),
+    List(partialOrders,metricSpacePairs),
     List("fixed-point-theorem.t"),
     List("ms-closed-ball.json")
   )

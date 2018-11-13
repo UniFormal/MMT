@@ -46,7 +46,8 @@ class Report extends Logger {
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
   private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response")
-  private def checkDebug = groups contains "debug"
+  /**  true if debug logging is enabled */
+  def checkDebug = groups contains "debug"
   
   private var counter = -1
   private def nextId = {counter += 1; counter}
@@ -56,7 +57,7 @@ class Report extends Logger {
    *  to use, set a breakpoint in this method and call "breakOnId(i)" after the call to "log" at which you want to break
    */
   def breakOnId(id: Int) {
-    if (id == counter)
+    if (id <= counter)
       return
   }
   
@@ -132,6 +133,16 @@ class Report extends Logger {
     if (ind >= 1) ind -= 1
   }
 
+  /** enables logging for a set of groups within a block */
+  def withGroups[A](groups: String*)(a: => A): A = {
+    val theGroups = groups.filterNot(this.groups.contains) // the groups that we did not have beforehand
+    theGroups.foreach(this.groups += _)
+    try {
+      a
+    } finally {
+      theGroups.foreach(this.groups -= _)
+    }
+  }
 }
 
 object Report {

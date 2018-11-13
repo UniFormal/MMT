@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import objects._
 import parser._
+import utils._
 
 class ShellCommand extends ShellExtension("run") {
    def helpText = "mmt :run THEORY-URI PROGRAM-TERM"

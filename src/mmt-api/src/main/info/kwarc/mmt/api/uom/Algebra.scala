@@ -1,3 +1,5 @@
+/* nice, but were never used; needs rethinking
+
 package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import objects._
@@ -479,3 +481,5 @@ class BooleanLattice(meet: GlobalName, join: GlobalName, top: GlobalName, bottom
       new Complement(join, compl, top)
    )
 }
+
+*/

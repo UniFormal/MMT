@@ -130,3 +130,19 @@ class Pragmatics extends ChangeListener {
      }
   }
 }
+
+/** apply/unapply for a pragmatic OMA under a given list of HOAS apply operators */
+class OMAUnder(under: List[GlobalName]) {
+  private val underL = under.length
+  private val underT = under.map(OMS(_))
+  def apply(f: Term, args: List[Term]) = {
+    val comps = underT ::: f :: args
+    OMA(comps.head, comps.tail)
+  }
+  def unapply(t: Term): Option[(Term,List[Term])] = t match {
+    case OMA(f,uargs) if (f::uargs).startsWith(underT) =>
+      val comps = (f::uargs).drop(underL)
+      Some((comps.head, comps.tail))
+    case _ => None
+  }
+}

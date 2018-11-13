@@ -12,18 +12,17 @@ import utils._
 import scala.util.Try
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
+class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, errorCont: ErrorHandler) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
-  private val errorCont = ErrorThrower
   private var counter = 0
 
   /** parses a declaration in a specific point (default: current point) of the document associated with this session (also stores in in controller) */
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
-    val ps = ParsingStream(path.uri, scope, NamespaceMap(doc.path), interpreter.format, buffer)
+    val ps = ParsingStream(path.uri, scope, doc.nsMap, interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
@@ -45,7 +44,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter) {
   }
 
   /** like parseStructure but for objects; the object is stored it as the definiens of a [[Constant]] declaration */
-  def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Declaration = {
+  def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Constant = {
     val scope = scopeOpt.getOrElse(currentScope)
     val mpath = scope match {
       case IsMod(m, _) => m
@@ -76,9 +75,11 @@ object REPLServer {
   case object Start extends Command
   case object Restart extends Command
   case object Quit extends Command
+  // return the OMDoc representation of the current session
+  case object StoreOMDoc extends Command
   // mathematically relevant commands
   case class Input(command: String) extends Command
-  
+
   object Command {
     def parse(s: String): Command = {
       s match {
@@ -87,15 +88,22 @@ object REPLServer {
         case "show" => Show
         case "restart" => Restart
         case "quit" => Quit
-        case s => Input(s) 
+        case "finalize" => StoreOMDoc
+        case s => Input(s)
       }
     }
   }
 
   /** Response by a REPL session after executing a [[Command]] */
   abstract class REPLResponse
+
+  /** @param messages pairs on type and object */
+  case class MultiTypedResponse(messages: (String,String)*) extends REPLResponse
+  /** shortcut for a response with a single message */
+  object AdminResponse {
+    def apply(message: String) = MultiTypedResponse("message" -> message)
+  }
   
-  case class AdminResponse(message: String) extends REPLResponse
   
   abstract class ElementResponse extends REPLResponse {
     def element: StructuralElement
@@ -106,7 +114,7 @@ object REPLServer {
 
 import REPLServer._
 
-class REPLServer extends ServerExtension("repl") {
+class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
   private lazy val presenter = controller.presenter
 
   private var sessions: List[REPLSession] = Nil
@@ -126,8 +134,8 @@ class REPLServer extends ServerExtension("repl") {
   def apply(session: Option[String], command: Command): REPLResponse = {
     applyActual(session, command)
   }
-  
-  private def getSessionOpt(id: String) = sessions.find(_.id == id)
+
+  def getSessionOpt(id: String) = sessions.find(_.id == id)
   private def getSession(id: String) = getSessionOpt(id).getOrElse(throw LocalError("Unknown Session"))
 
   private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
@@ -140,13 +148,20 @@ class REPLServer extends ServerExtension("repl") {
     command match {
       case Show => getSessions
       case Clear => clearSessions
-      case Start => startSession
+      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")))
       case Restart => restartSession(session)
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
+      case StoreOMDoc => storeOMDoc(session)
     }
   }
 
+  private def storeOMDoc(session: REPLSession) = {
+    val doc = session.doc
+    val msg = "stored document " + session.doc.path
+    MultiTypedResponse("message" -> msg, "omdoc" -> doc.toNodeResolved(controller.globalLookup).toString)
+  }
+  
   private def evalInSession(session: REPLSession, input: String) = {
     val firstPart = input.takeWhile(c => !c.isWhitespace)
     val rest = input.substring(firstPart.length).trim
@@ -178,8 +193,7 @@ class REPLServer extends ServerExtension("repl") {
     AdminResponse("Sessions cleared")
   }
 
-  private def startSession = {
-    val id = java.util.UUID.randomUUID().toString
+  private def startSession(id: String) = {
     if (sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
@@ -205,13 +219,14 @@ class REPLServer extends ServerExtension("repl") {
   // SESSION MANAGEMENT
 
   private def createSession(path: DPath, id: String) : REPLSession = {
-    val doc = new Document(path, root=true)
+    val nsMap = controller.getNamespaceMap(path)
+    val doc = new Document(path, root=true, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
     val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
       throw LocalError("no parser found")
     }
-    val s = new REPLSession(doc, id, interpreter)
+    val s = new REPLSession(doc, id, interpreter, errorCont)
     sessions ::= s
     s
   }
@@ -221,5 +236,3 @@ class REPLServer extends ServerExtension("repl") {
     sessions = sessions.filterNot(_.id == s.id)
   }
 }
-
-import utils._

@@ -38,8 +38,7 @@ git:
 before_install:
   - 'if [[ "$TRAVIS_OS_NAME" = "osx" ]]; then brew update; brew install sbt; fi'
 before_script:
-  - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi'
-  - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_DEVEL=1; fi'
+  - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;'
 install:
   - "cd src && (cat /dev/null | sbt ++2.12.3 update) && cd .."
 jobs:
@@ -59,49 +58,52 @@ jobs:
     # Check that our tests run and the code compiles
     - dist: trusty
       env:
-        - "INFO='Check that the code compiles and the test runs run'"
+        - "INFO='Check mmt.jar generation and integration tests'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
+        - '[[ -f "deploy/mmt.jar" ]]'
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.api.test.APITest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.lf.LFTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.ODKTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.MitMTest"
       stage: CompileAndCheck
     - dist: trusty
       env:
-        - "INFO='Check that the code compiles and the test runs run'"
+        - "INFO='Check mmt.jar generation and integration tests'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
-        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
-    # check that the 'apidoc' and 'deploy' targets work
+        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
+        - '[[ -f "deploy/mmt.jar" ]]'
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.api.test.APITest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.lf.LFTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.ODKTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.MitMTest"
     - dist: trusty
       env:
-        - "INFO='Check mmt.jar generation using `sbt deploy`'"
+        - "INFO='Check that unit tests run'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: openjdk8
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
-      stage: DeployCheck
+        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
     - dist: trusty
       env:
-        - "INFO='Check mmt.jar generation using `sbt deploy`'"
+        - "INFO='Check that unit tests run'"
         - 'SBT_VERSION_CMD="^validate"'
       jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
-        - '[[ -f "deploy/mmt.jar" ]]'
+        - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
+    # check that the 'apidoc' and 'deployLFCatalog' targets work
     - dist: trusty
       env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
@@ -112,6 +114,7 @@ jobs:
       script:
         - "cd src && (cat /dev/null | sbt ++2.12.3 deployLFCatalog) && cd .."
         - '[[ -f "deploy/lfcatalog/lfcatalog.jar" ]]'
+      stage: DeployCheck
     - dist: trusty
       env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"

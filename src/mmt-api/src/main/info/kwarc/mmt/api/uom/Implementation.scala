@@ -3,12 +3,14 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
 
+/*
+
 case class UOMError(msg: String) extends java.lang.Throwable
 
 case class Unimplemented(msg: String) extends java.lang.Throwable
 
 /** convenience class to construct computation rules */
-class Implementation(constantName : GlobalName, function : List[Term] => Term) extends BreadthRule(constantName) {
+class Implementation(constantName : GlobalName, function : List[Term] => Term) extends SimplificationRule(constantName) {
   def name = constantName
   val apply: Rewrite = (args : List[Term]) => {
      try {
@@ -76,3 +78,5 @@ object Implementation {
       f(args(0), args(1), args.drop(2))
    }
 }
+
+*/

@@ -31,7 +31,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
       val path = e.path
       e match {
          case t: DeclaredModule =>
-            t.getDeclarations foreach {
+          t.getDeclarations foreach {
 							case c: Constant =>
 								val declType: Unary = c.tp match {
 									case Some(x) => x match {
@@ -43,15 +43,9 @@ class TypedRelationalExtractor extends RelationalExtractor {
 												else {
 													IsDatatypeConstructor
 												}
-											case Univ(n) if n > 1 => // println("found high universe at " + c.path.toString());
-												IsHighUniverse
+											case Univ(n) if n > 1 => IsHighUniverse
 											case _ =>
-												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) {
-													IsRule
-												}
-												else {
-													IsDataConstructor
-												}
+												if (controller.globalLookup.getConstant(c.path).rl.contains("Judgment")) IsRule else IsDataConstructor
 										}
 									}
 									case None => IsUntypedConstant
