@@ -1,4 +1,7 @@
+/* FR: This looks like dead code - taken out.
+
 package info.kwarc.mmt.MitM.Server
+
 
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp1, scscp2}
@@ -6,9 +9,10 @@ import info.kwarc.mmt.odk.SCSCP.Client.SCSCPClient
 import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPCallArguments, SCSCPReturnObject}
 import info.kwarc.mmt.odk.SCSCP.Server.{RemoteServerException, SCSCPHandler, SCSCPServer, SCSCPServerClient}
 
+abstract class DatabaseHandler(val symbol: OMSymbol) extends MitMExtension with SCSCPHandler 
+
 /**
   * a database of mitm systems
-  * TODO: Figure out where this is used
   * @param scscpServer
   */
 class MitMDatabase(scscpServer: => SCSCPServer) {
@@ -74,7 +78,7 @@ class MitMDatabase(scscpServer: => SCSCPServer) {
   /**
     * Registers the server in the MitM proxy and returns the id of the server.
     */
-  object RegisterServerHandler extends MiTMHandler(OMSymbol("registerServer", "mitm_transient", None, None)) {
+  object RegisterServerHandler extends DatabaseHandler(OMSymbol("registerServer", "mitm_transient", None, None)) {
     override val min: Int = 1
     override val max: Int = 2
     // i.e. the signature is address: string, port: integer
@@ -88,7 +92,7 @@ class MitMDatabase(scscpServer: => SCSCPServer) {
     }
   }
 
-  object RemoveServerHandler extends MiTMHandler(OMSymbol("removeServer", "mitm_transient", None, None)) {
+  object RemoveServerHandler extends DatabaseHandler(OMSymbol("removeServer", "mitm_transient", None, None)) {
     override val min: Int = 1
     override val max: Int = 1
     override val signature = Some(SymbolSet(List(OMSymbol("string", "omtypes", None, None))))
@@ -99,7 +103,7 @@ class MitMDatabase(scscpServer: => SCSCPServer) {
     }
   }
 
-  object GetAllServersHandler extends MiTMHandler(OMSymbol("getAllServers", "mitm_transient", None, None)) {
+  object GetAllServersHandler extends DatabaseHandler(OMSymbol("getAllServers", "mitm_transient", None, None)) {
     override val min: Int = 0
     override val max: Int = 0
     override val signature = Some(SymbolSet(Nil))
@@ -122,3 +126,5 @@ class RemoteCallHandler(CAS: SCSCPClient, minArgs: Int, maxArgs: Int, sig: OMApp
   override def handle(client: SCSCPServerClient, arguments: SCSCPCallArguments, parameters: OMExpression*): OMExpression =
     CAS(new SCSCPCall(symbol, SCSCPCallArguments(CAS.newCallId, Some(SCSCPReturnObject), null), parameters: _*)).fetch().get
 }
+
+*/

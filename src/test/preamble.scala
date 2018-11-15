@@ -5,7 +5,8 @@ import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExpo
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
-import scala.concurrent.Future
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /** An abstract class for test methods. Instantiates a controller, sets the mathpath for archives,
   * loads the AlignmentsServer (so you can run a Server without getting an error message.
@@ -24,8 +25,8 @@ abstract class Test(archivepath : String,
                     logprefixes : List[String] = Nil,
                     alignmentspath : String = "",
                     serverport : Option[Int] = None,
-                    gotoshell : Boolean = true,
                     logfile : Option[String] = None) extends Logger {
+  val gotoshell: Boolean = true
   val controller = Run.controller
   def logPrefix = "user"
   def report = controller.report
@@ -70,16 +71,27 @@ abstract class Test(archivepath : String,
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
+    val shell = if (gotoshell) Some(Future {
+      Run.disableFirstRun = true
+      Run.main(Array())
+    }(scala.concurrent.ExecutionContext.global)) else None
+    run
+    shell.foreach(f => Await.result(f,Duration.Inf))
+
+    /*
       if (gotoshell) {
         Future {
-          Run.disableFirstRun = true
-          Run.main(Array())
+          Thread.sleep(1000)
+          run
         }(scala.concurrent.ExecutionContext.global)
-        Thread.sleep(1000)
+        Run.disableFirstRun = true
+        Run.main(Array())
       }
-      run
+      else run
+      */
     } catch {
-      case e: api.Error => println(e.toStringLong)
+      case e: api.Error =>
+        println(e.toStringLong)
         sys.exit
     }
 
@@ -100,7 +112,8 @@ object MagicTest {
       home / "work" / "MathHub", // Dennis
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
-      home / "content" // Michael
+      home / "content", // Michael
+      File("C:") / "other" / "oaff",
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
@@ -129,15 +142,7 @@ abstract class MagicTest(prefixes : String*) extends Test(
   prefixes.toList,
   MagicTest.alignments.map(_.toString).getOrElse(""),
   Some(8080),
-  true,
   MagicTest.logfile.map(_.toString)
-)
-
-abstract class MichaelTest(prefixes: String*) extends Test(
-  "/home/michael/content/",
-  prefixes.toList,
-  "",
-  Some(8080),
-  true,
-  None
-)
+) {
+  override val gotoshell: Boolean = false
+}

@@ -12,7 +12,6 @@ ENV PATH=/opt/sbt/bin:${PATH}
 RUN mkdir -p /opt
 WORKDIR /opt
 RUN curl -jksSL "${SBT_URL}/${SBT_RELEASE}/sbt-${SBT_RELEASE}.tgz" | tar -xzf -
-RUN rm -rf /var/cache/apk/*
 
 # Add all of MMT
 ADD src/ /build/MMT/src
@@ -45,5 +44,6 @@ ENV PATH="/mmt/deploy:${PATH}"
 # Run setup and setup the entry for the future
 RUN mmt :setup "/mmt/" "/content/" ":" "--no-content"
 
+ADD scripts/docker/install.msl /install.msl
 ADD scripts/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

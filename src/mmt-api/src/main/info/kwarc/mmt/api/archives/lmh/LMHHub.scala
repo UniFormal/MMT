@@ -27,6 +27,8 @@ abstract class LMHHub extends Logger {
   /** finds all directory entries available locally */
   def dirEntries: List[LMHHubDirectoryEntry] = entries_.collect({case d: LMHHubDirectoryEntry => d})
 
+  /** checks if a group exists remotely */
+  def hasGroup(name: String): Boolean
 
   /** find a list of remotely available entries (if any) */
   protected def available_(): List[String]
@@ -93,10 +95,17 @@ abstract class LMHHub extends Logger {
     * @param id ID of archive to install
     * @param version Optional version to be installed
     * @param recursive If set to false, do not install archive dependencies
-    * @param visited Internal parameter used to keep track of archives already installed
+    * @param update If set to false, do not update already installed archives
     * @return the newly installed entry
     */
-  def installEntry(id: String, version: Option[String], recursive: Boolean = false, visited: List[LMHHubEntry] = Nil) : Option[LMHHubEntry]
+  def installEntry(id: String, version: Option[String], recursive: Boolean = false, update: Boolean = true) : Option[LMHHubEntry]
+
+  /**
+    * Same as installEntry, but optimised for multiple entries at once
+    * @param entries
+    * @param recursive
+    */
+  def installEntries(entries: List[(String, Option[String])], recursive: Boolean = false, update: Boolean = true)
 
   /** get the default remote url for a repository with a given id */
   def remoteURL(id: String) : String
@@ -127,6 +136,8 @@ trait LMHHubEntry extends Logger {
   val root: File
   /** check if this archive matches a given spec */
   def matches(spec : String): Boolean = LMHHub.matchesComponents(spec, id)
+  /** download information about archive versions from the remote */
+  def fetch: Boolean
   /** push the newest version of this archive to the remote */
   def push: Boolean
   /** pull the newest version of this archive from the remote */
@@ -135,8 +146,12 @@ trait LMHHubEntry extends Logger {
   def setRemote(remote : String) : Boolean
   /** fix the remote url of the archive */
   def fixRemote: Boolean = setRemote(hub.remoteURL(id))
-  /** returns the version of an installed archive */
-  def version: Option[String]
+  /** returns the physical version (a.k.a commit hash) of an installed archive */
+  def physicalVersion: Option[String]
+  /** returns the logical version (a.k.a branch) of an installed archive */
+  def logicalVersion: Option[String]
+  /** gets the version of an installed archive, a.k.a. the branch of the git commit hash */
+  def version: Option[String] = logicalVersion.map(Some(_)).getOrElse(physicalVersion)
 }
 
 /** Represents a simple LMHHub Directory entry */
@@ -169,14 +184,17 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
 
   /** the list of dependencies of this archive */
   def dependencies: List[String] = {
-    // the corresponding meta-inf repository
-    val metainf = group + "/meta-inf"
+    val string = archive.properties.getOrElse("dependencies", "").replace(",", " ")
+    // check if we have a meta-inf repository, and if yes install it
+    val deps = (if(hub.hasGroup(group)) List(group + "/meta-inf") else Nil) ::: stringToList(string)
+    deps.distinct
+  }
 
-    // the declared dependencies
-    val depS = archive.properties.getOrElse("dependencies", "")
-    val deps = if (depS.contains(",")) stringToList(depS, ",").map(_.trim) else stringToList(depS)
-
-    (metainf :: deps).distinct
+  // TODO: Change meta-inf property used here
+  /** the list of tags associated with this archive */
+  def tags: List[String] = {
+    val mfTags = archive.properties.get("tags").map(stringToList(_, ",")).getOrElse(Nil)
+    (List("group/"+group) ::: mfTags).map(_.toLowerCase)
   }
 }
 

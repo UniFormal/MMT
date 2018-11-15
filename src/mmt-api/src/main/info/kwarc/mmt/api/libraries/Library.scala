@@ -61,8 +61,13 @@ class ModuleHashMap {
   *
   * @param report parameter for logging.
   */
-class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {
+class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {self =>
   val logPrefix = "library"
+
+  /** same as this but GetError instead of NotFound */
+  val asLocalLookup = new LookupWithNotFoundHandler(this) with FailingNotFoundHandler {
+    def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) = self.forDeclarationsInScope(mod)(f)
+  }
 
   // ************************ stateful data structures and basic accessors
 
@@ -71,7 +76,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
   /** the diagram of implicit morphisms */
-  private val implicitGraph = new ThinGeneratedCategory(this)
+  private val implicitGraph = new ThinGeneratedCategory(asLocalLookup)
 
   override def toString = modules.values.map(_.toString).mkString("", "\n\n", "")
 
@@ -81,6 +86,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** retrieves all modules in any order */
   def getModules = modules.values
 
+  
   /** direct lookup of p for mp = p / ln, also returns ln */
   private def modulesGetRoot(mp: MPath): (Module, LocalName) = {
     val top = mp.doc
@@ -265,6 +271,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   }
                 case _ =>
               }
+              // TODO we could throw a typing error here. But it's OK if the library succeeds on theories that aren't in scope.
+              // added for LMFDB queries, where LMFDB theories might not be in the context of the query
+              name.steps match {
+                case ComplexStep(q)::ln =>
+                  return get(OMMOD(q), ln, error)
+                case _ =>
+              }
             case StructureVarDecl(s, OMPMOD(p, args), dfOpt) =>
               name.head match {
                 case s2@SimpleStep(_) if s == LocalName(s2) =>
@@ -301,9 +314,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         if (tl.isEmpty)
           a
         else a match {
-          case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(_ * OMCOMP(tl)))
+          case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(OMM(_, OMCOMP(tl))))
           case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
-          case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(_ * OMCOMP(tl)), None)
+          case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(OMM(_, OMCOMP(tl))), None)
         }
       case OMIDENT(t) =>
         makeAssignment(t,name,None)
@@ -788,7 +801,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       }
     } catch {
       case AlreadyDefined(from, to, old, nw) =>
-        throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+        /* TODO in general, implicitness of a structure/view should only be added after checking the morphism, maybe implicit could be part of elaboration
+         *  otherwise:
+         *    the implicit morphism is already used in its own body (can cause infinite loops)
+         *    equality check performed by implicit graph cannot yet look up in the morphism, thus missing out on equalities
+         *  in particular, but not exclusively, the latter causes too many errors if morphisms are non-trivial,
+         *  so the error below is commented out for now -FR for implicits paper and ODK review
+         */
+        logError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+        // throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
 

@@ -17,7 +17,7 @@ abstract class Interpreter extends Importer {
   /** the input format (e.g., the file extension) to which this interpreter is applicable */
   def format: String
 
-  def key = format + "-omdoc"
+  val key = format + "-omdoc"
 
   override def isApplicable(s: String) = s == format || super.isApplicable(s)
 

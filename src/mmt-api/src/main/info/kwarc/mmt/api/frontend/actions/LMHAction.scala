@@ -66,7 +66,7 @@ object LMHCloneCompanion extends ActionCompanion("clone specific versions of arc
 case class LMHInstall(spec: List[String]) extends LMHAction {
   def apply() {
     val resolved = mathHub.available(spec: _*)
-    resolved.foreach {case (id, version) => mathHub.installEntry(id, version, recursive=true) }
+    mathHub.installEntries(resolved, recursive=true)
   }
   def toParseString = s"lmh install ${spec.mkString(" ")}".trim
 }
@@ -106,8 +106,7 @@ case class LMHList(spec: List[String]) extends LMHAction with LocalAction with R
       case ae: LMHHubArchiveEntry => s"Archive ${ae.id}"
       case _ =>                      s"Repo    ${archive.id}"
     }
-    val version = archive.version.getOrElse("(unknown version)")
-
+    val version = archive.version.getOrElse("unknown version")
     respond(s"$name: $version in '${archive.root.toJava.toString}'")
   }
   def toParseString = s"lmh ls ${spec.mkString(" ")}".trim
@@ -119,7 +118,11 @@ object LMHListCompanion extends ActionCompanion("show archives that are installe
 }
 
 
-case class LMHPull(spec: List[String]) extends LMHAction with LocalAction {
+case class LMHPull(spec: List[String]) extends LMHAction {
+  def apply: Unit = {
+    val updates = mathHub.entries(spec: _*).map({a => (a.id, None)})
+    mathHub.installEntries(updates, recursive = true)
+  }
   def applyActual(entry: LMHHubEntry) {entry.pull}
   def toParseString = s"lmh pull ${spec.mkString(" ")}".trim
 }

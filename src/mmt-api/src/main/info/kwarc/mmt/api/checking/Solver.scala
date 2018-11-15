@@ -72,7 +72,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
       import scala.collection.mutable.ListMap
-      private var _bounds = new ListMap[LocalName,List[TypeBound]] 
+      private var _bounds = new ListMap[LocalName,List[TypeBound]] //TODO bounds should be saved as a part of the context (that may require an artificial symbol)
       /** tracks the delayed constraints, in any order */
       private var _delayed : List[DelayedConstraint] = Nil
       /** tracks the errors in reverse order of encountering */
@@ -251,7 +251,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    /** true if unsolved variables are left */
    def hasUnsolvedVariables : Boolean = solution.toSubstitution.isEmpty
    /** true if all judgments solved so far succeeded (all variables solved, no delayed constraints, no errors) */
-   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.isEmpty
+   def checkSucceeded = ! hasUnresolvedConstraints && ! hasUnsolvedVariables && errors.forall(_.level < Level.Error)
    /** the solution to the constraint problem
     *
     * @return None if there are unresolved constraints or unsolved variables; Some(solution) otherwise
@@ -498,7 +498,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
          val vd = solved.copy(df = Some(valueS))
-         setNewSolution(left ::: vd :: rightS)
+         val newSolution = left ::: vd :: rightS
+         setNewSolution(newSolution)
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>
@@ -518,13 +519,19 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the the overall check succeeds
     */
    protected def solveType(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      log("solving type of " + name + " as " + presentObj(value))
-      history += "solving type of " + name + " as " + value
+      lazy val msg = "solving type of " + name + " as " + presentObj(value) 
+      log(msg)
+      history += msg
       val newSolution = simplify(substituteSolution(value))(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
       if (solved.tp.isDefined) {
          val existingSolution = solved.tp.get
-         check(Equality(Stack.empty, newSolution, existingSolution, None))(history + "solution for type must be equal to previously found solution")
+         // check(Equality(Stack.empty, newSolution, existingSolution, None))(history + "solution for type must be equal to previously found solution")
+         if (tryToCheckWithoutDelay(Subtyping(Stack.empty,newSolution,existingSolution)).contains(true)) {
+           setNewSolution(left ::: solved.copy(tp = Some(newSolution)) :: right)
+           true
+         }
+         else check(Subtyping(Stack.empty,existingSolution,newSolution))
       } else {
          val vd = solved.copy(tp = Some(newSolution))
          setNewSolution(left ::: vd :: right)
@@ -580,7 +587,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    protected def typeCheckSolution(vd: VarDecl)(implicit history: History): Boolean = {
       (vd.tp, vd.df) match {
          case (Some(FreeOrAny(tpCon,tp)), Some(FreeOrAny(dfCon,df))) =>
-           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking solution of metavariable against solved type")
+           val eqCon = check(EqualityContext(Stack.empty, tpCon, dfCon, true))(history + "checking equality of contexts of solution of of metavariable and type")
+           if (!eqCon) return false
            val subs = (tpCon alpha dfCon).getOrElse(return false)
            check(Typing(Stack(tpCon), df ^? subs, tp))(history + "checking solution of metavariable against solved type")
          case _ => true
@@ -594,7 +602,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
      var toEnd = Context(it)
      var toEndNames = List(name)
      rest.foreach {vd =>
-       if (utils.disjoint(vd.freeVars, toEndNames)) {
+       val vdVars = vd.freeVars ::: state.bounds(vd.name).flatMap(_.bound.freeVars)
+       if (utils.disjoint(vdVars, toEndNames)) {
          // no dependency: move over vd
          toLeft = toLeft ++ vd
        } else {
@@ -624,7 +633,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             case Some(vIndex) => // v declared in solution
                if (vIndex > mIndex)
                   false // but before m
-               // TODO switching to the commented-out code might help solving them cases
+               // TODO switching to the commented-out code might help solving some cases
                else true // v == m || solution(v).df.isDefined // after m but not solved yet
          }
       }
@@ -793,8 +802,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
              val mayhold = dc match {
                 case dj: DelayedJudgement =>
                    val j = dj.constraint
-                   log("activating: " + j.present)
                    val jP = prepareJ(j)
+                  log("activating: " + jP.present)
                    check(jP)(dj.history)
                 case di: DelayedInference =>
                     val tmP = prepare(di.tm)
@@ -848,15 +857,15 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(FreeOrAny(tpCon,tp)) =>
                 def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
-                  solve(vd.name, Free(tpCon, Hole(tp)))
+                  solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
                 }
                 history += "trying to find unique inhabitant " + vd.name + " of " + presentObj(tp)
                 findUniqueInhabitant(tp)(Stack(tpCon), history) match {
                   case Some(p) =>
-                    solve(vd.name, Free(tpCon,p))
+                    solve(vd.name, FreeOrAny(tpCon,p))
                   case None =>
                     tryAHole
-                    error("unsolved (typed) unknown: " + vd.name)                    
+                    error("unsolved (typed) unknown: " + vd.name)
                 }
             }
       }

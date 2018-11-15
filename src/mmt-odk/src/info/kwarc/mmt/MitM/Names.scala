@@ -1,13 +1,15 @@
 package info.kwarc.mmt.MitM
 
-import info.kwarc.mmt.api.{DPath, GlobalName, MPath, uom}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor}
+import info.kwarc.mmt.api.refactoring.{Preprocessor, SimpleParameterPreprocessor,AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardInt, StandardNat, StandardPositive}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
-import info.kwarc.mmt.odk.LFX
-import info.kwarc.mmt.odk.LFX.LFRecSymbol
+import info.kwarc.mmt.lf._
+import info.kwarc.mmt.odk._
+import info.kwarc.mmt.odk.LFX.{LFList, LFRecSymbol}
+
+import scala.math.BigInt
 
 object MitM {
   val basepath: DPath = DPath(URI("http","mathhub.info") / "MitM")
@@ -23,9 +25,134 @@ object MitM {
   val ff = BoolLit(false)
 
   // elliptic curves
-  val polypath: MPath = (basepath / "smglom" / "elliptic_curves") ? "Base"
+  val polypath: MPath = (basepath / "smglom" / "algebra") ? "Polynomials"
   val polynomials: GlobalName = polypath ? "polynomial"
-  val polycons: GlobalName = polypath ? "poly_con"
+  val multipoly : GlobalName = polypath ? "multi_polynomial"
+  val polycons: GlobalName = polypath.parent ? "RationalPolynomials" ? "poly_con"
+
+  val rationalRing = (basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField2"
+  val numberfield = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "numberField"
+  val galois = (MitM.basepath / "smglom" / "algebra") ? "NumberSpaces" ? "galoisGroup"
+
+  object Monomial {
+    object IInt {
+      def unapply(tm : Term): Option[BigInt] = tm match {
+        case IntegerLiterals(i : BigInt) => Some(i)
+        case info.kwarc.mmt.api.objects.UnknownOMLIT(s, _) => unapply(IntegerLiterals.parse(s))
+        case _ => None
+      }
+    }
+    object SString {
+      def unapply(tm : Term): Option[String] = tm match {
+        case StringLiterals(s) => Some(s)
+        case info.kwarc.mmt.api.objects.UnknownOMLIT(s, _) => unapply(StringLiterals.parse(s))
+        case _ => None
+      }
+    }
+    def apply(vars : List[(String,BigInt)],coeff : BigInt, ring : Term = OMS(MitM.rationalRing)) =
+      ApplySpine(OMS(MitM.monomial_con),ring :: LFX.Tuple(LFList(vars.map(p => LFX.Tuple(StringLiterals(p._1),IntegerLiterals(p._2)))),
+        IntegerLiterals(coeff)):: Nil :_*)
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IInt(coeff)))) =>
+        val ils = ls.map {
+          case LFX.Tuple(SString(x),IInt(i)) => (x,i)
+          case _ => ???
+        }
+        Some((ils,coeff,ring))
+      case ApplySpine(OMS(MitM.monomial_con),List(ring,LFX.Tuple(LFList(ls),IInt(coeff)))) =>
+        val ils = ls.map {
+          case LFX.Tuple(SString(x),IInt(i)) => (x,i)
+          case _ => ???
+        }
+        Some((ils,coeff,ring))
+      case _ => None
+    }
+  }
+
+  /** convenience class for representing monomials */
+  case class MultiMonomialStructure(coefficient: BigInt, exponents: List[BigInt])
+  /** convenience class for representing polynomials */
+  case class MultiPolynomialStructure(baseRing: Term, varnames: List[String], monomials: List[MultiMonomialStructure]) {
+    val varTerms = varnames map StringLiterals.apply
+    def toTerm = {
+      val monomTerms = monomials.map {m =>
+         val powers = varnames zip m.exponents
+         Monomial(powers, m.coefficient, baseRing)  
+      }
+      multi_polycon(baseRing :: monomTerms :_*)
+    }
+  }
+  object MultiPolynomialStructure {
+    def fromTerm(tm: Term): Option[MultiPolynomialStructure] = tm match {
+      case MitM.MultiPolynomial(r,ls) =>
+        var length = -1
+        val names : List[String] = ls.flatMap { case (vars,_,_) =>
+          vars.map(_._1)
+        }.distinct.sorted
+        val monoms = ls map { case (vars,coeff,_) =>
+          // names :::= vars.map(_._1)
+          val args = names.map(s => vars.find(_._1 == s).map(_._2).getOrElse(BigInt(0)))//vars.sortBy(_._1).map(_._2)
+          if (length == -1) length = args.length
+          assert(length == args.length)
+          MultiMonomialStructure(coeff, args)
+        }
+        val mps = MultiPolynomialStructure(r,names,monoms)
+        Some(mps)
+      case _ => None
+    }
+  }
+  /** aligns a specific system's polynomials with MitM polynomials via [[MultiPolynomialStructure]] */
+  abstract class MultiPolynomialMatcher {self =>
+    def unapply(tm: Term): Option[MitM.MultiPolynomialStructure]
+    def apply(mps: MultiPolynomialStructure): Term
+    
+    def getAlignmentTo = new AcrossLibraryTranslation {
+      def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = MultiPolynomialStructure.fromTerm(tm).isDefined
+      def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = {
+        val mps = MultiPolynomialStructure.fromTerm(tm).get
+        self.apply(mps)
+      }
+    }
+    def getAlignmentFrom = new AcrossLibraryTranslation {
+       def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = self.unapply(tm).isDefined
+       def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = self.unapply(tm).get.toTerm
+    }
+  }  
+  
+  object MultiPolynomial {
+    def unapply(tm : Term) = tm match {
+      case ApplySpine(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case OMA(OMS(`multi_polycon`), LFList(ls) :: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        val r = MitM.Monomial.unapply(ls.head).get._3
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case OMA(OMS(`multi_polycon`), r :: LFList(ls):: Nil) if ls.nonEmpty && ls.forall(MitM.Monomial.unapply(_).isDefined) =>
+        Some((r,ls.map(MitM.Monomial.unapply(_).get)))
+      case _ => None
+    }
+    def apply(r : Term,ls : List[Term]) = ApplySpine(OMS(multi_polycon),r,LFList(ls))
+  }
+  def present(tm : Term, pres : Term => String) : String = tm match {
+    case LFList(ls) =>
+      "[ " + ls.map(present(_,pres)).mkString(", ") + " ]"
+    case MultiPolynomial(ring,monoms) =>
+      "(in " + pres(ring) + ":) " + monoms.map { case (vars,coeff,_) =>
+        coeff.toString + "⋅" + vars.flatMap {
+          case (s,i) if i>1 => Some(s + "^" + i)
+          case (s,i) if i==1 => Some(s)
+          case (s,i) if i==0 => None
+        }.mkString("⋅")
+      }.mkString(" + ")
+    case _ => pres(tm)
+  }
+
+  val monomials : GlobalName = polypath ? "monomial"
+  val monomial_con : GlobalName = polypath.parent ? "RationalPolynomials" ? "monomial_con"
+  val multi_polycon : GlobalName = polypath.parent ? "RationalPolynomials" ? "multi_poly_con"
+
+  val polyOrbit : GlobalName = (basepath / "smglom" / "algebra" / "permutationgroup") ? "GroupAction" ? "polynomialOrbit"
+  val dihedralGroup : GlobalName = (basepath / "smglom" / "algebra" / "permutationgroup") ? "PermutationGroup" ? "dihedralGroup"
+  val groebner : GlobalName = polypath.parent ? "RationalPolynomials" ? "groebner"
 
 
   // strings
@@ -60,7 +187,9 @@ object MitM {
   val n = OMS(nat)
   val z = OMS(int)
   val p = OMS(pos)
-  val N= StandardNat
+  def synType(t: Term) = uom.SynOpType(List(Apply.path), Nil, t)
+  
+  val N = StandardNat
   val Z = StandardInt
   val P = StandardPositive
 
@@ -100,60 +229,12 @@ object MitM {
   )).withKey("MitM").withKey(logic)
 }
 
-object ModelsOf extends LFRecSymbol("ModelsOf") {
-  // val path2 = Records.path ? "ModelsOfUnary"
-  // val term2 = OMS(path2)
-  def apply(mp : MPath, args : Term*) = OMA(this.term,List(OMPMOD(mp,args.toList)))
-  def apply(t : Term) = OMA(this.term,List(t))
-  def unapply(t : Term) : Option[Term] = t match {
-    case OMA(this.term, List(tm)) => Some(tm)
-    // case OMA(this.term2,List(OMMOD(mp))) => Some(OMMOD(mp))
-    case OMA(this.term, OMMOD(mp) :: args) => Some(OMPMOD(mp,args))
-    case _ => None
-  }
-}
-
-object Lists {
-  val baseURI = LFX.ns / "Datatypes"
-  val th = baseURI ? "ListSymbols"
-}
-
-object ListNil {
-  val path = Lists.th ? "nil"
-  val term = OMS(path)
-}
-
-object Append {
-  val path2 = Lists.th ? "ls"
-  val term2 = OMS(path2)
-  val path = Lists.th ? "append"
-  val term = OMS(path)
-  def apply(a: Term, ls : Term) : Term = OMA(this.term,List(a,ls))
-  def unapply(tm : Term) : Option[(Term,Term)] = tm match {
-    case OMA(this.term,List(a,ls)) => Some((a,ls))
-    case OMA(this.term2,args) if args.nonEmpty =>
-      if (args.length==1) Some((args.head,ListNil.term))
-      else Some((args.head,OMA(this.term2,args.tail)))
-    case _ => None
-  }
-}
-
-object LFList {
-  val path = Lists.th ? "ls"
-  val term = OMS(path)
-  def apply(tms : List[Term]) : Term = OMA(this.term,tms)
-  def unapply(ls : Term) : Option[List[Term]] = ls match {
-    case OMA(this.term,args) => Some(args)
-    case Append(a,lsi) => unapply(lsi).map(a :: _)
-    case _ => None
-  }
-}
-
 /** Symbols used for all the different Systems */
 object MitMSystems {
-  private val _basepath = DPath(URI("http","opendreamkit.org"))
+  private val _basepath = DPath(URI("http","www.opendreamkit.org"))
   private val vretheory = _basepath ? "Systems"
 
+  /** marks a term for evaluation in a specific system */
   val evalSymbol: GlobalName = vretheory ? "Eval"
 
   val gapsym: GlobalName = vretheory ? "GAPEval"
@@ -161,4 +242,8 @@ object MitMSystems {
   val singularsym: GlobalName = vretheory ? "SingularEval"
   val lmfdbsym: GlobalName = vretheory ? "LMFDBEval"
   val querysym: GlobalName = vretheory ? "ODKQuery"
+  
+  /** kicks off a computation, and serves as default head of SCSCP servers */
+  val evaluateSym = _basepath ? "scscp_transient_1" ? "MitM_Evaluate"
 }
+

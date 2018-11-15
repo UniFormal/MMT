@@ -70,7 +70,7 @@ object TraversingTranslator {
 
 /** a translator that applies a morphism (lazily) */
 case class ApplyMorphism(morph: Term) extends UniformTranslator {
-   def apply(context: Context, tm: Term) = tm * morph
+   def apply(context: Context, tm: Term) = OMM(tm, morph)
 }
 
 /** a translator that performs substitution */

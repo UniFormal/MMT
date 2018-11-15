@@ -79,7 +79,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val recType = if (con.isEmpty) OMS(recordType) else ApplyGeneral(OMS(recordType), params)
       val arg = newVar(uniqueLN(name getOrElse "m"), recType, ctx)
       val resStr = ApplyGeneral(OMS(introDecl), params ++ (recordFields map {f => ApplyGeneral(OMS(f), params :+ arg.toTerm)}))
-      val ret : Term = Eq(resStr, arg.toTerm)
+      val ret : Term = Eq(resStr, arg.toTerm, OMS(recordType))
       Pi(con :+ arg, ret)
     }
     makeConst(uniqueLN("repr"), Ltp)
@@ -103,7 +103,6 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @param tpdecls all type level declarations
    * @param context the inner context of the derived declaration
    * @param introductionDecl the introduction declaration of the structure
-   * @param 
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
@@ -114,7 +113,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
         val dElim = toEliminationDecl(d, recType, recordFields)
         def assert(x: Term, y: Term): Term = d match {
           case TypeLevel(_, _, _, _,_) => Arrow(x, y)
-          case _ => Eq(x, y)
+          case _ => Eq(x, y, d.ret)
         } 
         PiOrEmpty(context++modelCtx, assert(ApplySpine(OMS(dElim.path), ApplyGeneral(OMS(recMake), modelCtx.map(_.toTerm))), v))
       }

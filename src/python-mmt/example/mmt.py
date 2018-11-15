@@ -63,11 +63,12 @@ JavaObject.__keys__ = lambda self: self.keys() # values for which getitem is def
 JavaObject.__getitem__ = lambda self,x: self.apply(x)
 JavaObject.__setitem__ = lambda self,x,y: self.update(x,y)
 JavaObject.__delitem__ = lambda self,x: self.delete(x)
+# These lead to infinite recursions.
 # . notation, not standard in Scala
-JavaObject.__dir__ = lambda self: self.attrs(x)
-JavaObject.__getattr__ = lambda self,x: self.getattr(x)
-JavaObject.__setattr__ = lambda self,x,y: self.setattr(x,y)
-JavaObject.__delattr__ = lambda self,x: self.delattr(x,y)
+# JavaObject.__dir__ = lambda self: self.attrs(x)
+# JavaObject.__getattr__ = lambda self,x: self.getattr(x)
+# JavaObject.__setattr__ = lambda self,x,y: self.setattr(x,y)
+# JavaObject.__delattr__ = lambda self,x: self.delattr(x,y)
 # in test
 JavaObject.__contains__ = lambda self,x: self.contains(x)
 # iteration
@@ -91,6 +92,10 @@ JavaObject.__ne__ = MagicFun("!=")
 JavaObject.__gt__ = MagicFun(">")
 JavaObject.__ge__ = MagicFun(">=")
 
+# TODO:
+# it appears impossible to construct a BigInt and send it to a Scala function
+# Py4J auto-converts it to a Python int, which is then converted to Java int,
+# which then (even if big enough) does not match the function signature
 
 # convert collections
 jc = gateway.jvm.scala.collection.JavaConverters
@@ -102,5 +107,3 @@ def Map(m):
     return jc.mapAsScalaMapConverter(m).asScala()
 def LMap(m):
     return jc.mapAsScalaMapConverter(m).asScala().toList()
-  
-        

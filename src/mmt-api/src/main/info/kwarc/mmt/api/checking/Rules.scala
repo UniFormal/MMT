@@ -29,8 +29,8 @@ trait CheckingCallback {
    /** checking */
    def check(j: Judgement)(implicit history: History): Boolean
    /** possibly unsafe simplification */
-   def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType
    /** type inference, fails by default */
+   def simplify(t : Obj)(implicit stack: Stack, history: History): t.ThisType
    def inferType(t : Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = None
    /** runs code and succeeds by default */
    def dryRun[A](allowDelay: Boolean, commitOnSuccess: A => Boolean)(code: => A): DryRunResult = Success(code)
@@ -84,6 +84,8 @@ trait CheckingRule extends SyntaxDrivenRule {
   def alternativeHeads: List[GlobalName] = Nil
   def heads = head::alternativeHeads
 
+  def canApply(t : Term) : Boolean = t.head.exists(heads.contains)
+
   /** may be thrown to indicate that the judgment that the rules was called on should be delayed */
   case class DelayJudgment(msg: String) extends Throwable
 }
@@ -109,7 +111,7 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
     *
     *  may throw SwitchToInference
     */
-   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean
+   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean]
 }
 
 /**
@@ -127,7 +129,7 @@ abstract class SubtypingRule extends CheckingRule with MaytriggerBacktrack {
 /** applies to  op(args1) <: op(args2) */
 abstract class VarianceRule(val head: GlobalName) extends SubtypingRule {
   def applicable(tp1: Term, tp2: Term) = (tp1,tp2) match {
-    case (ComplexTerm(this.head, _,_,_), ComplexTerm(this.head, _, _, _)) => true
+    case (ComplexTerm(a, _,_,_), ComplexTerm(b, _, _, _)) if this.heads.contains(a) && this.heads.contains(b) => true
     case _ => false
   }
 }
@@ -194,6 +196,26 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term]
 }
 
+/** A variant of InferenceRule that may additionally use the expected type.
+ *  Thus it can be used both for type inference and for type checking.
+ *  @param head the head of the term whose type this rule infers
+ */
+abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
+   /**
+    *  @param tp the expected type
+    *    if provided, tp is convered
+    *  @param covered whether tm is covered (if true and tp provided, typing is covered too)
+    *  @return the inferred type and the result of type-checking
+    *    post: if the latter is Some(true), typing is covered wrt to the provided and the returned type  
+    */
+   def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
+
+   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] =
+     apply(solver, tm, None, covered)._1
+}
+
+
+
 @deprecated("must be reimplemented cleanly","")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
@@ -216,40 +238,6 @@ abstract class FormationRule(h: GlobalName, t: GlobalName) extends InferenceRule
 abstract class IntroductionRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 abstract class EliminationRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t)
 
-/** return type of applying a simplification rule to a term t*/
-sealed abstract class Simplifiability {
-  def get: Option[Term]
-}
-
-/** simplify t to result */
-case class Simplify(result: Term) extends Simplifiability {
-  def get = Some(result)
-}
-
-/** this rule cannot be applied to t at toplevel */
-sealed abstract class CannotSimplify extends Simplifiability {
-  def get = None
-  /** a bounded semi-lattice, ordered by uncertainty about stability; least/neutral element: NoRecurse, greatest/attractive element Recurse */ 
-  def join(that: CannotSimplify): CannotSimplify = (this,that) match {
-    case (Recurse, _) | (_, Recurse) => Recurse 
-    case (RecurseOnly(p1),RecurseOnly(p2)) => RecurseOnly(p1:::p2)
-  }
-}
-
-/** this rule cannot become applicable unless a subterm in one of the given positions is simplified; the first argument has position 1 */
-case class RecurseOnly(positions: List[Int]) extends CannotSimplify
-
-/** this rule might become applicable if any subterm is simplified
- *  
- *  this should be returned by default; it replaces the return value "None" from the previous ComputationRule.apply method that returned Option[Term]
- */
-case object Recurse extends CannotSimplify
-
-object Simplifiability {
-  /** this rule cannot become applicable no matter what and how subterms are simplified */
-  val NoRecurse = RecurseOnly(Nil) 
-}
-
 /** A ComputationRule simplifies an expression operating at the toplevel of the term.
  *  But it may recursively simplify the components if that makes the rule applicable.
  *  The rule must preserve equality and well-typedness of the simplified term. If necessary, additional checks must be performed.
@@ -270,7 +258,7 @@ abstract class ComputationRule(val head: GlobalName) extends CheckingRule {
     *  @param stack its context
     *  @return the simplified term if simplification was possible
     */
-   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability
+   def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): uom.Simplifiability
 }
 
 /** A UnaryTermRule checks a [[UnaryTermJudgement]]
@@ -283,7 +271,7 @@ abstract class UnaryTermRule(val head: GlobalName) extends CheckingRule {
     *  @param stack its context
     *  @return true iff the judgment holds
     */
-   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Boolean
+   def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean]
 }
 /** checks an [[Inhabitable]] judgement */
 abstract class InhabitableRule(head: GlobalName) extends UnaryTermRule(head)

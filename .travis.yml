@@ -65,7 +65,6 @@ jobs:
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
       stage: CompileAndCheck
@@ -77,7 +76,6 @@ jobs:
       language: scala
       scala: "2.12.3"
       script:
-        - "cd src && (cat /dev/null | sbt ++2.12.3 scalastyle) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 compile) && cd .."
         - "cd src && (cat /dev/null | sbt ++2.12.3 test) && cd .."
     # check that the 'apidoc' and 'deploy' targets work

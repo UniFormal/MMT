@@ -1,13 +1,21 @@
 package info.kwarc.mmt.odk.SCSCP.Server
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.Stacktrace
+import info.kwarc.mmt.api.{GeneralError, Stacktrace}
 import info.kwarc.mmt.odk.OpenMath.{OMExpression, OMObject, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.Protocol.{SCSCPCall, SCSCPResult}
 
 sealed abstract class SCSCPServerEvent(server: SCSCPServer, client: Option[SCSCPServerClient]) {
   override def toString: String = client.map("client" + _.identifier + ": ").getOrElse("") + message
   def message: String
+}
+
+case class SCSCPNewClientException(t: Throwable, server: SCSCPServer) extends SCSCPServerEvent(server, None) {
+  def message: String = "New client exception: " + GeneralError("New client exception occurred").setCausedBy(t).toStringLong
+}
+
+case class SCSCPClientException(t: Throwable, client: SCSCPServerClient, server: SCSCPServer) extends SCSCPServerEvent(server, Some(client)) {
+  def message: String = "Client process exception: " + GeneralError("Client exception occurred").setCausedBy(t).toStringLong
 }
 
 case class SCSCPRegisteredHandler(symbol: OMSymbol, server: SCSCPServer) extends SCSCPServerEvent(server, None) {

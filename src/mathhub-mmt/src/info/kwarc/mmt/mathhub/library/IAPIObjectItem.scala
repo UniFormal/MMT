@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mathhub
+package info.kwarc.mmt.mathhub.library
 
 /**
   * this file contains data structures used for the MathHub API
@@ -8,10 +8,10 @@ package info.kwarc.mmt.mathhub
   */
 
 
-import info.kwarc.mmt.api.utils.{JSON, JSONConverter, JSONObjectBuffer}
+import info.kwarc.mmt.api.utils._
 
 /** anything returned by the API */
-trait IResponse {
+sealed trait IResponse {
   /** serializes this response into a JSONObject Buffer */
   protected def toJSONBuffer: JSONObjectBuffer
 
@@ -20,21 +20,25 @@ trait IResponse {
 }
 
 /** any object that is referencable */
-trait IReferencable extends IAPIObjectItem {
+sealed trait IReferencable extends IAPIObjectItem {
   val ref: Boolean = false
 }
 
 /** any concrete reference */
-trait IReference extends IAPIObjectItem {
+sealed trait IReference extends IAPIObjectItem {
   val ref: Boolean = true
+  val statistics: Option[List[IStatistic]] = None
 }
 
 
 //
 // GROUP
 //
+/** an archive or a group reference */
+sealed trait IHubReference extends IReference
 
-trait IGroupItem extends IAPIObjectItem {
+
+sealed trait IGroupItem extends IAPIObjectItem {
   val kind: String = "group"
   val parent: Option[IReference] = None
 
@@ -53,8 +57,8 @@ trait IGroupItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("title", title)
-    buffer.add("teaser", teaser)
+    buffer.add("title", JSONString(title))
+    buffer.add("teaser", JSONString(teaser))
 
     buffer
   }
@@ -66,12 +70,13 @@ case class IGroupRef(
                       override val name: String,
                       override val title: IAPIObjectItem.HTML,
                       override val teaser: IAPIObjectItem.HTML
-                    ) extends IGroupItem with IReference
+                    ) extends IGroupItem with IReference with IHubReference
 
 /** a full description of a MathHub Group */
 case class IGroup(
                    override val id: String,
                    override val name: String,
+                   override val statistics: Option[List[IStatistic]],
                    override val title: IAPIObjectItem.HTML,
                    override val teaser: IAPIObjectItem.HTML,
 
@@ -82,19 +87,55 @@ case class IGroup(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("description", description)
-    buffer.add("responsible", responsible)
-    buffer.add("archives", archives)
+    buffer.add("description", JSONString(description))
+    buffer.add("responsible", JSONArray(responsible.map(JSONString): _*))
+    buffer.add("archives", JSONArray(archives.map(_.toJSON):_*))
 
     buffer
   }
+}
+
+
+//
+// TagGroup
+//
+
+sealed trait ITagItem extends IAPIObjectItem {
+  val kind: String = "tag"
+  val parent: Option[IReference] = None
+
+  /** a machine-readable ID of this tag, starts with an @ */
+  val id: String
+
+  /** the name of this tag */
+  val name: String
+
+  def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer()
+}
+
+/** a reference to a MathHub Archive */
+case class ITagRef(
+                      override val id: String,
+                      override val name: String
+                    ) extends ITagItem with IReference
+
+/** a full description of a MathHub Group */
+case class ITag(
+                   override val id: String,
+                   override val name: String,
+                   override val statistics: Option[List[IStatistic]],
+                   archives: List[IArchiveRef]
+                 ) extends ITagItem with IReferencable {
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "archives" -> JSONArray(archives.map(_.toJSON):_*)
+  )
 }
 
 //
 // Archive
 //
 
-trait IArchiveItem extends IAPIObjectItem {
+sealed trait IArchiveItem extends IAPIObjectItem {
   val kind: String = "archive"
   val parent: Some[IGroupRef]
 
@@ -113,8 +154,8 @@ trait IArchiveItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("title", title)
-    buffer.add("teaser", teaser)
+    buffer.add("title", JSONString(title))
+    buffer.add("teaser", JSONString(teaser))
 
     buffer
   }
@@ -127,15 +168,19 @@ case class IArchiveRef(
                         override val name: String,
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML
-                      ) extends IArchiveItem with IReference with IDocumentParentRef
+                      ) extends IArchiveItem with IReference with IDocumentParentRef with IHubReference
 
 /** a full description of a MathHub Archive */
 case class IArchive(
                         override val parent: Some[IGroupRef],
                         override val id: String,
                         override val name: String,
+                        override val statistics: Option[List[IStatistic]],
                         override val title: IAPIObjectItem.HTML,
                         override val teaser: IAPIObjectItem.HTML,
+
+                        tags: List[ITagRef],
+                        version: Option[String],
 
                         description: IAPIObjectItem.HTML,
                         responsible: List[String],
@@ -144,9 +189,11 @@ case class IArchive(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("description", description)
-    buffer.add("responsible", responsible)
-    buffer.add("narrativeRoot", narrativeRoot)
+    buffer.add("tags", JSONArray(tags.map(_.toJSON):_*))
+    buffer.addO("version", version.map(JSONString))
+    buffer.add("description", JSONString(description))
+    buffer.add("responsible", JSONArray(responsible.map(JSONString):_*))
+    buffer.add("narrativeRoot", narrativeRoot.toJSON)
 
     buffer
   }
@@ -157,13 +204,13 @@ case class IArchive(
 //
 
 /** a narrative element inside an archive */
-trait INarrativeElement extends IAPIObjectItem // TODO: URIS?
+sealed trait INarrativeElement extends IAPIObjectItem // TODO: URIS?
 
 /** anything that can be the parent of a document */
-trait IDocumentParentRef extends IReference
+sealed trait IDocumentParentRef extends IReference
 
 
-trait IDocumentItem extends IAPIObjectItem {
+sealed trait IDocumentItem extends IAPIObjectItem {
   val kind = "document"
   val parent: Some[IDocumentParentRef]
 
@@ -191,19 +238,31 @@ case class IDocument(
                       override val id: IAPIObjectItem.URI,
                       override val name: String,
 
+                      tags: List[String],
+                      sourceRef: Option[ISourceReference],
+
+                      override val statistics: Option[List[IStatistic]],
+
                       decls: List[INarrativeElement]
                     ) extends IDocumentItem with IReferencable with INarrativeElement {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("decls", decls)
+    buffer.add("decls", JSONArray(decls.map(_.toJSON):_*))
+    buffer.add("tags", JSONArray(tags.map(JSONString) :_*))
+    buffer.addO("sourceRef", sourceRef.map(_.toJSON))
 
     buffer
   }
 
 }
 
-trait IOpaqueElementItem extends IAPIObjectItem {
+object IDocument {
+  /** the list of known tags */
+  val knownTags = List("ipynb-omdoc")
+}
+
+sealed trait IOpaqueElementItem extends IAPIObjectItem {
   val kind: String = "opaque"
   val parent: Some[IDocumentParentRef]
 
@@ -231,6 +290,8 @@ case class IOpaqueElement(
                            override val id: String,
                            override val name: String,
 
+                           override val statistics: Option[List[IStatistic]],
+
                            contentFormat: String,
                            content: String
                          ) extends IOpaqueElementItem with IReferencable with INarrativeElement {
@@ -238,8 +299,8 @@ case class IOpaqueElement(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("contentFormat", contentFormat)
-    buffer.add("content", content)
+    buffer.add("contentFormat", JSONString(contentFormat))
+    buffer.add("content", JSONString(content))
 
     buffer
   }
@@ -250,7 +311,7 @@ case class IOpaqueElement(
 // CONTENT
 //
 
-trait IModuleItem extends IAPIObjectItem {
+sealed trait IModuleItem extends IAPIObjectItem {
   /** there is no parent */
   val parent: Option[IReference] = None
 
@@ -263,14 +324,14 @@ trait IModuleItem extends IAPIObjectItem {
   def toJSONBuffer: JSONObjectBuffer = {
     val buffer = new JSONObjectBuffer
 
-    buffer.add("name", name)
+    buffer.add("name", JSONString(name))
 
     buffer
   }
 }
 
 /** a reference to a module */
-trait IModuleRef extends IModuleItem with IReference with INarrativeElement
+sealed trait IModuleRef extends IModuleItem with IReference with INarrativeElement
 
 /** a reference to a theory */
 case class ITheoryRef(
@@ -284,13 +345,13 @@ case class ITheoryRef(
 /** a reference to a view */
 case class IViewRef(
                      override val id: IAPIObjectItem.URI,
-                     override val name: String
+                     override val name: String,
                      ) extends IModuleRef {
   val kind: String = "view"
 }
 
 /** an actual module, i.e. a theory or a view */
-trait IModule extends IModuleItem with IReferencable {
+sealed trait IModule extends IModuleItem with IReferencable {
 
   /** presentation of this module as HTML */
   val presentation: IAPIObjectItem.HTML
@@ -301,8 +362,8 @@ trait IModule extends IModuleItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("presentation", presentation)
-    buffer.add("source", source)
+    buffer.add("presentation", JSONString(presentation))
+    buffer.add("source", source.map(JSONString).getOrElse(JSONNull))
 
     buffer
   }
@@ -312,6 +373,8 @@ trait IModule extends IModuleItem with IReferencable {
 case class ITheory(
                     override val id: IAPIObjectItem.URI,
                     override val name: String,
+
+                    override val statistics: Option[List[IStatistic]],
 
                     override val presentation: IAPIObjectItem.HTML,
                     override val source: Option[String],
@@ -323,7 +386,7 @@ case class ITheory(
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("meta", meta)
+    buffer.add("meta", meta.map(_.toJSON).getOrElse(JSONNull))
 
     buffer
   }
@@ -334,6 +397,8 @@ case class IView(
                   override val id: IAPIObjectItem.URI,
                   override val name: String,
 
+                  override val statistics: Option[List[IStatistic]],
+
                   override val presentation: IAPIObjectItem.HTML,
                   override val source: Option[String],
 
@@ -342,33 +407,32 @@ case class IView(
                   ) extends IModule {
   val kind: String = "theory"
 
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = super.toJSONBuffer
-
-    buffer.add("domain", domain)
-    buffer.add("codomain", codomain)
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
+    "domain" -> domain.toJSON,
+    "codomain" -> codomain.toJSON
+  )
 }
 
 //
 // Other responses
 //
 
+case class IStatistic(key: String, value: Int) extends IResponse {
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "key" -> JSONString(key),
+    "value" -> JSONInt(value),
+  )
+}
+
 /** a version information about MMT */
 case class IMMTVersionInfo(
                             versionNumber: String,
                             buildDate: Option[String]
                           ) extends IResponse {
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = new JSONObjectBuffer
-
-    buffer.add("versionNumber", versionNumber)
-    buffer.add("buildDate", buildDate)
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "versionNumber" -> JSONString(versionNumber),
+    "buildDate" -> buildDate.map(JSONString).getOrElse(JSONNull)
+  )
 }
 
 
@@ -376,10 +440,24 @@ case class IMMTVersionInfo(
 // Helper object
 //
 
+case class ISourceReference(parent: IHubReference, version: Option[String], path: Option[String]) extends IResponse {
+  def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = new JSONObjectBuffer
+
+    buffer.add("kind", JSONString("source"))
+    buffer.add("ref", JSONBoolean(true))
+    buffer.add("parent", parent.toJSON)
+    buffer.addO("version", version.map(JSONString))
+    buffer.addO("path", path.map(JSONString))
+
+    buffer
+  }
+}
+
 /**
   * Any object exposed by the API
   */
-trait IAPIObjectItem extends IResponse {
+sealed trait IAPIObjectItem extends IResponse {
 
   /** the kind of object this represents */
   val kind: String
@@ -396,16 +474,20 @@ trait IAPIObjectItem extends IResponse {
   /** the parent of this object, if any */
   val parent: Option[IReference]
 
+  /** statistics of this element (if any) */
+  val statistics: Option[List[IStatistic]]
+
   /** serializes this object into a JSON Object */
   override final def toJSON: JSON = {
     val buffer = toJSONBuffer
 
     // add shared attributes
-    buffer.add("kind", kind)
-    buffer.add("ref", ref)
-    buffer.add("id", id)
-    buffer.add("name", name)
-    buffer.add("parent", parent)
+    buffer.add("kind", JSONString(kind))
+    buffer.add("ref", JSONBoolean(ref))
+    buffer.add("id", JSONString(id))
+    buffer.add("name", JSONString(name))
+    buffer.add("parent", parent.map(_.toJSON).getOrElse(JSONNull))
+    buffer.addO("statistics", statistics.map(s => JSONArray(s.map(_.toJSON) :_*)))
 
     buffer.result()
   }
@@ -414,10 +496,4 @@ trait IAPIObjectItem extends IResponse {
 object IAPIObjectItem {
   type HTML = String
   type URI = String
-
-  /** so that we can convert all the things into JSON */
-  implicit def converter[T <: IResponse]: JSONConverter[T] = new JSONConverter[T] {
-    def toJSON(obj: T): JSON = obj.toJSON
-    def fromJSONOption(j: JSON): Option[T] = None
-  }
 }

@@ -90,10 +90,10 @@ object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
 }
 
 object TypingLock extends TypingRule(LockType.path) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Boolean = {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
     val LockType(pT, nT, sT, a) = tp
     val key = Key(pT,nT,sT)
-    solver.check(Typing(stack ++ Key.makeKeyDecl(key), Unlock(tm), a))
+    Some(solver.check(Typing(stack ++ Key.makeKeyDecl(key), Unlock(tm), a)))
   }
 }
 

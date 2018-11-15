@@ -1,30 +1,109 @@
 package info.kwarc.mmt.odk.Sage
 
 import info.kwarc.mmt.MitM.VRESystem.VREWithAlignmentAndSCSCP
-import info.kwarc.mmt.MitM.{MitMSystems, MitM}
+import info.kwarc.mmt.MitM.{MitM, MitMSystems}
+import info.kwarc.mmt.api.GlobalName
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.LogicalReference
+import info.kwarc.mmt.api.refactoring.{DereferenceAlignment, AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
-import info.kwarc.mmt.odk.StringLiterals
+import info.kwarc.mmt.odk.{IntegerLiterals, StringLiterals}
 import info.kwarc.mmt.sequences.Sequences
 
-class SageSystem extends VREWithAlignmentAndSCSCP("Sage",MitMSystems.sagesym,OMSymbol("MitM_Evaluate", "scscp_transient_1", None, None), "ODK/Sage") {
-  object NonTrivials extends StatelessTraverser {
-    val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
-    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-      case ApplySpine(OMS(MitM.polycons),List(_,r,_,lst)) =>
-        val ls = Sequences.flatseq.unapplySeq(lst).getOrElse(return t)
-        OMA(r,ls.toList)
-      case OMA(OMS(MitM.polycons),List(_,r,_,lst)) =>
-        val ls = Sequences.flatseq.unapplySeq(lst).getOrElse(return t)
-        OMA(r,ls.toList)
-      case ApplySpine(OMS(`nf`),a :: Nil) =>
+/** translations to be used in SageSystem */
+object SageTranslations {
+  private val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
+  private val poly = Sage.docpath ? "sage.rings.polynomial.polynomial_element" ? "Polynomial"
+  private val polyring = Sage.docpath ? "sage.rings.polynomial.polynomial_ring_constructor" ? "PolynomialRing"
+  private val galoisGroup = Sage.docpath ? "sage.rings.number_field.number_field.NumberField_absolute_with_category.galois_group" 
+  
+  
+  val numberfieldsTo = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(MitM.numberfield),a::Nil) => true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(MitM.numberfield),a::Nil) =>
         OMA(OMS(`nf`),List(a,StringLiterals("x")))
-      case OMA(OMS(`nf`),a :: Nil) =>
-        OMA(OMS(`nf`),List(a,StringLiterals("x")))
-      case _ => Traverser(this,t)
+    }
+  }
+  val numberfieldsFrom = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(`nf`),a::x::Nil) => true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(`nf`),a::_:: Nil) =>
+        OMA(OMS(MitM.numberfield),List(a))
     }
   }
 
-  override def translateToSystem(t: Term): Term = NonTrivials(super.translateToSystem(t),Context.empty)
+  object PolyMatcher extends MitM.MultiPolynomialMatcher {
+    def apply(mps: MitM.MultiPolynomialStructure) = {
+      val dictitems = mps.monomials.map {m => Python.tuple(Python.tuple(m.exponents.map(IntegerLiterals.apply)), IntegerLiterals(m.coefficient))}
+      poly(polyring(mps.baseRing, Python.list(mps.varTerms :_*)), Python.dict(dictitems :_*))
+    }
+    def unapply(t: Term): Option[MitM.MultiPolynomialStructure] = t match {
+      case OMA(OMS(`poly`), OMA(OMS(`polyring`), baseRing :: OMA(OMS(Python.list), varTerms) :: Nil) :: OMA(OMS(Python.dict), dictitems) :: Nil) =>
+        val names = varTerms map {
+          case StringLiterals(s) => s
+          case _ => return None
+        }
+        val monoms = dictitems map {
+          case OMA(OMS(Python.tuple), List(OMA(OMS(Python.tuple), expTerms), IntegerLiterals(coeff))) =>
+            val exps = expTerms map {
+              case IntegerLiterals(e) => e
+              case _ => return None
+            }
+            MitM.MultiMonomialStructure(coeff, exps)
+        }
+        val mps = MitM.MultiPolynomialStructure(baseRing, names, monoms)
+        Some(mps)
+      case _ => None
+    }
+  }
+
+  val polyTo = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMS(MitM.polycons), _ :: StringLiterals(_) :: _ :: Nil) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMS(MitM.polycons),r :: x :: ls :: Nil) =>
+        OMA(OMA(OMS(polyring),r :: x :: Nil),ls :: Nil)
+    }
+  }
+  val polyFrom = new AcrossLibraryTranslation {
+    override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
+      case OMA(OMA(OMS(`polyring`), _ :: _ :: Nil), _ :: Nil) =>
+        true
+      case _ => false
+    }
+
+    override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = tm match {
+      case OMA(OMA(OMS(`polyring`), r :: x :: Nil),ls :: Nil) =>
+        OMA(OMS(MitM.polycons),r :: x :: ls :: Nil)
+    }
+  }
+  
+  val galoisGroupTo = DereferenceAlignment(LogicalReference(MitM.galois), LogicalReference(galoisGroup), Python.dot)
+}
+
+/** external computation provided by SageMath */
+class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, MitMSystems.evaluateSym, "ODK/Sage") {
+  import SageTranslations._
+  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: PolyMatcher.getAlignmentTo :: numberfieldsTo :: galoisGroupTo.getTranslator :: super.toTranslations
+  override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: PolyMatcher.getAlignmentFrom :: numberfieldsFrom :: super.fromTranslations
+
+  override protected lazy val translator_to = translator(new TranslationTarget {
+    override def inTarget(path: GlobalName, controller: Controller): Boolean = Sage._base <= path
+  },toTranslations)
 }

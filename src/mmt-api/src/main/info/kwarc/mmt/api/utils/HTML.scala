@@ -61,6 +61,7 @@ abstract class HTML {
    val span = new Element("span")
 
    val pre  = new Element("pre")
+   val code = new Element("code")
 
    val math       = new Element("math")
    val mo         = new Element("mo")

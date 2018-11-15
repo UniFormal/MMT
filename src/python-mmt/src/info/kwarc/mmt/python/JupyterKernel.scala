@@ -2,7 +2,7 @@ package info.kwarc.mmt.python
 
 
 import info.kwarc.mmt.api._
-import objects.Text // twiesing: not sure if this is the right import
+import objects.Text
 import web._
 import frontend._
 import presentation._
@@ -62,45 +62,78 @@ object  Widget {
 
 class JupyterKernel extends Extension {
   private var repl: REPLServer = null
-  private lazy val presenter = controller.extman.get(classOf[Presenter], "html").getOrElse(controller.presenter)
+  private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
+  private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
+  logFile.createNewFile()
+  private val errorCont = new ErrorWriter(logFile, None)
 
+  override def logPrefix: String = "jupyter"
+  
   override def start(args: List[String]) {
     super.start(args)
+    initOther(presenter)
     val extman = controller.extman
     repl = extman.get(classOf[REPLServer]).headOption getOrElse {
-      val r = new REPLServer
+      errorCont.open
+      val r = new REPLServer(errorCont)
       extman.addExtension(r,Nil)
       r
     }
   }
 
-  def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = {
+  override def destroy: Unit = {
+    errorCont.close
+    super.destroy
+  }
+
+  // private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
+  private def returnError(msg: String): PythonParamDict = PythonParamDict("element" -> msg)
+  
+  def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = try {
     import REPLServer._
-    req match{
-      case "active computation" => {
+    req match {
+      case "active computation" =>
         activeComputation(kernel)
         PythonParamDict()
-      }
+      case s if s.startsWith("mitm ") =>
+        // mitm EXP evaluates EXP using a MitM computation
+        val rest = s.substring(5)
+        val replSession = repl.getSessionOpt(session).getOrElse {
+          return returnError("session " + session + " not found")
+        }
+        val con = replSession.parseObject(rest)
+        val df = con.df.getOrElse {
+          return returnError("epxression was processed but no definiens was found afterwards")
+        }
+        import info.kwarc.mmt.MitM.VRESystem._
+        val mitm = new MitMComputation(controller)
+        val trace = new MitMComputationTrace(None)
+        // log(df.toString)
+        val dfN = mitm.simplify(df, Some(objects.Context(con.parent)))(trace)
+        // log("Result: " + dfN)
+        con.dfC.analyzed = Some(dfN)
+        controller.add(con)
+        val dfNP = presenter.asString(dfN)
+        val result = if (controller.report.checkDebug) {
+          dfNP + "\n" + trace.toString(t => t.toString)
+        } else
+          dfNP
+        PythonParamDict("element" -> result)
       case _ => {
-        val comm = REPLServer.Command.parse(req)
-        try {
+          val comm = REPLServer.Command.parse(req)
           val resp = repl(Some(session), comm)
           resp match {
-            case AdminResponse(s) => PythonParamDict("message" -> s)
+            case m: MultiTypedResponse => PythonParamDict(m.messages.toList)
             case e: ElementResponse =>
               val h = presenter.asString(e.element)
               PythonParamDict("element" -> h)
-
           }
-        }
-        catch {
-          case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" ->e.mainMessage)
-          case e: Exception => PythonParamDict("element" ->(e.getClass.toString+e.getMessage))//(e.getStackTrace.foldRight(""){ (ste,s) => (s +"\n"+ ste.toString)}))
-
-        }
       }
     }
 
+  } catch {
+    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" -> presenter.asString(e))
+    case e: Exception => PythonParamDict("element" -> presenter.asString(e))
   }
 
 

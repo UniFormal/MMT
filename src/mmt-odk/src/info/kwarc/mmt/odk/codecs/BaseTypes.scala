@@ -6,7 +6,8 @@ import uom._
 import utils._
 import valuebases._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import info.kwarc.mmt.MitM.{Append, LFList, ListNil, MitM}
+import info.kwarc.mmt.MitM.MitM
+import info.kwarc.mmt.odk.LFX.{Append, LFList, ListNil}
 import info.kwarc.mmt.odk._
 import info.kwarc.mmt.sequences.{NatRules, Sequences}
 
@@ -21,7 +22,7 @@ trait BigIntAsJSON {
       JSONString(i.toString)
   }
   def decodeRep(j: JSON): BigInt = j match {
-    case JSONInt(i) => BigInt(i)
+    case JSONInt(i) => i
     case JSONString(s) => BigInt(s)
     case _ => throw CodecNotApplicable
   }
@@ -29,7 +30,12 @@ trait BigIntAsJSON {
 
 
 object TMInt extends LiteralsCodec[BigInt,JSON](Codecs.standardInt, IntegerLiterals) with BigIntAsJSON
-object TMNat extends LiteralsCodec[BigInt,JSON](Codecs.standardNat, NatLiterals) with BigIntAsJSON
+object TMNat extends LiteralsCodec[BigInt,JSON](Codecs.standardNat, NatLiterals) with BigIntAsJSON {
+  override def encode(t: Term): JSON = t match {
+    case IntegerLiterals(i) if i >= 0 => super.encode(NatLiterals(i))
+    case _ => super.encode(t)
+  }
+}
 object TMPos extends LiteralsCodec[BigInt,JSON](Codecs.standardPos, PosLiterals) with BigIntAsJSON
 
 object TMString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.standardString, StringLiterals))
@@ -39,8 +45,8 @@ object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.
 object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
   def encodeRep(b: java.lang.Boolean) = if (b) JSONInt(1) else JSONInt(0)
   def decodeRep(j: JSON) = j match {
-    case JSONInt(1) => true
-    case JSONInt(0) => false
+    case JSONInt(x) if x.toInt == 1 => true
+    case JSONInt(x) if x.toInt == 0 => false
     case _ => throw CodecNotApplicable
   }
 }
@@ -155,23 +161,23 @@ object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OM
       } else {
         constructPolynomial("x", List(0))
       }
-    // case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
+    case JSONInt(i) => decode(JSONString(i.toString)) // to interpret integers as polynomials
     case _ => throw new Exception(s"not a polynomial: Expected a JSONString, but got a ${c.getClass}: ${c.toCompactString}")
   }
 
   // Constructs a polynomial out of a list of rational numbers
   private def constructPolynomial(varName: String, ls : List[BigDecimal]) : Term = ApplySpine(
     OMS(MitM.polycons),
-    NatRules.NatLit(ls.length),
-    OMS((MitM.basepath / "smglom" / "algebra") ? "RationalField" ? "rationalField"),
+    //NatLiterals(ls.length),
+    OMS(MitM.rationalRing),
     StringLiterals.apply(varName),
-    Sequences.flatseq(ls.map(_.toBigInt).map(NatRules.NatLit.of):_*)
+    LFList(ls.map(_.toBigInt).map(IntegerLiterals.of))
   )
 
   // turns a polynomial into a list of rational numbers
   private def destructPolynomial(t : Term): (String, List[BigDecimal]) = t match {
-    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: Sequences.flatseq(ls @ _*) :: Nil) =>
-      (vname, ls.toList.map({ case NatRules.NatLit(bi: BigInt) => BigDecimal(bi)}))
+    case ApplySpine(OMS(MitM.polycons), _ :: OMLIT(vname: String, StringLiterals) :: LFList(ls) :: Nil) =>
+      (vname, ls.map({ case IntegerLiterals(bi: BigInt) => BigDecimal(bi)}))
     case _ => throw new Exception("not a polynomial")
   }
 

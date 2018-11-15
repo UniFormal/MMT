@@ -1,0 +1,5 @@
+// msl file used by MMT for installing initial MMT archives in content
+
+// turn on logging for console and lmh
+log console
+log+ lmh

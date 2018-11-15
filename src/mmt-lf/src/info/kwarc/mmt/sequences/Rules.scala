@@ -25,12 +25,12 @@ import NatRules.NatLit
  * |- type^n UNIV
  */
 object UniverseNType extends UniverseRule(rep.path) {
-   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = {
+   def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
      val Sequences.rep(t,n) = tm
      solver.check(Typing(stack, n, OMS(nat)))(history.branch) //TODO already covered by precondition or universe rules?
      t match {
-       case OMS(Typed.ktype) => true
-       case _ => solver.error("not a universe: " + tm)
+       case OMS(Typed.ktype) => Some(true)
+       case _ => Some(solver.error("not a universe: " + tm))
      }
    }
 }
@@ -183,25 +183,25 @@ object IndexCompute extends ComputationRule(index.path) {
  *  applicable only if |a| simplifies to a literal
  */
 class SequenceTypeCheck(op: GlobalName) extends TypingRule(op) {
-  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Boolean = {
+  def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
     val equalLength = Length.checkEqual(solver, tm, tp).getOrElse {
       throw DelayJudgment("length not known")
     }
-    if (!equalLength) return false
+    if (!equalLength) return Some(false)
     val n = Length.infer(solver, tp).get
     val nS = solver.safeSimplifyUntil(n)(NatLit.unapply)._1
     nS match {
       case NatLit(nI) =>
-        (BigInt(0) until nI) forall {iI =>
+        Some((BigInt(0) until nI) forall {iI =>
           val iL = NatLit(iI)
           solver.check(Typing(stack, index(tm, iL), index(tp, iL)))
-        }
+        })
       case OMV(x) =>
         val i = pickFreshIndexVar(solver, tm)._1
         val iV = OMV(i)
         val iup = upBoundName(i)
         val newCon = stack ++ i%OMS(nat) ++ iup%lessType(iV, nS)
-        solver.check(Typing(newCon, index(tm, iV), index(tp, iV)))
+        Some(solver.check(Typing(newCon, index(tm, iV), index(tp, iV))))
       case _ => throw DelayJudgment("length not a literal")
     }
   }
@@ -271,7 +271,7 @@ object ExpandRep extends ComputationRule(rep.path) {
 }
 
 /** inverse of ExpandRep, useful for complification */
-object ContractRep extends TermTransformationRule with ComplificationRule {
+object ContractRep extends ComplificationRule {
   val head = rep.path
   def apply(matcher: Matcher, c: Context, t: Term) = {
     t match {

@@ -2,6 +2,9 @@ package info.kwarc.mmt.api
 
 import utils._
 
+import scala.collection.TraversableLike
+import scala.collection.generic.CanBuildFrom
+
 /**
   * This package defines various MMT-independent high-level APIs.
   */
@@ -131,5 +134,12 @@ package object utils {
    def downcast[A, B<:A](cls: Class[B])(a: A): Option[B] = a match {
      case b: B@unchecked if cls.isInstance(b) => Some(b)
      case _ => None
+   }
+
+   /** returns a histogram of pf over lst, i.e. counts how often each return value occurs */
+   def histogram[T1, T2](lst: Seq[T1], pf: PartialFunction[T1, T2]): Seq[(T2, Int)] = {
+     lst.groupBy(pf.lift).collect({
+       case (Some(e), l) => (e, l.size)
+     }).toSeq
    }
 }

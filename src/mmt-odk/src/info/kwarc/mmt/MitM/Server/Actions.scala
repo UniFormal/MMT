@@ -6,8 +6,7 @@ import info.kwarc.mmt.api.web.Util
 /**
   * Actions controlling the MiTM SCSCP Server
   */
-trait Actions {
-  this: Server =>
+trait Actions {this: MitMComputationServer =>
 
   case object SCSCPInfoAction extends Action with ResponsiveAction {
     def apply(): Unit = scscpServer match {
@@ -27,7 +26,7 @@ trait Actions {
   }
 
   object SCSCPInfoActionCompanion extends ObjectActionCompanion(SCSCPInfoAction, "get information about the currently running SCSCP server", "show scscp")
-    with MiTMExtension
+    with MitMExtension
 
   case class SCSCPOn(port: Int = 26133, bindHost: String = "127.0.0.1") extends Action {
     def apply(): Unit = scscpServer match {
@@ -42,7 +41,7 @@ trait Actions {
     def toParseString = s"scscp on $port${if (bindHost == "127.0.0.1") "" else " " + bindHost}"
   }
 
-  object SCSCPOnCompanion extends ActionCompanion("start up the SCSCP server", "scscp on") with MiTMExtension {
+  object SCSCPOnCompanion extends ActionCompanion("start up the SCSCP server", "scscp on") with MitMExtension {
 
     import Action._
 
@@ -63,6 +62,6 @@ trait Actions {
   }
 
   object SCSCPOffCompanion extends ObjectActionCompanion(SCSCPOff, "shut down the SCSCP server", "scscp off")
-    with MiTMExtension
+    with MitMExtension
 
 }

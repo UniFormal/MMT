@@ -5,9 +5,18 @@ import info.kwarc.mmt.api.{DPath, frontend}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.Apply
 
+object Python {
+  val _base = DPath(URI.http colon "python.org")
+  val cd = _base ? "Python"
+  val dict = cd ? "dict"
+  val list = cd ? "list"
+  val tuple = cd ? "tuple"
+  val dot = cd ? "getattr"
+}
+
 object Sage {
   val metabase = DPath(URI.http colon "python.org")
-  val _base = DPath(URI.http colon "python.org")
+  val _base = Python._base
   val docpath : DPath = _base // "content"
   val theory = metabase ? "Types"
   val obj = theory ? "object"

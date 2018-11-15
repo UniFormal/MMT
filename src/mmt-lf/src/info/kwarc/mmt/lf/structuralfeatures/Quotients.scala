@@ -37,11 +37,11 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       }
       val quotMapSurj = surjDecl(quotientMap, controller, context)
       
-      val quotInvert = Pushout(dom, structure.path, rel.path, quotientMap.path, Some("quotInvert"), context)
+      val quotInvert = Pushforward(dom, structure.path, rel.path, quotientMap.path, Some("quotInvert"), context)
       val quotInverse = inverse(dom, structure.path, rel.path, quotientMap.path, quotInvert.path, Some("quotInverse"), context)
       
       val elabDecls = List(rel, structure, quotientMap, quotInvert, quotInverse, quotMapSurj)
-      //elabDecls map {d => log(defaultPresenter(d)(controller))}
+      //elabDecls map {d => log(present(d))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
         def getO(n: LocalName) = {
@@ -58,33 +58,51 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       case tp => println(tp); throw ImplementationError("Unexpected match case. ")
     }
     val args = List(newVar(uniqueLN("a1"), a, None), newVar(uniqueLN("a2"), a, None))
-    val ret : Term = PiOrEmpty(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail))))
+    val ret : Term = PiOrEmpty(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail), quot.ret)))
     TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
   }
   
-  /** Declares the unique push-out of a function on the domain down to the quotient, whenever well-defined */
-  def Pushout(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
+  /** Declares the unique push-forward g of a function on the domain down to the quotient, whenever well-defined 
+   *   Q  - - g - - >  Q
+   *   ^               ^
+   *   |               |
+   *  quot            quot
+   *   |               |
+   *  dom ---- f ---> dom
+   */
+  def Pushforward(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
       val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      def F(t:Term)=ApplySpine(f.toTerm,t)
       val (x, y) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx))
-      val proof = Pi(List(x, y), ApplyGeneral(rel, List(x.toTerm, y.toTerm)))
+      val proof = Pi(List(x, y), Arrow(ApplyGeneral(rel, List(x.toTerm, y.toTerm)), Eq(F(x.toTerm), F(y.toTerm), dom)))
       
       Pi(ctx getOrElse Context.empty ++ f, Arrow(proof, Arrow(q, q)))
     }
     makeConst(uniqueLN(name getOrElse "g"), Ltp)
   }
   
+  /**
+   * States that the diagram commutes:
+   *   Q  -- g -->  Q
+   *   ^            ^
+   *   |            |
+   *  quot         quot
+   *   |            |
+   *  dom -- f --> dom 
+   */
   def inverse(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, quotInv: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
       val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      def F(t:Term)=ApplySpine(f.toTerm,t)
       val (x, y, z) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx), newVar(uniqueLN("z"), dom, ctx))
-      val proof = Pi(List(x, y), ApplyGeneral(rel, List(x.toTerm, y.toTerm)))
+      val proof = Pi(List(x, y), Arrow(ApplyGeneral(rel, List(x.toTerm, y.toTerm)), Eq(F(x.toTerm), F(y.toTerm), dom)))
       
-      val g_z = ApplyGeneral(OMS(quotInv), (ctx getOrElse Context.empty).map(_.toTerm) ++ List(f.toTerm, proof, z.toTerm))
-      val f_o_quot_z = ApplySpine(OMS(quot), ApplySpine(f.toTerm, z.toTerm))
-      Pi((ctx getOrElse Context.empty) ++ f ++ z, Eq(g_z, f_o_quot_z))
+      val g_o_quot_z = ApplyGeneral(OMS(quotInv), (ctx getOrElse Context.empty).map(_.toTerm) ++ List(f.toTerm, proof, ApplySpine(OMS(quot),z.toTerm)))
+      val quot_o_f_z = ApplySpine(OMS(quot), ApplySpine(f.toTerm, z.toTerm))
+      Pi((ctx getOrElse Context.empty) ++ f ++ z, Eq(g_o_quot_z, quot_o_f_z, dom))
     }
   makeConst(uniqueLN(name getOrElse "quotInverse"), Ltp)
   }

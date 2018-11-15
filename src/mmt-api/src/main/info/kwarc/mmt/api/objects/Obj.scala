@@ -100,8 +100,6 @@ trait ThisTypeTrait
 sealed abstract class Term extends Obj with ThisTypeTrait {
    final type ThisType = Term
    def strip : Term = this
-   /** morphism application (written postfix), maps OMHID to OMHID */
-   def *(that : Term) : Term = OMM(this, that)
    /** permits the intuitive f(t_1,...,t_n) syntax for term applications */
    def apply(args : Term*) = OMA(this, args.toList)
    /** the syntactically computed MPath of the term.
@@ -440,7 +438,7 @@ object ComplexTerm {
      val conI = con.map(_.asInstanceOf[VarDecl])
      val argsI = args.map {
        case t: Term => t
-       case _ => throw ImplementationError("term expected")
+       case o => throw ImplementationError("term expected, found: " + o)
      }
      ComplexTerm(p, subsI, conI, argsI)
    }

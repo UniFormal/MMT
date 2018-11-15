@@ -99,9 +99,3 @@ case class SingularFunction(name : String, arguments : List[String], is_global :
   private def doType = arguments.foldLeft[Term](tp(got.getOrElse("returntype")))((tm,s) => Arrow(tp(s),tm))
   def asConstant(th : MPath) : Constant = Constant(OMMOD(th),LocalName(name),Nil,Some(doType),None,None)
 }
-
-object Singular {
-  val dpath = DPath(URI.http colon "www.singular.uni-kl.de")
-  val meta = dpath ? "Types"
-  def tp(s : String) = OMS(meta ? s)
-}
