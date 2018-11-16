@@ -500,7 +500,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       } else {
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val vd = solved.copy(df = Some(valueS))
-         // val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of other variables
+         // substitute in solutions of other variables
+         // this usd to do only val rightS = right ^^ (OMV(name) / valueS), but that is bad because solutions are not immediately reduced
+         // the code below is a bit redundant as it substitutes all solutions, even though normally only the new one should occur free
          val newSolution = left ::: vd :: right
          setNewSolution(newSolution)
          val newSolutionS = substituteSolution(newSolution)
