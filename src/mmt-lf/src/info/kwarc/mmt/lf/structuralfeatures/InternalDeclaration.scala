@@ -37,9 +37,13 @@ private object InternalDeclarationUtil {
     
    /** a very detailed presenter, useful for debugging */
   def present(c: Constant)(implicit parent: GlobalName) : String = {
-    c.path + ": " + present(c.tp.get)
+    c.path + ": " + present(c.tp.get, false)
   }
-  def present(e: Term)(implicit parent: GlobalName) : String = {
+  /** a very detailed presenter, useful for debugging */
+  def shortPresent(c: Constant)(implicit parent: GlobalName) : String = {
+    c.path + ": " + present(c.tp.get, true)
+  }
+  def present(e: Term, shortNames: Boolean)(implicit parent: GlobalName) : String = {
     def flatStrList(l : List[String], sep : String): String = l match {
       case Nil => ""
       case List(hd) => hd
@@ -54,9 +58,9 @@ private object InternalDeclarationUtil {
         case OMBIND(Pi.term, con, body) => preCon(con) + " "+iterPre(body)
         case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")
         case Arrow(a, b) => "("+iterPre(a) + " -> " + iterPre(b)+")"
-        case OMS(target) => "OMS("+target.name+")"
+        case OMS(target) => if (shortNames) target.name.toString() else "OMS("+target.name+")"
         case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg1) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
-        case OMV(n) => "OMV("+n.toString()+")"
+        case OMV(n) => if (shortNames) n.toString() else "OMV("+n.toString()+")"
         case OML(n, tp, df, _, _) => n.toString()+(if(tp != None) ": "+iterPre(tp.get) else "")+(if (df != None) " = "+iterPre(df.get) else "")
       }
     }
@@ -105,7 +109,7 @@ private object InternalDeclarationUtil {
   def injDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, ctx)
     val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
-    tmdecl.injDecl
+    tmdecl.injDecls
   }
   def surjDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, ctx)
@@ -196,10 +200,23 @@ sealed abstract class InternalDeclaration {
   /** like df but with all names externalized */
   def externalDf(implicit parent: GlobalName) = df map {t => externalizeNames(parent)(t, context)}
  
+  
+  /** checks whether the type of the declaration is dependent on the given argument */
+  def isIndependentArgument(arg: (Option[LocalName], Term)): Boolean = arg match {
+    case (None, _) => true
+    case (Some(name), tp) => {
+      val remainingArgs = args.reverse.takeWhile(_ != arg).reverse
+      if (remainingArgs.filter(x => arg != x).map(_._2).exists(argTp => argTp.freeVars contains name)) false else true 
+    }
+  }
+  
+  /** checks whether the declaration is not dependently typed */
+  def isNotDependentTyped(): Boolean = {args.forall(isIndependentArgument(_))}
+  
   /**
 	 * Build a context quantifying over all arguments
 	 *  and the term of this constructor applied to those arguments
-	 * @param suffix (optional) a suffix to append to the local name of each variable declaration in the returned context
+	 * @param suffix (optional) a suffix to append to the local name of each independent variable declaration in the returned context
    */
   def argContext(suffix: Option[String])(implicit parent: GlobalName): (Context, Term) = { 
     val suf = suffix getOrElse ""
@@ -209,8 +226,8 @@ sealed abstract class InternalDeclaration {
     }
     // In case of an OMV argument used in the type of a later argument
     var subs = Substitution()
-    val con: Context = dargs map {case (loc, tp) =>
-      val locSuf = uniqueLN(loc+suf)
+    val con: Context = dargs zip args map {case ((loc, tp), arg) =>
+      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf) else loc
       subs = subs ++ OMV(loc) / OMV(locSuf)
       newVar(locSuf, tp ^? subs, None)
     }
@@ -274,16 +291,23 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param d the term level for which to generate the injectivity axiom
    */
-  def injDecl(implicit parent: GlobalName): Constant = {
-    val Ltp = () => {
-      val (aCtx, aApplied) = argContext(Some("_0"))
-      val (bCtx, bApplied) = argContext(Some("_1"))
-      val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(ret, a.toTerm, b.toTerm)} // TODO does not type-check if ret depends on arguments
-      val resNeq = Neq(ret, aApplied, bApplied)  // TODO does not type-check if ret depends on arguments
-      val body = Arrow(Arrow(argEq, Contra), resNeq)
-      PiOrEmpty(context++aCtx ++ bCtx,  body)
+  def injDecls(implicit parent: GlobalName): List[Constant] = {
+    val (aCtx, aApplied) = argContext(Some("_0"))
+    val (bCtx, bApplied) = argContext(Some("_1"))
+    val ctxes = bCtx.zipWithIndex filter {case (x, i) => x != aCtx.variables.apply(i)} map {case (b, i) =>
+      val cCtx = aCtx.take(i-1) ++ (b::aCtx.drop(i))
+      val cApplied = applyTo(cCtx)
+      (cCtx, cApplied)
     }
-    makeConst(uniqueLN("injective_"+name), Ltp)(parent)
+    ctxes map {case (cCtx, cApplied) =>
+      val Ltp = () => {
+        val argEq = (aCtx zip cCtx) map {case (a,c) => Eq(ret, a.toTerm, c.toTerm)} // TODO does not type-check if ret depends on arguments
+        val resNeq = Neq(ret, aApplied, cApplied)  // TODO does not type-check if ret depends on arguments
+        val body = Arrow(Arrow(argEq, Contra), resNeq)
+        PiOrEmpty(context++aCtx ++ cCtx,  body)
+      }
+      makeConst(uniqueLN("injective_"+name), Ltp)(parent)
+    }
   }
   
   /**

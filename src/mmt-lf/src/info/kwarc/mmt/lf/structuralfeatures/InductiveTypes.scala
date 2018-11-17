@@ -71,9 +71,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    elabDecls foreach {d =>log(defaultPresenter(d)(controller))}
+    elabDecls foreach {d =>log(shortPresent(d))}
     new Elaboration {
-      val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
         elabDecls.find(_.name == n)
@@ -123,6 +122,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
               }
               utils.listmap(inductNames, p) match {
                 case Some(inductP) => ApplyGeneral(OMS(inductP), inductArgs)
+                case None => throw ImplementationError("Couldn't find declaration for the inductively defined type "+noLookupPresenter.asString(tp)+". This should never happen. ")
               }
           }
       }
@@ -143,6 +143,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         val retPrimed = induct(Univ(1), d.ret)
         val ret = d match {
           case tl: TermLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
+          case tl: StatementLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
           case tl: TypeLevel => Arrow(dAppliedInduct, dAppliedPrimed)
         }
         Pi(context ++ modelContext ++ argCon, ret)
@@ -151,7 +152,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val c = makeConst(name, Ltp)
       inductNames ::= d.path -> c.path
       c
-    } 
+    }
   }
   /**
    * name of the declaration corresponding to n declared in noJunks
@@ -165,21 +166,25 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
-    tmdecls.takeWhile(_ != d) foreach {b => 
-      if (b.ret == d.ret) {
-        // TODO for dependently-typed, this can generate ill-typed declarations
-        val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
-        val Ltp = () => {
-          val (aCtx, aApplied) = d.argContext(None)
-          val (bCtx, bApplied) = b.argContext(None)
-          Pi(d.context++aCtx ++ bCtx, Neq(b.ret, aApplied, bApplied))  // TODO does not type-check if ret depends on arguments
+    // To ensure that the result is well-typed
+    if (d.isNotDependentTyped()) {
+      // To ensure that the result is well-typed
+      tmdecls.takeWhile(_ != d) filter (_.isNotDependentTyped()) foreach {b => 
+        if (b.ret == d.ret) {
+          // TODO: Check this doesn't generate ill-typed declarations for dependently-typed
+          val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
+          val Ltp = () => {
+            val (aCtx, aApplied) = d.argContext(None)
+            val (bCtx, bApplied) = b.argContext(None)
+            Pi(d.context++aCtx ++ bCtx, Neq(b.ret, aApplied, bApplied))  // This does not type-check if ret depends on arguments
+          }
+          decls ::= makeConst(newName, Ltp)
         }
-        decls ::= makeConst(newName, Ltp)
       }
+      decls = decls.reverse
+      if(d.args.length > 0)
+        decls ++= d.injDecls
     }
-    decls = decls.reverse
-    if(d.args.length > 0)
-      decls ::= d.injDecl
     decls
   }
 }
