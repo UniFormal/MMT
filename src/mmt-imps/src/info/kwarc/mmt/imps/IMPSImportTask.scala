@@ -268,7 +268,7 @@ class IMPSImportTask(val controller  : Controller,
                   val quelle      : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
                   assert(quelle.isDefined)
 
-                  val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),List(doName(sourceName)),None,Some(target_term),None)
+                  val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),Nil,None,Some(target_term),None)
                   controller add nu_sort_map
 
                   if (tState.verbosity > 1) {
@@ -368,7 +368,9 @@ class IMPSImportTask(val controller  : Controller,
               for (nativec <- source.getConstants)
               {
                 println(" > translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name)
-                println(" > " + nativec)
+                println(" > con: " + nativec.name)
+                println(" > tp:  " + nativec.tp)
+                println(" > df:  " + nativec.df)
                 val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
                 val nuname : LocalName = ComplexStep(target.path) / nativec.name
                 val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
