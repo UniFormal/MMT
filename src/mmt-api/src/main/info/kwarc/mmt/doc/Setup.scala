@@ -176,7 +176,8 @@ class Setup extends ShellExtension("setup") {
       contentFolder.mkdirs
 
       if(installContent){
-        log("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
+        // log("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
+        log("cloning content repositories via git")
         try {
          controller.handleLine("lmh clone MMT/examples")
         } catch {case e: Error =>

@@ -1123,15 +1123,15 @@ case class ArgEnsembleSorts(sorts : List[ArgSortAssoc], var src : SourceInfo, va
   override def toString : String = "(sorts " + sorts.mkString(" ") + ")"
 }
 
-case class ArgConstAssoc(nm : Name, sorts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "( " + nm.toString + sorts.map(k => k.o match {
+case class ArgConstAssoc(nm : Name, consts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "( " + nm.toString + consts.map(k => k.o match {
     case Left(d)  => " " + d.toString
     case Right(n) => " " + n.toString
   }) + ")"
 }
 
-case class ArgEnsembleConsts(sorts : List[ArgConstAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
-  override def toString : String = "(constants " + sorts.mkString(" ") + ")"
+case class ArgEnsembleConsts(consts : List[ArgConstAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(constants " + consts.mkString(" ") + ")"
 }
 
 case class ArgNewTranslationName(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1474,7 +1474,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
           if (needle.nonEmpty)
           {
-            println(" > looking for formula for sort-pair: " + sps.get.defs(sp))
+            //println(" > looking for formula for sort-pair: " + sps.get.defs(sp))
 
             val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
             assert(json_theory2.isDefined)
@@ -1544,8 +1544,6 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
             case scala.util.Right(_)
                | scala.util.Left((_,Some(_))) => nu_cps_defs = nu_cps_defs ::: List(cps.get.defs(cp))
             case scala.util.Left((dfs,None))  =>
-
-              //println(" > looking for formula for constant-pair: " + cps.get.defs(cp))
 
               val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
               assert(json_theory2.isDefined)
@@ -1858,7 +1856,34 @@ object  DFTheoryEnsembleInstances extends Comp[DFTheoryEnsembleInstances] {
   override def build[T <: DefForm](args : List[Any]): T = args match {
     case (nm : Name) :: (fuq : Option[ModForceUnderQuickLoad]) :: (tt : Option[ArgTargetTheories]) :: (tm : Option[ArgTargetMultiple])
       :: (ss : Option[ArgEnsembleSorts]) :: (cs : Option[ArgEnsembleConsts]) :: (ms : Option[ArgMultiples]) :: (tic : Option[ArgTheoryInterpretationCheck])
-      :: (ps : Option[ArgPermutations]) :: (srs : Option[ArgSpecialRenamings]) :: Nil => DFTheoryEnsembleInstances(nm,fuq,tt,tm,ss,cs,ms,tic,ps,srs,None,None).asInstanceOf[T]
+      :: (ps : Option[ArgPermutations]) :: (srs : Option[ArgSpecialRenamings]) :: Nil =>
+      val nucs : Option[ArgEnsembleConsts] = if (cs.isDefined)
+      {
+        var nuCAs : List[ArgConstAssoc] = List.empty
+
+        for (c : ArgConstAssoc <- cs.get.consts) {
+          var nu_t : List[ODefString] = List.empty
+          for (t : ODefString <- c.consts) {
+            t.o match
+            {
+              // In this case, we need to search closer.
+              case scala.util.Left(tuple) => tuple match {
+                case (df,Some(ime)) => nu_t = nu_t ::: List(t)
+                case (df,None)      =>
+                  println(" > [TES] Looking for constants mapping: " + c.nm + " -> " + df)
+                  nu_t = nu_t ::: List(t)
+              }
+              case scala.util.Right(_)  => nu_t = nu_t ::: List(t)
+            }
+          }
+          nuCAs = nuCAs ::: List(ArgConstAssoc(c.nm,nu_t,c.src,c.cmt))
+        }
+
+        Some(ArgEnsembleConsts(nuCAs,cs.get.src,cs.get.cmt))
+
+      } else None
+
+      DFTheoryEnsembleInstances(nm,fuq,tt,tm,ss,nucs,ms,tic,ps,srs,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }

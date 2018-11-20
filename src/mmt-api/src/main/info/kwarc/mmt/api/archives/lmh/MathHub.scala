@@ -26,9 +26,10 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   } else {
     "git@" + remote.authority.getOrElse("") + ":" + id + ".git"
   }
+  /*
   protected def download_(id : String, version: Option[String]): URI = {
     (remote / id / "repository" / "archive.zip") ? s"ref=${version.getOrElse("master")}"
-  }
+  }*/
   protected def api_(page: Int): URI = {
     (remote / "api" / "v4" / "projects") ? s"per_page=100&page=$page"
   }
@@ -297,7 +298,8 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     val gitInstall = installGit(id, version)
     // if that has failed, try to download normally
     gitInstall orElse {
-      installGet(id, version)
+      logError(s"installation has failed, please make sure that git is installed and try again. ")
+      None
     }
   }
  
@@ -337,7 +339,8 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     }
     Some(MathHubEntry(lp))
   }
-  
+
+  /*
   private def installGet(id: String, version: Option[String]) : Option[MathHubEntry] = {
     log(s"trying to install $id (version $version) via download")
     val lp = localPath(id)
@@ -356,7 +359,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     } finally {
       zip.delete
     }
-  }
+  }*/
 
   private def installUpdateEntry(entry: MathHubEntry, version: Option[String]): Unit = {
     val id = entry.id
