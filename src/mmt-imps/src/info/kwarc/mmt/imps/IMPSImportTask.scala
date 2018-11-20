@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.imps.IMPSTheory.tp
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.SymbolicExpressionParser
 import info.kwarc.mmt.lf.ApplySpine
@@ -218,25 +219,64 @@ class IMPSImportTask(val controller  : Controller,
             if (relevantTranslations.length == 1)
             {
               if (tState.verbosity > 1) {
-                println(" > adding view " + vname)
+                println(" > adding view " + vname + " (source: " + source.name.toString + ", target: " + target.name.toString + ")")
               }
 
               val theRelevantTranslation : JSONObject = relevantTranslations.head
               val sep : SymbolicExpressionParser = new SymbolicExpressionParser
 
-              val nu_view = new DeclaredView(bt.narrationDPath, vname, TermContainer(source.toTerm), TermContainer(target.toTerm), isImplicit = true)
+              val nu_view = new DeclaredView(bt.narrationDPath, vname, TermContainer(source.toTerm), TermContainer(target.toTerm), isImplicit = false)
               val mref : MRef = MRef(doc.path,nu_view.path)
               controller add nu_view
               controller add mref
 
               tState.translations_decl = nu_view :: tState.translations_decl
 
+              val fixed = theRelevantTranslation.getAsList(classOf[JSONString],"fixed-theories")
+              for (ft <- fixed)
+              {
+                if (tState.verbosity > 1) { println("  > view " + vname + " fixes theory " + ft.value) }
+
+                val fix    : DeclaredTheory = getTheory(ft.value.toLowerCase)
+                val cn     : LocalName = LocalName(ComplexStep(fix.path))
+                val id_fix : DefinedStructure = DefinedStructure(nu_view.toTerm,cn,fix.toTerm,OMIDENT(fix.toTerm), isImplicit = false) // get it? :D
+                controller add id_fix
+              }
+
               if (ensembleSorts.isDefined) {
                 assert(targetThys.isDefined)
                 assert(targetMuls.isEmpty)
 
+                println(theRelevantTranslation)
+
                 /* Translate all explicity listed sort pairs */
 
+                val sortpairsexps : List[JSONString] = theRelevantTranslation.getAsList(classOf[JSONString],"sort-pairs-sexp")
+                assert(sortpairsexps.nonEmpty)
+
+                for (smi <- sortpairsexps.indices)
+                {
+                  val leftExpStr  : String = sortpairsexps(smi).value.takeWhile(c => !c.isWhitespace).tail.trim.toLowerCase
+                  val rightExpStr : String = sortpairsexps(smi).value.dropWhile(c => !c.isWhitespace).trim.init.toLowerCase
+
+                  val sourceName  : String = leftExpStr
+                  val sourceSort  : Term   = getConstant(sourceName,ensemble.baseTheory).toTerm
+
+                  val trgt : IMPSSort = IMPSAtomSort(rightExpStr)
+
+                  val target_term : Term = doSort(trgt,target)
+                  val quelle      : Option[DeclaredTheory] = locateMathSymbolHome(sourceName, source)
+                  assert(quelle.isDefined)
+
+                  val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),List(doName(sourceName)),None,Some(target_term),None)
+                  controller add nu_sort_map
+
+                  if (tState.verbosity > 1) {
+                    println(" > adding ensemble-instance sort-mapping: " + leftExpStr + " → " + trgt.toString)
+                  }
+                }
+
+                /*
                 for (sortMapping <- ensembleSorts.get.sorts)
                 {
                   val sourceName : String = sortMapping.nm.s
@@ -275,7 +315,7 @@ class IMPSImportTask(val controller  : Controller,
 
                     controller add nu_sort_map
                   }
-                }
+                } */
               }
 
               if (ensembleConsts.isDefined) {
@@ -325,6 +365,17 @@ class IMPSImportTask(val controller  : Controller,
               }
 
               // Translate natively defined constants here (see manual pg. 109)
+              for (nativec <- source.getConstants)
+              {
+                println(" > translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name)
+                println(" > " + nativec)
+                val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
+                val nuname : LocalName = ComplexStep(target.path) / nativec.name
+                val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
+                controller add nu_trans_native
+                println(" > " + nu_trans_native)
+
+              }
 
               if (renamings.isDefined)
               {
@@ -1047,6 +1098,7 @@ class IMPSImportTask(val controller  : Controller,
 
           //println(nsource)
           println("    ~~ urimage: " + urimage + " from " + nsource.name)
+          // ToDo: reintegrate types.
           val tp    : Option[Term] = None // if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None }
           val image : Term         = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm)
           val nu_trans_symbol = symbols.Constant(target.toTerm,q,Nil,tp,Some(image),Some("transported symbol"))
