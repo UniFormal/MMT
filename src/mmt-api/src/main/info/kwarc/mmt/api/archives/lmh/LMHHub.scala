@@ -84,8 +84,15 @@ abstract class LMHHub extends Logger {
       }
     }
   }
+  /** gets a single locally installed archive by an Archive instance */
   def getEntry(archive: Archive) : Option[LMHHubArchiveEntry]
+
+  /** gets a single locally installed archive by a root folder */
   def getEntry(root: File) : Option[LMHHubEntry]
+
+  def hasEntry(id: String):Boolean = getEntry(id).nonEmpty
+  def hasEntry(archive: Archive): Boolean = getEntry(archive).nonEmpty
+  def hasEntry(root: File): Boolean = getEntry(root).nonEmpty
 
   /** creates a new archive */
   def createEntry(id: String): Option[LMHHubEntry]

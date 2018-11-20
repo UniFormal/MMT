@@ -8,6 +8,7 @@ import GAP._
 import Singular._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.objects.{OMA, OMS}
+import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.OpenMath._
 
@@ -49,10 +50,12 @@ object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","tra
     val mitm = new MitMComputation(controller)
     val trace = newTrace
     val jane = singular(ApplySpine(OMS(MitM.groebner),ring,gap(orbit)))
-     
+
+    val c = controller.get(Path.parseS("http://test.org?Jane?singcall",NamespaceMap.empty)).asInstanceOf[FinalConstant]
+    mitm.simplify(c.df.get,None)(trace)
     //trace += InitialTerm(jane)
-    val janeResult = mitm.simplify(jane,None)(trace)
-    test(sage, janeResult)
+    //val janeResult = mitm.simplify(jane,None)(trace)
+    //test(sage, janeResult)
     
     //printTraceToFiles(trace, "Jane")
   }

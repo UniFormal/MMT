@@ -389,18 +389,21 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   /** substitutes some unknowns with solutions
    *  pre: solutions are of the form Free(xs,s) where xs.length is the number of arguments of the unknown 
    *  getSolution returns such a substitution
+   *  
    */
   // TODO this breaks structure sharing
   protected class SubstituteUnknowns(sub: Substitution) extends StatelessTraverser {
     private val unknowns = sub.map(_.name)
+    // con is ignored
     def traverse(t: Term)(implicit con : Context, state : State) = t match {
       case Unknown(n, args) =>
+        val argsT = args map {a => traverse(a)}
         sub(n) match {
           case Some(t) =>
             val FreeOrAny(xs, s) = t
-            s ^? (xs /! args)
+            s ^? (xs /! argsT)
           case None =>
-            t
+            Unknown(n, argsT)
         }
       case _ =>
         if (t.freeVars exists {x => unknowns contains x})
@@ -496,10 +499,14 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          check(Equality(Stack.empty, valueS, solved.df.get, solved.tp))(history + "solution must be equal to previously found solution")
       } else {
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
-         val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of later variables
          val vd = solved.copy(df = Some(valueS))
-         val newSolution = left ::: vd :: rightS
+         // substitute in solutions of other variables
+         // this usd to do only val rightS = right ^^ (OMV(name) / valueS), but that is bad because solutions are not immediately reduced
+         // the code below is a bit redundant as it substitutes all solutions, even though normally only the new one should occur free
+         val newSolution = left ::: vd :: right
          setNewSolution(newSolution)
+         val newSolutionS = substituteSolution(newSolution)
+         setNewSolution(newSolutionS)         
          val r = typeCheckSolution(vd)
          if (!r) return false
          bounds(name) forall {case TypeBound(bound, below) =>

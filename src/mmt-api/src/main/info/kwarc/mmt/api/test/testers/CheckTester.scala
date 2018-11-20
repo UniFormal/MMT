@@ -1,7 +1,6 @@
-package info.kwarc.mmt.api.test.utils.testers
+package info.kwarc.mmt.api.test.testers
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
 import info.kwarc.mmt.api.archives.{Archive, Current, RedirectableDimension, TraverseMode}
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
@@ -23,7 +22,7 @@ trait CheckTester extends BaseTester {
 
     try {
       // read the document in a task that can be cancelled by the stop method
-      val ps = ParsingStream.fromSourceFile(archive, FilePath(filename))
+      val ps = ParsingStream.fromSourceFile(archive, FilePath(filename),nsMapOpt = Some(controller.getNamespaceMap))
       val doc = controller.read(ps, true, true)(errorBuffer) match {
         case d: Document => d
         case _ => throw testError(s"Expected a document: $filename")
@@ -61,7 +60,7 @@ trait CheckTester extends BaseTester {
     * @param dimensionName
     */
   def shouldClearTarget(archiveID: String, dimensionName: String): Unit =
-    it should s"delete $archiveID target $dimensionName" in {
+    test(s"delete $archiveID target $dimensionName", {
 
       val archive = this.getArchive(archiveID)
       val folder = archive.root / archive.resolveDimension(RedirectableDimension(dimensionName))
@@ -72,7 +71,7 @@ trait CheckTester extends BaseTester {
       } else {
         log(s"skipped")
       }
-    }
+    })
 
   /**
     * Checks a set of files inside an archive
@@ -84,7 +83,7 @@ trait CheckTester extends BaseTester {
     * @param mustfail a list of archives that may not file in the return value of the error
     */
   def shouldCheck(archiveID : String, files : String*)(onlyfiles : Boolean = false, mayfail : List[String] = Nil, mustfail : List[String] = Nil): Unit =
-    it should s"check $archiveID" in {
+    test(s"check $archiveID", {
       // find the source folder of the archive
       val archive = this.getArchive(archiveID)
 
@@ -159,7 +158,7 @@ trait CheckTester extends BaseTester {
       if(!testOK){
         throw testError(s"Archive $archiveID behaved unexpectedly", firstTestError)
       }
-    }
+    })
 }
 
 

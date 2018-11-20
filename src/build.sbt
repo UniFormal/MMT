@@ -1,9 +1,6 @@
 import scala.io.Source
 import sbt.Keys._
 
-import scala.sys.process.Process
-import scala.util.Try
-
 // =================================
 // META-DATA and Versioning
 // =================================
@@ -14,7 +11,6 @@ val now = {
   import java.util.Date
   new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date())
 }
-
 
 packageOptions in Global ++= Seq(
   // Specification Version can be any string, and hence includes the build time
@@ -96,7 +92,9 @@ def commonSettings(nameStr: String) = Seq(
     // work around Florian's obsession with unmanaged jars
     // otherwise, we wouldn't need this
     case _ => MergeStrategy.first
-  }
+  },
+  // errors for assembly only
+  logLevel in assembly := Level.Error
 )
 
 /** settings reused by MMT projects */

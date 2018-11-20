@@ -673,6 +673,8 @@ class NotationBasedParser extends ObjectParser {
      }
      // construct the alternative terms
      if (cons.length > 1 && finalSub.isEmpty && finalVars.isEmpty && finalArgs.nonEmpty) {
+        // to avoid duplicating the arguments in each alternative (which would in particular cause them to be checked multiple times),
+        // we bind argument a_i as variable /AP/i=a_i outside of the ambiguous term 
         val (argCont,argNames) = finalArgs.zipWithIndex.map {case (a,i) =>
           val n = LocalName("") / "AP" / i.toString
           (VarDecl(n, df = a), OMV(n))

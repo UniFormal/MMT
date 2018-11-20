@@ -295,6 +295,8 @@ object OMATTRMany {
 /** The joint methods of OMLIT and UnknownOMLIT */
 sealed trait OMLITTrait extends Term {
    def synType: Term
+   /** canonical string representation of this literal */
+   def valueString: String
    def head = None // synType.head is awkward because it false triggers rules
    def synTypeXML = Obj.toStringOrNode(synType)
    def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
@@ -306,12 +308,15 @@ sealed trait OMLITTrait extends Term {
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
    override def equals(that: Any): Boolean = (this, that) match {
       case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
-      case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.value == m.value
+      case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.valueString == m.valueString
       case (l: OMLIT, m: UnknownOMLIT) =>
-         (l.synType == m.synType) && l == l.rt.parse(m.value)
+         // second conjunct is sufficient, first conjunct only acts as guard for checking the second 
+         (l.synType == m.synType) && l == l.rt.parse(m.valueString)
       case (l: UnknownOMLIT, m: OMLIT) => m == l
       case _ => false
    }
+   /** hash code depends only on synType and valueString */
+   override def hashCode = (synType,valueString).hashCode
 }
 
 /**
@@ -324,7 +329,8 @@ sealed trait OMLITTrait extends Term {
  */
 case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
    def synType = rt.synType
-   override def toStr(implicit shortURIs: Boolean) = rt.semType.toString(value)
+   override def toStr(implicit shortURIs: Boolean) = valueString
+   def valueString = rt.semType.toString(value)
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
@@ -334,13 +340,13 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  *
  *  @param synType the type of the this literal
  */
-case class UnknownOMLIT(value: String, synType: Term) extends Term with OMLITTrait {
-   override def toStr(implicit shortURIs: Boolean) = value
+case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OMLITTrait {
+   override def toStr(implicit shortURIs: Boolean) = valueString
 
    /** convert to OMLIT by choosing an applicable rule */
    def recognize(rules: RuleSet) = {
      rules.get(classOf[uom.RealizedType]).find(_.synType == synType).map {rule =>
-       rule.parse(value).from(this)
+       rule.parse(valueString).from(this)
      }
    }
 }

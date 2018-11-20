@@ -16,7 +16,7 @@ object Product {
    }
 }
 
-class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
+case class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    def asString = "(" + left.asString + "*" + right.asString + ")"
    override def valid(u: Any) = u match {
       case (l,r) => left.valid(l) && right.valid(r)
@@ -94,7 +94,7 @@ class RProduct[U,V](l: RSemanticType[U], r: RSemanticType[V]) extends Product(l,
 object ListType {
    val matcher = new utils.StringMatcher2Sep("[",",","]")
 }
-class ListType(val over: SemanticType) extends SemanticType {
+case class ListType(val over: SemanticType) extends SemanticType {
    def asString = "List[" + over.asString + "]"
    override def valid(u: Any) = u match {
       case us: List[_] => us.forall(over.valid)
@@ -118,7 +118,7 @@ class RList[U](o: RSemanticType[U]) extends ListType(o) with RSemanticType[List[
 object TupleType {
    val matcher = new utils.StringMatcher2Sep("(",",",")")
 }
-class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
+case class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
    def asString = "(" + over.asString + "^" + dim + ")"
    override def valid(u: Any) = u match {
       case us: List[_] if us.length == dim => us.forall(over.valid)

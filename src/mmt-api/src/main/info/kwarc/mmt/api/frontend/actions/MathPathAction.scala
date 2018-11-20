@@ -36,10 +36,10 @@ case object Local extends MathPathAction {
   }
   def toParseString = "mathpath local"
 }
-object LocalCompanion extends ObjectActionCompanion(Local, "add a catalog entry for the local file system", "mathpath local")
+object LocalCompanion extends ObjectActionCompanion(Local, "add a mathpath entry for the local file system", "mathpath local")
 
 case class AddArchive(folder: java.io.File) extends MathPathAction {
-  def apply() =controller.addArchive(folder)
+  def apply() = controller.addArchive(folder)
   def toParseString = s"mathpath archive $folder"
 }
 object AddArchiveCompanion extends ActionCompanion("add catalog entries for a set of local copies", "mathpath archive") {
@@ -55,7 +55,7 @@ case class AddMathPathFS(uri: URI, file: File) extends MathPathAction {
   }
   def toParseString = s"mathpath fs $uri $file"
 }
-object AddMathPathFSCompanion extends ActionCompanion("add catalog entry for a local directory", "mathpath fs") {
+object AddMathPathFSCompanion extends ActionCompanion("add mathpath entry for a local directory", "mathpath fs") {
   import Action._
   def parserActual(implicit state: ActionState) = uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
 }
@@ -91,15 +91,17 @@ object ReadCompanion extends ActionCompanion("read a file containing MMT in OMDo
 }
 
 /** implements helper functions of [[MathPathAction]]s */
-trait MathPathActionHandling {
-  self: Controller =>
+trait MathPathActionHandling {self: Controller =>
 
   /** add an archive plus its optional classpath and notify listeners, handling [[AddArchive]] */
   def addArchive(root: File): List[Archive] =  {
     val archs = backend.openArchive(root)
     archs.foreach { a =>
+      report("user", "opened archive " + a.root)
       a.properties.get("classpath").foreach { cp =>
-        backend.openRealizationArchive(a.root / cp)
+        val rF = a.root / cp
+        backend.openRealizationArchive(rF)
+        report("user", "... with realizations in folder " + rF)
       }
       notifyListeners.onArchiveOpen(a)
     }

@@ -235,7 +235,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
          Some(s)
       }
    }
-   def /!(args: List[Term]) = (this / args).getOrElse {throw ImplementationError("wrong number of arguments")}
+   def /!(args: List[Term]) = (this / args).getOrElse {throw ImplementationError("wrong number of arguments to substitute for context " + this + ": " + args.mkString(", "))}
 
    /** applies a function to the type/definiens of all variables (in the respective context)
     * @return the resulting context

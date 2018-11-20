@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.LogicalReference
-import info.kwarc.mmt.api.refactoring.{DereferenceAlignment, AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
+import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, TranslationTarget}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.OpenMath.OMSymbol
@@ -18,8 +18,6 @@ object SageTranslations {
   private val nf = Sage.docpath ? """sage.rings.number_field.number_field""" ? "NumberField"
   private val poly = Sage.docpath ? "sage.rings.polynomial.polynomial_element" ? "Polynomial"
   private val polyring = Sage.docpath ? "sage.rings.polynomial.polynomial_ring_constructor" ? "PolynomialRing"
-  private val galoisGroup = Sage.docpath ? "sage.rings.number_field.number_field.NumberField_absolute_with_category.galois_group" 
-  
   
   val numberfieldsTo = new AcrossLibraryTranslation {
     override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
@@ -93,14 +91,14 @@ object SageTranslations {
         OMA(OMS(MitM.polycons),r :: x :: ls :: Nil)
     }
   }
-  
-  val galoisGroupTo = DereferenceAlignment(LogicalReference(MitM.galois), LogicalReference(galoisGroup), Python.dot)
 }
+
+
 
 /** external computation provided by SageMath */
 class SageSystem extends VREWithAlignmentAndSCSCP("Sage", MitMSystems.sagesym, MitMSystems.evaluateSym, "ODK/Sage") {
   import SageTranslations._
-  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: PolyMatcher.getAlignmentTo :: numberfieldsTo :: galoisGroupTo.getTranslator :: super.toTranslations
+  override val toTranslations: List[AcrossLibraryTranslation] = polyTo :: PolyMatcher.getAlignmentTo :: numberfieldsTo :: super.toTranslations
   override val fromTranslations: List[AcrossLibraryTranslation] = polyFrom :: PolyMatcher.getAlignmentFrom :: numberfieldsFrom :: super.fromTranslations
 
   override protected lazy val translator_to = translator(new TranslationTarget {

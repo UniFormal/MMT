@@ -1,33 +1,25 @@
-package info.kwarc.mmt.lf.test
+package info.kwarc.mmt.lf
 
-import info.kwarc.mmt.api.archives.RedirectableDimension
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
-import info.kwarc.mmt.api.test.utils.testers._
-import info.kwarc.mmt.api.test.utils._
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.test.MMTIntegrationTest
+import info.kwarc.mmt.api.test.testers._
 
-class LFTest extends MMTIntegrationTest(
-  TestArchive("MMT/urtheories", hasDevel = true),
-  TestArchive("MMT/examples", hasDevel = true),
+object LFTest extends MMTIntegrationTest(
+  "MMT/urtheories",
+  "MMT/examples",
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
+  def main(): Unit = {
+    shouldClearTarget("MMT/urtheories", "bin")
+    shouldHandleLine("build MMT/urtheories scala-bin")
 
-  bootstrapTests()
+    shouldCheck("MMT/urtheories")()
 
-  shouldLoadExtensions()
-  shouldInstallArchives()
+    shouldClearTarget("MMT/examples", "bin")
+    shouldHandleLine("build MMT/examples scala-bin")
 
-
-  shouldClearTarget("MMT/urtheories", "bin")
-  shouldHandleLine("build MMT/urtheories scala-bin")
-
-  shouldCheck("MMT/urtheories")()
-
-  shouldClearTarget("MMT/examples", "bin")
-  shouldHandleLine("build MMT/examples scala-bin")
-
-  shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
+    shouldCheck("MMT/examples",Orders.examples:_*)(onlyfiles = true)
+  }
 }
 
 /*
@@ -49,6 +41,8 @@ object Orders {
     ,"sets/typed_sets.mmt"
     ,"sets/relations.mmt"
     ,"sets/functions.mmt"
+    ,"sets/finiteSet.mmt"
+    ,"sets/setSum.mmt"
     ,"graphs/graphs.mmt"
     ,"collections/collections.mmt"
     ,"collections/matroids.mmt"
@@ -77,13 +71,17 @@ object Orders {
     ,"sets/posetPowerset.mmt"
     ,"algebra/bands.mmt"
     ,"algebra/lattice.mmt"
+    ,"calculus/FinSequences.mmt"
     ,"calculus/metric.mmt"
     ,"calculus/sequencesconvergence.mmt"
     ,"calculus/derivatives.mmt"
     ,"calculus/domains.mmt"
     ,"functional-analysis/norms.mmt"
+    ,"topology/topologies.mmt"
     ,"measures/setalgebras.mmt"
     ,"measures/measures.mmt"
+    ,"calculus/integration/SimpleFunctions.mmt"
+    ,"calculus/integration/LebesgueIntegral.mmt"
     // "categories/basics.mmt"
   )
 

@@ -18,16 +18,18 @@ import scala.util.Try
 class MathHub(val controller: Controller, var local: File, var remote: URI, var https: Boolean = true) extends LMHHub {
 
   /** implements git */
-  protected val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
+  protected lazy val git: Git = MMTSystem.git
+
   // PATHS
   def remoteURL(id : String): String = if(https) {
     "https://" + remote.authority.getOrElse("") + "/" + id + ".git"
   } else {
     "git@" + remote.authority.getOrElse("") + ":" + id + ".git"
   }
+  /*
   protected def download_(id : String, version: Option[String]): URI = {
     (remote / id / "repository" / "archive.zip") ? s"ref=${version.getOrElse("master")}"
-  }
+  }*/
   protected def api_(page: Int): URI = {
     (remote / "api" / "v4" / "projects") ? s"per_page=100&page=$page"
   }
@@ -40,6 +42,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     if (!(local <= ret)) throw GeneralError("local path escapes root path: " + ret)
     ret
   }
+  /** checks if a group exists on the remote MathHub */
   def hasGroup(name: String): Boolean = Try(io.Source.fromURL(groupmf_(name).toString)).isSuccess
 
   // GETTING and LOADING existing entries
@@ -49,11 +52,11 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     val hub: MathHub = MathHub.this
 
     def physicalVersion: Option[String] = hub.git(root, "show-ref", "HEAD") match {
-      case ShellCommand.Success(op) => Some(op.split(" ").head)
+      case ShellCommand.Success(op) => Some(op.split(" ").head.trim)
       case _ => None
     }
     def logicalVersion: Option[String] = hub.git(root, "symbolic-ref", "HEAD") match {
-      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length))
+      case ShellCommand.Success(op) if op.startsWith("refs/heads/") => Some(op.substring("refs/heads/".length).trim)
       case _ => None
     }
     def fetch: Boolean = {
@@ -295,7 +298,8 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     val gitInstall = installGit(id, version)
     // if that has failed, try to download normally
     gitInstall orElse {
-      installGet(id, version)
+      logError(s"installation has failed, please make sure that git is installed and try again. ")
+      None
     }
   }
  
@@ -329,13 +333,14 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
         log(s"checking out ${version.get}")
         val vSuccess = git(lp, "checkout", "-f", version.get).success
         if (!vSuccess) {
-          logError("checkout failed, Local version may differ from requested version. ")
+          logError(s"checkout of $id failed, Local version may differ from requested version. ")
         }
       }
     }
     Some(MathHubEntry(lp))
   }
-  
+
+  /*
   private def installGet(id: String, version: Option[String]) : Option[MathHubEntry] = {
     log(s"trying to install $id (version $version) via download")
     val lp = localPath(id)
@@ -354,7 +359,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     } finally {
       zip.delete
     }
-  }
+  }*/
 
   private def installUpdateEntry(entry: MathHubEntry, version: Option[String]): Unit = {
     val id = entry.id
@@ -367,7 +372,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
       log(s"checking out ${version.get}")
       val vSuccess = git(entry.root, "checkout", "-f", version.get).success
       if (!vSuccess) {
-        logError("checkout failed, Local version may differ from requested version. ")
+        logError(s"checkout of $id failed, Local version may differ from requested version. ")
       }
     }
 

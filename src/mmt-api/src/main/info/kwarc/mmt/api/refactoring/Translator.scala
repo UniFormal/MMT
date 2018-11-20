@@ -65,7 +65,7 @@ abstract class AcrossLibraryTranslation extends UniformTranslator {
 }
 
 object AlignmentTranslation {
-  def apply(alignment : FormalAlignment)(implicit controller : Controller) = {
+  def apply(alignment : FormalAlignment, controller : Controller) = {
     val (from,to) = (Try(controller.get(alignment.from.mmturi)),Try(controller.get(alignment.to.mmturi)))
     /* if (from.toOption.isDefined && to.toOption.isDefined) */ new AlignmentTranslation(alignment)
     /* else None */
@@ -75,13 +75,9 @@ object AlignmentTranslation {
   }
 }
 
-class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibraryTranslation {
+case class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibraryTranslation {
   override def toString: String = "Alignment " + alignment.toString
 
-  override def equals(obj: scala.Any): Boolean = obj match {
-    case that : AlignmentTranslation if that.alignment == this.alignment => true
-    case _ => false
-  }
   /*
   lazy val traverser = alignment match {
     case SimpleAlignment(from,to,_) => new StatelessTraverser {
@@ -110,10 +106,10 @@ class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibrar
   }
   */
 
-  def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) = //traverser(tm,())
+  def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) = {//traverser(tm,())
     (alignment,tm) match {
       case (_,OMID(alignment.from.mmturi)) => OMID(alignment.to.mmturi)
-      case (align @ ArgumentAlignment(_,_,_,_),translator.Application(ls,alignment.from.mmturi,args)) =>
+      case (align: ArgumentAlignment, translator.Application(ls,alignment.from.mmturi,args)) =>
         // println("Pragma! " + ls + " from " + align.from.mmturi)
         def reorder(ts: List[Term]): List[Term] = {
           val max = align.arguments.maxBy(p => p._2)._2
@@ -126,26 +122,25 @@ class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossLibrar
         translator.Application(ls,align.to.mmturi match {
           case gn : GlobalName => gn
         },reorder(args))
+      case (align: DereferenceAlignment, translator.Application(_,_,hd::tl)) =>
+        OMA(align.dotOperator(hd, OML(align.to.mmturi.name)), tl)
+      case (align: AlignmentConcatenation, tm) =>
+        val tm1 = AlignmentTranslation(align.first).apply(tm)
+        val at2 = AlignmentTranslation(align.second)
+        if (at2.applicable(tm1))
+          AlignmentTranslation(align.second).apply(tm1)
+        else {
+          tm1
+        }
     }
+  }
 
   def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) = (alignment,tm) match {
     case (_,OMID(alignment.from.mmturi)) => true
-    case (ArgumentAlignment(_,_,_,_),translator.Application(_,alignment.from.mmturi, args)) if Try(translator.ctrl.get(alignment.to.mmturi)).isSuccess => true
+    case (_:ArgumentAlignment,    translator.Application(_,alignment.from.mmturi, args)) if Try(translator.ctrl.get(alignment.to.mmturi)).isSuccess => true
+    case (_:DereferenceAlignment, translator.Application(_,alignment.from.mmturi, _::_)) => true
+    case (ac: AlignmentConcatenation, _) => AlignmentTranslation(ac.first).applicable(tm) // TODO check ac.second 
     case _ => false
-  }
-}
-
-// TODO this should subclass Alignment, but the interface of Alignment is too hard to implement
-/** aligns a global function with a method that is accessed via projection on the first argument */
-case class DereferenceAlignment(from: LogicalReference, to: LogicalReference, dotOperator: GlobalName) {
-  def getTranslator = new AcrossLibraryTranslation {
-    def applicable(tm : Term)(implicit translator: AcrossLibraryTranslator) : Boolean = tm match {
-      case OMA(OMID(from.mmturi), _::_) => true
-      case _ => false
-    }
-    def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) : Term = tm match {
-      case OMA(OMID(from.mmturi), hd::tl) => OMA(dotOperator(hd, OML(to.mmturi.name)), tl)
-    }
   }
 }
 
