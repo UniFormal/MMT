@@ -31,6 +31,18 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
+  /** Check whether the TermLevel has an negative argument of an inductively defined type */
+  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent: GlobalName) = {
+    tc.args.zipWithIndex foreach {case (arg, i) => if ((i % 2) != 0) {
+      def dependsOn(tm: Term, tp: GlobalName): Boolean = {
+        val FunType(args, ret) = tm
+        args.+:(ret) exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
+      }
+        if (types.exists(x => dependsOn(arg._2, x))) throw LocalError("Unsupported constructor: "+noLookupPresenter.asString(tc.toTerm(parent))) 
+      }
+    }
+  }
+  
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
    * as well as the corresponding no confusion and no junk axioms
@@ -50,7 +62,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       case c: Constant =>
         val intDecl = InternalDeclaration.fromConstant(c, controller, Some(context))
         intDecl match {
-          case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d; intDecl
+          case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d; intDecl 
           case d @ TypeLevel(_, _, _, _,_) => tpdecls :+= d; intDecl
           case d @ StatementLevel(_, _, _, _,_) => statdecls :+= d; intDecl 
          }
@@ -59,6 +71,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
 
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
+    tmdecls foreach { tmdecl => checkTermLevel(tmdecl, tpdecls map (_.path))}
         
     // the no confusion axioms for the data constructors
     /*
