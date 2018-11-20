@@ -312,6 +312,8 @@ case class IOpaqueElement(
 //
 
 sealed trait IModuleItem extends IAPIObjectItem {
+  val kind: String = "module"
+
   /** there is no parent */
   val parent: Option[IReference] = None
 
@@ -331,39 +333,28 @@ sealed trait IModuleItem extends IAPIObjectItem {
 }
 
 /** a reference to a module */
-sealed trait IModuleRef extends IModuleItem with IReference with INarrativeElement
+case class IModuleRef(
+                       override val id: String,
+                       override val name: String,
 
-/** a reference to a theory */
-case class ITheoryRef(
-                       override val id: IAPIObjectItem.URI,
-                       override val name: String
-                     ) extends IModuleRef {
-  val kind: String = "theory"
-}
+                       mod: String, // "module" | "view"
+                     ) extends IModuleItem with IReference with INarrativeElement {
+  override def toJSONBuffer: JSONObjectBuffer = {
+    val buffer = super.toJSONBuffer
 
+    buffer.add("mod", JSONString(mod))
 
-/** a reference to a view */
-case class IViewRef(
-                     override val id: IAPIObjectItem.URI,
-                     override val name: String,
-                     ) extends IModuleRef {
-  val kind: String = "view"
+    buffer
+  }
 }
 
 /** an actual module, i.e. a theory or a view */
 sealed trait IModule extends IModuleItem with IReferencable {
-
-  /** presentation of this module as HTML */
-  val presentation: IAPIObjectItem.HTML
-
-  /** source code of this module, if available */
-  val source: Option[String]
-
+  val declarations: List[IAPIObjectItem] // TODO: Implement list of lower things
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("presentation", JSONString(presentation))
-    buffer.add("source", source.map(JSONString).getOrElse(JSONNull))
+    buffer.add("declarations", JSONArray(declarations.map(_.toJSON) : _*))
 
     buffer
   }
@@ -375,21 +366,16 @@ case class ITheory(
                     override val name: String,
 
                     override val statistics: Option[List[IStatistic]],
+                    override val declarations: List[IAPIObjectItem], // TODO: Lower type
 
-                    override val presentation: IAPIObjectItem.HTML,
-                    override val source: Option[String],
-
-                    meta: Option[ITheoryRef]
+                    meta: Option[IModuleRef]
                      ) extends IModule {
-  val kind: String = "theory"
-
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = super.toJSONBuffer
-
-    buffer.add("meta", meta.map(_.toJSON).getOrElse(JSONNull))
-
-    buffer
-  }
+  override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
+    "mod" -> JSONObject(
+      "kind" -> JSONString("theory"),
+      "meta" -> meta.map(_.toJSON).getOrElse(JSONNull)
+    )
+  )
 }
 
 /** a description of a view */
@@ -398,18 +384,17 @@ case class IView(
                   override val name: String,
 
                   override val statistics: Option[List[IStatistic]],
+                  override val declarations: List[IAPIObjectItem], // TODO: Lower type
 
-                  override val presentation: IAPIObjectItem.HTML,
-                  override val source: Option[String],
-
-                  domain: ITheoryRef,
-                  codomain: ITheoryRef
+                  domain: IModuleRef,
+                  codomain: IModuleRef
                   ) extends IModule {
-  val kind: String = "theory"
-
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
-    "domain" -> domain.toJSON,
-    "codomain" -> codomain.toJSON
+    "mod" -> JSONObject(
+      "kind" -> JSONString("view"),
+      "domain" -> domain.toJSON,
+      "codomain" -> codomain.toJSON
+    )
   )
 }
 

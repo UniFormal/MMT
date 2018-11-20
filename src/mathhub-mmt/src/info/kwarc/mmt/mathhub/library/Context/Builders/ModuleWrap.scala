@@ -20,6 +20,7 @@ trait ModuleWrap { this: MathHubAPIContext =>
   }
 
   /** presents any element for the MathHub API */
+  @deprecated("no longer needed")
   protected def getPresentationOf(se: StructuralElement): String = {
     val exporter = controller.extman.get(classOf[HTMLExporter]).head // TODO: Build a custom presenter
     val sb = new StringBuilder
