@@ -44,11 +44,7 @@ trait DeclarationWrap { this: MathHubAPIContext =>
 
   private def getPresentationOf(obj: Obj): String = {
     // TODO: Customize the object presenter
-    val presenter = controller.extman.get(classOf[MathMLPresenter]).headOption.getOrElse {
-      val p = new MathMLPresenter
-      controller.extman.addExtension(p)
-      p
-    }
+    val presenter = controller.extman.get(classOf[MathMLPresenter]).head // .head safe because present by default
     presenter.asString(obj, None)
   }
 }
