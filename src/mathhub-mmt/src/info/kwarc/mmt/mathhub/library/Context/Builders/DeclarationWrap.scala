@@ -2,7 +2,7 @@ package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.Obj
-import info.kwarc.mmt.api.presentation.HTMLPresenter
+import info.kwarc.mmt.api.presentation.{HTMLPresenter, MathMLPresenter}
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{AbstractObjectContainer, DeclarationComponent, utils}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
@@ -41,7 +41,8 @@ trait DeclarationWrap { this: MathHubAPIContext =>
 
 
   private def getPresentationOf(obj: Obj): String = {
-    val presenter = controller.extman.get(classOf[HTMLPresenter]).head.objectPresenter
+    // TODO: Customize the object presenter
+    val presenter = controller.extman.get(classOf[MathMLPresenter]).head
     presenter.asString(obj, None)
   }
 }
