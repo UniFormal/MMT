@@ -1,7 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory}
-import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{ITheory, IModuleRef}
 
 trait TheoryBuilder { this: Builder =>
@@ -40,7 +39,7 @@ trait TheoryBuilder { this: Builder =>
       ref.id, ref.name,
       getStats(ref.id),
 
-      List(), // TODO: Declarations
+      getDeclarations(theory),
 
       meta
     ))
