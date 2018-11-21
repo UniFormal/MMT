@@ -168,8 +168,12 @@ trait STeXAnalysis {
 
   def matchSmsEntry(a: Archive, line: String): List[STeXStructure] = {
     line match {
+      case useMhModule(r, b) =>
+        createMhImport(a, r, b)
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
+      case guse(_, r, p) =>
+        List(createGImport(a, r, p))
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
       case smsGStruct(_, r, _, p) =>
