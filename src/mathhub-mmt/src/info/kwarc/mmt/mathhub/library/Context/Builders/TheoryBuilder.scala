@@ -40,7 +40,7 @@ trait TheoryBuilder { this: Builder =>
       ref.id, ref.name,
       getStats(ref.id),
 
-      List(), // TODO: Declarations
+      getDeclarations(theory),
 
       meta
     ))

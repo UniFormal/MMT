@@ -94,9 +94,9 @@ trait LibraryServer { this: Server =>
     log(s"getModule($id)")
     context.getModule(id)
   }
-  private def getDeclaration(id: String): Option[Nothing] = {
+  private def getDeclaration(id: String): Option[IDeclaration] = {
     log(s"getDeclaration($id)")
-    None
+    context.getDeclaration(id)
   }
   private def getComponent(id: String): Option[Nothing] = {
     log(s"getComponent($id)")

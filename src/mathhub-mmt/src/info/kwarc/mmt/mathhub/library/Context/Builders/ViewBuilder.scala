@@ -35,7 +35,7 @@ trait ViewBuilder { this: Builder =>
       ref.id, ref.name,
       getStats(ref.id),
 
-      List(), // TODO: Declarations
+      getDeclarations(view),
 
       domain,
       codomain
