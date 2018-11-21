@@ -40,7 +40,7 @@ trait NestedModuleBuilder { this: Builder =>
       getStats(ref.id),
 
       getDeclarations(nested),
-      List(), // TODO: List of components
+      getComponents(nested), // TODO: List of components
 
       mod
     ))

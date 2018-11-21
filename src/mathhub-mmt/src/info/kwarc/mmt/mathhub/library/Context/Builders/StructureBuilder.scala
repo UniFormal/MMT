@@ -36,7 +36,7 @@ trait StructureBuilder { this: Builder =>
       getStats(ref.id),
 
       getDeclarations(structure),
-      List(), // TODO: List of components
+      getComponents(structure),
 
       structure.isImplicit,
       structure.isInclude

@@ -405,7 +405,6 @@ case class IView(
 sealed trait IDeclarationItem extends IAPIObjectItem {
   val kind: String = "declaration"
 
-  /** there is no parent */
   val parent: Option[IModuleRef]
 
   /** name of the declaration */
@@ -435,7 +434,7 @@ case class IDeclarationRef(
 /** an actual declaration, i.e. a structure, rule, ruleconstant or nested */
 sealed trait IDeclaration extends IDeclarationItem with IReferencable {
   val declarations: List[IDeclarationRef]
-  val components: List[IReference] // TODO: List of components
+  val components: List[IComponent]
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
     "declarations" -> JSONArray(declarations.map(_.toJSON) : _*),
     "components" -> JSONArray(declarations.map(_.toJSON) : _*)
@@ -450,7 +449,7 @@ case class IStructure(
 
                       override val statistics: Option[List[IStatistic]],
                       override val declarations: List[IDeclarationRef],
-                      override val components: List[IReference], // TODO: List of components
+                      override val components: List[IComponent],
 
                       isImplicit: Boolean,
                       isInclude: Boolean,
@@ -473,7 +472,7 @@ case class IConstant(
 
                        override val statistics: Option[List[IStatistic]],
                        override val declarations: List[IDeclarationRef],
-                       override val components: List[IReference], // TODO: List of components
+                       override val components: List[IComponent],
 
                        role: Option[String],
                        alias: List[String],
@@ -496,7 +495,7 @@ case class IRule(
 
                       override val statistics: Option[List[IStatistic]],
                       override val declarations: List[IDeclarationRef],
-                      override val components: List[IReference], // TODO: List of components
+                      override val components: List[IComponent],
                     ) extends IDeclaration {
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
     "mod" -> JSONObject(
@@ -513,7 +512,7 @@ case class INestedModule(
 
                   override val statistics: Option[List[IStatistic]],
                   override val declarations: List[IDeclarationRef],
-                  override val components: List[IReference], // TODO: List of components
+                  override val components: List[IComponent],
 
                   mod: IModuleRef,
                 ) extends IDeclaration {
@@ -525,6 +524,25 @@ case class INestedModule(
   )
 }
 
+//
+// Components
+//
+case class IComponent(
+                       name: String,
+
+                       component: String, // "object" | "notation"
+                       containerValue: String,
+                     ) extends IResponse  {
+  val kind: String = "component"
+
+  override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
+    "name" -> JSONString(name),
+    "component" -> JSONObject(
+      "kind" -> JSONString(component),
+      "component" -> JSONString(containerValue)
+    )
+  )
+}
 
 
 //

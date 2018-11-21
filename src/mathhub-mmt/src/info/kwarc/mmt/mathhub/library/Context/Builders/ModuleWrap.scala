@@ -25,13 +25,4 @@ trait ModuleWrap { this: MathHubAPIContext =>
     element.getDeclarations.collect({case d: Declaration => d.path.toPath})
       .flatMap(getDeclarationRef)
   }
-
-  /** presents any element for the MathHub API */
-  @deprecated("no longer needed")
-  protected def getPresentationOf(se: StructuralElement): String = {
-    val exporter = controller.extman.get(classOf[HTMLExporter]).head // TODO: Build a custom presenter
-    val sb = new StringBuilder
-    exporter(se, standalone = false)(sb)
-    sb.get
-  }
 }

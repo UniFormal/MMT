@@ -1,7 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory}
-import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{ITheory, IModuleRef}
 
 trait TheoryBuilder { this: Builder =>

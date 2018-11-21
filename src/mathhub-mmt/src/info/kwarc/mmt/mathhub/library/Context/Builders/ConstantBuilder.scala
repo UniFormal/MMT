@@ -36,7 +36,7 @@ trait ConstantBuilder { this: Builder =>
       getStats(ref.id),
 
       getDeclarations(constant),
-      List(), // TODO: List of components
+      getComponents(constant),
 
       constant.rl,
       constant.alias.map(_.toPath)
