@@ -402,11 +402,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
    }}
 }
 
-class HTMLExporter extends HTMLPresenter(new MathMLPresenter) {
-  val key = "html"
-}
-
-
+/** like HTMLPresenter but without SVG graphs */
 class MMTDocExporter extends HTMLPresenter(new MathMLPresenter) {
   val key = "mmtdoc"
   import htmlRh._

@@ -6,6 +6,7 @@ import parser._
 import ServerResponse._
 
 class ParseServer extends ServerExtension(":parse") {
+    private lazy val presenter = controller.extman.get(classOf[presentation.HTMLPresenter]).headOption.getOrElse{throw LocalError("no html presenter found")}
     def apply(request: ServerRequest): ServerResponse = {
       val wq = request.parsedQuery
       val text = wq.string("text", throw LocalError("found no text to parse"))
@@ -32,7 +33,6 @@ class ParseServer extends ServerExtension(":parse") {
                 } else {
                   mod
                 }
-                val presenter = new info.kwarc.mmt.api.presentation.HTMLExporter()
                 presenter(module)(rb)
                 val thyString = rb.get
                 var response: List[(String,JSON)] = Nil
