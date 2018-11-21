@@ -437,7 +437,7 @@ sealed trait IDeclaration extends IDeclarationItem with IReferencable {
   val components: List[IComponent]
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
     "declarations" -> JSONArray(declarations.map(_.toJSON) : _*),
-    "components" -> JSONArray(declarations.map(_.toJSON) : _*)
+    "components" -> JSONArray(components.map(_.toJSON) : _*)
   )
 }
 
@@ -539,7 +539,7 @@ case class IComponent(
     "name" -> JSONString(name),
     "component" -> JSONObject(
       "kind" -> JSONString(component),
-      "component" -> JSONString(containerValue)
+      component -> JSONString(containerValue)
     )
   )
 }

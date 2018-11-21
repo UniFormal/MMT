@@ -26,8 +26,6 @@ trait LibraryServer { this: Server =>
       toResponse(getModule(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case "declaration" :: Nil =>
       toResponse(getDeclaration(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
-    case "component" :: Nil =>
-      toResponse(getComponent(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case _ => throw PathNotFound(request)
   }
 
@@ -97,9 +95,5 @@ trait LibraryServer { this: Server =>
   private def getDeclaration(id: String): Option[IDeclaration] = {
     log(s"getDeclaration($id)")
     context.getDeclaration(id)
-  }
-  private def getComponent(id: String): Option[Nothing] = {
-    log(s"getComponent($id)")
-    None
   }
 }

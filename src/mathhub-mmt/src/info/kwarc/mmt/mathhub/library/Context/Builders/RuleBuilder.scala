@@ -36,7 +36,7 @@ trait RuleBuilder { this: Builder =>
       getStats(ref.id),
 
       getDeclarations(rule),
-      List(), // TODO: List of components
+      getComponents(rule),
     ))
   }
 }
