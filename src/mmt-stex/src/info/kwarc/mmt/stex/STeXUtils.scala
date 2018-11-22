@@ -91,6 +91,7 @@ object STeXUtils {
   val input: Regex = (bs + "(lib)?input" + oStar + optArg1).r
   val includeGraphics: Regex = (bs + "includegraphics" + oStar + optArg1).r
   val importOrUseModule: Regex = (bs + "(import|use)Module" + opt + any).r
+  val guse: Regex = (bs + "guse" + opt + arg1).r
   val useMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
   val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
   val beginModnl: Regex = (bs + begin("m?h?modnl") + optArg1).r
@@ -105,11 +106,7 @@ object STeXUtils {
     val ends: String = smsTopKeys.mkString("|end\\{(", "|", ")\\}")
     ("^\\\\(" + mkRegGroup(smsKeys) + "|" + begins + ends + ")").r
   }
-
   val importMhModule: Regex = (bs + "importmhmodule" + opt + "(.*?)").r
-  val useMhModule: Regex = (bs + "usemhmodule" + opt + "(.*?)").r
-
-  val guse: Regex = (bs + "guse" + opt + arg1).r
   val gimport: Regex = (bs + "gimport" + oStar + optArg1).r
 
   private def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
