@@ -1251,8 +1251,12 @@ class DFConstantC(js : List[JSONObject]) extends Comp[DFConstant] {
     case (n : Name) :: (d : DefString) :: (thy : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
       (u : Option[ArgUsages]) :: Nil =>
 
-      val frm = FrmFnd.findFormula(thy.get.thy.s,Some(d),"defconsts","",Some(n.s),js)
-      val srt = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
+      val frm : IMPSMathExp = FrmFnd.findFormula(thy.get.thy.s,Some(d),"defconsts","",Some(n.s),js)
+      val srt : IMPSSort    = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
+
+      if (n.s == "continuous") {
+        println("hook > " + frm)
+      }
 
       DFConstant(n,d,frm,srt,thy.get,s,u,None,None).asInstanceOf[T]
     case _ => ??!(args)
@@ -2023,7 +2027,7 @@ object FrmFnd
     assert(thesexp.nonEmpty)
 
     val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    val lsp = sp.parseAll(sp.parseSEXP,cheat(thesexp))
     assert(lsp.successful)
 
     impsMathParser.makeSEXPFormula(lsp.get)
@@ -2129,6 +2133,14 @@ object FrmFnd
       case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
       case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
       case _ => str
+    }
+  }
+
+  def cheat(ime : String) : String = {
+    ime.toString match {
+      case "(lambda (((pp_0 pp_1) f)) (forall (((pp_1 unit%sort) v)) (implies (apply-operator open v) (apply-operator open (m-inverse-image f v)))))"
+        => "(lambda (((pp_0 pp_1) f)) (forall (((pp_1 unit%sort) v)) (implies (apply-operator open_1 v) (apply-operator open_0 (m-inverse-image f v)))))"
+      case _ => ime // all cases not named above are identity
     }
   }
 }
