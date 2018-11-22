@@ -1,7 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.{ContentElement, StructuralElement, utils}
-import info.kwarc.mmt.api.presentation.{HTMLExporter, StringBuilder}
+import info.kwarc.mmt.api.{ContentElement, utils}
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IDeclarationRef, IModule, IModuleRef}

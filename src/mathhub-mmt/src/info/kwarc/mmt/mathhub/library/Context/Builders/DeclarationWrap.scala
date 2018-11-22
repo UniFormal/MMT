@@ -2,9 +2,9 @@ package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.Obj
-import info.kwarc.mmt.api.presentation.HTMLPresenter
+import info.kwarc.mmt.api.presentation.{HTMLPresenter, MathMLPresenter}
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.{AbstractObjectContainer, DeclarationComponent, utils}
+import info.kwarc.mmt.api.{AbstractObjectContainer, AbstractTermContainer, DeclarationComponent, utils}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IComponent, IDeclaration, IDeclarationRef}
 
@@ -29,19 +29,22 @@ trait DeclarationWrap { this: MathHubAPIContext =>
   /** gets a list of components */
   protected def getComponents(declaration: Declaration): List[IComponent] = {
     declaration.getComponents.flatMap({
-      case DeclarationComponent(key, oc: AbstractObjectContainer) =>
-          Some(IComponent(key.toString, "object", oc.get.map(getPresentationOf).getOrElse("")))
-      case DeclarationComponent(key, nc: NotationContainer) =>
-          Some(IComponent(key.toString, "notation", nc.toString))
+      case DeclarationComponent(key, oc: AbstractObjectContainer) if oc.isDefined =>
+          log(s"got $key object of $declaration")
+          Some(IComponent(key.toString, "object", oc.get.map(getPresentationOf).get))
+      case DeclarationComponent(key, nc: NotationContainer) if nc.isDefined =>
+        log(s"got $key notation of $declaration")
+        Some(IComponent(key.toString, "notation", nc.toString))
       case t =>
-        log(s"ignoring unknown DeclarationComponent $t")
+        log(s"ignoring unknown or empty DeclarationComponent ${t.key} of $declaration")
         None
     })
   }
 
 
   private def getPresentationOf(obj: Obj): String = {
-    val presenter = controller.extman.get(classOf[HTMLPresenter]).head.objectPresenter
+    // TODO: Customize the object presenter
+    val presenter = controller.extman.get(classOf[MathMLPresenter]).head // .head safe because present by default
     presenter.asString(obj, None)
   }
 }

@@ -29,8 +29,10 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 
    private val solutionRules = rules.get(classOf[ValueSolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
-
+   
+   /** the context of the goal */
    private var constantContext: Context = Context.empty
+   /** the context of the query (containing the variables to be solved) */
    private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
       case vd if vd.df.isEmpty => vd.name
@@ -110,8 +112,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  @param goalContext the global context
     *  @param goal the term to be matched, relative to goalContext
     *  @param queryVars the variables to solve
-    *  @param query the term to match against, this term may contain the queryVars and the context variables freely
-    *  @return true if the terms match
+    *  @param query the term to match against, relative to goalContext ++ queryVars
+    *  @return MatchSuccess(subs) if goal == query ^ subs for  goalContext |- subs:queryVars -> .
     */
    def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
      apply(goalContext, queryVars) {eq => eq(goal, query)}
@@ -129,12 +131,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       val res = doit(matchTerms)
       if (res) {
         log("matched: " + getSolution)
-        if (getUnsolvedVariables.isEmpty)
-           MatchSuccess(getSolution)
-        else
-           MatchInconclusive
-      }
-      else {
+        val total = getUnsolvedVariables.isEmpty
+        MatchSuccess(getSolution, total)
+      } else {
         log("no match")
         MatchFail
       }
@@ -165,7 +164,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       }
       // 3) try to isolate a query variable
       // j is the equality judgment that we try to apply solution rules to
-      var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
+      var j = Equality(Stack(boundOrg), goalOrg, queryOrg, None)
       // applies all the rules found by findSolvableVariable
       def applyRules(rs: List[ValueSolutionRule]) {
          rs.foreach {r =>
@@ -226,9 +225,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 abstract class MatchResult
 /**
  * @param solution the substitution for the query variables
+ * @param total true if all query variables were matched
  */
-case class MatchSuccess(solution: Substitution) extends MatchResult
+case class MatchSuccess(solution: Substitution, total: Boolean) extends MatchResult
 /** definitely not equal */
 case object MatchFail extends MatchResult
-/** no match found but terms might match if more sophisticated methods are used */
-case object MatchInconclusive extends MatchResult

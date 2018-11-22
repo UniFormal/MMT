@@ -437,7 +437,7 @@ sealed trait IDeclaration extends IDeclarationItem with IReferencable {
   val components: List[IComponent]
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
     "declarations" -> JSONArray(declarations.map(_.toJSON) : _*),
-    "components" -> JSONArray(declarations.map(_.toJSON) : _*)
+    "components" -> JSONArray(components.map(_.toJSON) : _*)
   )
 }
 
@@ -455,7 +455,7 @@ case class IStructure(
                       isInclude: Boolean,
                      ) extends IDeclaration {
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
-    "mod" -> JSONObject(
+    "declaration" -> JSONObject(
       "kind" -> JSONString("structure"),
 
       "implicit" -> JSONBoolean(isImplicit),
@@ -478,7 +478,7 @@ case class IConstant(
                        alias: List[String],
                      ) extends IDeclaration {
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
-    "mod" -> JSONObject(
+    "declaration" -> JSONObject(
       "kind" -> JSONString("constant"),
 
       "role" -> role.map(JSONString).getOrElse(JSONNull),
@@ -498,7 +498,7 @@ case class IRule(
                       override val components: List[IComponent],
                     ) extends IDeclaration {
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
-    "mod" -> JSONObject(
+    "declaration" -> JSONObject(
       "kind" -> JSONString("rule"),
     )
   )
@@ -517,7 +517,7 @@ case class INestedModule(
                   mod: IModuleRef,
                 ) extends IDeclaration {
   override def toJSONBuffer: JSONObjectBuffer = super.toJSONBuffer(
-    "mod" -> JSONObject(
+    "declaration" -> JSONObject(
       "kind" -> JSONString("nested"),
       "mod" -> mod.toJSON
     )
@@ -539,7 +539,7 @@ case class IComponent(
     "name" -> JSONString(name),
     "component" -> JSONObject(
       "kind" -> JSONString(component),
-      "component" -> JSONString(containerValue)
+      component -> JSONString(containerValue)
     )
   )
 }

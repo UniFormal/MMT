@@ -28,7 +28,7 @@ class SimpleIrrelevanceRule(p : GlobalName, default: Option[Term] = None) extend
 object TermIrrelevanceRule extends ParametricRule {
   def apply(controller: Controller, home: Term, args: List[Term]) = {
     args match {
-      case List(OMS(p)) => new SimpleIrrelevanceRule(p)//new TermIrrelevanceRule(List(Apply.path), p)
+      case List(OMS(p)) => new SimpleIrrelevanceRule(p)
       case List(OMS(p), default) => new SimpleIrrelevanceRule(p,Some(default))
       case _ => throw ParseError("exactly one identifier expected")
     }

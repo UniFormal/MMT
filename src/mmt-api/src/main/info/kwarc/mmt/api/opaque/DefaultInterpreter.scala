@@ -12,7 +12,7 @@ import scala.xml._
 class UnknownOpaqueElement(val parent: DPath, val format: String, val raw: NodeSeq) extends OpaqueElement
 
 /** a fallback/default parser for completely unknown elements  */
-class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueTextParser with OpaqueChecker with OpaqueHTMLPresenter {
+class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with OpaqueTextParser with OpaqueChecker with OpaqueHTMLPresenter with OpaqueTextPresenter {
    type OE = UnknownOpaqueElement
 
    def format = "unknown"
@@ -24,6 +24,10 @@ class DefaultOpaqueElementInterpreter extends OpaqueElementInterpreter with Opaq
       new UnknownOpaqueElement(parent, format, elem)
    }
 
+   def toString(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh: RenderingHandler) {
+     rh(oe.raw.text)
+   }
+   
    def check(oC: ObjectChecker, context: Context, rules: RuleSet, oe : OpaqueElement)(implicit ce: CheckingEnvironment) {}
 
    def toHTML(oP: ObjectPresenter, oe: OpaqueElement)(implicit rh : RenderingHandler) {
