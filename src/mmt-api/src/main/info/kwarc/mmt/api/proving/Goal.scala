@@ -196,7 +196,9 @@ class Goal(val context: Context, private var concVar: Term) {
    def setSearchTactics(prover: Searcher, backw: List[BackwardSearch]) {
       backwardSearch = backw
    }
-   def getNextSearch(prover: Searcher): List[ApplicableTactic] = {
+   
+   @scala.annotation.tailrec
+   final def getNextSearch(prover: Searcher): List[ApplicableTactic] = {
       backwardSearch match {
          case Nil => Nil
          case hd::tl =>

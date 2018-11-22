@@ -1112,25 +1112,25 @@ trait SolverAlgorithms {self: Solver =>
          delay(j)
    }
 
-   /** tries to prove a goal, @return the proof term if successful */
+   /** tries to prove a goal by finding a term of type conc
+    *  pre: no unknowns in context or conc
+    */
    def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
-      prove(constantContext ++ /* solution ++ */ stack.context, conc)
+      prove(constantContext ++ stack.context, conc)
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
       val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
-      log(msg)
       history += msg
-      val pu = ProvingUnit(checkingUnit.component, context/*simplify(context)(Stack(context),history)*/, conc, logPrefix).diesWith(checkingUnit)
+      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
       controller.extman.get(classOf[Prover]) foreach {prover =>
          val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
          if (found) {
             val p = proof.get
             history += "proof: " + presentObj(p)
-            log("proof: " + presentObj(p))
             return Some(p)
          } else {
-            log("no proof found with prover " + prover.toString) //goal.present(0)(presentObj, None, None))
+            history += "no proof found with prover " + prover.toString
          }
       }
       log("giving up")

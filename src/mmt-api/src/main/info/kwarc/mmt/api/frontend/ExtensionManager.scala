@@ -297,9 +297,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     val mmtextr = ontology.MMTExtractor
 
     val rbp = new RuleBasedProver
-    val prover: Extension = rbp
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, rbp, rbe).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     // pragmatic-strict converter
