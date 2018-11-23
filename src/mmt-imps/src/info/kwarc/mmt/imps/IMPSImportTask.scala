@@ -11,7 +11,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.imps.IMPSTheory.tp
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.SymbolicExpressionParser
 import info.kwarc.mmt.lf.ApplySpine
@@ -921,7 +920,7 @@ class IMPSImportTask(val controller  : Controller,
 
         if (tState.verbosity > 0)
         {
-          println(" > Adding constant: " + nu_constant.path + " : " + sort.toString + " to theory " + parent.path)
+          println(" > Adding constant: " + nu_constant.name + " : " + sort.toString + " to theory " + parent.name)
           //println(controller.get(parent.path))
         }
 
@@ -1136,7 +1135,7 @@ class IMPSImportTask(val controller  : Controller,
 
       case DFTheoryEnsembleOverloadings(basename, numbers, src, cmt) =>
 
-        if (tState.verbosity > 1) { println(" > adding overloadings to multiples " + numbers.ns.toString() + " of theory " + basename.s) }
+        if (tState.verbosity > 1) { println(" > adding overloadings to multiples (" + numbers.ns.mkString(" ") + ") of theory " + basename.s) }
 
         assert(tState.ensembles.exists(e => e.name.toString.toLowerCase == basename.s.toLowerCase))
         val ensemble : TheoryEnsemble = tState.ensembles.find(e => e.name.toString.toLowerCase == basename.s.toLowerCase).get
@@ -1147,7 +1146,13 @@ class IMPSImportTask(val controller  : Controller,
 
         val multiples : List[DeclaredTheory] = nums.map(j => ensemble.multipleMap(j))
         for (m <- multiples) {
-          controller add PlainInclude(base.path,m.path) // Seems fishy, but also seems to work.
+          //controller add PlainInclude(base.path,m.path) // Seems fishy, but also seems to work.
+
+          for (mc <- m.getConstants) {
+            for (dest <- tState.translations_decl) {
+              println(" [>] [overloading for " + mc.name + " along " + dest.name + " goes here]")
+            }
+          }
         }
 
       case DFOverloading(operator, pairs, _, _) =>
@@ -1260,6 +1265,10 @@ class IMPSImportTask(val controller  : Controller,
       controller add nu_fix
     }
 
+    val replic_trans : DeclaredView = DeclaredView(docPath,LocalName(renamer("replicating_translation")),base.toTerm,nu_replica.toTerm,isImplicit = false)
+    controller add replic_trans
+
+    /**
     for (c <- base.getConstants)
     {
       val chome : Term            = OMMOD(rep_struc.path.toMPath)
@@ -1267,9 +1276,14 @@ class IMPSImportTask(val controller  : Controller,
       val nu_constant = symbols.Constant(chome,ComplexStep(c.parent)/c.name,alias,None,None,None)
       controller add nu_constant
 
-      if (tState.verbosity > 4) {
-        println("     > adding constant " + renamer(c.name.toString) + " to replica structure " + rep_struc.name)
+      if (tState.verbosity > 2) {
+        println("     > adding constant " + nu_constant.name + " to replica theory " + rep_struc.name)
       }
+    }**/
+
+    for (c <- rep_struc.getComponents)
+    {
+      println(" hook > " + c)
     }
 
     // Elaborate Structures
