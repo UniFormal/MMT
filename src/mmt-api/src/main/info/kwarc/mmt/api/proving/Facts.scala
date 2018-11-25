@@ -32,12 +32,9 @@ case class Atom(tm: Term, tp: Term, rl: Option[String]) {
 /**
  * A database of facts obtained through forward proof search
  *
- * For efficiency, each instance only searches for terms that are added when the context is enriched.
- * Therefore, each [[Goal]] g maintains one instance of Facts, which links to the instance of the g.parent.
- * Each instance knows the local context of its goal, and maintains only terms that use a local variable.
- *
- * @param parent g.parent.facts
- * @param newContext g.context
+ * @param prover the prover
+ * @param shapeDepth complexity of indexing
+ * @param outerLogPrefix for logging
  */
 class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends frontend.Logger {
    val report = prover.report
@@ -47,6 +44,7 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
    private[proving] def addConstantAtom(a: Atom) {
       constantAtoms ::= a
    }
+   // these become facts during forward search (as a trivial case of ForwardPiElimination) 
    def getConstantAtoms = constantAtoms
 
    /**
@@ -119,14 +117,14 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
       val matcher = prover.makeMatcher
       val matches = matcher(f.goal.fullContext, f.tp, queryFresh, query)
       matches match {
-        case MatchSuccess(solution) =>
+        case MatchSuccess(solution, _) =>
            // we need freshSub ^ solution but restricted to those variables that were solved
            val freshSubRestrict = freshSub.filter {
              case Sub(_, OMV(qF)) => solution.maps(qF)
              case _ => false // impossible
            }
            Some((freshSubRestrict ^ solution, f.tm))
-        case _ =>
+        case MatchFail =>
          None
       }
    }
@@ -143,7 +141,7 @@ class Facts(prover: Searcher, shapeDepth: Int, outerLogPrefix: String) extends f
     */
    def termsOfTypeAtGoal(goal: Goal, queryVars: Context, query: Term): List[(Substitution, Term)] = {
       var res: List[(Substitution, Term)] = Nil
-      foreachFact(queryVars, query) {case f =>
+      foreachFact(queryVars, query) {f =>
          if (goal below f.goal) {
             matchFact(queryVars, query, f) foreach {x => res ::= x}
          }

@@ -91,6 +91,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           env.ce.simplifier.applyChecked(e)(env.ce.simpEnv)
       }
     }
+    UncheckedElement.erase(e)
     env.ce.task.reportProgress(Checked(e))
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
@@ -129,6 +130,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val path = e.path
     log("checking " + path ,Some("simple"))
     log("checking " + path)//+ " using the following rules: " + env.rules.toString)
+    UncheckedElement.set(e)
     e match {
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
@@ -326,7 +328,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //succeed for everything else but signal error
         logError("unchecked " + path)
     }
-    UncheckedElement.erase(e)
     e match {
       case _:ContainerElement[_] if streamed =>
         // streamed container elements are finalized in checkElementEnd
@@ -359,6 +360,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
 
   /** auxiliary method of check */
   private def checkElementBegin(context : Context, e : ContainerElement[_<: StructuralElement])(implicit env: ExtendedCheckingEnvironment) {
+    UncheckedElement.set(e)
+    e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
     val path = e.path
     log("checking begin of " + path )
     val rules = env.rules
@@ -374,7 +377,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkContext(contextMeta, t.parameters)
         t.df map {d => checkTheory(Some(CPath(t.path, DefComponent)), contextMeta++t.parameters, d)}
         // this is redundant on a clean check because e is empty then;
-        e.getPrimitiveDeclarations foreach {d => UncheckedElement.set(d)}
       case v: DeclaredView =>
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)

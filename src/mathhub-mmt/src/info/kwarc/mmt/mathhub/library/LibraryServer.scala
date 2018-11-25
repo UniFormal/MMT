@@ -5,27 +5,35 @@ import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.{PathNotFound, Server}
 
-trait ContentServer { this: Server =>
+trait LibraryServer { this: Server =>
   protected def applyContent(contentPath: List[String], request: ServerRequest) : ServerResponse = contentPath match {
     case "version" :: Nil =>
       toResponse(getMMTVersion)
 
     case "uri" :: Nil =>
-      toResponse(getURI(request.parsedQuery.string("uri", return missingParameter("uri"))))
+      toResponse(getURI(decodeURI(request.parsedQuery.string("uri", return missingParameter("uri")))))
     case "groups" :: Nil =>
       toResponse(getGroups())
     case "group" :: Nil =>
-      toResponse(getGroup(request.parsedQuery.string("id", return missingParameter("id"))))
+      toResponse(getGroup(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case "tag" :: Nil =>
-      toResponse(getTag(request.parsedQuery.string("id", return missingParameter("id"))))
+      toResponse(getTag(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case "archive" :: Nil =>
-      toResponse(getArchive(request.parsedQuery.string("id", return missingParameter("id"))))
+      toResponse(getArchive(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case "document" :: Nil =>
-      toResponse(getDocument(request.parsedQuery.string("id", return missingParameter("id"))))
+      toResponse(getDocument(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case "module" :: Nil =>
-      toResponse(getModule(request.parsedQuery.string("id", return missingParameter("id"))))
+      toResponse(getModule(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
+    case "declaration" :: Nil =>
+      toResponse(getDeclaration(decodeURI(request.parsedQuery.string("id", return missingParameter("id")))))
     case _ => throw PathNotFound(request)
   }
+
+  /**
+    * Unescapes a string received by the api.
+    * Reserved for future usage.
+    */
+  private def decodeURI(id: String): String = id
 
   /** turns an object into a server response */
   private def toResponse(result: Option[IResponse]): ServerResponse = result match {
@@ -76,12 +84,16 @@ trait ContentServer { this: Server =>
     log(s"getArchive($id)")
     context.getArchive(id)
   }
+  private def getDocument(id: String): Option[IDocument] = {
+    log(s"getDocument($id)")
+    context.getDocument(id)
+  }
   private def getModule(id: String): Option[IModule] = {
     log(s"getModule($id)")
     context.getModule(id)
   }
-  private def getDocument(id: String): Option[IDocument] = {
-    log(s"getDocument($id)")
-    context.getDocument(id)
+  private def getDeclaration(id: String): Option[IDeclaration] = {
+    log(s"getDeclaration($id)")
+    context.getDeclaration(id)
   }
 }

@@ -108,6 +108,7 @@ trait DocumentBuilder { this: Builder =>
   }
 
   /** gets a string representing the source code of a specific object */
+  @deprecated("no longer needed")
   protected def getSourceOf(md: HasMetaData): Option[String] = {
     // get the source ref string
     val sourceRef = md.metadata.getLinks(mmt.mmtbase ? "metadata" ? "sourceRef")

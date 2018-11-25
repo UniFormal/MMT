@@ -108,9 +108,9 @@ class MathMLPresenter extends NotationBasedPresenter {
       pc.out(closeTag("math"))
    }
    private def bracket(optional: Boolean, open: Boolean) = {
-      val cls = if (optional) "opt-brackets opt-brackets-hidden" else "brackets"
+      val cls = if (optional) List(bracketsOpt, bracketsOptHidden) else List(brackets)
       val brack = if (open) "(" else ")"
-      element("mo", List(("class", "operator " + cls)), brack)
+      element("mo", List(("class", (operator::cls).mkString(" "))), brack)
    }
    /**
     * wraps brackets around argument
@@ -133,15 +133,15 @@ class MathMLPresenter extends NotationBasedPresenter {
       wrapBrackets(Some(true), body)
    }
    private def doOptional(group: String, body: => Unit)(implicit pc: PresentationContext) {
-      pc.out(openTag("mrow", List(("class", s"$group $group-hidden"))))
+      pc.out(openTag("mrow", List(("class", s"$group ${hidden(group)}"))))
       body
       pc.out(closeTag("mrow"))
    }
    override def doImplicit(body: => Unit)(implicit pc: PresentationContext) {
-      doOptional("implicit-arg", body)
+      doOptional(implicitarg, body)
    }
    override def doInferredType(body: => Unit)(implicit pc: PresentationContext) {
-      doOptional("reconstructed", body)
+      doOptional(reconstructedtype, body)
    }
 
    /** wraps continuations in mrow to make sure they produce a single element */
