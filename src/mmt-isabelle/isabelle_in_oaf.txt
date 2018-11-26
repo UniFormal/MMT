@@ -1,0 +1,13 @@
+Steps to reproduce the export of Isabelle Distribution and AFP to MathHub
+
+* install Isabelle from provided link
+* create settings file in Isabelle user home (as described above)
+* rebuild MMT with Isabelle included (isabelle mmt_build as described above)
+* export Isabelle sessions with the command
+  isabelle mmt_import -A /MATHHUBROOT/MMT -C AFP=/MATHHUBROOT/Isabelle/AFP  -C _=/MATHHUBROOT/Isabelle/Distribution -v FOL
+  with e.g. MATHHUBROOT=/cygwin/c/other/oaff/ on Florian's windows machine
+* view the results by running
+  isabelle mmt_server -A /MATHHUBROOT/MMT -A /MATHHUBROOT/Isabelle
+  
+
+Here /MATHHUBROOT/MMT and /MATHHUBROOT/Isabelle/AFP a and _=/MATHHUBROOT/Isabelle/Distribution should be (groups of) clones of the corresponding MathHub repositories.
