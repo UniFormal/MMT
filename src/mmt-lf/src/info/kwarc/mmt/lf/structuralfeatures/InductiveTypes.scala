@@ -184,7 +184,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       // To ensure that the result is well-typed
       tmdecls.takeWhile(_ != d) filter (_.isNotDependentTyped()) foreach {b => 
         if (b.ret == d.ret) {
-          // TODO: Check this doesn't generate ill-typed declarations for dependently-typed
+          // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
           val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
           val Ltp = () => {
             val (aCtx, aApplied) = d.argContext(None)

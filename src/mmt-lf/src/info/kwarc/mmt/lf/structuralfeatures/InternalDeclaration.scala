@@ -297,14 +297,13 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     val ctxes = bCtx.zipWithIndex filter {case (x, i) => x != aCtx.variables.apply(i)} map {case (b, i) =>
       val cCtx = aCtx.take(i-1) ++ (b::aCtx.drop(i))
       val cApplied = applyTo(cCtx)
-      (cCtx, cApplied)
+      (cCtx, cApplied, aCtx(i), b)
     }
-    ctxes map {case (cCtx, cApplied) =>
+    ctxes map {case (cCtx, cApplied, a, b) =>
       val Ltp = () => {
-        val argEq = (aCtx zip cCtx) map {case (a,c) => Eq(ret, a.toTerm, c.toTerm)} // TODO does not type-check if ret depends on arguments
+        val argNeq = Neq(ret, a.toTerm, b.toTerm) // TODO does not type-check if ret depends on arguments
         val resNeq = Neq(ret, aApplied, cApplied)  // TODO does not type-check if ret depends on arguments
-        val body = Arrow(Arrow(argEq, Contra), resNeq)
-        PiOrEmpty(context++aCtx ++ cCtx,  body)
+        PiOrEmpty(context++aCtx ++ b,  Arrow(argNeq, resNeq))
       }
       makeConst(uniqueLN("injective_"+name), Ltp)(parent)
     }
