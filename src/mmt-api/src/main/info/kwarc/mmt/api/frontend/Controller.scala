@@ -76,6 +76,8 @@ class Controller extends ROController with ActionHandling with Logger {
     report_ = r
   }
 
+  def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
+
   // **************************** logging
 
   /** handles all output and log messages */

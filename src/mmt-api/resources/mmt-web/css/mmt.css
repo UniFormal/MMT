@@ -26,21 +26,21 @@ mi {
 	font-size: 5%;
 }
 
-mo.opt-brackets {
+mo.mmt-brackets-opt {
 	color: gray;
 }
 
-.reconstructed {
+.mmt-reconstructed-type {
 	border-top-style: dotted;
 	border-width: thin
 }
 
-.implicit-arg {
+.mmt-implicit-arg {
 	border-bottom-style: dotted;
 	border-width: thin
 }
 
-.reconstructed-hidden, .implicit-arg-hidden, .opt-brackets-hidden {
+.mmt-reconstructed-type-hidden, .mmt-implicit-arg-hidden, .mmt-brackets-opt-hidden {
 	display: none;
 }
 
@@ -52,8 +52,8 @@ mo.opt-brackets {
 }
 
 /*
-msubsup > .reconstructed-hidden, msubsup > .implicit-arg-hidden, msubsup > .brackets-hidden,
-munderover > .reconstructed-hidden, munderover > .implicit-arg-hidden, munderover > .brackets-hidden
+msubsup > .mmt-reconstructed-hidden, msubsup > .mmt-implicit-arg-hidden, msubsup > .mmt-brackets-opt-hidden,
+munderover > .mmt-reconstructed-hidden, munderover > .mmt-implicit-arg-hidden, munderover > .mmt-brackets-opt-hidden
 {
    display: inline;
 }

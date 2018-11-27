@@ -132,8 +132,8 @@ class JupyterKernel extends Extension {
     }
 
   } catch {
-    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" -> presenter.asString(e))
-    case e: Exception => PythonParamDict("element" -> presenter.asString(e))
+    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" -> presenter.exceptionAsHTML(e))
+    case e: Exception => PythonParamDict("element" -> presenter.exceptionAsHTML(e))
   }
 
 

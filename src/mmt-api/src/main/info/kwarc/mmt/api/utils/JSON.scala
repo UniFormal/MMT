@@ -62,7 +62,6 @@ case class JSONArray(values: JSON*) extends JSON {
         ("[", ",", "]")
       }
     }
-
     values.map( v =>
       JSON.addIndent(v.toFormattedString(indent), indent)
     ).mkString(start, sep, end)
@@ -88,7 +87,6 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
         ("{", ",", "}")
       }
     }
-
     val spaces = if (indent != "") " " else ""
     map.map { case (k, v) =>
       k.toFormattedString(indent) + ":" + spaces + JSON.addIndent(v.toFormattedString(indent), indent)

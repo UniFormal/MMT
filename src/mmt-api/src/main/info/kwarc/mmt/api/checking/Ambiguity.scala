@@ -7,7 +7,7 @@ import uom._
 import OMLiteral.OMI
 
 /**
- * oneOf(OMI(i),a_1,...a_n)  --->  a_i
+ * oneOf(OMI(i),a_0,...a_n)  --->  a_i
  */
 object Disambiguation extends ComputationRule(ObjectParser.oneOf) {
    def apply(checker: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
@@ -23,7 +23,7 @@ object Disambiguation extends ComputationRule(ObjectParser.oneOf) {
 }
 
 /**
- * solves unknown X in oneOf(X,a_1,...a_n) as i iff a_i is the only alternative whose type can be inferred
+ * solves unknown X in oneOf(X,a_0,...a_n) as i iff a_i is the only alternative whose type can be inferred
  */
 object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneOf) {
    def apply(checker: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = tm match {
@@ -37,7 +37,7 @@ object InferAmbiguous extends InferenceRule(ObjectParser.oneOf,ObjectParser.oneO
             case OMI(i) =>
                history += "already disambiguated"
                choose(i)
-            case OMV(n) =>
+            case checker.Unknown(_, _) =>
                // first (try to) infer the types of the shared terms, that can solve unknowns that are needed for disambiguation
                val namedPartsI = subs map { sub =>
                   history += "infering type of the named part " + checker.presentObj(sub.target)

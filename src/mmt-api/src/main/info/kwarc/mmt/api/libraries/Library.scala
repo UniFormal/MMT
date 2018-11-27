@@ -373,7 +373,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       case nm: NestedModule =>
         getDeclarationInElement(nm.module, args, name, error)
       case e =>
-        error("element cannot contain declarations: " + e.path)
+        error(e.feature + " declaration cannot contain declarations: " + e.path)
     }
   }
 

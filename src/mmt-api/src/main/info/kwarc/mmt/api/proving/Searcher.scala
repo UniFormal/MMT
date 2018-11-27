@@ -34,14 +34,15 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    implicit val facts = new Facts(this, 2, provingUnit.logPrefix)
 
-   private def doTheory(t : modules.DeclaredTheory) =
-         t.getDeclarations.foreach {
-            case c: Constant if !UncheckedElement.is(c) => c.tp.foreach { tp =>
-               val a = Atom(c.toTerm, tp, c.rl)
-               facts.addConstantAtom(a)
-            }
-            case _ =>
-         }
+   private def doTheory(t : modules.DeclaredTheory) = {
+     t.getDeclarations.foreach {
+        case c: Constant if !UncheckedElement.is(c) => c.tp.foreach { tp =>
+           val a = Atom(c.toTerm, tp, c.rl)
+           facts.addConstantAtom(a)
+        }
+        case _ =>
+     }
+   }
    private def getTheory(tm : Term) = {
       val mpath = provingUnit.component.flatMap(_.parent match {
          case mp : MPath => Some(mp)
@@ -68,6 +69,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
    private def initFacts {
       val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
       imports.foreach(doTerm)
+      // atoms from variables are collected during the first round of forward search (somewhat weirdly, by ForwardPiElimination)
+      //println("facts" + facts)
       log("Initialized facts are:  \n"+facts)
    }
 
@@ -91,8 +94,8 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    /**
     * a list of possible steps to be used in an interactive proof
-     *
-     * @param levels the search depth for forward search
+    *
+    * @param levels the search depth for forward search
     * @return a list of possible solutions (possibly with holes)
     */
    def interactive(levels: Int): List[Term] = {
@@ -101,7 +104,9 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       val backwardOptions = {
          val i = invertibleBackward.flatMap {r => r(this, goal).toList}
          val s = searchBackward.flatMap {r => r(this, goal)}
-         (i ::: s).flatMap(_.apply().map(_.proof()).toList)
+         (i ::: s).flatMap {r =>
+           r.apply().map(_.proof()).toList
+         }
       }
       // apply all forward rules according to levels
       Range(0,levels) foreach {_ => forwardSearch(true)}
@@ -109,6 +114,13 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
       (forwardOptions ::: backwardOptions).distinct
    }
 
+   /* TODO
+    * currently constantAtoms become facts only in ForardPiElimination (the motivation being that only non-functional atoms should be stored as facts)
+    * therefore, the first time backward search is tried, the necessary facts are not present yet
+    * but after one try, backward search rules of a goal are not tried again even if new facts become available at that goal
+    * therefore, many proofs fails because the critical first step is never made
+    */
+   
    private def search(levels: Int) {
       if (provingUnit.isKilled) {
         return

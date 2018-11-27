@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.opaque.OpaqueElement
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IReferencable, IReference, IStatistic}
 
@@ -24,9 +25,14 @@ trait Builder
     with NarrativeWrap
     with DocumentBuilder
     with OpaqueBuilder
+    with ModuleWrap
     with TheoryBuilder
     with ViewBuilder
-    with ModuleWrap
+    with DeclarationWrap
+    with StructureBuilder
+    with ConstantBuilder
+    with RuleBuilder
+    with NestedModuleBuilder
 { this: MathHubAPIContext =>
 
   protected val controller: Controller
@@ -58,6 +64,11 @@ trait Builder
     controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(ref.path)")) match {
       case view: View => buildViewReference(view)
       case theory: Theory => buildTheoryReference(theory)
+
+      case s: Structure => buildStructureReference(s)
+      case c: Constant => buildConstantReference(c)
+      case rc: RuleConstant => buildRuleReference(rc)
+      case nm: NestedModule => buildNestedModuleReference(nm)
 
       case opaque: OpaqueElement => buildOpaqueReference(opaque)
       case document: Document => buildDocumentReference(document)
@@ -91,6 +102,11 @@ trait Builder
     controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(object.path)")) match {
       case view: View => buildView(view)
       case theory: Theory => buildTheory(theory)
+
+      case s: Structure => buildStructure(s)
+      case c: Constant => buildConstant(c)
+      case rc: RuleConstant => buildRule(rc)
+      case nm: NestedModule => buildNestedModule(nm)
 
       case opaque: OpaqueElement => buildOpaque(opaque)
       case document: Document => buildDocument(document)

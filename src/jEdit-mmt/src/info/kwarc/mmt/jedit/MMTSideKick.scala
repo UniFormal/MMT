@@ -44,9 +44,11 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
                   val g = new proving.Goal(a.context, t)
                   val rules = RuleSet.collectRules(controller, a.context) //TODO should be cached
                   val pu = proving.ProvingUnit(None, g.context, g.conc, logPrefix)
+                  log("trying to complete for " + pu.toString)
                   val prover = new proving.Searcher(controller, g, rules, pu)
                   log(g.present(2)(prover.presentObj, None,None))
                   val options = prover.interactive(3)
+                  log("completion options:" + options.toString)
                   val comp = new ProverCompletion(view, controller, a.region, options)
                   return comp
                case o =>

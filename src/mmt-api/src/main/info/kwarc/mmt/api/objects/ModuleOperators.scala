@@ -101,9 +101,13 @@ object Morph {
                   lib.getO(pt) match {
                     case Some(l: DefinedStructure) =>
                       // restrict m to t
-                      val mR = l.df
-                      if (!isInclude(mR)) // the smaller we keep the codomain, the better
-                         result ::= mR
+                      l.dfC.get match {
+                        case Some(mR) =>
+                          if (!isInclude(mR)) // the smaller we keep the codomain, the better
+                             result ::= mR
+                        case None =>
+                          result ::= m
+                      }
                     case _ =>
                       result ::= m
                   }

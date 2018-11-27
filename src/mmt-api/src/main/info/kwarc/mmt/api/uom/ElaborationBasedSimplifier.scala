@@ -642,7 +642,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   //TODO move to library if it's not doing anything else
   def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement] = moduleExp match {
      case OMMOD(p) => lup.getTheory(p) match {
-       case m: DefinedModule => getBody(context, m.df)
+       case m: DefinedModule => getBody(context, m.df) //TODO .df is otpional
        case m: DeclaredModule => m
      }
      //TODO OMPMOD

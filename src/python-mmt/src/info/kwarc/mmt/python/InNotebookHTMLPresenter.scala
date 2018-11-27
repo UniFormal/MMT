@@ -11,23 +11,20 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
   val key = "notebook-presenter"
   def apply(e : StructuralElement, standalone: Boolean = false)(implicit rh : RenderingHandler) {
      val htmlRh = utils.HTML(s => rh(s))
-     val ps = new PresentationScope(htmlRh, rh)
+     val ps = new PresentationScope(htmlRh)
      ps(e)
   }
 
-  def apply(e : Exception)(implicit rh : RenderingHandler): Unit = {
-    val htmlRh = utils.HTML(s => rh(s))
-    import htmlRh._
-    pre() { code() { text(Error(e).toStringLong) } }
-  }
-  def asString(e : Exception): String = {
-    val sb = new StringBuilder
-    apply(e)(sb)
-    "Error:\n" + sb.get
+  def exceptionAsHTML(e : Exception): String = {
+    val html = new utils.HTMLBuilder
+    import html._
+    text("Error:\n")
+    pre { code { text(Error(e).toStringLong) } }
+    html.result
   }
   
   /** local class so that we can import htmlRh and build HTML programmatically */
-  private class PresentationScope(htmlRh: utils.HTML, rh : RenderingHandler) {
+  private class PresentationScope(htmlRh: utils.HTML) {
      import htmlRh._
      def apply(e: StructuralElement) {
         e match {
