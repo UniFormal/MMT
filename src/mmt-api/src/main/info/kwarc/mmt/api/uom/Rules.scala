@@ -84,8 +84,11 @@ class RewriteRule(val head: GlobalName, templateVars: Context, template: Term, v
   def makeRule(matcher: Matcher) = new SimplificationRule(head) {
     def apply(goalContext: Context, goal: Term) = {
       matcher(goalContext, goal, templateVars, template) match {
-        case MatchSuccess(sub) =>
-          Simplify(rhs ^? sub)
+        case MatchSuccess(sub,total) =>
+          if (total || utils.subset(rhs.freeVars, sub.domain))
+            Simplify(rhs ^? sub)
+          else
+            Recurse
         case _ =>
           Recurse // TODO this is terrible for stability
       }
