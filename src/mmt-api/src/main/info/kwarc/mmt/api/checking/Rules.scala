@@ -117,7 +117,7 @@ abstract class TypingRule(val head: GlobalName) extends CheckingRule {
 /**
  * A SubtypingRule handles [[Subtyping]] judgements
  */
-abstract class SubtypingRule extends CheckingRule with MaytriggerBacktrack {
+abstract class SubtypingRule extends CheckingRule {
    def applicable(tp1: Term, tp2: Term): Boolean
    /**
     * pre all arguments covered

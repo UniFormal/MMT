@@ -167,7 +167,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
             val fTOpt = solver.inferType(f, covered)(stack, history + ("inferring type of function " + solver.presentObj(f)))
             fTOpt match {
               case Some(fT) =>
-                history += "function is " + solver.presentObj(f) + " of type " + solver.presentObj(fT)
+                history += "function is `" + solver.presentObj(f) + "` of type `" + solver.presentObj(fT) + "`"
                 iterate(fT, args, Nil) match {
                   case Some((argTypes,tmI)) =>
                     // It is not clear whether it is better to type-check the return type or the arguments first.
@@ -316,11 +316,11 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
       // returns Some(reducedTerm) or None if no reduction
       def reduce(f: Term, args: List[Term]): Simplifiability = (f,args) match {
          case (Lambda(x,a,t), s :: rest) =>
-            if (conforms(solver)(s,a,covered)) {
+            if (conforms(solver)(s,a,covered)(stack, history+"checking argument to see if beta-reduction applicable")) {
               reduced = true
               reduce(t ^? (x / s), rest)
             } else {
-              history += "cannot beta-reduce at this point"
+              history += "beta-reduction is syntactically possible, but the argument does not conform to expectations"
               RecurseOnly(1 :: Nil)
             }
          case (f, Nil) =>
