@@ -89,7 +89,7 @@ private object InternalDeclarationUtil {
     parent.module ? parent.name / name
  
   def externalizeNames(parent: GlobalName) = Renamer(p => if (p.module == parent.toMPath) Some(externalName(parent, p.name)) else None) 
-  
+
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
    *  @param tp the type of the constant
@@ -229,7 +229,7 @@ sealed abstract class InternalDeclaration {
     val con: Context = dargs zip args map {case ((loc, tp), arg) =>
       val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf) else loc
       subs = subs ++ OMV(loc) / OMV(locSuf)
-      newVar(locSuf, tp ^? subs, None)
+      newVar(locSuf, externalizeNames(parent)(tp ^? subs, context), None)
     }
     val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
     (con, tp)

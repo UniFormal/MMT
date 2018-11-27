@@ -31,14 +31,23 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
-  /** Check whether the TermLevel has an negative argument of an inductively defined type */
+  /** Check whether the TermLevel has an negative argument of an inductively defined type
+   *  In that case an error is thrown
+   */
   def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent: GlobalName) = {
-    tc.args.zipWithIndex foreach {case (arg, i) => if ((i % 2) != 0) {
-      def dependsOn(tm: Term, tp: GlobalName): Boolean = {
+    def dependsOn(tm: Term, tp: GlobalName): Boolean = {
         val FunType(args, ret) = tm
         args.+:(ret) exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
       }
-        if (types.exists(x => dependsOn(arg._2, x))) throw LocalError("Unsupported constructor: "+noLookupPresenter.asString(tc.toTerm(parent))) 
+    val relevantArgs = tc.args filter {arg => types exists {x => dependsOn(arg._2, x)}}
+    relevantArgs.zipWithIndex foreach {case (arg, i) => if ((i % 2) != 0) {
+      
+        types.find(x => dependsOn(arg._2, x)) foreach {x => 
+          if (relevantArgs.zipWithIndex.filter({case (arg, i) => (i % 2) == 0}) exists {case (y, i) => dependsOn(y._2, x)}) {
+            throw LocalError("Unsupported constructor with argument of inductively defined type in negative position: "
+                +noLookupPresenter.asString(tc.toTerm(parent))
+                +" depends on "+x.name.toString)}
+          }
       }
     }
   }
@@ -84,10 +93,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    elabDecls foreach {d =>log(shortPresent(d))}
+    //elabDecls foreach {d =>log(shortPresent(d))}    //This typically prints all external declarations several times
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
+        elabDecls.find(_.name == n) foreach { x => println(defaultPresenter(x)(controller))}
         elabDecls.find(_.name == n)
       }
     }
@@ -144,7 +154,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
           case Some(inductP) => ApplyGeneral(OMS(inductP), model:::args:::List(tm))
           case None => tm
         }
-      case _ => throw ImplementationError("missing case")
+      case _ => log("Found term of non inductively-defined type "+noLookupPresenter.asString(tp)+". "); tm
     }
     
     decls map {d =>
