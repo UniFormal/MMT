@@ -77,7 +77,7 @@ class MMTGutterAnnotations(mmt: MMTPlugin, editPane: EditPane) extends MMTTextAr
     //mark line
     drawMarker(gfx, java.awt.Color.YELLOW, y, true)
     //draw marker character
-    var oldFont = gfx.getFont
+    val oldFont = gfx.getFont
     gfx.setFont(new Font(oldFont.getName, oldFont.getStyle, oldFont.getSize-2))
     if (annotations.size==1) {
       //if only one annotation display it's designated Marker character (defaults to ' ')
