@@ -1,7 +1,7 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.archives.{Archive, BuildResult, TraversingBuildTarget}
-import info.kwarc.mmt.api.{GeneralError, Path, StructuralElement}
+import info.kwarc.mmt.api.{GeneralError, Path, StructuralElement, utils}
 import info.kwarc.mmt.api.archives.lmh.MathHub
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{ChangeListener, Controller, Logger}
@@ -23,7 +23,6 @@ trait Builder
     with GroupBuilder
     with TagBuilder
     with ArchiveBuilder
-    with NarrativeWrap
     with DocumentBuilder
     with OpaqueBuilder
     with ModuleWrap
@@ -43,38 +42,37 @@ trait Builder
   /** gets a reference to an object, either from the cache or newly built */
   def getReference(id: String): Option[IReference] = memoizeReference(id) {
     logGroup {
-      // try to build a group reference
-      tryGroup(id).map(e => return buildGroupReference(e))
 
-      // try to build a tag reference
-      tryTag(id).map(e => return buildTagReference(e))
+      if (!id.contains(":")) {
+        utils.firstDefined(
+          {_ => tryGroup(id).flatMap(buildGroupReference)},
+          {_ => tryTag(id).flatMap(buildTagReference)},
+          {_ => tryArchive(id).flatMap(buildArchiveReference)}
+        )
+      } else {
+        // try to parse the path or fail
+        val path = try {
+          Path.parse(id, controller.getNamespaceMap)
+        } catch {
+          case _: Exception => return buildFailure(id, "Path.parse(ref.id)")
+        }
 
-      // try to build an archive reference
-      tryArchive(id).map(e => return buildArchiveReference(e))
+        // try to get the path or
 
+        controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(ref.path)")) match {
+          case view: View => buildViewReference(view)
+          case theory: Theory => buildTheoryReference(theory)
 
-      // try to parse the path or fail
-      val path = try {
-        Path.parse(id, controller.getNamespaceMap)
-      } catch {
-        case _: Exception => return buildFailure(id, "Path.parse(ref.id)")
-      }
+          case s: Structure => buildStructureReference(s)
+          case c: Constant => buildConstantReference(c)
+          case rc: RuleConstant => buildRuleReference(rc)
+          case nm: NestedModule => buildNestedModuleReference(nm)
 
-      // try to get the path or
+          case opaque: OpaqueElement => buildOpaqueReference(opaque)
+          case document: Document => buildDocumentReference(document)
 
-      controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(ref.path)")) match {
-        case view: View => buildViewReference(view)
-        case theory: Theory => buildTheoryReference(theory)
-
-        case s: Structure => buildStructureReference(s)
-        case c: Constant => buildConstantReference(c)
-        case rc: RuleConstant => buildRuleReference(rc)
-        case nm: NestedModule => buildNestedModuleReference(nm)
-
-        case opaque: OpaqueElement => buildOpaqueReference(opaque)
-        case document: Document => buildDocumentReference(document)
-
-        case _ => buildFailure(id, "controller.get(ref.path) match")
+          case _ => buildFailure(id, "controller.get(ref.path) match")
+        }
       }
     }
   }
@@ -84,38 +82,36 @@ trait Builder
   def getObject(id: String): Option[IReferencable] = memoizeObject(id) {
     logGroup {
 
-      // try to build a group reference
-      tryGroup(id).map(e => return buildGroup(e))
+      if (!id.contains(":")) {
+        utils.firstDefined(
+          {_ => tryGroup(id).flatMap(buildGroup)},
+          {_ => tryTag(id).flatMap(buildTag)},
+          {_ => tryArchive(id).flatMap(buildArchive)}
+        )
+      } else {
+        // try to parse the path or fail
+        val path = try{
+          Path.parse(id, controller.getNamespaceMap)
+        } catch {
+          case _: Exception => return buildFailure(id, "Path.parse(object.id)")
+        }
 
-      // try to build a tag reference
-      tryTag(id).map(e => return buildTag(e))
+        // try to get the path or
 
-      // try to build an archive reference
-      tryArchive(id).map(e => return buildArchive(e))
+        controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(object.path)")) match {
+          case view: View => buildView(view)
+          case theory: Theory => buildTheory(theory)
 
+          case s: Structure => buildStructure(s)
+          case c: Constant => buildConstant(c)
+          case rc: RuleConstant => buildRule(rc)
+          case nm: NestedModule => buildNestedModule(nm)
 
-      // try to parse the path or fail
-      val path = try{
-        Path.parse(id, controller.getNamespaceMap)
-      } catch {
-        case _: Exception => return buildFailure(id, "Path.parse(object.id)")
-      }
+          case opaque: OpaqueElement => buildOpaque(opaque)
+          case document: Document => buildDocument(document)
 
-      // try to get the path or
-
-      controller.getO(path).getOrElse(return buildFailure(id, "controller.getO(object.path)")) match {
-        case view: View => buildView(view)
-        case theory: Theory => buildTheory(theory)
-
-        case s: Structure => buildStructure(s)
-        case c: Constant => buildConstant(c)
-        case rc: RuleConstant => buildRule(rc)
-        case nm: NestedModule => buildNestedModule(nm)
-
-        case opaque: OpaqueElement => buildOpaque(opaque)
-        case document: Document => buildDocument(document)
-
-        case _ => buildFailure(id, "controller.get(object.path) match")
+          case _ => buildFailure(id, "controller.get(object.path) match")
+        }
       }
     }
   }
@@ -130,6 +126,40 @@ trait Builder
 
 
 trait Cache { this: MathHubAPIContext =>
+  /** runs a transaction that blocks clearing the cache */
+  def transaction[T](name: String, t: MathHubAPIContext => T): T = {
+    // block clearing
+    synchronized {
+      blockClear += 1
+    }
+
+    try {
+      logGroup {
+        val start = System.currentTimeMillis()
+        log(s"starting transaction $name")
+        val r = t(this)
+        val end = System.currentTimeMillis()
+        log(s"ending transaction $name, took ${end - start} ms")
+        r
+      }
+    } finally {
+      synchronized {
+        // if we requested clearing, run it
+        if (blockClear == 1 && requestedClear){
+          requestedClear = false
+          clearInternal()
+        }
+
+        // release the clearing lock
+        blockClear -= 1
+
+        // and trim the cache
+        trimCache()
+      }
+    }
+  }
+
+
   /** a map of ids to references to objects */
   private val refCache = mutable.Map[String, IReference]()
   protected def memoizeReference(id: String)(fill: => Option[IReference]): Option[IReference] = refCache.get(id) match {
@@ -192,33 +222,6 @@ trait Cache { this: MathHubAPIContext =>
     objCache.keys.foreach(objCache.remove)
   }
 
-  /** runs a transaction that blocks clearing the cache */
-  def transaction[T](t: MathHubAPIContext => T): T = {
-    // block clearing
-    synchronized {
-      blockClear += 1
-    }
-
-    try {
-      val result = t(this)
-      result
-    } finally {
-      synchronized {
-        // if we requested clearing, run it
-        if (blockClear == 1 && requestedClear){
-          requestedClear = false
-          clearInternal()
-        }
-
-        // release the clearing lock
-        blockClear -= 1
-
-        // and trim the cache
-        trimCache()
-      }
-    }
-  }
-
   /** called after adding the element */
   def onAdd(c: StructuralElement, log: String => Unit): Unit = {}
   /** called after deleting the element
@@ -259,6 +262,19 @@ trait Getters { this: Builder =>
     }
   }
 
+  /**
+    * Gets a reference of a given type or stores default as the type
+    */
+  protected def getObjectOrElse[T <: IReferencable](cls: Class[T], id: String)(default: => Option[T]): Option[T] = memoizeObject(id)(default) match {
+    case None => None
+    case Some(theRef) =>
+      if (cls.isInstance(theRef)) {
+        Some(theRef.asInstanceOf[T])
+      } else {
+        None
+      }
+  }
+
   /** gets a reference of a specific type */
   protected def getReferenceOf[T <: IReference](cls: Class[T], id: String): Option[T] = logGroup {
     log(s"trying to get reference of kind ${cls.getName} $id")
@@ -273,7 +289,20 @@ trait Getters { this: Builder =>
       }
     }
   }
-}
+
+  /**
+    * Gets a reference of a given type or stores default as the type
+    */
+  protected def getReferenceOrElse[T <: IReference](cls: Class[T], id: String)(default: => Option[T]): Option[T] = memoizeReference(id)(default) match {
+    case None => None
+    case Some(theRef) =>
+      if (cls.isInstance(theRef)) {
+        Some(theRef.asInstanceOf[T])
+      } else {
+        None
+      }
+    }
+  }
 
 
 trait Statistics { this: Builder =>

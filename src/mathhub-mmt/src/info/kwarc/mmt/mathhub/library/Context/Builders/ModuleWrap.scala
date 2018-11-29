@@ -1,5 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
+import info.kwarc.mmt.api.documents.MRef
 import info.kwarc.mmt.api.{ContentElement, utils}
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
@@ -12,6 +13,10 @@ trait ModuleWrap { this: MathHubAPIContext =>
     { _ => getTheoryRef(id) }
   )
 
+  /** gets a reference to a module with as few references as possible */
+  def getModuleReference(mref: MRef): Option[IModuleRef] = getReferenceOrElse(classOf[IModuleRef], mref.path.toPath) {
+    Some(IModuleRef(mref.target.toPath, mref.target.name.toPath))
+  }
 
   /** gets a module */
   def getModule(id: String): Option[IModule] = utils.firstDefined(

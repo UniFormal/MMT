@@ -73,36 +73,12 @@ trait LibraryServer extends ChangeListener { this: Server =>
 
   // getter methods
 
-  private def getURI(uri: String) : Option[IReferencable] = {
-    log(s"getObject($uri)")
-    context.transaction(_.getObject(uri))
-  }
-  private def getGroups() : List[IGroupRef] = {
-    log(s"getGroups()")
-    context.transaction(_.getGroups())
-  }
-  private def getGroup(id: String) : Option[IGroup] = {
-    log(s"getGroup($id)")
-    context.transaction(_.getGroup(id))
-  }
-  private def getTag(id: String) : Option[ITag] = {
-    log(s"getTag($id)")
-    context.transaction(_.getTag(id))
-  }
-  private def getArchive(id: String) : Option[IArchive] = {
-    log(s"getArchive($id)")
-    context.transaction(_.getArchive(id))
-  }
-  private def getDocument(id: String): Option[IDocument] = {
-    log(s"getDocument($id)")
-    context.transaction(_.getDocument(id))
-  }
-  private def getModule(id: String): Option[IModule] = {
-    log(s"getModule($id)")
-    context.transaction(_.getModule(id))
-  }
-  private def getDeclaration(id: String): Option[IDeclaration] = {
-    log(s"getDeclaration($id)")
-    context.transaction(_.getDeclaration(id))
-  }
+  private def getURI(uri: String) : Option[IReferencable] = context.transaction(s"getObject($uri)", _.getObject(uri))
+  private def getGroups() : List[IGroupRef] = context.transaction("getGroups()", _.getGroups())
+  private def getGroup(id: String) : Option[IGroup] = context.transaction(s"getGroup($id)", _.getGroup(id))
+  private def getTag(id: String) : Option[ITag] = context.transaction(s"getTag($id)", _.getTag(id))
+  private def getArchive(id: String) : Option[IArchive] = context.transaction(s"getArchive($id)", _.getArchive(id))
+  private def getDocument(id: String): Option[IDocument] = context.transaction(s"getDocument($id)", _.getDocument(id))
+  private def getModule(id: String): Option[IModule] = context.transaction(s"getModule($id)", _.getModule(id))
+  private def getDeclaration(id: String): Option[IDeclaration] = context.transaction(s"getDeclaration($id)", _.getDeclaration(id))
 }
