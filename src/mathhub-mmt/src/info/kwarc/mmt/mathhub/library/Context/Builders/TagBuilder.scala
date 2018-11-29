@@ -8,7 +8,7 @@ trait TagBuilder { this: Builder =>
 
   /** tries to find a group with the given id */
   protected def tryTag(id: String) : Option[String] = {
-    log(s"trying $id as tag")
+    logDebug(s"trying $id as tag")
 
     if(id.startsWith("@")) {
       Some(id.substring(1))
