@@ -66,7 +66,10 @@ object ShellCommand {
    * like run in
    * @param env environment variables to pass on
    */
-  def runInWithEnv(dir: File, env: Map[String, String], command: String*) = runInGeneral(Some(dir), env, command: _*){_=>()}
+  def runInWithEnv(dir: File, env: Map[String, String], print: Boolean, command: String*) = {
+    val out: String => Unit = if (print) (_ => ()) else println 
+    runInGeneral(Some(dir), env, command: _*)(out)
+  }
   
   /**
    * like runIn but prints output
