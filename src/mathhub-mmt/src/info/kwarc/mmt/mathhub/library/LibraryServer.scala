@@ -65,11 +65,11 @@ trait LibraryServer extends ChangeListener { this: Server =>
   // the context and caching methods
   private lazy val context: MathHubAPIContext = new MathHubAPIContext(controller, this.report)
 
-  override def onAdd(c: StructuralElement): Unit = context.onAdd(c, log(_))
-  override def onDelete(old: StructuralElement): Unit = context.onDelete(old, log(_))
-  override def onClear = context.onClear(log(_))
-  override def onArchiveOpen(a: Archive): Unit = context.onArchiveOpen(a, log(_))
-  override def onArchiveClose(a: Archive): Unit = context.onArchiveClose(a, log(_))
+  override def onAdd(c: StructuralElement): Unit = context.onAdd(c)
+  override def onDelete(old: StructuralElement): Unit = context.onDelete(old)
+  override def onClear = context.onClear()
+  override def onArchiveOpen(a: Archive): Unit = context.onArchiveOpen(a)
+  override def onArchiveClose(a: Archive): Unit = context.onArchiveClose(a)
 
   // getter methods
 

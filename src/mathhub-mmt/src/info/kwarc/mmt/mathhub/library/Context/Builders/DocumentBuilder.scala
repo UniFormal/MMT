@@ -13,14 +13,14 @@ trait DocumentBuilder { this: Builder =>
   def getDocumentRef(id: String): Option[IDocumentRef] = getReferenceOf(classOf[IDocumentRef], id)
 
   /** builds a reference to a document */
-  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = makeDocumentRef(document.path, document.name)
+  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = makeDocumentRef(document.path)
 
   /** optimisation to quickly build a reference to a parent without loading more content */
   protected def getDocumentReference(dRef: DRef): Option[IDocumentRef] = getReferenceOrElse(classOf[IDocumentRef], dRef.path.toPath) {
-    makeDocumentRef(dRef.target, dRef.target.name)
+    makeDocumentRef(dRef.target)
   }
 
-  private def makeDocumentRef(path: DPath, name: LocalName): Option[IDocumentRef] = {
+  private def makeDocumentRef(path: DPath): Option[IDocumentRef] = {
     // if we are the narrationBase of an archive, that is our parent
     val parent = mathHub.entries_.find({
       case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == path.toPath
@@ -36,7 +36,7 @@ trait DocumentBuilder { this: Builder =>
         parent.map(Some(_))
           .getOrElse(return buildFailure(path.toPath, "getRef(document.parent)")),/* parent */
         path.toPath, /* id */
-        name.last.toPath /* name */
+        path.name.last.toPath /* name */
       )
     )
   }
@@ -80,7 +80,7 @@ trait DocumentBuilder { this: Builder =>
       case d: DRef => getDocumentReference(d)
 
       case d =>
-        log(s"buildDocument: ignoring unknown child ${d.path.toPath} of ${document.path.toPath} (not OpaqueElement, Document or DRef, MRef)")
+        logDebug(s"buildDocument: ignoring unknown child ${d.path.toPath} of ${document.path.toPath} (not OpaqueElement, Document or DRef, MRef)")
         None
     })
 
