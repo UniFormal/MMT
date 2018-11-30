@@ -35,7 +35,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
           val tp = Arrow(dom, OMS(subtype.path))
           PiOrEmpty(params, if (!params.isEmpty) ApplyGeneral(tp, params.map(_.toTerm)) else tp)
         }
-        makeConst(uniqueLN("inj"), Ltp, Nil)
+        makeConst(uniqueLN("inj"), Ltp)
       }
       val injInjective = injDecl(injection, controller, context, Nil)
       val lift = this.lift(dom, pred, Some("g"), context)
@@ -66,7 +66,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
       val proof = p.applyTo(y)
       Pi(List(T, f, y), Arrow(proof, T.toTerm))
     }
-    makeConst(uniqueLN(name getOrElse "g"), Ltp, Nil)
+    makeConst(uniqueLN(name getOrElse "g"), Ltp)
   }
   
   /** Declares that the lifting function is inverse to the injection, if defined 
@@ -85,7 +85,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
       val y_mapped = ApplyGeneral(f.toTerm, List(x.toTerm))
       Pi(List(T, f, x), Arrow(proof, Eq(y_lifted, y_mapped,T.toTerm)))
     }
-    makeConst(uniqueLN(name getOrElse "inverse"), Ltp, Nil)
+    makeConst(uniqueLN(name getOrElse "inverse"), Ltp)
   }
 }
 

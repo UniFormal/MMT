@@ -37,26 +37,19 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     case _ => false
   }
   
-  /** Check whether the TermLevel has an negative argument of an inductively defined type
+  /** Check whether the TermLevel has a higher order argument of an inductively defined type
    *  In that case an error is thrown
    */
   def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent : GlobalName) = {
     def dependsOn(tm: Term, tp: GlobalName): Boolean = {
-        val FunType(args, ret) = tm
-        args.+:(ret) exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
-      }
+      val FunType(args, ret) = tm
+      args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
+    }
     if (constructor(tc, types)) {// Check whether the constructor is outgoing
-      val relevantArgs = tc.args filter {arg => types exists {x => dependsOn(arg._2, x)}}
-      relevantArgs.zipWithIndex foreach {case (arg, i) => if ((i % 2) != 0) {
-        
-          types.find(x => dependsOn(arg._2, x)) foreach {x => 
-            if (relevantArgs.zipWithIndex.filter({case (arg, i) => (i % 2) == 0}) exists {case (y, i) => dependsOn(y._2, x)}) {
-              throw LocalError("Unsupported constructor with argument of inductively defined type in negative position: "
-                  +noLookupPresenter.asString(tc.toTerm(parent))
-                  +" depends on "+x.name.toString)}
-            }
-        }
-      }
+      tc.args.map(_._2).exists({x =>
+        val FunType(args, ret) = x
+        args.exists(arg => types.exists(dependsOn(arg._2, _)))
+      })
     }
   }
   
@@ -87,7 +80,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
 
     // copy all the declarations
-    decls foreach {d => elabDecls ::= d.toConstant(tpdecls)}
+    decls foreach {d => elabDecls ::= d.toConstant}
     tmdecls foreach { tmdecl => checkTermLevel(tmdecl, tpdecls map (_.path))}
         
     // the no confusion axioms for the data constructors
@@ -96,16 +89,16 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
      * some of the (in)equality axioms would be ill-typed because
      * the type system already forces elements of different instances of a dependent type to be unequal and of unequal type
      */
-    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls, tpdecls)(dd.path))
+    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls)(dd.path))
     
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    //elabDecls foreach {d =>log(shortPresent(d))}    //This typically prints all external declarations several times
+    //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
-        elabDecls.find(_.name == n) foreach { x => println(defaultPresenter(x)(controller))}
+        elabDecls.find(_.name == n) foreach(c => log(defaultPresenter(c)(controller)))
         elabDecls.find(_.name == n)
       }
     }
@@ -165,14 +158,13 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         }
       case _ => log("Found term of non inductively-defined type "+noLookupPresenter.asString(tp)+". "); tm
     }
-    val types: List[TypeLevel] = decls.filter({case tpl: TypeLevel => true case _ => false}) map {case x: TypeLevel => x}
     decls map {d =>
       val Ltp = () => {
         val (argCon, dApplied) = d.argContext(None)
-        val dAppliedInduct = induct(d.externalRet(types), dApplied)
+        val dAppliedInduct = induct(d.ret, dApplied)
         val dPrimed = utils.listmap(repls, d.path).get
         val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(vd.tp.get, vd.toTerm)})
-        val retPrimed = induct(Univ(1), d.externalRet(types))
+        val retPrimed = induct(Univ(1), d.ret)
         val ret = d match {
           case tl: TermLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
           case tl: StatementLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
@@ -181,7 +173,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         Pi(context ++ modelContext ++ argCon, ret)
       }
       val name = inductName(d.name)
-      val c = makeConst(name, Ltp, types)
+      val c = makeConst(name, Ltp)
       inductNames ::= d.path -> c.path
       c
     }
@@ -196,29 +188,29 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param parent the derived declaration to elaborate
    * @param tmdecls all term level declarations
    */
-  def noConf(d: TermLevel, tmdecls: List[TermLevel], types: List[TypeLevel])(implicit parent: GlobalName): List[Constant] = {
+  def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
     //println("\n\nProducing the no-confusion declarations for "+d.name+": ")
     // To ensure that the result is well-typed
     if (d.isNotDependentTyped()) {
       // To ensure that the result is well-typed
       tmdecls.takeWhile(_ != d) filter (_.isNotDependentTyped()) foreach {b => 
-        if (b.extTp(types) == d.extTp(types)) {
+        if (b.tp == d.tp) {
           // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
           val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
           val Ltp = () => {
             val (aCtx, aApplied) = d.argContext(None)
             val (bCtx, bApplied) = b.argContext(None)
-            Pi(d.context++aCtx ++ bCtx, Neq(b.extTp(types), aApplied, bApplied))  // This does not type-check if ret depends on arguments
+            Pi(d.context++aCtx ++ bCtx, Neq(b.tp, aApplied, bApplied))  // This does not type-check if ret depends on arguments
           }
-          decls ::= makeConst(newName, Ltp, types)
+          decls ::= makeConst(newName, Ltp)
         }
       }
     }
     decls = decls.reverse
     if(d.args.length > 0)
       //println("Producing the injectivity axiom for "+d.name+": ")
-      decls ++= d.injDecls(types)
+      decls ++= d.injDecls
     decls
   }
 }

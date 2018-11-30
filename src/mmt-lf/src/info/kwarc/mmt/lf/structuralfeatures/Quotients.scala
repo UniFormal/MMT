@@ -25,7 +25,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
         case List((_, d), (_,_)) => d
         case tp => throw ImplementationError("Unexpectedly found: . ")
       }
-      val rel = eqRel.toConstant(Nil)
+      val rel = eqRel.toConstant
       val structure = structureDeclaration(Some("Q"), context)
       
       val quotientMap = {
@@ -33,7 +33,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
           val tp = Arrow(dom, structure.tp.get)
           PiOrEmpty(params, if (!params.isEmpty) ApplyGeneral(tp, params.map(_.toTerm)) else tp)
         }
-        makeConst(uniqueLN("quotient_map"), Ltp, Nil)
+        makeConst(uniqueLN("quotient_map"), Ltp)
       }
       val quotMapSurj = surjDecl(quotientMap, controller, context)
       
@@ -80,7 +80,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       
       Pi(ctx getOrElse Context.empty ++ f, Arrow(proof, Arrow(q, q)))
     }
-    makeConst(uniqueLN(name getOrElse "g"), Ltp, Nil)
+    makeConst(uniqueLN(name getOrElse "g"), Ltp)
   }
   
   /**
@@ -104,7 +104,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
       val quot_o_f_z = ApplySpine(OMS(quot), ApplySpine(f.toTerm, z.toTerm))
       Pi((ctx getOrElse Context.empty) ++ f ++ z, Eq(g_o_quot_z, quot_o_f_z, dom))
     }
-  makeConst(uniqueLN(name getOrElse "quotInverse"), Ltp, Nil)
+  makeConst(uniqueLN(name getOrElse "quotInverse"), Ltp)
   }
 }
 

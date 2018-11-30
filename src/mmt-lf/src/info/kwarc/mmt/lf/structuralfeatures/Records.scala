@@ -129,7 +129,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     val Ltp = () => {
       val r = LocalName("r")
       val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
-      Pi(r, OMS(recType), tr(c.context, c.externalTp(Nil)))
+      Pi(r, OMS(recType), tr(c.context, c.tp))
     }
     makeConst(c.name, Ltp)
   }
