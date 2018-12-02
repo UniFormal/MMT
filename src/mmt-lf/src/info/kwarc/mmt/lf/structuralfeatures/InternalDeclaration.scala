@@ -257,8 +257,8 @@ sealed abstract class InternalDeclaration {
       if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
       newVar(locSuf, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
-    val tp = ApplyGeneral(toTerm, context.map(_.toTerm)++con.map(_.toTerm))
-    (context++con, tp)
+    val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
+    (con, tp)
   }
   
   def toVarDecl = VarDecl(name, tp)
