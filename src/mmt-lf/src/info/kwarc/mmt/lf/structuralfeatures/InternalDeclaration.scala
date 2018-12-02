@@ -253,14 +253,12 @@ sealed abstract class InternalDeclaration {
     // In case of an OMV argument used in the type of a later argument
     var subs = Substitution()
     val con: Context = dargs zip args map {case ((loc, tp), arg) =>
-      //println("Checking for independance of constructor "+this.name+" on the argument "+loc+": ")
       val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf) else loc
-      //println("loc: "+loc+", locSuf: "+locSuf+", arg: "+present(arg._2, true))
       if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
       newVar(locSuf, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
-    val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
-    (con, tp)
+    val tp = ApplyGeneral(toTerm, context.map(_.toTerm)++con.map(_.toTerm))
+    (context++con, tp)
   }
   
   def toVarDecl = VarDecl(name, tp)

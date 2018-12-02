@@ -149,7 +149,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
                 case None => throw ImplementationError("Couldn't find declaration for the inductively defined type "+noLookupPresenter.asString(tp)+". This should never happen. ")
               }
           }
-        case _ => log("Found kind which is not the application of a type level: "+present(tm, true)+". "); tp
+        case _ => log("Found kind which is not the application of a type level: "+present(tm, true)+". "); tm
       }
       case ApplyGeneral(OMS(p), args) =>
         utils.listmap(inductNames, p) match {
