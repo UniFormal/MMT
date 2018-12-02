@@ -9,13 +9,13 @@ trait ArchiveBuilder { this: Builder =>
 
   /** tries to find an archive with a given id */
   protected def tryArchive(id: String) : Option[LMHHubArchiveEntry] = {
-    log(s"trying $id as archive")
+    logDebug(s"trying $id as archive")
     val optEntry = mathHub.entries_.collectFirst({
       case e: LMHHubArchiveEntry if e.id == id => e
     })
 
     if(optEntry.isEmpty){
-      log(s"$id is not an archive")
+      logDebug(s"$id is not an archive")
     }
 
     optEntry

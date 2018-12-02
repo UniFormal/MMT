@@ -13,7 +13,6 @@ trait TheoryBuilder { this: Builder =>
     IModuleRef(
       theory.path.toPath, /* id */
       theory.name.toPath, /* name */
-      "theory" /* mod */
     )
   )
 

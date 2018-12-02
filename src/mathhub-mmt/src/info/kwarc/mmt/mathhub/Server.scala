@@ -4,8 +4,6 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library._
 import info.kwarc.mmt.mathhub.logger.LogServer
 
-import scala.util.Try
-
 class Server extends ServerExtension("mathhub") with LibraryServer with LogServer {
   override val logPrefix: String = "mathhub"
 

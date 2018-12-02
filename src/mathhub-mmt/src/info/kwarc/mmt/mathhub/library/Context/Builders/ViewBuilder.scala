@@ -13,7 +13,6 @@ trait ViewBuilder { this: Builder =>
     IModuleRef(
       view.path.toPath, /* id */
       view.name.toPath, /* name */
-      "view" /* kind */
     )
   )
 

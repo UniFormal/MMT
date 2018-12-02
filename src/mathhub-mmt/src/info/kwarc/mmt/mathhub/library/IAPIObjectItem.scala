@@ -336,17 +336,7 @@ sealed trait IModuleItem extends IAPIObjectItem {
 case class IModuleRef(
                        override val id: String,
                        override val name: String,
-
-                       mod: String, // "module" | "view"
-                     ) extends IModuleItem with IReference with INarrativeElement {
-  override def toJSONBuffer: JSONObjectBuffer = {
-    val buffer = super.toJSONBuffer
-
-    buffer.add("mod", JSONString(mod))
-
-    buffer
-  }
-}
+                     ) extends IModuleItem with IReference with INarrativeElement {}
 
 /** an actual module, i.e. a theory or a view */
 sealed trait IModule extends IModuleItem with IReferencable {
