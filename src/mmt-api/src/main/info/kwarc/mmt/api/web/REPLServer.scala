@@ -220,7 +220,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   private def createSession(path: DPath, id: String) : REPLSession = {
     val nsMap = controller.getNamespaceMap(path)
-    val doc = new Document(path, root=true, nsMap = nsMap)
+    val doc = new Document(path, level=FileLevel, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
     val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {

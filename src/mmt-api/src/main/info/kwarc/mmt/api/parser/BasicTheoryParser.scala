@@ -23,7 +23,7 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
       val name = LocalName(FilePath(uri.path).stripExtension.name)
       val mpath = parseHeader(ns?name)(unp)
       val thy = Theory.empty(mpath.doc, mpath.name, meta)
-      val doc = new Document(ns, root = true, inititems = List(MRef(ns, thy.path)))
+      val doc = new Document(ns, FileLevel, inititems = List(MRef(ns, thy.path)))
       controller.add(doc)
       controller.add(thy)
       parseBody(thy.path)(thy, unp)

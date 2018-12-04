@@ -147,7 +147,7 @@ class MizarCompiler extends archives.Importer {
     val article = ParsingController.buildArticle()
 
     val dpath = getDPath(docBase, name)
-    val doc = new Document(dpath, true)
+    val doc = new Document(dpath)
     TranslationController.add(doc)
     val th = new DeclaredTheory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh), Theory.noParams, Theory.noBase)
 

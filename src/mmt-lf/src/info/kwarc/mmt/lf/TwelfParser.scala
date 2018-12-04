@@ -102,7 +102,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
-    val doc = new Document(dpath, true)
+    val doc = new Document(dpath, FileLevel)
     add(doc)
     try {
        // add document metadata and source references

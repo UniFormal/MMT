@@ -69,7 +69,7 @@ class IMPSImportTask(val controller  : Controller,
 
 	def doDocument(es : List[DefForm], uri : URI) : BuildResult =
 	{
-    val doc = new Document(DPath((IMPSImportTask.rootdpath / "impsMath" / uri.path.last).uri.setExtension("omdoc")), false)
+    val doc = new Document(DPath((IMPSImportTask.rootdpath / "impsMath" / uri.path.last).uri.setExtension("omdoc")), SectionLevel)
     controller add doc
     controller add DRef(toplevelDoc.path,doc.path)
 
