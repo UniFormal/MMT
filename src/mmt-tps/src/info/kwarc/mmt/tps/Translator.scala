@@ -25,7 +25,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doDocument(d: omdoc) : BuildResult = {
       path = DPath((URI.http colon "gl.mathhub.info") / "tps" )// / d._meta._metas.collectFirst{case title(s) => s}.getOrElse(bt.inFile.name))
-      val doc = new Document(bt.narrationDPath, true)
+      val doc = new Document(bt.narrationDPath)
       controller add doc
       val modsM = d._modules map doModule(path)
       modsM.foreach(m => {controller add MRef(bt.narrationDPath, m.path)})
