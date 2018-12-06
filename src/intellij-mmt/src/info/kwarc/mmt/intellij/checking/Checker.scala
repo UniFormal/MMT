@@ -40,15 +40,15 @@ class Checker(controller: Controller,ev : ErrorViewer) {
   class Progresser(file : File, note : (String,String) => Unit) extends MMTTaskProgressListener {
     override def apply(p: MMTTaskProgress): Unit = p match {
       case Parsed(s) =>
-        val str = s match {
-          case c : Declaration => c.path.module.name + "?" + c.name
-          case _ => s.path.name
+        s match {
+          case c : Declaration =>
+            note("Checking " + c.path.module.name + "?" + c.name,file.toString)
+          case _ =>
         }
-        note("Checking " + str,file.toString)
       case _ =>
     }
     def done(d : Document) = {
-      note("Done.",file.toString)
+      note("Done: " + d.path.toString,file.toString)
       ev.finish(file,d)
     }
   }
@@ -56,11 +56,12 @@ class Checker(controller: Controller,ev : ErrorViewer) {
   class ErrorForwarder(file: File,error : ((Int,Int),String,String,List[String]) => Unit) extends ErrorHandler {
 
     override protected def addError(e: api.Error): Unit = {
-      val (reg,main,extra) = processError(e)
-      error((reg.start.offset,reg.length),file.toString,main,extra)
+      val (reg,main,extra,isWarning) = processError(e)
+
+      error((reg.start.offset,reg.length),file.toString,if (isWarning) "Warning: "+ main else main,extra)
     }
 
-    def processError(e: api.Error): (SourceRegion, String, List[String]) = {
+    def processError(e: api.Error): (SourceRegion, String, List[String], Boolean) = {
       import info.kwarc.mmt.api._
       import archives.source
       import objects._
@@ -69,7 +70,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
 
       e match {
         case s: SourceError =>
-          (s.ref.region, s.mainMessage, s.extraMessages)
+          (s.ref.region, s.mainMessage, s.extraMessages, s.level == Level.Warning)
         case e: Invalid =>
           var mainMessage = e.shortMsg
           var extraMessages: List[String] = e.extraMessage.split("\n").toList
@@ -105,9 +106,9 @@ class Checker(controller: Controller,ev : ErrorViewer) {
             mainMessage = "error with unknown location: " + mainMessage
             SourceRef(utils.FileURI(file), SourceRegion(SourcePosition(0, 0, 0), SourcePosition(0, 0, 0)))
           }
-          (ref.region, mainMessage, extraMessages)
+          (ref.region, mainMessage, extraMessages,e.level == Level.Warning)
         case e: Error =>
-          (SourceRegion.none, "error with unknown location: " + e.getMessage, e.extraMessage.split("\n").toList)
+          (SourceRegion.none, "error with unknown location: " + e.getMessage, e.extraMessage.split("\n").toList,e.level==Level.Warning)
       }
     }
   }

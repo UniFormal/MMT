@@ -4,6 +4,7 @@ import java.awt.{Dimension, Font, GridBagConstraints, GridBagLayout, ScrollPane}
 import java.awt.event.{ActionEvent, ActionListener, MouseAdapter, MouseEvent}
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.gui.MMTElemAsset
 import javax.swing._
 import ontology._
 import org.gjt.sp.jedit._

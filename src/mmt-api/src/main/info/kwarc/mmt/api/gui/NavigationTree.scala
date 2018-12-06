@@ -1,6 +1,13 @@
 package info.kwarc.mmt.api.gui
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DefinedModule, Module, Theory}
+import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
+import javax.swing.tree.DefaultMutableTreeNode
 import parser._
 import utils._
 
@@ -44,3 +51,283 @@ abstract class NavigationTreeElementInfo {
   def region: SourceRegion
 }
 
+trait NavigationTreeElements {
+
+}
+
+abstract class NavigationTreeBuilder(controller:Controller) {
+  def makeDocument(doc : Document,region : SourceRegion) : MMTElemAsset
+  def makeNRef(uri : Path,region : SourceRegion) : MMTURIAsset
+  def makeModule(mod : Module, region : SourceRegion) : MMTElemAsset
+  def makeSection(s : String): MMTAuxAsset
+  def makeDeclaration(dec : Declaration, region : SourceRegion) : MMTElemAsset
+  def makeComponent(t : Term,cont : Context, parent : CPath, region: SourceRegion): MMTObjAsset
+  def makeTerm(t : Term, pragmatic : Term, cont : Context, parent : CPath, label : String, region : SourceRegion) : MMTObjAsset
+  def makeNotation(owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, region : SourceRegion) : MMTNotAsset
+  def makeVariableInContext(con : Context, vd : VarDecl,parent: CPath, region: SourceRegion) : MMTObjAsset
+
+  protected def moduleLabel(m: Module) = (m match {
+    case _ : Theory => "theory"
+    case _: modules.View => "view"
+  }) + " " + m.path.last
+  protected def declarationLabel(dec : Declaration) = dec match {
+    case Include(_, from,_) => "include " + from.last
+    case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
+    case r: RuleConstant => r.feature
+    case d => d.feature + " " + d.name.toStr(true)
+  }
+  protected def notationLabel(comp : NotationComponentKey) = comp match {
+    case ParsingNotationComponent => "notation (parsing)"
+    case PresentationNotationComponent => "notation (presentation)"
+    case VerbalizationNotationComponent => "notation (verbalization)"
+  }
+
+  private def getRegion(e: metadata.HasMetaData) : Option[SourceRegion] = SourceRef.get(e).map(_.region)
+
+  /* build the sidekick outline tree: document node */
+  def buildTreeDoc(node: DefaultMutableTreeNode, doc: Document) {
+    val reg = getRegion(doc) getOrElse SourceRegion(SourcePosition(0,0,0),SourcePosition(0,0,0))
+    val child = new DefaultMutableTreeNode(makeDocument(doc,reg))
+    node.add(child)
+    doc.getDeclarations foreach {
+      case d: Document =>
+        buildTreeDoc(child, d)
+      case r: NRef =>
+        val rReg = getRegion(r) getOrElse reg
+        val rChild = new DefaultMutableTreeNode(makeNRef(r.target,rReg))
+        r match {
+          case d: DRef =>
+            child.add(rChild)
+          case m: MRef =>
+            try {
+              val mod = controller.localLookup.getModule(m.target)
+              buildTreeMod(child, mod, Context.empty, reg)
+            } catch {case e: Error =>
+              // graceful degradation in case module could not be parsed
+              child.add(rChild)
+            }
+          case s: SRef =>
+        }
+      case oe: opaque.OpaqueElement =>
+    }
+  }
+
+  /* build the sidekick outline tree: module node */
+  private def buildTreeMod(node: DefaultMutableTreeNode, mod: Module, context: Context, defaultReg: SourceRegion) {
+    val reg = getRegion(mod) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+    val child = new DefaultMutableTreeNode(makeModule(mod,reg))
+    node.add(child)
+    buildTreeComps(child, mod, context, reg)
+    mod match {
+      case m: DeclaredModule =>
+        val defElab = m.getDeclarations.filter(_.getOrigin == ElaborationOfDefinition)
+        if (defElab.nonEmpty) {
+          val elabChild = new DefaultMutableTreeNode(makeSection("-- flat definition --"))
+          child.add(elabChild)
+          defElab foreach {d => buildTreeDecl(elabChild, m, d, context ++ m.getInnerContext, reg)}
+        }
+        val incls = m.getDeclarations.filter {d => Include.unapply(d).isDefined && d.isGenerated}
+        if (incls.nonEmpty) {
+          val inclsChild = new DefaultMutableTreeNode(makeSection("-- flat includes --"))
+          child.add(inclsChild)
+          incls foreach {d => buildTreeDecl(inclsChild, m, d, context ++ m.getInnerContext, reg)}
+        }
+        m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
+      case m: DefinedModule =>
+    }
+  }
+  /** build the sidekick outline tree: declaration (in a module) node */
+  private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion) {
+    val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+    dec match {
+      case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
+        buildTreeMod(node, nm.module, context, reg)
+        return
+      case _ =>
+    }
+    val child = new DefaultMutableTreeNode(makeDeclaration(dec,reg))
+    node.add(child)
+    buildTreeComps(child, dec, context, reg)
+    dec match {
+      case ce: ContainerElement[Declaration]@unchecked => // declarations can only contain declarations
+        val contextInner = context ++ controller.getExtraInnerContext(ce)
+        dec.getDeclarations foreach {d => buildTreeDecl(child, ce, d, contextInner, reg)}
+      case _ =>
+    }
+    // a child with all declarations elaborated from dec
+    val elab = parent.getDeclarations.filter(_.getOrigin == ElaborationOf(dec.path))
+    if (elab.nonEmpty) {
+      val elabChild = new DefaultMutableTreeNode(makeSection("-- elaboration --"))
+      child.add(elabChild)
+      elab foreach {e => buildTreeDecl(elabChild, parent, e, context, defaultReg)}
+    }
+  }
+
+  /** add child nodes for all components of an element */
+  private def buildTreeComps(node: DefaultMutableTreeNode, ce: ContentElement, context: Context, defaultReg: SourceRegion) {
+    ce.getComponents foreach {
+      case DeclarationComponent(comp, cont: AbstractTermContainer) if cont.get.isDefined =>
+        buildTreeComp(node, ce.path $ comp, cont.get.get, context, defaultReg)
+      case NotationComponent(comp, cont) =>
+        buildTreeNot(node, ce.path, cont, comp, defaultReg)
+      case _ =>
+    }
+  }
+
+  /** build the sidekick outline tree: component of a (module or symbol level) declaration */
+  private def buildTreeComp(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, defaultReg: SourceRegion) {
+    val reg = getRegion(t) getOrElse SourceRegion.none
+    val child = new DefaultMutableTreeNode(makeComponent(t,context,parent,reg))//,t,context,parent,parent.component.toString,reg))
+    node.add(child)
+    buildTreeTerm(child, parent, t, context, defaultReg)
+  }
+
+  /** build the sidekick outline tree: notations */
+  private def buildTreeNot(node: DefaultMutableTreeNode, owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, defaultReg: SourceRegion) {
+    val reg = getRegion(cont(comp).get) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+    val child = new DefaultMutableTreeNode(makeNotation(owner,cont,comp,reg))
+    node.add(child)
+  }
+
+  /** build the sidekick outline tree: context node (each VarDecl is added individually) */
+  private def buildTreeCont(node: DefaultMutableTreeNode, parent: CPath, con: Context, context: Context, defaultReg: SourceRegion) {
+    con mapVarDecls {case (previous, vd @ VarDecl(_, _, tp, df, _)) =>
+      val reg = getRegion(vd) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
+      val currentContext = context ++ previous
+      val child = new DefaultMutableTreeNode(makeVariableInContext(currentContext,vd,parent,reg))
+      node.add(child)
+      (tp.toList:::df.toList) foreach {t =>
+        buildTreeTerm(child, parent, t, currentContext, reg)
+      }
+    }
+  }
+
+  /** build the sidekick outline tree: (sub)term node */
+  private def buildTreeTerm(node: DefaultMutableTreeNode, parent: CPath, t: Term, context: Context, _unused_defaultReg: SourceRegion) {
+    var extraLabel = ""
+    val reg = getRegion(t) getOrElse {
+      extraLabel = " [not in source]" // lack of source region indicates inferred subterms
+      SourceRegion.none
+    }
+    val tP = controller.pragmatic.mostPragmatic(t)
+    val label = tP match {
+      case OMV(n) => n.toString + " (Var)"
+      case OMS(p) => p.name + " (?" + p.module.name + ")"
+      case OMID(p) => p.name.toString
+      case l: OMLITTrait => l.toString
+      case OML(nm,_,_,_,_) => nm.toString
+      case OMSemiFormal(_) => "unparsed: " + tP.toString
+      case OMA(OMS(p),_) => p.name + " (?" + p.module.name + ")"
+      case OMBINDC(OMS(p),_,_) => p.name + " (?" + p.module.name + ")"
+      case ComplexTerm(op, _,_,_) => op.name.last.toStr(true)
+      case OMA(OMID(p),_) => p.name.last.toStr(true)
+      case OMBINDC(OMID(p),_,_) => p.name.last.toStr(true)
+      case OMA(ct,args) => "OMA" // TODO probably shouldn't occur, but throws errors!
+    }
+    val asset = makeTerm(t,tP,context,parent,label+extraLabel,reg)// new MMTObjAsset(mmt, t, tP, context, parent, label+extraLabel, reg)
+    val child = new DefaultMutableTreeNode(asset)
+    node.add(child)
+    tP match {
+      case OML(_,tp,df,_,_) =>
+        (tp.toList:::df.toList) foreach {t =>
+          buildTreeTerm(child, parent, t, context, reg)
+        }
+      case OMBINDC(binder,cont, scopes) =>
+        if (! binder.isInstanceOf[OMID])
+          buildTreeTerm(child, parent, binder, context, reg)
+        buildTreeCont(child, parent, cont, context, reg)
+        scopes foreach {s =>
+          buildTreeTerm(child, parent, s, context ++ cont, reg)
+        }
+      case OMA(fun, args) =>
+        if (! fun.isInstanceOf[OMID])
+          buildTreeTerm(child, parent, fun, context, reg)
+        args.foreach(buildTreeTerm(child, parent, _, context, reg))
+      case _ => t.subobjects foreach {
+        case (_, o: Term) => buildTreeTerm(child, parent, o, context, reg)
+        case _ =>
+      }
+    }
+  }
+}
+
+/** Assets --------------- */
+
+
+/** node in the sidekick outline tree: common ancestor class
+  * @param name the label of the asset
+  * @param region the source region of the asset
+  */
+trait MMTAsset {
+  protected val label : String
+  val region : SourceRegion
+
+  /** the base URIto use in the context of this asset */
+  def getScope : Option[MPath]
+}
+
+/**
+  * a node for URIs
+  */
+trait MMTURIAsset extends {
+  val path : Path
+  protected val label = path.last
+  def getScope = path match {
+    case p: MPath => Some(p)
+    case _ => None
+  }
+}
+
+/** node for structural elements
+  * @param elem the node in the MMT syntax tree
+  */
+trait MMTElemAsset extends MMTAsset {
+  val elem : StructuralElement
+  def path = elem.path
+  def getScope : Option[MPath] = elem match {
+    case _ : NarrativeElement => None
+    case c : ContentElement => c match {
+      case t: DeclaredTheory => Some(t.path)
+      case v: modules.View => None //would have to be parsed to be available
+      case d: Declaration => Some(d.path.module)
+      case _ => None
+    }
+  }
+}
+
+/** node for objects
+  * @param term the node in the MMT syntax tree
+  * @param parent the component containing the term
+  * @param subobjectPosition the position in that term
+  */
+trait MMTObjAsset extends MMTAsset {
+  protected val controller : Controller
+  val obj: Obj
+  val pragmatic: Obj
+  val context: Context
+  val parent: CPath
+
+  def getScope = parent.parent match {
+    case cp: ContentPath => Some(cp.module)
+    case _ => None
+  }
+
+  /** tries to infer the type of this asset (may throw exceptions) */
+  def inferType: Option[Term] = {
+    obj match {
+      case t: Term =>
+        val thy = getScope.getOrElse(return None)
+        checking.Solver.infer(controller, Context(thy) ++ context, t, None)
+      case _ => None
+    }
+  }
+}
+
+trait MMTNotAsset extends MMTAsset {
+  protected val owner : ContentPath
+  protected val not : TextNotation
+  def getScope = Some(owner.module)
+}
+
+/** a dummy asset for structuring the tree */
+trait MMTAuxAsset  // extends enhanced.SourceAsset(label, -1, MyPosition(-1))

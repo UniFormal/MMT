@@ -3,7 +3,7 @@ package info.kwarc.mmt.jedit
 import java.awt.Dimension
 
 import info.kwarc.mmt.api._
-import gui.Swing
+import gui.{MMTObjAsset, Swing}
 import info.kwarc.mmt.api.modules.DeclaredView
 import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
@@ -52,7 +52,7 @@ class EditActions(mmtplugin: MMTPlugin) {
   def showNormalization(view: View, replace: Boolean) {
     val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
-      case oa: MMTObjAsset =>
+      case oa: JObjAsset =>
         val obj = oa.obj
         val objS = mmtplugin.controller.simplifier(obj, oa.context, true)
         val str = mmtplugin.asString(objS)
