@@ -21,6 +21,7 @@ import scala.xml.Elem
 class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document:" + level
+  /** FileLevel or ModuleLevel */
   def root: Boolean = List(FileLevel,ModuleLevel) contains level
   
   /** the containing document if root == false; otherwise, the URI without path */
