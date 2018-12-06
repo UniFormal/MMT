@@ -105,7 +105,7 @@ class GAPDocImporter extends Importer {
   def parseBook(n : Node)(implicit dpath : DPath, errorCont : ErrorHandler) {
     n.label match {
       case "Book" =>
-        val doc = new Document(dpath, true)
+        val doc = new Document(dpath, FileLevel)
         add(doc)
         val tname = LocalName("thy")
         count += 1

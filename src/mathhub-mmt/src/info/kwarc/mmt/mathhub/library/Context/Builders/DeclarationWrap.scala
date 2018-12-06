@@ -30,13 +30,11 @@ trait DeclarationWrap { this: MathHubAPIContext =>
   protected def getComponents(declaration: Declaration): List[IComponent] = {
     declaration.getComponents.flatMap({
       case DeclarationComponent(key, oc: AbstractObjectContainer) if oc.isDefined =>
-          log(s"got $key object of $declaration")
           Some(IComponent(key.toString, "object", oc.get.map(getPresentationOf).get))
       case DeclarationComponent(key, nc: NotationContainer) if nc.isDefined =>
-        log(s"got $key notation of $declaration")
         Some(IComponent(key.toString, "notation", nc.toString))
       case t =>
-        log(s"ignoring unknown or empty DeclarationComponent ${t.key} of $declaration")
+        logDebug(s"ignoring unknown or empty DeclarationComponent ${t.key} of $declaration")
         None
     })
   }

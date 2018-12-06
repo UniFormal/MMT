@@ -71,10 +71,14 @@ abstract class Test(archivepath : String,
         //controller.handleLine("clear")
         controller.handleLine("server on " + serverport.get)
       }
-    val shell = if (gotoshell) Some(Future {
-      Run.disableFirstRun = true
-      Run.main(Array())
-    }(scala.concurrent.ExecutionContext.global)) else None
+    val shell = if (gotoshell) Some({
+      val f = Future {
+        Run.disableFirstRun = true
+        Run.main(Array())
+      }(scala.concurrent.ExecutionContext.global)
+      Thread.sleep(1000)
+      f
+    }) else None
     run
     shell.foreach(f => Await.result(f,Duration.Inf))
 

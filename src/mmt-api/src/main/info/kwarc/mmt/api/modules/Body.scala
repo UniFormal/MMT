@@ -31,7 +31,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       /** the DPath of this Body as a document */
       val dpath = path.toMPath.toDPath
       /** this Body as a document (sharing the same metadata) */
-      val document = new Document(dpath, true, Some(self))
+      val document = new Document(dpath, ModuleLevel, Some(self))
       document.metadata = metadata
       /** call a function on all logical declarations and their parent document */
       def traverse(f: (Document,SRef) => Unit) {traverse(document, f)}

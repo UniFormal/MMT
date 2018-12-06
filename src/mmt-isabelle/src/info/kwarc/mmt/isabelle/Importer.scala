@@ -357,7 +357,7 @@ object Importer
       val (archive, thy_source_path, thy_doc_path) = Isabelle.theory_archive(thy_name)
 
       // document
-      val doc = new Document(thy_doc_path, root = true)
+      val doc = new Document(thy_doc_path, FileLevel)
       controller.add(doc)
 
       // theory content

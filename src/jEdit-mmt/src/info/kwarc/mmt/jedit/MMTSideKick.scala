@@ -112,7 +112,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          log("parsing " + path)
          // store the task for cancellation and progress reports
          mmt.progressTracker(buffer) = ps
-         ps.addListener(new LineInvalidator(buffer))
+         // ps.addListener(new LineInvalidator(buffer)) // commented out to see if this is the source of the line-display-duplication bug in jEdit/MMT
          // read the document
          val doc = controller.read(ps, true, true)(errorCont) match {
             case d: Document => d

@@ -28,7 +28,7 @@ class MMTILoop(controller: Controller) extends ILoop {
        if (r != IR.Success)
          println("binding of " + s + " failed")
      }
-     intp.
+     intp. // TODO is this needed?
      intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
          printError(intp.bind("controller", controller), "controller")

@@ -55,9 +55,10 @@ trait ModuleDefiniens extends StructuralElement {
   /** the TermContainer holding the definiens */
    val dfC : TermContainer
    /** the definiens as a Term */
+   @deprecated("this should be removed as the definiens is optional, it is only here because the definiens used to be mandatory", "")
    def df : Term
-   protected def innerString = " = " + df.toString
-   protected def innerNodes = getMetaDataNode ++ <definition>{df.toNode}</definition>
+   protected def innerString = dfC.get.map(df => " = " + df.toString).getOrElse("")
+   protected def innerNodes = getMetaDataNode ++ dfC.get.map(df => <definition>{df.toNode}</definition>).getOrElse(Nil)
    def getDeclarations = Nil
 }
 

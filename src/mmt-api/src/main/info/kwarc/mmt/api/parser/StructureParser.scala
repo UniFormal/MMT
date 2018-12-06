@@ -180,7 +180,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def apply(state: ParserState): (StructuralElement, ParserState) = {
     state.ps.parentInfo match {
        case IsRootDoc(dpath) =>
-          val doc = new Document(dpath, root = true, nsMap = state.namespaces)
+          val doc = new Document(dpath, FileLevel, nsMap = state.namespaces)
           seCont(doc)(state)
           logGroup {
             readInDocument(doc)(state)
@@ -384,7 +384,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "document" =>
           val name = readName
           val dpath = doc.path / name
-          val d = new Document(dpath, nsMap = state.namespaces)
+          val d = new Document(dpath, SectionLevel, nsMap = state.namespaces)
           seCont(d)
           logGroup {
             readInDocument(d)
@@ -571,7 +571,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   (name, nameTitle)
                }
                nextSection = nextSection / name
-               val innerDoc = new Document(docRoot / nextSection, contentAncestor = Some(mod))
+               val innerDoc = new Document(docRoot / nextSection, SectionInModuleLevel, contentAncestor = Some(mod))
                NarrativeMetadata.title.update(innerDoc, title)
                seCont(innerDoc)
             }

@@ -56,9 +56,10 @@ class XMLReader(controller: Controller) extends Logger {
       node match {
         case <omdoc>{modules @ _*}</omdoc> =>
            val base = Path.parseD(xml.attr(node, "base"), nsMap)
+           val level = DocumentLevel.parseO(xml.attr(node, "level")).getOrElse(FileLevel) // defaulting to file level for backwards compatibility
            val nsMapB = nsMap(base)
-           log("document with URI " + dpath + " found")
-           val d = new Document(dpath, root = true, nsMap = nsMapB)
+           log("document with URI " + dpath + " and level " + level + " found")
+           val d = new Document(dpath, level, nsMap = nsMapB)
            add(d,md)
            modules foreach {m => readIn(nsMapB, d, m)}
         case _ => throw ParseError("document expected: " + node)
@@ -94,7 +95,8 @@ class XMLReader(controller: Controller) extends Logger {
       node match {
          case <omdoc>{mods @_*}</omdoc> =>
             val dpath = doc.path / dname
-            val innerdoc = new Document(dpath)
+            // level attribute ignored
+            val innerdoc = new Document(dpath, SectionLevel)
             add(innerdoc, md)
             mods foreach (m => readIn(nsMap, innerdoc, m))
          case <opaque>{ops @_*}</opaque> =>
@@ -199,7 +201,8 @@ class XMLReader(controller: Controller) extends Logger {
       symbol match {
          case <omdoc>{dnodes @_*}</omdoc> =>
             val name = xml.attr(symbol, "name")
-            val innerDoc = new Document(docHome / name, contentAncestor = Some(body))
+            // level attribute ignored
+            val innerDoc = new Document(docHome / name, SectionInModuleLevel, contentAncestor = Some(body))
             add(innerDoc, md)
             dnodes.foreach {n =>
                readInModuleAux(home, innerDoc.path, nsMap, body, n)

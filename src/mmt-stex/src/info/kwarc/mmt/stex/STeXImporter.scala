@@ -196,7 +196,7 @@ class STeXImporter extends Importer {
     n.label match {
       case "omdoc" =>
         //creating document and implicit theory
-        implicit val doc = new Document(dpath, true)
+        implicit val doc = new Document(dpath, FileLevel)
         add(doc)
         //recursing into children
         n.child.foreach(translateModule)
@@ -219,7 +219,7 @@ class STeXImporter extends Importer {
           n.child.foreach(translateDeclaration(_)(doc, thy, errorCont))
         case "omgroup" => //recurse to find internal modules
           val name = getName(n, doc)
-          val newDoc = new Document(doc.path / name)
+          val newDoc = new Document(doc.path / name, SectionInModuleLevel)
           add(newDoc)
           n.child.foreach(n => translateModule(n)(newDoc, errorCont))
         case "metadata" => //TODO
@@ -404,7 +404,8 @@ class STeXImporter extends Importer {
         case "omgroup" | "theory" =>
           val name = getName(n, thy)
           val innerSect = localSection / name
-          val innerDoc = new Document(mpath.toDPath / innerSect, contentAncestor = Some(thy))
+          val level = if (n.label == "theory") ModuleLevel else SectionInModuleLevel
+          val innerDoc = new Document(mpath.toDPath / innerSect, level, contentAncestor = Some(thy))
           //NarrativeMetadata.title.update(innerDoc, title)
           add(innerDoc)
           n.child.foreach(c => translateDeclaration(c, innerSect))

@@ -159,8 +159,7 @@ class IMPSImporter extends Importer
       println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
     }
 
-    val doc = new Document(IMPSImportTask.docpath
-      , true)
+    val doc = new Document(IMPSImportTask.docpath, FileLevel)
     controller.add(doc)
 
     val importTask = new IMPSImportTask(controller, bf, tState,doc, index)

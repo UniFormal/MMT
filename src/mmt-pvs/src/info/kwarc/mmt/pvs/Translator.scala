@@ -139,7 +139,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
         })
       log("Translated: " + state.th.name)
 
-      val doc = new Document(bt.narrationDPath, true)
+      val doc = new Document(bt.narrationDPath, FileLevel)
       val ths = modsM map (m => {
         val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta), Theory.noParams, Theory.noBase)//,m.parameters)
         if (m.parameters.nonEmpty) {
