@@ -39,7 +39,7 @@ abstract class TypeCoercionRule(val head: GlobalName, under: List[GlobalName]) e
   }
   
   /** |- t=t':A  <--  |- t=t':lift(A):type */
-  object InEquality extends TypeBasedEqualityRule(under, head) {
+  object WithEquality extends TypeBasedEqualityRule(under, head) {
     def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History) = { 
       val r = solver.check(Equality(stack, tm1, tm2, Some(lift(tp))))(history + "lifting type")
       Some(r)
@@ -48,14 +48,14 @@ abstract class TypeCoercionRule(val head: GlobalName, under: List[GlobalName]) e
   }
   
   /** |- A Inh  <--  |- lift(A) Inh */
-  object InInhabitable extends InhabitableRule(head) {
+  object WithInhabitable extends InhabitableRule(head) {
     def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History) = {
       val r = solver.check(Inhabitable(stack, lift(term)))(history + "lifting")
       Some(r)
     }
   }
   
-  override def providedRules = super.providedRules ::: List(OnLeftSide, OnRightSide, InEquality, InInhabitable)
+  override def providedRules = super.providedRules ::: List(OnLeftSide, OnRightSide, WithEquality, WithInhabitable)
 }
 
 /** the typical case where lift(A) = Apply(operator, A) */  
