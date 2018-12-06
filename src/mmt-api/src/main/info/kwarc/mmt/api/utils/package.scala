@@ -110,7 +110,10 @@ package object utils {
    def disjoint[A](l: Seq[A], m: Seq[A]) = l.forall(a => ! m.contains(a))
    /** subset property of two lists (seen as sets) (fast if first argument is empty) */
    def subset[A](l: Seq[A], m: Seq[A]) = l.forall(a => m.contains(a))
-   
+   /** intersection of two lists */
+   def inter[A](l: Seq[A], m: Seq[A]) = l.filter(a => m.contains(a))
+   /** difference of two lists */
+   def diff[A](l: Seq[A], m: Seq[A]) = l.filter(a => !m.contains(a))
 
    /** variant of fold such that associate(List(a), unit)(comp) = a instead of comp(unit, a) */
    def associate[A](l: List[A], unit: A)(comp: (A,A) => A): A = l match {

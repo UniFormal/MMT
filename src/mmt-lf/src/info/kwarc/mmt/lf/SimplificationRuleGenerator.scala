@@ -15,10 +15,14 @@ import notations.ImplicitArg
 /**
  * convenience class for storing the names of an OuterInnerTerm
  *
- * @param implArgsOuter the positions of the implicit arguments of 'outer'
- * @param implArgsInner the positions of the implicit arguments of 'inner'
+ * @param before names of the before arguments (excluding implicit ones)
+ * @param after names of the after arguments (excluding implicit ones)
+ * @param inside names of the inside-arguments (excluding implicit ones)
+ * @param position of innner term (= before.length)
+ * @param implArgsOuter positions of the implicit arguments of 'outer' (counting from 0)
+ * @param implArgsInner positions of the implicit arguments of 'inner' (counting from 0)
  *
- * this represents a left hand side of the form
+ * this represents a left hand side of the form (excluding implicit arguments)
  *   outer(before,inner(inside),after)
  * where before, inside, after do not include the implicit arguments
  */
@@ -26,11 +30,15 @@ case class OuterInnerNames(outer: GlobalName, implArgsOuter: List[Int], before: 
                            innerPos: Int, inner: GlobalName, implArgsInner: List[Int], inside: List[LocalName], 
                            after: List[LocalName]
                            ) {
+   /** before:::inside:::after */
+   def allNames = (before:::inside:::after)
+   /** drops implicit arguments from before- and after-arguments */
    def explArgsOuter(allBefore: List[Term], allAfter: List[Term]): (List[Term],List[Term]) = {
       val b = allBefore.zipWithIndex.filterNot(p => implArgsOuter.contains(p._2)).map{_._1}
       val a = allAfter .zipWithIndex.filterNot(p => implArgsOuter.contains(p._2 + allBefore.length)).map{_._1}
       (b,a)
    }
+   /** drops implicit arguments from inside-arguments */
    def explArgsInner(allArgs: List[Term]): List[Term] =
       allArgs.zipWithIndex.filterNot(p => implArgsInner.contains(p._2)).map{_._1}
    def outerArity = implArgsOuter.length+before.length+1+after.length
@@ -174,7 +182,7 @@ class SimplificationRuleGenerator extends ChangeListener {
   
   private lazy val msc = new MatchStepCompiler(controller.globalLookup)
 
-  /** @param args implicit ::: List(t1, t2) for a rule t1 ~> t2 */
+  /** @param args implicit ::: List(t1, t2) for a rule {context} t1 ~> t2 */
   private def generateRule(c: symbols.Constant, context: Context, args: List[Term]) {
      val ruleName = c.name / SimplifyTag
      def addSimpRule(r: Rule) {
@@ -189,6 +197,9 @@ class SimplificationRuleGenerator extends ChangeListener {
      // match lhs to OMA(op, (var,...,var,OMA/OMID,var,...,var))
      lhs match {
        case OuterInnerTerm(names) =>
+         if (!utils.subset(utils.inter(rhs.freeVars, context.domain), names.allNames)) {
+           throw LocalError("implementation restriction: all free variables of right-hand side must occur in explicit arguments of left-hand side")
+         }
          // create and add the rule
          val desc = ruleName.toPath + ": " + present(lhs) + "  ~~>  " + present(rhs)
          val rule = new GeneratedDepthRule(c, desc, under, names, rhs)
@@ -268,7 +279,9 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
     /** timestamp to avoid regenerating this rule when 'from' has not changed */
     val validSince = from.tpC.lastChangeAnalyzed
 
-    /** the groups of indices of equal elements in 'bfrNames ::: insNames ::: aftNames' */
+    /** the groups of indices of equal elements in 'names.before ::: names.inside ::: names.after'
+     *  indices are counted from 0
+     */
     private val nonlinearityConstraints: List[(LocalName,List[Int])] = {
        val all = (names.before ::: names.inside ::: names.after).zipWithIndex
        val grouped: List[(LocalName,List[(LocalName,Int)])] = all.groupBy(_._1).toList

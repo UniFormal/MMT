@@ -12,7 +12,7 @@ import checking._
  */
 class SimpleIrrelevanceRule(p : GlobalName, default: Option[Term] = None) extends TypeBasedSolutionRule(List(Apply.path), p) {
   def solve(solver: Solver)(tp: Term)(implicit stack: Stack, history: History): Option[Term] = {
-    solver.prove(tp) orElse {default flatMap {d =>
+    solver.prove(tp, allowUnknowns = false) orElse {default flatMap {d =>
       tp match {
         case Apply(OMS(`p`),prop) =>
           solver.warning("using default value to solve " + solver.presentObj(tp))
