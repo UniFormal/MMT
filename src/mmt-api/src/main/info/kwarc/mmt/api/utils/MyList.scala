@@ -14,6 +14,15 @@ case class MyList[A](l: List[A]) {
   /** like map but with a partial function; removes all results that are <code>None</code> */
   def mapPartial[B](f: A => Option[B]): List[B] = l.map(f).filter(_.isDefined).map(_.get)
 
+  /** values of l (in same order) that yield biggest result under f */
+  def argMax[B](f: A => B)(implicit order: Ordering[B]): List[A] = {
+    if (l.isEmpty) Nil else {
+      val lF = l.map(f)
+      val max = lF.max
+      (l zip lF).filter(_._2 == max).map(_._1)
+    }
+  }
+  
   def quotient[B](f: A => B): List[(B, List[A])] = {
     var in: List[(B, A)] = l.map(x => (f(x), x))
     var out: List[(B, List[A])] = Nil
@@ -32,13 +41,11 @@ case class MyList[A](l: List[A]) {
   }
 
   /** do not print start and end for lists with a single element */
-  def mkString(start: String, sep: String, end: String): String =
+  def myMkString(start: String, sep: String, end: String): String =
     if (l.length == 1) l.mkString(sep) else l.mkString(start, sep, end)
 }
 
 object MyList {
-  implicit def fromList[A](l: List[A]): MyList[A] = new MyList[A](l)
-
   implicit def toList[A](m: MyList[A]): List[A] = m.l
 }
 

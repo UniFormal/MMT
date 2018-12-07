@@ -4,7 +4,6 @@ import objects._
 import checking._
 import objects.Conversions._
 import uom._
-import utils.MyList.fromList
 
 object Common {
    /** checks that a type can be quantified over

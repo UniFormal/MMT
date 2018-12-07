@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import utils._
-import utils.MyList.fromList
 import scala.xml.Node
 import scala.collection.mutable.{HashSet,HashMap}
 

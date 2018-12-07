@@ -9,14 +9,12 @@ import symbols._
 import patterns._
 import objects._
 import notations._
+import libraries.AlreadyDefined
 
-import utils.MyList.fromList
 import Theory._
 
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
-import info.kwarc.mmt.api.libraries.AlreadyDefined
-import sun.management.MappedMXBeanType.InProgress
 
 /** used by [[MMTStructureSimplifier]] */
 @deprecated("needs review","")

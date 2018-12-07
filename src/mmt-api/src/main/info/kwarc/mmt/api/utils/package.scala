@@ -85,6 +85,9 @@ package object utils {
     val endL = end.length
   }
 
+   /** implicit conversion into lists with extra functionality */
+   implicit def fromList[A](l: List[A]): MyList[A] = new MyList[A](l)
+  
    /** turns a list into a string by inserting a separator */
    def listToString[A](l: Iterable[A], sep: String) = l.map(_.toString).mkString(sep)
 

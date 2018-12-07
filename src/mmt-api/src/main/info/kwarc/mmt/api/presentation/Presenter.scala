@@ -87,18 +87,19 @@ object Presenter {
     *     - from a middle argument into a left- and right-closed notation
     *     - the right argument of a right-open notation into a left-closed notation
     *   these cases are handled below, but some heuristic fine-tuning is necessary
+    * - suppress brackets for left/right association
     * - when multiple arguments occur without delimiter, brackets are usually needed
     * - generally, omitting brackets may screw up parsing
     */
    def bracket(outerPrecedence: Precedence, delimitation: Int, innerNotation: TextNotation) : Int = {
       val innerPrecedence = innerNotation.precedence
-      if (outerPrecedence == Precedence.neginfinite || innerPrecedence == Precedence.infinite)
+      if (outerPrecedence == Precedence.neginfinite || innerPrecedence == Precedence.infinite) {
          // brackets explicitly prevented
          -1
-      else if (!innerNotation.isLeftOpen && !innerNotation.isRightOpen)
+      } else if (!innerNotation.isLeftOpen && !innerNotation.isRightOpen) {
          // inner notations brings its own brackets
          -1
-      else {
+      } else {
          val yes = delimitation match {
             //the = case puts brackets into x * (y / z) if * and / have the same precedence
             case 1 => outerPrecedence >= innerPrecedence && (innerNotation.isLeftOpen) // || innerNotation.arity.numNormalArgs > 1) // the commented-out part does not seem to make sense but it is kept for inspiration
