@@ -483,5 +483,6 @@ class GeneratedSolutionRule(from: Constant, desc: String, names: OuterInnerNames
          // TODO build implicit arguments of outer (currently guaranteed to be empty)
          val inverted = ApplyGeneral(OMS(names.outer), before ::: j.tm2 :: after)
          Some((Equality(j.stack, inverted, t, None), "inverting " + names.inner.name))
+      case _ => None
    }
 }

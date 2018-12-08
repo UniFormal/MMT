@@ -223,4 +223,18 @@ class MMTPluginInterface(homestr : String) {
       = Ob(vd.name.toString,region,parent,con,vd,vd)
       //Ret(vd.name.toString,Some(region))
   }
+
+  def buildFile(f: String) {
+    val file = File(f)
+    val errorCont = new ErrorHandler {
+      override protected def addError(e: Error): Unit = {}
+    }
+    if (file.isFile) {
+      try {
+        controller.build(file)(errorCont)
+      } catch {
+        case e: Error => errorCont(e)
+      }
+    }
+  }
 }

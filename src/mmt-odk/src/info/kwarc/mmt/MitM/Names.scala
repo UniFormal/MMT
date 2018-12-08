@@ -180,7 +180,7 @@ object MitM {
   private val natliterals = path ? "NatLiterals"
   val nat: GlobalName = natliterals ? "nat_lit"
   val pos: GlobalName = natliterals ? "pos_lit"
-  val succ: GlobalName = natliterals ? "nat_lit_succ"
+  val succ: GlobalName = natliterals ? "succ_nat_lit"
 
 
   val n = OMS(nat)

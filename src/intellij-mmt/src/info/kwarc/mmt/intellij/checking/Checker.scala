@@ -58,7 +58,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
     override protected def addError(e: api.Error): Unit = {
       val (reg,main,extra,isWarning) = processError(e)
 
-      error((reg.start.offset,reg.length),file.toString,if (isWarning) "Warning: "+ main else main,extra)
+      error((reg.start.offset,reg.length),file.toString,if (isWarning) "Warning: " + extra.last else main,extra)
     }
 
     def processError(e: api.Error): (SourceRegion, String, List[String], Boolean) = {
@@ -85,7 +85,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
               // find first WFJudgement whose region is within the failed checking unit
               declOpt.flatMap { decl =>
                 SourceRef.get(decl).flatMap { bigRef =>
-                  steps.mapFind { s =>
+                  steps.map { s =>
                     s.removeWrappers match {
                       case j: WFJudgement =>
                         SourceRef.get(j.wfo) flatMap { smallRef =>
@@ -98,7 +98,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
                       case _ =>
                         None
                     }
-                  }
+                  }.collectFirst{case Some(e) => e}
                 }.orElse(declOpt)
               }
           }
@@ -106,7 +106,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
             mainMessage = "error with unknown location: " + mainMessage
             SourceRef(utils.FileURI(file), SourceRegion(SourcePosition(0, 0, 0), SourcePosition(0, 0, 0)))
           }
-          (ref.region, mainMessage, extraMessages,e.level == Level.Warning)
+          (ref.region, mainMessage, extraMessages.filter(_.trim != ""),e.level == Level.Warning)
         case e: Error =>
           (SourceRegion.none, "error with unknown location: " + e.getMessage, e.extraMessage.split("\n").toList,e.level==Level.Warning)
       }
