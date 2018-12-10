@@ -127,6 +127,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                 if (tmS == t) {
                   throw ImplementationError("rule " + rule + " simplified term to itself: " + tmS)
                 }
+                if (tmS.freeVars.exists(n => !context.isDeclared(n)))
+                  true
                 log(rule.toString + ": " + t + " ~> " + tmS)
                 return traverse(tmS.from(t))
               case cannot: CannotSimplify =>

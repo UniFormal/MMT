@@ -727,7 +727,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val bi = new BranchInfo(h, getCurrentBranch)
       addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
       activateRepeatedly
-      if (errors.nonEmpty) {
+      if (errors.exists(_.level >= Level.Error)) {
         // definitely disproved
         false
       } else {

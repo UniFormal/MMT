@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.symbols._
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
   /** the first delimiter of this notation, which triggers the rule */
-  def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
-    case d: Delimiter => d.expand(name, alias).text
-    case SimpSeqArg(_, Delim(s), _) => s
-    case LabelSeqArg(_,Delim(s),_,_) => s
+  val firstDelim: Option[Delim] = notation.parsingMarkers collectFirst {
+    case d: Delimiter => d.expand(name, alias)
+    case SimpSeqArg(_, d, _) => d
+    case LabelSeqArg(_,d,_,_) => d
   }
+  val firstDelimLength = firstDelim.map(_.text.length).getOrElse(-1)
 }
 
 /** a set of parsing rules with the same precedence, see [[NotationOrder]] */

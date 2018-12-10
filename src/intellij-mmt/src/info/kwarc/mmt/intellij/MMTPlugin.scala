@@ -2,11 +2,19 @@ package info.kwarc.mmt.intellij
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.lmh.MathHub
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend.{Controller, MMTConfig, ReportHandler}
+import info.kwarc.mmt.api.gui._
+import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
+import info.kwarc.mmt.api.objects.{Context, Obj, Term, VarDecl}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
+import javax.swing.tree.DefaultMutableTreeNode
 
 import scala.collection.mutable
+import scala.util.Try
 
 class MMTPluginInterface(homestr : String) {
   val home = File(homestr)
@@ -160,5 +168,73 @@ class MMTPluginInterface(homestr : String) {
     /** MathHub Folder */
     controller.setHome(home)
     controller.addArchive(home)
+  }
+
+  def syntaxTree(node : DefaultMutableTreeNode, docS : String) : Unit = {
+    val dp = Path.parseD(docS,NamespaceMap.empty)
+    val doc = Try(controller.getDocument(dp)).getOrElse{return ()}
+    TreeBuilder.buildTreeDoc(node,doc)
+  }
+
+  private object TreeBuilder extends NavigationTreeBuilder(controller) {
+    abstract class Ret(reg : Option[SourceRegion]) extends {
+      protected val label : String
+
+      override def toString: String = label
+      def getOffset : Int = reg.getOrElse(return 0).start.offset
+      def getEnd : Int = reg.getOrElse(return 0).end.offset
+    }
+    case class Doc(elem : Document, region: SourceRegion) extends Ret(Some(region)) with MMTElemAsset {
+      val label = elem.name.last.toString
+    }
+    case class Mod(elem : modules.Module, region:SourceRegion) extends Ret(Some(region)) with MMTElemAsset {
+      val label = elem.name.toString
+    }
+    case class Dec(elem : Declaration, region:SourceRegion) extends Ret(Some(region)) with MMTElemAsset {
+      val label = elem.name match {
+        case LocalName(ComplexStep(mp) :: Nil) => "include ?" + mp.name
+        case _ => elem.name.toString
+      }
+    }
+    val ctrl = controller
+    case class Ob(label : String,region:SourceRegion, parent : CPath,context : Context,obj : Obj,pragmatic:Obj)
+      extends Ret(Some(region)) with MMTObjAsset {
+      val controller = ctrl
+    }
+    case class Not(owner : ContentPath, cont: NotationContainer, comp: NotationComponentKey, region : SourceRegion) extends Ret(Some(region)) with MMTNotAsset {
+      val not = cont(comp).get
+      val label = not.toString
+    }
+    case class Text(label : String) extends Ret(None) with MMTAuxAsset
+    case class Uri(path:Path, region : SourceRegion) extends Ret(Some(region)) with MMTURIAsset
+
+    override def makeDocument(doc: Document, region: SourceRegion) = Doc(doc,region)
+    override def makeModule(mod: modules.Module, region: SourceRegion) = Mod(mod, region)
+    override def makeDeclaration(dec: Declaration, region: SourceRegion) = Dec(dec,region)
+    override def makeComponent(t: Term, cont: Context, parent: CPath, region: SourceRegion)
+      = Ob(parent.component.toString,region,parent,cont,t,t)//Ret(parent.component.toString,Some(region))
+    override def makeTerm(t: Term, pragmatic: Term, cont: Context, parent: CPath, label: String, region: SourceRegion)
+      = Ob(label,region,parent,cont,t,pragmatic)//= Ret(label,Some(region))
+    override def makeNotation(owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, region: SourceRegion)
+      = Not(owner,cont,comp,region)
+    override def makeSection(s: String) = Text(s)
+    override def makeNRef(uri: Path, region: SourceRegion) = Uri(uri,region)
+    override def makeVariableInContext(con: Context, vd: VarDecl, parent: CPath, region: SourceRegion)
+      = Ob(vd.name.toString,region,parent,con,vd,vd)
+      //Ret(vd.name.toString,Some(region))
+  }
+
+  def buildFile(f: String) {
+    val file = File(f)
+    val errorCont = new ErrorHandler {
+      override protected def addError(e: Error): Unit = {}
+    }
+    if (file.isFile) {
+      try {
+        controller.build(file)(errorCont)
+      } catch {
+        case e: Error => errorCont(e)
+      }
+    }
   }
 }

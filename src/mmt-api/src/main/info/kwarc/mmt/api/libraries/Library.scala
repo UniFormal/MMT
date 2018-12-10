@@ -6,7 +6,7 @@ import documents._
 import modules._
 import objects._
 import symbols._
-import utils.MyList._
+import utils._
 
 import scala.collection._
 import scala.ref.SoftReference

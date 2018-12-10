@@ -21,7 +21,8 @@ import scala.xml.Elem
 class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document:" + level
-  def root: Boolean = level == FileLevel
+  /** not a section (which is stored as part of some other document) */
+  def root: Boolean = !(List(SectionLevel,SectionInModuleLevel) contains level)
   
   /** the containing document if root == false; otherwise, the URI without path */
   def parentOpt = if (root) None else Some(parent)

@@ -32,6 +32,10 @@ class MitMTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.
 */
 
 object Orders {
+  val mitmcore = List(
+    "properties.mmt"
+    ,"arithmetics/naturals.mmt"
+  )
   val mitmsmglom = List(
     "arithmetics/naturals.mmt"
     ,"arithmetics/integers.mmt"

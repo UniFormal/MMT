@@ -3,13 +3,14 @@ package info.kwarc.mmt.jedit
 import info.kwarc.mmt.api._
 import frontend._
 import objects._
-
 import org.gjt.sp.jedit._
 import textarea._
 import syntax._
 import javax.swing.text.Segment
 import java.awt.Font
 import java.awt.font.TextAttribute
+
+import info.kwarc.mmt.api.gui.MMTObjAsset
 import javax.swing.ImageIcon
 
 /** A TextAreaExtension that is added to every EditPane
