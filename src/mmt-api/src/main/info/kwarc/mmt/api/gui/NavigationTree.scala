@@ -3,13 +3,14 @@ package info.kwarc.mmt.api.gui
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DefinedModule, Module, Theory}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import javax.swing.tree.DefaultMutableTreeNode
 import parser._
 import utils._
+
+import javax.swing.tree.DefaultMutableTreeNode
 
 /** abstraction for rendering trees in different UIs */
 abstract class NavigationTreeImplementation[T <: NavigationTree, N <: NavigationTreeElement] {
@@ -119,7 +120,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     node.add(child)
     buildTreeComps(child, mod, context, reg)
     mod match {
-      case m: DeclaredModule =>
+      case m: Module =>
         val defElab = m.getDeclarations.filter(_.getOrigin == ElaborationOfDefinition)
         if (defElab.nonEmpty) {
           val elabChild = new DefaultMutableTreeNode(makeSection("-- flat definition --"))
@@ -133,7 +134,6 @@ abstract class NavigationTreeBuilder(controller:Controller) {
           incls foreach {d => buildTreeDecl(inclsChild, m, d, context ++ m.getInnerContext, reg)}
         }
         m.getPrimitiveDeclarations foreach {d => buildTreeDecl(child, m, d, context ++ m.getInnerContext, reg)}
-      case m: DefinedModule =>
     }
   }
   /** build the sidekick outline tree: declaration (in a module) node */
@@ -287,8 +287,8 @@ trait MMTElemAsset extends MMTAsset {
   def getScope : Option[MPath] = elem match {
     case _ : NarrativeElement => None
     case c : ContentElement => c match {
-      case t: DeclaredTheory => Some(t.path)
-      case v: modules.View => None //would have to be parsed to be available
+      case t: Theory => Some(t.path)
+      case v: View => None //would have to be parsed to be available
       case d: Declaration => Some(d.path.module)
       case _ => None
     }

@@ -12,10 +12,11 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 
+@deprecated("this is experimental and may still be removed", "")
 class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = { 
+  def elaborate(parent: Module, dd: DerivedDeclaration) = { 
     //val name = LocalName(dd.path.last)
     implicit val parentTerm = dd.path
     val context = Type.getParameters(dd)

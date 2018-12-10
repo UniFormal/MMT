@@ -146,13 +146,13 @@ class GenericScalaExporter extends Exporter {
 
   /* top level export methods */
 
-  def exportTheory(t: DeclaredTheory, bf: BuildTask) {
+  def exportTheory(t: Theory, bf: BuildTask) {
     outputHeader(t.parent.doc)
     outputTrait(t)
     outputCompanionObject(t)
   }
 
-  def exportView(v: DeclaredView, bf: BuildTask) {}
+  def exportView(v: View, bf: BuildTask) {}
 
   /** produces code to instantiate [[uom.DocumentScala]] to iterate over all content */
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
@@ -190,14 +190,14 @@ class GenericScalaExporter extends Exporter {
   /**
    * generates the trait, empty by default, override as needed
    */
-  protected def outputTrait(t: DeclaredTheory) {}
+  protected def outputTrait(t: Theory) {}
 
   /* the companion object */
 
   /** generates a companion object with fields for the MMT URIs
     * @param extraFields fields appended to the object
     */
-  protected def outputCompanionObject(t: DeclaredTheory) {
+  protected def outputCompanionObject(t: Theory) {
     val tpathS = t.path.toString
     val name = nameToScala(t.name)
     rh.writeln(s"/** Convenience functions for the MMT URIs of the declarations in the theory $tpathS\n" +

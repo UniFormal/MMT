@@ -46,8 +46,8 @@ trait StructurePresenter extends Exporter {
    }
 
    def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
-   def exportTheory(thy : DeclaredTheory, bf: BuildTask) = apply(thy, true)(rh)
-   def exportView(view : DeclaredView, bf: BuildTask) = apply(view, true)(rh)
+   def exportTheory(thy : Theory, bf: BuildTask) = apply(thy, true)(rh)
+   def exportView(view : View, bf: BuildTask) = apply(view, true)(rh)
    /** does nothing */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }

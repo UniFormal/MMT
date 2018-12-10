@@ -14,10 +14,10 @@ object Combinators {
 
 object Common {
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
-  def anonymize(solver: CheckingCallback, namedTheory: DeclaredTheory)(implicit stack: Stack, history: History): AnonymousTheory = {
+  def anonymize(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
     // collect included theories
     val includes = namedTheory.getIncludesWithoutMeta.flatMap {i => solver.lookup.getO(i) match {
-      case Some(dt: DeclaredTheory) =>
+      case Some(dt: Theory) =>
         List(dt)
       case Some(se) =>
         solver.error("ignoring include of " + se.path)
@@ -53,7 +53,7 @@ object Common {
       // named theories
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
-          case Some(th: DeclaredTheory) =>
+          case Some(th: Theory) =>
             lazy val default = anonymize(solver, th)
             th.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
             val at = th.dfC.normalized match {
@@ -178,7 +178,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
     val removeReals = thyAnon.decls.flatMap {
       case oml @ RealizeOML(p, _) =>
         solver.lookup.getO(p) match {
-          case Some(dt: DeclaredTheory) =>
+          case Some(dt: Theory) =>
             if (oldNew.exists {case (old,nw) => dt.declares(old)})
               List(oml)
             else

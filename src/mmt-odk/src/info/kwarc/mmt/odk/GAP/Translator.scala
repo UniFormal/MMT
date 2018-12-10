@@ -27,7 +27,7 @@ object Translator {
 
 class Translator(controller: Controller, bt: BuildTask, index: Document => Unit, log : GAPJSONImporter) {
 
-  private val theories : mutable.HashMap[MPath, DeclaredTheory] = mutable.HashMap.empty
+  private val theories : mutable.HashMap[MPath, Theory] = mutable.HashMap.empty
   private val docs : mutable.HashMap[DPath, Document] = mutable.HashMap.empty /*((Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),
   new Document(Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),root = true))) */
 

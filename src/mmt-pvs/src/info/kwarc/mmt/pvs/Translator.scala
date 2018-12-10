@@ -131,7 +131,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
       val modsM = d._modules map doModule
         modsM.flatMap(_.deps).distinct.foreach(d => {
           controller.getO(d) match {
-            case Some(th : DeclaredTheory) =>
+            case Some(th: Theory) =>
             case _ =>
               log("Unresolved dependency: " + d + " in " +modsM.head.path)
               throw Dependency(modsM.head.deps.head)
@@ -141,7 +141,7 @@ class PVSImportTask(val controller: Controller, bt: BuildTask, index: Document =
 
       val doc = new Document(bt.narrationDPath, FileLevel)
       val ths = modsM map (m => {
-        val theory = new DeclaredTheory(m.parent,m.name,Some(m.meta), Theory.noParams, Theory.noBase)//,m.parameters)
+        val theory = new Theory(m.parent,m.name,Some(m.meta), Theory.noParams, Theory.noBase)//,m.parameters)
         if (m.parameters.nonEmpty) {
           log(m.parameters.toString)
           theory.paramC.set(m.parameters)

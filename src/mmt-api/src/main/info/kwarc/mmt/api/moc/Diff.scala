@@ -105,7 +105,7 @@ object Differ {
     if (old.from != nw.from) {
       changes = UpdateComponent(old.path, DomComponent, Some(old.from), Some(nw.from)) :: changes
     }
-    //TODO changes to body of DeclaredStructure, definiens of DefinedStructure
+    //TODO changes to body of Structure, definiens of DefinedStructure
     new StrictDiff(changes)
   }
 
@@ -133,7 +133,7 @@ object Differ {
   private def compareModules(old : Module, nw : Module) : StrictDiff = {
       //getting all declarations stored in each library
 
-    def getInnerChanges(old: DeclaredModule, nw: DeclaredModule) = {
+    def getInnerChanges(old: Module, nw: Module) = {
        val od = old.getDeclarations
        val nd = nw.getDeclarations
 
@@ -156,7 +156,7 @@ object Differ {
     }
 
     (old,nw) match {
-      case (o : DeclaredTheory, n : DeclaredTheory) =>
+      case (o : Theory, n : Theory) =>
         var changes : List[StrictChange] = Nil
 
         (o.meta, n.meta) match {
@@ -168,47 +168,23 @@ object Differ {
               changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(op)), Some(OMMOD(np))) :: changes
             }
         }
-
+        if (o.dfC.get != n.dfC.get) {
+          changes = UpdateComponent(o.path, DefComponent, o.dfC.get, n.dfC.get) :: changes
+        }
        new StrictDiff(changes) ++ getInnerChanges(o, n)
 
-      case (o : DefinedTheory, n : DefinedTheory) =>
+      case (o : View, n : View) =>
         var changes : List[StrictChange] = Nil
-
-        if (o.df != n.df) {
-          changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
+        if (o.fromC.get != n.fromC.get) {
+          changes = UpdateComponent(o.path, DomComponent, o.fromC.get, n.fromC.get) :: changes
         }
-
-        new StrictDiff(changes)
-
-      case (o : DeclaredView, n : DeclaredView) =>
-        var changes : List[StrictChange] = Nil
-
-        if (o.from != n.from) {
-          changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
+        if (o.toC.get != n.toC.get) {
+          changes = UpdateComponent(o.path, CodComponent, o.toC.get, n.toC.get) :: changes
         }
-
-        if (o.to != n.to) {
-          changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
+        if (o.dfC.get != n.dfC.get) {
+          changes = UpdateComponent(o.path, DefComponent, o.dfC.get, n.dfC.get) :: changes
         }
-
         new StrictDiff(changes)  ++ getInnerChanges(o, n)
-
-      case (o : DefinedView, n : DefinedView) =>
-        var changes : List[StrictChange] = Nil
-
-        if (o.from != n.from) {
-          changes = UpdateComponent(o.path, DomComponent, Some(o.from), Some(n.from)) :: changes
-        }
-
-        if (o.to != n.to) {
-          changes = UpdateComponent(o.path, CodComponent, Some(o.to), Some(n.to)) :: changes
-        }
-
-        if (o.df != n.df) {
-          changes = UpdateComponent(o.path, DefComponent, Some(o.df), Some(n.df)) :: changes
-        }
-
-        new StrictDiff(changes)
     }
   }
 

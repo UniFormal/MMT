@@ -37,13 +37,13 @@ abstract class BasicTheoryParser(objectParser: ObjectParser, meta: Option[MPath]
    def endOfDecl: String = ".\\s"
    /** read the next declaration, may be overridden; default: everything until (excluding but dropping) endOfDecl */
    def readDeclaration(implicit u: Unparsed): String = u.takeUntilRegex(endOfDecl)
-   def parseDeclaration(s: String)(implicit thy: DeclaredTheory): Unit
+   def parseDeclaration(s: String)(implicit thy: Theory): Unit
 
    def comments: List[BracketPair]
 
    def parseHeader(default: MPath)(implicit u: Unparsed): MPath
 
-   def parseBody(t: MPath)(implicit thy: DeclaredTheory, u: Unparsed) {
+   def parseBody(t: MPath)(implicit thy: Theory, u: Unparsed) {
       while ({u.trim; !u.empty}) {
         val r = u.remainder
         comments.find(bp => r.startsWith(bp.open)) match {

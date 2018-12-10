@@ -7,7 +7,7 @@ import java.io.PrintWriter
 import javax.swing._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
-import info.kwarc.mmt.api.modules.{DeclaredTheory, View}
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
 import info.kwarc.mmt.api.utils.FilePath
@@ -86,7 +86,7 @@ class GraphOptimizationTool extends BuildTarget {
         printError("Error:" + e.toString + ", while looking up direct includes of " + theoryPath + "(skipped)")
         return ret
     }
-    val theory : DeclaredTheory = controller.get(theoryPath).asInstanceOf[DeclaredTheory]
+    val theory : Theory = controller.get(theoryPath).asInstanceOf[Theory]
     try {
       val replacement = replacementmap(theoryPath)
       for (declaration <- theory.getPrimitiveDeclarations) {
@@ -150,7 +150,7 @@ class GraphOptimizationTool extends BuildTarget {
                                ) : mutable.HashSet[MPath] = {
     try {
       controller.get(mpath) match {
-        case dt: DeclaredTheory =>
+        case dt: Theory =>
           var res: mutable.HashSet[MPath] = mutable HashSet[MPath]()
           res ++= includes(mpath, replacementmap)
           res ++= dt.getNamedStructures.map({ struct => struct.from.toMPath })
@@ -237,13 +237,13 @@ class GraphOptimizationTool extends BuildTarget {
       }
     }
 
-    /** Applies to DeclaredTheory
+    /** Applies to Theory
       *
-      * Searches a DeclaredTheory for its used theories, adds them to state
-      * @param dt This is the DeclaredTheory to be searched
+      * Searches a Theory for its used theories, adds them to state
+      * @param dt This is the Theory to be searched
       * @return This is a Set of used theories (as MPaths)
       */
-    def apply(dt: DeclaredTheory): State = {
+    def apply(dt: Theory): State = {
       val state: State = mutable.HashSet[MPath]()
       dt.getDeclarations.foreach(FindUsedTheories(_, state))
       state
@@ -257,7 +257,7 @@ class GraphOptimizationTool extends BuildTarget {
     def apply(se: StructuralElement): State = {
       se match {
         case vw : View => apply(vw)
-        case theory : DeclaredTheory => apply(theory)
+        case theory : Theory => apply(theory)
       }
     }
   }
@@ -303,7 +303,7 @@ class GraphOptimizationTool extends BuildTarget {
     *  theory inclusions that can be removed entirely will receive an empty set*/
     var replacements : mutable.HashMap[Path, mutable.HashSet[MPath]] = new mutable.HashMap[Path, mutable.HashSet[MPath]]
 
-    val theory : DeclaredTheory = controller.get(theoryPath).asInstanceOf[DeclaredTheory]
+    val theory : Theory = controller.get(theoryPath).asInstanceOf[Theory]
     var usedTheories : mutable.HashSet[MPath] = FindUsedTheories(theory)
     if (ignoreUnion && usedTheories.isEmpty) return replacements
     if (predictFuture) usedTheories ++= futureUse(theoryPath)
@@ -331,7 +331,7 @@ class GraphOptimizationTool extends BuildTarget {
       var usedDirectIncludes = mutable.HashSet[MPath]()
       usedDirectIncludes ++= directIncludes(theoryPath, replacementmap)
       usedDirectIncludes = usedDirectIncludes.intersect(usedTheories)
-      controller.get(optimizationCandidate).asInstanceOf[DeclaredTheory].meta match {
+      controller.get(optimizationCandidate).asInstanceOf[Theory].meta match {
         case Some(p : MPath) => usedDirectIncludes += p
         case None =>
       }
@@ -378,7 +378,7 @@ class GraphOptimizationTool extends BuildTarget {
     var futureStructure = mutable.HashSet[MPath]()
     if (protectStructures) for (future <- futureLight) {
       controller.get(future) match {
-        case dt : DeclaredTheory =>
+        case dt : Theory =>
           dt.getNamedStructures.foreach(
             {
               structure => futureStructure += structure.from.toMPath
@@ -502,7 +502,7 @@ class GraphOptimizationTool extends BuildTarget {
     controller.backend.getArchives.foreach(archive => archive.allContent.foreach(
       mpath => try {
         controller.get(mpath) match {
-          case dt : DeclaredTheory => theories += mpath
+          case dt : Theory => theories += mpath
           case _ =>
         }
       } catch {
@@ -718,7 +718,7 @@ class GraphOptimizationTool extends BuildTarget {
 
   /** build or update this target in a given archive */
   override def build(a: Archive, up: Update, in: FilePath): Unit = {
-    val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : DeclaredTheory => Some(p) case _ => None}})
+    val theories = a.allContent.flatMap({p:MPath => controller.get(p) match { case dt : Theory => Some(p) case _ => None}})
     val replacements = findReplacements(theories, interactive = false)
     val output = toXML(replacements)
     val file = new java.io.File(a.root + "/export/got/"+a.id+".xml")

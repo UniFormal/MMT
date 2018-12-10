@@ -10,7 +10,7 @@ import Theory._
 /**
  * a theory written directly in Scala
  */
-abstract class RealizedTheory(mt: Option[MPath]) extends DeclaredTheory(null, null, mt, noParams, noBase) with SemanticObject {
+abstract class RealizedTheory(mt: Option[MPath]) extends Theory(null, null, mt, noParams, noBase) with SemanticObject {
    // getClass only works inside the body, i.e., after initializing the super class
    // so we make the constructor arguments null and override afterwards
    // this will fail if one of the arguments is accessed during initialization of the superclass

@@ -25,22 +25,18 @@ class Theory2LogicSyntax {
     */
    def translateTheory(theo : Theory)  : LogicSyntax = {
      val logsyn = theo match {
-       case theo : DeclaredTheory => {
+       case theo : Theory => {
          val decList = theo.getPrimitiveDeclarations
 
          val cats = getCatRefs(decList) map { x =>
            getCat(decList,x)
          }
          val formCat = getFormCat(decList) // get category of formulas
-
-//         println( (decList mapPartial {x => x match { case x : Constant => Some(x); case _ => None }  }   )  map isFormCat )
-
+         // println( (decList mapPartial {x => x match { case x : Constant => Some(x); case _ => None }  }   )  map isFormCat )
          LogicSyntax(cats,formCat,getDecls(decList))
        }
-       case theo : DefinedTheory => throw TheoryLookupError("a DefinedTheory")
        case _ =>  throw TheoryLookupError("unidentified theory")
      }
-
      logsyn
    }
 

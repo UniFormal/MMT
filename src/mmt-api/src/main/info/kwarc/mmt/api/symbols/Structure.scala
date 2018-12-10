@@ -7,25 +7,21 @@ import objects._
 import presentation._
 
 /**
- * A Structure represents an MMT structure.
+ * MMT structures, given by a body and an optional definiens
  *
- * Structures be declared (given by a list of assignments) or defined (given by an existing morphism).
- * These cases are distinguished by which subtrait of Link is mixed in.
- *
- * @param parent the [[Path]] of the parent theory (also the codomain of the link)
- * @param name the name of the view
- * @param from the domain theory
+ * @param home the [[Term]] representing the parent theory
+ * @param name the name of the structure
+ * @param tpC the domain theory
+ * @param isImplicit true iff the link is implicit
  */
-abstract class Structure extends Declaration with Link {
+class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link {
    type ThisType = Structure
    val feature = "structure"
-   /** the domain/type of the structure */
-   val tpC: TermContainer
-   /** the domain of the structure as a Term, may fail if tpC is undefined */
+   /** the domain of a structure is its type */
    def fromC = tpC
    /** the domain of a structure is its home theory*/
    val toC = new FinalTermContainer(home)
-   val isImplicit: Boolean
+
    def namePrefix = name
 
    def isInclude = Include.unapply(this).isDefined
@@ -46,25 +42,14 @@ abstract class Structure extends Declaration with Link {
       val implAtt =if (isInclude) null else if (isImplicit) "true" else null
       <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }
-}
 
-/**
- * A DeclaredStructure represents an MMT structure given by a list of assignments.<p>
- *
- * @param home the [[Term]] representing the parent theory
- * @param name the name of the structure
- * @param from the domain theory
- * @param isImplicit true iff the link is implicit
- */
-class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermContainer, val isImplicit : Boolean)
-      extends Structure with DeclaredLink {
-   def getComponents = List(TypeComponent(tpC))
+   def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
 
    def getInnerContext = codomainAsContext
    
-   def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DeclaredStructure = {
+   def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): Structure = {
      def tl(m: Term)= translator.applyModule(context, m)
-     val res = new DeclaredStructure(home, prefix/name, tpC map tl, isImplicit)
+     val res = new Structure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
      getDeclarations foreach {d =>
        res.add(d.translate(res.toTerm, LocalName.empty, translator,context))
      }
@@ -72,11 +57,9 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
    }
    def merge(that: Declaration): Structure = {
      that match {
-       case that: DefinedStructure =>
-         new DefinedStructure(this.home, this.name, tpC.copy, that.dfC, isImplicit)
-       case that: DeclaredStructure =>
-         val res = new DeclaredStructure(this.home, this.name, tpC.copy, isImplicit)
-         // TODO we may have to copy dThis and dThat
+       case that: Structure =>
+         val res = new Structure(this.home, this.name, tpC.copy, dfC.copy, isImplicit)
+         // TODO maybe use val dfM = that.dfC merge this.dfC
          this.getDeclarations foreach {dThis =>
             res.add(dThis)
          }
@@ -92,57 +75,21 @@ class DeclaredStructure(val home : Term, val name : LocalName, val tpC: TermCont
    }
 }
 
- /**
-  * A DefinedStructure represents an MMT structure given by an existing morphism.
-  *
-  * @param home the [[Term]] representing the parent theory
-  * @param name the name of the structure
-  * @param from the domain theory
-  * @param df the definiens (the target if we see this as an assignment to a structure)
-  * @param isImplicit true iff the link is implicit
-  */
-class DefinedStructure(val home : Term, val name : LocalName,
-                       val tpC: TermContainer, val dfC : TermContainer, val isImplicit : Boolean)
-      extends Structure with DefinedLink {
-   def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
-
-   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): DefinedStructure = {
-     def tl(m: Term)= translator.applyModule(context, m)
-     new DefinedStructure(newHome, prefix/name, tpC map tl, dfC map tl, isImplicit)
-   }
-   def merge(that: Declaration): DefinedStructure = {
-     that match {
-       case that: DefinedStructure =>
-         val dfM = that.dfC merge this.dfC
-         new DefinedStructure(home, name, tpC.copy, dfM, isImplicit)
-       case that: DeclaredStructure =>
-         // this is a degenerate case
-         new DefinedStructure(home, name, tpC.copy, dfC.copy, isImplicit)
-       case _ => mergeError(that)
-     }
-   }
-}
-
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {
    def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(OMMOD(tp)), isImplicit)
+      new Structure(home, name, TermContainer(OMMOD(tp)), new TermContainer(), isImplicit)
    def unapply(ce: ContentElement) = ce match {
-      case SimpleStructure(s: DeclaredStructure, p) => Some((s.home, s.name, p, s.isImplicit))
+      case SimpleStructure(s: Structure, p) => Some((s.home, s.name, p, s.isImplicit))
       case _ => None
    }
 }
 
 /** auxiliary functions */
-object DeclaredStructure {
-   def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean) =
-      new DeclaredStructure(home, name, TermContainer(from), isImplicit)
-}
-
-/** auxiliary functions */
-object DefinedStructure {
-   def apply(home : Term, name : LocalName, from : Term, df: Term, isImplicit : Boolean) =
-      new DefinedStructure(home, name, TermContainer(from), TermContainer(df), isImplicit)
+object Structure {
+   def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean): Structure = apply(home, name, from, None, isImplicit)
+   def apply(home : Term, name : LocalName, from : Term, df: Option[Term], isImplicit : Boolean): Structure =
+      new Structure(home, name, TermContainer(from), TermContainer(df), isImplicit)
 }
 
 /**
@@ -168,9 +115,9 @@ object SimpleStructure {
 object Include {
    //TODO can there be assignments?
    def apply(home: Term, from: MPath, args: List[Term]) =
-      DeclaredStructure(home, LocalName(from), OMPMOD(from, args), true)
+      Structure(home, LocalName(from), OMPMOD(from, args), true)
    def unapply(t: ContentElement) : Option[(Term,MPath,List[Term])] = t match {
-      case d: DeclaredStructure => d.from match {
+      case d: Structure => d.from match {
          case OMPMOD(from, args) if d.name == LocalName(from) => Some((d.home, from, args))
          case _ => None
       }

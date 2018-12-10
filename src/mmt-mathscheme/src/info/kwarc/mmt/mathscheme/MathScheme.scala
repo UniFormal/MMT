@@ -2,7 +2,7 @@ package info.kwarc.mmt.mathscheme
 
 import info.kwarc.mmt.api.checking.ExtendedCheckingEnvironment
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.DeclaredModule
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._

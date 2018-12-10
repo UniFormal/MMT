@@ -352,8 +352,8 @@ class Controller extends ROController with ActionHandling with Logger {
     case None => throw GetError("Element doesn't exist: " + path)
   }
 
-  def getConstant(path : GlobalName) = getAs(classOf[Constant],path)
-  def getTheory(path : MPath) = getAs(classOf[DeclaredTheory],path)
+  def getConstant(path: GlobalName) = getAs(classOf[Constant],path)
+  def getTheory(path: MPath) = getAs(classOf[Theory],path)
 
 
   // ******************* determine context of elements
@@ -377,8 +377,7 @@ class Controller extends ROController with ActionHandling with Logger {
       case m: Module => m.superModule match {
         case None => Context.empty
         case Some(smP) => get(smP) match {
-          case sm: DeclaredModule => getContextWithInner(sm)
-          case sm: DefinedModule => getContext(m) // should never occur
+          case sm: Module => getContextWithInner(sm)
         }
       }
       case d: Declaration =>
@@ -397,8 +396,8 @@ class Controller extends ROController with ActionHandling with Logger {
   /** additional context for checking the body of ContainerElement */
   def getExtraInnerContext(e: ContainerElement[_]) = e match {
     case d: Document => Context.empty
-    case m: DeclaredModule => m.getInnerContext
-    case s: DeclaredStructure => Context.empty
+    case m: Module => m.getInnerContext
+    case s: Structure => Context.empty
     case dd: DerivedDeclaration =>
       val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
       sfOpt match {
@@ -534,7 +533,7 @@ class Controller extends ROController with ActionHandling with Logger {
               memory.content.add(nw, at)
               // load extension providing semantics for a Module
               nw match {
-                case t: DeclaredTheory =>
+                case t: Theory =>
                   TheoryExp.metas(OMMOD(t.path), all=true)(globalLookup) foreach {m =>
                     if (!extman.get(classOf[Plugin]).exists(_.theory == m)) {
                       getConfig.getEntries(classOf[SemanticsConf]).find(_.theory == m).foreach {sc =>

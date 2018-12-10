@@ -62,7 +62,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      }*/
    }
 
-   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: Module, dd: DerivedDeclaration) = new Elaboration {
      private lazy val (pattern,args) = getPattern(dd).getOrElse {
        throw InvalidElement(dd, "ill-formed instance")
      }

@@ -4,34 +4,31 @@ import symbols._
 import objects._
 
 /**
- * A Module represents an MMT module.
+ * MMT modules, unifies theories and views
  *
  * @param parent the [[Path]] of the parent document
  * @param name the name of the module
  */
-abstract class Module(val parent : DPath, val name : LocalName) extends ContentElement {
+abstract class Module(val parent : DPath, val name : LocalName) extends ModuleOrLink {
    def path: MPath = parent ? name
    def toTerm = OMMOD(path)
    def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.init) else None
+   //def parameters : Context
+   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): Module
+
+   //protected def innerString = dfC.get.map(df => " = " + df.toString).getOrElse("")
+   //protected def innerNodes = getMetaDataNode ++ dfC.get.map(df => <definition>{df.toNode}</definition>).getOrElse(Nil)
+}
+
+/**
+ * theories and views are [[Module]]; structures and views are [[Link]]s
+ * this class carries the common structure, in particular the body and the optional definiens
+ */
+trait ModuleOrLink extends ContentElement with Body with Definable {
    // sharper type
    def getDeclarations: List[Declaration]
-   //def parameters : Context
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): Module
-}
-
-/**
- * Module given by a set of statements
- */
-trait DeclaredModule extends Module with Body {
+   /** the narrative inner structure */
    def asDocument: documents.Document
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DeclaredModule
-}
-
-/**
- * Module given by existing modules/morphisms
- */
-trait DefinedModule extends Module with ModuleDefiniens {
-   def translate(newNS: DPath, prefix: LocalName, translator: Translator, context : Context): DefinedModule
 }
 
 /**
@@ -47,18 +44,3 @@ trait ModuleWrapper extends ContentElement {
   def toNode = module.toNode
   override def toString = module.toString
 }
-
-/**
- * A Module or Link given by existing modules/morphisms
- */
-trait ModuleDefiniens extends StructuralElement {
-  /** the TermContainer holding the definiens */
-   val dfC : TermContainer
-   /** the definiens as a Term */
-   @deprecated("this should be removed as the definiens is optional, it is only here because the definiens used to be mandatory", "")
-   def df : Term
-   protected def innerString = dfC.get.map(df => " = " + df.toString).getOrElse("")
-   protected def innerNodes = getMetaDataNode ++ dfC.get.map(df => <definition>{df.toNode}</definition>).getOrElse(Nil)
-   def getDeclarations = Nil
-}
-

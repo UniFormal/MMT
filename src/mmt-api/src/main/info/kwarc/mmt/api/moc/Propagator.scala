@@ -126,23 +126,16 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
    */
   private def containedPaths(mod : Module) : HashSet[Path] = {
     var cpaths = new HashSet[Path]()
-
     // module path
     cpaths += mod.path
-
     //declaration paths
     mod.getDeclarations collect {
       case dec : Declaration => cpaths ++= containedPaths(dec)
     }
-
     //component paths
-    mod match {
-      case t : DeclaredTheory => cpaths += CPath(mod.path, DomComponent)
-      case t : DefinedTheory => cpaths += CPath(mod.path, DefComponent)
-      case v : DeclaredView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent)
-      case v : DefinedView => cpaths = cpaths + CPath(mod.path, DomComponent) + CPath(mod.path, CodComponent) + CPath(mod.path, DefComponent)
+    mod.getComponents.foreach {comp =>
+      cpaths += CPath(mod.path, comp.key)
     }
-
     cpaths
   }
 
@@ -224,14 +217,13 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
 
       val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
-      case (t : DeclaredTheory, DomComponent) => None
-      case (t : DefinedTheory, DomComponent) => None
-      case (t : DefinedTheory, DefComponent) => makeChange(Some(t.df))
+      case (t : Theory, DomComponent) => None
+      case (t : Theory, DefComponent) => makeChange(t.dfC.get)
 
       /* Views */
-      case (v : View, CodComponent) => makeChange(Some(v.to))
-      case (v : View, DomComponent) => makeChange(Some(v.from))
-      case (v : DefinedView,  DefComponent) => makeChange(Some(v.df))
+      case (v : View, CodComponent) => makeChange(v.toC.get)
+      case (v : View, DomComponent) => makeChange(v.fromC.get)
+      case (v : View, DefComponent) => makeChange(v.dfC.get)
 
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)
@@ -320,17 +312,17 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
 
       val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
-      case (t : DeclaredTheory, DomComponent) => None
-      case (t : DefinedTheory, DomComponent) => None
-      case (t : DefinedTheory, DefComponent) => makeChange(Some(t.df))
+      case (t : Theory, DomComponent) => None
+      case (t : Theory, DefComponent) => makeChange(t.dfC.get)
 
       /* Views */
-      case (v : View, CodComponent) => makeChange(Some(v.to))
-      case (v : View, DomComponent) => makeChange(Some(v.from))
-      case (v : DefinedView, DefComponent) => makeChange(Some(v.df))
+      case (v : View, CodComponent) => makeChange(v.toC.get)
+      case (v : View, DomComponent) => makeChange(v.fromC.get)
+      case (v : View, DefComponent) => makeChange(v.dfC.get)
 
-      /* DefinedStructure */
-      case (d : DefinedStructure, DefComponent) => makeChange(Some(d.df))
+      /* structure  */
+      case (s : Structure, DomComponent) => makeChange(s.fromC.get)
+      case (s : Structure, DefComponent) => makeChange(s.dfC.get)
 
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)

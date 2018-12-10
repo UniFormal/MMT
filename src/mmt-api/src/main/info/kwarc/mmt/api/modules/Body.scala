@@ -247,3 +247,10 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       makeStrings(document,1).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
    }
 }
+
+/** holds the definiens and operations related to it, to be mixed into the same classes as [[Body]] */
+trait Definable {
+  /** the TermContainer holding the definiens */
+  def dfC : AbstractTermContainer  
+}
+

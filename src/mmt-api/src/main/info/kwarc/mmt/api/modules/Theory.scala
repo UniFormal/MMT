@@ -6,18 +6,13 @@ import objects._
 import objects.Conversions._
 import utils._
 
-abstract class Theory(doc : DPath, name : LocalName) extends Module(doc, name) {
-   val feature = "theory"
-   def parameters: Context
-}
-
 /** convenience functions for explicitly omitting constructor arguments (default arguments tend to mask implementation errors) */
 object Theory {
    def noMeta: Option[MPath] = None
    def noBase = new TermContainer
    def noParams = new ContextContainer
 
-   def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = new DeclaredTheory(doc, n, mt, noParams, noBase)
+   def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = new Theory(doc, n, mt, noParams, noBase)
 }
 
 /**
@@ -31,8 +26,8 @@ object Theory {
  * @param paramC the interface/parameters/arguments of this theory
  * @param dfC the definiens/base theory of this theory
  */
-class DeclaredTheory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
-      extends Theory(doc, name) with DeclaredModule {
+class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer) extends Module(doc, name) {
+   val feature = "theory"
    /** the container of the meta-theory */
    val metaC = TermContainer(mt.map(OMMOD(_)))
    /** the meta-theory */
@@ -111,35 +106,14 @@ class DeclaredTheory(doc: DPath, name: LocalName, private var mt: Option[MPath],
       streamInnerNodes(rh)
       rh << "</theory>"
    }
-   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DeclaredTheory = {
+   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): Theory = {
      val npar = paramC map {c => translator.applyContext(context, c)}
      val icont = getInnerContext
      val ndf = dfC map {df => translator.applyModule(icont, df)}
-     val res = new DeclaredTheory(newNS, newName, mt, npar, ndf)
+     val res = new Theory(newNS, newName, mt, npar, ndf)
      getDeclarations foreach {d =>
        res.add(d.translate(res.toTerm, LocalName.empty, translator,icont))
      }
      res
    }
-}
-
-@deprecated("use dfC in DeclaredTheory", "")
-class DefinedTheory(doc : DPath, name : LocalName, val dfC : TermContainer) extends Theory(doc, name) with DefinedModule {
-   val parameters = Context()
-   def getComponents = List(DefComponent(dfC))
-   def df = dfC.get.getOrElse(TheoryExp.empty)
-   override def toString = path + innerString
-   def toNode =
-    <theory name={name.last.toPath} base={doc.toPath}>
-        {innerNodes}
-    </theory>
-   def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): DefinedTheory = {
-     new DefinedTheory(newNS, newName, dfC.map(translator.applyModule(context, _)))
-   }
-
-}
-
-object DefinedTheory {
-   def apply(doc : DPath, name : LocalName, df : Term) =
-      new DefinedTheory(doc, name, TermContainer(df))
 }
