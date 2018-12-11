@@ -58,7 +58,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
     override protected def addError(e: api.Error): Unit = {
       val (reg,main,extra,isWarning) = processError(e)
 
-      error((reg.start.offset,reg.length),file.toString,if (isWarning) "Warning: " + extra.last else main,extra)
+      error((reg.start.offset,reg.length),file.toString,if (isWarning) "Warning: " + main else main,extra)
     }
 
     def processError(e: api.Error): (SourceRegion, String, List[String], Boolean) = {

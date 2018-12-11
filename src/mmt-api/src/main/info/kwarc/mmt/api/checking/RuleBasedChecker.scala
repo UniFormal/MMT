@@ -82,9 +82,13 @@ class RuleBasedChecker extends ObjectChecker {
             }
          }
         // report warnings
-        solver.getErrors.foreach{case SolverError(l,h) => env.errorCont(new InvalidUnit(cu,h.narrowDownError,cu.present(solver.presentObj)) {
-          override val level = l
-        })}
+        solver.getErrors.foreach{
+          case SolverError(l,h) =>
+            val msg = solver.getErrors.head.history.steps.head.present(solver.presentObj(_))
+            env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
+              override val level = l
+            })
+        }
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
          val cuS = cu.present(solver.presentObj)
