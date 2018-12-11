@@ -35,6 +35,10 @@ object Orders {
   val mitmcore = List(
     "properties.mmt"
     ,"arithmetics/naturals.mmt"
+    ,"arithmetics/integers.mmt"
+    ,"arithmetics/rationals.mmt"
+    ,"arithmetics/reals.mmt"
+    ,"arithmetics/complex.mmt"
   )
   val mitmsmglom = List(
     "arithmetics/naturals.mmt"
