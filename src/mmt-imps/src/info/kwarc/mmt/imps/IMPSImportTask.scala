@@ -977,9 +977,9 @@ class IMPSImportTask(val controller  : Controller,
 
         val trm : Term = doMathExp(frm.get, parent,Nil)
         val thm : Term = tState.bindUnknowns(IMPSTheory.Thm(trm))
-        val prf : Term = tState.bindUnknowns(IMPSTheory.Proofs.MagicProof(trm))
-        val nu_theorem = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(thm), Some(prf), Some("Theorem"))
-        //                                                                                ^-- proof goes here! Some(IMPSTheory.Proofs.MagicProof(trm))
+        //val prf : Term = tState.bindUnknowns(IMPSTheory.Proofs.MagicProof(trm))
+        val nu_theorem = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(thm), None, Some("Theorem"))
+        //                                                                                ^-- proof (Some(prf)) goes here! Some(IMPSTheory.Proofs.MagicProof(trm))
 
         /* Add available MetaData */
         if (usages.isDefined) {
@@ -1293,7 +1293,7 @@ class IMPSImportTask(val controller  : Controller,
   }
 
   def findKind(sort : IMPSSort) : Term = sort match {
-    case IMPSUnknownSort(h)         => tState.doUnknown(Some(h))
+    case IMPSUnknownSort(_)         => tState.doUnknown()
     case IMPSAtomSort("ind")        => OMS(IMPSTheory.lutinsIndType)
     case IMPSAtomSort("prop")       => OMS(IMPSTheory.lutinsPropType)
     case IMPSAtomSort("bool")       => OMS(IMPSTheory.lutinsPropType)
@@ -1644,10 +1644,13 @@ class IMPSImportTask(val controller  : Controller,
 
     case IMPSQCIn(e1,e2) =>
       val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
+      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
 
-      IMPSTheory.QCT.inQC(findKind(as),matchSort(as,thy),t1,t2)
+      val k = findKind(as)
+      val s = matchSort(as,thy)
+
+      IMPSTheory.QCT.inQC(k,s,t1,t2)
 
     case IMPSQCSubsetEQ(e1,e2) =>
       val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
