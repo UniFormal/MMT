@@ -17,19 +17,10 @@ class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : T
       extends Module(doc, name) with Link {
    val feature = "view"
    def namePrefix = LocalName(path)
-   
-   protected def outerString = path + " : " + from.toString + " -> " + to.toString
-   def toNode = {
-      val node = <view name={name.last.toPath} base={doc.toPath} implicit={if (isImplicit) "true" else null}>
-           {innerNodes}
-         </view>
-      val fromN = Obj.toStringOrNode(from)
-      val toN = Obj.toStringOrNode(to)
-      addAttrOrChild(addAttrOrChild(node, "to", toN), "from", fromN)
-   }
 
-   def getInnerContext = codomainAsContext
    def getComponents = List(DomComponent(fromC), CodComponent(toC), DefComponent(dfC))
+   
+   def getInnerContext = codomainAsContext
 
    def translate(newNS: DPath, newName: LocalName, translator: Translator,context:Context): View = {
      def tl(m: Term)= translator.applyModule(context, m)
@@ -38,6 +29,16 @@ class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : T
        res.add(d.translate(res.toTerm, LocalName.empty, translator,context))
      }
      res
+   }
+
+   protected def outerString = implicitString + feature + " " + path + " : " + from.toString + " -> " + to.toString
+   def toNode = {
+      val node = <view name={name.last.toPath} base={doc.toPath} implicit={if (isImplicit) "true" else null}>
+           {headerNodes}{innerNodes}
+         </view>
+      val fromN = Obj.toStringOrNode(from)
+      val toN = Obj.toStringOrNode(to)
+      addAttrOrChild(addAttrOrChild(node, "to", toN), "from", fromN)
    }
 }
 

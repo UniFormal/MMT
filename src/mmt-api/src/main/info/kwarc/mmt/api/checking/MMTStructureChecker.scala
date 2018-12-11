@@ -349,7 +349,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
         // check definiens, use it to update domain/codomain
-        v.dfC.get foreach {df =>
+        v.df foreach {df =>
           val (dfR, fromR, toR) = checkMorphism(context, df, v.fromC.get, v.toC.get)
           v.fromC.analyzed = fromR
           v.toC.analyzed = toR
@@ -359,7 +359,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
         // check definiens, use it to update domain
         val (thy, linkOpt) = content.getDomain(s)
-        s.dfC.get.foreach {df =>
+        s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>
               (s.fromC.get, Some(thy.toTerm))
@@ -441,7 +441,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
         doDoc(d)
-      case b: Body =>
+      case b: ModuleOrLink =>
         doDoc(b.asDocument)      
       case _ =>
     }

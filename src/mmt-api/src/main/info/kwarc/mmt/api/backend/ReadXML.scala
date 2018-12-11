@@ -170,11 +170,11 @@ class XMLReader(controller: Controller) extends Logger {
     * @param body the containing theory, view, or structure
     * @param node the node to parse
     */
-   def readInModule(home: MPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
+   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
       readInModuleAux(home, body.asDocument.path, nsMap, body, node)
    }
    /** additionally keeps track of the document nesting inside the body */
-   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
+   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
       val homeTerm = OMMOD(home)
       val relDocHome = docHome.dropPrefix(home.toDPath).getOrElse {
          throw ImplementationError(s"document home must extend content home")
@@ -241,13 +241,13 @@ class XMLReader(controller: Controller) extends Logger {
             val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
             addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
-            log("import " + name + " found")
             val (rest, from) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
             val adjustedName = if (name.length > 0) name else from match {
                case OMMOD(p) => LocalName(p)
                case OMPMOD(p,_) => LocalName(p)
                case _ => throw ParseError("domain of include must be atomic: " + controller.presenter.asString(from) + " in " + home + " (omdoc)")
             }
+            log("import " + adjustedName + " found")
             val isImplicit = parseImplicit(symbol)
             val (dfN,assignmentsN) = rest.child.map(xml.trimOneLevel) match {
                case <definition>{d}</definition> :: as => (Some(d),as)

@@ -392,7 +392,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       doNarrativeElement(ne, doNarrativeElementInDoc(_))
    }
    /** auxiliary method of doTheory */
-   protected def doNarrativeElementInMod(body: Body, ne: NarrativeElement) {ne match {
+   protected def doNarrativeElementInMod(body: ModuleOrLink, ne: NarrativeElement) {ne match {
       case r:SRef =>
          val d = body.get(r.target.name)
          doDeclaration(d)

@@ -64,18 +64,18 @@ trait StructuralElement extends Content with NamedElement {
         case (a: OpaqueElement, b: OpaqueElement) =>
            false // subclasses of OpaqueElement may override this method to give better results
         case (a: Theory, b: Theory) =>
-          a.meta == b.meta && a.dfC.get == b.dfC.get && a.parameters == b.parameters
+          a.meta == b.meta && a.df == b.df && a.parameters == b.parameters
         case (a: View, b: View) =>
           a.from == b.from &&
             a.to == b.to &&
-            a.dfC.get == b.dfC.get && (a.isImplicit == b.isImplicit)
+            a.df == b.df && (a.isImplicit == b.isImplicit)
         case (a: NestedModule, b: NestedModule) =>
           a.module.compatible(b.module)
         case (a: Constant, b: Constant) =>
           a.alias == b.alias && a.rl == b.rl
         case (a: Structure, b: Structure) =>
           a.from == b.from &&
-          a.dfC.get == b.dfC.get &&
+          a.df == b.df &&
           (a.isImplicit == b.isImplicit)
         case _ => false
       })

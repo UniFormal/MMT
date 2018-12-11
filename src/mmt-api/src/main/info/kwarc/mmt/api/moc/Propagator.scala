@@ -218,12 +218,12 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
       case (t : Theory, DomComponent) => None
-      case (t : Theory, DefComponent) => makeChange(t.dfC.get)
+      case (t : Theory, DefComponent) => makeChange(t.df)
 
       /* Views */
       case (v : View, CodComponent) => makeChange(v.toC.get)
       case (v : View, DomComponent) => makeChange(v.fromC.get)
-      case (v : View, DefComponent) => makeChange(v.dfC.get)
+      case (v : View, DefComponent) => makeChange(v.df)
 
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)
@@ -313,16 +313,16 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       val chOpt = (mem.content.get(cp.parent), cp.component) match {
       /* Theories */
       case (t : Theory, DomComponent) => None
-      case (t : Theory, DefComponent) => makeChange(t.dfC.get)
+      case (t : Theory, DefComponent) => makeChange(t.df)
 
       /* Views */
       case (v : View, CodComponent) => makeChange(v.toC.get)
       case (v : View, DomComponent) => makeChange(v.fromC.get)
-      case (v : View, DefComponent) => makeChange(v.dfC.get)
+      case (v : View, DefComponent) => makeChange(v.df)
 
       /* structure  */
       case (s : Structure, DomComponent) => makeChange(s.fromC.get)
-      case (s : Structure, DefComponent) => makeChange(s.dfC.get)
+      case (s : Structure, DefComponent) => makeChange(s.df)
 
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)

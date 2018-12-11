@@ -124,11 +124,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
             val ret = rule(context, state.rules, t)
             ret match {
               case Simplify(tmS) =>
+                // redundancy to catch subtle errors
                 if (tmS == t) {
                   throw ImplementationError("rule " + rule + " simplified term to itself: " + tmS)
                 }
-                if (tmS.freeVars.exists(n => !context.isDeclared(n)))
-                  true
                 log(rule.toString + ": " + t + " ~> " + tmS)
                 return traverse(tmS.from(t))
               case cannot: CannotSimplify =>

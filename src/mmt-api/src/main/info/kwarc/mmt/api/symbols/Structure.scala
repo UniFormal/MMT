@@ -21,26 +21,14 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
    def fromC = tpC
    /** the domain of a structure is its home theory*/
    val toC = new FinalTermContainer(home)
-
+   /** the domain as a term */
+   def tp = tpC.get
    def namePrefix = name
-
    def isInclude = Include.unapply(this).isDefined
-   private def nameOrKeyword = this match {
-      case Include(_, fromPath, _) => "include "
-      case _ => name + " : "
-   }
    /** override in order to permit implicit structures (identified by their domain) */
    override def implicitKey = this match {
       case Include(_, fromPath, _) => Some(fromPath)
       case _ => None
-   }
-
-   protected def outerString = nameOrKeyword + from.toString
-   def toNode = {
-      val nameAtt = if (isInclude) null else name.toPath
-      val (fromAtt,fromNode) = backend.ReadXML.makeTermAttributeOrChild(from, "from")
-      val implAtt =if (isInclude) null else if (isImplicit) "true" else null
-      <import name={nameAtt} from={fromAtt} implicit={implAtt}>{fromNode}{innerNodes}</import>
    }
 
    def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
@@ -72,6 +60,20 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
          res
        case _ => mergeError(that)
      }
+   }
+   
+   private def nameOrKeyword = this match {
+      case Include(_, fromPath, _) => "include "
+      case _ => implicitString + feature + " " + name + " : "
+   }
+   protected def outerString = nameOrKeyword + from.toString
+   
+   def toNode = {
+      val nameAtt = if (isInclude) null else name.toPath
+      val implAtt = if (isInclude) null else if (isImplicit) "true" else null
+      val node = <import name={nameAtt} implicit={implAtt}>{headerNodes}{innerNodes}</import>
+      val fromN = Obj.toStringOrNode(from)
+      utils.xml.addAttrOrChild(node, "from", fromN)
    }
 }
 

@@ -561,7 +561,7 @@ class Controller extends ROController with ActionHandling with Logger {
        InactiveElement.is(se)
      //log("deactivating " + se.path)
      se match {
-        case b: modules.Body =>
+        case b: modules.ModuleOrLink =>
            b.asDocument.getDeclarations foreach deactivate
         case r: NRef =>
            localLookup.getO(r.target) foreach {d =>
@@ -581,7 +581,7 @@ class Controller extends ROController with ActionHandling with Logger {
         notifyListeners.onDelete(se)
      } else {
         se match {
-           case b: modules.Body =>
+           case b: modules.ModuleOrLink =>
               deleteInactive(b.asDocument)
            case r: NRef =>
               localLookup.getO(r.target) foreach deleteInactive

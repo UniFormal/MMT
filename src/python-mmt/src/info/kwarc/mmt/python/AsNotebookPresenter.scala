@@ -82,7 +82,7 @@ class AsNotebookStructurePresenter(oP: ObjectPresenter) extends Presenter(oP) {
      doNarrativeElement(ne, doNarrativeElementInDoc _, level)
   }
   
-  protected def doNarrativeElementInMod(body: Body, ne: NarrativeElement, level: Int): List[Cell] = ne match {
+  protected def doNarrativeElementInMod(body: ModuleOrLink, ne: NarrativeElement, level: Int): List[Cell] = ne match {
     case r:SRef =>
       val d = body.get(r.target.name)
       doDeclaration(d, level)

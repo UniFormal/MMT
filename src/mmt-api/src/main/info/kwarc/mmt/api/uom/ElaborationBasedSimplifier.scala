@@ -62,7 +62,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
-  private def applyWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def applyWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
       return
     applyElementBeginWithParent(s, parentO, rulesO)
@@ -74,7 +74,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
   
   // internal and external flattening of s except for (in the case of container elements) those parts performed in applyElementEnd
-  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def applyElementBeginWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
       return
     log("flattening " + s.path)
@@ -83,7 +83,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     s match {
       case Include(_) =>
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
-      case m: Body =>
+      case m: ModuleOrLink =>
         // flatten header and call flattenDeclaration on every child
         val rules = RuleSet.collectRules(controller, m.getInnerContext)
         if (!ElaboratedElement.isPartially(s)) {
@@ -166,7 +166,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   }
 
   /** elaborates the definition into a context and adds the corresponding declarations */
-  private def flattenDefinition(mod: Body, rulesOpt: Option[RuleSet] = None) {
+  private def flattenDefinition(mod: ModuleOrLink, rulesOpt: Option[RuleSet] = None) {
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
@@ -231,7 +231,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    *  
    *  this method recurses into apply for dependency closure
    */
-  private def flattenExternally(dOrig: Declaration, parentO: Option[Body], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+  private def flattenExternally(dOrig: Declaration, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
     if (ElaboratedElement.isFully(dOrig))
       return
     val parent = parentO getOrElse {
@@ -239,7 +239,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        case OMID(p) =>
          val par = controller.globalLookup.get(p)
          par match {
-           case par: Body => par
+           case par: ModuleOrLink => par
            case _ =>
              return   // we don't elaborate in derived declarations
          }
@@ -725,11 +725,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         c.df.foreach {t =>
           rules += (path ? c.name -> t)
         }
-      case d : Structure => d.dfC.get.foreach {df =>
+      case s : Structure => s.df.foreach {df =>
         try {
           controller.get(df.toMPath) match {
-            case d : View => rules ++= makeRules(d)
-            case x => //nothing to do
+            case v : View => rules ++= makeRules(v)
+            case _ => //nothing to do
           }
         } catch {
           case e : Error => // println(e)//nothing to do

@@ -168,8 +168,8 @@ object Differ {
               changes = UpdateComponent(o.path, DomComponent, Some(OMMOD(op)), Some(OMMOD(np))) :: changes
             }
         }
-        if (o.dfC.get != n.dfC.get) {
-          changes = UpdateComponent(o.path, DefComponent, o.dfC.get, n.dfC.get) :: changes
+        if (o.df != n.df) {
+          changes = UpdateComponent(o.path, DefComponent, o.df, n.df) :: changes
         }
        new StrictDiff(changes) ++ getInnerChanges(o, n)
 
@@ -181,8 +181,8 @@ object Differ {
         if (o.toC.get != n.toC.get) {
           changes = UpdateComponent(o.path, CodComponent, o.toC.get, n.toC.get) :: changes
         }
-        if (o.dfC.get != n.dfC.get) {
-          changes = UpdateComponent(o.path, DefComponent, o.dfC.get, n.dfC.get) :: changes
+        if (o.df != n.df) {
+          changes = UpdateComponent(o.path, DefComponent, o.df, n.df) :: changes
         }
         new StrictDiff(changes)  ++ getInnerChanges(o, n)
     }

@@ -5,9 +5,9 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils._
 
 /**
- * abstract representation of an atomic MMT morphism, unifies structures and views
+ * atomic MMT morphism, unifies views (which are modules) and structures (which are declarations)
  * 
- * Assignments are
+ * The declarations in the body are assignments, which are
  * 1) [[Constant]]s, whose name is the qualified name (always starts with [[ComplexStep]])
  * of a domain [[Constant]]
  * and whose definiens is codomain [[Term]]
@@ -19,20 +19,19 @@ trait Link extends ModuleOrLink {
    def fromC: TermContainer
    /** the codomain of the link (mutable for views but not structures) */
    def toC: AbstractTermContainer
-   
-   @deprecated("only used by deprecated methods", "")
-   private def unknownTheory = OMSemiFormal(Text("unchecked", "not inferred"))
-   @deprecated("use fromC", "")
-   def from = fromC.get.getOrElse(unknownTheory)
-   @deprecated("use toC", "")
-   def to = toC.get.getOrElse(unknownTheory)
-   def codomainAsContext = to match {
-       case ComplexTheory(cont) => cont
+   /** the domain of this link; pre: must have be given explicitly or have been inferred */
+   def from = fromC.get.getOrElse(throw ImplementationError("can only call this method after domain has been inferred"))
+   /** the codomain of this link; pre: must have be given explicitly or have been inferred */
+   def to = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
+   /** the codomain as a context; pre: same as `to` */
+   def codomainAsContext = toC.get match {
+       case Some(ComplexTheory(cont)) => cont
        case _ => throw ImplementationError("codomain of link must be theory")
     }
 
-   def toTerm : Term
-   val isImplicit : Boolean
+   /** true if this link is implicit */
+   def isImplicit : Boolean
+   protected def implicitString = if (isImplicit) "implicit " else ""
 
    /** like getIncludes but also with includes of parametric theories and their instantiations */
    def getIncludes: List[(MPath,Term)] = getDeclarations.flatMap {
@@ -42,11 +41,4 @@ trait Link extends ModuleOrLink {
    
    /** the prefix used when translating declarations along this link */
    def namePrefix: LocalName
-
-   protected def innerNodes : Seq[scala.xml.Node]
-   /** header as a string */
-   protected def outerString : String
-   /** body as a string */
-   protected def innerString : String
-   override def toString = outerString + "\n" + innerString
 }

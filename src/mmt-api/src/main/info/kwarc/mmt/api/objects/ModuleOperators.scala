@@ -98,10 +98,11 @@ object Morph {
                     case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
                   // check if p contains an assignment to t (will fail if cod = p.from)
-                  lib.getO(pt) match {
+                  val ptL = lib.getO(pt)
+                  ptL match {
                     case Some(l: Structure) =>
                       // restrict m to t
-                      l.dfC.get match {
+                      l.df match {
                         case Some(mR) =>
                           if (!isInclude(mR)) // the smaller we keep the codomain, the better
                              result ::= mR

@@ -159,7 +159,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case Some(se) => seeAsDoc(se, error)
         case None => error("referenced element does not exist: " + r.target)
      }
-     case b: Body => b.asDocument
+     case b: ModuleOrLink => b.asDocument
      case nm: NestedModule => seeAsDoc(nm.module, error)
      case _ => error("element exists but is not document-like: " + se.path)
   }
@@ -341,17 +341,18 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     // now the actual lookup
     mod match {
       case t: Theory =>
-         t.dfC.get match {
-           case Some(df) =>
-             // defined theory
+         t.df match {
+           case Some(df) if !uom.ElaboratedElement.isPartially(t) =>
+             // lookup in definiens if not elaborated yet; alternatively: call elaboration
              val d = getDeclarationInTerm(df, name, error)
              instantiate(d, t.parameters, args)
-           case None =>
+           case _ =>
              getInTheory(t, args, name, error)
          }
-      case l: Link if l.dfC.get.isDefined =>
+      case l: Link if l.df.isDefined =>
          // defined view or structure
-         getDeclarationInTerm(l.dfC.get.get, name, error)
+         // TODO: lookup in elaboration if possible
+         getDeclarationInTerm(l.df.get, name, error)
       case v: View =>
          // if v is partial, the returned declaration may have an empty definiens
          getInLink(v, name, error)
@@ -362,7 +363,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          assig match {
             case ca: Constant if ca.df.isEmpty =>
               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
-            case sa: Structure if sa.dfC.get.isEmpty =>
+            case sa: Structure if sa.df.isEmpty =>
               new Structure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
             case a => a
          }
@@ -569,7 +570,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // if the morphism is partial, this returns a Constant with empty definiens;
   // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
-    l.dfC.get match {
+    l.df match {
       case Some(df) =>
         translate(decl, df, error)
       case None =>
@@ -602,7 +603,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case s: Structure =>
             val a = assig.asInstanceOf[Structure] // succeeds because of (*)
-            val newDef = a.dfC.get.getOrElse {
+            val newDef = a.df.getOrElse {
                OMCOMP(s.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
             DefLinkAssignment(l.to, newName, s.from, newDef)
@@ -720,7 +721,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def primitiveDocument(dp: DPath): Unit
      def otherNarrativeElement(parent: Document, ln: LocalName): Unit
      def primitiveModule(mp: MPath): Unit
-     def otherContentElement(parent: Body, ln: LocalName): Unit
+     def otherContentElement(parent: ModuleOrLink, ln: LocalName): Unit
      def component(cp: CPath, cont: ComponentContainer): Unit
      /** This does the relevant case distinction and then delegates to one of the abstract methods. */
      def apply(p: Path) {p match {
@@ -736,7 +737,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case GlobalName(p,ln) =>
             val se = seeAsMod(getContent(p, errorFun), errorFun)
             se match {
-              case b: Body =>
+              case b: ModuleOrLink =>
                  otherContentElement(b, ln)
               case _ => errorFun("parent does not resolve to container " + se.path)
             }
@@ -780,6 +781,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case Include(to, p, args) =>
           addInclude(to, p, args)
         case l: Link if l.isImplicit =>
+          //TODO this causes failures because the equality check does not take the includes inside l into account yet
           implicitGraph(l.from, l.to) = l.toTerm
         case t: Theory =>
           t.getAllIncludes foreach {case (p,args) =>
@@ -849,7 +851,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               wrongType("module")
         }
      }
-     def otherContentElement(body: Body, ln: LocalName) = {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
         se match {
            case d: Declaration =>
               body.add(d, at)
@@ -898,7 +900,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         modules -= mp
         //if (mp.name.length > 1) delete(mp.toGlobalName)
      }
-     def otherContentElement(body: Body, ln: LocalName) = {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
        body.delete(ln) foreach {s =>
          s.getComponents.foreach {case DeclarationComponent(comp, cont) =>
            if (cont.isDefined) notifyUpdated(s.path $ comp)
@@ -932,7 +934,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               wrongType("narrative element")
         }
      }
-     override def otherContentElement(body: Body, ln: LocalName) = {
+     override def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
         se match {
            case d: Declaration =>
               body.update(d)
@@ -953,7 +955,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         doc.reorder(ln)
      }
      def primitiveModule(mp: MPath) {}
-     def otherContentElement(body: Body, ln: LocalName) {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) {
         body.reorder(ln)
      }
      def component(cp: CPath, cont: ComponentContainer) {}

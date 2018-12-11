@@ -41,8 +41,8 @@ abstract class Constant extends Declaration with HasNotation {
   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): FinalConstant = {
      Constant(
          newHome, prefix / name, alias.map(prefix / _),
-         tpC.get map {t => translator.applyType(context, t)},
-         dfC.get map {d => translator.applyDef(context, d)},
+         tp map {t => translator.applyType(context, t)},
+         df map {d => translator.applyDef(context, d)},
          rl, notC
      )
   }

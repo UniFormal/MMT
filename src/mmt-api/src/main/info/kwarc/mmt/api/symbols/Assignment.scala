@@ -29,9 +29,9 @@ object DefLinkAssignment {
    def apply(home : Term, name : LocalName, from: Term, target : Term) =
       Structure(home, name, from, Some(target), false)
    def unapply(se: StructuralElement): Option[(Term,LocalName,Term,Term)] = se match {
-     case ds: Structure =>
-       ds.dfC.get map {df =>
-         (ds.home, ds.name, ds.from, df)
+     case s: Structure =>
+       s.df map {df =>
+         (s.home, s.name, s.from, df)
        }
      case _ => None
    }
@@ -47,9 +47,9 @@ object LinkInclude {
    */
   def apply(home: Term, from: MPath, mor: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), mor)
   def unapply(d: ContentElement) = d match {
-    case d: Structure =>
-      (d.from, d.dfC.get) match {
-        case (OMMOD(f), Some(df)) if d.name == LocalName(f) => Some((d.home, f, df))
+    case s: Structure =>
+      (s.from, s.df) match {
+        case (OMMOD(f), Some(df)) if s.name == LocalName(f) => Some((s.home, f, df))
         case _ => None
       }
     case _ => None

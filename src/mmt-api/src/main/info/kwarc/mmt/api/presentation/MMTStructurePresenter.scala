@@ -132,7 +132,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
 
    /** `= df` if df is preset, returns true if there was a df */
    protected def doDefComponent(m: ModuleOrLink)(implicit rh: RenderingHandler) = {
-    m.dfC.get match {
+    m.df match {
       case Some(df) =>
         rh(" = ")
         apply(df, Some(m.path $ DefComponent))
