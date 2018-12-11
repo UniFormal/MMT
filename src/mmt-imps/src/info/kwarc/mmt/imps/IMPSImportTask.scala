@@ -1265,7 +1265,7 @@ class IMPSImportTask(val controller  : Controller,
       controller add nu_fix
     }
 
-    val replic_trans : DeclaredView = DeclaredView(docPath,LocalName(renamer("replicating_translation")),base.toTerm,nu_replica.toTerm,isImplicit = false)
+    val replic_trans : View = View(docPath,LocalName(renamer("replicating_translation")),base.toTerm,nu_replica.toTerm,isImplicit = false)
     controller add replic_trans
 
     /**
