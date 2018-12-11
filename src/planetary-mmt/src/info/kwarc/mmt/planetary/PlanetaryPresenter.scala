@@ -246,9 +246,9 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        s match {
          case doc : Document =>
            wrapScope(standalone, doc.path)(doDocument(doc))
-         case thy : DeclaredTheory =>
+         case thy: Theory =>
            wrapScope(standalone, thy.path)(doTheory(thy))
-         case view : DeclaredView =>
+         case view: View =>
            wrapScope(standalone, view.path)(doView(view))
          case c : Constant =>
            wrapScope(standalone, c.path)(doConstant(c))
@@ -295,7 +295,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
    private val scriptbase = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/script/"
    private val cssbase    = "https://svn.kwarc.info/repos/MMT/src/mmt-api/trunk/resources/mmt-web/css/"
 
-   def doTheory(t: DeclaredTheory) {
+   def doTheory(t: Theory) {
      div("theory") {
        div("theory-header") {doName(t.path)}
        t.getPrimitiveDeclarations.foreach {
@@ -465,7 +465,7 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
      }
    }
 
-   def doView(v: DeclaredView) {}
+   def doView(v: View) {}
    override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
      div("namespace") {
         namespaces.foreach {bt =>
@@ -501,13 +501,13 @@ class PlanetaryPresenter extends PlanetaryAbstractPresenter("planetary") {
        }
      case m : MRef =>
        controller.get(m.target) match {
-         case t : DeclaredTheory =>
+         case t: Theory =>
            if (t.name != OMV.anonymous) {
             li("mref") {
             doTheory(t)
             }
            }
-         case v : DeclaredView =>
+         case v: View =>
            li("mref") {
             doView(v)
            }

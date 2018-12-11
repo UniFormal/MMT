@@ -18,7 +18,7 @@ import scala.xml.Elem
  * @param nsMap the namespaces declared in this document
  */
 //TODO check if we can mixin DefaultLookup
-class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
+class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[ModuleOrLink] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document:" + level
   /** not a section (which is stored as part of some other document) */

@@ -21,7 +21,7 @@ class sTeXExtractor extends RelationalExtractor {
 
   def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) = {
     e match {
-    case m : DeclaredTheory =>
+    case m : Theory =>
       var foundPrimarySymbol = false
       m.getDeclarations collect {
       case c : Constant =>

@@ -53,13 +53,13 @@ class ScalaExporter extends GenericScalaExporter {
       case _ => throw IllFormed
    }
 
-   override def outputTrait(t: DeclaredTheory) {
+   override def outputTrait(t: Theory) {
      return
       val includes = t.getIncludesWithoutMeta.filter {i =>
          controller.globalLookup.getO(i) match {
             case Some(r: RealizationInScala) =>
                false //TODO handle includes of models
-            case Some(t: DeclaredTheory) =>
+            case Some(t: Theory) =>
                t.name.length == 1 // we only take basic theories for now
             case _ => false // should not happen
          }
@@ -91,7 +91,7 @@ class ScalaExporter extends GenericScalaExporter {
       rh.writeln("}\n")
    }
 
-    private def constantToString(t: DeclaredTheory, c: Constant): String = {
+    private def constantToString(t: Theory, c: Constant): String = {
       c.tp match {
          case None => ""
          case Some(tp) => try {

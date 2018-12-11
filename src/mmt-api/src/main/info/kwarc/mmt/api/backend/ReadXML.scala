@@ -76,8 +76,8 @@ class XMLReader(controller: Controller) extends Logger {
             case None =>
                readInDocument(nsMap, Some(d), node)
          }
-         case t: DeclaredTheory => readInModule(t.path, nsMap(t.path), t, node)
-         case v: DeclaredView => readInModule(v.path, nsMap(v.to.toMPath), v, node)
+         case t: Theory => readInModule(t.path, nsMap(t.path), t, node)
+         case v: View => readInModule(v.path, nsMap(v.to.toMPath), v, node)
          //case s: DeclaredStructure => readInTheory(s.home / s.name, s.path, Some(s), node)
       }
    }
@@ -135,7 +135,7 @@ class XMLReader(controller: Controller) extends Logger {
                    log("meta-theory " + mt + " found")
                    Some(Path.parseM(mt, nsMap(namespace)))
              }
-               // parameters and definition are parsed later by readIn (necessary to allow for streaming)
+             // parameters and definition are parsed by readIn (necessary to allow for streaming)
              val bodyNodes = m.child
              val t = Theory.empty(namespace, name, meta)
              addModule(t, md, docOpt)
@@ -147,22 +147,15 @@ class XMLReader(controller: Controller) extends Logger {
             case <view>{_*}</view> =>
                log("view " + name + " found")
                val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
-               val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)
+               val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap) // definitio parsed by readIn
                val isImplicit = parseImplicit(m)
-               m3.child match {
-                  case <definition>{d}</definition> :: Nil =>
-                     val df = Obj.parseTerm(d, nsMap)
-                     val v = DefinedView(namespace, name, from, to, df, isImplicit)
-                     addModule(v, md, docOpt)
-                  case assignments =>
-                      val v = DeclaredView(namespace, name, from, to, isImplicit)
-                     addModule(v, md, docOpt)
-                     logGroup {
-                        assignments.foreach {d =>
-                           readIn(nsMap, v, d)
-                        }
-                     }
-                }
+               val v = View(namespace, name, from, to, isImplicit)
+               addModule(v, md, docOpt)
+               logGroup {
+                  m3.child.foreach {d =>
+                     readIn(nsMap, v, d)
+                  }
+               }
             case <rel>{_*}</rel> =>
                //ignoring logical relations, produced by Twelf, but not implemented yet
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
@@ -177,11 +170,11 @@ class XMLReader(controller: Controller) extends Logger {
     * @param body the containing theory, view, or structure
     * @param node the node to parse
     */
-   def readInModule(home: MPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
+   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
       readInModuleAux(home, body.asDocument.path, nsMap, body, node)
    }
    /** additionally keeps track of the document nesting inside the body */
-   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: Body, node: Node)(implicit cont: StructuralElement => Unit) {
+   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
       val homeTerm = OMMOD(home)
       val relDocHome = docHome.dropPrefix(home.toDPath).getOrElse {
          throw ImplementationError(s"document home must extend content home")
@@ -248,24 +241,22 @@ class XMLReader(controller: Controller) extends Logger {
             val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
             addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
-            log("import " + name + " found")
             val (rest, from) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
             val adjustedName = if (name.length > 0) name else from match {
                case OMMOD(p) => LocalName(p)
                case OMPMOD(p,_) => LocalName(p)
                case _ => throw ParseError("domain of include must be atomic: " + controller.presenter.asString(from) + " in " + home + " (omdoc)")
             }
+            log("import " + adjustedName + " found")
             val isImplicit = parseImplicit(symbol)
-            rest.child.map(xml.trimOneLevel) match {
-               case <definition>{d}</definition> :: Nil =>
-                  val df = Obj.parseTerm(d, nsMap)
-                  val s = DefinedStructure(homeTerm, adjustedName, from, df, isImplicit)
-                  addDeclaration(s)
-               case assignments =>
-                  val s = DeclaredStructure(homeTerm, adjustedName, from, isImplicit)
-                  addDeclaration(s)
-                  assignments foreach {a => readInModule(s.path.toMPath, nsMap, s, a)}
+            val (dfN,assignmentsN) = rest.child.map(xml.trimOneLevel) match {
+               case <definition>{d}</definition> :: as => (Some(d),as)
+               case as => (None,as)
             }
+            val df = dfN map {n => Obj.parseTerm(n, nsMap)}
+            val s = Structure(homeTerm, adjustedName, from, df, isImplicit)
+            addDeclaration(s)
+            assignmentsN foreach {a => readInModule(s.path.toMPath, nsMap, s, a)}
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
             val tname = home.name / name
@@ -288,21 +279,14 @@ class XMLReader(controller: Controller) extends Logger {
             val vname = home.name / name
             log("view " + name + " found")
             val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
-            val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)
+            val (m3, to) = ReadXML.getTermFromAttributeOrChild(m2, "to", nsMap)//definition is parsed by readIn
             val isImplicit = parseImplicit(m)
-            m3.child match {
-               case <definition>{d}</definition> :: Nil =>
-                  val df = Obj.parseTerm(d, nsMap)
-                  val v = DefinedView(parent, vname, from, to, df, isImplicit)
-                  addDeclaration(new NestedModule(OMMOD(home),name,v))
-               case assignments =>
-                  val v = DeclaredView(parent, name, from, to, isImplicit)
-                  addDeclaration(new NestedModule(OMMOD(home), name, v))
-                  logGroup {
-                     assignments.foreach {d =>
-                        readIn(nsMap, v, d)
-                     }
-                  }
+            val v = View(parent, name, from, to, isImplicit)
+            addDeclaration(new NestedModule(OMMOD(home), name, v))
+            logGroup {
+              m3.child foreach {d =>
+                readIn(nsMap, v, d)
+              }
             }
          case <ruleconstant><type>{tpN}</type></ruleconstant> =>
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
@@ -338,13 +322,14 @@ class XMLReader(controller: Controller) extends Logger {
          case <parameters>{parN}</parameters> =>
             val par = Context.parse(parN, nsMap)
             body match {
-               case d: DeclaredTheory => d.paramC.set(par)
+               case d: Theory => d.paramC.set(par)
                case _ => throw ParseError("parameters outside declared theory")
             }
          case <definition>{dfN}</definition> =>
             val df = Obj.parseTerm(dfN, nsMap)
             body match {
-               case d: DeclaredTheory => d.dfC.set(df)
+               case d: Theory => d.dfC.set(df)
+               case v: View => v.dfC.set(df)
                case _ => throw ParseError("definition outside declared theory")
             }
 

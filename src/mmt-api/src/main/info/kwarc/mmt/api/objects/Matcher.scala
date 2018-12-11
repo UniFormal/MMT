@@ -86,7 +86,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
          // add include of codomain of mor
          case OMMOD(mp) =>
             val th = controller.globalLookup.getO(mp) match {
-               case Some(th2: DeclaredTheory) => th2
+               case Some(th2: Theory) => th2
                case _ => return None
             }
             val ds = th.getDeclarationsElaborated.map({

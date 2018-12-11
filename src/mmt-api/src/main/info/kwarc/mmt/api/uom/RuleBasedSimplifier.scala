@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import checking._
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
 import objects._
 import objects.Conversions._
@@ -124,11 +124,10 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
             val ret = rule(context, state.rules, t)
             ret match {
               case Simplify(tmS) =>
+                // redundancy to catch subtle errors
                 if (tmS == t) {
                   throw ImplementationError("rule " + rule + " simplified term to itself: " + tmS)
                 }
-                if (tmS.freeVars.exists(n => !context.isDeclared(n)))
-                  true
                 log(rule.toString + ": " + t + " ~> " + tmS)
                 return traverse(tmS.from(t))
               case cannot: CannotSimplify =>
@@ -398,10 +397,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          Some(new AnonymousTheory(mt, Nil))
        // add include of codomain of mor
        case OMMOD(mp) =>
-         val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
-           case Some(th2: DeclaredTheory) => th2
-           case _ => return None
-         }
+         val th = Try(controller.globalLookup.getTheory(mp)).getOrElse(return None)
          val ds = th.getDeclarationsElaborated.map({
            case c: Constant =>
              OML(c.name, c.tp, c.df, c.not)

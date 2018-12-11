@@ -6,7 +6,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{ParsingStream, SourceRegion}
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.utils.{File, FileURI, URI}
+import info.kwarc.mmt.api.utils._
 
 class Checker(controller: Controller,ev : ErrorViewer) {
   def check(uri : String, text: String,
@@ -66,7 +66,6 @@ class Checker(controller: Controller,ev : ErrorViewer) {
       import archives.source
       import objects._
       import parser._
-      import utils.MyList._
 
       e match {
         case s: SourceError =>
@@ -85,7 +84,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
               // find first WFJudgement whose region is within the failed checking unit
               declOpt.flatMap { decl =>
                 SourceRef.get(decl).flatMap { bigRef =>
-                  steps.map { s =>
+                  steps.mapFind { s =>
                     s.removeWrappers match {
                       case j: WFJudgement =>
                         SourceRef.get(j.wfo) flatMap { smallRef =>
@@ -98,7 +97,7 @@ class Checker(controller: Controller,ev : ErrorViewer) {
                       case _ =>
                         None
                     }
-                  }.collectFirst{case Some(e) => e}
+                  }
                 }.orElse(declOpt)
               }
           }

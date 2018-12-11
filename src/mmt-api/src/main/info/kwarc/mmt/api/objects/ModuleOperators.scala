@@ -98,10 +98,11 @@ object Morph {
                     case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
                   // check if p contains an assignment to t (will fail if cod = p.from)
-                  lib.getO(pt) match {
-                    case Some(l: DefinedStructure) =>
+                  val ptL = lib.getO(pt)
+                  ptL match {
+                    case Some(l: Structure) =>
                       // restrict m to t
-                      l.dfC.get match {
+                      l.df match {
                         case Some(mR) =>
                           if (!isInclude(mR)) // the smaller we keep the codomain, the better
                              result ::= mR
@@ -249,15 +250,14 @@ object TheoryExp {
     * @param all if false, stop after the first meta-theory, true by default
     */
   def metas(thy: Term, all: Boolean = true)(implicit lib: Lookup): List[MPath] = thy match {
-    case OMMOD(p) => lib.getTheory(p) match {
-      case t: DeclaredTheory => t.meta match {
+    case OMMOD(p) =>
+      val t = lib.getTheory(p)
+      t.meta match {
         case None => 
           Nil
         case Some(m) =>
           if (all) m :: metas(OMMOD(m)) else List(m)
       }
-      case t: DefinedTheory => metas(t.df)
-    }
     case AnonymousTheory(mt,_) => mt.toList
     case TUnion(ts) =>
       val ms = ts map { t => metas(t) }
@@ -281,11 +281,9 @@ object TheoryExp {
    */
   def getDomain(t: Term)(implicit lib: Lookup): List[DomainElement] = t match {
     case OMMOD(p) => lib.getTheory(p) match {
-      case d: DeclaredTheory =>
+      case d: Theory =>
         d.getPrimitiveDeclarations.map {
-          case s: symbols.DefinedStructure =>
-            DomainElement(s.name, defined = true, Some((s.from, Nil)))
-          case s: symbols.DeclaredStructure =>
+          case s: symbols.Structure =>
             val definitions = s.getPrimitiveDeclarations.map(_.name)
             DomainElement(s.name, defined = false, Some((s.from, definitions)))
           case c: symbols.Constant =>
@@ -293,7 +291,6 @@ object TheoryExp {
           case pd =>
             DomainElement(pd.name, defined = true, None) //by default, no map allowed
         }
-      case d: DefinedTheory => getDomain(d.df)
     }
     case ComplexTheory(body) =>
       body.getDomain

@@ -173,11 +173,11 @@ class STeXImporter extends Importer {
     controller.add(s)
   }
 
-  private def getAnonThy(dpath: DPath): DeclaredTheory = {
+  private def getAnonThy(dpath: DPath): Theory = {
     val anonpath = dpath ? OMV.anonymous
     try {
       controller.get(anonpath) match {
-        case d: DeclaredTheory => d
+        case d: Theory => d
       }
     } catch {
       case e: GetError =>
@@ -248,7 +248,7 @@ class STeXImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node, localSection : LocalName = LocalName.empty)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
+  private def translateDeclaration(n: Node, localSection : LocalName = LocalName.empty)(implicit doc: Document, thy: Theory, errorCont: ErrorHandler) {
     implicit val dpath = doc.path
     implicit val mpath = thy.path
     val sref = parseSourceRef(n, doc.path)
@@ -434,7 +434,7 @@ class STeXImporter extends Importer {
     }
   }
 
-  def parseNarrativeObject(n: scala.xml.Node)(implicit dpath: DPath, thy: DeclaredTheory, errorCont: ErrorHandler): Option[Term] = {
+  def parseNarrativeObject(n: scala.xml.Node)(implicit dpath: DPath, thy: Theory, errorCont: ErrorHandler): Option[Term] = {
     val sref = parseSourceRef(n, dpath)
     implicit val mpath = thy.path
     n.child.find(_.label == "CMP").map(_.child) match {
@@ -538,7 +538,7 @@ class STeXImporter extends Importer {
     }
   }
 
-  def translateCMP(n: scala.xml.Node)(implicit dpath: DPath, thy: DeclaredTheory, errorCont: ErrorHandler): Term = {
+  def translateCMP(n: scala.xml.Node)(implicit dpath: DPath, thy: Theory, errorCont: ErrorHandler): Term = {
     val sref = parseSourceRef(n, dpath)
     n.label match {
       case "definiendum" =>
@@ -913,7 +913,7 @@ class STeXImporter extends Importer {
         }
 
         val symOptions = thys flatMap {
-          case d: DeclaredTheory =>
+          case d: Theory =>
             d.getConstants.filter(_.name.last.toPath == snameS)
           case _ => Nil
         }

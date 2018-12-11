@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.refactoring
 import info.kwarc.mmt.api.{DPath, GlobalName, MPath, Path}
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.Extension
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{SetResult, IsTheory, Paths}
 import info.kwarc.mmt.api.utils.FilePath
@@ -31,7 +31,7 @@ class ArchiveStore extends Extension {
     private var contains : List[MPath] = Nil
     private var isread = false
     private var readfoundation = false
-    private var foundations : List[DeclaredTheory] = Nil
+    private var foundations : List[Theory] = Nil
     def theories = {
       if (!isread) read
       contains ::: foundations.map(_.path)
@@ -64,8 +64,8 @@ class ArchiveStore extends Extension {
       logGroup {f}
     }
 
-    private def readfounds: Unit = {
-      val fnd = Try(controller.get(archive.foundation.get).asInstanceOf[DeclaredTheory]).map(Some(_)).getOrElse(None)
+    private def readfounds {
+      val fnd = Try(controller.get(archive.foundation.get).asInstanceOf[Theory]).map(Some(_)).getOrElse(None)
       log("Foundation: " + fnd.map(_.path.toString).getOrElse("None"))
 
       foundations = fnd.map(flattened).getOrElse(Nil).distinct
@@ -99,12 +99,12 @@ class ArchiveStore extends Extension {
 
   // partially mirrors alignmentfinder; TODO clean up
 
-  private val flatteneds : mutable.HashMap[MPath,List[DeclaredTheory]] = mutable.HashMap()
+  private val flatteneds : mutable.HashMap[MPath,List[Theory]] = mutable.HashMap()
 
-  private def flattened(th : DeclaredTheory) : List[DeclaredTheory] = flatteneds.getOrElse(th.path,{
+  private def flattened(th : Theory) : List[Theory] = flatteneds.getOrElse(th.path,{
     //Try(controller.simplifier.flatten(th))
     val theories = //th ::
-      th.getIncludes.map(p => Try(controller.get(p).asInstanceOf[DeclaredTheory]))
+      th.getIncludes.map(p => Try(controller.get(p).asInstanceOf[Theory]))
     val flats = theories.map({
       case Success(t) => Try(flattened(t))
       case Failure(e) => Failure(e)

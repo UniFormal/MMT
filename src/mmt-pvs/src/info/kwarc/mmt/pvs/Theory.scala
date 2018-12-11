@@ -2,7 +2,7 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.{CovariantParameterPreprocessor, Hasher, Preprocessor}
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -30,7 +30,7 @@ object PVSTheory {
     private lazy val syms = getSyms(thpath)
     private val symmap : mutable.HashMap[MPath,List[GlobalName]] = mutable.HashMap.empty
     private def getSyms(mp : MPath) : List[GlobalName] = symmap.getOrElseUpdate(mp,{
-      val th = controller.getAs(classOf[DeclaredTheory],mp)
+      val th = controller.getAs(classOf[Theory],mp)
       th.getIncludes.flatMap(getSyms).distinct ::: th.getConstants.map(_.path)
     })
 
@@ -52,8 +52,8 @@ object PVSTheory {
     override protected def doTerm(tm: Term): Term = trav(tm,())
   }
   private val notccs = new Preprocessor {
-    override def apply(th : DeclaredTheory) : DeclaredTheory = {
-      val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)
+    override def apply(th : Theory) : Theory = {
+      val nth = new Theory(th.parent,th.name,th.meta,th.paramC,th.dfC)
       th.getDeclarations foreach {
         case c : FinalConstant if c.name.toString.contains("TCC") =>
         case o => nth add o

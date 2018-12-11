@@ -30,20 +30,22 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
         e match {
           case mr: MRef =>
             apply(controller.get(mr.target))
-          case thy: DeclaredTheory =>
+          case thy: Theory =>
             doKeyword("theory")
             doName(thy.name)
             thy.meta foreach {m =>
               doOperator(":")
               doPath(m)
             }
-          case v: DeclaredView =>
+            doDefComponent(thy)
+          case v: View =>
             doKeyword("view")
             doName(v.name)
             doOperator(":")
             doTerm(v.from)
             doOperator("-->")
             doTerm(v.to)
+            doDefComponent(v)
           case nm: NestedModule =>
             apply(nm.module)
             // always empty in a notebook
@@ -69,13 +71,21 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
               }
               doOperator(")")
             }
-          case s: DeclaredStructure =>
+          case s: Structure =>
             doKeyword("structure")
             doName(s.name)
             doOperator(":")
             doTerm(s.from)
+            doDefComponent(s)
           case se => text("object " + se.path)
         }
+     }
+     /* definiens */
+     def doDefComponent(m: ModuleOrLink) {
+       m.dfC.get foreach {df =>
+         doOperator("=")
+         doTerm(df)
+       }
      }
      /** names of new declarations */
      def doName(l: LocalName) {
@@ -94,7 +104,6 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
        // handled via the provided object presenter
        oP(t, None)(rh)
      }
-     
      /** concrete syntax: alphanumeric keywords */
      def doKeyword(k: String) {
        span("keyword") {

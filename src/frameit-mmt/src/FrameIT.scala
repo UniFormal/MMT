@@ -36,7 +36,7 @@ class FrameViewer extends Extension {
 
    private def pushoutOne(tm : Term, vpath : MPath) : Term = {
      val view = controller.get(vpath) match {
-       case v : DeclaredView => v
+       case v : View => v
        case s => throw FrameitError("Expected view found " + s.toString)
      }
 
@@ -44,7 +44,7 @@ class FrameViewer extends Extension {
      pushout(tm)(rules)
    }
 
-   private def makeRules(v : DeclaredView) : HashMap[Path, Term]= {
+   private def makeRules(v : View) : HashMap[Path, Term]= {
      v.from match {
        case OMMOD(p) =>
          var rules = new HashMap[Path,Term]
@@ -116,7 +116,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
          case p => throw FrameitError("Expected MPath found " + p)
        }
        val view = controller.get(vpath) match {
-         case d : DeclaredView => d
+         case d : View => d
          case _ => throw FrameitError("expected view")
        }
 
@@ -134,8 +134,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
      log("Before: " + t.toString)
      //val solver = new Solver(controller,cu,rules)
      val th = controller.get(home) match {
-       case thx : DeclaredTheory => thx
-       case _ => throw FrameitError("No DeclaredTheory: " + home)
+       case thx : Theory => thx
+       case _ => throw FrameitError("No Theory: " + home)
      }
      controller.simplifier.apply(th)
      val con = (objects.Context(home) :: th.getIncludes.map(p => objects.Context(p))).flatten
@@ -204,26 +204,26 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
   val sitpath = dpath ? "situation_theory"
   val viewpath = dpath ? "situation_problem_view"
   def view = controller.get(viewpath) match {
-    case dv : DeclaredView => dv
+    case dv : View => dv
     case _ => throw new FrameitError("view does not exist!")
   }
   def sittheory = controller.get(sitpath) match {
-    case dt : DeclaredTheory => dt
+    case dt : Theory => dt
     case _ => throw new FrameitError("situation theory does not exist!")
   }
 
   def getdomcod = {
     val dom = view.from match {
       case OMMOD(p) => controller.get(p) match {
-        case th : DeclaredTheory => th
-        case _ => throw FrameitError("DeclaredView expected")
+        case th : Theory => th
+        case _ => throw FrameitError("View expected")
       }
       case _ => throw FrameitError("Expected MPath, found " + view.from)
     }
     val cod = view.to match {
       case OMMOD(p) => controller.get(p) match {
-        case th : DeclaredTheory => th
-        case _ => throw FrameitError("DeclaredTheory for situation theory expected")
+        case th : Theory => th
+        case _ => throw FrameitError("Theory for situation theory expected")
       }
       case _ => throw FrameitError("Expected MPath, found " + view.from)
     }
@@ -243,8 +243,8 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
       try {
         val sol = Path.parse(request.query.trim.drop(7)) match {
           case m : MPath => controller.get(m) match {
-            case t : DeclaredTheory => t
-            case _ => throw FrameitError("Solution theory not a DeclaredTheory")
+            case t : Theory => t
+            case _ => throw FrameitError("Solution theory not a Theory")
           }
           case _ => throw FrameitError(request.query.trim.drop(7) + " not an MPath")
         }
@@ -317,30 +317,30 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     */
     val sol = Path.parse(solthS) match {
       case m : MPath => controller.get(m) match {
-        case t : DeclaredTheory => t
-        case _ => throw FrameitError("DeclaredTheory expected")
+        case t : Theory => t
+        case _ => throw FrameitError("Theory expected")
       }
-      case _ => throw FrameitError("DeclaredTheory expected")
+      case _ => throw FrameitError("Theory expected")
     }
     val vpath = Path.parse(vpathS) match {
       case vp : MPath => vp
       case p => throw FrameitError("Expected MPath found " + p)
     }
     val view = controller.get(vpath) match {
-      case d : DeclaredView => d
+      case d : View => d
       case _ => throw FrameitError("expected view")
     }
     val dom = view.from match {
       case OMMOD(p) => controller.get(p) match {
-        case th : DeclaredTheory => th
-        case _ => throw FrameitError("DeclaredTheory expected")
+        case th : Theory => th
+        case _ => throw FrameitError("Theory expected")
       }
       case _ => throw FrameitError("Expected MPath found " + view.from)
     }
     val cod = view.to match {
       case OMMOD(p) => controller.get(p) match {
-        case th : DeclaredTheory => th
-        case _ => throw FrameitError("DeclaredTheory expected")
+        case th : Theory => th
+        case _ => throw FrameitError("Theory expected")
       }
       case _ => throw FrameitError("Expected MPath found " + view.from)
     }

@@ -44,7 +44,7 @@ class ImplementsRuleGenerator extends ChangeListener {
          if (r.isDefined) return
          val impl = Metadata.ImplementsLinker.get(c).getOrElse(return)
          log("generating rule for " + c.path + " for " + impl)
-         val schemaThy = controller.localLookup.getDeclaredTheory(c.parent)
+         val schemaThy = controller.localLookup.getTheory(c.parent)
          val cons = Metadata.ConstructorLinker.get(schemaThy).getOrElse {
            throw LocalError("no constructor annotation found in " + schemaThy.path)
          }

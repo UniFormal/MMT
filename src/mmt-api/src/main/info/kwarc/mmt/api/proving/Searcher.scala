@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.proving
 
 import info.kwarc.mmt.api._
 import checking._
+import modules._
 import objects._
 import frontend._
 import symbols._
@@ -34,7 +35,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    implicit val facts = new Facts(this, 2, provingUnit.logPrefix)
 
-   private def doTheory(t : modules.DeclaredTheory) = {
+   private def doTheory(t : Theory) = {
      t.getDeclarations.foreach {
         case c: Constant if !UncheckedElement.is(c) => c.tp.foreach { tp =>
            val a = Atom(c.toTerm, tp, c.rl)
@@ -50,7 +51,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
          case _ => None
       })
       controller.simplifier.materialize(provingUnit.context,tm,mpath,None) match {
-         case dt : modules.DeclaredTheory =>
+         case dt : Theory =>
             Some(dt)
          case _ =>
             None

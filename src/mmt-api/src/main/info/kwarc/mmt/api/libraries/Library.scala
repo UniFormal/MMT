@@ -17,28 +17,21 @@ import scala.ref.SoftReference
   */
 class ModuleHashMap {
   private val underlying = new mutable.HashMap[MPath, SoftReference[Module]]
-
   def get(p: MPath): Option[Module] = {
     underlying.get(p).flatMap(_.get)
   }
-
   def update(p: MPath, m: Module) {
     val r = new SoftReference(m)
     underlying.update(p, r)
   }
-
   def -=(p: MPath) {
     underlying -= p
   }
-
   def keys = underlying.keys
-
   def values = underlying.values.flatMap(_.get)
-
   def clear {
     underlying.clear
   }
-
   override def toString = {
     underlying.toList.sortBy(_._1.name.toPath).map { case (mp, r) =>
       val modString = r.get match {
@@ -166,7 +159,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case Some(se) => seeAsDoc(se, error)
         case None => error("referenced element does not exist: " + r.target)
      }
-     case b: Body => b.asDocument
+     case b: ModuleOrLink => b.asDocument
      case nm: NestedModule => seeAsDoc(nm.module, error)
      case _ => error("element exists but is not document-like: " + se.path)
   }
@@ -316,7 +309,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
           a
         else a match {
           case a: Constant => ConstantAssignment(home, a.name, a.alias, a.df.map(OMM(_, OMCOMP(tl))))
-          case a: DefinedStructure => DefLinkAssignment(home, a.name, a.from, OMCOMP(a.df :: tl))
+          case DefLinkAssignment(ahome, aname, afrom, adf) => DefLinkAssignment(home, aname, afrom, OMCOMP(adf :: tl))
           case a: RuleConstant => RuleConstant(home, a.name, a.tp.map(OMM(_, OMCOMP(tl))), None)
         }
       case OMIDENT(t) =>
@@ -347,27 +340,31 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
     // now the actual lookup
     mod match {
-      case t: DefinedTheory =>
-        val d = getDeclarationInTerm(t.df, name, error)
-        instantiate(d, t.parameters, args)
-      case v: DefinedView =>
-        getDeclarationInTerm(v.df, name, error)
-      case s: DefinedStructure =>
-        getDeclarationInTerm(s.df, name, error)
-      case t: DeclaredTheory =>
-         getInTheory(t, args, name, error)
-      case v: DeclaredView =>
+      case t: Theory =>
+         t.df match {
+           case Some(df) if !uom.ElaboratedElement.isPartially(t) =>
+             // lookup in definiens if not elaborated yet; alternatively: call elaboration
+             val d = getDeclarationInTerm(df, name, error)
+             instantiate(d, t.parameters, args)
+           case _ =>
+             getInTheory(t, args, name, error)
+         }
+      case l: Link if l.df.isDefined =>
+         // defined view or structure
+         // TODO: lookup in elaboration if possible
+         getDeclarationInTerm(l.df.get, name, error)
+      case v: View =>
          // if v is partial, the returned declaration may have an empty definiens
          getInLink(v, name, error)
-      case s: DeclaredStructure =>
+      case s: Structure =>
          val assig = getInLink(s, name, error)
          // structures are total: so we merge in a default definiens: s(n) = s/n
          def defaultDef = TermContainer(OMS(s.home.toMPath ? translateNameByLink(name, s)))
          assig match {
             case ca: Constant if ca.df.isEmpty =>
-               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
-            case sa: DefinedStructure if sa.dfC.get.isEmpty =>
-               new DefinedStructure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
+              new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
+            case sa: Structure if sa.df.isEmpty =>
+              new Structure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
             case a => a
          }
       case nm: NestedModule =>
@@ -378,7 +375,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
-  private def getInTheory(t: DeclaredTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
+  private def getInTheory(t: Theory, args: List[Term], name: LocalName, error: String => Nothing) = {
      val declLnOpt = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
@@ -388,7 +385,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
          case Include(_,p,as) =>
            getDeclarationInTerm(OMPMOD(p,as),ln,error)
          // a prefix exists and resolves to d, a suffix ln is left
-         case s: Structure =>
+         case s:Structure =>
            val sym = getDeclarationInTerm(s.from, ln, sourceError) // resolve ln in the domain of s
            translateByLink(sym, s, error) // translate sym along l
          case dd: DerivedDeclaration =>
@@ -426,7 +423,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * look up 'name' in elaboration of dd
    */
-  private def getInElaboration(parent: DeclaredModule, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInElaboration(parent: Module, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
@@ -447,11 +444,11 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** auxiliary method of get to unify lookup in structures and views
     * returns an empty Declaration (with only home and name set) if no assignment provided
     */
-  private def getInLink(l: DeclaredLink, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInLink(l: Link, name: LocalName, error: String => Nothing): Declaration = {
      def default = {
         val da = get(l.from, name, sourceError) match {
           case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
-          case d: Structure => new DefinedStructure(l.toTerm, name, d.tpC, TermContainer(None), false)
+          case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false)
           case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
           case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
         }
@@ -465,12 +462,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case Some((a, ln)) => a match {
           case a: Constant =>
             error("local name " + ln + " left after resolving to constant assignment")
-          case a: DefinedLink =>
-            val dom = a.from.toMPath
-            val dfAssig = getDeclarationInTerm(a.df, ComplexStep(dom)/ln, error)
+          case DefLinkAssignment(_, aname, afrom, adf) =>
+            val dom = afrom.toMPath
+            val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head
-            val prefix = if (h.isInstanceOf[ComplexStep] && a.name.head == h) a.name.init else a.name
+            val prefix = if (h.isInstanceOf[ComplexStep] && aname.head == h) aname.init else aname
             dfAssig.translate(l.toTerm, prefix, IdentityTranslator, Context.empty)
         }
         case None =>
@@ -573,10 +570,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // if the morphism is partial, this returns a Constant with empty definiens;
   // for a structure, the definiens is the composed morphism (which may be defined for some constants even if it is not defined in general)
   private def translateByLink(decl: Declaration, l: Link, error: String => Nothing): Declaration =
-    l match {
-      case l: DefinedLink =>
-        translate(decl, l.df, error)
-      case l: DeclaredLink =>
+    l.df match {
+      case Some(df) =>
+        translate(decl, df, error)
+      case None =>
         // if necessary, first translate decl along implicit morphism into l.from
         val imp = implicitGraph(decl.home, l.from) getOrElse {
           throw GetError("no implicit morphism from " + decl.home + " to " + l.from)
@@ -604,12 +601,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newNotC = a.notC merge c.notC
             val newRole = a.rl orElse c.rl
             Constant(l.to, newName, newAlias, newTp, newDef, newRole, newNotC)
-          case r: Structure =>
-            val a = assig.asInstanceOf[DefinedStructure] // succeeds because of (*); actually missing the case of DeclaredStructure, which are forbidden in links
-            val newDef = a.dfC.get.getOrElse {
-               OMCOMP(r.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
+          case s: Structure =>
+            val a = assig.asInstanceOf[Structure] // succeeds because of (*)
+            val newDef = a.df.getOrElse {
+               OMCOMP(s.toTerm, l.toTerm) //TODO should result in DeclaredStructure containing a subset of the assignments in l
             }
-            DefinedStructure(l.to, newName, r.from, newDef, false)
+            DefLinkAssignment(l.to, newName, s.from, newDef)
           case rc: RuleConstant =>
             val a = assig.asInstanceOf[RuleConstant] // succeeds because of (*)
             val newTp = a.tp orElse rc.tp.map(mapTerm)
@@ -652,7 +649,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     impls.foreach {
       case (OMMOD(p), m) =>
         val thO = get(p) match {
-          case t: DeclaredTheory =>
+          case t: Theory =>
             Some(t)
           case dd: DerivedDeclaration =>
             Some(dd.module)
@@ -724,7 +721,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def primitiveDocument(dp: DPath): Unit
      def otherNarrativeElement(parent: Document, ln: LocalName): Unit
      def primitiveModule(mp: MPath): Unit
-     def otherContentElement(parent: Body, ln: LocalName): Unit
+     def otherContentElement(parent: ModuleOrLink, ln: LocalName): Unit
      def component(cp: CPath, cont: ComponentContainer): Unit
      /** This does the relevant case distinction and then delegates to one of the abstract methods. */
      def apply(p: Path) {p match {
@@ -740,7 +737,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case GlobalName(p,ln) =>
             val se = seeAsMod(getContent(p, errorFun), errorFun)
             se match {
-              case b: Body =>
+              case b: ModuleOrLink =>
                  otherContentElement(b, ln)
               case _ => errorFun("parent does not resolve to container " + se.path)
             }
@@ -784,13 +781,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case Include(to, p, args) =>
           addInclude(to, p, args)
         case l: Link if l.isImplicit =>
+          //TODO this causes failures because the equality check does not take the includes inside l into account yet
           implicitGraph(l.from, l.to) = l.toTerm
-        case t: DeclaredTheory =>
+        case t: Theory =>
           t.getAllIncludes foreach {case (p,args) =>
              addInclude(t.toTerm, p, args)
           }
-        case t: DefinedTheory =>
-          implicitGraph(t.df, t.toTerm) = OMIDENT(t.toTerm)
         case dd: DerivedDeclaration =>
         case e: NestedModule =>
           add(e.module, at)
@@ -855,7 +851,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               wrongType("module")
         }
      }
-     def otherContentElement(body: Body, ln: LocalName) = {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
         se match {
            case d: Declaration =>
               body.add(d, at)
@@ -904,7 +900,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         modules -= mp
         //if (mp.name.length > 1) delete(mp.toGlobalName)
      }
-     def otherContentElement(body: Body, ln: LocalName) = {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
        body.delete(ln) foreach {s =>
          s.getComponents.foreach {case DeclarationComponent(comp, cont) =>
            if (cont.isDefined) notifyUpdated(s.path $ comp)
@@ -938,7 +934,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               wrongType("narrative element")
         }
      }
-     override def otherContentElement(body: Body, ln: LocalName) = {
+     override def otherContentElement(body: ModuleOrLink, ln: LocalName) = {
         se match {
            case d: Declaration =>
               body.update(d)
@@ -959,7 +955,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         doc.reorder(ln)
      }
      def primitiveModule(mp: MPath) {}
-     def otherContentElement(body: Body, ln: LocalName) {
+     def otherContentElement(body: ModuleOrLink, ln: LocalName) {
         body.reorder(ln)
      }
      def component(cp: CPath, cont: ComponentContainer) {}

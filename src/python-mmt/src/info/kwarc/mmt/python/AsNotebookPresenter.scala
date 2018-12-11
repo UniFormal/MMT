@@ -25,7 +25,7 @@ class AsNotebookStructurePresenter(oP: ObjectPresenter) extends Presenter(oP) {
    protected def doElement(e: StructuralElement, level: Int) : List[Cell] = {
      e match {
        case d: Document => doDocument(d, level)
-       case t: DeclaredTheory => doTheory(t, level)
+       case t: Theory => doTheory(t, level)
        case d: Declaration => doDeclaration(d, level)
      }
    }
@@ -33,7 +33,7 @@ class AsNotebookStructurePresenter(oP: ObjectPresenter) extends Presenter(oP) {
      doNarrativeElementInDoc(doc, level)
    }
    
-   protected def doTheory(t: DeclaredTheory, level: Int): List[Cell] = {
+   protected def doTheory(t: Theory, level: Int): List[Cell] = {
      doNarrativeElementInMod(t, t.asDocument, level)
    }
    
@@ -82,7 +82,7 @@ class AsNotebookStructurePresenter(oP: ObjectPresenter) extends Presenter(oP) {
      doNarrativeElement(ne, doNarrativeElementInDoc _, level)
   }
   
-  protected def doNarrativeElementInMod(body: Body, ne: NarrativeElement, level: Int): List[Cell] = ne match {
+  protected def doNarrativeElementInMod(body: ModuleOrLink, ne: NarrativeElement, level: Int): List[Cell] = ne match {
     case r:SRef =>
       val d = body.get(r.target.name)
       doDeclaration(d, level)

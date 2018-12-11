@@ -10,11 +10,11 @@ import java.lang.ref.WeakReference
 
 import Theory._
 
-class Heap(id: Int, controller: Controller) extends DeclaredTheory(utils.mmt.mmtbase / "heap", LocalName(id.toString), noMeta, noParams, noBase) {
+class Heap(id: Int, controller: Controller) extends Theory(utils.mmt.mmtbase / "heap", LocalName(id.toString), noMeta, noParams, noBase) {
    private var instanceId = 0
 
    def newInstance(context: Context, ofTerm: Term): Instance = {
-      val of = controller.simplifier.materialize(context, ofTerm, None, None).asInstanceOf[DeclaredTheory]
+      val of = controller.simplifier.materialize(context, ofTerm, None, None).asInstanceOf[Theory]
       val i = new Instance(path, of.path, instanceId)
       instanceId += 1
 

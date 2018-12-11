@@ -77,7 +77,7 @@ case class MMTTeX(tex: File) extends Action {
      private def doModule(m: Module) {
         controller.simplifier(m)
         m match {
-          case dt: DeclaredTheory => dt.meta.foreach {mt =>
+          case dt: Theory => dt.meta.foreach {mt =>
             presenter(PlainInclude(mt, m.path))(jobFile)
           }
           case _ =>

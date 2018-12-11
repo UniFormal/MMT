@@ -28,7 +28,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   var allaxioms : List[Axiom] = Nil
   var allstructures : List[Structure] = Nil
 
-  val theories : mutable.HashMap[String,DeclaredTheory] = mutable.HashMap.empty
+  val theories : mutable.HashMap[String,Theory] = mutable.HashMap.empty
   val intcategories : mutable.HashMap[String,ParsedCategory] = mutable.HashMap.empty
   val intclasses : mutable.HashMap[String,ParsedClass] = mutable.HashMap.empty
   var missings : List[String] = Nil
@@ -41,7 +41,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   controller.add(topdoc)
 
   val axth = controller.getO(Sage._base ? LocalName("Axioms")) match {
-    case Some(dc : DeclaredTheory) => dc
+    case Some(dc : Theory) => dc
     case _ =>
       val ret = Theory.empty(Sage._base, LocalName("Axioms"), Some(Sage.theory))
       controller.add(ret)
@@ -73,7 +73,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     case _ => controller add se
   }
 
-  private def doMethod(m : SageMethod)(implicit th : DeclaredTheory, sec : Option[String]) = {
+  private def doMethod(m : SageMethod)(implicit th: Theory, sec : Option[String]) = {
     val c = Constant(th.toTerm, LocalName(m.tp + "." + m.name), Nil, Some(doArity(m.arity)), None, None)
     if (sec.isDefined) c.setDocumentHome(LocalName(sec.get))
     controller add c
@@ -195,7 +195,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   }
   )
 
-  private def addOpaque(text : String,th : DeclaredTheory, sec : Option[String] = None) =
+  private def addOpaque(text : String,th : Theory, sec : Option[String] = None) =
     controller add new OpaqueText(if (sec.isDefined) th.path.toDPath / sec.get else th.path.toDPath, OpaqueText.defaultFormat, StringFragment(text))
 
   private def doArity(ar : Int) : Term = if (ar == 0) OMS(Sage.obj) else Arrow(OMS(Sage.obj),doArity(ar-1))

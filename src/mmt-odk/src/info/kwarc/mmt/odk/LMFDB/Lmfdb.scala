@@ -1,23 +1,26 @@
 package info.kwarc.mmt.odk.LMFDB
 
-
 import info.kwarc.mmt.api._
 import backend._
 import frontend._
 import metadata.GlobalNameLinker
-import info.kwarc.mmt.MitM.VRESystem._
 import ontology._
-import info.kwarc.mmt.api.ontology.{BaseType, Query, QueryEvaluator}
-import info.kwarc.mmt.api.web.WebQuery
-import info.kwarc.mmt.odk.codecs.LMFDBCoder
-import modules.{DeclaredTheory, _}
+import ontology.{BaseType, Query, QueryEvaluator}
+import modules._
 import objects._
 import symbols._
 import utils._
 import valuebases._
-import info.kwarc.mmt.odk._
+import info.kwarc.mmt.api.web.WebQuery
+
 import info.kwarc.mmt.lf.Apply
+
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
+import info.kwarc.mmt.MitM.VRESystem._
+
+import info.kwarc.mmt.odk._
+import info.kwarc.mmt.odk.codecs.LMFDBCoder
+
 
 import scala.collection.mutable.HashSet
 import scala.util.Try
@@ -62,8 +65,8 @@ object Metadata {
 }
 
 case class DBField(jsonKey: String, codec: Codec[JSON])
-case class DBTheory(tp : Term, constructor : Term, parents : List[(DB,DeclaredTheory)] = Nil) {
-  def +(th : DeclaredTheory)(implicit controller: Controller) = DBTheory(tp,constructor,
+case class DBTheory(tp : Term, constructor : Term, parents : List[(DB,Theory)] = Nil) {
+  def +(th : Theory)(implicit controller: Controller) = DBTheory(tp,constructor,
     (DB.fromPath(th.path).getOrElse{throw BackendError("Not a schema theory",th.path)},th) :: parents)
 }
 
@@ -191,7 +194,7 @@ trait LMFDBBackend {
   }
 
   /** finds an implementor */
-  protected def findImplementor(schema : DeclaredTheory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : (DB, GlobalName) = {
+  protected def findImplementor(schema: Theory, forSymbol: GlobalName, err : String => Unit)(implicit controller: Controller) : (DB, GlobalName) = {
     val symbol = collectImplementMetaData(schema, forSymbol).map(_.path).headOption.getOrElse({
       err(s"no implementor found for $forSymbol in ${schema.path}")
       null
@@ -205,7 +208,7 @@ trait LMFDBBackend {
     (db, symbol)
   }
 
-  protected def collectImplementMetaData(schema: DeclaredTheory, forSymbol: GlobalName)(implicit controller: Controller): List[Declaration] = {
+  protected def collectImplementMetaData(schema: Theory, forSymbol: GlobalName)(implicit controller: Controller): List[Declaration] = {
     val parents = schema.metadata.getValues(Metadata.extend)
       .collect({ case OMID(path: MPath) => controller.getTheory(path)})
       .flatMap(collectImplementMetaData(_, forSymbol))
@@ -231,7 +234,7 @@ trait LMFDBBackend {
     parents.flatMap(findExtensions) ::: List(db)
   }
 
-  protected def getKey(schema : DeclaredTheory) : String = {
+  protected def getKey(schema: Theory) : String = {
     def err(s: String) = throw BackendError(s,schema.path)
     // HACK HACK HACK; parse the ODK String
     val spath = OMS(Path.parseS("http://mathhub.info/MitM/Foundation?Strings?string", NamespaceMap.empty))
@@ -252,7 +255,7 @@ trait LMFDBBackend {
   private def getTP(db : DB, mp : MPath)(implicit controller: Controller) : DBTheory = {
     def err(s: String) = throw BackendError(s,mp)
     val th = Try(controller.getTheory(mp)).toOption match {
-      case Some(t : DeclaredTheory) =>
+      case Some(t : Theory) =>
         // db.addParent(t)
         t
       case _ =>
@@ -283,12 +286,12 @@ trait LMFDBBackend {
 
 object LMFDBStore {
   /** produces the db-theory for a given schema-theory */
-  def getOrAddVirtualTheory(controller: Controller, schemaTheory: DeclaredTheory): Option[DeclaredTheory] = {
+  def getOrAddVirtualTheory(controller: Controller, schemaTheory: Theory): Option[Theory] = {
     val db = DB.fromPath(schemaTheory.path, allowDBPath = false).getOrElse(return None)
     val dbp = db.dbPath
     // create it if it is not in memory yet
     controller.localLookup.getO(dbp) match {
-      case Some(dbt: DeclaredTheory) => Some(dbt)
+      case Some(dbt: Theory) => Some(dbt)
       case Some(_) => None
       case None =>
         val dbThy = Theory.empty(dbp.parent, dbp.name, schemaTheory.meta)
@@ -309,7 +312,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
        case mp : MPath =>
         // retrieving the schema-theory may already create the db-theory
         val sch = Try(controller.getTheory(db.schemaPath)).toOption match {
-           case Some(t : DeclaredTheory) => t
+           case Some(t : Theory) => t
            case _ => throw NotApplicable("schema theory not found")
         }
         LMFDBStore.getOrAddVirtualTheory(controller, sch)
@@ -394,7 +397,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
     }
 
     val schema = controller.get(primary.schemaPath) match {
-      case dt:DeclaredTheory => dt
+      case dt:Theory => dt
       case _ => error("Schema-Theory missing from controller")
     }
     val key = getKey(schema)
