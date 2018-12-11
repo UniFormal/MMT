@@ -119,8 +119,8 @@ object Include {
    def apply(home: Term, from: MPath, args: List[Term]) =
       Structure(home, LocalName(from), OMPMOD(from, args), true)
    def unapply(t: ContentElement) : Option[(Term,MPath,List[Term])] = t match {
-      case d: Structure => d.from match {
-         case OMPMOD(from, args) if d.name == LocalName(from) => Some((d.home, from, args))
+      case d: Structure => d.fromC.get match {
+         case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some((d.home, from, args))
          case _ => None
       }
       case _ => None

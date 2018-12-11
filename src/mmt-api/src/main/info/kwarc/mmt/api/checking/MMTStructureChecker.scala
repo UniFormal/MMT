@@ -356,8 +356,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           v.dfC.analyzed = dfR
         }
       case s: Structure =>
-        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
-        // check definiens, use it to update domain
+        s.fromC.get foreach {t => checkTheory(Some(CPath(s.path, TypeComponent)), context, t)}
+        // check definiens, use it to update/infer domain
         val (thy, linkOpt) = content.getDomain(s)
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
@@ -381,6 +381,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           s.fromC.analyzed = fromR
           s.dfC.analyzed = dfR
         }
+        if (s.fromC.get.isEmpty)
+          throw InvalidElement(s, "could not infer domain of structure")
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {

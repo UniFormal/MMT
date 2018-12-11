@@ -534,7 +534,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   case _ =>
                 }
                 // infer type
-                val tp = Morph.domain(tc.get.get)(lup)
+                val tp = Morph.domain(tc.get.get)(lup).getOrElse {
+                  fail("could not infer domain of included morphism")
+                }
                 (TermContainer(tp), tc)
               } else {
                 // first term was type
@@ -543,8 +545,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 doComponent(dfC, context)
                 (tc, dfC)
               }
-              val name = tpC.get.get match {
-                case OMPMOD(p,_) => LocalName(p)
+              val name = tpC.get match {
+                case Some(OMPMOD(p,_)) => LocalName(p)
                 case _ => fail("domain must be atomic")
               }
               val as = new Structure(link.toTerm, name, tpC, dfC, false)
