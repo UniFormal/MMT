@@ -6,6 +6,7 @@ import web.{Body, _}
 import frontend._
 import info.kwarc.mmt.api.backend.XMLReader
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.parser.StructureParserContinuations
 import info.kwarc.mmt.api.utils.URI
 import objects._
 import symbols._
@@ -268,6 +269,10 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
             val sitth = seq.head
             val viewxml = seq.tail.head
             val reader = new XMLReader(controller)
+            val eh = new ErrorHandler {
+              override protected def addError(e: Error): Unit = ServerResponse.errorResponse(e.shortMsg)
+            }
+            implicit val spc : StructureParserContinuations = new StructureParserContinuations(eh)
 
             try {
               reader.readDocument(dpath, sitth)
