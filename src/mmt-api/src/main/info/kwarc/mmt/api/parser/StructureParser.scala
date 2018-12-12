@@ -112,6 +112,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (!state.ps.isKilled) {
       state.cont.onElementEnd(s)
     }
+    controller.endAdd(s)
     log("end " + s.path)
   }
 
@@ -485,7 +486,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        d match {
          case ce: ContainerElement[_] =>
            // if a container element is added in one go (e.g., includes, instances), we need to also call the end of element hook
-           state.cont.onElementEnd(ce)
+           end(ce)
          case _ =>
        }
     }
@@ -771,6 +772,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         val (_, _, df) = readParsedObject(context)
         val v = View(ns, name, from, to, Some(df.toTerm), isImplicit)
         moduleCont(v, parent)
+        end(v)
       case "=" =>
         val v = View(ns, name, from, to, None, isImplicit)
         moduleCont(v, parent)
@@ -1017,7 +1019,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         }
       }
       SourceRef.update(target, pu.source)
-      createStructure(Some(target))
+      val s = createStructure(Some(target))
+      end(s)
     } else {
       // read the body a DeclaredStructure
       if (link.isDefined) {

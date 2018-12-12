@@ -31,6 +31,7 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
   override def toNode : Elem = {
     val (tpAtt, tpNode) = tpAttNode
     <derived feature={feature} name={name.toPath} base={t.parent.toPath} type={tpAtt}>
+      {getMetaDataNode}
       {tpNode}
       {notC.toNode}
       {t.getDeclarations map (_.toNode)}

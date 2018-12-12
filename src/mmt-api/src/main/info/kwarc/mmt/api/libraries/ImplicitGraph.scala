@@ -75,8 +75,10 @@ class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
         // note that Library may instantiate this with itself, i.e., local lookup
         if (Morph.equal(c, morphN, from)(lib)) {
           return
-        } else
+        } else {
+          Morph.simplify(OMCOMP(OMIDENT(from), morphN))(lib) //DELETE
           throw AlreadyDefined(from, to, c, morphN)
+        }
       }
       super.update(fromN, toN, morphN)
    }
