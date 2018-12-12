@@ -76,7 +76,6 @@ class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
         if (Morph.equal(c, morphN, from)(lib)) {
           return
         } else {
-          Morph.simplify(OMCOMP(OMIDENT(from), morphN))(lib) //DELETE
           throw AlreadyDefined(from, to, c, morphN)
         }
       }

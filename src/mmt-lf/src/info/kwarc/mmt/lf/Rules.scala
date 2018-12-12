@@ -79,8 +79,11 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
                  // usually an error, but xn may disappear later, especially when unknown in b are not solved yet
                  //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
                  None
-              } else
+              } else {
+                 // TODO if this check fails, we could recover with a type-coercion 
+                 solver.check(Universe(stack,bT))(history + "codomain must be a universe")
                  Some(bT)
+              }
            }
         case _ => None // should be impossible
       }
