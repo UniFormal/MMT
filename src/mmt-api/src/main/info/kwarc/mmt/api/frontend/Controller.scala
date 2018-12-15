@@ -549,6 +549,11 @@ class Controller extends ROController with ActionHandling with Logger {
     }
   }
   
+  /** called after adding all elements in the body of a container element */
+  def endAdd(c: ContainerElement[_]) {
+    memory.content.endAdd(c)
+  }
+  
   /**
    * if set, the element is deactivated
    */

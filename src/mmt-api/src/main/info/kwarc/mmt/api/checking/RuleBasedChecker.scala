@@ -83,8 +83,8 @@ class RuleBasedChecker extends ObjectChecker {
          }
         // report warnings
         solver.getErrors.foreach{
-          case SolverError(l,h) =>
-            val msg = solver.getErrors.head.history.steps.head.present(solver.presentObj(_))
+          case e@SolverError(l,h,_) =>
+            val msg = e.msg(solver.presentObj(_))
             env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
               override val level = l
             })
@@ -95,7 +95,7 @@ class RuleBasedChecker extends ObjectChecker {
          logGroup {
             solver.logState(logPrefix)
             val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
-            (errors:::warnings) foreach {case SolverError(l,h) =>
+            (errors:::warnings) foreach {case SolverError(l,h,_) =>
                val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
                  override val level = l
                }

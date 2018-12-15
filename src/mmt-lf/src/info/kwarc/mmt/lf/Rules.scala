@@ -12,12 +12,12 @@ object Common {
     *  in plain LF, this is only possible if U=type, i.e., if a:type
     *  other frameworks may want to reuse the LF typing rules with more options for U
     */
+   // FR: this is too generous: it falsely allows U to be a Pi-kind 
    def isTypeLike(solver: Solver, a: Term)(implicit stack: Stack, history: History) = {
      val h = history + "checking the size of the type of the bound variable"
      val kind = OMS(Typed.kind)
      solver.inferTypeAndThen(a)(stack, h) {aT =>
         solver.check(Typing(stack, aT, kind, Some(OfType.path)))
-        // FR: this used to call aT<:type instead aT:kind, which makes no sense 
      }
    }
 
@@ -79,8 +79,11 @@ object PiTerm extends FormationRule(Pi.path, OfType.path) with PiOrArrowRule {
                  // usually an error, but xn may disappear later, especially when unknown in b are not solved yet
                  //solver.error("type of Pi-scope has been inferred, but contains free variable " + xn + ": " + solver.presentObj(bT))
                  None
-              } else
+              } else {
+                 // TODO if this check fails, we could recover with a type-coercion 
+                 solver.check(Universe(stack,bT))(history + "codomain must be a universe")
                  Some(bT)
+              }
            }
         case _ => None // should be impossible
       }

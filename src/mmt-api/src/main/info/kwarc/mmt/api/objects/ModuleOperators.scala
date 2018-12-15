@@ -195,10 +195,14 @@ object Morph {
     }
   }
   
-  /** true if m is a morphism that immediately reduces to the identity/include */
-  def isInclude(m: Term): Boolean = m match {
+  /** true if m is a morphism that reduces to the identity/include */
+  def isInclude(m: Term)(implicit lib: Lookup): Boolean = m match {
     case OMIDENT(_) => true
     case OMCOMP(ms) => ms forall isInclude
+    case OMS(p) => lib.get(p) match {
+      case Include(_,_,_) => true
+      case _ => false
+    }
     case _ => false
   }
 

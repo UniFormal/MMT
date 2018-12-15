@@ -7,6 +7,7 @@ import modules._
 import notations._
 import symbols._
 import objects._
+import parser._
 import patterns._
 import utils._
 import ontology._
@@ -25,22 +26,21 @@ class XMLReader(controller: Controller) extends Logger {
    val logPrefix = "reader"
    private val rci = new RuleConstantInterpreter(controller)
 
-   /** calls the continuation function */
-   private def add(e : StructuralElement)(implicit cont: StructuralElement => Unit) {
-      cont(e)
-   }
    /** adds metadata and calls the continuation functions */
-   private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructuralElement => Unit) {
+   private def add(e : StructuralElement, md: Option[MetaData])(implicit cont: StructureParserContinuations) {
       md foreach {e.metadata = _}
-      cont(e)
+      cont.onElement(e)
    }
-   private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructuralElement => Unit) {
+   private def addModule(m: Module, md: Option[MetaData], docOpt: Option[Document])(implicit cont: StructureParserContinuations) {
       add(m, md)
       docOpt foreach {d =>
         val mref = new MRef(d.path, LocalName(m.path), m.path)
         mref.setOrigin(GeneratedMRef)
-        add(mref)
+        add(mref, None)
       }
+   }
+   private def endAdd(ce: ContainerElement[_])(implicit cont: StructureParserContinuations) {
+     cont.onElementEnd(ce)
    }
 
    /**
@@ -50,7 +50,7 @@ class XMLReader(controller: Controller) extends Logger {
     *
     *  If the document has a base attribute, it is used as the default namespace of modules.
     */
-   def readDocument(dpath : DPath, nodeMd : Node)(implicit cont: StructuralElement => Unit) {
+   def readDocument(dpath : DPath, nodeMd : Node)(implicit cont: StructureParserContinuations) {
       val nsMap = NamespaceMap.fromXML(nodeMd)(dpath)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
@@ -61,13 +61,16 @@ class XMLReader(controller: Controller) extends Logger {
            log("document with URI " + dpath + " and level " + level + " found")
            val d = new Document(dpath, level, nsMap = nsMapB)
            add(d,md)
-           modules foreach {m => readIn(nsMapB, d, m)}
+           modules foreach {m =>
+             readIn(nsMapB, d, m)
+           }
+           endAdd(d)
         case _ => throw ParseError("document expected: " + node)
       }
    }
 
    /** entry point for reading in a node if the containing document, theory, view is known */
-   def readIn(nsMap: NamespaceMap, se: StructuralElement, node: Node)(implicit cont: StructuralElement => Unit) {
+   def readIn(nsMap: NamespaceMap, se: ContainerElement[_], node: Node)(implicit cont: StructureParserContinuations) {
       // base is unchanged for documents, module.path for theories, codomain for views
       se match {
          case d: Document => d.contentAncestor match {
@@ -78,7 +81,7 @@ class XMLReader(controller: Controller) extends Logger {
          }
          case t: Theory => readInModule(t.path, nsMap(t.path), t, node)
          case v: View => readInModule(v.path, nsMap(v.to.toMPath), v, node)
-         //case s: DeclaredStructure => readInTheory(s.home / s.name, s.path, Some(s), node)
+         case s: Structure => readInModule(s.path.toMPath, nsMap, s, node)
       }
    }
 
@@ -88,7 +91,7 @@ class XMLReader(controller: Controller) extends Logger {
     * @param docOpt the containing document, if any; if given, XRef's will be generated
     * @param nodeMd the node to parse
     */
-   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructuralElement => Unit) {
+   def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructureParserContinuations) {
       lazy val doc = docOpt.getOrElse {throw ParseError("document element without containing document")}
       lazy val dname = LocalName.parse(xml.attr(nodeMd,"name"), nsMap)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
@@ -98,7 +101,10 @@ class XMLReader(controller: Controller) extends Logger {
             // level attribute ignored
             val innerdoc = new Document(dpath, SectionLevel)
             add(innerdoc, md)
-            mods foreach (m => readIn(nsMap, innerdoc, m))
+            mods foreach {m =>
+              readIn(nsMap, innerdoc, m)
+            }
+            endAdd(innerdoc)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
             val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {
@@ -110,17 +116,17 @@ class XMLReader(controller: Controller) extends Logger {
             val d = xml.attr(node, "target")
             log("dref to " + d + " found")
             val r = new DRef(doc.path, dname, Path.parseD(d,nsMap))
-            add(r)
+            add(r, None)
          case <mref/> =>
             val t = xml.attr(node, "target")
             log("mref to " + t + " found")
             val r = new MRef(doc.path, dname, Path.parseM(t,nsMap))
-            add(r)
+            add(r, None)
          case <sref/> =>
             val t = xml.attr(node, "target")
             log("sref to " + t + " found")
             val r = new SRef(doc.path, dname, Path.parseS(t,nsMap))
-            add(r)
+            add(r, None)
          case scala.xml.Comment(_) =>
          case m =>
            val namespace = Path.parseD(xml.attr(m,"base"), nsMap)
@@ -144,6 +150,7 @@ class XMLReader(controller: Controller) extends Logger {
                    readIn(nsMap, t, d)
                 }
              }
+             endAdd(t)
             case <view>{_*}</view> =>
                log("view " + name + " found")
                val (m2, from) = ReadXML.getTermFromAttributeOrChild(m, "from", nsMap)
@@ -156,6 +163,7 @@ class XMLReader(controller: Controller) extends Logger {
                      readIn(nsMap, v, d)
                   }
                }
+               endAdd(v)
             case <rel>{_*}</rel> =>
                //ignoring logical relations, produced by Twelf, but not implemented yet
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
@@ -170,11 +178,11 @@ class XMLReader(controller: Controller) extends Logger {
     * @param body the containing theory, view, or structure
     * @param node the node to parse
     */
-   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
+   def readInModule(home: MPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations) {
       readInModuleAux(home, body.asDocument.path, nsMap, body, node)
    }
    /** additionally keeps track of the document nesting inside the body */
-   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructuralElement => Unit) {
+   private def readInModuleAux(home: MPath, docHome: DPath, nsMap: NamespaceMap, body: ModuleOrLink, node: Node)(implicit cont: StructureParserContinuations) {
       val homeTerm = OMMOD(home)
       val relDocHome = docHome.dropPrefix(home.toDPath).getOrElse {
          throw ImplementationError(s"document home must extend content home")
@@ -200,6 +208,7 @@ class XMLReader(controller: Controller) extends Logger {
             dnodes.foreach {n =>
                readInModuleAux(home, innerDoc.path, nsMap, body, n)
             }
+            endAdd(innerDoc)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
             val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {
@@ -256,7 +265,10 @@ class XMLReader(controller: Controller) extends Logger {
             val df = dfN map {n => Obj.parseTerm(n, nsMap)}
             val s = Structure(homeTerm, adjustedName, from, df, isImplicit)
             addDeclaration(s)
-            assignmentsN foreach {a => readInModule(s.path.toMPath, nsMap, s, a)}
+            assignmentsN foreach {a =>
+              readInModule(s.path.toMPath, nsMap, s, a)
+            }
+            endAdd(s)
          case <theory>{body @_*}</theory> =>
             val parent = home.parent
             val tname = home.name / name
@@ -274,6 +286,7 @@ class XMLReader(controller: Controller) extends Logger {
                   readIn(nsMap, t, n)
                }
             }
+            endAdd(t)
          case m @ <view>{_*}</view> =>
             val parent = home.parent
             val vname = home.name / name
@@ -288,6 +301,7 @@ class XMLReader(controller: Controller) extends Logger {
                 readIn(nsMap, v, d)
               }
             }
+            endAdd(v)
          case <ruleconstant><type>{tpN}</type></ruleconstant> =>
             log("found rule constant " + name + ", trying RuleConstantInterpreter")
             val tp = Obj.parseTerm(tpN, nsMap)
@@ -317,7 +331,7 @@ class XMLReader(controller: Controller) extends Logger {
                   readInModule(home / name, nsMap, dd.module, d)
                }
             }
-
+            endAdd(dd)
          // parameters and definition should be parsed much earlier; but when streaming the XML, they are found only now
          case <parameters>{parN}</parameters> =>
             val par = Context.parse(parN, nsMap)
