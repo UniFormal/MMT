@@ -1235,7 +1235,13 @@ class DFAtomicSortC(js : List[JSONObject]) extends Comp[DFAtomicSort] {
       (w : Option[ArgWitness]) :: Nil =>
 
       val frm : IMPSMathExp = FrmFnd.findFormula(t.get.thy.s,Some(d),"defsorts","",Some(n.s),js)
-      val srt : IMPSSort    = FrmFnd.findSort(t.get.thy.s,d,"defsorts",Some(n.s),js)
+      var srt : IMPSSort    = FrmFnd.findSort(t.get.thy.s,d,"defsorts",Some(n.s),js)
+      assert(srt.isInstanceOf[IMPSBinaryFunSort] | srt.isInstanceOf[IMPSNaryFunSort])
+      srt match {
+        case IMPSBinaryFunSort(s1,prop) => srt = s1
+        case IMPSNaryFunSort(srts) => assert(srts.length == 2) ; srt = srts.head
+        case _ => ??!(srt)
+      }
 
       DFAtomicSort(n,d,frm,srt,t.get,u,w,None,None).asInstanceOf[T]
     case _ => ??!(args)
