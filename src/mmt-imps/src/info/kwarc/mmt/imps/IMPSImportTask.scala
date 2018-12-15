@@ -1660,10 +1660,10 @@ class IMPSImportTask(val controller  : Controller,
       if (!uu.isInstanceOf[IMPSUnknownSort]) {
         assert(uu.isInstanceOf[IMPSBinaryFunSort])
         uu match {
-          case IMPSBinaryFunSort(s1,s2) => {
+          case IMPSBinaryFunSort(s1,s2) =>
             assert(s2 == IMPSAtomSort("unit%sort"))
             uu = s1
-          }
+          case _ => ??!("This never happens")
         }
       }
 
@@ -1707,46 +1707,28 @@ class IMPSImportTask(val controller  : Controller,
       IMPSTheory.QCT.complementQC(findKind(as),matchSort(as,thy),t1)
 
     case IMPSQCUnion(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.unionQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.unionQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCIntersection(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.intersectionQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.intersectionQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCDifference(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.differenceQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.differenceQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCSymDifference(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.symDifferenceQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.symDifferenceQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCDisjoint(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.disjointQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.disjointQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCPartitionQ(e1,e2) =>
-      val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
-      val as : IMPSSort = ca.getOrElse(cb.getOrElse(IMPSUnknownSort(tState.freshHash())))
       val t1 = doMathExp(e1,thy,cntxt) ; val t2 = doMathExp(e2,thy,cntxt)
-
-      IMPSTheory.QCT.partitionQQC(findKind(as), matchSort(as,thy), t1, t2)
+      IMPSTheory.QCT.partitionQQC(tState.doUnknown(), tState.doUnknown(), t1, t2)
 
     case IMPSQCSingleton(m) =>
       val ca = findSortFromContext(m, cntxt)
