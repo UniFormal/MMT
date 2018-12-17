@@ -75,6 +75,18 @@ object MMTSystem {
     Option(this.getClass.getPackage.getImplementationVersion).getOrElse(getResourceAsString("versioning/system.txt") + "--localchanges")
   }
 
+  /**
+    * Gets the latest version of the MMT System using the GitHub API.
+    * May throw any kind of exception if it fails -- this should be handled by the caller.
+    * Returns a pair (version, url)
+    */
+  def getLatestVersion: (String, String) = {
+    val json = JSONFromURL("https://api.github.com/repos/Uniformal/MMT/releases/latest").getOrElse(throw GeneralError("Unable to load JSON")).asInstanceOf[JSONObject]
+    val version = json.getAsString("tag_name").stripPrefix("v").trim()
+    val url = json.getAsString("html_url")
+    (version, url)
+  }
+
   /** the git used by this MMT instance */
   lazy val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
 
