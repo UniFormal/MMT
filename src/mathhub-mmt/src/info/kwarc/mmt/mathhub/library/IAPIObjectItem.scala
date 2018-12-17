@@ -121,13 +121,13 @@ case class ITagRef(
 
 /** a full description of a MathHub Group */
 case class ITag(
-                   override val id: String,
-                   override val name: String,
-                   override val statistics: Option[List[IStatistic]],
-                   archives: List[IArchiveRef]
+                 override val id: String,
+                 override val name: String,
+                 override val statistics: Option[List[IStatistic]],
+                 components: List[IArchiveRef]
                  ) extends ITagItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
-    "archives" -> JSONArray(archives.map(_.toJSON):_*)
+    "components" -> JSONArray(components.map(_.toJSON):_*)
   )
 }
 
