@@ -247,4 +247,6 @@ class MMTPluginInterface(homestr : String,reportF : Any) {
       }
     }
   }
+
+  def checkUpdate : Option[(String,String)] = Try(MMTSystem.getLatestVersion).toOption
 }
