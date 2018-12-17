@@ -82,14 +82,14 @@ case class IGroup(
 
                    description: IAPIObjectItem.HTML,
                    responsible: List[String],
-                   archives: List[IArchiveRef]
+                   components: List[IArchiveRef]
                  ) extends IGroupItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
     buffer.add("description", JSONString(description))
     buffer.add("responsible", JSONArray(responsible.map(JSONString): _*))
-    buffer.add("archives", JSONArray(archives.map(_.toJSON):_*))
+    buffer.add("components", JSONArray(components.map(_.toJSON):_*))
 
     buffer
   }
