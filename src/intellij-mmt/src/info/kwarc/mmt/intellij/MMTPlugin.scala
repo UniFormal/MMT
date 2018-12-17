@@ -16,9 +16,17 @@ import javax.swing.tree.DefaultMutableTreeNode
 import scala.collection.mutable
 import scala.util.Try
 
-class MMTPluginInterface(homestr : String) {
+class MMTPluginInterface(homestr : String,reportF : Any) {
   val home = File(homestr)
   private var controller : Controller = _
+
+  lazy val errorReport = new ReportHandler("IntelliJ") {
+    private val report = reportF.asInstanceOf[{
+      def apply(s : String) : Unit
+    }]
+    override def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = if (group=="error") report(msgParts.mkString(" "))
+
+  }
 
   private object Abbreviations {
     lazy val pairstrings = MMTSystem.getResourceAsString("latex/unicode-latex-map").split("\n")
@@ -148,6 +156,8 @@ class MMTPluginInterface(homestr : String) {
 
   def init(): Unit = {
     controller = new Controller
+    controller.report.addHandler(errorReport)
+
     /** Options */
     val mslf = home / "startup.msl"
     if (mslf.toJava.exists())
