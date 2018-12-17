@@ -1337,7 +1337,12 @@ object DFLanguage extends Comp[DFLanguage] {
     case (n : Name) :: (els : Option[ArgEmbeddedLangs]) :: (el : Option[ArgEmbeddedLang])
                     :: (bt : Option[ArgBaseTypes]) :: (srts : Option[ArgSorts])
                     :: (ex : Option[ArgExtensible]) :: (cnsts : Option[ArgConstants])
-                    :: Nil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
+                    :: Nil => {
+      if (n.s.toLowerCase == "PURE-GENERIC-LANGUAGE-2".toLowerCase) {
+        println("<hook> " + bt.toRight())
+      }
+      DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
+    }
     case _ => ??!(args)
   }
 }

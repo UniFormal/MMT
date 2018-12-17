@@ -305,10 +305,11 @@ class TheoryEnsemble(nm : String, base : Theory, fixed : List[Theory], renamer: 
 class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
-  var theories_decl      : List[Theory] = Nil
+  var theories_decl      : List[Theory]         = Nil
   var ensembles          : List[TheoryEnsemble] = Nil
 
-  var languages          : List[DFLanguage]     = Nil
+  var languages_raw      : List[DFLanguage]     = Nil
+  var languages_decl     : List[Theory]         = Nil
 
   var translations_raw   : List[DFTranslation]  = Nil
   var translations_decl  : List[View]   = Nil

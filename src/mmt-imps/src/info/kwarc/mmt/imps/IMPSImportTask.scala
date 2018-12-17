@@ -86,14 +86,7 @@ class IMPSImportTask(val controller  : Controller,
           case e : IMPSDependencyException => println(" > ... fail. Add to stack: " +  e.getMessage ) ; excps = excps.::(e)
         }
         // Languages are processed in context of theories using them, not by themselves
-        case l@DFLanguage(_,_,_,_,_,_,_,_,_) =>
-          if (!tState.languages.contains(l)) {
-            if (tState.verbosity > 0)
-            {
-              println(" > adding language " + l.name)
-            }
-            tState.languages = tState.languages :+ l
-          }
+        case l@DFLanguage(_,_,_,_,_,_,_,_,_)              => doLanguage(l, doc.path, bt.narrationDPath, uri)
         case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         case DFTheoryEnsembleMultiple(name,integ,src,cmt) =>
 
@@ -436,48 +429,33 @@ class IMPSImportTask(val controller  : Controller,
 
     // Build correct union of languages
     if (t.lang.isDefined) {
-      if (!tState.languages.exists(la => la.name.toString.toLowerCase == t.lang.get.lang.toString.toLowerCase)) { thy_reset() ; throw new IMPSDependencyException("required language " + t.lang.get.lang + " not found") }
-      l = tState.languages.find(la => la.name.toString.toLowerCase == t.lang.get.lang.toString.toLowerCase)
+      val fnd : Option[Theory] = tState.languages_decl.find(th => th.name.toString.toLowerCase == t.lang.get.lang.toString.toLowerCase)
+      hAssert(fnd.nonEmpty, tState.languages_decl)
+
+      val includee : Theory = fnd.get
+      val includer : Theory = nu_theory
+      controller add PlainInclude(includee.path,includer.path)
+
+      if (tState.verbosity > 0) {
+        println(" > adding include: " + nu_theory.name + " includes " + fnd.get.name)
+      }
     }
 
     if (t.comp.isDefined)
     {
-      def recursiveInclude(includee : Theory, includer : Theory) : Unit =
-      {
-        // Don't add superfluous includes
-        if (!includer.getIncludes.contains(includee.path))
-        {
-          /* Add Include */
-          if (tState.verbosity > 0) {
-            println("   > adding include of " + includee.name.toString.toLowerCase)
-          }
-          controller add PlainInclude(includee.path,includer.path)
-
-          for (i <- includee.getIncludes)
-          {
-            // These are metatheories, don't need to be included
-            if (!List("Lutins","QuasiLutins").contains(i.name.toString))
-            {
-              val inc : Option[Theory] = tState.theories_decl.find(t => t.path == i)
-              assert(inc.isDefined)
-              recursiveInclude(inc.get,includer)
-            }
-          }
-        }
-      }
-
-      /* For each component theory, take its language (if there is one) */
+      /* Include all component theories */
       for (comp_theory <- t.comp.get.cps)
       {
-        if (!tState.theories_raw.exists(t => t.name.toString.toLowerCase == comp_theory.toString.toLowerCase)) { thy_reset() ; throw new IMPSDependencyException("required co-theory " + comp_theory.s.toLowerCase + " not found") }
-
+        hAssert(tState.theories_raw.exists(t => t.name.toString.toLowerCase == comp_theory.toString.toLowerCase),tState.theories_raw)
         val component : Theory = getTheory(comp_theory.toString.toLowerCase)
-        recursiveInclude(component,nu_theory)
+
+        /* Add Include */
+        if (tState.verbosity > 0) {
+          println("   > adding include of " + component.name.toString + " to " + nu_theory.name)
+        }
+        controller add PlainInclude(component.path,nu_theory.path)
       }
     }
-
-    // Actually translate resulting language
-    if (l.isDefined) { doLanguage(l.get, nu_theory, uri) }
 
     /* Translate all axioms, if there are any */
     if (t.axioms.isDefined)
@@ -550,29 +528,48 @@ class IMPSImportTask(val controller  : Controller,
 
   }
 
-  def doLanguage(l : DFLanguage, t : Theory, uri : URI) : Unit =
+  def doLanguage(l : DFLanguage, docPath : DPath, ns : DPath, uri : URI) : Unit =
   {
-    def doLanguageOrTheory(target : String, thy : Theory) : Unit =
+    val t = new Theory(ns,
+      LocalName(l.name.toString),
+      Some(IMPSTheory.QCT.quasiLutinsPath),
+      modules.Theory.noParams,
+      modules.Theory.noBase)
+
+    val mref : MRef = MRef(docPath,t.path)
+    controller.add(t)
+    controller.add(mref)
+
+    if (tState.verbosity > 0)
     {
-      val exists_language : Boolean = tState.languages.exists(p => p.name.toString.toLowerCase == target.toLowerCase)
-
-      if (exists_language) {
-        doLanguage(tState.languages.find(p => p.name.toString.toLowerCase == target.toLowerCase).get, thy, uri)
-      }
+      println(" > adding language " + l.name.toString)
     }
 
+    // Include embedded languages
+    var emblangs : List[Name] = List.empty
     if (l.el.isDefined) {
-      doLanguageOrTheory(l.el.get.nm.s,t)
+      emblangs = emblangs :+ l.el.get.nm
+    }
+    if (l.els.isDefined) {
+      emblangs = emblangs ::: l.els.get.nms
     }
 
-    if (l.els.isDefined) {
-      for (l_embed <- l.els.get.nms.map(_.s)) {
-        doLanguageOrTheory(l_embed, t)
+    for (embl <- emblangs) {
+      val fnd : Option[Theory] = tState.languages_decl.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
+      hAssert(fnd.isDefined, tState.languages_decl)
+
+      val includee : Theory = fnd.get
+      val includer : Theory = t
+      controller add PlainInclude(includee.path,includer.path)
+
+      if (tState.verbosity > 0) {
+        println(" > adding include: " + t.name + " includes " + fnd.get.name)
       }
     }
 
     if (l.bt.isDefined)
     {
+      println("<hook> " + l.bt.get)
       for (baseType : IMPSSort <- l.bt.get.nms)
       {
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
@@ -648,6 +645,10 @@ class IMPSImportTask(val controller  : Controller,
         controller add l_const
       }
     }
+
+    tState.languages_raw  = tState.languages_raw :+ l
+    tState.languages_decl = tState.languages_decl :+ t
+
   }
 
   def doTranslation(d : DFTranslation, docPath: DPath, uri : URI) : Unit = d match
@@ -1042,10 +1043,10 @@ class IMPSImportTask(val controller  : Controller,
 
         // Quasi-Constructors needed to be built in because they're not parseable
 
-        assert(tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase)
+        assert(tState.languages_raw.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase)
            ||  tState.theories_raw.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
 
-        val parent: Theory = if (!tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
+        val parent: Theory = if (!tState.languages_raw.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
         {
           getTheory(LocalName(arglang.lang.s).toString.toLowerCase)
         }

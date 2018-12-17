@@ -15,4 +15,13 @@ package object imps
     println(x)
     ???
   }
+
+  // Slightly more helpful version of assert.
+  def hAssert(b : Boolean, x : Any) : Unit = {
+    if (!b) {
+      println("There's an assertion about to fail. Here's some potentially useful information:")
+      println(x.toString)
+    }
+    assert(b)
+  }
 }
