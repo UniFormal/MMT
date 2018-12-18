@@ -102,8 +102,6 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
    type ThisType = NestedModule
    val feature = mod.feature
    def module = mod
-   //val home = OMMOD(module.parent ? module.name.init)
-   //val name = LocalName(module.name.last)
    def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): NestedModule = {
      val modT = mod.translate(utils.mmt.mmtbase, LocalName(newHome.toMPath/prefix)/name, translator,context)
      new NestedModule(newHome, prefix/name, modT)

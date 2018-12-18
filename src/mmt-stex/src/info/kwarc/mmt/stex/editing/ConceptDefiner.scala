@@ -38,6 +38,7 @@ class ConceptDefiner extends ServerExtension("define") {
        }}
      }
 
+     import JSONConversions._
      val json: JSONArray = nameLists map {case (a,names) =>
        JSONObject(
            "archive" -> JSONString(a.narrationBase.toString),

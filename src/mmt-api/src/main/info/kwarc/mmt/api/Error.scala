@@ -107,7 +107,7 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 }
 
 object Error {
-  /** converts java exception to MMT error */
+  /** converts java exception to MMT error, identity on MMT errors */
   def apply(e: Exception): Error = e match {
     case e: Error => e
     case e: Exception => GeneralError("unknown error").setCausedBy(e)
@@ -188,7 +188,7 @@ case class InvalidElement(elem: StructuralElement, s: String) extends Invalid("i
 case class InvalidObject(obj: objects.Obj, s: String) extends Invalid("invalid object (" + s + "): " + obj)
 
 /** errors that occur when judgements do not hold */
-case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid("invalid unit: " + msg)
+case class InvalidUnit(unit: checking.CheckingUnit, history: checking.History, msg: String) extends Invalid(s"invalid unit: $msg")
 
 /** run time error thrown by executing invalid program */
 case class ExecutionError(msg: String) extends Error(msg)

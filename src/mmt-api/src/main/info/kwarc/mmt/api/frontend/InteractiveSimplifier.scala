@@ -3,12 +3,14 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api._
 import objects._
 import uom._
+import tools.nsc._
+import interpreter._
 
 //TODO obsolete
 //should be redone with a clean step-based/interactive object simplifier
-class InteractiveSimplifier(controller : Controller, intp : tools.nsc.interpreter.ILoop) {
+class InteractiveSimplifier(controller : Controller, intp : ILoop) {
   private var uom = controller.simplifier
-  var uomLog: List[(UOMState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
+  var uomLog: List[(SimplifierState,Term,Rule)] = Nil //TODO corresponding code in RuleBasedSimplifier is broken
   def current = uomLog.head
   def rule = current._3
   var topTerm : Term = null

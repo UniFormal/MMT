@@ -3,7 +3,7 @@ package info.kwarc.mmt.odk.Singular
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
-import info.kwarc.mmt.api.documents.{Document, MRef}
+import info.kwarc.mmt.api.documents.{Document, FileLevel,MRef}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
@@ -24,7 +24,7 @@ class SingularImporter extends Importer {
 
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
     val d = bf.inFile.name
-    val topdoc = new Document(bf.narrationDPath,true)
+    val topdoc = new Document(bf.narrationDPath,FileLevel)
     var ths : List[MPath] = Nil
     controller add topdoc
     val e = try {
@@ -98,10 +98,4 @@ case class SingularFunction(name : String, arguments : List[String], is_global :
   override def toString: String = name + ": " + arguments.mkString(" -> ") + "\n - " + docstring.replace("\n","\n - ")
   private def doType = arguments.foldLeft[Term](tp(got.getOrElse("returntype")))((tm,s) => Arrow(tp(s),tm))
   def asConstant(th : MPath) : Constant = Constant(OMMOD(th),LocalName(name),Nil,Some(doType),None,None)
-}
-
-object Singular {
-  val dpath = DPath(URI.http colon "www.singular.uni-kl.de")
-  val meta = dpath ? "Types"
-  def tp(s : String) = OMS(meta ? s)
 }

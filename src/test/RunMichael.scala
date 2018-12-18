@@ -2,7 +2,7 @@ import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.got.GraphOptimizationTool
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 
-object RunMichael extends MichaelTest {
+object RunMichael extends MagicTest {
 
   def run : Unit = {
     controller.handleLine("extension info.kwarc.mmt.got.GraphOptimizationTool")

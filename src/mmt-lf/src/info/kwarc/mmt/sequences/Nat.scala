@@ -10,20 +10,25 @@ import info.kwarc.mmt.lf._
 
 object Bool {
    val _base = Typed._base
-   val _path = _base ? "DHOL"
-   object ded   extends UnaryLFConstantScala(_path, "DED")
+   val _boolpath = _base ? "DHOL"
+   val _dedpath = _base ? "Ded"
+   object ded   extends UnaryLFConstantScala(_dedpath, "DED")
+   val trueo = _base ? "Bool" ? "TRUE"
+   val falseo = _base ? "Bool" ? "FALSE"
 }
 
 object Nat {
    val _base = Typed._base
-   val _path = _base ? "NatSymbols"
+   val _sympath = _base ? "NatSymbols"
+   val _arithpath = _base ? "NatArith"
+   val _relpath = _base ? "NatRels"
 
-   val nat   = _path ? "NAT"
-   val zero  = _path ? "zero"
-   val one   = _path ? "one"
+   val nat   = _sympath ? "NAT"
+   val zero  = _sympath ? "zero"
+   val one   = _arithpath ? "one"
 
-   object succ  extends UnaryLFConstantScala(_path, "succ")
-   object leq   extends BinaryLFConstantScala(_path, "LEQ")
+   object succ  extends UnaryLFConstantScala(_arithpath, "succ")
+   object leq   extends BinaryLFConstantScala(_relpath, "LEQ")
 
    /** a < b : type */
    def lessType(a: Term, b: Term) = Bool.ded(leq(succ(a),b))

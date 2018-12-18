@@ -14,6 +14,9 @@ travisConfig := {
     s"cd src && (cat /dev/null | sbt ++$ourScalaVersion $task) && cd .."
   ) ::: check.toList
 
+  // convenience wrapper to tun a specific test class
+  def runMainClass(cls: String*) : List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
+
   // convenience functions for checks
   def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
   def identical(name: String) : Option[String] = Some("(git diff --quiet --exit-code \"" + name + "\")")
@@ -45,8 +48,7 @@ travisConfig := {
 
       // setup the test environment, so that the lmh versioning is ignored on devel
       "before_script" -> List(
-        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_ARCHIVE_HEAD=1; fi",
-        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_DEVEL=1; fi"
+        "if [ \"$TRAVIS_BRANCH\" == \"devel\" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;"
       )
     ),
 
@@ -60,11 +62,16 @@ travisConfig := {
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
-      TravisJob("Check that the code compiles and the test runs run", sbt("scalastyle") ::: sbt("compile") ::: sbt("test"))
+      TravisJob("Check mmt.jar generation and integration tests",
+        sbt("deploy", file("deploy/mmt.jar")) ::: runMainClass(
+          "info.kwarc.mmt.api.test.APITest",
+          "info.kwarc.mmt.lf.LFTest",
+          "info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest"
+        )),
+      TravisJob("Check that unit tests run", sbt("test")),
     ),
 
-    TravisStage("DeployCheck", "check that the 'apidoc' and 'deploy' targets work")(
-      TravisJob("Check mmt.jar generation using `sbt deploy`", sbt("deploy", file("deploy/mmt.jar"))),
+    TravisStage("DeployCheck", "check that the 'apidoc' and 'deployLFCatalog' targets work")(
       TravisJob("Check lfcatalog.jar generation using `sbt deployLFCatalog`", sbt("deployLFCatalog", file("deploy/lfcatalog/lfcatalog.jar"))),
       TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
     ),

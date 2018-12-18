@@ -52,7 +52,7 @@ case class Evaluation() extends activeComputation("eval", "Evaluate") {
 /* represents a context of an active computation */
 case class ACContext(values: Map[GlobalName, String]) {
   /** turns this ACContext into a json object for exporting */
-  def toJSON : JSON = JSONObject.fromList(values.toList.map(e => (JSONString(e._1.toPath), JSONString(e._2))))
+  def toJSON : JSON = JSONObject(values.toList.map(e => (JSONString(e._1.toPath), JSONString(e._2))))
 }
 
 object ACContext {

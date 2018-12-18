@@ -38,7 +38,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
     //override def buffered = true
     override def chunked = true
     // Session tracking config
-    override def sessionTimeoutMinutes = 60
+    override def sessionTimeoutMinutes = 1
     override def tracking = HTracking.Cookie
     override def cookieKey = "MMT_SESSIONID"
     override def sidKey = "MMT_SESSIONID"
@@ -77,7 +77,7 @@ trait TiscafServerImplementation extends HServer with ServerImplementation {
   }
 
   /** stop the server; for some reason this throws IOException which we catch here */
-  override def stop: Unit = {
+  override def stop {
     try {
       super.stop
     } catch {

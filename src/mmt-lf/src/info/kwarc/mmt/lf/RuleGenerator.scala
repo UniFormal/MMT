@@ -86,10 +86,10 @@ abstract class RuleGenerator extends ChangeListener {
                  val mt = rec.makeMatcher
                  val matches = mt(rec.solverContext ++ stack.context, r.parameters) {eq => eq(a, tm) && eq(b, tp)}
                  matches match {
-                   case MatchSuccess(sub) =>
-                      r.assumptions.forall(a => rec(a ^ sub))
+                   case MatchSuccess(sub, true) =>
+                      Some(r.assumptions.forall(a => rec(a ^ sub)))
                    case _ =>
-                    ??? // not applicable
+                    None // not applicable
                  }
               }
            }

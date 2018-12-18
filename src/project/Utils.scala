@@ -3,7 +3,7 @@ import java.nio.file.StandardCopyOption._
 
 object Utils {
    /** MMT root directory */
-   val root = File("..")
+   val root = File("..").canonical
    /** source folder */
    val src = root / "src"
    /** MMT deploy directory */

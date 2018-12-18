@@ -71,10 +71,8 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
      case Some(f) => this match {
        case IncludeVarDecl(_,OMPMOD(p,args),_) =>
           Include(home, p, args) //TODO defined include
-       case StructureVarDecl(n, from, dfO) => dfO match {
-         case None => DeclaredStructure(home, name, from, false)
-         case Some(df) => DefinedStructure(home, name, from, df, false)
-       }
+       case StructureVarDecl(n, from, dfO) =>
+          Structure(home, name, from, dfO, false)
        case DerivedVarDeclFeature(n,f,tp,None) =>
           new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not))
      }
@@ -142,14 +140,14 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
    /** @return the prefix up to and excluding the variable */
    def before(name: LocalName): Context = {
       index(name) match {
-         case None => this
+         case None => Context.empty
          case Some(i) => Context(variables.take(variables.length-i-1):_*)
       }
    }
    /** @return the suffix after and excluding the variable */
    def after(name: LocalName): Context = {
       index(name) match {
-         case None => Context.empty
+         case None => this
          case Some(i) => Context(variables.drop(variables.length-i):_*)
       }
    }
@@ -235,6 +233,7 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
          Some(s)
       }
    }
+   def /!(args: List[Term]) = (this / args).getOrElse {throw ImplementationError("wrong number of arguments to substitute for context " + this + ": " + args.mkString(", "))}
 
    /** applies a function to the type/definiens of all variables (in the respective context)
     * @return the resulting context
@@ -381,6 +380,7 @@ case class Substitution(subs : Sub*) extends Obj {
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def subobjects = subobjectsNoContext(subs.toList)
    def maps(n: LocalName): Boolean = this exists {_.name == n}
+   def domain = this.map(_.name)
    def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
       case Sub(n, OMV(m)) => m == n

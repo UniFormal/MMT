@@ -22,8 +22,6 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
    protected val delegatee = t // inheriting the container element functions of t
 } with NestedModule(h, name, t) with DelegatingContainerElement[Declaration] with HasNotation {
   
-  // overriding to make the type stricter
-  override def module: DeclaredModule = t
   def modulePath = module.path
 
   override def getDeclarations = module.getDeclarations
@@ -33,6 +31,7 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
   override def toNode : Elem = {
     val (tpAtt, tpNode) = tpAttNode
     <derived feature={feature} name={name.toPath} base={t.parent.toPath} type={tpAtt}>
+      {getMetaDataNode}
       {tpNode}
       {notC.toNode}
       {t.getDeclarations map (_.toNode)}
@@ -148,7 +147,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     * @param parent the containing module
     * @param dd the derived declaration
     */
-   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration
+   def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration
 
    /** override as needed */
    def modules(dd: DerivedDeclaration): List[Module] = Nil
@@ -234,7 +233,7 @@ trait Untyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   }
   override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -251,7 +250,7 @@ trait UnnamedUntyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   override def makeHeader(dd: DerivedDeclaration) = OMMOD(mpath)
 
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -278,15 +277,29 @@ trait TypedConstantLike {self: StructuralFeature =>
   }
 }
 
-trait TheoryLike {self: StructuralFeature =>
+trait TheoryLike extends StructuralFeature {
+  object Type {
+    val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
+
+    def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
+    def unapply(t: Term) = t match {
+      case OMBINDC(OMMOD(this.mpath), params, Nil) => Some((params))
+      case _ => None
+    }
+
+    /** retrieves the parameters */
+    def getParameters(dd: DerivedDeclaration) = {
+      dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
+    }
+  }
   def getHeaderNotation: List[Marker] = List(LabelArg(1,LabelInfo.none))
   override def processHeader(header: Term) = header match {
-    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_))) => (LocalName(name),None)// (name, Type(cont))
-    case _ => throw ImplementationError("unexpected header")
+    case OMBIND(OMMOD(`mpath`), cont, OML(name,None,None,_,_)) => (name, Type(cont))
+    case OMA(OMMOD(`mpath`), List(OML(name,None,None,_,_))) => (name, Type(Context.empty))
+    case _ => throw InvalidObject(header, "ill-formed header")
   }
   override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
-    case Some(t) => OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
-    case None => throw ImplementationError("no type present")
+    case Some(Type(cont)) => OMBIND(OMMOD(mpath), cont, OML(dd.name, None,None))
   }
   def getType(dd: DerivedDeclaration): Term = dd.tpC.get.get
   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
@@ -319,13 +332,13 @@ object ParametricTheoryLike {
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
 
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
+  def elaborate(parent: Module, dd: DerivedDeclaration) = {
       val dom = getDomain(dd)
       val context = parent.getInnerContext
       val body = controller.simplifier.materialize(context, dom, None, None)
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
-        private val morphism = DeclaredView(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
+        private val morphism = View(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
         /** precompute domain and build the morphism */
         val domain = body.getDeclarationsElaborated.map {d =>
           val ddN = dd.name / d.name
@@ -366,7 +379,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   private def bindPi(t : Term)(implicit vars : Context) = if (vars.nonEmpty) OMBIND(OMS(pi),vars,t) else t
   private def bindLambda(t : Term)(implicit vars : Context) = if (vars.nonEmpty) OMBIND(OMS(lambda),vars,t) else t
 
-  private def applyParams(body : DeclaredTheory,toTerm : LocalName => Term)(vars : Context) = new StatelessTraverser {
+  private def applyParams(body : Theory,toTerm : LocalName => Term)(vars : Context) = new StatelessTraverser {
     val varsNames = vars.map(_.name)
     def traverse(t: Term)(implicit con: Context, state: State) : Term = t match {
       case OMS(p) if p.module == body.path && p.name.steps.head.isInstanceOf[SimpleStep] => //dd.module.path =>
@@ -382,7 +395,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       case _ => Traverser(this,t)
     }
   }
-  private def mkTranslator(body : DeclaredTheory, toTerm : LocalName => Term)(implicit vars : Context) = new Translator {
+  private def mkTranslator(body : Theory, toTerm : LocalName => Term)(implicit vars : Context) = new Translator {
     val applyPars = applyParams(body,toTerm)(vars)
     def applyType(c: Context, t: Term) = bindPi(applyPars(t, c))
     def applyDef(c: Context, t: Term) = bindLambda(applyPars(t, c))
@@ -391,7 +404,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   override def elaborateInContext(context: Context, dv: VarDecl): Context = dv match {
     case VarDeclFeature(LocalName(ComplexStep(dom) :: Nil), OMMOD(q), None) if dom == q && !context.contains(dv) =>
       val thy = controller.simplifier.getBody(context, OMMOD(dom)) match {
-        case t : DeclaredTheory => t
+        case t : Theory => t
         case _ => throw GetError("Not a declared theory: " + dom)
       }
       controller.simplifier.apply(thy)
@@ -423,17 +436,17 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       }.toList
     case _ => Context.empty
   }
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) : Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration) : Elaboration = {
     // println(parent.name + " <- " + dd.name)
     val dom = getDomain(dd)
     val parenth = parent match {
-      case th : DeclaredTheory => th
+      case th : Theory => th
       case _ => ???
     }
     val context = controller.simplifier.elaborateContext(Context.empty,parenth.getInnerContext)
     val body = controller.simplifier.getBody(context, dom) match {
-      case t : DeclaredTheory => t
-      case _ => throw GetError("Not a declared theory: " + dom)
+      case t : Theory => t
+      case _ => throw GetError("Not a theory: " + dom)
     }
     controller.simplifier.apply(body)
     val parentContextIncludes = context.collect{

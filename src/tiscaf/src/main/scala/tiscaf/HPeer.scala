@@ -14,13 +14,17 @@
  * You should have received a copy of the GNU Lesser General Public License
  * along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
+// twiesing 18-09-2018: Remove call to deprecated methods
+
 package tiscaf
 
 import java.nio.ByteBuffer
-import java.nio.channels.{ Selector, SelectionKey, SocketChannel }
+import java.nio.channels.{SelectionKey, Selector, SocketChannel}
+
 import javax.net.ssl._
 
 import scala.concurrent.ExecutionContext
+import scala.util.Success
 
 private trait HPeer extends HLoggable {
 
@@ -98,10 +102,11 @@ private trait HSimplePeer extends HPeer {
   final def readChannel: Unit = try {
 
     def doTalkItself =
-      acceptor.talk onSuccess {
-        case PeerWant.Read  => acceptor.in.reset; connRead // new alive request/response
-        case PeerWant.Close => connClose
-        case x              => sys.error("unexpected PeerWant value " + x)
+      acceptor.talk onComplete {
+        case Success(PeerWant.Read)  => acceptor.in.reset; connRead // new alive request/response
+        case Success(PeerWant.Close) => connClose
+        case Success(x)              => sys.error("unexpected PeerWant value " + x)
+        case _ => // do nothing and avoid MatchError
       }
 
     theBuf.clear

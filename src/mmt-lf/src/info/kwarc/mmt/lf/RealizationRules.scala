@@ -7,6 +7,7 @@ import symbols._
 import objects._
 import checking._
 import uom._
+import utils._
 
 /** realize an LF-type/function as a [[SemanticType]] or [[SemanticOperator]] */
 object Realize extends ParametricRule {
@@ -75,10 +76,10 @@ object Realize extends ParametricRule {
          val args = from.map(_._2)
          if (args.length != semOp.arity)
            throw ParseError("semantic operator has wrong arity")
-         val expSynOpTp = SynOpType(args,to)
+         val expSynOpTp = SynOpType(List(Apply.path), args,to)
          def gST(tp: Term) = getSemanticType(controller, home, tp)
          val expSemOpTp = SemOpType(args map gST, gST(to))
-         if (!semOp.getTypes.contains(expSemOpTp))
+         if (!semOp.getTypes.exists(st => expSemOpTp subtype st))
            throw ParseError("semantic operator has wrong type")
          RealizedOperator(synP, expSynOpTp, semOp, expSemOpTp)
        case _ => throw ParseError("objects exists but is not a semantic type or operator")

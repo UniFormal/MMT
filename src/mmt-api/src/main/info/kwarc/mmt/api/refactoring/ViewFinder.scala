@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.{Controller, Extension, Logger, Report}
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
@@ -20,9 +20,9 @@ import scala.util.Try
 class FinderConfig(val finder : ViewFinder, protected val report : Report) extends Logger {
   override def logPrefix: String = "viewfinder"
 
-  private var fromTheories_var : List[DeclaredTheory] = Nil
-  private var toTheories_var : List[DeclaredTheory] = Nil
-  private var commonTheories_var : List[DeclaredTheory] = Nil
+  private var fromTheories_var : List[Theory] = Nil
+  private var toTheories_var : List[Theory] = Nil
+  private var commonTheories_var : List[Theory] = Nil
   private var fixing_var : List[AlignmentTranslation] = Nil
   private var judg1_var: Option[GlobalName] = None
   private var judg2_var: Option[GlobalName] = None
@@ -30,9 +30,9 @@ class FinderConfig(val finder : ViewFinder, protected val report : Report) exten
   private var minimal_parameter_length_var = 0
   private var multithreaded : Boolean = false
 
-  // def fromTheories : List[DeclaredTheory] = fromTheories_var
-  // def toTheories : List[DeclaredTheory] = toTheories_var
-  // def commonTheories : List[DeclaredTheory] = commonTheories_var
+  // def fromTheories : List[Theory] = fromTheories_var
+  // def toTheories : List[Theory] = toTheories_var
+  // def commonTheories : List[Theory] = commonTheories_var
   def fixing : List[AlignmentTranslation] = fixing_var
   def judg1: Option[GlobalName] = judg1_var
   def judg2: Option[GlobalName] = judg2_var
@@ -46,7 +46,7 @@ class FinderConfig(val finder : ViewFinder, protected val report : Report) exten
     fixing_var :::= al.map(finder.makeAlignment)
   }
 
-  // val translations = fixing.map(AlignmentTranslation.apply(_)(controller))
+  // val translations = fixing.map(AlignmentTranslation.apply(_,controller))
 
   def addJudgmentFrom(gn : GlobalName) = judg1_var = Some(gn)
   def addJudgmentTo(gn : GlobalName) = judg2_var = Some(gn)
@@ -74,7 +74,7 @@ class ViewFinder extends frontend.Extension {
   implicit private val ec = ExecutionContext.global //.fromExecutor(Executors.newFixedThreadPool(10000))
 
   private var initialized : Boolean = false
-  private val theories : mutable.HashMap[String,(List[DeclaredTheory],Option[GlobalName])] = mutable.HashMap()
+  private val theories : mutable.HashMap[String,(List[Theory],Option[GlobalName])] = mutable.HashMap()
 
   private lazy val preprocs = controller.extman.get(classOf[Preprocessor])
 
@@ -117,18 +117,18 @@ class ViewFinder extends frontend.Extension {
     var i = 0
     var judg: Option[GlobalName] = None
     while (judg.isEmpty && i < ths.length) {
-      judg = findJudgment(controller.getAs(classOf[DeclaredTheory],ths(i)))
+      judg = findJudgment(controller.getAs(classOf[Theory],ths(i)))
       i += 1
     }
     judg
   }
 
   private[refactoring] def makeAlignment(al : FormalAlignment) =
-    AlignmentTranslation(al)(controller)
+    AlignmentTranslation(al, controller)
 
-  private def findJudgment(th:DeclaredTheory):Option[GlobalName] = {
+  private def findJudgment(th:Theory):Option[GlobalName] = {
 
-    def findJudgmentIt(th:DeclaredTheory):Option[GlobalName] = {
+    def findJudgmentIt(th:Theory):Option[GlobalName] = {
       val list = for {o <- th.getConstants.filter(p => p.rl match {
         case t: Some[String] => true
         case _ => false
@@ -142,26 +142,26 @@ class ViewFinder extends frontend.Extension {
     findJudgmentIt(th)
   }
 
-  def getFlat(mpaths : List[MPath]) : List[DeclaredTheory] = { // TODO properly
+  def getFlat(mpaths : List[MPath]) : List[Theory] = { // TODO properly
 
-    var dones : List[DeclaredTheory] = Nil
+    var dones : List[Theory] = Nil
     def flatten(mp : MPath): Unit = {
       if (dones.exists(_.path == mp)) return ()
       controller.getO(mp) match {
-        case Some(t : DeclaredTheory) if !t.getDeclarations.exists(_.isInstanceOf[NestedModule]) =>
+        case Some(t : Theory) if !t.getDeclarations.exists(_.isInstanceOf[NestedModule]) =>
           t.getIncludes.foreach(flatten)
           dones ::= t
-        case Some(t : DeclaredTheory) =>
-          var ns : List[DeclaredTheory] = Nil
-          val th = new DeclaredTheory(t.parent,t.name,t.meta,t.paramC,t.dfC)
+        case Some(t : Theory) =>
+          var ns : List[Theory] = Nil
+          val th = new Theory(t.parent,t.name,t.meta,t.paramC,t.dfC)
           t.getDeclarations.foreach {
             case c : FinalConstant => th add c
             case inc : Structure =>
               flatten(inc.from.toMPath)
               th add inc
-            case nm : NestedModule if nm.module.isInstanceOf[DeclaredTheory] =>
-              val old = nm.module.asInstanceOf[DeclaredTheory]
-              val in = new DeclaredTheory(old.parent,old.name,old.meta,old.paramC,old.dfC)
+            case nm : NestedModule if nm.module.isInstanceOf[Theory] =>
+              val old = nm.module.asInstanceOf[Theory]
+              val in = new Theory(old.parent,old.name,old.meta,old.paramC,old.dfC)
               th.getDeclarations.foreach(in.add(_))
               old.getDeclarations.foreach(in.add(_))
               ns ::= in
@@ -181,21 +181,21 @@ class ViewFinder extends frontend.Extension {
     dones.reverse
 /*
     // guarantees that the dependency closure is ordered
-    val dones : mutable.HashMap[MPath,Option[List[DeclaredTheory]]] = mutable.HashMap.empty
-    def flatten(mp : MPath) : Option[List[DeclaredTheory]] = {
+    val dones : mutable.HashMap[MPath,Option[List[Theory]]] = mutable.HashMap.empty
+    def flatten(mp : MPath) : Option[List[Theory]] = {
       dones.getOrElseUpdate(mp, {
         // log("Doing: " + mp.toString)
         // println(mp)
         controller.getO(mp) match {
-          case Some(t : DeclaredTheory) =>
-            var ns : List[DeclaredTheory] = Nil
-            val th = new DeclaredTheory(t.parent,t.name,t.meta,t.paramC,t.dfC)
+          case Some(t : Theory) =>
+            var ns : List[Theory] = Nil
+            val th = new Theory(t.parent,t.name,t.meta,t.paramC,t.dfC)
             t.getDeclarations.foreach {
               case c : FinalConstant => th add c
               case inc : Structure => th add inc
-              case nm : NestedModule if nm.module.isInstanceOf[DeclaredTheory] =>
-                val old = nm.module.asInstanceOf[DeclaredTheory]
-                val in = new DeclaredTheory(old.parent,old.name,old.meta,old.paramC,old.dfC)
+              case nm : NestedModule if nm.module.isInstanceOf[Theory] =>
+                val old = nm.module.asInstanceOf[Theory]
+                val in = new Theory(old.parent,old.name,old.meta,old.paramC,old.dfC)
                 th.getDeclarations.foreach(in.add(_))
                 old.getDeclarations.foreach(in.add(_))
                 ns ::= in
@@ -219,7 +219,7 @@ class ViewFinder extends frontend.Extension {
 */
   }
 
-  def getArchive(a : Archive) : Option[(List[DeclaredTheory], Option[GlobalName])] = Some{
+  def getArchive(a : Archive) : Option[(List[Theory], Option[GlobalName])] = Some{
     log("Collecting theories in " + a.id)
     val (t0,cont) = Time.measure { a.allContent }
     //log("Loaded after " + t0)
@@ -230,7 +230,7 @@ class ViewFinder extends frontend.Extension {
     (ths,judg)
   }
 
-  def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report))
+  def getHasher : Hasher = new HashesNormal(new FinderConfig(this,report),controller)
 
   def addArchives(a1 : Archive, a2 : Archive, hasher : Hasher) : Unit = {
     var lf = a1.root / "viewfinder_order"
@@ -241,7 +241,7 @@ class ViewFinder extends frontend.Extension {
       log("Adding " + mps.length + " theories...")
       val ret = mps.indices.map{i =>
         print("\r  " + (i + 1) + " of " + mps.indices.length)
-        controller.getAs(classOf[DeclaredTheory],mps(i))
+        controller.getAs(classOf[Theory],mps(i))
       }.toList
       println(" Done.")
       ret
@@ -260,7 +260,7 @@ class ViewFinder extends frontend.Extension {
       log("Adding " + mps.length + " theories...")
       val ret = mps.indices.map{i =>
         print("\r  " + (i + 1) + " of " + mps.indices.length)
-        controller.getAs(classOf[DeclaredTheory],mps(i))
+        controller.getAs(classOf[Theory],mps(i))
       }.toList
       println(" Done.")
       ret
@@ -586,9 +586,9 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
       newmap.requires foreach add
     }
 
-    def toView(path : MPath) : DeclaredView = {
+    def toView(path : MPath) : View = {
       maps = maps.distinct
-      val v = new DeclaredView(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to)),false)
+      val v = new View(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to)),new TermContainer(),false)
       maps.foreach(m => if (m.from != m.to && !v.declares(m.sfrom.name)) v.add(Constant(v.toTerm,m.sfrom.name,Nil,None,Some(OMS(m.sto)),None)))
       v
     }
@@ -600,7 +600,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     newview
   }
 
-  def makeviews(path : MPath, omaps : List[Map]) : List[DeclaredView] = {
+  def makeviews(path : MPath, omaps : List[Map]) : List[View] = {
     val imaps = omaps.reverse.filter(_.isSimple).map(_.simple).distinct
     var views : List[InternalView] = Nil
     imaps.indices.foreach {i =>
@@ -663,8 +663,8 @@ trait Preprocessor extends Extension { self =>
     this
   }
 
-  def apply(th : DeclaredTheory) : DeclaredTheory = {
-    val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,th.dfC)
+  def apply(th : Theory) : Theory = {
+    val nth = new Theory(th.parent,th.name,th.meta,th.paramC,th.dfC)
     th.getDeclarations foreach {
       case c : FinalConstant =>
         val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map doTerm,c.df map doTerm,c.rl,c.notC)
@@ -683,7 +683,7 @@ trait Preprocessor extends Extension { self =>
       self.init(controller)
       super.init(controller)
     }
-    override def apply(th : DeclaredTheory) = that.apply(self.apply(th))
+    override def apply(th : Theory) = that.apply(self.apply(th))
   }
 }
 
@@ -703,8 +703,8 @@ object SimpleParameterPreprocessor extends Preprocessor {
 object CovariantParameterPreprocessor extends Preprocessor {
   import info.kwarc.mmt.api.objects.Conversions._
 
-  override def apply(th: DeclaredTheory): DeclaredTheory = {
-    val nth = new DeclaredTheory(th.parent,th.name,th.meta,ContextContainer(Nil),TermContainer(None))
+  override def apply(th: Theory): Theory = {
+    val nth = new Theory(th.parent,th.name,th.meta,ContextContainer(Nil),TermContainer(None))
     var sub = Substitution()
     th.parameters foreach {v =>
       val c = Constant(nth.toTerm,LocalName("Parameter") / v.name,Nil,v.tp.map(_ ^? sub),v.df.map(_ ^? sub),None,NotationContainer(None))
@@ -742,10 +742,10 @@ object DefinitionExpander extends Preprocessor {
     }
   }
 
-  private lazy val simplifier = controller.simplifier.objectLevel
+  private lazy val simplifier = controller.simplifier
 
-  override def apply(th: DeclaredTheory): DeclaredTheory = {
-    val nth = new DeclaredTheory(th.parent,th.name,th.meta,th.paramC,TermContainer(None))
+  override def apply(th: Theory): Theory = {
+    val nth = new Theory(th.parent,th.name,th.meta,th.paramC,TermContainer(None))
     th.getDeclarations foreach {
       case Include(_,from,args) if args.nonEmpty => // get rid of parametric includes
         nth.add(Include(nth.toTerm,from,Nil))

@@ -56,7 +56,7 @@ class MMTInterpolator(controller: frontend.Controller) {
         if (check) {
            val stack = Stack(Context(theory) ++ cont)
            val (tR, tpR) = checking.Solver.check(controller, stack, tI).
-                  left.toOption.getOrElse {
+                  left.getOrElse {
                throw InvalidObject(t, "term was parsed but did not type-check")
              }
            tR

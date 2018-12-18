@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.frontend.{Logger, Report}
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.utils._
@@ -22,7 +22,7 @@ case class Consthash(iname:GlobalName, hash: List[Int], pars: List[Hasher.Target
 
   private[refactoring] def toJson = JSONObject(
     ("name",JSONString(name.toString)),
-    ("hash",JSONArray(hash.map(JSONInt):_*)),
+    ("hash",JSONArray(hash.map(JSONInt(_)):_*)),
     ("pars",JSONArray(pars.map(p => JSONString(p.toString)):_*)),
     ("isProp",JSONBoolean(isProp)) // TODO Definition
   )
@@ -106,6 +106,8 @@ object Hasher {
 
 trait Hasher {
 
+  val controller : Controller
+
   val cfg : FinderConfig
 
   def from : List[Theoryhash]
@@ -114,10 +116,10 @@ trait Hasher {
 
   def get(mp : MPath) : Option[Theoryhash]
 
-  def add(th : DeclaredTheory, as : Int) : Unit
+  def add(th : Theory, as : Int) : Unit
 }
 
-class HashesNormal(val cfg : FinderConfig) extends Hasher {
+class HashesNormal(val cfg : FinderConfig,val controller: Controller) extends Hasher {
   private var theories : List[(Theoryhash,Int)] = Nil
   private var commons : List[MPath] = Nil
   private var numbers : List[GlobalName] = cfg.fixing.map { a =>
@@ -142,7 +144,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
 
   def get(p : MPath) : Option[Theoryhash] = theories.find(_._1.path == p).map(_._1)
 
-  def add (th : DeclaredTheory, as : Int) = as match {
+  def add (th : Theory, as : Int) = as match {
     case Hasher.COMMON =>
       commons ::= th.path
       th.getConstants.foreach(c => numbers ::= c.path)
@@ -152,7 +154,7 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
     }
   }
 
-  private def get(th : DeclaredTheory) : Theoryhash = {
+  private def get(th : Theory) : Theoryhash = {
     val h = new Theoryhash(th.path)
     if (!(commons contains th.path)) {
       th.getConstants.collect({
@@ -176,8 +178,8 @@ class HashesNormal(val cfg : FinderConfig) extends Hasher {
 
     def traverse(t: Term)(implicit vars : List[LocalName]) : List[Int] = {
       // assumption: at most one alignment applicable
-      val al = cfg.fixing.find(_.applicable(t))
-      val tm = al.map(_.apply(t)).getOrElse(t)
+      val al = cfg.fixing.find(_.applicable(t)(AcrossLibraryTranslator.trivial(controller)))
+      val tm = al.map(_.apply(t)(AcrossLibraryTranslator.trivial(controller))).getOrElse(t)
       tm match {
         case Hasher.Complex(itm) => List(1,1,{
           pars ::= itm

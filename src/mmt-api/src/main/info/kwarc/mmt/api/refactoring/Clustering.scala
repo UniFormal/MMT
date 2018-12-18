@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.{GlobalName, MPath}
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
 
 import scala.collection.mutable
@@ -43,10 +43,10 @@ abstract class ClusteringFactory[NodeState,EdgeState](controller: Controller, in
     edges((n,m)) = newone
     newone
   }))
-  def run(t : DeclaredTheory) = t.getDeclarations.collect{case c : Constant => c}.foreach(strategy)
+  def run(t : Theory) = t.getDeclarations.collect{case c : Constant => c}.foreach(strategy)
 }
 
-class StandardCluster(controller : Controller,theory : DeclaredTheory)
+class StandardCluster(controller : Controller,theory : Theory)
   extends ClusteringFactory[Int,Int](controller,0,0) {
 
   def strategy(c : Constant) = {

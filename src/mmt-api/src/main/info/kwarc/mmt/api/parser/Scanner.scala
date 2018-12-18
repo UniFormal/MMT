@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.notations._
+import notations._
+import utils._
 
 import scala.annotation.tailrec
 
@@ -250,9 +251,9 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
             val futureTokens = availableFutureTokens
             //openable is the list of notations that can be opened, paired with the length of the delim they match
             //if multiple notations can be opened, we open the one with the longest first delim
-            val openable = currentGroup.rules flatMap { not =>
-              val delim = not.firstDelimString
-              val m = delim.isDefined && ActiveNotation.matches(delim.get, currentToken.word, futureTokens)
+            val openable = currentGroup.rules flatMap {not =>
+              val delim = not.firstDelim
+              val m = delim.isDefined && ActiveNotation.matches(delim.get.text, currentToken.word, futureTokens)
               val openArgs = not.notation.openArgs(false)
               // n is true iff there are enough tokens shifted for not to pick from the left
               val n = openArgs == 0 || {
@@ -264,19 +265,19 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
               }
               // the number of tokens shifted in the surrounding group that can be picked
               if (m && n)
-                List((not, delim.get.length))
+                List(not)
               else
                 Nil
             }
-           // TODO add notations without firstDelimString
-            log("openable: " + openable.map(_._1).mkString(", "))
-            //the longest firstDelim of an openable notation
-            val longestDelim = if (openable.isEmpty) -1 else openable.maxBy(_._2)._2
-            openable.collect {case o if o._2 == longestDelim => o._1} match {
+            // TODO add notations without firstDelimString
+            log("openable: " + openable.mkString(", "))
+            // restrict to notations with longest firstDelim
+            val longestOpenable = openable.argMax(_.firstDelimLength)
+            longestOpenable match {
               case hd :: others =>
                 // we allow for syntax overloading: if all alternatives have the same markers, we proceed
                 if (!others.forall(pr => TextNotation.agree(pr.notation, hd.notation))) {
-                   throw Ambiguous(hd::others) //better ambiguity-handling could go here (maybe look for next delimiter)
+                   throw Ambiguous(longestOpenable) //better ambiguity-handling could go here (maybe look for next delimiter)
                 }
                 //open the notation and apply it
                 log("opening notation at " + currentToken)
@@ -286,9 +287,12 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
                    * there is no unique reading for a-b+c
                    * closing all closable notations has the effect of associating to the left, i.e., (a-b)+c
                    * that corresponds to the left-to-right reading convention
-                   * alternatively, one could flag an error
+                   * 
                    */
-                  Range(0, closable) foreach { _ => closeFirst(true) }
+                  val assocLeft = hd.firstDelim.map(_.associatesToLeft).getOrElse(true)
+                  if (assocLeft) {
+                    Range(0, closable) foreach { _ => closeFirst(true) }
+                  }
                 }
                 val nct = active match {
                   case Nil => numCurrentTokens

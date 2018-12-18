@@ -404,12 +404,13 @@ class NotationBasedPresenter extends ObjectPresenter {
       case OMA(f,args) =>
          // only applies in unusual cases where f is not atomic
          doBracketedGroup {
-            val comps = (f::args).zipWithIndex
-            comps.init.foreach {case (t,i) =>
-               recurse(t)(pc.child(i))
+            recurse(f)(pc.child(0))
+            if (args.isEmpty) {
+              doOperator("()")
+            } else args.zipWithIndex.foreach {case (t,i) =>
                doSpace(1)
+               recurse(t)(pc.child(i+1))
             }
-            recurse(comps.last._1)(pc.child(comps.last._2))
          }
          1
       case OMBINDC(b,c,s) =>
@@ -597,6 +598,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                   return default
                case Some(objP) =>
                   val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
+                  if (attrib) return default // TODO specify and implement handling of HOAS type attributions
                   val firstVarNumber = subargs.length+1
                   val firstArgNumber = subargs.length+context.length+1
                   /*

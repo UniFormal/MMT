@@ -1,0 +1,21 @@
+(* :mode=isabelle-options: *)
+
+option mmt_check_delay : real = 10
+  -- "delay for theory status check during PIDE processing (seconds)"
+
+option mmt_cleanup_delay : real = 60
+  -- "delay for cleanup of already imported theories (seconds, 0 = disabled)"
+
+option mmt_watchdog_timeout : real = 3600
+  -- "watchdog timeout for PIDE processing of broken theories (seconds, 0 = disabled)"
+
+option mmt_type_checking : bool = false
+  -- "explicit type-checking for imported items"
+
+
+section "Meta info for default archive"
+
+option mmt_archive_dir : string = "isabelle_test"
+option mmt_archive_id : string = "Isabelle_Test"
+option mmt_archive_title : string = "Isabelle Test"
+option mmt_archive_narration_base : string = "https://isabelle.in.tum.de"

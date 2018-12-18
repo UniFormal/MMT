@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.informal._
 import info.kwarc.mmt.stex._
+import parser._
 import symbols.{Constant}
 
 import utils._
@@ -197,7 +198,7 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
   }
 
 
-  private def getPresentationResponse(params: JSONObject)= {
+  private def getPresentationResponse(params: JSONObject) = {
     try {
       log("Received Presentation Request : " + params.toString)
       val bodyS = params("body").getOrElse(throw ServerError("No Body Found")).toString
@@ -209,9 +210,13 @@ class PlanetaryPlugin extends ServerExtension("planetary") with Logger {
       }
       val reader = new XMLReader(controller)
       val bodyXML = scala.xml.XML.loadString(bodyS)
-      val cont = controller //new Controller
-      reader.readDocument(dpath, bodyXML)(cont.add(_))
-      val doc : Document = cont.getDocument(dpath, dp => "doc not found at path " + dp)
+      val cont = new StructureParserContinuations(ErrorThrower) {
+        override def onElement(se: StructuralElement) {
+          controller.add(se)
+        }
+      }
+      reader.readDocument(dpath, bodyXML)(cont)
+      val doc : Document = controller.getDocument(dpath, dp => "doc not found at path " + dp)
       val rb = new StringBuilder()
       presenter.apply(doc)(rb)
       val response = rb.get

@@ -3,6 +3,7 @@ package info.kwarc.mmt.jedit
 import gatchan.jedit.hyperlinks._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.source
+import info.kwarc.mmt.api.gui.{MMTAsset, MMTObjAsset, MMTURIAsset}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.utils._
 import org.gjt.sp.jedit._

@@ -3,886 +3,25 @@ package info.kwarc.mmt.imps
 /* IMPORTS */
 
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
-import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.imps.HList.:+:
-import info.kwarc.mmt.imps.Method.Method
+import info.kwarc.mmt.api.utils.{JSONObject, JSONString, URI}
+import info.kwarc.mmt.imps.FrmFnd.{handpick, removeWhitespace}
+import info.kwarc.mmt.imps.ParseMethod.ParseMethod
 import info.kwarc.mmt.imps.NumericalType.NumericalType
 import info.kwarc.mmt.imps.OperationType.OperationType
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.{SortParser, SymbolicExpressionParser}
 
-/* Parser abstract class and case classes. */
+//-----------
 
-abstract class TExp
+abstract class SEXP
 
-case class Exp(children : List[TExp], src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    var str : String = "Exp("
-    str = str + children.toString()
-    str = str + ")"
-    str
-  }
-}
+case class SEXPAtom(s : String) extends SEXP
 
-case class Comment(content : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    "; " + content
-  }
-}
+case class SEXPNested(args : List[SEXP]) extends SEXP
 
-case class Str(str : String) extends TExp {
-  override def toString : String = { "\"" + str + "\"" }
-}
+//-----------
 
-/* TEMPORARY */
-case class Dummy(str : String) extends TExp
-{
-  override def toString : String =
-  {
-    "PLACEHOLDER: A " + str + " will appear here in the future!"
-  }
-}
-
-case class Ignore(str : String) extends TExp
-
-case class ParseFailure(str : String) extends TExp {
-  override def toString: String = {
-    "Could not parse structure: " + str
-  }
-}
-
-/* IMPS SPECIAL FORM ARGUMENTS */
-
-case class LeftMethod(m : Method, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(left-method " + m.toString + ")"}
-}
-
-case class NullMethod(m : Method, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(null-method " + m.toString + ")"}
-}
-
-case class Token(spec : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(token " + spec + ")"}
-}
-
-case class Table(tablename : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(table " + tablename + ")"}
-}
-
-case class Binding(n : Int, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(binding " + n.toString + ")"}
-}
-
-case class ArgumentTheory(thy : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(theory " + thy + ")"}
-}
-
-case class HomeTheory(hmthy : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(home-theory " + hmthy + ")"}
-}
-
-case class TranslationSource(thy : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(source " + thy + ")"}
-}
-
-case class TranslationTarget(thy : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(target " + thy + ")"}
-}
-
-case class ArgumentLanguage(lang : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(language " + lang + ")"}
-}
-
-case class Constructor(const : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(constructor " + const + ")" }
-}
-
-case class Macete(macete : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(macete " + macete + ")" }
-}
-
-case class Sort(sort : IMPSSort, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(sort " + sort + ")" }
-}
-
-case class Witness(witness : IMPSMathExp, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(witness " + witness + ")"}
-}
-
-case class SourceTheory(srcthy : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { "(source-theory " + srcthy + ")"}
-}
-
-case class ArgumentTranslation(trans : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(translation " + trans + ")" }
-}
-
-case class EmbeddedLanguage(name : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(embedded-language " + name + ")" }
-}
-
-case class DefinitionName(name : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = { "(definition-name " + name + ")" }
-}
-
-case class EmbeddedLanguages(names : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString: String = {
-    var str : String = "(embedded-languages " + names.head
-    for (n <- names.tail)
-    {
-      str = str + " " + n
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class Assumptions(assmptns : List[IMPSMathExp], src : Option[SourceRef]) extends TExp
-
-case class TheoryInterpretationCheck(chk : String, src : Option[SourceRef]) extends TExp
-
-case class CoreTranslation(ctr : String, src : Option[SourceRef]) extends TExp
-
-case class SortPairs(prs : List[(Either[IMPSSort,IMPSMathExp],Either[IMPSSort,IMPSMathExp])], src : Option[SourceRef]) extends TExp
-
-case class ConstantPairs(prs : List[(IMPSMathExp,IMPSMathExp)], src: Option[SourceRef]) extends TExp
-
-case class DistinctConstants(lst : List[List[String]], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "(distinct-constants "
-    for (dst <- lst)
-    {
-      str = str + "("
-      for (nm <- dst)
-      {
-        str = str + nm + " "
-      }
-      str = str.trim
-      str = str + ")"
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class LangBaseTypes(tps : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString: String = {
-    var str = "(base-types " + tps.head
-    for (t <- tps.tail)
-    {
-      str = str + " " + t
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class ComponentTheories(lst : List[String], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String =
-  {
-    assert(!lst.isEmpty)
-    var str : String = "(component-theories"
-    for (t <- lst)
-    {
-      str = str + " " + t
-    }
-    str = str + ")"
-    str
-  }
-}
-
-object NumericalType extends Enumeration
-{
-  type NumericalType = Value
-  val INTEGERTYPE  = Value("*integer-type*")
-  val RATIONALTYPE = Value("*rational-type*")
-  val OCTETTYPE    = Value("*octet-type*")
-}
-
-case class TypeSortAList(numericType : NumericalType, sort : IMPSSort, src : Option[SourceRef]) extends TExp
-{
-  override def toString: String = "(" + numericType.toString + " " + sort + ")"
-}
-
-case class Extensible(lst : List[TypeSortAList], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String = {
-    var str : String = ""
-    for (p <- lst)
-    {
-      str = str + p.toString + " "
-    }
-    str = str.trim
-    str
-  }
-}
-
-case class SortSpecifications(lst : List[(IMPSSort, IMPSSort)], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String = {
-    var str : String = ""
-    for (p <- lst)
-    {
-      str = str + "(" + p._1.toString + " " + p._2.toString + ") "
-    }
-    str = str.trim
-    str
-  }
-}
-
-case class ConstantSpecifications(lst : List[(String, IMPSSort)], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String = {
-    var str : String = ""
-    for (p <- lst)
-    {
-      str = str + "(" + p._1 + " " + p._2.toString + ") "
-    }
-    str = str.trim
-    str
-  }
-}
-
-case class AxiomSpecification(formula : IMPSMathExp,
-                              name    : Option[String],
-                              usgs    : Option[List[Usage]],
-                              src     : Option[SourceRef])
-  extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "("
-    if (name.isDefined) { str = str + name + " " }
-    str = str + "\"" + formula.toString + "\""
-    if (usgs.isDefined)
-    {
-      assert(!usgs.get.isEmpty)
-      for (u <- usgs.get)
-      {
-        str = str + " " + u
-      }
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class TheoryAxioms(axs : List[AxiomSpecification], src : Option[SourceRef]) extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "(axioms "
-    assert(!axs.isEmpty)
-    for (a <- axs)
-    {
-      str = str + " " + a.toString
-    }
-    str = str + ")"
-    str
-  }
-}
-
-// Proof scripts ATM only saved as strings
-case class Proof(prf : String, src : Option[SourceRef]) extends TExp {
-  override def toString : String = { prf }
-}
-
-case class Accessors(accs : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    var str : String = "(accessors "
-    str = str + accs.head
-    for (a <- accs.tail)
-    {
-      str = str + " " + a
-    }
-    str = str + ")"
-    str
-  }
-}
-
-object Method extends Enumeration
-{
-  type Method = Value
-
-  val PREFIXMETHOD   = Value("prefix-operator-method")
-  val INFIXMETHOD    = Value("infix-operator-method")
-  val POSTFIXMETHOD  = Value("postfix-operator-method")
-  val NEGATIONMETHOD = Value("negation-operator-method")
-  val TABLEMETHOD    = Value("table-operator-method")
-  val INDBOTHSYN     = Value("parse-indicator-constructor-both-syntaxes")
-  val PREFSORTDEPOM  = Value("prefix-sort-dependent-operator-method")
-  val NULLCALL       = Value("null-call-method-terminator")
-}
-
-case class ArgumentUsages(usgs : List[Usage], src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    var str : String = "(usages "
-    str = str + usgs.head.toString
-    for (u <- usgs.tail)
-    {
-      str = str + " " + u.toString
-    }
-    str = str + ")"
-    str
-  }
-}
-
-abstract class SpecForm() extends TExp
-
-case class SpecFormByName(name : String,
-                          src  : Option[SourceRef]) extends SpecForm
-{
-  override def toString: String = name
-}
-
-case class SpecFormByList(elems : List[SpecFormElement],
-                          src   : Option[SourceRef]) extends SpecForm
-{
-  override def toString: String = "(" + elems.flatMap(_.toString) + ")"
-}
-
-abstract class SpecFormElement() extends TExp
-
-case class SpecFormScalars(nt  : NumericalType,
-                           src : Option[SourceRef]) extends SpecFormElement {
-  override def toString: String = "(scalars " + nt.toString + ")"
-}
-
-case class SpecFormOperations(ops : List[OperationAlist],
-                              src : Option[SourceRef]) extends SpecFormElement {
-  override def toString: String = "(operations " + ops.flatMap(_.toString) + ")"
-}
-
-case class SpecFormCommutes(src : Option[SourceRef]) extends SpecFormElement {
-  override def toString: String = "commutes."
-}
-
-case class SpecFormNumeralsForGroundTerms(src : Option[SourceRef]) extends SpecFormElement {
-  override def toString: String = "use-numerals-for-ground-terms."
-}
-
-object OperationType extends Enumeration
-{
-  type OperationType = Value
-
-  val PLUS  = Value("+")
-  val TIMES = Value("*")
-  val MINUS = Value("-")
-  val DIV   = Value("/")
-  val EXP   = Value("^")
-  val SUB   = Value("sub")
-  val ZERO  = Value("zero")
-  val UNIT  = Value("unit")
-}
-
-case class OperationAlist(optype   : OperationType,
-                          opname   : String,
-                          src : Option[SourceRef]) extends SpecForm
-{
-  override def toString: String = "(" + optype.toString + " " + opname + ")"
-}
-
-case class AlgProcessorBase(spec : SpecForm, src : Option[SourceRef]) extends TExp {
-  override def toString: String = "(base " + spec.toString + ")"
-}
-
-case class AlgProcessorExponent(spec : SpecForm, src : Option[SourceRef]) extends TExp {
-  override def toString: String = "(exponent " + spec.toString + ")"
-}
-
-case class AlgProcessorCoefficient(spec : SpecForm, src : Option[SourceRef]) extends TExp {
-  override def toString: String = "(coefficient " + spec.toString + ")"
-}
-
-case class FixedTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    var str : String = "(fixed-theories "
-    str = str + thrs.head
-    for (t <- thrs.tail)
-    {
-      str = str + " " + t
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class SourceTheories(thrs : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString : String =
-  {
-    var str : String = "(source-theories "
-    str = str + thrs.head
-    for (t <- thrs.tail)
-    {
-      str = str + " " + t
-    }
-    str = str + ")"
-    str
-  }
-}
-
-/* IMPS SPECIAL FORMS */
-
-case class Overloading(symbol : String,
-                       pairs  : List[(String,String)],
-                       src    : Option[SourceRef])
-  extends TExp
-{
-  override def toString: String = {
-    var str = "(def-overloading " + symbol
-    for (pair <- pairs)
-    {
-      str = str + "\n  (" + pair._1 + " " + pair._2 + ")"
-    }
-    str = str + ")"
-    str
-  }
-}
-
-case class AlgebraicProcessor(name : String,
-                              cancellative : Boolean,
-                              language : ArgumentLanguage,
-                              base     : AlgProcessorBase,
-                              expo     : Option[AlgProcessorExponent],
-                              coeff    : Option[AlgProcessorCoefficient],
-                              src      : Option[SourceRef]
-                             ) extends TExp
-{
-  override def toString: String = {
-    var str : String = "(def-algebraic-processor " + name
-    str = str + "\n  " + language.toString
-    str = str + "\n  " + base.toString
-    if (expo.isDefined) { str = str + "\n  " + expo.get.toString }
-    if (coeff.isDefined) { str = str + "\n  " + coeff.get.toString }
-    if (cancellative) { str = str + "\n  cancellative."}
-    str
-  }
-}
-
-
-
-case class ParseSyntax(name  : String,
-                       token : Option[Token],
-                       leftM : Option[LeftMethod],
-                       nullM : Option[NullMethod],
-                       tbl   : Option[Table],
-                       bnd   : Option[Binding],
-                       src   : Option[SourceRef])
-  extends TExp
-{
-  override def toString: String = {
-    var str : String = "(def-parse-syntax " + name
-
-    if (token.isDefined) { str = str + token.toString + "\n" }
-    if (leftM.isDefined) { str = str + leftM.toString + "\n" }
-    if (nullM.isDefined) { str = str + nullM.toString + "\n" }
-    if (tbl.isDefined)   { str = str + tbl.toString + "\n" }
-    if (bnd.isDefined)   { str = str + bnd.toString + "\n" }
-
-    str = str + ")"
-    str
-  }
-}
-
-/* def-atomic-sort
- * Documentation: IMPS manual pgs. 158, 159 */
-case class AtomicSort(sortName        : String, /* Positional Argument, Required */
-                      quasiSortString : IMPSMathExp, /* Positional Argument, Required */
-                      theory          : ArgumentTheory, /* Keyword Argument, Required */
-                      usages          : Option[ArgumentUsages], /* Keyword Argument, Optional */
-                      witness         : Option[Witness], /* Keyword Argument, Optional */
-                      src             : Option[SourceRef],       /* SourceRef for MMT */
-                      encSort         : IMPSSort)
-  extends TExp
-{
-  override def toString : String =
-  {
-    var str : String = "(def-atomic-sort " + sortName
-    str = str + "\n  " + quasiSortString.toString
-    str = str + "\n  " + theory.toString
-    if (usages.isDefined) str = str + "\n  " + usages.get.toString
-    if (witness.isDefined) str = str + "\n  " + witness.get.toString
-    str = str + ")"
-    str
-  }
-}
-
-abstract class MaceteSpec
-
-case class SpecSeries(specs : List[MaceteSpec]) extends MaceteSpec {
-  override def toString: String = "(series " + specs.flatMap(_.toString) + ")"
-}
-
-case class SpecRepeat(specs : List[MaceteSpec]) extends MaceteSpec {
-  override def toString: String = "(repeat " + specs.flatMap(_.toString) + ")"
-}
-
-case class SpecSequential(specs : List[MaceteSpec]) extends MaceteSpec {
-  override def toString: String = "(sequential " + specs.flatMap(_.toString) + ")"
-}
-
-case class SpecParallel(specs : List[MaceteSpec]) extends MaceteSpec {
-  override def toString: String = "(parallel " + specs.flatMap(_.toString) + ")"
-}
-
-case class SpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec) extends MaceteSpec {
-  override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
-}
-
-case class SpecWithoutMinorPremises(spec : MaceteSpec) extends MaceteSpec {
-  override def toString: String = "(without-minor-premises " + spec.toString + ")"
-}
-
-case class CompoundMacete(name : String,
-                          spec : MaceteSpec,
-                          src  : Option[SourceRef]) extends TExp
-{
-  override def toString: String = "(def-compound-macete " + name + "\n  " + spec.toString + ")"
-}
-
-/* def-constant
- * Documentation: IMPS manual pgs. 168,169 */
-case class Constant(constantName : String, /* Positional Argument, Required */
-                    math         : IMPSMathExp, /* Positional Argument, Required */
-                    theory       : ArgumentTheory, /* Keyword Argument, Required */
-                    sort         : IMPSSort, /* Keyword Argument, Optional */
-                    usages       : Option[ArgumentUsages], /* Keyword Argument, Optional */
-                    src          : Option[SourceRef])      /* SourceRef for MMT */
-  extends TExp
-{
-  override def toString : String =
-  {
-    var str : String = "(def-constant " + constantName
-    str = str + "\n  " + math.toString
-    str = str + "\n  " + theory.toString
-    if (usages.isDefined) { str = str + "\n  " + usages.get.toString}
-    str = str + "\n  (sort " + sort.toString + ")"
-    str = str + ")"
-    str
-  }
-}
-
-case class ArgumentBaseCaseHook(name : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = "(base-case-hook " + name + ")"
-}
-
-case class ArgumentStepHook(name : String, src : Option[SourceRef]) extends TExp {
-  override def toString: String = "(step-hook " + name + ")"
-}
-
-case class ArgumentDontUnfold(names : List[String], src : Option[SourceRef]) extends TExp {
-  override def toString: String = {
-    var str = "(base-case-hook"
-    for (n <- names) { str = str + " " + n}
-    str = str + ")"
-    str
-  }
-}
-
-case class Inductor(name : String,
-                    inductionPrinciple : String,
-                    thy : ArgumentTheory,
-                    trans : Option[ArgumentTranslation],
-                    base : Option[ArgumentBaseCaseHook],
-                    step : Option[ArgumentStepHook],
-                    unf  : Option[ArgumentDontUnfold],
-                    src : Option[SourceRef]
-                    ) extends TExp
-{
-  override def toString: String = {
-    var str = "(def-inductor " + name
-    str = str + "\n  " + inductionPrinciple
-    str = str + "\n  " + thy
-    if (trans.isDefined) { str = str + "\n  " + trans.get.toString }
-    if (base.isDefined) { str = str + "\n  " + base.get.toString }
-    if (step.isDefined) { str = str + "\n  " + step.get.toString }
-    if (unf.isDefined) { str = str + "\n  " + unf.get.toString }
-    str
-  }
-}
-
-/* def-recursive-constant
- * Documentation: IMPS Manual pgs. 178, 179 */
-case class RecursiveConstant(constantNames : List[String],
-                             maths         : List[IMPSMathExp],
-                             sorts         : List[IMPSSort],
-                             theory        : ArgumentTheory,
-                             usages        : Option[ArgumentUsages],
-                             definame      : Option[DefinitionName],
-                             src           : Option[SourceRef])      /* SourceRef for MMT */
-extends TExp
-{}
-
-/* def-imported-rewrite-rules
- * Documentation: IMPS manual pg. 169*/
-case class ImportedRewriteRules(theoryName  : String,                 /* Positional Argument, Required */
-                                srcTheory   : Option[SourceTheory],   /* Keyword Argument, Optional */
-                                srcTheories : Option[SourceTheories], /* Keyword Argument, Optional */
-                                src         : Option[SourceRef])      /* SourceRef for MMT */
-  extends TExp
-{
-  override def toString : String =
-  {
-    var str : String = "(def-imported-rewrite-rules " + theoryName
-    if (srcTheory.isDefined) { str = str + "\n  " + srcTheory.get.toString}
-    if (srcTheories.isDefined) { str = str + "\n  " + srcTheories.get.toString}
-    str = str + ")"
-    str
-  }
-}
-
-/* def-quasi-constructor
- * Documentation: IMPS manual pgs. 176, 177 */
-case class QuasiConstructor(name            : String,                 /* Positional Argument, Required */
-                            lambdaExprString : String,                /* Positional Argument, Required */
-                            language         : ArgumentLanguage,      /* Keyword Argument, Required */
-                            fixedTheories    : Option[FixedTheories], /* Keyword Argument, Optional */
-                            src              : Option[SourceRef])             /* SourceRef for MMT */
-  extends TExp
-{
-  override def toString : String =
-  {
-    var str : String = "(def-quasi-contructor " + name
-    str = str + "\n  " + lambdaExprString
-    str = str + "\n  " + language.toString
-    if (fixedTheories.isDefined) { str = str + "\n  " + fixedTheories.get.toString}
-    str = str + ")"
-    str
-  }
-}
-
-/* def-schematic-macete
- * Decomentation: IMPS manual pgs. 180, 181 */
-case class SchematicMacete(name                 : String, /* Positional Argument, Required */
-                           formula              : String, /* Positional Argument, Required */
-                           thy                  : ArgumentTheory, /* Keyword Argument, Required */
-                           nullPresent          : Boolean, /* Keyword Argument, Optional */
-                           transportablePresent : Boolean, /* Keyword Argument, Optional */
-                           src                  : Option[SourceRef]) /* SourceRef for MMT */
-  extends TExp
-{
-  override def toString : String =
-  {
-    var str : String = "(def-schematic-macete " + name
-    str = str + "\n  " + formula
-    if (nullPresent) { str = str + "\n  null" }
-    if (transportablePresent) { str = str + "\n  transportable"}
-    str = str + "\n  " + thy.toString
-    str = str + ")"
-    str
-  }
-}
-
-/* def-theorem
- * Documentation: IMPS manual pgs. 184 ff. */
-case class Theorem(name    : String,                      /* Positional argument. Required. */
-                   formula : IMPSMathExp,                 /* Positional argument. Required. */
-                   lemma   : Boolean,                     /* Modifier argument. Optional. */
-                   reverse : Boolean,                     /* Modifier argument. Optional. */
-                   thy     : ArgumentTheory,              /* Keyword Argument, Required */
-                   usages  : Option[ArgumentUsages],      /* Keyword Argument, Optional */
-                   trans   : Option[ArgumentTranslation], /* Keyword Argument, Optional */
-                   macete  : Option[Macete],              /* Keyword Argument, Optional */
-                   hmthy   : Option[HomeTheory],          /* Keyword Argument, Optional */
-                   prf     : Option[Proof],               /* Keyword Argument, Optional */
-                   src     : Option[SourceRef])           /* SourceRef for MMT */
-  extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "(def-theorem " + name + "\n  " + formula.toString
-    if (lemma) { str = str + "\n  lemma"}
-    if (reverse) { str = str + "\n  reverse"}
-    str = str + "\n  " + thy.toString
-    if (usages.isDefined) { str = str + "\n  " + usages.get.toString }
-    if (macete.isDefined) { str = str + "\n  " + macete.get.toString }
-    if (hmthy.isDefined)  { str = str + "\n  " + hmthy.get.toString }
-    if (prf.isDefined)    { str = str + "\n  " + prf.get.toString }
-    str = str + ")"
-    str
-  }
-}
-
-/* def-language
- * Documentation: IMPS manual pgs. 172 ff. */
-case class Language(name       : String,
-                    embedlang  : Option[EmbeddedLanguage],
-                    embedlangs : Option[EmbeddedLanguages],
-                    bstps      : Option[LangBaseTypes],
-                    extens     : Option[Extensible],
-                    srts       : Option[SortSpecifications],
-                    cnstnts    : Option[ConstantSpecifications],
-                    src        : Option[SourceRef])
-  extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "(def-language " + name
-    if (embedlang.isDefined)  { str = str + "\n  " + embedlang.get.toString }
-    if (embedlangs.isDefined) { str = str + "\n  " + embedlangs.get.toString }
-    if (bstps.isDefined) { str = str + "\n  " + bstps.get.toString }
-    if (extens.isDefined) { str = str + "\n  " + extens.get.toString }
-    if (srts.isDefined) { str = str + "\n  " + srts.get.toString }
-    if (cnstnts.isDefined) { str = str + "\n  " + cnstnts.get.toString }
-    str = str + ")"
-    str
-  }
-
-  def union(l : Language) : Language =
-  {
-    val nu_name : String = name + "_union_" + l.name
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    var lsHere  : List[String] = Nil
-    var lsThere : List[String] = Nil
-
-    if (embedlang.isDefined)  { lsHere = lsHere :+  embedlang.get.name }
-    if (embedlangs.isDefined) { lsHere = lsHere ::: embedlangs.get.names }
-
-    if (l.embedlang.isDefined)  { lsThere = lsThere :+  l.embedlang.get.name }
-    if (l.embedlangs.isDefined) { lsThere = lsThere ::: l.embedlangs.get.names }
-
-    val union_embedlangs : List[String] = (lsHere ::: lsThere).distinct
-
-    var nu_embedlang  : Option[EmbeddedLanguage]  = None
-    var nu_embedlangs : Option[EmbeddedLanguages] = None
-
-    if (union_embedlangs.nonEmpty)
-    {
-      val src_embedlang = if (embedlang.isDefined)    { embedlang.get.src }
-                     else if (embedlangs.isDefined)   { embedlangs.get.src }
-                     else if (l.embedlang.isDefined)  { l.embedlang.get.src }
-                     else                             { l.embedlangs.get.src }
-
-      if (union_embedlangs.length == 1) { nu_embedlang = Some(EmbeddedLanguage(union_embedlangs.head, src_embedlang)) }
-      else { nu_embedlangs = Some(EmbeddedLanguages(union_embedlangs, src_embedlang)) }
-    }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    var nu_basetypes : Option[LangBaseTypes] = None
-
-    var bsHere  : List[String] = Nil
-    var bsThere : List[String] = Nil
-
-    if (bstps.isDefined)   { bsHere  = bstps.get.tps }
-    if (l.bstps.isDefined) { bsThere = l.bstps.get.tps }
-
-    val union_basetypes : List[String] = (bsHere ::: bsThere).distinct
-
-    if (union_basetypes.nonEmpty)
-    {
-      val src_basetypes = if (bstps.isDefined) { bstps.get.src } else { l.bstps.get.src }
-      nu_basetypes = Some(LangBaseTypes(union_basetypes, src_basetypes))
-    }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    var nu_extensible : Option[Extensible] = None
-
-    var exHere  : List[TypeSortAList] = Nil
-    var exThere : List[TypeSortAList] = Nil
-
-    if (extens.isDefined)   { exHere = extens.get.lst }
-    if (l.extens.isDefined) { exThere = l.extens.get.lst }
-
-    val union_extens : List[TypeSortAList] = (exHere ::: exThere).distinct
-
-    if (union_extens.nonEmpty)
-    {
-      val src_extens = if (extens.isDefined) { extens.get.src } else { l.extens.get.src }
-      nu_extensible = Some(Extensible(union_extens, src_extens))
-    }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    var nu_sorts : Option[SortSpecifications] = None
-
-    var srtHere  : List[(IMPSSort, IMPSSort)] = Nil
-    var srtThere : List[(IMPSSort, IMPSSort)] = Nil
-
-    if (srts.isDefined)   { srtHere = srts.get.lst }
-    if (l.srts.isDefined) { srtThere = l.srts.get.lst }
-
-    val union_srts : List[(IMPSSort, IMPSSort)] = (srtHere ::: srtThere).distinct
-
-    if (union_srts.nonEmpty)
-    {
-      val src_srts = if (srts.isDefined) { srts.get.src } else { l.srts.get.src }
-      nu_sorts = Some(SortSpecifications(union_srts, src_srts))
-    }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    var nu_consts : Option[ConstantSpecifications] = None
-
-    var conHere  : List[(String, IMPSSort)] = Nil
-    var conThere : List[(String, IMPSSort)] = Nil
-
-    if (cnstnts.isDefined)   { conHere = cnstnts.get.lst }
-    if (l.cnstnts.isDefined) { conThere = l.cnstnts.get.lst }
-
-    val union_constants : List[(String, IMPSSort)] = (conHere ::: conThere).distinct
-
-    if (union_constants.nonEmpty)
-    {
-      val src_constants = if (cnstnts.isDefined) { cnstnts.get.src } else { l.cnstnts.get.src }
-      nu_consts = Some(ConstantSpecifications(union_constants, src_constants))
-    }
-
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    Language(nu_name, nu_embedlang, nu_embedlangs, nu_basetypes, nu_extensible, nu_sorts, nu_consts, src)
-  }
-}
-
-/* def-theory
- * Documentation: IMPS manual pgs. 186 ff. */
-case class Theory(name      : String,
-                  lang      : Option[ArgumentLanguage],
-                  cmpntthrs : Option[ComponentTheories],
-                  axioms    : Option[TheoryAxioms],
-                  dstnct    : Option[DistinctConstants],
-                  src       : Option[SourceRef])
-  extends TExp
-{
-  override def toString: String =
-  {
-    var str : String = "(def-theory " + name
-    if (lang.isDefined) { str = str + "\n  " + lang.get.toString }
-    if (cmpntthrs.isDefined) { str = str + "\n  " + cmpntthrs.get.toString }
-    if (axioms.isDefined) { str = str + "\n  " + axioms.get.toString }
-    if (dstnct.isDefined) { str = str + "\n  " + dstnct.get.toString }
-    str = str + ")"
-    str
-  }
-}
-
-case class Translation(name        : String,
-                       force       : Boolean,
-                       forceQL     : Boolean,
-                       dontEnrich  : Boolean,
-                       source      : TranslationSource,
-                       target      : TranslationTarget,
-                       fixed       : Option[FixedTheories],
-                       assumptions : Option[Assumptions],
-                       sortpairs   : Option[SortPairs],
-                       constpairs  : Option[ConstantPairs],
-                       coretrans   : Option[CoreTranslation],
-                       theintcheck : Option[TheoryInterpretationCheck],
-                       src         : Option[SourceRef])
-extends TExp
-{
-
-}
+case class Section(name : String, dependencies : List[Section], files : List[String], jsons : List[String])
 
 /* IMPS SORTS ETC */
 
@@ -1123,7 +262,7 @@ abstract class IMPSQuasiConstructor extends IMPSMathExp
 
 case class IMPSTotal(f : IMPSMathExp, beta : IMPSSort) extends IMPSQuasiConstructor
 {
-  override def toString: String = "total_q(" + f.toString + ", " + beta.toString() + ")"
+  override def toString: String = "total_q(" + f.toString + ", " + beta.toString + ")"
 }
 
 case class IMPSNonVacuous(p : IMPSMathExp) extends IMPSQuasiConstructor
@@ -1159,7 +298,6 @@ case class IMPSQCSort2Indicator(sort : IMPSMathExp) extends IMPSUserDefinedQuasi
     assert(sort.isInstanceOf[IMPSUndefined])
     sort match {
       case IMPSUndefined(s) => "sort_to_indic(" + s.toString + ")"
-      case _ => ???
     }
   }
 }
@@ -1354,7 +492,7 @@ case class IMPSQCLength(o : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
   override def toString: String = "length{" + o.toString + "}"
 }
 
-case class IMPSQCFseq(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
+case class IMPSQCFseqQ(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 {
   override def toString: String = "f_seq_q{" + s.toString + "}"
 }
@@ -1436,30 +574,6 @@ case class IMPSQCSecond(s : IMPSMathExp) extends IMPSUserDefinedQuasiConstructor
 
 //-------------
 
-/* This version of HLists is sourced from here, to make do without Shapeless */
-/* https://apocalisp.wordpress.com/2010/07/06/type-level-programming-in-scala-part-6a-heterogeneous-list%c2%a0basics/ */
-
-sealed trait HList
-
-final case class HCons[H, T <: HList](head : H, tail : T) extends HList {
-  def :+:[U](v : U) = HCons(v, this)
-}
-
-sealed class HNil extends HList {
-  def :+:[T](v : T) = HCons(v, this)
-}
-
-object HNil extends HNil
-
-// aliases for building HList types and for pattern matching
-object HList {
-  type :+:[H, T <: HList] = HCons[H, T]
-  val :+: : HCons.type = HCons
-
-  // contains no type information: not even A
-  implicit def fromList[A](list: List[A]): HList = ((HNil : HList) /: list.reverse) ( (hl,v) => HCons(v, hl) )
-}
-
 trait DefForm
 {
   var src : SourceInfo
@@ -1470,7 +584,7 @@ trait DefForm
   }
 
   /* This is kept separate so that it doesn't need to be overwritten */
-  def updateURI(uri : URI) : (SourceInfo => SourceInfo) =
+  def updateURI(uri : URI) : SourceInfo => SourceInfo =
   {
     case None => None
     case Some(scala.util.Left(((a,b,c),(x,y,z)))) => Some(scala.util.Right(SourceRef(uri,SourceRegion(SourcePosition(a,b,c),SourcePosition(x,y,z)))))
@@ -1488,8 +602,8 @@ trait DefForm
   }
 }
 
-abstract class Comp[T <: DefForm] {
-  def build[T <: DefForm](args : HList) : T
+abstract class Comp[T <: DefForm](js : List[JSONObject] = Nil) {
+  def build[S <: DefForm](args : List[Any]) : S
 }
 
 case class LineComment(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
@@ -1500,12 +614,32 @@ case class Name(s : String, var src : SourceInfo, var cmt : CommentInfo) extends
   override def toString: String = s
 }
 
+case class Number(n : Int, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = n.toString
+}
+
+case class Script(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = s
+}
+
 case class DefString(s : String, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = s
 }
 
+case class ODefString(o : Either[(DefString,Option[IMPSMathExp]),Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = o.toString
+}
+
 case class ArgTheory(thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString : String = { "(theory " + thy.toString + ")"}
+}
+
+case class ArgTranslation(t : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(translation " + t.toString + ")"}
+}
+
+case class ArgLanguage(lang : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(theory " + lang.toString + ")"}
 }
 
 case class ArgWitness(w : DefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
@@ -1519,6 +653,7 @@ object Usage extends Enumeration
   type Usage = Value
 
   val ELEMENTARYMACETE       : Usage = Value("elementary-macete")
+  val TRANSPORTABLE          : Usage = Value("transportable")
   val TRANSPORTABLEMACETE    : Usage = Value("transportable-macete")
   val REWRITE                : Usage = Value("rewrite")
   val TRANSPORTABLEREWRITE   : Usage = Value("transportable-rewrite")
@@ -1531,38 +666,1469 @@ case class ArgUsages(usgs : List[Usage], var src : SourceInfo, var cmt : Comment
   override def toString : String = { "(usages " + usgs.mkString(" ") + ")"}
 }
 
+case class ArgSort(srt : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(sort " + srt.toString + ")"}
+}
+
+case class ArgFixedTheories(ts : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = { "(fixed-theories " + ts.mkString(" ") + ")"}
+}
+
+case class ModTransportable(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "transportable"
+}
+
+case class ModNull(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "null"
+}
+
+abstract class MaceteSpec extends DefForm
+
+case class MSpecName(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = nm.s
+}
+
+case class MSpecSeries(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(series " + specs.mkString(" ") + ")"
+}
+
+case class MSpecRepeat(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(repeat " + specs.mkString(" ") + ")"
+}
+
+case class MSpecSequential(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(sequential " + specs.mkString(" ") + ")"
+}
+
+case class MSpecParallel(specs : List[MaceteSpec], var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec {
+  override def toString: String = "(parallel " + specs.mkString(" ") + ")"
+}
+
+case class MSpecSound(spec1 : MaceteSpec, spec2 : MaceteSpec, spec3 : MaceteSpec,
+                      var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec
+{
+  override def toString: String = "(sound " + spec1 + " " + spec2 + " " + spec3 + ")"
+}
+
+case class MSpecWithoutMinorPremises(spec : MaceteSpec, var src : SourceInfo, var cmt : CommentInfo) extends MaceteSpec
+{
+  override def toString: String = "(without-minor-premises " + spec.toString + ")"
+}
+
+case class ArgSourceTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source-theory " + nm.toString + ")"
+}
+
+case class ArgSourceTheories(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source-theories " + nms.mkString(" ") + ")"
+}
+
+case class ArgBaseCaseHook(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(base-case-hook " + nm.toString + ")"
+}
+
+case class ArgInductionStepHook(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(induction-step-hook " + nm.toString + ")"
+}
+
+case class ArgDontUnfold(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(dont-unfold " + nms.mkString(" ") + ")"
+}
+
+case class ArgInductionPrinciple(p : Either[Name,DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = p match {
+    case Left(Name(n,_,_)) => n
+    case Right(d)          => d.toString
+  }
+}
+
+case class ArgEmbeddedLang(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(embedded-language " + nm.toString + ")"
+}
+
+case class ArgEmbeddedLangs(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(embedded-languages " + nms.mkString(" ") + ")"
+}
+
+case class ArgBaseTypes(nms : List[IMPSSort], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(base-types " + nms.mkString(" ") + ")"
+}
+
+case class ArgSortSpec(sub : IMPSSort, enc : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + sub.toString + " " + enc.toString + ")"
+}
+
+case class ArgSorts(specs : List[ArgSortSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(sorts " + specs.mkString(" ") + ")"
+}
+
+case class ArgConstantSpec(nm : Name, enc : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + nm.toString + " " + enc.toString + ")"
+}
+
+case class ArgConstants(specs : List[ArgConstantSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(constants " + specs.mkString(" ") + ")"
+}
+
+object NumericalType extends Enumeration
+{
+  type NumericalType = Value
+
+  val INTEGERTYPE  : NumericalType = Value("*integer-type*")
+  val RATIONALTYPE : NumericalType = Value("*rational-type*")
+  val OCTETTYPE    : NumericalType = Value("*octet-type*")
+}
+
+case class ArgTypeSortAList(tp : NumericalType, srt : IMPSSort, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + tp.toString + " " + srt.toString + ")"
+}
+
+case class ArgExtensible(specs : List[ArgTypeSortAList], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(extensible " + specs.mkString(" ") + ")"
+}
+
+case class ArgRenamerPair(old : Name, nu : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + old.toString + " " + nu.toString + ")"
+}
+
+case class ArgPairs(ps : List[ArgRenamerPair], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(pairs " + ps.mkString(" ") + ")"
+}
+
+case class ArgToken(t : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(token " + t.toString + ")"
+}
+
+case class ArgBinding(n : Int, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(binding " + n.toString + ")"
+}
+
+case class ArgTable(tn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(table " + tn.toString + ")"
+}
+
+/* Maybe make a better representation for this method (like below) if it ever becomes relevant.
+
+jbetzend@turing :: 13:34:20 :: ~ > grep -r -o --no-filename "(method .*)" Development/KWARC/content/MathHub/MMT/imps/source/ | sort | uniq
+(method  present-binary-infix-operator)
+(method present-binary-infix-operator)
+(method present-indicator-constructor-operator)
+(method  present-loglike-operator)
+(method present-loglike-operator)
+(method present-non-associative-infix-operator)
+(method present-postfix-operator)
+(method present-prefix-operator)
+(method present-sort-dependent-prefix-operator)
+(method present-subscripted-sort-arg)
+(method  present-tex-binary-infix-operator)
+(method present-tex-binary-infix-operator)
+(method present-tex-delimited-expression)
+(method present-tex-delimited-expression-with-dots)
+(method PRESENT-TEX-differentiation)
+(method present-tex-direct-image-operator)
+(method present-tex-id-operator)
+(method present-tex-indicator-constructor-operator)
+(method present-tex-interval-iteration-operator)
+(method present-tex-inverse-image-operator)
+(method present-tex-inverse-operator)
+(method present-tex-prefix-operator)
+(method PRESENT-TEX-RAISE)
+(method present-tex-sort-dependent-prefix-operator)
+(method present-tex-stack-label)
+(method present-tex-symbol)
+
+ */
+
+case class ArgMethod(mn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(method " + mn.toString + ")"
+}
+
+object ParseMethod extends Enumeration
+{
+  type ParseMethod = Value
+
+  val PREFIXMETHOD   : ParseMethod = Value("prefix-operator-method")
+  val INFIXMETHOD    : ParseMethod = Value("infix-operator-method")
+  val POSTFIXMETHOD  : ParseMethod = Value("postfix-operator-method")
+  val NEGATIONMETHOD : ParseMethod = Value("negation-operator-method")
+  val TABLEMETHOD    : ParseMethod = Value("table-operator-method")
+  val INDBOTHSYN     : ParseMethod = Value("parse-indicator-constructor-both-syntaxes")
+  val PREFSORTDEPOM  : ParseMethod = Value("prefix-sort-dependent-operator-method")
+  val NULLCALL       : ParseMethod = Value("null-call-method-terminator")
+}
+
+case class ArgLeftMethod(mn : ParseMethod, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(left-method " + mn.toString + ")"
+}
+
+case class ArgNullMethod(mn : ParseMethod, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(null-method " + mn.toString + ")"
+}
+
+case class ModTex(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "tex"
+}
+
+case class ModReverse(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "reverse"
+}
+
+case class ModLemma(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "lemma"
+}
+
+case class ArgMacete(mn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(macete " + mn.toString + ")"
+}
+
+case class ArgHomeTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(home-theory " + nm.toString + ")"
+}
+
+case class ArgProof(prf : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(proof " + prf.toString + ")"
+}
+
+case class ArgComponentTheories(cps : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(component-theories " + cps.mkString(" ") + ")"
+}
+
+case class ArgDistinctConstants(ds : List[List[Name]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = {
+    var str = "(distinct-constants"
+    for (d <- ds) {
+      str = str + " (" + d.mkString(" ") +  ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class AxiomSpec(name : Option[String], defstr : DefString, frm : Option[IMPSMathExp], usgs : Option[List[Usage]],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = {
+    "(" + (if (name.isDefined) {name.get + " "} else {""}) + defstr.toString + (if (usgs.isDefined) {" " + usgs.get.mkString(" ")} else {""}) + ")"
+  }
+}
+
+case class ArgAxioms(cps : List[AxiomSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(axioms " + cps.mkString(" ") + ")"
+}
+
+case class ArgOverloadingPair(tname : Name, sname : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + tname.toString + " " + sname.toString + ")"
+}
+
+case class ModForce(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "force"
+}
+
+case class ModForceUnderQuickLoad(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "force-under-quick-load"
+}
+
+case class ModDontEnrich(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "dont-enrich"
+}
+
+case class ArgSource(var thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(source " + thy.toString + ")"
+}
+
+case class ArgTarget(var thy : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(target " + thy.toString + ")"
+}
+
+case class ArgAssumptions(defs : List[DefString], frms : List[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(assumptions " + defs.mkString(" ") + ")"
+}
+
+
+case class ArgSortPairSpec(name : Name, srt : Either[Either[Name,DefString],Either[DefString,DefString]], mth : Option[IMPSMathExp], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+
+  def mapPrint[A,B,C,D](e : Either[Either[A,B],Either[C,D]]) : String = {
+    e match {
+      case Left(Left(value))   => value.toString
+      case Left(Right(value))  => value.toString
+      case Right(Left(value))  => value.toString
+      case Right(Right(value)) => value.toString
+    }
+  }
+
+  override def toString: String = {
+    "(" + name.toString + " " + mapPrint(srt) + ")"
+  }
+}
+
+case class ArgSortPairs(defs : List[ArgSortPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(sort-pairs " + defs.mkString(" ") + ")"
+}
+
+case class ArgConstPairSpec(name : Name, const : ODefString, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + name.toString + " " + const.toString + ")"
+}
+
+case class ArgConstPairs(defs : List[ArgConstPairSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(constant-pairs " + defs.mkString(" ") + ")"
+}
+
+case class ArgCoreTranslation(var tr : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(core-translation " + tr.toString + ")"
+}
+
+case class ArgTheoryInterpretationCheck(var cm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(theory-interpretation-check " + cm.toString + ")"
+}
+
+case class ArgDefinitionName(var dn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(definition-name " + dn.toString + ")"
+}
+
+case class ArgNameList(var nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = if (nms.length == 1) { nms.head.toString } else { "(" + nms.mkString(" ") + ")"}
+}
+
+case class ArgDefStringList(var dfs : List[DefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = if (dfs.length == 1) { dfs.head.toString } else { "(" + dfs.mkString(" ") + ")"}
+}
+
+case class ArgRenamer(var rn : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(renamer " + rn.toString + ")"
+}
+
+case class ModCancellative(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "cancellative"
+}
+
+object OperationType extends Enumeration
+{
+  type OperationType = Value
+
+  val PLUS  : OperationType = Value("+")
+  val TIMES : OperationType = Value("*")
+  val MINUS : OperationType = Value("-")
+  val DIV   : OperationType = Value("/")
+  val EXP   : OperationType = Value("^")
+  val SUB   : OperationType = Value("sub")
+  val ZERO  : OperationType = Value("zero")
+  val UNIT  : OperationType = Value("unit")
+}
+
+case class ArgOperationAlist(optype : OperationType, op : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(" + optype.toString + " " + op.toString + ")"
+}
+
+case class ArgOperations(defs : List[ArgOperationAlist], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(operations " + defs.mkString(" ") + ")"
+}
+
+case class ArgScalars(ntype : NumericalType, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(scalars " + ntype.toString + ")"
+}
+
+case class ModCommutes(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "commutes"
+}
+
+case class ModUseNumerals(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "use-numerals-for-ground-terms"
+}
+
+case class ArgSpecForms(specform : Either[Name,QDFSpecForm], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = specform match {
+    case Left(n)  => n.toString
+    case Right(s) => s.toString
+  }
+}
+
+case class ArgBase(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(base " + sf.toString + ")"
+}
+
+case class ArgExponent(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(exponent " + sf.toString + ")"
+}
+
+case class ArgCoefficient(sf : ArgSpecForms, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(coefficient " + sf.toString + ")"
+}
+
+case class ArgRetrievalProtocol(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(retrieval-protocol " + nm.toString + ")"
+}
+
+case class ArgApplicabilityRecognizer(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(applicability-recognizer " + nm.toString + ")"
+}
+
+case class ArgComponentSections(nms : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(component-sections " + nms.mkString(" ") + ")"
+}
+
+case class ArgFileSpec(nm1 : Name, nm2 : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(" + nm1.toString + " " + nm2.toString + ")"
+}
+
+case class ArgFiles(nms : List[ArgFileSpec], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(files " + nms.mkString(" ") + ")"
+}
+
+case class ArgBaseTheory(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(base-theory " + nm.toString + ")"
+}
+
+case class ArgReplicaRenamer(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(replica-renamer " + nm.toString + ")"
+}
+
+case class ArgNumbers(ns : List[Number], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(" + ns.mkString(" ") + ")"
+}
+
+case class ArgPermutations(nns : List[List[Number]], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = {
+    var str = "(permutations"
+    for (p <- nns) {
+      str = str + " (" + p.mkString(" ") + ")"
+    }
+    str = str + ")"
+    str
+  }
+}
+
+case class ArgMultiples(ns : List[Number], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(multiples " + ns.mkString(" ") + ")"
+}
+
+case class ArgSpecialRenamings(ns : List[ArgRenamerPair], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(special-renamings " + ns.mkString(" ") + ")"
+}
+
+case class ArgTargetTheories(ns : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(target-theories " + ns.mkString(" ") + ")"
+}
+
+case class ArgTargetMultiple(n : Number, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(target-multiple " + n.toString + ")"
+}
+
+case class ArgSortAssoc(nm : Name, sorts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "( " + nm.toString + sorts.map(k => k.o match {
+    case Left(d)  => " " + d.toString
+    case Right(n) => " " + n.toString
+  }) + ")"
+}
+
+case class ArgEnsembleSorts(sorts : List[ArgSortAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(sorts " + sorts.mkString(" ") + ")"
+}
+
+case class ArgConstAssoc(nm : Name, consts : List[ODefString], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "( " + nm.toString + consts.map(k => k.o match {
+    case Left(d)  => " " + d.toString
+    case Right(n) => " " + n.toString
+  }) + ")"
+}
+
+case class ArgEnsembleConsts(consts : List[ArgConstAssoc], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(constants " + consts.mkString(" ") + ")"
+}
+
+case class ArgNewTranslationName(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString : String = "(new-translation-name " + nm.toString + ")"
+}
+
+case class ArgAlgebraicSimplifierSpec(names : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + names.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicSimplifier(specs : List[ArgAlgebraicSimplifierSpec],
+                                  var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-simplifier" + specs.mkString(" ") + ")"
+}
+
+
+case class ArgAlgebraicOrderSimplifierSpec(names : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + names.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicOrderSimplifier(specs : List[ArgAlgebraicOrderSimplifierSpec],
+                                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-order-simplifier" + specs.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicTermComparator(specs : List[Name], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-term-comparator" + specs.mkString(" ") + ")"
+}
+
+case class ArgAlgebraicProcessor(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(algebraic-processor" + nm.toString + ")"
+}
+
+case class ArgDiscreteSorts(srts : List[IMPSSort], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(discrete-sorts" + srts.mkString(" ") + ")"
+}
+
+case class ArgOperationsAlist(optype : Name, op : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + optype.toString + " " + op.toString + ")"
+}
+
+case class ArgProcOperations(alists : List[ArgOperationsAlist], var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(operations " + alists.mkString(" ") + ")"
+}
+
+case class Set(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(set " + cont.toString + ")"
+}
+
+case class Define(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(define " + cont.toString + ")"
+}
+
+case class ModReload(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "reload"
+}
+
+case class ModQuickLoad(var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "quick-load"
+}
+
+case class TeXCorrespondence(scrpt : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(make-tex-correspondence " + scrpt.toString + ")"
+}
+
+case class QCConstantlike(nm : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(make-quasi-constructor-constantlike " + nm.toString + ")"
+}
+
+case class EnsembleDontTranslateConst(nm : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(ensemble-dont-translate-constant " + nm.toString + ")"
+}
+
+case class ArbitraryScript(opener : String, scrpt : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(" + opener + " " + scrpt.toString + ")"
+}
+
+case class Simplog1stWrapper(d : DefForm, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+  override def toString: String = "(transportable-rewrite-usage-simplog1st " + d.toString + ")"
+}
+
 // Full DefForms
 
 case class Heralding(name : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
 object Heralding extends Comp[Heralding] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (nm : Name) :+: HNil => Heralding(nm, None, None).asInstanceOf[T]
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: Nil => Heralding(nm, None, None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
 
 
-case class DFAtomicSort(name : Name, dfs : DefString, thy : ArgTheory,
-                        usgs : Option[ArgUsages], wtn : Option[ArgWitness],
+case class DFAtomicSort(name : Name, dfs : DefString, frm : IMPSMathExp, sort : IMPSSort,
+                        thy : ArgTheory, usgs : Option[ArgUsages], wtn : Option[ArgWitness],
                         var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-object DFAtomicSort extends Comp[DFAtomicSort] {
-  override def build[T <: DefForm](args : HList) : T = args match {
-    case (n : Name) :+: (d : DefString) :+: (t : Option[ArgTheory]) :+: (u : Option[ArgUsages]) :+:
-      (w : Option[ArgWitness]) :+: HNil => DFAtomicSort(n,d,t.get,u,w,None,None).asInstanceOf[T]
+class DFAtomicSortC(js : List[JSONObject]) extends Comp[DFAtomicSort] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (t : Option[ArgTheory]) :: (u : Option[ArgUsages]) ::
+      (w : Option[ArgWitness]) :: Nil =>
+
+      val frm : IMPSMathExp = FrmFnd.findFormula(t.get.thy.s,Some(d),"defsorts","",Some(n.s),js)
+      val srt : IMPSSort    = FrmFnd.findSort(t.get.thy.s,d,"defsorts",Some(n.s),js)
+
+      DFAtomicSort(n,d,frm,srt,t.get,u,w,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
 }
 
-//-----------
+case class DFConstant(name : Name, dfs : DefString, frm : IMPSMathExp, sort : IMPSSort, thy : ArgTheory,
+                      srt : Option[ArgSort], usgs : Option[ArgUsages],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-abstract class SEXP
+class DFConstantC(js : List[JSONObject]) extends Comp[DFConstant] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (thy : Option[ArgTheory]) :: (s : Option[ArgSort]) ::
+      (u : Option[ArgUsages]) :: Nil =>
 
-case class SEXPAtom(s : String) extends SEXP
+      val frm = FrmFnd.findFormula(thy.get.thy.s,Some(d),"defconsts","",Some(n.s),js)
+      val srt = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
 
-case class SEXPNested(args : List[SEXP]) extends SEXP
+      DFConstant(n,d,frm,srt,thy.get,s,u,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
 
-//-----------
+case class DFQuasiConstructor(name : Name, dfs : DefString,
+                              lan  : ArgLanguage, fx : Option[ArgFixedTheories],
+                              var src : SourceInfo, var cmt : CommentInfo) extends DefForm
 
-case class Section(name : String, dependencies : List[Section], files : List[String], jsons : List[String])
+object DFQuasiConstructor extends Comp[DFQuasiConstructor] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (t : Option[ArgLanguage]) :: (f : Option[ArgFixedTheories]) :: Nil =>
+      DFQuasiConstructor(n,d,t.get,f,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFSchematicMacete(name : Name, dfs : DefString, nil : Option[ModNull],
+                             trans : Option[ModTransportable], t : ArgTheory,
+                             var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFSchematicMacete extends Comp[DFSchematicMacete] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (d : DefString) :: (nl : Option[ModNull]) :: (tr : Option[ModTransportable]) ::
+      (t : Option[ArgTheory]) :: Nil => DFSchematicMacete(n,d,nl,tr,t.get,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFCompoundMacete(nm : Name, spec : MaceteSpec, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFCompoundMacete extends Comp[DFCompoundMacete] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (s : MaceteSpec) :: Nil => DFCompoundMacete(n,s,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFImportedRewriteRules(nm : Name, thy : Option[ArgSourceTheory], thies : Option[ArgSourceTheories],
+                                  var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFImportedRewriteRules extends Comp[DFImportedRewriteRules] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (thy : Option[ArgSourceTheory]) :: (thies : Option[ArgSourceTheories]) :: Nil =>
+      DFImportedRewriteRules(n,thy,thies,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFInductor(nm : Name, princ : ArgInductionPrinciple, thy : ArgTheory,
+                      trans : Option[ArgTranslation], bh : Option[ArgBaseCaseHook],
+                      ih : Option[ArgInductionStepHook], du : Option[ArgDontUnfold],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFInductor extends Comp[DFInductor] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (p : ArgInductionPrinciple) :: (thy : Option[ArgTheory]) :: (tr : Option[ArgTranslation])
+      :: (bh : Option[ArgBaseCaseHook]) :: (ih : Option[ArgInductionStepHook]) :: (du : Option[ArgDontUnfold])
+      :: Nil => DFInductor(n,p,thy.get,tr,bh,ih,du,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFLanguage(name : Name, els : Option[ArgEmbeddedLangs], el : Option[ArgEmbeddedLang],
+                      bt : Option[ArgBaseTypes], srts : Option[ArgSorts],
+                      ex : Option[ArgExtensible], cnsts : Option[ArgConstants],
+                      var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFLanguage extends Comp[DFLanguage] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (els : Option[ArgEmbeddedLangs]) :: (el : Option[ArgEmbeddedLang])
+                    :: (bt : Option[ArgBaseTypes]) :: (srts : Option[ArgSorts])
+                    :: (ex : Option[ArgExtensible]) :: (cnsts : Option[ArgConstants])
+                    :: Nil => DFLanguage(n,els,el,bt,srts,ex,cnsts,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFRenamer(nm : Name, ps : Option[ArgPairs], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+{
+  def toFunction : String => String = {
+    if (ps.isDefined) { x : String => applyRenaming(x,ps.get.ps) } else { identity }
+  }
+
+  def applyRenaming(in : String, res : List[ArgRenamerPair]) : String = {
+    if (res.isEmpty) {in} else {if (res.head.old.s == in) {res.head.nu.s} else {applyRenaming(in,res.tail)}}
+  }
+}
+
+object DFRenamer extends Comp[DFRenamer] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (ps : Option[ArgPairs]) :: Nil => DFRenamer(n,ps,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFParseSyntax(n : Name, t : Option[ArgToken], lm : Option[ArgLeftMethod],
+                         nm : Option[ArgNullMethod], tbl : Option[ArgTable],
+                         bnd : ArgBinding, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFParseSyntax extends Comp[DFParseSyntax] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (t : Option[ArgToken]) :: (lm : Option[ArgLeftMethod]) :: (nm : Option[ArgNullMethod])
+                    :: (tbl : Option[ArgTable]) :: (bnd : Option[ArgBinding]) :: Nil
+                    => DFParseSyntax(n,t,lm,nm,tbl,bnd.get,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFPrintSyntax(n : Name, tex : Option[ModTex], t : Option[ArgToken],
+                         m : Option[ArgMethod], tbl : Option[ArgTable], bnd : ArgBinding,
+                         var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFPrintSyntax extends Comp[DFPrintSyntax] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (tex : Option[ModTex]) :: (t : Option[ArgToken]) :: (m : Option[ArgMethod])
+      :: (tbl : Option[ArgTable]) :: (bnd : Option[ArgBinding]) :: Nil
+    => DFPrintSyntax(n,tex,t,m,tbl,bnd.get,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheorem(n : Name, defn : ODefString, frm : Option[IMPSMathExp], modr : Option[ModReverse],
+                     modl : Option[ModLemma], t : ArgTheory, us : Option[ArgUsages], tr : Option[ArgTranslation],
+                     mac : Option[ArgMacete], ht : Option[ArgHomeTheory], prf : Option[ArgProof],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+class DFTheoremC(js : List[JSONObject]) extends Comp[DFTheorem] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (df  : ODefString)        :: (modr : Option[ModReverse])  :: (modl : Option[ModLemma])
+                    :: (thy : Option[ArgTheory]) :: (us : Option[ArgUsages])     :: (tr : Option[ArgTranslation])
+                    :: (mac : Option[ArgMacete]) :: (ht : Option[ArgHomeTheory]) :: (prf : Option[ArgProof]) :: Nil
+    =>
+      // Construct full theorem!
+      val formula : IMPSMathExp = df.o match {
+        case Left((defstring,None))                         => FrmFnd.findFormula(thy.get.thy.s,Some(defstring),"theorems","axioms",Some(n.s),js)
+        case Left((_,Some(thef)))                           => thef
+        case Right(Name(k@"right-act-inv",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"left-act-inv",_,_))              => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"action-macete",_,_))             => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"reverse-act-associativity",_,_)) => FrmFnd.findFormula("group-actions",None,"theorems","axioms",Some(k),js)
+        case Right(Name(k@"finiteness-of-zeta-orbit",_,_))  => FrmFnd.findFormula("counting-theorem-theory",None,"theorems","axioms",Some(k),js)
+        case Right(name)                                    => FrmFnd.findFormula(thy.get.thy.s,None,"theorems","axioms",Some(name.s),js)
+      }
+      DFTheorem(n,df,Some(formula),modr,modl,thy.get,us,tr,mac,ht,prf,None,None).asInstanceOf[T]
+
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheory(name : Name, lang : Option[ArgLanguage], comp : Option[ArgComponentTheories],
+                    axioms : Option[ArgAxioms], dstnct : Option[ArgDistinctConstants],
+                    var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+class DFTheoryC(js : List[JSONObject]) extends Comp[DFTheory] {
+
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (lang : Option[ArgLanguage]) :: (comp : Option[ArgComponentTheories])
+                    :: (axs : Option[ArgAxioms]) :: (dscs : Option[ArgDistinctConstants]) :: Nil =>
+
+      val nuaxs : Option[ArgAxioms] = if (axs.isDefined) {
+        var nu : List[AxiomSpec] = Nil
+        for (ax <- axs.get.cps) {
+          val found = FrmFnd.findAxiom(n.s, ax, js)
+          nu = nu ::: List(AxiomSpec(ax.name,ax.defstr,Some(found),ax.usgs,ax.src,ax.cmt))
+        }
+        Some(ArgAxioms(nu,axs.get.src,axs.get.cmt))
+      } else { None }
+
+      DFTheory(n,lang,comp,nuaxs,dscs,None,None).asInstanceOf[T]
+
+    case _ => ??!(args)
+  }
+}
+
+case class DFOverloading(n : Name, ps : List[ArgOverloadingPair], var src : SourceInfo, var cmt : CommentInfo)
+  extends DefForm
+
+object DFOverloading extends Comp[DFOverloading] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (ps : List[ArgOverloadingPair]) :: Nil => DFOverloading(n,ps,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTranslation(n : Name, f : Option[ModForce], fu : Option[ModForceUnderQuickLoad], de : Option[ModDontEnrich],
+                         sour : ArgSource, tar : ArgTarget, asms : Option[ArgAssumptions], fxd : Option[ArgFixedTheories],
+                         sps : Option[ArgSortPairs], cps : Option[ArgConstPairs], ct : Option[ArgCoreTranslation],
+                         tic : Option[ArgTheoryInterpretationCheck], var src : SourceInfo, var cmt : CommentInfo)
+  extends DefForm
+
+class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
+
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (n : Name) :: (f : Option[ModForce]) :: (fu : Option[ModForceUnderQuickLoad]) :: (de : Option[ModDontEnrich])
+                    :: (sour : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (asms : Option[ArgAssumptions])
+                    :: (fxd : Option[ArgFixedTheories]) :: (sps : Option[ArgSortPairs]) :: (cps : Option[ArgConstPairs])
+                    :: (ct : Option[ArgCoreTranslation]) :: (tic : Option[ArgTheoryInterpretationCheck]) :: Nil =>
+
+      var formulas : List[IMPSMathExp] = Nil
+      var nu_cps : Option[ArgConstPairs] = None
+      var nu_sps : Option[ArgSortPairs]  = None
+
+      if (sps.isDefined)
+      {
+        var nu_sps_defs : List[ArgSortPairSpec] = Nil
+
+        for (sp <- sps.get.defs.indices)
+        {
+          var needle : String = ""
+
+          sps.get.defs(sp).srt match {
+            case scala.util.Left(scala.util.Left(_))           => nu_sps_defs = nu_sps_defs ::: List(sps.get.defs(sp))
+            case scala.util.Left(scala.util.Right(the_string)) => needle = removeWhitespace(the_string.s.tail.init)
+            case scala.util.Right(scala.util.Left(the_pred))   => needle = "(pred " + removeWhitespace(the_pred.s.tail.init) + ")"
+            case scala.util.Right(scala.util.Right(the_indic)) => needle = "(indic " + removeWhitespace(the_indic.s.tail.init) + ")"
+          }
+
+          if (needle.nonEmpty)
+          {
+            //println(" > looking for formula for sort-pair: " + sps.get.defs(sp))
+
+            val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
+            assert(json_theory2.isDefined)
+            assert(json_theory2.get.getAsString("type") == "imps-theory")
+
+            val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
+            val haystack : List[JSONObject] = group2.distinct
+            assert(haystack.nonEmpty)
+
+            var theThing : Option[JSONObject] = None
+
+            // Search by string
+            if (theThing.isEmpty)
+            {
+              // At this point, we need the actual def-string
+              assert(needle.nonEmpty)
+
+              // unmodified string
+              needle = removeWhitespace(needle)
+              var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(needle))
+
+              // if that didn't work, handpicked string
+              if (tempt.isEmpty) {
+                val handpicked = handpick(needle)
+                tempt = haystack.find(j => j.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(handpicked))
+              }
+              theThing = tempt
+            }
+
+            if (theThing.isEmpty)
+            {
+              assert(needle != "")
+              println("\n > needle     = " + needle)
+              println(" > handpicked = " + handpick(needle))
+
+              println("\nCandidates:\n")
+              for (t <- haystack) {
+                for (a <- t.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase)) {
+                  println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                }
+              }
+            }
+
+            assert(theThing.isDefined)
+            val thesexp : List[String] = theThing.get.getAsList(classOf[String],"sort-pairs-sexp")
+            assert(thesexp.nonEmpty)
+
+            val sep : SymbolicExpressionParser = new SymbolicExpressionParser
+            val lsp = sep.parseAll(sep.parseSEXP,thesexp(sp).toLowerCase.dropWhile(c => !c.isWhitespace).init.trim)
+            assert(lsp.successful)
+
+            val foo = Some(impsMathParser.makeSEXPFormula(lsp.get))
+
+            nu_sps_defs = nu_sps_defs ::: List(ArgSortPairSpec(sps.get.defs(sp).name,sps.get.defs(sp).srt,foo,sps.get.defs(sp).src,sps.get.defs(sp).cmt))
+          }
+        }
+        nu_sps = Some(ArgSortPairs(nu_sps_defs,sps.get.src,sps.get.cmt))
+      }
+
+      if (cps.isDefined)
+      {
+        var nu_cps_defs : List[ArgConstPairSpec] = Nil
+
+        for (cp <- cps.get.defs.indices)
+        {
+          cps.get.defs(cp).const.o match {
+            case scala.util.Right(_)
+               | scala.util.Left((_,Some(_))) => nu_cps_defs = nu_cps_defs ::: List(cps.get.defs(cp))
+            case scala.util.Left((dfs,None))  =>
+
+              val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
+              assert(json_theory2.isDefined)
+              assert(json_theory2.get.getAsString("type") == "imps-theory")
+
+              val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
+              val haystack : List[JSONObject] = group2.distinct
+              assert(haystack.nonEmpty)
+
+              var needle : String = dfs.s.tail.init
+              var theThing : Option[JSONObject] = None
+
+              // Search by string
+              if (theThing.isEmpty)
+              {
+                // At this point, we need the actual def-string
+                assert(needle.nonEmpty)
+
+                // unmodified string
+                needle = removeWhitespace(needle)
+                var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(needle))
+
+                // if that didn't work, handpicked string
+                if (tempt.isEmpty) {
+                  val handpicked = handpick(needle)
+                  tempt = haystack.find(j => j.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase).map(a => removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init)).contains(handpicked))
+                }
+                theThing = tempt
+              }
+
+              if (theThing.isEmpty)
+              {
+                assert(needle != "")
+                println("\n > needle     = " + needle)
+                println(" > handpicked = " + handpick(needle))
+
+                println("\nCandidates:\n")
+                for (t <- haystack)
+                {
+                  for (a <- t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase)) {
+                    println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                  }
+                }
+              }
+
+              assert(theThing.isDefined)
+              val thesexp : List[String] = theThing.get.getAsList(classOf[String],"constant-pairs-sexp")
+              assert(thesexp.nonEmpty)
+
+              val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+              val lsp = sp.parseAll(sp.parseSEXP,thesexp(cp).toLowerCase.dropWhile(c => !c.isWhitespace).init.trim)
+              assert(lsp.successful)
+
+              nu_cps_defs = nu_cps_defs ::: List(ArgConstPairSpec(cps.get.defs(cp).name,ODefString(scala.util.Left((dfs,Some(impsMathParser.makeSEXPFormula(lsp.get)))),None,None),None,None))
+          }
+        }
+
+        nu_cps = Some(ArgConstPairs(nu_cps_defs,cps.get.src,cps.get.cmt))
+      }
+
+      if (asms.isDefined)
+      {
+        val json_theory1 : Option[JSONObject] = js.find(j => j.getAsString("name") == sour.get.thy.s.toLowerCase)
+        assert(json_theory1.isDefined)
+        assert(json_theory1.get.getAsString("type") == "imps-theory")
+
+        val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
+        assert(json_theory2.isDefined)
+        assert(json_theory2.get.getAsString("type") == "imps-theory")
+
+        val group1   : List[JSONObject] = json_theory1.get.getAsList(classOf[JSONObject],"translations")
+        val group2   : List[JSONObject] = json_theory2.get.getAsList(classOf[JSONObject],"translations")
+        val haystack : List[JSONObject] = (group1 ::: group2).distinct
+        assert(haystack.nonEmpty)
+
+        for (as <- asms.get.defs.indices)
+        {
+          var needle : String = asms.get.defs(as).s.tail.init
+          var theThing : Option[JSONObject] = None
+
+          // Search by string
+          if (theThing.isEmpty)
+          {
+            // At this point, we need the actual def-string
+            assert(needle.nonEmpty)
+
+            // unmodified string
+            needle = removeWhitespace(needle)
+            var tempt = haystack.find(j => j.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => removeWhitespace(a)).contains(needle))
+
+            // if that didn't work, handpicked string
+            if (tempt.isEmpty) {
+              val handpicked = handpick(needle)
+              tempt = haystack.find(j => j.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase).map(a => removeWhitespace(a)).contains(handpicked))
+            }
+            theThing = tempt
+          }
+
+          if (theThing.isEmpty)
+          {
+            assert(needle != "")
+            println("\n > needle     = " + needle)
+            println(" > handpicked = " + handpick(needle))
+
+            for (t <- haystack)
+            {
+              println("\nCandidates:\n")
+              for (a <- t.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase)) {
+                println(removeWhitespace(a))
+              }
+            }
+          }
+
+          assert(theThing.isDefined)
+          val thesexp : List[String] = theThing.get.getAsList(classOf[String],"assumptions-sexp")
+          assert(thesexp.nonEmpty)
+
+          val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+          val lsp = sp.parseAll(sp.parseSEXP,thesexp(as).toLowerCase)
+          assert(lsp.successful)
+
+          formulas = formulas ::: List(impsMathParser.makeSEXPFormula(lsp.get))
+        }
+      }
+
+      val nuAsms : Option[ArgAssumptions] = if (asms.isDefined) { Some(asms.get.copy(frms = formulas)) } else { None }
+
+      DFTranslation(n, f, fu, de, sour.get, tar.get, nuAsms, fxd, nu_sps, nu_cps, ct, tic, None, None).asInstanceOf[T]
+
+    case _ => ??!(args)
+  }
+}
+
+case class DFRecursiveConstant(ns : ArgNameList, defs : ArgDefStringList, frms : List[IMPSMathExp], srts : List[IMPSSort],
+                               thy : ArgTheory, usgs : Option[ArgUsages], defname : Option[ArgDefinitionName],
+                               var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+class DFRecursiveConstantC(js : List[JSONObject]) extends Comp[DFRecursiveConstant] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (ns : ArgNameList) :: (defs : ArgDefStringList) :: (thy : Option[ArgTheory]) :: (usgs : Option[ArgUsages])
+                            :: (defname : Option[ArgDefinitionName]) :: Nil =>
+
+      var frms : List[IMPSMathExp] = Nil
+      var srts : List[IMPSSort] = Nil
+
+      val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thy.get.thy.s)
+      assert(json_theory.isDefined)
+      assert(json_theory.get.getAsString("type") == "imps-theory")
+
+      val recconsts : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],"def-recursive-consts")
+      assert(recconsts.nonEmpty)
+
+      val theconst : Option[JSONObject] = recconsts.find(j => j.getAsList(classOf[JSONString], "names").map(_.value.toLowerCase).contains(ns.nms.map(_.s).head.toLowerCase))
+      assert(theconst.isDefined)
+      assert(theconst.get.getAsString("type") == "imps-theory-recursive-constant")
+
+      val thesexps = theconst.get.getAsList(classOf[JSONString],"defining-sexps")
+      assert(thesexps.nonEmpty)
+      var realsexps : List[String] = thesexps.map(_.value)
+      if (thesexps.lengthCompare(ns.nms.length) != 0)
+      {
+        val nusexps = thesexps.head.value.split(", ")
+        assert(nusexps.lengthCompare(ns.nms.length) == 0)
+        realsexps = nusexps.toList
+      }
+
+      val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+
+      for (k <- ns.nms.indices)
+      {
+        //println(" > Working on recursive constant " + names(k))
+
+        val thesexp = realsexps(k)
+        val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+        assert(lsp.successful)
+
+        val defexp = impsMathParser.makeSEXPFormula(lsp.get)
+        frms = frms ::: List(defexp)
+        //println("     > Formula generation successful: " + defexp.toString)
+
+        var thesorts  : List[String]     = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
+
+        if (thesorts.length < ns.nms.length)
+        {
+          assert(thesorts.length == 1)
+          thesorts = thesorts.head.split(", ").toList
+        }
+
+        assert(thesorts.nonEmpty)
+        assert(thesorts.lengthCompare(ns.nms.length) == 0)
+
+        val sop = new SortParser()
+        val losp = sop.parseAll(sop.parseSort,thesorts(k))
+        assert(losp.successful)
+
+        srts = srts ::: List(losp.get)
+      }
+
+      assert(frms.nonEmpty)
+      assert(srts.nonEmpty)
+      assert(ns.nms.length == frms.length)
+
+      DFRecursiveConstant(ns,defs,frms,srts,thy.get,usgs,defname,None,None).asInstanceOf[T]
+
+    case _ => ??!(args)
+  }
+}
+
+case class DFTransportedSymbols(ns : ArgNameList, tr : ArgTranslation, rn : Option[ArgRenamer],
+                                var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+
+object DFTransportedSymbols extends Comp[DFTransportedSymbols] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (ns : ArgNameList) :: (tr : Option[ArgTranslation]) :: (rn : Option[ArgRenamer]) :: Nil =>
+      DFTransportedSymbols(ns,tr.get,rn,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class QDFSpecForm(sclrs : Option[ArgScalars], ops : Option[ArgOperations],
+                       usenum : Option[ModUseNumerals], comm : Option[ModCommutes],
+                       var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object QDFSpecForm extends Comp[QDFSpecForm] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (sclrs : Option[ArgScalars]) :: (ops : Option[ArgOperations]) :: (usenum : Option[ModUseNumerals])
+      :: (comm : Option[ModCommutes]) :: Nil => QDFSpecForm(sclrs,ops,usenum,comm,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFAlgebraicProcessor(nm : Name, canc : Option[ModCancellative], lang : ArgLanguage,
+                                bs : ArgBase, ex : Option[ArgExponent], co : Option[ArgCoefficient],
+                                var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFAlgebraicProcessor extends Comp[DFAlgebraicProcessor] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: (canc : Option[ModCancellative]) :: (lang : Option[ArgLanguage]) :: (bs : Option[ArgBase])
+                     :: (ex : Option[ArgExponent]) :: (co : Option[ArgCoefficient]) :: Nil =>
+      DFAlgebraicProcessor(nm,canc,lang.get,bs.get,ex,co,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFScript(nm : Name, argc : Number, scrpt : Script, ret : Option[ArgRetrievalProtocol],
+                    rec : Option[ArgApplicabilityRecognizer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFScript extends Comp[DFScript] {
+  override def build[T <: DefForm](args : List[Any]) : T = args match {
+    case (nm : Name) :: (argc : Number) :: (scrpt : Script) :: (ret : Option[ArgRetrievalProtocol])
+      :: (rec : Option[ArgApplicabilityRecognizer]) :: Nil => DFScript(nm,argc,scrpt,ret,rec,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFSection(nm : Name, com : Option[ArgComponentSections], fls : Option[ArgFiles],
+                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFSection extends Comp[DFSection] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (com : Option[ArgComponentSections]) :: (fls : Option[ArgFiles]) :: Nil =>
+      DFSection(nm,com,fls,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheoryEnsemble(nm : Name, bt : Option[ArgBaseTheory], fts : Option[ArgFixedTheories],
+                            rnm : Option[ArgReplicaRenamer], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsemble extends Comp[DFTheoryEnsemble] {
+  override def build[T <: DefForm](args : List[Any]): T = {
+    args match {
+      case (nm : Name) :: (bt : Option[ArgBaseTheory]) :: (fts : Option[ArgFixedTheories]) :: (rnm : Option[ArgReplicaRenamer]) :: Nil
+      => DFTheoryEnsemble(nm,bt,fts,rnm,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
+  }
+}
+
+case class DFTheoryEnsembleMultiple(nm : Name, n : Number, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsembleMultiple extends Comp[DFTheoryEnsembleMultiple] {
+  override def build[T <: DefForm](args : List[Any]): T = {
+    args match {
+      case (nm : Name) :: (n : Number) :: Nil => DFTheoryEnsembleMultiple(nm,n,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
+  }
+}
+
+case class DFTheoryEnsembleOverloadings(nm : Name, ns : ArgNumbers, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryEnsembleOverloadings extends Comp[DFTheoryEnsembleOverloadings] {
+  override def build[T <: DefForm](args : List[Any]): T = {
+    args match {
+      case (nm : Name) :: (ns : ArgNumbers) :: Nil => DFTheoryEnsembleOverloadings(nm,ns,None,None).asInstanceOf[T]
+      case _ => ??!(args)
+    }
+  }
+}
+
+case class DFTheoryEnsembleInstances(nm : Name, fuq : Option[ModForceUnderQuickLoad], tt : Option[ArgTargetTheories],
+                                     tm : Option[ArgTargetMultiple], ss : Option[ArgEnsembleSorts], cs : Option[ArgEnsembleConsts],
+                                     ms : Option[ArgMultiples], tic : Option[ArgTheoryInterpretationCheck],
+                                     ps : Option[ArgPermutations], srs : Option[ArgSpecialRenamings],
+                                     var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object  DFTheoryEnsembleInstances extends Comp[DFTheoryEnsembleInstances] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (fuq : Option[ModForceUnderQuickLoad]) :: (tt : Option[ArgTargetTheories]) :: (tm : Option[ArgTargetMultiple])
+      :: (ss : Option[ArgEnsembleSorts]) :: (cs : Option[ArgEnsembleConsts]) :: (ms : Option[ArgMultiples]) :: (tic : Option[ArgTheoryInterpretationCheck])
+      :: (ps : Option[ArgPermutations]) :: (srs : Option[ArgSpecialRenamings]) :: Nil =>
+      val nucs : Option[ArgEnsembleConsts] = if (cs.isDefined)
+      {
+        var nuCAs : List[ArgConstAssoc] = List.empty
+
+        for (c : ArgConstAssoc <- cs.get.consts) {
+          var nu_t : List[ODefString] = List.empty
+          for (t : ODefString <- c.consts) {
+            t.o match
+            {
+              // In this case, we need to search closer.
+              case scala.util.Left(tuple) => tuple match {
+                case (df,Some(ime)) => nu_t = nu_t ::: List(t)
+                case (df,None)      =>
+                  println(" > [TES] Looking for constants mapping: " + c.nm + " -> " + df)
+                  nu_t = nu_t ::: List(t)
+              }
+              case scala.util.Right(_)  => nu_t = nu_t ::: List(t)
+            }
+          }
+          nuCAs = nuCAs ::: List(ArgConstAssoc(c.nm,nu_t,c.src,c.cmt))
+        }
+
+        Some(ArgEnsembleConsts(nuCAs,cs.get.src,cs.get.cmt))
+
+      } else None
+
+      DFTheoryEnsembleInstances(nm,fuq,tt,tm,ss,nucs,ms,tic,ps,srs,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheoryInstance(nm : Name, sr : ArgSource, tar : ArgTarget, trans : ArgTranslation,
+                            fts : Option[ArgFixedTheories], rnm : Option[ArgRenamer], ntn : Option[ArgNewTranslationName],
+                            var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryInstance extends Comp[DFTheoryInstance] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (sr : Option[ArgSource]) :: (tar : Option[ArgTarget]) :: (trans : Option[ArgTranslation])
+      :: (fts : Option[ArgFixedTheories]) :: (rnm : Option[ArgRenamer]) :: (ntn : Option[ArgNewTranslationName])
+      :: Nil => DFTheoryInstance(nm,sr.get,tar.get,trans.get,fts,rnm,ntn,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFTheoryProcessors(nm : Name, as : Option[ArgAlgebraicSimplifier], aos : Option[ArgAlgebraicOrderSimplifier],
+                              atc : Option[ArgAlgebraicTermComparator], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFTheoryProcessors extends Comp[DFTheoryProcessors] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (as : Option[ArgAlgebraicSimplifier]) :: (aos : Option[ArgAlgebraicOrderSimplifier]) ::
+      (atc : Option[ArgAlgebraicTermComparator]) :: Nil => DFTheoryProcessors(nm,as,aos,atc,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFOrderProcessor(nm : Name, ap : Option[ArgAlgebraicProcessor], ops : Option[ArgProcOperations],
+                            ds : Option[ArgDiscreteSorts], var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFOrderProcessor extends Comp[DFOrderProcessor] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (nm : Name) :: (ap : Option[ArgAlgebraicProcessor]) :: (ops : Option[ArgProcOperations])
+      :: (ds : Option[ArgDiscreteSorts]) :: Nil => DFOrderProcessor(nm,ap,ops,ds,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFIncludeFiles(rl : Option[ModReload], ql : Option[ModQuickLoad], fs : Option[ArgFiles],
+                          var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFIncludeFiles extends Comp[DFIncludeFiles] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (rl : Option[ModReload]) :: (ql : Option[ModQuickLoad]) :: (fs : Option[ArgFiles]) :: Nil =>
+      DFIncludeFiles(rl,ql,fs,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFLoadSection(sc : Name, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFLoadSection extends Comp[DFLoadSection] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (sc : Name) :: Nil => DFLoadSection(sc,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+case class DFComment(c : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm
+
+object DFComment extends Comp[DFComment] {
+  override def build[T <: DefForm](args : List[Any]): T = args match {
+    case (c : Script) :: Nil => DFComment(c,None,None).asInstanceOf[T]
+    case _ => ??!(args)
+  }
+}
+
+object FrmFnd
+{
+  def removeWhitespace(str : String) : String = str.replaceAll(" ", "").replaceAll("\t","").replaceAll("\n","").toLowerCase
+
+  def findAxiom(thyname : String, spec : AxiomSpec, js : List[JSONObject]) : IMPSMathExp =
+    findFormula(thyname, Some(spec.defstr), "theorems", "axioms", spec.name, js)
+
+  def findFormula(thyname : String, dfstr : Option[DefString], g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
+  {
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+
+    val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
+    val group2 : List[JSONObject] = if (g2 == "") { Nil } else { json_theory.get.getAsList(classOf[JSONObject],g2) }
+
+    val haystack : List[JSONObject] = (group1 ::: group2).distinct
+    assert(haystack.nonEmpty)
+
+    var needle : String = ""
+    var theThing : Option[JSONObject] = None
+
+    // Search by name
+    if (n.isDefined)
+    {
+      assert(n.get != "")
+      val temps = haystack.find(j => j.getAsString("name") == n.get.toLowerCase)
+      theThing = temps
+    }
+
+    // Search by string
+    if (theThing.isEmpty)
+    {
+      // At this point, we need the actual def-string
+      if (dfstr.isEmpty) { println(" > No defstr for " + n.get + " but nothing found via name either.") }
+      assert(dfstr.isDefined)
+
+      // unmodified string
+      needle = removeWhitespace(dfstr.get.s.tail.init)
+      var tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == needle)
+
+      // if that didn't work, handpicked string
+      if (tempt.isEmpty) {
+        val handpicked = handpick(removeWhitespace(dfstr.get.s.tail.init))
+        tempt = haystack.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+      }
+      theThing = tempt
+    }
+
+    if (theThing.isEmpty)
+    {
+      if (n.isDefined) { println("looking for " + n.get.toLowerCase) } else { println("looking for nameless formula") }
+      assert(needle != "")
+      val bar = removeWhitespace(needle)
+      println(" > s = " + needle)
+
+      for (t <- haystack)
+      {
+        val foo = removeWhitespace(t.getAsString("formula-string"))
+        val numb = math.min(foo.length,9)
+        if (foo.take(numb) == bar.take(numb)) {
+          println("     > json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
+        }
+      }
+    }
+
+    assert(theThing.isDefined)
+    val thesexp : String = theThing.get.getAsString("formula-sexp")
+    assert(thesexp.nonEmpty)
+
+    val sp : SymbolicExpressionParser = new SymbolicExpressionParser
+    val lsp = sp.parseAll(sp.parseSEXP,thesexp)
+    assert(lsp.successful)
+
+    impsMathParser.makeSEXPFormula(lsp.get)
+  }
+
+  def findSort(thyname : String, dfstr : DefString, g1 : String, n : Option[String], js : List[JSONObject]) : IMPSSort =
+  {
+    val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
+    assert(json_theory.isDefined)
+    assert(json_theory.get.getAsString("type") == "imps-theory")
+
+    val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
+    assert(group1.nonEmpty)
+
+    var s : String = ""
+    val theThing : Option[JSONObject] = if (n.isDefined)
+    {
+      group1.find(j => j.getAsString("name") == n.get.toLowerCase)
+    } else {
+      s = dfstr.s.tail.init
+      //println("     > scala theorem: " + removeWhitespace(dfstr.s.tail.init))
+      var tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(dfstr.s.tail.init))
+
+      if (tempt.isEmpty) {
+        val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
+        //println("     > handpicked: " +handpicked)
+        tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
+      }
+      tempt
+    }
+
+    if (theThing.isEmpty)
+    {
+      assert(s != "")
+      val bar = removeWhitespace(s)
+      println(" > s = " + s)
+
+      for (t <- group1)
+      {
+        val foo = removeWhitespace(t.getAsString("formula-string"))
+        val n = 5
+        if (foo.take(n) == bar.take(n)) {
+          println("     > json theorem: " + foo)
+        }
+      }
+    }
+
+    if (theThing.isEmpty) {
+      println("ERROR: Didn't find thing for " + g1 + " or " + " / " + dfstr)
+    }
+
+    assert(theThing.isDefined)
+    val thesort : String = theThing.get.getAsString("sort")
+    assert(thesort.nonEmpty)
+
+    val sp = new SortParser()
+    val lsp = sp.parseAll(sp.parseSort,thesort)
+    assert(lsp.successful)
+    lsp.get
+  }
+
+  /* Welcome to the most shameful part of the codebase...
+   * Some strings are subtly different from JSON to T, so we correct by hand.
+   */
+  def handpick(str: String) : String = {
+    str match {
+      case "forall(x:rr,#(abs(x)))" => "total_q{abs,[rr,rr]}"
+      case "forall(x,y:rr,#(max(x,y)))" => "total_q{max,[rr,rr,rr]}"
+      case "forall(x,y:pp,#(dist(x,y)))" => "total_q{dist,[pp,pp,rr]}"
+      case "total_q(+_kk,[kk,kk,kk])" => "total_q{+_kk,[kk,kk,kk]}"
+      case "total_q(*_kk,[kk,kk,kk])" => "total_q{*_kk,[kk,kk,kk]}"
+      case "total_q(-_kk,[kk,kk])" => "total_q{-_kk,[kk,kk]}"
+      case "total_q(**,[uu,uu,uu])" => "total_q{**,[uu,uu,uu]}"
+      case "forall(x:rr,x+(-x)=0)" => "forall(x:rr,x+-x=0)"
+      case "forall(y,x:rr,x-y=x+(-y))" => "forall(y,x:rr,x-y=x+-y)"
+      case "forall(n,m:zz,x:rr,((#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr)))" => "forall(n,m:zz,x:rr,(#(x^m,rr)and#(x^n,rr))iff#((x^m)^n,rr))"
+      case "total_q(+,[rr,rr,rr])" => "total_q{+,[rr,rr,rr]}"
+      case "total_q(*,[rr,rr,rr])" => "total_q{*,[rr,rr,rr]}"
+      case "total_q(-,[rr,rr])" => "total_q{-,[rr,rr]}"
+      case "total_q(sub,[rr,rr,rr])" => "total_q{sub,[rr,rr,rr]}"
+      case "forall(x,y,z:kk,not(x=o_kk)andnot(y=o_kk)andnot(z=o_kk)impliesnot(x*_kky=o_kk)and(not(y*_kkz=o_kk)andx*_kky*_kkz=x*_kk(y*_kkz)))" => "forall(x,y,z:kk,not(x=o_kk)andnot(y=o_kk)andnot(z=o_kk)impliesnot(x*y=o_kk)and(not(y*z=o_kk)andx*y*z=x*(y*z)))"
+      case "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andinv(x)*_kkx=i_kk)" => "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andinv(x)*x=i_kk)"
+      case "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andx*_kkinv(x)=i_kk)" => "forall(x:kk,not(x=o_kk)impliesnot(inv(x)=o_kk)andx*inv(x)=i_kk)"
+      case "forall(n,m:zz,x:kk,((#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk)))" => "forall(n,m:zz,x:kk,(#(x^m,kk)and#(x^n,kk))iff#((x^m)^n,kk))"
+      case "total_q{iterate,[[pp,pp],pp,[zz,pp]]}" => "total_q{ms%iterate,[[pp,pp],pp,[zz,pp]]}"
+      case "forsome(a:sets[uu],equiv%class_q(a))" => "nonvacuous_q{equiv%class_q}"
+      case "with(a:sets[gg],forall(g,h:gg,(gina)and(hina)implies(gmulh)ina))" => "with(a:sets[gg],forall(g,h:gg,ginaandhinaimplies(gmulh)ina))"
+      case "with(a:sets[gg],forall(g:gg,(gina)implies(inv(g)ina)))" => "with(a:sets[gg],forall(g:gg,ginaimpliesinv(g)ina))"
+      case "with(u:[ind_1,ind_2],a:sets[ind_1],dom{u}=a)" => "with(a:sets[ind_1],u:[ind_1,ind_2],dom{u}=a)"
+      case "with(v:[ind_2,ind_1],b:sets[ind_2],dom{v}=b)" => "with(b:sets[ind_2],v:[ind_2,ind_1],dom{v}=b)"
+      case "with(u:[ind_1,ind_2],b:sets[ind_2],ran{u}subseteqb)" => "with(b:sets[ind_2],u:[ind_1,ind_2],ran{u}subseteqb)"
+      case "with(v:[ind_2,ind_1],a:sets[ind_1],ran{v}subseteqa)" => "with(a:sets[ind_1],v:[ind_2,ind_1],ran{v}subseteqa)"
+      case "lambda(x,y:kk,if(x=o_kkory=o_kk,?kk,x*y))" => "lambda(x,y:kk,if(x=o_kkory=o_kk,?kk,x*_kky))"
+      case "with(a:sets[gg],lambda(x,y:gg,if((xina)and(yina),xmuly,?gg)))" => "with(a:sets[gg],restrict2{mul,a,a})"
+      case "with(a:sets[gg],lambda(x:gg,if(xina,inv(x),?gg)))" => "with(a:sets[gg],restrict{inv,a})"
+      case "with(a:sets[gg],a)" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
+      case "(indica)" => "lambda(x_0:ind_1,x_0ina)"
+      case "(indicb)" => "lambda(x_0:ind_2,x_0inb)"
+      case "(indicwith(a:sets[gg],a))" => "with(a:sets[gg],lambda(x_0:gg,x_0ina))"
+      case "(predlambda(x:kk,not(x=o_kk)))" => "lambda(x:kk,not(x=o_kk))"
+      case "(predlambda(z:kk,not(z=o_kk)))" => "lambda(z:kk,not(z=o_kk))"
+      case "lambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))" => "(mullambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))"
+      case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
+      case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
+      case _ => str
+    }
+  }
+}

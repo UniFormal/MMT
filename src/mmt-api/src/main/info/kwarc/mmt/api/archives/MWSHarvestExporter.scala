@@ -19,7 +19,7 @@ class MWSHarvestExporter extends Exporter {
   val key = "mws"
   override val outExt = "harvest"
 
-  def exportTheory(t: DeclaredTheory, bf: BuildTask) {
+  def exportTheory(t: Theory, bf: BuildTask) {
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
     t.getDeclarations foreach {d =>
@@ -35,7 +35,7 @@ class MWSHarvestExporter extends Exporter {
     rh("</mws:harvest>\n")
   }
 
-  def exportView(v: DeclaredView, bf: BuildTask) {
+  def exportView(v: View, bf: BuildTask) {
     //excluding expressions from views for now
   }
 
@@ -57,7 +57,7 @@ class FlatteningMWSExporter extends Exporter {
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
   lazy val mf = controller.simplifier
-  def exportTheory(t : DeclaredTheory, bd : BuildTask) {
+  def exportTheory(t : Theory, bd : BuildTask) {
     mf(t)
     rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
     rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
@@ -74,7 +74,7 @@ class FlatteningMWSExporter extends Exporter {
     rh("</mws:harvest>\n")
 
   }
-    def exportView(v: DeclaredView, bd: BuildTask) {
+    def exportView(v: View, bd: BuildTask) {
     //excluding expressions from views for now
   }
 
@@ -136,7 +136,7 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
     s match {
       case doc : Document =>
         wrapScope(standalone, doc.path)(doDocument(doc))
-      case thy : DeclaredTheory =>
+      case thy : Theory =>
         val newThys = if (thy.path.toPath.contains("math")) mf.enrichFineGrained(thy) else List(thy)
         newThys foreach { t =>
           val out = (folder / t.name.toPath).setExtension("html")
@@ -144,7 +144,7 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
             wrapScope(standalone, thy.path)(doTheory(t))
           }
         }
-      case view : DeclaredView =>
+      case view : View =>
         wrapScope(standalone, view.path)(doView(view))
       case _ => rh("TODO: Not implemented yet, presentation function for " + s.getClass().toString())
     }
@@ -157,7 +157,7 @@ class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
     //nothing to do
   }
 
-  private def doTheory(thy : DeclaredTheory) {
+  private def doTheory(thy : Theory) {
     div ("theory") {
       thy.getDeclarations foreach {
       case c : Constant =>

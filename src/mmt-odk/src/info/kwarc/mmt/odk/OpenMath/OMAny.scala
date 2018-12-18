@@ -1,4 +1,6 @@
 package info.kwarc.mmt.odk.OpenMath
+
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils.URI
 
 import scala.collection.GenTraversableOnce
@@ -302,6 +304,10 @@ case class OMSymbol(name : String, cd : String, id : Option[String], cdbase : Op
   }
 }
 
+object OMSymbol {
+  def apply(p: GlobalName): OMSymbol = OMSymbol(p.name.toPath, p.module.name.toPath, None, None)// Some(p.doc.uri)) 
+}
+
 /**
   * An OpenMath Variable
  *
@@ -481,7 +487,7 @@ case class OMAttributionPairs(pairs : List[(OMSymbol, OMAnyVal)], id : Option[St
   * @param id Identifier
   * @param cdbase CD Base URI
   */
-case class OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes {
+case class  OMBinding(B: OMExpression, vars: OMBindVariables, C: OMExpression, id: Option[String], cdbase: Option[URI]) extends OMCompoundElement with CompoundAttributes {
   def absolutize(uri : URI) : OMBinding = {
     val r = OMAny.absolutizeURI(uri, cdbase)
 

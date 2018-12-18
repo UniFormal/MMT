@@ -36,3 +36,6 @@ bin
 .settings
 target
 .classpath
+
+# scala-bin compilation articfacts
+out/

@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.symbols._
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
   /** the first delimiter of this notation, which triggers the rule */
-  def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
-    case d: Delimiter => d.expand(name, alias).text
-    case SimpSeqArg(_, Delim(s), _) => s
-    case LabelSeqArg(_,Delim(s),_,_) => s
+  val firstDelim: Option[Delim] = notation.parsingMarkers collectFirst {
+    case d: Delimiter => d.expand(name, alias)
+    case SimpSeqArg(_, d, _) => d
+    case LabelSeqArg(_,d,_,_) => d
   }
+  val firstDelimLength = firstDelim.map(_.text.length).getOrElse(-1)
 }
 
 /** a set of parsing rules with the same precedence, see [[NotationOrder]] */
@@ -145,13 +146,13 @@ class NotationBasedParser extends ObjectParser {
      def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
        unknowns ::= VarDecl(name)
        val bvars = BoundName.getVars(boundNames)
-       if (bvars.isEmpty)
-         OMV(name)
-       else {
-         //TODO in case of shadowing (duplicates in bvars), one variable must be renamed
-         //apply meta-variable to all bound variables in whose scope it occurs
-         prag.defaultApplication(Some(pu.getLevel), OMV(name), bvars.map(OMV(_)))
-       }
+       // handling of shadowing: we assume that an unknown cannot depend on a shadowed variable
+       // so we remove shadowed (i.e., earlier) occurrences of bound variables
+       // There are reasonable cases, where the unknown does depend on a shadowed variable, e.g., in [x: type, c: x, x: type] c = c.
+       // The behavior in still unspecified in these cases.
+       val bvarsD = bvars.reverse.distinct.reverse
+       //apply meta-variable to all bound variables in whose scope it occurs
+       checking.Solver.makeUnknown(name, bvarsD)
      }
 
      /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
@@ -527,6 +528,7 @@ class NotationBasedParser extends ObjectParser {
            doFoundContent(fc, uls)
        }
      }
+     // the list of constants of the used notation
      // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
      // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
      var consVar: List[ContentPath] = Nil
@@ -653,7 +655,7 @@ class NotationBasedParser extends ObjectParser {
         // the level of the notation: if not provided, default to the meta-theory of the constant
         val level = notation.meta orElse {
            lup.getO(con.module) match {
-             case Some(t: modules.DeclaredTheory) => t.meta
+             case Some(t: Theory) => t.meta
              case _ => None
            }
         }
@@ -673,6 +675,8 @@ class NotationBasedParser extends ObjectParser {
      }
      // construct the alternative terms
      if (cons.length > 1 && finalSub.isEmpty && finalVars.isEmpty && finalArgs.nonEmpty) {
+        // to avoid duplicating the arguments in each alternative (which would in particular cause them to be checked multiple times),
+        // we bind argument a_i as variable /AP/i=a_i outside of the ambiguous term 
         val (argCont,argNames) = finalArgs.zipWithIndex.map {case (a,i) =>
           val n = LocalName("") / "AP" / i.toString
           (VarDecl(n, df = a), OMV(n))

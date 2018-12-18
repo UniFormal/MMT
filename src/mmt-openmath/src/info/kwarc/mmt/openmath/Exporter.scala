@@ -2,7 +2,7 @@ package info.kwarc.mmt.openmath
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.BuildTask
-
+import modules._
 import objects._
 import documents._
 import presentation._
@@ -37,10 +37,10 @@ class Exporter extends archives.Exporter {
   def exportNamespace(dp: DPath, bt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 
   /** OpenMath does not support views, so we skip them */
-  def exportView(view: modules.DeclaredView, bf: BuildTask) {}
+  def exportView(view: View, bf: BuildTask) {}
 
   /** flatten a theory and export it as a CD */
-  def exportTheory(thy: modules.DeclaredTheory, bf: BuildTask) {
+  def exportTheory(thy: Theory, bf: BuildTask) {
     // simplification flattens a theory, this removes in particular all named imports
     // controller is MMT's main object, it is available to every extension
     controller.simplifier(thy)

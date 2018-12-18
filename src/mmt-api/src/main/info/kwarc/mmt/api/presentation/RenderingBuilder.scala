@@ -125,8 +125,8 @@ object ConsoleWriter extends RenderingHandler {
 }
 
 /** writes text output to a file */
-class FileWriter(val filename : File) extends RenderingHandler {
-   private val file = utils.File.Writer(filename)
+class FileWriter(val filename : File, compress: Boolean = false) extends RenderingHandler {
+   private val file = utils.File.Writer(filename, compress)
    def write(s : String) {
      file.write(s)
    }

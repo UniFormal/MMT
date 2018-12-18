@@ -531,8 +531,7 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
   }
 
   def Writer(f: File) = {
-    f.up.toJava.mkdirs
-    new StandardPrintWriter(f)
+    File.Writer(f)
   }
 
   def write(f: File, s: String) {
@@ -555,7 +554,7 @@ class URIProducer extends BuildTarget {
        thys.foreach {thy =>
          catchErrors("error while processing " + thy) {
            controller.globalLookup.getO(thy) match {
-             case Some(d: DeclaredTheory) =>
+             case Some(d: Theory) =>
                catchErrors("error while flattening " + d.path) {
                   controller.simplifier(d)
                }

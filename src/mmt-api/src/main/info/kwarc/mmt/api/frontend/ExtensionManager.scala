@@ -11,9 +11,12 @@ import parser._
 import presentation._
 import proving._
 import uom._
+import presentation._
 import utils._
 import utils.MyList._
 import web._
+
+import scala.util.Try
 
 
 trait Extension extends Logger {
@@ -146,10 +149,12 @@ class ExtensionManager(controller: Controller) extends Logger {
   )
 
 
+  /** all extensions of type E */ 
   def get[E <: Extension](cls: Class[E]): List[E] = extensions.collect {
     case e: E@unchecked if cls.isInstance(e) => e
   }
 
+  /** some extension of type E */ 
   def get[E <: FormatBasedExtension](cls: Class[E], format: String): Option[E] = extensions.collectFirst {
     case e: E@unchecked if cls.isInstance(e) && e.isApplicable(format) => e
   }
@@ -192,7 +197,11 @@ class ExtensionManager(controller: Controller) extends Logger {
   def addExtension(cls: String, args: List[String]): Extension = {
     log("trying to create extension " + cls)
     val clsJ = try {
-       Class.forName(cls)
+       try {
+         Class.forName(cls)
+       } catch {case e: ClassNotFoundException =>
+         controller.backend.loadClass(cls).getOrElse(throw e)
+       }
     } catch {
       case e: Throwable =>
         // need to catch all Exceptions and Errors here because NoClassDefFoundError is not an Exception
@@ -206,7 +215,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val Ext = clsJ.asInstanceOf[Class[Extension]]
       Ext.newInstance
     } catch {
-      case e: Exception => throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
+      case e: Exception =>
+        throw RegistrationError("error while trying to instantiate class " + cls).setCausedBy(e)
     }
     addExtension(ext, args)
     ext
@@ -287,22 +297,22 @@ class ExtensionManager(controller: Controller) extends Logger {
     val mmtextr = ontology.MMTExtractor
 
     val rbp = new RuleBasedProver
-    val prover: Extension = rbp
 
-    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, prover, rbe).foreach {e => addExtension(e)}
+    List(new XMLStreamer, nbp, kwp, rbc, msc, mmtint, nbpr, rbs, mss, msp, mmtextr, rbp, rbe).foreach {e => addExtension(e)}
     // build manager
     addExtension(new TrivialBuildManager)
     // pragmatic-strict converter
     addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
-    List(new info.kwarc.mmt.api.presentation.HTMLExporter, new archives.PythonExporter, new uom.GenericScalaExporter, new uom.OpenMathScalaExporter,
-      new TextInterpreter, new HTMLInterpreter,
-      TextPresenter, OMDocPresenter).foreach {
-      e => addExtension(e)
+    val mp = new MathMLPresenter
+    val hp = new HTMLPresenter(mp) {
+      val key = "html"
     }
-    //parser
+    List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
+      new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter).foreach(addExtension(_))
+
+    //parser extensions
     List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
-    //parserExtensions ::= new ControlParser
     //serverPlugins
     List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
       new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.ContextMenuAggregator, new web.MessageHandler,
@@ -325,8 +335,8 @@ class ExtensionManager(controller: Controller) extends Logger {
         CheckCompanion, CheckTermCompanion, NavigateCompanion, CompareCompanion,
         ShowArchivesCompanion, LocalCompanion, AddArchiveCompanion, AddMathPathFSCompanion, AddMathPathJavaCompanion, ReadCompanion,
         ServerInfoActionCompanion, ServerOnCompanion, ServerOffCompanion,
-        MMTInfoCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
-        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHCloneCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
+        MMTInfoCompanion, MMTLegalCompanion, MMTVersionCompanion, ClearConsoleCompanion, PrintAllCompanion, PrintAllXMLCompanion, PrintConfigCompanion, HelpActionCompanion,
+        ShowLMHCompanion, SetLMHRootCompanion, LMHInitCompanion, LMHUseCompanion, LMHInstallCompanion, LMHListCompanion, LMHPullCompanion, LMHPushCompanion, LMHSetRemoteCompanion, LMHListRemoteCompanion,
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,

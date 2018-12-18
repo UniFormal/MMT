@@ -9,19 +9,27 @@ import scala.xml.Node
 import documents._
 
 /**
- * Body represents the content of modules, i.e., a set of declarations.
- *
- * It is mixed into elements that contain declarations, e.g., declared theories.
+ * this class carries the common properties of complex structural elements, in particular the body and the optional definiens
+ * Instances are of two type: [[Theory]] and [[View]]s are [[Module]]s; [[View]]s and [[Structure]]s are [[Link]]s
  *
  * It stores both the logical [[Declaration]]s as well as their narrative structure.
  * The former uses a hash from [[LocalName]] to [[Declaration]], which completely ignores narrative structure.
  * In particular, declaration names must be unique independent of the narrative grouping.
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
 */
-trait Body extends ContentElement with ContainerElement[Declaration] {self =>
-  /** the context of all declarations in this body */
-  def getInnerContext: Context
-   /** the set of named statements, indexed by name
+trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] {self =>
+   /** this element as a module expression */
+   def toTerm : Term
+
+   /** the context of all declarations in this body */
+   def getInnerContext: Context
+   /** the definiens */
+   def dfC : AbstractTermContainer
+   /** the definiens as a term */
+   def df = dfC.get
+
+   /**
+    * the set of named statements, indexed by name
     * if a statement has an alternativeName, it occurs twice in this map
     */
    protected val statements = new scala.collection.mutable.HashMap[LocalName,Declaration]
@@ -31,7 +39,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       /** the DPath of this Body as a document */
       val dpath = path.toMPath.toDPath
       /** this Body as a document (sharing the same metadata) */
-      val document = new Document(dpath, true, Some(self))
+      val document = new Document(dpath, ModuleLevel, Some(self))
       document.metadata = metadata
       /** call a function on all logical declarations and their parent document */
       def traverse(f: (Document,SRef) => Unit) {traverse(document, f)}
@@ -197,6 +205,29 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
       }
       decs.reverse
    }
+   
+   /** header as a string (without definiens) */
+   protected def outerString : String
+   /** body as a string */
+   def innerString = {
+      def makeStrings(doc: Document, indent: Int): List[(Int,String)] = {
+         doc.getDeclarations.flatMap {
+            case r: SRef =>
+               val s = statements(r.target.name)
+               if (!s.isGenerated) List((indent,s.toString)) else Nil
+            case d: Document =>
+               (indent, "document " + d.name.last.toPath) :: makeStrings(d, indent+1)
+            case ne => List((indent, ne.toString))
+         }
+      }
+      makeStrings(document,1).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
+   }
+   /** outerString, definiens, innerString */
+   override def toString = outerString + df.map(d => " = " + d.toString).getOrElse("") + "\n" + innerString
+
+   /** common inner nodes: definiens (metadata is part of document) */
+   protected def headerNodes: Seq[Node] = df.toList.map(d => <definition>{d.toNode}</definition>)
+   
    /** getPrimitiveDeclarations, with narrative structure */
    protected def innerNodes = {
       def makeNodes(doc: Document): scala.xml.NodeSeq = {
@@ -214,7 +245,7 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
    }
    def streamInnerNodes(rh: presentation.RenderingHandler) {
       def streamNodes(doc: Document) {
-         rh(doc.getMetaDataNode)
+         headerNodes.foreach(n => rh(n))
          doc.getDeclarations.foreach {
             case r: SRef =>
                val s = statements(r.target.name)
@@ -233,17 +264,4 @@ trait Body extends ContentElement with ContainerElement[Declaration] {self =>
 
    /** getDeclarationsElaborated, without narrative structure */
    protected def innerNodesElab = getDeclarationsElaborated.map(_.toNode)
-   def innerString = {
-      def makeStrings(doc: Document, indent: Int): List[(Int,String)] = {
-         doc.getDeclarations.flatMap {
-            case r: SRef =>
-               val s = statements(r.target.name)
-               if (!s.isGenerated) List((indent,s.toString)) else Nil
-            case d: Document =>
-               (indent, "document " + d.name.last.toPath) :: makeStrings(d, indent+1)
-            case ne => List((indent, ne.toString))
-         }
-      }
-      makeStrings(document,1).map {case (ind, s) => repeatString("  ", ind) + s}.mkString("\n")
-   }
 }

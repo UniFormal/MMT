@@ -56,26 +56,19 @@ class RuleBasedChecker extends ObjectChecker {
          solver.applyMain
       }
       // if solved, we can substitute all unknowns; if not, we still substitute partially
-      val psol = solver.getPartialSolution
       val remUnknowns = solver.getUnsolvedVariables
-      val subs = psol.toPartialSubstitution
       val contm = prOrg.copy(unknown = Context.empty).toTerm
-      val contmI = contm ^? subs //fill in inferred values
-      val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms
-      TermProperty.eraseAll(contmIS) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
-      val pr = ParseResult.fromTerm(contmIS).copy(unknown = remUnknowns)
+      val contmI = solver.substituteSolution(contm) //fill in inferred values
+      // TODO simplify using built-in rules like Disambiguate, or InterpretPseudoContent, possibly introduce coercions
+      TermProperty.eraseAll(contmI) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
+      val pr = ParseResult.fromTerm(contmI).copy(unknown = remUnknowns)
       //now report results, dependencies, errors
-      val success = solver.checkSucceeded
+      val success = mayHold && solver.checkSucceeded
       if (success) {
         // free variables may remain but their types are solved
         if (pr.free.exists({case IncludeVarDecl(_,_,_) => false case _ => true})) {
           env.errorCont(new InvalidUnit(cu, NoHistory, "check succeeded, but free variables remained: " + pr.free.map(_.name).mkString(", ")){
-             override val level: Level = Level.Warning
-          })
-        }
-        solver.warnings foreach {w =>
-          env.errorCont(new InvalidUnit(cu, NoHistory, w){
-            override val level: Level = Level.Warning
+             override val level = Level.Warning
           })
         }
       }
@@ -88,18 +81,36 @@ class RuleBasedChecker extends ObjectChecker {
                tc.dependsOn += d
             }
          }
+        // report warnings
+        solver.getErrors.foreach{
+          case e@SolverError(l,h,_) =>
+            val msg = e.msg(solver.presentObj(_))
+            env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
+              override val level = l
+            })
+        }
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
+         val cuS = cu.present(solver.presentObj)
          logGroup {
             solver.logState(logPrefix)
-            val errors = solver.getErrors
-            errors foreach {e =>
-               env.errorCont(InvalidUnit(cu, e.narrowDownError, cu.present(solver.presentObj)))
+            val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
+            (errors:::warnings) foreach {case SolverError(l,h,_) =>
+               val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
+                 override val level = l
+               }
+               env.errorCont(e)
             }
             if (errors.isEmpty) {
-               solver.getConstraints foreach {dc =>
+               val constraints = solver.getConstraints 
+               constraints foreach {dc =>
                   val h = dc.history + "unresolved constraint"
-                  env.errorCont(InvalidUnit(cu, h, cu.present(solver.presentObj)))
+                  env.errorCont(InvalidUnit(cu, h, cuS))
+               }
+               if (constraints.isEmpty) {
+                 val h = new History(Nil)
+                 h += "check failed, but no error was returned and no constraints remain (this is likely because a rule forgot to generate an error message)"
+                 env.errorCont(InvalidUnit(cu, h, cuS))
                }
             }
          }
@@ -145,21 +156,6 @@ class RuleBasedChecker extends ObjectChecker {
               log("new value")
          }
       }
-      CheckingResult(success, Some(psol), resultTerm)
-   }
-   /**
-    * A Traverser that reduces all redexes introduced by solving unknowns.
-    */
-   private object SimplifyInferred extends Traverser[RuleSet] {
-      def traverse(t: Term)(implicit con : Context, rules: RuleSet) : Term = {
-         t match {
-            case OMA(OMS(parser.ObjectParser.oneOf), uom.OMLiteral.OMI(i) :: args) =>
-               Traverser(this, args(i.toInt))
-            case _ if parser.SourceRef.get(t).isEmpty =>
-               controller.simplifier(t, con, rules, false)
-            case _ =>
-               Traverser(this, t)
-         }
-      }
+      CheckingResult(success, Some(solver.getPartialSolution), resultTerm)
    }
 }

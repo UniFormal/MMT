@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+#
+# DESCRIPTION: build and deploy MMT, using sbt
+
+isabelle_admin_build jars || exit $?
+
+cd "$ISABELLE_MMT_ROOT/src" && sbt mmt/deploy "$@"

@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.webedit
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
@@ -62,7 +62,7 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
 
   private def getCoverCardinality(includes: List[MPath], theory: MPath) = {
     val thy = controller.get(theory) match {
-      case theor: DeclaredTheory => theor
+      case theor: Theory => theor
       case _ => throw ServerError("No theory found")
     }
     val fromCheck = thy.getIncludes
@@ -126,11 +126,11 @@ class WebEditServerPlugin extends ServerExtension("editing") with Logger {
   private def rank(includes: MPath, term: MPath): Int = {
 
     val constants = controller.get(term) match {
-      case t: DeclaredTheory => t.getDeclarations
+      case t: Theory => t.getDeclarations
       case _ => throw new ServerError("No declarations")
     }
     val declarations: List[Declaration] = controller.get(includes) match {
-      case t: DeclaredTheory => t.getDeclarations
+      case t: Theory => t.getDeclarations
       case _ => throw new ServerError("No declarations")
     }
     val decl = declarations.map(_.name)

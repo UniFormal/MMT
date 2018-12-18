@@ -1,7 +1,8 @@
+// twiesing 18-09-2018: Remove call to deprecated methods
 package tiscaf
 
-import scala.concurrent._
-import scala.util._
+
+import scala.collection.JavaConverters._
 
 object Test extends App with HServer {
   def ports = Set(8910)
@@ -16,9 +17,7 @@ object Test extends App with HServer {
     }
   }
 
-  import scala.collection.mutable._
-
-  val pending = new HashSet[Suspended[Int]] with SynchronizedSet[Suspended[Int]]
+  val pending = new java.util.concurrent.ConcurrentHashMap[Suspended[Int],Unit]()
 
   var i = 0
   def next = {
@@ -28,15 +27,15 @@ object Test extends App with HServer {
 
   object resumeLet extends HSimpleLet {
     def act(talk: HTalk) {
-      val toRemove = pending map { s =>
+      pending.keys.asScala map { s =>
         s.resume(next)
         s
-      }
-      pending --= toRemove
+      } foreach pending.remove
       talk.setContentLength(3).write("ok\n")
     }
   }
 
+  import scala.reflect.runtime.{universe => ru}
   class SuspendLet(path: String) extends HLet with HSuspendable {
 
     import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,10 +52,15 @@ object Test extends App with HServer {
 
     }
 
-    def onSuspend[T: Manifest](suspended: Suspended[T]) {
+
+    def onSuspend[T: ru.TypeTag](suspended: Suspended[T]) {
+      val mirror = ru.runtimeMirror( getClass.getClassLoader )
+      val classSym = mirror.classSymbol( suspended.getClass.getComponentType )
+
+
       suspended match {
-        case s: Suspended[Int] if manifest[T] <:< manifest[Int] =>
-          pending += s
+        case s: Suspended[Int@unchecked] if classSym.toType <:< implicitly[ru.TypeTag[Int]].tpe =>
+          pending.asScala.put(s, ())
         case _ => // ignore
       }
     }

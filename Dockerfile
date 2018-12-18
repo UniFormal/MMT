@@ -1,18 +1,5 @@
-FROM openjdk:jre-alpine
-
-# Build dependencies
-RUN apk --no-cache --no-progress add bash git curl wget
-
-# Get sbt
-ENV SBT_URL=https://dl.bintray.com/sbt/native-packages/sbt
-ENV SBT_RELEASE=0.13.15
-ENV PATH=/opt/sbt/bin:${PATH}
-
-# Install sbt
-RUN mkdir -p /opt
-WORKDIR /opt
-RUN curl -jksSL "${SBT_URL}/${SBT_RELEASE}/sbt-${SBT_RELEASE}.tgz" | tar -xzf -
-RUN rm -rf /var/cache/apk/*
+# Start from the sbt builder image
+FROM kwarc/sbt-builder
 
 # Add all of MMT
 ADD src/ /build/MMT/src
@@ -45,5 +32,6 @@ ENV PATH="/mmt/deploy:${PATH}"
 # Run setup and setup the entry for the future
 RUN mmt :setup "/mmt/" "/content/" ":" "--no-content"
 
+ADD scripts/docker/install.msl /install.msl
 ADD scripts/docker/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]

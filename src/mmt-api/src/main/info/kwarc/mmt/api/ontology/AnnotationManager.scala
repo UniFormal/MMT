@@ -23,3 +23,4 @@ abstract class Annotation {
   val dialogueContent : java.awt.Component = new JLabel("<html>"+tohtml(toString)+"</html>")
 
 }
+

@@ -118,6 +118,9 @@ class MMTConfig {
        e.id == id
     }
 
+    /** all foreign conf entries of a certain section */
+    def getForeignEntries(section: String): List[ForeignConf] = getEntries(classOf[ForeignConf]).filter(_.section == section)
+
     def getArchive(aid : String) = getEntry(classOf[ArchiveConf], aid) getOrElse {
        throw ConfigurationError("archive not registered: " + aid)
     }

@@ -39,7 +39,7 @@ object GlossaryGenerator {
     val modules = mpaths flatMap { p =>
       try {
         controller.get(p) match {
-          case d : DeclaredTheory => Some(d)
+          case d: Theory => Some(d)
           case _ =>  None
         }
       } catch {
@@ -48,7 +48,7 @@ object GlossaryGenerator {
       }
     }
     val verbs = modules collect {
-      case thy: DeclaredTheory =>
+      case thy: Theory =>
         thy.getDeclarations collect {
           case c: Constant if c.notC.verbalizationDim.isDefined =>
             c.notC.verbalizationDim.notations.values.flatten.map(c.path -> _)

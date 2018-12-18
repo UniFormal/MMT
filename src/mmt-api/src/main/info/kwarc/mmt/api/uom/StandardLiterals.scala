@@ -15,7 +15,8 @@ object Product {
      t.pairOps(f.toLeft compose left, f.toRight compose right)
    }
 }
-class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
+
+case class Product(val left: SemanticType, val right: SemanticType) extends SemanticType {
    def asString = "(" + left.asString + "*" + right.asString + ")"
    override def valid(u: Any) = u match {
       case (l,r) => left.valid(l) && right.valid(r)
@@ -80,6 +81,10 @@ class Product(val left: SemanticType, val right: SemanticType) extends SemanticT
        case _ => None
      }
    }
+   override def subtype(that: SemanticType) = that match {
+     case p: Product => (p.left subtype left) && (p.right subtype right)
+     case _ => false
+   }
 }
 
 class RProduct[U,V](l: RSemanticType[U], r: RSemanticType[V]) extends Product(l, r) with RSemanticType[(U,V)] {
@@ -89,7 +94,7 @@ class RProduct[U,V](l: RSemanticType[U], r: RSemanticType[V]) extends Product(l,
 object ListType {
    val matcher = new utils.StringMatcher2Sep("[",",","]")
 }
-class ListType(val over: SemanticType) extends SemanticType {
+case class ListType(val over: SemanticType) extends SemanticType {
    def asString = "List[" + over.asString + "]"
    override def valid(u: Any) = u match {
       case us: List[_] => us.forall(over.valid)
@@ -113,7 +118,7 @@ class RList[U](o: RSemanticType[U]) extends ListType(o) with RSemanticType[List[
 object TupleType {
    val matcher = new utils.StringMatcher2Sep("(",",",")")
 }
-class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
+case class TupleType(val over: SemanticType, val dim: Int) extends SemanticType {
    def asString = "(" + over.asString + "^" + dim + ")"
    override def valid(u: Any) = u match {
       case us: List[_] if us.length == dim => us.forall(over.valid)
@@ -149,6 +154,8 @@ abstract class Subtype(val of: SemanticType) extends SemanticType {
    def incl = Unary(this, of){x => x}
 
    override def embed(into: SemanticType) = super.embed(into) orElse {of.embed(into) map {e => incl compose e}}
+   override def subtype(that: SemanticType) =
+     (of subtype that) || super.subtype(that)
 }
 abstract class RSubtype[U](of: RSemanticType[U]) extends Subtype(of) with RSemanticType[U] {
   val cls = of.cls
@@ -348,7 +355,7 @@ object Arithmetic {
   }
 
   object Succ extends InvertibleUnary(Z,Z, {case Z(x) => x+1}, {case Z(x) => Some(x-1)}) {
-    alsoHasType(N =>: N)
+    alsoHasType(N =>: StandardPositive)
   }
 
   object Plus extends InvertibleBinary(Z,Z,Z, {case (Z(x),Z(y)) => x+y}) with Commutative {

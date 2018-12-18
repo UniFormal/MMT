@@ -2,21 +2,19 @@ package info.kwarc.mmt.api.uom
 
 import info.kwarc.mmt.api._
 import checking._
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
 import objects._
 import objects.Conversions._
 
 import scala.util.Try
 
-case class UOMState(t : Term, context: Context, rules: RuleSet, expandDefinitions: Boolean, path : List[Int]) {
-  def enter(i : Int) : UOMState = copy(path = i :: path)
-  def exit(i : Int) : UOMState = copy(path = path.tail)
+case class SimplifierState(t : Term, unit: SimplificationUnit, rules: RuleSet, path: List[Int]) {
+  def enter(i : Int) : SimplifierState = copy(path = i :: path)
+  def exit(i : Int) : SimplifierState = copy(path = path.tail)
   override def toString = t.toString + "@" + path.mkString("_")
-  /** precomputes the available rules */
-  val depthRules = rules.get(classOf[DepthRule])
-  /** precomputes the available rules */
-  val breadthRules = rules.getOrdered(classOf[BreadthRule])
+  /** precomputes the available simplification rules */
+  val simpRules = rules.get(classOf[MatchingSimplificationRule])
   /** precomputes the available rules */
   val compRules = rules.getOrdered(classOf[ComputationRule])
   /** precomputes the available rules */
@@ -25,15 +23,11 @@ case class UOMState(t : Term, context: Context, rules: RuleSet, expandDefinition
   val matchRules = rules.get(classOf[InverseOperator])
 }
 
-//TODO Simplifier should not be pragmatics-aware, instead each rule should have 'under' field
-
 import RuleBasedSimplifier._
 
 /** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
 class RuleBasedSimplifier extends ObjectSimplifier {self =>
   override val logPrefix = "object-simplifier"
-
-  private lazy val StrictOMA = controller.pragmatic.StrictOMA
 
    /** the main simplification method
     * @param t the term to simplify
@@ -47,35 +41,43 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     * The code uses [[Simple]] and [[SimplificationResult]] to remember whether a term has been simplified.
     * Therefore, structure sharing or multiple calls to this method do not cause multiple traversals.
     */
-   def apply(obj: Obj, context: Context, rules: RuleSet, expDef: Boolean): obj.ThisType = {
-      log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
-      val result = obj match {
+   def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType = {
+      val context = su.context
+      //log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
+      val result: Obj = obj match {
          case t: Term =>
-            val initState = new UOMState(t, context, rules, expDef, Nil)
+            val initState = new SimplifierState(t, su, rules, Nil)
             val tS: Term =
               try {
                 traverse(t,initState, context)
-              } catch {
-                case e: Exception =>
-                  // this should never happen; but if there is a bug, it's easier to locate this way 
-                  throw GeneralError("error while simplifying " + controller.presenter.asString(obj)).setCausedBy(e)
+              } catch {case e: Exception =>
+                // this should never happen; but if there is a bug, it's easier to locate this way 
+                throw GeneralError("error while simplifying " + controller.presenter.asString(obj) + "\n" + obj.toStr(true)).setCausedBy(e)
               }
             tS
          case c: Context =>
-            c.mapTerms {case (sofar, t) => apply(t, context ++ sofar, rules, expDef)}
+            c.mapTerms {case (sofar, t) => apply(t, su ++ sofar, rules)}
          case s: Substitution =>
-            s.map {case Sub(x,t) => Sub(x, apply(t, context, rules, expDef))}
+            s.map {case Sub(x,t) => Sub(x, apply(t, su, rules))}
       }
+      SimplificationResult.eraseDeep(result)
       // this is statically well-typed, but we need a cast because Scala does not see it
       result.asInstanceOf[obj.ThisType]
   }
 
+   private def isStable(o: Obj) = o match {
+     case t: Term => Stability.is(t)
+     case Sub(x,t) => Stability.is(t)
+     case vd: VarDecl => vd.tp.forall(Stability.is(_)) && vd.df.forall(Stability.is(_))
+   }
    /** the code for traversing a term and recursively simplifying */
-   private val traverse = new Traverser[UOMState] {
+   private val traverse = new Traverser[SimplifierState] {
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
-      def traverse(t: Term)(implicit con : Context, init: UOMState) : Term = {
-       log("traversing into " + controller.presenter.asString(t))
+      def traverse(t: Term)(implicit context : Context, state: SimplifierState) : Term = {
+       if (state.unit.isKilled) return t
+       //log("traversing into " + controller.presenter.asString(t))
+       //log("in context " + controller.presenter.asString(context))
        t match {
          /* TODO this optimization saves 10-20% on examples (One would expect it to save more time.) by avoiding retraversal of simplified terms.
             However, there is a subtle problem: When looking up a type and simplifying it, the marker may be reintroduced on the previously checked term.
@@ -90,65 +92,165 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case SimplificationResult(tS) =>
            log("structure-shared term was already simplified")
            tS
+         case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
+           // MMT-level untyped beta-reduction using 'free' as 'lambda'
+           // should only be needed if we expand the definition of an unknown variable
+           val sub = cont /! args // defined due to guard
+           val tC = bd ^? sub
+           traverse(tC.from(t))
          // apply morphisms TODO should become computation rule once module expressions are handled properly
          case OMM(tt, mor) =>
             val tM = controller.globalLookup.ApplyMorphs(tt, mor)
-            traverse(tM)
+            traverse(tM.from(t))
          // the main case
-         case ComplexTerm(_,_,_,_) =>
-            logGroup {
-               //log("state is" + init.t + " at " + init.path.toString)
-               val (tS, globalChange) = logGroup {
-                  applyAux(t)
-               }
-               //log("simplified to " + controller.presenter.asString(tS))
-               val tSM = Simple(tS.from(t))
-               SimplificationResult.put(t, tSM) // store result to recall later in case of structure sharing
-               if (globalChange)
-                  Changed(tSM)
-               else
-                  tSM
+         case ComplexTerm(op,subs,cont,args) => logGroup {
+          //log("state is" + init.t + " at " + init.path.toString)
+          var recPosComp: CannotSimplify = Simplifiability.NoRecurse
+          val cb = callback(state)
+          state.compRules.foreach {rule =>
+            if (rule.applicable(t)) {
+              val ret = rule(cb)(t, true)(Stack(context), NoHistory)
+              ret match {
+                case Simplify(tmS) =>
+                  log(rule.toString + ": " + t + " ~> " + tmS)
+                  return traverse(tmS.from(t))
+                case cannot: CannotSimplify =>
+                  recPosComp = recPosComp join cannot
+              }
             }
+          }
+          var recPosSimp: CannotSimplify = Simplifiability.NoRecurse
+          state.simpRules foreach {rule =>
+            val ret = rule(context, state.rules, t)
+            ret match {
+              case Simplify(tmS) =>
+                // redundancy to catch subtle errors
+                if (tmS == t) {
+                  throw ImplementationError("rule " + rule + " simplified term to itself: " + tmS)
+                }
+                log(rule.toString + ": " + t + " ~> " + tmS)
+                return traverse(tmS.from(t))
+              case cannot: CannotSimplify =>
+                recPosSimp = recPosSimp join cannot
+            }
+          }
+          // no applicable rule: recurse according to simp
+          val top = t.subobjects.length
+          val recursePositions = if (state.unit.fullRecursion)
+            1 to top
+          else (recPosSimp join recPosComp).getPositions(top)
+          val stabilityCriticalPos = recPosComp.getPositions(top)
+          var changed = false
+          var stable = true
+          // we go through all arguments and try to simplify one of them
+          val subobjsNew = t.subobjects.zipWithIndex.tail.map {case ((c,o),i) =>
+            if (!recursePositions.contains(i)) {
+              o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
+            } else {
+              val oN = traverseObject(o)(context++c,state)
+              val ch = oN != o
+              changed ||= ch
+              if (stabilityCriticalPos contains i) {
+                 // we only make terms unstable if a computation rule wanted to recurse
+                 // that's not always correct, but using all rules often makes the intended solution of an unknown not-unique
+                 stable &&= isStable(oN)
+              }
+              if (ch) oN else o
+            }
+          }
+          val tS = if (changed) {
+            ComplexTerm(op,subobjsNew).from(t)
+          } else {
+            t
+          }
+          if (changed) {
+            traverse(tS)
+          } else {
+            if (stable) {
+              Stability.set(tS)
+            }
+            Simple(tS.from(t))
+            SimplificationResult.put(t, tS) // store result to recall later in case of structure sharing
+            tS
+          }
+          //log("simplified to " + controller.presenter.asString(tS))
+         }
          // expand abbreviations but not definitions
          case OMS(p) =>
-            applyAbbrevRules(p) match {
-              case GlobalChange(tS) => tS.from(t)
-              case NoChange =>
-                // TODO does not work yet; how does definition expansion interact with other steps?
-                if (init.expandDefinitions) {
-                  controller.globalLookup.getO(p) flatMap {
-                    case c: Constant =>
-                      normalizeConstant(c)
-                      c.dfC.normalized
-                    case _ => None
-                  } match {
-                    // TODO d must be traversed in a smaller context: d may refer to parameters of c.home that may be shadowed in the current context  
-                    case Some(d) => traverse(d) // need to traverse normalized term because the present context might have more rules than the one of c
-                    case None => Simple(t)
-                  }
-                } else {
-                  Simple(t)
-                }
-              // LocalChange impossible
+           state.abbrevRules.filter(_.head == p) foreach {rule =>
+              log(rule.toString + ": " + t.toStr(true) + " ~> " + rule.term.toStr(true))
+              return traverse(rule.term.from(t))
+           }
+           // TODO does not work yet; how does definition expansion interact with other steps?
+           if (state.unit.expandDefinitions) {
+              val pC = controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */
+              pC flatMap {
+              case c: Constant =>
+                normalizeConstant(c)
+                c.dfC.normalized
+              case _ =>
+                None
+            } match {
+               // TODO d must be traversed in a smaller context: d may refer to parameters of c.home that may be shadowed in the current context  
+               case Some(d) => traverse(d) // need to traverse normalized term because the present context might have more rules than the one of c
+               case None =>
+                 Stability.set(t)
+                 Simple(t)
             }
+           } else {
+             // no definition expansion; but we can still mark this as stable if there is no definition anyway
+             val stable = controller.localLookup.getO(p) match {
+               case Some(c: Constant) => c.df.isEmpty
+               case _ => false
+             }
+             if (stable) Stability.set(t)
+             Simple(t)
+           }
          // expand definitions of variables (Simple(_) prevents this case if the definiens is added later, e.g., when solving an unknown)
-         case OMV(n) => con(n).df match {
-           case Some(d) =>
-             log("expanding and simplifying definition of variable " + n)
-             traverse(d)(con.before(n), init)
-           case None =>
-             t
-         }
+         case OMV(n) =>
+           val vdO = try {
+             context(n).df
+           } catch {case le: LookupError =>
+             // this should be impossible, but implementations errors are hard to trace if not caught here
+             throw ImplementationError("simplification was called on ill-formed context-object pair").setCausedBy(le)
+           }
+           vdO match {
+             case Some(d) =>
+               log("expanding and simplifying definition of variable " + n)
+               traverse(d)(context.before(n), state)
+             case None =>
+               //TODO awkward special case to avoid marking an unknown as stable
+               val isUnknown = n.steps.length > 1 && (n.steps.head match {
+                 case SimpleStep(s) => s.startsWith("/")
+                 case _ => false
+               })
+               if (isUnknown)
+                 Stability.set(t)
+               t
+           }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>
-           u.recognize(init.rules).getOrElse(u)
+           val uR = u.recognize(state.rules).getOrElse(u)
+           Stability.set(uR)
+           uR
          case _ =>
             val tS = Simple(Traverser(this, t))
             SimplificationResult.put(t, tS)
             tS
        }
       }
+   }
 
+  /** fully normalizes the definiens of a constant */
+  private def normalizeConstant(c: Constant) {
+    c.dfC.normalize {u =>
+      val cont = controller.getContext(c)
+      val rs = RuleSet.collectRules(controller, cont)
+      self.apply(u, SimplificationUnit(cont, true, true), rs)
+    }
+  }
+   
+     /* old code
      /** an auxiliary method of apply that applies simplification rules
        * This method exhaustively applies rules as follows:
        *  (1) --depth rules--> (2) --simplify arguments--> (3) --breadth rules--> (return)
@@ -158,7 +260,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
        * @param globalChange true if there has been a GlobalChange so far
        * @return the simplified term and a Boolean indicating whether a GlobalChange occurred
        */
-      private def applyAux(t: Term, globalChange: Boolean = false)(implicit con : Context, init: UOMState) : (Term, Boolean) = t match {
+      private def applyAux(t: Term)(implicit con : Context, init: SimplifierState) : (Term, Boolean) = t match {
          case StrictOMA(strictApps, outer, args) =>
             // state (1)
             log("applying depth rules to   " + controller.presenter.asString(t))
@@ -216,37 +318,6 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          // no rules applicable
          case _ => (t, globalChange)
       }
-   }
-
-  /** fully normalizes the definiens of a constant */
-  private def normalizeConstant(c: Constant) {
-    c.dfC.normalize {u =>
-      val cont = controller.getContext(c)
-      val rs = RuleSet.collectRules(controller, cont)
-      self.apply(u, cont, rs, true)
-    }
-  }
-   
-  /** object for matching the inner term in a depth rule */
-  private class InnerTermMatcher(controller: frontend.Controller, matchRules: List[InverseOperator]) {
-     /**
-      * unifies matching OMA, strict OMS, OMS, literals that can be the result of applying a realized operator
-      * @return list of matches: tuples of operator, arguments, flag signaling whether the inner term is an OMS
-      */
-     def matches(t: Term): List[(GlobalName, List[Term], Boolean)] = t match {
-        case StrictOMA(strApps, p, args) => List((p, args, false))
-        case OMS(p) => List((p, Nil, true))
-        case l: OMLIT =>
-           matchRules.flatMap {m =>
-              m.unapply(l) match {
-                 case None => Nil
-                 case Some(args) => List((m.head, args, args.isEmpty))
-              }
-           }
-           Nil //TODO use match rules
-        case _ => Nil
-     }
-  }
 
    /** applies all DepthRule's that are applicable at toplevel of an OMA
     * for each arguments, all rules are tried
@@ -256,7 +327,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     * @param after the arguments that still need to be checked
     * @return GlobalChange if a rule led to it; LocalChange otherwise (even if no rule was applicable)
     */
-   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: UOMState): Change = {
+   private def applyDepthRules(outer: GlobalName, before: List[Term], after: List[Term])(implicit state: SimplifierState): Change = {
       val itm = new InnerTermMatcher(controller, state.matchRules.toList)
       after match {
          case Nil => LocalChange(before) //we don't know if 'before' has a change; but if not, returning NoChange would not actually help in applyAux anyway
@@ -284,11 +355,11 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     * @param outer the toplevel symbol
     * @param args the arguments
     * */
-   private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: UOMState): Change = {
+   private def applyBreadthRules(op: GlobalName, inside: List[Term])(implicit state: SimplifierState): Change = {
       var insideS = inside
       var changed = false
       state.breadthRules.filter(_.head == op) foreach {rule =>
-         val ch = rule.apply.apply(insideS)
+         val ch = rule.apply(insideS)
          log("rule " + rule + ": " + ch)
          ch match {
             case NoChange =>
@@ -303,68 +374,56 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       //we have to check for insideS == inside here in case a BreadthRule falsely thinks it changed the term (such as commutativity when the arguments are already in normal order)
       if (! changed || insideS == inside) NoChange else LocalChange(insideS)
    }
-
-   private def applyAbbrevRules(p: GlobalName)(implicit state: UOMState): Change = {
-      state.abbrevRules.filter(_.head == p) foreach {rule =>
-         return GlobalChange(rule.term)
-      }
-      NoChange
-   }
-
+*/
+  
   /** callback for calling checking rules, used in applyCompRules */
-  private def callback(state: UOMState) = new CheckingCallback {
-    private val expDef = state.expandDefinitions
+  private def callback(state: SimplifierState) = new CheckingCallback {
     def check(j: Judgement)(implicit history: History) = j match {
       case j: Equality =>
-        apply(j.tm1, j.context, state.rules, expDef) == apply(j.tm2, j.context, state.rules, expDef)
+        apply(j.tm1, state.unit++j.context, state.rules) == apply(j.tm2, state.unit++j.context, state.rules)
       case j: EqualityContext =>
-        apply(j.context1, j.context, state.rules, expDef) == apply(j.context2, j.context, state.rules, expDef)
+        apply(j.context1, state.unit++j.context, state.rules) == apply(j.context2, state.unit++j.context, state.rules)
       case _ => false
     }
 
     def lookup = controller.globalLookup
-    def simplify(t: Obj)(implicit stack: Stack, history: History) =
-      apply(t, stack.context, state.rules, expDef)
+    def simplify(t: Obj)(implicit stack: Stack, history: History) = {
+      apply(t, state.unit++stack.context, state.rules)
+    }
     def outerContext = Context.empty
+
     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
        case AnonymousTheory(mt, ds) =>
          Some(new AnonymousTheory(mt, Nil))
        // add include of codomain of mor
        case OMMOD(mp) =>
-         val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
-           case Some(th2: DeclaredTheory) => th2
-           case _ => return None
-         }
+         val th = Try(controller.globalLookup.getTheory(mp)).getOrElse(return None)
          val ds = th.getDeclarationsElaborated.map({
            case c: Constant =>
              OML(c.name, c.tp, c.df, c.not)
            case PlainInclude(from, to) =>
              IncludeOML(from, Nil)
-           case _ => ???
+           case _ => ??? //TODO
          })
          Some(new AnonymousTheory(th.meta, ds))
        case _ =>
          return None
     }
 
+    val sO = state.unit.solverO
+
+    // TODO specify if this is allowed. Some ComputationRules call safeSimplifyUntil even if covered=true and may be surprised that all rules are applied.
     override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term, Option[A]) = {
-      val s = simplify(tm)
-      (s,simple(s))
+      if (sO.isDefined) sO.get.safeSimplifyUntil(tm)(simple) else {
+        val s = simplify(tm)
+        (s,simple(s))
+      }
+    }
+
+    override def inferType(t: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
+      if (sO.isDefined) sO.get.inferType(t,covered) else super.inferType(t, covered)
     }
   }
-
-   /** applies all computation rules */
-   private def applyCompRules(tm: Term)(implicit context: Context, state: UOMState): Change = {
-      val cb = callback(state)
-      state.compRules.foreach {rule =>
-         if (rule.applicable(tm.head.orNull)) {
-           rule(cb)(tm, true)(Stack(context), NoHistory).get.foreach {tmS =>
-             return GlobalChange(tmS)
-           }
-         }
-      }
-      NoChange
-   }
 }
 
 object RuleBasedSimplifier {
@@ -379,10 +438,4 @@ object RuleBasedSimplifier {
    * used to remember that a Term is the result of simplification to avoid recursing into it again
    */
   object Simple extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "simplified")
-
-  /**
-   * used to remember whether a Term underwent a GlobalChange during simplification
-   * this information is passed upwards during recursive simplification
-   */
-  object Changed extends BooleanTermProperty(utils.mmt.baseURI / "clientProperties" / "uom" / "changed")
 }

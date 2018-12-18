@@ -169,7 +169,7 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
 class JDocgraph extends SimpleJGraphExporter("docgraph"){
   val builder = GraphBuilder.PlainBuilder
   val selector = new JGraphSelector {
-    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+    def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val se = Try(controller.get(Path.parse(s))) match {
         case scala.util.Success(e : StructuralElement) => e
         case _ => return (Nil,Nil)
@@ -187,7 +187,7 @@ class JDocgraph extends SimpleJGraphExporter("docgraph"){
         case d: Declaration => return select(d.parent.doc.toString)
       }
       ((theories.map(controller.getO) collect {
-        case Some(th : DeclaredTheory) => th
+        case Some(th : Theory) => th
       }).toList,(views.map(controller.getO) collect {
         case Some(v : View) => v
       }).toList)
@@ -197,16 +197,16 @@ class JDocgraph extends SimpleJGraphExporter("docgraph"){
 class JThgraph extends SimpleJGraphExporter("thgraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
-    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+    def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(t : DeclaredTheory) => t
+        case scala.util.Success(t : Theory) => t
         case _ => return (Nil,Nil)
       }
-      var (theories,views) : (List[DeclaredTheory],List[View]) = (Nil,Nil)
+      var (theories,views) : (List[Theory],List[View]) = (Nil,Nil)
       val insouts = controller.depstore.querySet(th.path,Includes | Declares | HasDomain | HasCodomain | RefersTo).toList :::
         th.getIncludes ::: th.getDeclarations.filter(_.isInstanceOf[NestedModule]).map(_.path)
       insouts.map(controller.getO).distinct.foreach{
-        case Some(t : DeclaredTheory) => theories ::= t
+        case Some(t : Theory) => theories ::= t
         case Some(v : View) => views ::= v
         case _ =>
       }
@@ -217,7 +217,7 @@ class JThgraph extends SimpleJGraphExporter("thgraph") {
 class JPgraph extends SimpleJGraphExporter("pgraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
-    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+    def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val dpath = Try(Path.parse(s)) match {
         case scala.util.Success(d: DPath) => d
         case scala.util.Success(mp : MPath) => mp.parent
@@ -226,7 +226,7 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
       }
       log("Doing " + dpath)
       (alltheories.filter(dpath <= _).map(controller.getO).collect{
-        case Some(th : DeclaredTheory) => th
+        case Some(th : Theory) => th
       },allviews.filter(dpath <= _).map(controller.getO).collect{
         case Some(v : View) => v
       })
@@ -252,13 +252,13 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))
   val selector = new JGraphSelector {
-    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+    def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
       val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
       log("Archives: " + a.map(_.id).mkString(", "))
-      var (theories,views) : (List[DeclaredTheory],List[View]) = (Nil,Nil)
+      var (theories,views) : (List[Theory],List[View]) = (Nil,Nil)
       a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
-        case Some(th : DeclaredTheory) => theories ::= th
+        case Some(th : Theory) => theories ::= th
         case Some(v : View) => views ::= v
         case _ =>
       }
@@ -276,7 +276,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
   }
   val builder = new StandardBuilder {
     def doView(v: View)(implicit controller : Controller) = (Nil,Nil)
-    def doTheory(th: DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
+    def doTheory(th: Theory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
       log("Doing theory " + th.path)
       val consts = th.getPrimitiveDeclarations.collect{case c : Constant => c}
       val sb = new info.kwarc.mmt.api.presentation.StringBuilder
@@ -329,30 +329,30 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
   }
 
   val selector = new JGraphSelector {
-    def select(s: String)(implicit controller: Controller): (List[DeclaredTheory], List[View]) = {
+    def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(t: DeclaredTheory) => List(t)
+        case scala.util.Success(t: Theory) => List(t)
         case _ =>
           val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
           val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
           log("Archives: " + a.map(_.id).mkString(", "))
-          var theories : List[DeclaredTheory] = Nil
+          var theories : List[Theory] = Nil
           a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
-            case Some(th : DeclaredTheory) => theories ::= th
+            case Some(th : Theory) => theories ::= th
             case _ =>
           }
           log(theories.length + " selected")
           theories
       }
-      var (theories, views): (List[DeclaredTheory], List[View]) = (Nil, Nil)
-      def recurse(ith : DeclaredTheory) {
+      var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
+      def recurse(ith : Theory) {
         log("Select: " + s)
         theories ::= ith
         val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect{
           case st if st.from.isInstanceOf[OMID] => st.from.toMPath
         }
         ins.map(controller.getO).distinct.foreach {
-          case Some(t: DeclaredTheory) if !theories.contains(t) =>
+          case Some(t: Theory) if !theories.contains(t) =>
             recurse(t)
           case Some(v: View) => views ::= v
           case _ =>
@@ -390,18 +390,18 @@ abstract class JGraphEdge {
 }
 
 abstract class JGraphSelector {
-  def select(s : String)(implicit controller : Controller): (List[DeclaredTheory],List[View])
+  def select(s : String)(implicit controller : Controller): (List[Theory],List[View])
 }
 
 abstract class JGraphBuilder {
   def log(s : String) {}
-  def build(theories : List[DeclaredTheory], views : List[View])(implicit controller : Controller) : JSON
+  def build(theories : List[Theory], views : List[View])(implicit controller : Controller) : JSON
 }
 abstract class StandardBuilder extends JGraphBuilder {
-  protected def doTheory(th : DeclaredTheory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge])
+  protected def doTheory(th : Theory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge])
   protected def doView(v : View)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge])
 
-  def build(theories : List[DeclaredTheory], views : List[View])(implicit controller : Controller) = {
+  def build(theories : List[Theory], views : List[View])(implicit controller : Controller) = {
     var edges : List[JGraphEdge] = Nil
     var nodes : List[JGraphNode] = Nil
     views foreach (v => doView(v) match {
@@ -423,7 +423,7 @@ abstract class StandardBuilder extends JGraphBuilder {
 }
 
 object GraphBuilder {
-  def standardTheory(th: DeclaredTheory) = {
+  def standardTheory(th: Theory) = {
     val thnode = List(new JGraphNode {
       val id = th.path.toString
       val style = "theory"
@@ -479,7 +479,7 @@ object GraphBuilder {
   case object PlainBuilder extends StandardBuilder {
     def doView(v: View)(implicit controller: Controller) = standardView(v)
 
-    def doTheory(th: DeclaredTheory)(implicit controller: Controller) = standardTheory(th)
+    def doTheory(th: Theory)(implicit controller: Controller) = standardTheory(th)
   }
 
   case class AlignmentBuilder(ilog : String => Unit) extends StandardBuilder {
@@ -487,7 +487,7 @@ object GraphBuilder {
 
     override def log(s: String): Unit = ilog(s)
 
-    def doTheory(th: DeclaredTheory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge]) = {
+    def doTheory(th: Theory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge]) = {
       val (ths, views) = standardTheory(th)
       val alserver = controller.extman.get(classOf[AlignmentsServer]).headOption.getOrElse(return (ths, views))
       val als = th.getConstants.flatMap(c => alserver.getFormalAlignments(c.path)).view

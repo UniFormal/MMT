@@ -15,6 +15,7 @@
  *  along with tiscaf.  If not, see <http://www.gnu.org/licenses/>.
  *  ****************************************************************************
  */
+// twiesing 18-09-2018: Remove call to deprecated methods
 package tiscaf
 
 import javax.net.ssl.SSLEngine
@@ -143,7 +144,6 @@ trait HServer extends HLoggable {
   /** Starts the server. */
   def start: Unit = synchronized {
     if (isStopped.get) {
-      talksExe.prepare()
       plexer.start
       ports.foreach { port => plexer.addListener(peerFactory, bindHost, port) }
       // listen to SSL ports if any configured

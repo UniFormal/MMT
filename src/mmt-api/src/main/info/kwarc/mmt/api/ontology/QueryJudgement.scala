@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.utils.xml
 import scala.xml.Node
 
 /**
-  * A Jugement that MMT evaluates in a dynamic fashion at runtime.
+  * A Judgement that MMT evaluates in a dynamic fashion at runtime.
   * Receives a single GlobalName as an argument
   *
   * @param varname
@@ -34,10 +34,10 @@ object QueryJudgement {
   }
 
   def parse(t : Term)(implicit queryFunctions: List[QueryFunctionExtension], relManager: RelationalManager): QueryJudgement = t match {
-    case OMBINDC(QMTJudgements.Equals,Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
+    case OMBINDC(OMID(QMTJudgements.Equals),Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
       Equals(vname, tm1, tm2)
-    case OMBINDC(QMTJudgements.Types,Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
-      Equals(vname, tm1, tm2)
+    case OMBINDC(OMID(QMTJudgements.Types),Context(VarDecl(vname,_,_,_,_)),List(tm1, tm2)) =>
+      Types(vname, tm1, tm2)
   }
 }
 
@@ -54,6 +54,8 @@ abstract class BinaryQueryJudgement(varname: LocalName, left : Term, right: Term
   protected def toJudgementImpl(stack: Stack, leftSub: Term, rightSub: Term) : Judgement
 }
 
+
+// BUG: judgments should not bind a variable
 
 /** semantic equality between two terms */
 case class Equals(varname : LocalName, left : Term, right: Term) extends BinaryQueryJudgement(varname, left, right) {

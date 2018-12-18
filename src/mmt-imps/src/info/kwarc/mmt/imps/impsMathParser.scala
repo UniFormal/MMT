@@ -111,7 +111,8 @@ package object impsMathParser
           IMPSQCEmptyIndicator(srt)
         }
 
-        case SEXPAtom("i-nonempty-indicator?") =>
+        case SEXPAtom("I-NONEMPTY-INDICATOR?")
+           | SEXPAtom("i-nonempty-indicator?") =>
         {
           assert(s.args.length == 2)
           val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
@@ -382,32 +383,6 @@ package object impsMathParser
           IMPSQCGroups(m,mul,e,inv)
         }
 
-        case SEXPAtom("nil") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCNil(e1)
-        }
-
-        case SEXPAtom("length") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCLength(e1)
-        }
-
-        case SEXPAtom("f-seq?") =>
-        {
-          assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
-
-          IMPSQCFseq(e1)
-        }
-
-          //More sequences QCs
-
         case SEXPAtom("finite-cardinality") =>
         {
           assert(s.args.length == 2)
@@ -439,6 +414,30 @@ package object impsMathParser
           val f : IMPSMathExp = makeSEXPFormula(s.args(2))
 
           IMPSQCInvariant(a,f)
+        }
+
+        case SEXPAtom("length") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCLength(e1)
+        }
+
+        case SEXPAtom("f-seq?") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCFseqQ(e1)
+        }
+
+        case SEXPAtom("nil") =>
+        {
+          assert(s.args.length == 2)
+          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+
+          IMPSQCNil(e1)
         }
 
         case SEXPAtom("cons") =>
@@ -528,19 +527,16 @@ package object impsMathParser
           IMPSQCFirst(e1)
         }
 
-        case SEXPAtom("second") =>
-        {
+        case SEXPAtom("second") => {
           assert(s.args.length == 2)
-          val e1 : IMPSMathExp = makeSEXPFormula(s.args(1))
+          val e1: IMPSMathExp = makeSEXPFormula(s.args(1))
 
           IMPSQCSecond(e1)
         }
 
-
-
         case SEXPAtom(str) =>
         {
-          throw new IMPSDependencyException("Error: Unknown operators: " + str)
+          throw new IMPSDependencyException("Error: Unknown operators: " + str + "\n" + s)
         }
       }
     }
@@ -874,17 +870,16 @@ package object impsMathParser
     { IMPSVar(valid.head) }
   }
 
-  /* PackratParsers because those can be left-recursive */
-  class IMPSMathParser extends RegexParsers with PackratParsers
+  class SortParser extends RegexParsers with PackratParsers
   {
+    lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
+      ("[^,\\]):\\s]+".r) ^^ {case sort => IMPSAtomSort(sort)}
+    }
+
     lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
 
     lazy val parseSets : PackratParser[IMPSSetSort] = {
       ("sets[" ~> parseSort <~ "]") ^^ { case setsort => IMPSSetSort(setsort)}
-    }
-
-    lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
-      ("[^,\\]):\\s]+".r) ^^ {case (sort) => IMPSAtomSort(sort)}
     }
 
     lazy val parseFunSort : PackratParser[IMPSNaryFunSort] = {
@@ -893,6 +888,21 @@ package object impsMathParser
 
     lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
       "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    }
+  }
+
+  class SymbolicExpressionParser extends RegexParsers with PackratParsers
+  {
+    lazy val parseSEXP : PackratParser[SEXP] = { parseNestedSEXP | parseAtom }
+
+    lazy val parseAtom : PackratParser[SEXPAtom] =
+    {
+      """[^()\t\r\n ]+""".r ^^ { case name => SEXPAtom(name)}
+    }
+
+    lazy val parseNestedSEXP : PackratParser[SEXPNested] =
+    {
+      ("(" ~> rep1(parseSEXP) <~ ")") ^^ { case sexps => SEXPNested(sexps) }
     }
   }
 }

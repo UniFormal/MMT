@@ -5,7 +5,7 @@ import api._
 import objects._
 import uom._
 
-import lf._
+//import lf._
 import sequences._
 
 import info.kwarc.mmt.mizar.mmtwrappers._
@@ -40,6 +40,7 @@ object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2),
  * this cannot easily be a rewrite rule because m and n can be arbitrary
  */
 object IntroduceImplication extends TermTransformationRule with ComplificationRule {
+  import lf._
   val head = constantName("implies")
   def apply(matcher: Matcher, goalContext: Context, goal: Term) = {
     goal match {
@@ -84,7 +85,7 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
  */
 object IntroduceExistential extends TermTransformationRule with ComplificationRule {
    val head = constantName("exists")
-
+  import lf._
    // extract the names of the Mizar constants
    private val dummy = OMV("dummy")
    private val Apply(neg, ApplySpine(univ, List(_, Lambda(_, any, _)))) = not(forall(dummy.name.toString, dummy, dummy))

@@ -27,7 +27,7 @@ object Translator {
 
 class Translator(controller: Controller, bt: BuildTask, index: Document => Unit, log : GAPJSONImporter) {
 
-  private val theories : mutable.HashMap[MPath, DeclaredTheory] = mutable.HashMap.empty
+  private val theories : mutable.HashMap[MPath, Theory] = mutable.HashMap.empty
   private val docs : mutable.HashMap[DPath, Document] = mutable.HashMap.empty /*((Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),
   new Document(Path.parseD("http://www.gap-system.org/",NamespaceMap.empty),root = true))) */
 
@@ -41,7 +41,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
       val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
         throw GeneralError(s"no mmt checker found")
       }
-      theories foreach (th => checker(th._2)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore, bt)))
+      // theories foreach (th => checker(th._2)(new CheckingEnvironment(controller.simplifier, new ErrorLogger(controller.report), RelationHandler.ignore, bt)))
     }
     docs.values foreach index
   }
@@ -62,13 +62,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def doObject(obj : DeclaredObject) : Unit = {
     if (dones contains obj) return ()
-    if (obj.name.toString == "IsNonTrivial") {
-      print("")
-    }
-    obj.dependencies foreach doObject
-    if (obj.name.toString == "IsNonTrivial") {
-      print("")
-    }
+    obj.dependencies.foreach(doObject)
     val (deps,cs) = obj match {
       case df : DefinedFilter =>
         var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),Some(df.defi),None))
@@ -170,7 +164,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
   private def addDependencies(thp : MPath, objs : List[DeclaredObject]): Unit = objs foreach (obj => {
     addTheory(thp)
     val th = theories.get(thp).get
-    if (!th.getIncludes.contains(obj.path.module)) controller add PlainInclude(obj.path.module,thp)
+    if (!(th.getIncludes.contains(obj.path.module) || obj.path.module == th.path)) controller add PlainInclude(obj.path.module,thp)
   })
   private def doImpls(c : Constant, objs : List[DeclaredObject]) = objs.map(obj => Implies(c.path,obj.path))
 
@@ -188,7 +182,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
 
   private def addtoDoc(mp : MPath) = {
     val doc = docs.getOrElse(mp.doc,{
-      val ret = new Document(DPath(mp.doc.uri.setExtension("omdoc")), root = true)
+      val ret = new Document(DPath(mp.doc.uri.setExtension("omdoc")), FileLevel)
       controller add ret
       docs(mp.doc) = ret
       ret

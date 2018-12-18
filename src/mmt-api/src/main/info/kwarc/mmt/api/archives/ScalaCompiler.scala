@@ -17,9 +17,10 @@ class ScalaCompiler extends BuildTarget {
   private def jars(f: File) = Try(f.children.filter(_.getExtension.contains("jar"))).getOrElse(Nil)
 
   /** gets the current class path */
-  private def getCurrentClassPath: List[File] = ClassLoader.getSystemClassLoader match {
-    case loader: URLClassLoader => loader.getURLs.map(u => File(u.getFile)).toList
-    case _ => Nil
+  private def getCurrentClassPath: List[File] = {
+    import scala.collection.JavaConverters._
+    val it = ClassLoader.getSystemClassLoader.getResources("").asScala
+    it.toList.map(u => File(u.getPath))
   }
 
   /** find the class path needed for compilation */
@@ -35,7 +36,8 @@ class ScalaCompiler extends BuildTarget {
       jars(d / "lib") ::: jars(d / "main")
     case r: Classes =>
       report("debug", s"using Classes classpath for 'scala-bin'")
-      jars(r.deploy / "lib") ::: List(r.classFolder, r.projectFolder("mmt-lf") / "bin") //TODO don't hard-code LF path here
+      // val lf = File(r.classFolder.toString.replace("mmt-api","mmt-lf"))
+      jars(r.deploy / "lib") ::: List(r.classFolder)//, lf) //TODO don't hard-code LF path here
     // we are running some other (weird) way, so we do not know the classpath
     case OtherStyle =>
       Nil
@@ -43,7 +45,7 @@ class ScalaCompiler extends BuildTarget {
 
    def build(a: Archive, up: Update, in: FilePath) {
      (a / ScalaOutDim).mkdirs
-     // the classpath seperator
+     // the classpath separator
      val sep = if (OS.detect == Windows) ";" else ":"
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")

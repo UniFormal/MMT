@@ -15,10 +15,8 @@ sealed abstract class Delimiter extends Marker {
    def text : String
    /** the value of a delimiter may depend on the name of the operator that owns the notation
     *  expand eliminates such dependencies
-    *
-    *  expansion is identity by default
     */
-   def expand(name: ContentPath, alias: List[LocalName]) : Delimiter = this
+   def expand(name: ContentPath, alias: List[LocalName]): Delim
 }
 
 /** helper object */
@@ -31,19 +29,31 @@ object Delimiter {
 }
 
 /** a delimiter
-  *
-  * @param s the delimiting String, %w for whitespace
+ *
+ * @param s the delimiting String, %w for whitespace
  */
-case class Delim(s: String) extends Delimiter {
+case class Delim(s: String, associatesToLeft: Boolean = true) extends Delimiter {
    override def toString = {
       if (s == "%w") s
-      else if (List('%', 'V').contains(s(0)) || s.endsWith("…"))
-         "%D" + s
       else {
-         if (stringToInt(s).isDefined) "%D" + s else s
+        val escape = !associatesToLeft || List('%', 'V').contains(s(0)) || s.endsWith("…") || stringToInt(s).isDefined
+        if (escape) {
+          val escapePref = if (associatesToLeft) "%D" else "%R"
+          escapePref + s
+        } else
+          s
       }
    }
    def text = if (s == "%w") " " else s
+   def expand(name: ContentPath, alias: List[LocalName]) = this
+}
+
+/** replace the default unapply method to ignore the argument with default value when pattern-matching */ 
+object Delim {
+  def unapply(m: Marker) = m match {
+    case d: Delim => Some(d.s)
+    case _ => None
+  }
 }
 
 /**
@@ -627,12 +637,15 @@ object Marker {
          case "%i" => InstanceName()
          case "%n" => SymbolName()
          case "%a" => AttributedObject
-         case s: String if s.startsWith("%D") =>
+         case s: String if s.startsWith("%D") || s.startsWith("%R") =>
             // Ds ---> delimiter s (used to escape special delimiters)
+            // Rs ---> same as Ds but associates to the right
             if (s.length == 2)
                throw ParseError("not a valid marker " + s)
-            else
-               Delim(s.substring(2))
+            else {
+               val assocLeft = s(1) == 'D' 
+               Delim(s.substring(2), assocLeft)
+            }
          case s: String if s.startsWith("%I") =>
             // In or Gn ---> implicit argument or implicit guard
             val n = stringToInt(s.substring(2)).getOrElse(throw ParseError("not a valid marker " + s))

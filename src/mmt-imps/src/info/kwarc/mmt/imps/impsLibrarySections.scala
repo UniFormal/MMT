@@ -2,13 +2,6 @@ package info.kwarc.mmt.imps
 
 package object impsLibrarySections
 {
-  def testOnly : Section = Section(
-    "test-only",
-    Nil,
-    List("test.t"),
-    Nil
-  )
-
   // See some-sections.ool
 
   def pureGenericTheories : Section = Section(
@@ -142,8 +135,8 @@ package object impsLibrarySections
   def basicGroupTheory : Section = Section(
     "basic-group-theory",
     List(foundation),
-    List("groups.t", "subgroups.t", "group-actions.t", "group-lemmas.t", "cosets.t", "normal-subgroups.t"), // "cyclic-groups.t"?
-    List("groups.json", "group-actions.json") // "abelian-groups.json"?
+    List("groups.t", "subgroups.t", "group-actions.t", "cosets.t", "group-lemmas.t", "normal-subgroups.t", "cyclic-groups.t"), // "cyclic-groups.t"?
+    List("groups.json", "group-actions.json", "abelian-groups.json") // "abelian-groups.json"?
   )
 
   def fundamentalCountingTheorem : Section = Section(
@@ -218,7 +211,7 @@ package object impsLibrarySections
 
   def basicFields : Section = Section(
     "basic-fields",
-    List(foundation, preReals, basicMonoids), //basicGroupTheory
+    List(foundation, preReals, basicMonoids, basicGroupTheory), //basicGroupTheory
     List("fields.t", "fields-supplements.t"),
     List("fields.json")
   )
@@ -239,7 +232,7 @@ package object impsLibrarySections
 
   def metricSpaces : Section = Section(
     "metric-spaces",
-    List(foundation),
+    List(foundation,iterate),
     List("metric-spaces.t", "metric-space-supplements.t"),
     List("metric-spaces.json", "metric-spaces-0.json", "metric-spaces-1.json", "metric-spaces-2.json")
   )
@@ -283,7 +276,7 @@ package object impsLibrarySections
 
   def banachFixedPointTheorem : Section = Section(
     "banach-fixed-point-theorem",
-    List(partialOrders,metricSpaces),
+    List(partialOrders,metricSpaceSubspaces),
     List("fixed-point-theorem.t"),
     List("ms-closed-ball.json")
   )

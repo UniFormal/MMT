@@ -2,6 +2,9 @@ package info.kwarc.mmt.api
 
 import utils._
 
+import scala.collection.TraversableLike
+import scala.collection.generic.CanBuildFrom
+
 /**
   * This package defines various MMT-independent high-level APIs.
   */
@@ -82,6 +85,9 @@ package object utils {
     val endL = end.length
   }
 
+   /** implicit conversion into lists with extra functionality */
+   implicit def fromList[A](l: List[A]): MyList[A] = new MyList[A](l)
+  
    /** turns a list into a string by inserting a separator */
    def listToString[A](l: Iterable[A], sep: String) = l.map(_.toString).mkString(sep)
 
@@ -105,6 +111,12 @@ package object utils {
 
    /** disjointness of two lists (fast if first argument is empty) */
    def disjoint[A](l: Seq[A], m: Seq[A]) = l.forall(a => ! m.contains(a))
+   /** subset property of two lists (seen as sets) (fast if first argument is empty) */
+   def subset[A](l: Seq[A], m: Seq[A]) = l.forall(a => m.contains(a))
+   /** intersection of two lists */
+   def inter[A](l: Seq[A], m: Seq[A]) = l.filter(a => m.contains(a))
+   /** difference of two lists */
+   def diff[A](l: Seq[A], m: Seq[A]) = l.filter(a => !m.contains(a))
 
    /** variant of fold such that associate(List(a), unit)(comp) = a instead of comp(unit, a) */
    def associate[A](l: List[A], unit: A)(comp: (A,A) => A): A = l match {
@@ -131,5 +143,17 @@ package object utils {
    def downcast[A, B<:A](cls: Class[B])(a: A): Option[B] = a match {
      case b: B@unchecked if cls.isInstance(b) => Some(b)
      case _ => None
+   }
+
+   /** returns a histogram of pf over lst, i.e. counts how often each return value occurs */
+   def histogram[T1, T2](lst: Seq[T1], pf: PartialFunction[T1, T2]): Seq[(T2, Int)] = {
+     lst.groupBy(pf.lift).collect({
+       case (Some(e), l) => (e, l.size)
+     }).toSeq
+   }
+
+   /** calls a list of functions in order and finds the first defined one or None */
+   def firstDefined[T](alternatives: (Unit => Option[T])*): Option[T] = {
+     alternatives.view.map(x => x()).find(_.isDefined).flatten
    }
 }

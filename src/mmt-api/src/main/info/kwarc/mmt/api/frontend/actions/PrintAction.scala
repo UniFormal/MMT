@@ -7,13 +7,19 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Try
 
 /** an action that responds to the user */
-private[actions] trait ResponsiveAction extends Action {
+trait ResponsiveAction extends Action {
   /** prints a response to the caller */
   def respond(x: Any*) = controller.report.apply("user", x.map(_.toString).mkString(", "))
 }
 
 /** Shared base class for Actions for printing something */
 sealed abstract class PrintAction extends ResponsiveAction {}
+
+case object MMTLegal extends PrintAction {
+  def apply(): Unit = respond(MMTSystem.legalNotices)
+  def toParseString = "show notices"
+}
+object MMTLegalCompanion extends ObjectActionCompanion(MMTLegal, "show legal notices", "show notices")
 
 case object MMTInfo extends PrintAction {
   def apply() {

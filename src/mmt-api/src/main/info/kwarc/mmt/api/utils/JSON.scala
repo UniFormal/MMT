@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
 
+import scala.util.Try
+
 /**
  * straightforward API for JSON objects
  */
@@ -14,6 +16,19 @@ sealed abstract class JSON {
 
   /** turns this JSON object into a formatted string */
   def toFormattedString(indent: String): String
+  
+  /** derefences a path in a JSON element */
+  def apply(selectors: JSON.Selector*): Option[JSON] = {
+    val oneStep = selectors.headOption match {
+      case None => return Some(this)
+      case Some(s) => (this,s) match {
+        case (j: JSONObject, Left(s)) => j(s)
+        case (j: JSONArray, Right(i)) => if (i >= 0 && i < j.values.length) Some(j(i)) else None
+        case _ => None
+      }
+    }
+    oneStep flatMap {j => j(selectors.tail:_*)}
+  }
 }
 
 case object JSONNull extends JSON {
@@ -24,15 +39,10 @@ sealed abstract class JSONValue extends JSON {
    def value: Any
    def toFormattedString(indent: String): String = value.toString
 }
-sealed abstract class JSONNumber extends JSONValue
 
-case object Infinity extends JSONNumber {
-  val value = "Infinity"
-}
+case class JSONInt(value: BigInt) extends JSONValue
 
-case class JSONInt(value: Int) extends JSONNumber
-
-case class JSONFloat(value: Double) extends JSONNumber
+case class JSONFloat(value: BigDecimal) extends JSONValue
 
 case class JSONBoolean(value: Boolean) extends JSONValue
 
@@ -52,7 +62,6 @@ case class JSONArray(values: JSON*) extends JSON {
         ("[", ",", "]")
       }
     }
-
     values.map( v =>
       JSON.addIndent(v.toFormattedString(indent), indent)
     ).mkString(start, sep, end)
@@ -60,12 +69,14 @@ case class JSONArray(values: JSON*) extends JSON {
   
   // needed for Python bridge
   def iterator = values.iterator
+  
+  def apply(i: Int) = values(i)
 }
 
 object JSONArray {
-   implicit def toList(a: JSONArray) = a.values.toList
-   implicit def fromList(l: List[JSON]) = JSONArray(l :_*)
+   implicit def toList(j: JSONArray): List[JSON] = j.values.toList 
 }
+
 
 case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   def toFormattedString(indent: String): String = {
@@ -76,7 +87,6 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
         ("{", ",", "}")
       }
     }
-
     val spaces = if (indent != "") " " else ""
     map.map { case (k, v) =>
       k.toFormattedString(indent) + ":" + spaces + JSON.addIndent(v.toFormattedString(indent), indent)
@@ -104,8 +114,12 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
   } catch {
     case e : Exception => ""
   }
-  def getAsInt(s : String) : Int = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+  def getAsInt(s : String) : BigInt = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
     case j: JSONInt => j.value
+    case _ => throw ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
+  }
+  def getAsFloat(s : String) : BigDecimal = apply(s).getOrElse(throw new ParseError("Field \"" + s + "\" not defined in JSONObject " + this)) match {
+    case j: JSONFloat => j.value
     case _ => throw ParseError("Field \"" + s + "\" is not a JSONInt in " + this)
   }
   def getAsList[A](cls: Class[A],s : String) : List[A] = {
@@ -122,13 +136,20 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
       case j => throw ParseError("getAs Error: A=" + cls.toString + ", j:" + j.getClass + " = " + j)
     }
   }
-  
 }
 
 object JSONObject {
-   implicit def toList(o: JSONObject) : List[(JSONString,JSON)] = o.map.toList
-   implicit def fromList(l: List[(JSONString,JSON)]) : JSONObject = JSONObject(l)
    def apply(cases: (String,JSON)*): JSONObject = JSONObject(cases.toList map {case (k,v) => (JSONString(k),v)})
+   implicit def toList(j: JSONObject): List[(JSONString,JSON)] = j.map 
+}
+
+
+object JSONConversions {
+   implicit def fromString(s: String) = JSONString(s)
+   implicit def fromInt(i: Int) = JSONInt(i)
+   implicit def fromList(l: List[(JSONString,JSON)]) : JSONObject = JSONObject(l)
+   implicit def fromList(l: List[JSON]) = JSONArray(l :_*)
+   implicit def fromConvertibleList[A <% JSON](l: List[A]) = JSONArray(l.map(implicitly[A => JSON]):_*)
 }
 
 object JSON {
@@ -142,6 +163,9 @@ object JSON {
 
    case class JSONError(s: String) extends java.lang.Exception(s)
 
+   /** to select a field in an JSONObjcet or a value in a JSONArray */
+   type Selector = Union[String,Int]
+   
    def parse(s: String) : JSON = {
       val u = new Unparsed(s, msg => throw JSONError(msg))
       val j = parse(u)
@@ -183,19 +207,15 @@ object JSON {
       JSONBoolean(b)
    }
 
-   def parseNum(s: Unparsed): JSONNumber = {
-     if (s.remainder.startsWith("Infinity")) {
-       s.drop("Infinity")
-       return Infinity
-     }
+   def parseNum(s: Unparsed): JSONValue = {
       val e = "(?: e|e\\+|e-|E|E\\+|E-)"
       val mt = s.takeRegex(s"(-)?(\\d+)(\\.\\d+)?($e\\d+)?")
       val List(sgn, main, frac, exp) = mt.subgroups
       val jn = if (frac == null && exp == null) {
          val f = if (sgn == null) 1 else -1
-         JSONInt(f * main.toInt)
+         JSONInt(f * BigInt(main))
       } else
-         JSONFloat(mt.matched.toDouble)
+         JSONFloat(BigDecimal(mt.matched))
       jn
    }
 
@@ -321,6 +341,20 @@ object JSON {
     case c if (c >= '\u0000' && c <= '\u001f') || (c >= '\u007f' && c <= '\u009f') => "\\u%04x".format(c.toInt)
     case c => c
   }.mkString
+}
+
+/** retrieve JSON from a URL */
+object JSONFromURL {
+  def apply(url: String) : Option[JSON] = {
+    println(s"getting json from ${url}")
+    Try(io.Source.fromURL(url)).toOption.map { a =>
+      Try(JSON.parse(a.toBuffer.mkString)) match {
+        case util.Failure(t: Throwable) =>
+          throw ParseError(url.toString).setCausedBy(t)
+        case util.Success(j) => j
+      }
+    }
+  }
 }
 
 /** converts between XML and JSON following the jsonML specification */

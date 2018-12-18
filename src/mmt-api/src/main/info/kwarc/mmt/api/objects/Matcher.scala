@@ -2,12 +2,11 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import frontend._
 import checking._
+import uom._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.symbols._
 import Conversions._
 
-import info.kwarc.mmt.api.modules.DeclaredTheory
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-
-import scala.util.Try
 
 /** matches a goal term against a template term and computes the unifying substitution if possible
  *  i.e., we try to find solution such that template ^ solution == goal
@@ -28,10 +27,12 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
    def report = controller.report
    private def presentObj(o: Obj) = controller.presenter.asString(o)
 
-   private val solutionRules = rules.get(classOf[SolutionRule])
+   private val solutionRules = rules.get(classOf[ValueSolutionRule])
    private val equalityRules = rules.get(classOf[TermBasedEqualityRule])
-
+   
+   /** the context of the goal */
    private var constantContext: Context = Context.empty
+   /** the context of the query (containing the variables to be solved) */
    private var querySolution : Context = Context.empty
    def getUnsolvedVariables : List[LocalName] = querySolution collect {
       case vd if vd.df.isEmpty => vd.name
@@ -76,7 +77,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 
       def lookup = controller.globalLookup
       def simplify(t: Obj)(implicit stack: Stack, history: History) =
-         controller.simplifier(t, stack.context, rules, false)
+         controller.simplifier(t, SimplificationUnit(stack.context,false,false), rules)
       def outerContext = constantContext ++ querySolution
 
       def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
@@ -84,8 +85,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
             Some(new AnonymousTheory(mt, Nil))
          // add include of codomain of mor
          case OMMOD(mp) =>
-            val th = Try(controller.globalLookup.getTheory(mp)).toOption match {
-               case Some(th2: DeclaredTheory) => th2
+            val th = controller.globalLookup.getO(mp) match {
+               case Some(th2: Theory) => th2
                case _ => return None
             }
             val ds = th.getDeclarationsElaborated.map({
@@ -111,8 +112,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     *  @param goalContext the global context
     *  @param goal the term to be matched, relative to goalContext
     *  @param queryVars the variables to solve
-    *  @param query the term to match against, this term may contain the queryVars and the context variables freely
-    *  @return true if the terms match
+    *  @param query the term to match against, relative to goalContext ++ queryVars
+    *  @return MatchSuccess(subs) if goal == query ^ subs for  goalContext |- subs:queryVars -> .
     */
    def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
      apply(goalContext, queryVars) {eq => eq(goal, query)}
@@ -130,12 +131,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       val res = doit(matchTerms)
       if (res) {
         log("matched: " + getSolution)
-        if (getUnsolvedVariables.isEmpty)
-           MatchSuccess(getSolution)
-        else
-           MatchInconclusive
-      }
-      else {
+        val total = getUnsolvedVariables.isEmpty
+        MatchSuccess(getSolution, total)
+      } else {
         log("no match")
         MatchFail
       }
@@ -166,9 +164,9 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       }
       // 3) try to isolate a query variable
       // j is the equality judgment that we try to apply solution rules to
-      var j = Equality(Stack(boundOrg), queryOrg, goalOrg, None)
+      var j = Equality(Stack(boundOrg), goalOrg, queryOrg, None)
       // applies all the rules found by findSolvableVariable
-      def applyRules(rs: List[SolutionRule]) {
+      def applyRules(rs: List[ValueSolutionRule]) {
          rs.foreach {r =>
             j = r(j).getOrElse(return)._1
          }
@@ -227,9 +225,8 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
 abstract class MatchResult
 /**
  * @param solution the substitution for the query variables
+ * @param total true if all query variables were matched
  */
-case class MatchSuccess(solution: Substitution) extends MatchResult
+case class MatchSuccess(solution: Substitution, total: Boolean) extends MatchResult
 /** definitely not equal */
 case object MatchFail extends MatchResult
-/** no match found but terms might match if more sophisticated methods are used */
-case object MatchInconclusive extends MatchResult
