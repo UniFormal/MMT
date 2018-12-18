@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.pureGenericTheories
+    val targetSection : Section = impsLibrarySections.reals
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -193,12 +193,6 @@ class IMPSImporter extends Importer
         case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
       }
     }
-
-    println("###### All languages:")
-    println(tState.languages_decl.mkString("\n\n"))
-
-    println("###### All theories:")
-    println(tState.theories_decl.mkString("\n\n"))
 
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run

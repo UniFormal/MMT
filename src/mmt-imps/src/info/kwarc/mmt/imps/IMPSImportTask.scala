@@ -137,15 +137,23 @@ class IMPSImportTask(val controller  : Controller,
               for (incl <- includes) {
                 val includee : Theory = incl
                 val includer : Theory = nu_multiple
-                controller add PlainInclude(includee.path,includer.path)
+                val theInclude = PlainInclude(includee.path,includer.path)
+                controller add theInclude
+                controller endAdd theInclude
               }
 
               // include lower multiple, if applicable
-              if (j != 1) { controller add PlainInclude(ensemble.multipleMap(j-1).path,nu_multiple.path) }
+              if (j != 1) {
+                val theInclude = PlainInclude(ensemble.multipleMap(j-1).path,nu_multiple.path)
+                controller add theInclude
+                controller endAdd theInclude
+              }
 
               assert(ensemble.replicaMap.contains(j))
               val theReplica : Theory = ensemble.replicaMap(j)
-              controller add PlainInclude(theReplica.path,nu_multiple.path)
+              val theInclude = PlainInclude(theReplica.path,nu_multiple.path)
+              controller add theInclude
+              controller endAdd theInclude
 
               // register new Theory Multiple
               ensemble.multipleMap = ensemble.multipleMap + (j -> nu_multiple)
@@ -193,6 +201,7 @@ class IMPSImportTask(val controller  : Controller,
               controller add MRef(doc.path,union.path)
               controller add PlainInclude(t1.path,union.path)
               controller add PlainInclude(t2.path,union.path)
+              ??!("these still need endAdds")
               union
             }
           }
@@ -387,6 +396,8 @@ class IMPSImportTask(val controller  : Controller,
                 }
               }
 
+              controller endAdd nu_view
+
             } else { println("  > [TES] No unique applicable translation in source for " + fooname + ", skipping!") }
 
           }
@@ -431,7 +442,9 @@ class IMPSImportTask(val controller  : Controller,
       }
 
       val kernel : Theory = getTheory( name = "the-kernel-theory")
-      controller add PlainInclude.apply(kernel.path,nu_theory.path)
+      val theInclude = PlainInclude.apply(kernel.path,nu_theory.path)
+      controller add theInclude
+      controller endAdd theInclude
     }
 
     /* Translate language of the theory */
@@ -444,7 +457,9 @@ class IMPSImportTask(val controller  : Controller,
 
       val includee : Theory = fnd.get
       val includer : Theory = nu_theory
-      controller add PlainInclude(includee.path,includer.path)
+      val theInclude = PlainInclude(includee.path,includer.path)
+      controller add theInclude
+      controller endAdd theInclude
 
       if (tState.verbosity > 0) {
         println("   > adding language include: " + nu_theory.name + " includes " + fnd.get.name)
@@ -463,7 +478,9 @@ class IMPSImportTask(val controller  : Controller,
         if (tState.verbosity > 0) {
           println("   > adding theory include: " + nu_theory.name + " includes " + component.name.toString)
         }
-        controller add PlainInclude(component.path,nu_theory.path)
+        val theInclude = PlainInclude(component.path,nu_theory.path)
+        controller add theInclude
+        controller endAdd theInclude
       }
     }
 
@@ -522,6 +539,8 @@ class IMPSImportTask(val controller  : Controller,
       }
     }
 
+    controller endAdd nu_theory
+
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
 
@@ -559,7 +578,9 @@ class IMPSImportTask(val controller  : Controller,
 
       val includee : Theory = fnd.get
       val includer : Theory = nu_lang
-      controller add PlainInclude(includee.path,includer.path)
+      val theInclude = PlainInclude(includee.path,includer.path)
+      controller add theInclude
+      controller endAdd theInclude
 
       if (tState.verbosity > 0) {
         println("   > adding include: " + nu_lang.name + " includes " + fnd.get.name)
@@ -644,9 +665,10 @@ class IMPSImportTask(val controller  : Controller,
       }
     }
 
+    controller endAdd nu_lang
+
     tState.languages_raw  = tState.languages_raw :+ l
     tState.languages_decl = tState.languages_decl :+ nu_lang
-
   }
 
   def doTranslation(d : DFTranslation, docPath: DPath, uri : URI) : Unit = d match
@@ -826,6 +848,8 @@ class IMPSImportTask(val controller  : Controller,
       }
 
       doSourceRefT(nu_view.toTerm,src, uri)
+      controller endAdd nu_view
+
       controller.simplifier.apply(nu_view)
 
     case _ => println("Error: Unknown translation structure!")
@@ -1145,8 +1169,6 @@ class IMPSImportTask(val controller  : Controller,
 
         val multiples : List[Theory] = nums.map(j => ensemble.multipleMap(j))
         for (m <- multiples) {
-          //controller add PlainInclude(base.path,m.path) // Seems fishy, but also seems to work.
-
           for (mc <- m.getConstants) {
             for (dest <- tState.translations_decl) {
               println(" [>] [overloading for " + mc.name + " along " + dest.name + " goes here]")
@@ -1252,7 +1274,9 @@ class IMPSImportTask(val controller  : Controller,
     val includes : List[Theory] = base.getIncludesWithoutMeta.map(controller.getTheory)
 
     for (fix <- includes) {
-      controller add PlainInclude(fix.path,nu_replica.path)
+      val theInclude = PlainInclude(fix.path,nu_replica.path)
+      controller add theInclude
+      controller endAdd theInclude
     }
     // Each replica only carries one structure (a  kind of theory morphism) from the base theory into it.
     val rep_struc = Structure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
@@ -1279,6 +1303,8 @@ class IMPSImportTask(val controller  : Controller,
         println("     > adding constant " + nu_constant.name + " to replica theory " + rep_struc.name)
       }
     }**/
+
+    controller endAdd replic_trans
 
     // Elaborate Structures
     controller.simplifier(nu_replica)
