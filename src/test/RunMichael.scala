@@ -5,13 +5,13 @@ import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 object RunMichael extends MichaelTest {
 
   def run : Unit = {
-    controller.extman.addExtension(new GraphOptimizationTool)
+    controller.handleLine("extension info.kwarc.mmt.got.GraphOptimizationTool")
     val got : GraphOptimizationTool = controller.extman.get(classOf[GraphOptimizationTool]).head
 
     val list = Path.parseM("http://mydomain.org/testarchive/mmt-example?test_other",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_all",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_future",NamespaceMap.empty) :: Nil
     val starttime = System.currentTimeMillis()
-    controller.handleLine("build testarchive got")
-    controller.extman.addExtension(new MMTOptimizationAnnotationReader)
+    //controller.handleLine("build testarchive got")
+    controller.handleLine("extension info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader")
     val or : MMTOptimizationAnnotationReader = controller.extman.get(classOf[MMTOptimizationAnnotationReader]).head
     //println(list.head)
     //println(or(list.head))
