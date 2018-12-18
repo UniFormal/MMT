@@ -75,7 +75,6 @@ package object impsMathParser
           assert(s.args.length == 2)
           val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
           assert(srt.isInstanceOf[IMPSUndefined])
-
           IMPSQCSort2Indicator(srt)
         }
 

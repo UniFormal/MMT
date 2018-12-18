@@ -268,8 +268,8 @@ object IMPSTheory
     }
 
     object sort2indicQC extends UDQC("sort2indicQC") {
-      def apply(u : Term, e : Term) : Term = {
-        ApplySpine(this.term, u, e)
+      def apply(u : Term, alpha : Term, e : Term) : Term = {
+        ApplySpine(this.term, u, alpha, e)
       }
     }
 

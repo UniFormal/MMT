@@ -1389,7 +1389,7 @@ class IMPSImportTask(val controller  : Controller,
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : Theory, src : SourceInfo, uri : URI) : Unit =
   {
-    // TODO: Fix different usages
+    // TODO: Maybe generate subtyping rules? (compare Plugin.scala and Rules.scala in mmt-odk)
 
     /* enclosing sort should already be defined */
     if (tState.verbosity > 0) {
@@ -1641,7 +1641,7 @@ class IMPSImportTask(val controller  : Controller,
 
       case qc : IMPSUserDefinedQuasiConstructor => doQuasiConstructor(qc,thy,cntxt)
 
-      case _ => println("Error: Unknown IMPSMathExp\n" + d + " (" + d.getClass + ")") ; ???
+      case _ => ??!("Error: Unknown IMPSMathExp\n" + d + " (" + d.getClass + ")")
     }
   }
 
@@ -1651,16 +1651,29 @@ class IMPSImportTask(val controller  : Controller,
 
     case IMPSQCPred2Indicator(m) =>
       val ca = findSortFromContext(m, cntxt)
-      val as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+      var as: IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
+
+      assert(as.isInstanceOf[IMPSUnknownSort] | as.isInstanceOf[IMPSBinaryFunSort] | as.isInstanceOf[IMPSNaryFunSort])
+
+      val srt : IMPSSort = as match {
+        case IMPSBinaryFunSort(s1,s2) => hAssert(s2 == IMPSAtomSort("bool") || s2 == IMPSAtomSort("prop"), s2) ; s1
+        case IMPSNaryFunSort(srts)    => assert(srts.last == IMPSAtomSort("bool") || srts.last == IMPSAtomSort("prop"))
+                                         assert(srts.length == 2)
+                                         srts.head
+        case IMPSUnknownSort(_)       => IMPSUnknownSort(tState.freshHash())
+      }
       val t1 = doMathExp(m, thy, cntxt)
 
-      IMPSTheory.QCT.pred2indicQC(findKind(as), matchSort(as, thy), t1)
+      IMPSTheory.QCT.pred2indicQC(findKind(srt), matchSort(srt, thy), t1)
 
-    case IMPSQCSort2Indicator(srt) =>
-      val ca = findSortFromContext(srt,cntxt)
-      val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-
-      IMPSTheory.QCT.sort2indicQC(findKind(as),matchSort(as,thy))
+    case IMPSQCSort2Indicator(und) =>
+      assert(und.isInstanceOf[IMPSUndefined])
+      val srt : IMPSSort = und match {
+        case IMPSUndefined(s) => s
+        case _ => ???
+      }
+      val wit : Term = doMathExp(und,thy,cntxt)
+      IMPSTheory.QCT.sort2indicQC(findKind(srt),matchSort(srt,thy),wit)
 
     case IMPSQCIn(e1,e2) =>
       val ca = findSortFromContext(e1,cntxt) ; val cb = findSortFromContext(e2,cntxt)
@@ -1702,15 +1715,27 @@ class IMPSImportTask(val controller  : Controller,
     case IMPSQCEmptyIndicator(srt) =>
       val ca = findSortFromContext(srt,cntxt)
       val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-
       IMPSTheory.QCT.emptyIndicQC(findKind(as),matchSort(as,thy))
 
-    case IMPSQCEmptyIndicatorQ(srt) =>
-      val ca = findSortFromContext(srt,cntxt)
+    case IMPSQCEmptyIndicatorQ(ind) =>
+      val ca = findSortFromContext(ind,cntxt)
       val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-      val t1 = doMathExp(srt,thy,cntxt)
 
-      IMPSTheory.QCT.emptyIndicQQC(findKind(as),matchSort(as,thy),t1)
+      assert(as.isInstanceOf[IMPSUnknownSort]   || as.isInstanceOf[IMPSSetSort]
+          || as.isInstanceOf[IMPSBinaryFunSort] || as.isInstanceOf[IMPSNaryFunSort])
+
+      val srt : IMPSSort = as match {
+        case IMPSSetSort(s)           => s
+        case IMPSBinaryFunSort(s1,s2) => hAssert(s2 == IMPSAtomSort("unit%sort") || s2 == IMPSAtomSort("unitsort"), s2) ; s1
+        case IMPSNaryFunSort(srts)    => assert(srts.last == IMPSAtomSort("unit%sort") || srts.last == IMPSAtomSort("unitsort"))
+                                         assert(srts.length == 2)
+                                         srts.head
+        case IMPSUnknownSort(_)       => IMPSUnknownSort(tState.freshHash())
+      }
+
+      val t1 = doMathExp(ind,thy,cntxt)
+
+      IMPSTheory.QCT.emptyIndicQQC(findKind(srt),matchSort(srt,thy),t1)
 
     case IMPSQCNonemptyIndicator(srt) =>
       val ca = findSortFromContext(srt,cntxt)

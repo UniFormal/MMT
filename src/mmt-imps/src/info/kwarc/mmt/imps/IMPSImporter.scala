@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.reals
+    val targetSection : Section = impsLibrarySections.indicators
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -149,7 +149,8 @@ class IMPSImporter extends Importer
       }
       if (tState.verbosity > 0)
       {
-        println("Done! Succesfully parsed " + e.length.toString + " def-forms!")
+        val weight = Math.round(e.toString().length / 100.0) / 10.0
+        println("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K")
       }
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
