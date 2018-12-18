@@ -424,6 +424,16 @@ class IMPSImportTask(val controller  : Controller,
       controller.delete(mref.path)
     }
 
+    if (t.name.s != "the-kernel-theory")
+    {
+      if (tState.verbosity > 0) {
+        println("   > adding include for kernel theory")
+      }
+
+      val kernel : Theory = getTheory( name = "the-kernel-theory")
+      controller add PlainInclude.apply(kernel.path,nu_theory.path)
+    }
+
     /* Translate language of the theory */
     var l : Option[DFLanguage] = None
 
@@ -437,7 +447,7 @@ class IMPSImportTask(val controller  : Controller,
       controller add PlainInclude(includee.path,includer.path)
 
       if (tState.verbosity > 0) {
-        println(" > adding include: " + nu_theory.name + " includes " + fnd.get.name)
+        println("   > adding language include: " + nu_theory.name + " includes " + fnd.get.name)
       }
     }
 
@@ -451,7 +461,7 @@ class IMPSImportTask(val controller  : Controller,
 
         /* Add Include */
         if (tState.verbosity > 0) {
-          println("   > adding include of " + component.name.toString + " to " + nu_theory.name)
+          println("   > adding theory include: " + nu_theory.name + " includes " + component.name.toString)
         }
         controller add PlainInclude(component.path,nu_theory.path)
       }
@@ -473,7 +483,7 @@ class IMPSImportTask(val controller  : Controller,
         controller.add(assumption)
 
         if (tState.verbosity > 2) {
-          println("  > adding axiom " + assumption.name + " (" + ax.defstr.toString + ") to theory " + nu_theory.name)
+          println("   > adding axiom " + assumption.name + " (" + ax.defstr.toString + ") to theory " + nu_theory.name)
         }
       }
     }
@@ -512,17 +522,6 @@ class IMPSImportTask(val controller  : Controller,
       }
     }
 
-    if (t.name.s != "the-kernel-theory")
-    {
-      if (tState.verbosity > 0)
-      {
-        println("  > adding include for kernel theory")
-      }
-
-      val component : Theory= getTheory("the-kernel-theory")
-      controller add PlainInclude.apply(component.path,nu_theory.path)
-    }
-
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
 
@@ -530,14 +529,14 @@ class IMPSImportTask(val controller  : Controller,
 
   def doLanguage(l : DFLanguage, docPath : DPath, ns : DPath, uri : URI) : Unit =
   {
-    val t = new Theory(ns,
+    val nu_lang = new Theory(ns,
       LocalName(l.name.toString),
       Some(IMPSTheory.QCT.quasiLutinsPath),
       modules.Theory.noParams,
       modules.Theory.noBase)
 
-    val mref : MRef = MRef(docPath,t.path)
-    controller.add(t)
+    val mref : MRef = MRef(docPath,nu_lang.path)
+    controller.add(nu_lang)
     controller.add(mref)
 
     if (tState.verbosity > 0)
@@ -559,25 +558,24 @@ class IMPSImportTask(val controller  : Controller,
       hAssert(fnd.isDefined, tState.languages_decl)
 
       val includee : Theory = fnd.get
-      val includer : Theory = t
+      val includer : Theory = nu_lang
       controller add PlainInclude(includee.path,includer.path)
 
       if (tState.verbosity > 0) {
-        println(" > adding include: " + t.name + " includes " + fnd.get.name)
+        println("   > adding include: " + nu_lang.name + " includes " + fnd.get.name)
       }
     }
 
     if (l.bt.isDefined)
     {
-      println("<hook> " + l.bt.get)
       for (baseType : IMPSSort <- l.bt.get.nms)
       {
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
-        val basetype = symbols.Constant(t.toTerm, doName(baseType.toString), Nil, Some(tp), None, Some("BaseType"))
+        val basetype = symbols.Constant(nu_lang.toTerm, doName(baseType.toString), Nil, Some(tp), None, Some("BaseType"))
         if (l.bt.get.src.isDefined) { doSourceRefD(basetype, l.bt.get.src, uri) }
         controller add basetype
 
-        if (tState.verbosity > 0) { println("   > adding language base type: " + baseType.toString + " to " + t.name) }
+        if (tState.verbosity > 0) { println("   > adding language base type: " + baseType.toString + " to " + nu_lang.name) }
       }
     }
 
@@ -588,11 +586,11 @@ class IMPSImportTask(val controller  : Controller,
 
         //val opt_ind   : Option[Term] = Some(Apply(OMS(IMPSTheory.lutinsPath ? LocalName("sort")), OMS(IMPSTheory.lutinsIndType)))
         val tp     : Term        = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
-        val typing : Declaration = symbols.Constant(t.toTerm,LocalName(spec.sub.toString),Nil,Some(tp),None,Some("Sort"))
+        val typing : Declaration = symbols.Constant(nu_lang.toTerm,LocalName(spec.sub.toString),Nil,Some(tp),None,Some("Sort"))
         controller add typing
 
-        doSubsort(spec.sub, spec.enc, t, spec.src, uri)
-        if (tState.verbosity > 0) { println("   > adding language sort: " + spec.sub + " (enclosed by " + spec.enc + ") to " + t.name) }
+        doSubsort(spec.sub, spec.enc, nu_lang, spec.src, uri)
+        if (tState.verbosity > 0) { println("   > adding language sort: " + spec.sub + " (enclosed by " + spec.enc + ") to " + nu_lang.name) }
       }
     }
 
@@ -615,11 +613,11 @@ class IMPSImportTask(val controller  : Controller,
             OMS(IMPSTheory.lutinsPath ? "octetType")
         }
 
-        val srt = tState.bindUnknowns(matchSort(tal.srt,t))
+        val srt = tState.bindUnknowns(matchSort(tal.srt,nu_lang))
         val knd = tState.bindUnknowns(findKind(tal.srt))
         val trm = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), knd, sub, srt)
         val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(trm))
-        val judgement : Declaration  = symbols.Constant(t.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
+        val judgement : Declaration  = symbols.Constant(nu_lang.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
 
         if (tState.verbosity > 0)
         {
@@ -635,19 +633,19 @@ class IMPSImportTask(val controller  : Controller,
     {
       for (pair : ArgConstantSpec <- l.cnsts.get.specs)
       {
-        val mth_tp : Term = tState.bindUnknowns(doSort(pair.enc, t))
-        val l_const = symbols.Constant(t.toTerm,doName(pair.nm.s),Nil,Some(mth_tp),None,Some("Constant"))
+        val mth_tp : Term = tState.bindUnknowns(doSort(pair.enc, nu_lang))
+        val l_const = symbols.Constant(nu_lang.toTerm,doName(pair.nm.s),Nil,Some(mth_tp),None,Some("Constant"))
         if (l.cnsts.get.src.isDefined) { doSourceRefD(l_const,l.cnsts.get.src, uri) }
         if (tState.verbosity > 0)
         {
-          println(" > adding constant " + pair.nm.s + " : " + pair.enc + " to " + t.path)
+          println(" > adding constant " + pair.nm.s + " : " + pair.enc + " to " + nu_lang.path)
         }
         controller add l_const
       }
     }
 
     tState.languages_raw  = tState.languages_raw :+ l
-    tState.languages_decl = tState.languages_decl :+ t
+    tState.languages_decl = tState.languages_decl :+ nu_lang
 
   }
 
@@ -1281,11 +1279,6 @@ class IMPSImportTask(val controller  : Controller,
         println("     > adding constant " + nu_constant.name + " to replica theory " + rep_struc.name)
       }
     }**/
-
-    for (c <- rep_struc.getComponents)
-    {
-      println(" hook > " + c)
-    }
 
     // Elaborate Structures
     controller.simplifier(nu_replica)
