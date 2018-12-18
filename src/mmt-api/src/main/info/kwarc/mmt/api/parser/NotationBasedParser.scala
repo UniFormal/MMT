@@ -528,6 +528,7 @@ class NotationBasedParser extends ObjectParser {
            doFoundContent(fc, uls)
        }
      }
+     // the list of constants of the used notation
      // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
      // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
      var consVar: List[ContentPath] = Nil
