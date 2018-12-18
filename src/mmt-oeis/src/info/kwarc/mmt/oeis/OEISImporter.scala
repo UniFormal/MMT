@@ -150,7 +150,7 @@ class OEISImporter extends Importer {
   /**
     * translate third level, in-module elements (typically declarations)
     */
-  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: DeclaredTheory, errorCont: ErrorHandler) {
+  private def translateDeclaration(n: Node, tsref: SourceRef)(implicit doc: Document, thy: Theory, errorCont: ErrorHandler) {
     val sref = OMDoc.parseSourceRef(n, doc.path).getOrElse(tsref)
     implicit val dpath = doc.path
     implicit val mpath = thy.path
@@ -214,7 +214,7 @@ class OEISImporter extends Importer {
         defaultPath
       case l =>
         val matches = l.map(controller.get(_)) flatMap {
-          case d: DeclaredTheory =>
+          case d: Theory =>
             d.getConstants.filter(_.name.last.toPath == snameS)
           case _ => None
         }

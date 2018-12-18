@@ -3,13 +3,13 @@ package info.kwarc.mmt.jedit
 import java.awt.Dimension
 
 import info.kwarc.mmt.api._
-import gui.Swing
-import info.kwarc.mmt.api.modules.DeclaredView
+import gui.{MMTObjAsset, Swing}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import javax.swing.JMenu
-import org.gjt.sp.jedit._
+import org.gjt.sp.jedit.{View => JEditView,_}
 import textarea._
 
 import scala.concurrent.Future
@@ -26,7 +26,7 @@ object EditActions {
  *  these functions should be bound to actions in actions.xml, which can then be bound to keystrokes etc.
  */ 
 class EditActions(mmtplugin: MMTPlugin) {
-  def introduceHole(view: View) {
+  def introduceHole(view: JEditView) {
     val editPane = view.getEditPane
     val textArea = editPane.getTextArea
     val buffer = editPane.getBuffer
@@ -49,10 +49,10 @@ class EditActions(mmtplugin: MMTPlugin) {
     *
     * @param replace if true, replace selected asset; otherwise, show popup
     */
-  def showNormalization(view: View, replace: Boolean) {
+  def showNormalization(view: JEditView, replace: Boolean) {
     val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
-      case oa: MMTObjAsset =>
+      case oa: JObjAsset =>
         val obj = oa.obj
         val objS = mmtplugin.controller.simplifier(obj, oa.context, true)
         val str = mmtplugin.asString(objS)
@@ -69,7 +69,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     }
   }
 
-  private def findViewTo(view: View, to: String): Unit = {
+  private def findViewTo(view: JEditView, to: String): Unit = {
     val em = mmtplugin.controller.extman
     val (as, selected) = MMTSideKick.getCurrentAsset(view).getOrElse(return)
     as match {
@@ -98,7 +98,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     }
   }
 
-  private def presentView(v : DeclaredView) : String = v.name.toString + " : " +
+  private def presentView(v : View) : String = v.name.toString + " : " +
     v.from.toMPath.module.name.toString + " -> " + v.to.toMPath.module.name.toString + "\n" + (v.getIncludes.map { i =>
       "  include " + i._2.toStr(true)
     } ::: v.getDeclarations.collect {
@@ -109,7 +109,7 @@ class EditActions(mmtplugin: MMTPlugin) {
         })
     }).mkString("\n")
 
-  def viewfindermenu(view: View) = {
+  def viewfindermenu(view: JEditView) = {
     mmtplugin.controller.extman.get(classOf[ViewFinder]).headOption match {
       case Some(vf) =>
         val menu = new JMenu("Find Views to...")

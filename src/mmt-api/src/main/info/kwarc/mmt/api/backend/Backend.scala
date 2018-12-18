@@ -124,10 +124,10 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     * @throws NotApplicable if the root is neither a folder nor a mar file
     */
   def openArchive(root: File): List[Archive] = {
-    if (getArchive(root).isDefined)
+    if (getArchive(root).isDefined) {
        // already open
        Nil
-    else if (root.isDirectory) {
+    } else if (root.isDirectory) {
       val manifestOpt = manifestLocation(root)
       manifestOpt match {
         case Some(manifest) =>
@@ -139,9 +139,9 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             log(manifest + " does not contain id, creating " + generatedId)
             properties += (("id", generatedId))
           }
-            val arch = new Archive(root, properties, report)
-            addStore(arch)
-            List(arch)
+          val arch = new Archive(root, properties, report)
+          addStore(arch)
+          List(arch)
         case None =>
           log(root + " is not an archive - recursing")
           // folders beginning with . are skipped
@@ -171,8 +171,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
       }
       // open the archive in newRoot
       openArchive(unpackedRoot)
-    }
-    else {
+    } else {
       log(root + " is not an archive or a folder containing archives")
       Nil
     }

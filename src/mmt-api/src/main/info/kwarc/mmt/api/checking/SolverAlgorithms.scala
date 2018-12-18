@@ -36,173 +36,13 @@ trait SolverAlgorithms {self: Solver =>
    private lazy val typeSolutionRules = rules.getOrdered(classOf[TypeSolutionRule])
    private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
    private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
-   /* convenience function for going to the next rule after one has been tried */
-   private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
-   private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
 
-  // **********************************************************************
-   
-   /** infers the type of a term by applying InferenceRule's
-    *
-    * @param tm the term
-    * @param stack its Context
-    * @return the inferred type, if inference succeeded
-    *
-    * This method should not be called by users (instead, use object Solver.check).
-    * It is only public because it serves as a callback for Rule's.
-    *
-    * pre: context is covered
-    *
-    * post: if result, typing judgment is covered
-    */
-   override def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
-     log("inference: " + presentObj(tm) + " : ?")
-     history += "inferring type of " + presentObj(tm)
-     // return previously inferred type, if any (previously unsolved variables are substituted)
-     InferredType.get(tm) match {
-        case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
-           return Some(tmI ^^ solution.toPartialSubstitution)
-        case _ =>
-     }
-     val res = logAndHistoryGroup {
-        log("in context: " + presentObj(stack.context))
-        val resFoundInd = tm match {
-          //foundation-independent cases
-          case Free(con,t) =>
-            inferType(t, covered)(stack++con, history) map {tp => Free(con, tp)}
-          case Unknown(u,args) =>
-            getVar(u).tp map {tp => OMAorAny(tp, args)}
-          case OMV(x) =>
-             history += "lookup in context"
-             val vd = getVar(x)
-             vd.tp orElse {
-                vd.df flatMap {df =>
-                  val con = stack.context.before(x)
-                  inferType(df, true)(Stack(con), history + "inferring type of definiens")
-                }
-             }
-          case OMS(p) =>
-             history += "lookup in theory"
-             getType(p) orElse {
-               getDef(p) match {
-                 case None => None
-                 case Some(d) => inferType(d) // expand defined constant
-               }
-             }
-          // note that OML's do not have a generally-defined type
-          case l: OMLIT =>
-             history += "lookup in literal"
-             // structurally well-formed literals carry their type
-             Some(l.rt.synType) // no need to use InferredType.put on literals
-          case l : UnknownOMLIT =>
-            if (!covered) {
-              // TODO check literal
-            }
-            Some(l.synType)
-          case OMMOD(p) =>
-             // types of theories and views are formed using meta-level operators
-             history += "lookup in library"
-             getModule(p) match {
-                case Some(t: Theory) => Some(TheoryType(t.parameters))
-                case Some(v: View)   => Some(MorphType(v.from,v.to))
-                case _ =>
-                   error("not found")
-                   None
-             }
-          case _ =>
-             None
-        }
-        //foundation-dependent cases if necessary
-        //syntax-driven type inference
-        //rules may trigger backtracking, in which case the next rule is tried until one yields a result
-        resFoundInd orElse {
-           var activerules = inferenceRules
-           var tmS = tm
-           var tp: Option[Term] = None
-           var tryAgain = true  // normally, we run the loop only once; but if a rule triggers Backtrack, we try again with a different rule
-           while (tryAgain) {
-              tryAgain = false
-              val (tmp, ruleOpt) = safeSimplifyUntilRuleApplicable(tmS, activerules)
-              tmS = tmp
-              ruleOpt match {
-                 case Some(rule) =>
-                   log("applying inference rule " + rule.toString)
-                    history += ("applying inference rule " + rule.toString)
-                    try {
-                      tp = rule(this)(tmS, covered)
-                      tp match {
-                        case None =>
-                          activerules = dropJust(activerules, rule)
-                          tryAgain = true
-                        case _ =>
-                      }
-                    } catch {
-                       case t : MaytriggerBacktrack#Backtrack =>
-                          history += t.getMessage
-                          activerules = dropJust(activerules, rule)
-                          tryAgain = true
-                    }
-                 case None =>
-                    if (tmS hashneq tm) {
-                      history += "no applicable rule, trying again with simplified term"
-                      tp = inferType(tmS, covered)
-                    } else {
-                      history += "no applicable rule, giving up"
-                    }
-              }
-           }
-           tp
-        }
-     }
-     log("inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed"))
-     history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
-     //remember inferred type
-     if (!isDryRun) {
-       res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
-     }
-     res map {r => substituteSolution(r)} // this used to call simplify (without defnition expansion)
-   }
+  // ******************************************************************************************
+  // *** algorithms for checking a judgment, returning booleans
+  // ******************************************************************************************
 
   /**
-    * performs a type inference and calls a continuation function on the inferred type
-    *
-    * If type inference is not successful, this is delayed.
-    */
-  def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
-      implicit val (s,h) = (stack, history)
-      inferType(tm) match {
-         case Some(tp) =>
-            cont(tp)
-         case None =>
-            val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
-            addConstraint(new DelayedInference(stack, bi, tm, cont))
-            true
-      }
-   }
-
-   /**
-    * tries to find a unique term of a given type by applying [[TypeBaseSolutionRule]]s
-    *
-    * @param tp the type
-    * @param stack its Context
-    * @return the found term, if search succeeded
-    *
-    * pre: context and tp are covered
-    * post: if result, typing judgment is covered
-    */
-   def findUniqueInhabitant(tp: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
-      typebasedsolutionRules.foreach {rule =>
-        if (rule.applicable(tp)) {
-          history += "calling type-based solution rule " + rule
-          val res = rule.solve(this)(tp)
-          res foreach {r => return res}
-        }
-      }
-      None
-   }
-
-   /**
-    * checks a judgement
+    * general entry point for checking a judgement
     *
     * This is the method that should be used to recurse into a hypothesis.
     * It handles logging and error reporting and delegates to specific methods based on the judgement.
@@ -270,9 +110,9 @@ trait SolverAlgorithms {self: Solver =>
    // TODO this should be removed; instead LF should use low-priority InhabitableRules that apply to any term
    private def checkUniverse(j : Universe)(implicit history: History): Boolean = {
      implicit val stack : Stack = j.stack
-     tryAllRules(universeRules,j.univ) { (rule,tmS) =>
-         rule.apply(this)(tmS)
-     }.getOrElse(delay(Universe(stack,j.univ)))
+     history += "trying universe rules"
+     val res = tryAllUnaryRules(universeRules,j.univ)
+     res.getOrElse(delay(Universe(stack,j.univ)))
      /*
      safeSimplifyUntilRuleApplicable(j.univ, universeRules) match {
         case (uS, Some(rule)) =>
@@ -311,9 +151,9 @@ trait SolverAlgorithms {self: Solver =>
      }
      */
      implicit val stack : Stack = j.stack
-     tryAllRules(inhabitableRules,j.wfo) { (rule,tmS) =>
-       rule(this)(tmS)
-     }.getOrElse {
+     history += "trying inhabitability rules"
+     val res = tryAllUnaryRules(inhabitableRules,j.wfo)
+     res.getOrElse {
        history += "inferring universe"
        inferType(j.wfo)(stack, history) match {
          case None =>
@@ -323,65 +163,6 @@ trait SolverAlgorithms {self: Solver =>
        }
      }
    }
-
-  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],tm1 : Term,tm2 : Term)(condition : (A,Term,Term) => Boolean)(rulecheck : (A,Term,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
-    var done = false
-    var rules = rulesS
-    var ret : Option[B] = None
-    var (tm1S,tm2S) = (tm1,tm2)
-    while (!done) {
-      safeSimplifyUntil(tm1S,tm2S)((t1,t2) => rules.find(condition(_,t1,t2))) match {
-        case (t1S,t2S,Some(rule)) =>
-          tm1S = t1S
-          tm2S = t2S
-          done = true
-          history += "trying " + rule.toString
-          log("trying " + rule.toString)
-          ret = rulecheck(rule,tm1S,tm2S)
-          if (ret.isEmpty) {
-            done = false
-            rules = dropJust(rules, rule)
-          }
-        case _ =>
-          done = true
-          history += "No rule applicable"
-          log("No rule applicable")
-      }
-    }
-    ret
-  }
-
-  // private case class BreakTry[B](ret : B) extends Throwable
-  private def tryAllRules[A <: CheckingRule,B](rulesS : List[A],term : Term)(rulecheck : (A,Term) => Option[B])(implicit stack : Stack, history : History) : Option[B] = {
-    var done = false
-    var rules = rulesS
-    var tmS = term
-    var ret : Option[B] = None
-    while (!done) {
-      safeSimplifyUntilRuleApplicable(tmS, rules) match {
-        case (tS,Some(rule)) =>
-          done = true
-          tmS = tS
-          history += "trying " + rule.toString
-          log("trying " + rule.toString)
-          ret = // try {
-            rulecheck(rule, tmS)
-          /* } catch {
-            case BreakTry(r : B) => return Some(r)
-            case e => throw e
-          } */
-          if (ret.isEmpty) {
-            done = false
-            rules = dropJust(rules, rule)
-          }
-        case _ =>
-          done = true
-          history += "No rule applicable"
-          log("No rule applicable")
-      }
-    }
-    ret
-  }
 
   /** proves a Typing Judgement by bidirectional type checking
     *
@@ -400,20 +181,19 @@ trait SolverAlgorithms {self: Solver =>
      if (solved) return solved
 
      // continuation if we resort to infering the type of tm
-     def checkByInference(tpS: Term): Boolean = {
-       log("Checking by inference")
-       val hisbranch = history.branch
-       inferType(tm)(stack, hisbranch) match {
+     def checkByInference(tpS: Term, h: History): Boolean = {
+       log("checking by inference")
+       inferType(tm)(stack, h + "infering type") match {
          case Some(tmI) =>
-           checkAfterInference(tmI, tpS)
+           checkAfterInference(tmI, tpS, h)
          case None =>
-           delay(Typing(stack, tm, tpS, j.tpSymb))(hisbranch + "type inference failed")
+           delay(Typing(stack, tm, tpS, j.tpSymb))(h + "no applicable typing rule and type inference failed")
        }
      }
 
      // continuation if we have inferred the type of tm
-     def checkAfterInference(tmI: Term, tpS: Term): Boolean = {
-       check(Subtyping(stack, tmI, tpS))(history + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
+     def checkAfterInference(tmI: Term, tpS: Term, h: History): Boolean = {
+       check(Subtyping(stack, tmI, tpS))(h + ("inferred type must conform to expected type; the term is: " + presentObj(tm)))
      }
      // the foundation-independent cases
      tp match {
@@ -447,7 +227,7 @@ trait SolverAlgorithms {self: Solver =>
          getType(p) match {
            case None => getDef(p) match {
              case None =>
-               checkByInference(tp)
+               checkByInference(tp, history)
              //error("untyped, undefined constant type-checks against nothing: " + p.toString)
              case Some(d) => check(Typing(stack, d, tp, j.tpSymb)) // expand defined constant
            }
@@ -459,30 +239,33 @@ trait SolverAlgorithms {self: Solver =>
        // bidirectional type checking: first try to apply a typing rule (i.e., use the type early on), if that fails, infer the type and check equality
        case tm =>
          logAndHistoryGroup {
-           tryAllRules(typingRules,tp) { (rule,tpS) =>
+           history += "trying typing rules"
+           val tmT = tryAllRules(typingRules,tp) {(rule,tpS,h) =>
              try {
-               rule(this)(tm,tpS)
+               rule(this)(tm,tpS)(stack,h)
              } catch {
                case TypingRule.SwitchToInference =>
-                 return checkByInference(tpS)
+                 return checkByInference(tpS, history + "switching to inference")
                case rule.DelayJudgment(msg) =>
                  return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
              }
-           }.getOrElse {
-             tryAllRules(inferAndTypingRules,tm) { (rule,tmS) =>
+           }
+           history += "trying inference/typing rules"
+           tmT.getOrElse {
+             val res = tryAllRules(inferAndTypingRules,tm) { (rule,tmS,h) =>
                try {
-                 rule(this, tmS, Some(tp), false) match {
+                 rule(this, tmS, Some(tp), false)(stack,h) match {
                    case (_, Some(b)) => Some(b)
-                   case (Some(tI), None) => return checkAfterInference(tI, tp)
-                   case (None, None) => return checkByInference(tp)
+                   case (Some(tI), None) => return checkAfterInference(tI, tp, history)
+                   case (None, None) => return checkByInference(tp, history)
                  }
                } catch {
                  case TypingRule.SwitchToInference =>
-                   return checkByInference(tp)
+                   return checkByInference(tp, history)
                }
-             }.getOrElse(checkByInference(tp))
+             }
+             res.getOrElse(checkByInference(tp, history))
            }
-
          }
          /*
          logAndHistoryGroup {
@@ -691,19 +474,13 @@ trait SolverAlgorithms {self: Solver =>
           //TODO eventually we need cases to handle sub/supertype bounds of constants and variables
      }
      // otherwise, apply a subtyping rule
-     history += "not obviously equal, trying subtyping"
-     tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S) =>
-       try {
-         rule(this)(tp1,tp2)
-       } catch {case e: MaytriggerBacktrack#Backtrack =>
-         history += e.getMessage
-         None
-       }
-     } match {
-       case Some(b) => b
-       case _ =>
-         history += "no applicable subtyping rules, falling back to checking equality"
-         check(Equality(j.stack, tp1, tp2, None))
+     history += "not obviously equal, trying subtyping rules"
+     val res = tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S,h) =>
+       rule(this)(tp1,tp2)(stack,h)
+     }
+     res.getOrElse {
+       history += "falling back to checking equality"
+       check(Equality(j.stack, tp1, tp2, None))
      }
      /*
      subtypingRules foreach {r =>
@@ -721,7 +498,243 @@ trait SolverAlgorithms {self: Solver =>
      // in the absence of subtyping rules, this is the only option anyway
   }
 
-  /* ********************** simplification ******************************************************/
+
+  // ******************************************************************************************
+  // *** algorithms for finding a term that makes a judgment true
+  // ******************************************************************************************
+
+  // *********************************************** type inference
+   
+   /** infers the type of a term by applying InferenceRule's
+    *
+    * @param tm the term
+    * @param stack its Context
+    * @return the inferred type, if inference succeeded
+    *
+    * This method should not be called by users (instead, use object Solver.check).
+    * It is only public because it serves as a callback for Rule's.
+    *
+    * pre: context is covered
+    *
+    * post: if result, typing judgment is covered
+    */
+   override def inferType(tm: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
+     log("inference: " + presentObj(tm) + " : ?")
+     history += "inferring type of " + presentObj(tm)
+     // return previously inferred type, if any (previously unsolved variables are substituted)
+     InferredType.get(tm) match {
+        case Some((bp,tmI)) if getCurrentBranch.descendsFrom(bp) =>
+           return Some(tmI ^^ solution.toPartialSubstitution)
+        case _ =>
+     }
+     val res = logAndHistoryGroup {
+        log("in context: " + presentObj(stack.context))
+        val resFoundInd = tm match {
+          //foundation-independent cases
+          case Free(con,t) =>
+            inferType(t, covered)(stack++con, history) map {tp => Free(con, tp)}
+          case Unknown(u,args) =>
+            getVar(u).tp map {tp => OMAorAny(tp, args)}
+          case OMV(x) =>
+             history += "lookup in context"
+             val vd = getVar(x)
+             vd.tp orElse {
+                vd.df flatMap {df =>
+                  val con = stack.context.before(x)
+                  inferType(df, true)(Stack(con), history + "inferring type of definiens")
+                }
+             }
+          case OMS(p) =>
+             history += "lookup in theory"
+             getType(p) orElse {
+               getDef(p) match {
+                 case None => None
+                 case Some(d) => inferType(d) // expand defined constant
+               }
+             }
+          // note that OML's do not have a generally-defined type
+          case l: OMLIT =>
+             history += "lookup in literal"
+             // structurally well-formed literals carry their type
+             Some(l.rt.synType) // no need to use InferredType.put on literals
+          case l : UnknownOMLIT =>
+            if (!covered) {
+              // TODO check literal
+            }
+            Some(l.synType)
+          case OMMOD(p) =>
+             // types of theories and views are formed using meta-level operators
+             history += "lookup in library"
+             getModule(p) match {
+                case Some(t: Theory) => Some(TheoryType(t.parameters))
+                case Some(v: View)   => Some(MorphType(v.from,v.to))
+                case _ =>
+                   error("not found")
+                   None
+             }
+          case _ =>
+             None
+        }
+        //foundation-dependent cases if necessary
+        //syntax-driven type inference
+        //rules may trigger backtracking, in which case the next rule is tried until one yields a result
+        resFoundInd orElse {
+           var activerules = inferenceRules
+           var tmS = tm
+           var tp: Option[Term] = None
+           var tryAgain = true  // normally, we run the loop only once; but if a rule triggers Backtrack, we try again with a different rule
+           while (tryAgain) {
+              tryAgain = false
+              val (tmp, ruleOpt) = safeSimplifyUntilRuleApplicable(tmS, activerules)
+              tmS = tmp
+              ruleOpt match {
+                 case Some(rule) =>
+                   log("applying inference rule " + rule.toString)
+                    history += ("applying inference rule " + rule.toString)
+                    try {
+                      tp = rule(this)(tmS, covered)
+                      tp match {
+                        case None =>
+                          activerules = dropJust(activerules, rule)
+                          tryAgain = true
+                        case _ =>
+                      }
+                    } catch {
+                       case t : MaytriggerBacktrack#Backtrack =>
+                          history += t.getMessage
+                          activerules = dropJust(activerules, rule)
+                          tryAgain = true
+                    }
+                 case None =>
+                    if (tmS hashneq tm) {
+                      history += "no applicable rule, trying again with simplified term"
+                      tp = inferType(tmS, covered)
+                    } else {
+                      history += "no applicable rule, giving up"
+                    }
+              }
+           }
+           tp
+        }
+     }
+     log("inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed"))
+     history += "inferred: " + presentObj(tm) + " : " + res.map(presentObj).getOrElse("failed")
+     //remember inferred type
+     if (!isDryRun) {
+       res foreach {r => InferredType.put(tm, (getCurrentBranch,r))}
+     }
+     res map {r => substituteSolution(r)} // this used to call simplify (without defnition expansion)
+   }
+
+  /**
+    * performs a type inference and calls a continuation function on the inferred type
+    *
+    * If type inference is not successful, this is delayed.
+    */
+  def inferTypeAndThen(tm: Term)(stack: Stack, history: History)(cont: Term => Boolean): Boolean = {
+      implicit val (s,h) = (stack, history)
+      inferType(tm) match {
+         case Some(tp) =>
+            cont(tp)
+         case None =>
+            val bi = new BranchInfo(history + "(inference delayed)", getCurrentBranch)
+            addConstraint(new DelayedInference(stack, bi, tm, cont))
+            true
+      }
+   }
+
+  // *********************************************** inhabitant search
+  
+   /**
+    * tries to find a unique term of a given type by applying [[TypeBaseSolutionRule]]s
+    *
+    * @param tp the type
+    * @param stack its Context
+    * @return the found term, if search succeeded
+    *
+    * pre: context and tp are covered
+    * post: if result, typing judgment is covered
+    */
+   def findUniqueInhabitant(tp: Term, covered: Boolean = false)(implicit stack: Stack, history: History): Option[Term] = {
+      typebasedsolutionRules.foreach {rule =>
+        if (rule.applicable(tp)) {
+          history += "calling type-based solution rule " + rule
+          val res = rule.solve(this)(tp)
+          res foreach {r => return res}
+        }
+      }
+      None
+   }
+
+   /**
+    * proves an inhabitation judgment by theorem proving
+    *
+    * pre: context and type are covered
+    *
+    * post: inhabitation judgment is covered
+    */
+   private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
+      val tp = simplify(substituteSolution(j.tp))(j.stack, history)
+      val res = prove(tp)(j.stack, history)
+      if (res.isDefined)
+         true
+      else
+         delay(j)
+   }
+
+   /** tries to prove a goal by finding a term of type conc
+    *  If conc contains unknowns, this is unlikely to succeed unless an appropriate assumption is in the context.
+    */
+   def prove(conc: Term, allowUnknowns: Boolean = true)(implicit stack: Stack, history: History): Option[Term] = {
+      val unknCont = if (allowUnknowns) solution else Context.empty
+      prove(constantContext ++ unknCont ++ stack.context, conc)
+   }
+
+   private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
+      val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
+      history += msg
+      val pu = ProvingUnit(checkingUnit.component, context, conc, logPrefix).diesWith(checkingUnit)
+      controller.extman.get(classOf[Prover]) foreach {prover =>
+         val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
+         if (found) {
+            val p = proof.get
+            history += "proof: " + presentObj(p)
+            return Some(p)
+         } else {
+            history += "no proof found with prover " + prover.toString
+         }
+      }
+      log("giving up")
+      None
+   }
+
+
+   /**
+    * applies all ForwardSolutionRules of the given priority
+    *
+    * @param priority exactly the rules with this Priority are applied
+    */
+   //TODO call this method at appropriate times
+   private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
+      val results = solution.zipWithIndex map {
+         case (vd, i) => vd.tp match {
+           case Some(tp) =>
+              implicit val con : Context = solution.take(i)
+              safeSimplifyUntilRuleApplicable(tp, forwardSolutionRules) match {
+                 case (tpS, Some(rule)) if rule.priority == priority =>
+                   history += "Applying ForwardSolutionRule " + rule.toString
+                   rule(this)(vd)
+                 case _ => false
+              }
+           case None => false
+         }
+         case _ => false
+      }
+      results.contains(true)
+   }  
+
+  
+  // *********************************************** simplification
 
   /**
     * unsafe via ObjectSimplifier
@@ -750,12 +763,13 @@ trait SolverAlgorithms {self: Solver =>
      if (checkingUnit.isKilled) {
        return tm
      }
+     history += "trying to simplify " + presentObj(tm) 
      val tmS = tm match {
        case OMS(p) =>
          val d = getDef(p)
          d match {
            case Some(tD) =>
-             history += "Expanding Definition"
+             history += "expanding definition of " + p
              tD
            case None =>
              // TODO apply abbrev rules?
@@ -769,9 +783,10 @@ trait SolverAlgorithms {self: Solver =>
            tm
          } else vd.df match {
            case Some(tD) =>
+             history += "expanding definition of " + n
              tD
            case _ =>
-             Stability.set(tm) 
+             Stability.set(tm)
              tm
          }
        case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
@@ -812,7 +827,7 @@ trait SolverAlgorithms {self: Solver =>
             val o = subobjsLeft.head
             subobjsLeft = subobjsLeft.tail
             val i = subobjsNew.length + 1 // position of o
-            val h = history + ("recursing into subobject " + i) 
+            val h = history + ("recursing into subobject " + i)
             val sNew = if (!simplified && !recursePositions.contains(i)) {
               o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
             } else {
@@ -867,7 +882,8 @@ trait SolverAlgorithms {self: Solver =>
     *  @param stack the context of tm
     *  @return (tmS, Some(a)) if tmS is simple and simple(tm)=tmS; (tmS, None) if tmS is not simple but no further simplification rules are applicable
     */
-   override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
+   @scala.annotation.tailrec
+   final override def safeSimplifyUntil[A](tm: Term)(simple: Term => Option[A])(implicit stack: Stack, history: History): (Term,Option[A]) = {
       simple(tm) match {
          case Some(a) => (tm,Some(a))
          case None =>
@@ -902,11 +918,13 @@ trait SolverAlgorithms {self: Solver =>
     *  @param history the current history
     *  @return (tmS, Some(r)) where tmS = tm and r from hs is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
-   private def safeSimplifyUntilRuleApplicable[R <: CheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      safeSimplifyUntil[R](tm)(t => hs.find(_.canApply(t)))
+   private def safeSimplifyUntilRuleApplicable[R <: SingleTermBasedCheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+      safeSimplifyUntil[R](tm)(t => hs.find(_.applicable(t)))
 
       
-  /* ********************** methods for contexts ***************************/
+  // ******************************************************************************************
+  // *** algorithms for contexts
+  // ******************************************************************************************
 
   /** checks contexts */
    private def checkContext(j: IsContext)(implicit history: History): Boolean = {
@@ -973,7 +991,9 @@ trait SolverAlgorithms {self: Solver =>
      }
    }
 
-  /* ************************************************************ */
+  // ******************************************************************************************
+  // *** auxiliary functions for solving
+  // ******************************************************************************************
 
    /** tries to solve an unknown occurring in tm1 in terms of tm2
     *
@@ -1096,69 +1116,75 @@ trait SolverAlgorithms {self: Solver =>
       }
    }
 
-   /**
-    * proves an inhabitation judgment by theorem proving
-    *
-    * pre: context and type are covered
-    *
-    * post: inhabitation judgment is covered
-    */
-   private def checkInhabited(j : Inhabited)(implicit history: History): Boolean = {
-      val tp = simplify(substituteSolution(j.tp))(j.stack, history)
-      val res = prove(tp)(j.stack, history)
-      if (res.isDefined)
-         true
-      else
-         delay(j)
-   }
+   
+  // ******************************************************************************************
+  // *** auxiliary functions for iterating over rules
+  // ******************************************************************************************
 
-   /** tries to prove a goal, @return the proof term if successful */
-   def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
-      prove(constantContext ++ /* solution ++ */ stack.context, conc)
-   }
-
-   private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
-      val msg = "proving " + presentObj(context) + " |- _ : " + presentObj(conc)
-      log(msg)
-      history += msg
-      val pu = ProvingUnit(checkingUnit.component, context/*simplify(context)(Stack(context),history)*/, conc, logPrefix).diesWith(checkingUnit)
-      controller.extman.get(classOf[Prover]) foreach {prover =>
-         val (found, proof) = prover.apply(pu, rules, 3) //Set the timeout on the prover
-         if (found) {
-            val p = proof.get
-            history += "proof: " + presentObj(p)
-            log("proof: " + presentObj(p))
-            return Some(p)
-         } else {
-            log("no proof found with prover " + prover.toString) //goal.present(0)(presentObj, None, None))
-         }
+  /* convenience function for going to the next rule after one has been tried */
+  private def dropTill[A](l: List[A], a: A) = l.dropWhile(_ != a).tail
+  private def dropJust[A](l: List[A], a:A) = l.filter(_ != a)
+  
+  /** like below but for the special case where the rules can be applied generically */
+  private def tryAllUnaryRules[A <: UnaryTermRule](rules : List[A], term : Term)(implicit stack : Stack, history : History) : Option[Boolean] = {
+    tryAllRules(rules, term)((r,t,h) => r.apply(this)(t)(stack, h))
+  }
+  
+  /** like below but for a single term */
+  private def tryAllRules[A <: SingleTermBasedCheckingRule,B](rules: List[A],term: Term)(rulecheck : (A,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
+    var done = false
+    var rulesV = rules
+    var tmS = term
+    var ret : Option[B] = None
+    while (!done) {
+      safeSimplifyUntilRuleApplicable(tmS, rulesV) match {
+        case (tS,Some(rule)) =>
+          done = true
+          tmS = tS
+          ret = rulecheck(rule, tmS, history + ("trying " + rule.toString))
+          if (ret.isEmpty) {
+            done = false
+            rulesV = dropJust(rulesV, rule)
+          }
+        case _ =>
+          done = true
+          history += "no rule applicable"
       }
-      log("giving up")
-      None
-   }
+    }
+    ret
+  }
 
-
-   /**
-    * applies all ForwardSolutionRules of the given priority
-    *
-    * @param priority exactly the rules with this Priority are applied
-    */
-   //TODO call this method at appropriate times
-   private def forwardRules(priority: ForwardSolutionRule.Priority)(implicit stack: Stack, history: History): Boolean = {
-      val results = solution.zipWithIndex map {
-         case (vd, i) => vd.tp match {
-           case Some(tp) =>
-              implicit val con : Context = solution.take(i)
-              safeSimplifyUntilRuleApplicable(tp, forwardSolutionRules) match {
-                 case (tpS, Some(rule)) if rule.priority == priority =>
-                   history += "Applying ForwardSolutionRule " + rule.toString
-                   rule(this)(vd)
-                 case _ => false
-              }
-           case None => false
-         }
-         case _ => false
+  /** simplifies two terms until a rule is applicable and then applies that rule
+   *  @param A the type of rules
+   *  @param rules the rules to try
+   *  @param tm1 the first term
+   *  @param tm2 the second term
+   *  @param condition an applicability condition that is used to filter rules
+   *  @param rulecheck the function that applies the rule; if this returns None, the rule is removed and we try again
+   *  @return the result of applying the rule if any rule was applicable 
+   */
+  private def tryAllRules[A <: CheckingRule,B](rules: List[A], tm1: Term, tm2: Term)
+       (condition: (A,Term,Term) => Boolean)(rulecheck: (A,Term,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
+    var done = false
+    var rulesV = rules
+    var ret : Option[B] = None
+    var (tm1S,tm2S) = (tm1,tm2)
+    while (!done) {
+      safeSimplifyUntil(tm1S,tm2S)((t1,t2) => rulesV.find(condition(_,t1,t2))) match {
+        case (t1S,t2S,Some(rule)) =>
+          tm1S = t1S
+          tm2S = t2S
+          done = true
+          ret = rulecheck(rule,tm1S,tm2S,history + ("trying " + rule.toString))
+          if (ret.isEmpty) {
+            done = false
+            rulesV = dropJust(rulesV, rule)
+          }
+        case _ =>
+          done = true
+          history += "no rule applicable"
       }
-      results.contains(true)
-   }  
+    }
+    ret
+  }
 }

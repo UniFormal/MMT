@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.objects._
 import web._
 
 import scala.collection.mutable
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.{URI, _}

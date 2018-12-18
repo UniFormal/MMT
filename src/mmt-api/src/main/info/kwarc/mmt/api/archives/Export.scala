@@ -50,10 +50,10 @@ trait Exporter extends BuildTarget {self =>
   def exportDocument(doc: Document, bf: BuildTask): Unit
 
   /** applied to each theory */
-  def exportTheory(thy: DeclaredTheory, bf: BuildTask): Unit
+  def exportTheory(thy: Theory, bf: BuildTask): Unit
 
   /** applied to each view */
-  def exportView(view: DeclaredView, bf: BuildTask): Unit
+  def exportView(view: View, bf: BuildTask): Unit
 
   /** applied to every namespace
  *
@@ -111,9 +111,9 @@ trait Exporter extends BuildTarget {self =>
       val mod = controller.globalLookup.getModule(mp)
       outputTo(bf.outFile) {
         mod match {
-          case t: DeclaredTheory =>
+          case t: Theory =>
             exportTheory(t, bf)
-          case v: DeclaredView =>
+          case v: View =>
             exportView(v, bf)
           case _ =>
         }
@@ -172,14 +172,14 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
     }
   }
 
-  def exportTheory(t: DeclaredTheory, bf: BuildTask) {
+  def exportTheory(t: Theory, bf: BuildTask) {
     if (covered(t.path))
       exportCoveredTheory(t)
     else
       bf.skipped = true
   }
 
-  def exportView(v: DeclaredView, bf: BuildTask) {
+  def exportView(v: View, bf: BuildTask) {
     if (covered(v.from.toMPath)) {
       val to = v.to.toMPath
       if (to == found)
@@ -193,12 +193,12 @@ abstract class FoundedExporter(meta: MPath, found: MPath) extends Exporter {
   }
 
   /** called on covered theories, i.e., theories with meta-theory meta */
-  def exportCoveredTheory(t: DeclaredTheory)
+  def exportCoveredTheory(t: Theory)
 
   /** called on views between covered theories */
-  def exportFunctor(v: DeclaredView)
+  def exportFunctor(v: View)
 
   /** called on realizations, i.e., views from a covered theory to found, e.g., models or implementations */
-  def exportRealization(r: DeclaredView)
+  def exportRealization(r: View)
 
 }

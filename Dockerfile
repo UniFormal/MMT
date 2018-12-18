@@ -1,17 +1,5 @@
-FROM openjdk:jre-alpine
-
-# Build dependencies
-RUN apk --no-cache --no-progress add bash git curl wget
-
-# Get sbt
-ENV SBT_URL=https://dl.bintray.com/sbt/native-packages/sbt
-ENV SBT_RELEASE=0.13.15
-ENV PATH=/opt/sbt/bin:${PATH}
-
-# Install sbt
-RUN mkdir -p /opt
-WORKDIR /opt
-RUN curl -jksSL "${SBT_URL}/${SBT_RELEASE}/sbt-${SBT_RELEASE}.tgz" | tar -xzf -
+# Start from the sbt builder image
+FROM kwarc/sbt-builder
 
 # Add all of MMT
 ADD src/ /build/MMT/src

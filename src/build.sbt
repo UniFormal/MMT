@@ -135,7 +135,7 @@ lazy val src = (project in file(".")).
       mmt, api,
       lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got,
       tiscaf, lfcatalog,
-      jedit
+      jedit, intellij
   ).
   settings(
     unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -148,7 +148,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python).
+  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -228,6 +228,11 @@ lazy val jedit = (project in file("jEdit-mmt")).
     deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
     install := Utils.installJEditJars
   )
+
+// MMT IntelliJ-Plugin. Maintainer: Dennis
+lazy val intellij = (project in file("intellij-mmt")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("intellij-mmt"): _*)
   
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).

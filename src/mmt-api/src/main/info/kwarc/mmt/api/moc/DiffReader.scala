@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
+import parser._
 
 import Theory._
 
@@ -20,12 +21,14 @@ class DiffReader(controller : Controller) {
   def parseChange(n : scala.xml.Node) : List[Change] = n.label match {
     case "add" | "delete" =>
       var changes : List[Change] = Nil
-      def cont(s : StructuralElement) {
-        val change = n.label match {
-            case "add" => Add(s)
-            case "delete" => Delete(s)
+      val cont = new StructureParserContinuations(ErrorThrower) {
+        override def onElement(s : StructuralElement) {
+          val change = n.label match {
+              case "add" => Add(s)
+              case "delete" => Delete(s)
+          }
+          changes ::= change
         }
-        changes ::= change
       }
       val level = (n \ "@level").text
       val base = Path.parse((n \ "@base").text)

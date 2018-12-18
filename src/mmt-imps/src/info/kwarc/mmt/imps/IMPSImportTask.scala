@@ -1,16 +1,19 @@
 package info.kwarc.mmt.imps
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.imps.IMPSTheory.tp
 import info.kwarc.mmt.imps.Usage.Usage
+import info.kwarc.mmt.imps.impsMathParser.SymbolicExpressionParser
 import info.kwarc.mmt.lf.ApplySpine
 import utils._
 
@@ -66,7 +69,7 @@ class IMPSImportTask(val controller  : Controller,
 
 	def doDocument(es : List[DefForm], uri : URI) : BuildResult =
 	{
-    val doc = new Document(DPath((IMPSImportTask.rootdpath / "impsMath" / uri.path.last).uri.setExtension("omdoc")), false)
+    val doc = new Document(DPath((IMPSImportTask.rootdpath / "impsMath" / uri.path.last).uri.setExtension("omdoc")), SectionLevel)
     controller add doc
     controller add DRef(toplevelDoc.path,doc.path)
 
@@ -95,36 +98,16 @@ class IMPSImportTask(val controller  : Controller,
         case t@DFTranslation(_,_,_,_,_,_,_,_,_,_,_,_,_,_) => doTranslation(t, doc.path, uri)
         case DFTheoryEnsembleMultiple(name,integ,src,cmt) =>
 
-          val ensemble : TheoryEnsemble = tState.ensembles.find(e => e.name.toLowerCase == name.s.toLowerCase).get
-          val ln       : LocalName      = LocalName(ensemble.baseTheory.name.toString + "-" + integ.n.toString + "-tuples")
-
           if (tState.verbosity > 0) {
             println(" > adding theory-multiple " + name)
           }
 
-          val nu_multiple = new DeclaredTheory(bt.narrationDPath,
-            ln,
-            Some(IMPSTheory.QCT.quasiLutinsPath),
-            modules.Theory.noParams,
-            modules.Theory.noBase)
-
-          val mref : MRef = MRef(doc.path,nu_multiple.path)
-          controller.add(nu_multiple)
-          controller.add(mref)
-
-          val base     : DeclaredTheory          = ensemble.baseTheory
+          val ensemble : TheoryEnsemble          = tState.ensembles.find(e => e.name.toLowerCase == name.s.toLowerCase).get
+          val base     : Theory          = ensemble.baseTheory
           val renaming : Int => String => String = ensemble.replicaRenamer
 
-          // Include all includes
-          val includes : List[DeclaredTheory] = recursiveIncludes(List(base)).filter(t => t != base)
-          for (incl <- includes) {
-            val includee : DeclaredTheory = incl
-            val includer : DeclaredTheory = nu_multiple
-            controller add PlainInclude(includee.path,includer.path)
-          }
-
           val n = integ.n
-          for (i <- 0 until n)
+          for (i <- 1 to n)
           {
             if (tState.verbosity > 1) {
               println("   > adding replica number " + i.toString)
@@ -132,19 +115,287 @@ class IMPSImportTask(val controller  : Controller,
 
             // Create replica if necessary
             if (!ensemble.replicaMap.contains(i)) {
-              val replica = makeReplica(base, doc.path, bt.narrationDPath, renaming(i))
+              val replica = makeReplica(base, doc.path, bt.narrationDPath, renaming(i-1))
               ensemble.replicaMap = ensemble.replicaMap + (i -> replica)
             }
-
-            assert(ensemble.replicaMap.contains(i))
-            val theReplica : DeclaredTheory = ensemble.replicaMap(i)
-            controller add PlainInclude(theReplica.path,nu_multiple.path)
           }
 
-          // register new Theory Multiple
-          ensemble.multipleMap = ensemble.multipleMap + (n -> nu_multiple)
-          println("-- The following keys are now in the multipleMap of ensemble " + ensemble.name + ": " + ensemble.multipleMap.keySet)
-          tState.theories_decl = nu_multiple :: tState.theories_decl
+          for (j <- 1 to n)
+          {
+            if (!ensemble.multipleMap.contains(j))
+            {
+              if (tState.verbosity > 1) {
+                println("   > adding multiple number " + j.toString)
+              }
+
+              val ln : LocalName = LocalName(ensemble.baseTheory.name.toString + "-" + j.toString + "-TUPLES")
+
+              val nu_multiple = new Theory(bt.narrationDPath,
+                ln,
+                Some(IMPSTheory.QCT.quasiLutinsPath),
+                modules.Theory.noParams,
+                modules.Theory.noBase)
+
+              val mref : MRef = MRef(doc.path,nu_multiple.path)
+              controller.add(nu_multiple)
+              controller.add(mref)
+
+              // Include all includes
+              val includes : List[Theory] = recursiveIncludes(List(base)).filter(t => t != base)
+              for (incl <- includes) {
+                val includee : Theory = incl
+                val includer : Theory = nu_multiple
+                controller add PlainInclude(includee.path,includer.path)
+              }
+
+              // include lower multiple, if applicable
+              if (j != 1) { controller add PlainInclude(ensemble.multipleMap(j-1).path,nu_multiple.path) }
+
+              assert(ensemble.replicaMap.contains(j))
+              val theReplica : Theory = ensemble.replicaMap(j)
+              controller add PlainInclude(theReplica.path,nu_multiple.path)
+
+              // register new Theory Multiple
+              ensemble.multipleMap = ensemble.multipleMap + (j -> nu_multiple)
+              tState.theories_decl = nu_multiple :: tState.theories_decl
+            }
+          }
+        case DFTheoryEnsembleInstances(name, _, targetThys, targetMuls, ensembleSorts, ensembleConsts, multiples, _, perms, renamings, src, cmt) =>
+
+          if (tState.verbosity > 0) {
+            println(" > adding theory-ensemble-instances: " + name)
+          }
+
+          val ensemble : TheoryEnsemble = tState.ensembles.find(te => te.name.toLowerCase == name.s.toLowerCase).get
+
+          val candidates : List[Theory] = if (targetThys.isDefined) {
+            targetThys.get.ns.map(nm => getTheory(nm.toString))
+          } else if (targetMuls.isDefined) {
+            val range = 1 to targetMuls.get.n.n
+            range.map(k => ensemble.replicaMap(k)).toList
+          } else ??? // should not happen, either argument is always present
+
+          var permutations : List[List[Int]] = List.empty
+
+          if (perms.isDefined) {
+            permutations = perms.get.nns.map(ls => ls.map(_.n))
+          } else if (multiples.isDefined) {
+            for (m <- multiples.get.ns) {
+              permutations = candidates.indices.toList.permutations.toList.filter(l => l.length == m.n)
+            }
+          } else ??? // should not happen, either argument is always present
+
+          def tUnion : (Theory, Theory) => Theory = (t1, t2) =>
+          {
+            if      (recursiveIncludes(List(t1)).contains(t2)) t1
+            else if (recursiveIncludes(List(t2)).contains(t1)) t2
+            else {
+              ??!("!!! Actual theory union between " + t1.name + " and " + t2.name)
+              val union = new Theory(bt.narrationDPath,
+                LocalName(t1.name.toString + "_union_" + t2.name.toString),
+                Some(IMPSTheory.QCT.quasiLutinsPath),
+                modules.Theory.noParams,
+                modules.Theory.noBase)
+
+              controller add union
+              controller add MRef(doc.path,union.path)
+              controller add PlainInclude(t1.path,union.path)
+              controller add PlainInclude(t2.path,union.path)
+              union
+            }
+          }
+
+          val allJSONTranslations : List[JSONObject] = tState.jsons.flatMap(j => j.getAsList(classOf[JSONObject],"translations"))
+
+          for (permutation <- permutations) {
+            val targets: List[Theory] = permutation.map(p => candidates(p))
+            val target: Theory = targets.tail.foldRight(targets.head)(tUnion)
+            val source: Theory = ensemble.multipleMap(permutation.last + 1)
+            val fooname: String = source.name.toString + "-TO-" + target.name.toString
+            val vname: LocalName = LocalName(fooname.toUpperCase)
+
+            val relevantTranslations: List[JSONObject] = allJSONTranslations.filter(j => j.getAsString("name").toLowerCase == fooname.toLowerCase)
+            //println(" > [TES] " + relevantTranslations.length + " relevant translation(s)!")
+            if (relevantTranslations.length == 1)
+            {
+              if (tState.verbosity > 1) {
+                println(" > adding view " + vname + " (source: " + source.name.toString + ", target: " + target.name.toString + ")")
+              }
+
+              val theRelevantTranslation : JSONObject = relevantTranslations.head
+              val sep : SymbolicExpressionParser = new SymbolicExpressionParser
+
+              val nu_view = View(bt.narrationDPath, vname, source.toTerm, target.toTerm, isImplicit = false)
+              val mref : MRef = MRef(doc.path,nu_view.path)
+              controller add nu_view
+              controller add mref
+
+              tState.translations_decl = nu_view :: tState.translations_decl
+
+              val fixed = theRelevantTranslation.getAsList(classOf[JSONString],"fixed-theories")
+              for (ft <- fixed)
+              {
+                if (tState.verbosity > 1) { println("  > view " + vname + " fixes theory " + ft.value) }
+
+                val fix    : Theory = getTheory(ft.value.toLowerCase)
+                val cn     : LocalName = LocalName(ComplexStep(fix.path))
+                val id_fix : Structure = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false) // get it? :D
+                controller add id_fix
+              }
+
+              if (ensembleSorts.isDefined) {
+                assert(targetThys.isDefined)
+                assert(targetMuls.isEmpty)
+
+                println(theRelevantTranslation)
+
+                /* Translate all explicity listed sort pairs */
+
+                val sortpairsexps : List[JSONString] = theRelevantTranslation.getAsList(classOf[JSONString],"sort-pairs-sexp")
+                assert(sortpairsexps.nonEmpty)
+
+                for (smi <- sortpairsexps.indices)
+                {
+                  val leftExpStr  : String = sortpairsexps(smi).value.takeWhile(c => !c.isWhitespace).tail.trim.toLowerCase
+                  val rightExpStr : String = sortpairsexps(smi).value.dropWhile(c => !c.isWhitespace).trim.init.toLowerCase
+
+                  val sourceName  : String = leftExpStr
+                  val sourceSort  : Term   = getConstant(sourceName,ensemble.baseTheory).toTerm
+
+                  val trgt : IMPSSort = IMPSAtomSort(rightExpStr)
+
+                  val target_term : Term = doSort(trgt,target)
+                  val quelle      : Option[Theory] = locateMathSymbolHome(sourceName, source)
+                  assert(quelle.isDefined)
+
+                  val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),List(doName(sourceName)),None,Some(target_term),None)
+                  controller add nu_sort_map
+
+                  if (tState.verbosity > 1) {
+                    println(" > adding ensemble-instance sort-mapping: " + leftExpStr + " → " + trgt.toString)
+                  }
+                }
+
+                /*
+                for (sortMapping <- ensembleSorts.get.sorts)
+                {
+                  val sourceName : String = sortMapping.nm.s
+                  val sourceSort : Term   = matchSort(IMPSAtomSort(sourceName),locateMathSymbolHome(sourceName,ensemble.baseTheory).get)
+
+                  for (targetSort : ODefString <- sortMapping.sorts)
+                  {
+                    var trgt : Either[IMPSSort,IMPSMathExp] = targetSort.o match
+                    {
+                      case scala.util.Right(srt_name) => scala.util.Left(IMPSAtomSort(srt_name.toString))
+                      case scala.util.Left((dfs,ime)) => assert(ime.isDefined) ; scala.util.Right(ime.get)
+                    }
+
+                    val target_term : Term = trgt match {
+                      case scala.util.Left(is)  => val q = locateMathSymbolHome(is.toString,target) ; assert(q.isDefined) ; matchSort(is,q.get)
+                      case scala.util.Right(im) => doMathExp(im,target,Nil)
+                    }
+
+                    val target_tp : Option[Term] = trgt match {
+                      case scala.util.Left(is) => Some(IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType)))
+                      case scala.util.Right(_) => None
+                    }
+
+                    val quelle : Option[Theory] = locateMathSymbolHome(sourceName, source)
+                    assert(quelle.isDefined)
+
+                    val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),Nil,target_tp,Some(target_term),None)
+                    if (tState.verbosity > 1)
+                    {
+                      val disp : String = targetSort.o match {
+                        case scala.util.Left((df,_)) => df.toString
+                        case scala.util.Right(xname) => xname.toString
+                      }
+                      println(" > adding ensemble-instance sort-mapping: " + sourceName + " → " + disp)
+                    }
+
+                    controller add nu_sort_map
+                  }
+                } */
+              }
+
+              if (ensembleConsts.isDefined) {
+                assert(targetThys.isDefined)
+                assert(targetMuls.isEmpty)
+
+                // Define special constant renamer
+                def renamer(in : String) : String = {
+                  var renamed = in
+                  if (renamings.isDefined) {
+                    for (re <- renamings.get.ns) {
+                      if (in.toLowerCase == re.old.toString.toLowerCase) { renamed = re.nu.toString ; println("actually renamed " + in + " into " + re.nu.toString) }
+                    }
+                  }
+                  renamed
+                }
+
+                val constpairsexps : List[JSONString] = theRelevantTranslation.getAsList(classOf[JSONString],"constant-pairs-sexp")
+                assert(constpairsexps.nonEmpty)
+
+                for (cmi <- constpairsexps.indices)
+                {
+                  val leftExpStr  : String = constpairsexps(cmi).value.takeWhile(c => !c.isWhitespace).tail.trim.toLowerCase
+                  val rightExpStr : String = constpairsexps(cmi).value.dropWhile(c => !c.isWhitespace).trim.init.toLowerCase
+
+                  val sourceName   : String = leftExpStr
+                  val sourceConst  : Term   = getConstant(sourceName,ensemble.baseTheory).toTerm
+
+                  val sexpParser   : SymbolicExpressionParser = new SymbolicExpressionParser
+                  val sexp = sexpParser.parseAll(sexpParser.parseSEXP,rightExpStr)
+                  assert(sexp.successful)
+
+                  val trgt : IMPSMathExp = impsMathParser.makeSEXPFormula(sexp.get)
+
+                  val target_term : Term = doMathExp(trgt,target,Nil)
+                  val target_tp   : Option[Term] = None
+                  val quelle      : Option[Theory] = locateMathSymbolHome(sourceName, source)
+                  assert(quelle.isDefined)
+
+                  val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(renamer(sourceName)),List(doName(sourceName)),target_tp,Some(target_term),None)
+                  controller add nu_const_map
+
+                  if (tState.verbosity > 1) {
+                    println(" > adding ensemble-instance const-mapping: " + leftExpStr + " → " + trgt.toString)
+                  }
+                }
+              }
+
+              // Translate natively defined constants here (see manual pg. 109)
+              for (nativec <- source.getConstants)
+              {
+                println(" > translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name)
+                println(" > " + nativec)
+                val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
+                val nuname : LocalName = ComplexStep(target.path) / nativec.name
+                val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
+                controller add nu_trans_native
+                println(" > " + nu_trans_native)
+
+              }
+
+              if (renamings.isDefined)
+              {
+                for (re <- renamings.get.ns) {
+                  //val q : Theory  = locateMathSymbolHome(re.old.toString,source).get
+                  val locname : LocalName = api.ComplexStep(target.path) / LocalName(re.nu.toString)
+                  val c       : Constant  = getConstant(re.old.toString,target)
+
+                  val nu_constant = symbols.Constant(target.toTerm,locname,List.empty,c.tp,Some(c.toTerm),Some("Special Renaming"))
+                  controller add nu_constant
+
+                  if (tState.verbosity > 1) {
+                    println(" > adding special renaming: " + re.nu.toString + " for " + c.path + " in  " + target.name + " // " + nu_constant)
+                  }
+                }
+              }
+
+            } else { println("  > [TES] No unique applicable translation in source for " + fooname + ", skipping!") }
+
+          }
 
         // If it's none of these, fall back to doDeclaration
         case _                             => doDeclaration(exp,uri)
@@ -159,7 +410,7 @@ class IMPSImportTask(val controller  : Controller,
 
   def doTheory (t : DFTheory, docPath: DPath, ns:DPath, uri : URI) : Unit =
   {
-    val nu_theory = new DeclaredTheory(ns,
+    val nu_theory = new Theory(ns,
                                        LocalName(t.name.toString),
                                        Some(IMPSTheory.QCT.quasiLutinsPath),
                                        modules.Theory.noParams,
@@ -190,7 +441,7 @@ class IMPSImportTask(val controller  : Controller,
 
     if (t.comp.isDefined)
     {
-      def recursiveInclude(includee : DeclaredTheory, includer : DeclaredTheory) : Unit =
+      def recursiveInclude(includee : Theory, includer : Theory) : Unit =
       {
         // Don't add superfluous includes
         if (!includer.getIncludes.contains(includee.path))
@@ -206,7 +457,7 @@ class IMPSImportTask(val controller  : Controller,
             // These are metatheories, don't need to be included
             if (!List("Lutins","QuasiLutins").contains(i.name.toString))
             {
-              val inc : Option[DeclaredTheory] = tState.theories_decl.find(t => t.path == i)
+              val inc : Option[Theory] = tState.theories_decl.find(t => t.path == i)
               assert(inc.isDefined)
               recursiveInclude(inc.get,includer)
             }
@@ -219,7 +470,7 @@ class IMPSImportTask(val controller  : Controller,
       {
         if (!tState.theories_raw.exists(t => t.name.toString.toLowerCase == comp_theory.toString.toLowerCase)) { thy_reset() ; throw new IMPSDependencyException("required co-theory " + comp_theory.s.toLowerCase + " not found") }
 
-        val component : DeclaredTheory = getTheory(comp_theory.toString.toLowerCase)
+        val component : Theory = getTheory(comp_theory.toString.toLowerCase)
         recursiveInclude(component,nu_theory)
       }
     }
@@ -241,6 +492,10 @@ class IMPSImportTask(val controller  : Controller,
         if (ax.usgs.isDefined) { doUsages(assumption,ax.usgs.get) }
         if (ax.src.isDefined) { doSourceRefD(assumption,ax.src,uri) }
         controller.add(assumption)
+
+        if (tState.verbosity > 2) {
+          println("  > adding axiom " + assumption.name + " (" + ax.defstr.toString + ") to theory " + nu_theory.name)
+        }
       }
     }
 
@@ -285,7 +540,7 @@ class IMPSImportTask(val controller  : Controller,
         println("  > adding include for kernel theory")
       }
 
-      val component : DeclaredTheory= getTheory("the-kernel-theory")
+      val component : Theory= getTheory("the-kernel-theory")
       controller add PlainInclude.apply(component.path,nu_theory.path)
     }
 
@@ -294,9 +549,9 @@ class IMPSImportTask(val controller  : Controller,
 
   }
 
-  def doLanguage(l : DFLanguage, t : DeclaredTheory, uri : URI) : Unit =
+  def doLanguage(l : DFLanguage, t : Theory, uri : URI) : Unit =
   {
-    def doLanguageOrTheory(target : String, thy : DeclaredTheory) : Unit =
+    def doLanguageOrTheory(target : String, thy : Theory) : Unit =
     {
       val exists_language : Boolean = tState.languages.exists(p => p.name.toString.toLowerCase == target.toLowerCase)
 
@@ -324,10 +579,7 @@ class IMPSImportTask(val controller  : Controller,
         if (l.bt.get.src.isDefined) { doSourceRefD(basetype, l.bt.get.src, uri) }
         controller add basetype
 
-        if (tState.verbosity > 0) {
-          println(" > adding base type: " + baseType.toString + " to " + t.name)
-          //println(" > " + basetype.path + "\n")
-        }
+        if (tState.verbosity > 0) { println("   > adding language base type: " + baseType.toString + " to " + t.name) }
       }
     }
 
@@ -342,6 +594,7 @@ class IMPSImportTask(val controller  : Controller,
         controller add typing
 
         doSubsort(spec.sub, spec.enc, t, spec.src, uri)
+        if (tState.verbosity > 0) { println("   > adding language sort: " + spec.sub + " (enclosed by " + spec.enc + ") to " + t.name) }
       }
     }
 
@@ -414,14 +667,14 @@ class IMPSImportTask(val controller  : Controller,
 
       // Source and Target need to be defined!
       assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
-      val source_thy   : DeclaredTheory = getTheory(doName(sourcet.thy.s).toString.toLowerCase)
+      val source_thy   : Theory = getTheory(doName(sourcet.thy.s).toString.toLowerCase)
       val source_thy_t : Term = source_thy.toTerm
 
       assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
-      val target_thy : DeclaredTheory = getTheory(doName(targett.thy.s).toString.toLowerCase)
+      val target_thy : Theory = getTheory(doName(targett.thy.s).toString.toLowerCase)
       val target_thy_t : Term = target_thy.toTerm
 
-      val nu_view = new DeclaredView(bt.narrationDPath, ln, TermContainer(source_thy_t), TermContainer(target_thy_t), isImplicit = false)
+      val nu_view = View(bt.narrationDPath, ln, source_thy_t, target_thy_t, isImplicit = false)
       val mref : MRef = MRef(docPath,nu_view.path)
       controller add nu_view
       controller add mref
@@ -434,11 +687,11 @@ class IMPSImportTask(val controller  : Controller,
         {
           if (tState.verbosity > 1) { println("  > translation " + name.s + " fixes theory " + fixed.get.ts(ft).s) }
 
-          val fix : DeclaredTheory = getTheory(fixed.get.ts(ft).s.toLowerCase)
+          val fix : Theory = getTheory(fixed.get.ts(ft).s.toLowerCase)
 
           val cn : LocalName = LocalName(ComplexStep(fix.path))
 
-          val id_fix : DefinedStructure = DefinedStructure(nu_view.toTerm,cn,fix.toTerm,OMIDENT(fix.toTerm), isImplicit = false) // get it? :D
+          val id_fix = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false) // get it? :D
           controller add id_fix
         }
       }
@@ -467,12 +720,11 @@ class IMPSImportTask(val controller  : Controller,
             case scala.util.Right(_) => None
           }
 
-          val quelle : Option[DeclaredTheory] = locateMathSymbolHome(sp.name.toString, source_thy)
+          val quelle : Option[Theory] = locateMathSymbolHome(sp.name.toString, source_thy)
           assert(quelle.isDefined)
-          //println("Quelle of sort " + sp.name.toString + " is " + quelle.get.name.toString)
 
           val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sp.name.s),Nil,target_tp,Some(target_term),None)
-          if (tState.verbosity > 1) { println(" >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(quelle.get.path) / doName(sp.name.s)) }
+          if (tState.verbosity > 1) { println("  >  adding sort-mapping: " + sp.name.s + " → " + tar + " // " + ComplexStep(quelle.get.path) / doName(sp.name.s)) }
 
           translated_constant_names = doName(sp.name.toString) :: translated_constant_names
           //println(nu_sort_map)
@@ -503,11 +755,10 @@ class IMPSImportTask(val controller  : Controller,
             }
           }
 
-          val quelle : DeclaredTheory = locateMathSymbolHome(cp.name.toString, source_thy).get
-          println("Quelle of sort " + cp.name.toString + " is " + quelle.name.toString)
+          val quelle : Theory = locateMathSymbolHome(cp.name.toString, source_thy).get
 
           val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / doName(cp.name.s),Nil,None,Some(target_const_term),None)
-          if (true) { println(" >  adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(quelle.path) / doName(cp.name.s)) }
+          if (true) { println("  > adding constant-mapping: " + cp.name.s + " → " + tar + " // " + ComplexStep(quelle.path) / doName(cp.name.s)) }
 
           translated_constant_names = doName(cp.name.toString) :: translated_constant_names
           controller add nu_const_map
@@ -519,16 +770,37 @@ class IMPSImportTask(val controller  : Controller,
 
       if (source_thy == target_thy)
       {
-        if (tState.verbosity > 1) { println(" >  adding constant-endo-mappings.") }
+        if (tState.verbosity > 1) { println("  > adding constant-endo-mappings.") }
 
         for (c <- source_thy.getConstants) {
           if (!translated_constant_names.contains(c.name))
           {
-            if (tState.verbosity > 4) { println(" >    adding constant-endo-mapping for " + c.name) }
-            val quelle : DeclaredTheory = locateMathSymbolHome(c.name.toString, source_thy).get
+            if (tState.verbosity > 4) { println("   > adding constant-endo-mapping for " + c.name) }
+            val quelle : Theory = locateMathSymbolHome(c.name.toString, source_thy).get
             val orig_c = findConstant(c.name.toString,quelle)
             val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / c.name,c.alias,c.tp,Some(orig_c.toTerm),c.rl)
             controller add nu_id_const
+          }
+        }
+      } else {
+        assert(source_thy != target_thy)
+
+        val bothInclude = (source_thy.getIncludesWithoutMeta ::: target_thy.getIncludesWithoutMeta).distinct.map(m => controller.getTheory(m))
+        for (bothinc <- bothInclude)
+        {
+          if (tState.verbosity > 1) {
+            println("  > Both " + source_thy.name + " and " + target_thy.name + " include " + bothinc.name)
+            println("  > Adding constant endo-mappings for " + bothinc.name)
+          }
+
+          for (c <- bothinc.getConstants) {
+            if (!translated_constant_names.contains(c.name))
+            {
+              if (tState.verbosity > 4) { println("   > adding constant-endo-mapping for " + c.name) }
+              val orig_c = findConstant(c.name.toString,bothinc)
+              val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(bothinc.path) / c.name,c.alias,c.tp,Some(orig_c.toTerm),c.rl)
+              controller add nu_id_const
+            }
           }
         }
       }
@@ -591,7 +863,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for atomic sort not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
 
         val tp : Term = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val nu_atomicSort = symbols.Constant(parent.toTerm, doName(name.s), Nil, Some(tp), None, Some("Atomic Sort"))
@@ -633,7 +905,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for constant not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
 
         val srt : Term  = tState.bindUnknowns(doSort(curry(sort), parent))
         val mth : Term  = tState.bindUnknowns(doMathExp(frm, parent,Nil))
@@ -657,7 +929,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for constant not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
 
         val theseSorts = sorts.map(curry)
 
@@ -695,7 +967,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for theorem not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
 
         if (tState.verbosity > 0)
         {
@@ -749,7 +1021,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for schematic macete not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
 
         // Macetes are added as opaque (for now?)
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
@@ -772,7 +1044,7 @@ class IMPSImportTask(val controller  : Controller,
         assert(tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase)
            ||  tState.theories_raw.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
 
-        val parent: DeclaredTheory = if (!tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
+        val parent: Theory = if (!tState.languages.exists(p => p.name.s.toLowerCase == arglang.lang.s.toLowerCase))
         {
           getTheory(LocalName(arglang.lang.s).toString.toLowerCase)
         }
@@ -807,10 +1079,10 @@ class IMPSImportTask(val controller  : Controller,
         assert(trans_decl.isDefined)
 
         val sourceName : String = tState.translations_raw.find(t => t.n.s.toLowerCase == translation.t.s.toLowerCase).get.sour.thy.s.toLowerCase
-        val source : DeclaredTheory = getTheory(sourceName)
+        val source : Theory = getTheory(sourceName)
 
         val targetName : String = tState.translations_raw.find(t => t.n.s.toLowerCase == translation.t.s.toLowerCase).get.tar.thy.s.toLowerCase
-        val target : DeclaredTheory = getTheory(targetName)
+        val target : Theory = getTheory(targetName)
 
         for (n <- names.nms)
         {
@@ -820,27 +1092,23 @@ class IMPSImportTask(val controller  : Controller,
           val q = doName(rename(n.s))
 
           val nnsource = locateMathSymbolHome(n.s,source)
-          if (nnsource.isEmpty) { println("ERROR: Couldn't find symbol " + n.s + " starting from theory " + source.name) ; println(source)}
           assert(nnsource.isDefined)
           val nsource = nnsource.get
           val urimage = nsource.getConstants.find(c => c.name.toString.toLowerCase == n.s.toLowerCase).get
-          println("     > urimage definiens: " + urimage.df)
-          println("     > urimage type:      " + urimage.tp)
 
-          val tp : Option[Term] = if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None }
-          val image = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm)
+          //println(nsource)
+          println("    ~~ urimage: " + urimage + " from " + nsource.name)
+          // ToDo: reintegrate types.
+          val tp    : Option[Term] = None // if (urimage.tp.isDefined) { Some(controller.library.ApplyMorphs(urimage.tp.get,trans_decl.get.toTerm)) } else { None }
+          val image : Term         = controller.library.ApplyMorphs(urimage.toTerm,trans_decl.get.toTerm)
           val nu_trans_symbol = symbols.Constant(target.toTerm,q,Nil,tp,Some(image),Some("transported symbol"))
-          println("     >   image definiens: " + nu_trans_symbol.df)
-          println("     >   image type:      " + nu_trans_symbol.tp)
-
-          if (true) { println("   > adding " + n.toString + "\n") }
           controller add nu_trans_symbol
         }
 
       case DFTheoryEnsemble(name,baseTheory,fixed,reprenamer,src,cmt) =>
 
         val thyName : String         = if (baseTheory.isDefined) {baseTheory.get.nm.s} else {name.s}
-        val base    : DeclaredTheory = getTheory(thyName.toLowerCase)
+        val base    : Theory = getTheory(thyName.toLowerCase)
 
         if (tState.verbosity > 0) {
           println(" > adding theory-ensemble " + name.s)
@@ -855,7 +1123,7 @@ class IMPSImportTask(val controller  : Controller,
           n : Int => (s : String) => s + "_" + n.toString
         }
 
-        val fxd : List[DeclaredTheory] = if (fixed.isDefined) {
+        val fxd : List[Theory] = if (fixed.isDefined) {
           fixed.get.ts.map(t => t.s).map(nm => tState.theories_decl.find(thy => thy.name.toString.toLowerCase == nm.toLowerCase).get)
         } else {
           List.empty
@@ -871,16 +1139,26 @@ class IMPSImportTask(val controller  : Controller,
         assert(tState.ensembles.exists(e => e.name.toString.toLowerCase == basename.s.toLowerCase))
         val ensemble : TheoryEnsemble = tState.ensembles.find(e => e.name.toString.toLowerCase == basename.s.toLowerCase).get
 
-        val base     : DeclaredTheory = getTheory(basename.s)
-
+        val base     : Theory = getTheory(basename.s)
         val nums     : List[Int]      = numbers.ns.map(_.n)
         assert(nums.nonEmpty)
 
-        println(ensemble.multipleMap)
-
-        val multiples : List[DeclaredTheory] = nums.map(j => ensemble.multipleMap(j))
+        val multiples : List[Theory] = nums.map(j => ensemble.multipleMap(j))
         for (m <- multiples) {
-          controller add PlainInclude(base.path,m.path) // ToDo: ???
+          controller add PlainInclude(base.path,m.path) // Seems fishy, but also seems to work.
+        }
+
+      case DFOverloading(operator, pairs, _, _) =>
+
+        val name : LocalName = LocalName(operator.s)
+
+        for (pair <- pairs)
+        {
+          val thy : Theory = getTheory(pair.tname.s)
+          val c   : Constant       = getConstant(pair.sname.s,thy)
+
+          val nu_constant = symbols.Constant(thy.toTerm,name,List.empty,c.tp,Some(c.toTerm),Some("Overloading"))
+          controller add nu_constant
         }
 
       case DFInductor(name,princ,thy,trans,bh,ish,du,src,cmt) =>
@@ -889,7 +1167,7 @@ class IMPSImportTask(val controller  : Controller,
         if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
           throw new IMPSDependencyException("required theory " + ln + " for inductor " + name.s + " not found")
         }
-        val parent: DeclaredTheory = getTheory(ln.toString)
+        val parent: Theory = getTheory(ln.toString)
         val opaque = new OpaqueText(parent.path.toDPath, OpaqueText.defaultFormat, StringFragment(d.toString))
         if (tState.verbosity > 1) { println("   > adding inductor " + name.toString + " to theory " + thy.thy.s) }
         controller add opaque
@@ -945,10 +1223,10 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def makeReplica(base : DeclaredTheory, docPath : DPath, ns : DPath, renamer : String => String) : DeclaredTheory =
+  def makeReplica(base : Theory, docPath : DPath, ns : DPath, renamer : String => String) : Theory =
   {
     // Create a new replica
-    val nu_replica = new DeclaredTheory(ns,
+    val nu_replica = new Theory(ns,
                                         LocalName(renamer(base.name.toString)),
                                         Some(IMPSTheory.QCT.quasiLutinsPath),
                                         modules.Theory.noParams,
@@ -962,30 +1240,34 @@ class IMPSImportTask(val controller  : Controller,
     controller.add(nu_replica)
     controller.add(mref)
 
-    val nu_name   : String            = renamer(base.name.toString)
+    val nu_name : String = renamer(base.name.toString)
 
+    // Fix all includes
+    val includes : List[Theory] = base.getIncludesWithoutMeta.map(controller.getTheory)
+
+    for (fix <- includes) {
+      controller add PlainInclude(fix.path,nu_replica.path)
+    }
     // Each replica only carries one structure (a  kind of theory morphism) from the base theory into it.
-    val rep_struc : DeclaredStructure = DeclaredStructure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
+    val rep_struc = Structure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
     controller add rep_struc
+
+    for (fix <- includes) {
+      val fixname = LocalName(ComplexStep(fix.path))
+      val nu_fix = Structure(rep_struc.toTerm,fixname,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false)
+      controller add nu_fix
+    }
 
     for (c <- base.getConstants)
     {
       val chome : Term            = OMMOD(rep_struc.path.toMPath)
       val alias : List[LocalName] = LocalName(renamer(c.name.toString)) :: c.alias
-      val nu_constant = symbols.Constant(chome,ComplexStep(c.parent)/c.name,alias,c.tp,c.df,c.rl)
+      val nu_constant = symbols.Constant(chome,ComplexStep(c.parent)/c.name,alias,None,None,None)
       controller add nu_constant
 
-      if (tState.verbosity > 2) {
+      if (tState.verbosity > 4) {
         println("     > adding constant " + renamer(c.name.toString) + " to replica structure " + rep_struc.name)
       }
-    }
-
-    // Fix all includes
-    val includes : List[DeclaredTheory] = recursiveIncludes(List(base)).filter(t => t != base)
-
-    for (fix <- includes) {
-      val fixname : LocalName = LocalName(ComplexStep(fix.path))
-      val nu_fix  : DefinedStructure = DefinedStructure(rep_struc.toTerm,fixname,fix.toTerm,OMIDENT(fix.toTerm), isImplicit = false)
     }
 
     // Elaborate Structures
@@ -1007,7 +1289,7 @@ class IMPSImportTask(val controller  : Controller,
     case IMPSNaryFunSort(sorts)     => findKind(curry(sort))
   }
 
-  def matchSort(e : IMPSSort, t : DeclaredTheory) : Term =
+  def matchSort(e : IMPSSort, t : Theory) : Term =
   {
     if (e.isInstanceOf[IMPSNaryFunSort]) { return matchSort(curry(e),t)}
 
@@ -1036,7 +1318,7 @@ class IMPSImportTask(val controller  : Controller,
         IMPSTheory.Sets(tp,srt)
 
       case IMPSAtomSort(srt) =>
-        val thy : Option[DeclaredTheory] = locateMathSymbolHome(srt,t)
+        val thy : Option[Theory] = locateMathSymbolHome(srt,t)
         assert(thy.isDefined)
         OMS(thy.get.path ? srt)
     }
@@ -1060,7 +1342,7 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def doSort(d : IMPSSort, t : DeclaredTheory) : Term =
+  def doSort(d : IMPSSort, t : Theory) : Term =
   {
     val d_prime : IMPSSort = curry(d)
     val tp      : Term     = findKind(d_prime)
@@ -1069,7 +1351,7 @@ class IMPSImportTask(val controller  : Controller,
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
-  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : DeclaredTheory, src : SourceInfo, uri : URI) : Unit =
+  def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : Theory, src : SourceInfo, uri : URI) : Unit =
   {
     // TODO: Fix different usages
 
@@ -1107,7 +1389,7 @@ class IMPSImportTask(val controller  : Controller,
   }
 
   /* Translate IMPS Math Expressions to Terms */
-  def doMathExp(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
+  def doMathExp(d : IMPSMathExp, thy : Theory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     //return OMS(IMPSTheory.lutinsPath ? "thetrue")
     d match
@@ -1127,7 +1409,7 @@ class IMPSImportTask(val controller  : Controller,
         else if (isIntLiteral(s) || isRatLiteral(s) || isOctLiteral(s)) { doLiteral(s) }
         else
         {
-          val srcthy : Option[DeclaredTheory] = locateMathSymbolHome(s,thy)
+          val srcthy : Option[Theory] = locateMathSymbolHome(s,thy)
           if (srcthy.isEmpty) { println("> ERROR: Could not find home for math symbol: " + s) ; println("\n\n" + thy)}
           assert(srcthy.isDefined)
           OMS(srcthy.get.path ? LocalName(s))
@@ -1327,7 +1609,7 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def doQuasiConstructor(d : IMPSMathExp, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term = d match
+  def doQuasiConstructor(d : IMPSMathExp, thy : Theory, cntxt : List[(IMPSVar,IMPSSort)]) : Term = d match
   {
     /* QCs from indicators.t */
 
@@ -1696,7 +1978,7 @@ class IMPSImportTask(val controller  : Controller,
     case _ => println(" > Error: Unknown Quasi-Constructor!") ; ??!(d)
   }
 
-  def getTheory(name : String) : DeclaredTheory =
+  def getTheory(name : String) : Theory =
   {
     var thy = tState.theories_decl.find(t => t.name.toString.toLowerCase == name.toLowerCase)
     if (thy.isEmpty) { tState.theories_decl.find(t => t.name.toString.toLowerCase == name.toLowerCase + "_ensemble") }
@@ -1705,34 +1987,46 @@ class IMPSImportTask(val controller  : Controller,
     thy.get
   }
 
-  def getConstant(name : String, thy : DeclaredTheory) : Constant =
+  def getConstant(name : String, thy : Theory) : Constant =
   {
-    val con = thy.getConstants.find(c => c.name.toString.toLowerCase == name.toLowerCase)
-    if (con.isEmpty) { ??!(name) }
-    assert(con.isDefined)
-    con.get
+    val con1 = thy.getConstants.find(c => c.name.toString.toLowerCase == name.toLowerCase)
+    val con2 = thy.getConstants.find(c => c.alias.map(_.toString.toLowerCase).contains(name))
+    if (con1.isDefined) { con1.get }
+    else if (con2.isDefined) { con2.get }
+    else {
+      val foundTheory = locateMathSymbolHome(name, thy)
+      getConstant(name, foundTheory.get)
+    }
   }
 
-  def recursiveIncludes(ts : List[DeclaredTheory]) : List[DeclaredTheory] =
+  def recursiveIncludes(ts : List[Theory]) : List[Theory] =
   {
-    var is : List[DeclaredTheory] = ts
+    var is : List[Theory] = ts
 
     for (t <- ts)
     {
-      val recs = recursiveIncludes(t.getIncludes.map(m => controller.getTheory(m)))
+      val recs = recursiveIncludes(t.getIncludesWithoutMeta.map(m => controller.getTheory(m)))
       is = is ::: recs
     }
 
     is.distinct
   }
 
-  def locateMathSymbolHome(s : String, thy : DeclaredTheory) : Option[DeclaredTheory] =
+  def locateMathSymbolHome(s : String, thy : Theory) : Option[Theory] =
   {
     def cmatch(c : Constant, s : String) : Boolean = {
       c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) || (c.name.toString.toLowerCase == s.toLowerCase)
     }
 
-    val srcthy : Option[DeclaredTheory] = recursiveIncludes(List(thy)).reverse.find(t => t.getConstants.exists(c => cmatch(c,s)))
+    var multipleCandidates : List[Theory] = List.empty
+    if (tState.ensembles.exists(te => te.name.toLowerCase == thy.name.toString.toLowerCase))
+    {
+      val ensemble = tState.ensembles.find(te => te.name.toLowerCase == thy.name.toString.toLowerCase).get
+      multipleCandidates = recursiveIncludes(ensemble.multipleMap.values.toList).reverse
+    }
+
+    val candidates : List[Theory]   = (recursiveIncludes(List(thy)).reverse ::: multipleCandidates).distinct
+    val srcthy     : Option[Theory] = candidates.find(t => t.getConstants.exists(c => cmatch(c,s)))
     if (tState.verbosity > 3)
     {
       println(" > Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString)
@@ -1740,15 +2034,12 @@ class IMPSImportTask(val controller  : Controller,
 
     if (srcthy.isEmpty) {
       println(" >>> location for " + s + " could not be found, starting from " + thy.name)
-      println(thy)
-      println("Foo")
-      Thread.sleep(20000)
     }
 
     srcthy
   }
 
-  def findConstant(name : String, thy : DeclaredTheory) : Constant =
+  def findConstant(name : String, thy : Theory) : Constant =
   {
     val needle : String = name.toLowerCase
     val const = thy.getConstants.find(c => c.name.toString.toLowerCase == needle || c.alias.map(_.toString.toLowerCase).contains(needle))
@@ -1785,7 +2076,7 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def doIMPSLambda(lambda : IMPSLambda, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
+  def doIMPSLambda(lambda : IMPSLambda, thy : Theory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(lambda.vs.length == 1)
@@ -1820,7 +2111,7 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def doIMPSForsome(forsome : IMPSForSome, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
+  def doIMPSForsome(forsome : IMPSForSome, thy : Theory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(forsome.vs.length == 1)
@@ -1845,7 +2136,7 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def doIMPSForall(forall : IMPSForAll, thy : DeclaredTheory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
+  def doIMPSForall(forall : IMPSForAll, thy : Theory, cntxt : List[(IMPSVar,IMPSSort)]) : Term =
   {
     // Always call curried
     assert(forall.vs.length == 1)

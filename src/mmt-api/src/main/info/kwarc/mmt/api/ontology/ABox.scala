@@ -1,11 +1,8 @@
 package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.utils.MyList.fromList
 import info.kwarc.mmt.api.objects._
 import scala.collection.mutable.{HashSet,HashMap}
-
-import scala.util.control.Exception.Catch
 
 /**
  * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.

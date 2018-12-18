@@ -3,16 +3,14 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api._
 
 import scala.io.Source
-import scala.util.Either
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
-import info.kwarc.mmt.imps.impsLibrarySections.allSections
 
 class IMPSImporter extends Importer
 {
@@ -24,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.metricSpacePairs
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -161,8 +159,7 @@ class IMPSImporter extends Importer
       println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
     }
 
-    val doc = new Document(IMPSImportTask.docpath
-      , true)
+    val doc = new Document(IMPSImportTask.docpath, FileLevel)
     controller.add(doc)
 
     val importTask = new IMPSImportTask(controller, bf, tState,doc, index)
@@ -290,17 +287,17 @@ class NEWIMPSParser
   }
 }
 
-class TheoryEnsemble(nm : String, base : DeclaredTheory, fixed : List[DeclaredTheory], renamer: Int => String => String)
+class TheoryEnsemble(nm : String, base : Theory, fixed : List[Theory], renamer: Int => String => String)
 {
   val name           : String = nm
-  val baseTheory     : DeclaredTheory = base
-  val fixedTheories  : List[DeclaredTheory] = fixed
+  val baseTheory     : Theory = base
+  val fixedTheories  : List[Theory] = fixed
   val replicaRenamer : Int => String => String = renamer
 
-  var replicaMap     : Map[Int,DeclaredTheory] = Map.empty
-  var multipleMap    : Map[Int,DeclaredTheory] = Map.empty
+  var replicaMap     : Map[Int,Theory] = Map.empty
+  var multipleMap    : Map[Int,Theory] = Map.empty
 
-  var interpretationsMap : Map[(Int,Int),DeclaredView] = Map.empty
+  var interpretationsMap : Map[(Int,Int),View] = Map.empty
 }
 
 /* Some things are convenient to carry around in state.
@@ -308,13 +305,13 @@ class TheoryEnsemble(nm : String, base : DeclaredTheory, fixed : List[DeclaredTh
 class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
-  var theories_decl      : List[DeclaredTheory] = Nil
+  var theories_decl      : List[Theory] = Nil
   var ensembles          : List[TheoryEnsemble] = Nil
 
   var languages          : List[DFLanguage]     = Nil
 
   var translations_raw   : List[DFTranslation]  = Nil
-  var translations_decl  : List[DeclaredView]   = Nil
+  var translations_decl  : List[View]   = Nil
 
   var renamers           : List[DFRenamer]      = Nil
 

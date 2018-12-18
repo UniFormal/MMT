@@ -31,6 +31,8 @@ object PiIntroduction extends BackwardInvertible {
 object BackwardPiElimination extends BackwardSearch {
    val head = Pi.path
    override val priority = 3
+   
+   private def log(s: => String) {} // = println(s)
 
    private object UnnamedArgument {
       def unapply(vd: VarDecl) = vd match {
@@ -79,8 +81,8 @@ object BackwardPiElimination extends BackwardSearch {
       val matcher = prover.makeMatcher
       val matchFound = matcher(context, goal, paramsFresh, scopeFresh)
       val solution = matchFound match {
-        case MatchSuccess(subs) => subs
-        case _ => return None
+        case MatchSuccess(subs,_) => subs
+        case MatchFail => return None
       }
       // now scope ^ rename ^ solution == goal
       var result = Context()
@@ -112,7 +114,9 @@ object BackwardPiElimination extends BackwardSearch {
         Alternative(sgs.reverse, () => ApplyGeneral(tm, args.reverseMap(a => a())))
    }
    def apply(prover: Searcher, g: Goal): List[ApplicableTactic] = {
+      log("backward Pi elimination on goal " + prover.presentObj(g.conc))
       (g.fullVarAtoms ::: prover.facts.getConstantAtoms).flatMap {case Atom(tm,tp,_) =>
+         log("  trying atom " + prover.presentObj(tm))
          // match return type of tp against g.conc
          val sgsOpt = makeSubgoals(prover, g.fullContext, g.conc, tp)
          sgsOpt match {
@@ -126,6 +130,7 @@ object BackwardPiElimination extends BackwardSearch {
               }
               if (unsolvedParameters.isEmpty) {
                  // yes: make an alternative using the unnamed arguments of tp as subgoals
+                 log("    applicable, making alternative")
                  onApply("Pi elimination backward using " + tm) {makeAlternative(g, tm, argDecls)}.toList
               } else {
                  // no: try to match the first unnamed argument against a known fact to instantiate the remaining ones
@@ -159,6 +164,7 @@ object BackwardPiElimination extends BackwardSearch {
                                 // substitute the new solutions in the remaining unnamed arguments
                                 vd.copy(tp = Some(t ^ subs))
                           }
+                          log("    applicable with fact " + prover.presentObj(p) + " of type " + prover.presentObj(uAtp ^ subs) + ", making alternative")
                           onApply("Pi elimination backward using " + tm + " and " + prover.presentObj(p) + " : " + prover.presentObj(uAtp ^ subs)) {
                              makeAlternative(g, tm, argDecls2)
                           }.toList
@@ -168,7 +174,7 @@ object BackwardPiElimination extends BackwardSearch {
                     appTacs
                  else {
                     // if no progress, we try enumerating values for the missing parameters
-                    // but only if there is a single missing parameter
+                    // but only if there is only a single missing parameter
                     unsolvedParameters match {
                        case List(uP @ UnsolvedParameter(x,xtp)) =>
                           prover.facts.termsOfTypeAtGoal(g, Context(), xtp) flatMap {case (_, p) =>

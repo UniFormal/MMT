@@ -28,7 +28,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   var allaxioms : List[Axiom] = Nil
   var allstructures : List[Structure] = Nil
 
-  val theories : mutable.HashMap[String,DeclaredTheory] = mutable.HashMap.empty
+  val theories : mutable.HashMap[String,Theory] = mutable.HashMap.empty
   val intcategories : mutable.HashMap[String,ParsedCategory] = mutable.HashMap.empty
   val intclasses : mutable.HashMap[String,ParsedClass] = mutable.HashMap.empty
   var missings : List[String] = Nil
@@ -37,11 +37,11 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     ParsedCategory(s,Nil,Nil,Nil,"INTERNAL",JSONObject(Nil))
   }) */
 
-  val topdoc = new Document(DPath({Sage._base / bt.inFile.name}.uri.setExtension("")),root = true)
+  val topdoc = new Document(DPath({Sage._base / bt.inFile.name}.uri.setExtension("")), FileLevel)
   controller.add(topdoc)
 
   val axth = controller.getO(Sage._base ? LocalName("Axioms")) match {
-    case Some(dc : DeclaredTheory) => dc
+    case Some(dc : Theory) => dc
     case _ =>
       val ret = Theory.empty(Sage._base, LocalName("Axioms"), Some(Sage.theory))
       controller.add(ret)
@@ -52,7 +52,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   add(structh)
   add(MRef(topdoc.path,structh.path))
   val sagedoc = controller.getO(Sage.docpath / "sage").getOrElse({
-    val nd = new Document(Sage.docpath / "sage",true)
+    val nd = new Document(Sage.docpath / "sage", FileLevel)
     controller add nd
     nd
   }).asInstanceOf[Document]
@@ -60,7 +60,8 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
 
   def getDoc(d : List[String]) : Document = docs.getOrElseUpdate(d.mkString("."), {
       val dpath = d.foldLeft(Sage.docpath)((d,s) => d / s)
-      val ndoc = new Document(dpath, root = (dpath.^ == dpath))
+      val level = if (dpath.^ == dpath) FileLevel else SectionLevel
+      val ndoc = new Document(dpath, level)
       if (ndoc.parentOpt.isDefined) getDoc(d.init)
       controller.add(ndoc)
       //controller add new DRef(topdoc.path,)
@@ -72,7 +73,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
     case _ => controller add se
   }
 
-  private def doMethod(m : SageMethod)(implicit th : DeclaredTheory, sec : Option[String]) = {
+  private def doMethod(m : SageMethod)(implicit th: Theory, sec : Option[String]) = {
     val c = Constant(th.toTerm, LocalName(m.tp + "." + m.name), Nil, Some(doArity(m.arity)), None, None)
     if (sec.isDefined) c.setDocumentHome(LocalName(sec.get))
     controller add c
@@ -116,7 +117,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
 
       if (clss.methods.nonEmpty) {
         sec = Some("Methods")
-        controller add new Document(th.path.toDPath / sec.get, root = false)
+        controller add new Document(th.path.toDPath / sec.get, SectionLevel)
         clss.methods foreach doMethod
       }
 
@@ -165,28 +166,28 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
 
     if (cat.elem_methods._2.nonEmpty) {
       sec = Some("Element Methods")
-      controller add new Document(th.path.toDPath / sec.get,root = false)
+      controller add new Document(th.path.toDPath / sec.get, SectionLevel)
       if (cat.elem_methods._1 != "") addOpaque(cat.elem_methods._1, th, sec)
       cat.elem_methods._2 foreach doMethod
     }
 
     if (cat.morph_methods._2.nonEmpty) {
       sec = Some("Morphism Methods")
-      controller add new Document(th.path.toDPath / sec.get, root = false)
+      controller add new Document(th.path.toDPath / sec.get, SectionLevel)
       if (cat.morph_methods._1 != "") addOpaque(cat.morph_methods._1, th, sec)
       cat.morph_methods._2 foreach doMethod
     }
 
     if (cat.parent_methods._2.nonEmpty) {
       sec = Some("Parent Methods")
-      controller add new Document(th.path.toDPath / sec.get, root = false)
+      controller add new Document(th.path.toDPath / sec.get, SectionLevel)
       if (cat.parent_methods._1 != "") addOpaque(cat.parent_methods._1, th, sec)
       cat.parent_methods._2 foreach doMethod
     }
 
     if (cat.subcategory_methods._2.nonEmpty) {
       sec = Some("Subcategory Methods")
-      controller add new Document(th.path.toDPath / sec.get, root = false)
+      controller add new Document(th.path.toDPath / sec.get, SectionLevel)
       if (cat.subcategory_methods._1 != "") addOpaque(cat.subcategory_methods._1, th, sec)
       cat.subcategory_methods._2 foreach doMethod
     }
@@ -194,7 +195,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   }
   )
 
-  private def addOpaque(text : String,th : DeclaredTheory, sec : Option[String] = None) =
+  private def addOpaque(text : String,th : Theory, sec : Option[String] = None) =
     controller add new OpaqueText(if (sec.isDefined) th.path.toDPath / sec.get else th.path.toDPath, OpaqueText.defaultFormat, StringFragment(text))
 
   private def doArity(ar : Int) : Term = if (ar == 0) OMS(Sage.obj) else Arrow(OMS(Sage.obj),doArity(ar-1))

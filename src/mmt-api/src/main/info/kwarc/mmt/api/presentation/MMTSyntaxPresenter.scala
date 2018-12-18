@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.presentation
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.{DRef, Document, MRef}
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, DefinedTheory, DefinedView}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.parser.Reader
 import info.kwarc.mmt.api.symbols._
 
@@ -17,13 +17,10 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case x: MRef                => rh(Reader.GS.toChar.toString) // check?
     case x: Constant            => rh(Reader.RS.toChar.toString)
     case x: RuleConstant        => rh(Reader.RS.toChar.toString)
-    case x: DeclaredTheory      => rh(Reader.GS.toChar.toString)
-    case x: DeclaredView        => rh(Reader.GS.toChar.toString)
+    case x: Theory              => rh(Reader.GS.toChar.toString)
+    case x: View                => rh(Reader.GS.toChar.toString)
     case x: NestedModule        => rh(Reader.GS.toChar.toString)                           // check?
-    case x: DeclaredStructure   => rh(Reader.GS.toChar.toString)
-    case x: DefinedTheory       => rh(Reader.RS.toChar.toString) // check?
-    case x: DefinedView         => rh(Reader.RS.toChar.toString) // check?
-    case x: DefinedStructure    => rh(Reader.RS.toChar.toString) // check?
+    case x: Structure           => rh(Reader.GS.toChar.toString)
   }
   override def doConstant(c:Constant,indent:Int)(implicit rh: RenderingHandler) = {
     rh("" + c.name.last)
@@ -63,12 +60,13 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
     */
   }
-  override def doDeclaredView(v:DeclaredView,indent:Int)(implicit rh: RenderingHandler) = {
+  
+  override def doView(v: View,indent:Int)(implicit rh: RenderingHandler) = {
     rh("view " + v.name + " : ")
     this.apply(v.from, Some(v.path $ DomComponent))
     rh(" -> ")
     this.apply(v.to, Some(v.path $ CodComponent))
-    rh(" =\n")
+    doDefComponent(v)
     v.getPrimitiveDeclarations.foreach {d => d match {
       case c:Constant => {
         this.doIndent(indent)
@@ -83,7 +81,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }}
   }
 
-  override def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
+  override def doStructure(s: Structure,indent:Int)(implicit rh: RenderingHandler) = {
     val decs = s.getPrimitiveDeclarations
     if (decs.isEmpty) {
       rh("include ")
@@ -92,10 +90,16 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     } else {
       rh("structure " + s.name + " : "+s.from.toMPath.^^.last+"?"+s.from.toMPath.last)
       //this.apply(s.from, Some(s.path $ TypeComponent))
-      rh(Reader.US.toChar.toString+ " =\n")
+      rh(Reader.US.toChar.toString)
+      doDefComponent(s)
       decs.foreach {d => this.apply(d, indent+1)}
       rh(Reader.GS.toChar.toString)
     }
   }
-
+  
+  override def doDefComponent(m: ModuleOrLink)(implicit rh: RenderingHandler) = {
+    val b = super.doDefComponent(m)
+    if (b) rh(Reader.US.toChar.toString)
+    b
+  }
 }

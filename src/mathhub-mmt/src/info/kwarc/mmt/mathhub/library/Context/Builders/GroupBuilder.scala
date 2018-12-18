@@ -10,14 +10,14 @@ trait GroupBuilder { this: Builder =>
 
   /** tries to find a group with the given id */
   protected def tryGroup(id: String) : Option[LMHHubGroupEntry] = {
-    log(s"trying $id as group")
+    logDebug(s"trying $id as group")
 
     val optEntry = mathHub.entries_.collectFirst({
       case e: LMHHubGroupEntry if e.group == id => e
     })
 
     if(optEntry.isEmpty){
-      log(s"$id is not a group")
+      logDebug(s"$id is not a group")
     }
 
     optEntry

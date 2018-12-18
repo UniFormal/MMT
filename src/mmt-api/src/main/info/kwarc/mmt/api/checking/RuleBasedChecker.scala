@@ -59,7 +59,7 @@ class RuleBasedChecker extends ObjectChecker {
       val remUnknowns = solver.getUnsolvedVariables
       val contm = prOrg.copy(unknown = Context.empty).toTerm
       val contmI = solver.substituteSolution(contm) //fill in inferred values
-      //val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms; not needed anymore since switch to new unknowns
+      // TODO simplify using built-in rules like Disambiguate, or InterpretPseudoContent, possibly introduce coercions
       TermProperty.eraseAll(contmI) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
       val pr = ParseResult.fromTerm(contmI).copy(unknown = remUnknowns)
       //now report results, dependencies, errors
@@ -82,16 +82,20 @@ class RuleBasedChecker extends ObjectChecker {
             }
          }
         // report warnings
-        solver.getErrors.foreach{case SolverError(l,h) => env.errorCont(new InvalidUnit(cu,h.narrowDownError,cu.present(solver.presentObj)) {
-          override val level = l
-        })}
+        solver.getErrors.foreach{
+          case e@SolverError(l,h,_) =>
+            val msg = e.msg(solver.presentObj(_))
+            env.errorCont(new InvalidUnit(cu,h.narrowDownError,msg) {
+              override val level = l
+            })
+        }
       } else {
          log("------------- failure " + (if (mayHold) " (not proved)" else " (disproved)"))
          val cuS = cu.present(solver.presentObj)
          logGroup {
             solver.logState(logPrefix)
             val (errors,warnings) = solver.getErrors.partition(e => e.level >= Level.Error)
-            (errors:::warnings) foreach {case SolverError(l,h) =>
+            (errors:::warnings) foreach {case SolverError(l,h,_) =>
                val e = new InvalidUnit(cu, h.narrowDownError, cuS) {
                  override val level = l
                }

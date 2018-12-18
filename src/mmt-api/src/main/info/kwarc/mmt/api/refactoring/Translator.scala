@@ -3,12 +3,12 @@ package info.kwarc.mmt.api.refactoring
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
-import info.kwarc.mmt.api.modules.{DeclaredLink, DeclaredTheory}
+import info.kwarc.mmt.api.modules.{Link, Theory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.QueryEvaluator.QuerySubstitution
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.parser.ParseResult
-import info.kwarc.mmt.api.symbols.{Constant, DeclaredStructure, UniformTranslator}
+import info.kwarc.mmt.api.symbols.{Constant, Structure, UniformTranslator}
 import info.kwarc.mmt.api.uom.RealizedType
 
 import scala.collection.mutable
@@ -148,8 +148,8 @@ abstract class TranslationGroup {
   def applicable(tm : Term)(implicit trl : AcrossLibraryTranslator) : List[(AcrossLibraryTranslation,Term)]
 }
 
-case class LinkTranslation(ln : DeclaredLink) extends TranslationGroup {
-  override def toString: String = "DeclaredLink " + ln.path
+case class LinkTranslation(ln : Link) extends TranslationGroup {
+  override def toString: String = "link " + ln.path
   val from = ln.from match {
     case OMMOD(mp) => mp
     case _ => ??? // TODO materialize properly
@@ -159,7 +159,7 @@ case class LinkTranslation(ln : DeclaredLink) extends TranslationGroup {
     def apply(tm : Term)(implicit translator: AcrossLibraryTranslator) = {
       require(tm == OMS(p))
       ln match {
-        case s : DeclaredStructure => OMS(s.parent ? (ln.name / p.name))
+        case s : Structure => OMS(s.parent ? (ln.name / p.name))
           // TODO views
       }
     }
@@ -199,14 +199,14 @@ case class ArchiveTarget(archive : Archive) extends TranslationTarget {
   def inTarget(path: GlobalName, controller : Controller): Boolean = (controller.backend.findOwningArchive(path.module) contains archive) || {
     val fndPath = archive.foundation.getOrElse(return false)
     val fnd = try {
-      val ret = controller.get(fndPath).asInstanceOf[DeclaredTheory]
+      val ret = controller.getAs(classOf[Theory], fndPath)
       controller.simplifier(ret)
       ret
     } catch {
       case e: Exception => return false
     }
     val ths = fnd :: fnd.getIncludes.map(p => Try(controller.get(p))).collect {
-      case Success(th: DeclaredTheory) =>
+      case Success(th: Theory) =>
         controller.simplifier(th)
         th
     }

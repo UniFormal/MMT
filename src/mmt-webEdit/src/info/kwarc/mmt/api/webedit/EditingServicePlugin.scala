@@ -37,7 +37,7 @@ class EditingServicePlugin(val controller: Controller) {
 
   def minIncl(to: MPath): List[MPath] = {
     val thy = controller.get(to) match {
-      case theor: DeclaredTheory => theor
+      case theor: Theory => theor
       case _ => throw ServerError("No theory found")
     }
     val incl = thy.getIncludes
@@ -224,7 +224,7 @@ class EditingServicePlugin(val controller: Controller) {
 
     def searchOnIncludes(mpath: Path): List[(String, Int)] = {
       val declarations = controller.get(mpath) match {
-        case t: DeclaredTheory => t
+        case t: Theory => t
         case _ => throw new ServerError("No declarations")
       }
       val includes = declarations.getIncludes
@@ -234,7 +234,7 @@ class EditingServicePlugin(val controller: Controller) {
       }
 
       val constants = controller.get(mpath) match {
-        case t: DeclaredTheory => t.getConstants.map(_.name.toString)
+        case t: Theory => t.getConstants.map(_.name.toString)
         case _ => Nil
       }
 

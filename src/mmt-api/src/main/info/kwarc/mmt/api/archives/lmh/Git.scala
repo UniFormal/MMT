@@ -19,7 +19,8 @@ abstract class Git {
     */
   def apply(wd: File, args: String*): ShellCommand.Result = {
     val fullArgs = toArgs(args:_*)
-    ShellCommand.runInWithEnv(wd, Map("GIT_TERMINAL_PROMPT" -> "0", "GIT_ASKPASS" -> "/bin/false"), fullArgs:_*)
+    // we always print out git commands because it is annoying for users not to know what's going on
+    ShellCommand.runInWithEnv(wd, Map("GIT_TERMINAL_PROMPT" -> "0", "GIT_ASKPASS" -> "/bin/false"), true, fullArgs:_*)
   }
 }
 

@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import uom._
 import symbols._
 import checking._
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import objects._
 import objects.Conversions._
 import info.kwarc.mmt.lf._

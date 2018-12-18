@@ -1,19 +1,18 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.modules.{DeclaredTheory, Theory}
-import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{ITheory, ITheoryRef}
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.mathhub.library.{ITheory, IModuleRef}
 
 trait TheoryBuilder { this: Builder =>
 
   /** gets a reference to a theory */
-  def getTheoryRef(id: String): Option[ITheoryRef] = getReferenceOf(classOf[ITheoryRef], id)
+  def getTheoryRef(id: String): Option[IModuleRef] = getReferenceOf(classOf[IModuleRef], id)
 
   /** builds a reference to a theory */
-  protected def buildTheoryReference(theory: Theory) : Option[ITheoryRef] = Some(
-    ITheoryRef(
+  protected def buildTheoryReference(theory: Theory) : Option[IModuleRef] = Some(
+    IModuleRef(
       theory.path.toPath, /* id */
-      theory.name.toPath /* name */
+      theory.name.toPath, /* name */
     )
   )
 
@@ -26,7 +25,7 @@ trait TheoryBuilder { this: Builder =>
       .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(theory.id)"))
 
     val meta = theory match {
-      case dc: DeclaredTheory =>
+      case dc: Theory =>
         dc.meta.map(mt =>
           getTheoryRef(mt.toPath)
             .getOrElse(return buildFailure(theory.path.toPath, "getTheoryRef(theory.meta)")
@@ -35,15 +34,11 @@ trait TheoryBuilder { this: Builder =>
       case _ => None
     }
 
-    val presentation: String = getPresentationOf(theory)
-    val source: Option[String] = getSourceOf(theory)
-
     Some(ITheory(
       ref.id, ref.name,
       getStats(ref.id),
 
-      presentation,
-      source,
+      getDeclarations(theory),
 
       meta
     ))

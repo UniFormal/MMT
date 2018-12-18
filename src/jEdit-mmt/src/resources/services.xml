@@ -5,6 +5,9 @@
    <SERVICE CLASS="console.Shell" NAME="mmt">
       new info.kwarc.mmt.jedit.MMTConsole();
    </SERVICE>
+   <SERVICE CLASS="console.Shell" NAME="scala">
+      new info.kwarc.mmt.jedit.ScalaConsole();
+   </SERVICE>
    <SERVICE CLASS="console.Shell" NAME="mmt-interpreter">
       new info.kwarc.mmt.jedit.MMTInterpreter();
    </SERVICE>

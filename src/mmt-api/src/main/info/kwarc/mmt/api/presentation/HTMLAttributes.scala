@@ -40,9 +40,34 @@ object HTMLAttributes {
     *  present on arbitrary elements
     */
    val load = prefix + "load"
-   /** the CSS class that should be toggle when clicking this element, affects all children of the '.toggle-root' ancestor
+   /** the CSS class that should be toggled when clicking this element, affects all children of the '.toggle-root' ancestor
     *  present on arbitrary elements
     */
    val toggleTarget = prefix + "toggle"
+   
+   /* CSS classes */
+   
+   val cssprefix = "mmt-"
+   
+   /** MMT-level operators :=() etc */
+   val operator = cssprefix + "operator"
+   /** mandatory brackets */
+   val brackets = cssprefix + "brackets"
+   /** optional brackets */
+   val bracketsOpt = brackets + "-opt"
+   
+   /** implicit arguments */
+   val implicitarg = prefix + "implicit-arg"
+   /** reconstructed type of bound variables */
+   val reconstructedtype = prefix + "reconstructed-type"
+   
+   /** additionally present on optional components if they are currently hidden,
+    *  for example, a UI can use select("cls").toggleAttribute("hidden(cls)") to toggle the display of a group
+    */
+   def hidden(cls: String) = cls + "-hidden"
+   val bracketsOptHidden = hidden(bracketsOpt)
+   val implicitargHidden = hidden(implicitarg)
+   val reconstructedtypeHidden = hidden(reconstructedtype)
+   
 }
 

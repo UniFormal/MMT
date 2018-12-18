@@ -44,17 +44,14 @@ class MathHubFormalPresenter extends HTMLPresenter(new MathMLPresenter) {
          div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
-      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredTheory] =>
-        div {
-          doTheory(controller.get(m.target).asInstanceOf[DeclaredTheory])
+      case m: MRef =>
+        controller.get(m.target) match {
+          case t: Theory => div {doTheory(t)}
+          case v: View => div {doView(v)}
         }
-      case m: MRef if controller.get(m.target).isInstanceOf[DeclaredView] =>
-        div{
-          doView(controller.get(m.target).asInstanceOf[DeclaredView])
-        }
-      case s : SRef if controller.get(s.target).isInstanceOf[Declaration] =>
+      case s : SRef =>
         div {
-          doDeclaration(controller.get(s.target).asInstanceOf[Declaration])
+          doDeclaration(controller.getAs(classOf[Declaration], s.target))
         }
       case r: NRef => //default case
         val label = r match {

@@ -3,7 +3,7 @@ package info.kwarc.mmt.jedit
 import javax.swing.{JPanel, BoxLayout}
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.DeclaredModule
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.refactoring.RefactorPanel
@@ -21,7 +21,7 @@ class MMTRefactorDockable(jview: View, position: String) extends JPanel {
 }
 
 object Publisher {
-  def publish(jview:View)(s:List[DeclaredModule]) {
+  def publish(jview:View)(s:List[Module]) {
     implicit val rh = new presentation.StringBuilder
     val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(presenter)

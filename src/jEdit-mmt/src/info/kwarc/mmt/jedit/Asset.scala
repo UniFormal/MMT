@@ -1,10 +1,9 @@
 package info.kwarc.mmt.jedit
 
 import sidekick._
-
 import org.gjt.sp.jedit._
-
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.gui._
 import parser._
 import objects._
 import modules._
@@ -19,11 +18,10 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
  * @param name the label of the asset
  * @param region the source region of the asset
  */
-sealed abstract class MMTAsset(name: String, val region: SourceRegion) extends enhanced.SourceAsset(name, region.start.line, MyPosition(region.start.offset)) {
+sealed abstract class JAsset(protected val label: String, val region: SourceRegion) extends enhanced.SourceAsset(label, region.start.line, MyPosition(region.start.offset))
+  with MMTAsset {
   setEnd(MyPosition(region.end.offset+1))
-  /** the base URIto use in the context of this asset */
-  def getScope : Option[MPath]
-  
+
   /** can be used with TextArea.setSelection to select this asset */
   def toSelection = new textarea.Selection.Range(region.start.offset, region.end.offset+1)
 
@@ -34,30 +32,15 @@ sealed abstract class MMTAsset(name: String, val region: SourceRegion) extends e
 /**
  * a node for URIs
  */
-class MMTURIAsset(val path: Path, r: SourceRegion) extends MMTAsset(path.last, r) {
-  def getScope = path match {
-    case p: MPath => Some(p)
-    case _ => None
-  }
+class JURIAsset(val path: Path, r: SourceRegion) extends JAsset(path.last, r) with MMTURIAsset {
+  override protected val label: String = path.last
 }
 
 /** node for structural elements
  * @param elem the node in the MMT syntax tree
  */
-class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
-   //note: shortDescription == name, shown in tree
+class JElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) extends JAsset(name, reg) with MMTElemAsset {
    setLongDescription(path.toPath)  // tool tip
-   //setIcon
-   def path = elem.path
-   def getScope : Option[MPath] = elem match {
-      case _ : NarrativeElement => None
-      case c : ContentElement => c match {
-        case t: DeclaredTheory => Some(t.path)
-        case v: modules.View => None //would have to be parsed to be available
-        case d: Declaration => Some(d.path.module)
-        case _ => None
-      }
-   }
 }
 
 /** node for objects
@@ -65,29 +48,16 @@ class MMTElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion
  * @param parent the component containing the term
  * @param subobjectPosition the position in that term
  */
-class MMTObjAsset(mmtplugin: MMTPlugin, val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion) extends MMTAsset(name, reg) {
+class JObjAsset(mmtplugin: MMTPlugin, val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion)
+  extends JAsset(name, reg) with MMTObjAsset {
+  protected val controller = mmtplugin.controller
   private lazy val longDescription = mmtplugin.asString(obj)
   override def getLongString = longDescription
-  def getScope = parent.parent match {
-     case cp: ContentPath => Some(cp.module)
-     case _ => None
-  }
-  
-  /** tries to infer the type of this asset (may throw exceptions) */
-  def inferType: Option[Term] = {
-    obj match {
-      case t: Term =>
-        val thy = getScope.getOrElse(return None)
-        checking.Solver.infer(mmtplugin.controller, Context(thy) ++ context, t, None)
-      case _ => None
-    }
-  }
 }
 
-class MMTNotAsset(owner: ContentPath, label: String, not: TextNotation, reg: SourceRegion) extends MMTAsset(label, reg) {
+class JNotAsset(protected val owner: ContentPath, label: String, protected val not: TextNotation, reg: SourceRegion) extends JAsset(label, reg) with MMTNotAsset {
    setLongDescription(not.toText)
-   def getScope = Some(owner.module)
 }
 
 /** a dummy asset for structuring the tree */
-class MMTAuxAsset(label: String) extends enhanced.SourceAsset(label, -1, MyPosition(-1))
+class JAuxAsset(protected val label: String) extends enhanced.SourceAsset(label, -1, MyPosition(-1)) with MMTAuxAsset

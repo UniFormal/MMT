@@ -53,7 +53,7 @@ object MMTExtractor extends RelationalExtractor {
          case t: Theory =>
             f(IsTheory(path))
             t match {
-               case t: DeclaredTheory =>
+               case t: Theory =>
                   t.meta foreach {p => f(HasMeta(path, p))}
                case _ => QueryFunctionApply
             }
@@ -65,7 +65,7 @@ object MMTExtractor extends RelationalExtractor {
          case _ =>
       }
       e match {
-         case t: DeclaredModule =>
+         case t: Module =>
             t.getDeclarations foreach {d => {
                val dec = Declares(path,d.path)
                d match {

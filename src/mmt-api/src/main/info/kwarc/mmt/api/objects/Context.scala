@@ -71,10 +71,8 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
      case Some(f) => this match {
        case IncludeVarDecl(_,OMPMOD(p,args),_) =>
           Include(home, p, args) //TODO defined include
-       case StructureVarDecl(n, from, dfO) => dfO match {
-         case None => DeclaredStructure(home, name, from, false)
-         case Some(df) => DefinedStructure(home, name, from, df, false)
-       }
+       case StructureVarDecl(n, from, dfO) =>
+          Structure(home, name, from, dfO, false)
        case DerivedVarDeclFeature(n,f,tp,None) =>
           new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not))
      }
@@ -382,6 +380,7 @@ case class Substitution(subs : Sub*) extends Obj {
    private[objects] def freeVars_ = (this flatMap {_.freeVars_})
    def subobjects = subobjectsNoContext(subs.toList)
    def maps(n: LocalName): Boolean = this exists {_.name == n}
+   def domain = this.map(_.name)
    def apply(v : LocalName) : Option[Term] = subs.reverse.find(_.name == v).map(_.target)
    def isIdentity : Boolean = subs forall {
       case Sub(n, OMV(m)) => m == n

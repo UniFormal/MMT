@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.LMFDB
 
 import info.kwarc.mmt.api.ParseError
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.web.WebQuery
 
@@ -193,7 +193,7 @@ trait LMFDBQueryIterators { this: LMFDBSystem =>
 
   private def lmfdbIterator(query: JSONObject, db: DB): LQI = {
     val schema = controller.get(db.schemaPath) match {
-      case dt:DeclaredTheory => dt
+      case dt: Theory => dt
       case _ => error("Schema-Theory missing from controller")
     }
 

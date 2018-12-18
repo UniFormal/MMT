@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import notations._
-import utils.MyList._
+import utils._
 
 import ActiveNotation._
 

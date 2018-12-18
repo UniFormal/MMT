@@ -102,7 +102,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var i = 0  // position in the flattened file
 
     // add (empty, for now) narrative document to the controller
-    val doc = new Document(dpath, true)
+    val doc = new Document(dpath, FileLevel)
     add(doc)
     try {
        // add document metadata and source references
@@ -749,7 +749,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     * @param parent the parent theory
     * @return position after the block
     * @throws SourceError for syntactical errors */
-  private def crawlMetaDeclaration(start: Int, parent: DeclaredTheory) : Int =
+  private def crawlMetaDeclaration(start: Int, parent: Theory) : Int =
   {
     var i = skipws(crawlKeyword(start, "%meta"))
     val (metaTheoryName, positionAfter) = crawlIdentifier(i)    // read meta theory name
@@ -821,11 +821,10 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, Context(parent.path))
         i = positionAfter
         domain match {
-          case Some(dom) => structure = DefinedStructure(parent.toTerm, LocalName(name), OMMOD(dom), morphism, isImplicit)
+          case Some(dom) => structure = Structure(parent.toTerm, LocalName(name), OMMOD(dom), Some(morphism), isImplicit)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted
-          case None => structure = DefinedStructure(parent.toTerm, LocalName(name), null, morphism, isImplicit)
+          case None => structure = Structure(parent.toTerm, LocalName(name), null, Some(morphism), isImplicit)
         }
-
         add(structure)
       }
     }
@@ -1107,7 +1106,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     * @param parent the enclosing DeclaredTheory
     * @return the position after the closing }
     * @throws SourceError for syntactical errors */
-  private def crawlTheoryBody(start: Int, parent: DeclaredTheory) : Int =
+  private def crawlTheoryBody(start: Int, parent: Theory) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment stored
@@ -1191,7 +1190,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       // It's a DefinedTheory
       val (theoryExp, positionAfter) = crawlTerm(i, Nil, Nil, tpath $ DefComponent, Context())
       i = positionAfter
-      theory = DefinedTheory(tpath.parent, tpath.name, theoryExp)
+      theory = new Theory(tpath.parent, tpath.name, None, Theory.noParams, TermContainer(theoryExp))
       add(theory)
       if (meta.isDefined) {
          errors ::= TextParseError(toPos(i), "meta-theory of defined theory is ignored").copy(level = Level.Warning)
@@ -1215,7 +1214,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     * @param parent the parent DeclaredLink
     * @return the position after the closing }
     * @throws SourceError for syntactical errors */
-  private def crawlLinkBody(start: Int, parent: DeclaredLink) : Int =
+  private def crawlLinkBody(start: Int, parent: Link) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment stored
@@ -1288,15 +1287,15 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     var view : View = null
     if (flat.codePointAt(i) == '{') {
       // It's a DeclaredView
-      view = DeclaredView(vpath.parent, vpath.name, domain, codomain, isImplicit)
+      view = View(vpath.parent, vpath.name, domain, codomain, isImplicit)
       add(view)
-      i = crawlLinkBody(i, view.asInstanceOf[DeclaredView])
+      i = crawlLinkBody(i, view.asInstanceOf[View])
     }
     else {
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, Context())
       i = positionAfter
-      view = DefinedView(vpath.parent, vpath.name, domain, codomain, morphism, isImplicit)
+      view = View(vpath.parent, vpath.name, domain, codomain, Some(morphism), isImplicit)
       add(view)
     }
 
@@ -1441,7 +1440,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     * @param parent the enclosing DeclaredTheory
     * @return the position after the closing }
     * @throws SourceError for syntactical errors */
-  private def crawlSpecBody(start: Int, parent: DeclaredTheory) : Int =
+  private def crawlSpecBody(start: Int, parent: Theory) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment store/

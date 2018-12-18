@@ -305,7 +305,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (! errors.isEmpty) {
             report(prefix, "errors:")
             logGroup {
-               errors.foreach {case SolverError(_,e) =>
+               errors.foreach {case SolverError(_,e,_) =>
                   report(prefix, "error: " + e.getSteps.head.present)
                   logHistory(e)
                }
@@ -398,13 +398,14 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     def traverse(t: Term)(implicit con : Context, state : State) = t match {
       case Unknown(n, args) =>
         val argsT = args map {a => traverse(a)}
-        sub(n) match {
+        val tS = sub(n) match {
           case Some(t) =>
             val FreeOrAny(xs, s) = t
             s ^? (xs /! argsT)
           case None =>
             Unknown(n, argsT)
         }
+        tS.from(t) // preserve meta-data when this is called at the end, in particular source reference of _
       case _ =>
         if (t.freeVars exists {x => unknowns contains x})
           Traverser(this, t)
@@ -500,7 +501,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       } else {
          parser.SourceRef.delete(valueS) // source-references from looked-up types may sneak in here
          val vd = solved.copy(df = Some(valueS))
-         // val rightS = right ^^ (OMV(name) / valueS) // substitute in solutions of other variables
+         // substitute in solutions of other variables
+         // this usd to do only val rightS = right ^^ (OMV(name) / valueS), but that is bad because solutions are not immediately reduced
+         // the code below is a bit redundant as it substitutes all solutions, even though normally only the new one should occur free
          val newSolution = left ::: vd :: right
          setNewSolution(newSolution)
          val newSolutionS = substituteSolution(newSolution)
@@ -697,8 +700,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   def warning(message: => String)(implicit history: History): Boolean = {
       log("warning: " + message)
       history += message
+      val h = history.steps.head
       val level = Level.Warning
-      addError(SolverError(level, history))
+      addError(SolverError(level, history,Some(cont => h.present(cont))))
       false
   }
 
@@ -724,7 +728,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val bi = new BranchInfo(h, getCurrentBranch)
       addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
       activateRepeatedly
-      if (errors.nonEmpty) {
+      if (errors.exists(_.level >= Level.Error)) {
         // definitely disproved
         false
       } else {
@@ -861,16 +865,22 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
               case None =>
                 error("unsolved (untyped) unknown: " + vd.name)
               case Some(FreeOrAny(tpCon,tp)) =>
-                def tryAHole = if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
-                  solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
-                }
-                history += "trying to find unique inhabitant " + vd.name + " of " + presentObj(tp)
-                findUniqueInhabitant(tp)(Stack(tpCon), history) match {
-                  case Some(p) =>
-                    solve(vd.name, FreeOrAny(tpCon,p))
-                  case None =>
-                    tryAHole
-                    error("unsolved (typed) unknown: " + vd.name)
+                if (tp.freeVars.exists(solution.isDeclared)) {
+                  // if the type still has unknowns, there's no point in trying to solve the unknown here
+                  error("unsolved unknown of unknown type: " + vd.name)
+                } else {
+                  findUniqueInhabitant(tp)(Stack(tpCon), history) match {
+                    case Some(p) =>
+                      solve(vd.name, FreeOrAny(tpCon,p))
+                    case None =>
+                      if (vd.name.startsWith(ParseResult.VariablePrefixes.explicitUnknown)) {
+                        // the user explicitly asked for this term to be filled in
+                        solve(vd.name, FreeOrAny(tpCon, Hole(tp)))
+                        error("unsolved hole")
+                      } else {
+                        error("unsolved (typed) unknown: " + vd.name)
+                      }
+                  }
                 }
             }
       }
@@ -979,7 +989,9 @@ object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
 case class TypeBound(bound: Term, upper: Boolean)
 
 /** error/warning produced by [[Solver]] */
-case class SolverError(level: Level.Level, history: History)
+case class SolverError(level: Level.Level, history: History,msgO : Option[(Obj => String) => String]= None) {
+  def msg(implicit cont : Obj => String) = msgO.map(_.apply(cont)).getOrElse(history.steps.head.present(cont))
+}
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult {

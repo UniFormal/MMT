@@ -18,16 +18,23 @@ object ConstantAssignment {
       Constant(home, name, alias, None, target, None, NotationContainer())
 }
 
-  /**
-   * An MMT assignment to a definitional link is a special case of a DefinedStructure.
-   *
-   * @param home the parent link
-   * @param name the name of the instantiated symbol
-   * @param target the morphism assigned to the symbol
-   */
+/**
+ * An MMT assignment to a definitional link is a special case of a DefinedStructure.
+ *
+ * @param home the parent link
+ * @param name the name of the instantiated symbol
+ * @param target the morphism assigned to the symbol
+ */
 object DefLinkAssignment {
    def apply(home : Term, name : LocalName, from: Term, target : Term) =
-      DefinedStructure(home, name, from, target, false)
+      Structure(home, name, from, Some(target), false)
+   def unapply(se: StructuralElement): Option[(Term,LocalName,Term,Term)] = se match {
+     case s: Structure =>
+       s.df map {df =>
+         (s.home, s.name, s.from, df)
+       }
+     case _ => None
+   }
 }
 
 
@@ -40,9 +47,9 @@ object LinkInclude {
    */
   def apply(home: Term, from: MPath, mor: Term) = DefLinkAssignment(home, LocalName(from), OMMOD(from), mor)
   def unapply(d: ContentElement) = d match {
-    case d: DefinedStructure =>
-      d.from match {
-        case OMMOD(f) if d.name == LocalName(f) => Some((d.home, f, d.df))
+    case s: Structure =>
+      (s.from, s.df) match {
+        case (OMMOD(f), Some(df)) if s.name == LocalName(f) => Some((s.home, f, df))
         case _ => None
       }
     case _ => None

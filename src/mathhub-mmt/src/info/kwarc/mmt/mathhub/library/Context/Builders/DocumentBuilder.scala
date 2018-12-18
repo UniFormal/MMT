@@ -1,42 +1,42 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives
+import info.kwarc.mmt.api.{DPath, LocalName, Path, archives}
 import info.kwarc.mmt.api.archives.ImporterAnnotator
 import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
-import info.kwarc.mmt.api.documents.{Document, NRef}
-import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
-import info.kwarc.mmt.api.utils.{File, mmt}
-import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentRef, ISourceReference, IModuleRef}
+import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentParentRef, IDocumentRef, ISourceReference}
 
 trait DocumentBuilder { this: Builder =>
   /** gets a reference to a document */
   def getDocumentRef(id: String): Option[IDocumentRef] = getReferenceOf(classOf[IDocumentRef], id)
 
   /** builds a reference to a document */
-  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = {
+  protected def buildDocumentReference(document: Document) : Option[IDocumentRef] = makeDocumentRef(document.path)
 
-    log(s"parent of ${document} is ${document.parent.toPath}")
+  /** optimisation to quickly build a reference to a parent without loading more content */
+  protected def getDocumentReference(dRef: DRef): Option[IDocumentRef] = getReferenceOrElse(classOf[IDocumentRef], dRef.path.toPath) {
+    makeDocumentRef(dRef.target)
+  }
 
+  private def makeDocumentRef(path: DPath): Option[IDocumentRef] = {
     // if we are the narrationBase of an archive, that is our parent
     val parent = mathHub.entries_.find({
-      case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == document.path.toPath
+      case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == path.toPath
       case _ => false
     }) match {
       case Some(ae) => getArchiveRef(ae.id)
       // if not, the parent is simply a document
-      case None => getDocumentRef(document.path.^.toPath) // TODO: is parent working properly?
+      case None => getDocumentRef(path.^.toPath)
     }
-
 
     Some(
       IDocumentRef(
         parent.map(Some(_))
-          .getOrElse(return buildFailure(document.path.toPath, "getRef(document.parent)")),/* parent */
-        document.path.toPath, /* id */
-        document.name.last.toPath /* name */
+          .getOrElse(return buildFailure(path.toPath, "getRef(document.parent)")),/* parent */
+        path.toPath, /* id */
+        path.name.last.toPath /* name */
       )
     )
   }
@@ -62,9 +62,7 @@ trait DocumentBuilder { this: Builder =>
     // TODO: More tags here
     val tags = ImporterAnnotator.get(document).toList.filter(IDocument.knownTags.contains)
 
-
     // find all the declarations
-    // TODO: Implement other types and section references
     val decls = document.getDeclarations.flatMap({
 
       // IOpaqueElement
@@ -75,63 +73,25 @@ trait DocumentBuilder { this: Builder =>
       case d: Document => getDocument(d.path.toPath).map(Some(_))
         .getOrElse(return buildFailure(document.path.toPath, s"getDocument(document.decls[${d.path.toPath}])"))
 
-      // Reference, currently support IDocumentRef and IModuleRef
-      case n: NRef => {
-        val path = n.target.toPath
-        getReference(path) match {
-          case Some(mr: IModuleRef) => Some(mr)
-          case Some(dr: IDocumentRef) => Some(dr)
+      // IModuleRef
+      case m: MRef => getModuleReference(m)
 
-          // TODO: Support other types once they have been implemented
-          case _ => {
-            log(s"buildDocument: ignoring unknown reference child ${path} of ${document.path.toPath} (not Module, Document)")
-            None
-          }
-        }
-      }
-      // TODO: Implement URIs
-      case d => {
-        log(s"buildDocument: ignoring unknown child ${d.path.toPath} of ${document.path.toPath} (not OpaqueElement, Document or MRef)")
+      // IDocumentRef
+      case d: DRef => getDocumentReference(d)
+
+      case d =>
+        logDebug(s"buildDocument: ignoring unknown child ${d.path.toPath} of ${document.path.toPath} (not OpaqueElement, Document or DRef, MRef)")
         None
-      }
     })
 
     Some(IDocument(
       ref.parent, ref.id, ref.name,
 
-      tags, // TODO: Implement tags
+      tags,
       source,
 
       getStats(ref.id),
       decls
     ))
-  }
-
-  /** gets a string representing the source code of a specific object */
-  protected def getSourceOf(md: HasMetaData): Option[String] = {
-    // get the source ref string
-    val sourceRef = md.metadata.getLinks(mmt.mmtbase ? "metadata" ? "sourceRef")
-      .headOption.map(SourceRef.fromURI).getOrElse(return None)
-
-    // try to resolve the physical path to the source in the source Dimension
-    val (archive, path) = controller.backend.resolveLogical(sourceRef.container).getOrElse(return None)
-    val sourcePath = path.foldLeft[File](archive.root / archive.resolveDimension(archives.source))((p, c) => p / c)
-    if(!sourcePath.isFile){ return None }
-
-    // take the appropriate lines from the source file
-    val sourceLines = File.read(sourcePath).split("\n")
-      .slice(sourceRef.region.start.line, sourceRef.region.end.line + 1)
-
-    if(sourceLines.length > 1){
-      // we have > 1 source line
-      val firstLine = sourceLines.headOption.map(_.drop(sourceRef.region.start.column))
-      val middleLines = sourceLines.drop(1).dropRight(1).toList
-      val lastLine = sourceLines.lastOption.map(l => l.dropRight(l.length - sourceRef.region.end.column))
-
-      Some((firstLine :: middleLines :: (lastLine :: Nil)).mkString("\n"))
-    } else {
-      // we have exactly one line
-      Some(sourceLines.head.slice(sourceRef.region.start.column, sourceRef.region.end.column + 1))
-    }
   }
 }

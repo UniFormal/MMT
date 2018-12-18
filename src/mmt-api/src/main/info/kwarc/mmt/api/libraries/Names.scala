@@ -20,9 +20,9 @@ case class IncludeOption(from : MPath, to: MPath, name : LocalName) {
 /** Auxiliary methods for name lookup */
 // we assume includes have been flattened
 object Names {
-   private def get(t: Term)(implicit lib: Lookup) : Option[DeclaredTheory] = t match {
+   private def get(t: Term)(implicit lib: Lookup) : Option[Theory] = t match {
       case OMMOD(p) => lib.get(p) match {
-         case th: DeclaredTheory => Some(th)
+         case th: Theory => Some(th)
          case _ => None
       }
       case _ => None

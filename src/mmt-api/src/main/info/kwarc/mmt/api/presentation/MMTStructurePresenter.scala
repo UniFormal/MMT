@@ -27,7 +27,26 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
      apply(e, 0)(rh)
    }
 
-   protected def doConstant(c: Constant,indent:Int)(implicit rh: RenderingHandler) = {
+  protected def doTheory(t: Theory, indent:Int)(implicit rh: RenderingHandler) {
+    //TODO this ignores all narrative structure inside a theory
+    rh("theory " + t.name)
+    t.meta.foreach(p => rh(" : "+p.toString))
+    doDefComponent(t)
+    rh(" \n")
+    t.getDeclarations.foreach {d => apply(d, indent+1)}
+  }
+  
+  protected def doView(v: View, indent:Int)(implicit rh: RenderingHandler) {
+      rh("view " + v.name + " : ")
+      apply(v.from, Some(v.path $ DomComponent))
+      rh(" -> ")
+      apply(v.to, Some(v.path $ CodComponent))
+      doDefComponent(v)
+      rh("\n")
+      v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
+  }
+
+   protected def doConstant(c: Constant, indent:Int)(implicit rh: RenderingHandler) = {
       rh("constant " + c.name)
       c.alias foreach {a =>
          rh(" @ ")
@@ -59,24 +78,12 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
       }
    }
 
-   protected def doDeclaredStructure(s:DeclaredStructure,indent:Int)(implicit rh: RenderingHandler) = {
+   protected def doStructure(s: Structure,indent:Int)(implicit rh: RenderingHandler) = {
       rh("structure " + s.name + " : ")
       apply(s.from, Some(s.path $ TypeComponent))
-      rh(" =\n")
+      doDefComponent(s)
+      rh("\n")
       s.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
-   }
-
-   protected def doIndent(indent:Int)(implicit rh: RenderingHandler) {
-      Range(0,indent).foreach {_ => rh("   ")}
-   }
-
-   protected def doDeclaredView(v:DeclaredView,indent:Int)(implicit rh: RenderingHandler) = {
-      rh("view " + v.name + " : ")
-      apply(v.from, Some(v.path $ DomComponent))
-      rh(" -> ")
-      apply(v.to, Some(v.path $ CodComponent))
-      rh(" =\n")
-      v.getPrimitiveDeclarations.foreach {d => apply(d, indent+1)}
    }
 
    //this used to be private; but had to change that for MMTSyntaxPresenter override of doDeclaredStructure
@@ -95,13 +102,8 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          case oe: OpaqueElement =>
             controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
          case c: Constant => doConstant(c,indent)
-         case t: DeclaredTheory =>
-            //TODO this ignores all narrative structure inside a theory
-            rh("theory " + t.name)
-            t.meta.foreach(p => rh(" : "+p.toString))
-            rh(" =\n")
-            t.getDeclarations.foreach {d => apply(d, indent+1)}
-         case v: DeclaredView => doDeclaredView(v,indent)
+         case t: Theory => doTheory(t, indent)
+         case v: View => doView(v,indent)
          case dd: DerivedDeclaration =>
             rh << dd.feature + " "
             controller.extman.get(classOf[StructuralFeature], dd.feature) match {
@@ -114,18 +116,7 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             dd.module.getDeclarations.foreach {d => apply(d, indent+1)}
          case nm: NestedModule =>
             apply(nm.module, indent+1)
-         case s: DeclaredStructure => doDeclaredStructure(s,indent)
-         case t: DefinedTheory =>
-            rh("theory " + t.name + " abbrev ")
-            apply(t.df, Some(t.path $ DefComponent))
-         case v: DefinedView =>
-            rh("view " + v.name + " abbrev ")
-            apply(v.df, Some(v.path $ DefComponent))
-         case s: DefinedStructure =>
-            rh("structure " + s.name + " : ")
-            apply(s.from, Some(s.path $ TypeComponent))
-            rh(" abbrev ")
-            apply(s.df, Some(s.path $ DefComponent))
+         case s: Structure => doStructure(s,indent)
          case r: RuleConstant =>
             if (r.df.isEmpty) rh("unknown ")
             rh("rule ")
@@ -134,4 +125,20 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
       endDecl(e)
       rh("\n")
    }
+   
+   protected def doIndent(indent:Int)(implicit rh: RenderingHandler) {
+      Range(0,indent).foreach {_ => rh("   ")}
+   }
+
+   /** `= df` if df is preset, returns true if there was a df */
+   protected def doDefComponent(m: ModuleOrLink)(implicit rh: RenderingHandler) = {
+    m.df match {
+      case Some(df) =>
+        rh(" = ")
+        apply(df, Some(m.path $ DefComponent))
+        true
+      case None =>
+        false
+    }
+  }
 }

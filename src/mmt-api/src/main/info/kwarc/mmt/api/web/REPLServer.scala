@@ -26,7 +26,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, e
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
-      case m: DeclaredModule => currentScope = IsMod(m.path, LocalName.empty)
+      case m: Module => currentScope = IsMod(m.path, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
     }
@@ -220,7 +220,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   private def createSession(path: DPath, id: String) : REPLSession = {
     val nsMap = controller.getNamespaceMap(path)
-    val doc = new Document(path, root=true, nsMap = nsMap)
+    val doc = new Document(path, level=FileLevel, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
     val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
