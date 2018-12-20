@@ -163,7 +163,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         val (argCon, dApplied) = d.argContext(None)
         val dAppliedInduct = induct(d.ret, dApplied)
         val dPrimed = utils.listmap(repls, d.path).get
-        val dAppliedPrimed = ApplyGeneral(dPrimed, (d.context++argCon) map {vd => induct(vd.tp.get, vd.toTerm)})
+        val dApplPrimedOutCon = ApplyGeneral(dPrimed, d.context map {vd => induct(vd.tp.get, vd.toTerm)}) // To bring this term to the same form as the analogous one
+        val dAppliedPrimed = ApplyGeneral(dApplPrimedOutCon, argCon map {vd => induct(vd.tp.get, vd.toTerm)})
         val retPrimed = induct(Univ(1), d.ret)
         val ret = d match {
           case tl: TermLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)

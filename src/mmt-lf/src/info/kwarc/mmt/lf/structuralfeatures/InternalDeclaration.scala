@@ -143,13 +143,6 @@ object InternalDeclaration {
   //TODO: Implement this properly (not required in LF)
   def isTypeLevel(tp: Term) : Boolean = false
   
-  def parsePi(pi:Term): (List[VarDecl], Term) = Pi.unapply(pi) match {
-    case Some((name, t, body)) => val (tl, tm) = parsePi(body); ((OMV(name) % t) :: tl, tm)
-    case None => (Nil, pi)
-  } // This should work, but somehow doesn't, it is however strictly required for this feature to make any sense*/
-  
-  //Currently, this leads to broken chains in the no-junk declarations, consequently the no-junk declarations are not well-typed for dependently-typed internal declarations
-  
   /**
    * convert the given constant into the appropriate internal declaration
    * @param c the constant to convert
