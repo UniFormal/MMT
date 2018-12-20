@@ -554,7 +554,7 @@ class URIProducer extends BuildTarget {
        thys.foreach {thy =>
          catchErrors("error while processing " + thy) {
            controller.globalLookup.getO(thy) match {
-             case Some(d: DeclaredTheory) =>
+             case Some(d: Theory) =>
                catchErrors("error while flattening " + d.path) {
                   controller.simplifier(d)
                }

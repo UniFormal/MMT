@@ -70,7 +70,7 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
    lazy val markers = assoc match {
       case Some(true) =>  argsWithOp(1)
       case None =>        argsWithOp(1)
-      case Some(false) => argsWithOp(1)
+      case Some(false) => argsWithOp(1) // TODO use Delim(_,false)
    }
    def asString = {
       val assocString = assoc match {

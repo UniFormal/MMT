@@ -305,7 +305,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
          if (! errors.isEmpty) {
             report(prefix, "errors:")
             logGroup {
-               errors.foreach {case SolverError(_,e) =>
+               errors.foreach {case SolverError(_,e,_) =>
                   report(prefix, "error: " + e.getSteps.head.present)
                   logHistory(e)
                }
@@ -700,8 +700,9 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   def warning(message: => String)(implicit history: History): Boolean = {
       log("warning: " + message)
       history += message
+      val h = history.steps.head
       val level = Level.Warning
-      addError(SolverError(level, history))
+      addError(SolverError(level, history,Some(cont => h.present(cont))))
       false
   }
 
@@ -727,7 +728,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       val bi = new BranchInfo(h, getCurrentBranch)
       addConstraint(new DelayedJudgement(j, bi, notTriedYet = true))(h)
       activateRepeatedly
-      if (errors.nonEmpty) {
+      if (errors.exists(_.level >= Level.Error)) {
         // definitely disproved
         false
       } else {
@@ -988,7 +989,9 @@ object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
 case class TypeBound(bound: Term, upper: Boolean)
 
 /** error/warning produced by [[Solver]] */
-case class SolverError(level: Level.Level, history: History)
+case class SolverError(level: Level.Level, history: History,msgO : Option[(Obj => String) => String]= None) {
+  def msg(implicit cont : Obj => String) = msgO.map(_.apply(cont)).getOrElse(history.steps.head.present(cont))
+}
 
 /** returned by [[Solver.dryRun]] as the result of a side-effect-free check */
 sealed trait DryRunResult {

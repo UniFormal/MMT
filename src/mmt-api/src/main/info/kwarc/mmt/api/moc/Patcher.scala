@@ -48,7 +48,7 @@ object Patcher {
 
   }
 
-  private def copyDecls(old : DeclaredModule, nw : DeclaredModule) {
+  private def copyDecls(old : Module, nw : Module) {
     old.getDeclarations collect {
       case s : Declaration => nw.add(s)
     }
@@ -56,31 +56,31 @@ object Patcher {
 
   def updateComponent(d : ContentElement, comp : ComponentKey,  old : Option[Obj], nw : Option[Obj]) : ContentElement = (d, comp, nw) match {
     /** Theories */
-    case (t : DeclaredTheory, DomComponent, Some(OMMOD(p))) =>
-       val tN = new DeclaredTheory(t.parent, t.name, Some(p), t.paramC, t.dfC)
+    case (t : Theory, DomComponent, Some(OMMOD(p))) =>
+       val tN = new Theory(t.parent, t.name, Some(p), t.paramC, t.dfC)
        copyDecls(t, tN)
        tN
-    case (t : DeclaredTheory, DomComponent, None) =>
-       val tN = new DeclaredTheory(t.parent, t.name, None, t.paramC, t.dfC)
+    case (t : Theory, DomComponent, None) =>
+       val tN = new Theory(t.parent, t.name, None, t.paramC, t.dfC)
        copyDecls(t, tN)
        tN
-    case (t : DefinedTheory,  DefComponent, Some(df : Term)) =>
-       DefinedTheory(t.parent, t.name, df)
+    case (t : Theory, DefComponent, Some(df : Term)) =>
+       val tN = new Theory(t.parent, t.name, t.meta, t.paramC, TermContainer(df))
+       copyDecls(t, tN)
+       tN
     /** Views */
-    case (v : DeclaredView, CodComponent, Some(to : Term)) =>
-       val vN = DeclaredView(v.parent, v.name, v.from, to, v.isImplicit)
+    case (v : View, CodComponent, Some(to : Term)) =>
+       val vN = new View(v.parent, v.name, v.fromC, TermContainer(to), v.dfC, v.isImplicit)
        copyDecls(v, vN)
        vN
-    case (v : DeclaredView, DomComponent, Some(from : Term)) =>
-       val vN = DeclaredView(v.parent, v.name, from, v.to, v.isImplicit)
+    case (v : View, DomComponent, Some(from : Term)) =>
+       val vN = new View(v.parent, v.name, TermContainer(from), v.toC, v.dfC, v.isImplicit)
        copyDecls(v, vN)
        vN
-    case (v : DefinedView, CodComponent, Some(to : Term)) =>
-       DefinedView(v.parent, v.name, v.from, to, v.df, v.isImplicit)
-    case (v : DefinedView, DomComponent, Some(from : Term)) =>
-       DefinedView(v.parent, v.name, from, v.to, v.df, v.isImplicit)
-    case (v : DefinedView,  DefComponent, Some(df : Term)) =>
-       DefinedView(v.parent, v.name, v.from, v.to, df, v.isImplicit)
+    case (v : View, DefComponent, Some(df : Term)) =>
+       val vN = new View(v.parent, v.name, v.fromC, v.toC, TermContainer(df), v.isImplicit)
+       copyDecls(v, vN)
+       vN
 
     /** Constants */
     case (c : Constant, DefComponent, Some(s : Term)) => Constant(c.home, c.name, c.alias, c.tp, Some(s), c.rl, c.notC)
@@ -113,8 +113,8 @@ object Patcher {
    def applyModuleChange(cm : ChangeModule, cold : Controller, controller : Controller) = {
     cm match {
       case AddModule(m,tp) => (tp,m) match {
-          case ("theory",d : DeclaredTheory) =>
-            val nd = new DeclaredTheory(d.parent, d.name, d.meta)
+          case ("theory",d : Theory) =>
+            val nd = new Theory(d.parent, d.name, d.meta)
             controller.add(nd)
             controller.add(MRef(m.path.parent ,m.path, true))
             _declarations(d).map(x => controller.add(x))
@@ -131,8 +131,8 @@ object Patcher {
       case DeleteModule(path, tp) => None
       case RenameModule(path, tp, name) =>
         (tp,cold.get(path)) match {
-          case ("theory",d : DeclaredTheory) =>
-            val nd = new DeclaredTheory(d.parent, name, d.meta)
+          case ("theory",d : Theory) =>
+            val nd = new Theory(d.parent, name, d.meta)
             controller.add(nd)
             controller.add(MRef(nd.path.parent ,nd.path, true))
             _declarations(d).map(x => x match {
@@ -196,29 +196,29 @@ object Patcher {
         })
         val cn = new Constant(home, name, tp, df, rl)
         cn
-      case ("theory", d : DeclaredTheory) =>
+      case ("theory", d : Theory) =>
         val doc = d.parent
         val name = d.name
         var meta = d.meta
         componentChanges.map(x => x match {
           case AddComponent(name, comp) => (name, comp) match {
             case ("meta", Component(p : OMMOD)) => meta = Some(p.toMPath)
-            case _ => throw ImplementationError("match error in Declared Theory components")
+            case _ => throw ImplementationError("match error in  Theory components")
 
           }
           case DeleteComponent(ctp,name) => (name) match {
             case "meta" => meta = None
-            case _ => throw ImplementationError("match error in Declared Theory components")
+            case _ => throw ImplementationError("match error in  Theory components")
           }
           case UpdateComponent(name,comp,changes) => (name,comp) match {
             case ("meta", Component(p : OMMOD)) => meta = Some(p.toMPath)
-            case _ => throw ImplementationError("match error in Declared Theory components")
+            case _ => throw ImplementationError("match error in  Theory components")
 
           }
           case IdenticalComponent(ctp,name) => None //already set above
         })
 
-        val dn = new DeclaredTheory(doc, name, meta)
+        val dn = new Theory(doc, name, meta)
         dn
     }
   }

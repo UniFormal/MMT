@@ -128,7 +128,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
 
    /** translates a theory T: OpenMath to a Scala trait */
-   def exportCoveredTheory(t: DeclaredTheory) {
+   def exportCoveredTheory(t: Theory) {
      val pack = dpathToScala(t.parent.doc)
      rh.writeln("package " + pack)
      rh.writeln(imports)
@@ -181,11 +181,11 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
    }
 
    /** currently skipped */
-   def exportFunctor(v: DeclaredView) {}
+   def exportFunctor(v: View) {}
 
    /** translates a view from (T: OpenMath) -> Scala to a Scala object implementing T */
-   def exportRealization(v: DeclaredView) {
-     val from = controller.globalLookup.getDeclaredTheory(v.from.toMPath)
+   def exportRealization(v: View) {
+     val from = controller.globalLookup.getAs(classOf[Theory], v.from.toMPath)
      val pack = dpathToScala(v.parent.doc)
      rh.writeln("package " + pack)
      rh.writeln(imports)
@@ -254,10 +254,10 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
       rh.writeln(s"object $folderName extends DocumentScala {\n")
       modules foreach {bt =>
          controller.globalLookup.getModule(bt.contentMPath) match {
-            case m: DeclaredTheory =>
+            case m: Theory =>
                val p = s"$pack.${nameToScala(m.name)}"
                rh.writeln(s"  addTheory($p)")
-            case m: DeclaredView =>
+            case m: View =>
                val p = s"$pack.${nameToScala(m.name)}"
                rh.writeln(s"  addRealization($p)")
             case _ =>

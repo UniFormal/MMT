@@ -11,12 +11,12 @@ import libraries._
 class FlatExporter extends Exporter {
    def key = "flat"
    def exportDocument(doc : Document, bf: BuildTask) {}
-   def exportView(view : DeclaredView, bf: BuildTask) {
+   def exportView(view : View, bf: BuildTask) {
       // TODO
    }
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 
-   def exportTheory(thy : DeclaredTheory, bf: BuildTask) {
+   def exportTheory(thy : Theory, bf: BuildTask) {
       val me = controller.simplifier
       me(thy)
       val node = thy.toNodeElab

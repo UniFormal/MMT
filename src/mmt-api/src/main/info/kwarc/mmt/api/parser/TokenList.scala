@@ -90,8 +90,10 @@ object TokenList {
             // letters, marks, and numbers continue the Token
             case _ if isLetter(c) || isNumber(c) =>
               current += c
-            // the special MMT delimiters continue a multi-character Token if other characters follow
-            // TODO does not allow lexing URIs ?name
+            // lexing URIs ?name, if name starts with a letter
+            case _ if c == '?' && current == "" && i.offset < l - 1 && isLetter(nextChar) =>
+              current += c
+            // ? and / continue a multi-character Token if other characters follow
             case _ if "?/".contains(c) && current != "" && i.offset < l - 1 && !isWhitespace(nextChar) =>
               current += c
             // connectors are remembered

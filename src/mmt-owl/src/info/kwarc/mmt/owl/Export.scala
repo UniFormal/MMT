@@ -54,13 +54,13 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
     val modules = document.getModulesResolved(controller.library)
     modules.map { module =>
       module match {
-        case module: DeclaredTheory => theoryToOWL(module)
+        case module: Theory => theoryToOWL(module)
         //case module : View
       }
     }
   }
 
-  def theoryToOWL(theory: DeclaredTheory): IRI = {
+  def theoryToOWL(theory: Theory): IRI = {
     val ontoIRI = modNameToIRI(theory.path)
     ontology = manager.createOntology(ontoIRI)
 

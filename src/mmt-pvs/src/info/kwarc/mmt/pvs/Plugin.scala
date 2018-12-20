@@ -2,7 +2,7 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import checking._
-import modules.{DeclaredModule, DeclaredTheory}
+import modules.{Module, Theory}
 import uom._
 import notations.{HOAS, NestedHOASNotation}
 import objects._
@@ -70,10 +70,10 @@ object PVSNotation extends NotationExtension {
 // Structural Features
 
 class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike {
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
     val dom = getDomain(dd)
     val body = controller.simplifier.getBody(Context.empty, dom) match {
-      case t : DeclaredTheory => t.path
+      case t : Theory => t.path
       case _ => throw GetError("Not a declared theory: " + dom)
     }
     new Elaboration {

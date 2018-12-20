@@ -47,7 +47,7 @@ object PillarFeature extends StructuralFeature("Pillar") {
      }
    }
 
-   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: Module, dd: DerivedDeclaration) = new Elaboration {
      lazy val domain = {
        dd.getDeclarations.map {d =>
          dd.name / d.name
@@ -60,14 +60,14 @@ object PillarFeature extends StructuralFeature("Pillar") {
    }
 
    // assumes checked instance of pillar
-   def getTheories(dd : DerivedDeclaration) : List[DeclaredTheory] = {
+   def getTheories(dd : DerivedDeclaration) : List[Theory] = {
      dd.tpC.get.get match {
        case OMA(_, args) =>
-         var thys : List[DeclaredTheory] = Nil
+         var thys : List[Theory] = Nil
          args foreach {
            case OMID(p : MPath) =>
              controller.globalLookup.getModule(p) match {
-               case dt : DeclaredTheory => thys ::= dt
+               case dt : Theory => thys ::= dt
                case _ => //nothing to do
              }
            case _ => // nothing to do
@@ -126,14 +126,14 @@ object RealmFeature extends StructuralFeature("Realm") {
    }
 
    // assumes checked instance of realm
-   def getViews(dd : DerivedDeclaration) : List[DeclaredView] = {
+   def getViews(dd : DerivedDeclaration) : List[View] = {
      dd.tpC.get.get match {
        case OMA(_, args) =>
-         var views : List[DeclaredView] = Nil
+         var views : List[View] = Nil
          args foreach {
            case OMID(p : MPath) =>
              controller.globalLookup.getModule(p) match {
-               case dv : DeclaredView => views ::= dv
+               case dv : View => views ::= dv
                case _ => //nothing to do
              }
            case _ => // nothing to do
@@ -143,17 +143,17 @@ object RealmFeature extends StructuralFeature("Realm") {
      }
    }
 
-   def isEssential(symbol : GlobalName, views : List[DeclaredView]) : Boolean = {
+   def isEssential(symbol : GlobalName, views : List[View]) : Boolean = {
      views.exists(v => v.from.toMPath == symbol.module && v.isDeclared(symbol.name))
    }
 
-   def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: Module, dd: DerivedDeclaration) = new Elaboration {
 
      lazy val pillars : Map[LocalName, DerivedDeclaration] = dd.getDeclarations.collect {
        case s : DerivedDeclaration if s.feature == "Pillar" => (s.name, s)
      }.toMap
 
-     lazy val theories : Map[LocalName, List[DeclaredTheory]] = {
+     lazy val theories : Map[LocalName, List[Theory]] = {
        pillars.map(p => (p._1, PillarFeature.getTheories(p._2))).toMap
      }
 

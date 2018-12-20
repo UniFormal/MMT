@@ -9,8 +9,8 @@ import info.kwarc.mmt.lf._
 import SemanticOperator._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, Structure}
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.MitM.MitM
 
 import scala.collection.mutable
@@ -233,15 +233,15 @@ class UniverseInference extends ChangeListener {
 
   def getUniverse(e : StructuralElement) : BigInt = e match {
     case ds: Structure =>
-      val dom: Option[DeclaredTheory] = ds.from match {
+      val dom: Option[Theory] = ds.from match {
         case OMPMOD(mp, _) =>
-          Some(controller.getAs(classOf[DeclaredTheory], mp))
+          Some(controller.getAs(classOf[Theory], mp))
         case _ => return default
       }
       // println("Structure " + ds.path + "with domain " + dom.map(_.path))
       dom.map(getUniverse).getOrElse(default)
 
-    case th: DeclaredTheory =>
+    case th:Theory =>
       th.metadata.get(TypeLevel.path).map(_.value).headOption match {
         case Some(TypeLevel(j)) => j
         case _ =>
@@ -252,7 +252,7 @@ class UniverseInference extends ChangeListener {
       val parent = controller.get(c.parent)
       val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
       val context = parent match {
-        case th : DeclaredTheory => th.getInnerContext
+        case th : Theory => th.getInnerContext
         case _ => return 0
       }
       val univ = try { Solver.infer(controller, context, c.tp.get, None) } catch {
@@ -291,8 +291,8 @@ class UniverseInference extends ChangeListener {
       }
     case ds : Structure =>
       val parent = controller.get(ds.parent) match {
-        case dm : DeclaredModule => dm
-        case _ => return ()
+        case m : Module => m
+        case _ => return
       }
       val parentV = getUniverse(parent)
       val structV = getUniverse(ds)

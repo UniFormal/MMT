@@ -30,7 +30,7 @@ class TypedRelationalExtractor extends RelationalExtractor {
    def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {
       val path = e.path
       e match {
-         case t: DeclaredModule =>
+         case t: Module =>
           t.getDeclarations foreach {
 							case c: Constant =>
 								val declType: Unary = c.tp match {

@@ -3,7 +3,7 @@ package info.kwarc.mmt.interviews
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredTheory, DeclaredView, Theory}
+import info.kwarc.mmt.api.modules.{Module, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.presentation.{HTMLPresenter, Presenter}
@@ -35,16 +35,16 @@ class InterviewServer extends ServerExtension("interview") {
             val (name,froms,tos) = (query("view").get,query("from").get,query("to").get)
             val mp = Path.parseM(name,NamespaceMap.empty)
             val (from,to) = (Path.parseM(froms,NamespaceMap.empty),Path.parseM(tos,NamespaceMap.empty))
-            val v = DeclaredView(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
+            val v = View(mp.parent,mp.name,OMMOD(from),OMMOD(to),false)
             controller add v
             checker.apply(v)(new CheckingEnvironment(controller.simplifier, errorCont,RelationHandler.ignore,MMTTask.generic))
             return ServerResponse.TextResponse("OK")
         }
         if (query("decl").isDefined && query("cont").isDefined) {
             val mps = query("cont").get
-            val th : DeclaredModule = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
-              case ths : DeclaredTheory => ths
-              case v : DeclaredView => v
+            val th : Module = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
+              case ths : Theory => ths
+              case v : View => v
               case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
             }
             val errs = parseDecl(body.asString,th)
@@ -55,7 +55,7 @@ class InterviewServer extends ServerExtension("interview") {
       case List("term") =>
         val mps = query("cont").getOrElse(return ServerResponse.errorResponse("No context for term given"))
         val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
-          case ths : DeclaredTheory => ths
+          case ths : Theory => ths
           case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
         }
         val (tm,errs) = parseTerm(body.asString,th.path)
@@ -65,7 +65,7 @@ class InterviewServer extends ServerExtension("interview") {
       case List("infer") =>
         val mps = query("cont").getOrElse(return ServerResponse.errorResponse("No context for term given"))
         val th = controller.get(Path.parseM(mps,NamespaceMap.empty)) match {
-          case ths : DeclaredTheory => ths
+          case ths : Theory => ths
           case _ => return ServerResponse.errorResponse("Theory " + mps + " doesn't exit")
         }
         val (tm,errs) = parseTerm(body.asString,th.path)
@@ -85,7 +85,7 @@ class InterviewServer extends ServerExtension("interview") {
     (t,errorCont.getErrors.filter(_.level > Level.Warning))
   }
 
-  private def parseDecl(s : String, th : DeclaredModule)(implicit errorCont : ErrorContainer) = {
+  private def parseDecl(s : String, th : Module)(implicit errorCont : ErrorContainer) = {
     val pstream = ParsingStream.fromString(s,th.parent,"mmt")
 
     val cont = new StructureParserContinuations(errorCont) {

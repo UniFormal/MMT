@@ -45,7 +45,7 @@ class LFTranslator(val controller: Controller, bt: BuildTask, index: Document =>
 
   def addDatabase(db: Database): Document = {
     val mod = Metamath.setmm
-    val doc = new Document(path, root = true)
+    val doc = new Document(path)
     controller add doc
     val theory = Theory.empty(mod.doc, mod.name, Some(Metamath.prelude))
     controller add theory

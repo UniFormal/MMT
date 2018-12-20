@@ -26,7 +26,7 @@ class IRelExtractor extends RelationalExtractor{
 
   /** apply a continuation function to every relational element of a StructuralElement */
   def apply(e : StructuralElement)(implicit f: RelationalElement => Unit) : Unit = e match {
-    case d : DeclaredModule => d.getDeclarations foreach {
+    case d : Module => d.getDeclarations foreach {
       case c : Constant =>
         c.metadata.getValues(Informal.constant("role")) foreach {
           case OMA(OMS(p), args) if p == Informal.constant("defines") =>

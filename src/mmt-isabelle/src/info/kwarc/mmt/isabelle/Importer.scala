@@ -357,7 +357,7 @@ object Importer
       val (archive, thy_source_path, thy_doc_path) = Isabelle.theory_archive(thy_name)
 
       // document
-      val doc = new Document(thy_doc_path, root = true)
+      val doc = new Document(thy_doc_path, FileLevel)
       controller.add(doc)
 
       // theory content
@@ -507,7 +507,7 @@ object Importer
             val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
             val to = OMMOD(content.get_locale(dep.target).global_name.toMPath)
 
-            val view = DeclaredView(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
+            val view = View(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
             controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
           }
         }
@@ -744,7 +744,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       (archive, source_path, doc_path)
     }
 
-    def make_theory(theory: String): DeclaredTheory =
+    def make_theory(theory: String): Theory =
     {
       val (archive, _, _) = theory_archive(import_name(theory))
       val module = DPath(archive.narrationBase) ? theory
@@ -1175,7 +1175,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       private val node_name = thy_export.node_name
       private val node_source = thy_export.node_source
 
-      val thy: DeclaredTheory = make_theory(node_name.theory)
+      val thy: Theory = make_theory(node_name.theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
       private val _content =

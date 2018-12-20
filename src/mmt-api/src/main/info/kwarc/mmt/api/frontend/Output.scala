@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.frontend
 
-import info.kwarc.mmt.api.documents.{Document, MRef}
+import info.kwarc.mmt.api.documents.{Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.objects.Obj
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.presentation.{ConsoleWriter, RenderingHandler, StringBuilder}
@@ -100,7 +100,7 @@ case class Closure(p: Path) extends MakeAbstract {
       controller.get(doc ? name) // retrieve once to make sure it's in memory
     val cl = controller.depstore.theoryClosure(doc ? name)
       val clp = cl.map { p => MRef(doc, p) }
-      new Document(doc, root = true, inititems = clp)
+      new Document(doc, FolderLevel, inititems = clp)
   }
 
   override def toString = p + " closure"

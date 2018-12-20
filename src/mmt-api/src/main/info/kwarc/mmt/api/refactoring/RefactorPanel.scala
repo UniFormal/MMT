@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.objects.{Term, OMID}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{ReportHandler, Controller}
-import info.kwarc.mmt.api.modules.{DeclaredModule, DeclaredView, DeclaredTheory}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.ontology.{MMTExtractor, IsView, IsTheory}
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
@@ -20,11 +20,11 @@ import scala.util.{Success, Try}
  * Created by raupi on 29.05.15.
  */
 
-class RefactorPanel(ctrl:Controller,publish: List[DeclaredModule] => Unit) extends JPanel {// with ActionListener {
+class RefactorPanel(ctrl:Controller,publish: List[Module] => Unit) extends JPanel {// with ActionListener {
   val controller = ctrl
 
-  var theories = (controller.memory.content.getModules collect { case t: DeclaredTheory => t }).toList
-  var views = (controller.memory.content.getModules collect { case v: DeclaredView => v }).toList
+  var theories = (controller.memory.content.getModules collect { case t: Theory => t }).toList
+  var views = (controller.memory.content.getModules collect { case v: View => v }).toList
   /*
   var theorynames = List().asInstanceOf[List[String]]
   var viewnames = List().asInstanceOf[List[String]]

@@ -26,7 +26,7 @@ class PythonExporter extends Exporter {
       rh.nl
    }
 
-   def exportTheory(t: DeclaredTheory, bf: BuildTask) {
+   def exportTheory(t: Theory, bf: BuildTask) {
       cls(t.name.toPath) {
          var fields: List[String] = Nil
          t.getPrimitiveDeclarations.foreach {
@@ -46,7 +46,7 @@ class PythonExporter extends Exporter {
       }
    }
 
-   def exportView(v: DeclaredView, bf: BuildTask) {}
+   def exportView(v: View, bf: BuildTask) {}
 
    def exportNamespace(dpath: DPath, nsbt: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
          namespaces.foreach {case bd =>

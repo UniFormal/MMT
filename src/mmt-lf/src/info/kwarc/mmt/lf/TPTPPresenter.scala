@@ -112,7 +112,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
          rh << Incl(r.parent.uri.relativize(r.target.uri.setExtension(outExt)))
       case r: MRef =>
          rh << Incl(r.parent.uri.relativize(r.target.doc.uri)/(r.target.name.toPath+"."+outExt))
-      case t: DeclaredTheory =>
+      case t: Theory =>
          controller.simplifier(t)
          t.meta.foreach {m =>
             if (m != LF.theoryPath) {

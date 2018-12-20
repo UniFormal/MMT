@@ -34,7 +34,7 @@ trait UsesAlignments extends VRESystem {
   def toTranslations : List[AcrossLibraryTranslation] = Translations.lftoOMA :: Nil
   def fromTranslations : List[AcrossLibraryTranslation] = Nil
 
-  private lazy val links : List[DeclaredLink] = Nil /*
+  private lazy val links : List[Link] = Nil /*
   // FR temporarily taken out to speed up testing
   {
     val content = (archive.allContent ::: mitm.allContent)
