@@ -70,19 +70,15 @@ abstract class ROController {
   *
   * It stores all stateful entities and executes Action commands.
   */
-class Controller extends ROController with ActionHandling with Logger {
-  def this(r: Report) {
-    this()
-    report_ = r
-  }
+class Controller(report_ : Report = new Report) extends ROController with ActionHandling with Logger {
 
   def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
 
   // **************************** logging
 
   /** handles all output and log messages */
-  private var report_ : Report = new Report
-  val report = report_
+  //private var report_ : Report = new Report
+  def report = report_
   val logPrefix = "controller"
 
   // **************************** data state and components
