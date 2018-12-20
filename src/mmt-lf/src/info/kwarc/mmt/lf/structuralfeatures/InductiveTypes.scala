@@ -31,24 +31,25 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
-  /** Check whether the TermLevel has an negative argument of an inductively defined type
+  /** Check whether the TermLevel is a constructor or outgoing */
+  def constructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
+    case ApplyGeneral(OMS(tpl), args) => types contains tpl
+    case _ => false
+  }
+  
+  /** Check whether the TermLevel has a higher order argument of an inductively defined type
    *  In that case an error is thrown
    */
-  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent: GlobalName) = {
+  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent : GlobalName) = {
     def dependsOn(tm: Term, tp: GlobalName): Boolean = {
-        val FunType(args, ret) = tm
-        args.+:(ret) exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
-      }
-    val relevantArgs = tc.args filter {arg => types exists {x => dependsOn(arg._2, x)}}
-    relevantArgs.zipWithIndex foreach {case (arg, i) => if ((i % 2) != 0) {
-      
-        types.find(x => dependsOn(arg._2, x)) foreach {x => 
-          if (relevantArgs.zipWithIndex.filter({case (arg, i) => (i % 2) == 0}) exists {case (y, i) => dependsOn(y._2, x)}) {
-            throw LocalError("Unsupported constructor with argument of inductively defined type in negative position: "
-                +noLookupPresenter.asString(tc.toTerm(parent))
-                +" depends on "+x.name.toString)}
-          }
-      }
+      val FunType(args, ret) = tm
+      args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
+    }
+    if (constructor(tc, types)) {// Check whether the constructor is outgoing
+      tc.args.map(_._2).exists({x =>
+        val FunType(args, ret) = x
+        args.exists(arg => types.exists(dependsOn(arg._2, _)))
+      })
     }
   }
   
@@ -93,11 +94,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
-    //elabDecls foreach {d =>log(shortPresent(d))}    //This typically prints all external declarations several times
+    //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
-        elabDecls.find(_.name == n) foreach { x => println(defaultPresenter(x)(controller))}
+        elabDecls.find(_.name == n) foreach(c => log(defaultPresenter(c)(controller)))
         elabDecls.find(_.name == n)
       }
     }
@@ -148,6 +149,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
                 case None => throw ImplementationError("Couldn't find declaration for the inductively defined type "+noLookupPresenter.asString(tp)+". This should never happen. ")
               }
           }
+        case _ => log("Found kind which is not the application of a type level: "+present(tm, true)+". "); tm
       }
       case ApplyGeneral(OMS(p), args) =>
         utils.listmap(inductNames, p) match {
@@ -156,13 +158,13 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         }
       case _ => log("Found term of non inductively-defined type "+noLookupPresenter.asString(tp)+". "); tm
     }
-    
     decls map {d =>
       val Ltp = () => {
         val (argCon, dApplied) = d.argContext(None)
         val dAppliedInduct = induct(d.ret, dApplied)
         val dPrimed = utils.listmap(repls, d.path).get
-        val dAppliedPrimed = ApplyGeneral(dPrimed, argCon map {vd => induct(vd.tp.get, vd.toTerm)})
+        val dApplPrimedOutCon = ApplyGeneral(dPrimed, d.context map {vd => induct(vd.tp.get, vd.toTerm)}) // To bring this term to the same form as the analogous one
+        val dAppliedPrimed = ApplyGeneral(dApplPrimedOutCon, argCon map {vd => induct(vd.tp.get, vd.toTerm)})
         val retPrimed = induct(Univ(1), d.ret)
         val ret = d match {
           case tl: TermLevel => Eq(retPrimed, dAppliedInduct, dAppliedPrimed)
@@ -189,25 +191,27 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
+    //println("\n\nProducing the no-confusion declarations for "+d.name+": ")
     // To ensure that the result is well-typed
     if (d.isNotDependentTyped()) {
       // To ensure that the result is well-typed
       tmdecls.takeWhile(_ != d) filter (_.isNotDependentTyped()) foreach {b => 
-        if (b.ret == d.ret) {
+        if (b.tp == d.tp) {
           // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
           val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
           val Ltp = () => {
             val (aCtx, aApplied) = d.argContext(None)
             val (bCtx, bApplied) = b.argContext(None)
-            Pi(d.context++aCtx ++ bCtx, Neq(b.ret, aApplied, bApplied))  // This does not type-check if ret depends on arguments
+            Pi(d.context++aCtx ++ bCtx, Neq(b.tp, aApplied, bApplied))  // This does not type-check if ret depends on arguments
           }
           decls ::= makeConst(newName, Ltp)
         }
       }
-      decls = decls.reverse
-      if(d.args.length > 0)
-        decls ++= d.injDecls
     }
+    decls = decls.reverse
+    if(d.args.length > 0)
+      //println("Producing the injectivity axiom for "+d.name+": ")
+      decls ++= d.injDecls
     decls
   }
 }
