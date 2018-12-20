@@ -97,7 +97,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
 
   @deprecated("unclear what happens here", "")
-  def elabContext(th : DeclaredTheory)(implicit ce: CheckingEnvironment): Context = {
+  def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, th.path)
@@ -168,38 +168,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         //apply(target)
       case nm: NestedModule =>
         check(context, nm.module, streamed)
-      case t: DefinedTheory =>
-          checkTheory(Some(CPath(t.path, DefComponent)), context, t.df)
-      case v: DefinedView =>
-        checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
-        checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
-        val (dfR, fromR, toR) = checkMorphism(context, v.df, v.fromC.get, v.toC.get)
-        v.fromC.analyzed = fromR
-        v.toC.analyzed = toR
-        v.dfC.analyzed = dfR
-      case s: DefinedStructure =>
-        val (thy, linkOpt) = content.getDomain(s)
-        s.fromC.get foreach {f => checkTheory(Some(CPath(s.path, TypeComponent)), context, f)}
-        val (expectedDomain, expectedCodomain) = linkOpt match {
-          case None =>
-            (s.fromC.get, Some(thy.toTerm))
-          case Some(link) =>
-            val sOrg = content.getStructure(thy.path ? s.name)
-            val sOrgFrom = sOrg.from
-            s.fromC.get match {
-              case None =>
-                // if no domain is given, copy it over from thy
-                s.fromC.analyzed = sOrgFrom
-              case Some(f) =>
-                // otherwise, make sure they're equal 
-                if (!TheoryExp.equal(sOrgFrom, f))
-                  env.errorCont(InvalidElement(s, "import-assignment has bad domain: found " + f + " expected " + sOrgFrom))
-            }
-            (Some(s.from), Some(link.to))
-        }
-        val (dfR, fromR, _ ) = checkMorphism(context, s.df, expectedDomain, expectedCodomain)
-        s.fromC.analyzed = fromR
-        s.dfC.analyzed = dfR
       case rc: RuleConstant =>
         rc.tp foreach {tp =>
           val tpR = checkTerm(context, tp)
@@ -368,7 +336,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     implicit val ce = env.ce
     e match {
       case d: Document =>
-      case t: DeclaredTheory =>
+      case t: Theory =>
         var contextMeta = context
         t.meta foreach { mt =>
           checkTheory(Some(CPath(t.path, TypeComponent)), context, OMMOD(mt))
@@ -377,11 +345,44 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         checkContext(contextMeta, t.parameters)
         t.df map {d => checkTheory(Some(CPath(t.path, DefComponent)), contextMeta++t.parameters, d)}
         // this is redundant on a clean check because e is empty then;
-      case v: DeclaredView =>
+      case v: View =>
         checkTheory(CPath(v.path, DomComponent), v, context, v.fromC.get)
         checkTheory(CPath(v.path, CodComponent), v, context, v.toC.get)
-      case s: DeclaredStructure =>
-        checkTheory(CPath(s.path, TypeComponent), s, context, s.fromC.get)
+        // check definiens, use it to update domain/codomain
+        v.df foreach {df =>
+          val (dfR, fromR, toR) = checkMorphism(context, df, v.fromC.get, v.toC.get)
+          v.fromC.analyzed = fromR
+          v.toC.analyzed = toR
+          v.dfC.analyzed = dfR
+        }
+      case s: Structure =>
+        s.fromC.get foreach {t => checkTheory(Some(CPath(s.path, TypeComponent)), context, t)}
+        // check definiens, use it to update/infer domain
+        val (thy, linkOpt) = content.getDomain(s)
+        s.df.foreach {df =>
+          val (expectedDomain, expectedCodomain) = linkOpt match {
+            case None =>
+              (s.fromC.get, Some(thy.toTerm))
+            case Some(link) =>
+              val sOrg = content.getStructure(thy.path ? s.name)
+              val sOrgFrom = sOrg.from
+              s.fromC.get match {
+                case None =>
+                  // if no domain is given, copy it over from thy
+                  s.fromC.analyzed = sOrgFrom
+                case Some(f) =>
+                  // otherwise, make sure they're equal 
+                  if (!TheoryExp.equal(sOrgFrom, f))
+                    env.errorCont(InvalidElement(s, "import-assignment has bad domain: found " + f + " expected " + sOrgFrom))
+              }
+              (Some(s.from), Some(link.to))
+          }
+          val (dfR, fromR, _ ) = checkMorphism(context, df, expectedDomain, expectedCodomain)
+          s.fromC.analyzed = fromR
+          s.dfC.analyzed = dfR
+        }
+        if (s.fromC.get.isEmpty)
+          throw InvalidElement(s, "could not infer domain of structure")
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -408,8 +409,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val ce = env.ce
     e match {
       case d: Document =>
-      case t: DeclaredTheory =>
-      case v: DeclaredView =>
+      case t: Theory =>
+      case v: View =>
         val istotal = isTotal(context,v)
         if (istotal.nonEmpty) {
           val ie = new InvalidElement(v, "View is not total") {
@@ -418,7 +419,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           }
           env.errorCont(ie)
         }
-      case s: DeclaredStructure =>
+      case s: Structure =>
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         // error for sfOpt.isEmpty is raised in checkElementegin already
@@ -442,7 +443,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
         doDoc(d)
-      case b: Body =>
+      case b: ModuleOrLink =>
         doDoc(b.asDocument)      
       case _ =>
     }
@@ -451,8 +452,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   
   /** checks if a view is total and returns the missing assignments */
   @deprecated("needs review", "")
-  private def isTotal(context: Context, view: DeclaredView, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
-    val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[DeclaredTheory]
+  private def isTotal(context: Context, view: View, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
+    val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[Theory]
     env.ce.simplifier(dom)
     val consts = dom.getConstants collect {
       case c : Constant if c.df.isEmpty && !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path

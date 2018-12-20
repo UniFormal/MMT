@@ -60,8 +60,6 @@ abstract class Lookup {self =>
    // deprecated, use getAs(classOf[X],...) instead of getX
    def getTheory(path : MPath, msg : Path => String = defmsg) : Theory =
      get(path) match {case t: Theory => t case _ => throw GetError(msg(path))}
-   def getDeclaredTheory(path : MPath, msg : Path => String = defmsg) : DeclaredTheory =
-     get(path) match {case t: DeclaredTheory => t case _ => throw GetError(msg(path))}
    def getView(path : MPath, msg : Path => String = defmsg) : View =
      get(path) match {case v: View => v case _ => throw GetError(msg(path))}
    def getLink(path : ContentPath, msg : Path => String = defmsg) : Link =
@@ -104,27 +102,23 @@ abstract class Lookup {self =>
     * @param a the Constant declaration/assignment
     * @return if assignment: the source theory and the containing link; if declaration: the containing theory
     */
-   def getDomain(a: Declaration) : (DeclaredTheory,Option[DeclaredLink]) = {
+   def getDomain(a: Declaration) : (Theory,Option[Link]) = {
       val p = a.home match {
          case OMMOD(p) => p
          case OMS(p) => p
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {
-         case t: DeclaredTheory => return (t, None)
+         case t: Theory => return (t, None)
+         case l: Link => l
          case nm: NestedModule => nm.module match {
-           case t: DeclaredTheory => return (t, None)
-           case l: DeclaredLink => l
+           case t: Theory => return (t, None)
+           case l: Link => l
          }
-         case l: DeclaredLink => l
          case _ => throw GetError("unknown home encountered while getting domain of " + a.path)
       }
       val dom = l.from match {
-         case OMMOD(t) => getAs(classOf[Theory],t) match {
-           case t: DeclaredTheory => t
-           case t : DefinedTheory =>
-             throw GetError("unsimplified defined theory")
-         }
+         case OMMOD(t) => getAs(classOf[Theory],t)
          case _ => throw GetError("domain of declared link is not a declared theory")
       }
       (dom,Some(l))

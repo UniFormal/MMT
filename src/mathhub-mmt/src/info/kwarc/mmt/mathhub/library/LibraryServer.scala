@@ -1,11 +1,14 @@
 package info.kwarc.mmt.mathhub.library
 
+import info.kwarc.mmt.api.StructuralElement
+import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.utils.{JSONArray, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.{PathNotFound, Server}
 
-trait LibraryServer { this: Server =>
+trait LibraryServer extends ChangeListener { this: Server =>
   protected def applyContent(contentPath: List[String], request: ServerRequest) : ServerResponse = contentPath match {
     case "version" :: Nil =>
       toResponse(getMMTVersion)
@@ -59,41 +62,23 @@ trait LibraryServer { this: Server =>
     Some(IMMTVersionInfo(versionNumber, buildDate))
   }
 
-  /** helper method to build a MathHubAPI Context
-    * TODO: Figure out global caching
-    */
-  private def context: MathHubAPIContext = new MathHubAPIContext(controller, this.report)
+  // the context and caching methods
+  private lazy val context: MathHubAPIContext = new MathHubAPIContext(controller, this.report)
 
-  private def getURI(uri: String) : Option[IReferencable] = {
-    log(s"getObject($uri)")
-    context.getObject(uri)
-  }
-  private def getGroups() : List[IGroupRef] = {
-    log(s"getGroups()")
-    context.getGroups()
-  }
-  private def getGroup(id: String) : Option[IGroup] = {
-    log(s"getGroup($id)")
-    context.getGroup(id)
-  }
-  private def getTag(id: String) : Option[ITag] = {
-    log(s"getTag($id)")
-    context.getTag(id)
-  }
-  private def getArchive(id: String) : Option[IArchive] = {
-    log(s"getArchive($id)")
-    context.getArchive(id)
-  }
-  private def getDocument(id: String): Option[IDocument] = {
-    log(s"getDocument($id)")
-    context.getDocument(id)
-  }
-  private def getModule(id: String): Option[IModule] = {
-    log(s"getModule($id)")
-    context.getModule(id)
-  }
-  private def getDeclaration(id: String): Option[IDeclaration] = {
-    log(s"getDeclaration($id)")
-    context.getDeclaration(id)
-  }
+  override def onAdd(c: StructuralElement): Unit = context.onAdd(c)
+  override def onDelete(old: StructuralElement): Unit = context.onDelete(old)
+  override def onClear = context.onClear()
+  override def onArchiveOpen(a: Archive): Unit = context.onArchiveOpen(a)
+  override def onArchiveClose(a: Archive): Unit = context.onArchiveClose(a)
+
+  // getter methods
+
+  private def getURI(uri: String) : Option[IReferencable] = context.transaction(s"getObject($uri)", _.getObject(uri))
+  private def getGroups() : List[IGroupRef] = context.transaction("getGroups()", _.getGroups())
+  private def getGroup(id: String) : Option[IGroup] = context.transaction(s"getGroup($id)", _.getGroup(id))
+  private def getTag(id: String) : Option[ITag] = context.transaction(s"getTag($id)", _.getTag(id))
+  private def getArchive(id: String) : Option[IArchive] = context.transaction(s"getArchive($id)", _.getArchive(id))
+  private def getDocument(id: String): Option[IDocument] = context.transaction(s"getDocument($id)", _.getDocument(id))
+  private def getModule(id: String): Option[IModule] = context.transaction(s"getModule($id)", _.getModule(id))
+  private def getDeclaration(id: String): Option[IDeclaration] = context.transaction(s"getDeclaration($id)", _.getDeclaration(id))
 }

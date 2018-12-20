@@ -34,11 +34,11 @@ class StatisticsExporter extends Exporter {
     * @param doc the theory to make the statistics for
     * @param bf the build task
     */
-  def exportTheory(thy: DeclaredTheory, bf: BuildTask) {
+  def exportTheory(thy: Theory, bf: BuildTask) {
     val rep = controller.report
     val rs = controller.depstore
     rh(rs.makeStatistics(thy.path).toJSON.toString)
   }
-  def exportView(view: DeclaredView, bf: BuildTask)  {}
+  def exportView(view: View, bf: BuildTask)  {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }

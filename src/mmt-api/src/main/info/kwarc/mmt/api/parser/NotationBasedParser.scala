@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.symbols._
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
   /** the first delimiter of this notation, which triggers the rule */
-  def firstDelimString: Option[String] = notation.parsingMarkers collectFirst {
-    case d: Delimiter => d.expand(name, alias).text
-    case SimpSeqArg(_, Delim(s), _) => s
-    case LabelSeqArg(_,Delim(s),_,_) => s
+  val firstDelim: Option[Delim] = notation.parsingMarkers collectFirst {
+    case d: Delimiter => d.expand(name, alias)
+    case SimpSeqArg(_, d, _) => d
+    case LabelSeqArg(_,d,_,_) => d
   }
+  val firstDelimLength = firstDelim.map(_.text.length).getOrElse(-1)
 }
 
 /** a set of parsing rules with the same precedence, see [[NotationOrder]] */
@@ -527,6 +528,7 @@ class NotationBasedParser extends ObjectParser {
            doFoundContent(fc, uls)
        }
      }
+     // the list of constants of the used notation
      // basically, cons = mlCons, but we drop every constant that is defined to be equal to one we already have
      // such cases can happen with structures, where the generated constants are essentially aliases that do not require ambiguity resolution 
      var consVar: List[ContentPath] = Nil
@@ -653,7 +655,7 @@ class NotationBasedParser extends ObjectParser {
         // the level of the notation: if not provided, default to the meta-theory of the constant
         val level = notation.meta orElse {
            lup.getO(con.module) match {
-             case Some(t: modules.DeclaredTheory) => t.meta
+             case Some(t: Theory) => t.meta
              case _ => None
            }
         }

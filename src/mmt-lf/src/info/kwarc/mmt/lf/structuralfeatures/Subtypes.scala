@@ -11,10 +11,11 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 
+@deprecated("this is experimental and may still be removed", "")
 class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
+  def elaborate(parent: Module, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
     val params = Type.getParameters(dd)
     val context = if (params.nonEmpty) Some(params) else None

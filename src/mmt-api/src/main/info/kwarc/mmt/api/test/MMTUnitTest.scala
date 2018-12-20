@@ -1,14 +1,31 @@
 package info.kwarc.mmt.api.test
 
 import info.kwarc.mmt.api.archives.BuildQueue
-import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller, ReportHandler, Run}
+import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.test.testers.BaseTester
+import info.kwarc.mmt.api.utils
 /**
   * A class used for MMT Unit Tests that only need a controller instance to work properly
   */
 abstract class MMTUnitTest extends BaseTester {
+
   /** controller we are using during tests */
-  lazy val controller: Controller = Run.controller
+  lazy val controller: Controller = new Controller(new Report {
+      private var count = 0
+
+      override def apply(prefix: => String, msg: => String): Unit = {
+        count += 1
+        super.apply(prefix, msg)
+        val prefixList = utils.stringToList(prefix, "#")
+        if (prefixList.forall(p => groups.contains(p)) || groups.contains("all")) {
+          count = 0
+        }
+        if (count >= 5000) {
+          count = 0
+          super.apply("test", "Still running!")
+        }
+      }
+    })
 
   /** sets up the controller for tests */
   override def init(): Unit = {

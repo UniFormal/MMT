@@ -77,7 +77,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
 
    def applyDoc(d: focdoc): Document = {
      val focdoc(nam, decls) = d
-     val doc = new Document(currentDoc, root = true)
+     val doc = new Document(currentDoc)
      controller add doc
      decls foreach {
        case m: FocModule => applyMod(doc, m)
@@ -120,7 +120,7 @@ class Translator(imp: FocalizeImporter, controller: Controller, bt: BuildTask) {
          }
        case collection(nam, impl, _) =>
          val to = TheoryExp.empty
-         val vw = new DeclaredView(currentNamespace, LocalName(nam.foc_name), applyCollSpec(impl), to, false)
+         val vw = DeclaredView(currentNamespace, LocalName(nam.foc_name), applyCollSpec(impl), to, false)
          controller.add(vw)
          controller.add(MRef(doc.path, vw.path))
          // TODO how to handle collections? body repeats all inferred declarations

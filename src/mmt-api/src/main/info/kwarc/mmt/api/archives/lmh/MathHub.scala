@@ -107,9 +107,9 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     }
   }
 
-  class MathHubDirectoryEntry(override val root: File) extends MathHubEntry(root) with LMHHubDirectoryEntry
-  class MathHubArchiveEntry(override val root: File) extends MathHubEntry(root) with LMHHubArchiveEntry
-  class MathHubGroupEntry(override val root: File) extends MathHubEntry(root) with LMHHubGroupEntry
+  class MathHubDirectoryEntry(root: File) extends MathHubEntry(root) with LMHHubDirectoryEntry
+  class MathHubArchiveEntry(root: File) extends MathHubEntry(root) with LMHHubArchiveEntry
+  class MathHubGroupEntry(root: File) extends MathHubEntry(root) with LMHHubGroupEntry
 
   /** gets a single entry from the MathHub root */
   def getEntry(root: File): Option[MathHubEntry] = {

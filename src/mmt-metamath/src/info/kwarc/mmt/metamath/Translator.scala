@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects._
 import Metamath._
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.symbols
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.opaque.OpaqueText
 import info.kwarc.mmt.api.opaque.StringFragment
 import org.metamath.scala._

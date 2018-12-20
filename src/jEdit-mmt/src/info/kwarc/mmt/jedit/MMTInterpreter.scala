@@ -3,12 +3,13 @@ package info.kwarc.mmt.jedit
 import info.kwarc.mmt.api._
 import frontend.MMTInterpolator
 import frontend.actions.SetBase
+import modules._
 import objects._
 import parser._
 import utils._
 
 import console._
-import org.gjt.sp.jedit._
+import org.gjt.sp.jedit.{View => JEditView,_}
 import org.gjt.sp.jedit.bufferset._
 
 import scala.collection.mutable
@@ -141,7 +142,7 @@ Non-commands are MMT code.
             scratchfname,
             true)
           scratch.setReadOnly(true)
-          buffmanag.addBuffer(null.asInstanceOf[View], scratch)
+          buffmanag.addBuffer(null.asInstanceOf[JEditView], scratch)
           scratch.setMode("mmt")
           scratch.insert(0, "namespace " + scratchnspace +
             Reader.GS.toChar.toString + "\n\n")
@@ -164,7 +165,7 @@ Non-commands are MMT code.
         val mt = try{
           controller.handle(SetBase(ct))
           controller.globalLookup.get(ct) match {
-            case d: modules.DeclaredTheory =>
+            case d: Theory =>
               d.meta.map(" : " + _.toPath).getOrElse("")
             case _ => ""
           }

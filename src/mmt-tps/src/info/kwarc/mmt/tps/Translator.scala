@@ -25,7 +25,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doDocument(d: omdoc) : BuildResult = {
       path = DPath((URI.http colon "gl.mathhub.info") / "tps" )// / d._meta._metas.collectFirst{case title(s) => s}.getOrElse(bt.inFile.name))
-      val doc = new Document(bt.narrationDPath, true)
+      val doc = new Document(bt.narrationDPath)
       controller add doc
       val modsM = d._modules map doModule(path)
       modsM.foreach(m => {controller add MRef(bt.narrationDPath, m.path)})
@@ -40,7 +40,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
 
    def doName(s:String) : LocalName = LocalName(s.replace("-","_"))
 
-   def doTheoryName(s:String)(implicit th : DeclaredTheory) : MPath = {
+   def doTheoryName(s:String)(implicit th: Theory) : MPath = {
       //println("Regex match! "+s)
       val doctheory = """(.+).omdoc#(.+)""".r
       val docdoc = """logics/(.+)""".r
@@ -68,7 +68,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
       }
    }
 
-   def NewName(s:String,start:Int = 1)(implicit th:DeclaredTheory) : LocalName = {
+   def NewName(s:String,start:Int = 1)(implicit th: Theory) : LocalName = {
       if (!th.declares(doName(s))) doName(s)
       else if (!th.declares(doName(s + "_" + start))) doName(s + "_" + start)
       else NewName(s, start + 1)
@@ -77,7 +77,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
    def doModule(d:DPath)(m: info.kwarc.mmt.tps.syntax.Module): modules.Module = m match {
       case t: theory =>
          val cont = Nil // (t.theory_formals map doFormalPars) collect {case Some(v) => v}
-      implicit val th = new DeclaredTheory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont), Theory.noBase)
+      implicit val th = new Theory(path,doName(t.id),Some(TPSTheory.thpath),ContextContainer(cont), Theory.noBase)
          // TODO: assuming, exporting_, possibly named stuff?
          // TODO theory context
          controller add th
@@ -100,7 +100,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
          sys.exit
    }
 
-   def doDecl(d:Declaration)(implicit th : DeclaredTheory): Unit = d match {
+   def doDecl(d:Declaration)(implicit th: Theory): Unit = d match {
        /*
       case assertion(id,tp,cmp,_def) => th add Constant(th.toTerm,doName(id),None,Some(
       Apply(TPSTheory.proof.term,doObject(_def._obj))
@@ -141,7 +141,7 @@ class TPSImportTask(controller: Controller, bt: BuildTask, index: Document => Un
                sys.exit
    }
 
-   def doObject(o: omobject)(implicit th : DeclaredTheory) : Term = o match {
+   def doObject(o: omobject)(implicit th: Theory) : Term = o match {
       case syntax.OMBIND(s,lvars,pars) =>
          val con : Context = lvars map (_ match {
             case syntax.OMV(name) =>

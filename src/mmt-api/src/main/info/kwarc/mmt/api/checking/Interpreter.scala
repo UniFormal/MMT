@@ -3,8 +3,8 @@ package info.kwarc.mmt.api.checking
 import info.kwarc.mmt.api._
 import archives._
 import documents._
-import frontend.Controller
-import info.kwarc.mmt.api.modules.{DeclaredTheory, DeclaredView, Theory}
+import frontend._
+import modules._
 import ontology.{Declares, RelationExp}
 import parser._
 import utils._
@@ -52,11 +52,12 @@ abstract class Interpreter extends Importer {
     val provided = doc.getModulesResolved(controller.globalLookup).map {m =>
        m.path
     } map LogicalDependency
+     // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the meantime it's better than nothing
+    // TODO handle definiens
     val used = doc.getModulesResolved(controller.globalLookup).flatMap {
-      case th : DeclaredTheory => th.meta.toList ::: th.getIncludes ::: th.getNamedStructures.map(_.from.toMPath)
-      case v : DeclaredView => v.from.toMPath :: v.to.toMPath :: v.getIncludes.map(_._1)
-    }.distinct.map(LogicalDependency) // TODO this is an ugly hack and should be replaced by a precise method. Requires some planning though; in the
-      // TODO meantime it's better than nothing
+      case th : Theory => th.meta.toList ::: th.getIncludes ::: th.getNamedStructures.map(_.from.toMPath)
+      case v : View => v.from.toMPath :: v.to.toMPath :: v.getIncludes.map(_._1)
+    }.distinct.map(LogicalDependency)
     val missing = used.collect {
         case ld if Try(controller.getO(ld.mpath)).toOption.flatten.isEmpty => ld
       }

@@ -112,6 +112,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (!state.ps.isKilled) {
       state.cont.onElementEnd(s)
     }
+    controller.endAdd(s)
     log("end " + s.path)
   }
 
@@ -180,7 +181,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def apply(state: ParserState): (StructuralElement, ParserState) = {
     state.ps.parentInfo match {
        case IsRootDoc(dpath) =>
-          val doc = new Document(dpath, root = true, nsMap = state.namespaces)
+          val doc = new Document(dpath, FileLevel, nsMap = state.namespaces)
           seCont(doc)(state)
           logGroup {
             readInDocument(doc)(state)
@@ -194,7 +195,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           readInDocument(doc)(state)
           (doc.getDeclarations.last,state)
        case IsMod(mp, rd) =>
-          val mod = controller.globalLookup.getAs(classOf[DeclaredModule],mp)
+          val mod = controller.globalLookup.getAs(classOf[Module],mp)
           readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
           (mod.getDeclarations.last, state)
     }
@@ -296,7 +297,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     (obj, reg, pr)
   }
 
-  private def doComponent(c: ComponentKey, tc: TermContainer, cont: Context)(implicit state: ParserState) {
+  private def doComponent(tc: TermContainer, cont: Context)(implicit state: ParserState) {
     val (obj, _, pr) = readParsedObject(cont)
     tc.read = obj
     tc.parsed = pr.toTerm
@@ -384,7 +385,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "document" =>
           val name = readName
           val dpath = doc.path / name
-          val d = new Document(dpath, nsMap = state.namespaces)
+          val d = new Document(dpath, SectionLevel, nsMap = state.namespaces)
           seCont(d)
           logGroup {
             readInDocument(d)
@@ -458,15 +459,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     *
     * this function handles one declaration if possible, then calls itself recursively
     */
-  def readInModule(mod: Body, context: Context, features: Features)(implicit state: ParserState) {
+  def readInModule(mod: ModuleOrLink, context: Context, features: Features)(implicit state: ParserState) {
      readInModuleAux(mod, mod.asDocument.path, context, features)
   }
 
-  private def readInModuleAux(mod: Body, docHome: DPath, context: Context, features: Features)(implicit state: ParserState) {
+  private def readInModuleAux(mod: ModuleOrLink, docHome: DPath, context: Context, features: Features)(implicit state: ParserState) {
     //This would make the last RS marker of a module optional, but it's problematic with nested modules.
     //if (state.reader.endOfModule) return
     val linkOpt = mod match {
-      case l: DeclaredLink => Some(l)
+      case l: Link => Some(l)
       case _ => None
     }
     val mpath = mod.path.toMPath // non-trivial only for structures
@@ -485,7 +486,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        d match {
          case ce: ContainerElement[_] =>
            // if a container element is added in one go (e.g., includes, instances), we need to also call the end of element hook
-           state.cont.onElementEnd(ce)
+           end(ce)
          case _ =>
        }
     }
@@ -510,27 +511,46 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         //Include resp. LinkInclude
         case "include" =>
           mod match {
-            case thy: DeclaredTheory =>
+            case thy: Theory =>
               val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
               val incl = Include(thy.toTerm,from,args)
               SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
               addDeclaration(incl)
-            case link: DeclaredLink =>
-              //TODO this should parse an entire morphism expression (but we can't parse those yet)
-              //TODO the 'from' theory should be optional (but ViewInclude currently requires it)
-              val (fromRef, from) = readMPath(link.path)
-              readDelimiter("=")
-              val (inclRef, inclp) = readMPath(link.path)
-              val target = controller.getO(inclp) match {
-                case Some(th: DeclaredTheory) =>
-                  // theory id as shortcut for its identity morphism
-                  OMIDENT(OMMOD(th.path))
-                case _ =>
-                  OMMOD(inclp)
+            case link: Link =>
+              // either `include df` or `include tp US = df`
+              val tc = new TermContainer // first term, i.e., tp or df
+              doComponent(tc, context)
+              val (tpC, dfC) = if (state.reader.endOfDeclaration) {
+                // only one term provided, infer type
+                // type inference belong to checking, but it's needed already to build the name of the include
+                val lup = controller.globalLookup
+                // theory id as shortcut for identity morphism (.get succeeds because term was read about)
+                tc.get.get match {
+                  case t @ OMMOD(p) => 
+                    lup.getO(p) match {
+                      case Some(_: Theory) =>
+                        tc.parsed = OMIDENT(t)
+                      case _ =>
+                    }
+                  case _ =>
+                }
+                // infer type
+                val tp = Morph.domain(tc.get.get)(lup).getOrElse {
+                  fail("could not infer domain of included morphism")
+                }
+                (TermContainer(tp), tc)
+              } else {
+                // first term was type
+                readDelimiter("=")
+                val dfC = new TermContainer
+                doComponent(dfC, context)
+                (tc, dfC)
               }
-              val as = LinkInclude(link.toTerm, from, target)
-              SourceRef.update(as.from, fromRef)
-              SourceRef.update(as.df, inclRef)
+              val name = tpC.get match {
+                case Some(OMPMOD(p,_)) => LocalName(p)
+                case _ => fail("domain must be atomic")
+              }
+              val as = new Structure(link.toTerm, name, tpC, dfC, false)
               addDeclaration(as)
           }
         case "structure" => readStructure(parentInfo, linkOpt, context, isImplicit = false)
@@ -571,7 +591,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   (name, nameTitle)
                }
                nextSection = nextSection / name
-               val innerDoc = new Document(docRoot / nextSection, contentAncestor = Some(mod))
+               val innerDoc = new Document(docRoot / nextSection, SectionInModuleLevel, contentAncestor = Some(mod))
                NarrativeMetadata.title.update(innerDoc, title)
                seCont(innerDoc)
             }
@@ -581,14 +601,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         //instances of patterns
         case "instance" =>
           mod match {
-            case thy: DeclaredTheory =>
+            case thy: Theory =>
               val patS = readName
               val pat = listmap(features.patterns, patS).getOrElse {
                 fail("unknown pattern: " + patS)
               }
               val i = readInstance(pat, thy.path)
               addDeclaration(i)
-            case link: DeclaredLink =>
+            case link: Link =>
               fail("instance declaration in link")
           }
         case "implicit" =>
@@ -701,10 +721,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     }
     val dfC = new TermContainer
     if (delim._1 == "abbrev" || delim._1 == "extends") {
-      doComponent(DefComponent,  dfC, contextMetaParams)
+      doComponent(dfC, contextMetaParams) // DefComponent
       delim = state.reader.readToken
     }
-    val t = new DeclaredTheory(ns, name, meta, paramC, dfC)
+    val t = new Theory(ns, name, meta, paramC, dfC)
     metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
     moduleCont(t, parent)
     if (delim._1 == "") {
@@ -750,10 +770,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readDelimiter("abbrev", "=") match {
       case "abbrev" =>
         val (_, _, df) = readParsedObject(context)
-        val v = DefinedView(ns, name, from, to, df.toTerm, isImplicit)
+        val v = View(ns, name, from, to, Some(df.toTerm), isImplicit)
         moduleCont(v, parent)
+        end(v)
       case "=" =>
-        val v = DeclaredView(ns, name, from, to, isImplicit)
+        val v = View(ns, name, from, to, None, isImplicit)
         moduleCont(v, parent)
         logGroup {
           readInModule(v, context ++ v.getInnerContext, noFeatures)
@@ -825,7 +846,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             } else {
               (key,cont) match {
                 case (_, tc: TermContainer) =>
-                  doComponent(key, tc, context)
+                  doComponent(tc, context) // key
                 case (_, cc: ContextContainer) =>
                   doContextComponent(cc, context)
                 case (nk: NotationComponentKey, nc: NotationContainer) =>
@@ -850,7 +871,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param parent the containing [[DeclaredModule]]
     * @param link the home theory for term components
     */
-  private def readConstant(givenName: LocalName, parent: MPath, link: Option[DeclaredLink],
+  private def readConstant(givenName: LocalName, parent: MPath, link: Option[Link],
                            context: Context)(implicit state: ParserState): Constant = {
     val name = link.map {l => resolveAssignmentName(classOf[Constant], l.from, givenName)}.getOrElse(givenName)
     val cpath = parent ? name
@@ -876,13 +897,13 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               errorCont(makeError(treg, "type of this constant already given, ignored"))
               state.reader.readObject
             } else
-              doComponent(TypeComponent, tpC, context)
+              doComponent(tpC, context) // TypeComponent
           case "=" =>
             if (dfC.read.isDefined) {
               errorCont(makeError(treg, "definiens of this constant already given, ignored"))
               state.reader.readObject
             } else
-              doComponent(DefComponent, dfC, context)
+              doComponent(dfC, context) // DefComponent
           case "#" =>
             doNotation(ParsingNotationComponent, nt, treg)
           case "##" =>
@@ -931,7 +952,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param context the context (excluding the structure to be read)
     * @param isImplicit whether the structure is implicit
     */
-  private def readStructure(parentInfo: IsMod, link: Option[DeclaredLink], context: Context,
+  private def readStructure(parentInfo: IsMod, link: Option[Link], context: Context,
                             isImplicit: Boolean)(implicit state: ParserState) {
     val givenName = readName
     val home = OMMOD(parentInfo.modParent)
@@ -940,13 +961,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     // the type and the code to set it (if provided)
     val tpC = new TermContainer
     // shared code for creating the structure
-    def createStructure(defined: Option[TermContainer]) = {
-      val s = defined match {
-        case None =>
-          new DeclaredStructure(home, name, tpC, isImplicit)
-        case Some(dfC) =>
-          new DefinedStructure(home, name, tpC, dfC, isImplicit)
-      }
+    def createStructure(df: Option[Term]) = {
+      val dfC = TermContainer(df)
+      val s = new Structure(home, name, tpC, dfC, isImplicit)
       s.setDocumentHome(parentInfo.relDocParent)
       seCont(s)
       s
@@ -967,7 +984,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           // declared structure only allowed in a theory
           throw makeError(reg, "'=' expected, within structure " + spath)
         }
-        val s = createStructure(None).asInstanceOf[DeclaredStructure]
+        val s = createStructure(None)
         end(s)
         return
       }
@@ -1002,8 +1019,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         }
       }
       SourceRef.update(target, pu.source)
-      val dfC = TermContainer(target)
-      val s = createStructure(Some(dfC))
+      val s = createStructure(Some(target))
+      end(s)
     } else {
       // read the body a DeclaredStructure
       if (link.isDefined) {
@@ -1014,7 +1031,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         // unexpected delimiter for the body of a declared structure
         throw makeError(reg, "'=' expected, within structure " + spath)
       }
-      val s = createStructure(None).asInstanceOf[DeclaredStructure]
+      val s = createStructure(None)
       logGroup {
         readInModule(s, context, noFeatures)
       }
@@ -1112,23 +1129,24 @@ trait MMTStructureEstimator {self: Interpreter =>
           t
         case _ => Traverser(this, t)
       }
+      def apply(tC: AbstractTermContainer, context: Context) {
+        tC.get.foreach {t => apply(t, context)}
+      }
     }
 
     override def seCont(se: StructuralElement)(implicit state: ParserState) = se match {
       case t: Theory =>
         provided ::= t.path
-        t match {
-          case t: DeclaredTheory =>
-            t.meta foreach { m => used ::= m }
-          case t: DefinedTheory =>
-            AddUsed(t.df, Context.empty)
-        }
+        t.meta foreach { m => used ::= m }
+        AddUsed(t.dfC, t.parameters)
       case v: View =>
         provided ::= v.path
-        AddUsed(v.from, Context.empty)
-        AddUsed(v.to, Context.empty)
+        AddUsed(v.fromC, Context.empty)
+        AddUsed(v.toC, Context.empty)
+        AddUsed(v.dfC, Context.empty)
       case s: Structure =>
-        AddUsed(s.from, Context.empty)
+        AddUsed(s.fromC, Context.empty)
+        AddUsed(s.dfC, Context.empty)
       case _ =>
     }
 

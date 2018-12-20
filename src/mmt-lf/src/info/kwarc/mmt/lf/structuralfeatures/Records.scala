@@ -29,7 +29,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: DeclaredModule, dd: DerivedDeclaration) = {
+  def elaborate(parent: Module, dd: DerivedDeclaration) = {
     val params = Type.getParameters(dd)
     val context = if (params.nonEmpty) Some(params) else None
     implicit val parentTerm = dd.path

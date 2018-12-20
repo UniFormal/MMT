@@ -683,10 +683,11 @@ trait SolverAlgorithms {self: Solver =>
    }
 
    /** tries to prove a goal by finding a term of type conc
-    *  pre: no unknowns in context or conc
+    *  If conc contains unknowns, this is unlikely to succeed unless an appropriate assumption is in the context.
     */
-   def prove(conc: Term)(implicit stack: Stack, history: History): Option[Term] = {
-      prove(constantContext ++ stack.context, conc)
+   def prove(conc: Term, allowUnknowns: Boolean = true)(implicit stack: Stack, history: History): Option[Term] = {
+      val unknCont = if (allowUnknowns) solution else Context.empty
+      prove(constantContext ++ unknCont ++ stack.context, conc)
    }
 
    private def prove(context: Context, conc: Term)(implicit history: History): Option[Term] = {
@@ -917,8 +918,8 @@ trait SolverAlgorithms {self: Solver =>
     *  @param history the current history
     *  @return (tmS, Some(r)) where tmS = tm and r from hs is applicable to tmS; (tmS, None) if tm = tmS and no further simplification rules are applicable
     */
-   private def safeSimplifyUntilRuleApplicable[R <: CheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
-      safeSimplifyUntil[R](tm)(t => hs.find(_.canApply(t)))
+   private def safeSimplifyUntilRuleApplicable[R <: SingleTermBasedCheckingRule](tm: Term, hs: Iterable[R])(implicit stack: Stack, history: History): (Term,Option[R]) =
+      safeSimplifyUntil[R](tm)(t => hs.find(_.applicable(t)))
 
       
   // ******************************************************************************************
@@ -1130,7 +1131,7 @@ trait SolverAlgorithms {self: Solver =>
   }
   
   /** like below but for a single term */
-  private def tryAllRules[A <: CheckingRule,B](rules: List[A],term: Term)(rulecheck : (A,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
+  private def tryAllRules[A <: SingleTermBasedCheckingRule,B](rules: List[A],term: Term)(rulecheck : (A,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
     var done = false
     var rulesV = rules
     var tmS = term

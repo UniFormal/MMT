@@ -45,7 +45,7 @@ class ScalaCompiler extends BuildTarget {
 
    def build(a: Archive, up: Update, in: FilePath) {
      (a / ScalaOutDim).mkdirs
-     // the classpath seperator
+     // the classpath separator
      val sep = if (OS.detect == Windows) ";" else ":"
      // find all source folders to collect files in
      val folderList = a.properties.getOrElse("scala", "scala")

@@ -1,5 +1,6 @@
 package info.kwarc.mmt.jedit
 
+import info.kwarc.mmt.api.gui.{MMTElemAsset, MMTObjAsset}
 import org.gjt.sp.jedit._
 
 class DebugActions(mmt: MMTPlugin) {

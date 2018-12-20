@@ -101,15 +101,15 @@ import modules._
 class RuleConstantParser extends ParserExtension {
    private lazy val rci = new RuleConstantInterpreter(controller)
    def isApplicable(se: StructuralElement, keyword: String) = {
-      se.isInstanceOf[DeclaredTheory] && keyword == "rule"
+      se.isInstanceOf[Theory] && keyword == "rule"
    }
    def apply(pea: ParserExtensionArguments) = {
       val (_,_,pr) = pea.parser.readParsedObject(pea.context, None)(pea.state)
       val thy = pea.se match {
-        case t: DeclaredTheory => t.path
+        case t: Theory => t.path
         case d: documents.Document =>
           d.contentAncestor match {
-            case Some(t: DeclaredTheory) => t.path
+            case Some(t: Theory) => t.path
             case _ => throw ParseError("rules only allowed in theories")
           }
         case _ => throw ParseError("rules only allowed in theories")

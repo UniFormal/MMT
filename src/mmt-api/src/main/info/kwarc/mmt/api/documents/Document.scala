@@ -13,14 +13,17 @@ import scala.xml.Elem
  * The content itself is stored in the controller.
  *
  * @param path the URI of the document; for toplevel documents, this is a URL
- * @param root true if this does not have a directly containing document (true for modules seen as documents)
+ * @param level the role of this document in a hierarchy of nested documents, default is [[FileLevel]] the role of source files containing modules
  * @param contentAncestor the closest container of this document that is a module (if any)
  * @param nsMap the namespaces declared in this document
  */
 //TODO check if we can mixin DefaultLookup
-class Document(val path: DPath, val root: Boolean = false, val contentAncestor: Option[Body] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
+class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[ModuleOrLink] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
-  val feature = "document"
+  val feature = "document:" + level
+  /** not a section (which is stored as part of some other document) */
+  def root: Boolean = !(List(SectionLevel,SectionInModuleLevel) contains level)
+  
   /** the containing document if root == false; otherwise, the URI without path */
   def parentOpt = if (root) None else Some(parent)
   val parent: DPath = if (root) path ^^ else path ^
@@ -88,7 +91,7 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
     else <omdoc name={name.toPath}>{getMetaDataNode}{items.map(_.toNode)}</omdoc>
 
   override def toNode(rh: presentation.RenderingHandler) {
-    rh( s"""<omdoc base="${path.toPath}">""")
+    rh( s"""<omdoc base="${path.toPath}" level="${level.toXML}">""")
     rh(getMetaDataNode)
     items.foreach { i =>
       i.toNode(rh)
@@ -110,4 +113,38 @@ class Document(val path: DPath, val root: Boolean = false, val contentAncestor: 
            case i => i.toNode
         }}
      </omdoc>
+}
+
+
+/** the role of a [[Document]] in a hierarchy of nested documents
+ *  root documents are the ones at [[FileLevel]] - the ones containing modules
+ *  Any not-semantically-relevant nesting structure above or below is also represented by documents.
+ *  
+ *  The levels are organized into triples of root-inner-leaf, where each leaf is the root of another triple:
+ *  * Hub-Group-Archive: the structure above projects.
+ *  * Archive-Folder-File: the structure inside projects.
+ *  * File-Section-Module: the structure inside source files.
+ *  * Module-SectionInModule-Module: the structure inside modules 
+ */
+sealed abstract class DocumentLevel(internal: String, external: String) {
+  override def toString = external
+  def toXML = internal
+}
+case object HubLevel extends DocumentLevel("hub", "Archive Hub")
+case object GroupLevel extends DocumentLevel("group", "Archive Group")
+case object ArchiveLevel extends DocumentLevel("archive", "Archive")
+case object FolderLevel extends DocumentLevel("folder", "Folder")
+case object FileLevel extends DocumentLevel("file", "Source File")
+case object SectionLevel extends DocumentLevel("section", "Section")
+case object ModuleLevel extends DocumentLevel("theory", "Module")
+case object SectionInModuleLevel extends DocumentLevel("section-in-module", "Section")
+
+object DocumentLevel {
+  val all = List(HubLevel, GroupLevel, ArchiveLevel, FolderLevel, FileLevel, SectionLevel, ModuleLevel, SectionInModuleLevel)
+  def parseO(s: String) = {
+    all.find(_.toXML == s)
+  }
+  def parse(s: String) = parseO(s).getOrElse {
+      throw ParseError("illegal document level: " + s)
+    }
 }

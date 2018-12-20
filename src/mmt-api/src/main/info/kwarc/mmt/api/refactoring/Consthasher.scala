@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
-import info.kwarc.mmt.api.modules.DeclaredTheory
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.utils._
@@ -116,7 +116,7 @@ trait Hasher {
 
   def get(mp : MPath) : Option[Theoryhash]
 
-  def add(th : DeclaredTheory, as : Int) : Unit
+  def add(th : Theory, as : Int) : Unit
 }
 
 class HashesNormal(val cfg : FinderConfig,val controller: Controller) extends Hasher {
@@ -144,7 +144,7 @@ class HashesNormal(val cfg : FinderConfig,val controller: Controller) extends Ha
 
   def get(p : MPath) : Option[Theoryhash] = theories.find(_._1.path == p).map(_._1)
 
-  def add (th : DeclaredTheory, as : Int) = as match {
+  def add (th : Theory, as : Int) = as match {
     case Hasher.COMMON =>
       commons ::= th.path
       th.getConstants.foreach(c => numbers ::= c.path)
@@ -154,7 +154,7 @@ class HashesNormal(val cfg : FinderConfig,val controller: Controller) extends Ha
     }
   }
 
-  private def get(th : DeclaredTheory) : Theoryhash = {
+  private def get(th : Theory) : Theoryhash = {
     val h = new Theoryhash(th.path)
     if (!(commons contains th.path)) {
       th.getConstants.collect({

@@ -182,7 +182,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
          s"""<opaque format="$format">$desc</opaque>"""
       }
       val es = entries.map(n => <dref name={n.name + ".ref"} target={prefix + n.name}/>).mkString("\n")
-      val docS = s"""<omdoc>$oe$es</omdoc>"""
+      val docS = s"""<omdoc level="folder">$oe$es</omdoc>"""
       val reader = new BufferedReader(new java.io.StringReader(docS))
       loadXML(uri, DPath(uri), reader)
    }

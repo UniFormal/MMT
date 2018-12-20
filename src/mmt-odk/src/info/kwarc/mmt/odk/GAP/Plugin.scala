@@ -3,8 +3,8 @@ package info.kwarc.mmt.odk.GAP
 import info.kwarc.mmt.api.objects.{OMS, Term}
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.DeclaredModule
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
@@ -65,13 +65,13 @@ object FilterRelations extends RelationalExtractor {
 
   val gaprels : scala.collection.mutable.HashMap[Constant,List[RelationalElement]] = mutable.HashMap.empty
 
-  def apply(e: StructuralElement)(implicit f: RelationalElement => Unit): Unit = e match {
-    case d: DeclaredModule => d.getDeclarations foreach {
+  def apply(e: StructuralElement)(implicit f: RelationalElement => Unit) {e match {
+    case d: Module => d.getDeclarations foreach {
       case c: Constant => gaprels.getOrElse(c,Nil) foreach f
       case _ =>
     }
     case _ =>
-  }
+  }}
 }
 
 object GAPGraphExporter extends SimpleRelationGraphExporter("gapgraph", "Gap graph", ((Includes | Declares | FilterRelations.Implies)^*) * HasType(IsConstant), List(DependsOn,FilterRelations.Implies)) {

@@ -7,7 +7,8 @@ import documents._
 import modules._
 import objects._
 import presentation._
-import utils.MyList._
+import utils._
+
 import javax.swing._
 import tree._
 import event._
