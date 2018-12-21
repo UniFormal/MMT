@@ -105,19 +105,22 @@ private object InternalDeclarationUtil {
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
    *  @param tp the type of the constant
+   *  @param Lnot (optional) the parsing notation of the constant
    *  @param df (optional) the definition of the constant
    *  @param parent (implicit) the inductive definition to elaborate
    */
-  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {
+  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None, Lnot: () => Option[TextNotation] = () => None)(implicit parent:  GlobalName): Constant = {
     val p = externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
       otherDefined = true
       def onAccess {
         _tp = Some(Ltp())
         _df = Ldf()
+        _not = Lnot()
       }
     }
   }
+//  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {makeConst(name, Ltp, () => None, Ldf)}
   def makeConst(name: LocalName, Ltp: () => Term)(implicit parent: GlobalName):Constant = {makeConst(name, Ltp, ()=>{None})}
   def injDecl(c: Constant, con: Controller, ctx: Option[Context], types:List[TypeLevel])(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, ctx)
@@ -256,7 +259,16 @@ sealed abstract class InternalDeclaration {
   
   def toVarDecl = VarDecl(name, tp)
   def toConstant(implicit parent: GlobalName): Constant = {
-    makeConst(name, () => externalTp, () => externalDf)(parent)
+    // for n parameters, copy over notation but add n implicit arguments at beginning
+    def not = notation.parsing.flatMap {n =>
+      val numPars = context.length
+      try {
+        Some(n.copy(fixity = n.fixity.addInitialImplicits(numPars)))
+      } catch { 
+        case ImplementationError(m) => println(m+" in the notation for the externalized internal declaration: "+name); None
+      }
+    }
+    makeConst(name, () => externalTp, () => externalDf, () => not)(parent)
   }
   def toTerm(implicit parent: GlobalName): Term = ApplyGeneral(OMS(externalName(parent, name)), context.map(_.toTerm))
   

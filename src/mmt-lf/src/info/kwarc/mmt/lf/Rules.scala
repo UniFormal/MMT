@@ -303,6 +303,30 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
    }
 }
 
+/** equality rule for apply that only considers currying
+ */
+object NormalizeCurrying extends TermBasedEqualityRule {
+   val head = Apply.path
+   def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head.orNull) && heads.contains(tm2.head.orNull)
+   def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+      (tm1,tm2) match {
+         case (ApplySpine(f1,args1), ApplySpine(f2,args2)) if f1 == f2 =>
+            // normalize nesting of applications
+            val tm1N = ApplySpine(f1,args1:_*)
+            val tm2N = ApplySpine(f2,args2:_*)
+            if (tm1N != tm1 || tm2N != tm2) {
+              val cont = Continue {
+                 history += "normalize currying"
+                 checker.check(Equality(stack, tm1N, tm2N, tp))
+              }
+              Some(cont)
+            } else
+              None
+         case _ => None
+      }
+   }
+}
+
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
  *
