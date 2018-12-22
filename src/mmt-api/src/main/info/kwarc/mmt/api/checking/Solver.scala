@@ -492,7 +492,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the overall check succeeds
     */
    def solve(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      log("solving " + name + " as " + value)
+      log("solving " + name + " as " + presentObj(value))
       history += ("solving " + name + " as " + presentObj(value))
       val valueS = simplify(substituteSolution(value))(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
@@ -699,8 +699,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   /** registers a warning, returns false */
   def warning(message: => String)(implicit history: History): Boolean = {
       log("warning: " + message)
-      history += message
-      val h = history.steps.head
+      val h = Comment(() => message)
+      history += h
       val level = Level.Warning
       addError(SolverError(level, history,Some(cont => h.present(cont))))
       false
