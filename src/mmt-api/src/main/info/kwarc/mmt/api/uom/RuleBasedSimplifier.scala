@@ -186,7 +186,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               val pC = controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */
               pC flatMap {
               case c: Constant =>
-                normalizeConstant(c)
+                normalizeConstant(c, state.unit.fullRecursion)
                 c.dfC.normalized
               case _ =>
                 None
@@ -241,12 +241,17 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       }
    }
 
-  /** fully normalizes the definiens of a constant */
-  private def normalizeConstant(c: Constant) {
+  /** fully normalizes the definiens of a constant and stores the result with the Constant
+   *  
+   *  Because the result is stored within the constant and to avoid shadowing problems,
+   *  this only uses the context of where the constant is declared, not where it is referenced.
+   *  This may under-normalize occasionally.
+   */
+  private def normalizeConstant(c: Constant, fullRec: Boolean) {
     c.dfC.normalize {u =>
       val cont = controller.getContext(c)
       val rs = RuleSet.collectRules(controller, cont)
-      self.apply(u, SimplificationUnit(cont, true, true), rs)
+      self.apply(u, SimplificationUnit(cont, true, fullRec), rs)
     }
   }
    

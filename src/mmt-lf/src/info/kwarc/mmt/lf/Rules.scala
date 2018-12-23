@@ -347,7 +347,8 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               reduce(t ^? (x / s), rest)
             } else {
               history += "beta-reduction is syntactically possible, but the argument does not conform to expectations"
-              RecurseOnly(1 :: Nil)
+              //RecurseOnly(1 :: Nil)
+              Simplifiability.NoRecurse
             }
          case (f, Nil) =>
            //all arguments were used, recurse in case f is again a redex
@@ -356,6 +357,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
              case s: Simplify => s
              case _: CannotSimplify => Simplify(f)
            }
+           /*
          case(OMS(p),ls) =>
            val dfO = solver.lookup.getConstant(p).df
            dfO match {
@@ -370,6 +372,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
                else
                  Simplifiability.NoRecurse
            }
+           */
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
@@ -379,12 +382,12 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               if (reduced)
                 Simplify(ApplySpine(f,args : _*))
               else
-                RecurseOnly(1 :: Nil)
+                RecurseOnly(tm.subobjects.indexWhere(_._2 hasheq f)::Nil)
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
          case ApplySpine(f, args) => reduce(f, args)
-         case _ => Recurse // only possible after recursing
+         case _ => Simplifiability.NoRecurse// Recurse // only possible after recursing
       }
    }
 }
