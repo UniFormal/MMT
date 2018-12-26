@@ -11,6 +11,7 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
+import info.kwarc.mmt.api.frontend.actions.Exit
 
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
@@ -32,7 +33,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
   /** Check whether the TermLevel is a constructor or outgoing */
-  def constructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
+  def isConstructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
     case ApplyGeneral(OMS(tpl), args) => types contains tpl
     case _ => false
   }
@@ -45,7 +46,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val FunType(args, ret) = tm
       args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
     }
-    if (constructor(tc, types)) {// Check whether the constructor is outgoing
+    if (isConstructor(tc, types)) {// Check whether the constructor is outgoing
       tc.args.map(_._2).exists({x =>
         val FunType(args, ret) = x
         args.exists(arg => types.exists(dependsOn(arg._2, _)))
@@ -78,10 +79,11 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
          }
       case _ => throw LocalError("unsupported declaration")
     }
-
+    val types = tpdecls map (_.path)
+    
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
-    tmdecls foreach { tmdecl => checkTermLevel(tmdecl, tpdecls map (_.path))}
+    tmdecls foreach { tmdecl => checkTermLevel(tmdecl, types)}
         
     // the no confusion axioms for the data constructors
     /*
@@ -89,7 +91,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
      * some of the (in)equality axioms would be ill-typed because
      * the type system already forces elements of different instances of a dependent type to be unequal and of unequal type
      */
-    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls)(dd.path))
+    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls, types)(dd.path))
     
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
@@ -189,30 +191,56 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param parent the derived declaration to elaborate
    * @param tmdecls all term level declarations
    */
-  def noConf(d: TermLevel, tmdecls: List[TermLevel])(implicit parent: GlobalName): List[Constant] = {
+  def noConf(a: TermLevel, tmdecls: List[TermLevel], types: List[GlobalName])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
-    //println("\n\nProducing the no-confusion declarations for "+d.name+": ")
     // To ensure that the result is well-typed
-    if (d.isNotDependentTyped()) {
-      // To ensure that the result is well-typed
-      tmdecls.takeWhile(_ != d) filter (_.isNotDependentTyped()) foreach {b => 
-        if (b.tp == d.tp) {
-          // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
-          val newName = uniqueLN("no_conf_" + d.name.last+ "_" + b.name.last)
-          val Ltp = () => {
-            val (aCtx, aApplied) = d.argContext(None)
-            val (bCtx, bApplied) = b.argContext(None)
-            Pi(d.context++aCtx ++ bCtx, Neq(b.tp, aApplied, bApplied))  // This does not type-check if ret depends on arguments
+    if (!isConstructor(a, types)) decls else {
+      if (a.isSimplyTyped()) {
+        // To ensure that the result is well-typed
+        tmdecls.takeWhile(_ != a) filter (_.isSimplyTyped()) foreach {b => 
+          val (matches, argMatches) = matchTypeParametersInReturnType(b, a)
+          if (matches) {
+            // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
+            val newName = uniqueLN("no_conf_" + a.name.last+ "_" + b.name.last)
+            val Ltp = () => {
+              val (aCtx, aApplied) = a.argContext(None)
+              val (bCtx, bApplied) = b.argContext(None)
+              val filteredBctx = bCtx.filterNot(arg => aCtx contains utils.listmap(argMatches, arg))
+              Pi(a.context++aCtx ++ filteredBctx, Neq(a.externalRet, aApplied, bApplied ^ argMatches.map(x=> x._1 / x._2)))  // This does not type-check if ret depends on arguments
+            }
+            decls ::= makeConst(newName, Ltp)
           }
-          decls ::= makeConst(newName, Ltp)
         }
       }
+      decls = decls.reverse
+      if(a.args.length > 0)
+        decls ++= a.injDecls
+      decls
     }
-    decls = decls.reverse
-    if(d.args.length > 0)
-      //println("Producing the injectivity axiom for "+d.name+": ")
-      decls ++= d.injDecls
-    decls
+  }
+  
+  /**
+   * Check whether the return types match for some parametric type parameters 
+   * and if so determine the necessary parameters that need to match
+   * @param a the first termlevel whoose return type is to be matched against the one of the second
+   * @param b the second termlevel whoose return type is to be matched against the return type of a
+   * @note postcondition: If the types match for certain arguments, a list of tuples with arguments that need to match is returned
+   * if those arguments passed to the termlevels are the same, the return types will both equal a.externalRet
+   */
+  def matchTypeParametersInReturnType(a: TermLevel, b: TermLevel): (Boolean, List[(OMV, OMV)]) = {
+    val ApplyGeneral(f1, args1) = a.ret
+    val ApplyGeneral(f2, args2) = b.ret
+    if (f1 != f2 || args1.length != args2.length) (false, Nil) else {
+      val notMatching = new Exception("arguments can't match")
+      try {
+        (true, args1.zip(args2).map {
+          case (a1 : OMV, a2: OMV) if (a.args contains a1) => (a2, a1)
+          case _ => throw notMatching
+        })
+      } catch {
+        case e@notMatching => (false, Nil)
+      }
+    }
   }
 }
 

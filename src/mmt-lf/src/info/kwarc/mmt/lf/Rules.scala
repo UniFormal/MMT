@@ -310,12 +310,14 @@ object NormalizeCurrying extends TermBasedEqualityRule {
    def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head.orNull) && heads.contains(tm2.head.orNull)
    def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
       (tm1,tm2) match {
-         case (ApplySpine(f1,args1), ApplySpine(f2,args2)) if f1 == f2 =>
+         case (ApplySpine(f1,args1), ApplySpine(f2,args2)) => // Deleted if f1 == f2, as this special case is not sufficient
             // normalize nesting of applications
             val tm1N = ApplySpine(f1,args1:_*)
             val tm2N = ApplySpine(f2,args2:_*)
+            //println("tm1: "+tm1.toStr(true)+", tm2: "+tm2.toStr(true)+", tm1': "+tm1N.toStr(true)+", tm2': "+tm2N.toStr(true))
             if (tm1N != tm1 || tm2N != tm2) {
               val cont = Continue {
+                 //println("Normalizing the currying of the terms to check term based equality. ")
                  history += "normalize currying"
                  checker.check(Equality(stack, tm1N, tm2N, tp))
               }

@@ -78,7 +78,7 @@ private object InternalDeclarationUtil {
   }
   object Neq {
     val path = theory ? "NOTEQUAL"
-    def apply(a: Term, s: Term, t: Term) = ApplySpine(OMS(path), a, s, t)
+    def apply(a: Term, s: Term, t: Term) = Ded(ApplySpine(OMS(path), a, s, t))
   }
   
   val Contra = OMS(theory ? "CONTRA")
@@ -144,7 +144,10 @@ object InternalDeclaration {
   implicit def toVarDecl(d: InternalDeclaration)(implicit parent: GlobalName): VarDecl = d.toVarDecl
 
   //TODO: Implement this properly (not required in LF)
-  def isTypeLevel(tp: Term) : Boolean = false
+  def isTypeLevel(tp: Term) : Boolean = {
+    val FunType(args, ret) = tp
+    ret == Univ(1)
+  }
   
   /**
    * convert the given constant into the appropriate internal declaration
@@ -162,7 +165,7 @@ object InternalDeclaration {
       ret match {
         case Univ(1) => TypeLevel(p, args, c.df, context, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, context, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC), ctx)
+        case r => TermLevel(p, args, ret, c.df, Some(c.notC), ctx)//if (isTypeLevel(r)) TypeLevel(p, args, c.df, context, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC), ctx)
       }
     }
   }
@@ -214,25 +217,22 @@ sealed abstract class InternalDeclaration {
   def externalTp(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(tp)
   /** like df but with all names externalized */
   def externalDf(implicit parent: GlobalName) = df map {t => externalizeNamesAndTypes(parent, context)(t)}
+  def externalRet(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(ret)
  
   
   /** checks whether the type of the declaration is dependent on the given argument */
   def isIndependentArgument(arg: (Option[LocalName], Term)): Boolean = arg match {
     case (None, _) => true
-    case (Some(name), tp) => {
-      val remainingArgs = args.reverse.takeWhile(_ != arg).reverse
-      //println("tp= "+present(tp, true)+", arg= "+name+": "+present(arg._2, true)+", ret= "+present(ret, true)+". ")
-      //println("remaining arguments ++ return value of "+this.name+"= "+remainingArgs.foldLeft("")((s,x) =>present(x._2, true)+" "+s)+" "+present(ret, true))
-      if ((remainingArgs.filter(x => arg != x).map(_._2):+ret).exists(argTp => argTp.freeVars contains name)) false else true 
-      //println("free variables of ret= "+ret.freeVars.foldLeft("")((s,x) =>x+" "+s))
-      //println(this.name+" is "+(if (res) "in" else "") +"dependent on the argument "+name); res
-    }
+    case (Some(name), tp) =>
+        val remainingArgs = args.reverse.takeWhile(_ != arg).reverse
+        !(remainingArgs:+(None,ret)).exists{argTp => argTp._2.freeVars contains name}
   }
   
-  /** checks whether the declaration is not dependently typed */
-  def isNotDependentTyped(): Boolean = {
-    args.forall(isIndependentArgument(_))
-    //if (!res) println(this.name+" is dependently typed. "); res
+  /** checks whether the declaration is simply typed */
+  def isSimplyTyped(): Boolean = {
+    (args.filterNot{_._2 == Univ(1)}) forall {case arg@(_, tp) => 
+      isIndependentArgument(arg) || tp == Univ(1)
+    }
   }
   
   /**
@@ -325,18 +325,16 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
   def injDecls(implicit parent: GlobalName): List[Constant] = {
     val (aCtx, aApplied) = argContext(Some("_0"))
     val (bCtx, bApplied) = argContext(Some("_1"))
-    val ctxes = bCtx.zipWithIndex filter {case (x, i) => x != aCtx.variables.apply(i)} map {case (b, i) =>
-      val cCtx = aCtx.take(i-1) ++ (b::aCtx.drop(i))
-      val cApplied = applyTo(cCtx)
-      (cCtx, cApplied, aCtx(i), b)
-    }
-    ctxes map {case (cCtx, cApplied, a, b) =>
+    val abi = (aCtx zip bCtx) zipWithIndex
+    val bis = abi filter {case ((a,b),i) => a != b}
+    bis map {case _@((a, b),i) =>
       val Ltp = () => {
-        val argNeq = Neq(ret, a.toTerm, b.toTerm) // TODO does not type-check if ret depends on arguments
-        val resNeq = Neq(ret, aApplied, cApplied)  // TODO does not type-check if ret depends on arguments
-        PiOrEmpty(context++aCtx ++ b,  Arrow(argNeq, resNeq))
+        val argNeq = Neq(a.tp.get, a.toTerm, b.toTerm) // TODO does not type-check if ret depends on arguments
+        val resNeq = Neq(externalRet, aApplied, bApplied)  // TODO does not type-check if ret depends on arguments
+        val res=PiOrEmpty(context++aCtx ++ bis.map(_._1._2),  Arrow(argNeq, resNeq))
+        res
       }
-      makeConst(uniqueLN("injective_"+name), Ltp, ()=>{None})(parent)
+      makeConst(uniqueLN("injective_"+name+"_"+i.toString), Ltp, ()=>{None})(parent)
     }
   }
   
