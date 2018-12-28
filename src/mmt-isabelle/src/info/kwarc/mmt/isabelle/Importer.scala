@@ -648,37 +648,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     /* dependencies */
 
     private val session_deps: isabelle.Sessions.Deps =
-    {
-      val sessions_structure0 =
-        isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs)
-
-      val selection1 =
-      {
-        val sessions_structure = sessions_structure0.selection(selection)
-
-        val default_record_proofs = options.int("record_proofs")
-        val sessions_record_proofs =
-          for {
-            name <- sessions_structure.build_topological_order
-            info <- sessions_structure.get(name)
-            if info.options.int("record_proofs") > default_record_proofs
-          } yield name
-
-        val excluded =
-          for (name <- sessions_structure.build_descendants(sessions_record_proofs))
-            yield {
-              progress.echo_warning("Skipping session " + name + "  (option record_proofs)")
-              name
-            }
-
-        selection.copy(exclude_sessions = excluded ::: selection.exclude_sessions)
-      }
-
-      val selection_size = sessions_structure0.selection(selection1).build_graph.size
-      if (selection_size > 1) progress.echo("Loading " + selection_size + " sessions ...")
-
-      sessions_structure0.selection_deps(selection1, progress = progress)
-    }
+      isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
+        selection_deps(options, selection, progress = progress,
+          uniform_session = true, loading_sessions = true)
 
 
     /* session */
