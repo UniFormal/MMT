@@ -347,7 +347,7 @@ object Importer
 
     def import_theory(thy_export: Theory_Export)
     {
-      progress.echo("Importing theory " + thy_export.node_name + " ...")
+      progress.echo("Processing theory " + thy_export.node_name + " ...")
 
       val thy_name = thy_export.node_name
       val thy_base_name = isabelle.Long_Name.base_name(thy_export.node_name.theory)
@@ -518,8 +518,7 @@ object Importer
       MMT_Importer.importDocument(archive, doc)
     }
 
-    try { Isabelle.import_session(import_theory) }
-    finally { Isabelle.session.stop() }
+    Isabelle.import_session(import_theory)
 
     progress.echo("Finished import of " + Isabelle.report_imported)
   }
@@ -541,7 +540,7 @@ object Importer
       var dirs: List[isabelle.Path] = Nil
       var session_groups: List[String] = Nil
       var logic = default_logic
-      var options = isabelle.Dump.make_options(isabelle.Options.init(), isabelle.Dump.known_aspects)
+      var options = isabelle.Options.init()
       var verbose = false
       var exclude_sessions: List[String] = Nil
 
@@ -644,29 +643,29 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
-
-    /* logic image */
-
     if (isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
-        dirs = dirs ::: select_dirs) != 0) isabelle.error("Failed to build Isabelle/" + logic)
+      dirs = dirs ::: select_dirs) != 0) isabelle.error("Failed to build Isabelle/" + logic)
 
 
-    /* session */
+    /* resources */
 
-    private val session_deps: isabelle.Sessions.Deps =
-      isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
-        selection_deps(options, selection, progress = progress,
-          uniform_session = true, loading_sessions = true)
+    val dump_options: isabelle.Options =
+      isabelle.Dump.make_options(options, isabelle.Dump.known_aspects)
+        .real.update("headless_check_delay", options.real("mmt_check_delay"))
+        .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
+        .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
 
-    val session: isabelle.Headless.Session =
-      isabelle.Headless.start_session(options, logic, progress = progress,
+    private val (session_deps, import_theories) =
+      isabelle.Dump.dependencies(dump_options, progress = progress,
+        dirs = dirs, select_dirs = select_dirs, selection = selection)
+
+    val resources: isabelle.Headless.Resources =
+      isabelle.Headless.Resources.make(dump_options, logic, progress = progress,
         session_dirs = dirs ::: select_dirs,
         include_sessions = session_deps.sessions_structure.imports_topological_order)
 
 
-    /* theory resources */
-
-    def resources: isabelle.Headless.Resources = session.resources
+    /* theories */
 
     def import_name(s: String): isabelle.Document.Node.Name =
       resources.import_name(isabelle.Sessions.DRAFT, "", s)
@@ -721,10 +720,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* import session theories */
 
-    private val import_theories =
-      for { (_, name) <- session_deps.used_theories_condition(options, progress.echo_warning) }
-        yield name
-
     import_theories.foreach(theory_archive)
 
     def import_session(import_theory: Theory_Export => Unit)
@@ -734,86 +729,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
       else {
         import_theory(pure_theory_export)
-
-        object Consumer
-        {
-          sealed case class Bad_Theory(
-            name: isabelle.Document.Node.Name,
-            status: isabelle.Document_Status.Node_Status,
-            errors: List[String])
-
-          private val consumer_bad_theories = isabelle.Synchronized(List.empty[Bad_Theory])
-
-          private val consumer =
-            isabelle.Consumer_Thread.fork(name = "mmt_import")(
-              consume = (args: (isabelle.Document.Snapshot, isabelle.Document_Status.Node_Status)) =>
-              {
-                val (snapshot, status) = args
-                val name = snapshot.node_name
-                if (status.ok) {
-                  try { import_theory(read_theory_export(snapshot)) }
-                  catch {
-                    case exn: Throwable if !isabelle.Exn.is_interrupt(exn) =>
-                      val msg = isabelle.Exn.message(exn)
-                      progress.echo("FAILED to import theory " + name)
-                      progress.echo_error_message(msg)
-                      consumer_bad_theories.change(Bad_Theory(name, status, List(msg)) :: _)
-                  }
-                }
-                else {
-                  val msgs =
-                    for ((tree, pos) <- snapshot.messages if isabelle.Protocol.is_error(tree))
-                    yield {
-                      "Error" + isabelle.Position.here(pos) + ":\n" +
-                        isabelle.XML.content(isabelle.Pretty.formatted(List(tree)))
-                    }
-                  progress.echo("FAILED to process theory " + name)
-                  msgs.foreach(progress.echo_error_message)
-                  consumer_bad_theories.change(Bad_Theory(name, status, msgs) :: _)
-                }
-                true
-              })
-
-          def apply(
-              snapshot: isabelle.Document.Snapshot,
-              node_status: isabelle.Document_Status.Node_Status): Unit =
-            consumer.send((snapshot, node_status))
-
-          def shutdown(): List[Bad_Theory] =
-          {
-            consumer.shutdown()
-            consumer_bad_theories.value.reverse
-          }
-        }
-
-        val use_theories_result =
-          session.use_theories(
-            import_theories.map(_.theory),
-            check_delay = options.seconds("mmt_check_delay"),
-            commit = Some(Consumer.apply _),
-            commit_cleanup_delay = options.seconds("mmt_cleanup_delay"),
-            watchdog_timeout = options.seconds("mmt_watchdog_timeout"),
-            progress = progress)
-
-        val bad_theories = Consumer.shutdown()
-        val bad_msgs =
-          for { bad <- bad_theories }
-          yield {
-            val msg =
-              "FAILED theory " + bad.name +
-                (if (bad.status.consolidated) "" else ": " + bad.status.percentage + "% finished") +
-                (if (bad.errors.isEmpty) "" else bad.errors.mkString("\n", "\n", ""))
-            isabelle.Output.clean_yxml(msg)
-          }
-
-        val pending_msgs =
-          use_theories_result.nodes_pending match {
-            case Nil => Nil
-            case pending => List("Pending theories: " + isabelle.commas(pending.map(p => p._1.toString)))
-          }
-
-        val errors = bad_msgs ::: pending_msgs
-        if (errors.nonEmpty) isabelle.error(errors.mkString("\n\n"))
+        isabelle.Dump.session(session_deps, resources, progress = progress,
+          process_theory = (_, snapshot, _) => import_theory(read_theory_export(snapshot)))
       }
     }
 
@@ -990,9 +907,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
       Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
     }
-
-    def use_theories(theories: List[String]): isabelle.Headless.Use_Theories_Result =
-      session.use_theories(theories, progress = progress)
 
 
     /* theory content */
