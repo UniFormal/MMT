@@ -643,8 +643,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
-    if (isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
-      dirs = dirs ::: select_dirs) != 0) isabelle.error("Failed to build Isabelle/" + logic)
+    isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
+      dirs = dirs ::: select_dirs, strict = true)
 
 
     /* resources */
