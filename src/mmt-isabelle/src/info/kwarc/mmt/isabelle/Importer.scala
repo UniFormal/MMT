@@ -659,10 +659,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           uniform_session = true, loading_sessions = true)
 
     val session: isabelle.Headless.Session =
-      isabelle.Headless.start_session(options, logic,
+      isabelle.Headless.start_session(options, logic, progress = progress,
         session_dirs = dirs ::: select_dirs,
-        include_sessions = session_deps.sessions_structure.imports_topological_order,
-        progress = progress)
+        include_sessions = session_deps.sessions_structure.imports_topological_order)
 
 
     /* theory resources */
