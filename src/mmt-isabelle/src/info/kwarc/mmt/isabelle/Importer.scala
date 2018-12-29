@@ -645,28 +645,24 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
 
-    /* dependencies */
+    /* logic image */
+
+    if (isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
+        dirs = dirs ::: select_dirs) != 0) isabelle.error("Failed to build Isabelle/" + logic)
+
+
+    /* session */
 
     private val session_deps: isabelle.Sessions.Deps =
       isabelle.Sessions.load_structure(options, dirs = dirs, select_dirs = select_dirs).
         selection_deps(options, selection, progress = progress,
           uniform_session = true, loading_sessions = true)
 
-
-    /* session */
-
     val session: isabelle.Headless.Session =
-    {
-      val build_rc =
-        isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
-          dirs = dirs ::: select_dirs)
-      if (build_rc != 0) isabelle.error("Failed to build Isabelle/" + logic)
-
       isabelle.Headless.start_session(options, logic,
         session_dirs = dirs ::: select_dirs,
         include_sessions = session_deps.sessions_structure.imports_topological_order,
         progress = progress)
-    }
 
 
     /* theory resources */
