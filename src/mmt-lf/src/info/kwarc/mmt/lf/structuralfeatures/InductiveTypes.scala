@@ -11,7 +11,6 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
-import info.kwarc.mmt.api.frontend.actions.Exit
 
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
@@ -32,28 +31,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
-  /** Check whether the TermLevel is a constructor or outgoing */
-  def isConstructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
-    case ApplyGeneral(OMS(tpl), args) => types contains tpl
-    case _ => false
-  }
-  
-  /** Check whether the TermLevel has a higher order argument of an inductively defined type
-   *  In that case an error is thrown
-   */
-  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent : GlobalName) = {
-    def dependsOn(tm: Term, tp: GlobalName): Boolean = {
-      val FunType(args, ret) = tm
-      args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
-    }
-    if (isConstructor(tc, types)) {// Check whether the constructor is outgoing
-      tc.args.map(_._2).exists({x =>
-        val FunType(args, ret) = x
-        args.exists(arg => types.exists(dependsOn(arg._2, _)))
-      })
-    }
-  }
-  
+    
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
    * as well as the corresponding no confusion and no junk axioms
@@ -71,7 +49,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit var tpdecls : List[TypeLevel]= Nil
     val decls = dd.getDeclarations map {
       case c: Constant =>
-        val intDecl = InternalDeclaration.fromConstant(c, controller, Some(context))
+        val intDecl = fromConstant(c, controller, Some(context))
         intDecl match {
           case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d; intDecl 
           case d @ TypeLevel(_, _, _, _,_) => tpdecls :+= d; intDecl
@@ -103,6 +81,28 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         elabDecls.find(_.name == n) foreach(c => log(defaultPresenter(c)(controller)))
         elabDecls.find(_.name == n)
       }
+    }
+  }
+  
+  /** Check whether the TermLevel is a constructor or outgoing */
+  def isConstructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
+    case ApplyGeneral(OMS(tpl), args) => types contains tpl
+    case _ => false
+  }
+  
+  /** Check whether the TermLevel has a higher order argument of an inductively defined type
+   *  In that case an error is thrown
+   */
+  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent : GlobalName) = {
+    def dependsOn(tm: Term, tp: GlobalName): Boolean = {
+      val FunType(args, ret) = tm
+      args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
+    }
+    if (isConstructor(tc, types)) {// Check whether the constructor is outgoing
+      tc.args.map(_._2).exists({x =>
+        val FunType(args, ret) = x
+        args.exists(arg => types.exists(dependsOn(arg._2, _)))
+      })
     }
   }
   
