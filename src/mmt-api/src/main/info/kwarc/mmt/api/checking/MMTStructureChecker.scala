@@ -705,7 +705,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
         val conR = checkContext(context, con)
-        val argsR = args map {a => checkTerm(context, a)}
+        val argsR = args map {a => checkTerm(context ++ conR, a)}
         OMBINDC(binR, conR, argsR)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)

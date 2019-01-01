@@ -17,7 +17,7 @@ import Theory._
  *  Its semantics is defined by the corresponding [[StructuralFeature]]
  */
 class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
-                         val notC: NotationContainer) extends {
+                         val notC: NotationContainer, val dfC : TermContainer = TermContainer(None)) extends {
    private val t = Theory.empty(h.toMPath.parent, h.toMPath.name/name, noMeta)
    protected val delegatee = t // inheriting the container element functions of t
 } with NestedModule(h, name, t) with DelegatingContainerElement[Declaration] with HasNotation {
@@ -25,7 +25,7 @@ class DerivedDeclaration(h: Term, name: LocalName, override val feature: String,
   def modulePath = module.path
 
   override def getDeclarations = module.getDeclarations
-  override def getComponents = TypeComponent(tpC) :: notC.getComponents
+  override def getComponents = TypeComponent(tpC) :: DefComponent(dfC) :: notC.getComponents
 
   private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
   override def toNode : Elem = {
