@@ -36,10 +36,14 @@ private object InternalDeclarationUtil {
    }
     
    /** a very detailed presenter, useful for debugging */
-  def present(c: Constant)(implicit parent: GlobalName) : String = {
-    c.path + ": " + present(c.tp.get)
+  def present(c: Constant) : String = {
+    c.path + ": " + present(c.tp.get, false)
   }
-  def present(e: Term)(implicit parent: GlobalName) : String = {
+  /** a very detailed presenter, useful for debugging */
+  def shortPresent(c: Constant) : String = {
+    c.path + ": " + present(c.tp.get, true)
+  }
+  def present(e: Term, shortNames: Boolean) : String = {
     def flatStrList(l : List[String], sep : String): String = l match {
       case Nil => ""
       case List(hd) => hd
@@ -54,9 +58,9 @@ private object InternalDeclarationUtil {
         case OMBIND(Pi.term, con, body) => preCon(con) + " "+iterPre(body)
         case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")
         case Arrow(a, b) => "("+iterPre(a) + " -> " + iterPre(b)+")"
-        case OMS(target) => "OMS("+target.name+")"
+        case OMS(target) => if (shortNames) target.name.toString() else "OMS("+target.name+")"
         case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg1) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
-        case OMV(n) => "OMV("+n.toString()+")"
+        case OMV(n) => if (shortNames) n.toString() else "OMV("+n.toString()+")"
         case OML(n, tp, df, _, _) => n.toString()+(if(tp != None) ": "+iterPre(tp.get) else "")+(if (df != None) " = "+iterPre(df.get) else "")
       }
     }
@@ -74,7 +78,7 @@ private object InternalDeclarationUtil {
   }
   object Neq {
     val path = theory ? "NOTEQUAL"
-    def apply(a: Term, s: Term, t: Term) = ApplySpine(OMS(path), a, s, t)
+    def apply(a: Term, s: Term, t: Term) = Ded(ApplySpine(OMS(path), a, s, t))
   }
   
   val Contra = OMS(theory ? "CONTRA")
@@ -84,28 +88,44 @@ private object InternalDeclarationUtil {
   def externalName(parent: GlobalName, name: LocalName): GlobalName = //(parent.module / parent.name, name)
     parent.module ? parent.name / name
  
-  def externalizeNames(parent: GlobalName) = Renamer(p => if (p.module == parent.toMPath) Some(externalName(parent, p.name)) else None) 
+  def externalizeNamesAndTypes(parent: GlobalName, params: Context):Term=>Term = { x=>
+    externalizeNames(parent)(externalizeTypes(parent, params)(x, params), params)
+  }
+  
+  def externalizeTypes(parent: GlobalName, params: Context) = {
+    def r(p: GlobalName) = if (p.module == parent.toMPath) Some(ApplyGeneral(OMS(p), params.map(_.toTerm))) else None
+    OMSReplacer(r _)
+  }
+  
+  def externalizeNames(parent: GlobalName) = {
+    def r(p: GlobalName) = if (p.module == parent.toMPath) Some(OMS(externalName(parent, p.name))) else None
+    OMSReplacer(r _)
+  }
   
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
    *  @param tp the type of the constant
+   *  @param Lnot (optional) the parsing notation of the constant
    *  @param df (optional) the definition of the constant
    *  @param parent (implicit) the inductive definition to elaborate
    */
-  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {
+  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None, Lnot: () => Option[TextNotation] = () => None)(implicit parent:  GlobalName): Constant = {
     val p = externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
       otherDefined = true
       def onAccess {
         _tp = Some(Ltp())
         _df = Ldf()
+        _not = Lnot()
       }
     }
   }
-  def injDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
+//  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {makeConst(name, Ltp, () => None, Ldf)}
+  def makeConst(name: LocalName, Ltp: () => Term)(implicit parent: GlobalName):Constant = {makeConst(name, Ltp, ()=>{None})}
+  def injDecl(c: Constant, con: Controller, ctx: Option[Context], types:List[TypeLevel])(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, ctx)
     val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
-    tmdecl.injDecl
+    tmdecl.injDecls
   }
   def surjDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, ctx)
@@ -124,7 +144,10 @@ object InternalDeclaration {
   implicit def toVarDecl(d: InternalDeclaration)(implicit parent: GlobalName): VarDecl = d.toVarDecl
 
   //TODO: Implement this properly (not required in LF)
-  def isTypeLevel(tp: Term) : Boolean = false
+  def isTypeLevel(tp: Term) : Boolean = {
+    val FunType(args, ret) = tp
+    ret == Univ(1)
+  }
   
   /**
    * convert the given constant into the appropriate internal declaration
@@ -133,9 +156,8 @@ object InternalDeclaration {
    */
   def fromConstant(c: Constant, con: Controller, ctx: Option[Context])(implicit parent : GlobalName) : InternalDeclaration = {
     val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}
-    val (retCtx, retTp) = (Context.empty, tp)//parsePi(tp)
-    val FunType(args, ret) = retTp
-    val context = Some(ctx getOrElse Context.empty ++ retCtx)
+    val FunType(args, ret) = tp
+    val context = Some(ctx getOrElse Context.empty)
     val p = c.path
     if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
       StatementLevel(p, args, c.df, context, Some(c.notC))
@@ -143,7 +165,7 @@ object InternalDeclaration {
       ret match {
         case Univ(1) => TypeLevel(p, args, c.df, context, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
-        case r => if (isTypeLevel(r)) TypeLevel(p, args, c.df, context, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC), ctx)
+        case r => TermLevel(p, args, ret, c.df, Some(c.notC), ctx)//if (isTypeLevel(r)) TypeLevel(p, args, c.df, context, Some(c.notC)) else TermLevel(p, args, ret, c.df, Some(c.notC), ctx)
       }
     }
   }
@@ -158,12 +180,12 @@ object InternalDeclaration {
   }
   
   /** build a dictionary from the declaration paths to OMV with their "primed" type, as well as a context with all the "primed" declarations*/
-  def chain(decls: List[InternalDeclaration], context: Context) : (List[(GlobalName, OMV)], Context) = {
+  def chain(decls: List[InternalDeclaration], context: Context)(implicit parent: GlobalName) : (List[(GlobalName, OMV)], Context) = {
     var repls: List[(GlobalName,OMV)] = Nil
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(repls, p)))
     val modelContext = decls map {d =>
       val namePrimed = d.name / "'"
-      val vdPrimed = VarDecl(namePrimed, tr(context, d.tp))
+      val vdPrimed = VarDecl(namePrimed, tr(context, externalizeTypes(parent, context)(d.tp, context)))
       repls ::= d.path -> OMV(namePrimed)
       vdPrimed
     }
@@ -192,14 +214,31 @@ sealed abstract class InternalDeclaration {
   def df : Option[Term]
   
   /** like tp but with all names externalized */
-  def externalTp(implicit parent: GlobalName) = externalizeNames(parent)(tp, context)
+  def externalTp(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(tp)
   /** like df but with all names externalized */
-  def externalDf(implicit parent: GlobalName) = df map {t => externalizeNames(parent)(t, context)}
+  def externalDf(implicit parent: GlobalName) = df map {t => externalizeNamesAndTypes(parent, context)(t)}
+  def externalRet(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(ret)
  
+  
+  /** checks whether the type of the declaration is dependent on the given argument */
+  def isIndependentArgument(arg: (Option[LocalName], Term)): Boolean = arg match {
+    case (None, _) => true
+    case (Some(name), tp) =>
+        val remainingArgs = args.reverse.takeWhile(_ != arg).reverse
+        !(remainingArgs:+(None,ret)).exists{argTp => argTp._2.freeVars contains name}
+  }
+  
+  /** checks whether the declaration is simply typed */
+  def isSimplyTyped(): Boolean = {
+    (args.filterNot{_._2 == Univ(1)}) forall {case arg@(_, tp) => 
+      isIndependentArgument(arg) || tp == Univ(1)
+    }
+  }
+  
   /**
 	 * Build a context quantifying over all arguments
 	 *  and the term of this constructor applied to those arguments
-	 * @param suffix (optional) a suffix to append to the local name of each variable declaration in the returned context
+	 * @param suffix (optional) a suffix to append to the local name of each independent variable declaration in the returned context
    */
   def argContext(suffix: Option[String])(implicit parent: GlobalName): (Context, Term) = { 
     val suf = suffix getOrElse ""
@@ -209,10 +248,10 @@ sealed abstract class InternalDeclaration {
     }
     // In case of an OMV argument used in the type of a later argument
     var subs = Substitution()
-    val con: Context = dargs map {case (loc, tp) =>
-      val locSuf = uniqueLN(loc+suf)
-      subs = subs ++ OMV(loc) / OMV(locSuf)
-      newVar(locSuf, tp ^? subs, None)
+    val con: Context = dargs zip args map {case ((loc, tp), arg) =>
+      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf) else loc
+      if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
+      newVar(locSuf, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
     val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
     (con, tp)
@@ -220,9 +259,18 @@ sealed abstract class InternalDeclaration {
   
   def toVarDecl = VarDecl(name, tp)
   def toConstant(implicit parent: GlobalName): Constant = {
-    makeConst(name, () => PiOrEmpty(context, externalTp), () => externalDf)(parent)
+    // for n parameters, copy over notation but add n implicit arguments at beginning
+    def not = notation.parsing.flatMap {n =>
+      val numPars = context.length
+      try {
+        Some(n.copy(fixity = n.fixity.addInitialImplicits(numPars)))
+      } catch { 
+        case ImplementationError(m) => println(m+" in the notation for the externalized internal declaration: "+name); None
+      }
+    }
+    makeConst(name, () => externalTp, () => externalDf, () => not)(parent)
   }
-  def toTerm(implicit parent: GlobalName): Term = OMS(externalName(parent, name))
+  def toTerm(implicit parent: GlobalName): Term = ApplyGeneral(OMS(externalName(parent, name)), context.map(_.toTerm))
   
   /** apply the internal declaration to the given argument context */
   def applyTo(args: Context)(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args.map(_.toTerm))
@@ -274,16 +322,20 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param d the term level for which to generate the injectivity axiom
    */
-  def injDecl(implicit parent: GlobalName): Constant = {
-    val Ltp = () => {
-      val (aCtx, aApplied) = argContext(Some("_0"))
-      val (bCtx, bApplied) = argContext(Some("_1"))
-      val argEq = (aCtx zip bCtx) map {case (a,b) => Eq(ret, a.toTerm, b.toTerm)} // TODO does not type-check if ret depends on arguments
-      val resNeq = Neq(ret, aApplied, bApplied)  // TODO does not type-check if ret depends on arguments
-      val body = Arrow(Arrow(argEq, Contra), resNeq)
-      PiOrEmpty(context++aCtx ++ bCtx,  body)
+  def injDecls(implicit parent: GlobalName): List[Constant] = {
+    val (aCtx, aApplied) = argContext(Some("_0"))
+    val (bCtx, bApplied) = argContext(Some("_1"))
+    val abi = (aCtx zip bCtx) zipWithIndex
+    val bis = abi filter {case ((a,b),i) => a != b}
+    bis map {case _@((a, b),i) =>
+      val Ltp = () => {
+        val argNeq = Neq(a.tp.get, a.toTerm, b.toTerm) // TODO does not type-check if ret depends on arguments
+        val resNeq = Neq(externalRet, aApplied, bApplied)  // TODO does not type-check if ret depends on arguments
+        val res=PiOrEmpty(context++aCtx ++ bis.map(_._1._2),  Arrow(argNeq, resNeq))
+        res
+      }
+      makeConst(uniqueLN("injective_"+name+"_"+i.toString), Ltp, ()=>{None})(parent)
     }
-    makeConst(uniqueLN("injective_"+name), Ltp)(parent)
   }
   
   /**
@@ -298,7 +350,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
     
       PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(ret, aApplied, im.toTerm)))))
     }
-    makeConst(uniqueLN("surjective_"+name), Ltp)(parent)
+    makeConst(uniqueLN("surjective_"+name), Ltp, ()=>{None})(parent)
   }
 }
 

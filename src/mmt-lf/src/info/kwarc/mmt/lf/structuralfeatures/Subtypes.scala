@@ -38,11 +38,11 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
         }
         makeConst(uniqueLN("inj"), Ltp)
       }
-      val injInjective = injDecl(injection, controller, context)
+      val injInjective = injDecl(injection, controller, context, Nil)
       val lift = this.lift(dom, pred, Some("g"), context)
       val inverse = this.inverse(dom, subtype.path, pred, injection.path, lift.path, Some("inverse"), context)
             
-      val elabDecls = List(subtype, injection, injInjective, lift, inverse) 
+      val elabDecls = List(subtype, injection)++injInjective++List(lift, inverse) 
       //elabDecls map {d => log(defaultPresenter(d)(controller))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}

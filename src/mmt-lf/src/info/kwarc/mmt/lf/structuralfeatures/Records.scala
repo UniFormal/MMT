@@ -117,7 +117,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
         } 
         PiOrEmpty(context++modelCtx, assert(ApplySpine(OMS(dElim.path), ApplyGeneral(OMS(recMake), modelCtx.map(_.toTerm))), v))
       }
-      makeConst(uniqueLN("induct_"+d.name), Ltp, () => None)
+      makeConst(uniqueLN("induct_"+d.name), Ltp)
     }
   }
   
@@ -129,7 +129,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     val Ltp = () => {
       val r = LocalName("r")
       val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
-      Pi(r, OMS(recType), tr(c.context, c.externalTp))
+      Pi(r, OMS(recType), tr(c.context, c.tp))
     }
     makeConst(c.name, Ltp)
   }
