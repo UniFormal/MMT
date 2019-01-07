@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.indicators
+    val targetSection : Section = impsLibrarySections.foundationSupplements
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -321,11 +321,13 @@ class TranslationState ()
 
   var jsons              : List[JSONObject]     = Nil
 
+  var supersorts         : Map[Term,List[Term]] = Map.empty
+
   var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil
-  var hashCount          : Int = 0
+  var hashCount          : Int                  = 0
 
-  var verbosity          : Int = 0
+  var verbosity          : Int                  = 0
 
   protected var unknowns : Int                  = 0
 
@@ -381,5 +383,16 @@ class TranslationState ()
   {
     hashCount += 1
     hashCount.toString.hashCode()
+  }
+
+  def allSupersorts(sub : Term) : List[Term] = {
+    var list  = List(sub)
+    var delta = true
+    while (delta) {
+      val tmplst : List[Term] = list ::: list.flatMap(e => supersorts.getOrElse(e,Nil))
+      delta = list.distinct != tmplst.distinct
+      list  = tmplst
+    }
+    list.distinct.filter(e => e != sub)
   }
 }

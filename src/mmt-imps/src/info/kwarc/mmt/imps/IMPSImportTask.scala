@@ -2,6 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
+import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
@@ -619,9 +620,10 @@ class IMPSImportTask(val controller  : Controller,
     {
       for (tal : ArgTypeSortAList <- l.ex.get.specs)
       {
-        var name : String = tal.srt.toString + "_is_"
+        val supersort : IMPSSort = tal.srt
+        var name : String = supersort.toString + "_encloses_"
 
-        val sub : Term = tal.tp match
+        val the_subsort   : Term = tal.tp match
         {
           case NumericalType.INTEGERTYPE  =>
             name = name + "integer_type"
@@ -634,19 +636,28 @@ class IMPSImportTask(val controller  : Controller,
             OMS(IMPSTheory.lutinsPath ? "octetType")
         }
 
-        val srt = tState.bindUnknowns(matchSort(tal.srt,nu_lang))
-        val knd = tState.bindUnknowns(findKind(tal.srt))
-        val trm = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), knd, sub, srt)
-        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(trm))
-        val judgement : Declaration  = symbols.Constant(nu_lang.toTerm, LocalName(name),Nil,jdgmttp,None,Some("Numerical Type Subsort"))
+        val the_supersort : Term = matchSort(tal.srt,nu_lang)
 
-        if (tState.verbosity > 0)
-        {
-          println(" > adding " + name)
-        }
+        val the_kind  : Term = OMS(IMPSTheory.lutinsIndType)
+        val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
 
-        if (tal.src.isDefined) { doSourceRefD(judgement, tal.src, uri) }
+        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
+
+        val judgement : Declaration  = symbols.Constant(nu_lang.toTerm,LocalName(name),Nil,jdgmttp,None,Some("Numeric Type subsort"))
+        doSourceRefD(judgement, tal.src, uri)
         controller add judgement
+
+        // Adding subtyping rules the checker can use
+        val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
+        val rulename : LocalName = LocalName(the_subsort.toString + "_<:_" + supersort.toString)
+        val ruleConst = RuleConstant(nu_lang.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
+        ruleConst.setOrigin(GeneratedBy(this))
+        if (tState.verbosity > 2) {
+          println(" > Adding actual subtyping rule: " + the_subsort.toString.dropWhile(c => !c.equals('?')) + " <:: " + supersort.toString)
+        }
+        controller add ruleConst
+        tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
+        doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),nu_lang)
       }
     }
 
@@ -1386,6 +1397,14 @@ class IMPSImportTask(val controller  : Controller,
     IMPSTheory.exp(tp, matchSort(d_prime,t))
   }
 
+  class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
+    val head : GlobalName = by
+    def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
+    def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+      Some(true)
+    }
+  }
+
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : Theory, src : SourceInfo, uri : URI) : Unit =
   {
@@ -1398,19 +1417,62 @@ class IMPSImportTask(val controller  : Controller,
 
     val jdgmtname : LocalName    = LocalName(subsort.toString + "_sub_" + supersort.toString)
 
-    val foo       : Term = tState.bindUnknowns(matchSort(subsort,thy))
-    val bar       : Term = tState.bindUnknowns(matchSort(supersort,thy))
-    val baz       : Term = tState.bindUnknowns(findKind(supersort))
+    val the_subsort   : Term = tState.bindUnknowns(matchSort(subsort,thy))
+    val the_supersort : Term = tState.bindUnknowns(matchSort(supersort,thy))
+    val the_kind      : Term = tState.bindUnknowns(findKind(supersort))
 
-    val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), baz, foo, bar)
+    val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
 
     val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
-
-    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
     val judgement : Declaration  = symbols.Constant(thy.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort_2"))
     doSourceRefD(judgement, src, uri)
     controller add judgement
+
+    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+    // Adding subtyping rules the checker can use
+    val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
+    val rulename : LocalName = LocalName(subsort.toString + "_<:_" + supersort.toString)
+    val ruleConst = RuleConstant(thy.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
+    ruleConst.setOrigin(GeneratedBy(this))
+    if (tState.verbosity > 2) {
+      println(" > Adding actual subtyping rule: " + subsort.toString + " <:: " + supersort.toString)
+    }
+    controller add ruleConst
+    tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
+    doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),thy)
+  }
+
+  def doTransitiveSubtyping(the_subsort : Term, known_supersorts : List[Term], q : Theory) : Unit =
+  {
+    val allSuperSorts : List[Term] = tState.allSupersorts(the_subsort)
+    println("all: " + allSuperSorts.diff(known_supersorts))
+    for (the_supersort <- allSuperSorts)
+    {
+      if (!known_supersorts.contains(the_supersort)) {
+        val jdgmtname : LocalName = LocalName(the_subsort.toString + "_sub_" + the_supersort.toString)
+        val the_kind  : Term      = OMS(IMPSTheory.lutinsIndType)
+
+        val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
+        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
+
+        val judgement : Declaration  = symbols.Constant(q.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort_2"))
+        controller add judgement
+
+        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+
+        // Adding subtyping rules the checker can use
+        val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
+        val rulename : LocalName = LocalName(the_subsort.toString + "_<:_" + the_supersort.toString)
+        val ruleConst = RuleConstant(q.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
+        ruleConst.setOrigin(GeneratedBy(this))
+        if (tState.verbosity > 2) {
+          println(" > Adding transitive subtyping rule: " + the_subsort.toString + " <: " + the_supersort.toString)
+        }
+        controller add ruleConst
+      }
+    }
   }
 
   def isIntLiteral(s : String) : Boolean = { s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit)) }
@@ -1737,12 +1799,25 @@ class IMPSImportTask(val controller  : Controller,
 
       IMPSTheory.QCT.emptyIndicQQC(findKind(srt),matchSort(srt,thy),t1)
 
-    case IMPSQCNonemptyIndicator(srt) =>
-      val ca = findSortFromContext(srt,cntxt)
+    case IMPSQCNonemptyIndicator(a) =>
+      val ca = findSortFromContext(a,cntxt)
       val as : IMPSSort = ca.getOrElse(IMPSUnknownSort(tState.freshHash()))
-      val t1 = doMathExp(srt,thy,cntxt)
 
-      IMPSTheory.QCT.nonEmptyIndicQQC(findKind(as),matchSort(as,thy),t1)
+      assert(as.isInstanceOf[IMPSUnknownSort]   || as.isInstanceOf[IMPSSetSort]
+        || as.isInstanceOf[IMPSBinaryFunSort] || as.isInstanceOf[IMPSNaryFunSort])
+
+      val srt : IMPSSort = as match {
+        case IMPSSetSort(s)           => s
+        case IMPSBinaryFunSort(s1,s2) => hAssert(s2 == IMPSAtomSort("unit%sort") || s2 == IMPSAtomSort("unitsort"), s2) ; s1
+        case IMPSNaryFunSort(srts)    => assert(srts.last == IMPSAtomSort("unit%sort") || srts.last == IMPSAtomSort("unitsort"))
+          assert(srts.length == 2)
+          srts.head
+        case IMPSUnknownSort(_)       => IMPSUnknownSort(tState.freshHash())
+      }
+
+      val t1 = doMathExp(a,thy,cntxt)
+
+      IMPSTheory.QCT.nonEmptyIndicQQC(findKind(srt),matchSort(srt,thy),t1)
 
     case IMPSQCComplement(m) =>
       val ca = findSortFromContext(m,cntxt)
