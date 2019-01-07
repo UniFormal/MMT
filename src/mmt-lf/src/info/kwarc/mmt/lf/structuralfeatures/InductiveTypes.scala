@@ -93,7 +93,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   /** Check whether the TermLevel has a higher order argument of an inductively defined type
    *  In that case an error is thrown
    */
-  def checkTermLevel(tc: TermLevel, types: List[GlobalName])(implicit parent : GlobalName) = {
+  def checkTermLevel(tc: TermLevel, types: List[GlobalName])= {
     def dependsOn(tm: Term, tp: GlobalName): Boolean = {
       val FunType(args, ret) = tm
       args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
