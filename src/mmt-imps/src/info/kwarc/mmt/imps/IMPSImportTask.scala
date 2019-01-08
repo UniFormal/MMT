@@ -620,21 +620,24 @@ class IMPSImportTask(val controller  : Controller,
     {
       for (tal : ArgTypeSortAList <- l.ex.get.specs)
       {
-        val supersort : IMPSSort = tal.srt
-        var name : String = supersort.toString + "_encloses_"
+        val supersort      : IMPSSort = tal.srt
+        var name           : String   = supersort.toString + "_encloses_"
+        var numerical_name : String   = ""
 
         val the_subsort   : Term = tal.tp match
         {
           case NumericalType.INTEGERTYPE  =>
-            name = name + "integer_type"
+            numerical_name = "integer_type"
             OMS(IMPSTheory.lutinsPath ? "integerType")
           case NumericalType.RATIONALTYPE =>
-            name = name + "rational_type"
+            numerical_name = "rational_type"
             OMS(IMPSTheory.lutinsPath ? "rationalType")
           case NumericalType.OCTETTYPE    =>
-            name = name + "octet_type"
+            numerical_name = "octet_type"
             OMS(IMPSTheory.lutinsPath ? "octetType")
         }
+
+        name += numerical_name
 
         val the_supersort : Term = matchSort(tal.srt,nu_lang)
 
@@ -647,15 +650,8 @@ class IMPSImportTask(val controller  : Controller,
         doSourceRefD(judgement, tal.src, uri)
         controller add judgement
 
-        // Adding subtyping rules the checker can use
-        val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
-        val rulename : LocalName = LocalName(the_subsort.toString + "_<:_" + supersort.toString)
-        val ruleConst = RuleConstant(nu_lang.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-        ruleConst.setOrigin(GeneratedBy(this))
-        if (tState.verbosity > 2) {
-          println(" > Adding actual subtyping rule: " + the_subsort.toString.dropWhile(c => !c.equals('?')) + " <:: " + supersort.toString)
-        }
-        controller add ruleConst
+        addSubtypingRule(the_subsort,the_supersort,nu_lang,judgement.path,numerical_name,tal.srt.toString)
+
         tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
         doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),nu_lang)
       }
@@ -1429,50 +1425,56 @@ class IMPSImportTask(val controller  : Controller,
     doSourceRefD(judgement, src, uri)
     controller add judgement
 
-    /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+    addSubtypingRule(the_subsort,the_supersort,thy,judgement.path,subsort.toString,supersort.toString)
 
-    // Adding subtyping rules the checker can use
-    val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
-    val rulename : LocalName = LocalName(subsort.toString + "_<:_" + supersort.toString)
-    val ruleConst = RuleConstant(thy.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-    ruleConst.setOrigin(GeneratedBy(this))
-    if (tState.verbosity > 2) {
-      println(" > Adding actual subtyping rule: " + subsort.toString + " <:: " + supersort.toString)
-    }
-    controller add ruleConst
     tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
     doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),thy)
   }
 
-  def doTransitiveSubtyping(the_subsort : Term, known_supersorts : List[Term], q : Theory) : Unit =
+  def doTransitiveSubtyping(the_subsort : Term, known_supersorts : List[Term], theory : Theory) : Unit =
   {
     val allSuperSorts : List[Term] = tState.allSupersorts(the_subsort)
     println("all: " + allSuperSorts.diff(known_supersorts))
     for (the_supersort <- allSuperSorts)
     {
-      if (!known_supersorts.contains(the_supersort)) {
-        val jdgmtname : LocalName = LocalName(the_subsort.toString + "_sub_" + the_supersort.toString)
+      if (!known_supersorts.contains(the_supersort))
+      {
+        val jdgmtname : LocalName = LocalName(the_subsort.toString + "_is_subsort_of_" + the_supersort.toString)
         val the_kind  : Term      = OMS(IMPSTheory.lutinsIndType)
 
         val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
         val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
 
-        val judgement : Declaration  = symbols.Constant(q.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort_2"))
+        val judgement : Declaration  = symbols.Constant(theory.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort"))
         controller add judgement
 
-        /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
+        val subName   : String = the_subsort.toString.reverse.takeWhile(c => c != "?".toCharArray.head).reverse
+        val supName   : String = the_supersort.toString.reverse.takeWhile(c => c != "?".toCharArray.head).reverse
 
-        // Adding subtyping rules the checker can use
-        val rule = new SubtypeJudgRule(the_subsort,the_supersort,judgement.path)
-        val rulename : LocalName = LocalName(the_subsort.toString + "_<:_" + the_supersort.toString)
-        val ruleConst = RuleConstant(q.toTerm,rulename,None,Some(rule)) //c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-        ruleConst.setOrigin(GeneratedBy(this))
-        if (tState.verbosity > 2) {
-          println(" > Adding transitive subtyping rule: " + the_subsort.toString + " <: " + the_supersort.toString)
-        }
-        controller add ruleConst
+        addSubtypingRule(the_subsort, the_supersort, theory, judgement.path, subName, supName)
       }
     }
+  }
+
+  /* Adding subtyping rules the checker can use. Note: subsort and supersort need exps around them. */
+  def addSubtypingRule(subsort : Term, supersort : Term, theory : Theory, origin : GlobalName, subname : String = "", supname : String = "") : Unit =
+  {
+    val present_subsort   : String = if (subname == "") {subsort.toString} else subname
+    val present_supersort : String = if (supname == "") {subsort.toString} else supname
+    val rulename  : LocalName = LocalName(present_subsort + "_<:_" + present_supersort)
+
+    val expSubsort   : Term = IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),subsort)
+    val expSupersort : Term = IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),supersort)
+
+    val rule      : SubtypeJudgRule = new SubtypeJudgRule(expSubsort, expSupersort, origin)
+    val ruleConst : RuleConstant    = RuleConstant(theory.toTerm,rulename,None,Some(rule))
+    ruleConst.setOrigin(GeneratedBy(this))
+
+    if (tState.verbosity > 2) {
+      println(" > Adding subtyping rule: " + present_subsort + " <: " + present_supersort)
+    }
+
+    controller add ruleConst
   }
 
   def isIntLiteral(s : String) : Boolean = { s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit)) }
