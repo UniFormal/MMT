@@ -384,7 +384,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               if (reduced)
                 Simplify(ApplySpine(f,args : _*))
               else
-                RecurseOnly(tm.subobjects.indexWhere(_._2 hasheq f)::Nil)
+                RecurseOnly(List(1))
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
