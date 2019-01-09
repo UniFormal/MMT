@@ -15,6 +15,17 @@ import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
 class Records extends StructuralFeature("record") with ParametricTheoryLike {
+  object noLookupPresenter extends presentation.NotationBasedPresenter {
+    override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
+    override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
+  }
+  
+  override def start(args: List[String]) {
+    initOther(noLookupPresenter)
+  }
+  
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+
 
   /**
    * Checks the validity of the record to be constructed
@@ -37,7 +48,6 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     var elabDecls : List[Constant] = Nil
     
     val structure = structureDeclaration(None, context)
-    elabDecls :+= structure
     
     val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
       case c: Constant => fromConstant(c, controller, context)
@@ -46,7 +56,10 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     val decls : List[Constant] = toEliminationDecls(origDecls, structure.path)
         
     val make : Constant = this.introductionDeclaration(structure.path, origDecls, None, context)
-    elabDecls :+= make
+    val strDecl = makeConst(structure.name.tail, () => {PiOrEmpty(origDecls map(_.toVarDecl), structure.tp.get)})
+    elabDecls ::= strDecl
+    elabDecls ::= make
+
     // copy all the declarations
     decls foreach (elabDecls ::= _)
     
@@ -55,7 +68,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     
     elabDecls :+= reprDeclaration(structure.path, make.path, decls map (_.path), Some("repr"), context)
     
-    //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
+    elabDecls foreach {d => log(defaultPresenter(d)(controller))}
     new Elaboration {
       val elabs : List[Declaration] = Nil 
       def domain = elabDecls map {d => d.name}
@@ -67,7 +80,8 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   
   def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
     val Ltp = () => {
-      PiOrEmpty(context getOrElse Context.empty ++ decls.map(_.toVarDecl), OMS(recType))
+      val declCtx = decls.map(_.toVarDecl)
+      PiOrEmpty(context getOrElse Context.empty ++declCtx++ decls.map(d => newVar(LocalName("x_"+d.name), OMV(LocalName(d.name)))), ApplyGeneral(OMS(recType), declCtx.map(_.toTerm)))
     }
     makeConst(uniqueLN(nm getOrElse "make"), Ltp)
   }
@@ -89,7 +103,8 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     var fields : List[GlobalName] = Nil
     decls map {
       case d =>
-        val dE = toEliminationDecl(d, recType, fields)
+        val Ctx = decls.map(_.toVarDecl)
+        val dE = toEliminationDecl(d, recType, Ctx, fields)
         fields ::= dE.path
         dE
     }
@@ -110,7 +125,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     val (repls, modelCtx) = chain(origDecls, context)
     (origDecls zip repls) map {case (d, (p, v)) =>
       val Ltp = () => {
-        val dElim = toEliminationDecl(d, recType, recordFields)
+        val dElim = toEliminationDecl(d, recType, origDecls.map(_.toVarDecl), recordFields)
         def assert(x: Term, y: Term): Term = d match {
           case TypeLevel(_, _, _, _,_) => Arrow(x, y)
           case _ => Eq(x, y, d.ret)
@@ -125,11 +140,11 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
    * where A[r] is like A with every d declared in this record with d r
    */
-  def toEliminationDecl(c:InternalDeclaration, recType: GlobalName, recordFields: List[GlobalName])(implicit parent: GlobalName): Constant = {
+  def toEliminationDecl(c:InternalDeclaration, recType: GlobalName, Ctx: Context, recordFields: List[GlobalName])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val r = LocalName("r")
-      val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(Apply(OMS(p), OMV(r))) else None))
-      Pi(r, OMS(recType), tr(c.context, c.tp))
+      val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(ApplyGeneral(OMS(p), (c.context++Ctx).map(_.toTerm):+OMV(r))) else None))
+      PiOrEmpty(c.context++Ctx, Pi(r, OMS(recType), tr(c.context, c.tp)))
     }
     makeConst(c.name, Ltp)
   }

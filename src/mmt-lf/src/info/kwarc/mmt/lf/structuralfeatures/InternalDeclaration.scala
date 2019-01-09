@@ -196,7 +196,7 @@ object InternalDeclaration {
     val Ltp = () => {
       PiOrEmpty(context getOrElse Context.empty, Univ(1))
     }
-    makeConst(uniqueLN(name getOrElse "Type"), Ltp)
+    makeConst(uniqueLN(name getOrElse "type"), Ltp)
   }
 }
 
