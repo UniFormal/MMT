@@ -1389,21 +1389,11 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def isIMPSliteralSort(sort : Term) : Boolean =
-  {
-    val integers  : Term = OMS(IMPSTheory.lutinsPath ? "integerType")
-    val rationals : Term = OMS(IMPSTheory.lutinsPath ? "rationalType")
-    val octets    : Term = OMS(IMPSTheory.lutinsPath ? "octetType")
-
-    val literalTypes : List[Term] = List(integers,rationals,octets)
-    literalTypes.contains(sort)
-  }
-
-  class IMPSLiteralTypeEqualityRule(unter : List[GlobalName], kopf : GlobalName) extends TypeBasedEqualityRule(unter, kopf) {
+  class IMPSTypeEqualityRule(unter : List[GlobalName], kopf : GlobalName) extends TypeBasedEqualityRule(unter, kopf) {
     def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       Some(true)
     }
-    def applicableToTerm(tm: Term): Boolean = isIMPSliteralSort(tm)
+    def applicableToTerm(tm: Term): Boolean = true
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
@@ -1429,7 +1419,6 @@ class IMPSImportTask(val controller  : Controller,
     controller add judgement
 
     addSubtypingRule(the_subsort,the_supersort,thy,judgement.path,subsort.toString,supersort.toString)
-
     tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
     doTransitiveSubtyping(the_subsort,List(the_supersort).distinct,thy)
   }
@@ -1459,18 +1448,18 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
-  def addSortEqualityRule(sort : Term, numericType : Term, theory : Theory, praesSort : String = "", praesNumType : String = "") : Unit =
+  def addSortEqualityRule(sort1 : Term, sort2 : Term, theory : Theory, praesSort1 : String = "", praesSort2 : String = "") : Unit =
   {
-    val present_sort    : String = if (praesSort == "") {sort.toString} else praesSort
-    val present_numType : String = if (praesNumType == "") {numericType.toString} else praesNumType
-    val rulename  : LocalName = LocalName(present_sort + "_is_exactly_" + praesSort)
+    val present_sort1 : String = if (praesSort1 == "") {sort1.toString} else praesSort1
+    val present_sort2 : String = if (praesSort2 == "") {sort2.toString} else praesSort2
+    val rulename  : LocalName = LocalName(present_sort1 + "_is_exactly_" + praesSort1)
 
-    val rule : IMPSLiteralTypeEqualityRule = new IMPSLiteralTypeEqualityRule(Nil,IMPSTheory.lutinsIndType)
+    val rule : IMPSTypeEqualityRule = new IMPSTypeEqualityRule(Nil,IMPSTheory.lutinsIndType)
     val ruleConst : RuleConstant = RuleConstant(theory.toTerm,rulename,None,Some(rule))
     ruleConst.setOrigin(GeneratedBy(this))
 
     if (tState.verbosity > 2) {
-      println(" > Adding type-equality rule: " + present_sort + " = " + present_numType)
+      println(" > Adding type-equality rule: " + present_sort1 + " = " + present_sort2)
     }
     controller add ruleConst
   }
