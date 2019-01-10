@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.Theory.{noBase, noParams}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
@@ -328,7 +329,7 @@ sealed trait TheorySet {
       d
     })
 
-    val th = new Theory(path.get.doc,path.get.name,metath)
+    val th = new Theory(path.get.doc,path.get.name,metath, noParams, noBase)
     structures.foreach(s => th.add(s))
 
     val losts = orig.filter(c => !localconsts.exists(p => p._1==c))
