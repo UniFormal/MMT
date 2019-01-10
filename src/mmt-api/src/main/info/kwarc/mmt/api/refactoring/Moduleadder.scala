@@ -72,7 +72,7 @@ sealed trait Viewset {
   def toView(implicit controller:Controller) : (View,List[View]) = {
     require(from.isDefined && to.isDefined)
     val (doc,name) = if (path.isDefined) (path.get.^^,path.get.name) else (from.get.parent,LocalName(this.hashCode().toString))
-    val v = new View(doc,name,from.get.toTerm,to.get.toTerm,false)
+    val v = View(doc,name,from.get.toTerm,to.get.toTerm,false)
     Moduleadder(v,localassignments,controller)
     val includeviews = includes.map(_.toView)
     includeviews.foreach(x => v add PlainViewInclude(v.toTerm,x._1.from.toMPath,x._1.toTerm.toMPath))
