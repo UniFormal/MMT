@@ -92,17 +92,17 @@ abstract class Intersecter extends Logger {
     val incs1 : Set[MPath] = from.allincludes.map(x => x.getPath.get).toSet
     val incs2 = to.allincludes.map(x => x.getPath.get).toSet
 
-    if ((from.localconsts forall (c => vs.localassignments.exists(p => p._1==c.path))) &&
+    if ((from.localconsts forall (c => vs.localassignments.exists(p => p._1==c._1.path))) &&
       (incs1 subsetOf incs2)) {
-      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c.path==p._2))
-      to.localconsts = to.localconsts.filter(c => !vs.localassignments.exists(p => p._2==c.path))
+      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c._1.path==p._2))
+      to.localconsts = to.localconsts.filter(c => !vs.localassignments.exists(p => p._2==c._1.path))
 
       val s = Structure(vs.to.get.toTerm,from.getPath.get.name,vs.from.get.toTerm,false)
       vs.localassignments foreach (pair =>{
-        val constOpt = to.localconsts.find(c => pair._2.name==c.name)
-        if (pair._1.name!=pair._2.name || constOpt.exists(_.df.nonEmpty)) {
-          s add Constant(s.toTerm,ComplexStep(from.getPath.get) / pair._1.name,if (pair._1.name!=pair._2.name) Some(pair._2.name) else None,
-            constOpt.map(_.tp).getOrElse(None),constOpt.map(_.df).getOrElse(None),None)
+        val constOpt = to.localconsts.find(c => pair._2.name==c._1.name)
+        if (pair._1.name!=pair._2.name || constOpt.exists(_._1.df.nonEmpty)) {
+          s add Constant(s.toTerm,ComplexStep(from.getPath.get) / pair._1.name,(if (pair._1.name!=pair._2.name) Some(pair._2.name) else None).toList,
+            constOpt.map(_._1.tp).getOrElse(None),constOpt.map(_._1.df).getOrElse(None),None)
         }
       })
       if (s.getDeclarations.isEmpty) to.includes = from::to.includes
@@ -117,17 +117,17 @@ abstract class Intersecter extends Logger {
       to.subst = subst
       List(from,to)
 
-    } else if ((to.localconsts forall (c => vs.localassignments.exists(p => p._2==c.path))) &&
+    } else if ((to.localconsts forall (c => vs.localassignments.exists(p => p._2==c._1.path))) &&
       (incs2 subsetOf incs1)) {
-      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c.path==p._2)).map(p => (p._2,p._1))
-      from.localconsts = from.localconsts.filter(c => !vs.localassignments.exists(p => p._1==c.path))
+      var subst = vs.localassignments.filter(p => to.localconsts.exists(c => c._1.path==p._2)).map(p => (p._2,p._1))
+      from.localconsts = from.localconsts.filter(c => !vs.localassignments.exists(p => p._1==c._1.path))
 
       val s = Structure(vs.from.get.toTerm,to.getPath.get.name,vs.to.get.toTerm,false)
       vs.localassignments foreach (pair =>{
-        val constOpt = from.localconsts.find(c => pair._1.name==c.name)
-        if (pair._1.name!=pair._2.name || constOpt.exists(_.df.nonEmpty)) {
-          s add Constant(s.toTerm,ComplexStep(to.getPath.get) / pair._2.name,if (pair._1.name!=pair._2.name) Some(pair._1.name) else None,
-            constOpt.map(_.tp).getOrElse(None),constOpt.map(_.df).getOrElse(None),None)
+        val constOpt = from.localconsts.find(c => pair._1.name==c._1.name)
+        if (pair._1.name!=pair._2.name || constOpt.exists(_._1.df.nonEmpty)) {
+          s add Constant(s.toTerm,ComplexStep(to.getPath.get) / pair._2.name,(if (pair._1.name!=pair._2.name) Some(pair._1.name) else None).toList,
+            constOpt.map(_._1.tp).getOrElse(None),constOpt.map(_._1.df).getOrElse(None),None)
         }
       })
       if (s.getDeclarations.isEmpty) from.includes = to::from.includes
@@ -146,8 +146,8 @@ abstract class Intersecter extends Logger {
       var subst2 : List[(GlobalName,GlobalName)] = Nil
       val path : MPath = from.getPath.get.doc ? LocalName(if (intname=="") vs.hashCode.toString else intname)
       val consts = vs.localassignments.map(pair => {
-        val const = if (takefromCodomain) to.localconsts.find(c => c.path==pair._2) else
-          from.localconsts.find(c => c.path==pair._1)
+        val const = if (takefromCodomain) to.localconsts.find(c => c._1.path==pair._2) else
+          from.localconsts.find(c => c._1.path==pair._1)
         if (takefromCodomain) {
           subst1::=(path?pair._2.name,pair._1)
           subst2::=(path?pair._2.name,pair._2)
@@ -157,8 +157,8 @@ abstract class Intersecter extends Logger {
         }
         const.getOrElse(throw new Exception("Erroneous assignment in Viewset during intersecting"))
       })
-      from.localconsts = from.localconsts.filter(p => !vs.localassignments.exists(pair => p.path==pair._1))
-      to.localconsts = to.localconsts.filter(p => !vs.localassignments.exists(pair => p.path==pair._2))
+      from.localconsts = from.localconsts.filter(p => !vs.localassignments.exists(pair => p._1.path==pair._1))
+      to.localconsts = to.localconsts.filter(p => !vs.localassignments.exists(pair => p._1.path==pair._2))
       val includes = from.includes.toSet intersect to.includes.toSet
       val int = TheorySet(consts,includes.toList)
       if (from.meta.isDefined && from.meta==to.meta) int.setMeta(from.meta.get)
@@ -195,7 +195,7 @@ case class Intersecter(controller:Controller) {
         case Some(n) => Some(TextNotation.parse(n,NamespaceMap.empty))
         case None => if(c._1.not.toString==c._2.not.toString) c._1.not else None
       })
-      Constant(OMID(int.path),c._3,None,tp,df,rl,notC)
+      Constant(OMID(int.path),c._3,List(),tp,df,rl,notC)
     })
     Moduleadder(int,consts.toSet)
     var newth1 = new Theory(th1.path.^^,th1.name,th1.meta, noParams, noBase)
@@ -210,7 +210,7 @@ case class Intersecter(controller:Controller) {
       for (o <- pairs if o._1.name!=o._3 || o._1.df.isDefined) {
         val df = Moduleadder.substitute(o._1.df,subst1)
         s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3,
-          if (o._1.name!=o._3) Some(o._1.name) else None, None, df, o._1.rl, o._1.notC))
+          (if (o._1.name!=o._3) Some(o._1.name) else None).toList, None, df, o._1.rl, o._1.notC))
       }
       s
     }
@@ -220,7 +220,7 @@ case class Intersecter(controller:Controller) {
       for (o <- pairs if o._2.name!=o._3 || o._2.df.isDefined) {
         val df = Moduleadder.substitute(o._2.df,subst2)
         s.add(Constant(OMID(s.path), ComplexStep(int.path) / o._3,
-          if (o._2.name!=o._3) Some(o._2.name) else None, None, df, o._2.rl, o._2.notC))
+          (if (o._2.name!=o._3) Some(o._2.name) else None).toList, None, df, o._2.rl, o._2.notC))
       }
       s
     }
