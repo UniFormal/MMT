@@ -35,8 +35,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param properties a key value map
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
-  extends ROArchive with Validate with ScalaCode with ZipArchive {
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
@@ -142,6 +141,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * TODO do properly
     * @return
     */
+  @deprecated("inefficient and brittle; use the relational dimension for this", "")
   lazy val allContent : List[MPath] = {
     log("Reading Content " + id)
     var ret : List[MPath] = Nil
@@ -193,7 +193,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
             }
             controller.depstore += re
           } catch { //TODO treat this as normal build target and report errors
-            case e : ParseError => log(e.getMessage)
+            case e : Error => log(e.getMessage)
           }
         }
       }

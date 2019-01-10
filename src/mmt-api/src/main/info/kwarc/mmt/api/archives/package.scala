@@ -14,6 +14,7 @@ package object archives {
    val content = RedirectableDimension("content")
    val narration = RedirectableDimension("narration")
    val relational = RedirectableDimension("relational")
+   val notational = RedirectableDimension("notations")
    val errors = RedirectableDimension("errors")
    val export = RedirectableDimension("export")
    val flat = RedirectableDimension("flat")

@@ -65,6 +65,10 @@ object AnonymousMorphism {
   def fromTerm(t: Term) = unapply(t).map {case (f,t,ds) => new AnonymousMorphism(f, t, ds)}
 }
 
+case class DiagramNode(label: LocalName, theory: AnonymousTheory)
+case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphism: AnonymousMorphism)
+class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: LocalName, distArrow: LocalName)
+
 object OMLList {
   // awkward casting here, but this way the list is not copied; thus, converting back and forth between Term and AnonymousTheory is cheap
   def unapply(ts: List[Term]): Option[List[OML]] = {
