@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.refactoring
 import info.kwarc.mmt.api.checking.Success
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.modules.Theory.{noBase, noParams}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.objects.{OMID, Term}
@@ -10,7 +11,7 @@ import info.kwarc.mmt.api.symbols._
 
 import scala.util.Try
 
-abstract class Viewsplitter extends Logger {
+abstract class Intersecter extends Logger {
   implicit val controller: Controller
   val logPrefix = "Viewfinder"
   lazy val report = controller.report
@@ -176,7 +177,7 @@ abstract class Viewsplitter extends Logger {
  */
 case class Intersecter(controller:Controller) {
   def apply(th1:Theory, th2:Theory, pairs:List[(FinalConstant,FinalConstant,LocalName,Option[String])], intname:LocalName):List[Theory] = {
-    val int = new Theory(th1.path.^^,intname,if (th1.meta==th2.meta) th1.meta else None)
+    val int = new Theory(th1.path.^^,intname,if (th1.meta==th2.meta) th1.meta else None, noParams, noBase)
 
     val includes = (int.meta match {
       case Some(x) => th1.getIncludesWithoutMeta.toSet diff th2.getIncludesWithoutMeta.toSet
@@ -197,8 +198,8 @@ case class Intersecter(controller:Controller) {
       Constant(OMID(int.path),c._3,None,tp,df,rl,notC)
     })
     Moduleadder(int,consts.toSet)
-    var newth1 = new Theory(th1.path.^^,th1.name,th1.meta, th1.paramC, th1.dfC)
-    var newth2 = new Theory(th2.path.^^,th2.name,th2.meta, th2.paramC, th2.dfC)
+    var newth1 = new Theory(th1.path.^^,th1.name,th1.meta, noParams, noBase)
+    var newth2 = new Theory(th2.path.^^,th2.name,th2.meta, noParams, noBase)
     val simple1 = if (pairs.forall(p => p._3==p._1.name && p._1.df.isEmpty)) true else false
     val simple2 = if (pairs.forall(p => p._3==p._2.name && p._2.df.isEmpty)) true else false
     var subst1 = if(simple1) pairs.map(p => (int.get(p._3).path,p._1.path)) else List()
@@ -245,19 +246,19 @@ case class Intersecter(controller:Controller) {
       vf
     })
     val view = viewfinder.find(th1.path,th2.path.toPath).headOption.getOrElse(return List())
-    val pairs = Viewsplitter.getPairs(view,th1,th2).map(p => (p._1,p._2,p._1.name,None))
+    val pairs = ViewSplitter.getPairs(view,th1,th2).map(p => (p._1,p._2,p._1.name,None))
     apply(th1,th2,pairs,intname)
   }
 
   def apply(th1:Theory, th2:Theory, v:View, intname:Option[String], takecod:Boolean = false):List[Theory] = {
     require(v.from==th1.toTerm && v.to==th2.toTerm)
 
-    val pairs = Viewsplitter.getPairs(v,th1,th2).map(p => (p._1,p._2,if (takecod) p._2.name else p._1.name,None))
+    val pairs = ViewSplitter.getPairs(v,th1,th2).map(p => (p._1,p._2,if (takecod) p._2.name else p._1.name,None))
     apply(th1,th2,pairs,if (intname.isDefined && intname.get!="") LocalName(intname.get) else LocalName("INTERSECTION"))
   }
 }
 
-object Viewsplitter {
+object ViewSplitter {
 
   /**
    * Splits a view up in Pairs of FinalConstants ; takes only those, that are directly elements
