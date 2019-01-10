@@ -1177,7 +1177,7 @@ case class ArgProcOperations(alists : List[ArgOperationsAlist], var src : Source
   override def toString: String = "(operations " + alists.mkString(" ") + ")"
 }
 
-case class Set(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
+case class ArgSet(cont : Script, var src : SourceInfo, var cmt : CommentInfo) extends DefForm {
   override def toString: String = "(set " + cont.toString + ")"
 }
 

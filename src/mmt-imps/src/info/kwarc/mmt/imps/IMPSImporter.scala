@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureCh
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.RuleConstant
 import info.kwarc.mmt.lf.Typed
 import info.kwarc.mmt.api.utils.JSON
 
@@ -322,6 +323,7 @@ class TranslationState ()
   var jsons              : List[JSONObject]     = Nil
 
   var supersorts         : Map[Term,List[Term]] = Map.empty
+  var knownsubtyperules  : Set[LocalName]       = Set.empty
 
   var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil

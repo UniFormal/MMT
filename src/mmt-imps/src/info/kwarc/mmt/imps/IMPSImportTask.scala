@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule}
+import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule, TypeBasedEqualityRule}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
@@ -610,9 +610,9 @@ class IMPSImportTask(val controller  : Controller,
         val tp     : Term        = IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType))
         val typing : Declaration = symbols.Constant(nu_lang.toTerm,LocalName(spec.sub.toString),Nil,Some(tp),None,Some("Sort"))
         controller add typing
+        if (tState.verbosity > 0) { println("   > adding language sort: " + spec.sub + " (enclosed by " + spec.enc + ") to " + nu_lang.name) }
 
         doSubsort(spec.sub, spec.enc, nu_lang, spec.src, uri)
-        if (tState.verbosity > 0) { println("   > adding language sort: " + spec.sub + " (enclosed by " + spec.enc + ") to " + nu_lang.name) }
       }
     }
 
@@ -620,40 +620,28 @@ class IMPSImportTask(val controller  : Controller,
     {
       for (tal : ArgTypeSortAList <- l.ex.get.specs)
       {
-        val supersort      : IMPSSort = tal.srt
-        var name           : String   = supersort.toString + "_encloses_"
-        var numerical_name : String   = ""
+        val sort         : IMPSSort = tal.srt
+        var numeric_name : String   = ""
 
-        val the_subsort   : Term = tal.tp match
+        val numeric_type   : Term = tal.tp match
         {
           case NumericalType.INTEGERTYPE  =>
-            numerical_name = "integer_type"
+            numeric_name = "integer_type"
             OMS(IMPSTheory.lutinsPath ? "integerType")
           case NumericalType.RATIONALTYPE =>
-            numerical_name = "rational_type"
+            numeric_name = "rational_type"
             OMS(IMPSTheory.lutinsPath ? "rationalType")
           case NumericalType.OCTETTYPE    =>
-            numerical_name = "octet_type"
+            numeric_name = "octet_type"
             OMS(IMPSTheory.lutinsPath ? "octetType")
         }
 
-        name += numerical_name
+        val sortTerm : Term = matchSort(tal.srt,nu_lang)
+        addSortEqualityRule(sortTerm,numeric_type,nu_lang,tal.srt.toString,numeric_name)
 
-        val the_supersort : Term = matchSort(tal.srt,nu_lang)
-
-        val the_kind  : Term = OMS(IMPSTheory.lutinsIndType)
-        val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
-
-        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
-
-        val judgement : Declaration  = symbols.Constant(nu_lang.toTerm,LocalName(name),Nil,jdgmttp,None,Some("Numeric Type subsort"))
-        doSourceRefD(judgement, tal.src, uri)
-        controller add judgement
-
-        addSubtypingRule(the_subsort,the_supersort,nu_lang,judgement.path,numerical_name,tal.srt.toString)
-
-        tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
-        doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),nu_lang)
+        val supersorts = tState.allSupersorts(sortTerm)
+        doTransitiveSubtyping(numeric_type,supersorts,nu_lang)
+        doTransitiveSubtyping(sortTerm,supersorts,nu_lang)
       }
     }
 
@@ -1245,11 +1233,11 @@ class IMPSImportTask(val controller  : Controller,
       case DFPrintSyntax(_,_,_,_,_,_,_,_)
          | DFParseSyntax(_,_,_,_,_,_,_,_) => // Not used, because they are hardcoded.
       case Heralding(_,_,_)
-         | DFIncludeFiles(_,_,_,_,_)
-         | DFSection(_,_,_,_,_)
-         | Define(_,_,_)
-         | Set(_,_,_)
-         | DFLoadSection(_,_,_) => // Not used, because information is present elsewhere.
+           | DFIncludeFiles(_,_,_,_,_)
+           | DFSection(_,_,_,_,_)
+           | Define(_,_,_)
+           | ArgSet(_,_,_)
+           | DFLoadSection(_,_,_) => // Not used, because information is present elsewhere.
       case some =>
         if (tState.verbosity > 0) {
           println(" > Error: Unknown decl encountered, not translated!")
@@ -1401,11 +1389,26 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
+  def isIMPSliteralSort(sort : Term) : Boolean =
+  {
+    val integers  : Term = OMS(IMPSTheory.lutinsPath ? "integerType")
+    val rationals : Term = OMS(IMPSTheory.lutinsPath ? "rationalType")
+    val octets    : Term = OMS(IMPSTheory.lutinsPath ? "octetType")
+
+    val literalTypes : List[Term] = List(integers,rationals,octets)
+    literalTypes.contains(sort)
+  }
+
+  class IMPSLiteralTypeEqualityRule(unter : List[GlobalName], kopf : GlobalName) extends TypeBasedEqualityRule(unter, kopf) {
+    def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+      Some(true)
+    }
+    def applicableToTerm(tm: Term): Boolean = isIMPSliteralSort(tm)
+  }
+
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */
   def doSubsort(subsort : IMPSSort, supersort : IMPSSort, thy : Theory, src : SourceInfo, uri : URI) : Unit =
   {
-    // TODO: Maybe generate subtyping rules? (compare Plugin.scala and Rules.scala in mmt-odk)
-
     /* enclosing sort should already be defined */
     if (tState.verbosity > 0) {
       println(" > Adding sort: " + subsort.toString + ", enclosed by " + supersort.toString + " in " + thy.name.toString)
@@ -1428,32 +1431,48 @@ class IMPSImportTask(val controller  : Controller,
     addSubtypingRule(the_subsort,the_supersort,thy,judgement.path,subsort.toString,supersort.toString)
 
     tState.supersorts = tState.supersorts + (the_subsort -> (tState.supersorts.getOrElse(the_subsort,Nil) ::: List(the_supersort)))
-    doTransitiveSubtyping(the_subsort,List(the_subsort, the_supersort),thy)
+    doTransitiveSubtyping(the_subsort,List(the_supersort).distinct,thy)
   }
+
+  // makes a constant more readable by trimming everything but the localname
+  def makeReadable(str : String) : String = str.reverse.takeWhile(c => c != '?').reverse
 
   def doTransitiveSubtyping(the_subsort : Term, known_supersorts : List[Term], theory : Theory) : Unit =
   {
-    val allSuperSorts : List[Term] = tState.allSupersorts(the_subsort)
-    println("all: " + allSuperSorts.diff(known_supersorts))
+    val allSuperSorts : List[Term] = (tState.allSupersorts(the_subsort) ::: known_supersorts).distinct
+    println("all supersorts of " + makeReadable(the_subsort.toString) + ": " + allSuperSorts.map(e => makeReadable(e.toString)))
     for (the_supersort <- allSuperSorts)
     {
-      if (!known_supersorts.contains(the_supersort))
-      {
-        val jdgmtname : LocalName = LocalName(the_subsort.toString + "_is_subsort_of_" + the_supersort.toString)
-        val the_kind  : Term      = OMS(IMPSTheory.lutinsIndType)
+      val jdgmtname : LocalName = LocalName(the_subsort.toString + "_is_subsort_of_" + the_supersort.toString)
+      val the_kind  : Term      = OMS(IMPSTheory.lutinsIndType)
 
-        val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
-        val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
+      val subs      : Term = ApplySpine(OMS(IMPSTheory.lutinsPath ? LocalName("subsort")), the_kind, the_subsort, the_supersort)
+      val jdgmttp   : Option[Term] = Some(IMPSTheory.Thm(subs))
 
-        val judgement : Declaration  = symbols.Constant(theory.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort"))
-        controller add judgement
+      val judgement : Declaration  = symbols.Constant(theory.toTerm,jdgmtname,Nil,jdgmttp,None,Some("Subsort"))
+      controller add judgement
 
-        val subName   : String = the_subsort.toString.reverse.takeWhile(c => c != "?".toCharArray.head).reverse
-        val supName   : String = the_supersort.toString.reverse.takeWhile(c => c != "?".toCharArray.head).reverse
+      val subName   : String = makeReadable(the_subsort.toString)
+      val supName   : String = makeReadable(the_supersort.toString)
 
-        addSubtypingRule(the_subsort, the_supersort, theory, judgement.path, subName, supName)
-      }
+      addSubtypingRule(the_subsort, the_supersort, theory, judgement.path, subName, supName)
     }
+  }
+
+  def addSortEqualityRule(sort : Term, numericType : Term, theory : Theory, praesSort : String = "", praesNumType : String = "") : Unit =
+  {
+    val present_sort    : String = if (praesSort == "") {sort.toString} else praesSort
+    val present_numType : String = if (praesNumType == "") {numericType.toString} else praesNumType
+    val rulename  : LocalName = LocalName(present_sort + "_is_exactly_" + praesSort)
+
+    val rule : IMPSLiteralTypeEqualityRule = new IMPSLiteralTypeEqualityRule(Nil,IMPSTheory.lutinsIndType)
+    val ruleConst : RuleConstant = RuleConstant(theory.toTerm,rulename,None,Some(rule))
+    ruleConst.setOrigin(GeneratedBy(this))
+
+    if (tState.verbosity > 2) {
+      println(" > Adding type-equality rule: " + present_sort + " = " + present_numType)
+    }
+    controller add ruleConst
   }
 
   /* Adding subtyping rules the checker can use. Note: subsort and supersort need exps around them. */
@@ -1470,11 +1489,19 @@ class IMPSImportTask(val controller  : Controller,
     val ruleConst : RuleConstant    = RuleConstant(theory.toTerm,rulename,None,Some(rule))
     ruleConst.setOrigin(GeneratedBy(this))
 
-    if (tState.verbosity > 2) {
-      println(" > Adding subtyping rule: " + present_subsort + " <: " + present_supersort)
+    if (tState.knownsubtyperules.contains(rulename)) {
+      if (tState.verbosity > 2) {
+        println(" > Skipping subtyping rule: exp " + present_subsort + " <: exp " + present_supersort + " (already known)")
+      }
     }
+    else {
+      if (tState.verbosity > 2) {
+        println(" > Adding subtyping rule: exp " + present_subsort + " <: exp " + present_supersort)
+      }
 
-    controller add ruleConst
+      tState.knownsubtyperules = tState.knownsubtyperules + rulename
+      controller add ruleConst
+    }
   }
 
   def isIntLiteral(s : String) : Boolean = { s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit)) }

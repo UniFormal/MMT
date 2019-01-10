@@ -794,8 +794,8 @@ class DefFormParsers(js : List[JSONObject])
     DFComment
   )
 
-  lazy val pSet : Parser[Set] = fullParser(
-    "(set" ~> parseScript <~ ")" ^^ { case (c) => Set(c,None,None) }
+  lazy val pSet : Parser[ArgSet] = fullParser(
+    "(set" ~> parseScript <~ ")" ^^ { case (c) => ArgSet(c,None,None) }
   )
 
   lazy val pDefine : Parser[Define] = fullParser(
