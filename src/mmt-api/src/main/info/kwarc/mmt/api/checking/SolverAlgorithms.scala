@@ -436,6 +436,7 @@ trait SolverAlgorithms {self: Solver =>
               var i = 0
               val argseq = (args1 zip args2) map {case (a1,a2) =>
                 i += 1
+                
                 check(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
               }
               argseq.forall(_ == true) // comparing all arguments is inefficient if an early argument has an error, but may help make sense of the error

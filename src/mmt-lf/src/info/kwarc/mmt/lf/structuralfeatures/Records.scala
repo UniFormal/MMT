@@ -53,24 +53,28 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       case c: Constant => fromConstant(c, controller, context)
       case _ => throw LocalError("unsupported declaration")
     }
-    val decls : List[Constant] = toEliminationDecls(origDecls, structure.path)
-        
-    val make : Constant = this.introductionDeclaration(structure.path, origDecls, None, context)
-    val strDecl = makeConst(structure.name.tail, () => {PiOrEmpty(origDecls map(_.toVarDecl), structure.tp.get)})
-    elabDecls ::= strDecl
+    val declCtx = origDecls map(_.toVarDecl)
+       
+    val makeType = makeConst(LocalName("makeType"), () => {PiOrEmpty(declCtx, structure.tp.get)})//, () => {Some(OMS(structure.path))})
+    val decls : List[Constant] = toEliminationDecls(origDecls, declCtx, makeType.path)
+    val make : Constant = this.introductionDeclaration(makeType.path, origDecls, None, context)
+    
+    //elabDecls ::= structure
+    elabDecls ::= makeType
     elabDecls ::= make
 
     // copy all the declarations
     decls foreach (elabDecls ::= _)
     
     // the no junk axioms
-    elabDecls = elabDecls.reverse ++ noJunksDeclarations(decls map (_.path), params, structure.path, make.path, origDecls)
+    elabDecls = elabDecls.reverse ++ noJunksDeclarations(params, declCtx, makeType.path, make.path, origDecls)
     
-    elabDecls :+= reprDeclaration(structure.path, make.path, decls map (_.path), Some("repr"), context)
+    elabDecls :+= reprDeclaration(makeType.path, make.path, declCtx, decls map (_.path), Some("rec"), context)
+    elabDecls :+= equalityDecl(makeType.path, make.path, declCtx, origDecls, context)
     
     elabDecls foreach {d => log(defaultPresenter(d)(controller))}
     new Elaboration {
-      val elabs : List[Declaration] = Nil 
+      val elabs : List[Declaration] = Nil
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
         elabDecls.find(_.name == n)
@@ -81,39 +85,73 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   def introductionDeclaration(recType: GlobalName, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
     val Ltp = () => {
       val declCtx = decls.map(_.toVarDecl)
-      PiOrEmpty(context getOrElse Context.empty ++declCtx++ decls.map(d => newVar(LocalName("x_"+d.name), OMV(LocalName(d.name)))), ApplyGeneral(OMS(recType), declCtx.map(_.toTerm)))
+      val declsTm = decls.filter(isTypeLevel(_)).map(d=>OMV(LocalName(d.name)))
+      PiOrEmpty(context getOrElse Context.empty ++declCtx, Arrow(declsTm, ApplyGeneral(OMS(recType), declCtx.map(_.toTerm))))
     }
     makeConst(uniqueLN(nm getOrElse "make"), Ltp)
   }
   
-  def reprDeclaration(recordType: GlobalName, introDecl: GlobalName, recordFields:List[GlobalName], name: Option[String], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
+  def reprDeclaration(recordType: GlobalName, introDecl: GlobalName, declCtx:Context, recordFields:List[GlobalName], name: Option[String], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
     val Ltp = () => {
       val con = (ctx getOrElse Context.empty)
-      val params = con  map (_.toTerm)
-      val recType = if (con.isEmpty) OMS(recordType) else ApplyGeneral(OMS(recordType), params)
+      val params = con .map(_.toTerm)++declCtx.map(_.toTerm)
+      val recType = if (params.isEmpty) OMS(recordType) else ApplyGeneral(OMS(recordType), params)
       val arg = newVar(uniqueLN(name getOrElse "m"), recType, ctx)
       val resStr = ApplyGeneral(OMS(introDecl), params ++ (recordFields map {f => ApplyGeneral(OMS(f), params :+ arg.toTerm)}))
-      val ret : Term = Eq(resStr, arg.toTerm, OMS(recordType))
-      Pi(con :+ arg, ret)
+      val ret : Term = Eq(recType, arg.toTerm, resStr)
+      Pi(con++declCtx :+ arg, ret)
     }
     makeConst(uniqueLN("repr"), Ltp)
   }
   
-  def toEliminationDecls(decls: List[InternalDeclaration], recType: GlobalName)(implicit parent : GlobalName) : List[Constant] = {
+  def equalityDecl(makeType: GlobalName, make: GlobalName, declCtx:Context, decls:List[InternalDeclaration], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
+    val Ltp = () => {
+      val con = (ctx getOrElse Context.empty)
+      val params = con.map(_.toTerm) ++ declCtx.map(_.toTerm)
+      val recType = if (params.isEmpty) OMS(makeType) else ApplyGeneral(OMS(makeType), params)
+      val args = decls.filter(isTypeLevel(_)).map(d=>newVar(uniqueLN("x_"+d.name), d.toVarDecl.toTerm, ctx))
+      val argsP = decls.filter(isTypeLevel(_)).map(d=>newVar(uniqueLN("y_"+d.name), d.toVarDecl.toTerm, ctx))
+      val res = ApplyGeneral(OMS(make), params ++ args.map(_.toTerm))
+      val resP = ApplyGeneral(OMS(make), params ++ argsP.map(_.toTerm))
+      val ret : Term = Arrow(args.zip(argsP) map {case (a, b) => Eq(a.tp.get, a.toTerm, b.toTerm)}, Eq(recType, res, resP))
+      Pi(con++declCtx ++ args ++ argsP, ret)
+    }
+    makeConst(uniqueLN("equiv"), Ltp)
+  }
+  
+  def toEliminationDecls(decls: List[InternalDeclaration], declCtx: Context, recMakeType: GlobalName)(implicit parent : GlobalName) : List[Constant] = {
     var fields : List[GlobalName] = Nil
-    decls map {
-      case d =>
-        val Ctx = decls.map(_.toVarDecl)
-        val dE = toEliminationDecl(d, recType, Ctx, fields)
-        fields ::= dE.path
-        dE
+    (decls zip declCtx).filter(_._1 match {case _: TypeLevel => true case _ => false}) map {
+      case (decl, d) =>
+        val Ltp = () => {
+          val params = decl.context.map(_.toTerm)++declCtx.map(_.toTerm)
+          val r = LocalName("r")
+          val rec = if (params.isEmpty) OMV(r) % OMS(recMakeType) else OMV(r) % ApplyGeneral(OMS(recMakeType), params)
+          PiOrEmpty(decl.context++declCtx++rec, d.toTerm)
+        }
+        makeConst(decl.name, Ltp)
     }
   }
     
+  
+  /*/**
+   * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
+   * where A[r] is like A with every d declared in this record with d r
+   */
+  def toEliminationDecl(c:InternalDeclaration, recMakeType: GlobalName, declCtx: Context, recordFields: List[GlobalName])(implicit parent: GlobalName): Constant = {
+    val Ltp = () => {
+      val r = LocalName("r")
+      val rec = if (c.context.isEmpty) OMV(r) % OMS(recMakeType) else OMV(r) % ApplyGeneral(OMS(recMakeType), c.context++declCtx map (_.toTerm))
+      val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(ApplyGeneral(OMS(p), (c.context).map(_.toTerm):+OMV(r))) else None))
+      PiOrEmpty(c.context++declCtx, Pi(rec, tr(c.context, c.applyTo(rec.toTerm))))
+    }
+    makeConst(c.name, Ltp)
+  }*/
+  
   /**
    * Generate no junk declaration for all the elimination form internal declarations
    * @param parent the parent declared module of the derived declaration to elaborate
-   * @param decls all the elimination form declarations, used to construct the chain
+   * @param recordFields the paths of the internal declarations
    * @param tmdecls all term level declarations
    * @param tpdecls all type level declarations
    * @param context the inner context of the derived declaration
@@ -121,32 +159,20 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @returns returns one no junk (morphism) declaration for each type level declaration
    * then generates all the corresponding no junk declarations for the termlevel constructors of each declared type
    */    
-  def noJunksDeclarations(recordFields : List[GlobalName], context: Context, recType: GlobalName, recMake: GlobalName, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
-    val (repls, modelCtx) = chain(origDecls, context)
-    (origDecls zip repls) map {case (d, (p, v)) =>
+  def noJunksDeclarations(context: Context, declCtx: Context, recMakeType: GlobalName, recMake: GlobalName, origDecls: List[InternalDeclaration])(implicit parent : GlobalName) : List[Constant] = {
+    //val (_, declCtx) = chain(origDecls, context)
+    //(origDecls zip repls) map {case (d, (p, v)) =>
+    origDecls zip(declCtx) map {case (decl, d) =>
       val Ltp = () => {
-        val dElim = toEliminationDecl(d, recType, origDecls.map(_.toVarDecl), recordFields)
-        def assert(x: Term, y: Term): Term = d match {
-          case TypeLevel(_, _, _, _,_) => Arrow(x, y)
-          case _ => Eq(x, y, d.ret)
-        } 
-        PiOrEmpty(context++modelCtx, assert(ApplySpine(OMS(dElim.path), ApplyGeneral(OMS(recMake), modelCtx.map(_.toTerm))), v))
+        val dElim = OMS(externalName(parent, decl.name))
+        val args = (origDecls.zip(declCtx)).filter(x => isTypeLevel(x._1)) map {case (_, d) => newVar(uniqueLN("x_"+d.name), d.toTerm, Some(context++declCtx))}
+        val params = (context++declCtx) map (_.toTerm)
+        val x_d = if (isTypeLevel(decl)) {val vd=newVar(uniqueLN("x_"+d.name), d.toTerm, Some(context++declCtx)); (vd.tp.get, vd.toTerm)} else (decl.tp, decl.toTerm)
+        
+        PiOrEmpty(context++declCtx++args, Eq(x_d._1, ApplyGeneral(dElim, params:+ApplyGeneral(OMS(recMake), params++args.map(_.toTerm))), x_d._2))
       }
-      makeConst(uniqueLN("induct_"+d.name), Ltp)
+      makeConst(uniqueLN("induct_"+decl.name), Ltp)
     }
-  }
-  
-  /**
-   * for records: for a declaration c:A, this produces the declaration c: {r:R} A[r]
-   * where A[r] is like A with every d declared in this record with d r
-   */
-  def toEliminationDecl(c:InternalDeclaration, recType: GlobalName, Ctx: Context, recordFields: List[GlobalName])(implicit parent: GlobalName): Constant = {
-    val Ltp = () => {
-      val r = LocalName("r")
-      val tr = TraversingTranslator(OMSReplacer(p => if (recordFields contains p) Some(ApplyGeneral(OMS(p), (c.context++Ctx).map(_.toTerm):+OMV(r))) else None))
-      PiOrEmpty(c.context++Ctx, Pi(r, OMS(recType), tr(c.context, c.tp)))
-    }
-    makeConst(c.name, Ltp)
   }
 }
 
