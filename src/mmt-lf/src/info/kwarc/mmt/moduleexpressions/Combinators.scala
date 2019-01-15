@@ -59,7 +59,7 @@ object Common {
             val at = th.dfC.normalized match {
               case Some(df) =>
                 df match {
-                  case AnonymousTheory(mt, ds) => new AnonymousTheory(mt,ds)
+                  case AnonymousTheoryCombinator(at) => at
                   case _ => default
                 }
               case None => default
@@ -73,7 +73,7 @@ object Common {
             None
         }
       // explicit anonymous theories
-      case AnonymousTheory(mt, OMLList(ds)) => Some(new AnonymousTheory(mt,ds))
+      case AnonymousTheoryCombinator(at) => Some(at)
       case _ => None
     }
   }
@@ -102,6 +102,21 @@ object Common {
     }
     Some(morAnon)
   }
+  
+  /** provides the base case of the function that elaborates a diagram expression (in the form of an [[AnonymousDiagrma]]) */
+  def asAnonymousDiagram(solver: CheckingCallback, thy: Term)(implicit stack: Stack, history: History): Option[AnonymousDiagram] = {
+    thy match {
+      // named diagrams
+      case OMMOD(p) =>
+        solver.lookup.getO(p) match {
+          case _ => ???
+        }
+       // explicit anonymous diagrams
+      case AnonymousDiagramCombinator(ad) => Some(ad)
+      case _ => None
+    }
+  }
+  
 }
 
 /* The rules below compute the results of theory combinators.
@@ -152,18 +167,23 @@ object ComputeCombine extends ComputationRule(Combine.path) {
         case hd::Nil => Some(hd)
         case _ => return Recurse
       }
-      Simplify(AnonymousTheory(mt, declsD))
+      Simplify(AnonymousTheoryCombinator(mt, declsD))
   }
 }
 
-object Rename extends FlexaryConstantScala(Combinators._path, "rename")
+object Rename extends FlexaryConstantScala(Combinators._path, "rename") {
+  /** the label of the renamed theory */
+  val nodeLabel = LocalName("pres")
+  /** the label of the renaming morphism (from old to renamed) */
+  val arrowLabel = LocalName("extend")
+}
 
 object ComputeRename extends ComputationRule(Rename.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    val Rename(thy,rens@_*) = tm
-    val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return RecurseOnly(List(1))}
+    val Rename(diag,rens@_*) = tm
+    val ad = Common.asAnonymousDiagram(solver, diag).getOrElse {return RecurseOnly(List(1))}
     // perform the renaming
-    val oldNew = rens.flatMap {
+    val oldNew = rens.toList.flatMap {
       case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
         List((old,nw))
       case OML(nw,None,Some(OMS(old)),_,_) =>
@@ -172,10 +192,19 @@ object ComputeRename extends ComputationRule(Rename.path) {
         solver.error("not a renaming " + r)
         Nil
     }
-    thyAnon.rename(oldNew:_*)
+    val dN = ad.getDistNode.getOrElse {
+      solver.error("distinguished node not found")
+      return Simplifiability.NoRecurse
+    }
+    val atR = dN.theory.copy
+    atR.rename(oldNew:_*)
+    val dNR = DiagramNode(Rename.nodeLabel, atR)
+    val renM = new AnonymousMorphism(dN.theory.toTerm, atR.toTerm, oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
+    val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
+    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Rename.nodeLabel, Rename.arrowLabel) 
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
-    val removeReals = thyAnon.decls.flatMap {
+    /*val removeReals = thyAnon.decls.flatMap {
       case oml @ RealizeOML(p, _) =>
         solver.lookup.getO(p) match {
           case Some(dt: Theory) =>
@@ -187,8 +216,8 @@ object ComputeRename extends ComputationRule(Rename.path) {
         }
       case _ => Nil
     }
-    thyAnon.decls = thyAnon.decls diff removeReals
-    Simplify(thyAnon.toTerm)
+    thyAnon.decls = thyAnon.decls diff removeReals */
+    Simplify(result.toTerm)
   }
 }
 
@@ -239,10 +268,10 @@ object ComputeExpand extends ComputationRule(Expand.path) {
    def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
       val Expand(mor, thy) = tm
       thy match {
-        case AnonymousTheory(mt, ds) =>
-          val res = new AnonymousTheory(mt, Nil) //TODO this should be an AnonymousMorphism; same as AnonymousTheory but no dependency
+        case AnonymousTheoryCombinator(at) =>
+          val res = new AnonymousTheory(at.mt, Nil) //TODO this should be an AnonymousMorphism; same as AnonymousTheory but no dependency
           // add include of mor
-          ds.foreach {case OML(n,t,d,_,_) =>
+          at.decls.foreach {case OML(n,t,d,_,_) =>
             // skip all includes of theories that are already include in domain of mor
             val ass = OML(n,None,Some(OML(n,None,None)))
             res.add(ass)

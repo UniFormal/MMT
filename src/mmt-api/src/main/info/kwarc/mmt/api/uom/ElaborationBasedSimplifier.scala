@@ -188,9 +188,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 add(d)
               }
-            case AnonymousTheory(mt,omls) =>
-              if (mt.isDefined) {
-                val mtTerm = OMMOD(mt.get)
+            case AnonymousTheoryCombinator(at) =>
+              if (at.mt.isDefined) {
+                val mtTerm = OMMOD(at.mt.get)
                 // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
                 thy.metaC.analyzed = Some(mtTerm)
                 controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
@@ -198,7 +198,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               var translations = Substitution() // replace all OML's with corresponding OMS's
               // TODO this replaces too many OML's if OML-shadowing occurs
               def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
-              omls foreach {o =>
+              at.decls foreach {o =>
                 o match {
                   case IncludeOML(mp, _) =>
                     val d = PlainInclude(mp,thy.path)

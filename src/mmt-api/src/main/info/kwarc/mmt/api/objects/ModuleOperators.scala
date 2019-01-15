@@ -262,7 +262,7 @@ object TheoryExp {
         case Some(m) =>
           if (all) m :: metas(OMMOD(m)) else List(m)
       }
-    case AnonymousTheory(mt,_) => mt.toList
+    case AnonymousTheoryCombinator(at) => at.mt.toList
     case TUnion(ts) =>
       val ms = ts map { t => metas(t) }
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
@@ -321,6 +321,7 @@ object ModExp extends uom.TheoryScala {
 
   val anonymoustheory = _path ? "anonymoustheory"
   val anonymousmorphism = _path ? "anonymousmorphism"
+  val anonymousdiagram = _path ? "anonymousdiagram"
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
   val identity = _path ? "identity"

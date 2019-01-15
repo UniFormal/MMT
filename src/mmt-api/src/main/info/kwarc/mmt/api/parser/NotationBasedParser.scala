@@ -273,9 +273,9 @@ class NotationBasedParser extends ObjectParser {
     // this used to simplify thy first, but that may be dangerous and/or inefficient
     thy match {
       case OMPMOD(mp,_) => getRules(Context(mp))
-      case AnonymousTheory(metaO, decls) =>
+      case AnonymousTheoryCombinator(at) =>
         //we could also collect all notations in decls, but we do not have parsing rules for OML's
-        metaO.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
+        at.mt.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }
