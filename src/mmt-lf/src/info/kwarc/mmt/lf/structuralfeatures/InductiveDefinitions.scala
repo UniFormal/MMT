@@ -36,7 +36,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
 
     def apply(p: GlobalName, params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, OMS(p)::args)
     def unapply(t: Term) = t match {
-      case OMBINDC(OMMOD(this.mpath), params, OMS(p)::args) => Some(p, params, args)
+      case OMBINDC(OMMOD(this.mpath), params, List(OMS(p))) => Some(p, params, Nil)
       case _ => None
     }
 
@@ -48,16 +48,18 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
     }
   }
 
-  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), SimpSeqArg(3, Delim(";"), CommonMarkerProperties.noProps), Delim(")"))
+  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":"),SimpArg(3))
   override def processHeader(header: Term) = header match {
-     case OMBINDC(OMMOD(`mpath`), cont, OML(name,None,None,_,_)::args) => 
-       (name, DefType(getInd(args.last)._1, cont, args))
-     case OMBINDC(_, _, _) => throw InvalidObject(header, "ill-formed header (OMBINDC)")
-     case OMSemiFormal(_) => throw InvalidObject(header, "ill-formed header (OMSF)")
-     case hdr => throw InvalidObject(header, "ill-formed header: "+hdr.toNode)
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
+      val (p, args) = getInd(t)
+      (name, DefType(p, Context.empty, args))
+    case OMBINDC(OMMOD(`mpath`), cont, List(OML(name,_, _,_,_), t)) => 
+      val (p, args) = getInd(t)
+      (name, DefType(p, cont, args))
+    case hdr => throw InvalidObject(header, "ill-formed header: "+hdr.toNode)
   }
   override def makeHeader(dd: DerivedDeclaration) = getParams(dd) match {
-    case (p, cont, args) => OMBINDC(OMMOD(dd.modulePath), cont, OML(dd.name, None,None)::args)
+    case (p, cont, args) => DefType(p, cont, args) //OMBINDC(OMMOD(dd.modulePath), cont, List(OML(dd.name, None,None), OMA(OMS(p), args)))
     case _ => throw LocalError("ffkkfkffdsafdaslkhf")
   }
   def getInd(t: Term) : (GlobalName, List[Term]) = t match {
@@ -79,7 +81,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
    */
   def elaborate(parent: Module, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
-    val (indTplPath, context, indParams) = getParams(dd)
+    val (indTplPath, context, indParams) = DefType.getParameters(dd)
     println("tpl path: "+indTplPath)
     println("context: "+context)
     println("indParams: "+indParams)

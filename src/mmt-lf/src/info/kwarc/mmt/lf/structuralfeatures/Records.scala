@@ -88,8 +88,11 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     val Ltp = () => {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)
       val declsTp = decls.filter(isTypeLevel(_)).map(d => OMV(LocalName(d.name)) % d.internalTp)
+      val params = context.getOrElse(Context.empty)++declsTp
+      println(params)
       val declsTm = decls.filter(!isTypeLevel(_)).map(d => d.internalTp)
-      PiOrEmpty(context.getOrElse(Context.empty)++declsTp, Arrow(declsTm, ApplyGeneral(recType, declsTp.map(_.toTerm))))
+      val TpTmDecls = decls.filter(isTypeLevel(_)).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
+      PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, declsTp.map(_.toTerm))))
     }
     makeConst(uniqueLN(nm getOrElse "make"), Ltp)
   }
