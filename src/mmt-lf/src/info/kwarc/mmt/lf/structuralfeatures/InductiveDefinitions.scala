@@ -52,6 +52,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
   override def processHeader(header: Term) = header match {
      case OMBINDC(OMMOD(`mpath`), cont, OML(name,None,None,_,_)::args) => 
        (name, DefType(getInd(args.last)._1, cont, args))
+     case OMBINDC(_, _, _) => throw InvalidObject(header, "ill-formed header (OMBINDC)")
+     case OMSemiFormal(_) => throw InvalidObject(header, "ill-formed header (OMSF)")
      case hdr => throw InvalidObject(header, "ill-formed header: "+hdr.toNode)
   }
   override def makeHeader(dd: DerivedDeclaration) = getParams(dd) match {

@@ -211,6 +211,7 @@ sealed abstract class InternalDeclaration {
   def context = ctx getOrElse Context.empty
   def notation: NotationContainer // TODO do we need this
   def tp = PiOrEmpty(context, FunType(args, ret))
+  def internalTp = FunType(args, ret)
   def df : Option[Term]
   
   /** like tp but with all names externalized */
