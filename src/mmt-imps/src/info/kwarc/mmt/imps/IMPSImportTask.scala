@@ -2141,6 +2141,22 @@ class IMPSImportTask(val controller  : Controller,
       val nn : Term = matchSort(IMPSAtomSort("nn"), r)
       IMPSTheory.QCT.inSeqQC(tState.doUnknown(),tState.doUnknown(),nn,l1_t,l2_t)
 
+    case IMPSQCCollapse(f) =>
+      val f_t : Term = doMathExp(f,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val w : Term = getConstant("omega%embedding",r).toTerm
+      IMPSTheory.QCT.collapseQC(tState.doUnknown(),tState.doUnknown(),nn,w,f_t)
+
+    case IMPSQCConstrict(f,a) =>
+      val f_t : Term = doMathExp(f,thy,cntxt)
+      val a_t : Term = doMathExp(a,thy,cntxt)
+      val r = getTheory("h-o-real-arithmetic")
+      val nn : Term = matchSort(IMPSAtomSort("nn"), r)
+      val w : Term = getConstant("omega%embedding",r).toTerm
+      IMPSTheory.QCT.constrictQC(tState.doUnknown(),tState.doUnknown(),nn,w,f_t,a_t)
+
+
     case _ => println(" > Error: Unknown Quasi-Constructor!") ; ??!(d)
   }
 
