@@ -214,6 +214,7 @@ sealed abstract class InternalDeclaration {
   def tp = PiOrEmpty(context, FunType(args, ret))
   def internalTp = FunType(args, ret)
   def df : Option[Term]
+  def isTypeLevel: Boolean
   
   /** like tp but with all names externalized */
   def externalTp(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(tp)
@@ -300,6 +301,7 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
+  def isTypeLevel = {true}
 
   /** a var decl with a fresh name whose type is this one */
   def makeVar(name: String, con: Context)(implicit parent: GlobalName) = newVar(uniqueLN(name), applyTo(con), None)
@@ -318,6 +320,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
   def notation = notC getOrElse NotationContainer()
   /** a var decl with a fresh name of the same type as this one */
   def makeVar(name: String) = newVar(uniqueLN(name), tp)
+  def isTypeLevel = {false}
 
   /**
    * Generate injectivity declaration for the term constructor d
@@ -368,6 +371,7 @@ case class StatementLevel(path: GlobalName, args: List[(Option[LocalName], Term)
   def ret = Univ(1)
   def tm = df
   def notation = notC getOrElse NotationContainer()
+  def isTypeLevel = {false}
 }
 
 object StatementLevel {
