@@ -91,7 +91,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
               return None
          }
          Some(TheoryType(Nil))
-      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO
+      case AnonymousTheoryCombinator(_) => Some(TheoryType(Nil)) // TODO
       case _ =>
          solver.error("illegal use of " + ModExp.complextheory)
          None
@@ -100,7 +100,7 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
 
 object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case AnonymousTheory(mt,decls) => Some(TheoryType(Nil)) // TODO
+      case AnonymousTheoryCombinator(_) => Some(TheoryType(Nil)) // TODO
       case _ =>
          solver.error("illegal use of " + ModExp.anonymoustheory)
          None

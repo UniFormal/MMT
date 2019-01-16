@@ -81,8 +81,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
       def outerContext = constantContext ++ querySolution
 
       def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
-         case AnonymousTheory(mt, ds) =>
-            Some(new AnonymousTheory(mt, Nil))
+         case AnonymousTheoryCombinator(at) => Some(at)
          // add include of codomain of mor
          case OMMOD(mp) =>
             val th = controller.globalLookup.getO(mp) match {

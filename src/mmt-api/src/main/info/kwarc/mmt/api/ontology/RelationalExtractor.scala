@@ -75,6 +75,11 @@ object MMTExtractor extends RelationalExtractor {
                      c.alias foreach {a =>
                        f(IsAliasFor(t.path ? a, c.path))
                      }
+                     // extract dependencies - this may make the rel files a lot bigger
+                     c.getComponents foreach {
+                       case DeclarationComponent(dim, oc: ObjContainer[_]) => doDependencies(c.path $ dim, oc)
+                       case _ =>
+                     }
                   case s: Structure =>
                      val from = s.from match {
                         case OMPMOD(p,_) => p
@@ -116,5 +121,13 @@ object MMTExtractor extends RelationalExtractor {
           f(IsImplicitly(l.to.toMPath,l.from.toMPath))
         case _ =>
       }
+   }
+   
+   /** extract all dependencies of object containers */
+   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit) {
+     oc.dependsOn foreach {p =>
+       val r = DependsOn(path, p)
+       f(r)
+     }
    }
 }

@@ -85,6 +85,8 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   /** maintains all customizations for specific languages */
   val extman = new ExtensionManager(this)
+  /** the catalog maintaining all registered physical storage units (must be initialized before memory) */
+  val backend = new Backend(extman, report)
 
   /** maintains all knowledge */
   val memory = new Memory(extman, report)
@@ -109,8 +111,6 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def pragmatic = extman.get(classOf[Pragmatics]).head
   /** the http server */
   var server: Option[Server] = None
-  /** the catalog maintaining all registered physical storage units */
-  val backend = new Backend(extman, report)
   /** the query engine */
   val evaluator = new ontology.QueryEvaluator(this)
   /** the window manager */
@@ -464,6 +464,11 @@ class Controller(report_ : Report = new Report) extends ROController with Action
    *  None adds at beginning, null (default) at end
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
+    // invalidate cache entry for the notation
+    nw.path match {
+      case p: ContentPath => memory.notations.delete(p)
+      case _ =>
+    }
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
