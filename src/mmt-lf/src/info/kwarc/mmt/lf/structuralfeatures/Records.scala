@@ -132,18 +132,19 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   }
   
   def convEqualityDecls(makeType: GlobalName, make: GlobalName, declCtx:Context, decls:List[InternalDeclaration], ctx: Option[Context])(implicit parent: GlobalName) : List[Constant] = {
-    decls.filter(isTypeLevel(_)).zipWithIndex map { case (_, i) =>
+    decls.zipWithIndex map { case (_, i) =>
       val Ltp = () => {
         val con = (ctx getOrElse Context.empty)
-        val params = con.map(_.toTerm) ++ declCtx.map(_.toTerm)
+        val cont = con ++ (decls zip declCtx).filter(_._1.isTypeLevel).map(_._2)
+        val params = cont.map(_.toTerm)
         val recType = if (params.isEmpty) OMS(makeType) else ApplyGeneral(OMS(makeType), params)
-        val args = decls.filter(_.isTypeLevel).map(d=>newVar(uniqueLN("x_"+d.name), d.toVarDecl.toTerm, ctx))
-        val argsP = decls.filter(_.isTypeLevel).map(d=>newVar(uniqueLN("y_"+d.name), d.toVarDecl.toTerm, ctx))
+        val args = decls.map(d=>newVar(uniqueLN("x_"+d.name), if(d.isTypeLevel) d.toVarDecl.toTerm else d.internalTp, ctx))
+        val argsP = decls.map(d=>newVar(uniqueLN("y_"+d.name), if(d.isTypeLevel) d.toVarDecl.toTerm else d.internalTp, ctx))
         val res = ApplyGeneral(OMS(make), params ++ args.map(_.toTerm))
         val resP = ApplyGeneral(OMS(make), params ++ argsP.map(_.toTerm))
         val argsEq = args.zip(argsP) map {case (a, b) => Eq(a.tp.get, a.toTerm, b.toTerm)}
         val ret : Term = Arrow(Eq(recType, res, resP), argsEq.toArray.apply(i))
-        Pi(con++declCtx ++ args ++ argsP, ret)
+        Pi(cont ++ args ++ argsP, ret)
       }
       makeConst(uniqueLN("conv_equiv_"+i), Ltp)
     }

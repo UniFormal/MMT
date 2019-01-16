@@ -248,6 +248,10 @@ trait SolverAlgorithms {self: Solver =>
                  return checkByInference(tpS, history + "switching to inference")
                case rule.DelayJudgment(msg) =>
                  return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
+               case e:AbstractMethodError => 
+                 println("\n\n\n\n\nAbstract method error when trying to apply the typing rule \""+rule.toString()+"\"")
+                 println("at "+rule.mpath)
+                 throw e
              }
            }
            history += "trying inference/typing rules"
