@@ -134,6 +134,7 @@ private object InternalDeclarationUtil {
   }
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
+  def LambdaOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
 }
 
 import InternalDeclarationUtil._

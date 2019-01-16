@@ -13,7 +13,7 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
-class InductiveDefinitions extends StructuralFeature("inductive_definition") {
+class InductiveDefinitions extends StructuralFeature("inductive_definition") with ParametricTheoryLike {
   object noLookupPresenter extends presentation.NotationBasedPresenter {
     override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
     override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
@@ -34,9 +34,9 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
   object DefType {
     val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
 
-    def apply(p: GlobalName, params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, OMS(p)::args)
+    def apply(p: GlobalName, params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, List(OMID(p)))
     def unapply(t: Term) = t match {
-      case OMBINDC(OMMOD(this.mpath), params, List(OMS(p))) => Some(p, params, Nil)
+      case OMBINDC(OMMOD(this.mpath), params, List(OMID(p))) => Some(p, params, Nil)
       case _ => None
     }
 
@@ -49,6 +49,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
   }
 
   override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":"),SimpArg(3))
+      //SimpArg(3),Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
       val (p, args) = getInd(t)
@@ -59,11 +60,11 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
     case hdr => throw InvalidObject(header, "ill-formed header: "+hdr.toNode)
   }
   override def makeHeader(dd: DerivedDeclaration) = getParams(dd) match {
-    case (p, cont, args) => DefType(p, cont, args) //OMBINDC(OMMOD(dd.modulePath), cont, List(OML(dd.name, None,None), OMA(OMS(p), args)))
-    case _ => throw LocalError("ffkkfkffdsafdaslkhf")
+    case (p, cont, args) => DefType(p, cont, args)
   }
   def getInd(t: Term) : (GlobalName, List[Term]) = t match {
-    case OMA(OMS(p), args) => (p, args) 
+    case OMA(OMID(p), args) => (p.toMPath.copy(name=p.name.init) ? p.name.last, args)
+    case OMID(p) => (p.toMPath.copy(name=p.name.init) ? p.name.last, Nil)
   }
   def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
     dd.tpC.get match {
@@ -80,39 +81,20 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: Module, dd: DerivedDeclaration) = {
-    implicit val parentTerm = dd.path
-    val (indTplPath, context, indParams) = DefType.getParameters(dd)
-    println("tpl path: "+indTplPath)
-    println("context: "+context)
-    println("indParams: "+indParams)
-      /* match {
-      case OMA(_, pars) => pars.last match {
-        case ApplyGeneral(OMS(p), indParams) =>println(p); (p, indParams)
-      }
-      case OMS(p) => (p, Nil)}
-      case t => throw LocalError("Expected path to TypeLevel but found "+noLookupPresenter.asString(t))
-    }*/
-    /*val indTplPath : GlobalName = try {
-      dd.getDeclarations.head match {case c: Constant if (c.name.toString() == "tpl") => c.df.get match {case OMS(p) => p}
-      case _ => throw LocalError("the first declaration should be a constant. ")}
-    } catch {
-      case e: NoSuchElementException => throw LocalError("The first declaration should be defined as the TypeLevel for which type the inductively-defined function is to be defined. ")
-      case e: Exception => throw LocalError("the definien of the first declaration should be the declaration of the TypeLevel for which type the inductively-defined function is to be defined. ")
-    }*/
-    val indTpl = controller.library.getO(indTplPath).getOrElse(throw LocalError("bla")) match {case c: Constant => c}
-    
-    val indTplName = LocalName(indTplPath.last)
-    val indDerDeclPath = indTplPath.copy(name = LocalName(indTplPath.name.head))
-    println("intDerDeclPath: "+indDerDeclPath)
-    val inductiveTypeDecl = controller.library.getO(indDerDeclPath) getOrElse(
-        throw LocalError("No corresponding inductively-defined type found at "+indDerDeclPath.toString()))
-    val inductiveType = inductiveTypeDecl match {
-        case dd : DerivedDeclaration if (dd.feature == "inductive") => dd
-        case _ => throw LocalError("Expected corresponding inductively-defined type at "+indDerDeclPath.toString()
-            +" but no derived declaration of deature inductive found.")
+    val (indDefPath, context, indParams) = DefType.getParameters(dd)
+    val (indD, indCtx) = controller.library.get(indDefPath) match {
+      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
+      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
+      case _ => throw LocalError("Expected corresponding inductively-defined types at "+indDefPath.toString()
+            +" but no derived declaration of feature inductive found at that location.")
     }
+    implicit val parent = indD.path
+    val indDefs = controller.library.get(indDefPath).getDeclarations map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
+    var indTpls: List[TypeLevel] = indDefs.filter{case tpl: TypeLevel => true case _ => false}.map{case t:TypeLevel => t}
+    
+    val indTplNames = indTpls map (_.name)
     def correspondingDecl(d: LocalName): Constant = {
-      inductiveType.getO(d).getOrElse(
+      indD.getO(d).getOrElse(
         throw LocalError("No corresponding declaration found for "+d)) match {
         case c: Constant=> c
         case dec => throw LocalError("Expected a constant at "+dec.path+".")
@@ -123,7 +105,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
     var decls:List[InternalDeclaration] = Nil
     
     // read in the declarations and replace all occurances of previously declared symbols by their definitions
-    dd.getDeclarations.tail foreach {
+    dd.getDeclarations foreach {
       case c: Constant  if (c.df.isDefined) =>
         val intDecl = fromConstant(c, controller, Some(context))
         def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
@@ -141,24 +123,27 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") {
         
     // check whether all declarations match their corresponding constructors
     decls foreach { d => checkDecl(d, fromConstant(correspondingDecl(d.name),controller, None)) }
+    // and whether we have all necessary declarations
+    indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")}
     
     //val indParams = Type.getParameters(inductiveType)
-    val induct_path = indDerDeclPath / LocalName("induct_"+indTplName)
+    val induct_paths = indTpls.map(t=>t.path.copy(name=LocalName("induct_"+t.name)))
     
     val modelDf = decls map (_.df.get)
-    val indTplArgs = fromConstant(controller.library.get(indTplPath) match {case c: Constant => c}, controller, Some(context)).argContext(None)._1
+    val indTplsArgs = indTpls map(_.argContext(None)._1)
     
-    val indTplDef = decls.find(_.name == indTplName).getOrElse(
-        throw LocalError("No declaration found for the typelevel of the type of the inductively-defined function.")).df.get
-    val Tp = PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))
-    val Df = PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(induct_path), indParams++modelDf++indTplArgs.map(_.toTerm))))
+    val indTplsDef = indTplNames map (nm => decls.find(_.name == nm).getOrElse(
+        throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
+    val Tps = indTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
+    val Dfs = indTplsArgs zip induct_paths map {case (indTplArgs, induct_path) => PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(induct_path), indParams++modelDf++indTplArgs.map(_.toTerm))))}
     
-    val inductDef = makeConst(dd.name, ()=> {Tp}, () => {Some(Df)})(indDerDeclPath)
-    log(defaultPresenter(inductDef)(controller))
+    val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
+      makeConst(dd.name/tpl.name, ()=> {tp}, () => {Some(df)})}
+    inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     new Elaboration {
-      def domain = List(inductDef.name)
-      def getO(n: LocalName) = if (n == inductDef.name) Some(inductDef) else None
+      def domain = inductDefs map (_.name)
+      def getO(n: LocalName) = inductDefs find (_.name == n)
     }
   }
   

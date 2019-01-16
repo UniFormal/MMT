@@ -74,11 +74,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     elabDecls :+= equalityDecl(recordType.path, make.path, declCtx, origDecls, context)
     elabDecls ++= convEqualityDecls(recordType.path, make.path, declCtx, origDecls, context)
     
-    elabDecls foreach {d => log(defaultPresenter(d)(controller))}
+    //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
     new Elaboration {
       val elabs : List[Declaration] = Nil
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
+        elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
         elabDecls.find(_.name == n)
       }
     }
@@ -89,10 +90,9 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)
       val declsTp = decls.filter(isTypeLevel(_)).map(d => OMV(LocalName(d.name)) % d.internalTp)
       val params = context.getOrElse(Context.empty)++declsTp
-      println(params)
       val declsTm = decls.filter(!isTypeLevel(_)).map(d => d.internalTp)
       val TpTmDecls = decls.filter(isTypeLevel(_)).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
-      PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, declsTp.map(_.toTerm))))
+      PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
     }
     makeConst(uniqueLN(nm getOrElse "make"), Ltp)
   }
