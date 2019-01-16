@@ -921,14 +921,18 @@ class IMPSImportTask(val controller  : Controller,
 
         val ln: LocalName = LocalName(thy.thy.s.toLowerCase())
 
-        if (!tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString)) {
-          throw new IMPSDependencyException("required theory " + ln + " for constant not found")
-        }
-        val parent: Theory = getTheory(ln.toString)
+        assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == ln.toString))
+        val parent : Theory = getTheory(ln.toString)
 
         val srt : Term  = tState.bindUnknowns(doSort(curry(sort), parent))
         val mth : Term  = tState.bindUnknowns(doMathExp(frm, parent,Nil))
-        val nu_constant : FinalConstant = symbols.Constant(parent.toTerm, LocalName(name.s.toLowerCase()), Nil, Some(srt), Some(mth), Some("Constant"))
+
+        var aliases : List[LocalName] = Nil
+        if (name.toString.toLowerCase == "lim%rr") {
+          aliases = LocalName("lim") :: aliases
+        }
+
+        val nu_constant : FinalConstant = symbols.Constant(parent.toTerm, LocalName(name.s.toLowerCase()), aliases, Some(srt), Some(mth), Some("Constant"))
 
         /* Add available MetaData */
         doSourceRefD(nu_constant, src, uri)
@@ -938,8 +942,11 @@ class IMPSImportTask(val controller  : Controller,
 
         if (tState.verbosity > 0)
         {
-          println(" > Adding constant: " + nu_constant.name + " : " + sort.toString + " to theory " + parent.name)
-          //println(controller.get(parent.path))
+          var aliasnames = ""
+          if (nu_constant.alias.nonEmpty) {
+            aliasnames = " (also known as " + nu_constant.alias.mkString(" or ") + ")"
+          }
+          println(" > Adding constant: " + nu_constant.name + " : " + sort.toString + aliasnames + " to theory " + parent.name)
         }
 
       case DFRecursiveConstant(names,defs,maths,sorts,argthy,usgs,defname,src,cmt) =>
@@ -1526,7 +1533,7 @@ class IMPSImportTask(val controller  : Controller,
         else
         {
           val srcthy : Option[Theory] = locateMathSymbolHome(s,thy)
-          if (srcthy.isEmpty) { println("> ERROR: Could not find home for math symbol: " + s) ; println("\n\n" + thy)}
+          if (srcthy.isEmpty) { println("> ERROR: Could not find home for math symbol: " + s)}
           assert(srcthy.isDefined)
           OMS(srcthy.get.path ? LocalName(s))
         }
@@ -2167,7 +2174,7 @@ class IMPSImportTask(val controller  : Controller,
   def locateMathSymbolHome(s : String, thy : Theory) : Option[Theory] =
   {
     def cmatch(c : Constant, s : String) : Boolean = {
-      c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) || (c.name.toString.toLowerCase == s.toLowerCase)
+      c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) || (c.name.toString.toLowerCase == s.toLowerCase || c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase))
     }
 
     var multipleCandidates : List[Theory] = List.empty
