@@ -574,8 +574,15 @@ class IMPSImportTask(val controller  : Controller,
     }
 
     for (embl <- emblangs) {
-      val fnd : Option[Theory] = tState.languages_decl.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
-      hAssert(fnd.isDefined, tState.languages_decl)
+      var fnd : Option[Theory] = tState.languages_decl.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
+      if (fnd.isEmpty) {
+        val thyl = tState.theories_raw.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
+        assert(thyl.isDefined)
+        val bandelang = thyl.get.lang.get.lang.toString.toLowerCase
+        fnd = tState.languages_decl.find(la => la.name.toString.toLowerCase == bandelang)
+      }
+
+      hAssert(fnd.isDefined, "wanted " + embl.toString.toLowerCase + " but only had " + tState.languages_decl.map(_.name).mkString("\n"))
 
       val includee : Theory = fnd.get
       val includer : Theory = nu_lang
