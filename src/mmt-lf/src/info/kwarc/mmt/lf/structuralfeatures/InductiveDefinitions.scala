@@ -85,8 +85,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val (indD, indCtx) = controller.library.get(indDefPath) match {
       case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
       case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration of feature inductive found at that location.")
+      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
+            +" but no derived declaration found at that location.")
     }
     implicit val parent = indD.path
     val indDefs = controller.library.get(indDefPath).getDeclarations map {case c:Constant => fromConstant(c, controller, Some(indCtx))}

@@ -54,9 +54,9 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       case _ => throw LocalError("unsupported declaration")
     }
     val declCtx = origDecls map(d => OMV(LocalName(d.name)) % d.internalTp)
-    val TpDeclCtx = origDecls filter (_ match {case _:TypeLevel => true case _ => false}) map (_.toVarDecl)
+    val TpDeclCtx = origDecls filter (_.isTypeLevel) map (_.toVarDecl)
        
-    val recordType = makeConst(LocalName("type"), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})//, () => {Some(OMS(structure.path))})
+    val recordType = makeConst(LocalName("type"), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})
     val decls : List[Constant] = toEliminationDecls(origDecls, declCtx, TpDeclCtx, recordType.path)
     val make : Constant = this.introductionDeclaration(recordType.toTerm, origDecls, None, context)
     
@@ -88,7 +88,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
     val Ltp = () => {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)
-      val declsTp = decls.filter(isTypeLevel(_)).map(d => OMV(LocalName(d.name)) % d.internalTp)
+      val declsTp = decls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
       val params = context.getOrElse(Context.empty)++declsTp
       val declsTm = decls.filterNot(_.isTypeLevel).map(d => d.internalTp)
       val TpTmDecls = decls.filter(_.isTypeLevel).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
@@ -193,7 +193,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     origDecls zip(declCtx) map {case (decl, d) =>
       val Ltp = () => {
         val dElim = OMS(externalName(parent, decl.name))
-        val args = (origDecls.zip(declCtx)).filter(x => isTypeLevel(x._1)) map {case (_, d) => newVar(uniqueLN("x_"+d.name), d.toTerm, Some(context++declCtx))}
+        val args = (origDecls.zip(declCtx)).filter(x => x._1.isTypeLevel) map {case (_, d) => newVar(uniqueLN("x_"+d.name), d.toTerm, Some(context++declCtx))}
         val params = (context++TpDeclCtx) map (_.toTerm)
         val x_d = if (isTypeLevel(decl)) {val vd=newVar(uniqueLN("x_"+d.name), d.toTerm, Some(context++declCtx)); (vd.tp.get, vd.toTerm)} else (decl.tp, d.toTerm)
         

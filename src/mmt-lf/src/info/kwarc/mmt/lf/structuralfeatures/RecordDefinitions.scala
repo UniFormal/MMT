@@ -84,10 +84,10 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
     implicit val parentTerm = dd.path
     val (indDefPath, context, indParams) = DefType.getParameters(dd)
     val (recD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration of feature inductive found at that location.")
+      case indD: DerivedDeclaration if (indD.feature == "record") => (indD, Type.getParameters(indD))
+      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
+      case _ => throw LocalError("Expected definition of corresponding record at "+indDefPath.toString()
+            +" but no derived declaration found at that location.")
     }
     val recDefs = controller.library.get(indDefPath).getDeclarations map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
     
@@ -125,7 +125,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
     
     val Ltp = () => {
       val recType = recDefs.find(_.name.toString() == "type").getOrElse(throw LocalError("No type declaration found for the record "+recD.name))
-      PiOrEmpty(context, ApplyGeneral(recType.applyTo(indParams), decls.filter({case d:TypeLevel => true case _ => false}).map(d => d.df.get)))
+      PiOrEmpty(context, ApplyGeneral(recType.applyTo(indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
     }
     val Ldf = () => {
       val makeRec = recDefs.find(_.name.toString() == "make").getOrElse(throw LocalError("No introduction declaration found for the record "+recD.name))
