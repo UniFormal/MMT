@@ -321,10 +321,16 @@ trait TheoryLike extends StructuralFeature {
 
 trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryLike {
   val ParamType = TypedParametricTheoryLike.ParamType(getClass)
+  override val Type = ParametricTheoryLike.Type(getClass)
 
   override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":")
       ,SimpArg(3), Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
 
+  override def getInnerContext(dd: DerivedDeclaration) = {
+    val params = ParamType.getParameters(dd)
+    params ++ Context(dd.modulePath)
+  }
+      
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
       val p = getHeadPath(t)

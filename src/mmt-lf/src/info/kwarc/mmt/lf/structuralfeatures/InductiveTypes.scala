@@ -30,7 +30,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: Module, dd: DerivedDeclaration) = {
-    val context = Type.getParameters(dd) 
+    val context = Type.getParameters(dd)
     implicit val parentTerm = dd.path
     // to hold the result
     var elabDecls : List[Constant] = Nil
