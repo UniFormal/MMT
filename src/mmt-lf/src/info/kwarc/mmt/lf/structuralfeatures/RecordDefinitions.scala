@@ -13,17 +13,7 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
-class RecordDefinitions extends StructuralFeature("record_term") with ParametricTheoryLike {
-  object noLookupPresenter extends presentation.NotationBasedPresenter {
-    override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
-    override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
-  }
-  
-  override def start(args: List[String]) {
-    initOther(noLookupPresenter)
-  }
-  
-  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+class RecordDefinitions extends StructuralFeature("record_term") with TypedParametricTheoryLike {
 
   /**
    * Checks the validity of the inductive type(s) to be constructed
@@ -31,48 +21,6 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
-  object DefType {
-    val mpath = SemanticObject.javaToMMT(getClass.getCanonicalName)
-
-    def apply(p: GlobalName, params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, List(OMID(p)))
-    def unapply(t: Term) = t match {
-      case OMBINDC(OMMOD(this.mpath), params, List(OMID(p))) => Some(p, params, Nil)
-      case _ => None
-    }
-
-    /** retrieves the parameters */
-    def getParameters(dd: DerivedDeclaration) = {
-      dd.tpC.get.getOrElse(throw LocalError("missing type of derived declaration")) match {
-        case DefType(p, pars, args) => (p, pars, args)
-      }
-    }
-  }
-
-  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":"),SimpArg(3))
-      //SimpArg(3),Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
-  override def processHeader(header: Term) = header match {
-    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
-      val (p, args) = getInd(t)
-      (name, DefType(p, Context.empty, args))
-    case OMBINDC(OMMOD(`mpath`), cont, List(OML(name,_, _,_,_), t)) => 
-      val (p, args) = getInd(t)
-      (name, DefType(p, cont, args))
-    case hdr => throw InvalidObject(header, "ill-formed header: "+hdr.toNode)
-  }
-  override def makeHeader(dd: DerivedDeclaration) = getParams(dd) match {
-    case (p, cont, args) => DefType(p, cont, args)
-  }
-  def getInd(t: Term) : (GlobalName, List[Term]) = t match {
-    case OMA(OMID(p), args) => (p.toMPath.copy(name=p.name.init) ? p.name.last, args)
-    case OMID(p) => (p.toMPath.copy(name=p.name.init) ? p.name.last, Nil)
-  }
-  def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
-    dd.tpC.get match {
-      case Some(OMBINDC(_, params, args)) => val (p, ags) = getInd(args.last); (p, params, ags)
-    }
-  }
-  
-    
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
    * as well as the corresponding no confusion and no junk axioms
@@ -82,14 +30,13 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
    */
   def elaborate(parent: Module, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
-    val (indDefPath, context, indParams) = DefType.getParameters(dd)
-    val (recD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "record") => (indD, Type.getParameters(indD))
+    val (recDefPath, context, indParams) = ParamType.getParams(dd)
+    val (recD, indCtx) = controller.library.get(recDefPath) match {
+      case recD: DerivedDeclaration if (recD.feature == "record") => (recD, Type.getParameters(recD))
       case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding record at "+indDefPath.toString()
+      case _ => throw LocalError("Expected definition of corresponding record at "+recDefPath.toString()
             +" but no derived declaration found at that location.")
     }
-    val recDefs = controller.library.get(indDefPath).getDeclarations map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
     
     def correspondingDecl(d: LocalName): Constant = {
       recD.getO(d).getOrElse(
@@ -100,6 +47,8 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
     }
     
     var decls:List[InternalDeclaration] = Nil
+    val recDefs = recD.getDeclarationsElaborated map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
+
     
     // read in the declarations and replace all occurances of previously declared symbols by their definitions
     dd.getDeclarations foreach {
@@ -124,20 +73,21 @@ class RecordDefinitions extends StructuralFeature("record_term") with Parametric
     recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
     
     val Ltp = () => {
-      val recType = recDefs.find(_.name.toString() == "type").getOrElse(throw LocalError("No type declaration found for the record "+recD.name))
-      PiOrEmpty(context, ApplyGeneral(recType.applyTo(indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+      PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("type")), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
     }
     val Ldf = () => {
-      val makeRec = recDefs.find(_.name.toString() == "make").getOrElse(throw LocalError("No introduction declaration found for the record "+recD.name))
-      Some(LambdaOrEmpty(context, ApplyGeneral(makeRec.applyTo(indParams), decls.map(_.df.get))))
+      Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("make")), indParams), decls.map(_.df.get))))
     }
     
     val make = makeConst(LocalName("make"), Ltp, Ldf)
-    log(defaultPresenter(make)(controller))
+    //log(defaultPresenter(make)(controller))
     
     new Elaboration {
       def domain = List(make.name)
-      def getO(n: LocalName) = List(make) find (_.name == n)
+      def getO(n: LocalName) = {
+        List(make) find (_.name == n) foreach (d => log(defaultPresenter(d)(controller)))
+        List(make) find (_.name == n)
+      }
     }
   }
   

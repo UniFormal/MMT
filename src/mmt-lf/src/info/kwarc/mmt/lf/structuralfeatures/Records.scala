@@ -15,17 +15,6 @@ import InternalDeclarationUtil._
 
 /** theories as a set of types of expressions */ 
 class Records extends StructuralFeature("record") with ParametricTheoryLike {
-  object noLookupPresenter extends presentation.NotationBasedPresenter {
-    override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
-    override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
-  }
-  
-  override def start(args: List[String]) {
-    initOther(noLookupPresenter)
-  }
-  
-  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
-
 
   /**
    * Checks the validity of the record to be constructed

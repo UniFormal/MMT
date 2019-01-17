@@ -11,6 +11,7 @@ import notations._
 import scala.xml.Elem
 
 import Theory._
+import com.sun.xml.internal.ws.wsdl.writer.document.ParamType
 
 
 /** A [[DerivedDeclaration]] is a syntactically like a nested theory.
@@ -224,6 +225,17 @@ trait ParametricTheoryLike extends StructuralFeature {
    def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
      //TODO check IsContext here
    }
+   
+  object noLookupPresenter extends presentation.NotationBasedPresenter {
+    override def getNotations(p: GlobalName) = if (! (p.doc.uri.path contains "urtheories")) Nil else super.getNotations(p)
+    override def getAlias(p: GlobalName) = if (true) Nil else super.getAlias(p)
+  }
+  
+  override def start(args: List[String]) {
+    initOther(noLookupPresenter)
+  }
+  
+  def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
 }
 
 trait Untyped {self : StructuralFeature =>
@@ -307,6 +319,35 @@ trait TheoryLike extends StructuralFeature {
   }
 }
 
+trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryLike {
+  val ParamType = TypedParametricTheoryLike.ParamType(getClass)
+
+  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":")
+      ,SimpArg(3), Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
+
+  override def processHeader(header: Term) = header match {
+    case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
+      val p = getHeadPath(t)
+      (name, ParamType(p, Context.empty, Nil))
+    case OMA(OMMOD(`mpath`), OML(name,_,_,_,_)::t::args) => 
+      val p = getHeadPath(t)
+      (name, ParamType(p, Context.empty, args))
+    case OMBINDC(OMMOD(`mpath`), cont, List(OML(name,_, _,_,_), t)) => 
+      val p = getHeadPath(t)
+      (name, ParamType(p, cont, Nil))
+    case OMBINDC(OMMOD(`mpath`), cont, OML(name,_, _,_,_)::t::args) =>
+      val p = getHeadPath(t)
+      (name, ParamType(p, cont, args))
+    case hdr => throw InvalidObject(header, "ill-formed header")
+  }
+  override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+    case Some(ParamType(p, cont, args)) => OMBINDC(OMMOD(mpath), cont, OML(dd.name, None,None)::OMS(p)::args)
+  }
+  def getHeadPath(t: Term) : GlobalName = t match {
+    case OMID(p) => p.toMPath.copy(name=p.name.init) ? p.name.last
+  }
+}
+
 /** helper object */
 object ParametricTheoryLike {
    /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
@@ -323,6 +364,29 @@ object ParametricTheoryLike {
      def getParameters(dd: DerivedDeclaration) = {
        dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
      }
+   }
+}
+
+/** helper object */
+object TypedParametricTheoryLike {
+  /** official apply/unapply methods for the type of a TypedParametricTheoryLike derived declaration */
+   case class ParamType(cls: Class[_ <: TypedParametricTheoryLike]) {
+     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
+
+     def apply(p: GlobalName, params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, OMS(p)::args)
+     def unapply(t: Term) = t match {
+       case OMBINDC(OMMOD(this.mpath), params, OMS(p)::args) => Some(p, params, args)
+       case _ => None
+     }
+
+     /** retrieves the parameters and arguments */
+     def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
+      dd.tpC.get.get match {
+        case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
+      }
+    }
+     /** retrieves the parameters */
+    def getParameters(dd: DerivedDeclaration) = {getParams(dd)._2}
    }
 }
 
