@@ -75,7 +75,7 @@ class JupyterKernel extends Extension {
     val extman = controller.extman
     repl = extman.get(classOf[REPLServer]).headOption getOrElse {
       errorCont.open
-      val r = new REPLServer(errorCont)
+      val r = new REPLServer
       extman.addExtension(r,Nil)
       r
     }
@@ -121,7 +121,7 @@ class JupyterKernel extends Extension {
         PythonParamDict("element" -> result)
       case _ => {
           val comm = REPLServer.Command.parse(req)
-          val resp = repl(Some(session), comm)
+          val resp = repl(Some(session), comm, Some(errorCont))
           resp match {
             case m: MultiTypedResponse => PythonParamDict(m.messages.toList)
             case e: ElementResponse =>
