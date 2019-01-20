@@ -15,10 +15,10 @@ class DiagramDefinitions extends ModuleLevelFeature("diagram") {
    def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment) {}
    
    override def modules(dm: DerivedModule) = {
-     val diag: Term = ??? // need to normalize dm.df
+     val diag = dm.df.getOrElse {throw LocalError("no definiens found")}
      val ad = diag match {
        case AnonymousDiagramCombinator(ad) => ad
-       case _ => throw LocalError("not a diagram") // TODO should use proper error handler 
+       case _ => throw LocalError("definiens not a diagram") // TODO should use proper error handler 
      }
      def labelToTerm(l: LocalName) = OMMOD(dm.path / l) 
      val modules = ad.getElements.mapOrSkip {e =>
