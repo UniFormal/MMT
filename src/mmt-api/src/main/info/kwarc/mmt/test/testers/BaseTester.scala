@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.test.testers
+package info.kwarc.mmt.test.testers
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend._

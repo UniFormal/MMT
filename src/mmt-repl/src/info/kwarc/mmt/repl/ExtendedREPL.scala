@@ -31,7 +31,7 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   }
   private def handleLine(line: String) = {
     controller.tryHandleLine(line) match {
-      case ActionResultOK() => true
+      case ActionResultOK() =>
       case ae: ActionResultError =>
         report(ae.error)
         // FR: this used to be, but it's wrong to suppress the stack trace

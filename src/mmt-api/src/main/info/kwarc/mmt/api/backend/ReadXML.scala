@@ -318,13 +318,15 @@ class XMLReader(controller: Controller) extends Logger {
          case ddN @ <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
             val (body2,tp) = ReadXML.getTermFromAttributeOrChild(ddN, "type", nsMap)
+            val (body3,df) = ReadXML.getTermFromAttributeOrChild(ddN, "definition", nsMap)
             val tpC = TermContainer(tp)
-            val (not,decls) = body2.child match {
+            val dfC = TermContainer(df)
+            val (not,decls) = body3.child match {
               case hd::tl if hd.label == "notations" => (Some(hd),tl)
               case ds => (None, ds)
             }
             val notC = not.map {case node => NotationContainer.parse(node.child, home ? name)}.getOrElse(new NotationContainer())
-            val dd = new DerivedDeclaration(homeTerm, name, feature, tpC, notC)
+            val dd = new DerivedDeclaration(homeTerm, name, feature, tpC, notC, dfC)
             addDeclaration(dd)
             decls.foreach {d =>
                logGroup {

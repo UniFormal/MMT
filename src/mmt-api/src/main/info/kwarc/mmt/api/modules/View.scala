@@ -23,7 +23,7 @@ class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : T
    def getInnerContext = codomainAsContext
 
    def translate(newNS: DPath, newName: LocalName, translator: Translator,context:Context): View = {
-     def tl(m: Term)= translator.applyModule(context, m)
+     def tl(m: Term) = translator.applyModule(context, m)
      val res = new View(newNS, newName, fromC map tl, toC map tl, dfC map tl, isImplicit)
      getDeclarations foreach {d =>
        res.add(d.translate(res.toTerm, LocalName.empty, translator,context))

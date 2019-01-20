@@ -90,6 +90,7 @@ abstract class Declaration extends ContentElement {
 trait HasNotation {
    def notC: NotationContainer
    def not = notC.parsing
+   def notNode = notC.toNode
 }
 
 /** a [[Module]] as a [[Declaration]], i.e., inside some other module
@@ -110,5 +111,19 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
    def merge(that: Declaration): NestedModule = {
      mergeError(that)
    }
-
 }
+
+trait HasType {
+  def tpC: AbstractTermContainer
+  def tp = tpC.get
+  def tpNode = if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil
+  def translateTp(translator: Translator, context : Context) = TermContainer(tp map {t => translator.applyType(context, t)})
+}
+
+trait HasDefiniens {
+  def dfC: TermContainer
+  def df = dfC.get
+  def dfNode = if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil
+  def translateDf(translator: Translator, context : Context) = TermContainer(df map {t => translator.applyDef(context, t)})
+}
+

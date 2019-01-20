@@ -254,6 +254,8 @@ class NotationBasedParser extends ObjectParser {
           rt.lexerExtension.foreach {les ::= _}
         case _ =>
       }
+      case dd: DerivedDeclaration =>
+        //TODO
       case nm: NestedModule =>
         val args = nm.module match {
           case t: Theory => t.parameters.length

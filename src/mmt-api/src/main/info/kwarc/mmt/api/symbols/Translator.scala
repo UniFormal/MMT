@@ -79,15 +79,19 @@ case class ApplySubs(subs: Substitution) extends UniformTranslator {
 }
 
 /** replaces all naked OML's; for convenience a substitution is used even though we are replacing OML's not OMV's */
-class OMLReplacer(replacements: Substitution) extends StatelessTraverser {
+class OMLReplacer(replace: LocalName => Option[Term]) extends StatelessTraverser {
   def traverse(t: Term)(implicit con : Context, state : State) = t match {
     case OML(n, None, None, None, None) =>
-      replacements(n) match {
+      replace(n) match {
         case None => t
         case Some(r) => r
       }
     case t => Traverser(this,t)
   }
+}
+
+object OMLReplacer {
+  def apply(replacements: Substitution) = new OMLReplacer(r => replacements(r))
 }
 
 /** fully applies a morphism that is given as a Scala function */

@@ -15,7 +15,7 @@ import InternalDeclarationUtil._
 class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: Module, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
     val params = Type.getParameters(dd)
     val context = if (params.nonEmpty) Some(params) else None

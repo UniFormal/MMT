@@ -16,7 +16,7 @@ import InternalDeclarationUtil._
 class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: Module, dd: DerivedDeclaration) = { 
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = { 
     //val name = LocalName(dd.path.last)
     implicit val parentTerm = dd.path
     val context = Type.getParameters(dd)

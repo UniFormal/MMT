@@ -470,7 +470,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case l: Link => Some(l)
       case _ => None
     }
-    val mpath = mod.path.toMPath // non-trivial only for structures
+    val mpath = mod.modulePath
     /** the root name of all sections and the LocalName of the currentSection */
     val docRoot = mpath.toDPath
     val currentSection = docHome.dropPrefix(docRoot).getOrElse {
@@ -1050,6 +1050,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val notC = new NotationContainer
     val compSpecs = notationComponentSpec(notC)
     val equalFound = readComponents(context, compSpecs, Some(feature.bodyDelim))
+    // TODO read definiens instead of body
     val dd = new DerivedDeclaration(OMID(parent), name, feature.feature, TermContainer(tp), notC)
     dd.setDocumentHome(parentInfo.relDocParent)
     seCont(dd)

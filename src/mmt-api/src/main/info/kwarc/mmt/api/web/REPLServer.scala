@@ -26,7 +26,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, v
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
-      case m: Module => currentScope = IsMod(m.path, LocalName.empty)
+      case m: ModuleOrLink => currentScope = IsMod(m.modulePath, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
     }

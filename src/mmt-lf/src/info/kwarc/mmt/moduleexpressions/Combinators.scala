@@ -201,7 +201,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
     val dNR = DiagramNode(Rename.nodeLabel, atR)
     val renM = new AnonymousMorphism(dN.theory.toTerm, atR.toTerm, oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
     val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Rename.nodeLabel, Rename.arrowLabel) 
+    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel)) 
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {
@@ -240,7 +240,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
     val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return Recurse)
     // translate all declarations of thy that are not from dom via mor and add them to cod
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
-    val translator = new OMLReplacer(morAsSub)
+    val translator = OMLReplacer(morAsSub)
     val pushout = codAnon
     thyAnon.decls.foreach {
       case RealizeOML(p,_) =>
