@@ -130,27 +130,38 @@ object Common {
  * Open question: Should they be required to find all errors? Maybe only all structural errors?
  */
 
-object Extends extends FlexaryConstantScala(Combinators._path, "extends")
+object Extends extends FlexaryConstantScala(Combinators._path, "extends"){
+  /** the label of the distinguished node after extension */
+  val nodeLabel = LocalName("pres")
+  /** the label of the distinguished arrow after extension (from old to extended theory) */
+  val arrowLabel = LocalName("extend")
+}
 
 // TODO all rules must preserve and reflect typing errors
 // declaration merging must happen somewhere
 
 object ComputeExtends extends ComputationRule(Extends.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-      val Extends(thy,wth@_*) = tm
-      val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return RecurseOnly(List(1))}
-      wth match {
-        case OMLList(extDecls) =>
-          // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon
-          val trav = OMSReplacer {p =>
-            if (thyAnon isDeclared p.name) Some(OML(p.name)) else None
-          }
-          val extDeclsR = extDecls map {oml => trav(oml,stack.context).asInstanceOf[OML]}
-          val extAnon = new AnonymousTheory(thyAnon.mt, thyAnon.decls ::: extDeclsR)
-          Simplify(extAnon.toTerm)
-        case _ => RecurseOnly(List(2))
-      }
-   }
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+    val Extends(diag,wth@_*) = tm
+    val ad = Common.asAnonymousDiagram(solver, diag).getOrElse {return RecurseOnly(List(1))}
+    // Getting the new declarations as List[OML]
+    val extD = wth match {
+      case OMLList(extDecl) => extDecl
+      case _ => return RecurseOnly(List(2))
+    }
+    // dN : distinguished node of the input diagram
+    val dN = ad.getDistNode.getOrElse {
+      solver.error("distinguished node not found")
+      return Simplifiability.NoRecurse
+    }
+    // creating the new AnonymousDiagram
+    val new_decls = dN.theory.decls ::: extD
+    val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
+    val extM = new AnonymousMorphism(dN.theory.toTerm,new_dN.theory.toTerm,new_decls )
+    val extA = DiagramArrow(Extends.arrowLabel,dN.label,new_dN.label,extM )
+    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
+    Simplify(result.toTerm)
+  }
 }
 
 object Combine extends FlexaryConstantScala(Combinators._path, "combine")
