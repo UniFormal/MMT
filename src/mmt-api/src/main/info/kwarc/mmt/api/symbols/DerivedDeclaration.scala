@@ -11,7 +11,6 @@ import notations._
 import scala.xml.Elem
 
 import Theory._
-import com.sun.xml.internal.ws.wsdl.writer.document.ParamType
 
 
 /** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
