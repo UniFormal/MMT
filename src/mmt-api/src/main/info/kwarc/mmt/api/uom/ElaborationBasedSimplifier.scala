@@ -85,6 +85,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
       case dm: DerivedModule =>
         // TODO wait for more examples to understand how to handle derived modules here
+      case _: DerivedDeclaration =>
+        // nothing to do, but would otherwise be caught be next case
       case m: ModuleOrLink =>
         // flatten header and call flattenDeclaration on every child
         val rules = RuleSet.collectRules(controller, m.getInnerContext)

@@ -8,7 +8,11 @@ import objects._
 import notations._
 import utils._
 
-class DiagramDefinitions extends ModuleLevelFeature("diagram") {
+object DiagramDefinition {
+  val feature = "diagram"
+}
+
+class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
    def getHeaderNotation = Nil
    
    /** not sure if this is even called, need to wait for more experience with checking derived modules */

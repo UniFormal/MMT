@@ -417,19 +417,28 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             case _ => throw makeError(reg2, "only views can be implicit here")
           }
         case k =>
-          // other keywords are treated as parser plugins
-          val extParser = getParseExt(doc, k).getOrElse {
-            throw makeError(reg, "unknown keyword: " + k)
-          }
-          val (mod, mreg) = state.reader.readModule
-          val reader = Reader(mod)
-          reader.setNextSourcePosition(mreg.start)
-          val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
-          extParser(pea) foreach {
-            case m: Module =>
-              moduleCont(m, parentInfo)
-              //TODO unclear if end(m) should be called; presumably yes if m is declared
-            case _ => throw makeError(reg, "parser extension returned non-module")
+          getParseExt(doc, k) match {
+            // first look for a parser extension
+            case Some(extParser) =>
+              val (mod, mreg) = state.reader.readModule
+              val reader = Reader(mod)
+              reader.setNextSourcePosition(mreg.start)
+              val pea = new ParserExtensionArguments(this, state.copy(reader), doc, k)
+              extParser(pea) foreach {
+                case m: Module =>
+                  moduleCont(m, parentInfo)
+                  //TODO unclear if end(m) should be called; presumably yes if m is declared
+                case _ => throw makeError(reg, "parser extension returned non-module")
+              }
+            case None =>
+              // other keywords are treated as module level features
+              controller.extman.get(classOf[ModuleLevelFeature], k) match {
+                case Some(_) =>
+                  // not actually using the feature (there might be multiple for the same keyword); just checking that at least one exists
+                  readDerivedModule(parentInfo, Context.empty, k)
+                case None =>
+                  throw ParseError("unknown keyword: " + k)
+              }
           }
       }
       // check that the reader is at the end of a module level declaration, throws error otherwise
@@ -780,6 +789,55 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           readInModule(v, context ++ v.getInnerContext, noFeatures)
         }
         end(v)
+    }
+  }
+  
+  private def readDerivedModule(parent: HasParentInfo, context: Context, feature: String)(implicit state: ParserState) {
+    val rname = readName
+    val (ns, name) = parent match {
+      case IsDoc(doc) =>
+        val ns = DPath(state.namespaces.default)
+        val mref = MRef(doc, ns ? rname)
+        mref.setOrigin(GeneratedMRef)
+        seCont(mref)
+        (ns, rname)
+      case IsMod(mod,_) =>
+        (mod.doc, mod.name / rname)
+    }
+    val mpath = ns ? name
+    var delim = state.reader.readToken
+    val metaReg = if (delim._1 == ":") {
+      val (r,m) = readMPath(mpath)
+      delim = state.reader.readToken
+      Some((m,r))
+    } else
+      None
+    val meta = (metaReg,parent) match {
+      case (Some((p,_)),_) => Some(p)
+      case _ => None
+    }
+    val contextMeta = meta match {
+      case Some(p) => context ++ p
+      case _ => context
+    }
+    val dfC = new TermContainer
+    if (delim._1 == "abbrev" || delim._1 == "extends" || delim._1 == ":=") {
+      doComponent(dfC, contextMeta) // DefComponent
+      delim = state.reader.readToken
+    }
+    val dm = new DerivedModule(feature, ns, name, meta, new TermContainer(), dfC, new NotationContainer())
+    //metaReg foreach {case (_,r) => SourceRef.update(dm.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
+    moduleCont(dm, parent)
+    if (delim._1 == "") {
+      end(dm)
+    } else if (delim._1 == "=") {
+      val features = getFeatures(contextMeta)
+      logGroup {
+        readInModule(dm, context ++ dm.getInnerContext, features)
+      }
+      end(dm)
+    } else {
+      throw makeError(delim._2, "':' or '=' or ':=', or 'abbrev' expected")
     }
   }
 

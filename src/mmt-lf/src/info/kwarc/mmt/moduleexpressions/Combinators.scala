@@ -109,7 +109,11 @@ object Common {
       // named diagrams
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
-          case _ => ???
+          case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
+            dm.dfC.normalized map {
+              case AnonymousDiagramCombinator(ad) => ad
+            }
+          case _ => return None
         }
        // explicit anonymous diagrams
       case AnonymousDiagramCombinator(ad) => Some(ad)
