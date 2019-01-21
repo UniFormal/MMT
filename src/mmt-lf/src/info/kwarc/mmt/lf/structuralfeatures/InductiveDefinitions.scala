@@ -29,7 +29,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: Module, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val (indD, indCtx) = controller.library.get(indDefPath) match {
       case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))

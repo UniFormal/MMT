@@ -1,6 +1,6 @@
-package info.kwarc.mmt.api.test
+package info.kwarc.mmt.test
 
-import info.kwarc.mmt.api.test.testers._
+import info.kwarc.mmt.test.testers._
 import info.kwarc.mmt.api.utils.MMTSystem.{Classes, DeployRunStyle, ThinJars}
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.doc.Setup

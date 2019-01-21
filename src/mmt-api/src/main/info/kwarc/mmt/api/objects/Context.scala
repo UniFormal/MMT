@@ -74,7 +74,7 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
        case StructureVarDecl(n, from, dfO) =>
           Structure(home, name, from, dfO, false)
        case DerivedVarDeclFeature(n,f,tp,None) =>
-          new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not))
+          new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not), TermContainer(df))
      }
    }
 }

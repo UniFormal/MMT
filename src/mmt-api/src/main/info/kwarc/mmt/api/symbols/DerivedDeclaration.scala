@@ -14,66 +14,77 @@ import Theory._
 import com.sun.xml.internal.ws.wsdl.writer.document.ParamType
 
 
-/** A [[DerivedDeclaration]] is a syntactically like a nested theory.
- *  Its semantics is defined by the corresponding [[StructuralFeature]]
+/** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
+ *  The semantics is defined by the corresponding [[StructuralFeature]]
  */
-class DerivedDeclaration(h: Term, name: LocalName, override val feature: String, val tpC: TermContainer,
-                         val notC: NotationContainer, val dfC : TermContainer = TermContainer(None)) extends {
-   private val t = Theory.empty(h.toMPath.parent, h.toMPath.name/name, noMeta)
-   protected val delegatee = t // inheriting the container element functions of t
-} with NestedModule(h, name, t) with DelegatingContainerElement[Declaration] with HasNotation {
-  
-  def modulePath = module.path
-
-  override def getDeclarations = module.getDeclarations
+trait DerivedContentElement extends AbstractTheory with HasType with HasNotation {
   override def getComponents = TypeComponent(tpC) :: DefComponent(dfC) :: notC.getComponents
 
-  private def tpAttNode = tpC.get.map {t => backend.ReadXML.makeTermAttributeOrChild(t, "type")}.getOrElse((null,Nil))
-  override def toNode : Elem = {
-    val (tpAtt, tpNode) = tpAttNode
-    <derived feature={feature} name={name.toPath} base={t.parent.toPath} type={tpAtt}>
-      {getMetaDataNode}
-      {tpNode}
-      {notC.toNode}
-      {t.getDeclarations map (_.toNode)}
-    </derived>
-  }
-  // override def toNodeElab
-  override def toNode(rh: presentation.RenderingHandler) {
-    val (tpAtt, tpNode) = tpAttNode
-    rh << s"""<derived feature="$feature" name="${name.toPath}" base="${t.parent.toPath}">"""
-    tpC.get.foreach {tp =>
-      rh << "<type>"
-      rh(tp.toNode)
-      rh << "</type>"
-    }
-    rh(notC.toNode)
-    t.getDeclarations foreach(_.toNode(rh))
-    rh << "</derived>"
-  }
+  /** always empty for now, could be relaxed in the future */
+  def parameters = Context.empty
 
-  override def toString = {
-    val s1 = {
+  def outerString: String = {
+    val s = {
       name match {
         case LocalName(ComplexStep(p) :: Nil) => ""
         case _ => " " + name
       }
     }
-    val s2 = if (t.getDeclarations.nonEmpty) " =\n" + t.innerString else ""
-    feature + s1 + tpC.get.map(" " + _.toString).getOrElse("") + s2
+    feature + s + tpC.get.map(" " + _.toString).getOrElse("")
   }
+ 
+  override def toNode : Elem = {
+    <derived feature={feature} name={name.toPath} base={parent.toPath}>
+      {getMetaDataNode}
+      {tpNode}
+      {dfNode}
+      {notNode}
+      {getDeclarations map (_.toNode)}
+    </derived>
+  }
+  // override def toNodeElab
+  override def toNode(rh: presentation.RenderingHandler) {
+    rh << s"""<derived feature="$feature" name="${name.toPath}" base="${parent.toPath}">"""
+    (getMetaDataNode++tpNode++dfNode++notNode) foreach {n =>
+      rh(n)
+    }
+    getDeclarations foreach(_.toNode(rh))
+    rh << "</derived>"
+  }
+}
 
-  override def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): DerivedDeclaration = {
-     // translate this as a [[NestedModue]], then extend the result to a DerivedDeclaration
-     val superT = super.translate(newHome, prefix, translator,context) // temporary, will be used to build result
-     val tpT = tpC.get map {tp => translator.applyType(Context.empty, tp)}
-     // splice super in to res
-     val res = new DerivedDeclaration(superT.home, superT.name, feature, TermContainer(tpT), notC)
-     superT.module.getDeclarations.foreach {d =>
-       res.module.add(d)
+/** a module that is elaborated into more primitive module */
+class DerivedModule(val feature: String, p: DPath, n: LocalName, val meta: Option[MPath], val tpC: TermContainer, val dfC : TermContainer, val notC: NotationContainer)
+   extends Module(p,n) with DerivedContentElement {
+   def translate(newNS: DPath, newName: LocalName, tl: Translator, con: Context): DerivedModule = {
+     new DerivedModule(feature, newNS, newName, meta, translateTp(tl, con), translateDf(tl, con), notC.copy)
+   }
+}
+
+
+/** a declarations that is elaborated into more primitive declarations */
+class DerivedDeclaration(val home: Term, val name: LocalName, val feature: String, val tpC: TermContainer,
+                         val notC: NotationContainer, val dfC : TermContainer = TermContainer(None)) extends Declaration with DerivedContentElement {
+  type ThisType = DerivedDeclaration
+  
+  def meta = None
+  
+  @deprecated("redundant: every DerivedDeclaration is module-like now","")
+  val module = this // left over from old definition via NestedModule
+
+  override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {
+     val tpT = translateTp(tl, con)
+     val dfT = translateDf(tl,con)
+     val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy, dfT)
+     val icont = con ++ getInnerContext
+     getDeclarations.foreach {d =>
+       res.add(d.translate(res.toTerm, LocalName.empty, tl, icont))
      }
      res
    }
+  
+   // see also NestedModule
+   def merge(that: Declaration) = mergeError(that)
 }
 
 
@@ -95,7 +106,7 @@ case class StructuralFeatureRule(cls: Class[_ <: StructuralFeature], feature: St
  * - dd.feature == this.feature
  * - dd.getComponents has the same components as this.expectedComponents and in the same order
  */
-abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
+abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feature: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == feature
 
    val bodyDelim = "="
@@ -120,7 +131,7 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
    }
 
    /** inverse of processHeader */
-   def makeHeader(dd: DerivedDeclaration): Term = {
+   def makeHeader(dd: Level): Term = {
      dd.tpC.get match {
        case Some(OMA(OMMOD(`mpath`), args)) => OMA(OMMOD(mpath), OML(dd.name, None, None) :: args)
      }
@@ -133,14 +144,16 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     */
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
 
-   /** additional context relative to which to interpret the body of a derived declaration */
-   def getInnerContext(dd: DerivedDeclaration): Context = dd.module.getInnerContext
-
    /** called after checking components and inner declarations for additional feature-specific checks */
-   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
+   def check(dd: Level)(implicit env: ExtendedCheckingEnvironment): Unit
 
-  def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
-  def checkInContext(prev: Context, dv: VarDecl) {}
+   /** override as needed */
+   def modules(dd: Level): List[Module] = Nil
+}
+
+abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[DerivedDeclaration](f) {
+  /** additional context relative to which to interpret the body of a derived declaration */
+  def getInnerContext(dd: DerivedDeclaration): Context = dd.getInnerContext
 
    /**
     * defines the outer perspective of a derived declaration
@@ -148,17 +161,18 @@ abstract class StructuralFeature(val feature: String) extends FormatBasedExtensi
     * @param parent the containing module
     * @param dd the derived declaration
     */
-   def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration
 
-   /** override as needed */
-   def modules(dd: DerivedDeclaration): List[Module] = Nil
-
-   /** returns the rule constant for using this feature in a theory */
-   def getRule = StructuralFeatureRule(getClass, feature)
+   def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
+   def checkInContext(prev: Context, dv: VarDecl) {}
 
    /** for creating/matching variable declarations of this feature */
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
+   /** returns the rule constant for using this feature in a theory */
+   def getRule = StructuralFeatureRule(getClass, feature)
 }
+
+abstract class ModuleLevelFeature(f: String) extends GeneralStructuralFeature[DerivedModule](f)
 
 /**
  * the return type of elaborating a [[DerivedDeclaration]] by a [[StructuralFeature]]
@@ -407,17 +421,21 @@ object TypedParametricTheoryLike {
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
 
-  def elaborate(parent: Module, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+      val parentThy = parent match {
+        case thy: Theory => thy
+        case _ => throw LocalError("generative pushout must occur in theory")
+      }
       val dom = getDomain(dd)
       val context = parent.getInnerContext
       val body = controller.simplifier.materialize(context, dom, None, None)
       new Elaboration {
         /** the morphism dd.dom -> parent of the pushout diagram: it maps every n to dd.name/n */
-        private val morphism = View(parent.parent, parent.name/dd.name, dom, parent.toTerm, false)
+        private val morphism = View(parentThy.parent, parent.name/dd.name, dom, parent.toTerm, false)
         /** precompute domain and build the morphism */
         val domain = body.getDeclarationsElaborated.map {d =>
           val ddN = dd.name / d.name
-          val assig = Constant(morphism.toTerm, d.name, Nil, None, Some(OMS(parent.path ? ddN)), None)
+          val assig = Constant(morphism.toTerm, d.name, Nil, None, Some(OMS(parentThy.path ? ddN)), None)
           morphism.add(assig)
           ddN
         }
@@ -429,7 +447,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
             body.getO(rest) map {
               case d: Declaration =>
                 val dT = d.translate(parent.toTerm, dd.name, translator,Context.empty)
-                val dTM = dd.module.getO(rest) match {
+                val dTM = dd.getO(rest) match {
                   case None => dT
                   case Some(a) => dT merge a
                 }
@@ -511,7 +529,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       }.toList
     case _ => Context.empty
   }
-  def elaborate(parent: Module, dd: DerivedDeclaration) : Elaboration = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) : Elaboration = {
     // println(parent.name + " <- " + dd.name)
     val dom = getDomain(dd)
     val parenth = parent match {

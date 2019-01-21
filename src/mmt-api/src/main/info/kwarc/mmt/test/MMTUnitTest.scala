@@ -1,9 +1,11 @@
-package info.kwarc.mmt.api.test
+package info.kwarc.mmt.test
 
 import info.kwarc.mmt.api.archives.BuildQueue
 import info.kwarc.mmt.api.frontend._
-import info.kwarc.mmt.api.test.testers.BaseTester
 import info.kwarc.mmt.api.utils
+
+import info.kwarc.mmt.test.testers.BaseTester
+
 /**
   * A class used for MMT Unit Tests that only need a controller instance to work properly
   */
@@ -28,7 +30,7 @@ abstract class MMTUnitTest extends BaseTester {
     })
 
   /** sets up the controller for tests */
-  override def init(): Unit = {
+  override def init {
     controller.report.addHandler(ConsoleHandler)
 
     // add all the log groups that we are only using during tests

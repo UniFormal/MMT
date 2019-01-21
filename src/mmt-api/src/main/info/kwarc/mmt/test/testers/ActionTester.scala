@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.test.testers
+package info.kwarc.mmt.test.testers
 
 /** implements the checking of Actions */
 trait ActionTester extends BaseTester {

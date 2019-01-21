@@ -62,7 +62,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      }*/
    }
 
-   def elaborate(parent: Module, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
      private lazy val (pattern,args) = getPattern(dd).getOrElse {
        throw InvalidElement(dd, "ill-formed instance")
      }
@@ -79,7 +79,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
          case _ => d
        }
        val subs = (params zip args) map {case (vd,a) => Sub(vd.name, a)}
-       val tl = ApplySubs(subs) compose TraversingTranslator(Renamer.prefix(pattern.module.path, dd.path))
+       val tl = ApplySubs(subs) compose TraversingTranslator(Renamer.prefix(pattern.modulePath, dd.path))
        val dT = dN.translate(dd.home, dd.name, tl, Context.empty)
        Some(dT)
      }

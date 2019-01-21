@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.test.testers
+package info.kwarc.mmt.test.testers
 
 /** trait implementing testing for extensions */
 trait ExtensionTester extends BaseTester {

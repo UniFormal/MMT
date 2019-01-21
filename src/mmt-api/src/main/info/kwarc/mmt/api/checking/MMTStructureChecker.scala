@@ -12,8 +12,6 @@ import frontend._
 import opaque._
 import objects.Conversions._
 
-
-
 /** variant of CheckingEnvironment that carries around more structure */
 case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, p: Path, var timeout: Int = 0) {
   def pCont(q: Path) {
@@ -24,7 +22,6 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
     ce.errorCont(e)
   }
 }
-
 
 /** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
   * 
@@ -192,12 +189,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val (thy, linkOpt) = content.getDomain(c)
         // the home theory of the components of c
         val scope = linkOpt match {
-          case None => OMMOD(thy.path)
+          case None => thy.toTerm
           case Some(link) => link.to
         }
         // if link: the source constant and its translated components
         val linkInfo = linkOpt map { link =>
-          val cOrg = content.getConstant(thy.path ? c.name)
+          val cOrg = content.getConstant(thy.modulePath ? c.name)
           val expTypeOpt = cOrg.tp map { t => content.ApplyMorphs(t, link.toTerm) }
           val expDefOpt = cOrg.df map { t => content.ApplyMorphs(t, link.toTerm) }
           (cOrg, expTypeOpt, expDefOpt)
@@ -336,7 +333,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     implicit val ce = env.ce
     e match {
       case d: Document =>
-      case t: Theory =>
+      case t: AbstractTheory with Module =>
+        // unifies Theory and DerivedModule but not DerivedDeclaration
+        // eventually DerivedModule will presumably need its own case
         var contextMeta = context
         t.meta foreach { mt =>
           checkTheory(Some(CPath(t.path, TypeComponent)), context, OMMOD(mt))
@@ -364,7 +363,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case None =>
               (s.fromC.get, Some(thy.toTerm))
             case Some(link) =>
-              val sOrg = content.getStructure(thy.path ? s.name)
+              val sOrg = content.getStructure(thy.modulePath ? s.name)
               val sOrgFrom = sOrg.from
               s.fromC.get match {
                 case None =>
@@ -392,6 +391,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             dd.tpC.get foreach {tp =>
               val tpR = checkTerm(context, tp)
               // not using tpR here because source references are gone
+            }
+            dd.dfC.get foreach {df =>
+              val dfR = checkTerm(context, df)
+              // not using dfR here because source references are gone
             }
         }
       case _ =>
@@ -499,7 +502,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         case t: Module => t
         case nm: NestedModule => nm.module
         case _ =>
-          env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
+          env.errorCont(InvalidObject(t, "not a theory: " + controller.presenter.asString(t)))
           dec
       }
       val tR: Term = thy match {

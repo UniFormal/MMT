@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.test.testers
+package info.kwarc.mmt.test.testers
 
 import info.kwarc.mmt.api.Level.Level
 import info.kwarc.mmt.api.archives.{Archive, Current, RedirectableDimension, TraverseMode}

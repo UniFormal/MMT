@@ -92,7 +92,7 @@ sealed abstract class HasParentInfo extends ParentInfo {
  *  @param parent the parent document
  */
 case class IsDoc(docParent: DPath) extends HasParentInfo
-/** the content is located inside a module
+/** the content is located inside a ModuleOrLink
  *  @param modParent the parent module
  *  @param relDocParent the path of the parent document relative to the parent module
  */
