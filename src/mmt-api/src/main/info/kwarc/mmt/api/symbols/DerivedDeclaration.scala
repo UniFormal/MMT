@@ -319,6 +319,11 @@ trait TheoryLike extends StructuralFeature {
   }
 }
 
+/** for structural features with both take parameters and a type
+ *  Examples are structural features which build structures defined via a derived declaration of another structural feature
+ *  like inductively-defined functions or proofs by induction over an inductively-defined type or terms of a record
+ *  In such a case the type is the other derived declaration instanciated with values for its parameters
+ */
 trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryLike {
   val ParamType = TypedParametricTheoryLike.ParamType(getClass)
   override val Type = ParametricTheoryLike.Type(getClass)
@@ -362,7 +367,7 @@ object ParametricTheoryLike {
 
      def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
      def unapply(t: Term) = t match {
-       case OMBINDC(OMMOD(this.mpath), params, Nil) => Some((params))
+       case OMBINDC(OMMOD(this.mpath), params, _) => Some((params))
        case _ => None
      }
 
