@@ -224,6 +224,12 @@ class NotationBasedParser extends ObjectParser {
 
   private type RuleLists = (List[ParsingRule], List[LexerExtension], List[NotationExtension])
 
+  private def unappNotation(e: ContentElement, altNames: List[LocalName], args: Int) = {
+    val ms = Mixfix(Delim(e.name.toString) :: Range(0, args).toList.map(SimpArg(_)))
+    val n = new TextNotation(ms, Precedence.infinite, None)
+    ParsingRule(e.path, altNames, n)
+  }
+  
   /** auxiliary function to collect all lexing and parsing rules in a given context */
   private def getRules(context: Context): RuleLists = {
     val support = context.getIncludes
@@ -242,7 +248,7 @@ class NotationBasedParser extends ObjectParser {
         //the unapplied notations consisting just of the name
         val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
         val app = c.not.toList
-        (app ::: unapp).foreach {n =>
+        (unapp:::app).foreach {n =>
           nots ::= ParsingRule(c.path, c.alternativeNames, n)
         }
       case r: RuleConstant => r.df.foreach {
@@ -254,16 +260,14 @@ class NotationBasedParser extends ObjectParser {
           rt.lexerExtension.foreach {les ::= _}
         case _ =>
       }
-      case dd: DerivedDeclaration =>
-        //TODO
+      case de: DerivedContentElement =>
+        nots ::= unappNotation(de, Nil, 0)
       case nm: NestedModule =>
         val args = nm.module match {
           case t: Theory => t.parameters.length
           case v: View => 0
         }
-        val ms = Mixfix(Delim(nm.name.toString) :: Range(0, args).toList.map(SimpArg(_)))
-        val tn = new TextNotation(ms, Precedence.infinite, None)
-        nots ::= ParsingRule(nm.module.path, Nil, tn)
+        nots ::= unappNotation(nm.module, Nil, args)
       case _ =>
     }}}
     les = les.sortBy(- _.priority)
