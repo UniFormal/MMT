@@ -79,9 +79,9 @@ class XMLReader(controller: Controller) extends Logger {
             case None =>
                readInDocument(nsMap, Some(d), node)
          }
-         case t: Theory => readInModule(t.path, nsMap(t.path), t, node)
-         case v: View => readInModule(v.path, nsMap(v.to.toMPath), v, node)
-         case s: Structure => readInModule(s.path.toMPath, nsMap, s, node)
+         case t: AbstractTheory => readInModule(t.modulePath, nsMap(t.path), t, node)
+         case v: View =>           readInModule(v.modulePath, nsMap(v.to.toMPath), v, node)
+         case s: Structure =>      readInModule(s.modulePath, nsMap, s, node)
       }
    }
 
@@ -92,7 +92,7 @@ class XMLReader(controller: Controller) extends Logger {
     * @param nodeMd the node to parse
     */
    def readInDocument(nsMap: NamespaceMap, docOpt: Option[Document], nodeMd : Node)(implicit cont: StructureParserContinuations) {
-      lazy val doc = docOpt.getOrElse {throw ParseError("document element without containing document")}
+      lazy val doc = docOpt.getOrElse {throw ParseError("narrative element without containing document")}
       lazy val dname = LocalName.parse(xml.attr(nodeMd,"name"), nsMap)
       val (node, md) = MetaData.parseMetaDataChild(nodeMd, nsMap)
       node match {
@@ -105,6 +105,10 @@ class XMLReader(controller: Controller) extends Logger {
               readIn(nsMap, innerdoc, m)
             }
             endAdd(innerdoc)
+         case <instruction/> =>
+           val text = xml.attr(node, "text")
+           val ii = InterpretationInstruction.parse(doc.path, text, nsMap)
+           add(ii, None)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
             val oi = controller.extman.get(classOf[OpaqueElementInterpreter], format).getOrElse {
@@ -164,7 +168,30 @@ class XMLReader(controller: Controller) extends Logger {
                   }
                }
                endAdd(v)
-            case <rel>{_*}</rel> =>
+         case dmN @ <derived>{body @_*}</derived> =>
+            val feature = xml.attr(dmN, "feature")
+            val (dmN2,tp) = ReadXML.getTermFromAttributeOrChild(dmN, "type", nsMap)
+            val (dmN3,df) = ReadXML.getTermFromAttributeOrChild(dmN2, "definition", nsMap)
+            val meta = xml.attr(m, "meta") match {
+               case "" => None
+               case mt => Some(Path.parseM(mt, nsMap(namespace)))
+             }
+            val tpC = TermContainer(tp)
+            val dfC = TermContainer(df)
+            val (not,decls) = dmN3.child match {
+              case hd::tl if hd.label == "notations" => (Some(hd),tl)
+              case ds => (None, ds)
+            }
+            val notC = not.map {case node => NotationContainer.parse(node.child, namespace ? name)}.getOrElse(new NotationContainer())
+            val dm = new DerivedModule(feature, namespace, name, meta, tpC, dfC, notC)
+            addModule(dm, md, docOpt)
+            decls.foreach {d =>
+               logGroup {
+                  readIn(nsMap, dm, d)
+               }
+            }
+            endAdd(dm)
+           case <rel>{_*}</rel> =>
                //ignoring logical relations, produced by Twelf, but not implemented yet
            case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
            case _ => throw ParseError("element not allowed in document: " + m)
@@ -318,13 +345,15 @@ class XMLReader(controller: Controller) extends Logger {
          case ddN @ <derived>{body @_*}</derived> =>
             val feature = xml.attr(symbol, "feature")
             val (body2,tp) = ReadXML.getTermFromAttributeOrChild(ddN, "type", nsMap)
+            val (body3,df) = ReadXML.getTermFromAttributeOrChild(ddN, "definition", nsMap)
             val tpC = TermContainer(tp)
-            val (not,decls) = body2.child match {
+            val dfC = TermContainer(df)
+            val (not,decls) = body3.child match {
               case hd::tl if hd.label == "notations" => (Some(hd),tl)
               case ds => (None, ds)
             }
             val notC = not.map {case node => NotationContainer.parse(node.child, home ? name)}.getOrElse(new NotationContainer())
-            val dd = new DerivedDeclaration(homeTerm, name, feature, tpC, notC)
+            val dd = new DerivedDeclaration(homeTerm, name, feature, tpC, notC, dfC)
             addDeclaration(dd)
             decls.foreach {d =>
                logGroup {

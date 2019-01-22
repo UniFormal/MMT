@@ -83,13 +83,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     s match {
       case Include(_) =>
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
+      case _: DerivedDeclaration =>
+        // nothing to do, but would otherwise be caught be next case
       case m: ModuleOrLink =>
         // flatten header and call flattenDeclaration on every child
         val rules = RuleSet.collectRules(controller, m.getInnerContext)
         if (!ElaboratedElement.isPartially(s)) {
           flattenDefinition(m, Some(rules))
           m match {
-            case t: Theory =>
+            case t: AbstractTheory =>
               t.meta foreach apply
             case v: Link =>
               applyChecked(materialize(Context.empty,v.from,None, Some(v.fromC)))
@@ -135,6 +137,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       return
     log("finalize flattening of " + s.path)
     s match {
+      case dm: DerivedModule =>
+        flattenDerivedModule(dm, None)
       case m: Module =>
       case d: Declaration =>
         // external flattening of structures, declared declarations
@@ -170,20 +174,21 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     lazy val rules = rulesOpt.getOrElse {
       RuleSet.collectRules(controller, mod.getInnerContext)
     }
+    val at = new RepeatedAdd(AtBegin)
+    def add(d: Declaration) {
+      d.setOrigin(ElaborationOfDefinition)
+      controller.add(d, at.getNextFor(d))
+      log("flattening yields " + d.path)
+    }
+    mod.dfC.normalize {d =>
+      val dS = objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)
+      log("normalizing definiens to " + controller.presenter.asString(dS))
+      dS
+    }
     mod match {
-      case v: Link => return //TODO
       case thy: Theory =>
-        val at = new RepeatedAdd(AtBegin)
-        def add(d: Declaration) {
-          d.setOrigin(ElaborationOfDefinition)
-          controller.add(d, at.getNextFor(d))
-          log("flattening yields " + d.path)
-        }
-        var previous: Option[LocalName] = None
-        thy.dfC.normalize {d => objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)}
-        thy.dfC.normalized.foreach {dfS =>
+        thy.dfC.normalized.foreach {
           //TODO mod.getInnerContext is too small for nested theories
-          dfS match {
             case ComplexTheory(cont) =>
               cont.asDeclarations(mod.toTerm).foreach {d =>
                 add(d)
@@ -197,7 +202,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               }
               var translations = Substitution() // replace all OML's with corresponding OMS's
               // TODO this replaces too many OML's if OML-shadowing occurs
-              def translate(tm: Term) = (new OMLReplacer(translations)).apply(tm, Context.empty)
+              def translate(tm: Term) = (OMLReplacer(translations)).apply(tm, Context.empty)
               at.decls foreach {o =>
                 o match {
                   case IncludeOML(mp, _) =>
@@ -221,11 +226,46 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                 }
               }
             case _ =>
-          }
         }
+      case link: Link =>
+        link.dfC.normalized foreach {
+          case AnonymousMorphismCombinator(am) =>
+            val to = link.to.toMPath
+            val replacer = new OMLReplacer(l => Some(OMS(to ? l)))
+            def translate(tm: Term) = replacer(tm, Context.empty)
+            //TODO add identity maps for skipped declarations
+            am.decls foreach {o =>
+              val tpT = o.tp map translate
+              val dfT = o.df map translate
+              val ntT = NotationContainer(o.nt)
+              val c = Constant(link.toTerm, o.name, Nil, tpT, dfT, None, ntT)
+              add(c)
+            }
+          case _ =>
+        }
+      case dm: DerivedModule =>
+        // TODO do we need to do something here?
     }
   }
 
+  /**
+   * flattens a derived module by calling the respective [[ModuleLevelFeature]] and adding all generated modules 
+   */
+  private def flattenDerivedModule(dm: DerivedModule, rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
+     controller.extman.get(classOf[ModuleLevelFeature], dm.feature) match {
+       case None => Nil
+       case Some(sf) =>
+          val elab = sf.modules(dm)
+          elab.foreach {e =>
+            e.setOrigin(ElaborationOf(dm.path))
+            log("flattening of " + dm.name + " yields " + e)
+            controller.add(e)
+            applyChecked(e)
+          }
+          ElaboratedElement.setFully(dm)
+     }
+  }
+  
   /** adds elaboration of d to parent
    *  for efficiency, parent and its rules may be passed if they are already known
    *  
@@ -418,7 +458,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case (link: Link, dd: DerivedDeclaration) =>
         Nil //TODO 
       case (_, nm: NestedModule) =>
-        // nested module do not affect the semantics of their parent except when they are used, i.e., no external elaboration
+        // nested modules do not affect the semantics of their parent except when they are used, i.e., no external elaboration
         Nil
       case (_,_: Constant) =>
         //TODO maybe allow constants to be marked in a way that forces the normalization of its definiens

@@ -140,7 +140,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion) {
     val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
     dec match {
-      case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
+      case nm: NestedModule =>
         buildTreeMod(node, nm.module, context, reg)
         return
       case _ =>

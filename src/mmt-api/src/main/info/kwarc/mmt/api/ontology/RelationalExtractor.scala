@@ -39,14 +39,18 @@ object MMTExtractor extends RelationalExtractor {
             f(IsDocument(d.path))
             //TODO should use getLocalItems but then it wouldn't work for documents created from folders
             d.getDeclarations.foreach {i =>
-               val c = i match {
+               val cO = i match {
                   case inner: Document =>
                      apply(inner)
-                     inner.path
-                  case oe: OpaqueElement => oe.path
-                  case nr: NRef => nr.target
+                     Some(inner.path)
+                  case oe: OpaqueElement =>
+                    None
+                  case nr: NRef =>
+                    Some(nr.target)
+                  case ii: InterpretationInstruction =>
+                    None
                }
-               f(Declares(d.path, c))
+               cO foreach {c => f(Declares(d.path, c))}
             }
          case n: NRef =>
          case oe: OpaqueElement =>

@@ -17,16 +17,15 @@ import documents._
  * In particular, declaration names must be unique independent of the narrative grouping.
  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
 */
-trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] {self =>
+trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] with HasDefiniens {self =>
    /** this element as a module expression */
    def toTerm : Term
+   
+   /** path if seen as a module */
+   def modulePath: MPath = path.toMPath
 
    /** the context of all declarations in this body */
    def getInnerContext: Context
-   /** the definiens */
-   def dfC : AbstractTermContainer
-   /** the definiens as a term */
-   def df = dfC.get
 
    /**
     * the set of named statements, indexed by name

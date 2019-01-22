@@ -85,7 +85,7 @@ object Common {
       case OMMOD(p) => p
       case _ => return None
     }
-    val morAnon = new AnonymousMorphism(fromTerm,toTerm,Nil)
+    val morAnon = new AnonymousMorphism(Nil)
     // replaces toTerm-OMS's in mor with to-OMLs 
     val trav = OMSReplacer {p =>
       if (to.isDeclared(p.name)) Some(OML(p.name)) else None
@@ -109,7 +109,34 @@ object Common {
       // named diagrams
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
-          case _ => ???
+          case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
+            dm.dfC.normalized flatMap {
+              case AnonymousDiagramCombinator(ad) => Some(ad)
+              case _ => None
+            }
+          case Some(thy: Theory) =>
+            // the theory as a one-node diagram
+            val anonThy = anonymize(solver, thy)
+            val label = LocalName(thy.path)
+            val anonThyN = DiagramNode(label, anonThy)
+            val ad = new AnonymousDiagram(List(anonThyN), Nil, Some(label), None)
+            Some(ad)
+          case Some(vw: View) =>
+            // the view as a one-edge diagram
+            val from = asAnonymousTheory(solver, vw.from).getOrElse(return None)
+            val to   = asAnonymousTheory(solver, vw.to).getOrElse(return None)
+            val mor  = asAnonymousMorphism(solver, vw.from, from, vw.to, to, vw.toTerm).getOrElse(return None)
+            val label = LocalName(vw.path)
+            // TODO this only makes sense if domain and codomain are named theories; otherwise, we should maybe copy the whole diagram
+            val fromL = LocalName(vw.from.toMPath)
+            val toL   = LocalName(vw.to.toMPath)
+            val fromN = DiagramNode(fromL, from)
+            val toN   = DiagramNode(toL, to)
+            val arrow = DiagramArrow(label, fromL, toL, mor)
+            val distArrow = if (vw.isImplicit) Some(label) else None
+            val ad = new AnonymousDiagram(List(fromN,toN), List(arrow), Some(toL), distArrow)
+            Some(ad)
+          case _ => return None
         }
        // explicit anonymous diagrams
       case AnonymousDiagramCombinator(ad) => Some(ad)
@@ -126,27 +153,38 @@ object Common {
  * Open question: Should they be required to find all errors? Maybe only all structural errors?
  */
 
-object Extends extends FlexaryConstantScala(Combinators._path, "extends")
+object Extends extends FlexaryConstantScala(Combinators._path, "extends"){
+  /** the label of the distinguished node after extension */
+  val nodeLabel = LocalName("pres")
+  /** the label of the distinguished arrow after extension (from old to extended theory) */
+  val arrowLabel = LocalName("extend")
+}
 
 // TODO all rules must preserve and reflect typing errors
 // declaration merging must happen somewhere
 
 object ComputeExtends extends ComputationRule(Extends.path) {
-   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-      val Extends(thy,wth@_*) = tm
-      val thyAnon = Common.asAnonymousTheory(solver, thy).getOrElse {return RecurseOnly(List(1))}
-      wth match {
-        case OMLList(extDecls) =>
-          // replace OMS-references to declarations in thy with OML-references to declarations in thyAnon
-          val trav = OMSReplacer {p =>
-            if (thyAnon isDeclared p.name) Some(OML(p.name)) else None
-          }
-          val extDeclsR = extDecls map {oml => trav(oml,stack.context).asInstanceOf[OML]}
-          val extAnon = new AnonymousTheory(thyAnon.mt, thyAnon.decls ::: extDeclsR)
-          Simplify(extAnon.toTerm)
-        case _ => RecurseOnly(List(2))
-      }
-   }
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+    val Extends(diag,wth@_*) = tm
+    val ad = Common.asAnonymousDiagram(solver, diag).getOrElse {return RecurseOnly(List(1))}
+    // Getting the new declarations as List[OML]
+    val extD = wth match {
+      case OMLList(extDecl) => extDecl
+      case _ => return RecurseOnly(List(2))
+    }
+    // dN : distinguished node of the input diagram
+    val dN = ad.getDistNode.getOrElse {
+      solver.error("distinguished node not found")
+      return Simplifiability.NoRecurse
+    }
+    // creating the new AnonymousDiagram
+    val new_decls = dN.theory.decls ::: extD
+    val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
+    val extM = new AnonymousMorphism(new_decls)
+    val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM)
+    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
+    Simplify(result.toTerm)
+  }
 }
 
 object Combine extends FlexaryConstantScala(Combinators._path, "combine")
@@ -199,9 +237,9 @@ object ComputeRename extends ComputationRule(Rename.path) {
     val atR = dN.theory.copy
     atR.rename(oldNew:_*)
     val dNR = DiagramNode(Rename.nodeLabel, atR)
-    val renM = new AnonymousMorphism(dN.theory.toTerm, atR.toTerm, oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
+    val renM = new AnonymousMorphism(oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
     val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Rename.nodeLabel, Rename.arrowLabel) 
+    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel)) 
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {
@@ -240,7 +278,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
     val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return Recurse)
     // translate all declarations of thy that are not from dom via mor and add them to cod
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
-    val translator = new OMLReplacer(morAsSub)
+    val translator = OMLReplacer(morAsSub)
     val pushout = codAnon
     thyAnon.decls.foreach {
       case RealizeOML(p,_) =>

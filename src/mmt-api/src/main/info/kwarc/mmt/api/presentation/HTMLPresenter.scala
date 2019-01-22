@@ -366,6 +366,13 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
+      case ii: InterpretationInstruction =>
+        div("instruction") {
+          span {text(ii.feature)}
+          ii.arguments.foreach {s =>
+            text(s)
+          }
+        }
       case r: NRef =>
         val label = r match {
            case _:DRef => "dref"

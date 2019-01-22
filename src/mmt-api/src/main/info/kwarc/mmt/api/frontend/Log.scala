@@ -45,7 +45,7 @@ class Report extends Logger {
 
   /** output is categorized, the elements of group determine which categories are considered
     * the categories "user" (for user input), "error" are output by default, and "temp" (for temporary logging during debugging) */
-  private[api] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response", "lmh")
+  private[mmt] val groups = scala.collection.mutable.Set[String]("user", "error", "temp", "response", "lmh")
   /**  true if debug logging is enabled */
   def checkDebug = groups contains "debug"
   

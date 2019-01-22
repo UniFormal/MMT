@@ -184,7 +184,7 @@ object NotationContainer {
       nc
    }
    /** parses a notation element containing several notations of different dimensions (1-dimensional is default) */
-   def parse(ns: scala.xml.NodeSeq, name : GlobalName): NotationContainer = {
+   def parse(ns: scala.xml.NodeSeq, name : ContentPath): NotationContainer = {
       val nc = new NotationContainer
       ns foreach {c =>
          val tn = TextNotation.parse(c, NamespaceMap(name))

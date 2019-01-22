@@ -2,7 +2,7 @@ package info.kwarc.mmt.pvs
 
 import info.kwarc.mmt.api._
 import checking._
-import modules.{Module, Theory}
+import modules._
 import uom._
 import notations.{HOAS, NestedHOASNotation}
 import objects._
@@ -70,7 +70,7 @@ object PVSNotation extends NotationExtension {
 // Structural Features
 
 class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike {
-  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = {
     val dom = getDomain(dd)
     val body = controller.simplifier.getBody(Context.empty, dom) match {
       case t : Theory => t.path

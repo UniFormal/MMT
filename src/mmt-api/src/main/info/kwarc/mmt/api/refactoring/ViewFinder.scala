@@ -160,6 +160,7 @@ class ViewFinder extends frontend.Extension {
               flatten(inc.from.toMPath)
               th add inc
             case nm : NestedModule if nm.module.isInstanceOf[Theory] =>
+              // TODO this case does not match DerivedDeclaration anymore
               val old = nm.module.asInstanceOf[Theory]
               val in = new Theory(old.parent,old.name,old.meta,old.paramC,old.dfC)
               th.getDeclarations.foreach(in.add(_))

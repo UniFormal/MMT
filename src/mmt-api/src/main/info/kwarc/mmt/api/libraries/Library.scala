@@ -340,7 +340,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
     // now the actual lookup
     mod match {
-      case t: Theory =>
+      case t: AbstractTheory =>
+         // unifies theories and derived content elements
          t.df match {
            case Some(df) if !uom.ElaboratedElement.isPartially(t) =>
              // lookup in definiens if not elaborated yet; alternatively: call elaboration
@@ -374,8 +375,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }
 
-  /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
-  private def getInTheory(t: Theory, args: List[Term], name: LocalName, error: String => Nothing) = {
+  /** auxiliary method of get for lookups in a [[Theory]] */
+  private def getInTheory(t: AbstractTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
      val declLnOpt = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
@@ -426,7 +427,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            }
          case Nil =>
            throw GetError("empty name not allowed")
-         case _ => throw NotFound(t.path ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
+         case _ => throw NotFound(t.modulePath ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
   }
@@ -434,7 +435,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * look up 'name' in elaboration of dd
    */
-  private def getInElaboration(parent: Module, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInElaboration(parent: AbstractTheory, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
@@ -787,6 +788,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              addIncludeToImplicit(t.toTerm, p, args)
           }
         case dd: DerivedDeclaration =>
+          implicitGraph(dd.home, OMMOD(dd.modulePath)) = OMIDENT(dd.home)
         case e: NestedModule =>
           add(e.module, at)
           //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of

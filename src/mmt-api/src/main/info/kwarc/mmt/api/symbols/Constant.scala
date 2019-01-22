@@ -8,19 +8,16 @@ import moc._
 /**
  * the abstract interface to MMT constants with a few basic methods
  */
-abstract class Constant extends Declaration with HasNotation {
-   val feature = "constant"
-   def alias: List[LocalName]
-   def tpC: TermContainer
-   def dfC: TermContainer
-   def rl : Option[String]
+abstract class Constant extends Declaration with HasType with HasDefiniens with HasNotation {
+  val feature = "constant"
+  def alias: List[LocalName]
+  def tpC: TermContainer
+  def dfC: TermContainer
+  def rl : Option[String]
    
-   def vs: Visibility
+  def vs: Visibility
 
   override def alternativeNames = alias
-
-  def tp = tpC.get
-  def df = dfC.get
 
   def getComponents = List(TypeComponent(tpC), DefComponent(dfC)) ::: notC.getComponents
   def getDeclarations = Nil
@@ -28,9 +25,9 @@ abstract class Constant extends Declaration with HasNotation {
   def toNode =
      <constant name={name.toPath} alias={if (alias.isEmpty) null else alias.map(_.toPath).mkString(" ")} role={rl.getOrElse(null)}>
        {getMetaDataNode}
-       {if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil}
-       {if (df.isDefined) <definition>{df.get.toOBJNode}</definition> else Nil}
-       {notC.toNode}
+       {tpNode}
+       {dfNode}
+       {notNode}
      </constant>
   override def toString = name.toString + alias.map(" @ " + _).mkString(" ") +
      tp.map(" : " + _).getOrElse("") + df.map(" = " + _).getOrElse("") + notC.toString
@@ -41,8 +38,8 @@ abstract class Constant extends Declaration with HasNotation {
   def translate(newHome: Term, prefix: LocalName, translator: Translator, context : Context): FinalConstant = {
      Constant(
          newHome, prefix / name, alias.map(prefix / _),
-         tp map {t => translator.applyType(context, t)},
-         df map {d => translator.applyDef(context, d)},
+         translateTp(translator, context),
+         translateDf(translator, context),
          rl, notC
      )
   }

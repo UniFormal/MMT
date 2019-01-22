@@ -1,7 +1,6 @@
-package info.kwarc.mmt.lf
+package info.kwarc.mmt.test
 
-import info.kwarc.mmt.api.test.MMTIntegrationTest
-import info.kwarc.mmt.api.test.testers._
+import info.kwarc.mmt.test.testers._
 
 object LFTest extends MMTIntegrationTest(
   "MMT/urtheories",

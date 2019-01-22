@@ -14,15 +14,13 @@ import presentation._
  * @param tpC the domain theory
  * @param isImplicit true iff the link is implicit
  */
-class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link {
+class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link with HasType {
    type ThisType = Structure
    val feature = "structure"
    /** the domain of a structure is its type */
    def fromC = tpC
    /** the domain of a structure is its home theory*/
    val toC = new FinalTermContainer(home)
-   /** the domain as a term */
-   def tp = tpC.get
    def namePrefix = name
    def isInclude = Include.unapply(this).isDefined
    /** override in order to permit implicit structures (identified by their domain) */
