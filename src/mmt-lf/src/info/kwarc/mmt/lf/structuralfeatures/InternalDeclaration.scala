@@ -65,7 +65,7 @@ private object InternalDeclarationUtil {
       }
     }
     iterPre(e)
-  }  
+  }
 
   val theory: MPath = LF._base ? "DHOL"
   object Ded {

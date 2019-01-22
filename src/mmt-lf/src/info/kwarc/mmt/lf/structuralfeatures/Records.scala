@@ -13,6 +13,14 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 
+object RecordUtil {
+    val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
+    val recTypePath = recHome ? "Rectype"
+    val recExpPath = recHome ? "Recexp"
+}
+import RecordUtil._
+import symbols.StructuralFeatureUtil._
+
 /** theories as a set of types of expressions */ 
 class Records extends StructuralFeature("record") with ParametricTheoryLike {
 
@@ -196,26 +204,13 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   }
   
   def declaresRecords(home: ModuleOrLink) = {
-    val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
-    val recTypePath = recHome ? "Rectype"
-    val recExpPath = recHome ? "Recexp"
     val knownDecls = home.getDeclarations.map(_.path)
-    knownDecls.contains(recTypePath) && knownDecls.contains(recExpPath)
+    knownDecls.contains(recExpPath)
   }
   
   def elaborateToRecord(ctx: Context)(implicit parent: GlobalName) = {
-    val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
-    val recTypePath = recHome ? "Rectype"
-    val recExpPath = recHome ? "Recexp"
     val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
-    new Elaboration {
-      val elabDecls = List(makeConst(parent.name, () => {OMA(OMS(recTypePath), recordFields)}))
-      def domain = elabDecls map {d => d.name}
-      def getO(n: LocalName) = {
-        elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
-        elabDecls.find(_.name == n)
-      }
-    }
+    singleExternalDeclaration(makeConst(parent.name, () => {OMA(OMS(recTypePath), recordFields)}))
   }
 }
 

@@ -201,6 +201,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
+     case dd: DerivedDeclaration => dd
      case _ => error("element exists but is not module-like: " + ce.path)
   }
 

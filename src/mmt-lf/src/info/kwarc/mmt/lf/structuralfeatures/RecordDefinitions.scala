@@ -12,6 +12,11 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 
+import RecordUtil._
+import symbols.StructuralFeatureUtil._
+import TermConstructingFeatureUtil._
+
+
 /** theories as a set of types of expressions */ 
 class RecordDefinitions extends StructuralFeature("record_term") with TypedParametricTheoryLike {
 
@@ -31,62 +36,58 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
     val (recDefPath, context, indParams) = ParamType.getParams(dd)
-    val (recD, indCtx) = controller.library.get(recDefPath) match {
-      case recD: DerivedDeclaration if (recD.feature == "record") => (recD, Type.getParameters(recD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding record at "+recDefPath.toString()
-            +" but no derived declaration found at that location.")
-    }
-    
-    def correspondingDecl(d: LocalName): Constant = {
-      recD.getO(d).getOrElse(
-        throw LocalError("No corresponding declaration found for "+d)) match {
-        case c: Constant=> c
-        case dec => throw LocalError("Expected a constant at "+dec.path+".")
+    if (declaresRecords(parent)) {elaborateToRecordExp(context, indParams)} else {
+      val (recD, indCtx) = controller.library.get(recDefPath) match {
+        case recD: DerivedDeclaration if (recD.feature == "record") => (recD, Type.getParameters(recD))
+        case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
+        case _ => throw LocalError("Expected definition of corresponding record at "+recDefPath.toString()
+              +" but no derived declaration found at that location.")
       }
-    }
-    
-    var decls:List[InternalDeclaration] = Nil
-    val recDefs = recD.getDeclarationsElaborated map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
-
-    
-    // read in the declarations and replace all occurances of previously declared symbols by their definitions
-    dd.getDeclarations foreach {
-      case c: Constant  if (c.df.isDefined) =>
-        val intDecl = fromConstant(c, controller, Some(context))
-        def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
-        def mpDf(df: Term):Term = OMSReplacer(repDfs)(df, Context.empty)
-        val repDf = Some(mpDf(intDecl.df.get))
-        
-        intDecl match {
-          case d : TermLevel => val repD = d.copy(df = repDf); decls :+= repD
-          case d : TypeLevel => val repD = d.copy(df = repDf); decls :+= repD
-          case d : StatementLevel => val repD = d.copy(df = repDf); decls :+= repD 
-         }
-      case c: Constant => throw LocalError("Unsupported corresponding declaration: Expected constant with definien at "+c.path)
-      case _ => throw LocalError("unsupported declaration")
-    }
-        
-    // check whether all declarations match their corresponding constructors
-    decls foreach { d => checkDecl(d, fromConstant(correspondingDecl(d.name),controller, None)) }
-    // and whether we have all necessary declarations
-    recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
-    
-    val Ltp = () => {
-      PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("type")), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
-    }
-    val Ldf = () => {
-      Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("make")), indParams), decls.map(_.df.get))))
-    }
-    
-    val make = makeConst(LocalName("make"), Ltp, Ldf)
-    //log(defaultPresenter(make)(controller))
-    
-    new Elaboration {
-      def domain = List(make.name)
-      def getO(n: LocalName) = {
-        List(make) find (_.name == n) foreach (d => log(defaultPresenter(d)(controller)))
-        List(make) find (_.name == n)
+      
+      var decls:List[InternalDeclaration] = Nil
+      val recDefs = recD.getDeclarationsElaborated map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
+  
+      
+      // read in the declarations and replace all occurances of previously declared symbols by their definitions
+      dd.getDeclarations foreach {
+        case c: Constant  if (c.df.isDefined) =>
+          val intDecl = fromConstant(c, controller, Some(context))
+          def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
+          def mpDf(df: Term):Term = OMSReplacer(repDfs)(df, Context.empty)
+          val repDf = Some(mpDf(intDecl.df.get))
+          
+          intDecl match {
+            case d : TermLevel => val repD = d.copy(df = repDf); decls :+= repD
+            case d : TypeLevel => val repD = d.copy(df = repDf); decls :+= repD
+            case d : StatementLevel => val repD = d.copy(df = repDf); decls :+= repD 
+           }
+        case c: Constant => throw LocalError("Unsupported corresponding declaration: Expected constant with definien at "+c.path)
+        case _ => throw LocalError("unsupported declaration")
+      }
+          
+      // check whether all declarations match their corresponding constructors
+      decls foreach { d => correspondingDecl(recD, d.name) map {decl =>
+        checkDecl(d, fromConstant(decl,controller, None))}
+      }
+      // and whether we have all necessary declarations
+      recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
+      
+      val Ltp = () => {
+        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("type")), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+      }
+      val Ldf = () => {
+        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("make")), indParams), decls.map(_.df.get))))
+      }
+      
+      val make = makeConst(LocalName("make"), Ltp, Ldf)
+      //log(defaultPresenter(make)(controller))
+      
+      new Elaboration {
+        def domain = List(make.name)
+        def getO(n: LocalName) = {
+          List(make) find (_.name == n) foreach (d => log(defaultPresenter(d)(controller)))
+          List(make) find (_.name == n)
+        }
       }
     }
   }
@@ -99,6 +100,18 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
    */
   def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {//TODO: This should be implemented to provide more accurate error messages
     
+  }
+  
+  def declaresRecords(home: ModuleOrLink) = {
+    val knownDecls = home.getDeclarations.map(_.path)
+    knownDecls.contains(recExpPath)
+  }
+  
+  def elaborateToRecordExp(ctx: Context, params: List[Term])(implicit parent: GlobalName) = {
+    val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
+    singleExternalDeclaration(makeConst(parent.name, 
+        () => {OMA(OMS(recTypePath), recordFields)}, 
+        () => {Some(OMA(OMS(recExpPath), params))}))
   }
 }
 

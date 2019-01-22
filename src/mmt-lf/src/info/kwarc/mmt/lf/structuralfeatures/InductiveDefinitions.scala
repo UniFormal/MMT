@@ -12,6 +12,16 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 
+object TermConstructingFeatureUtil {
+    def correspondingDecl(dd: DerivedDeclaration, d: LocalName): Option[Constant] = {
+      dd.getO(d) map {
+        case c: Constant=> c
+        case dec => throw GeneralError("Expected a constant at "+dec.path+".")
+      }
+    }
+}
+import TermConstructingFeatureUtil._
+
 /** theories as a set of types of expressions */ 
 class InductiveDefinitions extends StructuralFeature("inductive_definition") with TypedParametricTheoryLike {
   
@@ -43,13 +53,6 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     var indTpls: List[TypeLevel] = indDefs.filter{case tpl: TypeLevel => true case _ => false}.map{case t:TypeLevel => t}
     
     val indTplNames = indTpls map (_.name)
-    def correspondingDecl(d: LocalName): Option[Constant] = {
-      indD.getO(d) map {
-        case c: Constant=> c
-        case dec => throw LocalError("Expected a constant at "+dec.path+".")
-      }
-    }
-    
     
     var decls:List[InternalDeclaration] = Nil
     
@@ -72,7 +75,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         
     // check whether all declarations match their corresponding constructors
     decls foreach { 
-      d => correspondingDecl(d.name) map { decl => 
+      d => correspondingDecl(indD, d.name) map { decl => 
       checkDecl(d, fromConstant(decl, controller, None))
       }
     }

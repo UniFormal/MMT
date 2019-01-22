@@ -683,3 +683,17 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   // def modules(d: DerivedDeclaration): List[Module] = Nil
   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 }
+
+
+object StructuralFeatureUtil {
+  def singleExternalDeclaration(d: Constant) = {
+    new Elaboration {
+      val elabDecls = List(d)
+      def domain = elabDecls map {d => d.name}
+      def getO(n: LocalName) = {
+        elabDecls.find(_.name == n)
+      }
+    }
+  }
+  
+}
