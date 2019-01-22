@@ -83,8 +83,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     s match {
       case Include(_) =>
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
-      case dm: DerivedModule =>
-        // TODO wait for more examples to understand how to handle derived modules here
       case _: DerivedDeclaration =>
         // nothing to do, but would otherwise be caught be next case
       case m: ModuleOrLink =>
@@ -182,7 +180,12 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       controller.add(d, at.getNextFor(d))
       log("flattening yields " + d.path)
     }
-    mod.dfC.normalize {d => objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)}
+    println(mod.toString)
+    mod.dfC.normalize {d =>
+      val dS = objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)
+      println("normalizing definiens to " + controller.presenter.asString(dS))
+      dS
+    }
     mod match {
       case thy: Theory =>
         thy.dfC.normalized.foreach {
@@ -241,6 +244,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             }
           case _ =>
         }
+      case dm: DerivedModule =>
+        // TODO do we need to do something here?
     }
   }
 

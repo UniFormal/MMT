@@ -15,14 +15,14 @@ object DiagramDefinition {
 class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
    def getHeaderNotation = Nil
    
-   /** not sure if this is even called, need to wait for more experience with checking derived modules */
+   /**  */
    def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment) {}
    
    override def modules(dm: DerivedModule) = {
-     val diag = dm.df.getOrElse {throw LocalError("no definiens found")}
+     val diag = dm.dfC.normalized.getOrElse {throw LocalError("no definiens found")}
      val ad = diag match {
        case AnonymousDiagramCombinator(ad) => ad
-       case _ => throw LocalError("definiens not a diagram") // TODO should use proper error handler 
+       case df => throw LocalError("definiens not a diagram: " + controller.presenter.asString(df)) // TODO should use proper error handler 
      }
      def labelToTerm(l: LocalName) = OMMOD(dm.path / l) 
      val modules = ad.getElements.mapOrSkip {e =>

@@ -29,7 +29,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
         case _ => " " + name
       }
     }
-    feature + s + tpC.get.map(" " + _.toString).getOrElse("")
+    feature + s + tpC.get.map(" : " + _.toString).getOrElse("")
   }
  
   override def toNode : Elem = {

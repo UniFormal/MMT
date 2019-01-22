@@ -101,6 +101,8 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             rh("module " + r.target.toPath)
          case oe: OpaqueElement =>
             controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
+         case ii: InterpretationInstruction =>
+            rh(ii.toString)
          case c: Constant => doConstant(c,indent)
          case t: Theory => doTheory(t, indent)
          case v: View => doView(v,indent)

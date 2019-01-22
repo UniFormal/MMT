@@ -399,14 +399,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
         case "/" =>
             val oe = readOpaque(parentInfo, Context.empty)
             seCont(oe)
-        case "namespace" =>
-          // default namespace is set relative to current default namespace
-          val ns = readDPath
-          state.namespaces = state.namespaces(DPath(ns.uri))
-        case "import" =>
-          val (n, _) = state.reader.readToken
-          val ns = readDPath
-          state.namespaces = state.namespaces.add(n, ns.uri)
+        case k if InterpretationInstruction.all contains k =>
+          val (text,reg) = state.reader.readModule
+          val ii = InterpretationInstruction.parse(doc.path, text, state.namespaces)
+          state.namespaces = state.namespaces process ii
+          seCont(ii)
         case "theory" =>
           readTheory(parentInfo, Context.empty)
         case ViewKey(_) => readView(parentInfo, Context.empty, isImplicit = false)
@@ -437,7 +434,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   // not actually using the feature (there might be multiple for the same keyword); just checking that at least one exists
                   readDerivedModule(parentInfo, Context.empty, k)
                 case None =>
-                  throw ParseError("unknown keyword: " + k)
+                  throw makeError(reg, "unknown keyword: " + k)
               }
           }
       }
@@ -686,6 +683,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readInModuleAux(mod, docRoot / nextSection, context, features) // compiled code is not actually tail-recursive
   }
 
+  private val definiensDelimiter = List("abbrev", "extends", ":=")
+  
   /** auxiliary function to read Theories
     *
     * @param parent the containing document or module (if any)
@@ -713,7 +712,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       None
     val meta = (metaReg,parent) match {
       case (Some((p,_)),_) => Some(p)
-      case _ => None
+      case _ => state.namespaces.meta
     }
     val contextMeta = meta match {
       case Some(p) => context ++ p
@@ -729,24 +728,24 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       case Some(params) => contextMeta ++ params
     }
     val dfC = new TermContainer
-    if (delim._1 == "abbrev" || delim._1 == "extends") {
+    val hasDef = definiensDelimiter contains delim._1
+    if (hasDef) {
       doComponent(dfC, contextMetaParams) // DefComponent
-      delim = state.reader.readToken
     }
     val t = new Theory(ns, name, meta, paramC, dfC)
     metaReg foreach {case (_,r) => SourceRef.update(t.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
     moduleCont(t, parent)
-    if (delim._1 == "") {
-      end(t)
-    } else if (delim._1 == "=") {
-      val features = getFeatures(contextMeta)
-      logGroup {
-        readInModule(t, context ++ t.getInnerContext, features)
+    if (!hasDef) {
+      if (delim._1 == "=") {
+        val features = getFeatures(contextMeta)
+        logGroup {
+          readInModule(t, context ++ t.getInnerContext, features)
+        }
+      } else {
+        throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
       }
-      end(t)
-    } else {
-      throw makeError(delim._2, "':' or '=' or 'abbrev' expected")
     }
+    end(t)
   }
 
   /** auxiliary function to read views
@@ -814,31 +813,32 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       None
     val meta = (metaReg,parent) match {
       case (Some((p,_)),_) => Some(p)
-      case _ => None
+      case _ => state.namespaces.meta
     }
     val contextMeta = meta match {
       case Some(p) => context ++ p
       case _ => context
     }
     val dfC = new TermContainer
-    if (delim._1 == "abbrev" || delim._1 == "extends" || delim._1 == ":=") {
+    // there is either a definiens or a body
+    val hasDef = definiensDelimiter contains delim._1 
+    if (hasDef) {
       doComponent(dfC, contextMeta) // DefComponent
-      delim = state.reader.readToken
     }
     val dm = new DerivedModule(feature, ns, name, meta, new TermContainer(), dfC, new NotationContainer())
     //metaReg foreach {case (_,r) => SourceRef.update(dm.metaC.get.get, r)} //awkward, but needed attach a region to the meta-theory; same problem for structure domains
     moduleCont(dm, parent)
-    if (delim._1 == "") {
-      end(dm)
-    } else if (delim._1 == "=") {
-      val features = getFeatures(contextMeta)
-      logGroup {
-        readInModule(dm, context ++ dm.getInnerContext, features)
+    if (!hasDef) {
+      if (delim._1 == "=") {
+        val features = getFeatures(contextMeta)
+        logGroup {
+          readInModule(dm, context ++ dm.getInnerContext, features)
+        }
+      } else {
+        throw makeError(delim._2, "':' or '=' or ':=', or 'abbrev' expected")
       }
-      end(dm)
-    } else {
-      throw makeError(delim._2, "':' or '=' or ':=', or 'abbrev' expected")
     }
+    end(dm)
   }
 
   /**

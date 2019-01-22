@@ -414,10 +414,13 @@ object MorphType {
 object TheoryType {
   val path = ModExp.theorytype
 
-  def apply(params: Context) = ComplexTerm(this.path, Nil, params, Nil)
+  def apply(params: Context) = {
+    if (params.isEmpty) OMS(this.path)
+    else ComplexTerm(this.path, Nil, params, Nil)
+  }
 
   def unapply(t: Term): Option[Context] = t match {
-    case OMID(this.path) => Some(Nil)
+    case OMS(this.path) => Some(Nil)
     case ComplexTerm(this.path, Substitution(), params, Nil) => Some(params)
     case _ => None
   }

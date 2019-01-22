@@ -163,6 +163,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         //TODO decide what to do here; usually, checking is redundant and may even fail here if the context is not fully elaborated and loaded
         //apply(target)
+      case ii: InterpretationInstruction =>
+        // nothing to do; but we could carry a namespace map around        
       case nm: NestedModule =>
         check(context, nm.module, streamed)
       case rc: RuleConstant =>
@@ -333,9 +335,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     implicit val ce = env.ce
     e match {
       case d: Document =>
-      case t: AbstractTheory with Module =>
-        // unifies Theory and DerivedModule but not DerivedDeclaration
-        // eventually DerivedModule will presumably need its own case
+      case t: Theory =>
         var contextMeta = context
         t.meta foreach { mt =>
           checkTheory(Some(CPath(t.path, TypeComponent)), context, OMMOD(mt))
@@ -382,6 +382,23 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         if (s.fromC.get.isEmpty)
           throw InvalidElement(s, "could not infer domain of structure")
+      case dm: DerivedModule =>
+        var contextMeta = context
+        dm.meta foreach {mt =>
+          checkTheory(Some(CPath(dm.path, TypeComponent)), context, OMMOD(mt))
+          contextMeta = contextMeta ++ mt
+        }
+        val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
+        sfOpt match {
+          case None =>
+            env.errorCont(InvalidElement(dm, s"structural feature '${dm.feature}' not registered"))
+          case Some(sf) =>
+            // TODO check header of derived module properly
+            dm.df foreach {df =>
+              val (dfR,_) = checkTermTop(contextMeta, df)
+              dm.dfC.analyzed = dfR
+            }
+        }
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -423,6 +440,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           env.errorCont(ie)
         }
       case s: Structure =>
+      case dm: DerivedModule =>
+        val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
+        // error for sfOpt.isEmpty is raised in checkElementegin already
+        sfOpt foreach {sf =>
+          sf.check(dm)
+        }
+        
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         // error for sfOpt.isEmpty is raised in checkElementegin already
