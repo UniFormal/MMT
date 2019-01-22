@@ -401,7 +401,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
             seCont(oe)
         case k if InterpretationInstruction.all contains k =>
           val (text,reg) = state.reader.readModule
-          val ii = InterpretationInstruction.parse(doc.path, text, state.namespaces)
+          val ii = InterpretationInstruction.parse(doc.path, k + " " + text, state.namespaces)
           state.namespaces = state.namespaces process ii
           seCont(ii)
         case "theory" =>

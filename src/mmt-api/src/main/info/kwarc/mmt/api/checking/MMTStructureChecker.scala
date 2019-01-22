@@ -463,6 +463,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       ne match {
         case doc: Document => doc.getDeclarations foreach doDoc
         case r: NRef =>
+        case ii: InterpretationInstruction =>
         case oe: OpaqueElement =>
           check(contextI, oe, false)(envI)
       }
