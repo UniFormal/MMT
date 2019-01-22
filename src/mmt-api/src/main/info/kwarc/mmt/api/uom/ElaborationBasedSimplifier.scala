@@ -180,10 +180,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       controller.add(d, at.getNextFor(d))
       log("flattening yields " + d.path)
     }
-    println(mod.toString)
     mod.dfC.normalize {d =>
       val dS = objectLevel(d, SimplificationUnit(mod.getInnerContext, false, true), rules)
-      println("normalizing definiens to " + controller.presenter.asString(dS))
+      log("normalizing definiens to " + controller.presenter.asString(dS))
       dS
     }
     mod match {

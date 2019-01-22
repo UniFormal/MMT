@@ -395,8 +395,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case Some(sf) =>
             // TODO check header of derived module properly
             dm.df foreach {df =>
-              val (dfR,_) = checkTermTop(contextMeta, df)
-              dm.dfC.analyzed = dfR
+              // this is one possible check, but for DiagramDefinitions, it cannot handle the dynamic extension of the context
+              // val (dfR,_) = checkTermTop(contextMeta, df)
+              dm.dfC.analyzed = df
             }
         }
       case dd: DerivedDeclaration =>

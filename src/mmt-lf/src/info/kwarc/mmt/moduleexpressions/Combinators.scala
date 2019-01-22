@@ -110,8 +110,9 @@ object Common {
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
           case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
-            dm.dfC.normalized map {
-              case AnonymousDiagramCombinator(ad) => ad
+            dm.dfC.normalized flatMap {
+              case AnonymousDiagramCombinator(ad) => Some(ad)
+              case _ => None
             }
           case Some(thy: Theory) =>
             // the theory as a one-node diagram

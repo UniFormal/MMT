@@ -506,7 +506,7 @@ class NotationBasedParser extends ObjectParser {
        lni match {
          case None =>
          case Some(lni) =>
-             (subs:::args).find(_._1 == lni.argument) foreach {case (_,e) =>
+           (subs:::args).find(_._1 == lni.argument) foreach {case (_,e) =>
              val tO = lni.role match {
                case LocalNotationInfo.Theory =>
                  Some(e)
