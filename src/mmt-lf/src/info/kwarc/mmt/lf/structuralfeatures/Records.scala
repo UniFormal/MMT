@@ -31,45 +31,48 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    */
   def elaborate(parent: Module, dd: DerivedDeclaration) = {
     val params = Type.getParameters(dd)
-    val context = if (params.nonEmpty) Some(params) else None
     implicit val parentTerm = dd.path
-    // to hold the result
-    var elabDecls : List[Constant] = Nil
-    
-    val structure = structureDeclaration(Some("typeDecl"), context)
-    
-    val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
-      case c: Constant => fromConstant(c, controller, context)
-      case _ => throw LocalError("unsupported declaration")
-    }
-    val declCtx = origDecls map(d => OMV(LocalName(d.name)) % d.internalTp)
-    val TpDeclCtx = origDecls filter (_.isTypeLevel) map (_.toVarDecl)
-       
-    val recordType = makeConst(LocalName("type"), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})
-    val decls : List[Constant] = toEliminationDecls(origDecls, declCtx, TpDeclCtx, recordType.path)
-    val make : Constant = this.introductionDeclaration(recordType.toTerm, origDecls, None, context)
-    
-    //elabDecls ::= structure
-    elabDecls ::= recordType
-    elabDecls ::= make
 
-    // copy all the declarations
-    decls foreach (elabDecls ::= _)
-    
-    // the no junk axioms
-    elabDecls = elabDecls.reverse ++ noJunksDeclarations(params, declCtx, TpDeclCtx, recordType.toTerm, make.path, origDecls)
-    
-    elabDecls :+= reprDeclaration(recordType.path, make.path, declCtx, TpDeclCtx, decls map (_.path), Some("rec"), context)
-    elabDecls :+= equalityDecl(recordType.path, make.path, declCtx, origDecls, context)
-    elabDecls ++= convEqualityDecls(recordType.path, make.path, declCtx, origDecls, context)
-    
-    //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
-    new Elaboration {
-      val elabs : List[Declaration] = Nil
-      def domain = elabDecls map {d => d.name}
-      def getO(n: LocalName) = {
-        elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
-        elabDecls.find(_.name == n)
+    if (declaresRecords(parent)) {elaborateToRecord(params)} else {
+      val context = if (params.nonEmpty) Some(params) else None
+      // to hold the result
+      var elabDecls : List[Constant] = Nil
+      
+      val structure = structureDeclaration(Some("typeDecl"), context)
+      
+      val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
+        case c: Constant => fromConstant(c, controller, context)
+        case _ => throw LocalError("unsupported declaration")
+      }
+      val declCtx = origDecls map(d => OMV(LocalName(d.name)) % d.internalTp)
+      val TpDeclCtx = origDecls filter (_.isTypeLevel) map (_.toVarDecl)
+         
+      val recordType = makeConst(LocalName("type"), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})
+      val decls : List[Constant] = toEliminationDecls(origDecls, declCtx, TpDeclCtx, recordType.path)
+      val make : Constant = this.introductionDeclaration(recordType.toTerm, origDecls, None, context)
+      
+      //elabDecls ::= structure
+      elabDecls ::= recordType
+      elabDecls ::= make
+  
+      // copy all the declarations
+      decls foreach (elabDecls ::= _)
+      
+      // the no junk axioms
+      elabDecls = elabDecls.reverse ++ noJunksDeclarations(params, declCtx, TpDeclCtx, recordType.toTerm, make.path, origDecls)
+      
+      elabDecls :+= reprDeclaration(recordType.path, make.path, declCtx, TpDeclCtx, decls map (_.path), Some("rec"), context)
+      elabDecls :+= equalityDecl(recordType.path, make.path, declCtx, origDecls, context)
+      elabDecls ++= convEqualityDecls(recordType.path, make.path, declCtx, origDecls, context)
+      
+      //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
+      new Elaboration {
+        val elabs : List[Declaration] = Nil
+        def domain = elabDecls map {d => d.name}
+        def getO(n: LocalName) = {
+          elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
+          elabDecls.find(_.name == n)
+        }
       }
     }
   }
@@ -189,6 +192,29 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
         PiOrEmpty(context++declCtx++args, Eq(x_d._1, ApplyGeneral(dElim, params:+ApplyGeneral(OMS(recMake), params++args.map(_.toTerm))), x_d._2))
       }
       makeConst(uniqueLN("induct_"+decl.name), Ltp)
+    }
+  }
+  
+  def declaresRecords(home: Module) = {
+    val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
+    val recTypePath = recHome ? "Rectype"
+    val recExpPath = recHome ? "Recexp"
+    val knownDecls = home.getDeclarations.map(_.path)
+    knownDecls.contains(recTypePath) && knownDecls.contains(recExpPath)
+  }
+  
+  def elaborateToRecord(ctx: Context)(implicit parent: GlobalName) = {
+    val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
+    val recTypePath = recHome ? "Rectype"
+    val recExpPath = recHome ? "Recexp"
+    val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
+    new Elaboration {
+      val elabDecls = List(makeConst(parent.name, () => {OMA(OMS(recTypePath), recordFields)}))
+      def domain = elabDecls map {d => d.name}
+      def getO(n: LocalName) = {
+        elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
+        elabDecls.find(_.name == n)
+      }
     }
   }
 }

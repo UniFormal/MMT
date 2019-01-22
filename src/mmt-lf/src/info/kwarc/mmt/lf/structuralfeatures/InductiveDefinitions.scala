@@ -43,9 +43,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     var indTpls: List[TypeLevel] = indDefs.filter{case tpl: TypeLevel => true case _ => false}.map{case t:TypeLevel => t}
     
     val indTplNames = indTpls map (_.name)
-    def correspondingDecl(d: LocalName): Constant = {
-      indD.getO(d).getOrElse(
-        throw LocalError("No corresponding declaration found for "+d)) match {
+    def correspondingDecl(d: LocalName): Option[Constant] = {
+      indD.getO(d) map {
         case c: Constant=> c
         case dec => throw LocalError("Expected a constant at "+dec.path+".")
       }
@@ -72,7 +71,11 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     }
         
     // check whether all declarations match their corresponding constructors
-    decls foreach { d => checkDecl(d, fromConstant(correspondingDecl(d.name),controller, None)) }
+    decls foreach { 
+      d => correspondingDecl(d.name) map { decl => 
+      checkDecl(d, fromConstant(decl, controller, None))
+      }
+    }
     // and whether we have all necessary declarations
     indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
