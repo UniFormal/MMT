@@ -67,10 +67,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   def makeNotation(owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, region : SourceRegion) : MMTNotAsset
   def makeVariableInContext(con : Context, vd : VarDecl,parent: CPath, region: SourceRegion) : MMTObjAsset
 
-  protected def moduleLabel(m: Module) = (m match {
-    case _ : Theory => "theory"
-    case _: modules.View => "view"
-  }) + " " + m.path.last
+  protected def moduleLabel(m: Module) = m.feature + " " + m.name.last
   protected def declarationLabel(dec : Declaration) = dec match {
     case Include(_, from,_) => "include " + from.last
     case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
