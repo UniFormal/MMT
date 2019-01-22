@@ -195,7 +195,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
     }
   }
   
-  def declaresRecords(home: Module) = {
+  def declaresRecords(home: ModuleOrLink) = {
     val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
     val recTypePath = recHome ? "Rectype"
     val recExpPath = recHome ? "Recexp"
