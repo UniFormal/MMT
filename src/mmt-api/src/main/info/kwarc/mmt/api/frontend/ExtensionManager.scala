@@ -9,6 +9,7 @@ import libraries._
 import opaque._
 import parser._
 import presentation._
+import symbols._
 import proving._
 import uom._
 import presentation._
@@ -145,7 +146,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     classOf[ontology.QueryFunctionExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
-    classOf[BuildTarget]
+    classOf[BuildTarget],
+    classOf[StructuralFeature], classOf[ModuleLevelFeature] 
   )
 
 

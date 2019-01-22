@@ -429,7 +429,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               }
             case None =>
               // other keywords are treated as module level features
-              controller.extman.get(classOf[ModuleLevelFeature], k) match {
+              controller.extman.getOrAddExtension(classOf[ModuleLevelFeature], k) match {
                 case Some(_) =>
                   // not actually using the feature (there might be multiple for the same keyword); just checking that at least one exists
                   readDerivedModule(parentInfo, Context.empty, k)

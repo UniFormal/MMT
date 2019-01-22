@@ -388,7 +388,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           checkTheory(Some(CPath(dm.path, TypeComponent)), context, OMMOD(mt))
           contextMeta = contextMeta ++ mt
         }
-        val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
+        val sfOpt = extman.getOrAddExtension(classOf[ModuleLevelFeature], dm.feature)
         sfOpt match {
           case None =>
             env.errorCont(InvalidElement(dm, s"structural feature '${dm.feature}' not registered"))
