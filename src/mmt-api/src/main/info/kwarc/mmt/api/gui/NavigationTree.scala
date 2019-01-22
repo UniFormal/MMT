@@ -109,6 +109,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
             }
           case s: SRef =>
         }
+      case ii: InterpretationInstruction =>
       case oe: opaque.OpaqueElement =>
     }
   }
