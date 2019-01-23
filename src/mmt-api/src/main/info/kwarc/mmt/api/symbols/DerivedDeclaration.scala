@@ -368,6 +368,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     case Some(ParamType(p, cont, args)) => OMBINDC(OMMOD(mpath), cont, OML(dd.name, None,None)::OMS(p)::args)
   }
   def getHeadPath(t: Term) : GlobalName = t match {
+    case OMS(p) => p
     case OMID(p) => p.toMPath.copy(name=p.name.init) ? p.name.last
   }
 }
