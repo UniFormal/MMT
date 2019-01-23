@@ -84,8 +84,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
     }
     
-    //val indParams = Type.getParameters(inductiveType)
-    val induct_paths = indTpls.map(t=>t.path.copy(name=LocalName("induct_"+t.name)))
+    val induct_paths = indTpls.map(t=>t.path.copy(name=LocalName("induct")/t.name))
     
     val modelDf = decls map (_.df.get)
     val indTplsArgs = indTpls map(_.argContext(None)._1)

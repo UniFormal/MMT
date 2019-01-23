@@ -177,7 +177,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   /**
    * name of the declaration corresponding to n declared in noJunks
    */
-  private def inductName(n: LocalName) = LocalName("induct_" + n.toPath)
+  private def inductName(n: LocalName) = {LocalName("induct") / n}
   
     /**
    * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
@@ -228,6 +228,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val tp = Pi(argCon++tm, Prop)
       newVar("P_"+tpl.name, tp, Some(ctx))
     }
+    
     ctx ++= predChain
     val (proofContext, nCtx) = proofChain(tpdecls, tmdecls, predChain, context, ctx)
     ctx = nCtx
@@ -246,7 +247,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   }
     
   /** name of the declarations generated in indProofs */
-  def proofName(n: LocalName): LocalName = LocalName("ind_proof") /n
+  def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
   
   /** Finds and applies the correct proof predicate to the given term
    *  @param tm the term to apply the proof predicate to
@@ -262,7 +263,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }}
     ApplyGeneral(p.toTerm, args.+:(tm))
   }
-  def applyPred(tm: VarDecl, tpdecls: List[GlobalName], predChain: Context) : Term = applyPred(tm.toTerm, tm.tp.get, tpdecls, predChain)
+  def applyPred(tm: VarDecl, tpdecls: List[GlobalName], predChain: Context) : Term = {applyPred(tm.toTerm, tm.tp.get, tpdecls, predChain)}
   
   /** Generate a context with the declarations needed for an inductive proof over an inductive type declaration I
    * @param tpdecls all Type-Level declarations in I
@@ -287,7 +288,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       proofStepTpl
     }
     
-    // Generate the types of the declarations corresponding to the Type-Levels
+    // Generate the types of the declarations corresponding to the Term-Levels
     val tmlPrfDecls = tmdecls map {tml =>
       val (argCon, dApplied) = tml.argContext(Some("/'"))
       val relevantArgs = argCon filter {
