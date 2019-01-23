@@ -13,26 +13,26 @@ import info.kwarc.mmt.lf._
 /** utility functions for elaborating structural features from typed internal declarations */
 private object InternalDeclarationUtil {
   /**
-   * Make a new unique local name from the given string
+   * Make a new unique local name from the given string which is unique in the given context
    * @param nm the string from which the local name is generated
+   * @param ctx (optional) the context
    */
-  def uniqueLN(nm: String): LocalName = {
-    LocalName(nm)
+  def uniqueLN(nm: String, ctx: Option[Context] = None): LocalName = {
+    val c = ctx.getOrElse(Context.empty)
+     Context.pickFresh(c, LocalName(nm))._1
   }
   
-  def uniqueGN(nm: String)(implicit parent: GlobalName): GlobalName = parent.module ? uniqueLN(nm)
+  def uniqueGN(nm: String, ctx: Option[Context])(implicit parent: GlobalName): GlobalName = parent.module ? uniqueLN(nm, ctx)
 
   /**
     * Make a new variable declaration for a variable of type tp and fresh name (preferably name) in the given (optional) context
     * @param name the local name that will preferably be picked for the variable declaration
     * @param tp the type of the variable
-    * @param the context in which to pick the a fresh variable (optional)
+    * @param con (optional) the context in which to pick the a fresh variable
     * @note postcondition: the returned variable is free in the given context
     */
-   def newVar(name: LocalName, tp: Term, con: Option[Context] = None) : VarDecl = {
-     val c = con.getOrElse(Context.empty)
-     val (freshName,_) = Context.pickFresh(c, uniqueLN(name.toString()))
-     VarDecl(freshName, tp)
+   def newVar(name: String, tp: Term, con: Option[Context] = None) : VarDecl = {
+     VarDecl(uniqueLN(name.toString, con), tp)
    }
     
    /** a very detailed presenter, useful for debugging */
@@ -135,6 +135,7 @@ private object InternalDeclarationUtil {
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
   def LambdaOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
+  val Prop = Univ(1)
 }
 
 import InternalDeclarationUtil._
@@ -247,14 +248,14 @@ sealed abstract class InternalDeclaration {
     val suf = suffix getOrElse ""
     val dargs = args.zipWithIndex map {
       case ((Some(loc), arg), _) => (loc, arg)
-      case ((None, arg), i) => (uniqueLN("x_"+i), arg)
+      case ((None, arg), i) => (uniqueLN("x_"+i, Some(context)), arg)
     }
     // In case of an OMV argument used in the type of a later argument
     var subs = Substitution()
     val con: Context = dargs zip args map {case ((loc, tp), arg) =>
-      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf) else loc
+      val locSuf = if (isIndependentArgument(arg)) uniqueLN(loc+suf, Some(context)) else loc
       if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
-      newVar(locSuf, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
+      newVar(locSuf.toString, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
     val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
     (con, tp)
@@ -303,8 +304,11 @@ case class TypeLevel(path: GlobalName, args: List[(Option[LocalName], Term)], df
   def notation = notC getOrElse NotationContainer()
   def isTypeLevel = {true}
 
-  /** a var decl with a fresh name whose type is this one */
-  def makeVar(name: String, con: Context)(implicit parent: GlobalName) = newVar(uniqueLN(name), applyTo(con), None)
+  /** a var decl with a fresh name whose type is this one 
+   * @param name a suggestion for the name of the new variable
+   * @param con a context of arguments to apply the tpl to (other than the context)
+   */
+  def makeVar(name: String, con: Context)(implicit parent: GlobalName) = newVar(name, applyTo(con), None)
 }
 
 object TypeLevel {
@@ -319,7 +323,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
   def tm = df
   def notation = notC getOrElse NotationContainer()
   /** a var decl with a fresh name of the same type as this one */
-  def makeVar(name: String) = newVar(uniqueLN(name), tp)
+  def makeVar(name: String) = newVar(name, tp)
   def isTypeLevel = {false}
 
   /**
@@ -350,7 +354,7 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
    */
   def surjDecl(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
-      val im = newVar(uniqueLN("image_point"), ret, Some(context))
+      val im = newVar("image_point", ret, Some(context))
       val (aCtx, aApplied) = argContext(None)
     
       PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(ret, aApplied, im.toTerm)))))

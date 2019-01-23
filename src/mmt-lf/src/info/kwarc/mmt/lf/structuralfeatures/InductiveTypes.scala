@@ -64,6 +64,9 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
+    // the inductive proof declarations
+    elabDecls ++= indProofs(tpdecls, tmdecls.filter(isConstructor(_, types)), context)(dd.path)
+    
     //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
       def domain = elabDecls map {d => d.name}
@@ -191,7 +194,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
           val (matches, argMatches) = matchTypeParametersInReturnType(b, a)
           if (matches) {
             // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
-            val newName = uniqueLN("no_conf_" + a.name.last+ "_" + b.name.last)
+            val newName = LocalName("no_conf_" + a.name.last+ "_" + b.name.last)
             val Ltp = () => {
               val (aCtx, aApplied) = a.argContext(None)
               val (bCtx, bApplied) = b.argContext(None)
@@ -207,6 +210,103 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
         decls ++= a.injDecls
       decls
     }
+  }
+  
+  /**
+   * Generate inductive proof declarations for an inductive type declaration I
+   * @param tpdecls all Type-Level declarations in I
+   * @param tmdecls all constructor declarations in I
+   * @param context the parameters of I
+   * @param parent the URI of I
+   */
+  def indProofs(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    var ctx = context
+    val predChain = tpdecls map {tpl =>
+      val (argCon, dApplied) = tpl.argContext(None)
+      val tm = tpl.makeVar("y_"+tpl.name, argCon)
+      ctx ++= argCon.+:(tm)
+      val tp = Pi(argCon++tm, Prop)
+      newVar("P_"+tpl.name, tp, Some(ctx))
+    }
+    ctx ++= predChain
+    val (proofContext, nCtx) = proofChain(tpdecls, tmdecls, predChain, context, ctx)
+    ctx = nCtx
+    
+    tpdecls map {tpl =>
+      val Ltp = () => {
+        val (argCon, dApplied) = tpl.argContext(None)
+        val tm = tpl.makeVar("tm", argCon)
+        val ret = Pi(tm, applyPred(tm.toTerm, tm.tp.get, tpdecls.map(_.path), predChain))   
+        Pi(context ++ predChain ++ proofContext ++ argCon, ret)
+      }
+      val name = proofName(tpl.name)
+      val c = makeConst(name, Ltp)
+      c
+    }
+  }
+    
+  /** name of the declarations generated in indProofs */
+  def proofName(n: LocalName): LocalName = LocalName("ind_proof") /n
+  
+  /** Finds and applies the correct proof predicate to the given term
+   *  @param tm the term to apply the proof predicate to
+   *  @param tpdecls the paths of the Type-Levels
+   *  @param predChain a context with the proof predicates
+   *  @note precondition: the contexts are ordered such that the proof predicates in predChain match the Type-Levels in tpdecls
+   */
+  def applyPred(tm: Term, tp: Term, tpdecls: List[GlobalName], predChain: Context) : Term = {
+    var args: List[Term] = Nil
+    val Some((_, p)) = (tpdecls zip predChain) find { x => tp match {
+      case ApplyGeneral(OMS(tpl), ags) => args = ags; true
+      case _ => throw ImplementationError("Trying to find the corresponding Type-Level for an outgoing Term-Level")
+    }}
+    ApplyGeneral(p.toTerm, args.+:(tm))
+  }
+  def applyPred(tm: VarDecl, tpdecls: List[GlobalName], predChain: Context) : Term = applyPred(tm.toTerm, tm.tp.get, tpdecls, predChain)
+  
+  /** Generate a context with the declarations needed for an inductive proof over an inductive type declaration I
+   * @param tpdecls all Type-Level declarations in I
+   * @param tmdecls all constructor declarations in I
+   * @param predChain a context with the proof predicates
+   * @param context the parameters of I
+   * @param ctx a Context with all local names already taken
+   * @param parent the URI of I
+   * @returns a context with the declarations needed for an inductive proof (the proofChain) and a context with all taken local names
+   * @note precondition: the contexts are ordered such that the proof predicates in predChain match the Type-Levels in tpdecls
+   */
+  def proofChain(tpdecls: List[TypeLevel], tmdecls: List[TermLevel], predChain: Context, context: Context, ctx: Context)(implicit parent : GlobalName): (Context, Context) = {
+    var newCtx = ctx
+    // Generate the types of the declarations corresponding to the Type-Levels
+    val tplPrfDecls = tpdecls map {tpl =>
+      val (argCon, dApplied) = tpl.argContext(Some("/'"))
+      val tm = newVar("x_"+tpl.name, dApplied, Some(newCtx))
+      newCtx +:= tm
+      val tp = Pi(context++argCon++tm, applyPred(tm.toTerm, tm.tp.get, tpdecls.map(_.path), predChain))
+      val proofStepTpl = newVar("ps_"+tpl.name, tp, Some(newCtx))
+      newCtx +:= proofStepTpl
+      proofStepTpl
+    }
+    
+    // Generate the types of the declarations corresponding to the Type-Levels
+    val tmlPrfDecls = tmdecls map {tml =>
+      val (argCon, dApplied) = tml.argContext(Some("/'"))
+      val relevantArgs = argCon filter {
+        arg => arg.tp.get match {
+          case ApplyGeneral(OMS(p), _) => tpdecls.map(_.path) contains p
+          case _ => false}
+      }
+      val inductiveAssumptions = relevantArgs map (applyPred(_, tpdecls.map(_.path), predChain))
+      val indAssumptionCtx = relevantArgs zip inductiveAssumptions map {case (arg, indAss) =>
+        val ass = newVar("ind_ass_"+arg.name, indAss, Some(newCtx))
+        newCtx +:= ass
+        ass
+      }
+      val tp = PiOrEmpty(context++argCon++indAssumptionCtx, applyPred(dApplied, tml.ret, tpdecls.map(_.path), predChain))
+      val proofStepTml = newVar("ps_"+tml.name, tp, Some(newCtx))
+      newCtx +:= proofStepTml
+      proofStepTml
+    }
+    (tplPrfDecls++tmlPrfDecls, newCtx)
   }
   
   /**

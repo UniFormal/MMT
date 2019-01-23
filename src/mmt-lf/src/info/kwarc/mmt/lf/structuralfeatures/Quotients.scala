@@ -56,11 +56,11 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
   def quotientEq(structure: TypeLevel, rel: InternalDeclaration, quot: TermLevel, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): TermLevel = {
     val a = rel.args match {
       case List((_, d), (_,_)) => d
-      case tp => println(tp); throw ImplementationError("Unexpected match case. ")
+      case tp => throw ImplementationError("Unexpected match case: "+tp)
     }
-    val args = List(newVar(uniqueLN("a1"), a, None), newVar(uniqueLN("a2"), a, None))
+    val args = List(newVar("a1", a, ctx), newVar("a2", a, ctx))
     val ret : Term = PiOrEmpty(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail), quot.ret)))
-    TermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
+    TermLevel(uniqueGN(name getOrElse "quot", ctx), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
   }
   
   /** Declares the unique push-forward g of a function on the domain down to the quotient, whenever well-defined 
@@ -74,9 +74,9 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
   def Pushforward(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
-      val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      val f = newVar("f", Arrow(dom, dom), ctx)
       def F(t:Term)=ApplySpine(f.toTerm,t)
-      val (x, y) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx))
+      val (x, y) = (newVar("x", dom, ctx), newVar("y", dom, ctx))
       val proof = Pi(List(x, y), Arrow(ApplyGeneral(rel, List(x.toTerm, y.toTerm)), Eq(F(x.toTerm), F(y.toTerm), dom)))
       
       Pi(ctx getOrElse Context.empty ++ f, Arrow(proof, Arrow(q, q)))
@@ -96,9 +96,9 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
   def inverse(dom: Term, Quot:GlobalName, relat:GlobalName, quot: GlobalName, quotInv: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val (q, rel) = if (!ctx.isEmpty) (ApplyGeneral(OMS(Quot), ctx.get.map(_.toTerm)), ApplyGeneral(OMS(relat), ctx.get.map(_.toTerm))) else (OMS(Quot), OMS(relat))
-      val f = newVar(uniqueLN("f"), Arrow(dom, dom), ctx)
+      val f = newVar("f", Arrow(dom, dom), ctx)
       def F(t:Term)=ApplySpine(f.toTerm,t)
-      val (x, y, z) = (newVar(uniqueLN("x"), dom, ctx), newVar(uniqueLN("y"), dom, ctx), newVar(uniqueLN("z"), dom, ctx))
+      val (x, y, z) = (newVar("x", dom, ctx), newVar("y", dom, ctx), newVar("z", dom, ctx))
       val proof = Pi(List(x, y), Arrow(ApplyGeneral(rel, List(x.toTerm, y.toTerm)), Eq(F(x.toTerm), F(y.toTerm), dom)))
       
       val g_o_quot_z = ApplyGeneral(OMS(quotInv), (ctx getOrElse Context.empty).map(_.toTerm) ++ List(f.toTerm, proof, ApplySpine(OMS(quot),z.toTerm)))

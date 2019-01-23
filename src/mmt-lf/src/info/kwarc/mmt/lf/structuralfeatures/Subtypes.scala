@@ -61,9 +61,9 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
    */
   private def lift(dom: Term, p:InternalDeclaration, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
-      val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(dom, T.toTerm), ctx)
-      val y = newVar(uniqueLN("y"), dom, ctx)
+      val T = newVar("T", Univ(1), ctx)
+      val f = newVar("f", Arrow(dom, T.toTerm), ctx)
+      val y = newVar("y", dom, ctx)
       val proof = p.applyTo(y)
       Pi(List(T, f, y), Arrow(proof, T.toTerm))
     }
@@ -77,9 +77,9 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
   private def inverse(dom: Term, S: GlobalName, p: InternalDeclaration, inj: GlobalName, g: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val sub = if (! ctx.isEmpty) ApplyGeneral(OMS(S), ctx.get map (_.toTerm)) else OMS(S)
-      val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(dom, T.toTerm), ctx)
-      val x = newVar(uniqueLN("x"), sub, ctx)
+      val T = newVar("T", Univ(1), ctx)
+      val f = newVar("f", Arrow(dom, T.toTerm), ctx)
+      val x = newVar("x", sub, ctx)
       val y = ApplyGeneral(OMS(inj), List(x.toTerm))
       val proof = p.applyTo(y)
       val y_lifted = ApplyGeneral(OMS(g), List(T.toTerm, f.toTerm, y, proof))
