@@ -1,9 +1,6 @@
 package info.kwarc.mmt.api.utils
 
-object SkipThis {
-  object Skip extends Throwable
-  def apply() {throw Skip}
-}
+object SkipThis extends Throwable
 
 /** Wrapper around List to provide some custom extensions */
 case class MyList[A](l: List[A]) {
@@ -22,7 +19,7 @@ case class MyList[A](l: List[A]) {
   /** a map function in which SkipThis() can be called to skip an element */
   def mapOrSkip[B](f: A => B): List[B] = l flatMap {a => 
     try {List(f(a))}
-    catch {case SkipThis.Skip => Nil}
+    catch {case SkipThis => Nil}
   }
   
   /** values of l (in same order) that yield biggest result under f */
