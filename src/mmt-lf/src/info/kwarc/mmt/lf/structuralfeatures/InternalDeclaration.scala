@@ -81,6 +81,27 @@ private object InternalDeclarationUtil {
     def apply(a: Term, s: Term, t: Term) = Ded(ApplySpine(OMS(path), a, s, t))
   }
   
+  // Needed for the testers
+  val Prop = Univ(1)
+  val Bool = OMS(LF._base ? "Bool" ? "BOOL")
+  val True = OMS(LF._base ? "Bool" ? "TRUE")
+  val False = OMS(LF._base ? "Bool" ? "FALSE")
+  
+  // Needed for the unappliers
+  val theoryPath = LF._base ? "Option"
+  object OPTION {
+    val path = theoryPath ? "OPTION"
+    def apply(tp: Term) = ApplySpine(OMS(path), tp)
+  }
+  object NONE {
+    val path = theoryPath ? "NONE"
+    def apply(tp: Term) = ApplySpine(OMS(path), tp)
+  }
+  object SOME {
+    val path = theoryPath ? "SOME"
+    def apply(tp: Term, tm: Term) = ApplyGeneral(OMS(path), List(tp, tm))
+  }
+  
   val Contra = OMS(theory ? "CONTRA")
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
@@ -135,7 +156,6 @@ private object InternalDeclarationUtil {
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
   def LambdaOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
-  val Prop = Univ(1)
 }
 
 import InternalDeclarationUtil._
@@ -325,6 +345,11 @@ case class TermLevel(path: GlobalName, args: List[(Option[LocalName], Term)], re
   /** a var decl with a fresh name of the same type as this one */
   def makeVar(name: String) = newVar(name, tp)
   def isTypeLevel = {false}
+  /** Check whether the TermLevel is a constructor or outgoing */
+  def isConstructor(types: List[GlobalName]): Boolean = ret match {
+    case ApplyGeneral(OMS(tpl), args) => types contains tpl
+    case _ => false
+  }
 
   /**
    * Generate injectivity declaration for the term constructor d
@@ -368,6 +393,23 @@ object TermLevel {
       TermLevel(path, args map {vd => (Some(vd.name), vd.toTerm)}, ret, df, notC, ctx)
   }
   def apply(path: GlobalName, args: Context, ret: Term, df: Option[Term], ctx: Option[Context]): TermLevel = TermLevel(path, args, ret, df, None, ctx)
+}
+
+class Constructor(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None) extends TermLevel(path, args, ret: Term, df, notC, ctx) {
+  override def isConstructor(types: List[GlobalName]) = {true}
+  def getTpl(tpdecls: List[TypeLevel]): TypeLevel = ret match {
+    case ApplyGeneral(OMS(tpl), args) => tpdecls.find(_.path == tpl).get
+  }
+  def getTplArgs: List[Term] = ret match {
+    case ApplyGeneral(_, args) => args
+  }
+}
+
+object Constructor {
+  def fromTml(tml: TermLevel): Constructor = new Constructor(tml.path, tml.args, tml.ret, tml.df, tml.notC, tml.ctx)
+  def constructors(tmdecls: List[TermLevel], types: List[GlobalName]): List[Constructor] = {
+    tmdecls.filter(_.isConstructor(types)).map(fromTml(_))
+  }
 }
 
 /** Rules and Judgment constructors */

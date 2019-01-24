@@ -64,8 +64,14 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // the no junk axioms
     elabDecls ++= noJunks(decls, context)(dd.path)
     
+    // the testers
+    elabDecls ++= testers(tmdecls, tpdecls, decls, context)(dd.path)
+    
+    // the unappliers
+    elabDecls ++= unappliers(tmdecls, tpdecls, decls, context)(dd.path)
+    
     // the inductive proof declarations
-    elabDecls ++= indProofs(tpdecls, tmdecls.filter(isConstructor(_, types)), context)(dd.path)
+    elabDecls ++= indProofs(tpdecls, tmdecls.filter(_.isConstructor(types)), context)(dd.path)
     
     //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
@@ -77,12 +83,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
   }
   
-  /** Check whether the TermLevel is a constructor or outgoing */
-  def isConstructor(tc: TermLevel, types: List[GlobalName]): Boolean = tc.ret match {
-    case ApplyGeneral(OMS(tpl), args) => types contains tpl
-    case _ => false
-  }
-  
   /** Check whether the TermLevel has a higher order argument of an inductively defined type
    *  In that case an error is thrown
    */
@@ -91,7 +91,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val FunType(args, ret) = tm
       args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
     }
-    if (isConstructor(tc, types)) {// Check whether the constructor is outgoing
+    if (tc.isConstructor(types)) {// Check whether the constructor is outgoing
       tc.args.map(_._2).exists({x =>
         val FunType(args, ret) = x
         args.exists(arg => types.exists(dependsOn(arg._2, _)))
@@ -187,7 +187,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   def noConf(a: TermLevel, tmdecls: List[TermLevel], types: List[GlobalName])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
     // To ensure that the result is well-typed
-    if (!isConstructor(a, types)) decls else {
+    if (!a.isConstructor(types)) decls else {
       if (a.isSimplyTyped()) {
         // To ensure that the result is well-typed
         tmdecls.takeWhile(_ != a) filter (_.isSimplyTyped()) foreach {b => 
@@ -213,6 +213,71 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   }
   
   /**
+   * Generate tester declarations for all constructors of an inductive type declaration I
+   * @param tmdecls the termlevel declarations in I
+   * @param tpdecls the typelevel declarations in I
+   * @param decls all internal declarations in I
+   * @param context the context of I
+   */
+  def testers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    val types = tpdecls.map(_.path)
+    Constructor.constructors(tmdecls, types) map {constr =>
+      val Ltp = () => {
+        val (argCon, _) = constr.argContext(None)
+        val tpl = constr.getTpl(tpdecls)
+        val induct = ApplyGeneral(OMS(tpl.path.copy(name=inductName(tpl.name))), context.map(_.toTerm))
+        val chain = decls map {
+          case d: TypeLevel => 
+            val (argConTpl, dAppliedTpl) = d.argContext(None)
+            PiOrEmpty(context++argConTpl, Arrow(dAppliedTpl, Bool))
+          case d: TermLevel if (d.isConstructor(types)) => PiOrEmpty(context++d.argContext(None)._1, if (d == constr) True else False)
+          case d => 
+            val (argConD, appliedD) = d.argContext(None)
+            PiOrEmpty(context++argConD, appliedD)
+        }
+        PiOrEmpty(context++argCon, ApplyGeneral(induct, chain++:constr.getTplArgs))
+      }
+      makeConst(testerName(constr.name), Ltp)
+    }
+  }
+  /** Name of the declaration generated in testers */
+  def testerName(n: LocalName) = {n / LocalName("?")}
+  
+  
+  /**
+   * Generate unapply declarations for all constructors of an inductive type declaration I
+   * @param tmdecls the termlevel declarations in I
+   * @param tpdecls the typelevel declarations in I
+   * @param decls all internal declarations in I
+   * @param context the context of I
+   */
+  def unappliers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    val types = tpdecls.map(_.path)
+    Constructor.constructors(tmdecls, types) map {constr =>
+      val Ltp = () => {
+        val (argCon, _) = constr.argContext(None)
+        val tpl = constr.getTpl(tpdecls)
+        val induct = ApplyGeneral(OMS(tpl.path.copy(name=inductName(tpl.name))), context.map(_.toTerm))
+        val chain = decls map {
+          case d: TypeLevel => 
+            val (argConTpl, dAppliedTpl) = d.argContext(None)
+            PiOrEmpty(context++argConTpl, Arrow(dAppliedTpl, OPTION(dAppliedTpl)))
+          case d: TermLevel if (d.isConstructor(types)) => 
+            val (argConTml, dAppliedTml) = d.argContext(None)
+            PiOrEmpty(context++argConTml, if (d == constr) SOME(d.ret, dAppliedTml) else NONE(d.ret))
+          case d => 
+            val (argConD, appliedD) = d.argContext(None)
+            PiOrEmpty(context++argConD, appliedD)
+        }
+        PiOrEmpty(context++argCon, ApplyGeneral(induct, chain++:constr.getTplArgs))
+      }
+      makeConst(unapplierName(constr.name), Ltp)
+    }
+  }
+  /** Name of the declaration generated in unappliers */
+  def unapplierName(n: LocalName) = {n / LocalName("-1")}
+  
+  /**
    * Generate inductive proof declarations for an inductive type declaration I
    * @param tpdecls all Type-Level declarations in I
    * @param tmdecls all constructor declarations in I
@@ -220,6 +285,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param parent the URI of I
    */
   def indProofs(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName): List[Constant] = {
+    // In order to keep track of local names already used
     var ctx = context
     val predChain = tpdecls map {tpl =>
       val (argCon, dApplied) = tpl.argContext(None)
