@@ -220,6 +220,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       if (dom1 != dom2) return Recurse // TODO find common source
       // val vis1 = solver.lookup.visible(OMMOD(dom1)) // get all nodes implicitly visible to dom1
       
+      // now put dom := dom1 = dom2
+      // dom -- --> 
       val poL = Combine.nodeLabel
       val po = DiagramNode(poL, ???)
       val List(dN1,dN2) = List(ad1,ad2).map(_.distNode.getOrElse(return Recurse))
