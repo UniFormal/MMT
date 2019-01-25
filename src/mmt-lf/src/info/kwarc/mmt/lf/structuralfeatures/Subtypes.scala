@@ -9,6 +9,7 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 @deprecated("this is experimental and may still be removed", "")
@@ -27,7 +28,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
           case _ => throw LocalError("Equivalence relation expected.")
         }
       }*/ 
-      val pred = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, context)}
+      val pred = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, Nil, context)}
       val dom = pred.args match {case List((_, d)) => d}
             
       val subtype = structureDeclaration(Some("S"), context)
@@ -38,7 +39,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
         }
         makeConst(uniqueLN("inj"), Ltp)
       }
-      val injInjective = injDecl(injection, controller, context, Nil)
+      val injInjective = injDecl(injection, controller, context)
       val lift = this.lift(dom, pred, Some("g"), context)
       val inverse = this.inverse(dom, subtype.path, pred, injection.path, lift.path, Some("inverse"), context)
             

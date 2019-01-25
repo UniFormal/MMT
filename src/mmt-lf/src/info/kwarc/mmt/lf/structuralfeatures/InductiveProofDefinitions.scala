@@ -12,6 +12,8 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
+import StructuralFeatureUtil._
+import inductiveUtil._
 
 /** theories as a set of types of expressions */ 
 class InductiveProofDefinitions extends StructuralFeature("ind_proof") with TypedParametricTheoryLike {
@@ -39,35 +41,17 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
             +" but no derived declaration found at that location.")
     }
     implicit val parent = indD.path
-    val indDefs = controller.library.get(indDefPath).getDeclarations map {case c:Constant => 
-      fromConstant(c, controller, Some(indCtx))}
+    val indDefs = parseInternalDeclarations(indD, controller, None)
     var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).map{case t:TypeLevel => t}
     
     val indTplNames = indTpls map (_.name)
     
-    var decls:List[InternalDeclaration] = Nil
-    
-    // read in the declarations and replace all occurances of previously declared symbols by their definitions
-    dd.getDeclarations foreach {
-      case c: Constant  if (c.df.isDefined) =>
-        val intDecl = fromConstant(c, controller, Some(context))
-        def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
-        def mpDf(df: Term):Term = OMSReplacer(repDfs)(df, Context.empty)
-        val repDf = Some(mpDf(intDecl.df.get))
-        
-        intDecl match {
-          case d : TermLevel => val repD = d.copy(df = repDf); decls :+= repD
-          case d : TypeLevel => val repD = d.copy(df = repDf); decls :+= repD
-          case d : StatementLevel => val repD = d.copy(df = repDf); decls :+= repD 
-         }
-      case c: Constant => throw LocalError("Unsupported corresponding declaration: Expected constant with definien at "+c.path)
-      case _ => throw LocalError("unsupported declaration")
-    }
-        
+    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+     
     // check whether all declarations match their corresponding constructors
     decls foreach {
       d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, None))
+      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None))
       }
     }
     // and whether we have all necessary declarations
@@ -75,7 +59,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
     }
     
-    val proof_paths = indTpls.map(t=>t.path.copy(name=LocalName("ind_proof")/t.name))
+    val proof_paths = indTpls.map(t=>t.path.copy(name=proofName(t.name)))
     
     val modelDf = decls map (_.df.get)
     val indTplsArgs = indTpls map(_.argContext(None)._1)

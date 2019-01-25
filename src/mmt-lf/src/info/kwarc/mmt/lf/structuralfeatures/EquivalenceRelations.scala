@@ -27,7 +27,7 @@ class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricT
       val Arrow(a2, target) = codom
       if (dom != a2 || target != Univ(1))
         throw LocalError("Wrong argument: Equivalence relation expects a relation (A -> A -> Type) as an argument. ")*/
-      val eqRel = dd.getDeclarations.head match {case c:Constant=>fromConstant(c, controller, Some(context))}
+      val eqRel = dd.getDeclarations.head match {case c:Constant=>fromConstant(c, controller, Nil, Some(context))}
       val List((_, dom), (_, dom2)) = eqRel.args
       val target = eqRel.ret
       if (dom != dom2 || target != Univ(1))

@@ -11,12 +11,12 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
-import StructuralFeatureUtil._
 import TermConstructingFeatureUtil._
 import inductiveUtil._
+import StructuralFeatureUtil._
 
 /** theories as a set of types of expressions */ 
-class InductiveDefinitions extends StructuralFeature("inductive_definition") with TypedParametricTheoryLike {
+class InductiveMatch extends StructuralFeature("match") with TypedParametricTheoryLike {
   
   /**
    * Checks the validity of the inductive type(s) to be constructed
@@ -48,18 +48,25 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
     
-    // check whether all declarations match their corresponding constructors
-    decls foreach { 
-      d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None))
-      }
-    }
-    // and whether we have all necessary declarations
-    indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {
-      n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
-    }
-    
     val induct_paths = indTpls.map(t=>t.path.copy(name=inductName(t.name)))
+    val unapply_paths = indDefs.map(t=>t.path.copy(name=unapplierName(t.name)))
+    def defined(d: InternalDeclaration) = {decls.map(_.name) contains d.name}
+    def definition(d: InternalDeclaration): Term = {
+      val decl = decls.find(_.name == d.name).getOrElse(throw LocalError("The declaration "+d.name+" must also be defined."))
+      decl.df.getOrElse(throw LocalError("No definien for declaration: "+decl.name))
+    }
+    val tpldecls = tpls(indDefs)
+    val types = tpldecls map (_.path)
+    val mapDefs = indDefs map {
+      case d: TypeLevel if defined(d) =>  
+        PiOrEmpty(context++indCtx++d.argContext(None)._1, definition(d))
+      case constr: Constructor if (defined(constr)) => 
+        val tpl = constr.getTpl(tpldecls)
+        val Arrow(_, ret) = definition(tpl)
+        PiOrEmpty(context++indCtx++constr.argContext(None)._1, MAP(constr.externalRet(indD.path), ret, definition(constr)))
+      case d: Constructor => PiOrEmpty(context++indCtx++d.argContext(None)._1, NONE(d.externalRet))
+      case d => PiOrEmpty(context, d.toTerm)
+    }
     
     val modelDf = decls map (_.df.get)
     val indTplsArgs = indTpls map(_.argContext(None)._1)
@@ -95,4 +102,4 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
   }
 }
 
-object InductiveDefinitionRule extends StructuralFeatureRule(classOf[InductiveDefinitions], "inductive_definition")
+object InductiveMatchRule extends StructuralFeatureRule(classOf[InductiveMatch], "match")

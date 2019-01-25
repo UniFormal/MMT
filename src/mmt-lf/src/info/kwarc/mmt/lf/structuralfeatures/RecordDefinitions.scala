@@ -14,6 +14,7 @@ import InternalDeclarationUtil._
 
 import RecordUtil._
 import symbols.StructuralFeatureUtil._
+import StructuralFeatureUtil._
 import TermConstructingFeatureUtil._
 
 
@@ -44,30 +45,13 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
               +" but no derived declaration found at that location.")
       }
       
-      var decls:List[InternalDeclaration] = Nil
-      val recDefs = recD.getDeclarationsElaborated map {case c:Constant => fromConstant(c, controller, Some(indCtx))}
-  
-      
-      // read in the declarations and replace all occurances of previously declared symbols by their definitions
-      dd.getDeclarations foreach {
-        case c: Constant  if (c.df.isDefined) =>
-          val intDecl = fromConstant(c, controller, Some(context))
-          def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
-          def mpDf(df: Term):Term = OMSReplacer(repDfs)(df, Context.empty)
-          val repDf = Some(mpDf(intDecl.df.get))
-          
-          intDecl match {
-            case d : TermLevel => val repD = d.copy(df = repDf); decls :+= repD
-            case d : TypeLevel => val repD = d.copy(df = repDf); decls :+= repD
-            case d : StatementLevel => val repD = d.copy(df = repDf); decls :+= repD 
-           }
-        case c: Constant => throw LocalError("Unsupported corresponding declaration: Expected constant with definien at "+c.path)
-        case _ => throw LocalError("unsupported declaration")
-      }
+      var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+      val recDefs = parseInternalDeclarations(recD, controller, None)
+      val types = tpls(recDefs) map (_.path)
           
       // check whether all declarations match their corresponding constructors
       decls foreach { d => correspondingDecl(recD, d.name) map {decl =>
-        checkDecl(d, fromConstant(decl,controller, None))}
+        checkDecl(d, fromConstant(decl,controller, types, None))}
       }
       // and whether we have all necessary declarations
       recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
