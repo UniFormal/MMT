@@ -15,8 +15,11 @@ import parser.SourceRef
 /**
  * standard structure text syntax for MMT, not necessarily parsable
  */
-class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
-   val key = "present-text-notations"
+abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
+   /** determines if the modules should be flattened */
+   val presentGenerated: Boolean
+   
+   val key = "present-text-notations" + (if (presentGenerated) "-flat" else "")
    override def outExt = "mmt"
 
    def beginDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
@@ -33,7 +36,9 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
     t.meta.foreach(p => rh(" : "+p.toString))
     doDefComponent(t)
     rh(" \n")
-    t.getDeclarations.foreach {d => apply(d, indent+1)}
+    t.getDeclarations.foreach {d => 
+      if (!d.isGenerated || presentGenerated) apply(d, indent+1)
+    }
   }
   
   protected def doView(v: View, indent:Int)(implicit rh: RenderingHandler) {
@@ -143,4 +148,14 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
         false
     }
   }
+}
+
+/** not flattened */
+class MMTStructurePresenter(oP: ObjectPresenter) extends AbstractMMTStructurePresenter(oP) {
+  val presentGenerated = false
+}
+
+/** flattened */
+class FlatMMTStructurePresenter(oP: ObjectPresenter) extends AbstractMMTStructurePresenter(oP) {
+  val presentGenerated = true
 }

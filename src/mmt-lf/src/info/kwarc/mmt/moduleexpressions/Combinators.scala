@@ -2,17 +2,39 @@ package info.kwarc.mmt.moduleexpressions
 
 import info.kwarc.mmt.api._
 import checking._
+import info.kwarc.mmt.api.frontend.{Controller, ExtensionManager, Report}
+import info.kwarc.mmt.api.libraries.{Library, ThinGeneratedCategory}
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
 import objects._
+import utils._
 import uom._
 import info.kwarc.mmt.lf._
+
+/* TODO: I don't think the parameters that I am using in the library here makes sense.. */
+/* TODO: I am currently working on CheckingCallback.Lookup, which is the whole library for MMT
+*  I believe ww should be having a sub-theory-graph of only distinguished arrows that we do computations on (more effeicent)
+*  BUT: when I use Graph.graph.update(OMMOD(dN.label),new_dN.label,new_decls) I get error because it is expecting a Term, not a LocalName */
+object Graph{
+  val r = new Report
+  def lib = new Library(new ExtensionManager(new Controller(r)) ,r ,None)
+  def graph = new ThinGeneratedCategory(lib)
+}
 
 object Combinators {
   val _path = ModExp._base ? "Combinators"
 }
 
 object Common {
+  /** apply/unapply functions so that ExistingName(p) is the label of a module with URI p */
+  object ExistingName {
+    def apply(p: MPath) = LocalName(p)
+    def unapply(l: LocalName) = l.steps match {
+      case List(ComplexStep(p)) => Some(p)
+      case _ => None
+    }
+  }
+  
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
   def anonymize(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
     // collect included theories
@@ -103,9 +125,9 @@ object Common {
     Some(morAnon)
   }
   
-  /** provides the base case of the function that elaborates a diagram expression (in the form of an [[AnonymousDiagrma]]) */
-  def asAnonymousDiagram(solver: CheckingCallback, thy: Term)(implicit stack: Stack, history: History): Option[AnonymousDiagram] = {
-    thy match {
+  /** provides the base case of the function that elaborates a diagram expression (in the form of an [[AnonymousDiagram]]) */
+  def asAnonymousDiagram(solver: CheckingCallback, diag: Term)(implicit stack: Stack, history: History): Option[AnonymousDiagram] = {
+    diag match {
       // named diagrams
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
@@ -117,24 +139,24 @@ object Common {
           case Some(thy: Theory) =>
             // the theory as a one-node diagram
             val anonThy = anonymize(solver, thy)
-            val label = LocalName(thy.path)
+            val label = ExistingName(thy.path)
             val anonThyN = DiagramNode(label, anonThy)
-            val ad = new AnonymousDiagram(List(anonThyN), Nil, Some(label), None)
+            val ad = new AnonymousDiagram(List(DiagramArrow(label,anonThyN,anonThyN,new AnonymousMorphism(Nil))), Some(label), None)
             Some(ad)
           case Some(vw: View) =>
             // the view as a one-edge diagram
             val from = asAnonymousTheory(solver, vw.from).getOrElse(return None)
             val to   = asAnonymousTheory(solver, vw.to).getOrElse(return None)
             val mor  = asAnonymousMorphism(solver, vw.from, from, vw.to, to, vw.toTerm).getOrElse(return None)
-            val label = LocalName(vw.path)
+            val label = ExistingName(vw.path)
             // TODO this only makes sense if domain and codomain are named theories; otherwise, we should maybe copy the whole diagram
             val fromL = LocalName(vw.from.toMPath)
             val toL   = LocalName(vw.to.toMPath)
             val fromN = DiagramNode(fromL, from)
             val toN   = DiagramNode(toL, to)
-            val arrow = DiagramArrow(label, fromL, toL, mor)
+            val arrow = DiagramArrow(label, fromN, toN, mor)
             val distArrow = if (vw.isImplicit) Some(label) else None
-            val ad = new AnonymousDiagram(List(fromN,toN), List(arrow), Some(toL), distArrow)
+            val ad = new AnonymousDiagram(List(arrow), Some(toL), distArrow)
             Some(ad)
           case _ => return None
         }
@@ -181,31 +203,9 @@ object ComputeExtends extends ComputationRule(Extends.path) {
     val new_decls = dN.theory.decls ::: extD
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
     val extM = new AnonymousMorphism(new_decls)
-    val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
+    val extA = DiagramArrow(Extends.arrowLabel, dN, new_dN, extM)
+    val result = new AnonymousDiagram(ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
     Simplify(result.toTerm)
-  }
-}
-
-object Combine extends FlexaryConstantScala(Combinators._path, "combine")
-
-object ComputeCombine extends ComputationRule(Combine.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-      val Combine(thys@_*) = tm
-      val thysAnon = thys map {thy => Common.asAnonymousTheory(solver, thy).getOrElse(return Recurse)}
-      var mts: List[MPath] = Nil
-      var decls: List[OML] = Nil
-      thysAnon.foreach {at =>
-          at.mt.foreach {mts ::= _}
-          decls = decls ::: at.decls
-      }
-      val declsD = decls.distinct
-      val mt = mts.distinct match {
-        case Nil => None
-        case hd::Nil => Some(hd)
-        case _ => return Recurse
-      }
-      Simplify(AnonymousTheoryCombinator(mt, declsD))
   }
 }
 
@@ -216,19 +216,18 @@ object Rename extends FlexaryConstantScala(Combinators._path, "rename") {
   val arrowLabel = LocalName("extend")
 }
 
+object Rename1 extends BinaryConstantScala(Combinators._path, "rename1")
+
 object ComputeRename extends ComputationRule(Rename.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Rename(diag,rens@_*) = tm
     val ad = Common.asAnonymousDiagram(solver, diag).getOrElse {return RecurseOnly(List(1))}
     // perform the renaming
-    val oldNew = rens.toList.flatMap {
-      case OML(nw, None, Some(OML(old, None,None,_,_)),_,_) =>
-        List((old,nw))
-      case OML(nw,None,Some(OMS(old)),_,_) =>
-        List((old.name,nw))
+    val oldNew: List[(LocalName,LocalName)] = rens.toList.mapOrSkip {
+      case Rename1(OML(old,None,None,_,_), OML(nw,None,None,_,_)) => (old,nw)
       case r =>
         solver.error("not a renaming " + r)
-        Nil
+        throw SkipThis
     }
     val dN = ad.getDistNode.getOrElse {
       solver.error("distinguished node not found")
@@ -238,8 +237,8 @@ object ComputeRename extends ComputationRule(Rename.path) {
     atR.rename(oldNew:_*)
     val dNR = DiagramNode(Rename.nodeLabel, atR)
     val renM = new AnonymousMorphism(oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
-    val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel)) 
+    val renA = DiagramArrow(Rename.arrowLabel, dN, dNR, renM)
+    val result = new AnonymousDiagram(ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel))
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {
@@ -256,6 +255,45 @@ object ComputeRename extends ComputationRule(Rename.path) {
     }
     thyAnon.decls = thyAnon.decls diff removeReals */
     Simplify(result.toTerm)
+  }
+}
+
+object Combine extends BinaryConstantScala(Combinators._path, "combine") {
+  val nodeLabel = LocalName("pres")
+  val arrowLabel1 = LocalName("extend1")
+  val arrowLabel2 = LocalName("extend2")
+  val arrowLabel = LocalName("extend")
+}
+
+object ComputeCombine extends ComputationRule(Combine.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+      val Combine(d1,d2) = tm
+      val List(ad1,ad2) = List(d1,d2) map {d => Common.asAnonymousDiagram(solver, d).getOrElse(return Recurse)}
+      // val nodes = (ad1.nodes ::: ad2.nodes).distinct
+      val arrows = (ad1.arrows ::: ad2.arrows).distinct
+      val List(dom1,dom2) = List(ad1,ad2) map {d =>
+      val fromT = d.getDistArrow.getOrElse(return Recurse).from
+      fromT match {
+        case Common.ExistingName(p) => p
+        case _ => return Recurse
+      }
+    }
+    if (dom1 != dom2) return Recurse // TODO find common source
+
+
+
+      // val vis1 = solver.lookup.visible(OMMOD(dom1)) // get all nodes implicitly visible to dom1
+      
+      // now put dom := dom1 = dom2
+      // dom -- -->
+      val poL = Combine.nodeLabel
+      val po = DiagramNode(poL, ???)
+      val List(dN1,dN2) = List(ad1,ad2).map(_.getDistNode.getOrElse(return Recurse))
+      val a1 = DiagramArrow(Combine.arrowLabel1, dN1, po, ???)
+      val a2 = DiagramArrow(Combine.arrowLabel2, dN2, po, ???)
+      val diag = DiagramArrow(Combine.arrowLabel, ???, po, ???)
+      val ad = new AnonymousDiagram(arrows:::List(a1,a2,diag), Some(poL), Some(Combine.arrowLabel))
+      Simplify(ad.toTerm)
   }
 }
 
