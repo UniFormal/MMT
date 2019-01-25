@@ -64,8 +64,8 @@ travisConfig := {
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
       TravisJob("Check mmt.jar generation and integration tests",
         sbt("deploy", file("deploy/mmt.jar")) ::: runMainClass(
-          "info.kwarc.mmt.api.test.APITest",
-          "info.kwarc.mmt.lf.LFTest",
+          "info.kwarc.mmt.test.APITest",
+          "info.kwarc.mmt.test.LFTest",
           "info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest"
         )),
       TravisJob("Check that unit tests run", sbt("test")),
