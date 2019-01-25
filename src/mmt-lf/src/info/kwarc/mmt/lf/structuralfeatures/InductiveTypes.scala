@@ -11,6 +11,24 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
+import StructuralFeatureUtil._
+
+object inductiveUtil {
+  /**
+   * name of the declaration corresponding to n declared in noJunks
+   */
+  def inductName(n: LocalName) = {LocalName("induct") / n}
+  
+  /** Name of the declaration generated in testers */
+  def testerName(n: LocalName) = {n / LocalName("?")}
+  
+  /** Name of the declaration generated in unappliers */
+  def unapplierName(n: LocalName) = {n / LocalName("-1")}
+    
+  /** name of the declarations generated in indProofs */
+  def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
+}
+import inductiveUtil._
 
 /** theories as a set of types of expressions */ 
 class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
@@ -34,19 +52,10 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit val parentTerm = dd.path
     // to hold the result
     var elabDecls : List[Constant] = Nil
-    implicit var tmdecls : List[TermLevel]= Nil
-    implicit var statdecls : List[StatementLevel]= Nil
-    implicit var tpdecls : List[TypeLevel]= Nil
-    val decls = dd.getDeclarations map {
-      case c: Constant =>
-        val intDecl = fromConstant(c, controller, Some(context))
-        intDecl match {
-          case d @ TermLevel(_, _, _, _, _,_) => tmdecls :+= d; intDecl 
-          case d @ TypeLevel(_, _, _, _,_) => tpdecls :+= d; intDecl
-          case d @ StatementLevel(_, _, _, _,_) => statdecls :+= d; intDecl 
-         }
-      case _ => throw LocalError("unsupported declaration")
-    }
+    
+    val decls = parseInternalDeclarations(dd, controller, Some(context))
+    val tpdecls = tpls(decls)
+    val tmdecls = tmls(decls)
     val types = tpdecls map (_.path)
     
     // copy all the declarations
@@ -71,7 +80,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls ++= unappliers(tmdecls, tpdecls, decls, context)(dd.path)
     
     // the inductive proof declarations
-    elabDecls ++= indProofs(tpdecls, tmdecls.filter(_.isConstructor(types)), context)(dd.path)
+    elabDecls ++= indProofs(tpdecls, tmdecls.filter(_.isConstructor), context)(dd.path)
     
     //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
@@ -91,7 +100,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val FunType(args, ret) = tm
       args exists {arg => val ApplyGeneral(tpConstr, tpArgs) = arg._2; tpConstr == OMS(tp)}  // TODO: Is this the right condition to check for?
     }
-    if (tc.isConstructor(types)) {// Check whether the constructor is outgoing
+    if (tc.isConstructor) {// Check whether the constructor is outgoing
       tc.args.map(_._2).exists({x =>
         val FunType(args, ret) = x
         args.exists(arg => types.exists(dependsOn(arg._2, _)))
@@ -174,11 +183,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       c
     }
   }
-  /**
-   * name of the declaration corresponding to n declared in noJunks
-   */
-  private def inductName(n: LocalName) = {LocalName("induct") / n}
-  
+    
     /**
    * Generate no confusion/injectivity declaration for term constructor d and all term constructors of the same return type
    * @param parent the derived declaration to elaborate
@@ -187,7 +192,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   def noConf(a: TermLevel, tmdecls: List[TermLevel], types: List[GlobalName])(implicit parent: GlobalName): List[Constant] = {
     var decls: List[Constant] = Nil
     // To ensure that the result is well-typed
-    if (!a.isConstructor(types)) decls else {
+    if (!a.isConstructor) decls else {
       if (a.isSimplyTyped()) {
         // To ensure that the result is well-typed
         tmdecls.takeWhile(_ != a) filter (_.isSimplyTyped()) foreach {b => 
@@ -220,8 +225,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param context the context of I
    */
   def testers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
-    val types = tpdecls.map(_.path)
-    Constructor.constructors(tmdecls, types) map {constr =>
+    //val types = tpdecls.map(_.path)
+    constrs(tmdecls) map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
         val tpl = constr.getTpl(tpdecls)
@@ -230,7 +235,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
           case d: TypeLevel => 
             val (argConTpl, dAppliedTpl) = d.argContext(None)
             PiOrEmpty(context++argConTpl, Arrow(dAppliedTpl, Bool))
-          case d: TermLevel if (d.isConstructor(types)) => PiOrEmpty(context++d.argContext(None)._1, if (d == constr) True else False)
+          case d: TermLevel if (d.isConstructor) => PiOrEmpty(context++d.argContext(None)._1, if (d == constr) True else False)
           case d => 
             val (argConD, appliedD) = d.argContext(None)
             PiOrEmpty(context++argConD, appliedD)
@@ -240,10 +245,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       makeConst(testerName(constr.name), Ltp)
     }
   }
-  /** Name of the declaration generated in testers */
-  def testerName(n: LocalName) = {n / LocalName("?")}
-  
-  
+    
   /**
    * Generate unapply declarations for all constructors of an inductive type declaration I
    * @param tmdecls the termlevel declarations in I
@@ -253,7 +255,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def unappliers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
     val types = tpdecls.map(_.path)
-    Constructor.constructors(tmdecls, types) map {constr =>
+    constrs(tmdecls) map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
         val tpl = constr.getTpl(tpdecls)
@@ -262,7 +264,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
           case d: TypeLevel => 
             val (argConTpl, dAppliedTpl) = d.argContext(None)
             PiOrEmpty(context++argConTpl, Arrow(dAppliedTpl, OPTION(dAppliedTpl)))
-          case d: TermLevel if (d.isConstructor(types)) => 
+          case d: TermLevel if (d.isConstructor) => 
             val (argConTml, dAppliedTml) = d.argContext(None)
             PiOrEmpty(context++argConTml, if (d == constr) SOME(d.ret, dAppliedTml) else NONE(d.ret))
           case d => 
@@ -274,8 +276,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       makeConst(unapplierName(constr.name), Ltp)
     }
   }
-  /** Name of the declaration generated in unappliers */
-  def unapplierName(n: LocalName) = {n / LocalName("-1")}
   
   /**
    * Generate inductive proof declarations for an inductive type declaration I
@@ -312,9 +312,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     }
   }
     
-  /** name of the declarations generated in indProofs */
-  def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
-  
   /** Finds and applies the correct proof predicate to the given term
    *  @param tm the term to apply the proof predicate to
    *  @param tpdecls the paths of the Type-Levels

@@ -11,6 +11,7 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 
 import InternalDeclaration._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 object RecordUtil {
@@ -48,10 +49,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       
       val structure = structureDeclaration(Some("typeDecl"), context)
       
-      val origDecls : List[InternalDeclaration] = dd.getDeclarations map {
-        case c: Constant => fromConstant(c, controller, context)
-        case _ => throw LocalError("unsupported declaration")
-      }
+      val origDecls = parseInternalDeclarations(dd, controller, context)
       val declCtx = origDecls map(d => OMV(LocalName(d.name)) % d.internalTp)
       val TpDeclCtx = origDecls filter (_.isTypeLevel) map (_.toVarDecl)
          

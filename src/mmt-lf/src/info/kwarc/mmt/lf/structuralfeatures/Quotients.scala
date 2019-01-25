@@ -9,6 +9,7 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 @deprecated("this is experimental and may still be removed", "")
@@ -21,7 +22,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
     val params = Type.getParameters(dd)
     val context = if (params.nonEmpty) Some(params) else None
     try {
-      val eqRel = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, context)}
+      val eqRel = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, Nil, context)}
       val dom = eqRel.args match {
         case List((_, d), (_,_)) => d
         case tp => throw ImplementationError("Unexpectedly found: . ")
@@ -60,7 +61,7 @@ class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike 
     }
     val args = List(newVar("a1", a, ctx), newVar("a2", a, ctx))
     val ret : Term = PiOrEmpty(args, Arrow(rel.applyTo(args), Eq(quot.applyTo(args.init), quot.applyTo(args.tail), quot.ret)))
-    TermLevel(uniqueGN(name getOrElse "quot", ctx), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
+    new OutgoingTermLevel(uniqueGN(name getOrElse "quot"), args map (x => (Some(x.name), x.tp.get)), ret, None, None, ctx)
   }
   
   /** Declares the unique push-forward g of a function on the domain down to the quotient, whenever well-defined 
