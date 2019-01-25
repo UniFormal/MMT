@@ -11,6 +11,8 @@ import utils._
 import uom._
 import info.kwarc.mmt.lf._
 
+import scala.collection.mutable.HashSet
+
 /* TODO: I don't think the parameters that I am using in the library here makes sense.. */
 /* TODO: I am currently working on CheckingCallback.Lookup, which is the whole library for MMT
 *  I believe ww should be having a sub-theory-graph of only distinguished arrows that we do computations on (more effeicent)
@@ -269,16 +271,34 @@ object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val Combine(d1,d2) = tm
       val List(ad1,ad2) = List(d1,d2) map {d => Common.asAnonymousDiagram(solver, d).getOrElse(return Recurse)}
+      var List(dom1,dom2) = List(ad1,ad2) map {d => d.getDistArrow.getOrElse(return Recurse).from}
+      var List(path1 , path2) = List(dom1,dom2) map {d =>
+        var dom = d
+        var path = List[DiagramNode]()
+        while(dom != Nil){
+          path :+ dom
+          var vis1 : HashSet[Term] = solver.lookup.visible(DiagramNodeCombinator(dom.label,dom.theory)) // get all nodes implicitly visible to dom1
+          /* The problem now is which node to choose.. When talking about distinguished, we should always have one..
+             But, I am not sure how to do that.. so I will assume the HashSet has one element.
+           */
+          dom = DiagramNodeCombinator.unapply(vis1.head).getOrElse(return Recurse) // TODO: probably want to change the return Recurse part.
+        }
+        path
+      }
+      //val inters : List[DiagramNode] = path1.intersect(path2)
+      // val source : DiagramNode = inters.head
+
+
       // val nodes = (ad1.nodes ::: ad2.nodes).distinct
       val arrows = (ad1.arrows ::: ad2.arrows).distinct
-      val List(dom1,dom2) = List(ad1,ad2) map {d =>
+   /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
       val fromT = d.getDistArrow.getOrElse(return Recurse).from
       fromT match {
         case Common.ExistingName(p) => p
         case _ => return Recurse
       }
-    }
-    if (dom1 != dom2) return Recurse // TODO find common source
+    }*/
+    // if (dom1 != dom2) return Recurse // TODO find common source
 
 
 
@@ -309,10 +329,10 @@ object Translate extends BinaryConstantScala(Combinators._path, "translate")
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    val Translate(mor, thy) = tm
+    val Translate(mor, dia) = tm
     val dom = Morph.domain(mor)(solver.lookup).getOrElse{return Recurse}
     val cod = Morph.codomain(mor)(solver.lookup).getOrElse{return Recurse}
-    val List(thyAnon,domAnon,codAnon) = List(thy,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return Recurse)}
+    val List(thyAnon,domAnon,codAnon) = List(dia,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return Recurse)}
     val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return Recurse)
     // translate all declarations of thy that are not from dom via mor and add them to cod
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
