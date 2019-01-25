@@ -90,14 +90,28 @@ case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends Diagra
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
   override def toString = s"$label:THEY=$theory"
 }
+
+/** bridges between [[DiagramNode]] and [[Term]] */
+object DiagramNodeCombinator {
+  val path = ModExp.diagramnode
+
+  def apply(label: LocalName, theory: AnonymousTheory) = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
+  def unapply(t: Term): Option[DiagramNode] = t match {
+    case OML(label,_,AnonymousTheoryCombinator(t),_,_) =>
+      val d = DiagramNode(label,t)
+      Some(d)
+    case _ => None
+  }
+}
+
 /** an arrow in an [[AnonymousDiagram]]
  *  @param label the label of this arrow
  *  @param from the label of the domain node in the same diagram
  *  @param to the label of the codomain node in the same diagram
  *  @param morphism the morphism attached to this arrow (the same theory may be attached to multiple nodes)
  */
-case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphism: AnonymousMorphism) extends DiagramElement {
-  def toTerm = OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm))
+case class DiagramArrow(label: LocalName, from: DiagramNode, to: DiagramNode, morphism: AnonymousMorphism) extends DiagramElement {
+  def toTerm = OML(label, Some(MorphType(from.toTerm, to.toTerm)), Some(morphism.toTerm))
   override def toString = s"$label:$from->$to=$morphism"
 }
 /** a diagram in the category of theories and morphisms
@@ -107,24 +121,23 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
  *  @param distArrow the label of a distinguished arrow to be used if this diagram is used like a morphism
  *  invariant: codomain of distArrow is distNode
  */
-class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName], val distArrow: Option[LocalName]) {
-  def getDistNode: Option[DiagramNode] = nodes.find(distNode contains _.label)
+class AnonymousDiagram(val arrows: List[DiagramArrow], val distNode: Option[LocalName], val distArrow: Option[LocalName]) { // val nodes: List[DiagramNode],
   def getDistArrow: Option[DiagramArrow] = arrows.find(distArrow contains _.label)
-  def getElements = nodes:::arrows
-  def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode, distArrow)
-  override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + (distNode.toList ::: distArrow.toList).mkString(", ") 
+  def getDistNode: Option[DiagramNode] = Some (getDistArrow.get.from) // TODO: catch a possible exception
+  def getArrows = arrows
+  def toTerm = AnonymousDiagramCombinator(arrows, distNode, distArrow)
+  override def toString = arrows.mkString(", ") + "; " + (distNode.toList ::: distArrow.toList).mkString(", ")
 }
 
 /** bridges between [[AnonymousDiagram]] and [[Term]] */
 object AnonymousDiagramCombinator {
   val path = ModExp.anonymousdiagram
 
-  def apply(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName], distArrow: Option[LocalName]) = {
-    val nodesT = nodes map {n => n.toTerm}
+  def apply(arrows: List[DiagramArrow], distNode: Option[LocalName], distArrow: Option[LocalName]) = {
     val arrowsT = arrows map {a => a.toTerm}
     val dN = distNode.toList.map(n => OML(n))
     val dA = distArrow.toList.map(n => OML(n))
-    OMA(OMS(this.path), dN ::: dA ::: nodesT ::: arrowsT)
+    OMA(OMS(this.path), dN ::: dA ::: arrowsT)
   }
   def unapply(t: Term): Option[AnonymousDiagram] = t match {
     case OMA(OMS(this.path), args) =>
@@ -139,17 +152,36 @@ object AnonymousDiagramCombinator {
         case OML(name, Some(tp), Some(df), _, _) => (tp, df) match {
           case (TheoryType(Context.empty), AnonymousTheoryCombinator(at)) =>
             nodes ::= DiagramNode(name, at)
-          case (MorphType(OML(f, None, None, _, _), OML(t, None, None, _, _)), AnonymousMorphismCombinator(am)) =>
-            arrows ::= DiagramArrow(name, f, t, am)
+          case (MorphType(DiagramNodeCombinator(f), DiagramNodeCombinator(t)), AnonymousMorphismCombinator(am)) =>
+            arrows ::= DiagramArrow(name, f , t, am)
           case _ => return None
         }
         case _ => return None
       }
-      val ad = new AnonymousDiagram(nodes.reverse, arrows.reverse, dN, dA)
+      val ad = new AnonymousDiagram(arrows.reverse, dN, dA)
       Some(ad)
     case _ => None
   }
-  
+
+  /*
+  /** bridges between [[AnonymousTheory]] and [[Term]] */
+object DiagramNodeCombinator {
+  val path = ModExp.anonymoustheory
+
+  def apply(label: LocalName, theory: AnonymousTheory) = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
+  def unapply(t: Term): Option[AnonymousTheory] = {
+    val at = t match {
+      case OMA(OMS(this.path), OMMOD(mt)::OMLList(omls)) =>
+        new AnonymousTheory(Some(mt), omls)
+      case OMA(OMS(this.path), OMLList(omls)) =>
+        new AnonymousTheory(None, omls)
+      case _ => return None
+    }
+    Some(at)
+  }
+}
+   */
+
 }
 
 object OMLList {
