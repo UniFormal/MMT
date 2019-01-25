@@ -141,7 +141,7 @@ object Common {
             val anonThy = anonymize(solver, thy)
             val label = ExistingName(thy.path)
             val anonThyN = DiagramNode(label, anonThy)
-            val ad = new AnonymousDiagram(List(anonThyN), Nil, Some(label), None)
+            val ad = new AnonymousDiagram(List(DiagramArrow(label,anonThyN,anonThyN,new AnonymousMorphism(Nil))), Some(label), None)
             Some(ad)
           case Some(vw: View) =>
             // the view as a one-edge diagram
@@ -154,9 +154,9 @@ object Common {
             val toL   = LocalName(vw.to.toMPath)
             val fromN = DiagramNode(fromL, from)
             val toN   = DiagramNode(toL, to)
-            val arrow = DiagramArrow(label, fromL, toL, mor)
+            val arrow = DiagramArrow(label, fromN, toN, mor)
             val distArrow = if (vw.isImplicit) Some(label) else None
-            val ad = new AnonymousDiagram(List(fromN,toN), List(arrow), Some(toL), distArrow)
+            val ad = new AnonymousDiagram(List(arrow), Some(toL), distArrow)
             Some(ad)
           case _ => return None
         }
@@ -203,8 +203,8 @@ object ComputeExtends extends ComputationRule(Extends.path) {
     val new_decls = dN.theory.decls ::: extD
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
     val extM = new AnonymousMorphism(new_decls)
-    val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
+    val extA = DiagramArrow(Extends.arrowLabel, dN, new_dN, extM)
+    val result = new AnonymousDiagram(ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
     Simplify(result.toTerm)
   }
 }
@@ -237,8 +237,8 @@ object ComputeRename extends ComputationRule(Rename.path) {
     atR.rename(oldNew:_*)
     val dNR = DiagramNode(Rename.nodeLabel, atR)
     val renM = new AnonymousMorphism(oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
-    val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
-    val result = new AnonymousDiagram(ad.nodes ::: List(dNR), ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel))
+    val renA = DiagramArrow(Rename.arrowLabel, dN, dNR, renM)
+    val result = new AnonymousDiagram(ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel))
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {

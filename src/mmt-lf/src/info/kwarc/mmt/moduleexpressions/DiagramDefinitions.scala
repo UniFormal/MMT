@@ -30,7 +30,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
        case Common.ExistingName(p) => p
        case _ => dm.parent ? labelToName(l)
      }
-     val modules = ad.getElements.mapOrSkip {e =>
+     val modules = ad.getArrows.mapOrSkip {e =>
        val isNew = e.label match {
          case Common.ExistingName(_) => false
          case _ => true
@@ -47,7 +47,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
            val isImplicit = ad.distArrow contains arrow.label 
            val anonMorph = arrow.morphism
            val df = anonMorph.toTerm
-           val vw = View(dm.parent, name, OMMOD(labelToPath(arrow.from)), OMMOD(labelToPath(arrow.to)), Some(df), isImplicit)
+           val vw = View(dm.parent, name, OMMOD(labelToPath(arrow.from.label)), OMMOD(labelToPath(arrow.to.label)), Some(df), isImplicit)
            vw
        }
      }
