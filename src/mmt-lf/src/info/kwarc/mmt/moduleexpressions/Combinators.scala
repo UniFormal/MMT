@@ -215,7 +215,7 @@ object Rename extends FlexaryConstantScala(Combinators._path, "rename") {
   /** the label of the renamed theory */
   val nodeLabel = LocalName("pres")
   /** the label of the renaming morphism (from old to renamed) */
-  val arrowLabel = LocalName("extend")
+  val arrowLabel = LocalName("rename")
 }
 
 object Rename1 extends BinaryConstantScala(Combinators._path, "rename1")
@@ -271,6 +271,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
       val Combine(d1,d2) = tm
       val List(ad1,ad2) = List(d1,d2) map {d => Common.asAnonymousDiagram(solver, d).getOrElse(return Recurse)}
+      /* Finding the path to the common node (\Gamma) */
       var List(dom1,dom2) = List(ad1,ad2) map {d => d.getDistArrow.getOrElse(return Recurse).from}
       var List(path1 , path2) = List(dom1,dom2) map {d =>
         var dom = d
@@ -285,34 +286,39 @@ object ComputeCombine extends ComputationRule(Combine.path) {
         }
         path
       }
-      //val inters : List[DiagramNode] = path1.intersect(path2)
-      // val source : DiagramNode = inters.head
+      val inters : List[DiagramNode] = path1.intersect(path2)
+      val source : DiagramNode = inters.head
+      val List(dN1,dN2) : List[DiagramNode] = List(ad1,ad2) map {t => t.getDistNode.getOrElse(return Recurse)}
+      /* Next Problem: How to retrieve the arrows? */
+      // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
+      // def getImplicit(from: Term, to: Term) : Option[Term]
+      // val morphism = (solver.lookup.getImplicit(source.toTerm,ad1.getDistNode.get.toTerm))
 
+      /* Computing the output theory presentation as the distinct unions of the two theories, for now */
+      val poL = Combine.nodeLabel
+      val po_decls = (source.theory.decls ::: dN1.theory.decls ::: dN2.theory.decls).distinct
+      val po = DiagramNode(poL, new AnonymousTheory(source.theory.mt,po_decls)) // TODO: The new meta-theory does not have to be the source meta-theory
 
-      // val nodes = (ad1.nodes ::: ad2.nodes).distinct
+      /* Computing the morphisms */
+      val morph1 = new AnonymousMorphism(po.theory.decls.diff(dN1.theory.decls))
+      val extend1 = DiagramArrow(Combine.arrowLabel1, dN1, po, morph1)
+
+      val morph2 = new AnonymousMorphism(po.theory.decls.diff(dN2.theory.decls))
+      val extend2 = DiagramArrow(Combine.arrowLabel2, dN2, po, morph2)
+
+      val morphD = new AnonymousMorphism(po.theory.decls.diff(source.theory.decls))
+      val diag = DiagramArrow(Combine.arrowLabel,source,po,morphD)
+
       val arrows = (ad1.arrows ::: ad2.arrows).distinct
-   /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
+    /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
       val fromT = d.getDistArrow.getOrElse(return Recurse).from
       fromT match {
         case Common.ExistingName(p) => p
         case _ => return Recurse
       }
     }*/
-    // if (dom1 != dom2) return Recurse // TODO find common source
 
-
-
-      // val vis1 = solver.lookup.visible(OMMOD(dom1)) // get all nodes implicitly visible to dom1
-      
-      // now put dom := dom1 = dom2
-      // dom -- -->
-      val poL = Combine.nodeLabel
-      val po = DiagramNode(poL, ???)
-      val List(dN1,dN2) = List(ad1,ad2).map(_.getDistNode.getOrElse(return Recurse))
-      val a1 = DiagramArrow(Combine.arrowLabel1, dN1, po, ???)
-      val a2 = DiagramArrow(Combine.arrowLabel2, dN2, po, ???)
-      val diag = DiagramArrow(Combine.arrowLabel, ???, po, ???)
-      val ad = new AnonymousDiagram(arrows:::List(a1,a2,diag), Some(poL), Some(Combine.arrowLabel))
+      val ad = new AnonymousDiagram(arrows:::List(extend1,extend2,diag), Some(poL), Some(Combine.arrowLabel))
       Simplify(ad.toTerm)
   }
 }
