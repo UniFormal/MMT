@@ -52,7 +52,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
            vw
        }
      }
-     val adP = ad.relabel(l => utils.listmap(oldNew, l).get)
+     val adP = ad.relabel(l => utils.listmap(oldNew, l).getOrElse(l))
      dm.dfC.normalized = Some(adP.toTerm)
      modules
    }
