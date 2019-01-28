@@ -259,7 +259,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           elab.foreach {e =>
             e.setOrigin(ElaborationOf(dm.path))
             log("flattening of " + dm.name + " yields " + e)
-            controller.add(e)
+            controller.add(e) // TODO also add to document? currently not shown when presenting or in sidekick
             applyChecked(e)
           }
           ElaboratedElement.setFully(dm)

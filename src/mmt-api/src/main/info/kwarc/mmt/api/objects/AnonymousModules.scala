@@ -108,8 +108,17 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  invariant: codomain of distArrow is distNode
   */
 class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName], val distArrow: Option[LocalName]) {
-  def getDistNode: Option[DiagramNode] = nodes.find(distNode contains _.label)
-  def getDistArrow: Option[DiagramArrow] = arrows.find(distArrow contains _.label)
+  def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
+  def getArrow(label: LocalName): Option[DiagramArrow] = arrows.find(_.label == label)
+  def getArrowWithNodes(label: LocalName): Option[(DiagramNode,DiagramNode,DiagramArrow)] = {
+    val a = getArrow(label).getOrElse(return None)
+    val f = getNode(a.from).getOrElse(return None)
+    val t = getNode(a.to).getOrElse(return None)
+    Some((f,t,a))
+  }
+  def getDistNode: Option[DiagramNode] = distNode flatMap getNode
+  def getDistArrow: Option[DiagramArrow] = distArrow flatMap getArrow
+  def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = distArrow flatMap getArrowWithNodes
   def getElements = nodes:::arrows
   def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode, distArrow)
   override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + (distNode.toList ::: distArrow.toList).mkString(", ")
