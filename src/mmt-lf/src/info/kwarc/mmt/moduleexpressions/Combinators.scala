@@ -36,7 +36,7 @@ object Common {
       case _ => None
     }
   }
-  
+
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
   def anonymize(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
     // collect included theories
@@ -80,14 +80,14 @@ object Common {
           case Some(th: Theory) =>
             lazy val default = anonymize(solver, th)
             th.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
-            val at = th.dfC.normalized match {
-              case Some(df) =>
-                df match {
-                  case AnonymousTheoryCombinator(at) => at
-                  case _ => default
-                }
-              case None => default
-            }
+          val at = th.dfC.normalized match {
+            case Some(df) =>
+              df match {
+                case AnonymousTheoryCombinator(at) => at
+                case _ => default
+              }
+            case None => default
+          }
             Some(at)
           case Some(_) =>
             solver.error("not a theory: " + p)
@@ -101,16 +101,16 @@ object Common {
       case _ => None
     }
   }
-  
+
   /** like asAnonymousTheory but for morphisms */
   def asAnonymousMorphism(solver: CheckingCallback, fromTerm: Term, from: AnonymousTheory,
-                                                    toTerm: Term, to: AnonymousTheory, mor: Term)(implicit stack: Stack, history: History): Option[AnonymousMorphism] = {
+                          toTerm: Term, to: AnonymousTheory, mor: Term)(implicit stack: Stack, history: History): Option[AnonymousMorphism] = {
     val fromPath = fromTerm match {
       case OMMOD(p) => p
       case _ => return None
     }
     val morAnon = new AnonymousMorphism(Nil)
-    // replaces toTerm-OMS's in mor with to-OMLs 
+    // replaces toTerm-OMS's in mor with to-OMLs
     val trav = OMSReplacer {p =>
       if (to.isDeclared(p.name)) Some(OML(p.name)) else None
     }
@@ -126,7 +126,7 @@ object Common {
     }
     Some(morAnon)
   }
-  
+
   /** provides the base case of the function that elaborates a diagram expression (in the form of an [[AnonymousDiagram]]) */
   def asAnonymousDiagram(solver: CheckingCallback, diag: Term)(implicit stack: Stack, history: History): Option[AnonymousDiagram] = {
     diag match {
@@ -143,7 +143,7 @@ object Common {
             val anonThy = anonymize(solver, thy)
             val label = ExistingName(thy.path)
             val anonThyN = DiagramNode(label, anonThy)
-            val ad = new AnonymousDiagram(List(DiagramArrow(label,anonThyN,anonThyN,new AnonymousMorphism(Nil))), Some(label), None)
+            val ad = new AnonymousDiagram(List(anonThyN), Nil, Some(label), None)
             Some(ad)
           case Some(vw: View) =>
             // the view as a one-edge diagram
@@ -156,19 +156,20 @@ object Common {
             val toL   = LocalName(vw.to.toMPath)
             val fromN = DiagramNode(fromL, from)
             val toN   = DiagramNode(toL, to)
-            val arrow = DiagramArrow(label, fromN, toN, mor)
+            val arrow = DiagramArrow(label, fromL, toL, mor)
             val distArrow = if (vw.isImplicit) Some(label) else None
-            val ad = new AnonymousDiagram(List(arrow), Some(toL), distArrow)
+            val ad = new AnonymousDiagram(List(fromN,toN), List(arrow), Some(toL), distArrow)
             Some(ad)
           case _ => return None
         }
-       // explicit anonymous diagrams
+      // explicit anonymous diagrams
       case AnonymousDiagramCombinator(ad) => Some(ad)
       case _ => None
     }
   }
-  
+
 }
+
 
 /* The rules below compute the results of theory combinators.
  * Each rule is applicable if the arguments have been computed already.
@@ -205,8 +206,8 @@ object ComputeExtends extends ComputationRule(Extends.path) {
     val new_decls = dN.theory.decls ::: extD
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
     val extM = new AnonymousMorphism(new_decls)
-    val extA = DiagramArrow(Extends.arrowLabel, dN, new_dN, extM)
-    val result = new AnonymousDiagram(ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
+    val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM)
+    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel), Some(Extends.arrowLabel))
     Simplify(result.toTerm)
   }
 }
@@ -239,8 +240,8 @@ object ComputeRename extends ComputationRule(Rename.path) {
     atR.rename(oldNew:_*)
     val dNR = DiagramNode(Rename.nodeLabel, atR)
     val renM = new AnonymousMorphism(oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
-    val renA = DiagramArrow(Rename.arrowLabel, dN, dNR, renM)
-    val result = new AnonymousDiagram(ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel))
+    val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM)
+    val result = new AnonymousDiagram(ad.nodes ::: List(dNR),ad.arrows ::: List(renA), Some(Rename.nodeLabel), Some(Rename.arrowLabel))
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {
@@ -260,7 +261,7 @@ object ComputeRename extends ComputationRule(Rename.path) {
   }
 }
 
-object Combine extends BinaryConstantScala(Combinators._path, "combine") {
+object Combine extends FouraryConstantScala(Combinators._path, "combine") {
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("extend2")
@@ -269,47 +270,58 @@ object Combine extends BinaryConstantScala(Combinators._path, "combine") {
 
 object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-      val Combine(d1,d2) = tm
-      val List(ad1,ad2) = List(d1,d2) map {d => Common.asAnonymousDiagram(solver, d).getOrElse(return Recurse)}
-      /* Finding the path to the common node (\Gamma) */
-      var List(dom1,dom2) = List(ad1,ad2) map {d => d.getDistArrow.getOrElse(return Recurse).from}
-      var List(path1 , path2) = List(dom1,dom2) map {d =>
-        var dom = d
-        var path = List[DiagramNode]()
-        while(dom != Nil){
-          path :+ dom
-          var vis1 : HashSet[Term] = solver.lookup.visible(DiagramNodeCombinator(dom.label,dom.theory)) // get all nodes implicitly visible to dom1
-          /* The problem now is which node to choose.. When talking about distinguished, we should always have one..
-             But, I am not sure how to do that.. so I will assume the HashSet has one element.
-           */
-          dom = DiagramNodeCombinator.unapply(vis1.head).getOrElse(return Recurse) // TODO: probably want to change the return Recurse part.
-        }
-        path
-      }
-      val inters : List[DiagramNode] = path1.intersect(path2)
-      val source : DiagramNode = inters.head
-      val List(dN1,dN2) : List[DiagramNode] = List(ad1,ad2) map {t => t.getDistNode.getOrElse(return Recurse)}
-      /* Next Problem: How to retrieve the arrows? */
-      // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
-      // def getImplicit(from: Term, to: Term) : Option[Term]
-      // val morphism = (solver.lookup.getImplicit(source.toTerm,ad1.getDistNode.get.toTerm))
+    val Combine(d1,r1,d2,r2) = tm
+    val List(ad1,ad2) = List(d1,d2) map {d => Common.asAnonymousDiagram(solver, d).getOrElse(return Recurse)}
+    /* Finding the path to the common node (\Gamma) */
+    /* TODO: Handle the case when the two domains are not the same */
+    val List(dom1,dom2) : List[LocalName] = List(ad1,ad2) map {d => d.getDistArrow.getOrElse(return Recurse).from}
+    val List(dN1,dN2) : List[DiagramNode] = List(ad1,ad2) map {t => t.getDistNode.getOrElse(return Recurse)}
+    if(dom1 != dom2) return Recurse
+    /* TODO: Get an actual node given a value of type LocalName
+     * This source is a place holder
+     * So, for now the common theory is the source */
+    val source : DiagramNode = DiagramNode(LocalName("source"),new AnonymousTheory(None,Nil))
+    // val inters =
 
-      /* Computing the output theory presentation as the distinct unions of the two theories, for now */
-      val poL = Combine.nodeLabel
-      val po_decls = (source.theory.decls ::: dN1.theory.decls ::: dN2.theory.decls).distinct
-      val po = DiagramNode(poL, new AnonymousTheory(source.theory.mt,po_decls)) // TODO: The new meta-theory does not have to be the source meta-theory
+    // var List(path1 , path2) = List(Nil,Nil)
+    /* List(dom1,dom2) map {d =>
+    var dom = d
+    var path = List[DiagramNode]()
+    while(dom != Nil){
+      path :+ dom
+      var vis1 : HashSet[Term] = solver.lookup.visible(dom) // get all nodes implicitly visible to dom1
+      /* The problem now is which node to choose.. When talking about distinguished, we should always have one..
+         But, I am not sure how to do that.. so I will assume the HashSet has one element.
+       */
+      dom = DiagramNodeCombinator.unapply(vis1.head).getOrElse(return Recurse) // TODO: probably want to change the return Recurse part.
+    }
+    path
+  }*/
+    // val inters : List[DiagramNode] = path1.intersect(path2)
+    // val source : DiagramNode = inters.head
 
-      /* Computing the morphisms */
-      val morph1 = new AnonymousMorphism(po.theory.decls.diff(dN1.theory.decls))
-      val extend1 = DiagramArrow(Combine.arrowLabel1, dN1, po, morph1)
+    /* Next Problem: How to retrieve the arrows? */
+    // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
+    // def getImplicit(from: Term, to: Term) : Option[Term]
+    // val morphism = (solver.lookup.getImplicit(source.toTerm,ad1.getDistNode.get.toTerm))
 
-      val morph2 = new AnonymousMorphism(po.theory.decls.diff(dN2.theory.decls))
-      val extend2 = DiagramArrow(Combine.arrowLabel2, dN2, po, morph2)
+    /* Computing the output theory presentation as the distinct unions of the two theories, for now */
+    val poL = Combine.nodeLabel
+    val po_decls = (source.theory.decls ::: dN1.theory.decls ::: dN2.theory.decls).distinct
+    val po = DiagramNode(poL, new AnonymousTheory(source.theory.mt,po_decls)) // TODO: The new meta-theory does not have to be the source meta-theory
 
-      val morphD = new AnonymousMorphism(po.theory.decls.diff(source.theory.decls))
-      val diag = DiagramArrow(Combine.arrowLabel,source,po,morphD)
+    /* Computing the morphisms */
+    val morph1 = new AnonymousMorphism(po.theory.decls.diff(dN1.theory.decls))
+    val extend1 = DiagramArrow(Combine.arrowLabel1, dN1.label, po.label, morph1)
 
-      val arrows = (ad1.arrows ::: ad2.arrows).distinct
+    val morph2 = new AnonymousMorphism(po.theory.decls.diff(dN2.theory.decls))
+    val extend2 = DiagramArrow(Combine.arrowLabel2, dN2.label, po.label, morph2)
+
+    val morphD = new AnonymousMorphism(po.theory.decls.diff(source.theory.decls))
+    val diag = DiagramArrow(Combine.arrowLabel,source.label,po.label,morphD)
+
+    val arrows = (ad1.arrows ::: ad2.arrows).distinct
+    val nodes = (ad1.nodes ::: ad2.nodes).distinct
     /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
       val fromT = d.getDistArrow.getOrElse(return Recurse).from
       fromT match {
@@ -318,10 +330,11 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       }
     }*/
 
-      val ad = new AnonymousDiagram(arrows:::List(extend1,extend2,diag), Some(poL), Some(Combine.arrowLabel))
-      Simplify(ad.toTerm)
+    val ad = new AnonymousDiagram(nodes ::: List(po), arrows:::List(extend1,extend2,diag), Some(poL), Some(Combine.arrowLabel))
+    Simplify(ad.toTerm)
   }
 }
+
 
 /**
  * Translate(m,T) and Expand(m,T) form a pushout along an inclusion as follows:

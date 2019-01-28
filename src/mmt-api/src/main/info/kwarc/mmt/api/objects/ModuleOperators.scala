@@ -321,7 +321,6 @@ object ModExp extends uom.TheoryScala {
 
   val anonymoustheory = _path ? "anonymoustheory"
   val anonymousmorphism = _path ? "anonymousmorphism"
-  val diagramnode = _path ? "diagramnode"
   val anonymousdiagram = _path ? "anonymousdiagram"
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
