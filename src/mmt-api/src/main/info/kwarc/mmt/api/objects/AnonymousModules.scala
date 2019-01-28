@@ -86,7 +86,7 @@ sealed abstract class DiagramElement {
   *  @param label the label of this node
   *  @param theory the theory attached to this node (the same theory may be attached to multiple nodes)
   */
-case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
+case class DiagramNode(var label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
   override def toString = s"$label:THEY=$theory"
 }
@@ -96,9 +96,15 @@ case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends Diagra
   *  @param to the label of the codomain node in the same diagram
   *  @param morphism the morphism attached to this arrow (the same theory may be attached to multiple nodes)
   */
-case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphism: AnonymousMorphism) extends DiagramElement {
-  def toTerm = OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm))
-  override def toString = s"$label:$from->$to=$morphism"
+case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphism: AnonymousMorphism, isImplicit: Boolean) extends DiagramElement {
+  def toTerm = {
+    val f = if (isImplicit) Some("implicit") else None
+    OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm), None, f)
+  }
+  override def toString = {
+    val a = if (isImplicit) "-i->" else "--->"
+    s"$label:$from$a$to=$morphism"
+  }
 }
 /** a diagram in the category of theories and morphisms
   *  @param nodes the nodes
@@ -107,7 +113,7 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param distArrow the label of a distinguished arrow to be used if this diagram is used like a morphism
   *  invariant: codomain of distArrow is distNode
   */
-class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName], val distArrow: Option[LocalName]) {
+class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {
   def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
   def getArrow(label: LocalName): Option[DiagramArrow] = arrows.find(_.label == label)
   def getArrowWithNodes(label: LocalName): Option[(DiagramNode,DiagramNode,DiagramArrow)] = {
@@ -117,44 +123,59 @@ class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArr
     Some((f,t,a))
   }
   def getDistNode: Option[DiagramNode] = distNode flatMap getNode
-  def getDistArrow: Option[DiagramArrow] = distArrow flatMap getArrow
-  def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = distArrow flatMap getArrowWithNodes
+  def getDistArrow: Option[DiagramArrow] = distNode flatMap {n => arrows.find(a => a.isImplicit && a.to == n)}
+  /**
+   * returns all distinguished arrows that can be composed to form a morphism into the node label
+   * starting from that node 
+   */
+  def getDistArrowsTo(label: LocalName): List[DiagramArrow] = {
+    arrows.find(a => a.to == label && a.isImplicit) match {
+      case None => Nil
+      case Some(a) => a :: getDistArrowsTo(a.from)
+    }
+  }
+  def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}
   def getElements = nodes:::arrows
-  def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode, distArrow)
-  override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + (distNode.toList ::: distArrow.toList).mkString(", ")
+  /** replaces every label l with r(l) */
+  def relabel(r: LocalName => LocalName) = {
+    val nodesR = nodes.map(n => n.copy(label = r(n.label)))
+    val arrowsR = arrows.map(a => a.copy(label = r(a.label), from = r(a.from), to = r(a.to)))
+    new AnonymousDiagram(nodesR, arrowsR, distNode map r)
+  }
+  def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode)
+  override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + distNode.toList.mkString("")
 }
 
 /** bridges between [[AnonymousDiagram]] and [[Term]] */
 object AnonymousDiagramCombinator {
   val path = ModExp.anonymousdiagram
 
-  def apply(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName], distArrow: Option[LocalName]) = {
+  def apply(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName]) = {
     val nodesT = nodes map {n => n.toTerm}
     val arrowsT = arrows map {a => a.toTerm}
     val dN = distNode.toList.map(n => OML(n))
-    val dA = distArrow.toList.map(n => OML(n))
-    OMA(OMS(this.path), dN ::: dA ::: nodesT ::: arrowsT)
+    OMA(OMS(this.path), dN ::: nodesT ::: arrowsT)
   }
   def unapply(t: Term): Option[AnonymousDiagram] = t match {
     case OMA(OMS(this.path), args) =>
       var nodes: List[DiagramNode] = Nil
       var arrows: List[DiagramArrow] = Nil
-      var (elems, dN, dA) = args match {
-        case OML(dN, None, None, _ , _) :: OML(dA, None, None, _ , _) :: rest => (rest, Some(dN), Some(dA))
-        case OML(dN, None, None, _ , _) :: rest => (rest, Some(dN), None)
-        case rest => (rest, None, None)
+      var (elems, dN) = args match {
+        case OML(dN, None, None, _ , _) :: rest => (rest, Some(dN))
+        case rest => (rest, None)
       }
       elems foreach {
-        case OML(name, Some(tp), Some(df), _, _) => (tp, df) match {
+        case OML(name, Some(tp), Some(df), _, f) => (tp, df) match {
           case (TheoryType(Context.empty), AnonymousTheoryCombinator(at)) =>
             nodes ::= DiagramNode(name, at)
           case (MorphType(OML(f, None, None, _, _), OML(t, None, None, _, _)), AnonymousMorphismCombinator(am)) =>
-            arrows ::= DiagramArrow(name, f, t, am)
+            val impl = f contains "implicit"
+            arrows ::= DiagramArrow(name, f, t, am, impl)
           case _ => return None
         }
         case _ => return None
       }
-      val ad = new AnonymousDiagram(nodes.reverse, arrows.reverse, dN, dA)
+      val ad = new AnonymousDiagram(nodes.reverse, arrows.reverse, dN)
       Some(ad)
     case _ => None
   }

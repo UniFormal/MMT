@@ -30,13 +30,15 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
        case Common.ExistingName(p) => p
        case _ => dm.parent ? labelToName(l)
      }
+     var oldNew: List[(LocalName,LocalName)] = Nil
      val modules = ad.getElements.mapOrSkip {e =>
-       val isNew = e.label match {
-         case Common.ExistingName(_) => false
-         case _ => true
+       e.label match {
+         case Common.ExistingName(_) => throw SkipThis
+         case _ =>
        }
-       if (!isNew) throw SkipThis
-       val name = labelToName(e.label)
+       val path = labelToPath(e.label)
+       val name = path.name
+       oldNew ::= (e.label,LocalName(path))
        e match {
          case node: DiagramNode =>
            val anonThy = node.theory
@@ -44,13 +46,14 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
            val thy = Theory(dm.parent, name, anonThy.mt, df = df)
            thy
          case arrow: DiagramArrow =>
-           val isImplicit = ad.distArrow contains arrow.label 
            val anonMorph = arrow.morphism
            val df = anonMorph.toTerm
-           val vw = View(dm.parent, name, OMMOD(labelToPath(arrow.from)), OMMOD(labelToPath(arrow.to)), Some(df), isImplicit)
+           val vw = View(dm.parent, name, OMMOD(labelToPath(arrow.from)), OMMOD(labelToPath(arrow.to)), Some(df), arrow.isImplicit)
            vw
        }
      }
+     val adP = ad.relabel(l => utils.listmap(oldNew, l).get)
+     dm.dfC.normalized = Some(adP.toTerm)
      modules
    }
 }
