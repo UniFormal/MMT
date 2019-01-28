@@ -1,27 +1,24 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.checking.Success
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Controller, Logger}
+import info.kwarc.mmt.api.frontend.{Controller, Extension, Logger}
 import info.kwarc.mmt.api.modules.Theory.{noBase, noParams}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.objects.{OMID, Term}
 import info.kwarc.mmt.api.symbols._
 
-import scala.util.Try
+import scala.util.{Success, Try}
 
-abstract class Intersecter extends Logger {
-  implicit val controller: Controller
-  val logPrefix = "Viewfinder"
-  lazy val report = controller.report
+abstract class IntersecterAbs extends Extension {
+  override val logPrefix = "Viewfinder"
 
   /** Creates intersected theories from a given View
     *
     * @param vs partial renaming of theory S to T
     * @return pair of theories S' T' including the intersection
     */
-  def intersect(vs:Viewset): (TheorySet,TheorySet) = {
+  def intersect(vs:Viewset) (implicit controller: Controller): (TheorySet,TheorySet) = {
     require(vs.from.isDefined && vs.to.isDefined)
     vs.distribute
     val metaasincludes = vs.from.get.meta!=vs.to.get.meta
@@ -74,6 +71,7 @@ abstract class Intersecter extends Logger {
     }
   }
 
+  /*
   def intersect(vs:Viewset, takefromCodomain:Boolean = false, intname:String ="", refact : List[TheorySet] = Nil) : List[TheorySet] = {
     require(vs.from.isDefined && vs.to.isDefined)
 
@@ -160,7 +158,7 @@ abstract class Intersecter extends Logger {
       from.localconsts = from.localconsts.filter(p => !vs.localassignments.exists(pair => p._1.path==pair._1))
       to.localconsts = to.localconsts.filter(p => !vs.localassignments.exists(pair => p._1.path==pair._2))
       val includes = from.includes.toSet intersect to.includes.toSet
-      val int = TheorySet(consts,includes.toList)
+      val int = TheorySet(consts.map(c => c._1), includes.toList)
       if (from.meta.isDefined && from.meta==to.meta) int.setMeta(from.meta.get)
       int.setPath(path)
       from.includes = int::from.includes.filter(i => !includes.contains(i))
@@ -170,12 +168,15 @@ abstract class Intersecter extends Logger {
       List(int,from,to)
     }
   }
+  */
 }
+
 
 /**
  * Intersects theories
  */
-case class Intersecter(controller:Controller) {
+case class Intersecter(ctrl :Controller) extends IntersecterAbs {
+  controller = ctrl
   def apply(th1:Theory, th2:Theory, pairs:List[(FinalConstant,FinalConstant,LocalName,Option[String])], intname:LocalName):List[Theory] = {
     val int = new Theory(th1.path.^^,intname,if (th1.meta==th2.meta) th1.meta else None, noParams, noBase)
 
@@ -197,7 +198,7 @@ case class Intersecter(controller:Controller) {
       })
       Constant(OMID(int.path),c._3,List(),tp,df,rl,notC)
     })
-    Moduleadder(int,consts.toSet)
+    Moduleadder(int,consts)
     var newth1 = new Theory(th1.path.^^,th1.name,th1.meta, noParams, noBase)
     var newth2 = new Theory(th2.path.^^,th2.name,th2.meta, noParams, noBase)
     val simple1 = if (pairs.forall(p => p._3==p._1.name && p._1.df.isEmpty)) true else false
@@ -205,7 +206,7 @@ case class Intersecter(controller:Controller) {
     var subst1 = if(simple1) pairs.map(p => (int.get(p._3).path,p._1.path)) else List()
     var subst2 = if(simple2) pairs.map(p => (int.get(p._3).path,p._2.path)) else List()
     val s1 = if(simple1) PlainInclude(int.path,newth1.path) else {
-      val s = new Structure(OMID(newth1.path), int.name, TermContainer(OMID(int.path)), false)
+      val s = new Structure(OMID(newth1.path), int.name, TermContainer(OMID(int.path)), TermContainer(None), false)
         subst1 = pairs.map(c => (s.path / ComplexStep(int.path) / c._3,c._1.path))
       for (o <- pairs if o._1.name!=o._3 || o._1.df.isDefined) {
         val df = Moduleadder.substitute(o._1.df,subst1)
@@ -215,7 +216,7 @@ case class Intersecter(controller:Controller) {
       s
     }
     val s2 = if(simple2) PlainInclude(int.path,newth2.path) else {
-      val s = new Structure(OMID(newth2.path), int.name, TermContainer(OMID(int.path)), false)
+      val s = new Structure(OMID(newth2.path), int.name, TermContainer(OMID(int.path)), TermContainer(None), false)
       subst2 = pairs.map(c => (s.path / ComplexStep(int.path) / c._3,c._2.path))
       for (o <- pairs if o._2.name!=o._3 || o._2.df.isDefined) {
         val df = Moduleadder.substitute(o._2.df,subst2)
@@ -233,14 +234,14 @@ case class Intersecter(controller:Controller) {
     val th2includes = th2.getIncludesWithoutMeta.filter(p => !includes.contains(p))
     // TODO flatten includes in s?
 
-    Moduleadder(newth1,th1consts.toSet,subst1)
-    Moduleadder(newth2,th2consts.toSet,subst2)
+    Moduleadder(newth1,th1consts,subst1)
+    Moduleadder(newth2,th2consts,subst2)
 
     List(int,newth1,newth2)
   }
 
   def apply(th1:Theory, th2:Theory, intname:LocalName):List[Theory] = {
-    val viewfinder = controller.extman.get(Class[ViewFinder]).headOption.getOrElse({
+    val viewfinder = controller.extman.get(classOf[ViewFinder]).headOption.getOrElse({
       val vf = new ViewFinder()
       controller.extman.addExtension(vf)
       vf

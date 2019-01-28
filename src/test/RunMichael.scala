@@ -1,12 +1,16 @@
-import info.kwarc.mmt.api.refactoring.ViewFinder
-import info.kwarc.mmt.api.{NamespaceMap, Path}
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
+import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, ViewFinder, Viewset}
+import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.got.GraphOptimizationTool
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 
 object RunMichael extends MagicTest {
 
   def run : Unit = {
-    viewfinder
+    moduleadder
   }
 
   def got : Unit = {
@@ -57,5 +61,52 @@ object RunMichael extends MagicTest {
       vf.find(from,to).foreach(r => log(r.toString))
       // vf.find(mitmmonoid,to).foreach(r => log(r.toString))
       // vf.find(pvsmonoid,to).foreach(r => log(r.toString))
+  }
+
+  def intersect: Unit = {
+    val vf = new ViewFinder
+    controller.extman.addExtension(vf,List(
+      "MitM/smglom"
+      //,"HOLLight/basic"
+      // ,"PVS/Prelude"
+      // ,"PVS/NASA"
+    ))
+    val int = new Intersecter(controller)
+    controller.extman.addExtension(int, Nil)
+    while(!vf.isInitialized) {
+      Thread.sleep(500)
+    }
+
+    val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
+    val to = "MitM/smglom"
+    vf.find(from,to).map(r => int.intersect(Viewset(r)(controller))(controller)).foreach(s => log(s.toString))
+  }
+
+  def exportMMT: Unit = {
+    //controller.handleLine("extension info.kwarc.mmt.api.presentation.MMTSyntaxPresenter")
+    controller.extman.addExtension(new MMTSyntaxPresenter(), List())
+    val msp = controller.extman.get(classOf[MMTSyntaxPresenter]).head
+    val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
+    val th = controller.get(from)
+    val sb = new info.kwarc.mmt.api.presentation.StringBuilder()
+    msp(th)(sb)
+    log(sb.get)
+  }
+
+  def moduleadder: Unit = {
+    controller.extman.addExtension(new MMTSyntaxPresenter(), List())
+    val msp = controller.extman.get(classOf[MMTSyntaxPresenter]).head
+    val from = Path.parseS("http://mydomain.org/testarchive/mmt-example?test_base?base_type",NamespaceMap.empty)
+    val from2 = Path.parseS("http://mydomain.org/testarchive/mmt-example?test_all?final",NamespaceMap.empty)
+    val to = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
+    val const = controller.getConstant(from).asInstanceOf[FinalConstant]
+    val th = Theory.empty(Path.parseD("http://mydomain.org/testarchive/mmt-example",NamespaceMap.empty), LocalName("TH'"), None)
+    controller.add(th)
+    //controller.getTheory(to)
+    Moduleadder(th, List(from, from2), controller)
+    val sb = new info.kwarc.mmt.api.presentation.StringBuilder()
+    msp(th)(sb)
+    log(sb.get)
+    log(th.toString)
   }
 }

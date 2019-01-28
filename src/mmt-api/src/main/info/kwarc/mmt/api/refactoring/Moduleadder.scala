@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{symbols, _}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory.{noBase, noParams}
 import info.kwarc.mmt.api.notations.NotationContainer
@@ -76,7 +76,7 @@ sealed trait Viewset {
     val v = View(doc,name,from.get.toTerm,to.get.toTerm,false)
     Moduleadder(v,localassignments,controller)
     val includeviews = includes.map(_.toView)
-    includeviews.foreach(x => v add PlainViewInclude(v.toTerm,x._1.from.toMPath,x._1.toTerm.toMPath))
+    includeviews.foreach(x => v add Structure(v.toTerm, x._1.name, x._1.from, Option(x._1.toTerm), false))
     (v,v::includeviews.flatMap(_._2))
   }
 
@@ -227,7 +227,7 @@ object Viewset {
   }
 
   private def flatDomain(v:View)(implicit controller: Controller) : List[LocalName]
-  = v.domain.toList:::v.getIncludes.flatMap(p => controller.get(p) match {
+  = v.domain.toList:::v.getIncludes.flatMap(p => controller.get(p._1) match {
     case w:View => flatDomain(w)
     case _ => List()
   })
@@ -249,7 +249,7 @@ object Viewset {
 
   def apply(v:View)(implicit controller : Controller) : Viewset = {
     val (dom,cod) = (controller.get(v.from.toMPath), controller.get(v.to.toMPath)) match {
-      case p:(Theory,Theory) => p
+      case (s:Theory,t:Theory) => (s, t)
       case _ => return Viewset(Set(),Set())
     }
     val ass : List[(GlobalName,GlobalName)] = v.getDeclarations.map{
@@ -261,7 +261,7 @@ object Viewset {
         case _ => None
       }
     }.filter(_.isDefined).map(_.get)
-    val includes = v.getIncludes map controller.get collect {
+    val includes = v.getIncludes map ( inc => controller.get(inc._1)) collect {
       case w:View => w
     }
     val vs = Viewset(ass.toSet,(includes map apply).toSet,Some(v.path))
@@ -445,13 +445,15 @@ object Moduleadder {
       TermContainer(a._1.tp),
       TermContainer(OMID(a._2.path)),
       None,
-      NotationContainer(None)))
+      NotationContainer(None),
+      Visibility.public)
+    )
     true
   }
 
   def apply(th: Theory,a:FinalConstant):Boolean = {
     th.add(new FinalConstant(OMID(th.path), a.name, a.alias, TermContainer(a.tp), TermContainer(a.df), a.rl,
-      NotationContainer(a.not)))
+      NotationContainer(a.not),Visibility.public))
     true
   }
 
@@ -465,7 +467,7 @@ object Moduleadder {
     val nsubsts = for {a <- list} yield (GlobalName(th.path,a.name),a.path)
     for (a <- order(list)) th.add(new FinalConstant(OMID(th.path), a.name, a.alias,
       TermContainer(substitute(a.tp,nsubsts:::substs)), TermContainer(substitute(a.df,nsubsts:::substs)), a.rl,
-      NotationContainer(a.not)))
+      NotationContainer(a.not),Visibility.public))
     true
   }
 
@@ -530,12 +532,12 @@ object Moduleadder {
   }
 
   def orderp(list:List[(FinalConstant,FinalConstant)]) : List[(FinalConstant,FinalConstant)] = {
-    val newlist = orderh(list.map(b => Consthash(b._2,List(),None))).reverse
+    val newlist = orderh(list.map(b => Consthash(b._2.path ,List(), List(), false, None))).reverse //TODO lists, isProp
     newlist.map(p => list.collectFirst{case c if c._2.path==p.name => c}.get)
   }
 
   def order(list:List[FinalConstant]):List[FinalConstant] = {
-    val newlist = orderh(list.map(b => Consthash(b,List(),None))).reverse
+    val newlist = orderh(list.map(b => Consthash(b.path,List(),List(),false, None))).reverse //TODO lists, isProp
     newlist.map(p => list.collectFirst{case c if c.path==p.name => c}.get)
   }
 
