@@ -1,6 +1,6 @@
 package info.kwarc.mmt.moduleexpressions
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{uom, _}
 import checking._
 import info.kwarc.mmt.api.frontend.{Controller, ExtensionManager, Report}
 import info.kwarc.mmt.api.libraries.{Library, ThinGeneratedCategory}
@@ -10,18 +10,10 @@ import objects._
 import utils._
 import uom._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.moduleexpressions.Combine.path
+import info.kwarc.mmt.moduleexpressions.PushoutUtils.BranchInfo
 
 import scala.collection.mutable.HashSet
-
-/* TODO: I don't think the parameters that I am using in the library here makes sense.. */
-/* TODO: I am currently working on CheckingCallback.Lookup, which is the whole library for MMT
-*  I believe ww should be having a sub-theory-graph of only distinguished arrows that we do computations on (more effeicent)
-*  BUT: when I use Graph.graph.update(OMMOD(dN.label),new_dN.label,new_decls) I get error because it is expecting a Term, not a LocalName */
-object Graph{
-  val r = new Report
-  def lib = new Library(new ExtensionManager(new Controller(r)) ,r ,None)
-  def graph = new ThinGeneratedCategory(lib)
-}
 
 object Combinators {
   val _path = ModExp._base ? "Combinators"
@@ -167,6 +159,21 @@ object Common {
     }
   }
 
+  /* Applying a rename function to on OML */
+  def applyRenameFunc (decls : List[OML], renames : List[(LocalName,LocalName)]): List[OML] =
+    decls.map(
+      d => d match {
+        case OML(label,tp,df,nt,feature) =>
+          val rens = renames.filter(r => if(r._1.equals(label)) true else false)
+          if(rens.isEmpty) d
+          else (new OML(rens.last._2,tp,df,nt,feature))
+      })
+
+  def asRenameFunc(r : List[Term]) : List[(LocalName,LocalName)] = r.map {
+    case Rename1(OML(old,None,None,_,_), OML(nw,None,None,_,_)) => (old,nw)
+    case _ => return Nil
+  }
+
 }
 
 
@@ -264,33 +271,57 @@ object ComputeRename extends ComputationRule(Rename.path) {
  * apply/unapply methods for terms of the form
  * Combine(diagram1, List(Rename1(old1,new1),...), diagram2, List(Rename1(old2,new2),...))
  */
-object Combine extends ConstantScala {
+
+/* Have a common ComputePushout that contains methods common between Combine and Translate(Mixin) */
+
+trait Pushout extends ConstantScala {
   val parent = Combinators._path
-  val name = "combine"
-  
+
   def apply(d1: Term, r1: List[Term], d2: Term, r2: List[Term]) = {
     path(d1 :: r1 ::: List(d2) ::: r2)
   }
-  
+
   def unapply(t: Term): Option[(Term,List[Term],Term,List[Term])] = t match {
-      case OMA(OMS(this.path), args) =>
-        var left = args
-        val d1 = left.headOption.getOrElse(return None)
-        val r1 = left.takeWhile(t => Rename1.unapply(t).isDefined)
-        left = left.drop(r1.length)
-        val d2 = left.headOption.getOrElse(return None)
-        val r2 = left.takeWhile(t => Rename1.unapply(t).isDefined)
-        left = left.drop(r2.length)
-        if (left.nonEmpty) return None
-        Some((d1,r1,d2,r2))
-      case _ => None
+    case OMA(OMS(this.path), args) =>
+      var left = args
+      val d1 = left.headOption.getOrElse(return None)
+      val r1 = left.takeWhile(t => Rename1.unapply(t).isDefined)
+      left = left.drop(r1.length)
+      val d2 = left.headOption.getOrElse(return None)
+      val r2 = left.takeWhile(t => Rename1.unapply(t).isDefined)
+      left = left.drop(r2.length)
+      if (left.nonEmpty) return None
+      Some((d1,r1,d2,r2))
+    case _ => None
   }
-  
+}
+
+object PushoutUtils {
+  case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
+                        distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) {
+    def extend(po: DiagramNode) = {
+      val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
+      DiagramArrow(Combine.arrowLabel1, distNode.label, Combine.nodeLabel, morph, false)
+    }
+  }
+  def collectBranchInfo(solver: CheckingCallback,d: Term,rename : List[Term])(implicit stack: Stack, history: History): Option[BranchInfo] = {
+    val ren = Common.asRenameFunc(rename)
+    val ad = Common.asAnonymousDiagram(solver, d).getOrElse(return None)
+    val dom = ad.getDistArrow.getOrElse(return None).from
+    val distNode = ad.getDistNode.getOrElse(return None)
+    val distTo = ad.getDistArrowsTo(dom)
+    Some(PushoutUtils.BranchInfo(ad,dom,distNode,distTo,ren))
+  }
+}
+
+object Combine extends Pushout {
+  val name = "combine"
+
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("extend2")
   val arrowLabel = LocalName("diag")
-  
+
 }
 
 object ComputeCombine extends ComputationRule(Combine.path) {
@@ -298,28 +329,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Combine(d1,r1,d2,r2) = tm
 
-    case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
-                          distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) {
-      def extend(po: DiagramNode) = {
-        val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
-        DiagramArrow(Combine.arrowLabel1, distNode.label, Combine.nodeLabel, morph, false)
-      }
-    }
-    
-    def collectBranchInfo(d: Term): Option[BranchInfo] = {
-      val ren: List[(LocalName,LocalName)] = r1.map {
-        case Rename1(OML(old,None,None,_,_), OML(nw,None,None,_,_)) => (old,nw)
-        case _ => return None
-      }
-      val ad = Common.asAnonymousDiagram(solver, d).getOrElse(return None)
-      val dom = ad.getDistArrow.getOrElse(return None).from
-      val distNode = ad.getDistNode.getOrElse(return None)
-      val distTo = ad.getDistArrowsTo(dom)
-      Some(BranchInfo(ad,dom,distNode,distTo,ren))
-    }
-    
-    val b1 : BranchInfo = collectBranchInfo(d1).getOrElse(return Recurse)
-    val b2 : BranchInfo = collectBranchInfo(d2).getOrElse(return Recurse)
+    val b1 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d1,r1).getOrElse(return Recurse)
+    val b2 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d2,r2).getOrElse(return Recurse)
     
     /* Finding the common node (\Gamma) */
     val nearestCommonSource : LocalName = (b1.distTo.map(_.from) intersect b2.distTo.map(_.from)).headOption.getOrElse(return Recurse)
@@ -328,19 +339,9 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       case _ => return Recurse
     }
 
-    /* Applying a rename function to on OML */
-    def applyRename (decls : List[OML], renames : List[(LocalName,LocalName)]): List[OML] =
-      decls.map(
-       d => d match {
-          case OML(label,tp,df,nt,feature) =>
-            val rens = renames.filter(r => if(r._1.equals(label)) true else false)
-            if(rens.isEmpty) d
-            else (new OML(rens.last._2,tp,df,nt,feature))
-       })
-
     /* Getting the declarations after applying rename */
-    val node1Decls : List[OML] = applyRename(b1.distNode.theory.decls,b1.renames)
-    val node2Decls : List[OML] = applyRename(b2.distNode.theory.decls,b2.renames)
+    val node1Decls : List[OML] = Common.applyRenameFunc(b1.distNode.theory.decls,b1.renames)
+    val node2Decls : List[OML] = Common.applyRenameFunc(b2.distNode.theory.decls,b2.renames)
     val commonDecls : List[OML] = node1Decls.intersect(node2Decls)
 
     /* TODO: Check the guard */
@@ -373,7 +374,14 @@ object ComputeCombine extends ComputationRule(Combine.path) {
   }
 }
 
+object Translate extends Pushout {
+  val name = "translate"
 
+  val nodeLabel = LocalName("pres")
+  val arrowLabel1 = LocalName("extend")
+  val arrowLabel2 = LocalName("view")
+  val arrowLabel = LocalName("diag")
+}
 /**
  * Translate(m,T) and Expand(m,T) form a pushout along an inclusion as follows:
  *
@@ -382,25 +390,41 @@ object ComputeCombine extends ComputationRule(Combine.path) {
  * Expand(m,T): T -> Translate(m,T)
  * inclusion from B to Translate(m,T)
  */
-object Translate extends BinaryConstantScala(Combinators._path, "translate"){
-  val nodeLabel = LocalName("pres")
-  val arrowLabel1 = LocalName("extend")
-  val arrowLabel2 = LocalName("view")
-  val arrowLabel = LocalName("diag")
-}
+
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    val Translate(mor, dia) = tm
-    val dom = Morph.domain(mor)(solver.lookup).getOrElse{return Recurse}
+    /* Both combine and translate takes two diagrams and two renames. The difference is in the content of the second diagram */
+    val Translate(d1, r1, d2, r2) = tm
+    val List(ad1,ad2) = List(d1,d2).map{d => Common.asAnonymousDiagram(solver, d).getOrElse {return RecurseOnly(List(1))}}
+    val List(ren1,ren2) = List(r1,r2).map{r => Common.asRenameFunc(r)}
+
+
+
+    /* From the first diagram we get the inclusion arrow, apply ren1 to it */
+    val targetNodeDecls : List[OML] = Common.applyRenameFunc(ad1.getDistNode.getOrElse(return Recurse).theory.decls,ren1)
+    val codAnon = new AnonymousTheory(ad1.getDistNode.getOrElse(return Recurse).theory.mt,targetNodeDecls)
+    val domAnon = ad1.getNode(ad1.getDistArrow.getOrElse(return Recurse).from).getOrElse(return Recurse).theory
+    // val sourceNodeDecls : List[OML] = Common.applyRenameFunc(ad1.getNode(ad1.getDistArrow.getOrElse(return Recurse).from).getOrElse(return Recurse).theory.decls,ren1)
+
+    /* The input mor as DiagramArrow */
+    val arrow2 : DiagramArrow = ad2.getDistArrow.getOrElse(return Recurse)
+    /* From the second diagram, we get the view, then apply the rename function on it */
+    val morphDecls : List[OML] = Common.applyRenameFunc(arrow2.morphism.decls,ren2)
+    val morAnon = new AnonymousMorphism(morphDecls)
+
+
+
+    /*   val dom = Morph.domain(mor)(solver.lookup).getOrElse{return Recurse}
     val cod = Morph.codomain(mor)(solver.lookup).getOrElse{return Recurse}
-    val List(thyAnon,domAnon,codAnon) = List(dia,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return Recurse)}
-    val morAnon = Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon, mor).getOrElse(return Recurse)
+    val List(thyAnon,domAnon,codAnon) = List(???,dom,cod).map {t => Common.asAnonymousTheory(solver, t).getOrElse(return Recurse)} */
+
+    // Common.asAnonymousMorphism(solver, dom, domAnon, cod, codAnon,AnonymousMorphismCombinator(morphDecls)).getOrElse(return Recurse)
     // translate all declarations of thy that are not from dom via mor and add them to cod
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
     val translator = OMLReplacer(morAsSub)
     val pushout = codAnon
-    thyAnon.decls.foreach {
+    morAnon.decls.foreach {
       case RealizeOML(p,_) =>
         // these may also be translatable, but they are optional anyway
       case oml =>
