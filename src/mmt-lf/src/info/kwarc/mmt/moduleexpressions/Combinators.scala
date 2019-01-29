@@ -289,7 +289,7 @@ object Combine extends ConstantScala {
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("extend2")
-  val arrowLabel = LocalName("extend")
+  val arrowLabel = LocalName("diag")
   
 }
 
@@ -298,7 +298,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Combine(d1,r1,d2,r2) = tm
 
-    case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode, distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) {
+    case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
+                          distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) {
       def extend(po: DiagramNode) = {
         val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
         DiagramArrow(Combine.arrowLabel1, distNode.label, Combine.nodeLabel, morph, false)
@@ -317,47 +318,45 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       Some(BranchInfo(ad,dom,distNode,distTo,ren))
     }
     
-    val b1 = collectBranchInfo(d1).getOrElse(return Recurse)
-    val b2 = collectBranchInfo(d2).getOrElse(return Recurse)
+    val b1 : BranchInfo = collectBranchInfo(d1).getOrElse(return Recurse)
+    val b2 : BranchInfo = collectBranchInfo(d2).getOrElse(return Recurse)
     
-    /* Finding the path to the common node (\Gamma) */
-    /* TODO: Handle the case when the two domains are not the same */
-    val nearestCommonSource = (b1.distTo.map(_.from) intersect b2.distTo.map(_.from)).headOption.getOrElse(return Recurse)
-    val source = nearestCommonSource match {
+    /* Finding the common node (\Gamma) */
+    val nearestCommonSource : LocalName = (b1.distTo.map(_.from) intersect b2.distTo.map(_.from)).headOption.getOrElse(return Recurse)
+    val source : DiagramNode = nearestCommonSource match {
       case Common.ExistingName(s) => b1.anondiag.getNode(nearestCommonSource).get
       case _ => return Recurse
     }
 
-    // var List(path1 , path2) = List(Nil,Nil)
-    /* List(dom1,dom2) map {d =>
-    var dom = d
-    var path = List[DiagramNode]()
-    while(dom != Nil){
-      path :+ dom
-      var vis1 : HashSet[Term] = solver.lookup.visible(dom) // get all nodes implicitly visible to dom1
-      /* The problem now is which node to choose.. When talking about distinguished, we should always have one..
-         But, I am not sure how to do that.. so I will assume the HashSet has one element.
-       */
-      dom = DiagramNodeCombinator.unapply(vis1.head).getOrElse(return Recurse) // TODO: probably want to change the return Recurse part.
-    }
-    path
-  }*/
-    // val inters : List[DiagramNode] = path1.intersect(path2)
-    // val source : DiagramNode = inters.head
+    /* Applying a rename function to on OML */
+    def applyRename (decls : List[OML], renames : List[(LocalName,LocalName)]): List[OML] =
+      decls.map(
+       d => d match {
+          case OML(label,tp,df,nt,feature) =>
+            val rens = renames.filter(r => if(r._1.equals(label)) true else false)
+            if(rens.isEmpty) d
+            else (new OML(rens.last._2,tp,df,nt,feature))
+       })
+
+    /* Getting the declarations after applying rename */
+    val node1Decls : List[OML] = applyRename(b1.distNode.theory.decls,b1.renames)
+    val node2Decls : List[OML] = applyRename(b2.distNode.theory.decls,b2.renames)
+    val commonDecls : List[OML] = node1Decls.intersect(node2Decls)
+
+    /* TODO: Check the guard */
+    val result_node_decls : List[OML] = (node1Decls ::: node2Decls).distinct
+
+    /* TODO: How to choose the meta-theory? We need to have a constraint that one of them contains the other? */
+    val result_node = DiagramNode(Combine.nodeLabel, new AnonymousTheory(b1.distNode.theory.mt,result_node_decls))
+
+    val arrow1 = DiagramArrow(Combine.arrowLabel,b1.distNode.label,result_node.label,new AnonymousMorphism(List.empty),false)
+    val arrow2 = DiagramArrow(Combine.arrowLabel2,b2.distNode.label,result_node.label,new AnonymousMorphism(List.empty),false)
+    val diag = DiagramArrow(Combine.arrowLabel,source.label,result_node.label,new AnonymousMorphism(List.empty),true)
 
     /* Next Problem: How to retrieve the arrows? */
     // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
     // def getImplicit(from: Term, to: Term) : Option[Term]
     // val morphism = (solver.lookup.getImplicit(source.toTerm,ad1.getDistNode.get.toTerm))
-
-    /* Computing the output theory presentation as the distinct unions of the two theories, for now */
-    val poL = Combine.nodeLabel
-    val po_decls = (source.theory.decls ::: b1.distNode.theory.decls ::: b2.distNode.theory.decls).distinct
-    val po = DiagramNode(poL, new AnonymousTheory(source.theory.mt,po_decls)) // TODO: The new meta-theory does not have to be the source meta-theory
-
-    /* Computing the morphisms */
-    val morphD = new AnonymousMorphism(po.theory.decls.diff(source.theory.decls))
-    val diag = DiagramArrow(Combine.arrowLabel,source.label,po.label,morphD, true)
 
     val arrows = (b1.anondiag.arrows ::: b2.anondiag.arrows).distinct
     val nodes = (b1.anondiag.nodes ::: b2.anondiag.nodes).distinct
@@ -369,7 +368,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       }
     }*/
 
-    val ad = new AnonymousDiagram(nodes ::: List(po), arrows:::List(b1.extend(po),b2.extend(po),diag), Some(poL))
+    val ad = new AnonymousDiagram(nodes ::: List(result_node), arrows:::List(b1.extend(result_node),b2.extend(result_node),diag), Some(result_node.label))
     Simplify(ad.toTerm)
   }
 }
@@ -383,7 +382,12 @@ object ComputeCombine extends ComputationRule(Combine.path) {
  * Expand(m,T): T -> Translate(m,T)
  * inclusion from B to Translate(m,T)
  */
-object Translate extends BinaryConstantScala(Combinators._path, "translate")
+object Translate extends BinaryConstantScala(Combinators._path, "translate"){
+  val nodeLabel = LocalName("pres")
+  val arrowLabel1 = LocalName("extend")
+  val arrowLabel2 = LocalName("view")
+  val arrowLabel = LocalName("diag")
+}
 
 object ComputeTranslate extends ComputationRule(Translate.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
