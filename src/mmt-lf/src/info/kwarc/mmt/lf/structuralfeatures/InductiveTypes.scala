@@ -56,6 +56,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     val decls = parseInternalDeclarations(dd, controller, Some(context))
     val tpdecls = tpls(decls)
     val tmdecls = tmls(decls)
+    val constrdecls = constrs(tmdecls)
     val types = tpdecls map (_.path)
     
     // copy all the declarations
@@ -77,10 +78,10 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     elabDecls ++= testers(tmdecls, tpdecls, decls, context)(dd.path)
     
     // the unappliers
-    elabDecls ++= unappliers(tmdecls, tpdecls, decls, context)(dd.path)
+    elabDecls ++= unappliers(constrdecls, tpdecls, decls, context)(dd.path)
     
     // the inductive proof declarations
-    elabDecls ++= indProofs(tpdecls, tmdecls.filter(_.isConstructor), context)(dd.path)
+    elabDecls ++= indProofs(tpdecls, constrdecls, context)(dd.path)
     
     //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
     new Elaboration {
@@ -248,14 +249,14 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
   /**
    * Generate unapply declarations for all constructors of an inductive type declaration I
-   * @param tmdecls the termlevel declarations in I
+   * @param constrdecls the constructors of I
    * @param tpdecls the typelevel declarations in I
    * @param decls all internal declarations in I
    * @param context the context of I
    */
-  def unappliers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
+  def unappliers(constrdecls : List[Constructor], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
     val types = tpdecls.map(_.path)
-    constrs(tmdecls) map {constr =>
+    constrdecls map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
         val tpl = constr.getTpl(tpdecls)
