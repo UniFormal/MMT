@@ -123,7 +123,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   /** like seCont but may wrap in NestedModule */
   private def moduleCont(m: Module, par: HasParentInfo)(implicit state: ParserState) {
     val se = par match {
-       case IsDoc(_) => m
+       case IsDoc(dp) =>
+         m.parentDoc = Some(dp)
+         m
        case IsMod(mp, ln) =>
           // mp.name / mname == m.name
           val mname = m.name.dropPrefix(mp.name).getOrElse {throw ImplementationError("illegal name of nested module")}

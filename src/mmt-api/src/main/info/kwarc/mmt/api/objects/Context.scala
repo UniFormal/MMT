@@ -44,7 +44,7 @@ case class VarDecl(name : LocalName, feature: Option[String], tp : Option[Term],
       case IncludeVarDecl(_,OMPMOD(p,args), df) => p.toString + args.map(_.toStr).mkString(" ")
       case _ => name.toString + tp.map(" : " + _.toStr).getOrElse("") + df.map(" = " + _.toStr).getOrElse("")
    }
-   def toNode = <om:OMV name={name.toPath}>{mdNode}{tpN}{dfN}</om:OMV>
+   def toNode = <om:OMV name={name.toPath} feature={feature.orNull}>{mdNode}{tpN}{dfN}</om:OMV>
    def toCMLQVars(implicit qvars: Context) = <bvar><ci>{name.toPath}</ci>{(tp.toList:::df.toList).map(_.toCMLQVars)}</bvar>
    private def tpN = tp.map(t => <type>{t.toNode}</type>).getOrElse(Nil)
    private def dfN = df.map(t => <definition>{t.toNode}</definition>).getOrElse(Nil)

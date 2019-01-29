@@ -13,7 +13,7 @@ sealed abstract class InterpretationInstruction extends NarrativeElement {
   
   def getDeclarations = Nil
   def parentOpt = Some(parent)
-  lazy val name = LocalName("instrunction_" + toString.hashCode.toString)
+  lazy val name = LocalName("instruction_" + toString.hashCode.toString)
   def path = parent / name
  
   override def toString = (feature :: arguments).mkString(" ")

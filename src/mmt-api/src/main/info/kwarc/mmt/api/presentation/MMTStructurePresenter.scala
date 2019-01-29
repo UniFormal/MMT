@@ -19,7 +19,7 @@ abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) e
    /** determines if the modules should be flattened */
    val presentGenerated: Boolean
    
-   val key = "present-text-notations" + (if (presentGenerated) "-flat" else "")
+   def key = "present-text-notations" + (if (presentGenerated) "-flat" else "")
    override def outExt = "mmt"
 
    def beginDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}

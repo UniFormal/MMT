@@ -46,6 +46,7 @@
 		<KEYWORDS>
 			<KEYWORD1>namespace</KEYWORD1>
 			<KEYWORD1>import</KEYWORD1>
+			<KEYWORD1>fixmeta</KEYWORD1>
 			<KEYWORD1>document</KEYWORD1>
 			<KEYWORD1>ref</KEYWORD1>
 			<KEYWORD1>theory</KEYWORD1>

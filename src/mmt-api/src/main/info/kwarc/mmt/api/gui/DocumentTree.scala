@@ -23,9 +23,12 @@ abstract class MMTNode {
 
 class ControllerNode(controller: Controller) extends MMTNode {
    override def toString = "MMT"
-   def children = controller.backend.getArchives.map(a =>
+   def children = {
+     val as = controller.backend.getArchives.sortBy(a => a.id)
+     as.map {a =>
       new PathNode(DPath(a.narrationBase), controller)
-    )
+     }
+   }
 }
 
 class StructuralElementNode(val se: StructuralElement, controller: Controller) extends MMTNode {

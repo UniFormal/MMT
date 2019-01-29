@@ -311,8 +311,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val key = "html"
     }
     List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
-      new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter).foreach(addExtension(_))
-
+      new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
+      new MMTStructurePresenter(nbpr), new FlatMMTStructurePresenter(nbpr)).foreach(addExtension(_))
     //parser extensions
     List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
     //serverPlugins

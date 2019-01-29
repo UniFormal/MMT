@@ -64,8 +64,6 @@ abstract class Declaration extends ContentElement {
    def path = GlobalName(parent, name)
    /** the OMS referencing this declaration */
    def toTerm = OMS(path)
-   /** the component used to identify anonymous declarations, e.g., the from of an import, None by default but may be overridden */
-   def implicitKey : Option[MPath] = None
 
    // sharper type
    def getDeclarations: List[Declaration]
