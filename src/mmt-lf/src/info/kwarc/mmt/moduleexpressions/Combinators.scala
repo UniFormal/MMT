@@ -158,7 +158,6 @@ object Common {
       case _ => None
     }
   }
-
   /* Applying a rename function to on OML */
   def applyRenameFunc (decls : List[OML], renames : List[(LocalName,LocalName)]): List[OML] =
     decls.map(
@@ -173,9 +172,27 @@ object Common {
     case Rename1(OML(old,None,None,_,_), OML(nw,None,None,_,_)) => (old,nw)
     case _ => return Nil
   }
-
 }
 
+/** operator for the empty theory of a given meta-theory */
+object Empty extends UnaryConstantScala(Combinators._path, "empty") {
+  val label = LocalName("empty")
+}
+
+/** Empty(p) ---> p{} */
+object ComputeEmpty extends ComputationRule(Extends.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+    val mt = tm match {
+      case Empty(OMMOD(p)) => Some(p)
+      case OMS(Empty.path) => None
+      case _ => return Recurse
+    }
+    val thy = new AnonymousTheory(mt, Nil)
+    val dn = DiagramNode(Empty.label, thy)
+    val ad = new AnonymousDiagram(List(dn), Nil, Some(dn.label))
+    Simplify(ad.toTerm)
+  }
+}
 
 /* The rules below compute the results of theory combinators.
  * Each rule is applicable if the arguments have been computed already.

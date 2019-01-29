@@ -23,11 +23,6 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
    val toC = new FinalTermContainer(home)
    def namePrefix = name
    def isInclude = Include.unapply(this).isDefined
-   /** override in order to permit implicit structures (identified by their domain) */
-   override def implicitKey = this match {
-      case Include(_, fromPath, _) => Some(fromPath)
-      case _ => None
-   }
 
    def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
 

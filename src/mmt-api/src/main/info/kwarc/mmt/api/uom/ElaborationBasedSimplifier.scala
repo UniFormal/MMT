@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import checking._
 import utils._
+import documents._
 import modules._
 import symbols._
 import patterns._
@@ -256,10 +257,16 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
        case None => Nil
        case Some(sf) =>
           val elab = sf.modules(dm)
+          val docO = dm.parentDoc
           elab.foreach {e =>
             e.setOrigin(ElaborationOf(dm.path))
             log("flattening of " + dm.name + " yields " + e)
-            controller.add(e) // TODO also add to document? currently not shown when presenting or in sidekick
+            controller.add(e)
+            docO.foreach {d =>
+              val mr = MRef(d, e.path)
+              mr.setOrigin(ElaborationOf(dm.path))
+              controller.add(mr)
+            }
             applyChecked(e)
           }
           ElaboratedElement.setFully(dm)
