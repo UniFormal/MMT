@@ -327,7 +327,6 @@ class SubtypeGenerator extends ChangeListener {
     }
   }
 
-
   override def onAdd(e: StructuralElement) {
     onCheck(e)
   }
@@ -348,7 +347,6 @@ class SubtypeGenerator extends ChangeListener {
     }
     case _ =>
   }
-
 }
 
 class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
