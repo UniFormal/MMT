@@ -1,5 +1,5 @@
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, ViewFinder, Viewset}
 import info.kwarc.mmt.api.symbols.FinalConstant
@@ -10,7 +10,7 @@ import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 object RunMichael extends MagicTest {
 
   def run : Unit = {
-    moduleadder
+    intersect
   }
 
   def got : Unit = {
@@ -64,22 +64,23 @@ object RunMichael extends MagicTest {
   }
 
   def intersect: Unit = {
-    val vf = new ViewFinder
+    /*val vf = new ViewFinder
     controller.extman.addExtension(vf,List(
       "MitM/smglom"
       //,"HOLLight/basic"
       // ,"PVS/Prelude"
       // ,"PVS/NASA"
-    ))
-    val int = new Intersecter(controller)
+    ))*/
+    val int = new Intersecter
     controller.extman.addExtension(int, Nil)
-    while(!vf.isInitialized) {
+    /*while(!vf.isInitialized) {
       Thread.sleep(500)
-    }
+    }*/
 
     val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
     val to = "MitM/smglom"
-    vf.find(from,to).map(r => int.intersect(Viewset(r)(controller))(controller)).foreach(s => log(s.toString))
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?homo",NamespaceMap.empty)).asInstanceOf[View]
+    println(int(view))
   }
 
   def exportMMT: Unit = {
