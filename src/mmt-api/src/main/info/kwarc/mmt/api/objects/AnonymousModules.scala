@@ -165,11 +165,11 @@ object AnonymousDiagramCombinator {
         case rest => (rest, None)
       }
       elems foreach {
-        case OML(name, Some(tp), Some(df), _, f) => (tp, df) match {
+        case OML(name, Some(tp), Some(df), _, feature) => (tp, df) match {
           case (TheoryType(Context.empty), AnonymousTheoryCombinator(at)) =>
             nodes ::= DiagramNode(name, at)
           case (MorphType(OML(f, None, None, _, _), OML(t, None, None, _, _)), AnonymousMorphismCombinator(am)) =>
-            val impl = f contains "implicit"
+            val impl = feature contains "implicit"
             arrows ::= DiagramArrow(name, f, t, am, impl)
           case _ => return None
         }

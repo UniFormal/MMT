@@ -88,7 +88,7 @@ trait Exporter extends BuildTarget {self =>
   private trait ExportInfo extends TraversingBuildTarget {
     def key = self.key + "_" + inDim.toString
 
-    def includeFile(name: String) = name.endsWith(".omdoc")
+    def includeFile(name: String) = name.endsWith(".omdoc") || name.endsWith(".omdoc.xz")
 
     def outDim: Dim = self.outDim / inDim.toString
 

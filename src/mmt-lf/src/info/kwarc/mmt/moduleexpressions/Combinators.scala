@@ -228,7 +228,7 @@ object ComputeExtends extends ComputationRule(Extends.path) {
     // creating the new AnonymousDiagram
     val new_decls = dN.theory.decls ::: extD
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
-    val extM = new AnonymousMorphism(new_decls)
+    val extM = new AnonymousMorphism(Nil)
     val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM, true)
     val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel))
     Simplify(result.toTerm)
@@ -302,9 +302,11 @@ trait Pushout extends ConstantScala {
     case OMA(OMS(this.path), args) =>
       var left = args
       val d1 = left.headOption.getOrElse(return None)
+      left = left.tail
       val r1 = left.takeWhile(t => Rename1.unapply(t).isDefined)
       left = left.drop(r1.length)
       val d2 = left.headOption.getOrElse(return None)
+      left = left.tail
       val r2 = left.takeWhile(t => Rename1.unapply(t).isDefined)
       left = left.drop(r2.length)
       if (left.nonEmpty) return None
@@ -326,7 +328,7 @@ object PushoutUtils {
     val ad = Common.asAnonymousDiagram(solver, d).getOrElse(return None)
     val dom = ad.getDistArrow.getOrElse(return None).from
     val distNode = ad.getDistNode.getOrElse(return None)
-    val distTo = ad.getDistArrowsTo(dom)
+    val distTo = ad.getDistArrowsTo(distNode.label)
     Some(PushoutUtils.BranchInfo(ad,dom,distNode,distTo,ren))
   }
 }
