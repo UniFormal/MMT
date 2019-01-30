@@ -318,9 +318,10 @@ trait Pushout extends ConstantScala {
 object PushoutUtils {
   case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
                         distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) {
-    def extend(po: DiagramNode) = {
-      val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
-      DiagramArrow(Combine.arrowLabel1, distNode.label, Combine.nodeLabel, morph, false)
+    def extend(label: LocalName, po: DiagramNode) = {
+      //val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
+      val maps = renames.map {case (o,n) => OML(o, None, Some(OML(n)))}
+      DiagramArrow(label, distNode.label, po.label, new AnonymousMorphism(maps), false)
     }
   }
   def collectBranchInfo(solver: CheckingCallback,d: Term,rename : List[Term])(implicit stack: Stack, history: History): Option[BranchInfo] = {
@@ -359,8 +360,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     }
 
     /* Getting the declarations after applying rename */
-    val node1Decls : List[OML] = Common.applyRenameFunc(b1.distNode.theory.decls,b1.renames)
-    val node2Decls : List[OML] = Common.applyRenameFunc(b2.distNode.theory.decls,b2.renames)
+    val node1Decls : List[OML] = Common.applyRenameFunc(b1.distNode.theory.decls, b1.renames)
+    val node2Decls : List[OML] = Common.applyRenameFunc(b2.distNode.theory.decls, b2.renames)
     val commonDecls : List[OML] = node1Decls.intersect(node2Decls)
 
     /* TODO: Check the guard */
@@ -368,10 +369,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
 
     /* TODO: How to choose the meta-theory? We need to have a constraint that one of them contains the other? */
     val result_node = DiagramNode(Combine.nodeLabel, new AnonymousTheory(b1.distNode.theory.mt,result_node_decls))
-
-    val arrow1 = DiagramArrow(Combine.arrowLabel,b1.distNode.label,result_node.label,new AnonymousMorphism(List.empty),false)
-    val arrow2 = DiagramArrow(Combine.arrowLabel2,b2.distNode.label,result_node.label,new AnonymousMorphism(List.empty),false)
-    val diag = DiagramArrow(Combine.arrowLabel,source.label,result_node.label,new AnonymousMorphism(List.empty),true)
+    val diag   = DiagramArrow(Combine.arrowLabel,  source.label,      result_node.label, new AnonymousMorphism(Nil), true)
 
     /* Next Problem: How to retrieve the arrows? */
     // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
@@ -388,7 +386,9 @@ object ComputeCombine extends ComputationRule(Combine.path) {
       }
     }*/
 
-    val ad = new AnonymousDiagram(nodes ::: List(result_node), arrows:::List(b1.extend(result_node),b2.extend(result_node),diag), Some(result_node.label))
+    val arrow1 = b1.extend(Combine.arrowLabel1, result_node)
+    val arrow2 = b2.extend(Combine.arrowLabel2, result_node)
+    val ad = new AnonymousDiagram(nodes ::: List(result_node), arrows:::List(arrow1,arrow2, diag), Some(result_node.label))
     Simplify(ad.toTerm)
   }
 }

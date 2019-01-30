@@ -24,7 +24,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
        case AnonymousDiagramCombinator(ad) => ad
        case df => throw LocalError("definiens not a diagram: " + controller.presenter.asString(df)) // TODO should use proper error handler 
      }
-     /* defines the naem of the generated modules */
+     /* defines the name of the generated modules */
      def labelToName(l: LocalName) = LocalName(dm.name.toPath + "_" + l.toPath)
      def labelToPath(l: LocalName) = l match {
        case Common.ExistingName(p) => p

@@ -104,7 +104,10 @@ abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) e
          case r: DRef =>
             rh("document " + r.target.toPath)
          case r: MRef =>
-            rh("module " + r.target.toPath)
+            controller.getO(r.target) match {
+              case None => rh("module " + r.target.toPath)
+              case Some(m) => apply(m, indent)
+            }
          case oe: OpaqueElement =>
             controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
          case ii: InterpretationInstruction =>

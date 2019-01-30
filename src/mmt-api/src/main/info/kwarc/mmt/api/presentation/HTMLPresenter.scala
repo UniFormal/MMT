@@ -33,6 +33,8 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
        case view : View =>
          doHTMLOrNot(view.path.doc, standalone) {doView(view)}
+       case dm: DerivedModule =>
+         doHTMLOrNot(dm.path.doc, standalone) {doTheory(dm)}
        case d: Declaration => doHTMLOrNot(d.path.doc, standalone) {doDeclaration(d)}
      }
      this._rh = null
@@ -286,12 +288,14 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }}
    }
 
-   def doTheory(t: Theory) {
-      div("theory") {
-         doNarrativeElementInMod(t, t.asDocument)
+   def doTheory(m: ModuleOrLink) {
+      div(m.feature) {
+         doNarrativeElementInMod(m, m.asDocument)
       }
    }
-   def doView(v: View) {}
+   def doView(v: View) {
+      doTheory(v)
+   }
    override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       doHTMLOrNot(dpath, true) {div("namespace") {
          namespaces.foreach {case bd =>
