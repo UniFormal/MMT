@@ -59,8 +59,8 @@ object Common {
         case _ => Nil
       }
     }
-    val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
-    new AnonymousTheory(namedTheory.meta, omls ::: List(real))
+    //val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
+    new AnonymousTheory(namedTheory.meta, omls)
   }
 
   /** provides the base case of the function that elaborates a theory expression (in the form of an [[AnonymousTheory]]) */
@@ -441,10 +441,7 @@ object ComputeTranslate extends ComputationRule(Translate.path) {
     val morAsSub = morAnon.decls.flatMap {oml => oml.df.toList.map {d => Sub(oml.name, d)}}
     val translator = OMLReplacer(morAsSub)
     val pushout = codAnon
-    morAnon.decls.foreach {
-      case RealizeOML(p,_) =>
-        // these may also be translatable, but they are optional anyway
-      case oml =>
+    morAnon.decls.foreach {oml =>
         if (! domAnon.isDeclared(oml.name)) {
           if (codAnon.isDeclared(oml.name)) {
             solver.error("pushout not defined because of name clash: " + oml.name)
