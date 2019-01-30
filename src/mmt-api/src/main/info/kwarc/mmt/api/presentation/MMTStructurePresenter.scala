@@ -30,10 +30,11 @@ abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) e
      apply(e, 0)(rh)
    }
 
-  protected def doTheory(t: Theory, indent:Int)(implicit rh: RenderingHandler) {
+  protected def doTheory(t: AbstractTheory, indent:Int)(implicit rh: RenderingHandler) {
     //TODO this ignores all narrative structure inside a theory
-    rh("theory " + t.name)
+    rh(t.feature + " " + t.name)
     t.meta.foreach(p => rh(" : "+p.toString))
+    // TODO print type component
     doDefComponent(t)
     rh(" \n")
     t.getDeclarations.foreach {d => 
@@ -121,6 +122,8 @@ abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) e
             }
             rh << "\n"
             dd.module.getDeclarations.foreach {d => apply(d, indent+1)}
+         case dm: DerivedModule =>
+            doTheory(dm, indent)
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: Structure => doStructure(s,indent)

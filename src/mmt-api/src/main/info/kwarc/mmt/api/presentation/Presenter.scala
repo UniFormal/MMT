@@ -7,6 +7,7 @@ import objects.Conversions._
 import notations._
 import documents._
 import modules._
+import symbols._
 import archives._
 
 /**
@@ -48,6 +49,7 @@ trait StructurePresenter extends Exporter {
    def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
    def exportTheory(thy : Theory, bf: BuildTask) = apply(thy, true)(rh)
    def exportView(view : View, bf: BuildTask) = apply(view, true)(rh)
+   override def exportDerivedModule(dm: DerivedModule, bf: BuildTask) = apply(dm, true)(rh)
    /** does nothing */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
