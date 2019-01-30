@@ -82,14 +82,14 @@ case class IGroup(
 
                    description: IAPIObjectItem.HTML,
                    responsible: List[String],
-                   archives: List[IArchiveRef]
+                   declarations: List[IArchiveRef]
                  ) extends IGroupItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
     buffer.add("description", JSONString(description))
     buffer.add("responsible", JSONArray(responsible.map(JSONString): _*))
-    buffer.add("archives", JSONArray(archives.map(_.toJSON):_*))
+    buffer.add("declarations", JSONArray(declarations.map(_.toJSON):_*))
 
     buffer
   }
@@ -121,13 +121,13 @@ case class ITagRef(
 
 /** a full description of a MathHub Group */
 case class ITag(
-                   override val id: String,
-                   override val name: String,
-                   override val statistics: Option[List[IStatistic]],
-                   archives: List[IArchiveRef]
+                 override val id: String,
+                 override val name: String,
+                 override val statistics: Option[List[IStatistic]],
+                 declarations: List[IArchiveRef]
                  ) extends ITagItem with IReferencable {
   override def toJSONBuffer: JSONObjectBuffer = JSONObjectBuffer(
-    "archives" -> JSONArray(archives.map(_.toJSON):_*)
+    "declarations" -> JSONArray(declarations.map(_.toJSON):_*)
   )
 }
 
@@ -243,12 +243,12 @@ case class IDocument(
 
                       override val statistics: Option[List[IStatistic]],
 
-                      decls: List[INarrativeElement]
+                      declarations: List[INarrativeElement]
                     ) extends IDocumentItem with IReferencable with INarrativeElement {
   override def toJSONBuffer: JSONObjectBuffer = {
     val buffer = super.toJSONBuffer
 
-    buffer.add("decls", JSONArray(decls.map(_.toJSON):_*))
+    buffer.add("declarations", JSONArray(declarations.map(_.toJSON):_*))
     buffer.add("tags", JSONArray(tags.map(JSONString) :_*))
     buffer.addO("sourceRef", sourceRef.map(_.toJSON))
 

@@ -1,8 +1,8 @@
 package info.kwarc.mmt.odk
 
-import info.kwarc.mmt.api.test.MMTIntegrationTest
-import info.kwarc.mmt.api.test.testers._
-import info.kwarc.mmt.lf.Orders
+import info.kwarc.mmt.test.MMTIntegrationTest
+import info.kwarc.mmt.test.testers._
+import info.kwarc.mmt.test.Orders
 
 object ODKTest extends MMTIntegrationTest(
   "MMT/urtheories",

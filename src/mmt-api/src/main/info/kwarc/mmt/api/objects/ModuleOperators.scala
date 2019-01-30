@@ -262,7 +262,7 @@ object TheoryExp {
         case Some(m) =>
           if (all) m :: metas(OMMOD(m)) else List(m)
       }
-    case AnonymousTheory(mt,_) => mt.toList
+    case AnonymousTheoryCombinator(at) => at.mt.toList
     case TUnion(ts) =>
       val ms = ts map { t => metas(t) }
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
@@ -321,6 +321,7 @@ object ModExp extends uom.TheoryScala {
 
   val anonymoustheory = _path ? "anonymoustheory"
   val anonymousmorphism = _path ? "anonymousmorphism"
+  val anonymousdiagram = _path ? "anonymousdiagram"
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
   val identity = _path ? "identity"
@@ -413,10 +414,13 @@ object MorphType {
 object TheoryType {
   val path = ModExp.theorytype
 
-  def apply(params: Context) = ComplexTerm(this.path, Nil, params, Nil)
+  def apply(params: Context) = {
+    if (params.isEmpty) OMS(this.path)
+    else ComplexTerm(this.path, Nil, params, Nil)
+  }
 
   def unapply(t: Term): Option[Context] = t match {
-    case OMID(this.path) => Some(Nil)
+    case OMS(this.path) => Some(Nil)
     case ComplexTerm(this.path, Substitution(), params, Nil) => Some(params)
     case _ => None
   }

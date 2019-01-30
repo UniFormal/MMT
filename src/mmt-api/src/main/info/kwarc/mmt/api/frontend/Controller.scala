@@ -70,25 +70,23 @@ abstract class ROController {
   *
   * It stores all stateful entities and executes Action commands.
   */
-class Controller extends ROController with ActionHandling with Logger {
-  def this(r: Report) {
-    this()
-    report_ = r
-  }
+class Controller(report_ : Report = new Report) extends ROController with ActionHandling with Logger {
 
   def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
 
   // **************************** logging
 
   /** handles all output and log messages */
-  private var report_ : Report = new Report
-  val report = report_
+  //private var report_ : Report = new Report
+  def report = report_
   val logPrefix = "controller"
 
   // **************************** data state and components
 
   /** maintains all customizations for specific languages */
   val extman = new ExtensionManager(this)
+  /** the catalog maintaining all registered physical storage units (must be initialized before memory) */
+  val backend = new Backend(extman, report)
 
   /** maintains all knowledge */
   val memory = new Memory(extman, report)
@@ -113,8 +111,6 @@ class Controller extends ROController with ActionHandling with Logger {
   def pragmatic = extman.get(classOf[Pragmatics]).head
   /** the http server */
   var server: Option[Server] = None
-  /** the catalog maintaining all registered physical storage units */
-  val backend = new Backend(extman, report)
   /** the query engine */
   val evaluator = new ontology.QueryEvaluator(this)
   /** the window manager */
@@ -468,6 +464,11 @@ class Controller extends ROController with ActionHandling with Logger {
    *  None adds at beginning, null (default) at end
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
+    // invalidate cache entry for the notation
+    nw.path match {
+      case p: ContentPath => memory.notations.delete(p)
+      case _ =>
+    }
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>

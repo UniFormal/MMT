@@ -1,0 +1,56 @@
+def present(c: Constant) : String = {
+        var s = ""
+        def preTp(e: Term) : String = {
+          //def pres(e: Term) = controller.presenter.asString(e).replaceAll("%2F", "/")
+          def flatStrList(l : List[String], sep : String) = l match {
+            case Nil => ""
+            case hd::tl => hd+l.foldLeft("")((a, b) => a + sep + b)
+          }
+          var impl : List[String]= Nil
+          def iterPre(body: Term) : String = {
+            body match {
+              //case Pi(name, tp, body) => impl :+= iterPre(tp); iterPre(body)
+              case OMBIND(Pi.term, con, body) => impl = impl ++ (con map (x => present(Constant(parentTerm, x.name, Nil, x.tp, x.df, None)))); iterPre(body)
+              case ApplyGeneral(f:Term, args @ hd::tl) => iterPre(f)+ " " + flatStrList(args map iterPre, " ")+" "
+              case Arrow(a, b) => "("+iterPre(a) + " -> " + iterPre(b)+")"
+              case OMS(target) => target.name + " "
+              case ApplySpine(t : Term, List(arg1: Term, arg2: Term)) => "("+iterPre(t) + " " + iterPre(arg2)+")" // + iterPre(arg1) + " " 
+              case OMV(n) => n.toString()
+            }
+          }
+          s = iterPre(e)
+          if (impl == Nil) iterPre(e) else "{" + flatStrList(impl, ", ") + "} " + s
+        }
+        s = s + c.name 
+        s = s + " : " + preTp (c.tp.get)
+        if (c.df != None)
+          s = s + " = " + controller.presenter.asString(c.df.get)
+        s.replace("\n", "")
+      }
+      
+      
+      
+      try {//TODO: Find better heuristic, this one doesn't seem to work
+             println("The context looked at: "+ctx.foldLeft("")((a, b)=>a+" "+b.name))
+             val decl : VarDecl = Context.context2list(ctx).find({case x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r}).get
+             /*val decl : Option[VarDecl] = (ctx find ({x : VarDecl => val FunType(_, xRet) = x.toTerm; println(con.presenter.asString(xRet)); xRet == r}))
+             //if (decl != None) {
+             //  println("Found some decls!")
+             //}*/
+             val res = if (decl.tp == Some(Univ(1))) TermLevel(p, args, ret, c.df, c.notC) else TypeLevel(p, args, c.df, c.notC)
+             res
+          } catch {//In case of an empty get
+             case e: Throwable => TermLevel(p, args, ret, c.df, c.notC)
+          }
+          
+			case OMV(n) => log("case OMV(n)"); try {con(n).df match {
+           case Some(d) =>
+             log("expanding and simplifying definition of variable " + n)
+             traverse(d)(con.before(n), init)
+           case None =>
+             t
+         }}
+           catch {
+             case exc : LookupError => println("LookupError while traversing into OMV("+n+"): "+exc.getMessage); throw exc
+           }
+         

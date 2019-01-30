@@ -15,12 +15,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case x: Document            => rh(Reader.GS.toChar.toString) // check?
     case x: DRef                => rh(Reader.GS.toChar.toString) // check?
     case x: MRef                => rh(Reader.GS.toChar.toString) // check?
-    case x: Constant            => rh(Reader.RS.toChar.toString)
-    case x: RuleConstant        => rh(Reader.RS.toChar.toString)
-    case x: Theory              => rh(Reader.GS.toChar.toString)
-    case x: View                => rh(Reader.GS.toChar.toString)
+    case x: ModuleOrLink        => rh(Reader.GS.toChar.toString)
     case x: NestedModule        => rh(Reader.GS.toChar.toString)                           // check?
-    case x: Structure           => rh(Reader.GS.toChar.toString)
+    case d: Declaration         => rh(Reader.RS.toChar.toString) // some declarations are handled before by ModuleOrLink already
   }
   override def doConstant(c:Constant,indent:Int)(implicit rh: RenderingHandler) = {
     rh("" + c.name.last)

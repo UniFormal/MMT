@@ -248,6 +248,10 @@ trait SolverAlgorithms {self: Solver =>
                  return checkByInference(tpS, history + "switching to inference")
                case rule.DelayJudgment(msg) =>
                  return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
+               case e:AbstractMethodError => 
+                 println("\n\n\n\n\nAbstract method error when trying to apply the typing rule \""+rule.toString()+"\"")
+                 println("at "+rule.mpath)
+                 throw e
              }
            }
            history += "trying inference/typing rules"
@@ -436,6 +440,7 @@ trait SolverAlgorithms {self: Solver =>
               var i = 0
               val argseq = (args1 zip args2) map {case (a1,a2) =>
                 i += 1
+                
                 check(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
               }
               argseq.forall(_ == true) // comparing all arguments is inefficient if an early argument has an error, but may help make sense of the error
@@ -1141,13 +1146,16 @@ trait SolverAlgorithms {self: Solver =>
         case (tS,Some(rule)) =>
           done = true
           tmS = tS
+          log("Trying " + rule.toString)
           ret = rulecheck(rule, tmS, history + ("trying " + rule.toString))
           if (ret.isEmpty) {
             done = false
+            log("Rule " + rule.toString + " not applicable")
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
           done = true
+          log("no rule applicable")
           history += "no rule applicable"
       }
     }
@@ -1175,13 +1183,16 @@ trait SolverAlgorithms {self: Solver =>
           tm1S = t1S
           tm2S = t2S
           done = true
+          log("Trying rule " + rule.toString)
           ret = rulecheck(rule,tm1S,tm2S,history + ("trying " + rule.toString))
           if (ret.isEmpty) {
+            log("Rule " + rule.toString + " not applicable")
             done = false
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
           done = true
+          log("no rule applicable")
           history += "no rule applicable"
       }
     }

@@ -9,13 +9,14 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 @deprecated("this is experimental and may still be removed", "")
 class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: Module, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
     implicit val parentTerm = dd.path
     val params = Type.getParameters(dd)
     val context = if (params.nonEmpty) Some(params) else None
@@ -27,7 +28,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
           case _ => throw LocalError("Equivalence relation expected.")
         }
       }*/ 
-      val pred = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, context)}
+      val pred = dd.getDeclarations.last match {case c:Constant=>fromConstant(c, controller, Nil, context)}
       val dom = pred.args match {case List((_, d)) => d}
             
       val subtype = structureDeclaration(Some("S"), context)
@@ -42,7 +43,7 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
       val lift = this.lift(dom, pred, Some("g"), context)
       val inverse = this.inverse(dom, subtype.path, pred, injection.path, lift.path, Some("inverse"), context)
             
-      val elabDecls = List(subtype, injection, injInjective, lift, inverse) 
+      val elabDecls = List(subtype, injection)++injInjective++List(lift, inverse) 
       //elabDecls map {d => log(defaultPresenter(d)(controller))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}
@@ -61,9 +62,9 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
    */
   private def lift(dom: Term, p:InternalDeclaration, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
-      val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(dom, T.toTerm), ctx)
-      val y = newVar(uniqueLN("y"), dom, ctx)
+      val T = newVar("T", Univ(1), ctx)
+      val f = newVar("f", Arrow(dom, T.toTerm), ctx)
+      val y = newVar("y", dom, ctx)
       val proof = p.applyTo(y)
       Pi(List(T, f, y), Arrow(proof, T.toTerm))
     }
@@ -77,9 +78,9 @@ class Subtypes extends StructuralFeature("Subtype") with ParametricTheoryLike {
   private def inverse(dom: Term, S: GlobalName, p: InternalDeclaration, inj: GlobalName, g: GlobalName, name: Option[String], ctx: Option[Context])(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val sub = if (! ctx.isEmpty) ApplyGeneral(OMS(S), ctx.get map (_.toTerm)) else OMS(S)
-      val T = newVar(uniqueLN("T"), Univ(1), ctx)
-      val f = newVar(uniqueLN("f"), Arrow(dom, T.toTerm), ctx)
-      val x = newVar(uniqueLN("x"), sub, ctx)
+      val T = newVar("T", Univ(1), ctx)
+      val f = newVar("f", Arrow(dom, T.toTerm), ctx)
+      val x = newVar("x", sub, ctx)
       val y = ApplyGeneral(OMS(inj), List(x.toTerm))
       val proof = p.applyTo(y)
       val y_lifted = ApplyGeneral(OMS(g), List(T.toTerm, f.toTerm, y, proof))

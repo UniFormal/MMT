@@ -59,7 +59,7 @@ class RuleBasedChecker extends ObjectChecker {
       val remUnknowns = solver.getUnsolvedVariables
       val contm = prOrg.copy(unknown = Context.empty).toTerm
       val contmI = solver.substituteSolution(contm) //fill in inferred values
-      //val contmIS = SimplifyInferred(contmI, rules, cu.context ++ remUnknowns) //substitution may have created simplifiable terms; not needed anymore since switch to new unknowns
+      // TODO simplify using built-in rules like Disambiguate, or InterpretPseudoContent, possibly introduce coercions
       TermProperty.eraseAll(contmI) // reset term properties (whether a term is, e.g., simplified, depends on where it is used)
       val pr = ParseResult.fromTerm(contmI).copy(unknown = remUnknowns)
       //now report results, dependencies, errors

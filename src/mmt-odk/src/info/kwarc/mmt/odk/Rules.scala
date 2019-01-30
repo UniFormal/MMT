@@ -228,7 +228,7 @@ class UniverseInference extends ChangeListener {
 
   private def default : BigInt = {
     print("")
-    100
+    1000
   }
 
   def getUniverse(e : StructuralElement) : BigInt = e match {
@@ -246,11 +246,13 @@ class UniverseInference extends ChangeListener {
         case Some(TypeLevel(j)) => j
         case _ =>
           val decs = th.getDeclarations.map(getUniverse)
-          if (decs.isEmpty) 0 else decs.max
+          val ret = if (decs.isEmpty) BigInt(0) else decs.max
+          th.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(ret)))
+          ret
       }
     case c : FinalConstant if c.tp.isDefined && c.df.isEmpty =>
       val parent = controller.get(c.parent)
-      val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
+      // val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
       val context = parent match {
         case th : Theory => th.getInnerContext
         case _ => return 0
@@ -294,10 +296,14 @@ class UniverseInference extends ChangeListener {
         case m : Module => m
         case _ => return
       }
-      val parentV = getUniverse(parent)
+      val parentcurrent = parent.metadata.get(TypeLevel.path).map(_.value)
+      val previous : BigInt = parentcurrent.headOption match {
+        case Some(TypeLevel(j)) => j
+        case _ => 1
+      }
       val structV = getUniverse(ds)
-      ds.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV)))
-      parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(parentV max structV)))
+      ds.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(structV)))
+      parent.metadata.update(new MetaDatum(TypeLevel.path,TypeLevel(previous max structV)))
     case _ =>
   }
 }

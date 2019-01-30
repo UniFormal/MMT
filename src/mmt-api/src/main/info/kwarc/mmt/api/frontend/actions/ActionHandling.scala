@@ -34,7 +34,6 @@ trait ActionHandling extends
   /** executes an Action */
   def handle(act: Action, showLog: Boolean = true) {
     act.init(this)
-    implicit val task = act
     state.currentActionDefinition match {
       case Some(Defined(file, name, acts)) if act != EndDefine =>
         state.currentActionDefinition = Some(Defined(file, name, acts ::: List(act)))

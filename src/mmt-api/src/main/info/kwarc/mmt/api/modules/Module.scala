@@ -11,6 +11,9 @@ import objects._
  */
 abstract class Module(val parent : DPath, val name : LocalName) extends ModuleOrLink {
    def path: MPath = parent ? name
+
+   var parentDoc: Option[DPath] = None
+   
    def toTerm = OMMOD(path)
    def superModule: Option[MPath] = if (name.length > 1) Some(parent ? name.init) else None
    //def parameters : Context
