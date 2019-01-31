@@ -186,6 +186,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                         doNotComponent(d.path $ comp, n)
                       }
                   }
+               case _ => // impossible
             }
             if (aliases.nonEmpty) {
               tr("aliases") {

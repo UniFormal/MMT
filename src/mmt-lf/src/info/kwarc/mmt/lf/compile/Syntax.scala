@@ -34,7 +34,3 @@ case class Declaration(pattern: String, arguments: List[CatRef])
 /** a logic syntax consists of some categories (one of which is the category of formulas) and declarations */
 case class LogicSyntax(cats: List[Category], form: CatRef, decls: List[Declaration])
 
-/** generates a LogicSyntax for a given LF theory */
-class CodeGenerator {
-
-}

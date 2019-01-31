@@ -60,6 +60,9 @@ case class FUNCTYPE(args: List[ARG], ret: EXP) {
    }
 }
 
+/** comments */
+case class COMMENT(text: String) extends DECL
+
 /** An incomplete type checker for expressions */
 object DECL {
    /** @param d the declaration to be checked
@@ -75,6 +78,11 @@ object DECL {
            (c, FunctionalType(args, ID(n)))
         }
         Context((n, KindOfTypes) :: condecls)
+     case ADTRec(adts) =>
+        val types = adts map {adt => (adt.name, KindOfTypes)}
+        val ctx = context ++ Context(types)
+        val decls = adts.flatMap(adt => check(adt)(ctx).vars)
+        Context(decls)
      case RECORD(n, fields) =>
         val sels = fields map {case FIELD(f, v) =>
            EXP.checkType(v)
@@ -91,8 +99,17 @@ object DECL {
         val fundecl = (f.name, funtype)
         EXP.check(f.body, f.ret)(context ++ Context(fundecl :: ("", funtype) :: argdecls))
         Context(List(fundecl))
+     case FUNCTIONRec(funs) =>
+       val types = funs map {f =>
+         val t = FunctionalType(f.args.toList.map(_.tp), f.ret)
+         (f.name, t)
+       }
+       val ctx = context ++ Context(types)
+       val decls = funs.flatMap(f => check(f)(ctx).vars)
+       Context(decls)
      case EXCEPTION(n) =>
        Context(List((n, ErrorType)))
+     case COMMENT(_) => Context(Nil)
    }}
 }
 
