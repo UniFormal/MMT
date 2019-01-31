@@ -43,7 +43,7 @@ class FouraryLFConstantScala(val parent: MPath, val name: String) extends Consta
 }
 
 /**
- * auxiliary con/destructor for plain HOAS binders, e.g., forall [x:a] b
+ * auxiliary con/destructor for plain HOAS binders, e.g., forall [x:a] b with forall : (a -> prop) -> prop
  * 
  * See also [[TypedBinderScala]]
  */
@@ -65,6 +65,7 @@ class PlainBinderScala(val parent: MPath, val name: String) extends ConstantScal
 
 /**
  * auxiliary con/destructor for plain HOAS binders that take an extra argument for the variable type, e.g., forall S [x:tm S] b
+  * with forall {s} (tm s -> prop) -> prop
  * 
  * See also [[PlainBinderScala]]
  * 
@@ -72,11 +73,11 @@ class PlainBinderScala(val parent: MPath, val name: String) extends ConstantScal
  */
 class TypedBinderScala(val parent: MPath, val name: String, tm: UnaryLFConstantScala) extends ConstantScala {Single =>
   def apply(x: LocalName, sort: Term, body: Term): Term = {
-    ApplySpine(this.term, sort, Lambda(x, tm(sort), body))
+    Apply(this.term, Lambda(x, tm(sort), body))
   }
   def apply(binder: GlobalName, context: Context, body: Term): Term = {
     context.foldRight(body) {case (next, sofar) =>
-      val VarDecl(name, None, Some(sort), None, _) = next
+      val VarDecl(name, None, Some(tm(sort)), None, _) = next
       apply(name, sort, sofar)
     }
   }
