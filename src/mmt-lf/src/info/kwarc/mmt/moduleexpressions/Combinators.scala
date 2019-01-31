@@ -72,15 +72,21 @@ object Common {
           case Some(th: Theory) =>
             lazy val default = anonymize(solver, th)
             th.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
-          val at = th.dfC.normalized match {
-            case Some(df) =>
-              df match {
-                case AnonymousTheoryCombinator(at) => at
-                case _ => default
-              }
-            case None => default
-          }
+            val at = th.dfC.normalized match {
+              case Some(df) =>
+                df match {
+                  case AnonymousTheoryCombinator(at) => at
+                  case _ => default
+                }
+              case None => default
+            }
             Some(at)
+          case Some(dm:DerivedModule) if dm.feature == DiagramDefinition.feature =>
+            dm.dfC.normalized flatMap {
+              case AnonymousDiagramCombinator(ad) =>
+                ad.getDistNode map { n => n.theory }
+              case _ => None
+            }
           case Some(_) =>
             solver.error("not a theory: " + p)
             None
@@ -240,6 +246,9 @@ object Rename extends FlexaryConstantScala(Combinators._path, "rename") {
   val nodeLabel = LocalName("pres")
   /** the label of the renaming morphism (from old to renamed) */
   val arrowLabel = LocalName("rename")
+
+  def pairToTerm(on: (LocalName,LocalName)) = OML(on._1, None, Some(OML(on._2)))
+  def pairsToMorph(on: List[(LocalName,LocalName)]) = new AnonymousMorphism(on map pairToTerm)
 }
 
 object Rename1 extends BinaryConstantScala(Combinators._path, "rename1")
