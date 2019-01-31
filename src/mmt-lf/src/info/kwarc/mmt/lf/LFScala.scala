@@ -26,3 +26,79 @@ class BinaryLFConstantScala(val parent: MPath, val name: String) extends Constan
    }
 }
 
+class TernaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(a1: Term, a2: Term, a3: Term) = ApplySpine(OMS(path), a1, a2, a3)
+   def unapply(t: Term) = t match {
+      case ApplySpine(OMS(this.path), List(a1, a2, a3)) => Some((a1,a2,a3))
+      case _ => None
+   }
+}
+
+class FouraryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+   def apply(a1: Term, a2: Term, a3: Term, a4: Term) = ApplySpine(OMS(path), a1, a2, a3, a4)
+   def unapply(t: Term) = t match {
+      case ApplySpine(OMS(this.path), List(a1, a2, a3, a4)) => Some((a1,a2,a3,a4))
+      case _ => None
+   }
+}
+
+/**
+ * auxiliary con/destructor for plain HOAS binders, e.g., forall [x:a] b
+ * 
+ * See also [[TypedBinderScala]]
+ */
+class PlainBinderScala(val parent: MPath, val name: String) extends ConstantScala {
+  def apply(x: LocalName, lfType: Term, body: Term): Term = {
+    Apply(this.term, Lambda(x, lfType, body))
+  }
+  def apply(context: Context, body: Term): Term = {
+    context.foldRight(body) {case (next, sofar) =>
+      val VarDecl(name, None, Some(tp), None, _) = next
+      apply(name, tp, sofar)
+    }
+  }
+  def unapply(t: Term) : Option[(LocalName, Term, Term)] = t match {
+     case Apply(this.term, Lambda(x, tp, body)) => Some((x, tp, body))
+     case _ => None
+  }
+}
+
+/**
+ * auxiliary con/destructor for plain HOAS binders that take an extra argument for the variable type, e.g., forall S [x:tm S] b
+ * 
+ * See also [[PlainBinderScala]]
+ * 
+ * @param tm the operator used to lift the first argument to the LF-type level
+ */
+class TypedBinderScala(val parent: MPath, val name: String, tm: UnaryLFConstantScala) extends ConstantScala {Single =>
+  def apply(x: LocalName, sort: Term, body: Term): Term = {
+    ApplySpine(this.term, sort, Lambda(x, tm(sort), body))
+  }
+  def apply(binder: GlobalName, context: Context, body: Term): Term = {
+    context.foldRight(body) {case (next, sofar) =>
+      val VarDecl(name, None, Some(sort), None, _) = next
+      apply(name, sort, sofar)
+    }
+  }
+  def unapply(t: Term) : Option[(LocalName, Term, Term)] = t match {
+     case Apply(this.term, Lambda(x, tm(sort), body)) => Some((x, sort, body))
+     case _ => None
+  }
+  
+  object multiple {
+    def apply(bindings: List[(LocalName,Term)], body: Term) = {
+      bindings.foldRight(body) {case ((x,s),sofar) =>
+        Single(x,s,sofar)
+      }
+    }
+    def unapply(t: Term): Option[(List[(LocalName,Term)],Term)] = t match {
+      case Single(x,s,rest) => unapply(rest) match {
+        case None =>
+          Some((List((x,s)),rest))
+        case Some((bindings,body)) =>
+          Some(((x,s)::bindings, body))
+      }
+    }
+  }
+}
+

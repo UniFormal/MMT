@@ -39,6 +39,9 @@ object SFOL extends TheoryScala {
   val _name = LocalName("SFOL")
   val sort = _path ? "sort"
   object term extends UnaryLFConstantScala(_path, "term")
+  object equal extends TernaryLFConstantScala(_path, "equal")
+  object forall extends TypedBinderScala(_path, "forall", term)
+  object exists extends TypedBinderScala(_path, "exists", term)
 }
 
 object ComputeHom extends ComputationRule(Hom.path) {
@@ -77,7 +80,7 @@ object ComputeHom extends ComputationRule(Hom.path) {
        val tp: Term = o.tp.get match {
          // sort symbol, i.e., c: sort
          case OMS(SFOL.sort) =>
-           Arrow(OML(m1label / o.name), OML(m2label / o.name))
+           Arrow(OML(m1label/o.name), OML(m2label/o.name))
          // function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
          case FunType(args, SFOL.term(r)) =>
             val argsorts = args.map {
