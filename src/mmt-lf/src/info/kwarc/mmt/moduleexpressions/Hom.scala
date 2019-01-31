@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import checking._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.symbols._
-import objects._
+import objects.{Term, _}
 import utils._
 import uom._
 import info.kwarc.mmt.lf._
@@ -38,6 +38,19 @@ object SFOL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("SFOL")
   val sort = _path ? "sort"
+  /*
+  object forall{
+      val _path = SFOL._path ? "forall"
+      def apply(context: Context,body : Term): Term ={
+        OMBIND(OMS(_path),context,body)
+        Apply(OMS(path), Lambda(..)
+      }
+      def unapply(t : Term): Option[(Term,Context,Term)] = t match {
+        case OMBIND(binder,context,body) => Some((binder,context,body))
+        case _ => None
+      }
+  }
+  */
   object term extends UnaryLFConstantScala(_path, "term")
   object equal extends TernaryLFConstantScala(_path, "equal")
   object forall extends TypedBinderScala(_path, "forall", term)
@@ -75,20 +88,32 @@ object ComputeHom extends ComputationRule(Hom.path) {
     }
     val (mod1, ren1) = copy(ComputeHom.m1label.toString)
     val (mod2, ren2) = copy(ComputeHom.m2label.toString)
-   
+
+    def makeNames(base: String, n: Int) = Range(0,n).toList.map(i => LocalName(base+i))
+
+    import SFOL._
+
     val homdecls = decls mapOrSkip {o =>
        val tp: Term = o.tp.get match {
          // sort symbol, i.e., c: sort
+         // generate morphism map c: m1/c -> m2/c
          case OMS(SFOL.sort) =>
            Arrow(OML(m1label/o.name), OML(m2label/o.name))
          // function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
+         // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. r(m1/c x1 ... xn) = m2/c (s1 x1) ... (sn xn)
          case FunType(args, SFOL.term(r)) =>
             val argsorts = args.map {
               case (None, SFOL.term(s)) => s
             }
-            val ax = ???
+            val vars = makeNames("x", args.length)
+            val varSorts = vars zip argsorts
+            val left = Apply(r, ApplySpine(OML(m1label/o.name), vars.map(OMV(_)):_*))
+            val right = ApplySpine(OML(m2label/ o.name),varSorts map {case (x,s) => Apply(s,OMV(x))}:_*)
+            val body = equal(left,right)
+            val ax = forall.multiple(varSorts, body)
             PL.ded(ax)
          // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
+         // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. m1/c x1 ... xn => m2/c (s1 x1) ... (sn xn)
          case FunType(args, OMS(PL.prop)) =>
             val argsorts = args.map {
               case (None, SFOL.term(s)) => s
