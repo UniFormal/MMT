@@ -13,6 +13,20 @@ import scala.collection.mutable.HashSet
 
 object Hom extends UnaryConstantScala(Combinators._path, "homomorphism")
 
+/** MMT declarations
+ *  
+ *  namespace http://cds.omdoc.org/examples
+ *  fixmeta ?LF
+ *
+ *  theory PL = 
+ *    prop : type
+ *    ded : prop -> type
+ *
+ *  theory SFOL =
+ *    sort : type
+ *    term : sort -> type
+ */
+
 object PL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("PL")
@@ -58,21 +72,33 @@ object ComputeHom extends ComputationRule(Hom.path) {
     }
     val (mod1, ren1) = copy(ComputeHom.m1label.toString)
     val (mod2, ren2) = copy(ComputeHom.m2label.toString)
-    /*
-    val homdecls = decls map {o =>
-       val tp = o.tp.get match {
+   
+    val homdecls = decls mapOrSkip {o =>
+       val tp: Term = o.tp.get match {
+         // sort symbol, i.e., c: sort
          case OMS(SFOL.sort) =>
            Arrow(OML(m1label / o.name), OML(m2label / o.name))
+         // function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
          case FunType(args, SFOL.term(r)) =>
-           ???
+            val argsorts = args.map {
+              case (None, SFOL.term(s)) => s
+            }
+            val ax = ???
+            PL.ded(ax)
+         // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
          case FunType(args, OMS(PL.prop)) =>
-           ???
+            val argsorts = args.map {
+              case (None, SFOL.term(s)) => s
+            }
+            val ax = ???
+            PL.ded(ax)
+         // axiom, i.e., c: ded F
          case PL.ded(_) =>
            // skip
+           throw SkipThis
        }
-      OML(o.name, Some(tp), None)
+       OML(o.name, Some(tp), None)
     }
-    */
     // val homNode = DiagramNode(homlabel,new AnonymousTheory(Some(SFOL._path),mod1:::mod2:::homdecls))
     val arrow1 = DiagramArrow(m1label, node.label, homlabel , Rename.pairsToMorph(ren1), false)
     val arrow2 = DiagramArrow(m2label, node.label, homlabel , Rename.pairsToMorph(ren2), false)
