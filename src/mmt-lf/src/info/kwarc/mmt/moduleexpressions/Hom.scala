@@ -57,6 +57,7 @@ object SFOL extends TheoryScala {
   object exists extends TypedBinderScala(_path, "exists", term)
 }
 
+/* TODO: Use the mod */
 object ComputeHom extends ComputationRule(Hom.path) {
   val homlabel = LocalName("hom")
   val m1label = LocalName("m1")

@@ -8,18 +8,15 @@ import utils._
   *
   * anonymous modules are object that can be converted into these helper classes using the objects [[AnonymousTheory]] and [[AnonymousMorphism]]
   */
-trait AnonymousBody extends MutableElementContainer[OML] with DefaultLookup[OML] with DefaultMutability[OML] {
-  var decls: List[OML]
+trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
+  val decls: List[OML]
   def getDeclarations = decls
-  def setDeclarations(ds: List[OML]) {
-    decls = ds
-  }
   def toTerm: Term
   override def toString = getDeclarations.mkString("{", ", ", "}")
 }
 
 /** a theory given by meta-theory and body */
-class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends AnonymousBody {
+class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
   def rename(oldNew: (LocalName,LocalName)*) = {
     val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, OML(nw))}
     val trav = symbols.OMLReplacer(sub)
@@ -31,9 +28,14 @@ class AnonymousTheory(val mt: Option[MPath], var decls: List[OML]) extends Anony
         case None => omlR
       }
     }
-    decls = newDecls
+    new AnonymousTheory(mt, newDecls)
   }
-  def copy = new AnonymousTheory(mt, decls)
+  def add(d: OML) = new AnonymousTheory(mt, decls ::: List(d))
+  def union(that: AnonymousTheory) = {
+    val ds = (this.decls ::: that.decls).distinct
+    if (this.mt != that.mt) throw GeneralError("different meta-theories")
+    new AnonymousTheory(mt, ds)
+  }
   def toTerm = AnonymousTheoryCombinator(mt, decls)
   override def toString = {
     val m = mt.map(_.toString).getOrElse("")
@@ -59,9 +61,9 @@ object AnonymousTheoryCombinator {
 }
 
 /** a morphism given by domain, codomain, and body */
-class AnonymousMorphism(var decls: List[OML]) extends AnonymousBody {
+class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
   def toTerm = AnonymousMorphismCombinator(decls)
-  def copy = new AnonymousMorphism(decls)
+  def add(d: OML) = new AnonymousMorphism(decls ::: List(d))
 }
 
 /** bridges between [[AnonymousMorphism]] and [[Term]] */
@@ -86,7 +88,7 @@ sealed abstract class DiagramElement {
   *  @param label the label of this node
   *  @param theory the theory attached to this node (the same theory may be attached to multiple nodes)
   */
-case class DiagramNode(var label: LocalName, theory: AnonymousTheory) extends DiagramElement {
+case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
   override def toString = s"$label:THEY=$theory"
 }
@@ -113,7 +115,7 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param distArrow the label of a distinguished arrow to be used if this diagram is used like a morphism
   *  invariant: codomain of distArrow is distNode
   */
-class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {
+case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {
   def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
   def getArrow(label: LocalName): Option[DiagramArrow] = arrows.find(_.label == label)
   def getArrowWithNodes(label: LocalName): Option[(DiagramNode,DiagramNode,DiagramArrow)] = {
@@ -140,8 +142,12 @@ class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArr
   def relabel(r: LocalName => LocalName) = {
     val nodesR = nodes.map(n => n.copy(label = r(n.label)))
     val arrowsR = arrows.map(a => a.copy(label = r(a.label), from = r(a.from), to = r(a.to)))
-    new AnonymousDiagram(nodesR, arrowsR, distNode map r)
+    AnonymousDiagram(nodesR, arrowsR, distNode map r)
   }
+  def union(that: AnonymousDiagram) = {
+    new AnonymousDiagram((this.nodes ::: that.nodes).distinct, (this.arrows:::that.arrows).distinct, None)
+  }
+
   def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode)
   override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + distNode.toList.mkString("")
 }

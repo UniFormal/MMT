@@ -164,6 +164,17 @@ object Common {
       case _ => None
     }
   }
+
+  def prefixLabels(ad: AnonymousDiagram, prefix: LocalName) = {
+    def f(l: LocalName) = {
+      l match {
+        case ExistingName(_) => l
+        case _ => prefix / l
+      }
+    }
+    ad.relabel(f)
+  }
+
   /* Applying a rename function to on OML */
   def applyRenameFunc (decls : List[OML], renames : List[(LocalName,LocalName)]): List[OML] =
     decls.map(
@@ -236,7 +247,8 @@ object ComputeExtends extends ComputationRule(Extends.path) {
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
     val extM = new AnonymousMorphism(Nil)
     val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM, true)
-    val result = new AnonymousDiagram(ad.nodes ::: List(new_dN), ad.arrows ::: List(extA), Some(Extends.nodeLabel))
+    val adP = Common.prefixLabels(ad, Extends.arrowLabel)
+    val result = new AnonymousDiagram(adP.nodes ::: List(new_dN), adP.arrows ::: List(extA), Some(Extends.nodeLabel))
     Simplify(result.toTerm)
   }
 }
@@ -268,12 +280,12 @@ object ComputeRename extends ComputationRule(Rename.path) {
       solver.error("distinguished node not found")
       return Simplifiability.NoRecurse
     }
-    val atR = dN.theory.copy
-    atR.rename(oldNew:_*)
+    val atR = dN.theory.rename(oldNew:_*)
     val dNR = DiagramNode(Rename.nodeLabel, atR)
     val renM = new AnonymousMorphism(oldNew map {case (o,n) => OML(o, None, Some(OML(o)))})
     val renA = DiagramArrow(Rename.arrowLabel, dN.label, dNR.label, renM, true)
-    val result = new AnonymousDiagram(ad.nodes ::: List(dNR),ad.arrows ::: List(renA), Some(Rename.nodeLabel))
+    val adP = Common.prefixLabels(ad, Rename.arrowLabel)
+    val result = new AnonymousDiagram(adP.nodes ::: List(dNR),adP.arrows ::: List(renA), Some(Rename.nodeLabel))
     // remove all invalidated realizations, i.e., all that realized a theory one of whose symbols was renamed
     // TODO more generally, we could keep track of the renaming necessary for this realization, but then realizations cannot be implicit anymore
     /*val removeReals = thyAnon.decls.flatMap {
@@ -360,33 +372,26 @@ object ComputeCombine extends ComputationRule(Combine.path) {
 
     val b1 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d1,r1).getOrElse(return Recurse)
     val b2 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d2,r2).getOrElse(return Recurse)
-    
+    /* BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
+                        distTo: List[DiagramArrow], renames: List[(LocalName,LocalName)]) */
+
     /* Finding the common node (\Gamma) */
+    val commonDistArrows = b1.distTo.map(_.from) intersect b2.distTo.map(_.from)
     val nearestCommonSource : LocalName = (b1.distTo.map(_.from) intersect b2.distTo.map(_.from)).headOption.getOrElse(return Recurse)
     val source : DiagramNode = nearestCommonSource match {
       case Common.ExistingName(s) => b1.anondiag.getNode(nearestCommonSource).get
       case _ => return Recurse
     }
 
-    /* Getting the declarations after applying rename */
-    val node1Decls : List[OML] = Common.applyRenameFunc(b1.distNode.theory.decls, b1.renames)
-    val node2Decls : List[OML] = Common.applyRenameFunc(b2.distNode.theory.decls, b2.renames)
-    val commonDecls : List[OML] = node1Decls.intersect(node2Decls)
-
-    /* TODO: Check the guard */
-    val result_node_decls : List[OML] = (node1Decls ::: node2Decls).distinct
+    val new_thy1 = b1.distNode.theory.rename(b1.renames:_*)
+    val new_thy2 = b2.distNode.theory.rename(b2.renames:_*)
+    val new_thy = new_thy1 union new_thy2
 
     /* TODO: How to choose the meta-theory? We need to have a constraint that one of them contains the other? */
-    val result_node = DiagramNode(Combine.nodeLabel, new AnonymousTheory(b1.distNode.theory.mt,result_node_decls))
+    val result_node = DiagramNode(Combine.nodeLabel, new_thy)
     val diag   = DiagramArrow(Combine.arrowLabel,  source.label,      result_node.label, new AnonymousMorphism(Nil), true)
 
-    /* Next Problem: How to retrieve the arrows? */
-    // so we have a source, and two distinguished nodes.. I need to define the extension relation between them
-    // def getImplicit(from: Term, to: Term) : Option[Term]
-    // val morphism = (solver.lookup.getImplicit(source.toTerm,ad1.getDistNode.get.toTerm))
-
-    val arrows = (b1.anondiag.arrows ::: b2.anondiag.arrows).distinct
-    val nodes = (b1.anondiag.nodes ::: b2.anondiag.nodes).distinct
+    val jointDiag = Common.prefixLabels(b1.anondiag, LocalName("left")) union Common.prefixLabels(b2.anondiag, LocalName("right"))
     /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
       val fromT = d.getDistArrow.getOrElse(return Recurse).from
       fromT match {
@@ -397,7 +402,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
 
     val arrow1 = b1.extend(Combine.arrowLabel1, result_node)
     val arrow2 = b2.extend(Combine.arrowLabel2, result_node)
-    val ad = new AnonymousDiagram(nodes ::: List(result_node), arrows:::List(arrow1,arrow2, diag), Some(result_node.label))
+    val ad = new AnonymousDiagram(jointDiag.nodes ::: List(result_node), jointDiag.arrows:::List(arrow1,arrow2, diag), Some(result_node.label))
     Simplify(ad.toTerm)
   }
 }
