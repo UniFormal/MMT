@@ -443,7 +443,6 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
            case None => Nil
            case Some(sf) =>
               val elab = sf.elaborate(thy, dd)
-              dd.module.setOrigin(GeneratedBy(dd.path))
               // val simp = oS.toTranslator(rules, false)
              /*
              val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
