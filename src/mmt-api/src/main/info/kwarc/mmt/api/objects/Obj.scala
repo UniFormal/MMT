@@ -523,8 +523,8 @@ object Obj {
       def doBinder(binder : Node, context : Node, scopes : List[Node]) = {
          val bind = parseTermRec(binder)
          val cont = Context.parse(context, nsMap)
-         if (cont.isEmpty)
-            throw ParseError("at least one variable required in " + Nmd.toString)
+         //if (cont.isEmpty)
+           // throw ParseError("at least one variable required in " + Nmd.toString)
          val scopesP = scopes.map(parseTermRec(_))
          OMBINDC(bind, cont, scopesP)
       }

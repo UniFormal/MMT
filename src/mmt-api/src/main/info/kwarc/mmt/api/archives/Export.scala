@@ -6,6 +6,7 @@ import frontend._
 import Level.Level
 import modules._
 import objects._
+import symbols._
 import presentation._
 import utils._
 
@@ -55,6 +56,9 @@ trait Exporter extends BuildTarget {self =>
   /** applied to each view */
   def exportView(view: View, bf: BuildTask): Unit
 
+  /** applied to each derived module, does nothing by default */
+  def exportDerivedModule(dm: DerivedModule, bf: BuildTask) = {}
+  
   /** applied to every namespace
  *
     * @param dpath the namespace
@@ -88,11 +92,20 @@ trait Exporter extends BuildTarget {self =>
   private trait ExportInfo extends TraversingBuildTarget {
     def key = self.key + "_" + inDim.toString
 
-    def includeFile(name: String) = name.endsWith(".omdoc")
+    def includeFile(name: String) = name.endsWith(".omdoc") || name.endsWith(".omdoc.xz")
 
     def outDim: Dim = self.outDim / inDim.toString
 
     override def outExt = self.outExt
+    
+    override protected def getOutFile(a: Archive, inPath: FilePath) = {
+      // if we end in .omdoc.xz, we have to strip one more extension than usual
+      val inPathNoXz = if (inPath.name.endsWith(".xz"))
+        inPath.stripExtension
+      else
+        inPath
+      super.getOutFile(a, inPathNoXz)
+    }
 
     override protected val folderName = self.folderName
 
@@ -115,7 +128,8 @@ trait Exporter extends BuildTarget {self =>
             exportTheory(t, bf)
           case v: View =>
             exportView(v, bf)
-          case _ =>
+          case dm: DerivedModule =>
+            exportDerivedModule(dm, bf)
         }
       }
       BuildResult.empty

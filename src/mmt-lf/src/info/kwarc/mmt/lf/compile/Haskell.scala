@@ -18,6 +18,7 @@ object Haskell extends FuncLang[String] {
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " == " + exp(right) + ")"
      case AND(left,right) => "(" + exp(left) + " && " + exp(right) + ")"
+     case OR(left,right) => "(" + exp(left) + " || " + exp(right) + ")"
      case INTS => "Integer"
      case INT(value) => value.toString
      case PLUS(x,y) => "(" + exp(x) + " + " + exp(y) + ")"
@@ -100,6 +101,7 @@ object Haskell extends FuncLang[String] {
        if (!a.typeClasses.isEmpty) " deriving " + a.typeClasses.mkString("( ", ", ", ")\n") else ""
      }
      case EXCEPTION(e) => ""
+     case COMMENT(s) => "-- " + s 
    }
    private var ids: List[(String,Boolean)] = Nil
    def reset {ids = Nil}

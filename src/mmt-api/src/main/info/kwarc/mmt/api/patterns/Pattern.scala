@@ -32,14 +32,10 @@ object Pattern {
     dd
   }
 
-  def unapply(dd: DerivedDeclaration): Option[(Term, LocalName, Context, Theory)] = {
+  def unapply(dd: DerivedDeclaration): Option[(Term, LocalName, Context, AbstractTheory)] = {
     if (dd.feature != feature) return None
     val pars = Type.getParameters(dd)
-    val thy = dd.module match {
-      case thy: Theory => thy
-      case _ => throw ImplementationError("pattern must contain theory")
-    }
-    Some((dd.home,dd.name, pars, thy))
+    Some((dd.home,dd.name, pars, dd))
   }
 
   /** pre: d.feature == "pattern" */

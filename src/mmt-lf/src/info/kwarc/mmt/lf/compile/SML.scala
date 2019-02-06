@@ -5,6 +5,8 @@ object SML extends FuncLang[String] {
    private var current : String = null
    def exp(e: EXP) : String = e match {
      case EQUAL(left,right) => "(" + exp(left) + " = " + exp(right) + ")"
+     case AND(left,right) => "(" + exp(left) + " andalso " + exp(right) + ")"
+     case OR(left,right) => "(" + exp(left) + " orelse " + exp(right) + ")"
      case INTS => "int"
      case INT(value) => value.toString
      case PLUS(x,y) => "(" + exp(x) + " + " + exp(y) + ")"
@@ -29,6 +31,10 @@ object SML extends FuncLang[String] {
      case PROJ(e, i) => "(#" + i.toString + " (" + exp(e) + "))"
      case ARECORD(tp, fields) => tp + fields.map {case FIELD(n,v) => "#" + n + " = " + exp(v)}.mkString("{", ",", "}")
      case SELECT(rec, field) => "(#" + field + " " + exp(rec) + ")"
+     case OPTION(a) => exp(a) + " Option.option"
+     case NONE => "Option.NONE"
+     case SOME(x) => "(Option.SOME" + exp(x) + ")"
+     case UNOPTION(x) => "(Option.get" + exp(x) + ")"
    }
    def cons(c: CONS) = c.name + " of " + c.args.map(exp).mkString("", " * ", "")
    def arg(a: ARG) = a.name + ": " + exp(a.tp)
@@ -48,6 +54,7 @@ object SML extends FuncLang[String] {
      case FUNCTIONRec(fs) => fs.map(FUNCTIONaux).mkString("fun ", "and ", "\n")
      case EXCEPTION(e) => "exn " + e + " of string\n"
      case RECORD(name, fields) => "datatype " + name + " = " + name + " of " + fields.map {case FIELD(n,v) => n + " : " + exp(v)}.mkString("{", ",", "}")
+     case COMMENT(s) => "(* " + s + "*)"
    }
    def cas(c: CASE) : String = exp(c.pattern) + " => " + exp(c.body)
 }
