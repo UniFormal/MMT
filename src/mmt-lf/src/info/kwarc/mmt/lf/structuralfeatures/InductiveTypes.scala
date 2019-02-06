@@ -341,7 +341,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    */
   def proofChain(tpdecls: List[TypeLevel], tmdecls: List[TermLevel], predChain: Context, context: Context, ctx: Context)(implicit parent : GlobalName): (Context, Context) = {
     var newCtx = ctx
-    // Generate the types of the declarations corresponding to the Type-Levels
+    /*// Generate the types of the declarations corresponding to the Type-Levels
     val tplPrfDecls = tpdecls map {tpl =>
       val (argCon, dApplied) = tpl.argContext(Some("/'"))
       val tm = newVar("x_"+tpl.name, dApplied, Some(newCtx))
@@ -350,14 +350,14 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       val proofStepTpl = newVar("ps_"+tpl.name, tp, Some(newCtx))
       newCtx +:= proofStepTpl
       proofStepTpl
-    }
+    }*/
     
     // Generate the types of the declarations corresponding to the Term-Levels
     val tmlPrfDecls = tmdecls map {tml =>
       val (argCon, dApplied) = tml.argContext(Some("/'"))
       val relevantArgs = argCon filter {
         arg => arg.tp.get match {
-          case ApplyGeneral(OMS(p), _) => tpdecls.map(_.path) contains p
+          case ApplyGeneral(OMS(p), _) => tpdecls.map(_.externalPath) contains p
           case _ => false}
       }
       val inductiveAssumptions = relevantArgs map (applyPred(_, tpdecls.map(_.path), predChain))
@@ -371,7 +371,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       newCtx +:= proofStepTml
       proofStepTml
     }
-    (tplPrfDecls++tmlPrfDecls, newCtx)
+    (tmlPrfDecls, newCtx)
   }
   
   /**
