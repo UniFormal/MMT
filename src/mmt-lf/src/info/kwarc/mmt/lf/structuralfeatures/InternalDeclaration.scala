@@ -209,6 +209,8 @@ sealed abstract class InternalDeclaration {
   /** like df but with all names externalized */
   def externalDf(implicit parent: GlobalName) = df map {t => externalizeNamesAndTypes(parent, context)(t)}
   def externalRet(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(ret)
+  /** like path but with externalized path */
+  def externalPath(implicit parent: GlobalName): GlobalName = externalizeNames(parent)(OMS(path), Context.empty) match {case OMS(p) => p}
  
   
   /** checks whether the type of the declaration is dependent on the given argument */

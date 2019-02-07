@@ -147,9 +147,9 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     node.add(child)
     buildTreeComps(child, dec, context, reg)
     dec match {
-      case ce: ContainerElement[Declaration]@unchecked => // declarations can only contain declarations
-        val contextInner = context ++ controller.getExtraInnerContext(ce)
-        dec.getDeclarations foreach {d => buildTreeDecl(child, ce, d, contextInner, reg)}
+      case dd: DerivedDeclaration =>
+        val contextInner = context ++ controller.getExtraInnerContext(dd)
+        dec.getDeclarations foreach {d => buildTreeDecl(child, dd, d, contextInner, reg)}
       case _ =>
     }
     // a child with all declarations elaborated from dec

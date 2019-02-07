@@ -206,14 +206,16 @@ object Archive {
 
   private val escaper = FileNameEscaping
 
-  // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
+  /**
+   * scheme..authority / seg / ments / name.omdoc[.xz] ----> scheme :// authority / seg / ments ? name
+   */
   def ContentPathToMMTPath(segs: FilePath): MPath = segs.segments match {
     case Nil => throw ImplementationError("")
     case hd :: tl =>
       val p = hd.indexOf("..")
       val fileNameNoExt = tl.length match {
         case 0 => throw ImplementationError("")
-        case _ => tl.last.lastIndexOf(".") match {
+        case _ => tl.last.lastIndexOf(".omdoc") match {
           case -1 => tl.last
           case i => tl.last.substring(0, i)
         }
@@ -221,7 +223,9 @@ object Archive {
       DPath(URI(hd.substring(0, p), hd.substring(p + 2)) / tl.init) ? escaper.unapply(fileNameNoExt)
   }
 
-  // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
+  /** scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
+   *  file extensions are kept, to be used on folders only
+   */
   def ContentPathToDPath(segs: FilePath): DPath = segs.segments match {
     case Nil => DPath(URI.empty)
     case hd :: tl =>

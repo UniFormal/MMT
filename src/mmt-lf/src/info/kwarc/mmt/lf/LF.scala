@@ -175,7 +175,6 @@ object FunTerm {
   }
 }
 
-
 /**
  * like ApplySpine, but also covers the case n=0, akin to FunType
  *
