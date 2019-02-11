@@ -112,7 +112,7 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
 }
 
 trait HasType {
-  def tpC: AbstractTermContainer
+  def tpC: TermContainer
   def tp = tpC.get
   def tpNode = if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil
   def translateTp(translator: Translator, context : Context) = TermContainer(tp map {t => translator.applyType(context, t)})

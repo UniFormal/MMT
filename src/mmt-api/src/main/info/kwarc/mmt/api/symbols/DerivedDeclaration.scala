@@ -332,7 +332,26 @@ trait TheoryLike extends StructuralFeature {
   }
 }
 
-/** for structural features with both take parameters and a type
+/** helper object */
+object ParametricTheoryLike {
+   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
+   case class Type(cls: Class[_ <: ParametricTheoryLike]) {
+     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
+
+     def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
+     def unapply(t: Term) = t match {
+       case OMBINDC(OMMOD(this.mpath), params, _) => Some((params))
+       case _ => None
+     }
+
+     /** retrieves the parameters */
+     def getParameters(dd: DerivedDeclaration) = {
+       dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
+     }
+   }
+}
+
+/** for structural features that take both parameters and a type
  *  Examples are structural features which build structures defined via a derived declaration of another structural feature
  *  like inductively-defined functions or proofs by induction over an inductively-defined type or terms of a record
  *  In such a case the type is the other derived declaration instanciated with values for its parameters
@@ -348,7 +367,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     val params = ParamType.getParameters(dd)
     params ++ Context(dd.modulePath)
   }
-      
+
   override def processHeader(header: Term) = header match {
     case OMA(OMMOD(`mpath`), List(OML(name,_,_,_,_),t)) => 
       val p = getHeadPath(t)
@@ -369,27 +388,9 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   }
   def getHeadPath(t: Term) : GlobalName = t match {
     case OMS(p) => p
-    case OMID(p) => p.toMPath.copy(name=p.name.init) ? p.name.last
+    case OMMOD(p) => p.toGlobalName
+    case _ => throw InvalidObject(t, "ill-formed header") 
   }
-}
-
-/** helper object */
-object ParametricTheoryLike {
-   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
-   case class Type(cls: Class[_ <: ParametricTheoryLike]) {
-     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
-
-     def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
-     def unapply(t: Term) = t match {
-       case OMBINDC(OMMOD(this.mpath), params, _) => Some((params))
-       case _ => None
-     }
-
-     /** retrieves the parameters */
-     def getParameters(dd: DerivedDeclaration) = {
-       dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
-     }
-   }
 }
 
 /** helper object */
@@ -406,12 +407,12 @@ object TypedParametricTheoryLike {
 
      /** retrieves the parameters and arguments */
      def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
-      dd.tpC.get.get match {
-        case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
-      }
-    }
+       dd.tpC.get.get match {
+         case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
+       }
+     }
      /** retrieves the parameters */
-    def getParameters(dd: DerivedDeclaration) = {getParams(dd)._2}
+     def getParameters(dd: DerivedDeclaration) = {getParams(dd)._2}
    }
 }
 

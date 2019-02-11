@@ -369,14 +369,26 @@ class XMLReader(controller: Controller) extends Logger {
                case d: Theory => d.paramC.set(par)
                case _ => throw ParseError("parameters outside declared theory")
             }
+         case <type>{tpN}</type> =>
+            val tp = Obj.parseTerm(tpN, nsMap)
+            body match {
+               case d: symbols.HasType => d.tpC.set(tp)
+               case _ => throw ParseError("unexpected type element")
+            }
          case <definition>{dfN}</definition> =>
             val df = Obj.parseTerm(dfN, nsMap)
             body match {
-               case d: Theory => d.dfC.set(df)
-               case v: View => v.dfC.set(df)
-               case _ => throw ParseError("definition outside declared theory")
+               case d: HasDefiniens => d.dfC.set(df)
+               case _ => throw ParseError("unexpected definition element")
             }
-
+         case <notations>{notN}</notations> =>
+            val tp = Obj.parseTerm(notN, nsMap)
+            body match {
+               case d: HasNotation =>
+                 val ntC = NotationContainer.parse(notN, body.path)
+                 d.notC.add(ntC)
+               case _ => throw ParseError("unexpected notations element")
+            }
          case scala.xml.Comment(_) =>
          case n if Utility.trimProper(n).isEmpty => //whitespace node => nothing to do
          case _ => throw ParseError("symbol level element expected: " + symbol)

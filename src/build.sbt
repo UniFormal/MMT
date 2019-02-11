@@ -133,7 +133,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
       mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got,
+      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq,
       tiscaf, lfcatalog,
       jedit, intellij
   ).
@@ -233,6 +233,10 @@ lazy val jedit = (project in file("jEdit-mmt")).
 lazy val intellij = (project in file("intellij-mmt")).
   dependsOn(api).
   settings(mmtProjectsSettings("intellij-mmt"): _*)
+
+lazy val coq = (project in file("mmt-coq")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-coq"): _*)
   
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
