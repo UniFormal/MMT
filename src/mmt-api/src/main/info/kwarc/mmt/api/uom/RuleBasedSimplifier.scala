@@ -398,8 +398,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     def outerContext = Context.empty
 
     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
-       case AnonymousTheory(mt, ds) =>
-         Some(new AnonymousTheory(mt, Nil))
+       case AnonymousTheoryCombinator(at) =>
+         Some(at)
        // add include of codomain of mor
        case OMMOD(mp) =>
          val th = Try(controller.globalLookup.getTheory(mp)).getOrElse(return None)

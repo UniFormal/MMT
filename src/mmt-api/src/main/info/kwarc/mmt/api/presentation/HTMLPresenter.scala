@@ -33,6 +33,8 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          doHTMLOrNot(thy.path.doc, standalone) {doTheory(thy)}
        case view : View =>
          doHTMLOrNot(view.path.doc, standalone) {doView(view)}
+       case dm: DerivedModule =>
+         doHTMLOrNot(dm.path.doc, standalone) {doTheory(dm)}
        case d: Declaration => doHTMLOrNot(d.path.doc, standalone) {doDeclaration(d)}
      }
      this._rh = null
@@ -184,6 +186,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
                         doNotComponent(d.path $ comp, n)
                       }
                   }
+               case _ => // impossible
             }
             if (aliases.nonEmpty) {
               tr("aliases") {
@@ -286,12 +289,14 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       }}
    }
 
-   def doTheory(t: Theory) {
-      div("theory") {
-         doNarrativeElementInMod(t, t.asDocument)
+   def doTheory(m: ModuleOrLink) {
+      div(m.feature) {
+         doNarrativeElementInMod(m, m.asDocument)
       }
    }
-   def doView(v: View) {}
+   def doView(v: View) {
+      doTheory(v)
+   }
    override def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
       doHTMLOrNot(dpath, true) {div("namespace") {
          namespaces.foreach {case bd =>
@@ -366,6 +371,13 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
          div("opaque-"+oe.format + " inlineBoxSibling") {
             oi.toHTML(objectPresenter, oe)(rh)
          }
+      case ii: InterpretationInstruction =>
+        div("instruction") {
+          span {text(ii.feature)}
+          ii.arguments.foreach {s =>
+            text(s)
+          }
+        }
       case r: NRef =>
         val label = r match {
            case _:DRef => "dref"

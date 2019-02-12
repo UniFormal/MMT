@@ -48,7 +48,7 @@ trait RelStoreStatistics { this: RelStore =>
       utils.histogram(ds.toList, getConstantType)
       .map({e => StatisticEntry(e._1, e._2)})
       .toList
-    Statistics(List((pre, dsG)))
+    Statistics(Map((pre, dsG)))
   }
 
   /**
@@ -107,7 +107,7 @@ trait RelStoreStatistics { this: RelStore =>
 
 
 /** statistics that are being returned */
-case class Statistics(entries: List[(StatPrefixType, List[StatisticEntry])]) {
+case class Statistics(entries: collection.immutable.Map[StatPrefixType, List[StatisticEntry]]) {
   /** adds another statistics object to this one */
   def +(that: Statistics): Statistics = {
     var stat = this
@@ -117,7 +117,7 @@ case class Statistics(entries: List[(StatPrefixType, List[StatisticEntry])]) {
 
   /** adds a StatisticEntry with a given prefix to this statistics object */
   def +(s: StatisticEntry, pre: StatPrefixType) = Statistics(
-    if (entries.map(_._1.key).contains(pre.key))
+    if (entries.toList.map(_._1.key).contains(pre.key))
       entries map {
         case (p, stats) if p.key == pre.key =>
           if (stats map (_.stat) contains s.stat) {
@@ -130,15 +130,14 @@ case class Statistics(entries: List[(StatPrefixType, List[StatisticEntry])]) {
             (p, s :: stats)
         case e => e
       }
-    else
-      (pre, List(s)) :: entries
+    else entries.+((pre, List(s)))
   )
 
   /**
     * Returns a JSON representation of the statistics
     */
   def toJSON : JSONArray = {
-    val jstats = entries map {case (pre, substat) => JSONObject(pre.key -> JSONArray(substat.map(_.toJSON):_*))}
+    val jstats = entries.toList map {case (pre, substat) => JSONObject(pre.key -> JSONArray(substat.map(_.toJSON):_*))}
     JSONArray(jstats:_*)
   }
 }

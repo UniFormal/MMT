@@ -8,7 +8,7 @@ import info.kwarc.mmt.lf.hollight.HOLLight
 
 class Plugin extends frontend.Plugin {
    val theory = LF.theoryPath
-   val dependencies = List("info.kwarc.mmt.moduleexpressions.MorphismPlugin")
+   val dependencies = Nil
    override def start(args: List[String]) {
       val em = controller.extman
       // content enhancers

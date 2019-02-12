@@ -12,7 +12,7 @@ import utils._
 import scala.util.Try
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, errorCont: ErrorHandler) {
+class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, val errorCont: ErrorHandler) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
@@ -26,7 +26,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, e
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
-      case m: Module => currentScope = IsMod(m.path, LocalName.empty)
+      case m: ModuleOrLink => currentScope = IsMod(m.modulePath, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
     }
@@ -114,7 +114,7 @@ object REPLServer {
 
 import REPLServer._
 
-class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
+class REPLServer extends ServerExtension("repl") {
   private lazy val presenter = controller.presenter
 
   private var sessions: List[REPLSession] = Nil
@@ -124,15 +124,15 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
       val input = (request.query + " " + request.body.asString).trim
       val command = Command.parse(input)
       val session = request.headers.get("x-repl-session")
-      apply(session, command)
+      apply(session, command, None)
     } catch {
       case e : Exception => return ServerResponse.errorResponse(Error(e), "html")
     }
     TextResponse(response.toString)
   }
 
-  def apply(session: Option[String], command: Command): REPLResponse = {
-    applyActual(session, command)
+  def apply(session: Option[String], command: Command, errorContO: Option[ErrorHandler]): REPLResponse = {
+    applyActual(session, command, errorContO)
   }
 
   def getSessionOpt(id: String) = sessions.find(_.id == id)
@@ -140,7 +140,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
 
-  private def applyActual(idO: Option[String], command: Command) : REPLResponse = {
+  private def applyActual(idO: Option[String], command: Command, errorContO: Option[ErrorHandler]) : REPLResponse = {
     implicit lazy val session = idO match {
       case None => throw LocalError("session needed")
       case Some(id) => getSession(id)
@@ -148,7 +148,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
     command match {
       case Show => getSessions
       case Clear => clearSessions
-      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")))
+      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")), errorContO.getOrElse(ErrorThrower))
       case Restart => restartSession(session)
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
@@ -193,11 +193,11 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
     AdminResponse("Sessions cleared")
   }
 
-  private def startSession(id: String) = {
+  private def startSession(id: String, errorCont: ErrorHandler) = {
     if (sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
-    createSession(path(id), id)
+    createSession(path(id), id, errorCont)
     // return the session id
     AdminResponse(s"Created Session $id")
   }
@@ -205,7 +205,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
   private def restartSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
-    createSession(path(id), id)
+    createSession(path(id), id, session.errorCont)
     AdminResponse(s"Restarted Session $id")
   }
 
@@ -218,7 +218,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   // SESSION MANAGEMENT
 
-  private def createSession(path: DPath, id: String) : REPLSession = {
+  private def createSession(path: DPath, id: String, errorCont: ErrorHandler) : REPLSession = {
     val nsMap = controller.getNamespaceMap(path)
     val doc = new Document(path, level=FileLevel, nsMap = nsMap)
     controller.add(doc)

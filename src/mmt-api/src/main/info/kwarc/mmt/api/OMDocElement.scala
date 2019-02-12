@@ -77,6 +77,8 @@ trait StructuralElement extends Content with NamedElement {
           a.from == b.from &&
           a.df == b.df &&
           (a.isImplicit == b.isImplicit)
+        case (a: DerivedDeclaration, b: DerivedDeclaration) =>
+          a.feature == b.feature && a.tp == b.tp && a.df == b.df
         case _ => false
       })
   }
@@ -94,6 +96,9 @@ trait StructuralElement extends Content with NamedElement {
 trait ContentElement extends StructuralElement {
   /** the kind of declaration, e.g., "constant" */
   val feature: String
+  
+  /** local name relative to the parent element or namespace */
+  def name: LocalName
 
   def path: ContentPath
 

@@ -7,6 +7,7 @@ import objects.Conversions._
 import notations._
 import documents._
 import modules._
+import symbols._
 import archives._
 
 /**
@@ -48,6 +49,7 @@ trait StructurePresenter extends Exporter {
    def exportDocument(doc : documents.Document, bf: BuildTask) = apply(doc, true)(rh)
    def exportTheory(thy : Theory, bf: BuildTask) = apply(thy, true)(rh)
    def exportView(view : View, bf: BuildTask) = apply(view, true)(rh)
+   override def exportDerivedModule(dm: DerivedModule, bf: BuildTask) = apply(dm, true)(rh)
    /** does nothing */
    def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
@@ -112,13 +114,18 @@ object Presenter {
    }
 
    def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
-      val notC = controller.globalLookup.getO(p) flatMap {
-         case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
-         case d: symbols.DerivedDeclaration => None //TODO
-         case _ => None
+      val cached = controller.memory.notations.get(p)
+      cached match {
+        case Some(nO) => nO.toList
+        case None =>
+          val notC = controller.globalLookup.getO(p) flatMap {
+             case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
+             case d: symbols.DerivedDeclaration => None //TODO
+             case _ => None
+          }
+          val dim = if (twoDim) 2 else 1
+          notC.map(n => n.getNotations(Some(dim), None)).getOrElse(Nil)
       }
-      val dim = if (twoDim) 2 else 1
-      notC.map(n => n.getNotations(Some(dim), None)).getOrElse(Nil)
    }
 }
 

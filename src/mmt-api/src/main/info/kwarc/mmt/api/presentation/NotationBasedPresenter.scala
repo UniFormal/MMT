@@ -452,15 +452,12 @@ class NotationBasedPresenter extends ObjectPresenter {
          doDefault(o.vd)
       case VarDecl(n,f,tp,df, not) =>
          f.foreach {f => doOperator(f); doSpace(1)}
-         val named = n match {
-           case LocalName(ComplexStep(_)::Nil) => false
-           case _ => true
-         }
-         if (named)
+         val include = f contains IncludeVarDecl.feature
+         if (!include)
            doVariable(n)
          tp foreach {t =>
             val doIt = () => {
-              if (named) doOperator(":")
+              if (!include) doOperator(":")
               recurse(t, noBrackets)(pc.child(0))
             }
             if (metadata.TagInferredType.get(o)) {

@@ -15,8 +15,11 @@ import parser.SourceRef
 /**
  * standard structure text syntax for MMT, not necessarily parsable
  */
-class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
-   val key = "present-text-notations"
+abstract class AbstractMMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(objectPresenter) {
+   /** determines if the modules should be flattened */
+   val presentGenerated: Boolean
+   
+   def key = "present-text-notations" + (if (presentGenerated) "-flat" else "")
    override def outExt = "mmt"
 
    def beginDecl(e: StructuralElement)(implicit rh: RenderingHandler) {}
@@ -27,13 +30,16 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
      apply(e, 0)(rh)
    }
 
-  protected def doTheory(t: Theory, indent:Int)(implicit rh: RenderingHandler) {
+  protected def doTheory(t: AbstractTheory, indent:Int)(implicit rh: RenderingHandler) {
     //TODO this ignores all narrative structure inside a theory
-    rh("theory " + t.name)
+    rh(t.feature + " " + t.name)
     t.meta.foreach(p => rh(" : "+p.toString))
+    // TODO print type component
     doDefComponent(t)
     rh(" \n")
-    t.getDeclarations.foreach {d => apply(d, indent+1)}
+    t.getDeclarations.foreach {d => 
+      if (!d.isGenerated || presentGenerated) apply(d, indent+1)
+    }
   }
   
   protected def doView(v: View, indent:Int)(implicit rh: RenderingHandler) {
@@ -98,9 +104,14 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
          case r: DRef =>
             rh("document " + r.target.toPath)
          case r: MRef =>
-            rh("module " + r.target.toPath)
+            controller.getO(r.target) match {
+              case None => rh("module " + r.target.toPath)
+              case Some(m) => apply(m, indent)
+            }
          case oe: OpaqueElement =>
             controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
+         case ii: InterpretationInstruction =>
+            rh(ii.toString)
          case c: Constant => doConstant(c,indent)
          case t: Theory => doTheory(t, indent)
          case v: View => doView(v,indent)
@@ -114,6 +125,8 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
             }
             rh << "\n"
             dd.module.getDeclarations.foreach {d => apply(d, indent+1)}
+         case dm: DerivedModule =>
+            doTheory(dm, indent)
          case nm: NestedModule =>
             apply(nm.module, indent+1)
          case s: Structure => doStructure(s,indent)
@@ -141,4 +154,14 @@ class MMTStructurePresenter(objectPresenter: ObjectPresenter) extends Presenter(
         false
     }
   }
+}
+
+/** not flattened */
+class MMTStructurePresenter(oP: ObjectPresenter) extends AbstractMMTStructurePresenter(oP) {
+  val presentGenerated = false
+}
+
+/** flattened */
+class FlatMMTStructurePresenter(oP: ObjectPresenter) extends AbstractMMTStructurePresenter(oP) {
+  val presentGenerated = true
 }

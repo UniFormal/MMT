@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.frontend
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.notations._
 
 /** A read-only abstraction of memory */
 abstract class ROMemory {
@@ -20,6 +21,9 @@ class Memory(extman: ExtensionManager, val report: Report) extends ROMemory {
   /** maintains all content elements */
   val content = new Library(extman, report, Some(previousContent))
 
+  val notations = new NotationCache
+  //extman.addExtension(notations) // TODO needs to be improved before deploying
+  
   /** forgets everything */
   def clear {
     ontology.clear

@@ -6,6 +6,8 @@ import frontend._
 import Level.Level
 import modules._
 import parser._
+import notations._
+import symbols._
 import utils._
 
 /** common functionality of importers */
@@ -46,6 +48,8 @@ trait GeneralImporter extends Extension {
     writeToContent(a, mod)
     // write relational file
     writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
+    // write notations file, nice idea but does not eliminate all retrievals yet during presentation
+    // writeToNot(mod, a / notational / Archive.MMTPathToContentPath(mod.path))
   }
   
   /** Write a module to content folder */
@@ -68,6 +72,25 @@ trait GeneralImporter extends Extension {
       r => relFileHandle.write(r.toPath + "\n")
     }
     relFileHandle.close
+  }
+
+  /** extract the notations of a knowledge item and write them to a file */
+  protected def writeToNot(mod: Module, file: File) {
+    val notFile = file.setExtension("not")
+    log("[  -> notations]     " + notFile.getPath)
+    val notFileHandle = File.Writer(notFile)
+    def doModule(mod: Module) {
+      mod.getDeclarations.foreach {
+        case nm: NestedModule =>
+          doModule(nm.module)
+        case d: HasNotation =>
+          val dN = d.not.map(_.toText).getOrElse("")
+          notFileHandle.println(d.path + " " + dN)
+        case _ =>
+      }
+    }
+    doModule(mod)
+    notFileHandle.close
   }
 }
 

@@ -5,10 +5,8 @@ import actions._
 
 
 class ExtendedREPL extends REPLImpl with REPLExtension  {
-  override def enter
-  (args: ShellArguments): Unit = {
+  override def enter(args: ShellArguments) {
     super.enter(args)
-
     if (isDumb()) {
       println(
         """
@@ -17,7 +15,6 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
           |You may prefix a partial command with '@' to get a list of suggestions printed out.
         """.stripMargin)
     }
-
   }
 
   def eval(line: String): Boolean = {
@@ -34,11 +31,11 @@ class ExtendedREPL extends REPLImpl with REPLExtension  {
   }
   private def handleLine(line: String) = {
     controller.tryHandleLine(line) match {
-      case ActionResultOK() => true
-      case ActionParsingError(e) =>
-        println("\u001b[31;1m" + e + "\u001b[0m")
-      case ActionExecutionError(e) =>
-        println("\u001b[31;1m" + e + "\u001b[0m")
+      case ActionResultOK() =>
+      case ae: ActionResultError =>
+        report(ae.error)
+        // FR: this used to be, but it's wrong to suppress the stack trace
+        //println("\u001b[31;1m" + ae.error + "\u001b[0m")
     }
     true
   }

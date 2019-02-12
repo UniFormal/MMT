@@ -43,7 +43,7 @@ abstract class RuleGenerator extends ChangeListener {
 
   override def onCheck(e: StructuralElement) {
      val c = e match {
-        case c: Constant if c.rl.map(ruleTags.contains).getOrElse(false) =>
+        case c: Constant if c.rl.exists(ruleTags.contains) =>
           if (c.tpC.analyzed.isDefined) {
              // check if an up-to-date rule for this constant exists already: if so break, otherwise delete it
              getGeneratedRule(c.path) foreach {r =>

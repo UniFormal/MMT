@@ -1,5 +1,6 @@
 package info.kwarc.mmt.lf.compile
 
+/** convenience class for writing a program inside Scala concrete syntax */
 abstract class Program {
    /** stores the list of declarations in reverse declaration-order */
    private var decls : List[DECL] = Nil
@@ -50,6 +51,7 @@ abstract class Program {
              case f: FUNCTION => List(f.name)
              case t: TYPEDEF => List(t.name)
              case e: EXCEPTION => List(e.name)
+             case _:COMMENT => Nil
              case _ => null
           }
 //          ct += 1
@@ -67,21 +69,37 @@ abstract class Program {
          ds = rest
       }
    }
+   
+   def printIn(fl: FuncLang[String]) = fl.prog(get).mkString("\n")
 }
 
 /** An example program */
 object TestProgram extends Program {
    import EXPConversions._
+   val declare() = COMMENT("natural numbers as an inductive type")
    val declare(nat, zero, succ)  = "nat" adt ("zero" of (), "succ" of current)
+   val declare() = COMMENT("rational numbers as a record")
    val declare(rat, enum, denom) = "rat" record ("enum" ::: nat, "denom" ::: nat)
+   val declare() = COMMENT("type definition for a list of natural numbers")
    val declare(listnat) = "listnat" typedef LIST(nat)
+   val declare() = COMMENT("addition of natural numbers")
    val declare(add) = "add" function nat <-- ("x" :: nat, "y" :: nat) =||= {
       case (x,y) => x Match (
          zero ==> y,
          succ("n") ==> succ(current("n", y))
       )
    }
+   val declare() = COMMENT("multiplication of natural numbers")
+   val declare(mult) = "mult" function nat <-- ("x" :: nat, "y" :: nat) =||= {
+      case (x,y) => x Match (
+         zero ==> zero,
+         succ("n") ==> add(current("n", y), y)
+      )
+   }
+   val declare() = COMMENT("addition of natural numbers")
    val declare(addr) = "addr" function rat <-- ("x" :: rat, "y" :: rat) =||= {case (x,y) =>
-      rat(enum ::: x.__(enum) ** y.__(denom), denom ::: y.__(enum) ** x.__(denom))
+      rat(enum ::: add(mult(x __ enum, y __ denom), mult(y __ enum, x __ denom)) ,
+         denom ::: mult(x __ denom, y __ denom)
+         )
    }
 }

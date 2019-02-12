@@ -12,39 +12,22 @@ object Theory {
    def noBase = new TermContainer
    def noParams = new ContextContainer
 
-   def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = new Theory(doc, n, mt, noParams, noBase)
+   def apply(doc: DPath, n: LocalName, mt: Option[MPath], params: ContextContainer = noParams, df: TermContainer = noBase) =
+     new Theory(doc, n, mt, params, df)
+   
+   def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = apply(doc, n, mt)
 }
 
-/**
- * A Theory represents an MMT theory.
- *
- * Theories are constructed empty. Body is derived to hold a set of named symbols.
- *
- * @param doc as for [[Module]]
- * @param name as for [[Module]]
- * @param mt the optional meta-theory
- * @param paramC the interface/parameters/arguments of this theory
- * @param dfC the definiens/base theory of this theory
- */
-class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer) extends Module(doc, name) {
-   val feature = "theory"
-   /** the container of the meta-theory */
-   val metaC = TermContainer(mt.map(OMMOD(_)))
+/** abstract interface of theories and related classes, analog to [[Link]] */
+trait AbstractTheory extends ModuleOrLink {
    /** the meta-theory */
-   def meta = metaC.get map {case OMMOD(mt) => mt}
+   def meta: Option[MPath]
    /** the parameters */
-   def parameters = paramC.get getOrElse Context.empty
-
-   def getComponents = {
-     val mtComp = if (metaC.isDefined) List(TypeComponent(metaC)) else Nil
-     val dfComp = if (dfC.isDefined) List(DefComponent(dfC)) else Nil
-     val prComp = if (paramC.isDefined) List(ParamsComponent(paramC)) else Nil
-     mtComp ::: dfComp ::: prComp
-   }
+   def parameters: Context
 
    /** the context governing the body: meta-theory, parameters, and this theory */
    def getInnerContext = {
-      val self = IncludeVarDecl(path, parameters.id.map(_.target))
+      val self = IncludeVarDecl(modulePath, parameters.id.map(_.target))
       meta.map(p => Context(p)).getOrElse(Context.empty) ++ parameters ++ self
    }
    /** convenience method to obtain all constants */
@@ -78,6 +61,36 @@ class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val par
    /** convenience method to obtain all derived declarations for a given feature */
    def getDerivedDeclarations(f: String) = getDeclarations.collect {
      case dd: DerivedDeclaration if dd.feature == f => dd
+   }
+}
+
+
+/**
+ * A Theory represents an MMT theory.
+ *
+ * Theories are constructed empty. Body is derived to hold a set of named symbols.
+ *
+ * @param doc as for [[Module]]
+ * @param name as for [[Module]]
+ * @param mt the optional meta-theory
+ * @param paramC the interface/parameters/arguments of this theory
+ * @param dfC the definiens/base theory of this theory
+ */
+class Theory(doc: DPath, name: LocalName, private var mt: Option[MPath], val paramC: ContextContainer, val dfC: TermContainer)
+   extends Module(doc, name) with AbstractTheory {
+   val feature = "theory"
+   
+   /** the container of the meta-theory */
+   val metaC = TermContainer(mt.map(OMMOD(_)))
+
+   def meta = metaC.get map {case OMMOD(mt) => mt}
+   def parameters = paramC.get getOrElse Context.empty
+
+   def getComponents = {
+     val mtComp = if (meta.isDefined) List(TypeComponent(metaC)) else Nil
+     val dfComp = if (dfC.isDefined) List(DefComponent(dfC)) else Nil
+     val prComp = if (paramC.isDefined) List(ParamsComponent(paramC)) else Nil
+     mtComp ::: dfComp ::: prComp
    }
 
    def translate(newNS: DPath, newName: LocalName, translator: Translator, context : Context): Theory = {
