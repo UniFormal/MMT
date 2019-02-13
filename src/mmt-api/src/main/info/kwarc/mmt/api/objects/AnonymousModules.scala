@@ -141,10 +141,10 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
   }
   def viewOf(from:DiagramNode,to:DiagramNode): List[OML] = {
     /* Finding the rename arrows */
-    val distTo = getDistArrowsTo(to.label)
-    val rens: List[OML] = distTo.filter(_.label.toString.contains("rename")).flatMap(a => a.morphism.decls)
+    val distTo : List[DiagramArrow] = getDistArrowsTo(to.label)
+    val rens: List[OML] = distTo.flatMap(a => a.morphism.decls)
     val new_decls = from.theory.decls.map { curr =>
-      var curr_ren = rens.find(oml => (oml.name == curr.name))
+      var curr_ren = rens.find(_.name == curr.name)
       var new_decl = curr
       while (curr_ren != None) {
         var df = curr_ren.get.df // TODO: Do we want to have getOrElse here?

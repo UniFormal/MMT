@@ -354,7 +354,6 @@ object PushoutUtils {
 
 object Combine extends Pushout {
   val name = "combine"
-
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("extend2")
@@ -374,7 +373,7 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     val extArrows1 = b1.distTo.filter(_.label.toString.contains("extend"))
     val extArrows2 = b2.distTo.filter(_.label.toString.contains("extend"))
     val List(sN1,sN2) = List(b1,b2).map(b => b.distTo.filter(_.label.toString.contains("extend")).map(a => a.from))
-    val sourceName : LocalName = (sN1 intersect sN2).last
+    val sourceName : LocalName = (sN1 intersect sN2).head
     val source : DiagramNode = sourceName match {
       case Common.ExistingName(s) => b1.anondiag.getNode(sourceName).get
       case _ => return Recurse
@@ -386,8 +385,10 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     /* Checking for the guard:
      *  If two decls are renamed to the same name, they should be the same in the source node */
     // Going through the rename arrows:
-    val List(view_ad1,view_ad2) = List(b1,b2).map(b => b.anondiag.viewOf(source,b.distNode))
-    if(view_ad1 != view_ad2) new GeneralError("Wrong renames")
+    // val List(view_ad1,view_ad2) = List(b1,b2).map(b => b.anondiag.viewOf(source,b.distNode))
+    val view_ad1 = b1.anondiag.viewOf(source,new DiagramNode(LocalName("n1"),renamedThry1))
+    val view_ad2 = b2.anondiag.viewOf(source,new DiagramNode(LocalName("n2"),renamedThry2))
+    if(view_ad1 != view_ad2) throw (new GeneralError("Wrong renames"))
 
     /* Theory with the new declarations */
     val new_thy = renamedThry1 union renamedThry2
@@ -459,27 +460,11 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
     val new_decls : List[OML] = Common.applySubstitution(d1_dN_renamed.decls,mor)
     val pushout = new AnonymousTheory(d1_dN.theory.mt,new_decls)
 
-    /*
-    var pushout : AnonymousTheory = new AnonymousTheory(d1_dN_renamed.mt,Nil)
-    d1_dN_renamed.decls.foreach {oml =>
-        // TODO: I Am here, check is this is correct
-          if (view_renamed.decls.contains()) {
-            val omlT = (view_renamed.decls.dropWhile(_.name == oml.name).head.df).getOrElse(return Recurse).asInstanceOf[OML]
-            pushout = pushout.add(omlT)
-          // if (d1_dN_renamed.isDeclared(oml.name)) {
-          //   solver.error("pushout not defined because of name clash: " + oml.name)
-          //   return Recurse
-          }else {
-            val omlT = translator(oml, stack.context).asInstanceOf[OML]
-            pushout = pushout.add(omlT)
-          }
-    }*/
-
     val node = DiagramNode(Mixin.nodeLabel,pushout)
     // TODO: The morphisms needs more thinking
     val arrow1 = DiagramArrow(Mixin.arrowLabel1,d1_dN.label,node.label,view.morphism,false)
     val arrow2 = DiagramArrow(Mixin.arrowLabel2,d2_dN.label,node.label,new AnonymousMorphism(Nil),false)
-    val dA = DiagramArrow(Mixin.arrowLabel,ad2.getDistArrow.getOrElse(return Recurse).from,node.label,view.morphism,true)
+    val dA = DiagramArrow(Mixin.arrowLabel,view.from,node.label,view.morphism,true)
     val result = new AnonymousDiagram(ad1.nodes:::ad2.nodes:::List(node),ad1.arrows:::ad2.arrows:::List(arrow1,arrow2,dA),Some(node.label))
     Simplify(result.toTerm)
   }
