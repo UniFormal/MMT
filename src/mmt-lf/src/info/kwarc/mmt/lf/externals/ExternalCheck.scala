@@ -164,7 +164,6 @@ object ValRule extends ExternalConditionRule(CallByValue.Val) {
       case Apply(OMS(CallByValue.lam),_) =>
         None
       case Apply(OMS(CallByValue.free),_) =>
-        println("is variable")
         None
       case _ =>
         Some(solver.presentObj(tm) + " must be a value")
