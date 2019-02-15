@@ -16,8 +16,7 @@ import opaque._
 import utils._
 
 /**
- * An application that starts the Isabelle [[Importer]].
- * This is called by the shell-script mmt_import, via which it is available as a tool from within Isabelle.
+ * Isabelle/MMT [[Importer]] as command-line tool within the Isabelle environment.
  */
 object Importer
 {
@@ -524,27 +523,27 @@ object Importer
   }
 
 
-  /* command line entry point */
+  /* Isabelle tool wrapper */
 
-  def main(args: Array[String])
-  {
-    isabelle.Command_Line.tool0 {
-      var archive_dirs: List[isabelle.Path] = Nil
-      var chapter_archive_map: Map[String, String] = Map.empty
-      var chapter_archive_default = ""
-      var base_sessions: List[String] = Nil
-      var select_dirs: List[isabelle.Path] = Nil
-      var requirements = false
-      var exclude_session_groups: List[String] = Nil
-      var all_sessions = false
-      var dirs: List[isabelle.Path] = Nil
-      var session_groups: List[String] = Nil
-      var logic = default_logic
-      var options = isabelle.Options.init()
-      var verbose = false
-      var exclude_sessions: List[String] = Nil
+  val isabelle_tool =
+    isabelle.Isabelle_Tool("mmt_import", "import Isabelle sessions into MMT",
+      args => {
+        var archive_dirs: List[isabelle.Path] = Nil
+        var chapter_archive_map: Map[String, String] = Map.empty
+        var chapter_archive_default = ""
+        var base_sessions: List[String] = Nil
+        var select_dirs: List[isabelle.Path] = Nil
+        var requirements = false
+        var exclude_session_groups: List[String] = Nil
+        var all_sessions = false
+        var dirs: List[isabelle.Path] = Nil
+        var session_groups: List[String] = Nil
+        var logic = default_logic
+        var options = isabelle.Options.init()
+        var verbose = false
+        var exclude_sessions: List[String] = Nil
 
-      val getopts = isabelle.Getopts("""
+        val getopts = isabelle.Getopts("""
 Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Options are:
@@ -564,67 +563,67 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   Import specified sessions into MMT archive directories.
 """,
-      "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
-      "C:" -> (arg =>
-        isabelle.space_explode('=', arg) match {
-          case ch :: ar =>
-            val archive = ar.mkString("=")
-            if (ch == "_") chapter_archive_default = archive
-            else chapter_archive_map += (ch -> archive)
-          case Nil => isabelle.error("Malformed chapter to archive mapping")
-        }),
-      "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
-      "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
-      "R" -> (_ => requirements = true),
-      "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
-      "a" -> (_ => all_sessions = true),
-      "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
-      "g:" -> (arg => session_groups = session_groups ::: List(arg)),
-      "l:" -> (arg => logic = arg),
-      "o:" -> (arg => { options += arg }),
-      "v" -> (_ => verbose = true),
-      "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
+        "A:" -> (arg => archive_dirs = archive_dirs ::: List(isabelle.Path.explode(arg))),
+        "C:" -> (arg =>
+          isabelle.space_explode('=', arg) match {
+            case ch :: ar =>
+              val archive = ar.mkString("=")
+              if (ch == "_") chapter_archive_default = archive
+              else chapter_archive_map += (ch -> archive)
+            case Nil => isabelle.error("Malformed chapter to archive mapping")
+          }),
+        "B:" -> (arg => base_sessions = base_sessions ::: List(arg)),
+        "D:" -> (arg => { select_dirs = select_dirs ::: List(isabelle.Path.explode(arg)) }),
+        "R" -> (_ => requirements = true),
+        "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
+        "a" -> (_ => all_sessions = true),
+        "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
+        "g:" -> (arg => session_groups = session_groups ::: List(arg)),
+        "l:" -> (arg => logic = arg),
+        "o:" -> (arg => { options += arg }),
+        "v" -> (_ => verbose = true),
+        "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
 
-      val sessions = getopts(args)
+        val sessions = getopts(args)
 
-      val selection =
-        isabelle.Sessions.Selection(
-          requirements = requirements,
-          all_sessions = all_sessions,
-          base_sessions = base_sessions,
-          exclude_session_groups = exclude_session_groups,
-          exclude_sessions = exclude_sessions,
-          session_groups = session_groups,
-          sessions = sessions)
+        val selection =
+          isabelle.Sessions.Selection(
+            requirements = requirements,
+            all_sessions = all_sessions,
+            base_sessions = base_sessions,
+            exclude_session_groups = exclude_session_groups,
+            exclude_sessions = exclude_sessions,
+            session_groups = session_groups,
+            sessions = sessions)
 
-      val progress =
-        new isabelle.Console_Progress(verbose = verbose) {
-          override def theory(theory: isabelle.Progress.Theory): Unit =
-            if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
+        val progress =
+          new isabelle.Console_Progress(verbose = verbose) {
+            override def theory(theory: isabelle.Progress.Theory): Unit =
+              if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
+          }
+
+        val start_date = isabelle.Date.now()
+        if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
+
+        try {
+          importer(options,
+            logic = logic,
+            dirs = dirs,
+            select_dirs = select_dirs,
+            selection = selection,
+            archive_dirs = archive_dirs,
+            chapter_archive =
+              (ch: String) => chapter_archive_map.get(ch) orElse
+                isabelle.proper_string(chapter_archive_default),
+            progress = progress)
         }
-
-      val start_date = isabelle.Date.now()
-      if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
-
-      try {
-        importer(options,
-          logic = logic,
-          dirs = dirs,
-          select_dirs = select_dirs,
-          selection = selection,
-          archive_dirs = archive_dirs,
-          chapter_archive =
-            (ch: String) => chapter_archive_map.get(ch) orElse
-              isabelle.proper_string(chapter_archive_default),
-          progress = progress)
+        finally {
+          val end_date = isabelle.Date.now()
+          if (verbose) progress.echo("\nFinished at " + isabelle.Build_Log.print_date(end_date))
+          progress.echo((end_date.time - start_date.time).message_hms + " elapsed time")
+        }
       }
-      finally {
-        val end_date = isabelle.Date.now()
-        if (verbose) progress.echo("\nFinished at " + isabelle.Build_Log.print_date(end_date))
-        progress.echo((end_date.time - start_date.time).message_hms + " elapsed time")
-      }
-    }
-  }
+    )
 
 
 
