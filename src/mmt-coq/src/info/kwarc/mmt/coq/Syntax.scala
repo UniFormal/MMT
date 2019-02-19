@@ -8,12 +8,14 @@ import info.kwarc.mmt.lf._
 
 object Coq {
   val namespace = DPath(URI.http colon "coq.inria.fr")
-  val foundation = (namespace / "foundation") ? "COC"
+  val foundation = (namespace / "foundation") ? "Coq"
 
   val tp = foundation ? "Type"
   val sort = foundation ? "sort"
   val prop = foundation ? "Prop"
   val set = foundation ? "Set"
+
+  val decltype = foundation ? "DeclarationType"
 
   def makeSort(value : String) = value match {
     case "Type" => OMS(Coq.tp)
@@ -44,7 +46,7 @@ object Let {
   def apply(x:LocalName,df:Term,bd:Term) = OMBINDC(OMS(path),Context(VarDecl(x)),List(df,bd))
 }
 
-object Sub {
+object LFXSub {
   val baseURI = Let.baseURI
   val th = baseURI ? "SubSymbol"
 

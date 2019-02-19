@@ -46,9 +46,9 @@ object Key extends TernaryConstantScala(Locks._path, "key") {
 abstract class ExternalConditionRule(val head: GlobalName) extends CheckingRule {
   /**
    * checks the condition Key(head,tm,tp)
-   * return None if successful, error message otherwise
+   * return true if successful, solver.error otherwise
    */
-  def apply(solver: Solver)(context: Context, tm: Term, tp: Term): Option[String]
+  def apply(solver: Solver)(context: Context, tm: Term, tp: Term)(implicit history : History): Boolean
 }
 
 /** K |- T:type  --->  |- LockType(K,T): type */
@@ -95,11 +95,7 @@ object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
                case OMS(pPath) =>
                  solver.rules.getByHead(classOf[ExternalConditionRule], pPath).headOption match {
                    case Some(r) =>
-                     r(solver)(stack.context, n, s) match {
-                       case None =>
-                       case Some(msg) =>
-                         solver.error("external condition failed: " + msg)
-                     }
+                     if (!r(solver)(stack.context, n, s)) return None
                    case None =>
                      solver.error("no rule for predicate " + pPath + " found")
                  }
@@ -159,14 +155,10 @@ object CallByValue {
 
 /** Key(Val, tm, tp) checks whether tm is Val N is an abstraction of of the form free(_) */
 object ValRule extends ExternalConditionRule(CallByValue.Val) {
-  def apply(solver: Solver)(context: Context, tm: Term, tp: Term) = {
+  def apply(solver: Solver)(context: Context, tm: Term, tp: Term)(implicit history : History) : Boolean = {
     tm match {
-      case Apply(OMS(CallByValue.lam),_) =>
-        None
-      case Apply(OMS(CallByValue.free),_) =>
-        None
-      case _ =>
-        Some(solver.presentObj(tm) + " must be a value")
+      case Apply(OMS(CallByValue.lam | CallByValue.free),_) => true
+      case _ => solver.error(solver.presentObj(tm) + " must be a value")
     }
   }
 }

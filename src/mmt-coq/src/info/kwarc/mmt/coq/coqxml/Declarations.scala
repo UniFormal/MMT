@@ -1,7 +1,9 @@
 package info.kwarc.mmt.coq.coqxml
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
-import info.kwarc.mmt.api.objects.{OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq._
 
@@ -11,10 +13,21 @@ trait CoqEntry
 
 // ---------------------------------------------------------------------------
 
-trait theorystructure extends CoqEntry
+trait theorystructure extends CoqEntry {
+}
+
+object constantlike {
+  def unapply(ts:theorystructure) : Option[(URI,String,List[CoqEntry])] = ts match {
+    case AXIOM(uri,as,components) => Some((uri,as,components))
+    case DEFINITION(uri,as,components) => Some((uri,as,components))
+    case THEOREM(uri,as,components) => Some((uri,as,components))
+    case _ => None
+  }
+}
 
 // as \in Axiom | Declaration
-case class AXIOM(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
+case class AXIOM(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure {
+}
 // as \in Definition | InteractiveDefinition | Inductive | CoInductive | Record
 case class DEFINITION(uri : URI,as:String, components : List[CoqEntry]) extends theorystructure
 // as \in Theorem | Lemma | Corollary | Fact | Remark
@@ -23,6 +36,18 @@ case class THEOREM(uri:URI,as:String, components : List[CoqEntry]) extends theor
 case class VARIABLE(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
 
 case class SECTION(uri:URI,statements:List[theorystructure]) extends theorystructure
+
+case class MODULE(uri : URI, as:String,components:List[theorystructure]) extends theorystructure {
+  as match {
+    case "Module" =>
+    case "ModuleType" =>
+    case "AlgebraicModule" =>
+    case "AlgebraicModuleType" =>
+    case _ =>
+      println(as)
+      ???
+  }
+}
 
 // --------------------------------------------------------------------------
 
@@ -197,7 +222,9 @@ case class MUTCASE(uriType: URI, noType : Int, id : String, sort : String, patte
 //                    ^  the thing I'm matching      ^ lambda-abstracted cases
 case class instantiate(id: String, oo:objectOccurence,args:List[arg]) extends term {
   // println("Args: " + args)
-  def recOMDoc(implicit variables : TranslationState) : Term = Sub(args(1).arg.recOMDoc,oo.recOMDoc,args.head.arg.recOMDoc)
+  def recOMDoc(implicit variables : TranslationState) : Term =
+    if (args.length > 1) LFXSub(args(1).arg.recOMDoc,oo.recOMDoc,args.head.arg.recOMDoc)
+    else args.head.arg.recOMDoc
     // TODO check that this is correct
 }
 //                                                             ^ non-empty
@@ -207,6 +234,9 @@ case class REL(value : Int, binder : String, id : String, idref:String,sort : St
   }
 }// OMV
 //               ^ deBruijn-index(from 1) ^ (ideally) the name ^ id of binder
+case class PROJ(uri: URI, noType : Int, id : String, sort : String, tm : term) extends term {
+  def recOMDoc(implicit variables : TranslationState) : Term = tm.recOMDoc // TODO
+}
 
 case class arg(relUri : URI, arg : term) extends CoqEntry // explicit substitution
 case class patternsType(tm : term) extends CoqEntry
