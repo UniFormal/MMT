@@ -14,6 +14,10 @@ case object CodecNotApplicable extends java.lang.Throwable
 abstract class Codec[Code](val exp: Term, val tp: Term) {
    def encode(t: Term): Code
    def decode(c: Code): Term
+   
+   /** data must be validated even if decoding succeeds, e.g., check prime-ness of integer-encoded prime numbers */
+   // TODO check if codec operators should override this
+   def strictDecode(c: Code): Term = decode(c)
 }
 
 /**
