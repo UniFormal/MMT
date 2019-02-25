@@ -168,8 +168,12 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         // def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
         thexp.findAllIn(getLine).toList foreach {
           case thexp(name, base) =>
-            //println(base + "?" + name)
-            ret ::= Path.parseD(base, NamespaceMap.empty) ? name
+            // Dirty fix for https://github.com/UniFormal/MMT/issues/439
+            // until allContent is completely replaced.
+            Path.parse(base, NamespaceMap.empty) match {
+              case dPath: DPath => ret ::= dPath ? name
+              case _ => /* do nothing */
+            }
         }
       }
     }
