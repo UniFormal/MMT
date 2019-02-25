@@ -9,7 +9,7 @@ WORKDIR /build/MMT/src
 RUN sbt deploy
 
 # Runtime dependencies
-FROM openjdk:jre-alpine
+FROM openjdk:11-slim
 RUN apk --no-cache --no-progress add bash git
 
 # Notice that "server on [port]" will not just work inside a docker container

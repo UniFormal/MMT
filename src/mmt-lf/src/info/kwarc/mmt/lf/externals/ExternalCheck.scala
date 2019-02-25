@@ -6,36 +6,52 @@ import objects._
 import checking._
 import uom._
 
-object External {
+/**
+ * Rules for LLF_P as introduced by Honsell, Liquori, Maksimovi, Scagnetto in
+ * A logical framework for modeling external evidence, side conditions, and proof irrelevance using monads
+ */
+
+/** helper objects for identifiers */
+object Locks {
    val _base = Typed._base
-   val _path = _base ? "External"
+   val _path = _base ? "Locks"
 }
 
-object LockType extends FouraryConstantScala(External._path, "locktype")
+/** LockType(k,a,b,T) is the term \mathcal{L}^k_{a,b}[T] from the paper for a type T
+ *  We also write LockType(K,T) if K=Key(k,a,b) is known.
+ */
+object LockType extends FouraryConstantScala(Locks._path, "locktype")
 
-object LockTerm extends FouraryConstantScala(External._path, "lockterm")
+/** LockTerm(k,a,b,t) is the term \mathcal{L}^k_{a,b}[t] from the paper for a term t
+ *  We also write LockTerm(K,t) if K=Key(k,a,b) is known.
+ */
+object LockTerm extends FouraryConstantScala(Locks._path, "lockterm")
 
-object Unlock extends UnaryConstantScala(External._path, "unlock")
+/** Unlock(t) is the term \mathcal{U}^k_{a,b}[T] from the paper for a terms t: LockType(k,a,b,T)
+ *  The additional arguments used in the paper are not actually needed in the internal syntax.
+ */
+object Unlock extends UnaryConstantScala(Locks._path, "unlock")
 
-object Key extends TernaryConstantScala(External._path, "key") {
+/**
+ * convenience operator to bundle k,a,b into a single object Key(k, a, b)
+ */
+object Key extends TernaryConstantScala(Locks._path, "key") {
   def makeKeyDecl(k: Term)(implicit stack: Stack) = {
     val (keyN, _) = Context.pickFresh(stack.context, LocalName("key"))
     VarDecl(keyN, k)
   }
 }
 
-abstract class ExternalKeyRule(val head: GlobalName) extends CheckingRule {
-  def apply(solver: Solver)(context: Context, tm: Term, tp: Term): Boolean
+/** the abstract type of rules that realize a side condition for a particular key */
+abstract class ExternalConditionRule(val head: GlobalName) extends CheckingRule {
+  /**
+   * checks the condition Key(head,tm,tp)
+   * return true if successful, solver.error otherwise
+   */
+  def apply(solver: Solver)(context: Context, tm: Term, tp: Term)(implicit history : History): Boolean
 }
 
-object TrivRule extends ExternalKeyRule(External._base ? "TrivialKey" ? "triv") {
-  //val f = utils.File("C:\\incoming\\test.txt")
-  def apply(solver: Solver)(context: Context, tm: Term, tp: Term): Boolean = {
-     //utils.File.write(f, utils.File.read(f) + "\n" + solver.presentObj(tm))
-     false
-  }
-}
-
+/** K |- T:type  --->  |- LockType(K,T): type */
 object InferLockType extends InferenceRule(LockType.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
      val LockType(p, n, s, t) = tm
@@ -46,6 +62,7 @@ object InferLockType extends InferenceRule(LockType.path, OfType.path) {
   }
 }
 
+/** K |- t:T  ---> |- LockTerm(K,t) : LockType(K,T) */
 object InferLockTerm extends InferenceRule(LockTerm.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
      val LockTerm(p, n, s, t) = tm
@@ -58,6 +75,7 @@ object InferLockTerm extends InferenceRule(LockTerm.path, OfType.path) {
   }
 }
 
+/** G |- t: LockType(K,T)   and   K=Key(p,n,s) in G   and  p(a,b)   --->  U: T */
 object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
      val Unlock(l) = tm
@@ -75,9 +93,11 @@ object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
            if (!isKnown) {
              p match {
                case OMS(pPath) =>
-                 solver.rules.getByHead(classOf[ExternalKeyRule], pPath).headOption match {
-                   case Some(r) => r(solver)(stack.context, n, s)
-                   case None => solver.error("no rule for predicate " + pPath + " found")
+                 solver.rules.getByHead(classOf[ExternalConditionRule], pPath).headOption match {
+                   case Some(r) =>
+                     if (!r(solver)(stack.context, n, s)) return None
+                   case None =>
+                     solver.error("no rule for predicate " + pPath + " found")
                  }
                case _ => solver.error("predicate must be a symbol")
              }
@@ -89,6 +109,7 @@ object InferUnlock extends InferenceRule(Unlock.path, OfType.path) {
   }
 }
 
+/** K |- Unlock(t): T  --->  |- LockType(K,T) */
 object TypingLock extends TypingRule(LockType.path) {
   def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History) : Option[Boolean] = {
     val LockType(pT, nT, sT, a) = tp
@@ -97,6 +118,8 @@ object TypingLock extends TypingRule(LockType.path) {
   }
 }
 
+
+/** K |- Unlock(s) = Unlock(t): T  --->  |- s = t : LockType(K,T) */
 object EqualityLock extends ExtensionalityRule(Nil, LockType.path) {
   val introForm = LockTerm
   
@@ -107,6 +130,7 @@ object EqualityLock extends ExtensionalityRule(Nil, LockType.path) {
   }
 }
 
+/** Unlock(LockTerm(K,t) = t */
 object UnlockLock extends ComputationRule(Unlock.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
      val Unlock(l) = tm
@@ -114,5 +138,27 @@ object UnlockLock extends ComputationRule(Unlock.path) {
        case LockTerm(p, n, s, t) => Simplify(t)
        case _ => Recurse
      }
+  }
+}
+
+// *******************  Example (Section 5.1 of paper): call-by-value for lambda_v calculus
+
+/** helper object for identifier */
+object CallByValue {
+   val _base = Locks._base
+   val _path = _base ? "CallByValueExample"
+   
+   val Val = _path ? "Val"
+   val lam = _path ? "lam" 
+   val free = _path ? "free"
+}
+
+/** Key(Val, tm, tp) checks whether tm is Val N is an abstraction of of the form free(_) */
+object ValRule extends ExternalConditionRule(CallByValue.Val) {
+  def apply(solver: Solver)(context: Context, tm: Term, tp: Term)(implicit history : History) : Boolean = {
+    tm match {
+      case Apply(OMS(CallByValue.lam | CallByValue.free),_) => true
+      case _ => solver.error(solver.presentObj(tm) + " must be a value")
+    }
   }
 }

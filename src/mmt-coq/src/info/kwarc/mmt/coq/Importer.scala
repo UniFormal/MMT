@@ -2,7 +2,12 @@ package info.kwarc.mmt.coq
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, RedirectableDimension}
-import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.documents.{Document, MRef}
+import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
+import info.kwarc.mmt.api.symbols.{Constant, NestedModule, PlainInclude}
 import info.kwarc.mmt.api.utils.{File, URI, xml}
 import info.kwarc.mmt.coq.coqxml.CoqEntry
 
@@ -22,7 +27,7 @@ class Importer extends archives.Importer {
 
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult = {
     log("Reading " + bf.inFile)
-    val e = try {
+    val es = try {
       val parser = new Parser(bf.inFile)
       parser.parse
     } catch {
@@ -31,29 +36,102 @@ class Importer extends archives.Importer {
         sys.exit
     }
 
+    index(doDocument(bf.narrationDPath.^,bf.inFile.name.split('.').head,es))
+
     BuildResult.empty
   }
 
+  def doDocument(dp : DPath,file : String,elems : List[coqxml.theorystructure]): Document = {
+    val d = new Document(dp)
+    val top = Theory(d.path,LocalName(file),Some(Coq.foundation))
+    controller add top
+    elems.foreach(doDecl(top,_))
+    controller add MRef(d.path,top.path)
+    d
+  }
+
+  def doDecl(parent : Theory, elem : coqxml.theorystructure): Unit = elem match {
+    case coqxml.MODULE(uri,as,comp) =>
+      val name = parent.name / uri.path.last
+      val th = Theory(parent.parent,name,Some(Coq.foundation))
+      val nt = new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th)
+      th.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
+      log("Module " + th.path.toString + " ~> " + nt.path.toString)
+      controller add nt
+      comp.foreach(doDecl(th,_))
+      controller add PlainInclude(th.path,parent.path)
+    case coqxml.SECTION(uri,statements) =>
+      val name = parent.name / uri.path.last
+      val th = Theory(parent.parent,name,Some(Coq.foundation))
+      val nt = new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+      th.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Section")))
+      log("Section " + th.path.toString + " ~> " + nt.path.toString)
+      controller add nt
+      statements.foreach(doDecl(th,_))
+      // controller add PlainInclude(th.path,parent.path)
+    case coqxml.VARIABLE(uri,as,components) =>
+      val (name,tp,df) = components.collectFirst {
+        case coqxml.Variable(nm,params,_,body,tptm) =>
+          (LocalName(nm),Some(tptm.tm.toOMDoc(Map.empty,Map.empty)),body.map(_.tm.toOMDoc(Map.empty,Map.empty))) // TODO
+      }.get
+      // val tp : Option[Term] = None
+      // val df : Option[Term] = None
+      val c = Constant(parent.toTerm,name,Nil,tp,df,Some("Variable"))
+      c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
+      log("Variable " + c.path.toString + ":: " + c.toString)
+      controller add c
+    case coqxml.constantlike(uri,as,components) =>
+      if (components.isEmpty) {
+        println(components)
+        ???
+      }
+      val (name,tp,df) = components.collectFirst {
+        case coqxml.ConstantType(namei,params,id,tpi) =>
+          val dfi = components.collectFirst {
+            case coqxml.ConstantBody(_,_,_,body) =>
+              body.toOMDoc(Map.empty,Map.empty) // TODO
+          }
+          (LocalName(namei),Some(tpi.toOMDoc(Map.empty,Map.empty)),dfi) // TODO
+      }.getOrElse {
+        components.collectFirst {
+          case coqxml.InductiveDefinition(noParams,_,_,tps) =>
+            tps match {
+              case coqxml.InductiveType(namei,indbool,_,arity,consts) :: Nil =>
+                return () // TODO
+              case _ =>
+                ???
+            }
+        }.get
+      }
+      val c = Constant(parent.toTerm,name,Nil,tp,df,Some(as))
+      c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
+      log("Definition " + c.path.toString + ":: " + c.toString)
+      controller add c
+    case _ =>
+      println(elem.getClass)
+      ???
+  }
+
   class Parser(tfile: File) {
-    def parse: List[CoqEntry] = {
+    def parse: List[coqxml.theorystructure] = {
       val topnode = {
         new XhtmlParser(scala.io.Source.fromString(File.read(tfile))).initialize.document()
       }//xml.readFile(f)
-      topnode.flatMap(doStatement(_)).toList
+      topnode.flatMap(doStatement(_,List(tfile.name.split('.').head))).toList
     }
 
-    private def doStatement(n : Node,namespaces : List[String] = Nil) : List[CoqEntry] = n match {
+    private def doStatement(n : Node,namespaces : List[String] = Nil,sections : List[String] = Nil) : List[coqxml.theorystructure] = n match {
       case <html>{ch @ _*}</html> =>
         val ls = ch.find(_.label=="body").get.child
-        val sts = ls.flatMap(doStatement(_,namespaces))
+        val sts = ls.flatMap(doStatement(_,namespaces,sections))
         //ls.foreach(println)
         // TODO Documents
-        Nil
+        sts.toList
       case <br/> => Nil
       case <hr/> => Nil
       case <b>Require</b> => Nil // TODO include?
       case <div/> | <div> </div> => Nil
-      case <span>{ch @ _*}</span> => ch.flatMap(doStatement(_,namespaces)).toList
+      case <span>{ch @ _*}</span> => ch.flatMap(doStatement(_,namespaces,sections)).toList
       case a @ <a>{lnk}</a> if (a\"@href").mkString.startsWith("theory:/") =>
         val uri = URI((a\"@href").mkString)
         // TODO something
@@ -116,31 +194,33 @@ class Importer extends archives.Importer {
       case _ : scala.xml.Comment => Nil
       case sec @ <SECTION>{ch @ _*}</SECTION> =>
         val uri = URI((sec\"@uri").mkString)
-        log("Section " + uri.toString)
-        val recs = ch.flatMap(doStatement(_,namespaces ::: List(uri.path.last))).toList
-        List(coqxml.SECTION(uri,recs.map(_.asInstanceOf[coqxml.theorystructure])))
+        // log("Section " + uri.toString)
+        val recs = ch.flatMap(doStatement(_,namespaces,sections ::: List(uri.path.last))).toList
+        List(coqxml.SECTION(uri,recs))
       case d @ <VARIABLE/> =>
         val uri = URI((d\"@uri").mkString)
         // log(uri.toString)
         val as = (d\"@as").mkString
-        List(coqxml.VARIABLE(uri,as,handleXml(namespaces,uri.path.last)))
+        List(coqxml.VARIABLE(uri,as,handleXml(namespaces ::: sections,uri.path.last)))
       case d @ <DEFINITION/> =>
         val uri = URI((d\"@uri").mkString)
         // log(uri.toString)
         val as = (d\"@as").mkString
-        // TODO type/def
         List(coqxml.DEFINITION(uri,as,handleXml(namespaces,uri.path.last)))
       case d @ <THEOREM/> =>
         val uri = URI((d\"@uri").mkString)
         // log(uri.toString)
         val as = (d\"@as").mkString
-        // TODO type/def
         List(coqxml.THEOREM(uri,as,handleXml(namespaces,uri.path.last)))
       case d @ <AXIOM/> =>
         val uri = URI((d\"@uri").mkString)
         val as = (d\"@as").mkString
-        // TODO type/def
         List(coqxml.AXIOM(uri,as,handleXml(namespaces,uri.path.last)))
+      case m @ <MODULE>{ls @ _*}</MODULE> =>
+        val uri = URI((m\"@uri").mkString)
+        val as = (m\"@as").mkString
+        val components = ls.flatMap(doStatement(_,namespaces ::: List(uri.path.last),sections)).toList
+        List(coqxml.MODULE(uri,as,components))
       case node =>
         val nd = node
         println(node.mkString)
@@ -156,7 +236,6 @@ class Importer extends archives.Importer {
         if (f.exists()) {
           // log("Parsing XML: " + f)
           Some(handleNode(xml.readFile(f)))
-          None
         } else None
       }
     }
@@ -172,7 +251,7 @@ class Importer extends archives.Importer {
         coqxml.TYPE(of,term)
       case variable @ <Variable>{ch @ _*}</Variable> =>
         val name = (variable\"@name").mkString
-        val params = (variable\"@params").mkString.split(' ').toList
+        val params = (variable\"@params").mkString.split(' ').toList.filter(_ != "")
         val id = (variable\"@id").mkString
         val body = (variable\"body").headOption.map(handleNode).asInstanceOf[Option[coqxml.body]]
         val tp = handleNode((variable\"type").head).asInstanceOf[coqxml._type]
@@ -343,6 +422,13 @@ class Importer extends archives.Importer {
       case arg @ <arg>{ch}</arg> =>
         val relUri = URI((arg\"@relUri").mkString)
         coqxml.arg(relUri,handleNode(ch).asInstanceOf[coqxml.term])
+      case proj @ <PROJ>{ch}</PROJ> =>
+        val id = (proj\"@id").mkString
+        val sort = (proj\"@sort").mkString
+        val noType = (proj\"@noType").mkString.toInt
+        val uri = URI((proj\"@uri").mkString)
+        val tm = handleNode(ch).asInstanceOf[coqxml.term]
+        coqxml.PROJ(uri,noType,id,sort,tm)
       case _ =>
         println(n.mkString)
         ???
