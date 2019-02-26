@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
 import backend._
-import info.kwarc.mmt.api.utils.MMTSystem
+import info.kwarc.mmt.api.utils.{MMTSystem, MMT_TODO}
 
 import scala.xml._
 
@@ -136,7 +136,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
     ServerResponse.fromText(bodyString)
   }
 
-  @deprecated("use SearchServer instead", "")
+  @MMT_TODO("use SearchServer instead")
   /** handles a resolving an MWS response */
   private def resolveMWS(request : ServerRequest) : ServerResponse = {
     val body = request.body

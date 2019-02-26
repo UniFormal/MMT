@@ -68,7 +68,7 @@ object FlatSequence {
 /*
  * normalizes an sequence expression/symbol in OMDoc/MMT to the corresponding sequence of OMDoc/MMT
  */
-@deprecated
+@MMT_TODO("")
 object SeqNormalize {
   def length(tm : Term)(implicit lookup : Lookup, context : Context) : Term = {
     tm match {

@@ -8,7 +8,7 @@ import utils._
   * ShellExtensions are looked for after all configurations are loaded.
   * These must contain the corresponding [[ExtensionConf]] entry so that MMT can find a ShellExtension.
   */
-@deprecated("use ActionCompanion instead", "")
+@MMT_TODO("use ActionCompanion instead")
 abstract class ShellExtension(command: String) extends FormatBasedExtension {
    def isApplicable(s: String) = s == command
 

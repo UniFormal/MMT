@@ -7,12 +7,12 @@ import notations._
 import checking._
 import modules._
 import frontend.Controller
-
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
+import info.kwarc.mmt.api.utils.MMT_TODO
 
-@deprecated("this is experimental and may still be removed", "")
+@MMT_TODO("this is experimental and may still be removed")
 class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 

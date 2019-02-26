@@ -3,9 +3,10 @@ package info.kwarc.mmt.api.checking
 import scala.language.reflectiveCalls
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.ChangeListener
-import info.kwarc.mmt.api.modules.{Theory, Module}
+import info.kwarc.mmt.api.modules.{Module, Theory}
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
 import info.kwarc.mmt.api.uom.AbbrevRule
+import info.kwarc.mmt.api.utils.MMT_TODO
 import libraries._
 import objects._
 import objects.Conversions._
@@ -231,7 +232,7 @@ abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends Infe
 
 
 
-@deprecated("must be reimplemented cleanly","")
+@MMT_TODO("must be reimplemented cleanly")
 abstract class TheoryExpRule(head : GlobalName, oftype : GlobalName) extends InferenceRule(head,oftype) {
   def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
     val checks = apply(tm, covered)(solver,stack,history)
