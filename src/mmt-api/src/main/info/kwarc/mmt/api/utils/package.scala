@@ -154,6 +154,6 @@ package object utils {
 
    /** calls a list of functions in order and finds the first defined one or None */
    def firstDefined[T](alternatives: (Unit => Option[T])*): Option[T] = {
-     alternatives.view.map(x => x()).find(_.isDefined).flatten
+     alternatives.view.map(x => x(())).find(_.isDefined).flatten
    }
 }

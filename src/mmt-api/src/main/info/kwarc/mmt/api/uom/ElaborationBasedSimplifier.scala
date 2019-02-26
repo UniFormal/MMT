@@ -82,7 +82,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     ElaboratedElement.setInprogress(s)
     // internal flattening
     s match {
-      case Include(_) =>
+      case Include(_, _, _) =>
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
       case _: DerivedDeclaration =>
         // nothing to do, but would otherwise be caught be next case
@@ -420,7 +420,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           }
           // copies of the local declarations of p
           val decls = pThy.getDeclarations.flatMap {
-            case Include(_) =>
+            case Include(_, _, _) =>
               // because pThy is already flattened transitively, we do not have to do a transitive closure
               Nil
             case d: Declaration =>
