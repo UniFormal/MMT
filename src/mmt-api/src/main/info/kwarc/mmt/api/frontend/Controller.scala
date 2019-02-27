@@ -372,7 +372,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         case None => Context.empty
         case Some(smP) => get(smP) match {
           case sm: Module => getContextWithInner(sm)
-          case _ => Invalid(m, "super module of module must be module")
+          case _ => throw InvalidElement(m, "super module of module must be module")
         }
       }
       case d: Declaration =>
