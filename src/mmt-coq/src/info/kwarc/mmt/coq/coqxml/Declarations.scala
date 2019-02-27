@@ -11,6 +11,14 @@ import scala.collection.mutable
 
 trait CoqEntry
 
+trait CoqXml extends CoqEntry
+
+case class TopXML(e : CoqEntry) extends CoqXml
+case class TypesXML(e : CoqEntry) extends CoqXml
+case class BodyXML(e : CoqEntry) extends CoqXml
+case class ExprXML(e : CoqEntry) extends CoqXml
+case class SupXML(e : List[CoqEntry]) extends CoqXml
+
 // ---------------------------------------------------------------------------
 
 trait theorystructure extends CoqEntry {
@@ -37,7 +45,7 @@ case class VARIABLE(uri:URI,as:String, components : List[CoqEntry]) extends theo
 
 case class SECTION(uri:URI,statements:List[theorystructure]) extends theorystructure
 
-case class MODULE(uri : URI, as:String,components:List[theorystructure]) extends theorystructure {
+case class MODULE(uri : URI, as:String,components:List[theorystructure],componentsImpl : List[theorystructure],attributes : List[CoqXml],attributesImpl:List[CoqXml]) extends theorystructure {
   as match {
     case "Module" =>
     case "ModuleType" =>
@@ -48,6 +56,12 @@ case class MODULE(uri : URI, as:String,components:List[theorystructure]) extends
       ???
   }
 }
+
+case class MREF(uri : URI) extends theorystructure
+case class FUNAPP(f : theorystructure, args : List[theorystructure]) extends theorystructure
+case class WITH(a : theorystructure, d : theorystructure) extends theorystructure
+case class THDEF(relUri : URI,df : term) extends theorystructure
+case class ABS(uri : URI,mod:theorystructure)extends theorystructure
 
 // --------------------------------------------------------------------------
 

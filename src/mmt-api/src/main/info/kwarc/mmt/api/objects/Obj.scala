@@ -147,7 +147,7 @@ object OMS {
 }
 
 /**
- * An OMBINDC represents a binding with condition
+ * An OMBINDC represents a binding with arbitrarily many scopes
  * @param binder the binder
  * @param context the bound variables (from outside to inside)
  * @param scopes the scopes/bodies/matrices of the binder (usually exactly 1)
