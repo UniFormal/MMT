@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
-import info.kwarc.mmt.api.archives.lmh.MathHub._
 import backend._
 import checking._
 import documents._
@@ -22,7 +21,6 @@ import utils._
 import web._
 
 import scala.util.Try
-import info.kwarc.mmt.api.archives.lmh.MathHub
 
 /** An exception that is thrown when a needed knowledge item is not available
   *
