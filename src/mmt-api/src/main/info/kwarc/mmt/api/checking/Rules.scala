@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.checking
 
+import scala.language.reflectiveCalls
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.ChangeListener
 import info.kwarc.mmt.api.modules.{Theory, Module}

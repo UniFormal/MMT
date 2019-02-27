@@ -1017,7 +1017,7 @@ trait SolverAlgorithms {self: Solver =>
       stack = stack.tail
       ret
     } catch {
-      case rc : NonLocalReturnControl[Boolean] =>
+      case rc : NonLocalReturnControl[Boolean@unchecked] =>
         assert(stack.head == j)
         stack = stack.tail
         rc.value
@@ -1113,8 +1113,8 @@ trait SolverAlgorithms {self: Solver =>
    def solveSubtyping(j: Subtyping)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      val (unk, bound, below) = (j.tp1,j.tp2) match {
-       case (u@Unknown(_), b) => (u,b,true)
-       case (b, u@Unknown(_)) => (u,b,false)
+       case (u@Unknown(_, _), b) => (u,b,true)
+       case (b, u@Unknown(_, _)) => (u,b,false)
        case _ => return false
      }
      unk match {
