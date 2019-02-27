@@ -43,6 +43,7 @@ class SCSCPClientComputation(client : SCSCPClient, val call_id : String) {
       case SCSCPObjectStored(c, _) =>
         client(scscp2(scscp2.retrieve), c).fetchExpression()
       case SCSCPTerminated(_, _) => null
+      case SCSCPNothingReturned(_) => null
     }
   }
 }

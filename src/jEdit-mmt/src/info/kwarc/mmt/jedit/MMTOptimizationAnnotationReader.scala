@@ -73,12 +73,14 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
           try {annotationMap.put(nodeToPath(node), replaceTooltip(node)::Nil)}
           catch {
             case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e: Throwable => throw e
           }
         })
         (xml\"theory"\"removeInclusion").foreach(node => {
           try {annotationMap.put(nodeToPath(node), removeTooltip(node)::Nil)}
           catch {
             case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e : Throwable => throw e
           }
         })
       }

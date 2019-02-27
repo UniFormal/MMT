@@ -33,8 +33,6 @@ class OMMMTCoding(default: => URI) extends OMCoding[Term] {
     case OMInteger(i,id) => OMI(i)
     case OMFloat(r,id) => OMF(r)
     case OMString(s,id) => OMSTR(s)
-    case OMSymbol("", cd, id, cdbase) => OMMOD(DPath(cdbase.get) ? cd )
-    case OMSymbol(name, cd, id, cdbase) => OMS(DPath(cdbase.get) ? cd ? name)
 
     case OMBytes(list,id) => ??? // TODO: What to do with bytes?
 

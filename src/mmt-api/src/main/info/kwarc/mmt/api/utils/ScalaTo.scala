@@ -14,12 +14,12 @@ trait ScalaTo {
 object ScalaTo {
   /** labeled node in a serialization syntax tree */
   def node(label: String, children: List[ScalaTo]) = new ScalaTo {
-    def toXML = Elem(null, label, Null, TopScope, children.map(_.toXML):_*)
+    def toXML = Elem(null, label, Null, TopScope, children.isEmpty, children.map(_.toXML):_*)
     def toJSON = JSONArray(JSONString(label), JSONArray(children.map(_.toJSON):_*))
   }
   
   def value(label: String, v: String) = new ScalaTo {
-    def toXML = Elem(null, label, Null, TopScope, Text(v))
+    def toXML = Elem(null, label, Null, TopScope, false, Text(v))
     def toJSON = JSONObject(label -> JSONString(v))
   }
   

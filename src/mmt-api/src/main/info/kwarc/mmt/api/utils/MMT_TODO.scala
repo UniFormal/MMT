@@ -6,3 +6,4 @@ package info.kwarc.mmt.api.utils
   * @param message
   */
 class MMT_TODO(message: String) extends scala.deprecated(message, since="forever")
+// class MMT_TODO(message: String) extends scala.annotation.StaticAnnotation

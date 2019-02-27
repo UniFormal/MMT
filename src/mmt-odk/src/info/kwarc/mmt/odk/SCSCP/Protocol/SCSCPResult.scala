@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.SCSCP.Protocol
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.scscp1
 
@@ -60,6 +61,7 @@ sealed abstract class SCSCPResult(val attributes: OMAttributionPairs) {
     */
   val call_id: String = getAttribute(scscp1.callId) match {
     case OMString(text, _) => text
+    case _ => throw ImplementationError("expected call_id to be an OMString()")
   }
 }
 
