@@ -125,6 +125,7 @@ class HashesNormal(val cfg : FinderConfig,val controller: Controller) extends Ha
   private var numbers : List[GlobalName] = cfg.fixing.map { a =>
     a.alignment.to.mmturi match {
       case gn : GlobalName => gn
+      case _ => throw ImplementationError("Expected a GlobalName")
     }
   }
 

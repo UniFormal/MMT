@@ -160,7 +160,7 @@ trait ArchiveActionHandling {self: Controller =>
     * @param key
     * @param allArgs
     */
-  @deprecated("handled by the :make shell extension, use it instead", "") // TODO: Migrate remaining code
+  @MMT_TODO("handled by the :make shell extension, use it instead") // TODO: Migrate remaining code
   def make(key: String, allArgs: List[String]): Unit = {
     report.addHandler(ConsoleHandler)
     val optPair = BuildTargetModifier.splitArgs(allArgs, s => logError(s))

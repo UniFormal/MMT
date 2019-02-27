@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.archives.Archive
-import info.kwarc.mmt.api.{GlobalName, LocalName}
+import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{Link, Theory}
 import info.kwarc.mmt.api.objects._
@@ -121,6 +121,7 @@ case class AlignmentTranslation(val alignment : FormalAlignment) extends AcrossL
         }
         translator.Application(ls,align.to.mmturi match {
           case gn : GlobalName => gn
+          case a => throw ImplementationError("expected a GlobalName")
         },reorder(args))
       case (align: DereferenceAlignment, translator.Application(_,_,hd::tl)) =>
         OMA(align.dotOperator(hd, OML(align.to.mmturi.name)), tl)

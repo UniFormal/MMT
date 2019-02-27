@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.uom
 import info.kwarc.mmt.api._
 import frontend._
 import checking._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 import symbols._
 import modules._
@@ -68,9 +69,9 @@ abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSi
    }
    
    /** legacy interface */
-   @deprecated("use other apply methods instead", "")
+   @MMT_TODO("use other apply methods instead")
    def apply(obj: Obj, context: Context, expDef: Boolean = false): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true))
-   @deprecated("use other apply methods instead", "")
+   @MMT_TODO("use other apply methods instead")
    def apply(obj: Obj, context: Context, rules: RuleSet, expDef: Boolean): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true), rules)
 }
 

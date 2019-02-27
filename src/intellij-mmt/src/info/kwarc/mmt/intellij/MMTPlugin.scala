@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
 import javax.swing.tree.DefaultMutableTreeNode
+import scala.language.reflectiveCalls
 
 import scala.collection.mutable
 import scala.util.Try

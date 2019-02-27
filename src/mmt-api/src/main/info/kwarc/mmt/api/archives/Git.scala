@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.archives.lmh
+package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api.utils.{File, ShellCommand}
 

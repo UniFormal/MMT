@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.OpenMath.Coding
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.odk.OpenMath._
 
@@ -389,6 +390,7 @@ class OMJSONCoding extends OMCoding[JSON] {
       obj.add("arguments", pargs.result().asInstanceOf[JSON])
 
       obj.result()
+    case _ => throw ImplementationError("non-Node passed to encodeNode()")
   }
 
 }

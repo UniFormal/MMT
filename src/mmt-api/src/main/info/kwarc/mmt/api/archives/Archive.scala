@@ -141,7 +141,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * TODO do properly
     * @return
     */
-  @deprecated("inefficient and brittle; use the relational dimension for this", "")
+  @MMT_TODO("inefficient and brittle; use the relational dimension for this")
   lazy val allContent : List[MPath] = {
     log("Reading Content " + id)
     var ret : List[MPath] = Nil

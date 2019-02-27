@@ -70,7 +70,8 @@ object StructuralFeatureUtil {
           case constr: Constructor => new Constructor(constr.path, constr.args, constr.ret, repDf, constr.notC, constr.ctx)
           case out: OutgoingTermLevel => new OutgoingTermLevel(out.path, out.args, out.ret, repDf, out.notC, out.ctx)
           case d : TypeLevel => d.copy(df = repDf)
-          case d : StatementLevel => d.copy(df = repDf) 
+          case d : StatementLevel => d.copy(df = repDf)
+          case _ => throw ImplementationError("invalid InternalDeclaration")
          }
       if (decl.isTypeLevel) types +:= decl.path
       decl

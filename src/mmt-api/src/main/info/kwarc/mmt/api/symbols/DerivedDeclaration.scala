@@ -9,8 +9,8 @@ import objects._
 import notations._
 
 import scala.xml.Elem
-
 import Theory._
+import info.kwarc.mmt.api.utils.MMT_TODO
 
 
 /** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
@@ -68,7 +68,7 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
   
   def meta = None
   
-  @deprecated("redundant: every DerivedDeclaration is module-like now","")
+  @MMT_TODO("redundant: every DerivedDeclaration is module-like now")
   val module = this // left over from old definition via NestedModule
 
   override def translate(newHome: Term, prefix: LocalName, tl: Translator, con : Context) = {

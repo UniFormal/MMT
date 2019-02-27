@@ -1,9 +1,8 @@
-package info.kwarc.mmt.api.archives.lmh
+package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import utils._
 import frontend._
-import info.kwarc.mmt.api.archives.Archive
 
 import scala.collection.mutable.ListBuffer
 import scala.util.Try

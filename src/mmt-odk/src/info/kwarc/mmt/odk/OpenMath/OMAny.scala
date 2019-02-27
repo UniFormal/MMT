@@ -538,6 +538,7 @@ object OMVar {
     case omv : OMVariable => OMVarVar(omv)
     case OMAttribution(pairs, a, id, cdbase) =>
       OMAttVar(pairs, fromExpression(a), id)
+    case _ => throw ImplementationError("non-variable passed to fromExpression()")
   }
 }
 

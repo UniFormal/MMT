@@ -18,7 +18,7 @@ import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
 
 /** used by [[MMTStructureSimplifier]] */
-@deprecated("needs review","")
+@MMT_TODO("needs review")
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
@@ -151,7 +151,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     env.task.reportProgress(Elaborated(s))
   }
 
-  @deprecated("needs to be reviewed","")
+  @MMT_TODO("needs to be reviewed")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret

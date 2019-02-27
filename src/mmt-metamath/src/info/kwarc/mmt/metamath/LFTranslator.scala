@@ -313,6 +313,7 @@ class LFDBTranslator(implicit db: Database) {
                 case _ => ty
               }), t)
           }
+          case _ => throw ImplementationError("expected HypNode()")
         }))
     }
   }

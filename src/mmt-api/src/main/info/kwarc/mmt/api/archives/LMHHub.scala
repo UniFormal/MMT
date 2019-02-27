@@ -1,12 +1,11 @@
-package info.kwarc.mmt.api.archives.lmh
+package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.utils.{File, stringToList}
-
 import scala.collection.mutable
 import scala.util.matching.Regex
+import info.kwarc.mmt.api.utils.File.scala2Java
 
 /** represents a hub of archives */
 abstract class LMHHub extends Logger {
