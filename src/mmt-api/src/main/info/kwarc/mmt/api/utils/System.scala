@@ -89,11 +89,7 @@ object MMTSystem {
 
   /** the git used by this MMT instance */
   lazy val git: Git = OS.detect match {
-    case Windows =>
-      ShellCommand.run("where git") match {
-        case _ : ShellCommand.Success => UnixGit
-        case _ => new WindowsGit() 
-      }
+    case Windows => new WindowsGit() 
     case _ => UnixGit
   }
 
