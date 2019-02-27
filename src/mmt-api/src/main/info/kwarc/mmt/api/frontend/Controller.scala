@@ -64,31 +64,35 @@ abstract class ROController {
   }
 }
 
-/** A Controller is the central class maintaining all MMT knowledge items
+/** A Controller is the central class maintaining all MMT content and extensions.
   *
-  * It stores all stateful entities and executes Action commands.
+  * Every application (e.g., [[Shell]]) typically creates one controller.
+  * The controller creates and owns one instance of many MMT clasess (see the documentation of the respective fields below).
+  * 
+  * It also maintains the [[MMTConfig]] and exectures [[Action]]s.
   */
 class Controller(report_ : Report = new Report) extends ROController with ActionHandling with Logger {
-
-  def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
-
+  // note that fields must be declared here in dependency order; otherwise, some val's are used when they are still null (i.e., uninitialized)
+  
   // **************************** logging
 
   /** handles all output and log messages */
-  //private var report_ : Report = new Report
-  def report = report_
+  val report = report_
+  
   val logPrefix = "controller"
 
   // **************************** data state and components
 
-  /** maintains all customizations for specific languages */
+  /** maintains all extensions */
   val extman = new ExtensionManager(this)
-  /** the catalog maintaining all registered physical storage units (must be initialized before memory) */
+  /** the interface to physical storgae */
   val backend = new Backend(extman, report)
 
-  /** maintains all knowledge */
+  /** maintains all knowledge: structural elements, relational data, etc. */
   val memory = new Memory(extman, report)
+  /** shortcut for the relational manager */
   val depstore = memory.ontology
+  /** shortcut for the library */
   val library = memory.content
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
@@ -127,6 +131,9 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
 
   // **************************** control state and configuration
+
+  /** return the MMT version (from the jar) */
+  def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
 
   /** all control state */
   protected val state = new ControllerState

@@ -9,7 +9,7 @@ import objects._
 import frontend._
 import opaque._
 
-
+/** interface of any class that can be used by the [[RelationalManager]] to build the Abox from MMT content. */ 
 abstract class RelationalExtractor extends Extension {
   /** all unary relations that this extractor can generate (extract) */
   def allUnary : List[Unary]

@@ -7,6 +7,40 @@ import scala.collection.generic.CanBuildFrom
 
 /**
   * This package defines various MMT-independent high-level APIs.
+  * Various basic functions are declared directly in this package object in order to be easily available.
+  * 
+  * Most other files in this package are self-contained and independent of the rest of MMT and each other.
+  * We describe them in groups below.
+  *
+  * =Data structures*
+  * 
+  * - [[Union]] disjoint union of Scala types
+  * - [[MyList]] extensions of Scala's lists (via implicit conversions)
+  * - [[HashRelation]], [[HashMapToSet]], and [[HashEquality]]: hash-related data structures for
+  * - [[While]] while loops that allow for break and continue
+  * 
+  * =General purpose utilities=
+  * 
+  * - [[Killable]] tasks that can be notified that they should be canceled. In particular, [[MMTTask]]s can be aborted without risking an inconsistent state.
+  * - [[Unparsed]] for simple parsing of strings
+  * - [[ScalaTo]] serialization helpers for Scala objects
+  * - [[ValueCache]] factory methods that introduce structure sharing by resuing previous pointers
+  * - [[XMLToScala]] framework for conveniently turning a set of case classes into an XML parser for the corresponding schema  
+  * 
+  * =Wrappers for low-level APIs=
+  * 
+  * MMT provides various APIs that extend or simplify APIs provided Java or Scala:
+  * - [[File]] file paths and interacting with files
+  * - [[URI]] URIs
+  * - [[xml]] various helper function for working with XML and dereferencing URLs (not really a wrapper but fits best here)
+  * - [[ShellCommand]] commands executed on the system shell
+  * 
+  * =APIs for external languages=
+  * 
+  * - [[Dot]] the dot languages for graph layouting
+  * - [[JSON]] the JSON language
+  * - [[HTML]] API for building HTML pages programmatically
+  * 
   */
 package object utils {
    /** converts a string to an integer, returns None on format exception */
