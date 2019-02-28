@@ -1,8 +1,7 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.{Archive, MathHub}
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.lmh.MathHub
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{Theory, View}

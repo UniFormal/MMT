@@ -1,8 +1,7 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.{DPath, LocalName, Path, archives}
-import info.kwarc.mmt.api.archives.ImporterAnnotator
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
+import info.kwarc.mmt.api.archives.{ImporterAnnotator, LMHHubArchiveEntry}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef

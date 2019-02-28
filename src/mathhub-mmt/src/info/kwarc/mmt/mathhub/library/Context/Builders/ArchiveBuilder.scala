@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
+import info.kwarc.mmt.api.archives.LMHHubArchiveEntry
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IArchive, IArchiveRef}

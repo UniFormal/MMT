@@ -1,7 +1,7 @@
 package info.kwarc.mmt.intellij
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.lmh.MathHub
+import info.kwarc.mmt.api.archives.MathHub
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend.{Controller, MMTConfig, ReportHandler}
 import info.kwarc.mmt.api.gui._
@@ -12,8 +12,8 @@ import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
 import javax.swing.tree.DefaultMutableTreeNode
-import scala.language.reflectiveCalls
 
+import scala.language.reflectiveCalls
 import scala.collection.mutable
 import scala.util.Try
 
