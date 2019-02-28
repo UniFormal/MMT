@@ -1,10 +1,13 @@
 package info.kwarc.mmt.coq
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq.coqxml.TranslationState
 import info.kwarc.mmt.lf._
+
+import scala.util.Try
 
 object Coq {
   val namespace = DPath(URI.http colon "coq.inria.fr")
@@ -29,6 +32,47 @@ object Coq {
   val fail = foundation ? "FAIL"
 
   def makeImplicit : OMV = ???
+
+  private def coqtoomdoc(uri : URI)(implicit controller : Controller): ContentPath = {
+    var paths = uri.path
+    def error : Nothing = ???
+    var currentD : DPath = Path.parseD("cic:/",NamespaceMap.empty)
+    var currentM : MPath = null
+    var currentS : GlobalName = null
+    while (paths.nonEmpty) {
+      controller.getO(currentD ? paths.head) match {
+        case Some(_) =>
+          currentM = currentD ? paths.head
+          paths = paths.tail
+          while (paths.nonEmpty) {
+            controller.getO(currentM.parent ? (currentM.name / paths.head)) match {
+              case Some(_) =>
+                currentM = currentM.parent ? (currentM.name / paths.head)
+                paths = paths.tail
+              case None =>
+                currentS = currentM ? paths.mkString("/")
+                controller.getO(currentS) match {
+                  case Some(_) => return currentS
+                  case None => error
+                }
+            }
+          }
+          return currentM
+        case None =>
+          currentD = currentD / paths.head
+          paths = paths.tail
+      }
+    }
+    error
+  }
+  def toMPath(uri : URI)(implicit state : TranslationState) : MPath = Try(coqtoomdoc(uri)(state.controller)).toOption match {
+    case Some(mp:MPath) => mp
+    case _ => Coq.foundation // TODO
+  }
+  def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {
+    case Some(gn:GlobalName) => gn
+    case _ => Coq.fail // TODO
+  }
 }
 
 object Let {

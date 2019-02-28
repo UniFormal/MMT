@@ -38,7 +38,9 @@ class Importer extends archives.Importer {
         sys.exit
     }
 
-    index(doDocument(bf.narrationDPath.^,bf.inFile.name.split('.').head,es))
+    val ns = Path.parseD("cic:/" + bf.inPath.init.mkString("/"),NamespaceMap.empty)
+
+    index(doDocument(ns,bf.inFile.name.replace(".theory.xml",""),es))
 
     BuildResult.empty
   }
@@ -46,9 +48,11 @@ class Importer extends archives.Importer {
   def doDocument(dp : DPath,file : String,elems : List[coqxml.theorystructure]): Document = {
     val d = new Document(dp)
     val top = Theory(d.path,LocalName(file),Some(Coq.foundation))
+    log("Adding " + top.path)
+    controller add d
     controller add top
-    elems.foreach(doDecl(top,_))
     controller add MRef(d.path,top.path)
+    elems.foreach(doDecl(top,_))
     d
   }
 
@@ -57,13 +61,21 @@ class Importer extends archives.Importer {
       val name = parent.name / uri.path.last
       // TODO Module types, impl etc.
       val th = Theory(parent.parent,name,Some(Coq.foundation))
-      val nt = new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th)
-      th.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
-      log("Module " + th.path.toString + " ~> " + nt.path.toString)
-      controller add nt
-      // TODO
-      if (implcomp.nonEmpty) implcomp foreach (doDecl(th,_)) else comp.foreach(doDecl(th,_))
-      controller add PlainInclude(th.path,parent.path)
+      log("Adding " + th.path)
+      //controller add th
+      if (as=="Module" && implcomp.isEmpty) {
+        val nt = new NestedModule(OMMOD(parent.path), LocalName(uri.path.last), th)
+        th.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
+        log("Module " + th.path.toString + " ~> " + nt.path.toString)
+        controller add nt
+        comp.foreach(doDecl(th,_))
+        controller add PlainInclude(th.path,parent.path)
+      }
+      else {
+        ???
+      }
+      // if (implcomp.nonEmpty) implcomp foreach (doDecl(th,_)) else comp.foreach(doDecl(th,_))
+      // controller add PlainInclude(th.path,parent.path)
     case coqxml.SECTION(uri,statements) =>
       val name = parent.name / uri.path.last
       val th = Theory(parent.parent,name,Some(Coq.foundation))
@@ -76,7 +88,7 @@ class Importer extends archives.Importer {
     case coqxml.VARIABLE(uri,as,components) =>
       val (name,tp,df) = components.collectFirst {
         case coqxml.TopXML(coqxml.Variable(nm,params,_,body,tptm)) =>
-          (LocalName(nm),Some(tptm.tm.toOMDoc(Map.empty,Map.empty)),body.map(_.tm.toOMDoc(Map.empty,Map.empty))) // TODO
+          (LocalName(nm),Some(tptm.tm.toOMDoc(controller)),body.map(_.tm.toOMDoc(controller))) // TODO
       }.get
       // val tp : Option[Term] = None
       // val df : Option[Term] = None
@@ -89,9 +101,9 @@ class Importer extends archives.Importer {
         case coqxml.TopXML(coqxml.ConstantType(namei,params,id,tpi)) =>
           val dfi = components.collectFirst {
             case coqxml.BodyXML(coqxml.ConstantBody(_,_,_,body)) =>
-              body.toOMDoc(Map.empty,Map.empty) // TODO
+              body.toOMDoc(controller) // TODO
           }
-          (LocalName(namei),Some(tpi.toOMDoc(Map.empty,Map.empty)),dfi) // TODO
+          (LocalName(namei),Some(tpi.toOMDoc(controller)),dfi) // TODO
       }.getOrElse {
         components.collectFirst {
           case coqxml.TopXML(coqxml.InductiveDefinition(noParams,_,_,tps)) =>
@@ -284,15 +296,15 @@ class Importer extends archives.Importer {
         val id = (variable\"@id").mkString
         val body = (variable\"body").headOption.map(handleNode).asInstanceOf[Option[coqxml.body]]
         val tp = handleNode((variable\"type").head).asInstanceOf[coqxml._type]
-        body.foreach(_.tm.toOMDoc(Map.empty,Map.empty)) // debug
-        tp.tm.toOMDoc(Map.empty,Map.empty) // debug
+        body.foreach(_.tm.toOMDoc(controller)) // debug
+        tp.tm.toOMDoc(controller) // debug
         coqxml.Variable(name,params,id,body,tp)
       case ctp @ <ConstantType>{tm}</ConstantType> =>
         val name = (ctp\"@name").mkString
         val params = (ctp\"@params").mkString.split(' ').toList
         val id = (ctp\"@id").mkString
         val tp = handleNode(tm).asInstanceOf[coqxml.term]
-        tp.toOMDoc(Map.empty,Map.empty) // debug
+        tp.toOMDoc(controller) // debug
         coqxml.ConstantType(name,params,id,tp)
       case ind @ <InductiveDefinition>{ch @ _*}</InductiveDefinition> =>
         val id = (ind\"@id").mkString

@@ -2,6 +2,7 @@ package info.kwarc.mmt.coq.coqxml
 
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
@@ -90,7 +91,7 @@ case class Constructor(name:String,_type:term) extends CoqEntry
 
 // ------------------------------------------------------------------------
 
-class TranslationState(theories : Map[URI,MPath], symbols : Map[URI,GlobalName]) {
+class TranslationState(val controller : Controller) {
   private var _vars : List[Option[String]] = Nil
   def addVar = _vars ::= None
   def solveVar(i : Int, name : String): LocalName = {
@@ -128,16 +129,12 @@ class TranslationState(theories : Map[URI,MPath], symbols : Map[URI,GlobalName])
     varnames+=1
     LocalName("MMT_internal_" + varnames.toString)
   }
-
-  def toMPath(uri : URI) = theories.getOrElse(uri,???) // TODO
-  def toGlobalName(uri : URI) = symbols.getOrElse(uri,Coq.fail) // TODO
-
 }
 
 trait term extends CoqEntry {
-  def toOMDoc(theories : Map[URI,MPath], symbols : Map[URI,GlobalName]) : Term = {
+  def toOMDoc(controller : Controller) : Term = {
     // TODO implicit arguments
-    recOMDoc(new TranslationState(theories,symbols))
+    recOMDoc(new TranslationState(controller))
   }
   private[coqxml] def recOMDoc(implicit variables : TranslationState) : Term
 }
@@ -197,14 +194,14 @@ case class APPLY(id : String, sort : String, tms : List[term]) extends term {
   }
 }
 case class VAR(uri : URI, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(variables.toGlobalName(uri))
+  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.toGlobalName(uri)) // TODO ?
 }// OMS (because sections)
 case class CONST(uri : URI, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(variables.toGlobalName(uri))
+  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.toGlobalName(uri))
 }// OMS
 case class MUTIND(uri : URI, noType : Int, id : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    val gn = variables.toGlobalName(uri)
+    val gn = Coq.toGlobalName(uri)
     OMS(gn.module ? (gn.name.toString + noType.toString))
   }
 } // OMS
