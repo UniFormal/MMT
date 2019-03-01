@@ -81,6 +81,31 @@ import info.kwarc.mmt.api.uom._
   *
   *          // MatchSuccess(a:=(http://example.com?myModule?minus x y), b:=z,true)
   *          ```
+  *
+  * @note Beware of situations where the template and goal term share some variables.
+  *       E.g. take template term = "a", goal term = "a - a". Intuitively, this should
+  *       be a match with the substitution [a := a - a], but this class cannot handle this.
+  *       The following code will lead to a [[MatchFail]]:
+  *       ```scala
+  *          val matchResult = matcher(
+  *            Context(VarDecl(LocalName("a"))),
+  *            OMA(minus, List(OMV("a"), OMV("a"))),
+  *            Context(VarDecl(LocalName("a"))),
+  *            OMV("a")
+  *          )
+  *       ```
+  *       As a solution you might want to first make your template variables fresh:
+  *       ```scala
+  *       val matchResult = matcher(
+  *         Context(VarDecl(LocalName("a"))),
+  *         OMA(minus, List(OMV("a"), OMV("a"))),
+  *         Context(VarDecl(LocalName("b"))),
+  *         OMV("b")
+  *       )
+  *
+  *       // MatchSuccess(b:=(http://example.com?myModule?minus a a),true)
+  *       println(matchResult)
+  *       ```
   * @param controller needed for lookups when type checking the matches
   * @param rules rules to take into account
   */
