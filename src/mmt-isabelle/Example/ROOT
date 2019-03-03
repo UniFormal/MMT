@@ -1,2 +1,3 @@
-session Example = HOL +
+session Example = Pure +
+  sessions HOL
   theories Example
