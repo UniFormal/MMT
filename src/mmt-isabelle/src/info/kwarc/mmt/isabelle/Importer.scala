@@ -654,7 +654,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
         .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
 
-    private val (session_deps, import_theories) =
+    private val session_deps =
       isabelle.Dump.dependencies(dump_options, progress = progress,
         dirs = dirs, select_dirs = select_dirs, selection = selection)
 
@@ -662,6 +662,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       isabelle.Headless.Resources.make(dump_options, logic, progress = progress,
         session_dirs = dirs ::: select_dirs,
         include_sessions = session_deps.sessions_structure.imports_topological_order)
+
+    private val import_theories =
+      resources.used_theories(session_deps, progress = progress)
 
 
     /* theories */
