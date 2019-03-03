@@ -324,10 +324,7 @@ object Importer
 
   /** Isabelle to MMT importer **/
 
-  val default_logic: String = isabelle.Thy_Header.PURE
-
   def importer(options: isabelle.Options,
-    logic: String = default_logic,
     dirs: List[isabelle.Path] = Nil,
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
@@ -342,7 +339,7 @@ object Importer
     controller.extman.addExtension(MMT_Importer, Nil)
 
     object Isabelle extends
-      Isabelle(options, progress, logic, dirs, select_dirs, selection, archives, chapter_archive)
+      Isabelle(options, progress, dirs, select_dirs, selection, archives, chapter_archive)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -538,7 +535,6 @@ object Importer
         var all_sessions = false
         var dirs: List[isabelle.Path] = Nil
         var session_groups: List[String] = Nil
-        var logic = default_logic
         var options = isabelle.Options.init()
         var verbose = false
         var exclude_sessions: List[String] = Nil
@@ -556,7 +552,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -a           select all sessions
     -d DIR       include session directory
     -g NAME      select session group NAME
-    -l NAME      logic session name (default: """ + isabelle.quote(default_logic) + """)
     -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
     -v           verbose mode
     -x NAME      exclude session NAME and all descendants
@@ -579,7 +574,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "a" -> (_ => all_sessions = true),
         "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
         "g:" -> (arg => session_groups = session_groups ::: List(arg)),
-        "l:" -> (arg => logic = arg),
         "o:" -> (arg => { options += arg }),
         "v" -> (_ => verbose = true),
         "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
@@ -607,7 +601,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         try {
           importer(options,
-            logic = logic,
             dirs = dirs,
             select_dirs = select_dirs,
             selection = selection,
@@ -632,13 +625,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
   class Isabelle(
     options: isabelle.Options,
     progress: isabelle.Progress,
-    logic: String,
     dirs: List[isabelle.Path],
     select_dirs: List[isabelle.Path],
     selection: isabelle.Sessions.Selection,
     archives: List[Archive],
     chapter_archive: String => Option[String])
   {
+    val logic = isabelle.Thy_Header.PURE
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
