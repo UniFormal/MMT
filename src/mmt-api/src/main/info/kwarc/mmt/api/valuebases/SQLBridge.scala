@@ -6,13 +6,29 @@ import modules._
 import symbols._
 import objects._
 
-case class Table()
+/**
+  *  @param name table name, underscore style
+  *  @param columns sequence of all columns
+  *  @param collections sequence of all collections
+  */
+case class Table(name: String, columns: Seq[Column], collections: Seq[Collection])
 
 /**
+ *  @param name column name, underscore style
+ *  @param dbType one of "Boolean", "Int", "String", "UUID" - for now: it does not scale well to lists
+ *  @param isNullable can be null in the database
  *  @param isPrimaryKey key field (annotated in schema)
- *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)  
+ *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)
+ *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
  */
-case class Column(isPrimaryKey: Boolean, opaque: Boolean)
+case class Column(name: String, dbType: String, isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean)
+
+/**
+  *  @param id collection id (only needed for the interface)
+  *  @param index column holding the collection index
+  *  @param metadata a record object for name, authors, url, other information about the collection; can be JSON
+  */
+case class Collection(id: String, index: Column, metadata: Any)
 
 case class Filter(context: List[String], condition: SQLSyntax.Expr) {
   def toSQL = condition.toString
@@ -53,7 +69,7 @@ class SQLBridge(controller: Controller) {
      val cols = t.getConstants map {
        case c: Constant => constantToColumn(c)
      }
-     Table()
+     ???//Table()
    }
    def constantToColumn(t: Constant): Column = {
      ???
