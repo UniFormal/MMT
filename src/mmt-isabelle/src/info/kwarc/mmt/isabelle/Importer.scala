@@ -350,16 +350,16 @@ object Importer
       val thy_is_pure: Boolean = thy_name == Isabelle.pure_name
 
       // archive
-      val (archive, thy_source_path, thy_doc_path) = Isabelle.theory_archive(thy_name)
+      val thy_archive = Isabelle.theory_archive(thy_name)
 
       // document
-      val doc = new Document(thy_doc_path, FileLevel)
+      val doc = new Document(thy_archive.doc_path, FileLevel)
       controller.add(doc)
 
       // theory content
       val thy_draft =
         Isabelle.begin_theory(thy_export,
-          if (thy_is_pure) None else Some(archive.narrationBase / thy_source_path.implode))
+          if (thy_is_pure) None else Some(thy_archive.archive_source_uri))
 
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
@@ -388,7 +388,7 @@ object Importer
 
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
-        val path = isabelle.File.path(archive.root.toJava) + thy_source_path
+        val path = thy_archive.source_path
         isabelle.Isabelle_System.mkdirs(path.dir)
         isabelle.File.write(path, thy_export.node_source.text)
       }
@@ -509,9 +509,18 @@ object Importer
         }
       }
 
+      // RDF document
+      {
+        val path = thy_archive.archive_rdf_path
+        isabelle.Isabelle_System.mkdirs(path.dir)
+        isabelle.File.write(path,
+          isabelle.XML.header +
+          isabelle.XML.string_of_tree(thy_draft.rdf_document))
+      }
+
       thy_draft.end_theory()
 
-      MMT_Importer.importDocument(archive, doc)
+      MMT_Importer.importDocument(thy_archive.archive, doc)
     }
 
     Isabelle.import_session(import_theory)
@@ -668,7 +677,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def theory_qualifier(name: isabelle.Document.Node.Name): String =
       resources.session_base.theory_qualifier(name)
 
-    def theory_archive(name: isabelle.Document.Node.Name): (Archive, isabelle.Path, DPath) =
+    sealed case class Theory_Archive(
+      archive: Archive, source_path: isabelle.Path, rdf_path: isabelle.Path, doc_path: DPath)
+    {
+      def archive_root: isabelle.Path =
+        isabelle.File.path(archive.root.toJava)
+
+      def archive_source_uri: URI = archive.narrationBase / source_path.implode
+      def archive_source_path: isabelle.Path = archive_root + source_path
+
+      def archive_rdf_path: isabelle.Path = archive_root + rdf_path
+    }
+
+    def theory_archive(name: isabelle.Document.Node.Name): Theory_Archive =
     {
       def err(msg: String): Nothing =
         isabelle.error(msg + " (theory " + isabelle.quote(name.toString) + ")")
@@ -699,15 +720,21 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           isabelle.Path.basic(session_name) +
           isabelle.Path.basic(name.theory).ext("theory")
 
+      val rdf_path =
+        isabelle.Path.basic("rdf") +
+          isabelle.Path.explode(subdir.getOrElse("")) +
+          isabelle.Path.basic(session_name) +
+          isabelle.Path.basic(name.theory).ext("rdf")
+
       val doc_path =
         DPath(archive.narrationBase / subdir.toList / session_name / name.theory_base_name)
 
-      (archive, source_path, doc_path)
+      Theory_Archive(archive, source_path, rdf_path, doc_path)
     }
 
     def make_theory(theory: String): Theory =
     {
-      val (archive, _, _) = theory_archive(import_name(theory))
+      val archive = theory_archive(import_name(theory)).archive
       val module = DPath(archive.narrationBase) ? theory
       Theory.empty(module.doc, module.name, None)
     }
@@ -1054,10 +1081,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val thy: Theory = make_theory(node_name.theory)
       for (uri <- thy_source) SourceRef.update(thy, SourceRef(uri, SourceRegion.none))
 
-      private val _content =
-        isabelle.Synchronized(Content.merge(thy_export.parents.map(theory_content)))
+      private val _state =
+        isabelle.Synchronized[(Content, List[isabelle.RDF.Triple])](
+          Content.merge(thy_export.parents.map(theory_content)), Nil)
 
-      def content: Content = _content.value
+      def content: Content = _state.value._1
+      def rdf_document: isabelle.XML.Elem = Ontology.rdf_document(_state.value._2.reverse)
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
@@ -1065,7 +1094,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
         val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)
-        _content.change(_.declare(item))
+        _state.change(
+          { case (content, triples) =>
+              val content1 = content.declare(item)
+              val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
+              val triples1 = declares :: triples
+              (content1, triples1)
+          })
         item
       }
 

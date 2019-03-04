@@ -3,87 +3,89 @@ package info.kwarc.mmt.isabelle
 import java.net.URI
 
 
-object Ontology
-{
-  def unary(subject: URI, predicate: URI): isabelle.RDF.Triple =
-    isabelle.RDF.Triple(subject.toString, predicate.toString, Nil)
+object Ontology {
+  def unary(subject: String, predicate: String): isabelle.RDF.Triple =
+    isabelle.RDF.Triple(subject, predicate, Nil)
 
-  def binary(subject: URI, predicate: URI, `object`: URI): isabelle.RDF.Triple =
-    isabelle.RDF.Triple(subject.toString, predicate.toString, List(isabelle.XML.Text(`object`.toString)))
-}
+  def binary(subject: String, predicate: String, `object`: String): isabelle.RDF.Triple =
+    isabelle.RDF.Triple(subject, predicate, List(isabelle.XML.Text(`object`)))
 
-object ULO
-{
-  def uri(name: String): URI = new URI("ulo:" + name)
+  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "ulo:")
 
+  def rdf_document(triples: List[isabelle.RDF.Triple]): isabelle.XML.Elem =
+    isabelle.RDF.document(isabelle.RDF.triples(triples),
+      namespaces = isabelle.RDF.default_namespaces ::: List(ulo))
 
-  /* unaries */
+  object ULO
+  {
+    /* unaries */
 
-  val `type` = uri("type")    // Pure/HOL type
-  val data = uri("data")      // term constant
+    val `type` = ulo("type") // Pure/HOL type
+    val data = ulo("data") // term constant
 
-  val proposition = uri("proposition")  // FIXME !?
-  val statement = uri("statement")
+    val proposition = ulo("proposition") // FIXME !?
+    val statement = ulo("statement")
 
-  val theory = uri("theory")  // theory, locale, class, bundle (?)
-  val instance = uri("instance")  // locale interpretation, class instantiation, unbundle (?)
+    val theory = ulo("theory") // theory, locale, class, bundle (?)
+    val instance = ulo("instance") // locale interpretation, class instantiation, unbundle (?)
 
-  val section = uri("section")  // document headings: chapter, section, ..., subparagraph
-  val file = uri("file")  // auxiliary file (from thy_load command) (?)
-  val folder = uri("folder")  // Isabelle session (?)
-  val library = uri("library")  // e.g. Isabelle Distribution, AFP, IsaFoR
-  val group = uri("group")
+    val section = ulo("section") // document headings: chapter, section, ..., subparagraph
+    val file = ulo("file") // auxiliary file (from thy_load command) (?)
+    val folder = ulo("folder") // Isabelle session (?)
+    val library = ulo("library") // e.g. Isabelle Distribution, AFP, IsaFoR
+    val group = ulo("group")
 
-  val primitive = uri("primitive")  // e.g. axioms
-  val derived = uri("derived")  // e.g. definitions, theorems
+    val primitive = ulo("primitive") // e.g. axioms
+    val derived = ulo("derived") // e.g. definitions, theorems
 
-  val theorem = uri("theorem")  // kind "theorem"
-  val lemma = uri("lemma")  // kind "lemma"
-  val conjecture = uri("conjecture")  // unused
-  val corollary = uri("corollary")  // kind "corollary"
-  // FIXME val proposition = uri("proposition")  // kind "proposition"
+    val theorem = ulo("theorem") // kind "theorem"
+    val lemma = ulo("lemma") // kind "lemma"
+    val conjecture = ulo("conjecture") // unused
+    val corollary = ulo("corollary") // kind "corollary"
+    // FIXME val proposition = uri("proposition")  // kind "proposition"
 
-  val simplification_rule = uri("simplification-rule")  // fact within simpset (??)
+    val simplification_rule = ulo("simplification-rule") // fact within simpset (??)
 
-  val automatically_proved = uri("automatically_proved")  // unused!? could be result of "Judgement Day" Sledgehammer exploration
-  val experimental = uri("experimental")  // unused!? could be "theorem A oops"
-  val deprecated = uri("deprecated")  // unused!? could be command with "legacy_feature" message
-
-
-  /* binaries */
-
-  val declares = uri("declares")  // theory/locale declares item
-  val uses = uri("uses")
-  val type_depends_on_definition_of = uri("type-depends-on-definition-of")
-  val type_depends_on_type_of = uri("type-depends-on-type-of")
-  val definition_depends_on_type_of = uri("definition-depends-on-type-of")
-  val definition_depends_on_definition_of = uri("definition-depends-on-definition-of")
-
-  val generated_by = uri("generated-by")
-  val inductive_on = uri("inductive-on")
-  val mutual_with = uri("mutual-with")  // e.g. Spec_Rules peer group
+    val automatically_proved = ulo("automatically_proved") // unused!? could be result of "Judgement Day" Sledgehammer exploration
+    val experimental = ulo("experimental") // unused!? could be "theorem A oops"
+    val deprecated = ulo("deprecated") // unused!? could be command with "legacy_feature" message
 
 
-  // manual markers!?
-  val same_as = uri("same-as")
-  val similar_to = uri("similar-to")
-  val alternative_for = uri("alternative-for")
-  val see_also = uri("see-also")
-  val antonym_of = uri("antonym-of")
+    /* binaries */
 
-  val formalizes = uri("formalizes")
-  val aligned_with = uri("aligned_with")
-  val inspired_by = uri("inspired_by")
+    val declares = ulo("declares") // theory/locale declares item
+    val uses = ulo("uses")
+    val type_depends_on_definition_of = ulo("type-depends-on-definition-of")
+    val type_depends_on_type_of = ulo("type-depends-on-type-of")
+    val definition_depends_on_type_of = ulo("definition-depends-on-type-of")
+    val definition_depends_on_definition_of = ulo("definition-depends-on-definition-of")
 
-  val source_ref = uri("source-ref")
-  val check_time = uri("check-time")
-  val external_size = uri("external-size")  // source size (Isabelle symbols, singleton blanks)
-  val internal_size = uri("internal-size")
+    val generated_by = ulo("generated-by")
+    val inductive_on = ulo("inductive-on")
+    val mutual_with = ulo("mutual-with") // e.g. Spec_Rules peer group
 
 
-  /* examples */
-  
-  // axiomatization ... where  -- statement, primitive
-  // theorem A sorry  -- statement
-  // theorem A <proof>  -- statement, derived
+    // manual markers!?
+    val same_as = ulo("same-as")
+    val similar_to = ulo("similar-to")
+    val alternative_for = ulo("alternative-for")
+    val see_also = ulo("see-also")
+    val antonym_of = ulo("antonym-of")
+
+    val formalizes = ulo("formalizes")
+    val aligned_with = ulo("aligned_with")
+    val inspired_by = ulo("inspired_by")
+
+    val source_ref = ulo("source-ref")
+    val check_time = ulo("check-time")
+    val external_size = ulo("external-size") // source size (Isabelle symbols, singleton blanks)
+    val internal_size = ulo("internal-size")
+
+
+    /* examples */
+
+    // axiomatization ... where  -- statement, primitive
+    // theorem A sorry  -- statement
+    // theorem A <proof>  -- statement, derived
+  }
 }
