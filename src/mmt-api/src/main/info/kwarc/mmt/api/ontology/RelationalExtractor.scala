@@ -59,7 +59,7 @@ object MMTExtractor extends RelationalExtractor {
             t match {
                case t: Theory =>
                   t.meta foreach {p => f(HasMeta(path, p))}
-               case _ => QueryFunctionApply
+               case _ =>
             }
          case v: View =>
             f(HasDomain(path, v.from.toMPath))
