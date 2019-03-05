@@ -370,6 +370,12 @@ object Importer
 
       thy_draft.rdf_triples(Ontology.unary(thy_draft.thy.path.toString, Ontology.ULO.theory))
 
+      if (thy_export.node_timing.total > 0.0) {
+        thy_draft.rdf_triples(
+          isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.check_time,
+            isabelle.RDF.long(isabelle.Time.seconds(thy_export.node_timing.total).ms)))
+      }
+
       if (thy_is_pure) {
         controller.add(PlainInclude(Isabelle.bootstrap_theory, thy_draft.thy.path))
       }
@@ -395,8 +401,15 @@ object Importer
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
         val path = thy_archive.source_path
+        val text_decoded = thy_export.node_source.text
+        val text_encoded = isabelle.Symbol.encode(text_decoded)
+
         isabelle.Isabelle_System.mkdirs(path.dir)
-        isabelle.File.write(path, thy_export.node_source.text)
+        isabelle.File.write(path, text_decoded)
+
+        thy_draft.rdf_triples(
+          isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.external_size,
+            isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
 
       def decl_error(entity: isabelle.Export_Theory.Entity)(body: => Unit)

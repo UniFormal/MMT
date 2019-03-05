@@ -77,8 +77,8 @@ object Ontology {
     val inspired_by = ulo("inspired_by")
 
     val source_ref = ulo("source-ref")
-    val check_time = ulo("check-time")
-    val external_size = ulo("external-size") // source size (Isabelle symbols, singleton blanks)
+    val check_time = ulo("check-time")  // elapsed time (ms)
+    val external_size = ulo("external-size")  // source size (UTF-8 bytes)
     val internal_size = ulo("internal-size")
 
 
