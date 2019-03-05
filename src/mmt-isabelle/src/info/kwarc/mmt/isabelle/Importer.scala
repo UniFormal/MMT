@@ -163,14 +163,18 @@ object Importer
 
   /** Isabelle export structures **/
 
+  private val empty_timing = isabelle.Document_Status.Overall_Timing.empty
+
   sealed case class Theory_Export(
     node_name: isabelle.Document.Node.Name,
     node_source: Source,
+    node_timing: isabelle.Document_Status.Overall_Timing,
     parents: List[String],
     segments: List[Theory_Segment])
 
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
+    element_timing: isabelle.Document_Status.Overall_Timing = empty_timing,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
@@ -798,7 +802,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           facts = pure_theory.facts,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
-      Theory_Export(pure_name, Source.empty, Nil, List(segment))
+      Theory_Export(pure_name, Source.empty, empty_timing, Nil, List(segment))
     }
 
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
@@ -889,6 +893,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val syntax = resources.session_base.node_syntax(snapshot.version.nodes, node_name)
 
+      val node_timing =
+        isabelle.Document_Status.Overall_Timing.make(
+          snapshot.state, snapshot.version, snapshot.node.commands)
+
       val segments =
       {
         val relevant_elements =
@@ -902,6 +910,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         for (element <- relevant_elements)
         yield {
+          val element_timing =
+            isabelle.Document_Status.Overall_Timing.make(
+              snapshot.state, snapshot.version, element.iterator.toList)
+
           def defined(entity: isabelle.Export_Theory.Entity): Boolean =
           {
             def for_entity: String =
@@ -929,6 +941,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           }
           Theory_Segment(
             element = element,
+            element_timing = element_timing,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
@@ -938,7 +951,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
         }
       }
-      Theory_Export(node_name, Source(snapshot.node.source), theory.parents, segments)
+      Theory_Export(node_name, Source(snapshot.node.source), node_timing, theory.parents, segments)
     }
 
 
