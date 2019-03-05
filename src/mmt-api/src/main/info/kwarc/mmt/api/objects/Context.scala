@@ -547,9 +547,7 @@ object Context {
   def parse(Nmd: scala.xml.Node, nsMap: NamespaceMap): Context = {
     val (n, mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
     val c = xml.trimOneLevel(n) match {
-      case <OMBVAR>
-        {decls@_*}
-        </OMBVAR> => decls.toList.map(VarDecl.parse(_, nsMap))
+      case <OMBVAR>{decls @ _*}</OMBVAR> => decls.toList.map(VarDecl.parse(_, nsMap))
       case _ => throw ParseError("not a well-formed context: " + n.toString)
     }
     mdOpt.foreach { md => c.metadata = md }
@@ -644,9 +642,7 @@ object VarDecl {
   def parse(Nmd: Node, nsMap: NamespaceMap): VarDecl = {
     val (n, mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
     xml.trimOneLevel(n) match {
-      case <OMV>
-        {body@_*}
-        </OMV> =>
+      case <OMV>{body @ _*}</OMV> =>
         val name = LocalName.parse(xml.attr(n, "name"))
         val featureAtt = xml.attr(n, "feature")
         val feature = if (featureAtt == "") None else Some(featureAtt)
@@ -674,9 +670,7 @@ object Substitution {
   def parse(Nmd: scala.xml.Node, nsMap: NamespaceMap): Substitution = {
     val (n, mdOpt) = metadata.MetaData.parseMetaDataChild(Nmd, nsMap)
     val s = xml.trimOneLevel(n) match {
-      case <OMBVAR>
-        {sbs@_*}
-        </OMBVAR> => sbs.toList.map(Sub.parse(_, nsMap))
+      case <OMBVAR>{sbs @ _*}</OMBVAR> => sbs.toList.map(Sub.parse(_, nsMap))
       case _ => throw ParseError("not a well-formed substitution: " + n.toString)
     }
     mdOpt.foreach { md => s.metadata = md }
