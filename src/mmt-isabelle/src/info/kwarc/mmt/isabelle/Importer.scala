@@ -1147,7 +1147,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           Content.merge(thy_export.parents.map(theory_content)), Nil)
 
       def content: Content = _state.value._1
+
       def rdf_document: isabelle.XML.Elem = Ontology.rdf_document(_state.value._2.reverse)
+
+      def rdf_triple(triple: isabelle.RDF.Triple): Unit =
+        _state.change({ case (content, triples) => (content, triple :: triples) })
 
       def declare_item(
         entity: isabelle.Export_Theory.Entity,
@@ -1175,9 +1179,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
         item
       }
-
-      def rdf_triple(triple: isabelle.RDF.Triple): Unit =
-        _state.change({ case (content, triples) => (content, triple :: triples) })
 
       def end_theory(): Unit = imported.change(map => map + (node_name.theory -> content))
     }
