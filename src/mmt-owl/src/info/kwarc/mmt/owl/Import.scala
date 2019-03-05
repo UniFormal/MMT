@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.archives.BuildResult
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 //
 
@@ -110,7 +110,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
      */
 
 
-    val axioms: List[OWLAxiom] = ontology.getAxioms.toList
+    val axioms: List[OWLAxiom] = ontology.getAxioms.asScala.toList
     val (logicals, nonLogicals) = axioms.partition((a: OWLAxiom) => a.isLogicalAxiom)
     nonLogicals.foreach(axiom => axiomToLF(axiom))
     val individuals = ontology.getIndividualsInSignature()
@@ -128,7 +128,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
   def addConstant(a: OWLAxiom, n: LocalName, tp: Term, md: MetaData) {
     val name =
       if (n == null) {
-        a.getAnnotations.find(annot => annot.getProperty.getIRI == omdocIRI) match {
+        a.getAnnotations.asScala.find(annot => annot.getProperty.getIRI == omdocIRI) match {
           case Some(annot) =>
             val aval = annot.getValue
             aval match {
@@ -160,7 +160,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
               case c: OWLObjectIntersectionOf => ("OWL2SUB", "objectIntersectionOf")
               case c: OWLObjectUnionOf => ("OWL2RL", "objectUnionOf")
             }
-            val args = c.getOperandsAsList.map(classToLF)
+            val args = c.getOperandsAsList.asScala.map(classToLF)
             ApplySpine(OWL2OMS(sig, dec), args: _*)
 
           case c: OWLObjectComplementOf =>
@@ -231,7 +231,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
         ApplySpine(OWL2OMS("OWL2EL", "objectHasSelf"), propertyToLF(arg))
       //}
       case c: OWLObjectOneOf =>
-        val args = c.getIndividuals.map(individualToLF)
+        val args = c.getIndividuals.asScala.map(individualToLF)
         ApplySpine(OWL2OMS("OWL2ELRL", "objectOneOf"), args.toList: _*)
     }
   }
@@ -330,7 +330,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
           case dr: OWLDataIntersectionOf => ("OWL2SUB", "dataIntersectionOf")
           case dr: OWLDataUnionOf => ("OWL2", "dataUnionOf")
         }
-        val args = dr.getOperands.map(dataRangeToLF)
+        val args = dr.getOperands.asScala.map(dataRangeToLF)
         ApplySpine(OWL2OMS(sig, dec), args.toList: _*)
 
       case dr: OWLDataComplementOf =>
@@ -338,12 +338,12 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
         ApplySpine(OWL2OMS("OWL2", "dataComplementOf"), dataRangeToLF(arg))
 
       case dr: OWLDataOneOf => // "Peter" "1"^^xsd:integer
-        val args = dr.getValues.map(literalToLF)
+        val args = dr.getValues.asScala.map(literalToLF)
         ApplySpine(OWL2OMS("OWL2EL", "dataOneOf"), args.toList: _*)
 
       case dr: OWLDatatypeRestriction => //xsd:integer xsd:minInclusive "5"^^xsd:integer xsd:maxExclusive "10"^^xsd:integer
         val arg1 = dr.getDatatype
-        val args = dr.getFacetRestrictions.map(facetToLF)
+        val args = dr.getFacetRestrictions.asScala.map(facetToLF)
         ApplySpine(OWL2OMS("OWL2SUB", "dataTypeRestriction"), dataRangeToLF(arg1) :: args.toList: _*)
     }
   }
@@ -390,7 +390,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
 
             case ax: OWLDisjointUnionAxiom =>
               val arg1 = ax.getOWLClass
-              val args = ax.getClassExpressions.map(classToLF)
+              val args = ax.getClassExpressions.asScala.map(classToLF)
               val tp = ApplySpine(OWL2OMS("OWL2", "disjointUnionOf"), classToLF(arg1) :: args.toList: _*)
               (null, tp)
 
@@ -399,7 +399,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
                 case ax: OWLEquivalentClassesAxiom => ("OWL2SUB", "equivalentClasses")
                 case ax: OWLDisjointClassesAxiom => ("OWL2SUB", "disjointClasses")
               }
-              val args = ax.getClassExpressionsAsList.map(classToLF)
+              val args = ax.getClassExpressionsAsList.asScala.map(classToLF)
               val tp = ApplySpine(OWL2OMS(sig, dec), args: _*)
               (null, tp)
           }
@@ -412,12 +412,12 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
 
         //case ax : OWLNaryPropertyAxiom => {
         case ax: OWLEquivalentObjectPropertiesAxiom =>
-          val args = ax.getProperties.map(propertyToLF)
+          val args = ax.getProperties.asScala.map(propertyToLF)
           val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentObjectProperties"), args.toList: _*)
           (null, tp)
 
         case ax: OWLDisjointObjectPropertiesAxiom =>
-          val args = ax.getProperties.map(propertyToLF)
+          val args = ax.getProperties.asScala.map(propertyToLF)
           val tp = ApplySpine(OWL2OMS("OWL2QLRL", "disjointObjectProperties"), args.toList: _*)
           (null, tp)
 
@@ -455,12 +455,12 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
           (null, tp)
 
         case ax: OWLEquivalentDataPropertiesAxiom =>
-          val args = ax.getProperties.map(propertyToLF)
+          val args = ax.getProperties.asScala.map(propertyToLF)
           val tp = ApplySpine(OWL2OMS("OWL2SUB", "equivalentDataProperties"), args.toList: _*)
           (null, tp)
 
         case ax: OWLDisjointDataPropertiesAxiom => //hasName  hasAddress
-          val args = ax.getProperties.map(propertyToLF)
+          val args = ax.getProperties.asScala.map(propertyToLF)
           val tp = ApplySpine(OWL2OMS("OWL2QLRL", "disjointDataProperties"), args.toList: _*)
           (null, tp)
 
@@ -497,7 +497,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
             case ax: OWLSameIndividualAxiom => ("OWL2ELRL", "sameIndividual")
             case ax: OWLDifferentIndividualsAxiom => ("OWL2SUB", "differentIndividuals")
           }
-          val args = ax.getIndividualsAsList.map(individualToLF)
+          val args = ax.getIndividualsAsList.asScala.map(individualToLF)
           val tp = ApplySpine(OWL2OMS(sig, dec), args: _*)
           (null, tp)
 
@@ -553,7 +553,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
         //Apply(Apply(f,a),b),  ApplySpine(f,a,b)
       }
 
-    val mDatum = ax.getAnnotations.map(annotationToLF)
+    val mDatum = ax.getAnnotations.asScala.map(annotationToLF)
     val mData = new MetaData()
     mData.add(mDatum.toList: _*) // list into a sequence
     addConstant(ax, name, tp, mData)
