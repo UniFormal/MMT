@@ -449,7 +449,7 @@ object Importer
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_item(decl.entity)
+            val item = thy_draft.declare_entity(decl.entity)
             val tp = Isabelle.Class()
             add_constant(item, Some(tp), None)
           }
@@ -458,7 +458,8 @@ object Importer
         // types
         for (decl <- segment.types) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_item(decl.entity, decl.syntax)
+            val item = thy_draft.make_item(decl.entity, decl.syntax)
+            thy_draft.declare_item(item)
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
@@ -469,7 +470,8 @@ object Importer
         // consts
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
+            val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
+            thy_draft.declare_item(item)
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
@@ -480,7 +482,7 @@ object Importer
         // facts
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_item(decl.entity)
+            val item = thy_draft.declare_entity(decl.entity)
             val tp = thy_draft.content.import_prop(decl.prop)
             add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
             segment.theorem_kind.foreach(kind =>
@@ -492,7 +494,7 @@ object Importer
         for (locale <- segment.locales) {
           decl_error(locale.entity) {
             val content = thy_draft.content
-            val item = thy_draft.declare_item(locale.entity)
+            val item = thy_draft.declare_entity(locale.entity)
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
@@ -542,7 +544,7 @@ object Importer
         // locale dependencies (inclusions)
         for (dep <- segment.locale_dependencies if dep.is_inclusion) {
           decl_error(dep.entity) {
-            val item = thy_draft.declare_item(dep.entity)
+            val item = thy_draft.declare_entity(dep.entity)
             val content = thy_draft.content
 
             val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
@@ -1153,30 +1155,39 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def rdf_triple(triple: isabelle.RDF.Triple): Unit =
         _state.change({ case (content, triples) => (content, triple :: triples) })
 
-      def declare_item(
+      def declare_item(item: Item)
+      {
+        _state.change(
+          { case (content, triples) =>
+            val content1 = content.declare(item)
+            val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
+            val triples1 = declares :: triples
+            (content1, triples1)
+          })
+      }
+
+      def make_item(
         entity: isabelle.Export_Theory.Entity,
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
-        val item =
-          Item(
-            theory_path = thy.path,
-            theory_source = thy_source,
-            node_name = node_name,
-            node_source = node_source,
-            entity_kind = entity.kind.toString,
-            entity_name = entity.name,
-            entity_xname = entity.xname,
-            entity_pos = entity.pos,
-            syntax = syntax,
-            type_scheme = type_scheme)
-        _state.change(
-          { case (content, triples) =>
-              val content1 = content.declare(item)
-              val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
-              val triples1 = declares :: triples
-              (content1, triples1)
-          })
+        Item(
+          theory_path = thy.path,
+          theory_source = thy_source,
+          node_name = node_name,
+          node_source = node_source,
+          entity_kind = entity.kind.toString,
+          entity_name = entity.name,
+          entity_xname = entity.xname,
+          entity_pos = entity.pos,
+          syntax = syntax,
+          type_scheme = type_scheme)
+      }
+
+      def declare_entity(entity: isabelle.Export_Theory.Entity): Item =
+      {
+        val item = make_item(entity)
+        declare_item(item)
         item
       }
 
