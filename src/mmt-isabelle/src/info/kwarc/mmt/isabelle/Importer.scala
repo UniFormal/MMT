@@ -175,6 +175,7 @@ object Importer
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     element_timing: isabelle.Document_Status.Overall_Timing = empty_timing,
+    heading: Option[Int] = None,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
@@ -444,6 +445,17 @@ object Importer
             new OpaqueText(thy_draft.thy.asDocument.path,
               OpaqueText.defaultFormat, StringFragment(text))
           controller.add(opaque)
+        }
+
+        // document headings
+        for (i <- segment.heading) {
+          val kind = "heading"
+          val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, kind + i))
+          val pos = segment.element.head.span.position
+
+          val item = thy_draft.make_item0(kind, name, entity_pos = pos)
+          thy_draft.declare_item(item)
+          thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.section))
         }
 
         // classes
@@ -940,18 +952,30 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         val relevant_elements =
           isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList).
-            filter(elem => elem.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
+            filter(element =>
+              isabelle.Document_Structure.is_heading_command(element.head) ||
+              element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
+
         val relevant_ids =
           (for { element <- relevant_elements.iterator; cmd <- element.outline_iterator }
             yield cmd.id).toSet
 
         val node_command_ids = snapshot.command_id_map
 
+        var heading_count = 0
+
         for (element <- relevant_elements)
         yield {
           val element_timing =
             isabelle.Document_Status.Overall_Timing.make(
               snapshot.state, snapshot.version, element.iterator.toList)
+
+          val heading =
+            if (isabelle.Document_Structure.is_heading_command(element.head)) {
+              heading_count += 1
+              Some(heading_count)
+            }
+            else None
 
           def defined(entity: isabelle.Export_Theory.Entity): Boolean =
           {
@@ -981,6 +1005,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           Theory_Segment(
             element = element,
             element_timing = element_timing,
+            heading = heading,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
@@ -1166,8 +1191,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
       }
 
-      def make_item(
-        entity: isabelle.Export_Theory.Entity,
+      def make_item0(
+        entity_kind: String,
+        entity_name: String,
+        entity_xname: String = "",
+        entity_pos: isabelle.Position.T = isabelle.Position.none,
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
@@ -1176,8 +1204,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           theory_source = thy_source,
           node_name = node_name,
           node_source = node_source,
-          entity_kind = entity.kind.toString,
-          entity_name = entity.name,
+          entity_kind = entity_kind,
+          entity_name = entity_name,
+          entity_xname = if (entity_xname.nonEmpty) entity_xname else entity_name,
+          entity_pos = entity_pos,
+          syntax = syntax,
+          type_scheme = type_scheme)
+      }
+
+      def make_item(entity: isabelle.Export_Theory.Entity,
+        syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
+        type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
+      {
+        make_item0(entity.kind.toString, entity.name,
           entity_xname = entity.xname,
           entity_pos = entity.pos,
           syntax = syntax,
