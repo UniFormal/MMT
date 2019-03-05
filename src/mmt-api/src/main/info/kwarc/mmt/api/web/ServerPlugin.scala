@@ -294,7 +294,7 @@ class SearchServer extends ServerExtension("search") {
   }
 
   def apply(request: ServerRequest): ServerResponse = {
-    val wq = WebQuery.parse(request.query)
+    val wq = request.parsedQuery
     val base = wq("base")
     val mod = wq("module")
     val name = wq("name")
@@ -411,7 +411,7 @@ class MessageHandler extends ServerExtension("content") {
      val path = request.pathForExtension
      if (path.length != 1)
        throw LocalError("path must have length 1")
-     val wq = WebQuery.parse(request.query)
+     val wq = request.parsedQuery
      lazy val inFormat = wq.string("inFormat")
      lazy val outFormat = wq.string("outFormat")
      lazy val theory = wq.string("theory")
