@@ -458,19 +458,25 @@ object Importer
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
+            def loc_decl(d: Declaration): Unit =
+            {
+              loc_thy.add(d)
+              thy_draft.rdf_triple(Ontology.binary(loc_thy.path.toString, Ontology.ULO.declares, d.path.toString))
+            }
+
             // type parameters
             val type_env =
               (Env.empty /: locale.typargs) {
                 case (env, (a, _)) =>
                   val c = Constant(loc_thy.toTerm, LocalName(a), Nil, Some(Isabelle.Type()), None, None)
-                  loc_thy.add(c)
+                  loc_decl(c)
                   env + (a -> c.toTerm)
               }
 
             // sort constraints
             for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
               val name = LocalName(Isabelle.Locale.Sorts(i + 1))
-              loc_thy.add(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
+              loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
             // term parameters
@@ -480,14 +486,14 @@ object Importer
                   val notC = notation(None, 0, syntax)
                   val tp = content.import_type(ty, type_env)
                   val c = Constant(loc_thy.toTerm, LocalName(x), Nil, Some(tp), None, None, notC)
-                  loc_thy.add(c)
+                  loc_decl(c)
                   env + (x -> c.toTerm)
               }
 
             // logical axioms
             for { (prop, i) <- locale.axioms.map(content.import_prop(_, term_env)).zipWithIndex } {
               val name = LocalName(Isabelle.Locale.Axioms(i + 1))
-              loc_thy.add(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
+              loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
             controller.add(new NestedModule(thy_draft.thy.toTerm, loc_name, loc_thy))
@@ -1103,6 +1109,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
         item
       }
+
+      def rdf_triple(new_triple: isabelle.RDF.Triple): Unit =
+        _state.change({ case (content, triples) => (content, new_triple :: triples) })
+
+      def rdf_triples(new_triples: List[isabelle.RDF.Triple]): Unit =
+        _state.change({ case (content, triples) => (content, new_triples reverse_::: triples) })
 
       def end_theory(): Unit = imported.change(map => map + (node_name.theory -> content))
     }
