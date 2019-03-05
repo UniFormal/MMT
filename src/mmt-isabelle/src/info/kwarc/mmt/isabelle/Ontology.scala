@@ -20,13 +20,13 @@ object Ontology {
   {
     /* unaries */
 
-    val `type` = ulo("type") // Pure/HOL type
-    val data = ulo("data") // term constant
+    val `type` = ulo("type") // type constructors
+    val data = ulo("data") // term constants
 
     val proposition = ulo("proposition") // FIXME !?
     val statement = ulo("statement")
 
-    val theory = ulo("theory") // theory, locale, class, bundle (?)
+    val theory = ulo("theory") // theory, locale
     val instance = ulo("instance") // locale interpretation, class instantiation, unbundle (?)
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph

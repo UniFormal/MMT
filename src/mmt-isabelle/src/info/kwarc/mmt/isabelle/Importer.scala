@@ -364,6 +364,8 @@ object Importer
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
+      thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path.toString, Ontology.ULO.theory))
+
       if (thy_is_pure) {
         controller.add(PlainInclude(Isabelle.bootstrap_theory, thy_draft.thy.path))
       }
@@ -425,6 +427,7 @@ object Importer
         for (decl <- segment.types) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity, decl.syntax)
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
             add_constant(item, Some(tp), df)
@@ -435,6 +438,7 @@ object Importer
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, Some(tp), df)
@@ -455,6 +459,7 @@ object Importer
           decl_error(locale.entity) {
             val content = thy_draft.content
             val item = thy_draft.declare_item(locale.entity)
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
