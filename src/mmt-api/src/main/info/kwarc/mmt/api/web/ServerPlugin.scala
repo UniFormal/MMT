@@ -12,6 +12,8 @@ import ServerResponse._
 import info.kwarc.mmt.api.frontend.actions.{Action, GetAction}
 import info.kwarc.mmt.api.objects.Context
 
+import scala.util.Try
+
 /**
  * An MMT extensions that handles certain requests in MMT's HTTP server.
  *
@@ -495,13 +497,14 @@ class SubmitCommentServer extends ServerExtension("submit_comment") {
     val end = date.replaceAll("\\s", "")
     //deprecated but will use this until better alternatives come along
     // one possible solution is Argonaut
-    val result = scala.util.parsing.json.JSON.parseFull(s)
+    val result = Try(JSON.parse(s)).toOption
     var user = ""
     var comment = ""
     result match {
-      case Some(map: Map[String@unchecked, String@unchecked]) =>
-        user = map.getOrElse("user", null)
-        comment = map.getOrElse("comment", null)
+      case Some(m@JSONObject(_)) => {
+        user = m.getAsString("user")
+        comment = m.getAsString("comment")
+      }
       case None => println("Parsing failed")
       case other => println("Unknown data structure: " + other)
     }
