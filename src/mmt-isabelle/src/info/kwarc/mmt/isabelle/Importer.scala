@@ -285,32 +285,34 @@ object Importer
       }
     }
 
-    sealed case class Key(kind: isabelle.Export_Theory.Kind.Value, name: String)
+    sealed case class Key(kind: String, name: String)
     {
-      override def toString: String = kind.toString + " " + isabelle.quote(name)
+      override def toString: String = kind + " " + isabelle.quote(name)
     }
   }
 
   sealed case class Item(
-    theory_source: Option[URI],
     theory_path: MPath,
+    theory_source: Option[URI] = None,
     node_name: isabelle.Document.Node.Name,
-    node_source: Source,
-    entity: isabelle.Export_Theory.Entity,
+    node_source: Source = Source.empty,
+    entity_kind: String,
+    entity_name: String,
+    entity_xname: String,
+    entity_pos: isabelle.Position.T,
     syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
     type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
   {
-    val key: Item.Key = Item.Key(entity.kind, entity.name)
+    val key: Item.Key = Item.Key(entity_kind, entity_name)
 
-    def local_name: LocalName =
-      LocalName(node_name.theory + "," + entity.kind.toString + "," + entity.name)
+    def local_name: LocalName = LocalName(node_name.theory + "," + entity_kind + "," + entity_name)
     def global_name: GlobalName = constant(None, None).path
 
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
-      val notC = notation(Some(entity.xname), type_scheme._1.length, syntax)
+      val notC = notation(Some(entity_xname), type_scheme._1.length, syntax)
       val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notC)
-      for (sref <- node_source.ref(theory_source, entity.pos)) SourceRef.update(c, sref)
+      for (sref <- node_source.ref(theory_source, entity_pos)) SourceRef.update(c, sref)
       c
     }
 
@@ -835,7 +837,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
       entities.collectFirst(
-        { case entity if entity.name == name => Item(None, pure_path, pure_name, Source.empty, entity).global_name
+        { case entity if entity.name == name =>
+            Item(
+              theory_path = pure_path,
+              node_name = pure_name,
+              entity_kind = entity.kind.toString,
+              entity_name = entity.name,
+              entity_xname = entity.xname,
+              entity_pos = entity.pos).global_name
         }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
@@ -997,8 +1006,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def size: Int = rep.size
 
-      def report_kind(kind: isabelle.Export_Theory.Kind.Value): String =
-        rep.count({ case (_, item) => item.entity.kind == kind }).toString + " " + kind.toString
+      def report_kind(kind: String): String =
+        rep.count({ case (_, item) => item.entity_kind == kind }).toString + " " + kind
 
       def report: String =
         isabelle.commas(
@@ -1008,16 +1017,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
-            isabelle.Export_Theory.Kind.FACT).map(report_kind))
+            isabelle.Export_Theory.Kind.FACT).map(kind => report_kind(kind.toString)))
 
       def get(key: Item.Key): Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-      def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS, name))
-      def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE, name))
-      def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST, name))
-      def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT, name))
-      def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE, name))
+      def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
+      def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
+      def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
+      def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT.toString, name))
+      def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
       def get_locale_dependency(name: String): Item =
-        get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY, name))
+        get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
 
       def is_empty: Boolean = rep.isEmpty
       def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
@@ -1145,7 +1154,18 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
-        val item = Item(thy_source, thy.path, node_name, node_source, entity, syntax, type_scheme)
+        val item =
+          Item(
+            theory_path = thy.path,
+            theory_source = thy_source,
+            node_name = node_name,
+            node_source = node_source,
+            entity_kind = entity.kind.toString,
+            entity_name = entity.name,
+            entity_xname = entity.xname,
+            entity_pos = entity.pos,
+            syntax = syntax,
+            type_scheme = type_scheme)
         _state.change(
           { case (content, triples) =>
               val content1 = content.declare(item)
