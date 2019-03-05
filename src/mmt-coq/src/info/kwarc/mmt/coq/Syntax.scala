@@ -25,8 +25,8 @@ object Coq {
     case "Set" => OMS(Coq.set)
     case "Prop" => OMS(Coq.prop)
     case _ =>
-      println(value)
-      ???
+      println(value) // TODO
+      OML(LocalName(value))
   }
 
   val fail = foundation ? "FAIL"
@@ -38,7 +38,6 @@ object Coq {
     def error : Nothing = ???
     var currentD : DPath = Path.parseD("cic:/",NamespaceMap.empty)
     var currentM : MPath = null
-    var currentS : GlobalName = null
     while (paths.nonEmpty) {
       controller.getO(currentD ? paths.head) match {
         case Some(_) =>
@@ -50,11 +49,7 @@ object Coq {
                 currentM = currentM.parent ? (currentM.name / paths.head)
                 paths = paths.tail
               case None =>
-                currentS = currentM ? paths.mkString("/")
-                controller.getO(currentS) match {
-                  case Some(_) => return currentS
-                  case None => error
-                }
+                return currentM ? paths.mkString("/").split('.').head
             }
           }
           return currentM
@@ -67,11 +62,13 @@ object Coq {
   }
   def toMPath(uri : URI)(implicit state : TranslationState) : MPath = Try(coqtoomdoc(uri)(state.controller)).toOption match {
     case Some(mp:MPath) => mp
-    case _ => Coq.foundation // TODO
+    case _ =>
+      Coq.foundation // TODO
   }
   def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {
     case Some(gn:GlobalName) => gn
-    case _ => Coq.fail // TODO
+    case _ =>
+      Coq.fail // TODO
   }
 }
 
@@ -110,27 +107,14 @@ abstract class Coqsymbol(name : String) {
   val tm = OMS(path)
 }
 
-object Coqtp extends Coqsymbol("tp") {
-  def apply(s : String) : Term = apply(Coq.makeSort(s))
-  def apply(sort : Term) : Term = Apply(tm,sort)
-}
+object Coqtp extends Coqsymbol("Type")
 
-object expr extends Coqsymbol("expr") {
-  def apply(s : String,tp : Term): Term = apply(Coq.makeSort(s),tp)
-  def apply(sort : Term,tp : Term) : Term = ApplySpine(tm,sort,tp)
-}
+object expr extends Coqsymbol("expr")
 
 object CoqPROD extends Coqsymbol("PROD") {
   def apply(sort : String, name : String, tp : Term, body : Term)(implicit implicits:TranslationState) : Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = tp
-    val s = Lambda(LocalName(name), tp, body)
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s)
+    val s = Lambda(LocalName(name), expr.tm, body)
+    ApplySpine(tm,tp,s)
   }
   def apply(_type : String,vars : List[(String,Term)],body : Term)(implicit implicits:TranslationState) : Term =
     vars.foldLeft(body)((tm,p) => apply(_type,p._1,p._2,tm))
@@ -138,20 +122,13 @@ object CoqPROD extends Coqsymbol("PROD") {
 
 object CoqApply extends Coqsymbol("APPLY") {
   def apply(sort : String,f : Term,arg : Term)(implicit implicits:TranslationState): Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = implicits.newImplicit(Some(Coqtp(u1)))
-    val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
+    // val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
+    //val u2 = Coq.makeSort(sort)
+    // val t = implicits.newImplicit(Some(Coqtp(u1)))
+    // val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
     // val x = implicits.pickFresh
     // val ftp = implicits.newImplicit(Some(Pi(x,expr(u1,t),expr(u2,Apply(s,OMV(x))))))
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s,
-      f,
-      arg
-    )
+    ApplySpine(tm,f,arg)
   }
   def apply(sort : String,f : Term, args : List[Term])(implicit implicits:TranslationState) : Term = {
     args.foldLeft(f)((fi,arg) => apply(sort,fi,arg))
@@ -160,18 +137,12 @@ object CoqApply extends Coqsymbol("APPLY") {
 
 object CoqLambda extends Coqsymbol("LAMBDA") {
   def apply(sort : String,name:LocalName,tp : Term,body : Term)(implicit implicits:TranslationState): Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = tp
-    val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
-    val ftp = Lambda(name,expr(u1,t),body)
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s,
-      ftp
-    )
+    // val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
+    // val u2 = Coq.makeSort(sort)
+    // val t = tp
+    // val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
+    val ftp = Lambda(name,expr.tm,body)
+    ApplySpine(tm,tp,ftp)
   }
   def apply(sort : String,args : List[(LocalName,Term)],body : Term)(implicit implicits:TranslationState) : Term = {
     args.foldLeft(body)((fi,arg) => apply(sort,arg._1,arg._2,fi))

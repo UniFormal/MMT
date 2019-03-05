@@ -25,15 +25,15 @@ import info.kwarc.mmt.api.uom._
   *          and would like to match the goal term `||(a - b) - c||` with it.<br>
   *          The matcher will give you the substitution `solution = [x := (a - b), y := c]`.
   *
-  *          This is a special case of unification. In general, unification seeks a solution
-  *          substitution such that `template ^ solution == goal ^ solution`, i.e. the substitution
-  *          applied on *both* sides.
-  *          Thus the template usually contains variables intended for substitution ("matching"), but
-  *          the goal does not. Still, the goal term may contain free variables as in the example above,
-  *          they will then be part of the solution substitution - but only in the RHS of the substitutions.
+  * This is a special case of (typed!) unification. In general, unification seeks a solution
+  * substitution such that `template ^ solution == goal ^ solution`, i.e. the substitution
+  * applied on *both* sides.
+  * Thus the template usually contains variables intended for substitution ("matching"), but
+  * the goal does not. Still, the goal term may contain free variables as in the example above,
+  * they will then be part of the solution substitution - but only in the RHS of the substitutions.
   *
-  *          No equality relation is taken into account except alpha-conversion of bound variables and
-  *          solution rules.
+  * No equality relation is taken into account except alpha-conversion of bound variables and
+  * solution rules.
   *
   * @note    The class can be reused for multiple matches using the same RuleSet but is not thread-safe.
   *

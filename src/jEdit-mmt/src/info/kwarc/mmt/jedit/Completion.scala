@@ -15,7 +15,7 @@ import modules._
 import objects._
 import symbols._
 
-import scala.collection.JavaConversions.seqAsJavaList
+import scala.collection.JavaConverters._
 
 /**
  * @param view the current jEdit view
@@ -25,7 +25,7 @@ import scala.collection.JavaConversions.seqAsJavaList
  * @param items the list of completion labels that is displayed
  */
 class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constants: List[Constant], text: String, items: List[String])
-  extends SideKickCompletion(view, text, items) {
+  extends SideKickCompletion(view, text, items.asJava) {
   // this methods modifies the textArea after the user selected a completion
    override def insert(index: Int) {
      val con = constants(index)
@@ -64,7 +64,7 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
  * auto-completion popup for options that are generated with types and holes
  */
 class ProverCompletion(view : org.gjt.sp.jedit.View, controller: Controller, region: SourceRegion, options: List[Term])
-  extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o))) {
+  extends SideKickCompletion(view, "", options.map(o => controller.presenter.asString(o)).asJava) {
   // this methods modifies the textArea after the user selected a completion
   override def insert(index: Int) {
      // the new subterm, result of applying the rule
