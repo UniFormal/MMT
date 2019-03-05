@@ -23,7 +23,7 @@ object Ontology {
     val `type` = ulo("type") // type constructors
     val data = ulo("data") // term constants
 
-    val proposition = ulo("proposition") // FIXME !?
+    val proposition = ulo("proposition")
     val statement = ulo("statement")
 
     val theory = ulo("theory") // theory, locale
@@ -38,11 +38,10 @@ object Ontology {
     val primitive = ulo("primitive") // e.g. axioms
     val derived = ulo("derived") // e.g. definitions, theorems
 
-    val theorem = ulo("theorem") // kind "theorem"
-    val lemma = ulo("lemma") // kind "lemma"
-    val conjecture = ulo("conjecture") // unused
-    val corollary = ulo("corollary") // kind "corollary"
-    // FIXME val proposition = uri("proposition")  // kind "proposition"
+    val theorem = ulo("theorem") // command "theorem" or "proposition"
+    val lemma = ulo("lemma") // command "lemma" or "lemmas
+    val corollary = ulo("corollary") // command "corollary"
+    val conjecture = ulo("conjecture") // proof contains "sorry"
 
     val simplification_rule = ulo("simplification-rule") // fact within simpset (??)
 
@@ -80,12 +79,5 @@ object Ontology {
     val check_time = ulo("check-time")  // elapsed time (ms)
     val external_size = ulo("external-size")  // source size (UTF-8 bytes)
     val internal_size = ulo("internal-size")
-
-
-    /* examples */
-
-    // axiomatization ... where  -- statement, primitive
-    // theorem A sorry  -- statement
-    // theorem A <proof>  -- statement, derived
   }
 }

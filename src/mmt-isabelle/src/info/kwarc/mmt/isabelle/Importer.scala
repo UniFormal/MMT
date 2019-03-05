@@ -189,6 +189,19 @@ object Importer
         (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
           locales.nonEmpty || locale_dependencies.nonEmpty)
 
+    def theorem_kind: Option[String] =
+    {
+      if (element.iterator.exists(cmd => cmd.span.name == "sorry")) Some(Ontology.ULO.conjecture)
+      else {
+        element.head.span.name match {
+          case "lemmas" | "lemma" => Some(Ontology.ULO.lemma)
+          case "proposition" | "theorem" => Some(Ontology.ULO.theorem)
+          case "corollary" => Some(Ontology.ULO.corollary)
+          case _ => None
+        }
+      }
+    }
+
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
         decl_multi <- facts.iterator
@@ -468,6 +481,8 @@ object Importer
             val item = thy_draft.declare_item(decl.entity)
             val tp = thy_draft.content.import_prop(decl.prop)
             add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
+            segment.theorem_kind.foreach(kind =>
+              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, kind)))
           }
         }
 
