@@ -368,10 +368,10 @@ object Importer
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
-      thy_draft.rdf_triples(Ontology.unary(thy_draft.thy.path.toString, Ontology.ULO.theory))
+      thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path.toString, Ontology.ULO.theory))
 
       if (thy_export.node_timing.total > 0.0) {
-        thy_draft.rdf_triples(
+        thy_draft.rdf_triple(
           isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.check_time,
             isabelle.RDF.long(isabelle.Time.seconds(thy_export.node_timing.total).ms)))
       }
@@ -407,7 +407,7 @@ object Importer
         isabelle.Isabelle_System.mkdirs(path.dir)
         isabelle.File.write(path, text_decoded)
 
-        thy_draft.rdf_triples(
+        thy_draft.rdf_triple(
           isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.external_size,
             isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
@@ -444,7 +444,7 @@ object Importer
         for (decl <- segment.types) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity, decl.syntax)
-            thy_draft.rdf_triples(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
             add_constant(item, Some(tp), df)
@@ -455,7 +455,7 @@ object Importer
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
-            thy_draft.rdf_triples(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, Some(tp), df)
@@ -476,14 +476,14 @@ object Importer
           decl_error(locale.entity) {
             val content = thy_draft.content
             val item = thy_draft.declare_item(locale.entity)
-            thy_draft.rdf_triples(Ontology.unary(item.global_name.toString, Ontology.ULO.theory))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
             def loc_decl(d: Declaration): Unit =
             {
               loc_thy.add(d)
-              thy_draft.rdf_triples(Ontology.binary(loc_thy.path.toString, Ontology.ULO.declares, d.path.toString))
+              thy_draft.rdf_triple(Ontology.binary(loc_thy.path.toString, Ontology.ULO.declares, d.path.toString))
             }
 
             // type parameters
@@ -1141,8 +1141,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         item
       }
 
-      def rdf_triples(new_triples: isabelle.RDF.Triple*): Unit =
-        _state.change({ case (content, triples) => (content, new_triples.toList reverse_::: triples) })
+      def rdf_triple(triple: isabelle.RDF.Triple): Unit =
+        _state.change({ case (content, triples) => (content, triple :: triples) })
 
       def end_theory(): Unit = imported.change(map => map + (node_name.theory -> content))
     }
