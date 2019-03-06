@@ -25,7 +25,7 @@ object Ontology
     val data = ulo("data") // term constants
 
     val proposition = ulo("proposition")
-    val statement = ulo("statement")
+    val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
 
     val theory = ulo("theory") // theory, locale
     val instance = ulo("instance") // locale interpretation
@@ -36,8 +36,8 @@ object Ontology
     val library = ulo("library") // TODO e.g. Isabelle Distribution, AFP, IsaFoR
     val group = ulo("group")
 
-    val primitive = ulo("primitive") // TODO e.g. axioms
-    val derived = ulo("derived") // TODO e.g. definitions, theorems
+    val primitive = ulo("primitive") // consts or facts from "axiomatization"
+    val derived = ulo("derived") // proven statement
 
     val theorem = ulo("theorem") // command "theorem" or "proposition"
     val lemma = ulo("lemma") // command "lemma" or "lemmas

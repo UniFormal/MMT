@@ -190,6 +190,13 @@ object Importer
         (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
           locales.nonEmpty || locale_dependencies.nonEmpty)
 
+    def command_name: String = element.head.span.name
+
+    def is_statement: Boolean =
+      Set("axiomatization", "lemma", "theorem", "proposition", "corollary", "schematic_goal")(command_name)
+
+    def is_axiomatization: Boolean = command_name == "axiomatization"
+
     def theorem_kind: Option[String] =
     {
       if (element.iterator.exists(cmd => cmd.span.name == "sorry")) Some(Ontology.ULO.conjecture)
@@ -475,7 +482,9 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax)
             thy_draft.declare_item(item)
+
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
+
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
             add_constant(item, Some(tp), df)
@@ -487,7 +496,11 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item)
+
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
+            if (segment.is_axiomatization)
+              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.primitive))
+
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, Some(tp), df)
@@ -498,10 +511,20 @@ object Importer
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_entity(decl.entity)
-            val tp = thy_draft.content.import_prop(decl.prop)
-            add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
+
+            if (segment.is_statement) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.statement))
+              if (segment.is_axiomatization)
+                thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.primitive))
+              else
+                thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.derived))
+            }
+
             segment.theorem_kind.foreach(kind =>
               thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, kind)))
+
+            val tp = thy_draft.content.import_prop(decl.prop)
+            add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
           }
         }
 
