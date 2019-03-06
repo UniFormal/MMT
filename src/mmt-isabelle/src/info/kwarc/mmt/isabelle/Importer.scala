@@ -309,11 +309,14 @@ object Importer
     def local_name: LocalName = LocalName(node_name.theory + "," + entity_kind + "," + entity_name)
     def global_name: GlobalName = constant(None, None).path
 
+    def source_ref: Option[SourceRef] =
+      node_source.ref(theory_source, entity_pos)
+
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
       val notC = notation(Some(entity_xname), type_scheme._1.length, syntax)
       val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notC)
-      for (sref <- node_source.ref(theory_source, entity_pos)) SourceRef.update(c, sref)
+      for (sref <- source_ref) SourceRef.update(c, sref)
       c
     }
 
@@ -1186,10 +1189,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         _state.change(
           { case (content, triples) =>
-            val content1 = content.declare(item)
-            val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
-            val triples1 = declares :: triples
-            (content1, triples1)
+              val content1 = content.declare(item)
+              val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
+              val source_ref =
+                item.source_ref.map(sref =>
+                    Ontology.binary(item.global_name.toString, Ontology.ULO.source_ref, sref.toString))
+              val triples1 = declares :: source_ref.toList ::: triples
+              (content1, triples1)
           })
       }
 
