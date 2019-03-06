@@ -1,15 +1,38 @@
 package info.kwarc.mmt.isabelle
 
-import java.net.URI
+import info.kwarc.mmt.api.ContentPath
 
 
 object Ontology
 {
+  /* unary */
+
   def unary(subject: String, predicate: String): isabelle.RDF.Triple =
     isabelle.RDF.Triple(subject, predicate, Nil)
 
+  def unary(subject: ContentPath, predicate: String): isabelle.RDF.Triple =
+    unary(subject.toString, predicate)
+
+
+  /* binary */
+
+  def binary(subject: String, predicate: String, `object`: isabelle.XML.Body): isabelle.RDF.Triple =
+    isabelle.RDF.Triple(subject, predicate, `object`)
+
   def binary(subject: String, predicate: String, `object`: String): isabelle.RDF.Triple =
-    isabelle.RDF.Triple(subject, predicate, List(isabelle.XML.Text(`object`)))
+    binary(subject, predicate, List(isabelle.XML.Text(`object`)))
+
+  def binary(subject: ContentPath, predicate: String, `object`: isabelle.XML.Body): isabelle.RDF.Triple =
+    binary(subject.toString, predicate, `object`)
+
+  def binary(subject: ContentPath, predicate: String, `object`: String): isabelle.RDF.Triple =
+    binary(subject.toString, predicate, `object`)
+
+  def binary(subject: ContentPath, predicate: String, `object`: ContentPath): isabelle.RDF.Triple =
+    binary(subject.toString, predicate, `object`.toString)
+
+
+  /* namespace */
 
   val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "ulo:")
 

@@ -395,11 +395,11 @@ object Importer
       controller.add(thy_draft.thy)
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
-      thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path.toString, Ontology.ULO.theory))
+      thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path, Ontology.ULO.theory))
 
       if (thy_export.node_timing.total > 0.0) {
         thy_draft.rdf_triple(
-          isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.check_time,
+          Ontology.binary(thy_draft.thy.path, Ontology.ULO.check_time,
             isabelle.RDF.long(isabelle.Time.seconds(thy_export.node_timing.total).ms)))
       }
 
@@ -435,7 +435,7 @@ object Importer
         isabelle.File.write(path, text_decoded)
 
         thy_draft.rdf_triple(
-          isabelle.RDF.Triple(thy_draft.thy.path.toString, Ontology.ULO.external_size,
+          Ontology.binary(thy_draft.thy.path, Ontology.ULO.external_size,
             isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
 
@@ -466,7 +466,7 @@ object Importer
 
           val item = thy_draft.make_item0(kind, name, entity_pos = pos)
           thy_draft.declare_item(item)
-          thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.section))
+          thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.section))
         }
 
         // classes
@@ -484,9 +484,9 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax)
             thy_draft.declare_item(item)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`type`))
             if (thy_export.typedefs.exists(typedef => typedef.name == item.entity_name)) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.derived))
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
             }
 
             val tp = Isabelle.Type(decl.args.length)
@@ -501,9 +501,9 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.data))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.data))
             if (segment.is_axiomatization)
-              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.primitive))
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
@@ -517,15 +517,15 @@ object Importer
             val item = thy_draft.declare_entity(decl.entity)
 
             if (segment.is_statement) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.statement))
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
               if (segment.is_axiomatization)
-                thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.primitive))
+                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
               else
-                thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.derived))
+                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
             }
 
             segment.theorem_kind.foreach(kind =>
-              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, kind)))
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, kind)))
 
             val tp = thy_draft.content.import_prop(decl.prop)
             add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
@@ -537,14 +537,14 @@ object Importer
           decl_error(locale.entity) {
             val content = thy_draft.content
             val item = thy_draft.declare_entity(locale.entity)
-            thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.theory))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
 
             def loc_decl(d: Declaration): Unit =
             {
               loc_thy.add(d)
-              thy_draft.rdf_triple(Ontology.binary(loc_thy.path.toString, Ontology.ULO.declares, d.path.toString))
+              thy_draft.rdf_triple(Ontology.binary(loc_thy.path, Ontology.ULO.declares, d.path))
             }
 
             // type parameters
@@ -595,7 +595,7 @@ object Importer
             val view = View(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
             controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
 
-            thy_draft.rdf_triple(Ontology.binary(to.path.toString, Ontology.ULO.instance, from.path.toString))
+            thy_draft.rdf_triple(Ontology.binary(to.path, Ontology.ULO.instance, from.path))
           }
         }
       }
@@ -1223,10 +1223,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         _state.change(
           { case (content, triples) =>
               val content1 = content.declare(item)
-              val declares = Ontology.binary(thy.path.toString, Ontology.ULO.declares, item.global_name.toString)
+              val declares = Ontology.binary(thy.path, Ontology.ULO.declares, item.global_name)
               val source_ref =
                 item.source_ref.map(sref =>
-                    Ontology.binary(item.global_name.toString, Ontology.ULO.source_ref, sref.toString))
+                    Ontology.binary(item.global_name, Ontology.ULO.source_ref, sref.toString))
               val triples1 = declares :: source_ref.toList ::: triples
               (content1, triples1)
           })
