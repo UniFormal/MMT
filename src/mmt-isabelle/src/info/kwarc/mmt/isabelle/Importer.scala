@@ -423,22 +423,22 @@ object Importer
         controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy_draft.thy.path))
       }
 
-      def add_constant(item: Item, tp: Option[Term], df: Option[Term])
+      def add_constant(item: Item, tp: Term, df: Option[Term])
       {
         val context = Context(thy_draft.thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- tp.iterator ++ df.iterator if t != Isabelle.Unknown.term) {
+          for (t <- Iterator(tp) ++ df.iterator if t != Isabelle.Unknown.term) {
             check_term(controller, context, t)
           }
-          if (tp.isDefined && df.isDefined && df.get != Isabelle.Unknown.term) {
-            check_term_type(controller, context, df.get, tp.get)
+          if (df.isDefined && df.get != Isabelle.Unknown.term) {
+            check_term_type(controller, context, df.get, tp)
           }
         }
-        val c = item.constant(tp, df)
+        val c = item.constant(Some(tp), df)
         controller.add(c)
 
         for {
-          t <- tp.iterator ++ df.iterator
+          t <- Iterator(tp) ++ df.iterator
           dep <- dependencies(t)
         } {
           thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.uses, dep))
@@ -494,7 +494,7 @@ object Importer
           decl_error(decl.entity) {
             val item = thy_draft.declare_entity(decl.entity)
             val tp = Isabelle.Class()
-            add_constant(item, Some(tp), None)
+            add_constant(item, tp, None)
           }
         }
 
@@ -511,7 +511,7 @@ object Importer
 
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
-            add_constant(item, Some(tp), df)
+            add_constant(item, tp, df)
           }
         }
 
@@ -527,7 +527,7 @@ object Importer
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
-            add_constant(item, Some(tp), df)
+            add_constant(item, tp, df)
           }
         }
 
@@ -548,7 +548,7 @@ object Importer
               thy_draft.rdf_triple(Ontology.unary(item.global_name, kind)))
 
             val tp = thy_draft.content.import_prop(decl.prop)
-            add_constant(item, Some(tp), Some(Isabelle.Unknown.term))
+            add_constant(item, tp, Some(Isabelle.Unknown.term))
           }
         }
 
