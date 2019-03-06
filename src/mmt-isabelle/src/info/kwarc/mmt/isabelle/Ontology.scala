@@ -37,7 +37,7 @@ object Ontology
     val group = ulo("group")
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
-    val derived = ulo("derived") // proven statement
+    val derived = ulo("derived") // HOL typedefs, proven statements
 
     val theorem = ulo("theorem") // command "theorem" or "proposition"
     val lemma = ulo("lemma") // command "lemma" or "lemmas

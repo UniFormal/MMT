@@ -163,18 +163,17 @@ object Importer
 
   /** Isabelle export structures **/
 
-  private val empty_timing = isabelle.Document_Status.Overall_Timing.empty
-
   sealed case class Theory_Export(
     node_name: isabelle.Document.Node.Name,
-    node_source: Source,
-    node_timing: isabelle.Document_Status.Overall_Timing,
-    parents: List[String],
-    segments: List[Theory_Segment])
+    node_source: Source = Source.empty,
+    node_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
+    parents: List[String] = Nil,
+    segments: List[Theory_Segment] = Nil,
+    typedefs: List[isabelle.Export_Theory.Typedef] = Nil)
 
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
-    element_timing: isabelle.Document_Status.Overall_Timing = empty_timing,
+    element_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
     heading: Option[Int] = None,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
@@ -484,6 +483,9 @@ object Importer
             thy_draft.declare_item(item)
 
             thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.`type`))
+            if (thy_export.typedefs.exists(typedef => typedef.name == item.entity_name)) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name.toString, Ontology.ULO.derived))
+            }
 
             val tp = Isabelle.Type(decl.args.length)
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
@@ -874,7 +876,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           facts = pure_theory.facts,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
-      Theory_Export(pure_name, Source.empty, empty_timing, Nil, List(segment))
+      Theory_Export(pure_name, segments = List(segment))
     }
 
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
@@ -1043,7 +1045,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
         }
       }
-      Theory_Export(node_name, Source(snapshot.node.source), node_timing, theory.parents, segments)
+
+      Theory_Export(node_name,
+        node_source = Source(snapshot.node.source),
+        node_timing = node_timing,
+        parents = theory.parents,
+        segments = segments,
+        typedefs = theory.typedefs)
     }
 
 
