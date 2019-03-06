@@ -3,3 +3,7 @@ chapter Example
 session Example = Pure +
   sessions HOL
   theories Example
+
+session Example_FOL = FOL +
+  theories Example_FOL
+
