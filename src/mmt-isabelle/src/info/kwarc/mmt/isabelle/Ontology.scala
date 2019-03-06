@@ -82,7 +82,9 @@ object Ontology
     /* binaries */
 
     val declares = ulo("declares") // theory/locale declares item
-    val uses = ulo("uses") // TODO
+    val uses = ulo("uses") // dependencies of term language (not proofs)
+
+    // unused: somewhat biased towards Type Theory
     val type_depends_on_definition_of = ulo("type-depends-on-definition-of")
     val type_depends_on_type_of = ulo("type-depends-on-type-of")
     val definition_depends_on_type_of = ulo("definition-depends-on-type-of")

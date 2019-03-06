@@ -351,6 +351,19 @@ object Importer
     }
   }
 
+  def dependencies(term: Term): Set[ContentPath] =
+  {
+    var result = Set.empty[ContentPath]
+    def deps(obj: Obj): Unit =
+    {
+      obj match {
+        case OMS(name) => if (!result.contains(name)) result += name
+        case _ => for ((_, sub) <- obj.subobjects) deps(sub)
+      }
+    }
+    deps(term)
+    result
+  }
 
 
   /** Isabelle to MMT importer **/
@@ -423,6 +436,13 @@ object Importer
         }
         val c = item.constant(tp, df)
         controller.add(c)
+
+        for {
+          t <- tp.iterator ++ df.iterator
+          dep <- dependencies(t)
+        } {
+          thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.uses, dep))
+        }
       }
 
       // PIDE theory source
