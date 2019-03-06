@@ -146,13 +146,6 @@ object StructureVarDecl extends DerivedVarDeclFeature("structure")
 /**
   * An MMT context as a list of variable declarations [[VarDecl]].
   *
-  *
-  * this is
-  **/
-
-/**
-  * An MMT context as a list of variable declarations [[VarDecl]].
-  *
   * Being a list especially implies that there is an **order of the entries**.
   * For example, this is important when using the [[Context]] in an [[OMBINDC]]
   * to represent a lambda term: (λxy. x + y) will be represented as [[OMBINDC]]
@@ -625,15 +618,9 @@ object VarDecl {
     var df: Option[Term] = None
     var not: Option[TextNotation] = None
     N.map(xml.trimOneLevel).foreach {
-      case <type>
-        {t}
-        </type> => tp = Some(Obj.parseTerm(t, nsMap))
-      case <definition>
-        {t}
-        </definition> => df = Some(Obj.parseTerm(t, nsMap))
-      case <notation>
-        {n}
-        </notation> => not = Some(TextNotation.parse(n, nsMap))
+      case <type>{t}</type> => tp = Some(Obj.parseTerm(t, nsMap))
+      case <definition>{t}</definition> => df = Some(Obj.parseTerm(t, nsMap))
+      case <notation>{n}</notation> => not = Some(TextNotation.parse(n, nsMap))
       case n => throw ParseError("not a well-formed variable component: " + n.toString)
     }
     (tp, df, not)
