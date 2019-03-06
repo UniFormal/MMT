@@ -44,7 +44,7 @@ object Ontology
     val theorem = ulo("theorem") // command "theorem" or "proposition"
     val lemma = ulo("lemma") // command "lemma" or "lemmas
     val corollary = ulo("corollary") // command "corollary"
-    val conjecture = ulo("conjecture") // proof contains "sorry"
+    val conjecture = ulo("conjecture") // statement where proof contains "sorry"
 
     // unused: this is a property of the context, not of individual facts
     val simplification_rule = ulo("simplification-rule")

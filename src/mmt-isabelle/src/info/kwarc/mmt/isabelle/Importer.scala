@@ -198,7 +198,9 @@ object Importer
 
     def theorem_kind: Option[String] =
     {
-      if (element.iterator.exists(cmd => cmd.span.name == "sorry")) Some(Ontology.ULO.conjecture)
+      if (is_statement && element.iterator.exists(cmd => cmd.span.name == "sorry")) {
+        Some(Ontology.ULO.conjecture)
+      }
       else {
         element.head.span.name match {
           case "lemmas" | "lemma" => Some(Ontology.ULO.lemma)
