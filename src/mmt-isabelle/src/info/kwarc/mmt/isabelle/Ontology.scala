@@ -28,7 +28,7 @@ object Ontology
     val statement = ulo("statement")
 
     val theory = ulo("theory") // theory, locale
-    val instance = ulo("instance") // TODO locale interpretation, class instantiation (?), unbundle (?)
+    val instance = ulo("instance") // locale interpretation
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
     val file = ulo("file") // TODO auxiliary file (from thy_load command) (?)

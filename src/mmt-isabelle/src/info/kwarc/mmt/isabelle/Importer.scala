@@ -564,6 +564,8 @@ object Importer
 
             val view = View(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
             controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
+
+            thy_draft.rdf_triple(Ontology.binary(to.path.toString, Ontology.ULO.instance, from.path.toString))
           }
         }
       }
