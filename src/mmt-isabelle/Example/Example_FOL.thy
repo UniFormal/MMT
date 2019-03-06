@@ -21,14 +21,20 @@ axiomatization Zero :: \<open>nat\<close>  (\<open>0\<close>)
 definition add :: \<open>[nat, nat] \<Rightarrow> nat\<close>  (infixl \<open>+\<close> 60)
   where \<open>m + n \<equiv> rec(m, n, \<lambda>x y. Suc(y))\<close>
 
-lemma Suc_n_not_n: \<open>Suc(k) \<noteq> k\<close>
-  apply (rule_tac n = \<open>k\<close> in induct)
-   apply (rule notI)
-   apply (erule Suc_neq_0)
-  apply (rule notI)
-  apply (erule notE)
-  apply (erule Suc_inject)
-  done
+lemma Suc_n_not_n: \<open>Suc(k) \<noteq> k\<close>  (is "?P(k)")
+proof (rule induct [where n = k])
+  show "?P(0)"
+  proof
+    assume "Suc(0) = 0"
+    then show False by (rule Suc_neq_0)
+  qed
+  show "?P(Suc(k))" if hyp: "?P(k)" for k
+  proof
+    assume "Suc(Suc(k)) = Suc(k)"
+    then have "Suc(k) = k" by (rule Suc_inject)
+    with hyp show False ..
+  qed
+qed
 
 lemma add_0 [simp]: \<open>0 + n = n\<close>
   unfolding add_def by (rule rec_0)
