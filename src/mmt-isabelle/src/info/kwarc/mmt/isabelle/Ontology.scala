@@ -31,9 +31,11 @@ object Ontology
     val instance = ulo("instance") // locale interpretation
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
-    val file = ulo("file") // TODO auxiliary file (from thy_load command) (?)
-    val folder = ulo("folder") // TODO Isabelle session (?)
-    val library = ulo("library") // TODO e.g. Isabelle Distribution, AFP, IsaFoR
+
+    // unused: could be derived from sessions structure etc.
+    val file = ulo("file")
+    val folder = ulo("folder")
+    val library = ulo("library")
     val group = ulo("group")
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
@@ -44,9 +46,12 @@ object Ontology
     val corollary = ulo("corollary") // command "corollary"
     val conjecture = ulo("conjecture") // proof contains "sorry"
 
-    val simplification_rule = ulo("simplification-rule") // TODO fact within simpset (??)
+    // unused: this is a property of the context, not of individual facts
+    val simplification_rule = ulo("simplification-rule")
 
-    val automatically_proved = ulo("automatically_proved") // TODO e.g. result of "Judgement Day" Sledgehammer exploration
+    // unused: could be result of "Judgement Day" Sledgehammer exploration
+    val automatically_proved = ulo("automatically_proved")
+
     val experimental = ulo("experimental") // unused
     val deprecated = ulo("deprecated") // unused
 
