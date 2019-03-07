@@ -14,13 +14,14 @@ import objects._
 case class Table(name: String, columns: Seq[Column], collections: Seq[Collection])
 
 /**
- *  @param name column name, underscore style
- *  @param dbType one of "Boolean", "Int", "String", "UUID" - for now: it does not scale well to lists
- *  @param isNullable can be null in the database
- *  @param isPrimaryKey key field (annotated in schema)
- *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)
- *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
- */
+  *  @param name column name, underscore style
+  *  @param dbType one of "Boolean", "Int", "String", "UUID" - for now: it does not scale well to lists
+  *  @param isNullable can be null in the database
+  *  @param isPrimaryKey key field (annotated in schema)
+  *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)
+  *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
+  *  later we could add: displayName, description
+  */
 case class Column(name: String, dbType: String, isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean)
 
 /**
