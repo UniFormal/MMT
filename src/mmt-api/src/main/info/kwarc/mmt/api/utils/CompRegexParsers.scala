@@ -472,12 +472,12 @@ trait CompRegexParsers extends CompParser {
   // parse parts of the input
   private def parseI[T](p: Parser[T], in: Reader[Char]): ParseResult[T] = p(in)
   private def parseI[T](p: Parser[T], in: java.lang.CharSequence): ParseResult[T] = p(new CharSequenceReader(in))
-  private def parseI[T](p: Parser[T], in: java.io.Reader): ParseResult[T] = p(new PagedSeqReader(PagedSeq.fromReader(in)))
+  //private def parseI[T](p: Parser[T], in: java.io.Reader): ParseResult[T] = p(new PagedSeqReader(PagedSeq.fromReader(in)))
 
   // parse everything
   def parse[T](p: Parser[T], in: Reader[Char]): ParseResult[T] = parseI(phrase(p), in)
-  def parse[T](p: Parser[T], in: java.io.Reader): ParseResult[T] = parseI(phrase(p), in)
   def parse[T](p: Parser[T], in: java.lang.CharSequence): ParseResult[T] = parseI(phrase(p), in)
+  //def parse[T](p: Parser[T], in: java.io.Reader): ParseResult[T] = parseI(phrase(p), in)
 
   // complete
   def complete[T](p: Parser[T], in : Reader[Char]) : CompletionResult = p.complete(in, needsSeparation=false)

@@ -25,7 +25,25 @@ case class SimplifierState(t : Term, unit: SimplificationUnit, rules: RuleSet, p
 
 import RuleBasedSimplifier._
 
-/** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
+/** */
+
+/**
+  * A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively
+  * to simplify a Term.
+  *
+  * ### Invariants
+  *
+  * Simplifying transforms a welltyped term into another welltyped term.
+  * This especially means that [[Rule rules]] have to retain the type.
+  *
+  * Only [[AbbrevRule]] rules will be applied on [[OMID]] (sub)terms. This
+  * makes sense given that OMIDs reference constants, for which other
+  * reference to other constants could never take place given the welltyping
+  * constraint above. The only way for an [[OMID]] to be rewritten is by
+  * definitorial expansion, which can be enabled in [[SimplificationUnit]].
+  *
+  * TODO Add other invariants.
+  */
 class RuleBasedSimplifier extends ObjectSimplifier {self =>
   override val logPrefix = "object-simplifier"
 

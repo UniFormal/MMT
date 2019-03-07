@@ -70,7 +70,7 @@ class SQLBridge(controller: Controller) {
      val cols = t.getConstants map {
        case c: Constant => constantToColumn(c)
      }
-     Table()
+     ???//Table()
    }
    def constantToColumn(t: Constant): Column = {
      ???

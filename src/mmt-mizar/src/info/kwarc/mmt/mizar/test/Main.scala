@@ -19,7 +19,7 @@ import scala.xml._
 object Main {
 
   def dumpPatterns(mmlBase : String) : Unit = {
-    var p : scala.collection.mutable.LinkedList[Node] = new scala.collection.mutable.LinkedList()
+    var p : scala.collection.mutable.MutableList[Node] = new scala.collection.mutable.MutableList()
     p = p :+ DefPatterns.MizAttrIsCompleteDef.toNode
     p = p :+ DefPatterns.MizAttrIsPartialDef.toNode
     p = p :+ DefPatterns.MizAttrMeansCompleteDef.toNode
