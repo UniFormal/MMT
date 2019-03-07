@@ -45,6 +45,7 @@ trait WidgetPython {
   def get(key: String): Any
   def getAsFloat(key: String) : Float
   def getAsBool(key: String) : Boolean
+  def getAsString(key: String): String
   def getID: String
   def observe(callback: (JupyterKernelPython,java.util.HashMap[String,Any]) => Unit, key: String) : WidgetPython
   def on_click(callback: (JupyterKernelPython,WidgetPython) => Unit) : WidgetPython
@@ -87,21 +88,29 @@ class JupyterKernel extends Extension {
   }
 
   // private def returnError(e: Exception): PythonParamDict = returnError(Error(e).toStringLong)
-  private def returnError(msg: String): PythonParamDict = PythonParamDict("element" -> msg)
-  
-  def processRequest(kernel: JupyterKernelPython, session: String, req: String): PythonParamDict = try {
+  private def returnError(msg: String): List[(String, Any)] = List("element" -> msg)
+
+  def processRequest(kernel: JupyterKernelPython, sessionId: String, req: String): PythonParamDict = {
+    PythonParamDict(processRequestInt(kernel, sessionId, req))
+  }
+
+  private def processRequestInt(kernel: JupyterKernelPython, sessionId: String, req: String): List[(String, Any)] = try {
     import REPLServer._
+
+    // lazily find the repl session
+    lazy val session = repl.getSessionOpt(sessionId).getOrElse {
+      return returnError("session " + sessionId + " not found")
+    }
+
     req match {
-      case "active computation" =>
-        activeComputation(kernel)
-        PythonParamDict()
+      case s if s.startsWith("active computation ") =>
+        val tail = s.substring("active computation ".length).split(" ", 2)
+        activeComputation(kernel, session, tail(0).split(",").toList, tail(1))
+        List()
       case s if s.startsWith("mitm ") =>
         // mitm EXP evaluates EXP using a MitM computation
         val rest = s.substring(5)
-        val replSession = repl.getSessionOpt(session).getOrElse {
-          return returnError("session " + session + " not found")
-        }
-        val con = replSession.parseObject(rest)
+        val con = session.parseObject(rest)
         val df = con.df.getOrElse {
           return returnError("epxression was processed but no definiens was found afterwards")
         }
@@ -118,118 +127,56 @@ class JupyterKernel extends Extension {
           dfNP + "\n" + trace.toString(t => t.toString)
         } else
           dfNP
-        PythonParamDict("element" -> result)
+        List("element" -> result)
       case _ => {
           val comm = REPLServer.Command.parse(req)
-          val resp = repl(Some(session), comm, Some(errorCont))
+          val resp = repl(Some(sessionId), comm, Some(errorCont))
           resp match {
-            case m: MultiTypedResponse => PythonParamDict(m.messages.toList)
+            case m: MultiTypedResponse => m.messages.toList
             case e: ElementResponse =>
               val h = presenter.asString(e.element)
-              PythonParamDict("element" -> h)
+              List("element" -> h)
           }
       }
     }
 
   } catch {
-    case e: info.kwarc.mmt.api.SourceError => PythonParamDict("element" -> presenter.exceptionAsHTML(e))
-    case e: Exception => PythonParamDict("element" -> presenter.exceptionAsHTML(e))
+    case e: info.kwarc.mmt.api.SourceError => List("element" -> presenter.exceptionAsHTML(e))
+    case e: Exception => List("element" -> presenter.exceptionAsHTML(e))
   }
 
+  // simple example for e = mc²§session
+  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, variables: List[String], term: String) = {
+    // the top-most formula to display
+    val formula = Widget(kernel, "Label", "value" -> term)
+
+    // create the labels and inputs
+    val labels = variables.map(v => Widget(kernel, "Label", "value"->v))
+    val inputs = variables.map(v => Widget(kernel, "Text"))
+    val inputrows = (labels zip inputs).map(lt => Widget(kernel,"HBox","children"->List(lt._1, lt._2)))
+    val contextboxes = Widget(kernel, "VBox", "children"->inputrows)
+
+    // add a button and output widget
+    val button = Widget(kernel, "Button", "description" -> "Simplify")
+    val output = Widget(kernel, "HTML", "value" -> "<i>Click simplify to start</i>")
 
 
-//  def example(kernel: JupyterKernelPython) = {
-//    // we can create Widgets like this:
-//    Widget(kernel,"Text","value" -> "Hi").display
-//
-//    val slider = Widget(kernel,"IntRangeSlider","value" -> List(1,2), "description" -> "Hi")
-//    val button = Widget(kernel,"Button","description" -> "Hi")
-//
-//    def buttonCallback(kernel: JupyterKernelPython, JO : Any) = button.set("description","Bye")
-//    button.on_click(buttonCallback)
-//
-//    // or like this:
-//    val boxArgs = PythonParamDict(
-//      "children" -> List(slider,button)
-//    )
-//    kernel.makePWidget("HBox",boxArgs).display
-//  }
-
-  // simple example for e = mc²
-  def activeComputation(kernel: JupyterKernelPython) = {
-    val formula = kernel.makeWidget("Label").set("value",raw"$$ E = m \cdot c²$$").display
-
-    val EButton = Widget(kernel,"ToggleButton","description"->"E","tooltip"->"the energy in J")
-    val mButton = Widget(kernel,"ToggleButton","description"->"m","tooltip"->"the mass in kg")
-    val cButton = Widget(kernel,"ToggleButton","description"->"c","tooltip"->"the speed of light in m/s")
-
-    val E = Widget(kernel, "FloatText")
-    val m = Widget(kernel, "FloatText")
-    val c = Widget(kernel, "FloatText")
-
-    val buttonList = List(EButton,mButton,cButton)
-    val buttons = Widget(kernel,"VBox","children"->buttonList)
-    val boxes = Widget(kernel,"VBox","children"->List(E,m,c))
-    Widget(kernel,"HBox","children"->List(buttons,boxes)).display
-
-    def toggle(kernel: JupyterKernelPython, dict: java.util.HashMap[String,Any]) = {
-      val ppd = PythonParamDict.fromJavaHashMap(dict)
-      val owner = ppd("owner").asInstanceOf[WidgetPython]
-      val desc = owner.get("description")
-      val value = owner.get("value")
-      desc match {
-        case "E" => {
-          if(value == true){
-            formula.set("value", raw"$$ E = m \cdot c²$$")
-            E.set("disabled",true)
-            m.set("disabled",false)
-            c.set("disabled",false)
-            mButton.set("value",false)
-            cButton.set("value",false)
-          }
-        }
-        case "m" => {
-          if(value == true){
-            formula.set("value", raw"$$ m = \frac{E}{c²}$$")
-            E.set("disabled",false)
-            m.set("disabled",true)
-            c.set("disabled",false)
-            EButton.set("value",false)
-            cButton.set("value",false)
-          }
-        }
-        case "c" => {
-          if(value == true){
-            formula.set("value", raw"$$ c = \sqrt{\frac{E}{m}}$$")
-            E.set("disabled",false)
-            m.set("disabled",false)
-            c.set("disabled",true)
-            EButton.set("value",false)
-            mButton.set("value",false)
-          }
-        }
-      }
+    // a function to perform the actual computation
+    def compute(subts: Map[String, String]): String = {
+      subts.toList.map(kv => s"${kv._1}=${kv._2}").mkString("{", ",", "}")
     }
 
-    EButton.observe(toggle,"value")
-    mButton.observe(toggle,"value")
-    cButton.observe(toggle,"value")
+    // on clicking the button, extract the context
+    // and then compute
+    button.on_click((kernel: JupyterKernelPython, dict: WidgetPython) => {
+      val subts: List[(String, String)] = (variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value")))
 
-    def compute(kernel: JupyterKernelPython, dict: WidgetPython): Unit = {
-      val toCompute = buttonList.map(_.getAsBool("value"))
-      val mval = m.getAsFloat("value")
-      val cval = c.getAsFloat("value")
-      val Eval = E.getAsFloat("value")
-      toCompute match {
-          // this has to be untlimately done with MMT
-        case List(true,false,false) => E.set("value",mval*(cval*cval))
-        case List(false,true,false) => m.set("value",Eval/(cval*cval))
-        case List(false,false,true) => c.set("value",Math.sqrt(Eval/mval))
-        case _ =>
-      }
+      val result = compute(Map(subts:_*))
+      output.set("value", result)
+    })
 
-    }
-    Widget(kernel,"Button","description"->"Compute","tooltip"->"Compute the selected variable").on_click(compute).display
+    val vertical: List[WidgetPython] = List(formula, contextboxes, button, output)
+    Widget(kernel, "VBox", "children" -> vertical).display
   }
 }
 
