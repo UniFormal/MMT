@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.{ComplexStep, LocalName}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.Term
-import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 
 import scala.util.{Success, Try}
 
@@ -17,15 +17,14 @@ class Intersecter extends Extension {
   def apply(th1 : Theory, th2 : Theory, view : View) : (Theory, Theory, Theory) = {
     val th1p = Theory.empty(th1.parent, LocalName(th1.name.toString+"Mod"), th1.meta) // T1'
     val th2p = Theory.empty(th2.parent, LocalName(th2.name.toString+"Mod"), th2.meta) // T2'
-    val sec = Theory.empty(th1.parent, LocalName(th1.name.toString+"Ctus"+th2.name.toString), th1.meta) // intersection between T1 and T2
+    val sec = Theory.empty(th1.parent, LocalName(th1.name.toString+"CUT"+th2.name.toString), th1.meta) // intersection between T1 and T2
 
     val renaming = ViewSplitter(view)(controller)
 
     val constSec = renaming.map(_._1)
-    val structSec = view.getIncludes
 
     val constRem1 = th1.getConstants.filter(!renaming.map(_._1).contains(_)).map(_.asInstanceOf[FinalConstant])
-    val structRem1 = th1.getIncludes ++ th1.getNamedStructures
+    val structRem1 = th1.getDeclarations.flatMap(_ match{case s : Structure => Some(s)})
 
     val constRem2 = th2.getConstants.filter(!renaming.map(_._2).contains(_)).map(_.asInstanceOf[FinalConstant])
     val structRem2 = th2.getIncludes ++ th2.getNamedStructures
@@ -54,7 +53,7 @@ object ViewSplitter {
     */
 
   def getPairs(v:View, dom:Theory, cod:Theory) : List[(FinalConstant,FinalConstant)]= {
-    val domconsts = v.getDeclarations.filter(_.name.head.toString=="["+dom.name+"]") collect {
+    val domconsts = v.getDeclarations.filter(_.name.head match {case ComplexStep(p) => p==dom.path}) collect {
       case c: FinalConstant if c.df.isDefined => c
     }
 
@@ -107,5 +106,15 @@ object ViewSplitter {
     (all collect {case (c:FinalConstant,d:FinalConstant) => (c,d)},
       all collect {case (c:FinalConstant,t:Term) => (c,t)},
       all collect {case (t:Term, c:FinalConstant) => (t,c)})
+  }
+}
+
+object StructureMover {
+  def apply(struct : Structure, src : Theory, dest : Theory) : Structure = {
+    val structMod = Structure(dest.toTerm, struct.name, struct.from, struct.isImplicit)
+    for (decl <- struct.getDeclarations) {
+      structMod.add(decl)//TODO copy
+    }
+    structMod
   }
 }
