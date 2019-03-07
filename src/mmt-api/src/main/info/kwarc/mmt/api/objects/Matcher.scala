@@ -69,8 +69,10 @@ import info.kwarc.mmt.api.uom._
   *            ))
   *          )
   *
-  *          val rules = new MutableRuleSet
-  *          val matcher = new Matcher(ctrl, rules)
+  *          // Empty rule set because we don't use any logic foundation
+  *          // specific typing rules (e.g. the rule in LF for function
+  *          // application)
+  *          val matcher = new Matcher(ctrl, new MutableRuleSet)
   *
   *          val matchResult = matcher(
   *            Context(VarDecl(LocalName("x"), LocalName("y"), LocalName("z"))),
@@ -107,7 +109,14 @@ import info.kwarc.mmt.api.uom._
   *       println(matchResult)
   *       ```
   * @param controller needed for lookups when type checking the matches
-  * @param rules rules to take into account
+  * @param rules Simplification *and* **typing** rules to take into account.
+  *              Especially, you most probably want to specify the typing
+  *              rules of your chosen logic foundation (e.g. LF). A quick and
+  *              dirty way to do this is the following:
+  *              ```scala
+  *              val lfContext = Context(mPathToATheoryHavingLFAsMeta)
+  *              new Matcher(ctrl, RuleSet.collectRules(ctrl, lfContext))
+  *              ```
   */
 // @formatter:on
 class Matcher(controller: Controller, rules: RuleSet) extends Logger {
