@@ -438,7 +438,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         sElab foreach {d => ElaboratedElement.setFully(d)} // recursive elaboration already handled by recursively elaborating fromThy
         sElab
       // ************** derived declarations: elaborate
-      case (thy: Theory, dd: DerivedDeclaration) =>
+      case (thy: AbstractTheory, dd: DerivedDeclaration) =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
            case None => Nil
            case Some(sf) =>
