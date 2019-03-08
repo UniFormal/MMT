@@ -43,24 +43,49 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, v
     }
   }
 
+  /** gets the current MPath or throws an error */
+  def getMPath(scopeOpt: Option[HasParentInfo]): MPath  = scopeOpt.getOrElse(currentScope) match {
+    case IsMod(m, _) => m
+    case _ => throw GeneralError("can only get context inside of module")
+  }
+
   /** like parseStructure but for objects; the object is stored it as the definiens of a [[Constant]] declaration */
   def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Constant = {
-    val scope = scopeOpt.getOrElse(currentScope)
-    val mpath = scope match {
-      case IsMod(m, _) => m
-      case _ => throw GeneralError("can only parse term inside a theory")
-    }
-    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
+
+    // get a context for parsing
+    val mpath = getMPath(scopeOpt)
     val context = Context(mpath)
+
+    // set up the parsing unit
+    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
     val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+
+    // parse the term
     val cr = interpreter(pu)(errorCont)
     val term = cr.term
+
+    // simplify it and extract the types
     val termS = interpreter.simplifier(term, context, true)
     val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
+
+    // store it as a local definition
     val name = LocalName("res" + counter)
     counter += 1
     Constant(OMMOD(mpath), name, Nil, tp, df, None)
+  }
+  /** like parseObject but does not store or check the term */
+  def parseTerm(s: String, scopeOpt: Option[HasParentInfo] = None): Term = {
+
+    // get a context for parsing
+    val context = Context(getMPath(scopeOpt))
+
+    // setup the parsing unit
+    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
+    val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+
+    // and return the term
+    interpreter(pu)(errorCont).term
   }
 }
 

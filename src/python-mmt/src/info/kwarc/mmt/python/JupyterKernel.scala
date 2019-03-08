@@ -2,7 +2,7 @@ package info.kwarc.mmt.python
 
 
 import info.kwarc.mmt.api._
-import objects.Text
+import objects.{Sub, Substitution, Term, Text}
 import web._
 import frontend._
 import presentation._
@@ -146,9 +146,11 @@ class JupyterKernel extends Extension {
   }
 
   // simple example for e = mc²§session
-  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, variables: List[String], term: String) = {
+  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, variables: List[String], termS: String) = {
+    val term = session.parseTerm(termS)
+
     // the top-most formula to display
-    val formula = Widget(kernel, "Label", "value" -> term)
+    val formula = Widget(kernel, "HTML", "value" -> presenter.asString(term))
 
     // create the labels and inputs
     val labels = variables.map(v => Widget(kernel, "Label", "value"->v))
@@ -160,18 +162,28 @@ class JupyterKernel extends Extension {
     val button = Widget(kernel, "Button", "description" -> "Simplify")
     val output = Widget(kernel, "HTML", "value" -> "<i>Click simplify to start</i>")
 
-
     // a function to perform the actual computation
-    def compute(subts: Map[String, String]): String = {
-      subts.toList.map(kv => s"${kv._1}=${kv._2}").mkString("{", ",", "}")
+    def compute(sub: Substitution): Term = {
+      term.^?(sub)
     }
 
     // on clicking the button, extract the context
     // and then compute
     button.on_click((kernel: JupyterKernelPython, dict: WidgetPython) => {
-      val subts: List[(String, String)] = (variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value")))
+      val userInput: Map[String, String] = Map((variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value"))):_*)
 
-      val result = compute(Map(subts:_*))
+      val result = try {
+        // parse the user context
+        val ctx = userInput.map(kv => (LocalName.parse(kv._1), session.parseTerm(kv._2)))
+        // build a substiution
+        val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
+
+        // and do the computation
+        presenter.asString(compute(subst))
+      } catch {
+        case e: Error => e.toHTML
+        case e: Exception => Error(e).toHTML
+      }
       output.set("value", result)
     })
 
