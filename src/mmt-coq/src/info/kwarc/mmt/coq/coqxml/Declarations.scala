@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq._
+import info.kwarc.mmt.lf.ApplySpine
 
 import scala.collection.mutable
 
@@ -23,10 +24,12 @@ case class SupXML(e : supertypes) extends CoqXml
 case class Constraints(e : List[CoqEntry]) extends CoqXml
 case class supertypes(ls : List[CoqEntry]) extends CoqXml
 
+
 // ---------------------------------------------------------------------------
 
-trait theorystructure extends CoqEntry {
-}
+trait theorystructure extends CoqEntry
+
+case class Requirement(uri : URI) extends theorystructure
 
 object constantlike {
   def unapply(ts:theorystructure) : Option[(URI,String,List[CoqEntry])] = ts match {
@@ -150,12 +153,13 @@ case class SORT(value : String, id : String) extends term {
 case class LAMBDA(sort : String, decls:List[decl] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val tps = decls.map{d =>
-      val ret = (d.id,d._vartype.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vartype.recOMDoc)
+      // variables.addVar
+      // ret
+      (d.binder,d._vartype.recOMDoc)
     }
     val ret = target.tm.recOMDoc
-    val vars = tps.reverse.map(d => (LocalName(variables.getVar.getOrElse(OMV.anonymous.toString)),d._2))
+    val vars = tps.reverse.map(d => (LocalName(d._1),d._2))
     // println("VARIABLES: " + vars.map(_._1.toString))
     CoqLambda(sort,vars,ret)
   }
@@ -164,12 +168,13 @@ case class LAMBDA(sort : String, decls:List[decl] ,target:target) extends term {
 case class LETIN(sort : String, defs:List[_def] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val dfs = defs.map{d =>
-      val ret = (d.id,d._vardef.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vardef.recOMDoc)
+      // variables.addVar
+      // ret
+      (d.binder,d._vardef.recOMDoc)
     }
     val body = target.tm.recOMDoc
-    val vars = dfs.reverse.map(d => (variables.getVar.getOrElse(OMV.anonymous.toString),d._2))
+    val vars = dfs.reverse.map(d => (d._1,d._2))
     vars.foldLeft(body)((b,p) => Let(LocalName(p._1),p._2,b))
   }
 
@@ -177,19 +182,20 @@ case class LETIN(sort : String, defs:List[_def] ,target:target) extends term {
 case class PROD(_type : String, decls:List[decl] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val tps = decls.map{d =>
-      val ret = (d.id,d._vartype.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vartype.recOMDoc)
+      //variables.addVar
+      // ret
+      (d.binder,d._vartype.recOMDoc)
     }
     val body = target.tm.recOMDoc
-    val vars = tps.reverse.map(d => (variables.getVar.getOrElse(OMV.anonymous.toString),d._2))
+    val vars = tps.reverse.map(d => (d._1,d._2))
     // println("VARIABLES: " + vars.map(_._1.toString))
     CoqPROD(_type,vars,body)
   }
 }
 case class CAST(id : String, sort : String, tm : term, _type : _type) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    ???
+    OMS(Coq.fail) // TODO ???
   } // TODO
 }
 case class APPLY(id : String, sort : String, tms : List[term]) extends term {
@@ -209,38 +215,38 @@ case class CONST(uri : URI, id : String, sort : String) extends term with object
 case class MUTIND(uri : URI, noType : Int, id : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val gn = Coq.toGlobalName(uri)
-    OMS(gn.module ? (gn.name.toString + noType.toString)) // TODO
+    OMS(gn.module ? (gn.name.toString /* + "_" + noType.toString */)) // TODO
   }
 } // OMS
 //                                ^  starts from 0, index in list of mututally recursive types
 case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, sort : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val gn = Coq.toGlobalName(uri)
-    OMS(gn.module ? (gn.name + "_C" + noType))
+    OMS(gn.module ? (gn.name + "_C_" + noConstr ))
   }
 }// OMS
 //                                     ^  from 0      ^ starts from 1, index in list of constructors
 case class FIX(noFun : Int, id : String, sort : String, fixFunctions : List[FixFunction]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    ???
+    OMS(Coq.fail) // TODO ???
   }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class FixFunction(name : String, id : String, recIndex: Int,_type : _type, body : body) extends CoqEntry {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    ???
+    OMS(Coq.fail) // TODO ???
   }
 }
 //                                                      ^ index of decreasing argument, from 0 (proof for termination)
 case class COFIX(noFun : Int, id : String, sort : String, cofixFunctions : List[CofixFunction]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    ???
+    OMS(Coq.fail) // TODO ???
   }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class CofixFunction(id : String, name : String, _type : _type, body : body) extends CoqEntry {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    ???
+    OMS(Coq.fail) // TODO ???
   }
 }
 case class MUTCASE(uriType: URI, noType : Int, id : String, sort : String, patternsType : patternsType,
@@ -254,15 +260,15 @@ case class MUTCASE(uriType: URI, noType : Int, id : String, sort : String, patte
 case class instantiate(id: String, oo:objectOccurence,args:List[arg]) extends term {
   // println("Args: " + args)
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    if (args.length > 1) LFXSub(args(1).arg.recOMDoc, oo.recOMDoc, args.head.arg.recOMDoc)
-    else args.head.arg.recOMDoc
+
+    ApplySpine(oo.recOMDoc,args.map(_.arg.recOMDoc):_*)
   }
     // TODO check that this is correct
 }
 //                                                             ^ non-empty
 case class REL(value : Int, binder : String, id : String, idref:String,sort : String) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMV(variables.solveVar(value,binder))
+    OMV(binder)
   }
 }// OMV
 //               ^ deBruijn-index(from 1) ^ (ideally) the name ^ id of binder
@@ -278,5 +284,5 @@ case class inductiveTerm(tm : term) extends CoqEntry
 case class pattern(tm : term) extends CoqEntry
 case class _type(tm : term) extends CoqEntry
 case class target(tm : term) extends CoqEntry
-case class decl(id: String, _type : String /* sort , binder : String */, _vartype : term) extends CoqEntry
+case class decl(id: String, _type : String /* sort , binder : String */, binder : String, _vartype : term) extends CoqEntry
 case class _def(id: String, sort : String , binder : String, _vardef : term) extends CoqEntry

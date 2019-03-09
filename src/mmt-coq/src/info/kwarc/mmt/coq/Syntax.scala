@@ -3,6 +3,7 @@ package info.kwarc.mmt.coq
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.PlainInclude
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq.coqxml.TranslationState
 import info.kwarc.mmt.lf._
@@ -61,12 +62,24 @@ object Coq {
     error
   }
   def toMPath(uri : URI)(implicit state : TranslationState) : MPath = Try(coqtoomdoc(uri)(state.controller)).toOption match {
-    case Some(mp:MPath) => mp
+    case Some(mp:MPath) =>
+      ensure(mp)
+      mp
     case _ =>
       Coq.foundation // TODO
   }
+  private def ensure(p : ContentPath)(implicit state : TranslationState): Unit = {
+    val mp = p.module
+    val parent = state.current.parent ? state.current.name.head
+    state.controller.library.getImplicit(mp,parent) match {
+      case Some(_) =>
+      case None => state.controller add PlainInclude(mp,parent)
+    }
+  }
   def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {
-    case Some(gn:GlobalName) => gn
+    case Some(gn:GlobalName) =>
+      ensure(gn)
+      gn
     case _ =>
       Coq.fail // TODO
   }
