@@ -313,7 +313,7 @@ object Importer
   {
     val key: Item.Key = Item.Key(entity_kind, entity_name)
 
-    def local_name: LocalName = LocalName(entity_kind + "," + entity_name)
+    def local_name: LocalName = LocalName(entity_name + "|" + entity_kind)
     def global_name: GlobalName = constant(None, None).path
 
     def source_ref: Option[SourceRef] =
