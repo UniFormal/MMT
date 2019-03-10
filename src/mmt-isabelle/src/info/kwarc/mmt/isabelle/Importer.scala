@@ -44,10 +44,9 @@ object Importer
 
           val id = options.proper_string("mmt_archive_id").map("id: " + _)
           val title = options.proper_string("mmt_archive_title").map("title: " + _)
-          val narration_base = options.proper_string("mmt_archive_narration_base").
-            map("narration-base: " + _)
+          val narration_base = "narration-base: https://isabelle.in.tum.de"
           isabelle.File.write(meta_inf,
-            (id.toList ::: title.toList ::: narration_base.toList).mkString("", "\n", "\n"))
+            (id.toList ::: title.toList ::: List(narration_base)).mkString("", "\n", "\n"))
 
           controller.backend.openArchive(init_archive_dir.get.absolute_file) match {
             case Nil => isabelle.error("Failed to initialize archive in " + init_archive_dir)
