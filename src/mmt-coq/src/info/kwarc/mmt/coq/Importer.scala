@@ -57,22 +57,66 @@ class Importer extends archives.Importer {
   }
 
   def doDecl(parent : AbstractTheory, elem : coqxml.theorystructure): Unit = elem match {
+    case coqxml.MODULEExpr(uri,params,as,components,children) =>
+      val name = parent.name / uri.path.last
+      val th = Theory(parent.asInstanceOf[Theory].parent,name,Some(Coq.foundation))
+      val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
+      nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
+      log("Module " + th.path.toString)
+      controller add nt
+
+      components.collectFirst {
+        case coqxml.ExprXML(tx) =>
+          // val t = tx.toOMDoc(controller)
+          // TODO
+          def getRec(it : coqxml.theoryexpr) : (URI,List[URI]) = it match {
+            case coqxml.MREF(iuri) =>
+              (iuri,Nil)
+            case coqxml.FUNAPP(f,args) =>
+              val (h,fi) = getRec(f)
+              (h,fi ::: args.flatMap { a =>
+                val rec = getRec(a)
+                rec._1 :: rec._2
+              })
+            case coqxml.WITH(a,b) =>
+              val ra = getRec(a)
+              //val rb = getRec(b)
+              //(ra._1,rb._1 :: ra._2 ::: rb._2)
+              ra
+            case coqxml.ABS(iuri,mod) =>
+              val r = getRec(mod)
+              (iuri,r._1 :: r._2)
+            case _ =>
+              ???
+          }
+          val (modtp,incls) = getRec(tx)
+          (modtp :: incls).foreach { u =>
+            val p = Coq.toMPath(u)(new coqxml.TranslationState(controller,th.path))
+            controller add PlainInclude(p,th.path)
+          }
+          Nil
+      }.getOrElse{
+        print("wut?")
+        ???
+      }
+      children.foreach(doDecl(th,_))
+      if (as =="AlgebraicModule") controller add PlainInclude(th.path,parent.modulePath)
+
     case coqxml.MODULE(uri,params,as,comp,implcomp,modcomps,modcompsimpl) =>
       val name = parent.name / uri.path.last
-      // TODO Module types, impl etc.
       val th = Theory(parent.asInstanceOf[Theory].parent,name,Some(Coq.foundation))
       // log("Adding " + th.path)
       //controller add th
+      params map { u =>
+        // TODO
+      }
+      val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
+      nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
+      log("Module " + th.path.toString)
+      controller add nt
+
       if (as=="Module" && implcomp.isEmpty) {
-        params map { u =>
-          // TODO
-        }
-        val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
-        th.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
-        log("Module " + th.path.toString)
-        controller add nt
         comp.foreach(doDecl(th,_))
-        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
         modcomps foreach {
           case coqxml.SupXML(coqxml.supertypes(ts)) =>
             // TODO
@@ -81,17 +125,10 @@ class Importer extends archives.Importer {
           case _ =>
             ???
         }
+        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
       }
       else if (as=="Module") {
-        params map { u =>
-          // TODO
-        }
-        val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
-        th.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
-        log("Module " + th.path.toString + " ~> " + nt.path.toString)
-        controller add nt
         implcomp.foreach(doDecl(th,_))
-        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
         (modcomps ::: modcompsimpl) foreach {
           case coqxml.SupXML(coqxml.supertypes(ts)) =>
           // TODO
@@ -100,29 +137,11 @@ class Importer extends archives.Importer {
           case _ =>
             ???
         }
+        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
       }
       else if (as=="ModuleType" && implcomp.isEmpty) {
-        val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
-        th.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
-        log("Module " + th.path.toString + " ~> " + nt.path.toString)
-        controller add nt
         comp.foreach(doDecl(th,_))
         // controller add PlainInclude(th.path,parent.path)
-      }
-      else if (as=="AlgebraicModule") (modcomps ::: modcompsimpl).collectFirst {
-        case coqxml.ExprXML(tx) =>
-          // val t = tx.toOMDoc(controller)
-          // TODO
-          Nil
-      }.getOrElse{
-        ???
-      } else if (as=="AlgebraicModuleType") (modcomps ::: modcompsimpl).collectFirst {
-        case coqxml.ExprXML(tx) =>
-          // val t = tx.toOMDoc(controller)
-          // TODO
-          Nil
-      }.getOrElse{
-        ???
       } else {
         ???
       }
@@ -137,7 +156,6 @@ class Importer extends archives.Importer {
       controller add nt
       statements.foreach(doDecl(nt,_))
       controller.simplifier(nt.path)
-      print("here")
       // controller add PlainInclude(th.path,parent.path)
     case coqxml.VARIABLE(uri,as,components) =>
       val (name,tp,df) = components.collectFirst {
@@ -354,13 +372,29 @@ class Importer extends archives.Importer {
             ps.map(u => handleXml(namespaces ::: List(uri.path.last),u.path.last))
             // TODO
         }
-        val components = ls.flatMap(doStatement(_,namespaces ::: List(uri.path.last),sections)).toList
-        val implcomponents = if ((namespaces.foldLeft(tfile.up)((f,s) => f / s) / (uri.path.last + ".impl")).exists) {
-          ls.flatMap(doStatement(_,namespaces ::: List(uri.path.last + ".impl"),sections)).toList
-        } else Nil
-        val ncomps = handleXml(namespaces,uri.path.last)
-        val nimplcomps = handleXml(namespaces,uri.path.last + ".impl")
-        List(coqxml.MODULE(uri,params,as,components,implcomponents,ncomps,nimplcomps))
+        if (as=="AlgebraicModule" || as=="AlgebraicModuleType") {
+          val folder = namespaces.foldLeft(tfile.up)((f,s) => f / s) / uri.path.last
+          /*
+          if (folder.children.exists(!_.name.endsWith(".xml"))) {
+            print("nope: " + folder)
+            ???
+          }
+          */
+          val subs = folder.children.collect {
+            case f if f.name.contains(".con.") => f.name.split('.').head + ".con"
+          }.distinct
+          val components = handleXml(namespaces, uri.path.last)
+          val children = subs.map(s => coqxml.CHILD(uri / s,handleXml(namespaces ::: List(uri.path.last),s)))
+          List(coqxml.MODULEExpr(uri,params,as,components,children))
+        } else {
+          val components = ls.flatMap(doStatement(_, namespaces ::: List(uri.path.last), sections)).toList
+          val implcomponents = if ((namespaces.foldLeft(tfile.up)((f, s) => f / s) / (uri.path.last + ".impl")).exists) {
+            ls.flatMap(doStatement(_, namespaces ::: List(uri.path.last + ".impl"), sections)).toList
+          } else Nil
+          val ncomps = handleXml(namespaces, uri.path.last)
+          val nimplcomps = handleXml(namespaces, uri.path.last + ".impl")
+          List(coqxml.MODULE(uri, params, as, components, implcomponents, ncomps, nimplcomps))
+        }
       case r @ <REQUIRE/> =>
         val uri = URI((r\"@uri").mkString)
         List(coqxml.Requirement(uri))
@@ -381,6 +415,7 @@ class Importer extends archives.Importer {
         (path / (name + ".body.xml"),coqxml.BodyXML),
         // (path / (name + ".constraints.xml"),e => e.asInstanceOf[coqxml.Constraints]),
         (path / (name + ".expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
+        (path / (name + ".impl.expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
         (path / (name + ".sub.xml"),e => coqxml.SupXML(e.asInstanceOf[coqxml.supertypes]))
       )
       files.flatMap {case (f,e) =>

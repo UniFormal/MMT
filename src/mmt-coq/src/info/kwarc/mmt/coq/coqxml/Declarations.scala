@@ -36,6 +36,7 @@ object constantlike {
     case AXIOM(uri,as,components) => Some((uri,as,components))
     case DEFINITION(uri,as,components) => Some((uri,as,components))
     case THEOREM(uri,as,components) => Some((uri,as,components))
+    case CHILD(uri,components) => Some((uri,"",components))
     case _ => None
   }
 }
@@ -56,13 +57,18 @@ case class MODULE(uri : URI, params : List[List[CoqXml]], as:String,components:L
   as match {
     case "Module" =>
     case "ModuleType" =>
-    case "AlgebraicModule" =>
-    case "AlgebraicModuleType" =>
     case _ =>
       println(as)
       ???
   }
 }
+case class MODULEExpr(uri : URI, params : List[List[CoqXml]], as:String,components:List[CoqXml],children : List[CHILD]) extends theorystructure {
+  as match {
+    case "AlgebraicModule" =>
+    case "AlgebraicModuleType" =>
+  }
+}
+case class CHILD(uri:URI,components : List[CoqEntry]) extends theorystructure
 
 case class MREF(uri : URI) extends theoryexpr
 case class FUNAPP(f : theoryexpr, args : List[theoryexpr]) extends theoryexpr
