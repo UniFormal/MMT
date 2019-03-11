@@ -751,7 +751,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     archives: List[Archive],
     chapter_archive: String => Option[String])
   {
-    val logic = isabelle.Thy_Header.PURE
+    private val logic = isabelle.Thy_Header.PURE
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
