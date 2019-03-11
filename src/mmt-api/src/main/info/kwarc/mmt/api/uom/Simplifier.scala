@@ -69,9 +69,9 @@ abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSi
    }
    
    /** legacy interface */
-   @MMT_TODO("use other apply methods instead")
+   @deprecated("use the other apply methods in Simplifier", "forever")
    def apply(obj: Obj, context: Context, expDef: Boolean = false): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true))
-   @MMT_TODO("use other apply methods instead")
+   @deprecated("use the other apply methods in Simplifier", "forever")
    def apply(obj: Obj, context: Context, rules: RuleSet, expDef: Boolean): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true), rules)
 }
 
