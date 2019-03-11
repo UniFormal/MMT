@@ -109,13 +109,11 @@ import info.kwarc.mmt.api.uom._
   *       println(matchResult)
   *       ```
   * @param controller needed for lookups when type checking the matches
-  * @param rules Simplification *and* **typing** rules to take into account.
-  *              Especially, you most probably want to specify the typing
-  *              rules of your chosen logic foundation (e.g. LF). A quick and
-  *              dirty way to do this is the following:
+  * @param rules Simplification and other equality-related rules to take into account.
+  *              Especially, you most probably want to specify the equality of your meta-theory (e.g. LF), e.g., by calling
   *              ```scala
-  *              val lfContext = Context(mPathToATheoryHavingLFAsMeta)
-  *              new Matcher(ctrl, RuleSet.collectRules(ctrl, lfContext))
+  *              val ctx = Context(mPathToATheory)
+  *              new Matcher(ctrl, RuleSet.collectRules(ctrl, ctx))
   *              ```
   */
 // @formatter:on
@@ -220,17 +218,19 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     * @param goal        the term to be matched, relative to goalContext
     * @param queryVars   the variables to solve within the template `query`
     * @param query       the template term to match against, relative to goalContext ++ queryVars
-    * @return MatchSuccess(subs) if `goal == query ^ subs` for  `goalContext |- subs:queryVars -> .`
+    * @return MatchSuccess(subs, true) if `goal == query ^ subs` for  `goalContext |- subs:queryVars -> .`
     **/
   def apply(goalContext: Context, goal: Term, queryVars: Context, query: Term): MatchResult = {
     apply(goalContext, queryVars) { eq => eq(goal, query) }
   }
 
   /**
-    * A more general matching function allowing arbitrary "isMatch?" checks.
+    * A more general matching function that allows for multiple calls to the equality predicate (in the same context),
+    * e.g., to handle \forall queryVars. q_1 = g_1 \wedge ... \wedge q_n = g_n.
     *
     * @param doit a function that takes an equality predicate (for matching) and returns true if the match is possible
     *  e.g., basic matching is obtained as apply(queryVars){eq => eq(goal, query)}
+    *
     */
   def apply(goalContext: Context, queryVars: Context)(doit: ((Term, Term) => Boolean) => Boolean): MatchResult = {
     constantContext = goalContext
@@ -336,7 +336,7 @@ sealed abstract class MatchResult
 
 /**
   * @param solution the substitution for the query (template) variables
-  * @param total    true if all query variables were matched
+  * @param total    true if all query variables were solved; if false, the terms are equal for any value of the unsolved variables
   */
 final case class MatchSuccess(solution: Substitution, total: Boolean) extends MatchResult
 

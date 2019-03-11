@@ -178,7 +178,6 @@ abstract class ModuleLevelFeature(f: String) extends GeneralStructuralFeature[De
  */
 abstract class Elaboration extends ElementContainer[Declaration] {
     def domain: List[LocalName]
-
     /**
      * default implementation in terms of the other methods
      * may be overridden for efficiency
@@ -186,7 +185,6 @@ abstract class Elaboration extends ElementContainer[Declaration] {
     def getDeclarations = {
       domain.map {n => getO(n).getOrElse {throw ImplementationError(n + " is said to occur in domain of elaboration but retrieval failed")}}
     }
-
     def getMostSpecific(name: LocalName): Option[(Declaration,LocalName)] = {
       domain.reverse.foreach {n =>
          name.dropPrefix(n) foreach {suffix =>
@@ -195,6 +193,17 @@ abstract class Elaboration extends ElementContainer[Declaration] {
       }
       return None
     }
+}
+
+object Elaboration {
+  /** constructs a non-lazy Elaboration */
+  def apply(ds: List[Declaration]) = {
+    new Elaboration {
+      val elabDecls = ds
+      def domain = getDeclarations.map(_.name)
+      def getO(name: LocalName) = getDeclarations.view.reverse.find(_.name == name)
+    }
+  } 
 }
 
 /** for structural features with unnamed declarations whose type is an instance of a named theory */
@@ -249,6 +258,25 @@ trait ParametricTheoryLike extends StructuralFeature {
   }
   
   def defaultPresenter(c: Constant)(implicit con: Controller): String = c.name + ": " + noLookupPresenter.asString(c.tp.get) + (if (c.df != None) " = "+noLookupPresenter.asString(c.df.get) else "")
+}
+
+/** helper object */
+object ParametricTheoryLike {
+   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
+   case class Type(cls: Class[_ <: ParametricTheoryLike]) {
+     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
+
+     def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
+     def unapply(t: Term) = t match {
+       case OMBINDC(OMMOD(this.mpath), params, _) => Some((params))
+       case _ => None
+     }
+
+     /** retrieves the parameters */
+     def getParameters(dd: DerivedDeclaration) = {
+       dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
+     }
+   }
 }
 
 trait Untyped {self : StructuralFeature =>
@@ -332,36 +360,17 @@ trait TheoryLike extends StructuralFeature {
   }
 }
 
-/** helper object */
-object ParametricTheoryLike {
-   /** official apply/unapply methods for the type of a ParametricTheoryLike derived declaration */
-   case class Type(cls: Class[_ <: ParametricTheoryLike]) {
-     val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
-
-     def apply(params: Context) = OMBINDC(OMMOD(mpath), params, Nil)
-     def unapply(t: Term) = t match {
-       case OMBINDC(OMMOD(this.mpath), params, _) => Some((params))
-       case _ => None
-     }
-
-     /** retrieves the parameters */
-     def getParameters(dd: DerivedDeclaration) = {
-       dd.tpC.get.flatMap(unapply).getOrElse(Context.empty)
-     }
-   }
-}
-
 /** for structural features that take both parameters and a type
  *  Examples are structural features which build structures defined via a derived declaration of another structural feature
  *  like inductively-defined functions or proofs by induction over an inductively-defined type or terms of a record
- *  In such a case the type is the other derived declaration instanciated with values for its parameters
+ *  In such a case the type is the other derived declaration instantiated with values for its parameters
  */
 trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryLike {
   val ParamType = TypedParametricTheoryLike.ParamType(getClass)
   override val Type = ParametricTheoryLike.Type(getClass)
 
-  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":")
-      ,SimpArg(3), Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
+  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(")"), Delim(":"),
+      SimpArg(3), Delim("("), SimpSeqArg(4, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
 
   override def getInnerContext(dd: DerivedDeclaration) = {
     val params = ParamType.getParameters(dd)
@@ -684,18 +693,4 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
   private def checkpath(mp : MPath) = controller.get(mp)
   // def modules(d: DerivedDeclaration): List[Module] = Nil
   def check(d: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
-}
-
-
-object StructuralFeatureUtil {
-  def singleExternalDeclaration(d: Constant) = {
-    new Elaboration {
-      val elabDecls = List(d)
-      def domain = elabDecls map {d => d.name}
-      def getO(n: LocalName) = {
-        elabDecls.find(_.name == n)
-      }
-    }
-  }
-  
 }

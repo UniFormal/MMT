@@ -657,3 +657,25 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     propagator.boxedPaths
   }
 }
+
+object Controller {
+  /** convenience method for making a controller, e.g., for interactive shells or testing */ 
+  def make(logging: Boolean, loadDefaultConfig: Boolean, loadArchives: List[String]) = {
+    val c = new Controller
+    if (logging) {
+      c.handleLine("log console")
+    }
+    if (loadDefaultConfig) {
+      val deploy = MMTSystem.runStyle match {
+        case rs: MMTSystem.DeployRunStyle =>
+          c.loadConfigFile(rs.deploy/"mmtrc", false)
+        case _ =>
+      }
+    }
+    val contentRoot = c.getMathHub.map(_.local).getOrElse(File(""))
+    loadArchives.foreach {a =>
+      c.handleLine(s"mathpath archive $contentRoot/$a")
+    }
+    c
+  }
+}

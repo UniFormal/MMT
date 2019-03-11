@@ -6,7 +6,7 @@ import objects._
 /**
  * encodes/decodes terms using a set of [[Codec]]s and [[CodecOperator]]s
  */
-class Coder[Code](codecs: List[Codec[Code]], operators: List[CodecOperator[Code]]) {
+class Coder[Code, C <: Codec[Code]](codecs: List[C], operators: List[CodecOperator[Code,C]]) {
 
    def destruct(t: Term) : Option[(GlobalName,List[Term])] = t match {
       case OMA(OMS(op), pars) => Some((op, pars))
@@ -17,7 +17,7 @@ class Coder[Code](codecs: List[Codec[Code]], operators: List[CodecOperator[Code]
       def unapply(t: Term) = destruct(t)
    }
 
-   def buildCodec(codecExp: Term): Codec[Code] = codecExp match {
+   def buildCodec(codecExp: Term): C = codecExp match {
       case Matcher(op, pars) =>
          val cop = operators.find(_.id == op).getOrElse {
             throw GeneralError("codec not found: " + op)

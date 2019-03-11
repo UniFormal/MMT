@@ -24,6 +24,14 @@ abstract class Annotator[A](val key: GlobalName) {
   }
 }
 
+class TermAnnotator(k: GlobalName) extends Annotator[Term](k) {
+  def toObject(t: Term) = t
+  def fromObject(o: Obj) = o match {
+    case t: Term => t
+    case _ => throw GeneralError("not a term")
+  }
+}
+
 class StringAnnotator(key: GlobalName) extends Annotator[String](key) {
   private val Str = uom.OMLiteral.OMSTR 
   def fromObject(o: Obj) = Str.unapply(o.asInstanceOf[Term]).get

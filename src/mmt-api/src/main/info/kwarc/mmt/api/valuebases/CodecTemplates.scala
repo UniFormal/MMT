@@ -7,8 +7,9 @@ import uom._
 /**
  * codes a list
  */
+// useless in practice because we always use LF lists; generalized to LF lists in [[info.kwarc.mmt.odk.codecs.ListCodec]]
 abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName, cons: GlobalName)
-   extends CodecOperator[Code](id, list) {self =>
+   extends CodecOperator[Code, Codec[Code]](id, list) {self =>
 
    val typeParameterPositions = List(1)
 
