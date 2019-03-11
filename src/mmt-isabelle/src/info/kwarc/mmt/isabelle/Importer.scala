@@ -173,6 +173,7 @@ object Importer
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     element_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
+    meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
@@ -484,14 +485,14 @@ object Importer
           val pos = segment.element.head.span.position
 
           val item = thy_draft.make_item0(kind, name, entity_pos = pos)
-          thy_draft.declare_item(item)
+          thy_draft.declare_item(item, segment.meta_data)
           thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.section))
         }
 
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_entity(decl.entity)
+            val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
             val tp = Isabelle.Class()
             add_constant(item, tp, None)
           }
@@ -501,7 +502,7 @@ object Importer
         for (decl <- segment.types) {
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax)
-            thy_draft.declare_item(item)
+            thy_draft.declare_item(item, segment.meta_data)
 
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`type`))
             if (thy_export.typedefs.exists(typedef => typedef.name == item.entity_name)) {
@@ -518,7 +519,7 @@ object Importer
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
-            thy_draft.declare_item(item)
+            thy_draft.declare_item(item, segment.meta_data)
 
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.data))
             if (segment.is_axiomatization)
@@ -533,7 +534,7 @@ object Importer
         // facts
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_entity(decl.entity)
+            val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
 
             if (segment.is_statement) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
@@ -555,7 +556,7 @@ object Importer
         for (locale <- segment.locales) {
           decl_error(locale.entity) {
             val content = thy_draft.content
-            val item = thy_draft.declare_entity(locale.entity)
+            val item = thy_draft.declare_entity(locale.entity, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
@@ -605,7 +606,7 @@ object Importer
         // locale dependencies (inclusions)
         for (dep <- segment.locale_dependencies if dep.is_inclusion) {
           decl_error(dep.entity) {
-            val item = thy_draft.declare_entity(dep.entity)
+            val item = thy_draft.declare_entity(dep.entity, segment.meta_data)
             val content = thy_draft.content
 
             val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
@@ -862,7 +863,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       else {
         import_theory(pure_theory_export)
         isabelle.Dump.session(session_deps, resources, progress = progress,
-          process_theory = (_, snapshot, _) => import_theory(read_theory_export(snapshot)))
+          process_theory = (args: isabelle.Dump.Args) =>
+            {
+              val snapshot = args.snapshot
+              val rendering =
+                new isabelle.Rendering(args.snapshot, options, args.session) {
+                  override def model: isabelle.Document.Model = ???
+                }
+              import_theory(read_theory_export(rendering))
+            })
       }
     }
 
@@ -984,8 +993,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* user theories */
 
-    def read_theory_export(snapshot: isabelle.Document.Snapshot): Theory_Export =
+    def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
+      val snapshot = rendering.snapshot
       val node_name = snapshot.node_name
       val theory_name = node_name.theory
 
@@ -1017,9 +1027,21 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         for (element <- relevant_elements)
         yield {
+          val element_commands = element.iterator.toList
+
           val element_timing =
-            isabelle.Document_Status.Overall_Timing.make(
-              snapshot.state, snapshot.version, element.iterator.toList)
+            isabelle.Document_Status.Overall_Timing.make(snapshot.state, snapshot.version, element_commands)
+
+          val element_range =
+          {
+            val first = element_commands.head
+            val last = element_commands.last
+            val start = snapshot.node.command_start(first).get
+            val stop = snapshot.node.command_start(last).get + last.span.length
+            isabelle.Text.Range(start, stop)
+          }
+
+          val meta_data = isabelle.RDF.meta_data(rendering.meta_data(element_range))
 
           val heading =
             if (isabelle.Document_Structure.is_heading_command(element.head)) {
@@ -1056,6 +1078,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           Theory_Segment(
             element = element,
             element_timing = element_timing,
+            meta_data = meta_data,
             heading = heading,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
@@ -1237,7 +1260,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def rdf_triple(triple: isabelle.RDF.Triple): Unit =
         _state.change({ case (content, triples) => (content, triple :: triples) })
 
-      def declare_item(item: Item)
+      def declare_item(item: Item, props: isabelle.Properties.T)
       {
         _state.change(
           { case (content, triples) =>
@@ -1246,7 +1269,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               val source_ref =
                 item.source_ref.map(sref =>
                     Ontology.binary(item.global_name, Ontology.ULO.source_ref, sref.toString))
-              val triples1 = declares :: source_ref.toList ::: triples
+              val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
+              val triples1 = declares :: source_ref.toList ::: properties.reverse ::: triples
               (content1, triples1)
           })
       }
@@ -1283,10 +1307,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           type_scheme = type_scheme)
       }
 
-      def declare_entity(entity: isabelle.Export_Theory.Entity): Item =
+      def declare_entity(entity: isabelle.Export_Theory.Entity, props: isabelle.Properties.T): Item =
       {
         val item = make_item(entity)
-        declare_item(item)
+        declare_item(item, props)
         item
       }
 
