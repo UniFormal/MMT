@@ -41,7 +41,6 @@ class DefFormParsers(js : List[JSONObject])
     (parseName ^^ { case (nm) => Name(nm,None,None)}) | ("()" ^^ {case (_) => Name("()",None,None)})
   )
 
-  // ToDo: nested strings could be a problem. Do those occur?
   lazy val parseDefString : Parser[DefString] = fullParser("\"[^\"]+\"".r ^^ {case (s) => DefString(s,None,None)})
 
   lazy val parseArgTheory : Parser[ArgTheory] =
