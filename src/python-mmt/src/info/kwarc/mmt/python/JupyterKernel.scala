@@ -107,6 +107,15 @@ class JupyterKernel extends Extension {
         val tail = s.substring("active computation ".length).split(" ", 2)
         activeComputation(kernel, session, tail(0).split(",").toList, tail(1))
         List()
+      case s if s.startsWith("present ") =>
+        val tail = s.substring("present ".length)
+
+        // get the object to present
+        val path = Path.parse(tail, session.doc.nsMap)
+        val obj = controller.get(path)
+
+        // and present the returned object
+        List("element" -> presenter.asString(obj))
       case s if s.startsWith("mitm ") =>
         // mitm EXP evaluates EXP using a MitM computation
         val rest = s.substring(5)
@@ -145,11 +154,9 @@ class JupyterKernel extends Extension {
     case e: Exception => List("element" -> presenter.exceptionAsHTML(e))
   }
 
-  // simple example for e = mc²§session
   def activeComputation(kernel: JupyterKernelPython, session: REPLSession, varstrs: List[String], termS: String) = {
     val variables = varstrs.map(LocalName.parse)
     val term = session.parseTerm(termS, ls = variables)
-    print(term.toString)
 
     // the top-most formula to display
     val fS = presenter.asString(term)
@@ -182,7 +189,8 @@ class JupyterKernel extends Extension {
         val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
 
         // and do the computation
-        presenter.asString(compute(subst))
+        val res = compute(subst)
+        presenter.asString(res)
       } catch {
         case e: Error => e.toHTML
         case e: Exception => Error(e).toHTML
