@@ -1,35 +1,27 @@
 package info.kwarc.mmt.isabelle
 
 import info.kwarc.mmt.api.ContentPath
+import java.net.URI
 
 
 object Ontology
 {
-  /* unary */
-
-  def unary(subject: String, predicate: String): isabelle.RDF.Triple =
-    isabelle.RDF.Triple(subject, predicate, Nil)
+  /* relational triples */
 
   def unary(subject: ContentPath, predicate: String): isabelle.RDF.Triple =
-    unary(subject.toString, predicate)
-
-
-  /* binary */
-
-  def binary(subject: String, predicate: String, `object`: isabelle.XML.Body): isabelle.RDF.Triple =
-    isabelle.RDF.Triple(subject, predicate, `object`)
-
-  def binary(subject: String, predicate: String, `object`: String): isabelle.RDF.Triple =
-    binary(subject, predicate, List(isabelle.XML.Text(`object`)))
+    isabelle.RDF.Triple(subject.toString, predicate)
 
   def binary(subject: ContentPath, predicate: String, `object`: isabelle.XML.Body): isabelle.RDF.Triple =
-    binary(subject.toString, predicate, `object`)
+    isabelle.RDF.Triple(subject.toString, predicate, `object` = `object`)
 
   def binary(subject: ContentPath, predicate: String, `object`: String): isabelle.RDF.Triple =
-    binary(subject.toString, predicate, `object`)
+    binary(subject, predicate, List(isabelle.XML.Text(`object`)))
 
-  def binary(subject: ContentPath, predicate: String, `object`: ContentPath): isabelle.RDF.Triple =
-    binary(subject.toString, predicate, `object`.toString)
+  def binary(subject: ContentPath, predicate: String, resource: ContentPath): isabelle.RDF.Triple =
+    isabelle.RDF.Triple(subject.toString, predicate, resource = resource.toString)
+
+  def binary(subject: ContentPath, predicate: String, resource: URI): isabelle.RDF.Triple =
+    isabelle.RDF.Triple(subject.toString, predicate, resource = resource.toString)
 
 
   /* namespace */
