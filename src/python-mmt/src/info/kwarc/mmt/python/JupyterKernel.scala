@@ -33,7 +33,7 @@ trait JupyterKernelPython {
 
   def Text(args: PythonParamDict): Text
   def display(widgets: List[WidgetPython])
-
+  override def toString : String
 }
 
 /** interface to the Python side of the Jupyter kernel (will be implemented in Python) */
@@ -146,15 +146,18 @@ class JupyterKernel extends Extension {
   }
 
   // simple example for e = mc²§session
-  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, variables: List[String], termS: String) = {
-    val term = session.parseTerm(termS)
+  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, varstrs: List[String], termS: String) = {
+    val variables = varstrs.map(LocalName.parse)
+    val term = session.parseTerm(termS, ls = variables)
+    print(term.toString)
 
     // the top-most formula to display
-    val formula = Widget(kernel, "HTML", "value" -> presenter.asString(term))
+    val fS = presenter.asString(term)
+    val formula = Widget(kernel, "HTML", "value" -> fS)
 
     // create the labels and inputs
-    val labels = variables.map(v => Widget(kernel, "Label", "value"->v))
-    val inputs = variables.map(v => Widget(kernel, "Text"))
+    val labels = varstrs.map(v => Widget(kernel, "Label", "value"->v))
+    val inputs = varstrs.map(v => Widget(kernel, "Text"))
     val inputrows = (labels zip inputs).map(lt => Widget(kernel,"HBox","children"->List(lt._1, lt._2)))
     val contextboxes = Widget(kernel, "VBox", "children"->inputrows)
 
@@ -170,11 +173,11 @@ class JupyterKernel extends Extension {
     // on clicking the button, extract the context
     // and then compute
     button.on_click((kernel: JupyterKernelPython, dict: WidgetPython) => {
-      val userInput: Map[String, String] = Map((variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value"))):_*)
+      val userInput: Map[LocalName, String] = Map((variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value"))):_*)
 
       val result = try {
         // parse the user context
-        val ctx = userInput.map(kv => (LocalName.parse(kv._1), session.parseTerm(kv._2)))
+        val ctx = userInput.mapValues(session.parseTerm(_))
         // build a substiution
         val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
 
