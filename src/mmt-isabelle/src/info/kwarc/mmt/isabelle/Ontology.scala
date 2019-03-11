@@ -26,7 +26,7 @@ object Ontology
 
   /* namespace */
 
-  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "ulo:")
+  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "http://mathweb.org/ulo")
 
   def rdf_document(triples: List[isabelle.RDF.Triple]): isabelle.XML.Elem =
     isabelle.RDF.document(isabelle.RDF.triples(triples),
