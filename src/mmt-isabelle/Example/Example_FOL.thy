@@ -6,10 +6,11 @@ begin
 
 section \<open>Natural numbers: Peano's axioms, primitive recursion\<close>
 
-typedecl nat
+typedecl nat \<^marker>\<open>description \<open>Type of natural numbers in FOL.\<close>\<close>
 instance nat :: \<open>term\<close> ..
 
-axiomatization Zero :: \<open>nat\<close>  (\<open>0\<close>)
+axiomatization \<^marker>\<open>contributor \<open>Larry Paulson\<close>\<close> \<^marker>\<open>date 1992\<close> \<^marker>\<open>description \<open>Axiomatization of Peano arithmetic.\<close>\<close>
+        Zero :: \<open>nat\<close>  (\<open>0\<close>)
     and Suc :: \<open>nat \<Rightarrow> nat\<close>
     and rec :: \<open>[nat, 'a, [nat, 'a] \<Rightarrow> 'a] \<Rightarrow> 'a\<close>
   where induct: \<open>P(0) \<Longrightarrow> (\<And>x. P(x) \<Longrightarrow> P(Suc(x))) \<Longrightarrow> P(n)\<close>
