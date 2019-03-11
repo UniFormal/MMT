@@ -33,7 +33,7 @@ trait JupyterKernelPython {
 
   def Text(args: PythonParamDict): Text
   def display(widgets: List[WidgetPython])
-
+  override def toString : String
 }
 
 /** interface to the Python side of the Jupyter kernel (will be implemented in Python) */
@@ -107,6 +107,15 @@ class JupyterKernel extends Extension {
         val tail = s.substring("active computation ".length).split(" ", 2)
         activeComputation(kernel, session, tail(0).split(",").toList, tail(1))
         List()
+      case s if s.startsWith("present ") =>
+        val tail = s.substring("present ".length)
+
+        // get the object to present
+        val path = Path.parse(tail, session.doc.nsMap)
+        val obj = controller.get(path)
+
+        // and present the returned object
+        List("element" -> presenter.asString(obj))
       case s if s.startsWith("mitm ") =>
         // mitm EXP evaluates EXP using a MitM computation
         val rest = s.substring(5)
@@ -145,16 +154,17 @@ class JupyterKernel extends Extension {
     case e: Exception => List("element" -> presenter.exceptionAsHTML(e))
   }
 
-  // simple example for e = mc²§session
-  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, variables: List[String], termS: String) = {
-    val term = session.parseTerm(termS)
+  def activeComputation(kernel: JupyterKernelPython, session: REPLSession, varstrs: List[String], termS: String) = {
+    val variables = varstrs.map(LocalName.parse)
+    val term = session.parseTerm(termS, ls = variables)
 
     // the top-most formula to display
-    val formula = Widget(kernel, "HTML", "value" -> presenter.asString(term))
+    val fS = presenter.asString(term)
+    val formula = Widget(kernel, "HTML", "value" -> fS)
 
     // create the labels and inputs
-    val labels = variables.map(v => Widget(kernel, "Label", "value"->v))
-    val inputs = variables.map(v => Widget(kernel, "Text"))
+    val labels = varstrs.map(v => Widget(kernel, "Label", "value"->v))
+    val inputs = varstrs.map(v => Widget(kernel, "Text"))
     val inputrows = (labels zip inputs).map(lt => Widget(kernel,"HBox","children"->List(lt._1, lt._2)))
     val contextboxes = Widget(kernel, "VBox", "children"->inputrows)
 
@@ -170,16 +180,17 @@ class JupyterKernel extends Extension {
     // on clicking the button, extract the context
     // and then compute
     button.on_click((kernel: JupyterKernelPython, dict: WidgetPython) => {
-      val userInput: Map[String, String] = Map((variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value"))):_*)
+      val userInput: Map[LocalName, String] = Map((variables zip inputs).map(vi => (vi._1, vi._2.getAsString("value"))):_*)
 
       val result = try {
         // parse the user context
-        val ctx = userInput.map(kv => (LocalName.parse(kv._1), session.parseTerm(kv._2)))
+        val ctx = userInput.mapValues(session.parseTerm(_))
         // build a substiution
         val subst = Substitution(ctx.toList.map(lt => Sub(lt._1, lt._2)):_*)
 
         // and do the computation
-        presenter.asString(compute(subst))
+        val res = compute(subst)
+        presenter.asString(res)
       } catch {
         case e: Error => e.toHTML
         case e: Exception => Error(e).toHTML

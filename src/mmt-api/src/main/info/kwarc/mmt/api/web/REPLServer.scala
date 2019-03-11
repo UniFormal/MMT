@@ -13,7 +13,7 @@ import utils._
 import scala.util.Try
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, val errorCont: ErrorHandler) {
+class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpreter, val errorCont: ErrorHandler) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
@@ -76,17 +76,19 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, v
     Constant(OMMOD(mpath), name, Nil, tp, df, None)
   }
   /** like parseObject but does not store or check the term */
-  def parseTerm(s: String, scopeOpt: Option[HasParentInfo] = None): Term = {
+  def parseTerm(s: String, scopeOpt: Option[HasParentInfo] = None, ls : List[LocalName] = Nil): Term = {
 
+    import objects.Conversions._
     // get a context for parsing
-    val context = Context(getMPath(scopeOpt))
+    val mcontext = Context(getMPath(scopeOpt))
+    val context = if (ls.isEmpty) mcontext else ls.foldLeft(mcontext)((c,ln) => c ++ VarDecl(ln)) // ln % tp
 
     // setup the parsing unit
     val sref = SourceRef(path.uri, SourceRegion.ofString(s))
     val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
 
     // and return the term
-    interpreter(pu)(errorCont).term
+    interpreter.parser(pu)(errorCont).term
   }
   /** simplifies a term in the current context */
   def simplifyTerm(t: Term, scopeOpt: Option[HasParentInfo]): Term = {
@@ -254,7 +256,7 @@ class REPLServer extends ServerExtension("repl") {
     val doc = new Document(path, level=FileLevel, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
-    val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
+    val interpreter = controller.extman.get(classOf[TwoStepInterpreter], format).getOrElse {
       throw LocalError("no parser found")
     }
     val s = new REPLSession(doc, id, interpreter, errorCont)
