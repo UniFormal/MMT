@@ -164,7 +164,7 @@ class JupyterKernel extends Extension {
 
     // a function to perform the actual computation
     def compute(sub: Substitution): Term = {
-      term.^?(sub)
+      session.simplifyTerm(term.^?(sub), None)
     }
 
     // on clicking the button, extract the context

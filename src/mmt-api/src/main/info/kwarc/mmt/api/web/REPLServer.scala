@@ -7,6 +7,7 @@ import symbols._
 import objects._
 import parser._
 import checking._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import utils._
 
 import scala.util.Try
@@ -86,6 +87,11 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, v
 
     // and return the term
     interpreter(pu)(errorCont).term
+  }
+  /** simplifies a term in the current context */
+  def simplifyTerm(t: Term, scopeOpt: Option[HasParentInfo]): Term = {
+    val context = Context(getMPath(scopeOpt))
+    interpreter.simplifier(t, SimplificationUnit(context, true, true))
   }
 }
 
