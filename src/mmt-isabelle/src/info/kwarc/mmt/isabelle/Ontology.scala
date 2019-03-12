@@ -37,7 +37,7 @@ object Ontology
     /* unaries */
 
     val `type` = ulo("type") // type constructors
-    val data = ulo("data") // term constants
+    val data = ulo("object") // term constants
 
     val proposition = ulo("proposition")
     val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
