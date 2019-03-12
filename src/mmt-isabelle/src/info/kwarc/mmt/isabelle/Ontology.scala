@@ -26,7 +26,7 @@ object Ontology
 
   /* namespace */
 
-  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "http://mathweb.org/ulo")
+  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "https://mathhub.info/ulo#")
 
   def rdf_document(triples: List[isabelle.RDF.Triple]): isabelle.XML.Elem =
     isabelle.RDF.document(isabelle.RDF.triples(triples),
@@ -37,7 +37,7 @@ object Ontology
     /* unaries */
 
     val `type` = ulo("type") // type constructors
-    val data = ulo("data") // term constants
+    val data = ulo("object") // term constants
 
     val proposition = ulo("proposition")
     val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
