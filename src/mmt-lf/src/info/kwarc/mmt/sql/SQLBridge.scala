@@ -153,6 +153,19 @@ object SQLBridge {
       case e:Error => println(e.toStringLong)
     }
   }
+  def test2(controller: Controller, thyP: MPath) = {
+    try {
+      val rules = RuleSet.collectRules(controller, Context(thyP))
+      println(rules)
+      val bridge = new SQLBridge(controller, rules, Nil, Nil, Nil)
+      controller.handleLine("log+ " + bridge.logPrefix)
+      val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
+      val table = bridge.theoryToTable(thy)
+      table
+    } catch {
+      case e:Error => println(e.toStringLong)
+    }
+  }
 }
 
 case class CannotTranslate(tm: Term) extends Throwable

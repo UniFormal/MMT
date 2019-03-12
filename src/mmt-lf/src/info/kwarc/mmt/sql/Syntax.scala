@@ -52,10 +52,10 @@ object SQLSyntax {
     override def toString = s
   }
   case object IntType extends BaseType[Int]("Int")
-  case object BoolType extends BaseType[Boolean]("Bool")
+  case object BoolType extends BaseType[Boolean]("Boolean")
   case object StringType extends BaseType[String]("String")
   case object UUIDType extends BaseType[java.util.UUID]("UUID")
-  case object JSONType extends BaseType[utils.JSON]("json")
+  case object JSONType extends BaseType[utils.JSON]("JSON")
   
   case class ArrayType[U](entryType: Type[U]) extends Type[List[U]] {
     override def toString = s"List[$entryType]"
