@@ -26,7 +26,7 @@ class SQLBridge(controller: Controller, rules: RuleSet,
      val cols = t.getConstants flatMap {
        case c: Constant => constantToColumn(c).toList
      }
-     Table(t.path, cols, Nil) //TODO not sure what to do about collections
+     Table(t.path, cols)
    }
    
    def constantToColumn(c: Constant): Option[Column] = {
@@ -60,7 +60,11 @@ class SQLBridge(controller: Controller, rules: RuleSet,
      val isPrimaryKey = SchemaLang.primaryKey.get(c)
      val isOpaque = SchemaLang.opaque.get(c)
      val isHidden = SchemaLang.hidden.get(c)
-     val col = Column(c.path, mathType, codecTermChecked, dbtype, isNullable, isPrimaryKey, isOpaque, !isHidden)
+     val collection = if (SchemaLang.collection.get(c)) {
+       Some(CollectionInfo(???,???,c.metadata))
+     } else 
+       None
+     val col = Column(c.path, mathType, codecTermChecked, dbtype, isNullable, isPrimaryKey, isOpaque, !isHidden, collection)
      Some(col)
    }
       
@@ -143,7 +147,6 @@ object SQLBridge {
     val controller = Controller.make(true, true, List("MMT/urtheories", "MMT/LFX","ODK/DiscreteZoo"))
     try {
     val rules = RuleSet.collectRules(controller, Context(thyP))
-    println(rules)
     val bridge = new SQLBridge(controller, rules, Nil, Nil, Nil)
     controller.handleLine("log+ " + bridge.logPrefix)
     val thy = controller.globalLookup.getAs(classOf[Theory], thyP)

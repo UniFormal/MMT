@@ -8,9 +8,11 @@ import objects._
   *  @param columns sequence of all columns
   *  @param collections sequence of all collections
   */
-case class Table(path: MPath, columns: Seq[Column], collections: Seq[Collection]) {
+case class Table(path: MPath, columns: Seq[Column]) {
   /** db name of the table, underscore style */
   def name = path.name.toString
+  /** retrieve all columns that are collections */
+  def collections = columns.filter(_.collection.isDefined)
 }
 
 /**
@@ -24,7 +26,9 @@ case class Table(path: MPath, columns: Seq[Column], collections: Seq[Collection]
   *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
   *  later we could add: displayName, description
   */
-case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSyntax.Type[_], isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean) {
+case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSyntax.Type[_],
+    isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean,
+    collection: Option[CollectionInfo]) {
   /** the db name of the column */
   def name = path.name.toString
 }
@@ -34,7 +38,7 @@ case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSynt
   *  @param index column holding the collection index
   *  @param metadata a record object for name, authors, url, other information about the collection; can be JSON
   */
-case class Collection(id: String, index: Column, metadata: Any)
+case class CollectionInfo(id: String, index: Column, metadata: Any)
 
 /**
  * 

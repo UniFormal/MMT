@@ -46,4 +46,5 @@ object SchemaLang extends TheoryScala {
   val primaryKey = new Tagger(_path ? "primaryKey")
   val opaque     = new Tagger(_path ? "opaque")
   val hidden     = new Tagger(_path ? "hidden")
+  val collection = new Tagger(_path ? "collection")
 }
