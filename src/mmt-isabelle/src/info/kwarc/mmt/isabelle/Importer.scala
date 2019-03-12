@@ -447,7 +447,7 @@ object Importer
 
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
-        val path = thy_archive.source_path
+        val path = thy_archive.archive_source_path
         val text_decoded = thy_export.node_source.text
         val text_encoded = isabelle.Symbol.encode(text_decoded)
 
