@@ -622,9 +622,9 @@ object Importer
 
       // RDF document
       {
-        val path = thy_archive.archive_rdf_path
+        val path = thy_archive.archive_rdf_path.ext("xz")
         isabelle.Isabelle_System.mkdirs(path.dir)
-        isabelle.File.write(path,
+        isabelle.File.write_xz(path,
           isabelle.XML.header +
           isabelle.XML.string_of_tree(thy_draft.rdf_document))
       }
