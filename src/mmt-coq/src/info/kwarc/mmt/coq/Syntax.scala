@@ -2,8 +2,9 @@ package info.kwarc.mmt.coq
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.PlainInclude
+import info.kwarc.mmt.api.symbols.{DerivedDeclaration, PlainInclude}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq.coqxml.TranslationState
 import info.kwarc.mmt.lf._
@@ -26,7 +27,7 @@ object Coq {
     case "Set" => OMS(Coq.set)
     case "Prop" => OMS(Coq.prop)
     case _ =>
-      println(value) // TODO
+      // println(value) // TODO
       OML(LocalName(value))
   }
 
@@ -70,10 +71,14 @@ object Coq {
   }
   private def ensure(p : ContentPath)(implicit state : TranslationState): Unit = {
     val mp = p.module
-    val parent = state.current.parent ? state.current.name.head
+    var current = state.controller.get(state.current)
+    while (current.isInstanceOf[DerivedDeclaration]) {
+      current = state.controller.get(current.parent)
+    } // .parent ? state.current.name.head
+    val parent = current.asInstanceOf[Theory].path
     state.controller.library.getImplicit(mp,parent) match {
       case Some(_) =>
-      case None => state.controller add PlainInclude(mp,parent)
+      case None => state.controller.add(PlainInclude(mp,parent),AtBegin)
     }
   }
   def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {
