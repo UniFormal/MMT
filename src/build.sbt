@@ -5,6 +5,11 @@ import scala.io.Source
 
 utils in ThisBuild := Utils((baseDirectory in src).value)
 
+// If in doubt, always use utils.root or the other File properties on utils to construct
+// paths!
+// This ensures other SBT projects being able to use MMT as a subproject in a multiproject SBT
+// build, see https://github.com/UniFormal/MMT/pull/449.
+
 // =================================
 // META-DATA and Versioning
 // =================================

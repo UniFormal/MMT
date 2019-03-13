@@ -6,6 +6,7 @@ import sbt._
 
 object Utils {
 
+  // 
   val utils = settingKey[Utils]("Utils")
 
   def apply(base: java.io.File) = new Utils(File(base))
@@ -33,10 +34,9 @@ object Utils {
     * packages the compiled binaries and copies to deploy
     */
   def deployPackage(name: String): Def.Initialize[Task[Unit]] = Def.taskDyn {
-    val j = (packageBin in Compile).value
-    val u = utils.value
+    val jarFile = (packageBin in Compile).value
     Def.task {
-      Utils.deployTo(u.deploy / name)(j)
+      Utils.deployTo(utils.value.deploy / name)(jarFile)
     }
   }
 
@@ -79,6 +79,9 @@ object Utils {
   }
 }
 
+/**
+  * @param base File path to the "<MMT repo>/src" directory.
+  */
 class Utils(base: File) {
   /** MMT root directory */
   val root: File = (base / "..").canonical
