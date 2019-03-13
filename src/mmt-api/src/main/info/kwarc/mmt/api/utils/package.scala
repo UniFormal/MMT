@@ -133,6 +133,8 @@ package object utils {
 
    /** applies a list of pairs seen as a map */
    def listmap[A,B](l: Iterable[(A,B)], a: A): Option[B] = l.find(_._1 == a).map(_._2)
+   /** applies a list of pairs seen as the inverse of a map */
+   def invlistmap[A,B](l: Iterable[(A,B)], b: B): Option[A] = l.find(_._2 == b).map(_._1)
    
    /** like map, but the map function knows what previous values produced */
    def mapInContext[A,B](l: Iterable[A])(f: (List[(A,B)],A) => B) : List[B] = {

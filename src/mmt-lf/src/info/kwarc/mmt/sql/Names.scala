@@ -25,7 +25,7 @@ object DbData extends TheoryScala {
   val int    = _path ? "db_int"
   val string = _path ? "db_string"
   val uuid   = _path ? "db_uuid"
-  object array extends UnaryLFConstantScala(_path, "db_array") 
+  object array extends UnaryLFConstantScala(_path, "db_array")
 }
 
 object Codecs extends TheoryScala {

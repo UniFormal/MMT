@@ -15,9 +15,8 @@ import SQLSyntax._
 /**
  * 
  */
-class SQLBridge(controller: Controller, rules: RuleSet,
-                codecs: List[SQLCodec], codecOps: List[SQLCodecOperator], commProps: List[CommutingProperty]) extends Logger {
-   private val coder = new Coder(codecs, codecOps)
+class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[CommutingProperty]) extends Logger {
+   private val coder = new SQLCoder(rules)
    
    val report = controller.report
    val logPrefix = "sql"
@@ -50,7 +49,7 @@ class SQLBridge(controller: Controller, rules: RuleSet,
          return None
      }
      val dbtype = codecType match {
-       case Codecs.codec(_,tp) => termToType(tp)
+       case Codecs.codec(_,tp) => SQLBridge.termToType(tp)
        case a =>
          log("codec term has bad type: " + codecTerm + " : " + a)
          log("ignoring constant " + c.name)
@@ -75,15 +74,6 @@ class SQLBridge(controller: Controller, rules: RuleSet,
      case OMS(MathData.uuid)   => OMS(Codecs.UUIDIdent)
    }
   
-  /** converts a term over the theory DbData into the corresponding SQL type */
-  def termToType(tp: Term): Type[_] = tp match {
-     case OMS(DbData.bool) => BoolType
-     case OMS(DbData.int) => IntType
-     case OMS(DbData.string) => StringType
-     case OMS(DbData.uuid) => UUIDType
-     case DbData.array(tp) => ArrayType(termToType(tp))
-  }
-
   /**
     *  converts a term over a schema theory into the corresponding SQL expression and the codec that allows decoding it
     */
@@ -140,6 +130,19 @@ class SQLBridge(controller: Controller, rules: RuleSet,
 }
 
 object SQLBridge {
+  import DbData._
+  val basetypes = List(bool -> BoolType, int -> IntType, string -> StringType, uuid -> UUIDType)
+  /** converts a term over the theory DbData into the corresponding SQL type */
+  def termToType(tp: Term): Type[_] = tp match {
+     case OMS(p) => utils.listmap(basetypes,p).get
+     case DbData.array(tp) => ArrayType(termToType(tp))
+  }
+  /** inverse of termToType */
+  def typeToTerm(tp: Type[_]): Term = tp match {
+    case b: BaseType[_] => OMS(utils.invlistmap(basetypes, b).get)
+    case ArrayType(t) => array(typeToTerm(t))
+  }
+  
   /** MPath of example schema */ 
   val example = SchemaLang._base ? "Example"
   /** convert a theory to a table */
@@ -147,7 +150,7 @@ object SQLBridge {
     val controller = Controller.make(true, true, List("MMT/urtheories", "MMT/LFX","ODK/DiscreteZoo"))
     try {
     val rules = RuleSet.collectRules(controller, Context(thyP))
-    val bridge = new SQLBridge(controller, rules, Nil, Nil, Nil)
+    val bridge = new SQLBridge(controller, rules, Nil)
     controller.handleLine("log+ " + bridge.logPrefix)
     val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
     val table = bridge.theoryToTable(thy)
@@ -159,8 +162,7 @@ object SQLBridge {
   def test2(controller: Controller, thyP: MPath) = {
     try {
       val rules = RuleSet.collectRules(controller, Context(thyP))
-      println(rules)
-      val bridge = new SQLBridge(controller, rules, Nil, Nil, Nil)
+      val bridge = new SQLBridge(controller, rules, Nil)
       controller.handleLine("log+ " + bridge.logPrefix)
       val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
       val table = bridge.theoryToTable(thy)

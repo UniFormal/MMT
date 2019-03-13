@@ -51,12 +51,16 @@ case class Filter(condition: SQLSyntax.Expr) {
 /** inductive type for SQL queries */
 object SQLSyntax {
   
-  sealed abstract class Type[U]
+  sealed abstract class Type[U] {
+    type underlying = U
+    def itself = this.asInstanceOf[Type[underlying]]
+  }
   sealed abstract class BaseType[U](s: String) extends Type[U] {
     override def toString = s
+    def apply(u: U) = Value(this, u)
   }
   case object IntType extends BaseType[Int]("Int")
-  case object BoolType extends BaseType[Boolean]("Boolean")
+  case object BoolType extends BaseType[java.lang.Boolean]("Boolean")
   case object StringType extends BaseType[String]("String")
   case object UUIDType extends BaseType[java.util.UUID]("UUID")
   case object JSONType extends BaseType[utils.JSON]("JSON")
@@ -69,15 +73,37 @@ object SQLSyntax {
   sealed abstract class Expr {
     def columnRefs: List[String]
   }
-  sealed abstract class Value(value: Any) extends Expr {
+  sealed abstract class Value(val value: Any) extends Expr {
     override def toString = value.toString
     def columnRefs = Nil
   }
-  case class IntVal(v: BigInt) extends Value(v)
+  
+  object Value {
+    def apply[U](t: Type[U], u: U): Value = t match {
+      case IntType => IntVal(u)
+      case BoolType => BoolVal(u)
+      case StringType => StringVal(u)
+      case UUIDType => UUIDVal(u)
+      case JSONType => JSONVal(u)
+      case ArrayType(tp) => ArrayVal(tp, u)
+    }
+    def typeOf(v: Value) = v match {
+      case v: IntVal => IntType
+      case v: BoolVal => BoolType
+      case v: StringVal => StringType
+      case v: UUIDVal => UUIDType
+      case v: JSONVal => JSONType
+      case v: ArrayVal[_] => ArrayType(v.tp)
+    }
+  }
+  
+  case class IntVal(v: Int) extends Value(v)
   case class StringVal(s: String) extends Value(s)
   case class BoolVal(b: Boolean) extends Value(b)
   case class UUIDVal(u: java.util.UUID) extends Value(u)
   case class JSONVal(j: utils.JSON) extends Value(j)
+  
+  case class ArrayVal[U](tp: Type[U], elems: List[U]) extends Value(elems)
   
   case class ColumnRef(name: String) extends Expr {
     override def toString = name // TODO escaping

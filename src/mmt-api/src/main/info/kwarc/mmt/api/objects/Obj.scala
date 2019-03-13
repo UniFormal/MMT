@@ -342,13 +342,6 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  */
 case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OMLITTrait {
    override def toStr(implicit shortURIs: Boolean) = valueString
-
-   /** convert to OMLIT by choosing an applicable rule */
-   def recognize(rules: RuleSet) = {
-     rules.get(classOf[uom.RealizedType]).find(_.synType == synType).map {rule =>
-       rule.parse(valueString).from(this)
-     }
-   }
 }
 
 /**

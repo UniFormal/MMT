@@ -407,7 +407,41 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         case None => Context.empty
       }
   }
+  
+  // ******************************* semantics objects and literals
 
+  /** the semantic type of all semantic objects
+   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflections. 
+   */
+  private object SemanticObjectType extends uom.Atomic[SemanticObject] {
+     def asString = "semantic-object"
+     val cls = classOf[SemanticObject]
+     override def atomicToString(so: SemanticObject) = so.mpath.toPath
+     def fromString(s: String) = {
+       val mp = Path.parseM(s, NamespaceMap.empty)
+       backend.loadObjectO(mp) match {
+         case Some(so: SemanticObject) => so
+         case Some(_) => throw ParseError("object exists but is not a rule")
+         case None => throw ParseError("object does not exist")
+       }
+     }
+     /** scala"QUALIFIED-CLASS-NAME" */
+     override def lex = quotedLiteral("scala")
+  }
+  
+  /** a built-in rule for using semantic objects as literals
+   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflections. 
+   */
+  private val SemanticObjectRealizedType = new RepresentedRealizedType(OMS(utils.mmt.mmtcd ? "scala"), SemanticObjectType)
+
+  /** convert an UnknownOMLIT to an OMLIT by choosing an applicable rule */
+  def recognizeLiteral(rules: RuleSet, ul: UnknownOMLIT) = {
+     val rts = Iterable(SemanticObjectRealizedType) ++ rules.get(classOf[uom.RealizedType])
+     rts.find(_.synType == ul.synType).map {rule =>
+       rule.parse(ul.valueString).from(ul)
+     }
+  }
+  
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
