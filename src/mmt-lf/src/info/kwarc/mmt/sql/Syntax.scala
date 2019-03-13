@@ -19,12 +19,13 @@ case class Table(path: MPath, columns: Seq[Column]) {
   *  @param path the MMT name of the column
   *  @param mathType the mathematical type of the column
   *  @param codec the codec expression for en/de-coding functions between them
-  *  @param the database type
+  *  @param dbtype database type
   *  @param isNullable can be null in the database
   *  @param isPrimaryKey key field (annotated in schema)
   *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)
   *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
   *  later we could add: displayName, description
+  *  @param collection if the column is an index column of a collection, this parameter holds the collection metadata
   */
 case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSyntax.Type[_],
     isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean,
@@ -34,11 +35,10 @@ case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSynt
 }
 
 /**
-  *  @param id collection id (only needed for the interface)
   *  @param index column holding the collection index
   *  @param metadata a record object for name, authors, url, other information about the collection; can be JSON
   */
-case class CollectionInfo(id: String, index: Column, metadata: Any)
+case class CollectionInfo(index: GlobalName, metadata: Any)
 
 /**
  * 

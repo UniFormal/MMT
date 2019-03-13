@@ -11,6 +11,8 @@ case class ColumnCode(column: Column) {
   def typeString: String = if (column.isNullable) s"Option[${column.dbtype.toString}]" else column.dbtype.toString
   def caseClassField: String = s"$nameCamelCase: $typeString"
 
+  def jsonWriterMapItem: String = s"""Some($nameQuotes -> o.$nameCamelCase.toJson)"""
+
   def accessorMethod: String = {
     val maybePrimary = if (column.isPrimaryKey) ", O.PrimaryKey" else ""
     s"""def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb"$maybePrimary)"""
