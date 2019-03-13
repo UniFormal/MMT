@@ -160,7 +160,7 @@ object FilePath {
   private def rec(list : List[File]) : List[File] = list.flatMap(f => if (f.isDirectory) rec(f.children) else List(f))
 }
 
-/** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
+/** Constructs and pattern-matches absolute file:URIs in terms of absolute File's.*/
 object FileURI {
   def apply(f: File): URI = {
     val ss = f.segments
@@ -168,9 +168,15 @@ object FileURI {
   }
 
   def unapply(u: URI): Option[File] = {
-    if ((u.scheme.isEmpty || u.scheme.contains("file")) && (u.authority.isEmpty || u.authority.contains("")))
-      Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
-    // empty authority makes some Java versions throw error
+    // empty authority makes some Java versions throw errors
+    val valid_authority : Boolean = u.authority.isEmpty || u.authority.contains("") || u.authority.contains("localhost")
+
+    if (u.scheme.contains("file") && valid_authority) {
+      if (u.authority.contains("localhost"))
+        Some(File(new java.io.File(u)))
+      else
+        Some(File(new java.io.File(u.copy(authority = None))))
+    }
     else None
   }
 }
