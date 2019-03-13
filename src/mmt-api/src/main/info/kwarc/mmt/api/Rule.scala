@@ -52,29 +52,6 @@ trait SyntaxDrivenRule extends Rule {
    }
 }
 
-/** the [[SemanticType]] of all [[Rule]]s */
-class RuleType(be: Backend) extends Atomic[Rule] {
-   def asString = "rule"
-   val cls = classOf[Rule]
-   override def atomicToString(u: Rule) = u.mpath.toString
-
-   def fromString(s: String): Rule = {
-     val mp = Path.parseM(s, NamespaceMap.empty)
-     be.loadObjectO(mp) match {
-       case Some(r: Rule) => r
-       case Some(_) => throw ParseError("object exists but is not a rule")
-       case None => throw ParseError("object does not exist")
-     }
-   }
-   /** scala"QUALIFIED-CLASS-NAME" */
-   override def lex = quotedLiteral("scala")
-}
-
-/**
- * [[Rule]]s as literals (to be used as definiens of constants that represent rules)
- */
-class RuleLiterals(be: backend.Backend) extends RepresentedRealizedType[Rule](OMS(utils.mmt.mmtcd ? "rule"), new RuleType(be))
-
 /** A RuleSet groups some Rule's. */
 abstract class RuleSet extends Rule {self =>
   /** by making this a rule, MMT theories can add entire rule sets at once */

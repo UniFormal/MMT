@@ -447,7 +447,7 @@ object Importer
 
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
-        val path = thy_archive.source_path
+        val path = thy_archive.archive_source_path
         val text_decoded = thy_export.node_source.text
         val text_encoded = isabelle.Symbol.encode(text_decoded)
 
@@ -622,9 +622,9 @@ object Importer
 
       // RDF document
       {
-        val path = thy_archive.archive_rdf_path
+        val path = thy_archive.archive_rdf_path.ext("xz")
         isabelle.Isabelle_System.mkdirs(path.dir)
-        isabelle.File.write(path,
+        isabelle.File.write_xz(path,
           isabelle.XML.header +
           isabelle.XML.string_of_tree(thy_draft.rdf_document))
       }
@@ -1103,18 +1103,24 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     object Content
     {
-      val empty: Content = new Content(SortedMap.empty[Item.Key, Item](Item.Key.Ordering))
+      val empty: Content =
+        new Content(
+          SortedMap.empty[Item.Key, Item](Item.Key.Ordering),
+          SortedMap.empty[String, Int])
       def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
     }
 
-    final class Content private(private val rep: SortedMap[Item.Key, Item])
+    final class Content private(
+      private val items: SortedMap[Item.Key, Item],  // exported formal entities for each theory
+      private val triples: SortedMap[String, Int])  // number of RDF triples for each theory
     {
       content =>
 
-      def size: Int = rep.size
+      def items_size: Int = items.size
+      def triples_size: Int = triples.iterator.map(_._2).sum
 
       def report_kind(kind: String): String =
-        rep.count({ case (_, item) => item.entity_kind == kind }).toString + " " + kind
+        items.count({ case (_, item) => item.entity_kind == kind }).toString + " " + kind
 
       def report: String =
         isabelle.commas(
@@ -1126,7 +1132,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CONST,
             isabelle.Export_Theory.Kind.FACT).map(kind => report_kind(kind.toString)))
 
-      def get(key: Item.Key): Item = rep.getOrElse(key, isabelle.error("Undeclared " + key.toString))
+      def get(key: Item.Key): Item = items.getOrElse(key, isabelle.error("Undeclared " + key.toString))
       def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
       def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
@@ -1135,8 +1141,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def get_locale_dependency(name: String): Item =
         get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
 
-      def is_empty: Boolean = rep.isEmpty
-      def defined(key: Item.Key): Boolean = rep.isDefinedAt(key)
+      def is_empty: Boolean = items.isEmpty
+      def defined(key: Item.Key): Boolean = items.isDefinedAt(key)
 
       def declare(item: Item): Content =
       {
@@ -1149,15 +1155,27 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def + (item: Item): Content =
         if (defined(item.key)) content
-        else new Content(rep + (item.key -> item))
+        else new Content(items + (item.key -> item), triples)
+
+      def + (entry: (String, Int)): Content =
+        triples.get(entry._1) match {
+          case None => new Content(items, triples + entry)
+          case Some(m) =>
+            if (m == entry._2) content
+            else isabelle.error("Incoherent triple counts for theory: " + isabelle.quote(entry._1))
+        }
 
       def ++ (other: Content): Content =
         if (content eq other) content
         else if (is_empty) other
-        else (content /: other.rep)({ case (map, (_, item)) => map + item })
+        else {
+          val items1 = (content /: other.items)({ case (map, (_, item)) => map + item }).items
+          val triples1 = (content /: other.triples)({ case (map, entry) => map + entry }).triples
+          new Content(items1, triples1)
+        }
 
       override def toString: String =
-        rep.iterator.map(_._2).mkString("Content(", ", ", ")")
+        items.iterator.map(_._2).mkString("Content(", ", ", ")")
 
 
       /* MMT import of Isabelle classes, types, terms etc. */
@@ -1231,8 +1249,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def report_imported: String =
     {
       val theories = imported.value
-      val items = Content.merge(theories.valuesIterator)
-      theories.size.toString + " theories with " + items.size + " items: " + items.report
+      val content = Content.merge(theories.valuesIterator)
+      theories.size.toString +
+        " theories with " + content.items_size + " items: " + content.report +
+        ", and " + content.triples_size + " RDF triples"
     }
 
     def theory_content(name: String): Content =
@@ -1254,6 +1274,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           Content.merge(thy_export.parents.map(theory_content)), Nil)
 
       def content: Content = _state.value._1
+      def end_content: Content =
+      {
+        val st =_state.value
+        st._1 + (node_name.theory -> st._2.size)
+      }
 
       def rdf_document: isabelle.XML.Elem = Ontology.rdf_document(_state.value._2.reverse)
 
@@ -1314,7 +1339,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         item
       }
 
-      def end_theory(): Unit = imported.change(map => map + (node_name.theory -> content))
+      def end_theory(): Unit =
+        imported.change(map => map + (node_name.theory -> end_content))
     }
   }
 }

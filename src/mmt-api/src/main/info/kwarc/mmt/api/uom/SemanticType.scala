@@ -97,7 +97,7 @@ object SemanticType {
 abstract class Atomic[V] extends RSemanticType[V] {
   override def valid(u: Any) = unapply(u).isDefined
   final def toString(u: Any) = atomicToString(unapply(u).get)
-  def atomicToString(u: V) = unapply(u).get.toString
+  def atomicToString(u: V) = u.toString
   /** narrower type */
   def fromString(s: String): V
 }

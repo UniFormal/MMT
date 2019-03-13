@@ -248,7 +248,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>
-           val uR = u.recognize(state.rules).getOrElse(u)
+           val uR = controller.recognizeLiteral(state.rules, u).getOrElse(u)
            Stability.set(uR)
            uR
          case _ =>

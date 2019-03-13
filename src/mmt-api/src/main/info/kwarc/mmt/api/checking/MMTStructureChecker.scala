@@ -757,7 +757,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // resolve type and parse unknown literal, return OMLIT
       case u @ UnknownOMLIT(v, synType) =>
         checkTerm(context, synType)
-        u.recognize(env.rules).getOrElse {
+        controller.recognizeLiteral(env.rules, u).getOrElse {
           env.errorCont(InvalidObject(s, "unknown literal type " + synType))
           u
         }
