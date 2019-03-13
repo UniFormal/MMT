@@ -60,7 +60,7 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
      val isOpaque = SchemaLang.opaque.get(c)
      val isHidden = SchemaLang.hidden.get(c)
      val collection = if (SchemaLang.collection.get(c)) {
-       Some(CollectionInfo(???,???,c.metadata))
+       Some(CollectionInfo(c.path,c.metadata))
      } else 
        None
      val col = Column(c.path, mathType, codecTermChecked, dbtype, isNullable, isPrimaryKey, isOpaque, !isHidden, collection)

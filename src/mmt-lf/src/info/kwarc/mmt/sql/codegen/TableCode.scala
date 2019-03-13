@@ -99,4 +99,19 @@ case class TableCode(table: Table) {
      """.stripMargin
   }
 
+  def jsonSupportMap: String = {
+    val columns = columnCodeList.map(_.jsonWriterMapItem).mkString(",\n")
+    s"""implicit object format$caseClass extends RootJsonFormat[$caseClass] {
+       |override def write(o: $caseClass): JsValue = JsObject(
+       |List(
+       |$columns
+       |).flatten: _*
+       |)
+       |
+       |override def read(json: JsValue): $caseClass =
+       |throw new UnsupportedOperationException("Missing implementation for the $caseClass JsonReader")
+       |}
+     """.stripMargin
+  }
+
 }
