@@ -204,7 +204,8 @@ object Importer
       else {
         element.head.span.name match {
           case "lemmas" | "lemma" => Some(Ontology.ULO.lemma)
-          case "proposition" | "theorem" => Some(Ontology.ULO.theorem)
+          case "theorem" => Some(Ontology.ULO.theorem)
+          case "proposition" => Some(Ontology.ULO.proposition)
           case "corollary" => Some(Ontology.ULO.corollary)
           case _ => None
         }
@@ -521,7 +522,7 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item, segment.meta_data)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.data))
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`object`))
             if (segment.is_axiomatization)
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
 
