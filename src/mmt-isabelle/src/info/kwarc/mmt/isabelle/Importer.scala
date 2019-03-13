@@ -1070,9 +1070,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                   snapshot.state.lookup_id(entity_id) match {
                     case None => isabelle.error(msg)
                     case Some(st) =>
+                      val command = st.command
+                      val line_pos =
+                        snapshot.find_command_position(command.id, 0) match {
+                          case None => ""
+                          case Some(node_pos) => " (line " + node_pos.line + ")"
+                        }
                       isabelle.error(msg + " -- it refers to command " +
                         isabelle.Symbol.cartouche_decoded(st.command.source) + " in " +
-                        isabelle.quote(st.command.node_name.node))
+                        isabelle.quote(st.command.node_name.node) + line_pos)
                   }
               }
             element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
