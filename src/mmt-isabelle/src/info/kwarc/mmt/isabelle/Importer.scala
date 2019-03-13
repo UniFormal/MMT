@@ -634,9 +634,11 @@ object Importer
       MMT_Importer.importDocument(thy_archive.archive, doc)
     }
 
-    Isabelle.import_session(import_theory)
+    try { Isabelle.import_session(import_theory) }
+    finally { progress.echo("Finished import of " + Isabelle.report_imported) }
 
-    progress.echo("Finished import of " + Isabelle.report_imported)
+
+
   }
 
 
