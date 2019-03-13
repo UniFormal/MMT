@@ -636,9 +636,6 @@ object Importer
 
     try { Isabelle.import_session(import_theory) }
     finally { progress.echo("Finished import of " + Isabelle.report_imported) }
-
-
-
   }
 
 
