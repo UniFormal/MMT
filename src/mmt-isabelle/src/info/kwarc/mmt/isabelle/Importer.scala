@@ -1116,8 +1116,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
     final class Content private(
-      private val items: SortedMap[Item.Key, Item],  // exported formal entities for each theory
-      private val triples: SortedMap[String, Int])  // number of RDF triples for each theory
+      private val items: SortedMap[Item.Key, Item],  // exported formal entities per theory
+      private val triples: SortedMap[String, Int])  // number of RDF triples per theory
     {
       content =>
 
