@@ -39,7 +39,6 @@ object Ontology
     val `type` = ulo("type") // type constructors
     val data = ulo("object") // term constants
 
-    val proposition = ulo("proposition")
     val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
 
     val theory = ulo("theory") // theory, locale
@@ -56,8 +55,9 @@ object Ontology
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
     val derived = ulo("derived") // HOL typedefs, proven statements
 
-    val theorem = ulo("theorem") // command "theorem" or "proposition"
     val lemma = ulo("lemma") // command "lemma" or "lemmas
+    val theorem = ulo("theorem") // command "theorem" or "proposition"
+    val proposition = ulo("proposition") // command "proposition"
     val corollary = ulo("corollary") // command "corollary"
     val conjecture = ulo("conjecture") // statement where proof contains "sorry"
 

@@ -204,7 +204,8 @@ object Importer
       else {
         element.head.span.name match {
           case "lemmas" | "lemma" => Some(Ontology.ULO.lemma)
-          case "proposition" | "theorem" => Some(Ontology.ULO.theorem)
+          case "theorem" => Some(Ontology.ULO.theorem)
+          case "proposition" => Some(Ontology.ULO.proposition)
           case "corollary" => Some(Ontology.ULO.corollary)
           case _ => None
         }
