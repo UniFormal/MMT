@@ -67,8 +67,8 @@ object Ontology
     // unused: could be result of "Judgement Day" Sledgehammer exploration
     val automatically_proved = ulo("automatically_proved")
 
-    val experimental = ulo("experimental") // unused
-    val deprecated = ulo("deprecated") // unused
+    val experimental = ulo("experimental") // unused: could be derived from 'experimental' target
+    val deprecated = ulo("deprecated") // unused: could be specified via document marker
 
 
     /* binaries */
