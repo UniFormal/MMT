@@ -39,7 +39,7 @@ object Ontology
     val `type` = ulo("type") // type constructors
     val `object` = ulo("object") // term constants
 
-    val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
+    val statement = ulo("statement")  // fact that originates from theorem-like command (e.g. "theorem", "lemma", "axiomatization")
 
     val theory = ulo("theory") // theory, locale
     val instance = ulo("instance") // locale interpretation
@@ -47,9 +47,9 @@ object Ontology
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
 
     // unused: could be derived from sessions structure etc.
-    val file = ulo("file")
-    val folder = ulo("folder")
-    val library = ulo("library")
+    val file = ulo("file")  // could be theory file
+    val folder = ulo("folder")  // could be session
+    val library = ulo("library")  // could be "Distribution", "AFP", "IsaFoR" etc.
     val group = ulo("group")
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
