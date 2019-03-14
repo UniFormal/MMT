@@ -1105,31 +1105,58 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* theory content */
+    /* theory content and statistics */
+
+    def print_int(n: Int, len: Int = 8): String =
+      String.format(java.util.Locale.ROOT, "%" + len + "d", new Integer(n))
+
+    object Triples_Stats
+    {
+      def empty: Triples_Stats = Triples_Stats(SortedMap.empty)
+      def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = (empty /: triples)(_ + _)
+      def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = (empty /: args)(_ + _)
+    }
+
+    sealed case class Triples_Stats(stats: SortedMap[String, Int])
+    {
+      def + (name: String, count: Int): Triples_Stats =
+        Triples_Stats(stats + (name -> (stats.getOrElse(name, 0) + count)))
+
+      def + (t: isabelle.RDF.Triple): Triples_Stats = this + (t.predicate, 1)
+
+      def + (other: Triples_Stats): Triples_Stats =
+        (this /: other.stats)({ case (a, (b, n)) => a + (b, n) })
+
+      def total: Int = stats.iterator.map(_._2).sum
+
+      def report: String =
+        (for {(name, count) <- stats.iterator }
+          yield { print_int(count, len = 10) + " " + name }).mkString("\n")
+    }
 
     object Content
     {
       val empty: Content =
         new Content(
           SortedMap.empty[Item.Key, Item](Item.Key.Ordering),
-          SortedMap.empty[String, Int])
+          SortedMap.empty[String, Triples_Stats])
       def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
     }
 
     final class Content private(
       private val items: SortedMap[Item.Key, Item],  // exported formal entities per theory
-      private val triples: SortedMap[String, Int])  // number of RDF triples per theory
+      private val triples: SortedMap[String, Triples_Stats])  // RDF triples per theory
     {
       content =>
 
       def items_size: Int = items.size
-      def triples_size: Int = triples.iterator.map(_._2).sum
+      def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
 
       def report_kind(kind: String): String =
-        items.count({ case (_, item) => item.entity_kind == kind }).toString + " " + kind
+        print_int(items.count({ case (_, item) => item.entity_kind == kind }), len = 10) + " " + kind
 
       def report: String =
-        isabelle.commas(
+        isabelle.Library.cat_lines(
           List(
             isabelle.Export_Theory.Kind.LOCALE,
             isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
@@ -1163,12 +1190,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         if (defined(item.key)) content
         else new Content(items + (item.key -> item), triples)
 
-      def + (entry: (String, Int)): Content =
+      def + (entry: (String, Triples_Stats)): Content =
         triples.get(entry._1) match {
           case None => new Content(items, triples + entry)
-          case Some(m) =>
-            if (m == entry._2) content
-            else isabelle.error("Incoherent triple counts for theory: " + isabelle.quote(entry._1))
+          case Some(stats) =>
+            if (stats == entry._2) content
+            else isabelle.error("Incoherent triple stats for theory: " + isabelle.quote(entry._1))
         }
 
       def ++ (other: Content): Content =
@@ -1256,9 +1283,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     {
       val theories = imported.value
       val content = Content.merge(theories.valuesIterator)
-      theories.size.toString +
-        " theories with " + content.items_size + " items: " + content.report +
-        ", and " + content.triples_size + " RDF triples"
+      val all_triples = content.all_triples
+
+      print_int(theories.size) + " theories\n" +
+      print_int(content.items_size) + " individuals:\n" + content.report + "\n" +
+      print_int(all_triples.total) + " relations:\n" + all_triples.report
     }
 
     def theory_content(name: String): Content =
@@ -1282,8 +1311,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def content: Content = _state.value._1
       def end_content: Content =
       {
-        val st =_state.value
-        st._1 + (node_name.theory -> st._2.size)
+        val (content, triples) =_state.value
+        content + (node_name.theory -> Triples_Stats.make(triples))
       }
 
       def rdf_document: isabelle.XML.Elem = Ontology.rdf_document(_state.value._2.reverse)
