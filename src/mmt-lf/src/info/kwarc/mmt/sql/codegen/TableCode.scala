@@ -5,14 +5,15 @@ import info.kwarc.mmt.sql.{Column, Table}
 case class TableCode(table: Table) {
 
   def tableName: String = table.name
+  def tableObject: String = s"tb$tableName"
   // class names
   def plainQueryObject = s"${tableName}PlainQuery"
   def tableClass = s"${tableName}Table"
-  private def caseClass: String = table.name
+  def caseClass: String = table.name
   // database
   private def dbTableName = s"ZOO_${tableName.toUpperCase}" // table name in the database
 
-  def packageString = s"package xyz.discretezoo.web.db.Zoo$tableName" // package for the table specific files
+  def packageString = s"xyz.discretezoo.web.db.Zoo$tableName" // package for the table specific files
   private def columnCodeList: Seq[ColumnCode] = table.columns.map(ColumnCode)
   private def primaryKeyColumn: Column = table.columns.filter(_.isPrimaryKey).head
 
@@ -23,14 +24,14 @@ case class TableCode(table: Table) {
     val caseClassMapParameters = columnCodeList.map(_.nameCamelCase).mkString(" ::\n")
     val selectMap = columnCodeList.map(_.selectMapItem).mkString(",\n")
 
-    s"""$packageString
+    s"""package $packageString
        |import java.util.UUID
        |import slick.collection.heterogeneous.HNil
        |import slick.lifted.{ProvenShape, Rep}
        |import xyz.discretezoo.web.DynamicSupport.ColumnSelector
        |import xyz.discretezoo.web.ZooPostgresProfile.api._
        |
-       |final class $tableClass(tag: Tag) extends Table[$caseClass](tag, $dbTableName) with ColumnSelector {
+       |final class $tableClass(tag: Tag) extends Table[$caseClass](tag, "$dbTableName") with ColumnSelector {
        |
        |$accessorMethods
        |
@@ -54,7 +55,7 @@ case class TableCode(table: Table) {
     val cols = columnCodeList.map(_.caseClassField).mkString(",\n")
     val selectMap = columnCodeList.map(_.selectMapItem).mkString(",\n")
 
-    s"""$packageString
+    s"""package $packageString
        |import java.util.UUID
        |import xyz.discretezoo.web.ZooObject
        |
@@ -70,11 +71,12 @@ case class TableCode(table: Table) {
 
   def codePlainQueryObject: String = {
     val getResultParameters = table.columns.map(c => {
-      if (c.dbtype.toString == "UUID") "r.nextObject.asInstanceOf[UUID]"
+      val special = Seq("UUID", "List[Int]", "List[List[Int]]")
+      if (special.contains(c.dbtype.toString)) s"r.nextObject.asInstanceOf[${c.dbtype.toString}]"
       else "r.<<"
     }).mkString(", ")
 
-    s"""$packageString
+    s"""package $packageString
        |import java.util.UUID
        |import slick.jdbc.GetResult
        |import xyz.discretezoo.web.PlainSQLSupport
@@ -91,25 +93,22 @@ case class TableCode(table: Table) {
        |}""".stripMargin
   }
 
-  def jsonObjectProperties: String = {
-    val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
-    s"""{
-       |$columns
-       |}
-     """.stripMargin
-  }
-
   def jsonSupportMap: String = {
     val columns = columnCodeList.map(_.jsonWriterMapItem).mkString(",\n")
-    s"""implicit object format$caseClass extends RootJsonFormat[$caseClass] {
-       |override def write(o: $caseClass): JsValue = JsObject(
+    s"""case o: $caseClass => JsObject(
        |List(
        |$columns
        |).flatten: _*
        |)
-       |
-       |override def read(json: JsValue): $caseClass =
-       |throw new UnsupportedOperationException("Missing implementation for the $caseClass JsonReader")
+     """.stripMargin
+  }
+
+  // from here on react stuff
+
+  def jsonObjectProperties: String = {
+    val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
+    s""""$tableObject": {
+       |$columns
        |}
      """.stripMargin
   }
