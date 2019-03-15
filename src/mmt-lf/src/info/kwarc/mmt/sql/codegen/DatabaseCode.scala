@@ -2,22 +2,65 @@ package info.kwarc.mmt.sql.codegen
 
 case class DatabaseCode(name: String, tables: Seq[TableCode], jdbc: String, user: String, pass: String) {
 
-  // TODO Webserver
+  def jsonSupportCode: String = {
+    val importTablePackages = tables
+      .map(t => s"import ${t.packageString}.${t.caseClass}").mkString(",\n")
+    val casesToJson = tables
+      .map(_.jsonSupportMap).mkString("\n")
+    s"""package xyz.discretezoo.web
+       |import java.util.UUID
+       |import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+       |import spray.json.{JsonFormat, _}
+       |import xyz.discretezoo.web.ZooJsonAPI._
+       |$importTablePackages
+       |
+       |trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol with NullOptions {
+       |
+       |  implicit val formatCount: RootJsonFormat[Count] = jsonFormat1(Count)
+       |  implicit val formatParameter: RootJsonFormat[Parameter] = jsonFormat2(Parameter)
+       |  implicit val formatSearchParameters: RootJsonFormat[SearchParameters] = jsonFormat3(SearchParameters)
+       |  implicit val formatResultsParameters: RootJsonFormat[ResultsParameters] = jsonFormat4(ResultsParameters)
+       |
+       |  implicit object formatUUID extends JsonFormat[UUID] {
+       |    def write(u: UUID): JsValue = u.toString.toJson
+       |    def read(json: JsValue) =
+       |      throw new UnsupportedOperationException("Missing implementation for the UUID JsonReader")
+       |  }
+       |
+       |  implicit object formatZooObject extends RootJsonFormat[ZooObject] {
+       |    override def write(o: ZooObject): JsValue = o match {
+       |$casesToJson
+       |    }
+       |
+       |    override def read(json: JsValue): ZooObject =
+       |      throw new UnsupportedOperationException("Missing implementation for the ZooObject JsonReader")
+       |  }
+       |
+       |  implicit object formatSearchResults extends RootJsonFormat[SearchResult] {
+       |    override def write(o: SearchResult): JsValue = {
+       |      JsObject("pages" -> o.pages.toJson, "data" -> o.data.toJson)
+       |    }
+       |    override def read(json: JsValue): SearchResult =
+       |      throw new UnsupportedOperationException("Missing implementation for the ZooObject JsonReader")
+       |  }
+       |}
+     """.stripMargin
+  }
 
   def fileDbCode: String = {
     val importTablePackages = tables
-      .map(t => s"import ${t.packageString}.{${t.plainQueryObject}, ${t.tableClass}").mkString(",\n")
+      .map(t => s"import ${t.packageString}.{${t.plainQueryObject}, ${t.tableClass}}").mkString(",\n")
     val tableObjects = tables
-      .map(t => s"object tb${t.tableName} extends TableQuery(new ${t.tableClass}(_))").mkString(",\n")
+      .map(t => s"object ${t.tableObject} extends TableQuery(new ${t.tableClass}(_))").mkString(",\n")
     val getQueryMatches = tables
       .map(t =>
-        s"""case ("tb${t.tableName}", true) => ${t.plainQueryObject}.get(rp)
-           |case ("tb${t.tableName}", false) => tb${t.tableName}.dynamicQueryResults(rp).result
+        s"""case ("${t.tableObject}", true) => ${t.plainQueryObject}.get(rp)
+           |case ("${t.tableObject}", false) => tb${t.tableName}.dynamicQueryResults(rp).result
          """.stripMargin).mkString("\n")
     val countQueryMatches = tables
       .map(t =>
-        s"""case ("tb${t.tableName}", true) => ${t.plainQueryObject}.count(rp)
-           |case ("tb${t.tableName}", false) => tb${t.tableName}.dynamicQueryCount(qp).length.result
+        s"""case ("${t.tableObject}", true) => ${t.plainQueryObject}.count(qp)
+           |case ("${t.tableObject}", false) => tb${t.tableName}.dynamicQueryCount(qp).length.result
          """.stripMargin).mkString("\n")
     s"""package xyz.discretezoo.web.db
        |import akka.actor.ActorSystem
@@ -75,6 +118,16 @@ case class DatabaseCode(name: String, tables: Seq[TableCode], jdbc: String, user
        |}
        |}
        |
+       |}
+     """.stripMargin
+  }
+
+  // react
+
+  def objectPropertiesJSON: String = {
+    val code = tables.map(_.jsonObjectProperties).mkString(",\n")
+    s"""{
+       |$code
        |}
      """.stripMargin
   }
