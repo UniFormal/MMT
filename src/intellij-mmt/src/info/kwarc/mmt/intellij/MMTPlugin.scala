@@ -9,9 +9,10 @@ import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.parser.SourceRegion
+import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.refactoring.linkinversion.{ContinuationStyle, RewriteError, RewriteErrorHandler, SkipDeclaration}
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.utils.{File, MMTSystem}
+import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
 import info.kwarc.mmt.refactoring.linkinversion.LFLinkInverter
 import javax.swing.tree.DefaultMutableTreeNode
@@ -305,6 +306,18 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 
 	def checkUpdate: Option[(String, String)] = Try(MMTSystem.getLatestVersion).toOption
 
+	private var hasReadAllRelationalContent = false
+	private def readAllRelationalContent(): Unit = {
+		if (!hasReadAllRelationalContent) {
+			controller.backend.getArchives.foreach(archive => {
+				archive.allContent
+				archive.readRelational(FilePath("/"), controller, "rel")
+			})
+
+			hasReadAllRelationalContent = true
+		}
+	}
+
 	/* Generalizer Tool */
 	def generalize(
 									errorTreeRootNode: DefaultMutableTreeNode,
@@ -313,6 +326,27 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 									RToSPath: String,
 									TPath: String
 								): String = {
+
+		def getMMTSyntaxPresenterExtension: MMTSyntaxPresenter = {
+			controller.extman.get(classOf[MMTSyntaxPresenter], format = "").getOrElse {
+				val firstInstance = new MMTSyntaxPresenter()
+				controller.extman.addExtension(firstInstance)
+
+				firstInstance
+			}
+		}
+
+		// Precondition: StructuralElement added to controller
+		val elementToMMTSurfaceCode: StructuralElement => String = {
+			val mmtSyntaxPresenter = getMMTSyntaxPresenterExtension
+
+			element: StructuralElement => {
+				val stringBuilder = new presentation.StringBuilder
+				mmtSyntaxPresenter(element)(stringBuilder)
+
+				stringBuilder.get
+			}
+		}
 
 		object ErrorTreeExtendingErrorHandler extends RewriteErrorHandler {
 			def apply(error: RewriteError): ContinuationStyle = {
@@ -353,7 +387,10 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 
 		val newModulePath = T.path.parent ? "Generalized"
 
-		LFLinkInverter.invertLink(
+		// [[LinkInverter]] needs all relational data
+		readAllRelationalContent()
+
+		val invertedTheory = LFLinkInverter.invertLink(
 			R,
 			T,
 			RToS,
@@ -361,8 +398,11 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 			ErrorTreeExtendingErrorHandler
 		)(controller)
 
-		// TODO(ComFreek) Print generalized theory to MMT surface syntax
-		//   For that first add it to a dummy archive (?)
-		"hello world from reflected interface"
+
+		controller.add(invertedTheory)
+		val invertedTheoryCode = elementToMMTSurfaceCode(invertedTheory)
+		controller.delete(invertedTheory.path)
+
+		invertedTheoryCode
 	}
 }

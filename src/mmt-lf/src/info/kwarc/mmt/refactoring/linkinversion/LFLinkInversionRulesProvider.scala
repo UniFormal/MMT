@@ -1,9 +1,9 @@
 package info.kwarc.mmt.refactoring.linkinversion
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Link
 import info.kwarc.mmt.api.modules.LinkUtils.getTermMappingForLink
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.linkinversion.LinkInversionRulesProvider
 import info.kwarc.mmt.api.uom._
@@ -11,13 +11,13 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LF}
 
 // TODO(ComFreek) document this
-class LFLinkInversionRulesProviderHelper(private val ctrl: Controller, private val matcher: Matcher)
-	extends LinkInversionRulesProvider  {
+class LFLinkInversionRulesProvider(private val ctrl: Controller, private val matcher: Matcher)
+	extends LinkInversionRulesProvider {
 
 	def getInverseRewritingRules(link: Link): RuleSet = {
 		val rules = getTermMappingForLink(link)(ctrl)
 			.map { case (domainSymbol, assignment) =>
-				LFLinkInversionRulesProviderHelper.getInverseSimplificationRule(matcher)(domainSymbol, assignment)
+				LFLinkInversionRulesProvider.getInverseSimplificationRule(matcher)(domainSymbol, assignment)
 			}
 			.toSet
 
@@ -28,9 +28,10 @@ class LFLinkInversionRulesProviderHelper(private val ctrl: Controller, private v
 	}
 }
 
-private object LFLinkInversionRulesProviderHelper {
+private object LFLinkInversionRulesProvider {
 	/**
 		* TODO(ComFreek) Document
+		*
 		* @param matcher
 		* @param domainSymbol
 		* @param assignment
@@ -68,16 +69,16 @@ private object LFLinkInversionRulesProviderHelper {
 		* If (c := λ x_1, ..., x_n. s) is the assignment, then
 		*
 		*
-		*           t
+		* t
 		* ---------------------- if sσ = t for a substitution σ with dom(σ) ⊆ {x_1, ..., x_n}
-		*  s σ(x_1) ... σ(x_n)
+		* s σ(x_1) ... σ(x_n)
 		* ```
 		*
-		* @param matcher A [[Matcher]] instance.
+		* @param matcher      A [[Matcher]] instance.
 		* @param domainSymbol The LHS of the morphism assignment, e.g. when
 		*                     `d := λab. ||a - b||`, then this is `d`.
-		* @param assignment The definiens of the morphism assignment, e.g. when
-		*                   `d := λab. ||a - b||`, then this is `λab. ||a - b||`.
+		* @param assignment   The definiens of the morphism assignment, e.g. when
+		*                     `d := λab. ||a - b||`, then this is `λab. ||a - b||`.
 		* @return A simplification rule as described above.
 		*/
 	private def getInverseSimplificationRuleForLambdaBoundVariable(matcher: Matcher)

@@ -22,7 +22,7 @@ object LFLinkInverter {
 			RuleSet.collectRules(ctrl, Context(S.path))
 		)
 
-		val linkInversionRulesProvider = new LFLinkInversionRulesProviderHelper(ctrl, matcher)
+		val linkInversionRulesProvider = new LFLinkInversionRulesProvider(ctrl, matcher)
 
 		LinkInverter.invertLink(R, S, RToS, linkInversionRulesProvider, newModulePath,
 			rewriteErrorHandler)
