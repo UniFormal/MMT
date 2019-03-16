@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq._
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{ApplySpine, Lambda}
 
 import scala.collection.mutable
 
@@ -201,8 +201,8 @@ case class PROD(_type : String, decls:List[decl] ,target:target) extends term {
 }
 case class CAST(id : String, sort : String, tm : term, _type : _type) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail) // TODO ???
-  } // TODO
+    tm.recOMDoc // type casts are only for the coq type checker
+  }
 }
 case class APPLY(id : String, sort : String, tms : List[term]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
@@ -232,34 +232,37 @@ case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, so
   }
 }// OMS
 //                                     ^  from 0      ^ starts from 1, index in list of constructors
+import objects.Conversions._
 case class FIX(noFun : Int, id : String, sort : String, fixFunctions : List[FixFunction]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail) // TODO ???
+    val vars = fixFunctions.map(f => (LocalName(f.name),f._type.tm.recOMDoc,f.body.tm.recOMDoc))
+    ApplySpine(OMS(Coq.fix),Lambda(vars.map(v => v._1%v._2),ApplySpine(OMS(Coq.fix),vars.map(_._3):_*))) // TODO ???
   }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class FixFunction(name : String, id : String, recIndex: Int,_type : _type, body : body) extends CoqEntry {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail) // TODO ???
+   ??? // TODO ???
   }
 }
 //                                                      ^ index of decreasing argument, from 0 (proof for termination)
 case class COFIX(noFun : Int, id : String, sort : String, cofixFunctions : List[CofixFunction]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail) // TODO ???
+    val vars = cofixFunctions.map(f => (LocalName(f.name),f._type.tm.recOMDoc,f.body.tm.recOMDoc))
+    ApplySpine(OMS(Coq.cofix),Lambda(vars.map(v => v._1%v._2),ApplySpine(OMS(Coq.cofix),vars.map(_._3):_*))) // TODO ???
   }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class CofixFunction(id : String, name : String, _type : _type, body : body) extends CoqEntry {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail) // TODO ???
+    ??? // TODO ???
   }
 }
 case class MUTCASE(uriType: URI, noType : Int, id : String, sort : String, patternsType : patternsType,
 //                     ^  inductive type to match on                                ^ lambda abstracted return type (over both indices and mathcing value)
                    inductiveTerm : inductiveTerm, patterns : List[pattern]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail)
+    ApplySpine(OMS(Coq.ccase),patternsType.tm.recOMDoc :: inductiveTerm.tm.recOMDoc :: patterns.map(_.tm.recOMDoc):_*)
   } // TODO
 }
 //                    ^  the thing I'm matching      ^ lambda-abstracted cases
@@ -280,7 +283,7 @@ case class REL(value : Int, binder : String, id : String, idref:String,sort : St
 //               ^ deBruijn-index(from 1) ^ (ideally) the name ^ id of binder
 case class PROJ(uri: URI, noType : Int, id : String, sort : String, tm : term) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMS(Coq.fail)
+    ApplySpine(OMS(Coq.proj),tm.recOMDoc)
   } // TODO
 }
 

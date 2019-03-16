@@ -155,12 +155,17 @@ class Importer extends archives.Importer {
       log("Section " + nt.path.toString)
       controller add nt
       statements.foreach(doDecl(nt,_))
-      controller.simplifier(nt.path)
+      try {
+        controller.simplifier(nt.path)
+      } catch {
+        case GetError(_) =>
+        case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
+      }
       // controller add PlainInclude(th.path,parent.path)
     case coqxml.VARIABLE(uri,as,components) =>
       val (name,tp,df) = components.collectFirst {
         case coqxml.TopXML(coqxml.Variable(nm,params,_,body,tptm)) =>
-          (LocalName(nm),Some(tptm.tm.toOMDoc(controller,parent.modulePath)),body.map(_.tm.toOMDoc(controller,parent.modulePath))) // TODO
+          (LocalName(nm),Some(Coqtp(tptm.tm.toOMDoc(controller,parent.modulePath))),body.map(_.tm.toOMDoc(controller,parent.modulePath))) // TODO
       }.getOrElse {
         ???
       }
@@ -187,7 +192,7 @@ class Importer extends archives.Importer {
       tps foreach {
         case coqxml.InductiveType(namei,indbool,_,arity,consts) =>
           val name = LocalName(namei)
-          val tp = Some(arity.tm.toOMDoc(controller,parent.modulePath))
+          val tp = Some(Coqtp(arity.tm.toOMDoc(controller,parent.modulePath)))
           val df = None // TODO
           val c = Constant(dd.toTerm,name,Nil,tp,df,Some("Type"))
           controller add c
@@ -197,8 +202,11 @@ class Importer extends archives.Importer {
 
           }
       }
-
-      controller.simplifier(parent.path)
+      try {
+        controller.simplifier(parent.path)
+      } catch {
+        case GetError(_) =>
+      }
       /*
       val (name,tp,df) = components.collectFirst {
         case coqxml.TopXML(coqxml.InductiveDefinition(noParams,_,_,tps)) =>
@@ -227,7 +235,7 @@ class Importer extends archives.Importer {
             case coqxml.BodyXML(coqxml.ConstantBody(_,_,_,body)) =>
               body.toOMDoc(controller,parent.modulePath) // TODO
           }
-          val ret = (LocalName(namei),Some(tpi.toOMDoc(controller,parent.modulePath)),dfi) // TODO
+          val ret = (LocalName(namei),Some(Coqtp(tpi.toOMDoc(controller,parent.modulePath))),dfi) // TODO
           ret
       }.getOrElse {
         println("Oops")
