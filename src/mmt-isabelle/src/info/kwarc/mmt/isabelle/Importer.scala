@@ -1351,6 +1351,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         _state.change(
           { case (content, triples) =>
               val content1 = content.declare(item)
+              val name = Ontology.binary(item.global_name, Ontology.ULO.name, item.entity_xname)
               val specs =
                 List(
                   Ontology.binary(thy.path, Ontology.ULO.specifies, item.global_name),
@@ -1359,7 +1360,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 item.source_ref.map(sref =>
                     Ontology.binary(item.global_name, Ontology.ULO.source_ref, sref.toURI))
               val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
-              val triples1 = specs ::: source_ref.toList ::: properties.reverse ::: triples
+              val triples1 = name :: specs ::: source_ref.toList ::: properties.reverse ::: triples
               (content1, triples1)
           })
       }

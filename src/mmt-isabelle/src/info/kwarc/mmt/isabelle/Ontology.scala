@@ -40,6 +40,8 @@ object Ontology
     val `object` = ulo("object") // term constants
     val statement = ulo("statement")  // fact items (thm)
 
+    val name = ulo("name") // external entity name (xname)
+
     val theory = ulo("theory") // theory, locale
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
