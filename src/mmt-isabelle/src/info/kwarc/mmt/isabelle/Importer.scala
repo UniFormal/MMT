@@ -174,6 +174,7 @@ object Importer
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     element_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
+    command_kind: Option[String] = None,
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     classes: List[isabelle.Export_Theory.Class] = Nil,
@@ -192,26 +193,18 @@ object Importer
 
     def command_name: String = element.head.span.name
 
+    def is_definition: Boolean =
+      command_kind match {
+        case Some(kind) => isabelle.Keyword.theory_defn(kind)
+        case None => false
+      }
+
     def is_statement: Boolean =
       Set("axiomatization", "lemma", "theorem", "proposition", "corollary", "schematic_goal")(command_name)
 
     def is_axiomatization: Boolean = command_name == "axiomatization"
 
-    def theorem_kind: Option[String] =
-    {
-      if (is_statement && element.iterator.exists(cmd => cmd.span.name == "sorry")) {
-        Some(Ontology.ULO.conjecture)
-      }
-      else {
-        element.head.span.name match {
-          case "lemmas" | "lemma" => Some(Ontology.ULO.lemma)
-          case "theorem" => Some(Ontology.ULO.theorem)
-          case "proposition" => Some(Ontology.ULO.proposition)
-          case "corollary" => Some(Ontology.ULO.corollary)
-          case _ => None
-        }
-      }
-    }
+    def is_experimental: Boolean = element.iterator.exists(cmd => cmd.span.name == "sorry")
 
     def facts_single: List[isabelle.Export_Theory.Fact_Single] =
       (for {
@@ -540,17 +533,28 @@ object Importer
         for (decl <- segment.facts_single) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
 
-            if (segment.is_statement) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
-              if (segment.is_axiomatization)
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
-              else
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
+            if (segment.is_definition) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.definition))
             }
 
-            segment.theorem_kind.foreach(kind =>
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, kind)))
+            if (segment.is_statement) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.para))
+              thy_draft.rdf_triple(
+                Ontology.binary(item.global_name, Ontology.ULO.paratype, segment.command_name))
+            }
+
+            if (segment.is_axiomatization) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+            }
+            else {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
+            }
+
+            if (segment.is_experimental) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.experimental))
+            }
 
             val tp = thy_draft.content.import_prop(decl.prop)
             add_constant(item, tp, Some(Isabelle.Unknown.term))
@@ -1103,6 +1107,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           Theory_Segment(
             element = element,
             element_timing = element_timing,
+            command_kind = syntax.keywords.kinds.get(element.head.span.name),
             meta_data = meta_data,
             heading = heading,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,

@@ -38,13 +38,15 @@ object Ontology
 
     val `type` = ulo("type") // type constructors
     val `object` = ulo("object") // term constants
-
-    val statement = ulo("statement")  // fact that originates from theorem-like command (e.g. "theorem", "lemma", "axiomatization")
+    val statement = ulo("statement")  // fact items (thm)
 
     val theory = ulo("theory") // theory, locale
     val instance = ulo("instance") // locale interpretation
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
+
+    val para = ulo("para") // theorem-like statements (e.g. "theorem", "lemma", "axiomatization")
+    val definition = ulo("definition") // definitional statements (kind "thy_defn", "thy_goal_defn")
 
     // unused: could be derived from sessions structure etc.
     val file = ulo("file")  // could be theory file
@@ -54,12 +56,6 @@ object Ontology
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
     val derived = ulo("derived") // HOL typedefs, proven statements
-
-    val lemma = ulo("lemma") // command "lemma" or "lemmas
-    val theorem = ulo("theorem") // command "theorem" or "proposition"
-    val proposition = ulo("proposition") // command "proposition"
-    val corollary = ulo("corollary") // command "corollary"
-    val conjecture = ulo("conjecture") // statement where proof contains "sorry"
 
     // unused: this is a property of the context, not of individual facts
     val simplification_rule = ulo("simplification-rule")
@@ -72,6 +68,8 @@ object Ontology
 
 
     /* binaries */
+
+    val paratype = ulo("paratype") // name of theorem-like statements as its type (e.g. "theorem")
 
     val declares = ulo("declares") // theory/locale declares item
     val uses = ulo("uses") // dependencies of term language (not proofs)
