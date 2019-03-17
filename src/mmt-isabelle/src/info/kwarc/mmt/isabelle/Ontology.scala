@@ -41,7 +41,6 @@ object Ontology
     val statement = ulo("statement")  // fact items (thm)
 
     val theory = ulo("theory") // theory, locale
-    val instance = ulo("instance") // locale interpretation
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
 
@@ -70,6 +69,8 @@ object Ontology
     /* binaries */
 
     val paratype = ulo("paratype") // name of theorem-like statements as its type (e.g. "theorem")
+
+    val instance_of = ulo("instance-of") // locale interpretation
 
     val declares = ulo("declares") // theory/locale declares item
     val uses = ulo("uses") // dependencies of term language (not proofs)
