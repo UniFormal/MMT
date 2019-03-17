@@ -1,7 +1,7 @@
 chapter \<open>Example proof document in Isabelle\<close>
 
 theory Example
-  imports Main
+  imports Main \<^marker>\<open>license \<open>BSD3\<close>\<close>
 begin
 
 

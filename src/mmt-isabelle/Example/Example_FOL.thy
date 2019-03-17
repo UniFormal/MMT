@@ -1,7 +1,7 @@
 chapter \<open>Example proof document in Isabelle/FOL\<close>
 
 theory Example_FOL
-  imports FOL
+  imports FOL \<^marker>\<open>license \<open>BSD3\<close>\<close>
 begin
 
 section \<open>Natural numbers: Peano's axioms, primitive recursion\<close>

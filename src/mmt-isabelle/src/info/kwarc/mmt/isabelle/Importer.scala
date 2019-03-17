@@ -166,6 +166,7 @@ object Importer
     node_name: isabelle.Document.Node.Name,
     node_source: Source = Source.empty,
     node_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
+    node_meta_data: isabelle.Properties.T = Nil,
     parents: List[String] = Nil,
     segments: List[Theory_Segment] = Nil,
     typedefs: List[isabelle.Export_Theory.Typedef] = Nil)
@@ -410,6 +411,9 @@ object Importer
       controller.add(MRef(doc.path, thy_draft.thy.path))
 
       thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path, Ontology.ULO.theory))
+      for ((a, b) <- thy_export.node_meta_data) {
+        thy_draft.rdf_triple(Ontology.binary(thy_draft.thy.path, a, b))
+      }
 
       if (thy_export.node_timing.total > 0.0) {
         thy_draft.rdf_triple(
@@ -993,6 +997,23 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* user theories */
 
+    private def element_meta_data(
+      rendering: isabelle.Rendering,
+      element: isabelle.Thy_Element.Element_Command): isabelle.Properties.T =
+    {
+      val snapshot = rendering.snapshot
+      val element_range =
+      {
+        val commands = element.iterator.toList
+        val first = commands.head
+        val last = commands.last
+        val start = snapshot.node.command_start(first).get
+        val stop = snapshot.node.command_start(last).get + last.span.length
+        isabelle.Text.Range(start, stop)
+      }
+      isabelle.RDF.meta_data(rendering.meta_data(element_range))
+    }
+
     def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
       val snapshot = rendering.snapshot
@@ -1009,11 +1030,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         isabelle.Document_Status.Overall_Timing.make(
           snapshot.state, snapshot.version, snapshot.node.commands)
 
+      val node_elements =
+        isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList)
+
+      val node_meta_data =
+        node_elements.find(element => element.head.span.name == isabelle.Thy_Header.THEORY) match {
+          case Some(element) => element_meta_data(rendering, element)
+          case None => Nil
+        }
+
       val segments =
       {
         val relevant_elements =
-          isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList).
-            filter(element =>
+          node_elements.filter(element =>
               isabelle.Document_Structure.is_heading_command(element.head) ||
               element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
 
@@ -1027,21 +1056,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
         for (element <- relevant_elements)
         yield {
-          val element_commands = element.iterator.toList
-
           val element_timing =
-            isabelle.Document_Status.Overall_Timing.make(snapshot.state, snapshot.version, element_commands)
+            isabelle.Document_Status.Overall_Timing.make(
+              snapshot.state, snapshot.version, element.iterator.toList)
 
-          val element_range =
-          {
-            val first = element_commands.head
-            val last = element_commands.last
-            val start = snapshot.node.command_start(first).get
-            val stop = snapshot.node.command_start(last).get + last.span.length
-            isabelle.Text.Range(start, stop)
-          }
-
-          val meta_data = isabelle.RDF.meta_data(rendering.meta_data(element_range))
+          val meta_data = element_meta_data(rendering, element)
 
           val heading =
             if (isabelle.Document_Structure.is_heading_command(element.head)) {
@@ -1099,6 +1118,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       Theory_Export(node_name,
         node_source = Source(snapshot.node.source),
         node_timing = node_timing,
+        node_meta_data = node_meta_data,
         parents = theory.parents,
         segments = segments,
         typedefs = theory.typedefs)
