@@ -573,7 +573,8 @@ object Importer
             def loc_decl(d: Declaration): Unit =
             {
               loc_thy.add(d)
-              thy_draft.rdf_triple(Ontology.binary(loc_thy.path, Ontology.ULO.declares, d.path))
+              thy_draft.rdf_triple(Ontology.binary(loc_thy.path, Ontology.ULO.specifies, d.path))
+              thy_draft.rdf_triple(Ontology.binary(d.path, Ontology.ULO.specified_in, loc_thy.path))
             }
 
             // type parameters
@@ -1350,12 +1351,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         _state.change(
           { case (content, triples) =>
               val content1 = content.declare(item)
-              val declares = Ontology.binary(thy.path, Ontology.ULO.declares, item.global_name)
+              val specs =
+                List(
+                  Ontology.binary(thy.path, Ontology.ULO.specifies, item.global_name),
+                  Ontology.binary(item.global_name, Ontology.ULO.specified_in, thy.path))
               val source_ref =
                 item.source_ref.map(sref =>
                     Ontology.binary(item.global_name, Ontology.ULO.source_ref, sref.toURI))
               val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
-              val triples1 = declares :: source_ref.toList ::: properties.reverse ::: triples
+              val triples1 = specs ::: source_ref.toList ::: properties.reverse ::: triples
               (content1, triples1)
           })
       }

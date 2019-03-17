@@ -72,14 +72,10 @@ object Ontology
 
     val instance_of = ulo("instance-of") // locale interpretation
 
-    val declares = ulo("declares") // theory/locale declares item
-    val uses = ulo("uses") // dependencies of term language (not proofs)
+    val specifies = ulo("specifies") // theory/locale declares item
+    val specified_in = ulo("specified-in") // inverse of "specifies"
 
-    // unused: somewhat biased towards Type Theory
-    val type_depends_on_definition_of = ulo("type-depends-on-definition-of")
-    val type_depends_on_type_of = ulo("type-depends-on-type-of")
-    val definition_depends_on_type_of = ulo("definition-depends-on-type-of")
-    val definition_depends_on_definition_of = ulo("definition-depends-on-definition-of")
+    val uses = ulo("uses") // dependencies of term language (not proofs)
 
     val generated_by = ulo("generated-by")
     val inductive_on = ulo("inductive-on")
