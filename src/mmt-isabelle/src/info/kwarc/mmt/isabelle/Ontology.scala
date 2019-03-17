@@ -47,23 +47,13 @@ object Ontology
     val para = ulo("para") // theorem-like statements (e.g. "theorem", "lemma", "axiomatization")
     val definition = ulo("definition") // definitional statements (kind "thy_defn", "thy_goal_defn")
 
-    // unused: could be derived from sessions structure etc.
-    val file = ulo("file")  // could be theory file
-    val folder = ulo("folder")  // could be session
-    val library = ulo("library")  // could be "Distribution", "AFP", "IsaFoR" etc.
-    val group = ulo("group")
+    val file = ulo("file")  // unused: could be theory file
+    val folder = ulo("folder")  // unused: could be session
+    val library = ulo("library")  // unused: could be "Distribution", "AFP", "IsaFoR" etc.
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
     val derived = ulo("derived") // HOL typedefs, proven statements
-
-    // unused: this is a property of the context, not of individual facts
-    val simplification_rule = ulo("simplification-rule")
-
-    // unused: could be result of "Judgement Day" Sledgehammer exploration
-    val automatically_proved = ulo("automatically_proved")
-
-    val experimental = ulo("experimental") // unused: could be derived from 'experimental' target
-    val deprecated = ulo("deprecated") // unused: could be specified via document marker
+    val experimental = ulo("experimental") // proof contains "sorry"
 
 
     /* binaries */
@@ -77,24 +67,8 @@ object Ontology
 
     val uses = ulo("uses") // dependencies of term language (not proofs)
 
-    val generated_by = ulo("generated-by")
-    val inductive_on = ulo("inductive-on")
-    val mutual_with = ulo("mutual-with") // TODO e.g. Spec_Rules peer group
-
-
-    // TODO manual markers!?
-    val same_as = ulo("same-as")
-    val similar_to = ulo("similar-to")
-    val alternative_for = ulo("alternative-for")
-    val see_also = ulo("see-also")
-    val antonym_of = ulo("antonym-of")
-    val formalizes = ulo("formalizes")
-    val aligned_with = ulo("aligned_with")
-    val inspired_by = ulo("inspired_by")
-
     val source_ref = ulo("source-ref") // entity position
     val check_time = ulo("check-time") // elapsed time (ms)
     val external_size = ulo("external-size") // source size (UTF-8 bytes)
-    val internal_size = ulo("internal-size") // unused
   }
 }
