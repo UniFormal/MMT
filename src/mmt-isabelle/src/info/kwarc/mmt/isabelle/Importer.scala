@@ -1157,7 +1157,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def report: String =
         (for {(name, count) <- stats.iterator }
-          yield { print_int(count, len = 10) + " " + name }).mkString("\n")
+          yield { print_int(count, len = 12) + " " + name }).mkString("\n")
     }
 
     object Content
@@ -1179,7 +1179,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
 
       def report_kind(kind: String): String =
-        print_int(items.count({ case (_, item) => item.entity_kind == kind }), len = 10) + " " + kind
+        print_int(items.count({ case (_, item) => item.entity_kind == kind }), len = 12) + " " + kind
 
       def report: String =
         isabelle.Library.cat_lines(
