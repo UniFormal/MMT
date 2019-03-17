@@ -406,31 +406,32 @@ object Importer
       val thy_draft =
         Isabelle.begin_theory(thy_export,
           if (thy_is_pure) None else Some(thy_archive.archive_source_uri))
+      val thy = thy_draft.thy
 
-      controller.add(thy_draft.thy)
-      controller.add(MRef(doc.path, thy_draft.thy.path))
+      controller.add(thy)
+      controller.add(MRef(doc.path, thy.path))
 
-      thy_draft.rdf_triple(Ontology.unary(thy_draft.thy.path, Ontology.ULO.theory))
+      thy_draft.rdf_triple(Ontology.unary(thy.path, Ontology.ULO.theory))
       for ((a, b) <- thy_export.node_meta_data) {
-        thy_draft.rdf_triple(Ontology.binary(thy_draft.thy.path, a, b))
+        thy_draft.rdf_triple(Ontology.binary(thy.path, a, b))
       }
 
       if (thy_export.node_timing.total > 0.0) {
         thy_draft.rdf_triple(
-          Ontology.binary(thy_draft.thy.path, Ontology.ULO.check_time,
+          Ontology.binary(thy.path, Ontology.ULO.check_time,
             isabelle.RDF.long(isabelle.Time.seconds(thy_export.node_timing.total).ms)))
       }
 
       if (thy_is_pure) {
-        controller.add(PlainInclude(Isabelle.bootstrap_theory, thy_draft.thy.path))
+        controller.add(PlainInclude(Isabelle.bootstrap_theory, thy.path))
       }
       for (parent <- thy_export.parents) {
-        controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy_draft.thy.path))
+        controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy.path))
       }
 
       def add_constant(item: Item, tp: Term, df: Option[Term])
       {
-        val context = Context(thy_draft.thy.path)
+        val context = Context(thy.path)
         if (options.bool("mmt_type_checking")) {
           for (t <- Iterator(tp) ++ df.iterator if t != Isabelle.Unknown.term) {
             check_term(controller, context, t)
@@ -460,7 +461,7 @@ object Importer
         isabelle.File.write(path, text_decoded)
 
         thy_draft.rdf_triple(
-          Ontology.binary(thy_draft.thy.path, Ontology.ULO.external_size,
+          Ontology.binary(thy.path, Ontology.ULO.external_size,
             isabelle.RDF.int(isabelle.UTF8.bytes(text_encoded).length)))
       }
 
@@ -478,8 +479,7 @@ object Importer
         if (segment.header_relevant) {
           val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
           val opaque =
-            new OpaqueText(thy_draft.thy.asDocument.path,
-              OpaqueText.defaultFormat, StringFragment(text))
+            new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text))
           controller.add(opaque)
         }
 
@@ -564,7 +564,7 @@ object Importer
             val item = thy_draft.declare_entity(locale.entity, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.theory))
             val loc_name = item.local_name
-            val loc_thy = Theory.empty(thy_draft.thy.path.doc, thy_draft.thy.name / loc_name, None)
+            val loc_thy = Theory.empty(thy.path.doc, thy.name / loc_name, None)
 
             def loc_decl(d: Declaration): Unit =
             {
@@ -604,7 +604,7 @@ object Importer
               loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
-            controller.add(new NestedModule(thy_draft.thy.toTerm, loc_name, loc_thy))
+            controller.add(new NestedModule(thy.toTerm, loc_name, loc_thy))
           }
         }
 
@@ -617,8 +617,8 @@ object Importer
             val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
             val to = OMMOD(content.get_locale(dep.target).global_name.toMPath)
 
-            val view = View(thy_draft.thy.path.doc, thy_draft.thy.name / item.local_name, from, to, false)
-            controller.add(new NestedModule(thy_draft.thy.toTerm, item.local_name, view))
+            val view = View(thy.path.doc, thy.name / item.local_name, from, to, false)
+            controller.add(new NestedModule(thy.toTerm, item.local_name, view))
 
             thy_draft.rdf_triple(Ontology.binary(to.path, Ontology.ULO.instance, from.path))
           }
