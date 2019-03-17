@@ -2,6 +2,7 @@ package info.kwarc.mmt.sql
 
 import info.kwarc.mmt.api._
 import objects._
+import metadata.MetaData
 
 /**
   *  @param path the MMT name of the table
@@ -38,7 +39,7 @@ case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSynt
   *  @param index column holding the collection index
   *  @param metadata a record object for name, authors, url, other information about the collection; can be JSON
   */
-case class CollectionInfo(index: GlobalName, metadata: Any)
+case class CollectionInfo(index: GlobalName, metadata: MetaData)
 
 /**
  * 
