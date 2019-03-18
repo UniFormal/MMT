@@ -1405,7 +1405,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                   Ontology.binary(item.global_name, Ontology.ULO.specified_in, thy.path))
               val source_ref =
                 item.source_ref.map(sref =>
-                    Ontology.binary(item.global_name, Ontology.ULO.source_ref, sref.toURI))
+                    Ontology.binary(item.global_name, Ontology.ULO.sourceref, sref.toURI))
               val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
               val triples1 = name :: specs ::: source_ref.toList ::: properties.reverse ::: triples
               (content1, triples1)
