@@ -419,8 +419,9 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 		controller.add(invertedTheory)
 		controller.add(generatedMorphism)
 		val invertedTheoryCode = elementToMMTSurfaceCode(invertedTheory)
+		val generatedMorphismCode = elementToMMTSurfaceCode(generatedMorphism)
 		controller.delete(invertedTheory.path)
 
-		invertedTheoryCode
+		invertedTheoryCode + "\n\n" + generatedMorphismCode
 	}
 }
