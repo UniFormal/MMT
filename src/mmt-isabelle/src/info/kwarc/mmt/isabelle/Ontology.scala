@@ -70,6 +70,8 @@ object Ontology
 
     val uses = ulo("uses") // dependencies of term language (not proofs)
 
+    val justifies = ulo("justifies") // relation of proof vs. facts
+
     val source_ref = ulo("source-ref") // entity position
     val check_time = ulo("check-time") // elapsed time (ms)
     val external_size = ulo("external-size") // source size (UTF-8 bytes)
