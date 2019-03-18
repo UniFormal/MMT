@@ -1,7 +1,7 @@
 package info.kwarc.mmt.refactoring.linkinversion
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{Link, Theory}
+import info.kwarc.mmt.api.modules.{Link, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, Matcher}
 import info.kwarc.mmt.api.refactoring.linkinversion.{LinkInverter, RewriteErrorHandler}
 import info.kwarc.mmt.api.{MPath, RuleSet}
@@ -10,9 +10,10 @@ import info.kwarc.mmt.api.{MPath, RuleSet}
 object LFLinkInverter {
 	def invertLink(R: Theory, S: Theory, RToS: Link,
 								 newModulePath: MPath,
+								 generatedMorphismPath: MPath,
 								 rewriteErrorHandler: RewriteErrorHandler)
 								(implicit
-								 ctrl: Controller): Theory = {
+								 ctrl: Controller): (Theory, View) = {
 
 		val matcher = new Matcher(
 			ctrl,
@@ -24,7 +25,14 @@ object LFLinkInverter {
 
 		val linkInversionRulesProvider = new LFLinkInversionRulesProvider(ctrl, matcher)
 
-		LinkInverter.invertLink(R, S, RToS, linkInversionRulesProvider, newModulePath,
-			rewriteErrorHandler)
+		LinkInverter.invertLink(
+			R,
+			S,
+			RToS,
+			linkInversionRulesProvider,
+			newModulePath,
+			generatedMorphismPath,
+			rewriteErrorHandler
+		)
 	}
 }

@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.refactoring.linkinversion.{ContinuationStyle, RewriteError, RewriteErrorHandler, SkipDeclaration}
+import info.kwarc.mmt.api.refactoring.linkinversion._
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
@@ -307,6 +307,7 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 	def checkUpdate: Option[(String, String)] = Try(MMTSystem.getLatestVersion).toOption
 
 	private var hasReadAllRelationalContent = false
+
 	private def readAllRelationalContent(): Unit = {
 		if (!hasReadAllRelationalContent) {
 			controller.backend.getArchives.foreach(archive => {
@@ -349,32 +350,46 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 		}
 
 		object ErrorTreeExtendingErrorHandler extends RewriteErrorHandler {
-			def apply(error: RewriteError): ContinuationStyle = {
+			def apply(error: RewriteError): ContinuationStyle = error match {
 
-				val declErrorNode = new DefaultMutableTreeNode(
-					"?" + error.originalDecl.name.toStr(shortURIs = true)
-				)
+				case RewriteConstantError(originalDecl, attemptedDecl, blamableTerms) =>
 
-				error.blamableTerms.collect {
-					case (componentKey, failingTerms) if failingTerms.nonEmpty =>
-						val componentKeyErrorNode = new DefaultMutableTreeNode(
-							componentKey.toString
-						)
+					val declErrorNode = new DefaultMutableTreeNode(
+						"?" + originalDecl.name.toStr(shortURIs = true)
+					)
 
-						failingTerms.map(failingTerm => {
-							val failingTermErrorNode = new DefaultMutableTreeNode(
-								failingTerm.toStr(shortURIs = true)
+					blamableTerms.collect {
+						case (componentKey, failingTerms) if failingTerms.nonEmpty =>
+							val componentKeyErrorNode = new DefaultMutableTreeNode(
+								componentKey.toString
 							)
 
-							failingTermErrorNode
-						}).foreach(componentKeyErrorNode.add)
+							failingTerms.map(failingTerm => {
+								// TODO(ComFreek) Currently failing terms are always (?) OMIDs
+								//   but might not be in the future. Maybe then use
+								//   [[NotationBasedPresenter]]?
+								val failingTermErrorNode = new DefaultMutableTreeNode(
+									failingTerm.toStr(shortURIs = true)
+								)
 
-						componentKeyErrorNode
-				}.foreach(declErrorNode.add)
+								failingTermErrorNode
+							}).foreach(componentKeyErrorNode.add)
 
-				errorTreeRootNode.add(declErrorNode)
+							componentKeyErrorNode
+					}.foreach(declErrorNode.add)
 
-				SkipDeclaration
+					errorTreeRootNode.add(declErrorNode)
+
+					SkipDeclaration
+
+				case RewriteUnknownError(originalDecl) =>
+					val unknownErrorNode = new DefaultMutableTreeNode(
+						"Inversion not implemented for the declaration type used in " +
+							originalDecl.toString
+					)
+					errorTreeRootNode.add(unknownErrorNode)
+
+					SkipDeclaration
 			}
 		}
 
@@ -385,21 +400,24 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 		val T = controller.getTheory(Path.parseM(TPath, nsMap))
 		val RToS = controller.getAs(classOf[View], Path.parseM(RToSPath, nsMap))
 
-		val newModulePath = T.path.parent ? "Generalized"
+		val newModulePath = T.path.parent ? (T.path.name + "Generalized")
+		val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
 
 		// [[LinkInverter]] needs all relational data
 		readAllRelationalContent()
 
-		val invertedTheory = LFLinkInverter.invertLink(
+		val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
 			R,
 			T,
 			RToS,
 			newModulePath,
+			generatedMorphismPath,
 			ErrorTreeExtendingErrorHandler
 		)(controller)
 
 
 		controller.add(invertedTheory)
+		controller.add(generatedMorphism)
 		val invertedTheoryCode = elementToMMTSurfaceCode(invertedTheory)
 		controller.delete(invertedTheory.path)
 

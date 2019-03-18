@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.refactoring.linkinversion
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{Link, ModuleCreator, Theory}
+import info.kwarc.mmt.api.modules.{Link, ModuleCreator, Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{HasMeta, RelStore, RelationExp}
 import info.kwarc.mmt.api.symbols._
@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.uom.{AbbrevRule, SimplificationUnit}
 
 import scala.collection.mutable
 
+// @formatter:off
 /**
 	* Provider for inverse rewrite rules for links.
 	*
@@ -30,17 +31,20 @@ import scala.collection.mutable
 	*   context, it woud rewrite `t'` to `d [arguments for the instantiation]`.
 	*   See [[LFLinkInversionRulesProvider]].
 	*/
+//@formatter:on
 trait LinkInversionRulesProvider {
 	/**
 		* Provide rewrite rules for the inverted link.
 		*
 		* @see [[LinkInversionRulesProvider]] for more documentation.
-		*
 		* @param link The link.
 		* @return Rewrite rules.
 		*/
 	def getInverseRewritingRules(link: Link): RuleSet
 }
+
+sealed abstract class RewriteError(originalDecl: Declaration,
+																	 attemptedDecl: Option[Declaration])
 
 /**
 	*
@@ -61,9 +65,10 @@ trait LinkInversionRulesProvider {
 	*                      generalized, this map contains it grouped by their occurrence
 	*                      in the term's component.
 	*/
-sealed case class RewriteError(originalDecl: Declaration,
-															 attemptedDecl: Option[Declaration],
-															 blamableTerms: Map[ComponentKey, Seq[Term]]) {
+sealed case class RewriteConstantError(originalDecl: Constant,
+																			 attemptedDecl: Option[Declaration],
+																			 blamableTerms: Map[ComponentKey, Seq[Term]])
+	extends RewriteError(originalDecl, attemptedDecl) {
 	override def toString: String = {
 		val blamableTermsString = blamableTerms.map { case (key, terms) => (key, terms.map
 		(_.toStr(shortURIs = true)))
@@ -74,9 +79,12 @@ sealed case class RewriteError(originalDecl: Declaration,
 	}
 }
 
+sealed case class RewriteUnknownError(originalDecl: Declaration)
+	extends RewriteError(originalDecl = originalDecl, attemptedDecl = None)
+
 /**
 	* The continuation style telling [[LinkInverter.invertLink()]] how to
-	* continue after encountering a [[RewriteError]].
+	* continue after encountering a [[RewriteConstantError]].
 	*
 	* Apart from it being used a little bit internally for the control flow in
 	* [[LinkInverter]], it usually is returned by a [[RewriteErrorHandler]] given
@@ -117,16 +125,22 @@ trait RewriteErrorHandler {
 	def apply(error: RewriteError): ContinuationStyle
 }
 
+// TODO Replace with [[AnonymousDiagram]]
+final case class LinkInverterResult(invertedTheory: List[Declaration],
+																		generatedMorphism: List[Declaration])
+
 object LinkInverter {
 	def invertLink(R: Theory, S: Theory, RToS: Link,
 								 linkInversionRuleProvider: LinkInversionRulesProvider,
 								 newModulePath: MPath,
+								 newMorphismPath: MPath,
 								 rewriteErrorHandler: RewriteErrorHandler)
 								(implicit
-								 ctrl: Controller): Theory = {
+								 ctrl: Controller): (Theory, View) = {
 
-		val invertedDeclarations = invertLinkToAnonymous(
-			R, S, RToS, linkInversionRuleProvider, newModulePath, rewriteErrorHandler
+		val linkInversionResult = invertLinkToAnonymous(
+			R, S, RToS, linkInversionRuleProvider, newModulePath, newMorphismPath,
+			rewriteErrorHandler
 		)
 
 		val invertedTheory = ModuleCreator
@@ -134,11 +148,22 @@ object LinkInverter {
 			// Include R
 			.addNewSymbol(targetPath => Include(OMMOD(targetPath), R.path, Nil))
 			// Add generalized declarations
-			.addNewSymbols(invertedDeclarations.map(decl => {
+			.addNewSymbols(linkInversionResult.invertedTheory.map(decl => {
 			x: MPath => decl
 		})).asNewTheory(newModulePath.parent, newModulePath.name, R.meta)
 
-		invertedTheory
+		val generatedMorphism = ModuleCreator
+			.getBuilder
+			.addNewSymbols(linkInversionResult.generatedMorphism.map(decl => {
+				x: MPath => decl
+			})).asNewView(
+			newMorphismPath.parent,
+			newMorphismPath.name,
+			from = invertedTheory.path,
+			to = S.path
+		)
+
+		(invertedTheory, generatedMorphism)
 	}
 
 	// TODO Make it return an [[AnonymousBody]]
@@ -147,10 +172,11 @@ object LinkInverter {
 	def invertLinkToAnonymous(R: Theory, S: Theory, RToS: Link,
 														linkInversionRuleProvider: LinkInversionRulesProvider,
 														newModulePath: MPath,
+														newMorphismPath: MPath,
 														rewriteErrorHandler: RewriteErrorHandler)
 													 (implicit
 														ctrl: Controller)
-	: List[Declaration]
+	: LinkInverterResult
 	= {
 		assert(R.meta == S.meta)
 
@@ -182,7 +208,7 @@ object LinkInverter {
 		// inverting
 		val inversionRules = new MutableRuleSet
 		inversionRules.add(
-			linkInversionRuleProvider.getInverseRewritingRules(RToS).getAll.toSeq : _*
+			linkInversionRuleProvider.getInverseRewritingRules(RToS).getAll.toSeq: _*
 		)
 
 		val emptySimplificationUnit = SimplificationUnit(
@@ -201,6 +227,7 @@ object LinkInverter {
 		}
 
 		val newDeclarations = new mutable.ArrayBuffer[Declaration]
+		val outLinkDeclarations = new mutable.ArrayBuffer[Declaration]
 
 		val allowedOMIDReferences = new mutable.HashSet[Path]()
 		val allowedModuleReferences = new mutable.HashSet[MPath]()
@@ -221,9 +248,24 @@ object LinkInverter {
 					// Ignore include of S in T
 					// The very sense of inversion/generalization is that
 					// we want to replace the inclusion of S by an inclusion of R
+
+					outLinkDeclarations.append(new Structure(
+						OMID(newMorphismPath),
+						includeDecl.name,
+						tpC = TermContainer(RToS.from),
+						dfC = TermContainer(RToS.toTerm),
+						isImplicit = false
+					))
 				}
 				else {
 					newDeclarations.append(includeDecl)
+					outLinkDeclarations.append(new Structure(
+						OMID(newMorphismPath),
+						includeDecl.name,
+						includeDecl.tpC.copy,
+						includeDecl.dfC.copy,
+						isImplicit = false
+					))
 
 					// Allow OMIDs referencing symbols in the included theory
 					// or any of its transitively included theories later on.
@@ -264,7 +306,7 @@ object LinkInverter {
 				// Determine how to continue (in error or in success)
 				val continuationStyle: ContinuationStyle = {
 					if (invalidTypeSubterms.nonEmpty || invalidDefSubterms.nonEmpty) {
-						rewriteErrorHandler(RewriteError(decl, Some(attemptedDeclaration), Map(
+						rewriteErrorHandler(RewriteConstantError(decl, Some(attemptedDeclaration), Map(
 							TypeComponent -> invalidTypeSubterms,
 							DefComponent -> invalidDefSubterms
 						)))
@@ -282,7 +324,7 @@ object LinkInverter {
 							attemptedDeclaration.toTerm
 						))
 						allowedOMIDReferences += attemptedDeclaration.path
-					case RewriteAs(newDeclaration) =>
+					case RewriteAs(newDeclaration: Constant) =>
 						inversionRules.add(new AbbrevRule(
 							decl.toTerm.path.asInstanceOf[GlobalName],
 							newDeclaration.toTerm
@@ -290,10 +332,25 @@ object LinkInverter {
 						allowedOMIDReferences += newDeclaration.path
 						newDeclarations.append(newDeclaration)
 
+						outLinkDeclarations.append(Constant(
+							home = OMID(newModulePath),
+							name = newDeclaration.name,
+							alias = Nil,
+							tp = newDeclaration.tp,
+							df = Some(decl.toTerm),
+							rl = None
+						))
+
+					case RewriteAs(_) => throw new AssertionError("The RewriteErrorHandler passed to LinkInverter rewrote a constant " +
+						"declaration to a declaration which is not a (subclass of) constant " +
+						"anymore. It isn't clear how the generated morphism should account for " +
+						"that."
+					)
+
 					case SkipDeclaration =>
 				}
 			case unknownDecl =>
-				rewriteErrorHandler(RewriteError(unknownDecl, None, Map())) match {
+				rewriteErrorHandler(RewriteUnknownError(unknownDecl)) match {
 					case AssumeRewritable =>
 						allowedOMIDReferences += unknownDecl.path
 					case RewriteAs(decl) =>
@@ -303,7 +360,10 @@ object LinkInverter {
 				}
 		})
 
-		newDeclarations.toList
+		LinkInverterResult(
+			invertedTheory = newDeclarations.toList,
+			generatedMorphism = outLinkDeclarations.toList
+		)
 	}
 
 	/**
@@ -361,6 +421,7 @@ object LinkInverter {
 				(OMID(symbol) :: subterms).flatMap(check)
 			case UnknownOMLIT(_, synType) => check(synType)
 			case OMLIT(_, realizedType) => check(realizedType.synType)
+			case _ => ???
 		}
 
 		check(term)
