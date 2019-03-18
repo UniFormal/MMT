@@ -491,6 +491,7 @@ object Importer
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
+            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.universe))
             val tp = Isabelle.Class()
             add_constant(item, tp, None)
           }

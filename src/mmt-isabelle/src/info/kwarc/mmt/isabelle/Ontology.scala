@@ -38,11 +38,12 @@ object Ontology
 
     val `type` = ulo("type") // type constructors
     val `object` = ulo("object") // term constants
-    val statement = ulo("statement")  // fact items (thm)
+    val statement = ulo("statement") // fact items (thm)
+    val universe = ulo("universe") // type classes (primitive entity)
 
     val name = ulo("name") // external entity name (xname)
 
-    val theory = ulo("theory") // theory, locale
+    val theory = ulo("theory") // theory, locale (subsumes type classes as logical specification)
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
 
