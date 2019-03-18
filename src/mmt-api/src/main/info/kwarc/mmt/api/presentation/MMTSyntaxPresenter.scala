@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.{DRef, Document, InterpretationInstruction, MRef}
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects.OMID
 import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueTextPresenter}
 import info.kwarc.mmt.api.parser.Reader
 import info.kwarc.mmt.api.symbols._
@@ -22,13 +23,14 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 	/** determines if the modules should be flattened */
 	val presentGenerated: Boolean = false
 
-	def key = "present-text-notations" + (if (presentGenerated) "-flat" else "")
+	def key: String = "present-text-notations" + (if (presentGenerated) "-flat" else "")
 
 	override def outExt = "mmt"
 
 	private val OBJECT_DELIMITER = "❘"
 	private val DECLARATION_DELIMITER = "❙"
 	private val MODULE_DELIMITER = "❚"
+	private val EOL = "\n"
 
 	/**
 		* Present an element such as a [[Theory]], a [[View]] or a [[Declaration]].
@@ -56,14 +58,26 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		// TODO Prefer tabs?
 		val indentationString = "  " * indentation
 
-		var firstCall = true
+		var isAtStartOfLine = true
 
 		str: String => {
-			if (firstCall && str.nonEmpty) {
+			if (isAtStartOfLine && str.nonEmpty) {
 				rh.write(indentationString)
-				firstCall = false
+				isAtStartOfLine = false
 			}
-			rh.write(str.replace("\n", "\n" + indentationString))
+
+			// Replace inner EOLs by EOL+indentationString
+			val indentedStr = {
+				if (str.endsWith(EOL)) {
+					// TODO Probably bad for Unicode EOL (which we don't have anyway, though)
+					str.dropRight(EOL.length).replace(EOL, EOL + indentationString) + EOL
+				}
+				else {
+					str.replace(EOL, EOL + indentationString)
+				}
+			}
+
+			rh.write(indentedStr)
 		}
 	}
 
@@ -117,9 +131,14 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 	}
 
 	private def endDecl(element: StructuralElement, rh: RenderingHandler): Unit = element match {
-		case _: Document =>
-		case _: DRef => rh(Reader.GS.toChar.toString) // check?
-		case _: MRef => rh(Reader.GS.toChar.toString) // check?
+		case _: Document => /* do nothing */
+		case _: DRef => rh(MODULE_DELIMITER)
+		case _: MRef => rh(MODULE_DELIMITER)
+		case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER)
+
+		// TODO Fix for [[Structure.isInclude]] not accounting for inclusions
+		//  with definiens component, see tod*o note in [[Include.unapply]]
+		case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER)
 		case _: ModuleOrLink => rh(MODULE_DELIMITER)
 		case _: NestedModule => rh(DECLARATION_DELIMITER)
 
@@ -130,7 +149,15 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 	private def doTheory(theory: AbstractTheory, rh: RenderingHandler): Unit = {
 		//TODO this ignores all narrative structure inside a theory
 		rh(theory.feature + " " + theory.name)
-		theory.meta.foreach(metaTheoryPath => rh(" : " + metaTheoryPath.toString))
+
+		// TODO Possibly make metaTheoryPath relative imported namespaces in document
+		//  - if the presenter was initially called with a document.
+		theory.meta.foreach(metaTheoryPath => {
+			rh(" : ")
+			// Print the meta theory path, possibly relative
+			// TODO Replace OtherComponent("theory-meta") by correct component
+			apply(OMID(metaTheoryPath), Some(theory.path $ OtherComponent("theory-meta")))(rh)
+		})
 		// TODO print type component
 		// TODO What is a def component of a theory?
 		doDefComponent(theory, rh)
@@ -188,12 +215,15 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		apply(view.from, Some(view.path $ DomComponent))(rh)
 		rh(" -> ")
 		apply(view.to, Some(view.path $ CodComponent))(rh)
+		rh(" =\n")
+
+		// TODO doDefComponent does nothing for views?
 		doDefComponent(view, rh)
 		view.getPrimitiveDeclarations.foreach {
 			case c: Constant =>
-				indented(rh)("" + c.name.last)
+				indented(rh)(c.name.last.toString)
 				c.df foreach { t =>
-					rh("  = ")
+					rh(" = ")
 					apply(t, Some(c.path $ DefComponent))(rh)
 					rh(DECLARATION_DELIMITER + "\n")
 				}
@@ -205,11 +235,28 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		val decs = s.getPrimitiveDeclarations
 		if (decs.isEmpty) {
 			rh("include ")
-			apply(s.from, Some(s.path $ TypeComponent))(rh)
+
+			// In views "include" declarations carry a definiens component.
+			// As an example, consider the view v from a theory T1 to a theory T2.
+			//
+			// (1) Let both theories include a common base theory S, then the view can
+			//     encompass "include ?S" which will be turned into a structure whose
+			//     type component is "?T1" and whose definiens component is `OMIDENT(OMID
+			//     (T2.path))`
+			// (2) Let T1 include S1 and T2 include S2 and phi: S1 -> S2 a morphism.
+			//     Then the view v can encompass "include ?phi", which will be turned
+			//     into a structure whose type component is "?S1" and whose definiens
+			//     component is "?phi".
+			// TODO(Florian|Dennis) Have a look at the description above and confirm/decline.
+			if (s.df.isDefined) {
+				apply(s.df.get, Some(s.path $ DefComponent))(rh)
+			}
+			else {
+				apply(s.from, Some(s.path $ TypeComponent))(rh)
+			}
 		} else {
 			rh("structure " + s.name + " : " + s.from.toMPath.^^.last + "?" + s.from.toMPath.last)
 			//this.present(s.from, Some(s.path $ TypeComponent))
-			rh(Reader.US.toChar.toString)
 			doDefComponent(s, rh)
 			decs.foreach { d => present(d, indented(rh)) }
 		}
