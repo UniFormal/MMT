@@ -478,7 +478,7 @@ object Importer
       for (segment <- thy_export.segments) {
         def make_dummy(kind: String, i: Int) : Item =
         {
-          val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, kind + i))
+          val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, i.toString))
           val pos = segment.element.head.span.position
           thy_draft.make_item0(kind, name, entity_pos = pos)
         }
