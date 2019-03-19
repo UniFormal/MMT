@@ -1,0 +1,14 @@
+We have presented a system that allows embedding formal \mmt content inside \latex documents.
+The formal content is type-checked in a way that does not affect any existing \latex work flows and results in higher quality \latex than could be easily  produced manually.
+Moreover, the formal content may use and be used by any \mmt content formalized elsewhere, which allows the interlinking across document formats.
+
+Of course, we are not able to verify the informal parts of a document this way --- only those formulas that are written in \mmt syntax are checked.
+But our design supports both gradual formalization and parallel formal-informal representations.
+%Firstly, it can act as a bridge technology that exposes a wider audience of authors of mathematical texts to formalization tools while retaining their existing workflows.
+%Secondly, it enables exporting the high-level structure of a document and its remaining proof obligations for further refinement in a proof assistant.
+%This helps synchronize and establish cross-references between the mathematical document and its detailed formalization.
+
+It is intriguing to apply the same technology to formal proofs.
+This is already possible for formal proof terms, but those often bear little resemblance to informal proofs.
+Once \mmt supports a language for structured proofs, that could be used to write formal proofs in \mmttex.
+Morever, future work could apply \mmt as a middleware between \latex and other tools, e.g., \mmt could run a computation through a computer algebra to verify a computation in \latex.
