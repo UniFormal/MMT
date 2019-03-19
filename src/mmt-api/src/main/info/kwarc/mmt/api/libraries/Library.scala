@@ -406,7 +406,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            getO(mpath) match {
              case Some(included: Theory) =>
                // continue lookup in (possibly implicitly) included theory
-               val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
+               val imp = implicitGraph(OMMOD(mpath), t match {
+                 case _:Theory => t.toTerm
+                 case d:DerivedDeclaration => OMMOD(d.modulePath)
+               }) getOrElse {
                  error("no implicit morphism from " + mpath + " to " + t.path)
                }
                if (ln.isEmpty) {

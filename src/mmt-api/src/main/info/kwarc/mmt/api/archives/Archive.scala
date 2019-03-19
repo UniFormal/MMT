@@ -161,7 +161,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         val thexp = "name=\"([^\"]+)\" base=\"([^\"]+)\"".r
         def getLine = {
           val reader = File.Reader(inFile)
-          val str = reader.readLine()
+          val str = Try(reader.readLine()).getOrElse("")
           reader.close()
           if (str == null) "" else str
         }

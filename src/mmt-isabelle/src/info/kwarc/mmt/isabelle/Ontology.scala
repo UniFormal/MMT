@@ -26,7 +26,7 @@ object Ontology
 
   /* namespace */
 
-  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "https://mathhub.info/ulo#")
+  val ulo: isabelle.XML.Namespace = isabelle.XML.Namespace("ulo", "https://mathhub.info/ulo")
 
   def rdf_document(triples: List[isabelle.RDF.Triple]): isabelle.XML.Elem =
     isabelle.RDF.document(isabelle.RDF.triples(triples),
@@ -37,69 +37,43 @@ object Ontology
     /* unaries */
 
     val `type` = ulo("type") // type constructors
-    val data = ulo("object") // term constants
+    val `object` = ulo("object") // term constants
+    val statement = ulo("statement") // fact items (thm)
+    val universe = ulo("universe") // type classes (primitive entity)
 
-    val proposition = ulo("proposition")
-    val statement = ulo("statement")  // command "axiomatization", "theorem", ..., "schematic_goal"
+    val name = ulo("name") // external entity name (xname)
 
-    val theory = ulo("theory") // theory, locale
-    val instance = ulo("instance") // locale interpretation
+    val theory = ulo("theory") // theory, locale (subsumes type classes as logical specification)
 
     val section = ulo("section") // document headings: chapter, section, ..., subparagraph
 
-    // unused: could be derived from sessions structure etc.
-    val file = ulo("file")
-    val folder = ulo("folder")
-    val library = ulo("library")
-    val group = ulo("group")
+    val para = ulo("para") // theorem-like statements (e.g. "theorem", "lemma", "axiomatization")
+    val definition = ulo("definition") // definitional statements (kind "thy_defn", "thy_goal_defn")
+
+    val file = ulo("file")  // unused: could be theory file
+    val folder = ulo("folder")  // unused: could be session
+    val library = ulo("library")  // unused: could be "Distribution", "AFP", "IsaFoR" etc.
 
     val primitive = ulo("primitive") // consts or facts from "axiomatization"
     val derived = ulo("derived") // HOL typedefs, proven statements
-
-    val theorem = ulo("theorem") // command "theorem" or "proposition"
-    val lemma = ulo("lemma") // command "lemma" or "lemmas
-    val corollary = ulo("corollary") // command "corollary"
-    val conjecture = ulo("conjecture") // statement where proof contains "sorry"
-
-    // unused: this is a property of the context, not of individual facts
-    val simplification_rule = ulo("simplification-rule")
-
-    // unused: could be result of "Judgement Day" Sledgehammer exploration
-    val automatically_proved = ulo("automatically_proved")
-
-    val experimental = ulo("experimental") // unused
-    val deprecated = ulo("deprecated") // unused
+    val experimental = ulo("experimental") // proof contains "sorry"
 
 
     /* binaries */
 
-    val declares = ulo("declares") // theory/locale declares item
+    val paratype = ulo("paratype") // name of theorem-like statements as its type (e.g. "theorem")
+
+    val instance_of = ulo("instance-of") // locale interpretation
+
+    val specifies = ulo("specifies") // theory/locale declares item
+    val specified_in = ulo("specified-in") // inverse of "specifies"
+
     val uses = ulo("uses") // dependencies of term language (not proofs)
 
-    // unused: somewhat biased towards Type Theory
-    val type_depends_on_definition_of = ulo("type-depends-on-definition-of")
-    val type_depends_on_type_of = ulo("type-depends-on-type-of")
-    val definition_depends_on_type_of = ulo("definition-depends-on-type-of")
-    val definition_depends_on_definition_of = ulo("definition-depends-on-definition-of")
+    val justifies = ulo("justifies") // relation of proof vs. facts
 
-    val generated_by = ulo("generated-by")
-    val inductive_on = ulo("inductive-on")
-    val mutual_with = ulo("mutual-with") // TODO e.g. Spec_Rules peer group
-
-
-    // TODO manual markers!?
-    val same_as = ulo("same-as")
-    val similar_to = ulo("similar-to")
-    val alternative_for = ulo("alternative-for")
-    val see_also = ulo("see-also")
-    val antonym_of = ulo("antonym-of")
-    val formalizes = ulo("formalizes")
-    val aligned_with = ulo("aligned_with")
-    val inspired_by = ulo("inspired_by")
-
-    val source_ref = ulo("source-ref") // entity position
+    val sourceref = ulo("sourceref") // entity position
     val check_time = ulo("check-time") // elapsed time (ms)
     val external_size = ulo("external-size") // source size (UTF-8 bytes)
-    val internal_size = ulo("internal-size") // unused
   }
 }

@@ -1,0 +1,31 @@
+import ex http://cds.omdoc.org/examples
+theory Group
+ : ex:?SFOLEQ
+ = 
+constant U
+ : sort 
+
+constant operation
+ : tm U --> tm U --> tm U 
+ # 1 * 2 prec 50 
+
+constant unit
+ : tm U 
+ # e 
+
+constant inv
+ : tm U --> tm U 
+ # 1 ' prec 60 
+
+
+theory GroupDefs
+ : ex:?SFOLEQ
+ = 
+include ?Group 
+constant division
+ : tm U --> tm U --> tm U 
+ = [x,y] x*y' 
+ # 1 / 2 prec 50 
+
+constant mmt@2.2.0 = forall [x] x / x = e
+
