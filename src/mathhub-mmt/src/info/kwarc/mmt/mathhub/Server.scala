@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library._
 import info.kwarc.mmt.mathhub.logger.LogServer
 
-class Server extends ServerExtension("mathhub") with LibraryServer with LogServer {
+class Server extends ServerExtension("mathhub") with LibraryServer with LogServer with GraphServer {
   override val logPrefix: String = "mathhub"
 
   override def start(args: List[String]): Unit = {
@@ -35,6 +35,11 @@ class Server extends ServerExtension("mathhub") with LibraryServer with LogServe
     // the log server
     case "log" :: l => applyLog(l, request)
 
+    // the graph server, for now just exposed under :jgraph
+    // TODO: Refactor this once Max has refactored the code
+    case ":jgraph" :: _ => applyGraph(request)
+
+    // everything else isn't found
     case _ => throw PathNotFound(request)
   }
 

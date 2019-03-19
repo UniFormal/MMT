@@ -21,11 +21,11 @@ import scala.concurrent.{Await, Future}
   * @param gotoshell      : if true, it will drop to the MMT shell afterwards
   * @param logfile        : If defined, will log into file
   */
-abstract class Test(archivepath : String,
-                    logprefixes : List[String] = Nil,
-                    alignmentspath : String = "",
-                    serverport : Option[Int] = None,
-                    logfile : Option[String] = None) extends Logger {
+abstract class Test(val archivepath : String,
+                    val logprefixes : List[String] = Nil,
+                    val alignmentspath : String = "",
+                    val serverport : Option[Int] = None,
+                    val logfile : Option[String] = None) extends Logger {
   val gotoshell: Boolean = true
   val controller = Run.controller
   def logPrefix = "user"
