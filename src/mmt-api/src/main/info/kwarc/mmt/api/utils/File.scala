@@ -100,6 +100,10 @@ case class File(toJava: java.io.File) {
     case Some(s) => File(toString.substring(0, toString.length - s.length - 1))
   }
 
+  /** removes the last file extension (if any) */
+  def stripExtensionCompressed = Compress.normalize(this).stripExtension
+
+
   /** @return children of this directory */
   def children: List[File] = {
     if (toJava.isFile) Nil else {
@@ -180,6 +184,7 @@ object Compress {
   import org.tukaani.xz._
   private val cache = BasicArrayCache.getInstance
   def name(f: File) = f.addExtension("xz")
+  def normalize(f: File) = if (f.getExtension contains "xz") f.stripExtension else f
   def out(s: OutputStream, c: Boolean) = if (c) new XZOutputStream(s, new LZMA2Options(), cache) else new BufferedOutputStream(s)
   def in(s: InputStream, c: Boolean) = if (c) new XZInputStream(s, cache) else s
 }
