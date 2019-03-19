@@ -165,6 +165,11 @@ object Importer
 
   /** Isabelle export structures **/
 
+  sealed case class Proof_Text(
+    index: Int,
+    range: isabelle.Text.Range,
+    timing: isabelle.Document_Status.Overall_Timing)
+
   sealed case class Theory_Export(
     node_name: isabelle.Document.Node.Name,
     node_source: Source = Source.empty,
@@ -180,7 +185,7 @@ object Importer
     command_kind: Option[String] = None,
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
-    proof: Option[(Int, isabelle.Text.Range)] = None,
+    proof: Option[Proof_Text] = None,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
@@ -416,11 +421,15 @@ object Importer
         thy_draft.rdf_triple(Ontology.binary(thy.path, a, b))
       }
 
-      if (thy_export.node_timing.total > 0.0) {
-        thy_draft.rdf_triple(
-          Ontology.binary(thy.path, Ontology.ULO.check_time,
-            isabelle.RDF.long(isabelle.Time.seconds(thy_export.node_timing.total).ms)))
+      def rdf_timing(timing: Double): Unit =
+      {
+        if (timing > 0.0) {
+          thy_draft.rdf_triple(
+            Ontology.binary(thy.path, Ontology.ULO.check_time,
+              isabelle.RDF.long(isabelle.Time.seconds(timing).ms)))
+        }
       }
+      rdf_timing(thy_export.node_timing.total)
 
       if (thy_is_pure) {
         controller.add(PlainInclude(Isabelle.bootstrap_theory, thy.path))
@@ -577,11 +586,13 @@ object Importer
           )
 
         // optional proof
-        for ((i, range) <- segment.proof) yield {
-          val item = make_dummy("proof", i)
+        for (proof <- segment.proof) yield {
+          val item = make_dummy("proof", proof.index)
           val c = item.constant(Some(Isabelle.Proof()), None)
-          for (sref <- item.source_ref_range(range)) SourceRef.update(c, sref)
+          for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
+
+          rdf_timing(proof.timing.total)
 
           for (fact <- facts) {
             thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, fact.global_name))
@@ -1116,7 +1127,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               case Some(first) =>
                 proof_count += 1
                 val proof_range = commands_range(snapshot, first, element.last)
-                Some((proof_count, proof_range))
+                val proof_timing =
+                  isabelle.Document_Status.Overall_Timing.make(
+                    snapshot.state, snapshot.version, element.iterator.toList.tail)
+                Some(Proof_Text(proof_count, proof_range, proof_timing))
               case None => None
             }
 
