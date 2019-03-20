@@ -1,6 +1,8 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.UnparsedParsers
+import info.kwarc.mmt.imps
+
 import scala.util.parsing.combinator.Parsers
 
 object ParserWithSourcePosition extends Parsers with UnparsedParsers
@@ -31,21 +33,19 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
       p(inwo) match
       {
         case Success(t, in1) =>
-        {
           val ip = inwo.pos
           val after = (in1.offset, ip.line, ip.column)
           t.addSource(before,after)
           Success(t.asInstanceOf[T], in1)
-        }
         case ns: NoSuccess => ns
       }
     }
   }
 
-  lazy val parseText = regex("""[^\r\n]+""".r)
+  lazy val parseText : Parser[String] = regex("""[^\r\n]+""".r)
 
   lazy val parseLineComment: PackratParser[LineComment] = {
-    rep1(";" ~> parseText) ^^ { case txts => LineComment(txts.map(t => t.dropWhile(_ == ';').trim).mkString("\n"), None, None) }
+    rep1(";" ~> parseText) ^^ (txts => LineComment(txts.map(t => t.dropWhile(_ == ';').trim).mkString("\n"), None, None))
   }
 
   def pLineComment : ParserWithSourcePosition[LineComment] = {
@@ -68,7 +68,7 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
   }
 
   def singleOrList[A](p : Parser[A]) : Parser[List[A]] =
-    (p ^^ { case (r) => List(r) }) | ("(" ~> rep1(p) <~")" ^^ { case (rs) => rs })
+    (p ^^ (r => List(r))) | ("(" ~> rep1(p) <~")" ^^ (rs => rs))
 
   def anyOf[A](ks : List[Parser[A]]) : Parser[A] = {
     if (ks.isEmpty) { failure("none of anyOf") } else { ks.head | anyOf(ks.tail) }
@@ -78,7 +78,7 @@ object ParserWithSourcePosition extends Parsers with UnparsedParsers
   {
     def uniques[A](xs : List[(A, Int)]) : List[(A, Int)] = xs match {
       case Nil       => Nil
-      case (y :: ys) => y :: uniques(ys.filter(p => p._2 != y._2))
+      case y :: ys => y :: uniques(ys.filter(p => p._2 != y._2))
     }
 
     def fill(l : List[(Option[DefForm], Int)]) : List[(Option[DefForm], Int)] = {
