@@ -2,22 +2,21 @@ package info.kwarc.mmt.sql.codegen
 
 import info.kwarc.mmt.sql.{Column, Table}
 
-case class TableCode(table: Table) {
+case class TableCode(prefix: String, table: Table) {
 
   def tableName: String = table.name
   def tableObject: String = s"tb$tableName"
+  def packageString = s"xyz.discretezoo.web.db.$prefix$tableName" // package for the table specific files
   // class names
   def plainQueryObject = s"${tableName}PlainQuery"
   def tableClass = s"${tableName}Table"
   def caseClass: String = table.name
-  // database
-  private def dbTableName = s"ZOO_${tableName.toUpperCase}" // table name in the database
 
-  def packageString = s"xyz.discretezoo.web.db.Zoo$tableName" // package for the table specific files
+  private def dbTableName = s"${prefix}_${tableName.toUpperCase}" // table name in the database
+
   private def columnCodeList: Seq[ColumnCode] = table.columns.map(ColumnCode)
-  private def primaryKeyColumn: Column = table.columns.filter(_.isPrimaryKey).head
 
-//  def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
+//  TODO def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
 
   def codeTableClass: String = {
     val accessorMethods = columnCodeList.map(_.accessorMethod).mkString("\n")
@@ -33,9 +32,11 @@ case class TableCode(table: Table) {
        |
        |final class $tableClass(tag: Tag) extends Table[$caseClass](tag, "$dbTableName") with ColumnSelector {
        |
+       |def ID: Rep[UUID] = column[UUID]("ID", O.PrimaryKey)
        |$accessorMethods
        |
        |def * : ProvenShape[$caseClass] = (
+       |ID ::
        |$caseClassMapParameters ::
        |HNil
        |).mapTo[$caseClass]
@@ -45,7 +46,7 @@ case class TableCode(table: Table) {
        |)
        |
        |val inCollection: Map[String, Rep[Boolean]] = Map(
-       |"${primaryKeyColumn.name}" -> true
+       |"ID" -> true
        |)
        |
        |}""".stripMargin
@@ -60,6 +61,7 @@ case class TableCode(table: Table) {
        |import xyz.discretezoo.web.ZooObject
        |
        |case class $caseClass(
+       |ID: UUID,
        |$cols) extends ZooObject {
        |
        |def select: Map[String, _] = Map(
@@ -71,20 +73,25 @@ case class TableCode(table: Table) {
 
   def codePlainQueryObject: String = {
     val getResultParameters = table.columns.map(c => {
-      val special = Seq("UUID", "List[Int]", "List[List[Int]]")
-      if (special.contains(c.dbtype.toString)) s"r.nextObject.asInstanceOf[${c.dbtype.toString}]"
-      else "r.<<"
+      val special = Seq("UUID", "List[Int]")
+      val column = ColumnCode(c)
+      column.typeString match {
+        case "UUID" => "r.nextObject.asInstanceOf[UUID]"
+        case "List[Int]" => "r.<<[Seq[Int]].toList"
+        case _ => "r.<<"
+      }
     }).mkString(", ")
 
     s"""package $packageString
        |import java.util.UUID
        |import slick.jdbc.GetResult
        |import xyz.discretezoo.web.PlainSQLSupport
+       |import xyz.discretezoo.web.ZooPostgresProfile.api._
        |
        |object $plainQueryObject extends PlainSQLSupport[$caseClass] {
        |
        |override val tableName: String = "$dbTableName"
-       |override implicit val getResult: GetResult[$caseClass] = GetResult(r => $caseClass($getResultParameters))
+       |override implicit val getResult: GetResult[$caseClass] = GetResult(r => $caseClass(r.nextObject.asInstanceOf[UUID], $getResultParameters))
        |
        |val inCollection: Map[String, String] = Map(
        |"Ex" -> "ID"
@@ -94,13 +101,12 @@ case class TableCode(table: Table) {
   }
 
   def jsonSupportMap: String = {
-    val columns = columnCodeList.map(_.jsonWriterMapItem).mkString(",\n")
+    val columns = columnCodeList.map(c => s"        ${c.jsonWriterMapItem}").mkString(",\n")
     s"""case o: $caseClass => JsObject(
-       |List(
+       |        List(
        |$columns
-       |).flatten: _*
-       |)
-     """.stripMargin
+       |        ).flatten: _*
+       |      )""".stripMargin
   }
 
   // from here on react stuff

@@ -1,11 +1,10 @@
 package info.kwarc.mmt.sql.codegen
 
-//import java.io
+import java.io.PrintWriter
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.sql.{SQLBridge, SchemaLang, Table}
-import java.io.{File, PrintWriter}
 
 object CodeGenerator {
 
@@ -16,42 +15,75 @@ object CodeGenerator {
 
   def main(args: Array[String]): Unit = {
     args.foreach(println)
-    val outputDirPath = args.headOption.getOrElse("~/DiscreteZooOutput")
-    val scalaPath = s"$outputDirPath/backend/src/main/scala/xyz/discretezoo/web"
-    val reactPath = s"$outputDirPath/frontend/src"
-    val relDbPackagePath = s"$scalaPath/db"
+    val dirPaths = ProjectPaths(
+      args.headOption.getOrElse("~/DiscreteZooOutput"),
+      "backend/src/main/scala/xyz/discretezoo/web",
+      "frontend/src",
+      "db"
+    )
+    val jdbcInfo = JDBCInfo("jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
 
     val controller = Controller.make(true, true, List())
     val graphPath = SchemaLang._base ? "Graph"
     val mxPath = SchemaLang._base ? "Maniplex"
-    val examplePath = SQLBridge.example
-    val maybeTable: Option[Table] = SQLBridge.test(examplePath) match {
+    val exJoe = SchemaLang._base ? "MatrixS"
+    val exJane = SchemaLang._base ? "MatrixWithCharacteristicS"
+    val mPath = SchemaLang._base ? "Matrices"
+    val maybeTable: Option[Table] = SQLBridge.test(exJane) match {
       case t: Table => Some(t)
       case _ => None
     }
+    val sg = "Joe"
+
+    // remove later
+    controller.handleLine("build ODK/DiscreteZOO mmt-omdoc")
+
+    def isInputTheory(t: Theory) = {
+      val schemaLangIsMetaTheory = t.meta.contains(SchemaLang._path)
+      val isInSchemaGroup = t.metadata.get(SchemaLang.schemaGroup).headOption.exists(_.value.toString == sg)
+      schemaLangIsMetaTheory && isInSchemaGroup
+    }
+
+    val theories = controller.backend.getArchive("ODK/DiscreteZOO").get.allContent.map(controller.getO).collect({
+      case Some(t : Theory) if isInputTheory(t) => t
+    })
+//    collect {
+//      case Some(t : Theory) if t.meta.contains(SchemaLang._base.toMPath) => t.path
+//    }
+    theories.map(t => t).foreach(println)
 
     println(" - - - - - ")
+
     maybeTable.foreach(t => {
+
+      val generate = false
+      val prefix = "TEST"
+      val tableCode = TableCode(prefix, t)
+      val dbCode = DatabaseCode(dirPaths, prefix, Seq(tableCode), jdbcInfo) // TODO: one table only
       val name = {t.name}
-      val tablePackagePath = s"$relDbPackagePath/Zoo$name"
-      val tablePackageDir = new java.io.File(tablePackagePath)
-      if (!tablePackageDir.exists()) tablePackageDir.mkdir()
 
-      val tableCode = TableCode(t)
-      val dbCode = DatabaseCode("TEST", Seq(tableCode), "jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
+//      t.columns.foreach(c => println(c))
 
-      writeToFile(s"$relDbPackagePath/ZooDb.scala", dbCode.fileDbCode)
-      writeToFile(s"$scalaPath/JsonSupport.scala", dbCode.jsonSupportCode)
-      writeToFile(s"$tablePackagePath/$name.scala", tableCode.codeCaseClass)
-      writeToFile(s"$tablePackagePath/${name}PlainQuery.scala", tableCode.codePlainQueryObject)
-      writeToFile(s"$tablePackagePath/${name}Table.scala", tableCode.codeTableClass)
+//      t.columns.map(_.collection).collect({
+//        case Some(info) => info
+//      }).map(_.metadata).foreach(println)
 
-      writeToFile(s"$reactPath/objectProperties.json", dbCode.objectPropertiesJSON)
+//      println(t)
+
+      if (generate) {
+        // backend
+        dbCode.createTablePackageDirectories()
+        writeToFile(s"${dirPaths.backendPackagePath}/JsonSupport.scala", dbCode.jsonSupportCode)
+        writeToFile(s"${dirPaths.backendPackagePath}/Create.scala", dbCode.mainCreateCode)
+        writeToFile(s"${dirPaths.dbPackagePath}/ZooDb.scala", dbCode.fileDbCode)
+        writeToFile(s"${dbCode.tablePackagePath(name)}/$name.scala", tableCode.codeCaseClass)
+        writeToFile(s"${dbCode.tablePackagePath(name)}/${name}PlainQuery.scala", tableCode.codePlainQueryObject)
+        writeToFile(s"${dbCode.tablePackagePath(name)}/${name}Table.scala", tableCode.codeTableClass)
+        // frontend
+        writeToFile(s"${dirPaths.frontendPath}/objectProperties.json", dbCode.objectPropertiesJSON)
+      }
 
     })
-
-
-//    maybeTable.foreach(t => println(TableCode(t).jsonSupportMap))
   }
 
 }
