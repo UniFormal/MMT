@@ -3,7 +3,7 @@ package info.kwarc.mmt.refactoring.linkinversion
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Link
-import info.kwarc.mmt.api.modules.LinkUtils.getTermMappingForLink
+import info.kwarc.mmt.api.refactoring.linkinversion.LinkUtils.getTermMappingForLink
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.linkinversion.LinkInversionRulesProvider
 import info.kwarc.mmt.api.uom._

@@ -16,7 +16,7 @@ class Inductive extends StructuralFeature("Inductive") {
   override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = new Elaboration {
     override def getO(name: LocalName): Option[Declaration] = dd.getO(name) match {
       case Some(c: Constant) => Some(Constant(parent.toTerm,c.name,c.alias,c.tp,None,c.rl))
-      case None => None
+      case _ => None
     }
 
     override def domain: List[LocalName] = dd.domain
@@ -29,7 +29,7 @@ class CoInductive extends StructuralFeature("CoInductive") {
   override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = new Elaboration {
     override def getO(name: LocalName): Option[Declaration] = dd.getO(name) match {
       case Some(c: Constant) => Some(Constant(parent.toTerm,c.name,Nil,c.tp,None,c.rl))
-      case None => None
+      case _ => None
     }
 
     override def domain: List[LocalName] = dd.domain

@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.refactoring.linkinversion
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{Link, ModuleCreator, Theory, View}
+import info.kwarc.mmt.api.modules.{Link, Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.{HasMeta, RelStore, RelationExp}
 import info.kwarc.mmt.api.symbols._

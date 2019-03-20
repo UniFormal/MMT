@@ -1,11 +1,10 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.refactoring.linkinversion
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.modules.Link
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.utils.URI
 
 object LinkUtils {
 	def getDefiniensTerm(decl: Declaration): Term = {
