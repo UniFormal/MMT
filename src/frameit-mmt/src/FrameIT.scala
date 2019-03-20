@@ -163,7 +163,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
      })(objects.Stack(con),NoHistory)._1
      */
      //val tS = solver.forcesimplify(t)(objects.Stack(con),NoHistory)
-     tS = controller.simplifier(tS,con)//controller.simplifier(t, objects.Context(home))
+     tS = controller.simplifier(tS,SimplificationUnit(con, false, true))//controller.simplifier(t, objects.Context(home))
      log("After: " + tS.toString)
      tS
    }

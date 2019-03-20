@@ -4,10 +4,10 @@ import info.kwarc.mmt.api._
 import frontend._
 import objects._
 import presentation.Presenter
-
 import QueryResultConversion._
 import QueryTypeConversion._
 import info.kwarc.mmt.api.libraries.LookupWithNotFoundHandler
+import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable.HashSet
 
@@ -116,9 +116,9 @@ class Simplify extends QueryFunctionExtension("simplify", ObjType, ObjType) {
     val mp = mpath(params)
     argument match {
       case OMBIND(QueryEvaluator.free, cont, body) =>
-        controller.simplifier(body, Context(mp) ++ cont)
+        controller.simplifier(body, SimplificationUnit(Context(mp) ++ cont, false, true))
       case o: Obj =>
-        controller.simplifier(o, Context(mp))
+        controller.simplifier(o, SimplificationUnit(Context(mp), false, true))
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }
   }

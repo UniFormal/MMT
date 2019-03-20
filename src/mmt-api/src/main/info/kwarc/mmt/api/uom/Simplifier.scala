@@ -67,12 +67,6 @@ abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSi
       val rules = RuleSet.collectRules(controller, su.context)
       apply(obj, su, rules)
    }
-   
-   /** legacy interface */
-   @deprecated("use the other apply methods in Simplifier", "forever")
-   def apply(obj: Obj, context: Context, expDef: Boolean = false): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true))
-   @deprecated("use the other apply methods in Simplifier", "forever")
-   def apply(obj: Obj, context: Context, rules: RuleSet, expDef: Boolean): obj.ThisType = apply(obj, SimplificationUnit(context, expDef, true), rules)
 }
 
 class SimplificationEnvironment(val covered: Boolean, val errorCont: ErrorHandler, val task: MMTTask)

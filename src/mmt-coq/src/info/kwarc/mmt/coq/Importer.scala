@@ -427,7 +427,10 @@ class Importer extends archives.Importer {
         // (path / (name + ".constraints.xml"),e => e.asInstanceOf[coqxml.Constraints]),
         (path / (name + ".expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
         (path / (name + ".impl.expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
-        (path / (name + ".sub.xml"),e => coqxml.SupXML(e.asInstanceOf[coqxml.supertypes]))
+        (path / (name + ".sub.xml"),e => coqxml.SupXML(e match {
+          case s@coqxml.supertypes(_) => s
+          case s:CoqEntry => coqxml.supertypes(List(s))
+        }))
       )
       files.flatMap {case (f,e) =>
         if (f.exists()) {
