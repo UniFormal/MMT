@@ -773,7 +773,7 @@ class IMPSImportTask(val controller  : Controller,
 
               if (quelle.isDefined) { doMathExp(IMPSMathSymbol(n.s),quelle.get,Nil) }
               else {
-                assert(isRatLiteral(n.s) || isIntLiteral(n.s) || isOctLiteral(n.s))
+                assert(isDecLiteral(n.s) || isIntLiteral(n.s) || isOctLiteral(n.s))
                 doLiteral(n.s)
               }
             }
@@ -1506,15 +1506,45 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
+  def isSupportedLiteral(s : String) : Boolean = {
+    isIntLiteral(s) || isDecLiteral(s) || isRatLiteral(s) || isOctLiteral(s)
+  }
+
+  /* Integer Literals. Example: "-12" */
   def isIntLiteral(s : String) : Boolean = { s.forall(_.isDigit) || (s.startsWith("-") && s.tail.nonEmpty && s.tail.forall(_.isDigit)) }
-  def isRatLiteral(s : String) : Boolean = false
+
+  /* Octet Literals. Example: "128#8" */
   def isOctLiteral(s : String) : Boolean = { s.endsWith("#8") && s.init.init.nonEmpty && s.init.init.forall(_.isDigit) }
+
+  /* Rational Literals. Example: "-1/2" */
+  def isRatLiteral(s : String) : Boolean = {
+    if (!s.contains("/"))  { return false }
+    val split = s.split("/")
+    if (split.length != 2) { return false }
+
+    isIntLiteral(split(0)) && isIntLiteral(split(1)) && !split(1).contains("-")
+  }
+
+  /* Decimal Literals, interpreted as Double (because there's a standardDouble). Example: "-3.25*/
+  def isDecLiteral(s : String) : Boolean = {
+    if (!s.contains("."))  { return false }
+    val split = s.split(".")
+    if (split.length != 2) { return false }
+
+    val head : String = split(0)
+    val headB : Boolean = if (head.startsWith("-")) { head.tail.forall(_.isDigit) } else { head.forall(_.isDigit) }
+    val tailB : Boolean = split(1).forall(_.isDigit)
+
+    headB && tailB
+  }
 
   def doLiteral(s : String) : Term =
   {
-    if (isIntLiteral(s)) { IntLiterals.parse(s) }
+    if      (isIntLiteral(s)) { IntLiterals.parse(s) }
+    else if (isRatLiteral(s)) { RatLiterals.parse(s) }
+    else if (isDecLiteral(s)) { DecLiterals.parse(s) }
     else if (isOctLiteral(s)) { OctLiterals.parse(s.init.init) }
-    else { ??? } // ToDo: Ratliterals
+    else { ??!("Called doLiteral on something that's not a literal. :/") }
   }
 
   /* Translate IMPS Math Expressions to Terms */
@@ -1535,7 +1565,7 @@ class IMPSImportTask(val controller  : Controller,
       case IMPSMathSymbol(s)               =>
 
         if (s.startsWith("\"") && s.endsWith("\"")) { doMathExp(IMPSMathSymbol(s.tail.init),thy,cntxt) }
-        else if (isIntLiteral(s) || isRatLiteral(s) || isOctLiteral(s)) { doLiteral(s) }
+        else if (isSupportedLiteral(s)) { doLiteral(s) }
         else
         {
           val srcthy : Option[Theory] = locateMathSymbolHome(s,thy)
@@ -1543,8 +1573,6 @@ class IMPSImportTask(val controller  : Controller,
           assert(srcthy.isDefined)
           OMS(srcthy.get.path ? LocalName(s))
         }
-        //  Rational Literals
-        //  case "i/j" => OMLIT((BigInt(i),BigInt(j)),RatLiterals)
 
       case IMPSIndividual()       => OMS(IMPSTheory.lutinsPath ? "anIndividual")
       case IMPSTruth()            => OMS(IMPSTheory.lutinsPath ? "thetrue")

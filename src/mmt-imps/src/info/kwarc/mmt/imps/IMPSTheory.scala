@@ -2,7 +2,7 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{RSubtype, RepresentedRealizedType, StandardInt, StandardRat, StandardNat}
+import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import utils._
 
@@ -16,6 +16,9 @@ object IntLiterals extends
 
 object RatLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardRat)
+
+object DecLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardDouble)
 
 object OctLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"octetType")),ImpsOctet)
