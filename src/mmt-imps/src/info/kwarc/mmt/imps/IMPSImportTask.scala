@@ -174,7 +174,8 @@ class IMPSImportTask(val controller  : Controller,
           } else if (targetMuls.isDefined) {
             val range = 1 to targetMuls.get.n.n
             range.map(k => ensemble.replicaMap(k)).toList
-          } else ??? // should not happen, either argument is always present
+          } else throw ImplementationError("No target theory or target multiple.")
+                 // should not happen, either argument is always present
 
           var permutations : List[List[Int]] = List.empty
 
@@ -184,7 +185,8 @@ class IMPSImportTask(val controller  : Controller,
             for (m <- multiples.get.ns) {
               permutations = candidates.indices.toList.permutations.toList.filter(l => l.length == m.n)
             }
-          } else ??? // should not happen, either argument is always present
+          } else throw ImplementationError("No permutations or multiples defined")
+                 // should not happen, either argument is always present
 
           def tUnion : (Theory, Theory) => Theory = (t1, t2) =>
           {
@@ -217,7 +219,6 @@ class IMPSImportTask(val controller  : Controller,
             val vname: LocalName = LocalName(fooname.toUpperCase)
 
             val relevantTranslations: List[JSONObject] = allJSONTranslations.filter(j => j.getAsString("name").toLowerCase == fooname.toLowerCase)
-            //println(" > [TES] " + relevantTranslations.length + " relevant translation(s)!")
             if (relevantTranslations.length == 1)
             {
               if (tState.verbosity > 1) {
@@ -277,47 +278,6 @@ class IMPSImportTask(val controller  : Controller,
                     println(" > adding ensemble-instance sort-mapping: " + leftExpStr + " → " + trgt.toString)
                   }
                 }
-
-                /*
-                for (sortMapping <- ensembleSorts.get.sorts)
-                {
-                  val sourceName : String = sortMapping.nm.s
-                  val sourceSort : Term   = matchSort(IMPSAtomSort(sourceName),locateMathSymbolHome(sourceName,ensemble.baseTheory).get)
-
-                  for (targetSort : ODefString <- sortMapping.sorts)
-                  {
-                    var trgt : Either[IMPSSort,IMPSMathExp] = targetSort.o match
-                    {
-                      case scala.util.Right(srt_name) => scala.util.Left(IMPSAtomSort(srt_name.toString))
-                      case scala.util.Left((dfs,ime)) => assert(ime.isDefined) ; scala.util.Right(ime.get)
-                    }
-
-                    val target_term : Term = trgt match {
-                      case scala.util.Left(is)  => val q = locateMathSymbolHome(is.toString,target) ; assert(q.isDefined) ; matchSort(is,q.get)
-                      case scala.util.Right(im) => doMathExp(im,target,Nil)
-                    }
-
-                    val target_tp : Option[Term] = trgt match {
-                      case scala.util.Left(is) => Some(IMPSTheory.Sort(OMS(IMPSTheory.lutinsIndType)))
-                      case scala.util.Right(_) => None
-                    }
-
-                    val quelle : Option[Theory] = locateMathSymbolHome(sourceName, source)
-                    assert(quelle.isDefined)
-
-                    val nu_sort_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(sourceName),Nil,target_tp,Some(target_term),None)
-                    if (tState.verbosity > 1)
-                    {
-                      val disp : String = targetSort.o match {
-                        case scala.util.Left((df,_)) => df.toString
-                        case scala.util.Right(xname) => xname.toString
-                      }
-                      println(" > adding ensemble-instance sort-mapping: " + sourceName + " → " + disp)
-                    }
-
-                    controller add nu_sort_map
-                  }
-                } */
               }
 
               if (ensembleConsts.isDefined) {
@@ -370,9 +330,6 @@ class IMPSImportTask(val controller  : Controller,
               for (nativec <- source.getConstants)
               {
                 println(" > translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name)
-                println(" > con: " + nativec.name)
-                println(" > tp:  " + nativec.tp)
-                println(" > df:  " + nativec.df)
                 val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
                 val nuname : LocalName = ComplexStep(target.path) / nativec.name
                 val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
@@ -1150,7 +1107,7 @@ class IMPSImportTask(val controller  : Controller,
         {
           val rn = tState.renamers.find(r => r.nm.toString.toLowerCase == reprenamer.get.nm.toString.toLowerCase)
           assert(rn.isDefined)
-          ??? // I don't think this actually happens
+          throw ImplementationError("Unhandled renamer present.")// I don't think this actually happens
         } else {
           n : Int => (s : String) => s + "_" + n.toString
         }
@@ -1729,7 +1686,7 @@ class IMPSImportTask(val controller  : Controller,
               assert(s2 == IMPSAtomSort("bool") || s2 == IMPSAtomSort("prop"))
               IMPSTheory.Nonvacuous(findKind(s1),the_srt,the_exp)
 
-            case _ => ???
+            case _ => throw ImplementationError("Binary Funsort expected.")
           }
         } else { IMPSTheory.Nonvacuous(tState.doUnknown(),tState.doUnknown(),doMathExp(p,thy,cntxt)) }
 
@@ -1791,7 +1748,7 @@ class IMPSImportTask(val controller  : Controller,
       assert(und.isInstanceOf[IMPSUndefined])
       val srt : IMPSSort = und match {
         case IMPSUndefined(s) => s
-        case _ => ???
+        case _ => throw ImplementationError("Not an undefined sort in sort2indicator.")
       }
       val wit : Term = doMathExp(und,thy,cntxt)
       IMPSTheory.QCT.sort2indicQC(findKind(srt),matchSort(srt,thy),wit)
