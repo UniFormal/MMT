@@ -4,7 +4,6 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{History, Solver, SubtypingRule, TypeBasedEqualityRule}
 import info.kwarc.mmt.api.documents._
-import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules._
@@ -12,10 +11,11 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.{LocalName, _}
 import info.kwarc.mmt.imps.Usage.Usage
 import info.kwarc.mmt.imps.impsMathParser.SymbolicExpressionParser
 import info.kwarc.mmt.lf.ApplySpine
-import utils._
 
 object IMPSImportTask{
   val rootdpath : DPath = DPath(URI.http colon "imps.mcmaster.ca") /* arbitrary, but seemed fitting */

@@ -3,8 +3,8 @@ package info.kwarc.mmt.imps
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import utils._
 
 object ImpsOctet extends RSubtype(StandardNat) {
   override def asString = "octet"

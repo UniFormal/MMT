@@ -1,8 +1,6 @@
 package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api.utils.UnparsedParsers
-import info.kwarc.mmt.imps
-
 import scala.util.parsing.combinator.Parsers
 
 object ParserWithSourcePosition extends Parsers with UnparsedParsers
