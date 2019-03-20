@@ -98,7 +98,7 @@ abstract class RealizationInScala extends RealizedTheory(None) {
            try {
              val t = tL()
              //log("term: " + controller.presenter.asString(t))
-             val tS = controller.simplifier(t, Context(_path))
+             val tS = controller.simplifier(t, SimplificationUnit(Context(_path), false, true))
              //log("simplified: " + controller.presenter.asString(tS))
              val result = a(tS)
              log((if (result) "PASSED" else "FAILED") + "\n")
