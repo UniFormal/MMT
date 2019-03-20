@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.refactoring.Hasher.Targetable
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.utils.time.{Duration, Time}
 
@@ -754,7 +755,7 @@ object DefinitionExpander extends Preprocessor {
         val ntp = c.tp.map { tp =>
           val ret = traverser(tp, ())
           try {
-            simplifier(ret, th.getInnerContext, RuleSet.collectRules(controller, th.getInnerContext), false)
+            simplifier(ret, SimplificationUnit(th.getInnerContext, false, true), RuleSet.collectRules(controller, th.getInnerContext))
           } catch {
             case _ : info.kwarc.mmt.api.Error => ret
           }

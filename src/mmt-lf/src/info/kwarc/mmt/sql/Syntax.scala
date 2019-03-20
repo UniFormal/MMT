@@ -3,6 +3,7 @@ package info.kwarc.mmt.sql
 import info.kwarc.mmt.api._
 import objects._
 import metadata.MetaData
+import scala.language.existentials
 
 /**
   *  @param path the MMT name of the table

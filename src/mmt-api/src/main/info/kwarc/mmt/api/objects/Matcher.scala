@@ -149,7 +149,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
     */
   private def solve(name: LocalName, value: Term): Boolean = {
     val (left, solved :: right) = querySolution.span(_.name != name)
-    val valueS = controller.simplifier(value, constantContext ++ left, rules, expDef = false)
+    val valueS = controller.simplifier(value, SimplificationUnit(constantContext ++ left, false, true), rules)
     solved.tp foreach { tp =>
       val valueTp = Solver.infer(controller, constantContext, value, Some(rules)).getOrElse(return false)
       val tpmatch = aux(Nil, valueTp, tp)
