@@ -247,7 +247,7 @@ lazy val jedit = (project in file("jEdit-mmt")).
 
 // MMT IntelliJ-Plugin. Maintainer: Dennis
 lazy val intellij = (project in file("intellij-mmt")).
-  dependsOn(api).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("intellij-mmt"): _*)
 
 lazy val coq = (project in file("mmt-coq")).
