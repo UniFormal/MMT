@@ -790,7 +790,6 @@ class IMPSImportTask(val controller  : Controller,
       }
 
       /* Add translations from all non-mentioned constants to themselves if source = target */
-      // ToDo: What about when it isn't? Do we need some manual addings there, too?
 
       if (source_thy == target_thy)
       {
