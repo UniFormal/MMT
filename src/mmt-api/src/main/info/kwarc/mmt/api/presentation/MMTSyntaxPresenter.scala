@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.{OMID, OMPMOD}
+import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMPMOD, Term}
 import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueText, OpaqueTextPresenter}
 import info.kwarc.mmt.api.parser.Reader
 import info.kwarc.mmt.api.symbols._
@@ -87,7 +87,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 	}
 
 	class PersistentNamespaceMap {
-		private var nsm = NamespaceMap.empty
+		private var nsm = controller.getNamespaceMap
 		def base(s: String) = nsm = nsm.base(s)
 		def add(s : String,uri : URI) = nsm = nsm.add(s,uri)
 		def compact(s : String) = nsm.compact(s)
@@ -108,7 +108,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 					case Some(m) => present(m, rh)
 				}
 			case oe: OpaqueElement =>
-				rh("/T ")
+				rh("\n/T ")
 				val pres = controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
 				pres.get.toString(objectPresenter,oe)(rh)
 			case ii: InterpretationInstruction =>
@@ -119,7 +119,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 					case _ =>
 				}
 			case c: Constant => doConstant(c, rh)
-			case t: Theory => doTheory(t, rh)
+			case t: Theory =>
+				rh("\n")
+				doTheory(t, rh)
 			case v: View => doView(v, rh)
 			case dd: DerivedDeclaration =>
 				rh << dd.feature + " "
@@ -139,7 +141,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 			case r: RuleConstant =>
 				if (r.df.isEmpty) rh("unknown ")
 				rh("rule ")
-				r.tp foreach { t => apply(t, Some(r.path $ TypeComponent))(rh) }
+				r.tp.foreach(doURI(_,rh))
+				// r.tp foreach { t => apply(t, Some(r.path $ TypeComponent))(rh) }
 		}
 		endDecl(element, rh)
 	}
@@ -148,25 +151,23 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		case _: Document => /* do nothing */
 		case _: DRef => rh(MODULE_DELIMITER)
 		case _: MRef => rh(MODULE_DELIMITER)
-		case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER)
+		case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
 
 		// TODO Fix for [[Structure.isInclude]] not accounting for inclusions
 		//  with definiens component, see tod*o note in [[Include.unapply]]
-		case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER)
+		case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
 		case _: ModuleOrLink => // rh(MODULE_DELIMITER)
 		case _: NestedModule => rh(DECLARATION_DELIMITER)
 
 		// some declarations are handled before by ModuleOrLink already
-		case _: Declaration => rh(DECLARATION_DELIMITER)
-		case ns : Namespace =>
-			rh(MODULE_DELIMITER)
-		case nsi : NamespaceImport =>
-			rh(MODULE_DELIMITER)
+		case _: Declaration => rh(DECLARATION_DELIMITER + "\n")
+		case ns : InterpretationInstruction =>
+			rh(MODULE_DELIMITER + "\n")
 		case t : OpaqueText =>
 			val del = if (t.parent.toString.endsWith("omdoc")) MODULE_DELIMITER else DECLARATION_DELIMITER
 			// rh("/t ")
 			// t.text.toString(objectPresenter)(rh,OpaqueText.defaultEscapes)
-			rh(del)
+			rh(del+"\n")
 	}
 
 	private def doTheory(theory: AbstractTheory, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = {
@@ -179,7 +180,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 			rh(" : ")
 			// Print the meta theory path, possibly relative
 			// TODO Replace OtherComponent("theory-meta") by correct component
-			apply(OMID(metaTheoryPath), Some(theory.path $ OtherComponent("theory-meta")))(rh)
+			doURI(OMMOD(metaTheoryPath),rh)
+			// apply(OMID(metaTheoryPath), Some(theory.path $ OtherComponent("theory-meta")))(rh)
 		})
 		// TODO print type component
 		// TODO What is a def component of a theory?
@@ -192,6 +194,18 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 				present(d, indented(rh))
 			}
 		}
+	}
+
+	private def doURI(tm: Term, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = tm match {
+		case OMPMOD(p,args) =>
+			rh(nsm.compact(p.toString))
+			if (args.nonEmpty) {
+				rh(" (")
+				args.foreach(o => { apply(o,None)(rh);rh(" ") })
+				rh(")")
+			}
+		case _ =>
+			objectLevel.apply(tm,None)(rh)
 	}
 
 	private def doConstant(c: Constant, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = {
@@ -216,7 +230,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
 		val hadDefiniensComponent = c.df.isDefined
 		c.df foreach { definiensTerm =>
-			if (hadTypeComponent) {
+			if (hadTypeComponent | hadAlias) {
 				rh(OBJECT_DELIMITER)
 			}
 
@@ -226,7 +240,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		}
 
 		c.notC.parsing foreach { textNotation =>
-			if (hadDefiniensComponent) {
+			if (hadDefiniensComponent | hadTypeComponent | hadAlias) {
 				rh(OBJECT_DELIMITER)
 			}
 
@@ -238,9 +252,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
 	private def doView(view: View, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = {
 		rh("view " + view.name + " : ")
-		apply(view.from, Some(view.path $ DomComponent))(rh)
+		doURI(view.from,rh)
+		// apply(view.from, Some(view.path $ DomComponent))(rh)
 		rh(" -> ")
-		apply(view.to, Some(view.path $ CodComponent))(rh)
+		doURI(view.to,rh)
+		// apply(view.to, Some(view.path $ CodComponent))(rh)
 		rh(" =\n")
 
 		// TODO doDefComponent does nothing for views?
@@ -275,12 +291,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 			//     component is "?phi".
 			// TODO(Florian|Dennis) Have a look at the description above and confirm/decline.
 			val incl = if (s.df.isDefined) s.df.get else s.from
-			incl match {
-				case OMPMOD(p,args) =>
-					rh(nsm.compact(p.toString))
-				case _ =>
-					objectLevel.apply(incl,None)(rh)
-			}
+			doURI(incl,rh)
 		} else {
 			rh("structure " + s.name + " : " + s.from.toMPath.^^.last + "?" + s.from.toMPath.last)
 			//this.present(s.from, Some(s.path $ TypeComponent))
