@@ -112,7 +112,8 @@ object Include {
    def apply(home: Term, from: MPath, args: List[Term]): Structure = apply(home, from, args, None)
    def apply(home: Term, from: MPath, args: List[Term], df: Option[Term]): Structure =
       Structure(home, LocalName(from), OMPMOD(from, args), df, true)   
-   // the apply method already allows for defined includes (= implicit morphisms), but unapply does not support it yet because all algorithms must be adapted to consider defined includes
+   // TODO the apply method already allows for defined includes (= implicit morphisms),
+   //  but unapply does not support it yet because all algorithms must be adapted to consider defined includes
    def unapply(t: ContentElement) : Option[(Term,MPath,List[Term])] = t match {
       case d: Structure => d.fromC.get match {
          case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some((d.home, from, args)) // , d.df

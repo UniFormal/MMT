@@ -63,7 +63,7 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
    extends StructurePresenter with ObjectPresenter with LeveledExtension {
 
   /** relegates to objectPresenter */
-  def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = objectLevel(o, origin)
+  def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler): Unit = objectLevel(o, origin)
 
   override def outDim = Dim("export", "presentation", key)
 }
