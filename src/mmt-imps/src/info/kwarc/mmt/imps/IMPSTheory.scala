@@ -209,7 +209,7 @@ object IMPSTheory
   // Not used.
   object Falselike extends Sym("falselike")
   {
-    def apply : Term = ???
+    def apply : Term = ??!("Falselike encountered.")
   }
 
   object Total extends Sym("total")
