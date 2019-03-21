@@ -68,4 +68,23 @@ case class DatabaseCode(paths: ProjectPaths, name: String, tables: Seq[TableCode
      """.stripMargin
   }
 
+  def collectionDataJSON: String = {
+    val code = tables.map(_.collectionsData).mkString(",\n")
+    s"""{
+       |$code
+       |}
+     """.stripMargin
+  }
+
+  def settingsJSON: String = {
+    val code = tables.map(_.defaultColumns).mkString(",\n")
+    s"""{
+       |    "title": "Search",
+       |    "defaultColumns": {
+       |$code
+       |    }
+       |}
+     """.stripMargin
+  }
+
 }

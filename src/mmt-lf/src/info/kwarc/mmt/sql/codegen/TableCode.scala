@@ -2,7 +2,7 @@ package info.kwarc.mmt.sql.codegen
 
 import info.kwarc.mmt.sql.{Column, Table}
 
-case class TableCode(prefix: String, table: Table) {
+case class TableCode(prefix: String, description: String, table: Table) {
 
   def tableName: String = table.name
   def tableObject: String = s"tb$tableName"
@@ -120,14 +120,18 @@ case class TableCode(prefix: String, table: Table) {
   }
 
   def collectionsData: String = {
-    val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
     s""""$tableObject": {
-       |  $tableName: {
+       |  "$tableName": {
        |    "id": "$tableName",
-       |    "name": "Table description"
+       |    "name": "$description"
        |  }
        |}
      """.stripMargin
+  }
+
+  def defaultColumns: String = {
+    val columns = table.columns.filter(_.isDisplayedByDefault).map(c => s""""${c.name}"""").mkString(", ")
+    s"""      "$tableObject": [$columns]""".stripMargin
   }
 
 }
