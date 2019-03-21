@@ -156,7 +156,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		// TODO Fix for [[Structure.isInclude]] not accounting for inclusions
 		//  with definiens component, see tod*o note in [[Include.unapply]]
 		case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
-		case _: ModuleOrLink => // rh(MODULE_DELIMITER)
+		case _: ModuleOrLink => rh(MODULE_DELIMITER)
 		case _: NestedModule => rh(DECLARATION_DELIMITER)
 
 		// some declarations are handled before by ModuleOrLink already
@@ -174,14 +174,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		//TODO this ignores all narrative structure inside a theory
 		rh(theory.feature + " " + theory.name)
 
-		// TODO Possibly make metaTheoryPath relative imported namespaces in document
-		//  - if the presenter was initially called with a document.
 		theory.meta.foreach(metaTheoryPath => {
 			rh(" : ")
-			// Print the meta theory path, possibly relative
-			// TODO Replace OtherComponent("theory-meta") by correct component
 			doURI(OMMOD(metaTheoryPath),rh)
-			// apply(OMID(metaTheoryPath), Some(theory.path $ OtherComponent("theory-meta")))(rh)
 		})
 		// TODO print type component
 		// TODO What is a def component of a theory?
@@ -196,6 +191,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		}
 	}
 
+	/**
+		* Present a URI, possibly relative with the given namespace map.
+		*/
 	private def doURI(tm: Term, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = tm match {
 		case OMPMOD(p,args) =>
 			rh(nsm.compact(p.toString))
@@ -230,7 +228,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
 		val hadDefiniensComponent = c.df.isDefined
 		c.df foreach { definiensTerm =>
-			if (hadTypeComponent | hadAlias) {
+			if (hadTypeComponent || hadAlias) {
 				rh(OBJECT_DELIMITER)
 			}
 
@@ -240,7 +238,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		}
 
 		c.notC.parsing foreach { textNotation =>
-			if (hadDefiniensComponent | hadTypeComponent | hadAlias) {
+			if (hadDefiniensComponent || hadTypeComponent || hadAlias) {
 				rh(OBJECT_DELIMITER)
 			}
 
@@ -252,11 +250,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
 	private def doView(view: View, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = {
 		rh("view " + view.name + " : ")
-		doURI(view.from,rh)
-		// apply(view.from, Some(view.path $ DomComponent))(rh)
+		doURI(view.from, rh)
 		rh(" -> ")
 		doURI(view.to,rh)
-		// apply(view.to, Some(view.path $ CodComponent))(rh)
 		rh(" =\n")
 
 		// TODO doDefComponent does nothing for views?

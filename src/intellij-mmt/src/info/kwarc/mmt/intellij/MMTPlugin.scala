@@ -403,9 +403,6 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 		val newModulePath = T.path.parent ? (T.path.name + "Generalized")
 		val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
 
-		// [[LinkInverter]] needs all relational data
-		readAllRelationalContent()
-
 		val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
 			R,
 			T,
