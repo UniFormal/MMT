@@ -2,9 +2,11 @@ package info.kwarc.mmt.sql.codegen
 
 import java.io.PrintWriter
 
+import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.sql.{SQLBridge, SchemaLang, Table}
+import info.kwarc.mmt.api.objects.{OMA, OMS}
+import info.kwarc.mmt.sql.{Column, SQLBridge, SchemaLang, Table}
 
 object CodeGenerator {
 
@@ -29,11 +31,7 @@ object CodeGenerator {
     val exJoe = SchemaLang._base ? "MatrixS"
     val exJane = SchemaLang._base ? "MatrixWithCharacteristicS"
     val mPath = SchemaLang._base ? "Matrices"
-    val maybeTable: Option[Table] = SQLBridge.test(exJane) match {
-      case t: Table => Some(t)
-      case _ => None
-    }
-    val sg = "Joe"
+    val sg = "Mathilde"
 
     // remove later
     controller.handleLine("build ODK/DiscreteZOO mmt-omdoc")
@@ -54,21 +52,22 @@ object CodeGenerator {
 
     println(" - - - - - ")
 
+    val maybeTable: Option[Table] = SQLBridge.test(mPath) match {
+      case t: Table => Some(t)
+      case _ => None
+    }
+
     maybeTable.foreach(t => {
 
-      val generate = false
+      val generate = true
       val prefix = "TEST"
       val tableCode = TableCode(prefix, t)
       val dbCode = DatabaseCode(dirPaths, prefix, Seq(tableCode), jdbcInfo) // TODO: one table only
       val name = {t.name}
 
-//      t.columns.foreach(c => println(c))
-
 //      t.columns.map(_.collection).collect({
 //        case Some(info) => info
 //      }).map(_.metadata).foreach(println)
-
-//      println(t)
 
       if (generate) {
         // backend

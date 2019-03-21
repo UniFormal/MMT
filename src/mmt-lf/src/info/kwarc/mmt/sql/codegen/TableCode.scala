@@ -94,7 +94,7 @@ case class TableCode(prefix: String, table: Table) {
        |override implicit val getResult: GetResult[$caseClass] = GetResult(r => $caseClass(r.nextObject.asInstanceOf[UUID], $getResultParameters))
        |
        |val inCollection: Map[String, String] = Map(
-       |"Ex" -> "ID"
+       |"$tableName" -> "ID"
        |)
        |
        |}""".stripMargin
@@ -115,6 +115,17 @@ case class TableCode(prefix: String, table: Table) {
     val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
     s""""$tableObject": {
        |$columns
+       |}
+     """.stripMargin
+  }
+
+  def collectionsData: String = {
+    val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
+    s""""$tableObject": {
+       |  $tableName: {
+       |    "id": "$tableName",
+       |    "name": "Table description"
+       |  }
        |}
      """.stripMargin
   }

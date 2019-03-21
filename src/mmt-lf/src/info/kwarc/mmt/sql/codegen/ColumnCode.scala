@@ -1,5 +1,6 @@
 package info.kwarc.mmt.sql.codegen
 
+import info.kwarc.mmt.api.objects.{OMA, OMS}
 import info.kwarc.mmt.sql.Column
 
 case class ColumnCode(column: Column) {
@@ -28,7 +29,12 @@ case class ColumnCode(column: Column) {
       case "Boolean" => "bool"
       case _ => "opaque"
     }
-    s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$colType"}"""
+    s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$codecName"}"""
+  }
+
+  private def codecName: String = column.codec match {
+    case OMS(x) => x.name.toString
+    case OMA(_, codecArgs) => codecArgs.head.toMPath.name.last.toString
   }
 
 }
