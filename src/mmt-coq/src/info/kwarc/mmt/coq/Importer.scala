@@ -288,6 +288,7 @@ class Importer extends archives.Importer {
       case <hr/> => Nil
       case <b>Require</b> => Nil // TODO include?
       case <div/> | <div> </div> => Nil
+      case <img/> => Nil
       case <span>{ch @ _*}</span> => ch.flatMap(doStatement(_,namespaces,sections)).toList
       case a @ <a>{lnk}</a> if (a\"@href").mkString.startsWith("theory:/") =>
         val uri = URI((a\"@href").mkString)
