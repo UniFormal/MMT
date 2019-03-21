@@ -149,8 +149,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
 	private def endDecl(element: StructuralElement, rh: RenderingHandler): Unit = element match {
 		case _: Document => /* do nothing */
-		case _: DRef => rh(MODULE_DELIMITER)
-		case _: MRef => rh(MODULE_DELIMITER)
+		case _: DRef => // rh(MODULE_DELIMITER)
+		case _: MRef => // rh(MODULE_DELIMITER)
 		case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
 
 		// TODO Fix for [[Structure.isInclude]] not accounting for inclusions
@@ -196,9 +196,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		*/
 	private def doURI(tm: Term, rh: RenderingHandler)(implicit nsm : PersistentNamespaceMap): Unit = tm match {
 		case OMPMOD(p,args) =>
-			rh(nsm.compact(p.toString))
+			rh(nsm.compact(p.toString) + " ")
 			if (args.nonEmpty) {
-				rh(" (")
+				rh("(")
 				args.foreach(o => { apply(o,None)(rh);rh(" ") })
 				rh(")")
 			}
