@@ -93,4 +93,20 @@ trait DocumentBuilder { this: Builder =>
       decls
     ))
   }
+
+  /** builds a pseudo-document containing specific text */
+  protected def buildPseudoDocument(path: DPath, text: String): IDocument = {
+    val ref = makeDocumentRef(path).get
+    val child = pseudoOpaqueElement(ref, path, text)
+
+    IDocument(
+      ref.parent, ref.id, ref.name,
+
+      List(),
+      None,
+
+      getStats(ref.id),
+      List(child)
+    )
+  }
 }
