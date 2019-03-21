@@ -48,4 +48,5 @@ object SchemaLang extends TheoryScala {
   val hidden     = new Tagger(_path ? "hidden")
   val collection = new Tagger(_path ? "collection")
   val schemaGroup = _path ? "schemaGroup"
+  val datasetName = _path ? "datasetName"
 }
