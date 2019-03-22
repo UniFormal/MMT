@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Link, Theory, View}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{HasMeta, RelStore, RelationExp}
+import info.kwarc.mmt.api.ontology.{HasMeta, RelationExp}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.{AbbrevRule, SimplificationUnit}
 
@@ -129,6 +129,9 @@ trait RewriteErrorHandler {
 final case class LinkInverterResult(invertedTheory: List[Declaration],
 																		generatedMorphism: List[Declaration])
 
+/**
+	* @todo ComFreek: Document, especially when terms are not rewritable.
+	*/
 object LinkInverter {
 	def invertLink(R: Theory, S: Theory, RToS: Link,
 								 linkInversionRuleProvider: LinkInversionRulesProvider,
@@ -145,8 +148,6 @@ object LinkInverter {
 
 		val invertedTheory = ModuleCreator
 			.getBuilder
-			// Include R
-			.addNewSymbol(targetPath => Include(OMMOD(targetPath), R.path, Nil))
 			// Add generalized declarations
 			.addNewSymbols(linkInversionResult.invertedTheory.map(decl => {
 			x: MPath => decl
@@ -229,135 +230,152 @@ object LinkInverter {
 		val newDeclarations = new mutable.ArrayBuffer[Declaration]
 		val outLinkDeclarations = new mutable.ArrayBuffer[Declaration]
 
-		val allowedOMIDReferences = new mutable.HashSet[Path]()
 		val allowedModuleReferences = new mutable.HashSet[MPath]()
+		allowedModuleReferences += newModulePath
 
-		def getUnrewritableTerms(term: Term): Seq[Term] = {
-			isTermInTheoryObjects(
-				term,
-				R.path,
-				allowedOMIDReferences.toSet,
-				allowedModuleReferences.toSet
-			)(ctrl.depstore)
-		}
+		// Start inversion
+		// Add inclusion of R to generated theory
+		newDeclarations += Include(home = OMID(newModulePath), from = R.path, args = Nil)
+		outLinkDeclarations += Include(
+			home = OMID(newMorphismPath),
+			from = R.path,
+			args = Nil,
+			df = Some(RToS.toTerm)
+		)
 
+		// Now try inverting all declarations in T
 		// getConstants returns the constants in narrative (i.e. dependency-conforming) order
-		S.getDeclarations.foreach({
-			case includeDecl: Structure if includeDecl.isInclude =>
-				if (includeDecl.from.toMPath == RToS.to.toMPath) {
-					// Ignore include of S in T
-					// The very sense of inversion/generalization is that
-					// we want to replace the inclusion of S by an inclusion of R
+		S.getDeclarations.foreach(originalDecl => {
+			// If RToS contains a renaming originalDecl' -> originalDecl, then use the local
+			// name of originalDecl' as the new name. Otherwise, keep the name of originalDecl.
+			// This is precisely what [[rewrite]] does under the condition that
+			// expandDefinitions is set to false in the simplification unit.
+			val newName = rewrite(originalDecl.toTerm) match {
+				case OMID(GlobalName(_, newLocalName)) => newLocalName
+				case _ => throw new AssertionError("Simplifier rewrote OMID to a GlobalName " +
+					"to a non-OMID or to an OMID not referring to a GlobalName anymore.")
+			}
 
-					outLinkDeclarations.append(new Structure(
-						OMID(newMorphismPath),
-						includeDecl.name,
-						tpC = TermContainer(RToS.from),
-						dfC = TermContainer(RToS.toTerm),
-						isImplicit = false
-					))
-				}
-				else {
-					newDeclarations.append(includeDecl)
-					outLinkDeclarations.append(new Structure(
-						OMID(newMorphismPath),
-						includeDecl.name,
-						includeDecl.tpC.copy,
-						includeDecl.dfC.copy,
-						isImplicit = false
-					))
+			originalDecl match {
+				case includeDecl: Structure if includeDecl.isInclude =>
+					if (includeDecl.from.toMPath == RToS.to.toMPath) {
+						// Ignore include of S in T
+						// The very sense of inversion/generalization is that
+						// we want to replace the inclusion of S by an inclusion of R
 
-					// Allow OMIDs referencing symbols in the included theory
-					// or any of its transitively included theories later on.
-					allowedModuleReferences ++= ctrl.depstore.querySet(
-						includeDecl.from.toMPath,
-						(RelationExp.Imports | HasMeta).^*
-					).map(_.asInstanceOf[MPath])
-				}
-			case decl: Constant =>
-				// If RToS contains a renaming decl' -> decl, then use the local name of decl'
-				// as the new name.
-				// Otherwise, keep the name of decl.
-				// This is precisely what [[rewrite]] does under the condition that
-				// expandDefinitions is set to false in the simplification unit.
-				val newName = rewrite(decl.toTerm) match {
-					case OMID(GlobalName(_, newLocalName)) => newLocalName
-					case _ => throw new AssertionError("Simplifier rewrote OMID to a GlobalName " +
-						"to a non-OMID or to an OMID not referring to a GlobalName anymore.")
-				}
-
-				val newTypeContainer = decl.tpC.map(rewrite)
-				val newDefContainer = decl.dfC.map(rewrite)
-
-				val attemptedDeclaration = new FinalConstant(
-					home = OMID(newModulePath),
-					name = newName,
-					alias = decl.alias,
-					tpC = newTypeContainer,
-					dfC = newDefContainer,
-					rl = decl.rl,
-					notC = decl.notC.copy,
-					vs = decl.vs
-				)
-
-				val invalidTypeSubterms = attemptedDeclaration.tp.map(getUnrewritableTerms).getOrElse(Nil)
-				val invalidDefSubterms = attemptedDeclaration.df.map(getUnrewritableTerms).getOrElse(Nil)
-
-				// Determine how to continue (in error or in success)
-				val continuationStyle: ContinuationStyle = {
-					if (invalidTypeSubterms.nonEmpty || invalidDefSubterms.nonEmpty) {
-						rewriteErrorHandler(RewriteConstantError(decl, Some(attemptedDeclaration), Map(
-							TypeComponent -> invalidTypeSubterms,
-							DefComponent -> invalidDefSubterms
-						)))
+						// The inclusion of R has already been added above,
+						// likewise the inclusion of RToS to the generated morphism.
 					}
 					else {
-						// We actually succeeded in rewriting
-						RewriteAs(attemptedDeclaration)
+						// Copy the inclusion to the generated theory and morphism
+						// but with adjusted home terms, of course.
+						newDeclarations.append(new Structure(
+							OMID(newModulePath),
+							includeDecl.name,
+							includeDecl.tpC.copy,
+							includeDecl.dfC.copy,
+							isImplicit = includeDecl.isImplicit
+						))
+
+						outLinkDeclarations.append(new Structure(
+							OMID(newMorphismPath),
+							includeDecl.name,
+							includeDecl.tpC.copy,
+							includeDecl.dfC.copy,
+							isImplicit = includeDecl.isImplicit
+						))
+
+						// Allow OMIDs referencing symbols in the included theory
+						// or any of its transitively included theories later on.
+						allowedModuleReferences += includeDecl.from.toMPath
 					}
-				}
+				case originalConstant: Constant =>
+					val newTypeContainer = originalConstant.tpC.map(rewrite)
+					val newDefContainer = originalConstant.dfC.map(rewrite)
 
-				continuationStyle match {
-					case AssumeRewritable =>
-						inversionRules.add(new AbbrevRule(
-							decl.toTerm.path.asInstanceOf[GlobalName],
-							attemptedDeclaration.toTerm
-						))
-						allowedOMIDReferences += attemptedDeclaration.path
-					case RewriteAs(newDeclaration: Constant) =>
-						inversionRules.add(new AbbrevRule(
-							decl.toTerm.path.asInstanceOf[GlobalName],
-							newDeclaration.toTerm
-						))
-						allowedOMIDReferences += newDeclaration.path
-						newDeclarations.append(newDeclaration)
-
-						outLinkDeclarations.append(Constant(
-							home = OMID(newModulePath),
-							name = newDeclaration.name,
-							alias = Nil,
-							tp = newDeclaration.tp,
-							df = Some(decl.toTerm),
-							rl = None
-						))
-
-					case RewriteAs(_) => throw new AssertionError("The RewriteErrorHandler passed to LinkInverter rewrote a constant " +
-						"declaration to a declaration which is not a (subclass of) constant " +
-						"anymore. It isn't clear how the generated morphism should account for " +
-						"that."
+					val attemptedDeclaration = new FinalConstant(
+						home = OMID(newModulePath),
+						name = newName,
+						alias = originalConstant.alias,
+						tpC = newTypeContainer,
+						dfC = newDefContainer,
+						rl = originalConstant.rl,
+						notC = originalConstant.notC.copy,
+						vs = originalConstant.vs
 					)
 
-					case SkipDeclaration =>
-				}
-			case unknownDecl =>
-				rewriteErrorHandler(RewriteUnknownError(unknownDecl)) match {
-					case AssumeRewritable =>
-						allowedOMIDReferences += unknownDecl.path
-					case RewriteAs(decl) =>
-						newDeclarations.append(decl)
-						allowedOMIDReferences += unknownDecl.path
-					case SkipDeclaration =>
-				}
+					def getUnrewritableTerms(term: Term): Seq[Term] = {
+						new UnresolvablePathCollector(
+							ctrl.library,
+							R.path,
+							allowedModuleReferences.toSet
+						).collectUnresolvableTerms(term)
+					}
+
+					val invalidTypeSubterms = attemptedDeclaration.tp.map(getUnrewritableTerms).getOrElse(Nil)
+					val invalidDefSubterms = attemptedDeclaration.df.map(getUnrewritableTerms).getOrElse(Nil)
+
+					// Determine how to continue (in error or in success)
+					val continuationStyle: ContinuationStyle = {
+						if (invalidTypeSubterms.nonEmpty || invalidDefSubterms.nonEmpty) {
+							rewriteErrorHandler(RewriteConstantError(originalConstant, Some(attemptedDeclaration), Map(
+								TypeComponent -> invalidTypeSubterms,
+								DefComponent -> invalidDefSubterms
+							)))
+						}
+						else {
+							// We actually succeeded in rewriting
+							RewriteAs(attemptedDeclaration)
+						}
+					}
+
+					continuationStyle match {
+						case AssumeRewritable =>
+							inversionRules.add(new AbbrevRule(
+								originalConstant.toTerm.path.asInstanceOf[GlobalName],
+								attemptedDeclaration.toTerm
+							))
+						case RewriteAs(newDeclaration: Constant) =>
+							inversionRules.add(new AbbrevRule(
+								originalConstant.toTerm.path.asInstanceOf[GlobalName],
+								newDeclaration.toTerm
+							))
+							newDeclarations.append(newDeclaration)
+
+							outLinkDeclarations.append(Constant(
+								home = OMID(newModulePath),
+								name = newDeclaration.name,
+								alias = Nil,
+								tp = newDeclaration.tp,
+								df = Some(originalConstant.toTerm),
+								rl = None
+							))
+
+						case RewriteAs(_) => throw new AssertionError("The RewriteErrorHandler passed to LinkInverter rewrote a constant " +
+							"declaration to a declaration which is not a (subclass of) constant " +
+							"anymore. It isn't clear how the generated morphism should account for " +
+							"that."
+						)
+
+						case SkipDeclaration => /* Do nothing */
+					}
+				case unknownDecl =>
+					rewriteErrorHandler(RewriteUnknownError(unknownDecl)) match {
+						case AssumeRewritable =>
+							inversionRules.add(new AbbrevRule(
+								unknownDecl.toTerm.path.asInstanceOf[GlobalName],
+								OMID(newModulePath ? newName)
+							))
+						case RewriteAs(newDecl) =>
+							newDeclarations.append(newDecl)
+
+							inversionRules.add(new AbbrevRule(
+								unknownDecl.toTerm.path.asInstanceOf[GlobalName],
+								newDecl.toTerm
+							))
+						case SkipDeclaration => /* Do nothing */
+					}
+			}
 		})
 
 		LinkInverterResult(
@@ -365,66 +383,4 @@ object LinkInverter {
 			generatedMorphism = outLinkDeclarations.toList
 		)
 	}
-
-	/**
-		* Get all references (paths inside OMIDs) of a term which are neither resolvable by
-		* `theory` nor `allowedFurtherReferences`.
-		*
-		* A reference to a path is resolvable iff.
-		*
-		* a) it references a symbol (i.e. the path was a [[GlobalName]]) inside `theory` or
-		* any of its (transitively) *imported* (meta)theories, or
-		*
-		* b) it references a symbol (i.e. the path was a [[GlobalName]]) whose module path
-		* is contained in `allowedFurtherModuleReferences`, or
-		*
-		* c) it is contained in `allowedFurtherReferences`.
-		*
-		* "Imported" encompasses inclusions. See [[RelationExp.Imports]] for what it
-		* precisely means.
-		* Precisely, in a) it is checked whether the the path references a module in
-		* `(RelationExp.Imports | HasMeta)^*`.
-		*
-		* @param term                           The term to check. All subterms will be gone through.
-		* @param theory                         The theory which specifies allowed referenced symbols within `term`.
-		* @param allowedFurtherPathReferences   Whitelist of further allowed referenced paths in
-		*                                       OMIDs.
-		* @param allowedFurtherModuleReferences Whitelist of further allowed module paths.
-		* @param depstore                       The relational store used for querying inclusion and meta
-		*                                       relations, required as describes in the doccomment for
-		*                                       `theory`.
-		* @return A list of unresolvable references. This being Nil is a requirement for
-		*         the term to be welltyped.
-		*/
-	private def isTermInTheoryObjects(term: Term, theory: MPath,
-																		allowedFurtherPathReferences: Set[Path],
-																		allowedFurtherModuleReferences: Set[MPath])(implicit
-																																								depstore: RelStore)
-	: Seq[Term]
-	= {
-
-		val transitiveIncludedModules: Set[Path] =
-			depstore.querySet(theory, (RelationExp.Imports | HasMeta).^*).toSet
-
-		val totalAllowedModuleReferences =
-			transitiveIncludedModules ++ allowedFurtherModuleReferences
-
-		def check(subterm: Term): Seq[Term] = subterm match {
-			case OMID(GlobalName(module, _))
-				if totalAllowedModuleReferences.contains(module) =>
-				Nil
-			case OMID(path) if allowedFurtherPathReferences.contains(path) => Nil
-			case unresolvedReference: OMID => List(unresolvedReference)
-
-			case OMV(_) => Nil
-			case ComplexTerm(symbol, _, _, subterms) =>
-				(OMID(symbol) :: subterms).flatMap(check)
-			case UnknownOMLIT(_, synType) => check(synType)
-			case OMLIT(_, realizedType) => check(realizedType.synType)
-			case _ => ???
-		}
-
-		check(term)
-	}
-
 }

@@ -7,6 +7,8 @@ import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentParentRef, IDocumentRef, ISourceReference}
 
+import scala.util.Try
+
 trait DocumentBuilder { this: Builder =>
   /** gets a reference to a document */
   def getDocumentRef(id: String): Option[IDocumentRef] = getReferenceOf(classOf[IDocumentRef], id)
@@ -35,7 +37,7 @@ trait DocumentBuilder { this: Builder =>
         parent.map(Some(_))
           .getOrElse(return buildFailure(path.toPath, "getRef(document.parent)")),/* parent */
         path.toPath, /* id */
-        path.name.last.toPath /* name */
+        path.name.toPath /* name */
       )
     )
   }

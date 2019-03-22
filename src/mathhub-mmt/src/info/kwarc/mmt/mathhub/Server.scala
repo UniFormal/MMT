@@ -1,5 +1,6 @@
 package info.kwarc.mmt.mathhub
 
+import info.kwarc.mmt.api.GeneralError
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.mathhub.library._
 import info.kwarc.mmt.mathhub.logger.LogServer
@@ -20,9 +21,9 @@ class Server extends ServerExtension("mathhub") with LibraryServer with LogServe
   } catch {
     case PathNotFound(p) =>
       ServerResponse(s"API Route not found: $p", "text/plain", ServerResponse.statusCodeNotFound)
-    case t: Throwable =>
+    case e: Exception =>
       ServerResponse(
-        Option(t.getMessage).getOrElse("null"), "text", ServerResponse.statusCodeInternalServerError
+        info.kwarc.mmt.api.Error(e).toStringLong, "text", ServerResponse.statusCodeInternalServerError
       )
   }
 
