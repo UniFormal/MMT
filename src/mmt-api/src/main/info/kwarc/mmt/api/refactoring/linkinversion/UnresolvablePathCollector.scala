@@ -8,13 +8,12 @@ import scala.collection.mutable
 
 /**
 	* A [[Traverser]] collecting all references (paths inside OMIDs) of a term
-	* whose referenced module is neither in scope of `referenceModule` nor whitelisted by
-	* `allowedFurtherModuleReferences`.
+	* whose referenced module is neither in scope of `referenceModule` nor in
+	* scope by any whitelisted modules in `allowedFurtherModuleReferences`.
 	*
-	* A module is in scope of `referenceModule` iff. there is an implicit morphism
-	* (known to `library` at least) to `referenceModule`.
-	* E.g. this is the case if the module is (transitively) included or even
-	* `referenceModule` itself.
+	* A module M is in scope of M' iff. there is an implicit morphism
+	* (known to `library` at least!) from M to M'.
+	* E.g. this is the case if M is (transitively) included in M'.
 	*
 	* @param library                        The library which is queried for implicit morphisms.
 	* @param referenceModule                The reference module as described above.
@@ -26,12 +25,26 @@ private class UnresolvablePathCollector(library: Library, referenceModule: MPath
 		Traverser[mutable.ArrayBuffer[OMID]] {
 	override type State = mutable.ArrayBuffer[OMID]
 
-	override def traverse(term: Term)(implicit con: Context, state: State): Term = {
+	override def traverse(term: Term)(implicit con: Context, unresolvableOMIDs: State): Term
+	= {
 		term match {
 			case omid: OMID =>
-				if (!allowedFurtherModuleReferences.contains(omid.path.module) &&
-					!library.hasImplicit(OMMOD(omid.path.module), OMMOD(referenceModule))) {
-					state += omid
+				if (allowedFurtherModuleReferences.contains(omid.path.module)) {
+					// Fine
+					// TODO Should actually be handled by the else branch below as well
+					//   since we would have the identity morphism to be the implicit
+					//   morphism (is this true?). Probably this check is faster.
+				}
+				else if (library.hasImplicit(OMMOD(omid.path.module), OMMOD(referenceModule))) {
+					// Fine
+				}
+				else if (allowedFurtherModuleReferences.exists(furtherModule =>
+					library.hasImplicit(OMMOD(omid.path.module), OMMOD(furtherModule))
+				)) {
+					// Fine
+				}
+				else {
+					unresolvableOMIDs += omid
 				}
 			case _ => Traverser(this, term)
 		}
@@ -44,7 +57,6 @@ private class UnresolvablePathCollector(library: Library, referenceModule: MPath
 		* [[UnresolvablePathCollector]].
 		*
 		* @param term The term to check. All subterms will be gone through.
-		*
 		* @return A sequence of unresolvable references. This being Nil is a
 		*         requirement for the term to be welltyped (at least with the implicit
 		*         morphisms known to `library` as passed to the constructor

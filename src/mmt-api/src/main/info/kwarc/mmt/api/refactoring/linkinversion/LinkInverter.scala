@@ -148,8 +148,6 @@ object LinkInverter {
 
 		val invertedTheory = ModuleCreator
 			.getBuilder
-			// Include R
-			.addNewSymbol(targetPath => Include(OMMOD(targetPath), R.path, Nil))
 			// Add generalized declarations
 			.addNewSymbols(linkInversionResult.invertedTheory.map(decl => {
 			x: MPath => decl
@@ -235,6 +233,17 @@ object LinkInverter {
 		val allowedModuleReferences = new mutable.HashSet[MPath]()
 		allowedModuleReferences += newModulePath
 
+		// Start inversion
+		// Add inclusion of R to generated theory
+		newDeclarations += Include(home = OMID(newModulePath), from = R.path, args = Nil)
+		outLinkDeclarations += Include(
+			home = OMID(newMorphismPath),
+			from = R.path,
+			args = Nil,
+			df = Some(RToS.toTerm)
+		)
+
+		// Now try inverting all declarations in T
 		// getConstants returns the constants in narrative (i.e. dependency-conforming) order
 		S.getDeclarations.foreach(originalDecl => {
 			// If RToS contains a renaming originalDecl' -> originalDecl, then use the local
@@ -254,34 +263,33 @@ object LinkInverter {
 						// The very sense of inversion/generalization is that
 						// we want to replace the inclusion of S by an inclusion of R
 
-						outLinkDeclarations.append(new Structure(
-							OMID(newMorphismPath),
-							includeDecl.name,
-							tpC = TermContainer(RToS.from),
-							dfC = TermContainer(RToS.toTerm),
-							isImplicit = false
-						))
+						// The inclusion of R has already been added above,
+						// likewise the inclusion of RToS to the generated morphism.
 					}
 					else {
-						newDeclarations.append(includeDecl)
+						// Copy the inclusion to the generated theory and morphism
+						// but with adjusted home terms, of course.
+						newDeclarations.append(new Structure(
+							OMID(newModulePath),
+							includeDecl.name,
+							includeDecl.tpC.copy,
+							includeDecl.dfC.copy,
+							isImplicit = includeDecl.isImplicit
+						))
+
 						outLinkDeclarations.append(new Structure(
 							OMID(newMorphismPath),
 							includeDecl.name,
 							includeDecl.tpC.copy,
 							includeDecl.dfC.copy,
-							isImplicit = false
+							isImplicit = includeDecl.isImplicit
 						))
 
 						// Allow OMIDs referencing symbols in the included theory
 						// or any of its transitively included theories later on.
-						allowedModuleReferences ++= ctrl.depstore.querySet(
-							includeDecl.from.toMPath,
-							(RelationExp.Imports | HasMeta).^*
-						).map(_.asInstanceOf[MPath])
+						allowedModuleReferences += includeDecl.from.toMPath
 					}
 				case originalConstant: Constant =>
-
-
 					val newTypeContainer = originalConstant.tpC.map(rewrite)
 					val newDefContainer = originalConstant.dfC.map(rewrite)
 
