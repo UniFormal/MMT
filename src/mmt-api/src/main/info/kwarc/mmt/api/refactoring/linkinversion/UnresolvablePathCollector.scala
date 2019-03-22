@@ -13,7 +13,11 @@ import scala.collection.mutable
 	*
 	* A module M is in scope of M' iff. there is an implicit morphism
 	* (known to `library` at least!) from M to M'.
-	* E.g. this is the case if M is (transitively) included in M'.
+	* E.g. this is the case if M is (transitively) included in M' or
+	* also the case is M = M'.
+	*
+	* Thus this traverser can be used to check whether a term is a
+	* ({referenceModule} \cup allowedFurtherModuleReferences)-expression.
 	*
 	* @param library                        The library which is queried for implicit morphisms.
 	* @param referenceModule                The reference module as described above.
@@ -29,13 +33,7 @@ private class UnresolvablePathCollector(library: Library, referenceModule: MPath
 	= {
 		term match {
 			case omid: OMID =>
-				if (allowedFurtherModuleReferences.contains(omid.path.module)) {
-					// Fine
-					// TODO Should actually be handled by the else branch below as well
-					//   since we would have the identity morphism to be the implicit
-					//   morphism (is this true?). Probably this check is faster.
-				}
-				else if (library.hasImplicit(OMMOD(omid.path.module), OMMOD(referenceModule))) {
+				if (library.hasImplicit(OMMOD(omid.path.module), OMMOD(referenceModule))) {
 					// Fine
 				}
 				else if (allowedFurtherModuleReferences.exists(furtherModule =>
@@ -44,6 +42,7 @@ private class UnresolvablePathCollector(library: Library, referenceModule: MPath
 					// Fine
 				}
 				else {
+					// Unresolvable
 					unresolvableOMIDs += omid
 				}
 			case _ => Traverser(this, term)
