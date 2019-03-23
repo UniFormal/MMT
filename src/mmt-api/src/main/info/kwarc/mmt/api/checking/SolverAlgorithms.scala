@@ -12,6 +12,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.runtime.NonLocalReturnControl
 
 /** the essential subalgorithms of a bidirectional type-checking,
  *  factored out from the [[Solver]] class, which holds all bureaucracy
@@ -248,6 +249,10 @@ trait SolverAlgorithms {self: Solver =>
                  return checkByInference(tpS, history + "switching to inference")
                case rule.DelayJudgment(msg) =>
                  return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
+               case e:AbstractMethodError => 
+                 println("\n\n\n\n\nAbstract method error when trying to apply the typing rule \""+rule.toString()+"\"")
+                 println("at "+rule.mpath)
+                 throw e
              }
            }
            history += "trying inference/typing rules"
@@ -436,6 +441,7 @@ trait SolverAlgorithms {self: Solver =>
               var i = 0
               val argseq = (args1 zip args2) map {case (a1,a2) =>
                 i += 1
+                
                 check(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
               }
               argseq.forall(_ == true) // comparing all arguments is inefficient if an early argument has an error, but may help make sense of the error
@@ -995,13 +1001,37 @@ trait SolverAlgorithms {self: Solver =>
   // *** auxiliary functions for solving
   // ******************************************************************************************
 
+  /**
+    * For cycle detection in solveEquality
+    */
+  private object SolveEqualityStack {
+    private var stack : List[Equality] = Nil
+    def apply(j : Equality)(a : => Boolean): Boolean = try {
+      if (stack contains j) {
+        log("Cycle in solveEquality!")
+        return false
+      }
+      stack ::= j
+      val ret = a
+      assert(stack.head == j)
+      stack = stack.tail
+      ret
+    } catch {
+      case rc : NonLocalReturnControl[Boolean@unchecked] =>
+        assert(stack.head == j)
+        stack = stack.tail
+        rc.value
+    }
+  }
+
    /** tries to solve an unknown occurring in tm1 in terms of tm2
     *
     *  returns true if the unknowns were solved and the equality proved
     *  otherwise, returns false without state change (returning false here does not signal that the equality is disproved)
     */
-   private def solveEquality(j: Equality)(implicit history: History): Boolean = {
+   private def solveEquality(j: Equality)(implicit history: History): Boolean = SolveEqualityStack(j) {
       implicit val stack = j.stack
+     log("Solving " + j.present)
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
         case Unknown(m, as) =>
@@ -1030,6 +1060,7 @@ trait SolverAlgorithms {self: Solver =>
                 sr(j) match {
                   case Some((j2,msg)) =>
                     history += "Using solution rule " + rs.head.toString
+                    log("Using solution rule " + rs.head.toString)
                     return solveEquality(j2)((history + msg).branch)
                   case _ =>
                 }
@@ -1082,8 +1113,8 @@ trait SolverAlgorithms {self: Solver =>
    def solveSubtyping(j: Subtyping)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      val (unk, bound, below) = (j.tp1,j.tp2) match {
-       case (u@Unknown(_), b) => (u,b,true)
-       case (b, u@Unknown(_)) => (u,b,false)
+       case (u@Unknown(_, _), b) => (u,b,true)
+       case (b, u@Unknown(_, _)) => (u,b,false)
        case _ => return false
      }
      unk match {
@@ -1141,13 +1172,16 @@ trait SolverAlgorithms {self: Solver =>
         case (tS,Some(rule)) =>
           done = true
           tmS = tS
+          log("Trying " + rule.toString)
           ret = rulecheck(rule, tmS, history + ("trying " + rule.toString))
           if (ret.isEmpty) {
             done = false
+            log("Rule " + rule.toString + " not applicable")
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
           done = true
+          log("no rule applicable")
           history += "no rule applicable"
       }
     }
@@ -1175,13 +1209,16 @@ trait SolverAlgorithms {self: Solver =>
           tm1S = t1S
           tm2S = t2S
           done = true
+          log("Trying rule " + rule.toString)
           ret = rulecheck(rule,tm1S,tm2S,history + ("trying " + rule.toString))
           if (ret.isEmpty) {
+            log("Rule " + rule.toString + " not applicable")
             done = false
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
           done = true
+          log("no rule applicable")
           history += "no rule applicable"
       }
     }

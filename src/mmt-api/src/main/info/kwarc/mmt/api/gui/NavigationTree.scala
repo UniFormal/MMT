@@ -67,10 +67,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   def makeNotation(owner: ContentPath, cont: NotationContainer, comp: NotationComponentKey, region : SourceRegion) : MMTNotAsset
   def makeVariableInContext(con : Context, vd : VarDecl,parent: CPath, region: SourceRegion) : MMTObjAsset
 
-  protected def moduleLabel(m: Module) = (m match {
-    case _ : Theory => "theory"
-    case _: modules.View => "view"
-  }) + " " + m.path.last
+  protected def moduleLabel(m: Module) = m.feature + " " + m.name.last
   protected def declarationLabel(dec : Declaration) = dec match {
     case Include(_, from,_) => "include " + from.last
     case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
@@ -109,6 +106,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
             }
           case s: SRef =>
         }
+      case ii: InterpretationInstruction =>
       case oe: opaque.OpaqueElement =>
     }
   }
@@ -140,7 +138,7 @@ abstract class NavigationTreeBuilder(controller:Controller) {
   private def buildTreeDecl(node: DefaultMutableTreeNode, parent: ContainerElement[_ <: Declaration], dec: Declaration, context: Context, defaultReg: SourceRegion) {
     val reg = getRegion(dec) getOrElse SourceRegion(defaultReg.start,defaultReg.start)
     dec match {
-      case nm: NestedModule if !nm.isInstanceOf[DerivedDeclaration] =>
+      case nm: NestedModule =>
         buildTreeMod(node, nm.module, context, reg)
         return
       case _ =>
@@ -149,9 +147,9 @@ abstract class NavigationTreeBuilder(controller:Controller) {
     node.add(child)
     buildTreeComps(child, dec, context, reg)
     dec match {
-      case ce: ContainerElement[Declaration]@unchecked => // declarations can only contain declarations
-        val contextInner = context ++ controller.getExtraInnerContext(ce)
-        dec.getDeclarations foreach {d => buildTreeDecl(child, ce, d, contextInner, reg)}
+      case dd: DerivedDeclaration =>
+        val contextInner = context ++ controller.getExtraInnerContext(dd)
+        dec.getDeclarations foreach {d => buildTreeDecl(child, dd, d, contextInner, reg)}
       case _ =>
     }
     // a child with all declarations elaborated from dec

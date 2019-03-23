@@ -303,6 +303,34 @@ object PiCongruence extends TermBasedEqualityRule with PiOrArrowRule {
    }
 }
 
+/** equality rule for apply that only considers currying
+ */
+object NormalizeCurrying extends TermBasedEqualityRule {
+   val head = Apply.path
+   def applicable(tm1: Term, tm2: Term) = heads.contains(tm1.head.orNull) && heads.contains(tm2.head.orNull)
+   def apply(checker: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])(implicit stack: Stack, history: History) = {
+      (tm1,tm2) match {
+         // CR: Deleted if f1 == f2, as this special case is not sufficient
+         // FR: the guard should probably be put back in for optimization; any resulting limitations should probably be fixed elsewhere
+         case (ApplySpine(f1,args1), ApplySpine(f2,args2)) =>
+            // normalize nesting of applications
+            val tm1N = ApplySpine(f1,args1:_*)
+            val tm2N = ApplySpine(f2,args2:_*)
+            //println("tm1: "+tm1.toStr(true)+", tm2: "+tm2.toStr(true)+", tm1': "+tm1N.toStr(true)+", tm2': "+tm2N.toStr(true))
+            if (tm1N != tm1 || tm2N != tm2) {
+              val cont = Continue {
+                 //println("Normalizing the currying of the terms to check term based equality. ")
+                 history += "normalize currying"
+                 checker.check(Equality(stack, tm1N, tm2N, tp))
+              }
+              Some(cont)
+            } else
+              None
+         case _ => None
+      }
+   }
+}
+
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
  *
@@ -323,7 +351,8 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               reduce(t ^? (x / s), rest)
             } else {
               history += "beta-reduction is syntactically possible, but the argument does not conform to expectations"
-              RecurseOnly(1 :: Nil)
+              //RecurseOnly(1 :: Nil)
+              Simplifiability.NoRecurse
             }
          case (f, Nil) =>
            //all arguments were used, recurse in case f is again a redex
@@ -332,6 +361,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
              case s: Simplify => s
              case _: CannotSimplify => Simplify(f)
            }
+           /*
          case(OMS(p),ls) =>
            val dfO = solver.lookup.getConstant(p).df
            dfO match {
@@ -346,6 +376,7 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
                else
                  Simplifiability.NoRecurse
            }
+           */
          case _ =>
             /*// simplify f recursively to see if it becomes a Lambda
             val fS = solver.simplify(f)
@@ -355,12 +386,12 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
               if (reduced)
                 Simplify(ApplySpine(f,args : _*))
               else
-                RecurseOnly(1 :: Nil)
+                RecurseOnly(List(1))
       }
       tm match {
          //using ApplySpine here also normalizes curried application by merging them into a single one
          case ApplySpine(f, args) => reduce(f, args)
-         case _ => Recurse // only possible after recursing
+         case _ => Simplifiability.NoRecurse// Recurse // only possible after recursing
       }
    }
 }

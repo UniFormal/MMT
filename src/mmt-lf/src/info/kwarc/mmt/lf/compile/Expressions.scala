@@ -83,8 +83,11 @@ case class ERROR(name: String, msg: EXP) extends EXP
 
 /** equality */
 case class EQUAL(left: EXP, right: EXP) extends EXP
+
 /** conjunction */
 case class AND(left: EXP, right: EXP) extends EXP
+/** disjunction */
+case class OR(left: EXP, right: EXP) extends EXP
 
 /** type of integers */
 case object INTS extends EXP
@@ -124,7 +127,7 @@ case class OPTION(tp: EXP) extends EXP
 case class SOME(elem: EXP) extends EXP
 /** the empty option */
 case object NONE extends EXP
-/** unwrap option */
+/** unsafe access of the optional element (.get) */
 case class UNOPTION(sm: EXP) extends EXP
 
 /** product type */
@@ -181,6 +184,14 @@ object EXP {
            case (BuiltinType(a), BuiltinType(b)) if a == b => BuiltinType(BOOLS)
            case _ => throw SyntaxError("ill-formed comparison: " + e)
          }
+      case AND(l,r) =>
+        check(l,BOOLS)
+        check(r,BOOLS)
+        BuiltinType(BOOLS)
+      case OR(l,r) =>
+        check(l,BOOLS)
+        check(r,BOOLS)
+        BuiltinType(BOOLS)
       case BOOLS => KindOfTypes
       case INTS => KindOfTypes
       case INT(_) => BuiltinType(INTS)
@@ -257,6 +268,21 @@ object EXP {
       case ARECORD(r, fields) =>
          //TODO
          BuiltinType(ID(r))
+      case OPTION(a) =>
+        checkType(a)
+        KindOfTypes
+      case NONE =>
+        throw SyntaxError("cannot infer type of NONE")
+      case SOME(x) =>
+        infer(x) match {
+          case BuiltinType(a) => BuiltinType(OPTION(a))
+          case a => throw SyntaxError("not legal in an option type: " + a)
+        }
+      case UNOPTION(x) =>
+        infer(x) match {
+          case BuiltinType(OPTION(a)) => BuiltinType(a)
+          case a => throw SyntaxError("not an option type: " + a)
+        }
       case MATCH(e, cases) =>
          //TODO
          null

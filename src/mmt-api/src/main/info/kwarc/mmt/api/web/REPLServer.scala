@@ -7,12 +7,13 @@ import symbols._
 import objects._
 import parser._
 import checking._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import utils._
 
 import scala.util.Try
 
 /** stores the state of a content-inputing REPL session */
-class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, errorCont: ErrorHandler) {
+class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpreter, val errorCont: ErrorHandler) {
   private val path = doc.path
   override def toString = doc.toString
   private var currentScope: HasParentInfo = IsDoc(path)
@@ -26,7 +27,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, e
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
-      case m: Module => currentScope = IsMod(m.path, LocalName.empty)
+      case m: ModuleOrLink => currentScope = IsMod(m.modulePath, LocalName.empty)
       case nm: NestedModule => currentScope = IsMod(nm.module.path, LocalName.empty)
       case _ =>
     }
@@ -43,24 +44,56 @@ class REPLSession(val doc: Document, val id: String, interpreter: Interpreter, e
     }
   }
 
+  /** gets the current MPath or throws an error */
+  def getMPath(scopeOpt: Option[HasParentInfo]): MPath  = scopeOpt.getOrElse(currentScope) match {
+    case IsMod(m, _) => m
+    case _ => throw GeneralError("can only get context inside of module")
+  }
+
   /** like parseStructure but for objects; the object is stored it as the definiens of a [[Constant]] declaration */
   def parseObject(s: String, scopeOpt: Option[HasParentInfo] = None): Constant = {
-    val scope = scopeOpt.getOrElse(currentScope)
-    val mpath = scope match {
-      case IsMod(m, _) => m
-      case _ => throw GeneralError("can only parse term inside a theory")
-    }
-    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
+
+    // get a context for parsing
+    val mpath = getMPath(scopeOpt)
     val context = Context(mpath)
+
+    // set up the parsing unit
+    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
     val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+
+    // parse the term
     val cr = interpreter(pu)(errorCont)
     val term = cr.term
-    val termS = interpreter.simplifier(term, context, true)
+
+    // simplify it and extract the types
+    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true))
     val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
+
+    // store it as a local definition
     val name = LocalName("res" + counter)
     counter += 1
     Constant(OMMOD(mpath), name, Nil, tp, df, None)
+  }
+  /** like parseObject but does not store or check the term */
+  def parseTerm(s: String, scopeOpt: Option[HasParentInfo] = None, ls : List[LocalName] = Nil): Term = {
+
+    import objects.Conversions._
+    // get a context for parsing
+    val mcontext = Context(getMPath(scopeOpt))
+    val context = if (ls.isEmpty) mcontext else ls.foldLeft(mcontext)((c,ln) => c ++ VarDecl(ln)) // ln % tp
+
+    // setup the parsing unit
+    val sref = SourceRef(path.uri, SourceRegion.ofString(s))
+    val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+
+    // and return the term
+    interpreter.parser(pu)(errorCont).term
+  }
+  /** simplifies a term in the current context */
+  def simplifyTerm(t: Term, scopeOpt: Option[HasParentInfo]): Term = {
+    val context = Context(getMPath(scopeOpt))
+    interpreter.simplifier(t, SimplificationUnit(context, true, true))
   }
 }
 
@@ -114,7 +147,7 @@ object REPLServer {
 
 import REPLServer._
 
-class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
+class REPLServer extends ServerExtension("repl") {
   private lazy val presenter = controller.presenter
 
   private var sessions: List[REPLSession] = Nil
@@ -124,15 +157,15 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
       val input = (request.query + " " + request.body.asString).trim
       val command = Command.parse(input)
       val session = request.headers.get("x-repl-session")
-      apply(session, command)
+      apply(session, command, None)
     } catch {
       case e : Exception => return ServerResponse.errorResponse(Error(e), "html")
     }
     TextResponse(response.toString)
   }
 
-  def apply(session: Option[String], command: Command): REPLResponse = {
-    applyActual(session, command)
+  def apply(session: Option[String], command: Command, errorContO: Option[ErrorHandler]): REPLResponse = {
+    applyActual(session, command, errorContO)
   }
 
   def getSessionOpt(id: String) = sessions.find(_.id == id)
@@ -140,7 +173,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   private def path(id: String): DPath = DPath(mmt.baseURI) / "jupyter" / id
 
-  private def applyActual(idO: Option[String], command: Command) : REPLResponse = {
+  private def applyActual(idO: Option[String], command: Command, errorContO: Option[ErrorHandler]) : REPLResponse = {
     implicit lazy val session = idO match {
       case None => throw LocalError("session needed")
       case Some(id) => getSession(id)
@@ -148,7 +181,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
     command match {
       case Show => getSessions
       case Clear => clearSessions
-      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")))
+      case Start => startSession(idO.getOrElse(throw LocalError("No session provided")), errorContO.getOrElse(ErrorThrower))
       case Restart => restartSession(session)
       case Quit => quitSession(session)
       case Input(s) => evalInSession(session, s)
@@ -193,11 +226,11 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
     AdminResponse("Sessions cleared")
   }
 
-  private def startSession(id: String) = {
+  private def startSession(id: String, errorCont: ErrorHandler) = {
     if (sessions.exists(_.id==id)){
       throw LocalError("Session already exists")
     }
-    createSession(path(id), id)
+    createSession(path(id), id, errorCont)
     // return the session id
     AdminResponse(s"Created Session $id")
   }
@@ -205,7 +238,7 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
   private def restartSession(session: REPLSession) = {
     val id = session.id
     deleteSession(session)
-    createSession(path(id), id)
+    createSession(path(id), id, session.errorCont)
     AdminResponse(s"Restarted Session $id")
   }
 
@@ -218,12 +251,12 @@ class REPLServer(errorCont: ErrorHandler) extends ServerExtension("repl") {
 
   // SESSION MANAGEMENT
 
-  private def createSession(path: DPath, id: String) : REPLSession = {
+  private def createSession(path: DPath, id: String, errorCont: ErrorHandler) : REPLSession = {
     val nsMap = controller.getNamespaceMap(path)
     val doc = new Document(path, level=FileLevel, nsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
-    val interpreter = controller.extman.get(classOf[Interpreter], format).getOrElse {
+    val interpreter = controller.extman.get(classOf[TwoStepInterpreter], format).getOrElse {
       throw LocalError("no parser found")
     }
     val s = new REPLSession(doc, id, interpreter, errorCont)

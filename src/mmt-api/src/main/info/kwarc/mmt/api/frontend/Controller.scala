@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 import archives._
-import info.kwarc.mmt.api.archives.lmh.MathHub._
 import backend._
 import checking._
 import documents._
@@ -22,7 +21,6 @@ import utils._
 import web._
 
 import scala.util.Try
-import info.kwarc.mmt.api.archives.lmh.MathHub
 
 /** An exception that is thrown when a needed knowledge item is not available
   *
@@ -66,29 +64,35 @@ abstract class ROController {
   }
 }
 
-/** A Controller is the central class maintaining all MMT knowledge items
+/** A Controller is the central class maintaining all MMT content and extensions.
   *
-  * It stores all stateful entities and executes Action commands.
+  * Every application (e.g., [[Shell]]) typically creates one controller.
+  * The controller creates and owns one instance of many MMT clasess (see the documentation of the respective fields below).
+  * 
+  * It also maintains the [[MMTConfig]] and exectures [[Action]]s.
   */
 class Controller(report_ : Report = new Report) extends ROController with ActionHandling with Logger {
-
-  def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
-
+  // note that fields must be declared here in dependency order; otherwise, some val's are used when they are still null (i.e., uninitialized)
+  
   // **************************** logging
 
   /** handles all output and log messages */
-  //private var report_ : Report = new Report
-  def report = report_
+  val report = report_
+  
   val logPrefix = "controller"
 
   // **************************** data state and components
 
-  /** maintains all customizations for specific languages */
+  /** maintains all extensions */
   val extman = new ExtensionManager(this)
+  /** the interface to physical storgae */
+  val backend = new Backend(extman, report)
 
-  /** maintains all knowledge */
+  /** maintains all knowledge: structural elements, relational data, etc. */
   val memory = new Memory(extman, report)
+  /** shortcut for the relational manager */
   val depstore = memory.ontology
+  /** shortcut for the library */
   val library = memory.content
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
@@ -109,8 +113,6 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def pragmatic = extman.get(classOf[Pragmatics]).head
   /** the http server */
   var server: Option[Server] = None
-  /** the catalog maintaining all registered physical storage units */
-  val backend = new Backend(extman, report)
   /** the query engine */
   val evaluator = new ontology.QueryEvaluator(this)
   /** the window manager */
@@ -129,6 +131,9 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   private[api] def notifyListeners = new Notify(extman.get(classOf[ChangeListener]), report)
 
   // **************************** control state and configuration
+
+  /** return the MMT version (from the jar) */
+  def getVersion = MMTSystem.getResourceAsString("/versioning/system.txt")
 
   /** all control state */
   protected val state = new ControllerState
@@ -374,6 +379,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         case None => Context.empty
         case Some(smP) => get(smP) match {
           case sm: Module => getContextWithInner(sm)
+          case _ => throw InvalidElement(m, "super module of module must be module")
         }
       }
       case d: Declaration =>
@@ -401,7 +407,41 @@ class Controller(report_ : Report = new Report) extends ROController with Action
         case None => Context.empty
       }
   }
+  
+  // ******************************* semantics objects and literals
 
+  /** the semantic type of all semantic objects
+   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflections. 
+   */
+  private object SemanticObjectType extends uom.Atomic[SemanticObject] {
+     def asString = "semantic-object"
+     val cls = classOf[SemanticObject]
+     override def atomicToString(so: SemanticObject) = so.mpath.toPath
+     def fromString(s: String) = {
+       val mp = Path.parseM(s, NamespaceMap.empty)
+       backend.loadObjectO(mp) match {
+         case Some(so: SemanticObject) => so
+         case Some(_) => throw ParseError("object exists but is not a rule")
+         case None => throw ParseError("object does not exist")
+       }
+     }
+     /** scala"QUALIFIED-CLASS-NAME" */
+     override def lex = quotedLiteral("scala")
+  }
+  
+  /** a built-in rule for using semantic objects as literals
+   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflections. 
+   */
+  private val SemanticObjectRealizedType = new RepresentedRealizedType(OMS(utils.mmt.mmtcd ? "scala"), SemanticObjectType)
+
+  /** convert an UnknownOMLIT to an OMLIT by choosing an applicable rule */
+  def recognizeLiteral(rules: RuleSet, ul: UnknownOMLIT) = {
+     val rts = Iterable(SemanticObjectRealizedType) ++ rules.get(classOf[uom.RealizedType])
+     rts.find(_.synType == ul.synType).map {rule =>
+       rule.parse(ul.valueString).from(ul)
+     }
+  }
+  
   // ******************************* transparent loading during global lookup
 
   /** wrapping an expression in this method, evaluates the expression dynamically loading missing content
@@ -464,6 +504,11 @@ class Controller(report_ : Report = new Report) extends ROController with Action
    *  None adds at beginning, null (default) at end
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
+    // invalidate cache entry for the notation
+    nw.path match {
+      case p: ContentPath => memory.notations.delete(p)
+      case _ =>
+    }
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
@@ -644,5 +689,27 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     val propDiff = pChanges ++ propagator(pChanges)
     moc.Patcher.patch(propDiff, this)
     propagator.boxedPaths
+  }
+}
+
+object Controller {
+  /** convenience method for making a controller, e.g., for interactive shells or testing */ 
+  def make(logging: Boolean, loadDefaultConfig: Boolean, loadArchives: List[String]) = {
+    val c = new Controller
+    if (logging) {
+      c.handleLine("log console")
+    }
+    if (loadDefaultConfig) {
+      val deploy = MMTSystem.runStyle match {
+        case rs: MMTSystem.DeployRunStyle =>
+          c.loadConfigFile(rs.deploy/"mmtrc", false)
+        case _ =>
+      }
+    }
+    val contentRoot = c.getMathHub.map(_.local).getOrElse(File(""))
+    loadArchives.foreach {a =>
+      c.handleLine(s"mathpath archive $contentRoot/$a")
+    }
+    c
   }
 }

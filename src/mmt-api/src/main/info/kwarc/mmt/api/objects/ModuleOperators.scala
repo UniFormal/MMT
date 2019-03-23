@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils.MMT_TODO
 
 //TODO definition expansion everywhere
 
@@ -262,7 +263,7 @@ object TheoryExp {
         case Some(m) =>
           if (all) m :: metas(OMMOD(m)) else List(m)
       }
-    case AnonymousTheory(mt,_) => mt.toList
+    case AnonymousTheoryCombinator(at) => at.mt.toList
     case TUnion(ts) =>
       val ms = ts map { t => metas(t) }
       if (ms.nonEmpty && ms.forall(m => m == ms.head)) ms.head
@@ -321,6 +322,7 @@ object ModExp extends uom.TheoryScala {
 
   val anonymoustheory = _path ? "anonymoustheory"
   val anonymousmorphism = _path ? "anonymousmorphism"
+  val anonymousdiagram = _path ? "anonymousdiagram"
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
   val identity = _path ? "identity"
@@ -329,11 +331,11 @@ object ModExp extends uom.TheoryScala {
   val morphismapplication = _path ? "morphismapplication"
   val instantiation = _path ? "theoryinstantiate"
 
-  @deprecated("use anonymous theories", "")
+  @MMT_TODO("use anonymous theories")
   val complextheory = _path ? "complextheory"
-  @deprecated("use anonymous morphisms", "")
+  @MMT_TODO("use anonymous morphisms")
   val complexmorphism = _path ? "complexmorphism"
-  @deprecated("not needed but still used by Twelf", "")
+  @MMT_TODO("not needed but still used by Twelf")
   val tunion = _path ? "theory-union"
 }
 
@@ -413,10 +415,13 @@ object MorphType {
 object TheoryType {
   val path = ModExp.theorytype
 
-  def apply(params: Context) = ComplexTerm(this.path, Nil, params, Nil)
+  def apply(params: Context) = {
+    if (params.isEmpty) OMS(this.path)
+    else ComplexTerm(this.path, Nil, params, Nil)
+  }
 
   def unapply(t: Term): Option[Context] = t match {
-    case OMID(this.path) => Some(Nil)
+    case OMS(this.path) => Some(Nil)
     case ComplexTerm(this.path, Substitution(), params, Nil) => Some(params)
     case _ => None
   }

@@ -121,6 +121,7 @@ object Differ {
         compareConstants(o,n)
       case (o : Structure, n : Structure) =>
         compareStructures(o,n)
+      case _ => throw ImplementationError("non-identical declarations can not be compared")
     }
   }
 
@@ -185,6 +186,7 @@ object Differ {
           changes = UpdateComponent(o.path, DefComponent, o.df, n.df) :: changes
         }
         new StrictDiff(changes)  ++ getInnerChanges(o, n)
+      case _ => throw ImplementationError("Can not compare modules of different types")
     }
   }
 

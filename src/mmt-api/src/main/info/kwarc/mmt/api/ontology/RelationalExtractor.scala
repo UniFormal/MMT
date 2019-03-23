@@ -9,7 +9,7 @@ import objects._
 import frontend._
 import opaque._
 
-
+/** interface of any class that can be used by the [[RelationalManager]] to build the Abox from MMT content. */ 
 abstract class RelationalExtractor extends Extension {
   /** all unary relations that this extractor can generate (extract) */
   def allUnary : List[Unary]
@@ -39,14 +39,18 @@ object MMTExtractor extends RelationalExtractor {
             f(IsDocument(d.path))
             //TODO should use getLocalItems but then it wouldn't work for documents created from folders
             d.getDeclarations.foreach {i =>
-               val c = i match {
+               val cO = i match {
                   case inner: Document =>
                      apply(inner)
-                     inner.path
-                  case oe: OpaqueElement => oe.path
-                  case nr: NRef => nr.target
+                     Some(inner.path)
+                  case oe: OpaqueElement =>
+                    None
+                  case nr: NRef =>
+                    Some(nr.target)
+                  case ii: InterpretationInstruction =>
+                    None
                }
-               f(Declares(d.path, c))
+               cO foreach {c => f(Declares(d.path, c))}
             }
          case n: NRef =>
          case oe: OpaqueElement =>
@@ -55,7 +59,7 @@ object MMTExtractor extends RelationalExtractor {
             t match {
                case t: Theory =>
                   t.meta foreach {p => f(HasMeta(path, p))}
-               case _ => QueryFunctionApply
+               case _ =>
             }
          case v: View =>
             f(HasDomain(path, v.from.toMPath))
@@ -74,6 +78,11 @@ object MMTExtractor extends RelationalExtractor {
                      f(IsConstant(c.path))
                      c.alias foreach {a =>
                        f(IsAliasFor(t.path ? a, c.path))
+                     }
+                     // extract dependencies - this may make the rel files a lot bigger
+                     c.getComponents foreach {
+                       case DeclarationComponent(dim, oc: ObjContainer[_]) => doDependencies(c.path $ dim, oc)
+                       case _ =>
                      }
                   case s: Structure =>
                      val from = s.from match {
@@ -116,5 +125,13 @@ object MMTExtractor extends RelationalExtractor {
           f(IsImplicitly(l.to.toMPath,l.from.toMPath))
         case _ =>
       }
+   }
+   
+   /** extract all dependencies of object containers */
+   private def doDependencies(path: Path, oc: ObjContainer[_])(implicit f: RelationalElement => Unit) {
+     oc.dependsOn foreach {p =>
+       val r = DependsOn(path, p)
+       f(r)
+     }
    }
 }

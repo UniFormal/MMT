@@ -17,6 +17,8 @@ abstract class Fixity {
     *  pair of "fixity type" and type-specific argument(s)
     */
    def asString: (String,String)
+   
+   def addInitialImplicits(n: Int): Fixity
 }
 
 /**
@@ -24,6 +26,16 @@ abstract class Fixity {
  */
 case class Mixfix(markers: List[Marker]) extends Fixity {
    def asString = ("mixfix", markers.mkString(" "))
+   def addInitialImplicits(n: Int) = {
+     val markersM = markers.map {
+       case d: Delimiter => d
+       case a: Arg => a * {x => x+n}
+       case a: ImplicitArg => a * {x => x+n}
+       //TODO other cases
+       case other => throw ImplementationError("undefined case of marker "+other.toString())
+     }
+     Mixfix(markersM)
+   }
 }
 
 /**
@@ -60,6 +72,7 @@ abstract class SimpleFixity extends Fixity {
 case class Prefix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = if (expl != 0) argsWithOp(0) else argsWithOp(0) ::: implArgs
    def asString = ("prefix", simpleArgs)
+   def addInitialImplicits(n: Int) = copy(impl = impl+n) 
 }
 /**
  * delimiter after the first (explicit) argument
@@ -80,12 +93,14 @@ case class Infix(delim: Delimiter, impl: Int, expl: Int, assoc: Option[Boolean])
       }
       ("infix"+assocString, simpleArgs)
    }
+   def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
 
 /** delimiter after the (explicit) arguments */
 case class Postfix(delim: Delimiter, impl: Int, expl: Int) extends SimpleFixity {
    lazy val markers = argsWithOp(expl)
    def asString = ("postfix", simpleArgs)
+   def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
 
 /** delimiter followed by first and second (explicit) argument with . in between
@@ -100,6 +115,7 @@ case class Bindfix(delim: Delimiter, impl: Int, expl: Int, assoc: Boolean) exten
       val assocString = if (assoc) "-assoc" else ""
       ("bindfix"+assocString, simpleArgs)
    }
+   def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
 
 /**

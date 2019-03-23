@@ -2,7 +2,7 @@ package info.kwarc.mmt.odk.Sage
 
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Importer, RedirectableDimension}
 import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.{LocalName, ParseError, utils}
+import info.kwarc.mmt.api.{ImplementationError, LocalName, ParseError, utils}
 import info.kwarc.mmt.api.utils._
 
 
@@ -157,12 +157,15 @@ class SageImporter extends Importer {
     case JSONObject(List((JSONString("categories"),cats : JSONObject),(JSONString("classes"),clss : JSONObject),(JSONString("functions"),funs : JSONObject))) =>
       cats.map.map(_._2).foreach {
         case o : JSONObject => doCategory(o)
+        case _ => throw ImplementationError("expected a JSONObject")
       }
       clss.map.map(_._2).foreach {
         case o : JSONObject => doClass(o)
+        case _ => throw ImplementationError("expected a JSONObject")
       }
       funs.map.foreach {
         case (n,o : JSONObject) => doFunction(n.toString,o)
+        case _ => throw ImplementationError("expected a JSONObject")
       }
     case _ =>
       println(input.asInstanceOf[JSONObject].map.map(_._1.toString))

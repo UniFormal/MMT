@@ -2,9 +2,9 @@ package info.kwarc.mmt.imps
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.uom.{RSubtype, RepresentedRealizedType, StandardInt, StandardRat, StandardNat}
+import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
-import utils._
 
 object ImpsOctet extends RSubtype(StandardNat) {
   override def asString = "octet"
@@ -16,6 +16,9 @@ object IntLiterals extends
 
 object RatLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardRat)
+
+object DecLiterals extends
+  RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"rationalType")),StandardDouble)
 
 object OctLiterals extends
   RepresentedRealizedType(IMPSTheory.exp(OMS(IMPSTheory.lutinsIndType),OMS(IMPSTheory.lutinsPath?"octetType")),ImpsOctet)
@@ -206,7 +209,7 @@ object IMPSTheory
   // Not used.
   object Falselike extends Sym("falselike")
   {
-    def apply : Term = ???
+    def apply : Term = ??!("Falselike encountered.")
   }
 
   object Total extends Sym("total")
@@ -268,8 +271,8 @@ object IMPSTheory
     }
 
     object sort2indicQC extends UDQC("sort2indicQC") {
-      def apply(u : Term, e : Term) : Term = {
-        ApplySpine(this.term, u, e)
+      def apply(u : Term, alpha : Term, e : Term) : Term = {
+        ApplySpine(this.term, u, alpha, e)
       }
     }
 

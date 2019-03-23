@@ -32,7 +32,7 @@ class SingularImporter extends Importer {
       val read = File.read(bf.inFile) // .replace("\\\n","")
       log("JSON Parsing...")
       val parsed = JSON.parse(read) match {
-        case JSONArray(ls@_*) => ls.map{
+        case JSONArray(ls@_*) => ls.collect{
           case o : JSONObject =>
             SingularFile(o.getAsString("library_filename"),o.getAsList(classOf[JSONObject],"funcs") flatMap doFunction)
             // println(o.getAsString("library_filename"))

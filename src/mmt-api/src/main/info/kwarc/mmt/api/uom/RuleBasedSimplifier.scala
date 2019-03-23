@@ -25,7 +25,25 @@ case class SimplifierState(t : Term, unit: SimplificationUnit, rules: RuleSet, p
 
 import RuleBasedSimplifier._
 
-/** A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively to simplify a Term */
+/** */
+
+/**
+  * A RuleBasedSimplifier applies DepthRule's and BreadthRule's exhaustively
+  * to simplify a Term.
+  *
+  * ### Invariants
+  *
+  * Simplifying transforms a welltyped term into another welltyped term.
+  * This especially means that [[Rule rules]] have to retain the type.
+  *
+  * Only [[AbbrevRule]] rules will be applied on [[OMID]] (sub)terms. This
+  * makes sense given that OMIDs reference constants, for which other
+  * reference to other constants could never take place given the welltyping
+  * constraint above. The only way for an [[OMID]] to be rewritten is by
+  * definitorial expansion, which can be enabled in [[SimplificationUnit]].
+  *
+  * TODO Add other invariants.
+  */
 class RuleBasedSimplifier extends ObjectSimplifier {self =>
   override val logPrefix = "object-simplifier"
 
@@ -186,7 +204,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               val pC = controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */
               pC flatMap {
               case c: Constant =>
-                normalizeConstant(c)
+                normalizeConstant(c, state.unit.fullRecursion)
                 c.dfC.normalized
               case _ =>
                 None
@@ -230,7 +248,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            }
          // literals read from XML may not be recognized yet
          case u: UnknownOMLIT =>
-           val uR = u.recognize(state.rules).getOrElse(u)
+           val uR = controller.recognizeLiteral(state.rules, u).getOrElse(u)
            Stability.set(uR)
            uR
          case _ =>
@@ -241,12 +259,17 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       }
    }
 
-  /** fully normalizes the definiens of a constant */
-  private def normalizeConstant(c: Constant) {
+  /** fully normalizes the definiens of a constant and stores the result with the Constant
+   *  
+   *  Because the result is stored within the constant and to avoid shadowing problems,
+   *  this only uses the context of where the constant is declared, not where it is referenced.
+   *  This may under-normalize occasionally.
+   */
+  private def normalizeConstant(c: Constant, fullRec: Boolean) {
     c.dfC.normalize {u =>
       val cont = controller.getContext(c)
       val rs = RuleSet.collectRules(controller, cont)
-      self.apply(u, SimplificationUnit(cont, true, true), rs)
+      self.apply(u, SimplificationUnit(cont, true, fullRec), rs)
     }
   }
    
@@ -393,8 +416,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     def outerContext = Context.empty
 
     def getTheory(tm : Term)(implicit stack : Stack, history : History) : Option[AnonymousTheory] = simplify(tm) match {
-       case AnonymousTheory(mt, ds) =>
-         Some(new AnonymousTheory(mt, Nil))
+       case AnonymousTheoryCombinator(at) =>
+         Some(at)
        // add include of codomain of mor
        case OMMOD(mp) =>
          val th = Try(controller.globalLookup.getTheory(mp)).getOrElse(return None)

@@ -492,7 +492,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     * precondition: value is well-typed if the overall check succeeds
     */
    def solve(name: LocalName, value: Term)(implicit history: History) : Boolean = {
-      log("solving " + name + " as " + value)
+      log("solving " + name + " as " + presentObj(value))
       history += ("solving " + name + " as " + presentObj(value))
       val valueS = simplify(substituteSolution(value))(Stack.empty, history)
       val (left, solved :: right) = solution.span(_.name != name)
@@ -699,8 +699,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   /** registers a warning, returns false */
   def warning(message: => String)(implicit history: History): Boolean = {
       log("warning: " + message)
-      history += message
-      val h = history.steps.head
+      val h = Comment(() => message)
+      history += h
       val level = Level.Warning
       addError(SolverError(level, history,Some(cont => h.present(cont))))
       false
@@ -898,19 +898,29 @@ object Solver {
   /** base for client property keys */
   val propertyURI = utils.mmt.baseURI / "clientProperties" / "solver"
   
-  /** reconstructs a single term and returns the reconstructed term and its type */
-  def check(controller: Controller, stack: Stack, tm: Term): Union[(Term,Term),Solver] = {
+  /** type reconstruction: checks a single term against a partially known type
+   *  
+   *  @param tm the term (as a [[ParseResult]])
+   *  @param expectedType the expected type and the unknowns that additionally occur in it; if omitted a fresh unknown is generated for the type
+   *  @param rulesOpt the typing rules if known (to avoid computing them again)
+   *  @return Left(term, type) if successful,  Right(solver) otherwise; in the latter case, use e.g. solver.logState to print the typing errors
+   */
+  def check(controller: Controller, stack: Stack, tm: Term, expectedType: Option[(Context,Term)] = None, rulesOpt: Option[RuleSet] = None): Union[(Term,Term),Solver] = {
       val ParseResult(unknowns,free,tmU) = ParseResult.fromTerm(tm)
-      val etp = LocalName("expected_type")
-      val j = Typing(stack, tmU, OMV(etp), None)
-      val cu = CheckingUnit(None, stack.context, unknowns ++ VarDecl(etp), j)
-      val rules = RuleSet.collectRules(controller, stack.context)
+      val (etpUnknowns,etp) = expectedType.getOrElse {
+        val v = LocalName("expected_type")
+        (Context(VarDecl(v)), OMV(v))
+      }
+      val j = Typing(stack, tmU, etp, None)
+      val cu = CheckingUnit(None, stack.context, unknowns ++ etpUnknowns, j)
+      val rules = rulesOpt.getOrElse(RuleSet.collectRules(controller, stack.context))
       val solver = new Solver(controller, cu, rules)
       solver.applyMain
       if (solver.checkSucceeded) solver.getSolution match {
          case Some(sub) =>
            val tmR = solver.substituteSolution(tmU)
-           Left((tmR, sub(etp).get)) // must be defined if there is a solution
+           val tmI = solver.substituteSolution(etp)
+           Left((tmR, tmI))
          case None => Right(solver)
       } else
          Right(solver)
@@ -928,7 +938,7 @@ object Solver {
       tpOpt // map {tp => solver.simplify(tp)}
   }
 
-  /** checks a term against a type, returns the solver if not successful */
+  /** checks a term without unknowns against a type, returns the solver if not successful */
   def checkType(controller: Controller, context: Context, tm: Term, tp: Term): Option[Solver] = {
       val j = Typing(Stack(Context.empty), tm, tp, None)
       val cu = CheckingUnit(None, context, Context.empty, j)

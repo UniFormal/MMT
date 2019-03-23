@@ -330,6 +330,14 @@ object URILiteral extends Atomic[URI] {
    override def lex = quotedLiteral("uri")
 }
 
+/** UUIDs */
+object UUIDLiteral extends Atomic[java.util.UUID] {
+  def asString = "UUID"
+  val cls = classOf[java.util.UUID]
+  def fromString(s: String) = java.util.UUID.fromString(s)
+  override def lex = quotedLiteral("uuid")
+}
+
 /** MMT terms as a semantic type, e.g., for reflection, quotation */
 object TermLiteral extends Atomic[Term] {
   def asString = "term"

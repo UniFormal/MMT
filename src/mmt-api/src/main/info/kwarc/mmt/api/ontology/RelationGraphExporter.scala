@@ -52,14 +52,14 @@ abstract class RelationGraphExporter extends StructurePresenter {
     rh(svg)
   }
 
-  @deprecated("","")
+  @MMT_TODO("")
   def asJSON(se : StructuralElement): JSONObject = {
     val dg = buildGraph(se)
     val nodes = dg.JSONNodes.toList
     val edges = dg.JSONEdges.toList//.filter(o => nodes.exists(p => p("label") == o("from")) && nodes.exists(p => p("label") == o("to")))
     JSONObject(("nodes",JSONArray(nodes:_*)),("edges",JSONArray(edges:_*)))
   }
-  @deprecated("","")
+  @MMT_TODO("")
   def asJSON(ls : List[StructuralElement]) : JSONObject = {
     val dgs = ls.map(buildGraph)
     val nodes = dgs.flatMap(_.JSONNodes).distinct

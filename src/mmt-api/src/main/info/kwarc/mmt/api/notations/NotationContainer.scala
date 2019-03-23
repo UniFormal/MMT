@@ -87,15 +87,21 @@ class NotationContainer extends ComponentContainer {
       presentationDim.delete
       verbalizationDim.delete
    }
-   /** a copy of this NotationContainer with some other notations merged in */
-   def merge(that: NotationContainer) = {
-      val ntC = new NotationContainer()
+   
+   /** adds all notations into the current container */
+   def add(that: NotationContainer) {
       val comps = List(ParsingNotationComponent,PresentationNotationComponent,VerbalizationNotationComponent)
       comps.foreach {c =>
         (this.apply(c) orElse that.apply(c)).foreach {not =>
-          ntC(c) = not
+          update(c, not)
         }
       }
+   }
+    
+   /** a copy of this NotationContainer with some other notations merged in */
+   def merge(that: NotationContainer) = {
+      val ntC = NotationContainer()
+      ntC.add(this)
       ntC
    }
    def copy = NotationContainer() merge this
@@ -184,7 +190,7 @@ object NotationContainer {
       nc
    }
    /** parses a notation element containing several notations of different dimensions (1-dimensional is default) */
-   def parse(ns: scala.xml.NodeSeq, name : GlobalName): NotationContainer = {
+   def parse(ns: scala.xml.NodeSeq, name : ContentPath): NotationContainer = {
       val nc = new NotationContainer
       ns foreach {c =>
          val tn = TextNotation.parse(c, NamespaceMap(name))

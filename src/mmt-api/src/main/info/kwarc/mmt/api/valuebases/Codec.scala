@@ -14,6 +14,10 @@ case object CodecNotApplicable extends java.lang.Throwable
 abstract class Codec[Code](val exp: Term, val tp: Term) {
    def encode(t: Term): Code
    def decode(c: Code): Term
+   
+   /** data must be validated even if decoding succeeds, e.g., check prime-ness of integer-encoded prime numbers */
+   // TODO check if codec operators should override this
+   def strictDecode(c: Code): Term = decode(c)
 }
 
 /**
@@ -21,7 +25,7 @@ abstract class Codec[Code](val exp: Term, val tp: Term) {
  * @param id the id of the codec operator
  * @param tp the type operator
  */
-abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
+abstract class CodecOperator[Code, C <: Codec[Code]](val id: GlobalName, val tp: GlobalName) {
 
    /** positions in the argument list (starting from 1) in OMA(list, ...) that are type arguments */
    val typeParameterPositions : List[Int]
@@ -30,7 +34,7 @@ abstract class CodecOperator[Code](val id: GlobalName, val tp: GlobalName) {
     * @param cs one codec for each type parameter; pre: cs.length == this.typeParameterPositions.length
     * @return a codec for OMA(OMS(tp), cs.map(_.tp))
     */
-   def apply(cs: Codec[Code]*) : Codec[Code]
+   def apply(cs: C*) : C
 }
 
 /**

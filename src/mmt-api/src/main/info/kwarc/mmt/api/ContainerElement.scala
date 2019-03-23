@@ -127,39 +127,13 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    def getDeclarationsElaborated = getDeclarations.filter {
      case _: Constant => true
      case _: RuleConstant => true
-     case Include(_) => true
+     case Include(_, _, _) => true
      case s => ! ElaboratedElement.isFully(s)
    }
 }
 
-/** delegates all methods to an existing container element; awkward auxiliary class needed because Scala doesn't let us delegate systematically
- *  only used in DerivedDeclaration */
-trait DelegatingContainerElement[S <: StructuralElement] extends ContainerElement[S] {
-  protected val delegatee: ContainerElement[S]
-  def domain = delegatee.domain
-  def getDeclarations = delegatee.getDeclarations
-  def getO(name: LocalName) = delegatee.getO(name)
-  def getMostSpecific(name: LocalName) = delegatee.getMostSpecific(name)
-  def add(s: S, at: AddPosition = AtEnd) = delegatee.add(s, at)
-  def update(s: S) = delegatee.update(s)
-  def delete(name: LocalName) = delegatee.delete(name)
-  def reorder(name: LocalName) = delegatee.reorder(name)
-}
-
 class ListContainer[S <: NamedElement](items: List[S]) extends ElementContainer[S] with DefaultLookup[S] {
   def getDeclarations = items
-}
-
-trait ElaboratableElement[I <: NamedElement, O <: StructuralElement] extends NamedElement with ElementContainer[I] {
-  def feature : String // id of the default elaborator
-  def getElaboration(context: Context, elab : ElaboratorExtension[I,O]) : List[O] = elab.elaborate(context, this).getDeclarations
-}
-
-abstract class ElaboratorExtension[I <: NamedElement, O <: StructuralElement](val key : String) extends frontend.FormatBasedExtension {
-   def isApplicable(s: String) = s == key
-   def check(context: objects.Context, elem: ElaboratableElement[I,O])(implicit env: checking.CheckingEnvironment): Unit
-   def elaborate(context: objects.Context, elem: ElaboratableElement[I,O]): ElementContainer[O]
-//   def modules(d: DerivedDeclaration): List[Module]
 }
 
 /*

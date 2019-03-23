@@ -94,7 +94,7 @@ abstract class Lookup {self =>
    def preImage(p : GlobalName) : Option[GlobalName]
 
   /**
-    * gets the domain in which a Constant was declared
+    * gets the domain in which a Declaration was declared
     *
     * This can be used to retrieve the source of an assignment declared in a DeclaredLink.
     * It is also the official way to test whether a Constant is an assignment.
@@ -102,17 +102,17 @@ abstract class Lookup {self =>
     * @param a the Constant declaration/assignment
     * @return if assignment: the source theory and the containing link; if declaration: the containing theory
     */
-   def getDomain(a: Declaration) : (Theory,Option[Link]) = {
+   def getDomain(a: Declaration) : (AbstractTheory,Option[Link]) = {
       val p = a.home match {
          case OMMOD(p) => p
          case OMS(p) => p
          case _ => throw GetError("non-atomic link")
       }
       val l = get(p) match {
-         case t: Theory => return (t, None)
+         case t: AbstractTheory => return (t, None)
          case l: Link => l
          case nm: NestedModule => nm.module match {
-           case t: Theory => return (t, None)
+           case t: AbstractTheory => return (t, None)
            case l: Link => l
          }
          case _ => throw GetError("unknown home encountered while getting domain of " + a.path)

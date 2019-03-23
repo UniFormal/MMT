@@ -9,10 +9,9 @@ import objects._
 import ontology._
 import parser._
 import frontend._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import opaque._
 import objects.Conversions._
-
-
 
 /** variant of CheckingEnvironment that carries around more structure */
 case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, p: Path, var timeout: Int = 0) {
@@ -24,7 +23,6 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
     ce.errorCont(e)
   }
 }
-
 
 /** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
   * 
@@ -96,7 +94,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  @deprecated("unclear what happens here", "")
+  @MMT_TODO("unclear what happens here")
   def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -166,6 +164,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         //TODO decide what to do here; usually, checking is redundant and may even fail here if the context is not fully elaborated and loaded
         //apply(target)
+      case ii: InterpretationInstruction =>
+        // nothing to do; but we could carry a namespace map around        
       case nm: NestedModule =>
         check(context, nm.module, streamed)
       case rc: RuleConstant =>
@@ -192,12 +192,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val (thy, linkOpt) = content.getDomain(c)
         // the home theory of the components of c
         val scope = linkOpt match {
-          case None => OMMOD(thy.path)
+          case None => thy.toTerm
           case Some(link) => link.to
         }
         // if link: the source constant and its translated components
         val linkInfo = linkOpt map { link =>
-          val cOrg = content.getConstant(thy.path ? c.name)
+          val cOrg = content.getConstant(thy.modulePath ? c.name)
           val expTypeOpt = cOrg.tp map { t => content.ApplyMorphs(t, link.toTerm) }
           val expDefOpt = cOrg.df map { t => content.ApplyMorphs(t, link.toTerm) }
           (cOrg, expTypeOpt, expDefOpt)
@@ -364,7 +364,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             case None =>
               (s.fromC.get, Some(thy.toTerm))
             case Some(link) =>
-              val sOrg = content.getStructure(thy.path ? s.name)
+              val sOrg = content.getStructure(thy.modulePath ? s.name)
               val sOrgFrom = sOrg.from
               s.fromC.get match {
                 case None =>
@@ -383,6 +383,24 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
         if (s.fromC.get.isEmpty)
           throw InvalidElement(s, "could not infer domain of structure")
+      case dm: DerivedModule =>
+        var contextMeta = context
+        dm.meta foreach {mt =>
+          checkTheory(Some(CPath(dm.path, TypeComponent)), context, OMMOD(mt))
+          contextMeta = contextMeta ++ mt
+        }
+        val sfOpt = extman.getOrAddExtension(classOf[ModuleLevelFeature], dm.feature)
+        sfOpt match {
+          case None =>
+            env.errorCont(InvalidElement(dm, s"structural feature '${dm.feature}' not registered"))
+          case Some(sf) =>
+            // TODO check header of derived module properly
+            dm.df foreach {df =>
+              // this is one possible check, but for DiagramDefinitions, it cannot handle the dynamic extension of the context
+              // val (dfR,_) = checkTermTop(contextMeta, df)
+              dm.dfC.analyzed = df
+            }
+        }
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         sfOpt match {
@@ -392,6 +410,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             dd.tpC.get foreach {tp =>
               val tpR = checkTerm(context, tp)
               // not using tpR here because source references are gone
+            }
+            dd.dfC.get foreach {df =>
+              val dfR = checkTerm(context, df)
+              // not using dfR here because source references are gone
             }
         }
       case _ =>
@@ -420,6 +442,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           env.errorCont(ie)
         }
       case s: Structure =>
+      case dm: DerivedModule =>
+        val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
+        // error for sfOpt.isEmpty is raised in checkElementegin already
+        sfOpt foreach {sf =>
+          sf.check(dm)
+        }
+        
       case dd: DerivedDeclaration =>
         val sfOpt = extman.get(classOf[StructuralFeature], dd.feature)
         // error for sfOpt.isEmpty is raised in checkElementegin already
@@ -436,6 +465,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       ne match {
         case doc: Document => doc.getDeclarations foreach doDoc
         case r: NRef =>
+        case ii: InterpretationInstruction =>
         case oe: OpaqueElement =>
           check(contextI, oe, false)(envI)
       }
@@ -451,7 +481,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
   
   /** checks if a view is total and returns the missing assignments */
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   private def isTotal(context: Context, view: View, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
     val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[Theory]
     env.ce.simplifier(dom)
@@ -499,7 +529,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         case t: Module => t
         case nm: NestedModule => nm.module
         case _ =>
-          env.errorCont(InvalidObject(t, "not a module: " + controller.presenter.asString(t)))
+          env.errorCont(InvalidObject(t, "not a theory: " + controller.presenter.asString(t)))
           dec
       }
       val tR: Term = thy match {
@@ -705,7 +735,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
         val conR = checkContext(context, con)
-        val argsR = args map {a => checkTerm(context, a)}
+        val contextCon = context ++ conR
+        val argsR = args map {a => checkTerm(contextCon, a)}
         OMBINDC(binR, conR, argsR)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)
@@ -726,7 +757,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // resolve type and parse unknown literal, return OMLIT
       case u @ UnknownOMLIT(v, synType) =>
         checkTerm(context, synType)
-        u.recognize(env.rules).getOrElse {
+        controller.recognizeLiteral(env.rules, u).getOrElse {
           env.errorCont(InvalidObject(s, "unknown literal type " + synType))
           u
         }

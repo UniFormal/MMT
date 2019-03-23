@@ -12,50 +12,49 @@ class DefFormParsers(js : List[JSONObject])
   // ######### Sort Parsers
 
   lazy val parseAtomicSort : PackratParser[IMPSAtomSort] = {
-    ("[^,\\]):\\s\"]+".r) ^^ {case sort => IMPSAtomSort(sort)}
+    "[^,\\]):\\s\"]+".r ^^ (sort => IMPSAtomSort(sort))
   }
 
   lazy val parseSort : PackratParser[IMPSSort] = { parseSets | parseFunSort | parseFunSort2 | parseAtomicSort }
 
   lazy val parseSets : PackratParser[IMPSSetSort] = {
-    ("sets[" ~> parseSort <~ "]") ^^ { case setsort => IMPSSetSort(setsort)}
+    ("sets[" ~> parseSort <~ "]") ^^ (setsort => IMPSSetSort(setsort))
   }
 
   lazy val parseFunSort : PackratParser[IMPSNaryFunSort] = {
-    "[" ~> rep1sep(parseSort,",") <~ "]" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    "[" ~> rep1sep(parseSort,",") <~ "]" ^^ (sorts => IMPSNaryFunSort(sorts))
   }
 
   lazy val parseFunSort2 : PackratParser[IMPSNaryFunSort] = {
-    "(" ~> rep1(parseSort) <~ ")" ^^ {case (sorts) => IMPSNaryFunSort(sorts)}
+    "(" ~> rep1(parseSort) <~ ")" ^^ (sorts => IMPSNaryFunSort(sorts))
   }
 
   // ######### Argument Parsers
 
   lazy val number       : Parser[Int]    = """(0|[1-9]\d*)""".r ^^ { _.toInt }
   lazy val parseTNumber : Parser[Number] = fullParser(
-    number ^^ { case (n) => Number(n,None,None) }
+    number ^^ (n => Number(n, None, None))
   )
 
   lazy val parseName  : Parser[String] = "[^()\"\t\r\n ]+".r
   lazy val parseTName : Parser[Name]   = fullParser(
-    (parseName ^^ { case (nm) => Name(nm,None,None)}) | ("()" ^^ {case (_) => Name("()",None,None)})
+    (parseName ^^ (nm => Name(nm, None, None))) | ("()" ^^ (_ => Name("()", None, None)))
   )
 
-  // ToDo: nested strings could be a problem. Do those occur?
-  lazy val parseDefString : Parser[DefString] = fullParser("\"[^\"]+\"".r ^^ {case (s) => DefString(s,None,None)})
+  lazy val parseDefString : Parser[DefString] = fullParser("\"[^\"]+\"".r ^^ (s => DefString(s, None, None)))
 
   lazy val parseArgTheory : Parser[ArgTheory] =
-    fullParser(("(theory" ~> parseTName <~ ")") ^^ { case (n) => ArgTheory(n,None,None) })
+    fullParser(("(theory" ~> parseTName <~ ")") ^^ (n => ArgTheory(n, None, None)))
 
   lazy val parseArgTranslation : Parser[ArgTranslation] =
-    fullParser(("(translation" ~> parseTName <~ ")") ^^ { case (n) => ArgTranslation(n,None,None) })
+    fullParser(("(translation" ~> parseTName <~ ")") ^^ (n => ArgTranslation(n, None, None)))
 
   lazy val parseArgLanguage : Parser[ArgLanguage] = {
-    fullParser(("(language" ~> parseTName <~ ")") ^^ { case (n) => ArgLanguage(n, None, None) })
+    fullParser(("(language" ~> parseTName <~ ")") ^^ (n => ArgLanguage(n, None, None)))
   }
 
   lazy val parseArgWitness : Parser[ArgWitness] =
-    fullParser(("(witness" ~> parseDefString <~ ")") ^^ {case (s) => ArgWitness(s,None,None)})
+    fullParser(("(witness" ~> parseDefString <~ ")") ^^ (s => ArgWitness(s, None, None)))
 
   lazy val parseUsage : Parser[Usage] = parseName ^^ {
     case "elementary-macete"        => Usage.ELEMENTARYMACETE
@@ -69,31 +68,31 @@ class DefFormParsers(js : List[JSONObject])
   }
 
   lazy val parseArgUsages  : Parser[ArgUsages] =
-    fullParser(("(usages" ~> rep(parseUsage) <~ ")") ^^ { case (us) => ArgUsages(us,None,None) })
+    fullParser(("(usages" ~> rep(parseUsage) <~ ")") ^^ (us => ArgUsages(us, None, None)))
 
   lazy val parseArgSort    : Parser[ArgSort] =
-    fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ {case (n) => ArgSort(n,None,None)})
+    fullParser(("(sort" ~> (("\""?) ~> parseSort <~ ("\""?)) <~ ")") ^^ (n => ArgSort(n, None, None)))
 
   lazy val parseArgFixedTheories  : Parser[ArgFixedTheories] =
-    fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ { case (ts) => ArgFixedTheories(ts,None,None) })
+    fullParser(("(fixed-theories" ~> rep1(parseTName) <~ ")") ^^ (ts => ArgFixedTheories(ts, None, None)))
 
   lazy val parseModTransportable  : Parser[ModTransportable] =
-    fullParser("transportable" ^^ {case (_) => ModTransportable(None,None)} )
+    fullParser("transportable" ^^ (_ => ModTransportable(None, None)))
 
-  lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ {case (_) => ModNull(None,None)} )
+  lazy val parseModNull : Parser[ModNull] = fullParser("null" ^^ (_ => ModNull(None, None)))
 
-  lazy val parseSpecName : Parser[MSpecName] = fullParser(parseTName ^^ {case (n) => MSpecName(n,None,None)})
+  lazy val parseSpecName : Parser[MSpecName] = fullParser(parseTName ^^ (n => MSpecName(n, None, None)))
 
   lazy val parseSpecSeries : Parser[MSpecSeries] = fullParser(
-    "(series" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecSeries(s,None,None)}
+    "(series" ~> rep1(parseSpec) <~ ")" ^^ (s => MSpecSeries(s, None, None))
   )
 
   lazy val parseSpecRepeat : Parser[MSpecRepeat] = fullParser(
-    "(repeat" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecRepeat(s,None,None)}
+    "(repeat" ~> rep1(parseSpec) <~ ")" ^^ (s => MSpecRepeat(s, None, None))
   )
 
   lazy val parseSpecSequential : Parser[MSpecSequential] = fullParser(
-    "(sequential" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecSequential(s,None,None)}
+    "(sequential" ~> rep1(parseSpec) <~ ")" ^^ (s => MSpecSequential(s, None, None))
   )
 
   lazy val parseSpecSound : Parser[MSpecSound] = fullParser(
@@ -101,11 +100,11 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseSpecParallel : Parser[MSpecParallel] = fullParser(
-    "(parallel" ~> rep1(parseSpec) <~ ")" ^^ { case (s) => MSpecParallel(s,None,None)}
+    "(parallel" ~> rep1(parseSpec) <~ ")" ^^ (s => MSpecParallel(s, None, None))
   )
 
   lazy val parseSpecWithoutMinorPremises : Parser[MSpecWithoutMinorPremises] = fullParser(
-    "(without-minor-premises" ~> parseSpec <~ ")" ^^ { case (s) => MSpecWithoutMinorPremises(s,None,None)}
+    "(without-minor-premises" ~> parseSpec <~ ")" ^^ (s => MSpecWithoutMinorPremises(s, None, None))
   )
 
   val allMSpecs : List[Parser[MaceteSpec]] = List(
@@ -116,11 +115,11 @@ class DefFormParsers(js : List[JSONObject])
   lazy val parseSpec : Parser[MaceteSpec] = anyOf(allMSpecs)
 
   lazy val parseArgSourceTheory : Parser[ArgSourceTheory] = fullParser(
-    "(source-theory" ~> parseTName <~ ")" ^^ { case (n) => ArgSourceTheory(n,None,None) }
+    "(source-theory" ~> parseTName <~ ")" ^^ (n => ArgSourceTheory(n, None, None))
   )
 
   lazy val parseArgSourceTheories : Parser[ArgSourceTheories] = fullParser(
-    "(source-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgSourceTheories(ns,None,None) }
+    "(source-theories" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgSourceTheories(ns, None, None))
   )
 
   lazy val parseInductionPrinciple : Parser[ArgInductionPrinciple] = fullParser(
@@ -132,35 +131,35 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgBaseCaseHook : Parser[ArgBaseCaseHook] = fullParser(
-    "(base-case-hook" ~> parseTName <~ ")" ^^ { case (n) => ArgBaseCaseHook(n,None,None) }
+    "(base-case-hook" ~> parseTName <~ ")" ^^ (n => ArgBaseCaseHook(n, None, None))
   )
 
   lazy val parseArgInductionStepHook : Parser[ArgInductionStepHook] = fullParser(
-    "(induction-step-hook" ~> parseTName <~ ")" ^^ { case (n) => ArgInductionStepHook(n,None,None) }
+    "(induction-step-hook" ~> parseTName <~ ")" ^^ (n => ArgInductionStepHook(n, None, None))
   )
 
   lazy val parseArgDontUnfold : Parser[ArgDontUnfold] = fullParser(
-    "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgDontUnfold(ns,None,None) }
+    "(dont-unfold" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgDontUnfold(ns, None, None))
   )
 
   lazy val parseArgEmbeddedLang : Parser[ArgEmbeddedLang] = fullParser(
-    "(embedded-language" ~> parseTName <~ ")" ^^ { case (n) => ArgEmbeddedLang(n,None,None) }
+    "(embedded-language" ~> parseTName <~ ")" ^^ (n => ArgEmbeddedLang(n, None, None))
   )
 
   lazy val parseArgEmbeddedLangs : Parser[ArgEmbeddedLangs] = fullParser(
-    "(embedded-languages" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgEmbeddedLangs(ns,None,None) }
+    "(embedded-languages" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgEmbeddedLangs(ns, None, None))
   )
 
   lazy val parseArgBaseTypes : Parser[ArgBaseTypes] = fullParser(
-    "(base-types" ~> rep1(parseAtomicSort) <~ ")" ^^ { case (ns) => ArgBaseTypes(ns,None,None) }
+    "(base-types" ~> rep1(parseAtomicSort) <~ ")" ^^ (ns => ArgBaseTypes(ns, None, None))
   )
 
   lazy val parseArgSortSpec : Parser[ArgSortSpec] = fullParser(
-    "(" ~> (parseSort ~ parseSort) <~ ")" ^^ { case (sub ~ sup) => ArgSortSpec(sub,sup,None,None) }
+    "(" ~> (parseSort ~ parseSort) <~ ")" ^^ { case sub ~ sup => ArgSortSpec(sub,sup,None,None) }
   )
 
   lazy val parseArgSorts : Parser[ArgSorts] = fullParser(
-    "(sorts" ~> rep1(parseArgSortSpec) <~ ")" ^^ { case (ns) => ArgSorts(ns,None,None) }
+    "(sorts" ~> rep1(parseArgSortSpec) <~ ")" ^^ (ns => ArgSorts(ns, None, None))
   )
 
   lazy val parseNumericalType : Parser[NumericalType] = parseName ^^ {
@@ -170,43 +169,43 @@ class DefFormParsers(js : List[JSONObject])
   }
 
   lazy val parseArgTypeSortAList : Parser[ArgTypeSortAList] = fullParser(
-    "(" ~> (parseNumericalType ~ parseSort) <~ ")" ^^ { case (num ~ srt) => ArgTypeSortAList(num,srt,None,None) }
+    "(" ~> (parseNumericalType ~ parseSort) <~ ")" ^^ { case num ~ srt => ArgTypeSortAList(num,srt,None,None) }
   )
 
   lazy val parseArgExtensible : Parser[ArgExtensible] = fullParser(
-    "(extensible" ~> rep1(parseArgTypeSortAList) <~ ")" ^^ { case (als) => ArgExtensible(als,None,None) }
+    "(extensible" ~> rep1(parseArgTypeSortAList) <~ ")" ^^ (als => ArgExtensible(als, None, None))
   )
 
   lazy val parseArgConstantSpec : Parser[ArgConstantSpec] = fullParser(
-    "(" ~> (parseTName ~ (("\""?) ~> parseSort <~ ("\""?))) <~ ")" ^^ { case (nm ~ srt) => ArgConstantSpec(nm,srt,None,None) }
+    "(" ~> (parseTName ~ (("\""?) ~> parseSort <~ ("\""?))) <~ ")" ^^ { case nm ~ srt => ArgConstantSpec(nm,srt,None,None) }
   )
 
   lazy val parseArgConstants : Parser[ArgConstants] = fullParser(
-    "(constants" ~> rep1(parseArgConstantSpec) <~ ")" ^^ { case (ns) => ArgConstants(ns,None,None) }
+    "(constants" ~> rep1(parseArgConstantSpec) <~ ")" ^^ (ns => ArgConstants(ns, None, None))
   )
 
   lazy val parseArgRenamerPair : Parser[ArgRenamerPair] = fullParser(
-    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (old ~ nu) => ArgRenamerPair(old,nu,None,None) }
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case old ~ nu => ArgRenamerPair(old,nu,None,None) }
   )
 
   lazy val parseArgRenamerPairs : Parser[ArgPairs] = fullParser(
-    "(pairs" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ps) => ArgPairs(ps,None,None) }
+    "(pairs" ~> rep1(parseArgRenamerPair) <~ ")" ^^ (ps => ArgPairs(ps, None, None))
   )
 
   lazy val parseArgToken : Parser[ArgToken] = fullParser(
-    "(token" ~> parseScript <~ ")" ^^ { case (muls) => ArgToken(muls,None,None) }
+    "(token" ~> parseScript <~ ")" ^^ (muls => ArgToken(muls, None, None))
   )
 
   lazy val parseArgBinding : Parser[ArgBinding] = fullParser(
-    "(binding" ~> number <~ ")" ^^ { case (n) => ArgBinding(n,None,None) }
+    "(binding" ~> number <~ ")" ^^ (n => ArgBinding(n, None, None))
   )
 
   lazy val parseArgTable : Parser[ArgTable] = fullParser(
-    "(table" ~> parseTName <~ ")" ^^ { case (t) => ArgTable(t,None,None) }
+    "(table" ~> parseTName <~ ")" ^^ (t => ArgTable(t, None, None))
   )
 
   lazy val parseArgMethod : Parser[ArgMethod] = fullParser(
-    "(method" ~> parseTName <~ ")" ^^ { case (m) => ArgMethod(m,None,None) }
+    "(method" ~> parseTName <~ ")" ^^ (m => ArgMethod(m, None, None))
   )
 
   lazy val parseParseMethod : Parser[ParseMethod] = parseName ^^ {
@@ -221,29 +220,29 @@ class DefFormParsers(js : List[JSONObject])
     }
 
   lazy val parseArgLeftMethod : Parser[ArgLeftMethod] = fullParser(
-    "(left-method" ~> parseParseMethod <~ ")" ^^ { case (m) => ArgLeftMethod(m,None,None) }
+    "(left-method" ~> parseParseMethod <~ ")" ^^ (m => ArgLeftMethod(m, None, None))
   )
 
   lazy val parseArgNullMethod : Parser[ArgNullMethod] = fullParser(
-    "(null-method" ~> parseParseMethod <~ ")" ^^ { case (m) => ArgNullMethod(m,None,None) }
+    "(null-method" ~> parseParseMethod <~ ")" ^^ (m => ArgNullMethod(m, None, None))
   )
 
-  lazy val parseModTex : Parser[ModTex] = fullParser(("tex" | "TeX" | "TEX") ^^ {case (_) => ModTex(None,None)} )
+  lazy val parseModTex : Parser[ModTex] = fullParser(("tex" | "TeX" | "TEX") ^^ (_ => ModTex(None, None)))
 
-  lazy val parseModReverse : Parser[ModReverse] = fullParser("reverse" ^^ {case (_) => ModReverse(None,None)} )
+  lazy val parseModReverse : Parser[ModReverse] = fullParser("reverse" ^^ (_ => ModReverse(None, None)))
 
-  lazy val parseModLemma : Parser[ModLemma] = fullParser("lemma" ^^ {case (_) => ModLemma(None,None)} )
+  lazy val parseModLemma : Parser[ModLemma] = fullParser("lemma" ^^ (_ => ModLemma(None, None)))
 
   lazy val parseArgMacete : Parser[ArgMacete] = fullParser(
-    "(macete" ~> parseTName <~ ")" ^^ { case (m) => ArgMacete(m,None,None) }
+    "(macete" ~> parseTName <~ ")" ^^ (m => ArgMacete(m, None, None))
   )
 
   lazy val parseArgHomeTheory : Parser[ArgHomeTheory] = fullParser(
-    "(home-theory" ~> parseTName <~ ")" ^^ { case (m) => ArgHomeTheory(m,None,None) }
+    "(home-theory" ~> parseTName <~ ")" ^^ (m => ArgHomeTheory(m, None, None))
   )
 
   def balance(chars:List[Char], level:Int=0): Boolean = {
-    if (level < 0) return false;
+    if (level < 0) return false
 
     val nextParen = chars.dropWhile(char => char != ')' && char != '(')
     if (nextParen.isEmpty) {
@@ -258,21 +257,21 @@ class DefFormParsers(js : List[JSONObject])
 
 
   lazy val stuff       : Parser[String] = "[^()]+".r
-  lazy val bracketed   : Parser[String] = "(" ~> (parseScript | "") <~ ")" ^^ {case (s) => "(" + s.toString + ")"}
+  lazy val bracketed   : Parser[String] = "(" ~> (parseScript | "") <~ ")" ^^ (s => "(" + s.toString + ")")
   lazy val parseScript : Parser[Script] = fullParser(
-    rep1(bracketed|stuff) ^^ {case (ss) => Script(ss.mkString(" "),None,None) }
+    rep1(bracketed|stuff) ^^ (ss => Script(ss.mkString(" "), None, None))
   )
 
   lazy val parseArgProof : Parser[ArgProof] = fullParser(
-    "(proof" ~> parseScript <~ ")" ^^ { case (m) => ArgProof(m,None,None) }
+    "(proof" ~> parseScript <~ ")" ^^ (m => ArgProof(m, None, None))
   )
 
   lazy val parseArgComponentTheories : Parser[ArgComponentTheories] = fullParser(
-    "(component-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgComponentTheories(ns,None,None) }
+    "(component-theories" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgComponentTheories(ns, None, None))
   )
 
   lazy val parseArgDistinctConstants : Parser[ArgDistinctConstants] = fullParser(
-    "(distinct-constants" ~> rep1("(" ~> rep1(parseTName) <~ ")") <~ ")" ^^ { case (ll) => ArgDistinctConstants(ll,None,None)}
+    "(distinct-constants" ~> rep1("(" ~> rep1(parseTName) <~ ")") <~ ")" ^^ (ll => ArgDistinctConstants(ll, None, None))
   )
 
   lazy val parseAxiomSpec : Parser[AxiomSpec] = fullParser(
@@ -280,35 +279,35 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgAxioms : Parser[ArgAxioms] = fullParser(
-    "(axioms" ~> rep1(parseAxiomSpec) <~ ")" ^^ { case (as) => ArgAxioms(as,None,None) }
+    "(axioms" ~> rep1(parseAxiomSpec) <~ ")" ^^ (as => ArgAxioms(as, None, None))
   )
 
   lazy val parseArgOverloadingPairs : Parser[ArgOverloadingPair] = fullParser(
     "(" ~> parseTName ~ parseTName <~ ")" ^^ {case p1 ~ p2 => ArgOverloadingPair(p1,p2,None,None)}
   )
 
-  lazy val parseModForce : Parser[ModForce] = fullParser("force" ^^ {case (_) => ModForce(None,None)})
+  lazy val parseModForce : Parser[ModForce] = fullParser("force" ^^ (_ => ModForce(None, None)))
 
-  lazy val parseModForceU : Parser[ModForceUnderQuickLoad] = fullParser("force-under-quick-load" ^^ {case (_) => ModForceUnderQuickLoad(None,None)})
+  lazy val parseModForceU : Parser[ModForceUnderQuickLoad] = fullParser("force-under-quick-load" ^^ (_ => ModForceUnderQuickLoad(None, None)))
 
-  lazy val parseModDontEnrich : Parser[ModDontEnrich] = fullParser("dont-enrich" ^^ {case (_) => ModDontEnrich(None,None)})
+  lazy val parseModDontEnrich : Parser[ModDontEnrich] = fullParser("dont-enrich" ^^ (_ => ModDontEnrich(None, None)))
 
   lazy val parseArgSource : Parser[ArgSource] = fullParser(
-    "(source" ~> parseTName <~ ")" ^^ { case (n) => ArgSource(n, None, None) }
+    "(source" ~> parseTName <~ ")" ^^ (n => ArgSource(n, None, None))
   )
 
   lazy val parseArgTarget : Parser[ArgTarget] = fullParser(
-    "(target" ~> parseTName <~ ")" ^^ { case (n) => ArgTarget(n, None, None) }
+    "(target" ~> parseTName <~ ")" ^^ (n => ArgTarget(n, None, None))
   )
 
   lazy val parseArgAssumptions : Parser[ArgAssumptions] = fullParser(
-    "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ { case (as) => ArgAssumptions(as, Nil, None, None) }
+    "(assumptions" ~> rep1(parseDefString) <~ ")" ^^ (as => ArgAssumptions(as, Nil, None, None))
   )
 
-  lazy val pv0 = parseTName ^^ { case (n) => (n,0) }
-  lazy val pv1 = parseDefString ^^ { case (d) => (d,1) }
-  lazy val pv2 = "(pred" ~> parseDefString <~ ")" ^^ { case (d) => (d,2) }
-  lazy val pv3 = "(indic" ~> parseDefString <~ ")" ^^ { case (d) => (d,3) }
+  lazy val pv0 : Parser[(Name,Int)]      = parseTName ^^ (n => (n, 0))
+  lazy val pv1 : Parser[(DefString,Int)] = parseDefString ^^ (d => (d, 1))
+  lazy val pv2 : Parser[(DefString,Int)] = "(pred" ~> parseDefString <~ ")" ^^ (d => (d, 2))
+  lazy val pv3 : Parser[(DefString,Int)] = "(indic" ~> parseDefString <~ ")" ^^ (d => (d, 3))
 
   lazy val parseSortPairSpec : Parser[ArgSortPairSpec] = fullParser(
     "(" ~> parseTName ~ (pv0 | pv1 | pv2 | pv3) <~ ")" ^^ { case (nm : Name) ~ t => t match {
@@ -322,43 +321,43 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgSortPairs : Parser[ArgSortPairs] = fullParser(
-    "(sort-pairs" ~> rep1(parseSortPairSpec) <~ ")" ^^ { case (sps) => ArgSortPairs(sps, None, None) }
+    "(sort-pairs" ~> rep1(parseSortPairSpec) <~ ")" ^^ (sps => ArgSortPairs(sps, None, None))
   )
 
   lazy val parseDefStringOrName : Parser[ODefString] = fullParser(
-    (parseDefString ^^ { case (d) => ODefString(Left((d,None)),None,None) }) | (parseTName ^^ { case (n) => ODefString(Right(n),None,None) })
+    (parseDefString ^^ (d => ODefString(Left((d, None)), None, None))) | (parseTName ^^ (n => ODefString(Right(n), None, None)))
   )
 
   lazy val parseArgConstPairSpec : Parser[ArgConstPairSpec] = fullParser(
-    "(" ~> parseTName ~ parseDefStringOrName <~ ")" ^^ { case (f ~ b) => ArgConstPairSpec(f,b,None,None) }
+    "(" ~> parseTName ~ parseDefStringOrName <~ ")" ^^ { case f ~ b => ArgConstPairSpec(f,b,None,None) }
   )
 
   lazy val parseArgConstPairs : Parser[ArgConstPairs] = fullParser(
-    ("(constant-pairs" ~> rep1(parseArgConstPairSpec) <~ ")") ^^ { case (as) => ArgConstPairs(as, None, None) }
+    ("(constant-pairs" ~> rep1(parseArgConstPairSpec) <~ ")") ^^ (as => ArgConstPairs(as, None, None))
   )
 
   lazy val parseArgCoreTranslation : Parser[ArgCoreTranslation] = fullParser(
-    "(core-translation" ~> parseTName <~ ")" ^^ { case (n) => ArgCoreTranslation(n, None, None) }
+    "(core-translation" ~> parseTName <~ ")" ^^ (n => ArgCoreTranslation(n, None, None))
   )
 
   lazy val parseArgTheoryInterpretationCheck : Parser[ArgTheoryInterpretationCheck] = fullParser(
-    "(theory-interpretation-check" ~> parseTName <~ ")" ^^ { case (n) => ArgTheoryInterpretationCheck(n, None, None) }
+    "(theory-interpretation-check" ~> parseTName <~ ")" ^^ (n => ArgTheoryInterpretationCheck(n, None, None))
   )
 
   lazy val parseArgNameList : Parser[ArgNameList] = fullParser(
-    singleOrList(parseTName) ^^ { case (ns) => ArgNameList(ns,None,None) }
+    singleOrList(parseTName) ^^ (ns => ArgNameList(ns, None, None))
   )
 
   lazy val parseArgDefStringList : Parser[ArgDefStringList] = fullParser(
-    singleOrList(parseDefString) ^^ { case (ds) => ArgDefStringList(ds,None,None) }
+    singleOrList(parseDefString) ^^ (ds => ArgDefStringList(ds, None, None))
   )
 
   lazy val parseArgDefinitionName : Parser[ArgDefinitionName] = fullParser(
-    "(definition-name" ~> parseTName <~ ")" ^^ { case (nm) => ArgDefinitionName(nm,None,None) }
+    "(definition-name" ~> parseTName <~ ")" ^^ (nm => ArgDefinitionName(nm, None, None))
   )
 
   lazy val parseArgRenamer : Parser[ArgRenamer] = fullParser(
-    "(renamer" ~> parseTName <~ ")" ^^ { case (r) => ArgRenamer(r,None,None) }
+    "(renamer" ~> parseTName <~ ")" ^^ (r => ArgRenamer(r, None, None))
   )
 
   lazy val parseOperationType : Parser[OperationType] = parseName ^^ {
@@ -377,19 +376,19 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgOperations : Parser[ArgOperations] = fullParser(
-    "(operations" ~> rep1(parseOperationAlist) <~ ")" ^^ { case (oas) => ArgOperations(oas,None,None) }
+    "(operations" ~> rep1(parseOperationAlist) <~ ")" ^^ (oas => ArgOperations(oas, None, None))
   )
 
   lazy val parseArgScalars : Parser[ArgScalars] = fullParser(
-    "(scalars" ~> parseNumericalType <~ ")" ^^ { case (nt) => ArgScalars(nt,None,None) }
+    "(scalars" ~> parseNumericalType <~ ")" ^^ (nt => ArgScalars(nt, None, None))
   )
 
   lazy val parseModUseNumerals : Parser[ModUseNumerals] = fullParser(
-    "use-numerals-for-ground-terms" ^^ { case _ => ModUseNumerals(None,None) }
+    "use-numerals-for-ground-terms" ^^ (_ => ModUseNumerals(None, None))
   )
 
   lazy val parseModCommutes : Parser[ModCommutes] = fullParser(
-    "commutes" ^^ { case _ => ModCommutes(None,None) }
+    "commutes" ^^ (_ => ModCommutes(None, None))
   )
 
   lazy val parseQDFSpecForm : Parser[QDFSpecForm] = composeParser(
@@ -401,139 +400,139 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   lazy val parseArgSpecForms : Parser[ArgSpecForms] = fullParser(
-    (parseQDFSpecForm ^^ { case (sf) => ArgSpecForms(Right(sf),None,None) }) | (parseTName ^^ { case (n) => ArgSpecForms(Left(n),None,None) })
+    (parseQDFSpecForm ^^ (sf => ArgSpecForms(Right(sf), None, None))) | (parseTName ^^ (n => ArgSpecForms(Left(n), None, None)))
   )
 
   lazy val parseArgBase : Parser[ArgBase] = fullParser(
-    "(base" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgBase(b,None,None) }
+    "(base" ~> parseArgSpecForms <~ ")" ^^ (b => ArgBase(b, None, None))
   )
 
   lazy val parseArgExponent : Parser[ArgExponent] = fullParser(
-    "(exponent" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgExponent(b,None,None) }
+    "(exponent" ~> parseArgSpecForms <~ ")" ^^ (b => ArgExponent(b, None, None))
   )
 
   lazy val parseArgCoefficient : Parser[ArgCoefficient] = fullParser(
-    "(coefficient" ~> parseArgSpecForms <~ ")" ^^ { case (b) => ArgCoefficient(b,None,None) }
+    "(coefficient" ~> parseArgSpecForms <~ ")" ^^ (b => ArgCoefficient(b, None, None))
   )
 
   lazy val parseModCancellative : Parser[ModCancellative] = fullParser(
-    "cancellative" ^^ { case _ => ModCancellative(None,None) }
+    "cancellative" ^^ (_ => ModCancellative(None, None))
   )
 
   lazy val parseArgRetrievalProtocol : Parser[ArgRetrievalProtocol] = fullParser(
-    "(retrieval-protocol" ~> parseTName <~ ")" ^^ { case (b) => ArgRetrievalProtocol(b,None,None) }
+    "(retrieval-protocol" ~> parseTName <~ ")" ^^ (b => ArgRetrievalProtocol(b, None, None))
   )
 
   lazy val parseArgApplicabilityRecognizer : Parser[ArgApplicabilityRecognizer] = fullParser(
-    "(applicability-recognizer" ~> parseTName <~ ")" ^^ { case (b) => ArgApplicabilityRecognizer(b,None,None) }
+    "(applicability-recognizer" ~> parseTName <~ ")" ^^ (b => ArgApplicabilityRecognizer(b, None, None))
   )
 
   lazy val parseArgFileSpec : Parser[ArgFileSpec] = fullParser(
-    (";;"?) ~> "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (p ~ q) => ArgFileSpec(p,q,None,None) }
+    (";;"?) ~> "(" ~> parseTName ~ parseTName <~ ")" ^^ { case p ~ q => ArgFileSpec(p,q,None,None) }
   )
 
   lazy val parseArgFiles : Parser[ArgFiles] = fullParser(
-    "(files" ~> rep1(parseArgFileSpec) <~ ")" ^^ { case (fss) => ArgFiles(fss,None,None) }
+    "(files" ~> rep1(parseArgFileSpec) <~ ")" ^^ (fss => ArgFiles(fss, None, None))
   )
 
   lazy val parseArgComponentSections : Parser[ArgComponentSections] = fullParser(
-    "(component-sections" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgComponentSections(ns,None,None) }
+    "(component-sections" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgComponentSections(ns, None, None))
   )
 
   lazy val parseArgBaseTheory : Parser[ArgBaseTheory] = fullParser(
-    "(base-theory" ~> parseTName <~ ")" ^^ { case (b) => ArgBaseTheory(b,None,None) }
+    "(base-theory" ~> parseTName <~ ")" ^^ (b => ArgBaseTheory(b, None, None))
   )
 
   lazy val parseArgReplicaRenamer : Parser[ArgReplicaRenamer] = fullParser(
-    "(replica-renamer" ~> parseTName <~ ")" ^^ { case (b) => ArgReplicaRenamer(b,None,None) }
+    "(replica-renamer" ~> parseTName <~ ")" ^^ (b => ArgReplicaRenamer(b, None, None))
   )
 
   lazy val parseArgNumbers : Parser[ArgNumbers] = fullParser(
-    "(" ~> rep1(parseTNumber) <~ ")" ^^ { case (ns) => ArgNumbers(ns,None,None) }
+    "(" ~> rep1(parseTNumber) <~ ")" ^^ (ns => ArgNumbers(ns, None, None))
   )
 
   lazy val parseArgTargetTheories : Parser[ArgTargetTheories] = fullParser(
-    "(target-theories" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgTargetTheories(ns,None,None) }
+    "(target-theories" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgTargetTheories(ns, None, None))
   )
 
   lazy val parseArgTargetMultiple : Parser[ArgTargetMultiple] = fullParser(
-    "(target-multiple" ~> parseTNumber <~ ")" ^^ { case (n) => ArgTargetMultiple(n,None,None) }
+    "(target-multiple" ~> parseTNumber <~ ")" ^^ (n => ArgTargetMultiple(n, None, None))
   )
 
   lazy val parseArgSortAssoc : Parser[ArgSortAssoc] = fullParser(
-    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case (n ~ ns) => ArgSortAssoc(n,ns,None,None) }
+    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case n ~ ns => ArgSortAssoc(n,ns,None,None) }
   )
 
   lazy val parseArgEnsembleSorts : Parser[ArgEnsembleSorts] = fullParser(
-    "(sorts" ~> rep1(parseArgSortAssoc) <~ ")" ^^ { case (sas) => ArgEnsembleSorts(sas,None,None) }
+    "(sorts" ~> rep1(parseArgSortAssoc) <~ ")" ^^ (sas => ArgEnsembleSorts(sas, None, None))
   )
 
   lazy val parseArgConstAssoc : Parser[ArgConstAssoc] = fullParser(
-    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case (n ~ ns) => ArgConstAssoc(n,ns,None,None) }
+    "(" ~> parseTName ~ rep1(parseDefStringOrName) <~ ")" ^^ { case n ~ ns => ArgConstAssoc(n,ns,None,None) }
   )
 
   lazy val parseArgEnsembleConsts : Parser[ArgEnsembleConsts] = fullParser(
-    "(constants" ~> rep1(parseArgConstAssoc) <~ ")" ^^ { case (cas) => ArgEnsembleConsts(cas,None,None) }
+    "(constants" ~> rep1(parseArgConstAssoc) <~ ")" ^^ (cas => ArgEnsembleConsts(cas, None, None))
   )
 
   lazy val parseArgMultiples : Parser[ArgMultiples] = fullParser(
-    "(multiples" ~> rep1(parseTNumber) <~ ")" ^^ { case (ns) => ArgMultiples(ns,None,None) }
+    "(multiples" ~> rep1(parseTNumber) <~ ")" ^^ (ns => ArgMultiples(ns, None, None))
   )
 
   lazy val parseArgPermutations : Parser[ArgPermutations] = fullParser(
-    "(permutations" ~> rep1("(" ~> rep1(parseTNumber) <~ ")") <~ ")" ^^ { case (ns) => ArgPermutations(ns,None,None) }
+    "(permutations" ~> rep1("(" ~> rep1(parseTNumber) <~ ")") <~ ")" ^^ (ns => ArgPermutations(ns, None, None))
   )
 
   lazy val parseArgSpecialRenamings : Parser[ArgSpecialRenamings] = fullParser(
-    "(special-renamings" ~> rep1(parseArgRenamerPair) <~ ")" ^^ { case (ns) => ArgSpecialRenamings(ns,None,None) }
+    "(special-renamings" ~> rep1(parseArgRenamerPair) <~ ")" ^^ (ns => ArgSpecialRenamings(ns, None, None))
   )
 
   lazy val parseArgNewTranslationName : Parser[ArgNewTranslationName] = fullParser(
-    "(new-translation-name" ~> parseTName <~ ")" ^^ { case (n) => ArgNewTranslationName(n,None,None) }
+    "(new-translation-name" ~> parseTName <~ ")" ^^ (n => ArgNewTranslationName(n, None, None))
   )
 
   lazy val parseAlgebraicSimplifierSpec : Parser[ArgAlgebraicSimplifierSpec] = fullParser(
-    "(" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgAlgebraicSimplifierSpec(ns,None,None) }
+    "(" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgAlgebraicSimplifierSpec(ns, None, None))
   )
 
   lazy val parseAlgebraicSimplifier : Parser[ArgAlgebraicSimplifier] = fullParser(
-    "(algebraic-simplifier" ~> rep1(parseAlgebraicSimplifierSpec) <~ ")" ^^ { case (specs) => ArgAlgebraicSimplifier(specs,None,None) }
+    "(algebraic-simplifier" ~> rep1(parseAlgebraicSimplifierSpec) <~ ")" ^^ (specs => ArgAlgebraicSimplifier(specs, None, None))
   )
 
   lazy val parseAlgebraicOrderSimplifierSpec : Parser[ArgAlgebraicOrderSimplifierSpec] = fullParser(
-    "(" ~> rep1(parseTName) <~ ")" ^^ { case (ns) => ArgAlgebraicOrderSimplifierSpec(ns,None,None) }
+    "(" ~> rep1(parseTName) <~ ")" ^^ (ns => ArgAlgebraicOrderSimplifierSpec(ns, None, None))
   )
 
   lazy val parseAlgebraicOrderSimplifier : Parser[ArgAlgebraicOrderSimplifier] = fullParser(
-    "(algebraic-order-simplifier" ~> rep1(parseAlgebraicOrderSimplifierSpec) <~ ")" ^^ { case (specs) => ArgAlgebraicOrderSimplifier(specs,None,None) }
+    "(algebraic-order-simplifier" ~> rep1(parseAlgebraicOrderSimplifierSpec) <~ ")" ^^ (specs => ArgAlgebraicOrderSimplifier(specs, None, None))
   )
 
   lazy val parseAlgebraicTermComparator : Parser[ArgAlgebraicTermComparator] = fullParser(
-    "(algebraic-term-comparator" ~> rep1(parseTName) <~ ")" ^^ { case (specs) => ArgAlgebraicTermComparator(specs,None,None) }
+    "(algebraic-term-comparator" ~> rep1(parseTName) <~ ")" ^^ (specs => ArgAlgebraicTermComparator(specs, None, None))
   )
 
   lazy val parseArgAlgebraicProcessor : Parser[ArgAlgebraicProcessor] = fullParser(
-    "(algebraic-processor" ~> parseTName <~ ")" ^^ { case (n) => ArgAlgebraicProcessor(n,None,None) }
+    "(algebraic-processor" ~> parseTName <~ ")" ^^ (n => ArgAlgebraicProcessor(n, None, None))
   )
 
   lazy val parseArgDiscreteSorts : Parser[ArgDiscreteSorts] = fullParser(
-    "(discrete-sorts" ~> rep1(parseSort) <~ ")" ^^ { case (srt) => ArgDiscreteSorts(srt,None,None) }
+    "(discrete-sorts" ~> rep1(parseSort) <~ ")" ^^ (srt => ArgDiscreteSorts(srt, None, None))
   )
 
   lazy val parseArgOperationsAlist : Parser[ArgOperationsAlist] = fullParser(
-    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case (o ~ p) => ArgOperationsAlist(o,p,None,None) }
+    "(" ~> parseTName ~ parseTName <~ ")" ^^ { case o ~ p => ArgOperationsAlist(o,p,None,None) }
   )
 
   lazy val parseArgProcOperations : Parser[ArgProcOperations] = fullParser(
-    "(operations" ~> rep1(parseArgOperationsAlist) <~ ")" ^^ { case (ls) => ArgProcOperations(ls,None,None) }
+    "(operations" ~> rep1(parseArgOperationsAlist) <~ ")" ^^ (ls => ArgProcOperations(ls, None, None))
   )
 
   lazy val parseModReload : Parser[ModReload] = fullParser(
-    "reload" ^^ { case _ => ModReload(None,None) }
+    "reload" ^^ (_ => ModReload(None, None))
   )
 
   lazy val parseModQuickLoad : Parser[ModQuickLoad] = fullParser(
-    "quick-load" ^^ { case _ => ModQuickLoad(None,None) }
+    "quick-load" ^^ (_ => ModQuickLoad(None, None))
   )
 
   // ######### Full Def-Form Parsers
@@ -794,32 +793,32 @@ class DefFormParsers(js : List[JSONObject])
     DFComment
   )
 
-  lazy val pSet : Parser[Set] = fullParser(
-    "(set" ~> parseScript <~ ")" ^^ { case (c) => Set(c,None,None) }
+  lazy val pSet : Parser[ArgSet] = fullParser(
+    "(set" ~> parseScript <~ ")" ^^ (c => ArgSet(c, None, None))
   )
 
   lazy val pDefine : Parser[Define] = fullParser(
-    "(define" ~> parseScript <~ ")" ^^ { case (c) => Define(c,None,None) }
+    "(define" ~> parseScript <~ ")" ^^ (c => Define(c, None, None))
   )
 
   lazy val pTeXCorrespondence : Parser[TeXCorrespondence] = fullParser(
-    "(make-tex-correspondence" ~> parseScript <~ ")" ^^ { case (s) => TeXCorrespondence(s,None,None) }
+    "(make-tex-correspondence" ~> parseScript <~ ")" ^^ (s => TeXCorrespondence(s, None, None))
   )
 
   lazy val pQCConstantlike : Parser[QCConstantlike] = fullParser(
-    "(make-quasi-constructor-constantlike" ~> parseTName <~ ")" ^^ { case (s) => QCConstantlike(s,None,None) }
+    "(make-quasi-constructor-constantlike" ~> parseTName <~ ")" ^^ (s => QCConstantlike(s, None, None))
   )
 
   lazy val pEnsembleDontTranslateConst : Parser[EnsembleDontTranslateConst] = fullParser(
-    "(ensemble-dont-translate-constant" ~> parseScript <~ ")" ^^ { case (s) => EnsembleDontTranslateConst(s,None,None) }
+    "(ensemble-dont-translate-constant" ~> parseScript <~ ")" ^^ (s => EnsembleDontTranslateConst(s, None, None))
   )
 
   def parseArbitrary(str : String) : Parser[ArbitraryScript] = fullParser(
-    "(" ~> str.r ~ parseScript <~ ")" ^^ { case (n ~ s) => println(n + ";" + s) ; ArbitraryScript(n,s,None,None) }
+    "(" ~> str.r ~ parseScript <~ ")" ^^ { case n ~ s => println(n + ";" + s) ; ArbitraryScript(n,s,None,None) }
   )
 
   lazy val pSimplog1stWrapper : Parser[Simplog1stWrapper] = fullParser(
-    "(transportable-rewrite-usage-simplog1st" ~> pTheorem <~ ")" ^^ { case (d) => Simplog1stWrapper(d,None,None) }
+    "(transportable-rewrite-usage-simplog1st" ~> pTheorem <~ ")" ^^ (d => Simplog1stWrapper(d, None, None))
   )
 
   // ######### Complete Parsers

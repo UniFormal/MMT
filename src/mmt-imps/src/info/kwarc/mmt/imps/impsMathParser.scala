@@ -1,8 +1,6 @@
 package info.kwarc.mmt.imps
 
-import scala.util.parsing.combinator._
-import scala.util.parsing.combinator.PackratParsers
-import scala.util.Random
+import scala.util.parsing.combinator.{PackratParsers, _}
 
 package object impsMathParser
 {
@@ -75,7 +73,6 @@ package object impsMathParser
           assert(s.args.length == 2)
           val srt : IMPSMathExp = makeSEXPFormula(s.args(1))
           assert(srt.isInstanceOf[IMPSUndefined])
-
           IMPSQCSort2Indicator(srt)
         }
 

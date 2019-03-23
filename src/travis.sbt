@@ -1,7 +1,8 @@
-import sbt._
+import Utils.utils
 import sbt.Keys._
-import travis.Matrix._
+import sbt._
 import travis.Config._
+import travis.Matrix._
 
 import scala.io.Source
 
@@ -10,21 +11,23 @@ travisConfig := {
   val ourScalaVersion: String = scalaVersion.value
 
   // convenience wrapper to run an sbt task and an optional check
-  def sbt(task: String, check: Option[String] = None) : List[String] = List(
+  def sbt(task: String, check: Option[String] = None): List[String] = List(
     s"cd src && (cat /dev/null | sbt ++$ourScalaVersion $task) && cd .."
   ) ::: check.toList
 
   // convenience wrapper to tun a specific test class
-  def runMainClass(cls: String*) : List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
+  def runMainClass(cls: String*): List[String] = cls.map("java -cp deploy/mmt.jar " + _).toList
 
   // convenience functions for checks
-  def file(name: String) : Option[String] = Some("[[ -f \"" + name + "\" ]]")
-  def identical(name: String) : Option[String] = Some("(git diff --quiet --exit-code \"" + name + "\")")
-  def dir(name: String) : Option[String] = Some("[[ -d \"" + name + "\" ]]")
+  def file(name: String): Option[String] = Some("[[ -f \"" + name + "\" ]]")
+
+  def identical(name: String): Option[String] = Some("(git diff --quiet --exit-code \"" + name + "\")")
+
+  def dir(name: String): Option[String] = Some("[[ -d \"" + name + "\" ]]")
 
   val LinuxTesting = MatrixSet(
     Trusty, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
-    OpenJDK8, OracleJDK8//, OracleJDK9
+    OracleJDK8, OpenJDK11
   )
 
   // in principle we would test OS X as follows
@@ -64,8 +67,8 @@ travisConfig := {
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
       TravisJob("Check mmt.jar generation and integration tests",
         sbt("deploy", file("deploy/mmt.jar")) ::: runMainClass(
-          "info.kwarc.mmt.api.test.APITest",
-          "info.kwarc.mmt.lf.LFTest",
+          "info.kwarc.mmt.test.APITest",
+          "info.kwarc.mmt.test.LFTest",
           "info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest"
         )),
       TravisJob("Check that unit tests run", sbt("test")),
@@ -86,11 +89,11 @@ travisConfig := {
 val genTravisYML = taskKey[Unit]("Print out travis.yml configuration")
 genTravisYML := {
   // read the prefix and the config
-  val prefix = Source.fromFile(Utils.src / "project" / "prefix.travis.yml").getLines.filter(!_.startsWith("##")).mkString("\n")
+  val prefix = Source.fromFile(utils.value.src / "project" / "prefix.travis.yml").getLines.filter(!_.startsWith("##")).mkString("\n")
   val config = travisConfig.value.serialize
 
   // and write it into .travis.yml
-  val outFile = Utils.root / ".travis.yml"
+  val outFile = utils.value.root / ".travis.yml"
   IO.write(outFile, prefix + "\n" + config)
   streams.value.log.info(s"Wrote $outFile")
 }

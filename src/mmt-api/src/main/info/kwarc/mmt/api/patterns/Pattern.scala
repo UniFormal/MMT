@@ -11,7 +11,7 @@ import checking._
 /** patterns are derived declarations that are syntactically parametric theories */
 class PatternFeature extends StructuralFeature(Pattern.feature) with ParametricTheoryLike {
 
-   def elaborate(parent: Module, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
      def domain = Nil
      def getO(n: LocalName) = None
    }
@@ -32,14 +32,10 @@ object Pattern {
     dd
   }
 
-  def unapply(dd: DerivedDeclaration): Option[(Term, LocalName, Context, Theory)] = {
+  def unapply(dd: DerivedDeclaration): Option[(Term, LocalName, Context, AbstractTheory)] = {
     if (dd.feature != feature) return None
     val pars = Type.getParameters(dd)
-    val thy = dd.module match {
-      case thy: Theory => thy
-      case _ => throw ImplementationError("pattern must contain theory")
-    }
-    Some((dd.home,dd.name, pars, thy))
+    Some((dd.home,dd.name, pars, dd))
   }
 
   /** pre: d.feature == "pattern" */

@@ -43,16 +43,21 @@ class ModuleHashMap {
   }
 }
 
-/** A Library represents an MMT theory graph.
+/** A Library is the in-memory representation of an MMT diagram, including the implicit-diagram, and all root documents.
   *
-  * The Library implements the central structural algorithms, in particular lookup.
-  * All access of the main data structures is through the library's get/add/update/delete methods.
-  *
-  * Invariance: This class guarantees structural well-formedness in the sense that
+  * It implements the lookup and change of MMT URIs via get/add/update/delete/reorder methods. 
+  * 
+  * Invariant: This class guarantees structural well-formedness in the sense that
   * libraries conform to the MMT grammar and all declarations have canonical URIs.
   * The well-formedness of the objects in the declarations is not guaranteed.
   *
+  * The [[Controller]] own a library and uses it to load elements into memory dynamically.
+  * Therefore, access should always be through the corresponding methods of the controller.
+  * Elements are unloaded dynamically if MMT runs out of memory.
+  * 
+  * @param extman the controller's extension manager
   * @param report parameter for logging.
+  * @param previous a second library that stores the previous version whenever an element is changed
   */
 class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {self =>
   val logPrefix = "library"
@@ -201,6 +206,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      case m: Module => m
      case nm: NestedModule => nm.module
      case s: Structure => s
+     case dd: DerivedDeclaration => dd
      case _ => error("element exists but is not module-like: " + ce.path)
   }
 
@@ -340,7 +346,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
     // now the actual lookup
     mod match {
-      case t: Theory =>
+      case t: AbstractTheory =>
+         // unifies theories and derived content elements
          t.df match {
            case Some(df) if !uom.ElaboratedElement.isPartially(t) =>
              // lookup in definiens if not elaborated yet; alternatively: call elaboration
@@ -374,8 +381,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     }
   }
 
-  /** auxiliary method of get for lookups in a [[DeclaredTheory]] */
-  private def getInTheory(t: Theory, args: List[Term], name: LocalName, error: String => Nothing) = {
+  /** auxiliary method of get for lookups in a [[Theory]] */
+  private def getInTheory(t: AbstractTheory, args: List[Term], name: LocalName, error: String => Nothing) = {
      val declLnOpt = t.getMostSpecific(name) map {
         case (d, ln) => (instantiate(d, t.parameters, args), ln)
      }
@@ -399,7 +406,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            getO(mpath) match {
              case Some(included: Theory) =>
                // continue lookup in (possibly implicitly) included theory
-               val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
+               val imp = implicitGraph(OMMOD(mpath), t match {
+                 case _:Theory => t.toTerm
+                 case d:DerivedDeclaration => OMMOD(d.modulePath)
+               }) getOrElse {
                  error("no implicit morphism from " + mpath + " to " + t.path)
                }
                if (ln.isEmpty) {
@@ -426,7 +436,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            }
          case Nil =>
            throw GetError("empty name not allowed")
-         case _ => throw NotFound(t.path ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
+         case _ => throw NotFound(t.modulePath ? name, Some(t.path)) // [[Storage]]s may add declarations to a theory dynamically, so we throw NotFound
        }
      }
   }
@@ -434,7 +444,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /**
    * look up 'name' in elaboration of dd
    */
-  private def getInElaboration(parent: Module, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
+  private def getInElaboration(parent: AbstractTheory, dd: DerivedDeclaration, name: LocalName, error: String => Nothing): Declaration = {
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
@@ -787,6 +797,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              addIncludeToImplicit(t.toTerm, p, args)
           }
         case dd: DerivedDeclaration =>
+          implicitGraph(dd.home, OMMOD(dd.modulePath)) = OMIDENT(dd.home)
         case e: NestedModule =>
           add(e.module, at)
           //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of

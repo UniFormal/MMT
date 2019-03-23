@@ -72,7 +72,7 @@ object Realize extends ParametricRule {
          }
          val FunType(from, to) = synTp
          if (from.exists(_._1.isDefined))
-           throw ParseError("can only handle simple function types")
+           throw ParseError("can only handle simple function types: " + synTp)
          val args = from.map(_._2)
          if (args.length != semOp.arity)
            throw ParseError("semantic operator has wrong arity")

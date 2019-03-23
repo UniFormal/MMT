@@ -33,7 +33,7 @@ class AdditionHandler() extends SCSCPHandler {
   val max : Int = -1
   val signature = Some(SymbolSet(Nil)) // TODO:
   def handle(client: SCSCPServerClient, arguments : SCSCPCallArguments, parameters: OMExpression* ) : OMExpression = {
-    OMInteger(parameters.toList.map({
+    OMInteger(parameters.toList.collect({
       case i:OMInteger => i.int
     }).sum, None)
   }

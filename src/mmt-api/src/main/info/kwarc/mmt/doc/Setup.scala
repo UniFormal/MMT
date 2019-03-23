@@ -155,8 +155,6 @@ class Setup extends ShellExtension("setup") {
         case _ =>
       }
 
-      val mathhubFolder = contentFolder/"MathHub"
-      mathhubFolder.mkdirs
       val configFile = deploy/"mmtrc"
       if (!configFile.exists) {
         log("generating " + configFile)
@@ -165,7 +163,7 @@ class Setup extends ShellExtension("setup") {
             write("#backends\n")
             write("// The following line allows using MMT commands for cloning MathHub archives\n")
             write("// By default, cloning uses https. Change this to 'lmh FOLDER ssh' to clone via ssh" + "\n")
-            write("lmh " + mathhubFolder + "\n")
+            write("lmh " + contentFolder + "\n")
             write("// The following line loads all archives every time. This is good for beginners but advanced users may want to choose a specific set of archives each time.\n")
             write("mathpath " + contentFolder + "\n")
         }

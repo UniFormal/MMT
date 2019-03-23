@@ -14,22 +14,15 @@ import presentation._
  * @param tpC the domain theory
  * @param isImplicit true iff the link is implicit
  */
-class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link {
+class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link with HasType {
    type ThisType = Structure
    val feature = "structure"
    /** the domain of a structure is its type */
    def fromC = tpC
    /** the domain of a structure is its home theory*/
    val toC = new FinalTermContainer(home)
-   /** the domain as a term */
-   def tp = tpC.get
    def namePrefix = name
    def isInclude = Include.unapply(this).isDefined
-   /** override in order to permit implicit structures (identified by their domain) */
-   override def implicitKey = this match {
-      case Include(_, fromPath, _) => Some(fromPath)
-      case _ => None
-   }
 
    def getComponents = List(TypeComponent(tpC), DefComponent(dfC))
 
@@ -119,7 +112,8 @@ object Include {
    def apply(home: Term, from: MPath, args: List[Term]): Structure = apply(home, from, args, None)
    def apply(home: Term, from: MPath, args: List[Term], df: Option[Term]): Structure =
       Structure(home, LocalName(from), OMPMOD(from, args), df, true)   
-   // the apply method already allows for defined includes (= implicit morphisms), but unapply does not support it yet because all algorithms must be adapted to consider defined includes
+   // TODO the apply method already allows for defined includes (= implicit morphisms),
+   //  but unapply does not support it yet because all algorithms must be adapted to consider defined includes
    def unapply(t: ContentElement) : Option[(Term,MPath,List[Term])] = t match {
       case d: Structure => d.fromC.get match {
          case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some((d.home, from, args)) // , d.df

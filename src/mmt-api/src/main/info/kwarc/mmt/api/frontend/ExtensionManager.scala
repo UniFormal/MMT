@@ -9,6 +9,7 @@ import libraries._
 import opaque._
 import parser._
 import presentation._
+import symbols._
 import proving._
 import uom._
 import presentation._
@@ -145,7 +146,8 @@ class ExtensionManager(controller: Controller) extends Logger {
     classOf[ontology.QueryFunctionExtension],
     classOf[ChangeListener], classOf[ServerExtension],
     classOf[Parser], classOf[Checker], classOf[Prover], classOf[Interpreter], classOf[Simplifier], classOf[Presenter],
-    classOf[BuildTarget]
+    classOf[BuildTarget],
+    classOf[StructuralFeature], classOf[ModuleLevelFeature] 
   )
 
 
@@ -287,7 +289,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
-    val msp = new MMTStructurePresenter(nbpr)
+    val msp = new MMTSyntaxPresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
     val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
@@ -309,8 +311,8 @@ class ExtensionManager(controller: Controller) extends Logger {
       val key = "html"
     }
     List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
-      new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter).foreach(addExtension(_))
-
+      new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
+      new MMTSyntaxPresenter(nbpr), new FlatMMTSyntaxPresenter(nbpr)).foreach(addExtension(_))
     //parser extensions
     List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
     //serverPlugins

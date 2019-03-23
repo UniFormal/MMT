@@ -90,13 +90,6 @@ package object impsLibrarySections
     Nil
   )
 
-  def sequences : Section = Section(
-    "sequences",
-    List(foundation),
-    List("sequences.t", "sequences-supplements.t"),
-    List("sequences.json")
-  )
-
   def binaryRelaions : Section = Section(
     "binary-relations",
     List(foundation),
@@ -123,6 +116,13 @@ package object impsLibrarySections
     List(basicCardinality),
     List("omega-embedding-supplements.t", "cardinality-supplements.t", "combinatorics.t"),
     Nil
+  )
+
+  def sequences : Section = Section(
+    "sequences",
+    List(basicCardinality),
+    List("omega-embedding.t","sequences.t", "sequences-supplements.t"),
+    List("sequences.json")
   )
 
   def schroederBernsteinTheorem1 : Section = Section(

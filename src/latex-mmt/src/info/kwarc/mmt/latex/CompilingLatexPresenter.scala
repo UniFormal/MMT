@@ -245,7 +245,7 @@ class MacroUsingPresenter extends ObjectPresenter {
     val objS = obj match {
       case OMS(p) => doConstantName(p)
       case OMV(n) => n.toPath
-      case t @ ComplexTerm(_) =>
+      case t @ ComplexTerm(_, _, _, _) =>
         val tS = controller.pragmatic.makePragmatic(t)(p => Presenter.getNotations(controller, p, true)) match {
           case None =>
             val ComplexTerm(p, subs, con, args) = t

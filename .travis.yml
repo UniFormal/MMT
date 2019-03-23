@@ -60,14 +60,14 @@ jobs:
       env:
         - "INFO='Check mmt.jar generation and integration tests'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk8
+      jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
         - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
-        - "java -cp deploy/mmt.jar info.kwarc.mmt.api.test.APITest"
-        - "java -cp deploy/mmt.jar info.kwarc.mmt.lf.LFTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.test.APITest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.test.LFTest"
         - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.ODKTest"
         - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.MitMTest"
       stage: CompileAndCheck
@@ -75,21 +75,21 @@ jobs:
       env:
         - "INFO='Check mmt.jar generation and integration tests'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: oraclejdk11
       language: scala
       scala: "2.12.3"
       script:
         - "cd src && (cat /dev/null | sbt ++2.12.3 deploy) && cd .."
         - '[[ -f "deploy/mmt.jar" ]]'
-        - "java -cp deploy/mmt.jar info.kwarc.mmt.api.test.APITest"
-        - "java -cp deploy/mmt.jar info.kwarc.mmt.lf.LFTest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.test.APITest"
+        - "java -cp deploy/mmt.jar info.kwarc.mmt.test.LFTest"
         - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.ODKTest"
         - "java -cp deploy/mmt.jar info.kwarc.mmt.odk.MitMTest"
     - dist: trusty
       env:
         - "INFO='Check that unit tests run'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk8
+      jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
@@ -98,7 +98,7 @@ jobs:
       env:
         - "INFO='Check that unit tests run'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: oraclejdk11
       language: scala
       scala: "2.12.3"
       script:
@@ -108,7 +108,7 @@ jobs:
       env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk8
+      jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
@@ -119,7 +119,7 @@ jobs:
       env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: oraclejdk11
       language: scala
       scala: "2.12.3"
       script:
@@ -129,7 +129,7 @@ jobs:
       env:
         - "INFO='Check that apidoc generation works'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk8
+      jdk: oraclejdk8
       language: scala
       scala: "2.12.3"
       script:
@@ -139,7 +139,7 @@ jobs:
       env:
         - "INFO='Check that apidoc generation works'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: oraclejdk11
       language: scala
       scala: "2.12.3"
       script:

@@ -35,8 +35,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param properties a key value map
   * @param report the reporting mechanism
   */
-class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report)
-  extends ROArchive with Validate with ScalaCode with ZipArchive {
+class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
@@ -142,6 +141,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * TODO do properly
     * @return
     */
+  @MMT_TODO("inefficient and brittle; use the relational dimension for this")
   lazy val allContent : List[MPath] = {
     log("Reading Content " + id)
     var ret : List[MPath] = Nil
@@ -161,15 +161,19 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         val thexp = "name=\"([^\"]+)\" base=\"([^\"]+)\"".r
         def getLine = {
           val reader = File.Reader(inFile)
-          val str = reader.readLine()
+          val str = Try(reader.readLine()).getOrElse("")
           reader.close()
           if (str == null) "" else str
         }
         // def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
         thexp.findAllIn(getLine).toList foreach {
           case thexp(name, base) =>
-            //println(base + "?" + name)
-            ret ::= Path.parseD(base, NamespaceMap.empty) ? name
+            // Dirty fix for https://github.com/UniFormal/MMT/issues/439
+            // until allContent is completely replaced.
+            Path.parse(base, NamespaceMap.empty) match {
+              case dPath: DPath => ret ::= dPath ? name
+              case _ => /* do nothing */
+            }
         }
       }
     }
@@ -193,7 +197,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
             }
             controller.depstore += re
           } catch { //TODO treat this as normal build target and report errors
-            case e : ParseError => log(e.getMessage)
+            case e : Error => log(e.getMessage)
           }
         }
       }
@@ -206,14 +210,16 @@ object Archive {
 
   private val escaper = FileNameEscaping
 
-  // scheme..authority / seg / ments / name.omdoc ----> scheme :// authority / seg / ments ? name
+  /**
+   * scheme..authority / seg / ments / name.omdoc[.xz] ----> scheme :// authority / seg / ments ? name
+   */
   def ContentPathToMMTPath(segs: FilePath): MPath = segs.segments match {
     case Nil => throw ImplementationError("")
     case hd :: tl =>
       val p = hd.indexOf("..")
       val fileNameNoExt = tl.length match {
         case 0 => throw ImplementationError("")
-        case _ => tl.last.lastIndexOf(".") match {
+        case _ => tl.last.lastIndexOf(".omdoc") match {
           case -1 => tl.last
           case i => tl.last.substring(0, i)
         }
@@ -221,7 +227,9 @@ object Archive {
       DPath(URI(hd.substring(0, p), hd.substring(p + 2)) / tl.init) ? escaper.unapply(fileNameNoExt)
   }
 
-  // scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
+  /** scheme..authority / seg / ments  ----> scheme :// authority / seg / ments
+   *  file extensions are kept, to be used on folders only
+   */
   def ContentPathToDPath(segs: FilePath): DPath = segs.segments match {
     case Nil => DPath(URI.empty)
     case hd :: tl =>

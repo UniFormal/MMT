@@ -20,7 +20,7 @@ class Reader(val jr: java.io.BufferedReader) {
    /** the delimiter that terminated the previous read operation */
    private var lastDelimiter: Int = 65536 // initialized as invalid Char
    //TODO remove
-   @deprecated("needs review", "")
+   @MMT_TODO("needs review")
    def forceLastDelimiter(i : Int) = lastDelimiter = i
    /**
     * true if the last read operation hit the end of the current input stream

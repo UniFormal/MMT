@@ -16,7 +16,7 @@ import SeqNormalize._
 
 import scala.xml.{Node}
 
-@deprecated
+@MMT_TODO("")
 class SequenceMatcher(controller : Controller, var metaContext : Context) {
   def apply(seq1 : Term, seq2 : Term, con : Context = Context()) : Boolean = {
     val lookup = controller.globalLookup

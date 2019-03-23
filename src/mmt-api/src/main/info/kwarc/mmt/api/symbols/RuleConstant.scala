@@ -15,6 +15,7 @@ import scala.xml.Node
  *
  * @param df the rule this declaration provides
  */
+// TODO this should be abolished in favor of defined constants, definiens is rule as scala id literals, normalized definiens is scala rule literal
 class RuleConstant(val home : Term, val name : LocalName, val tpC: TermContainer, var df: Option[Rule]) extends Declaration {
    val feature = "rule"
    def tp = tpC.get

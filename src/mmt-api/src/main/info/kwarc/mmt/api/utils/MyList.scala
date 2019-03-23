@@ -1,5 +1,7 @@
 package info.kwarc.mmt.api.utils
 
+object SkipThis extends Throwable
+
 /** Wrapper around List to provide some custom extensions */
 case class MyList[A](l: List[A]) {
   /** returns the first non-None result of applying the argument function to elements of the list */
@@ -14,6 +16,12 @@ case class MyList[A](l: List[A]) {
   /** like map but with a partial function; removes all results that are <code>None</code> */
   def mapPartial[B](f: A => Option[B]): List[B] = l.map(f).filter(_.isDefined).map(_.get)
 
+  /** a map function in which SkipThis() can be called to skip an element */
+  def mapOrSkip[B](f: A => B): List[B] = l flatMap {a => 
+    try {List(f(a))}
+    catch {case SkipThis => Nil}
+  }
+  
   /** values of l (in same order) that yield biggest result under f */
   def argMax[B](f: A => B)(implicit order: Ordering[B]): List[A] = {
     if (l.isEmpty) Nil else {
