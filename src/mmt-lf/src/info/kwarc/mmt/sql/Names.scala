@@ -43,10 +43,14 @@ object Codecs extends TheoryScala {
 object SchemaLang extends TheoryScala {
   val _base = MathData._base
   val _name = LocalName("MDDL")
-  val foreignKey = new Tagger(_path ? "foreignKey")
-  val opaque     = new Tagger(_path ? "opaque")
-  val hidden     = new Tagger(_path ? "hidden")
-  val collection = new Tagger(_path ? "collection")
-  val schemaGroup = _path ? "schemaGroup"
   val datasetName = _path ? "datasetName"
+  val schemaGroup = _path ? "schemaGroup"
+  object foreignKey extends BinaryLFConstantScala(_path, "foreignKey")
+  val opaque      = new Tagger(_path ? "opaque")
+  val hidden      = new Tagger(_path ? "hidden")
+  val collection  = new Tagger(_path ? "collection")
+
+  val datasetNameAnnotator = new StringAnnotator(datasetName)
+  val schemaGroupAnnotator = new StringAnnotator(schemaGroup)
+  val foreignKeyAnnotator = new TermAnnotator(foreignKey.path)
 }
