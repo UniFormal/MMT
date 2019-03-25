@@ -806,6 +806,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       dirs = dirs ::: select_dirs, strict = true)
 
 
+    /* AFP */
+
+    private val optional_afp: Option[isabelle.AFP] =
+    {
+      if (isabelle.Isabelle_System.getenv("AFP_BASE").isEmpty) None
+      else Some(isabelle.AFP.init(options))
+    }
+
+
     /* resources */
 
     val dump_options: isabelle.Options =
@@ -1066,6 +1075,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       isabelle.RDF.meta_data(rendering.meta_data(element_range))
     }
 
+    private def session_meta_data(name: String): isabelle.Properties.T =
+    {
+      (for { afp <- optional_afp; entry <- afp.sessions_map.get(name) }
+        yield entry.rdf_meta_data) getOrElse Nil
+    }
+
+    private val rdf_author_info: Set[String] =
+      Set(
+        isabelle.RDF.Property.creator,
+        isabelle.RDF.Property.contributor,
+        isabelle.RDF.Property.license)
+
+
     def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
       val snapshot = rendering.snapshot
@@ -1085,7 +1107,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val node_elements =
         isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList)
 
-      val node_meta_data =
+      val theory_session_meta_data =
+        session_meta_data(theory_qualifier(node_name)).filter(p => rdf_author_info(p._1))
+
+      val theory_meta_data =
         node_elements.find(element => element.head.span.name == isabelle.Thy_Header.THEORY) match {
           case Some(element) => element_meta_data(rendering, element)
           case None => Nil
@@ -1185,7 +1210,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       Theory_Export(node_name,
         node_source = Source(snapshot.node.source),
         node_timing = node_timing,
-        node_meta_data = node_meta_data,
+        node_meta_data = isabelle.Library.distinct(theory_session_meta_data ::: theory_meta_data),
         parents = theory.parents,
         segments = segments,
         typedefs = theory.typedefs)
