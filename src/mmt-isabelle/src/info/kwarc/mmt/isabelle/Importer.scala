@@ -806,7 +806,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       dirs = dirs ::: select_dirs, strict = true)
 
 
-    /* AFP */
+    /* Isabelle + AFP library info */
+
+    private val isabelle_sessions: Set[String] =
+      isabelle.Sessions.load_structure(options, select_dirs = List(isabelle.Path.explode("$ISABELLE_HOME"))).
+        selection(isabelle.Sessions.Selection.empty).imports_graph.keys.toSet
 
     private val optional_afp: Option[isabelle.AFP] =
     {
@@ -1077,8 +1081,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     private def session_meta_data(name: String): isabelle.Properties.T =
     {
-      (for { afp <- optional_afp; entry <- afp.sessions_map.get(name) }
-        yield entry.rdf_meta_data) getOrElse Nil
+      if (isabelle_sessions(name)) List(isabelle.RDF.Property.license -> "BSD")
+      else {
+        (for { afp <- optional_afp; entry <- afp.sessions_map.get(name) }
+          yield entry.rdf_meta_data) getOrElse Nil
+      }
     }
 
     private val rdf_author_info: Set[String] =
