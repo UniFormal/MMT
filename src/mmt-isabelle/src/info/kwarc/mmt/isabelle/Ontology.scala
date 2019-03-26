@@ -42,6 +42,7 @@ object Ontology
     val universe = ulo("universe") // type classes (primitive entity)
 
     val name = ulo("name") // external entity name (xname)
+    val predicate = ulo("predicate") // term constants with propositional body type
 
     val theory = ulo("theory") // theory, locale (subsumes type classes as logical specification)
 
