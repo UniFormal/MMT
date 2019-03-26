@@ -38,6 +38,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
+    //log("Semantic: " + request.parsedQuery("semantic"))
     if (request.pathForExtension.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
       log("Returing menu for " + id)
@@ -166,6 +167,8 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
 
 }
 
+
+
 class JDocgraph extends SimpleJGraphExporter("docgraph"){
   val builder = GraphBuilder.PlainBuilder
   val selector = new JGraphSelector {
@@ -248,6 +251,15 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
     log("Done.")
     ret
   }
+  /** private def allattacks = {
+    log("Loading attacks...")
+    val ret = (controller.depstore.getInds(IsAttack) collect {
+      case mp : MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  */
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))
@@ -293,7 +305,10 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         c.rl.get match {
           case "Law" => "model"
           case "BoundaryCondition" => "boundarycondition"
-          case _ => "theory"}
+          case _ => "theory"
+          case "Accepted" => "acceptedtheory"
+          case "Rejected" => "rejectedtheory"
+          case "Undecided" => "undecidedtheory"}
       }).get
 
       ostyle match {

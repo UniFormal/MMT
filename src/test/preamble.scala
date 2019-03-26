@@ -117,6 +117,8 @@ object MagicTest {
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael
+      //File("C:/mmt2/content/Mathhub"), //Max
+      File("C:") / "/mmt2" / "/content" / "/MathHub",
       File("C:") / "other" / "oaff",
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
