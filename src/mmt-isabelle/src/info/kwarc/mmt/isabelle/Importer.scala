@@ -541,8 +541,9 @@ object Importer
             thy_draft.declare_item(item, segment.meta_data)
 
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`object`))
-            if (segment.is_axiomatization)
+            if (segment.is_axiomatization) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+            }
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
