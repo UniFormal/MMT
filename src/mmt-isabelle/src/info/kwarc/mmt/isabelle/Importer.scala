@@ -540,12 +540,15 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item, segment.meta_data)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`object`))
             if (segment.is_axiomatization) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
             }
+
             if (decl.propositional) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.predicate))
+            }
+            else {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.function))
             }
 
             decl.primrec_types match {

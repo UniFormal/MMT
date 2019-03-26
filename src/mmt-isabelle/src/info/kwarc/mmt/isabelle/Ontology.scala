@@ -37,7 +37,7 @@ object Ontology
     /* unaries */
 
     val `type` = ulo("type") // type constructors
-    val `object` = ulo("object") // term constants
+    val function = ulo("function") // term constants
     val statement = ulo("statement") // fact items (thm)
     val universe = ulo("universe") // type classes (primitive entity)
 
