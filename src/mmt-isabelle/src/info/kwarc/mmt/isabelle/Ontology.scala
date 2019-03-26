@@ -66,6 +66,8 @@ object Ontology
 
     val instance_of = ulo("instance-of") // locale interpretation
 
+    val inductive_on = ulo("inductive-on") // const is specified via primitive recursion on type
+
     val specifies = ulo("specifies") // theory/locale declares item
     val specified_in = ulo("specified-in") // inverse of "specifies"
 

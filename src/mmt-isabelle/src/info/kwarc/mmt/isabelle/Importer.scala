@@ -548,6 +548,14 @@ object Importer
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.predicate))
             }
 
+            decl.primrec_types match {
+              case List(type_name) =>
+                thy_draft.rdf_triple(
+                  Ontology.binary(item.global_name, Ontology.ULO.inductive_on,
+                    thy_draft.content.get_type(type_name).global_name))
+              case _ =>
+            }
+
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, tp, df)
