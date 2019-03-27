@@ -254,7 +254,7 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */
-  val base = archive.narrationBase
+  val base : URI = archive.narrationBase
 
   /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
   def contentMPath: MPath = Archive.ContentPathToMMTPath(inPath)
@@ -355,21 +355,21 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /// ***************** auxiliary methods for computing paths to output/error files etc.
 
-  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
+  protected def getOutFile(a: Archive, inPath: FilePath): File = (a / outDim / inPath).setExtension(outExt)
 
-  protected def getFolderOutFile(a: Archive, inPath: FilePath) = getOutFile(a, inPath / folderName)
+  protected def getFolderOutFile(a: Archive, inPath: FilePath) : File = getOutFile(a, inPath / folderName)
 
   protected def getErrorFile(a: Archive, inPath: FilePath): File =
     FileBuildDependency(key, a, inPath).getErrorFile(controller) //TODO why is this method not like the others?
 
   //TODO why is this not protected?
-  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+  def getFolderErrorFile(a: Archive, inPath: FilePath): File = a / errors / key / inPath / (folderName + ".err")
 
   @MMT_TODO("needs review")
-  protected def getTestOutFile(a: Archive, inPath: FilePath) =
+  protected def getTestOutFile(a: Archive, inPath: FilePath): File =
     (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
+  protected def getOutPath(a: Archive, outFile: File) : FilePath = outFile.toFilePath
 
   /** auxiliary method for logging results */
   protected def logResult(s: String) {

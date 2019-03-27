@@ -19,7 +19,7 @@ class AllPdf extends LaTeXDirTarget {
     BuildResult.empty
   }
 
-  override def estimateResult(bt: BuildTask) = {
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
@@ -54,56 +54,70 @@ class AllTeX extends LaTeXDirTarget {
     }
   }
 
-  def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
+  def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult =
+  {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
-    if (dirFiles.nonEmpty) {
+
+    if (dirFiles.nonEmpty)
+    {
       createLocalPaths(a, dir)
-      val deps = getDepsMap(getFilesRec(a, in))
-      val ds = Relational.flatTopsort(controller, deps)
-      val ts = ds.collect {
+      val deps : Map[Dependency, Set[Dependency]] = getDepsMap(getFilesRec(a, in))
+      val ds   : List[Dependency] = Relational.flatTopsort(controller, deps)
+
+      val ts: List[File] = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
+
       val files = ts.distinct.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
-      val langs = files.flatMap(f => getLang(File(f))).toSet
+
+      /* Find all languages present (by filename extension) */
+      val langs : Set[String] = files.flatMap(f => getLang(File(f))).toSet
       val nonLangFiles = langFiles(None, files)
-      if (nonLangFiles.nonEmpty) success = createAllFile(a, None, dir, nonLangFiles, force)
+      if (nonLangFiles.nonEmpty) { success = createAllFile(a, None, dir, nonLangFiles, force) }
+
       langs.toList.sorted.foreach { l =>
-        val res = createAllFile(a, Some(l), dir, files, force)
+        val res : Boolean = createAllFile(a, Some(l), dir, files, force)
         success ||= res
       }
     }
-    if (success) BuildResult.empty
-    else BuildEmpty("up-to-date")
+    if (success) BuildResult.empty // New all-file created
+    else BuildEmpty("up-to-date")  // Empty or all-file already up-to-date
   }
 
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
     readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
-  /** return success */
-  private def createAllFile(a: Archive, lang: Option[String], dir: File,
-                            files: List[String], force: Boolean): Boolean = {
-    val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
-    val ls = langFiles(lang, files)
+  /** Creates up-to-date all-File. Returns true if there was no all-file before, or it had to be updated. */
+  private def createAllFile(a: Archive, lang: Option[String], dir: File, files: List[String], force: Boolean): Boolean =
+  {
+    val allFileName = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
+
+    val ls : List[String] = langFiles(lang, files)
     val w = new StringBuilder
     def writeln(s: String): Unit = w.append(s + "\n")
-    ambleText("pre", a, lang).foreach(writeln)
+
+    /* Generate contents for up-to-date all-File */
+    ambleText(preOrPost = "pre", a, lang).foreach(writeln)
     writeln("")
+    /* Handle each file of the given language */
     ls.foreach { f =>
       writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
       writeln("\\input{" + File(f).stripExtension + "} \\newpage")
       writeln("")
     }
-    ambleText("post", a, lang).foreach(writeln)
-    val newContent = w.result
-    val outPath = getOutPath(a, all)
-    if (force || !all.exists() || File.read(all) != newContent) {
-      File.write(all, newContent)
+    ambleText(preOrPost = "post", a, lang).foreach(writeln)
+
+    val newContent : String   = w.result
+    val outPath    : FilePath = getOutPath(a, allFileName)
+
+    if (force || !allFileName.exists() || File.read(allFileName) != newContent) {
+      File.write(allFileName, newContent)
       logSuccess(outPath)
       true
     } else {
-      logResult("up-to-date " + outPath)
+      logResult("up-to-Date " + outPath) // all-File existed and was already up-to-date
       false
     }
   }
@@ -230,10 +244,10 @@ class LaTeXML extends LaTeXBuildTarget {
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
-    case "Info" => Level.Info
+    case "Info"  => Level.Info
     case "Error" => Level.Error
     case "Fatal" => Level.Fatal
-    case _ => Level.Warning
+    case _       => Level.Warning
   }
 
   private def line2Region(sLine: String, inFile: File): SourceRegion = {
@@ -256,11 +270,11 @@ class LaTeXML extends LaTeXBuildTarget {
   }
 
   private object LtxLog {
-    var optLevel: Option[Level.Level] = None
-    var msg: List[String] = Nil
-    var newMsg = true
-    var region = SourceRegion.none
-    var phase = 1
+    var optLevel : Option[Level.Level] = None
+    var msg      : List[String] = Nil
+    var newMsg   : Boolean = true
+    var region   : SourceRegion = SourceRegion.none
+    var phase    : Int = 1
 
     def phaseToString(p: Int): String = "latexml-" + (p match {
       case 1 => "compiler"
@@ -454,21 +468,20 @@ class LaTeXML extends LaTeXBuildTarget {
 }
 
 /** pdf generation */
-class PdfLatex extends LaTeXBuildTarget {
+class PdfLatex extends LaTeXBuildTarget
+{
   val key = "pdflatex"
   override val outExt = "pdf"
   val outDim: ArchiveDimension = Dim("export", "pdflatex", inDim.toString)
   private var pdflatexPath: String = "xelatex"
 
-  override def includeFile(n: String): Boolean =
-    n.endsWith(".tex") && !n.endsWith(localpathsFile)
+  override def includeFile(n: String): Boolean = n.endsWith(".tex") && !n.endsWith(localpathsFile)
 
   override def start(args: List[String]) {
     super.start(args)
     val (_, nonOpts) = splitOptions(remainingStartArguments)
-    val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts
-    else nonOpts
-    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
+    val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts else nonOpts
+    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, name = "PDFLATEX", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
@@ -557,12 +570,13 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 }
 
-class TikzSvg extends PdfLatex {
-  override val key = "tikzsvg"
-  override val outExt = "svg"
-  override val outDim = source
+class TikzSvg extends PdfLatex
+{
+  override val key    : String = "tikzsvg"
+  override val outExt : String = "svg"
+  override val outDim : RedirectableDimension = source
 
-  override def includeDir(n: String): Boolean = n.endsWith("tikz")
+  override def includeDir(n: String) : Boolean = n.endsWith("tikz")
 
   override def reallyBuildFile(bt: BuildTask): BuildResult = {
     val pdfFile = bt.inFile.setExtension("pdf")
