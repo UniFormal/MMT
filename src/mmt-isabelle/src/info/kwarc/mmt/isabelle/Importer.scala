@@ -553,8 +553,9 @@ object Importer
 
             decl.primrec_types match {
               case List(type_name) =>
+                val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
                 thy_draft.rdf_triple(
-                  Ontology.binary(item.global_name, Ontology.ULO.inductive_on,
+                  Ontology.binary(item.global_name, predicate,
                     thy_draft.content.get_type(type_name).global_name))
               case _ =>
             }
