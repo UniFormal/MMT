@@ -1,57 +1,50 @@
 package info.kwarc.mmt.sql.codegen
 
-//import java.io
-
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.sql.{SQLBridge, SchemaLang, Table}
-import java.io.{File, PrintWriter}
 
 object CodeGenerator {
 
-  def writeToFile(p: String, s: String): Unit = {
-    val pw = new PrintWriter(new java.io.File(p))
-    try pw.write(s) finally pw.close()
+  private def isInputTheory(t: Theory, schemaGroup: Option[String]): Boolean = {
+    val schemaLangIsMetaTheory = t.meta.contains(SchemaLang._path)
+    val isInSchemaGroup = schemaGroup.forall(sg => {
+      t.metadata.get(SchemaLang.schemaGroup).headOption.exists(_.value.toString == sg)
+    })
+    schemaLangIsMetaTheory && isInSchemaGroup
   }
 
   def main(args: Array[String]): Unit = {
-    args.foreach(println)
-    val outputDirPath = args.headOption.getOrElse("~/DiscreteZooOutput")
-    val scalaPath = s"$outputDirPath/backend/src/main/scala/xyz/discretezoo/web"
-    val reactPath = s"$outputDirPath/frontend/src"
-    val relDbPackagePath = s"$scalaPath/db"
+    val outputDir = args(0)
+    val archiveId = args(1)
+    val schemaGroup = if (args.length > 2) Some(args(2)) else None
+
+    val dirPaths = ProjectPaths(
+      outputDir,
+      "backend/src/main/scala/xyz/discretezoo/web",
+      "frontend/src",
+      "db"
+    )
+    val jdbcInfo = JDBCInfo("jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
+    val prefix = "MBGEN"
+    val generate = true
 
     val controller = Controller.make(true, true, List())
-    val graphPath = SchemaLang._base ? "Graph"
-    val mxPath = SchemaLang._base ? "Maniplex"
-    val examplePath = SQLBridge.example
-    val maybeTable: Option[Table] = SQLBridge.test(examplePath) match {
-      case t: Table => Some(t)
-      case _ => None
-    }
+    // remove later
+    controller.handleLine(s"build $archiveId mmt-omdoc")
 
-    println(" - - - - - ")
-    maybeTable.foreach(t => {
-      val name = {t.name}
-      val tablePackagePath = s"$relDbPackagePath/Zoo$name"
-      val tablePackageDir = new java.io.File(tablePackagePath)
-      if (!tablePackageDir.exists()) tablePackageDir.mkdir()
+    val tableCodes = controller.backend.getArchive(archiveId).get.allContent.map(controller.getO).collect({
+      case Some(theory : Theory) if isInputTheory(theory, schemaGroup) => {
+        SQLBridge.test2(theory.path, controller) match {
+          case table: Table => Some(TableCode(prefix, dirPaths.dbPackagePath, table))
+          case _ => None
+        }
+      }
+    }).collect({ case Some(t: TableCode) => t })
 
-      val tableCode = TableCode(t)
-      val dbCode = DatabaseCode("TEST", Seq(tableCode), "jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
+    val dbCode = DatabaseCode(dirPaths, prefix, tableCodes, jdbcInfo)
+    dbCode.writeAll(generate)
 
-      writeToFile(s"$relDbPackagePath/ZooDb.scala", dbCode.fileDbCode)
-      writeToFile(s"$scalaPath/JsonSupport.scala", dbCode.jsonSupportCode)
-      writeToFile(s"$tablePackagePath/$name.scala", tableCode.codeCaseClass)
-      writeToFile(s"$tablePackagePath/${name}PlainQuery.scala", tableCode.codePlainQueryObject)
-      writeToFile(s"$tablePackagePath/${name}Table.scala", tableCode.codeTableClass)
-
-      writeToFile(s"$reactPath/objectProperties.json", dbCode.objectPropertiesJSON)
-
-    })
-
-
-//    maybeTable.foreach(t => println(TableCode(t).jsonSupportMap))
   }
 
 }

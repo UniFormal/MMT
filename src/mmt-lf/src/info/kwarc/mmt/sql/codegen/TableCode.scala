@@ -2,105 +2,71 @@ package info.kwarc.mmt.sql.codegen
 
 import info.kwarc.mmt.sql.{Column, Table}
 
-case class TableCode(table: Table) {
+case class TableCode(prefix: String, dbPackagePath: String, table: Table) {
 
   def tableName: String = table.name
-  def tableObject: String = s"tb$tableName"
-  // class names
-  def plainQueryObject = s"${tableName}PlainQuery"
-  def tableClass = s"${tableName}Table"
-  def caseClass: String = table.name
-  // database
-  private def dbTableName = s"ZOO_${tableName.toUpperCase}" // table name in the database
+  def tablePackageName : String = prefix + tableName
 
-  def packageString = s"xyz.discretezoo.web.db.Zoo$tableName" // package for the table specific files
+  private def packageString = s"xyz.discretezoo.web.db.$tablePackageName" // package for the table specific files
   private def columnCodeList: Seq[ColumnCode] = table.columns.map(ColumnCode)
-  private def primaryKeyColumn: Column = table.columns.filter(_.isPrimaryKey).head
+  private def tableObject: String = s"tb$tableName"
 
-//  def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
+  private val baseRepl: Map[String, String] = Map(
+    "//package" -> s"package $packageString",
+    "%caseClass%" -> caseClass,
+    "%dbTableName%" -> s"${prefix}_${tableName.toUpperCase}" // table name in the database
+  )
 
-  def codeTableClass: String = {
-    val accessorMethods = columnCodeList.map(_.accessorMethod).mkString("\n")
-    val caseClassMapParameters = columnCodeList.map(_.nameCamelCase).mkString(" ::\n")
-    val selectMap = columnCodeList.map(_.selectMapItem).mkString(",\n")
+  // CaseClass
+  private def caseClass: String = table.name
+  def caseClassRepl: Map[String, String] = baseRepl ++ Map(
+    "//cols" -> columnCodeList.map(_.caseClassField).mkString(",\n"),
+    "//selectMap" -> columnCodeList.map(_.selectMapCaseClass).mkString(",\n")
+  )
 
-    s"""package $packageString
-       |import java.util.UUID
-       |import slick.collection.heterogeneous.HNil
-       |import slick.lifted.{ProvenShape, Rep}
-       |import xyz.discretezoo.web.DynamicSupport.ColumnSelector
-       |import xyz.discretezoo.web.ZooPostgresProfile.api._
-       |
-       |final class $tableClass(tag: Tag) extends Table[$caseClass](tag, "$dbTableName") with ColumnSelector {
-       |
-       |$accessorMethods
-       |
-       |def * : ProvenShape[$caseClass] = (
-       |$caseClassMapParameters ::
-       |HNil
-       |).mapTo[$caseClass]
-       |
-       |val select: Map[String, Rep[_]] = Map(
-       |$selectMap
-       |)
-       |
-       |val inCollection: Map[String, Rep[Boolean]] = Map(
-       |"${primaryKeyColumn.name}" -> true
-       |)
-       |
-       |}""".stripMargin
-  }
+  // PlainQueryObject
+  private def plainQueryObject: String = s"${tableName}PlainQuery"
+  def plainQueryRepl: Map[String, String] = baseRepl ++ Map(
+    "%plainQueryObject%" -> plainQueryObject,
+    "%tableName%" -> tableName,
+    "%getResultParameters%" -> table.columns.map(c => ColumnCode(c).getResultItem).mkString(", ")
+  )
 
-  def codeCaseClass: String = {
-    val cols = columnCodeList.map(_.caseClassField).mkString(",\n")
-    val selectMap = columnCodeList.map(_.selectMapItem).mkString(",\n")
+  // TableClass
+  private def tableClass = s"${tableName}Table"
+  def tableClassRepl: Map[String, String] = baseRepl ++ Map(
+    "//accessorMethods" -> columnCodeList.map(_.accessorMethod).mkString("\n"),
+    "//caseClassMapParameters" -> columnCodeList.map(_.nameCamelCase).mkString(" ::\n"),
+    "//selectMap" -> columnCodeList.map(_.selectMapTableClass).mkString(",\n"),
+    "%tableClass%" -> tableClass
+  )
 
-    s"""package $packageString
-       |import java.util.UUID
-       |import xyz.discretezoo.web.ZooObject
-       |
-       |case class $caseClass(
-       |$cols) extends ZooObject {
-       |
-       |def select: Map[String, _] = Map(
-       |$selectMap
-       |)
-       |
-       |}""".stripMargin
-  }
+  // Create
+  def zooCreateImport: String = s"import $packageString.$tableClass"
+  def zooSchemaCreate: String = s"$tableObject.schema.create"
 
-  def codePlainQueryObject: String = {
-    val getResultParameters = table.columns.map(c => {
-      val special = Seq("UUID", "List[Int]", "List[List[Int]]")
-      if (special.contains(c.dbtype.toString)) s"r.nextObject.asInstanceOf[${c.dbtype.toString}]"
-      else "r.<<"
-    }).mkString(", ")
+  // ZooDb
+  def zooDbImport: String = s"import $packageString.{$plainQueryObject, $tableClass}"
+  def zooDbObject: String = s"object $tableObject extends TableQuery(new $tableClass(_))"
+  def dbCountQueryMatches: String =
+    s"""      case ("$tableObject", true) => $plainQueryObject.count(qp)
+       |      case ("$tableObject", false) => tb$tableName.dynamicQueryCount(qp).length.result""".stripMargin
 
-    s"""package $packageString
-       |import java.util.UUID
-       |import slick.jdbc.GetResult
-       |import xyz.discretezoo.web.PlainSQLSupport
-       |
-       |object $plainQueryObject extends PlainSQLSupport[$caseClass] {
-       |
-       |override val tableName: String = "$dbTableName"
-       |override implicit val getResult: GetResult[$caseClass] = GetResult(r => $caseClass($getResultParameters))
-       |
-       |val inCollection: Map[String, String] = Map(
-       |"Ex" -> "ID"
-       |)
-       |
-       |}""".stripMargin
-  }
+  def dbGetQueryMatches: String =
+    s"""      case ("$tableObject", true) => $plainQueryObject.get(rp)
+       |      case ("$tableObject", false) => tb$tableName.dynamicQueryResults(rp).result""".stripMargin
 
+//  TODO def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
+
+  // JsonSupport
+  def jsonSupportImport: String = s"import $packageString.$caseClass"
   def jsonSupportMap: String = {
-    val columns = columnCodeList.map(_.jsonWriterMapItem).mkString(",\n")
+    val columns = columnCodeList.map(c => s"        ${c.jsonWriterMapItem}").mkString(",\n")
     s"""case o: $caseClass => JsObject(
-       |List(
+       |        List(
        |$columns
-       |).flatten: _*
-       |)
-     """.stripMargin
+       |        ).flatten: _*
+       |      )""".stripMargin
   }
 
   // from here on react stuff
@@ -111,6 +77,21 @@ case class TableCode(table: Table) {
        |$columns
        |}
      """.stripMargin
+  }
+
+  def collectionsData: String = {
+    s""""$tableObject": {
+       |  "$tableName": {
+       |    "id": "$tableName",
+       |    "name": "${table.datasetName}"
+       |  }
+       |}
+     """.stripMargin
+  }
+
+  def defaultColumns: String = {
+    val columns = table.columns.filter(_.isDisplayedByDefault).map(c => s""""${c.name}"""").mkString(", ")
+    s"""      "$tableObject": [$columns]""".stripMargin
   }
 
 }

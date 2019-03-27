@@ -1,6 +1,7 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.refactoring.linkinversion
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.symbols.Declaration
 

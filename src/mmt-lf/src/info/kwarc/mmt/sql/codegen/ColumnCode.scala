@@ -1,32 +1,50 @@
 package info.kwarc.mmt.sql.codegen
 
+import info.kwarc.mmt.api.objects.{OMA, OMS}
 import info.kwarc.mmt.sql.Column
 
 case class ColumnCode(column: Column) {
 
-  def nameQuotes = s""""${column.name}""""
-  def nameDb: String = column.name.toUpperCase
-  def nameCamelCase: String = "_([a-z\\d])".r.replaceAllIn(column.name, _.group(1).toUpperCase())
+  private def nameQuotes = s""""${column.name}""""
+  private def nameDb: String = column.name.toUpperCase
 
-  def typeString: String = if (column.isNullable) s"Option[${column.dbtype.toString}]" else column.dbtype.toString
-  def caseClassField: String = s"$nameCamelCase: $typeString"
-
-  def jsonWriterMapItem: String = s"""Some($nameQuotes -> o.$nameCamelCase.toJson)"""
-
-  def accessorMethod: String = {
-    val maybePrimary = if (column.isPrimaryKey) ", O.PrimaryKey" else ""
-    s"""def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb"$maybePrimary)"""
+  private def typeString: String = {
+    if (column.dbtype.toString == "List[List[Int]]" || column.dbtype.toString == "List[Int]") s"List[Int]"
+    else s"Option[${column.dbtype.toString}]"
   }
 
-  def selectMapItem: String = s""""${column.name}" -> this.$nameCamelCase"""
+  private def codecName: String = column.codec match {
+    case OMS(x) => x.name.toString
+    case OMA(_, codecArgs) => codecArgs.head.toMPath.name.last.toString
+  }
 
-  def jsonObjectProperties: String = { // TODO display name
+  // JsonSupport
+  def jsonWriterMapItem: String = s"""Some($nameQuotes -> o.$nameCamelCase.toJson)"""
+
+  // CaseClass
+  def caseClassField: String = s"  $nameCamelCase: $typeString"
+  def selectMapCaseClass: String = s"""    "${column.name}" -> $nameCamelCase"""
+
+  // PlainQueryObject
+  def getResultItem: String = typeString match {
+    case "UUID" => "r.nextObject.asInstanceOf[UUID]"
+    case "List[Int]" => "r.<<[Seq[Int]].toList"
+    case _ => "r.<<"
+  }
+
+  // TableClass
+  def nameCamelCase: String = "_([a-z\\d])".r.replaceAllIn(column.name, _.group(1).toUpperCase())
+  def accessorMethod: String = s"""def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb")"""
+  def selectMapTableClass: String = s"""    "${column.name}" -> this.$nameCamelCase"""
+
+  // Frontend
+  def jsonObjectProperties: String = {
     val colType = column.dbtype.toString match {
       case "Int" => "numeric"
       case "Boolean" => "bool"
       case _ => "opaque"
     }
-    s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$colType"}"""
+    s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$codecName"}"""
   }
 
 }

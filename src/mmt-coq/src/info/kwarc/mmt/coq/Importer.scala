@@ -288,6 +288,7 @@ class Importer extends archives.Importer {
       case <hr/> => Nil
       case <b>Require</b> => Nil // TODO include?
       case <div/> | <div> </div> => Nil
+      case <img/> => Nil
       case <span>{ch @ _*}</span> => ch.flatMap(doStatement(_,namespaces,sections)).toList
       case a @ <a>{lnk}</a> if (a\"@href").mkString.startsWith("theory:/") =>
         val uri = URI((a\"@href").mkString)
@@ -427,7 +428,10 @@ class Importer extends archives.Importer {
         // (path / (name + ".constraints.xml"),e => e.asInstanceOf[coqxml.Constraints]),
         (path / (name + ".expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
         (path / (name + ".impl.expr.xml"),e => coqxml.ExprXML(e.asInstanceOf[coqxml.theoryexpr])),
-        (path / (name + ".sub.xml"),e => coqxml.SupXML(e.asInstanceOf[coqxml.supertypes]))
+        (path / (name + ".sub.xml"),e => coqxml.SupXML(e match {
+          case s@coqxml.supertypes(_) => s
+          case s:CoqEntry => coqxml.supertypes(List(s))
+        }))
       )
       files.flatMap {case (f,e) =>
         if (f.exists()) {

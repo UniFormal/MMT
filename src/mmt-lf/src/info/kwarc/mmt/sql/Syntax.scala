@@ -7,10 +7,12 @@ import scala.language.existentials
 
 /**
   *  @param path the MMT name of the table
+  *  @param datasetName table description metadatum
+  *  @param schemaGroup metadatum
   *  @param columns sequence of all columns
   *  @param collections sequence of all collections
   */
-case class Table(path: MPath, columns: Seq[Column]) {
+case class Table(path: MPath, datasetName: Option[String], schemaGroup: Option[String], columns: Seq[Column]) {
   /** db name of the table, underscore style */
   def name = path.name.toString
   /** retrieve all columns that are collections */
@@ -22,16 +24,16 @@ case class Table(path: MPath, columns: Seq[Column]) {
   *  @param mathType the mathematical type of the column
   *  @param codec the codec expression for en/de-coding functions between them
   *  @param dbtype database type
-  *  @param isNullable can be null in the database
-  *  @param isPrimaryKey key field (annotated in schema)
+  *  @param foreignKey
   *  @param opaque no meaningful operations on column except for (in)equality  (annotated in schema)
   *  @param isDisplayedByDefault (annotated in schema) whether the column gets displayed in the default view of the result set
   *  later we could add: displayName, description
   *  @param collection if the column is an index column of a collection, this parameter holds the collection metadata
+  *  The primary key is generated separately.
+  *  The column is anullable if it is not the primaryKey
   */
 case class Column(path: GlobalName, mathType: Term, codec: Term, dbtype: SQLSyntax.Type[_],
-    isNullable: Boolean, isPrimaryKey: Boolean, opaque: Boolean, isDisplayedByDefault: Boolean,
-    collection: Option[CollectionInfo]) {
+                  foreignKey: Option[MPath], opaque: Boolean, isDisplayedByDefault: Boolean, collection: Option[CollectionInfo]) {
   /** the db name of the column */
   def name = path.name.toString
 }

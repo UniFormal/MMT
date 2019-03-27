@@ -540,9 +540,24 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item, segment.meta_data)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`object`))
-            if (segment.is_axiomatization)
+            if (segment.is_axiomatization) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+            }
+
+            if (decl.propositional) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.predicate))
+            }
+            else {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.function))
+            }
+
+            decl.primrec_types match {
+              case List(type_name) =>
+                thy_draft.rdf_triple(
+                  Ontology.binary(item.global_name, Ontology.ULO.inductive_on,
+                    thy_draft.content.get_type(type_name).global_name))
+              case _ =>
+            }
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
@@ -806,6 +821,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       dirs = dirs ::: select_dirs, strict = true)
 
 
+    /* Isabelle + AFP library info */
+
+    private val isabelle_sessions: Set[String] =
+      isabelle.Sessions.load_structure(options, select_dirs = List(isabelle.Path.explode("$ISABELLE_HOME"))).
+        selection(isabelle.Sessions.Selection.empty).imports_graph.keys.toSet
+
+    private val optional_afp: Option[isabelle.AFP] =
+    {
+      if (isabelle.Isabelle_System.getenv("AFP_BASE").isEmpty) None
+      else Some(isabelle.AFP.init(options))
+    }
+
+
     /* resources */
 
     val dump_options: isabelle.Options =
@@ -1066,6 +1094,22 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       isabelle.RDF.meta_data(rendering.meta_data(element_range))
     }
 
+    private def session_meta_data(name: String): isabelle.Properties.T =
+    {
+      if (isabelle_sessions(name)) List(isabelle.RDF.Property.license -> "BSD")
+      else {
+        (for { afp <- optional_afp; entry <- afp.sessions_map.get(name) }
+          yield entry.rdf_meta_data) getOrElse Nil
+      }
+    }
+
+    private val rdf_author_info: Set[String] =
+      Set(
+        isabelle.RDF.Property.creator,
+        isabelle.RDF.Property.contributor,
+        isabelle.RDF.Property.license)
+
+
     def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
       val snapshot = rendering.snapshot
@@ -1085,7 +1129,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       val node_elements =
         isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList)
 
-      val node_meta_data =
+      val theory_session_meta_data =
+        session_meta_data(theory_qualifier(node_name)).filter(p => rdf_author_info(p._1))
+
+      val theory_meta_data =
         node_elements.find(element => element.head.span.name == isabelle.Thy_Header.THEORY) match {
           case Some(element) => element_meta_data(rendering, element)
           case None => Nil
@@ -1185,7 +1232,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       Theory_Export(node_name,
         node_source = Source(snapshot.node.source),
         node_timing = node_timing,
-        node_meta_data = node_meta_data,
+        node_meta_data = isabelle.Library.distinct(theory_session_meta_data ::: theory_meta_data),
         parents = theory.parents,
         segments = segments,
         typedefs = theory.typedefs)
