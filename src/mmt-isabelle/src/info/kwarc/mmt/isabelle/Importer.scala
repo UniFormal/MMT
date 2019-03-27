@@ -1103,12 +1103,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
     }
 
-    private val rdf_author_info: Set[String] =
-      Set(
-        isabelle.RDF.Property.creator,
-        isabelle.RDF.Property.contributor,
-        isabelle.RDF.Property.license)
-
+    private def rdf_author_info(entry: isabelle.Properties.Entry): Option[isabelle.Properties.Entry] =
+    {
+      val (a, b) = entry
+      if (a == isabelle.RDF.Property.creator || a == isabelle.RDF.Property.contributor) {
+        Some(a -> isabelle.AFP.trim_mail(b))
+      }
+      else if (a == isabelle.RDF.Property.license) Some(entry)
+      else None
+    }
 
     def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
@@ -1130,7 +1133,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList)
 
       val theory_session_meta_data =
-        session_meta_data(theory_qualifier(node_name)).filter(p => rdf_author_info(p._1))
+        session_meta_data(theory_qualifier(node_name)).flatMap(rdf_author_info)
 
       val theory_meta_data =
         node_elements.find(element => element.head.span.name == isabelle.Thy_Header.THEORY) match {
