@@ -551,15 +551,6 @@ object Importer
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.function))
             }
 
-            decl.primrec_types match {
-              case List(type_name) =>
-                val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
-                thy_draft.rdf_triple(
-                  Ontology.binary(item.global_name, predicate,
-                    thy_draft.content.get_type(type_name).global_name))
-              case _ =>
-            }
-
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, tp, df)
@@ -684,7 +675,22 @@ object Importer
         }
       }
 
-      // RDF document
+      for (segment <- thy_export.segments) {
+        // information about recursion (from Spec_Rules): after all types have been exported
+        for (decl <- segment.consts) {
+          val item = thy_draft.content.get_const(decl.entity.name)
+          decl.primrec_types match {
+            case List(type_name) =>
+              val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
+              thy_draft.rdf_triple(
+                Ontology.binary(item.global_name, predicate,
+                  thy_draft.content.get_type(type_name).global_name))
+            case _ =>
+          }
+        }
+      }
+
+        // RDF document
       {
         val path = thy_archive.archive_rdf_path.ext("xz")
         isabelle.Isabelle_System.mkdirs(path.dir)
