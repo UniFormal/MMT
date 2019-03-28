@@ -44,11 +44,7 @@ trait GroupBuilder { this: Builder =>
     val ref = getGroupRef(entry.group).getOrElse(return buildFailure(entry.group, "getGroupRef(group.id)"))
 
     // get the description file
-    val file = entry.root / entry.properties.getOrElse("description", "desc.html")
-    val description = if(entry.root <= file && file.exists()) {
-      File.read(file)
-    } else { "No description provided" }
-
+    val description = entry.readLongDescription.getOrElse("No description provided")
     val responsible = entry.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
     val archives = mathHub.entries_.collect({case archive: LMHHubArchiveEntry if archive.group == ref.id => archive.id })
