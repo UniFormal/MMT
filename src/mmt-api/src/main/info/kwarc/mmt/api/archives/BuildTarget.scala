@@ -7,6 +7,8 @@ import Level.Level
 import frontend._
 import utils._
 
+import java.util.Date
+
 case class TestModifiers(compareWithTest: Boolean = false, addTest: Boolean = false, updateTest: Boolean = false) {
   def makeTests: Boolean = compareWithTest || addTest || updateTest
 }
@@ -18,12 +20,12 @@ sealed abstract class BuildTargetModifier {
 
 /** default modifier: build the target */
 case class Build(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim
+  def toString(dim: String) : String = dim
 }
 
 /** don't run, just delete all output files */
 case object Clean extends BuildTargetModifier {
-  def toString(dim: String) = "-" + dim
+  def toString(dim: String) : String = "-" + dim
 }
 
 /** incremental build: skip this build if it nothing has changed */
@@ -34,7 +36,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
 
-  def toString(dim: String) = dim + key
+  def toString(dim: String) : String = dim + key
 
   // use dependency level for dependencies
   def forDependencies: Update = dependencyLevel match {
@@ -50,7 +52,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
 @MMT_TODO("needs review")
 //TODO this is only needed if called on the shell; check if any user actually calls it (presumably at most stex building, possibly in mathhub)
 case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim + "&"
+  def toString(dim: String) : String = dim + "&"
 }
 
 /** forces building independent of status */
@@ -191,7 +193,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
 
-  override def toString = super.toString + s" with key $key"
+  override def toString : String = super.toString + " with key " + key
 
   def isApplicable(format: String): Boolean = format == key
 
@@ -268,9 +270,9 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
   def narrationDPath: DPath = DPath(base / inPath.segments)
 
-  def isDir = children.isDefined
+  def isDir: Boolean = children.isDefined
 
-  def isEmptyDir = children.isDefined && children.get.isEmpty
+  def isEmptyDir: Boolean = children.isDefined && children.get.isEmpty
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.toFilePath.dirPath.name
@@ -460,6 +462,31 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val outPath = bt.outPath
     val Update(errLev, dryRun, testMod, _) = up
     val rn = rebuildNeeded(deps, bt, errLev)
+
+    /*
+    def exshow(s : File): String = if (s.exists()) {
+      val d = new Date(s.lastModified())
+      "E (" + d.toString + ")"
+    } else "X"
+
+    if (outPath.toString.contains("open-content.sms")) {
+
+      var info : String = ""
+
+      val i = bt.inFile
+      val e = bt.asDependency.getErrorFile(controller)
+      val foo = Modification(i,e)
+
+      info += "MARKER"
+      if (errLev <= Level.Force) { info += "[forced]" ; assert(rn) } else { info += "[not forced]" }
+      info += "(rn=" + rn + ") StrictM: " + foo.toString
+      info += " (" + exshow(i) + "," + exshow(e) + ") // "
+      info += bt.inFile.toFilePath.toString
+
+      println(info)
+    }
+    */
+
     if (!rn) {
       logResult("up-to-date " + outPath)
     } else if (dryRun) {
@@ -481,13 +508,13 @@ abstract class TraversingBuildTarget extends BuildTarget {
   private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
     val errorFile = bt.asDependency.getErrorFile(controller)
     val errs = hadErrors(errorFile, level)
-    val mod = modified(bt.inFile, errorFile)
+    val mod = strictModified(bt.inFile, errorFile)
     level <= Level.Force || mod || errs ||
       deps.exists {
         case bd: BuildDependency =>
           val errFile = bd.getErrorFile(controller)
-          modified(errFile, errorFile)
-        case PhysicalDependency(fFile) => modified(fFile, errorFile)
+          strictModified(errFile, errorFile)
+        case PhysicalDependency(fFile) => strictModified(fFile, errorFile)
         case _ => false // for now
       } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
       modified(bf.asDependency.getErrorFile(controller), errorFile)
@@ -609,6 +636,12 @@ abstract class TraversingBuildTarget extends BuildTarget {
   private def modified(inFile: File, errorFile: File): Boolean = {
     val mod = Modification(inFile, errorFile)
     mod == Modified || mod == Added
+  }
+
+  /** Stricter version of modified that also return true on "Deleted" */
+  private def strictModified(inFile : File, errorFile : File) : Boolean = {
+    val mod = Modification(inFile, errorFile)
+    mod != Unmodified
   }
 
   /** @return status of input file, obtained by comparing to error file */
