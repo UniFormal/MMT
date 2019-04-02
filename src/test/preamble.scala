@@ -118,7 +118,7 @@ object MagicTest {
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael
       //File("C:/mmt2/content/Mathhub"), //Max
-      File("C:") / "/mmt2" / "/content" / "/MathHub",
+      File("C:") / "/mmt2" / "/content" / "/MathHub", // Max
       File("C:") / "other" / "oaff",
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
@@ -134,7 +134,10 @@ object MagicTest {
   lazy val logfile: Option[File] = {
     if((home / "work").exists){
       Some(home / "work" / "mmtlog.html") // Dennis
-    } else {
+    } // else if ((File("C:") / "/mmt2" / "/My stuff").exists) {
+      // Some(File("C:") / "/mmt2" / "/My stuff"/"mmtlog.html") // Max
+    //}
+     else {
       None
     }
   }

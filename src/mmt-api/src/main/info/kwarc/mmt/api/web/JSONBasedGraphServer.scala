@@ -12,6 +12,7 @@ import info.kwarc.mmt.api.presentation.{HTMLPresenter, MMTDocExporter, MathMLPre
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
+
 import scala.util.Try
 
 /**
@@ -35,13 +36,14 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
 
 
   def apply(request: ServerRequest): ServerResponse = {
+    println(request)
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
-    //log("Semantic: " + request.parsedQuery("semantic"))
+    log("Semantic: " + request.parsedQuery("semantic"))
     if (request.pathForExtension.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
-      log("Returing menu for " + id)
+      log("Returning menu for " + id)
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.pathForExtension.headOption == Some("json")) {
@@ -50,10 +52,18 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
         throw CatchError(s"exporter $key not available")
       }
-      log("Computing " + key + " for " + uri + "... ")
-      val ret = ServerResponse.fromJSON(exp.buildGraph(uri))
-      log("Done")
-      ret
+      val sem = request.parsedQuery("semantic").getOrElse(null)
+      if (sem == null) {
+        log("Computing " + key + " for " + uri + "... ")
+        val ret = ServerResponse.fromJSON(exp.buildGraph(uri))
+        log("Done")
+        ret
+      } else {log("Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
+        val comp = request.parsedQuery("computer").getOrElse(return ServerResponse.errorResponse(GetError("No computer specified"), "json"))
+        val ret = ServerResponse.fromJSON(exp.computeSem(exp.buildGraph(uri), sem, comp))
+        log("Done")
+        ret }
+
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
@@ -147,16 +157,16 @@ class JGraphSideBar extends Extension {
   }
 }
 
-abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
+abstract class JGraphExporter(val key : String, val semantic : String = "none", val computer : String = "best") extends FormatBasedExtension {
   def isApplicable (format: String): Boolean = format == key
   def buildGraph(s : String) : JSON
+  def computeSem(f: JSON, sem: String, comp: String) : JSON
 }
 
-abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
+abstract class SimpleJGraphExporter(key : String, semantic : String = "none", computer : String = "best") extends JGraphExporter(key,semantic) {
   override def logPrefix: String = key
   val builder : JGraphBuilder
   val selector : JGraphSelector
-
   def buildGraph(s : String) : JSON = {
     val (ths,vs) = selector.select(s)(controller)
     log("building...")
@@ -165,6 +175,11 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
     res
   }
 
+  def computeSem(f: JSON, sem: String, comp: String = "best"): JSON = {
+    val semcomp = new SemanticComputer(f, sem, comp)
+    val ret = semcomp.TgfToJson(semcomp.CallComputer(semcomp.JsonToTgf(f), sem, comp))
+    ret
+  }
 }
 
 
@@ -521,4 +536,10 @@ object GraphBuilder {
       (ths, views ::: es)
     }
   }
+}
+
+class SemanticComputer (val f: JSON, val sem: String, val computer: String = "best") {
+  def JsonToTgf (f: JSON) : String ="test"
+  def TgfToJson (tgf: String) : JSON = null
+  def CallComputer (tgf: String, semantic: String, computer: String) : String ="test"
 }
