@@ -59,7 +59,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
         log("Done")
         ret
       } else {log("Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
-        val comp = request.parsedQuery("computer").getOrElse(return ServerResponse.errorResponse(GetError("No computer specified"), "json"))
+        val comp = request.parsedQuery("computer").getOrElse(return ServerResponse.errorResponse(GetError("No solver specified"), "json"))
         val ret = ServerResponse.fromJSON(exp.computeSem(exp.buildGraph(uri), sem, comp))
         log("Done")
         ret }
