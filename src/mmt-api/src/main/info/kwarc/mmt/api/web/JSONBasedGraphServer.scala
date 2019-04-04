@@ -18,12 +18,12 @@ import scala.util.Try
 /**
   * Created by jazzpirate on 07.06.17.
   */
-class JSONBasedGraphServer extends ServerExtension("jgraph") {
-  override val logPrefix = "jgraph"
+
+class DirectGraphBuilder extends Extension{
+
   private case class CatchError(s : String) extends Throwable
 
   override def start(args: List[String]) {
-    controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new JDocgraph)
     controller.extman.addExtension(new JThgraph)
     controller.extman.addExtension(new JPgraph)
@@ -32,10 +32,47 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     super.start(args)
   }
 
+
+  def apply(query: String): JSON = {
+
+    val uri = WebQuery(query)("uri").getOrElse(return JSONString("Not a URI"))
+    val key = WebQuery(query)("key").getOrElse("pgraph")
+    val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
+      throw CatchError(s"exporter $key not available")
+    }
+    val sem = WebQuery(uri)("semantic").getOrElse("none")
+    if (sem == "none") {
+      log("Computing " + key + " for " + uri + "... ")
+      val ret = exp.buildGraph(uri)
+      log("Done")
+      ret
+    } else {log("Got here and Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
+      val comp = WebQuery(query)("computer").getOrElse(return JSONString("No solver specified"))
+      val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
+      log("Done")
+      ret }
+}}
+
+
+class JSONBasedGraphServer extends ServerExtension("jgraph") {
+  override val logPrefix = "jgraph"
+  private case class CatchError(s : String) extends Throwable
+
+  override def start(args: List[String]) {
+    controller.extman.addExtension(new JGraphSideBar)
+    controller.extman.addExtension(new DirectGraphBuilder)
+    /** controller.extman.addExtension(new JDocgraph)
+    controller.extman.addExtension(new JThgraph)
+    controller.extman.addExtension(new JPgraph)
+    controller.extman.addExtension(new JArchiveGraph)
+    controller.extman.addExtension(new JMPDGraph)
+    super.start(args) **/
+  }
+
   lazy val sidebar = controller.extman.get(classOf[JGraphSideBar]).head
+  lazy val buil = controller.extman.get(classOf[DirectGraphBuilder]).head
 
-
-  def apply(request: ServerRequest): ServerResponse = {
+  /** def apply(request: ServerRequest): ServerResponse = {
     println(request)
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
@@ -52,18 +89,38 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
         throw CatchError(s"exporter $key not available")
       }
-      val sem = request.parsedQuery("semantic").getOrElse(null)
-      if (sem == null) {
+      val sem = request.parsedQuery("semantic").getOrElse("none")
+      if (sem == "none") {
         log("Computing " + key + " for " + uri + "... ")
         val ret = ServerResponse.fromJSON(exp.buildGraph(uri))
         log("Done")
         ret
-      } else {log("Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
+      } else {log("Got here and Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
         val comp = request.parsedQuery("computer").getOrElse(return ServerResponse.errorResponse(GetError("No solver specified"), "json"))
         val ret = ServerResponse.fromJSON(exp.computeSem(exp.buildGraph(uri), sem, comp))
         log("Done")
         ret }
 
+    } else ServerResponse.errorResponse("Invalid path", "json")
+  } **/
+
+  def apply(request:ServerRequest): ServerResponse = {
+    log("Paths: " + request.pathForExtension)
+    log("Query: " + request.query)
+    log("Path: " + request.parsedQuery("uri"))
+    log("Semantic: " + request.parsedQuery("semantic"))
+    if (request.pathForExtension.headOption == Some("menu")) {
+      val id = request.parsedQuery("id").getOrElse("top")
+      log("Returning menu for " + id)
+      if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
+      else ServerResponse.fromJSON(sidebar.getJSON(id))
+    } else if (request.pathForExtension.headOption == Some("json")) {
+      val graph = buil(request.query)
+      if (graph == JSONString("Not a URI")) {return ServerResponse.errorResponse(GetError("Not a URI"), "json")}
+      else if (graph == JSONString("No solver specified")){return ServerResponse.errorResponse(GetError("No solver specified"), "json")}
+      else {
+      val ret = ServerResponse.fromJSON(graph)
+      ret}
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
