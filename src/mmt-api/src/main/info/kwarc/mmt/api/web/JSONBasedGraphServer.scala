@@ -33,21 +33,18 @@ class DirectGraphBuilder extends Extension{
   }
 
 
-  def apply(query: String): JSON = {
-
-    val uri = WebQuery(query)("uri").getOrElse(return JSONString("Not a URI"))
-    val key = WebQuery(query)("key").getOrElse("pgraph")
+  def apply(uri: String, key: String, sem: String, comp: String): JSON = {
+    /* val uri = WebQuery(query)("uri").getOrElse(return JSONString("Not a URI"))
+    val key = WebQuery(query)("key").getOrElse("pgraph") */
     val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
       throw CatchError(s"exporter $key not available")
     }
-    val sem = WebQuery(uri)("semantic").getOrElse("none")
     if (sem == "none") {
       log("Computing " + key + " for " + uri + "... ")
       val ret = exp.buildGraph(uri)
       log("Done")
       ret
-    } else {log("Got here and Computing " + key + " for " + uri + "with" + sem + "semantic" + "... ")
-      val comp = WebQuery(query)("computer").getOrElse(return JSONString("No solver specified"))
+    } else {log("Got here and computing " + key + " for " + uri + "with" + sem + "semantic" + "using" + comp + "...")
       val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
       log("Done")
       ret }
@@ -115,12 +112,13 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.pathForExtension.headOption == Some("json")) {
-      val graph = buil(request.query)
-      if (graph == JSONString("Not a URI")) {return ServerResponse.errorResponse(GetError("Not a URI"), "json")}
-      else if (graph == JSONString("No solver specified")){return ServerResponse.errorResponse(GetError("No solver specified"), "json")}
-      else {
+      val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
+      val key = request.parsedQuery("key").getOrElse("pgraph")
+      val sem = request.parsedQuery("semantic").getOrElse("none")
+      val comp = request.parsedQuery("comp").getOrElse("default solver")
+      val graph = buil(uri, key , sem , comp)
       val ret = ServerResponse.fromJSON(graph)
-      ret}
+      ret
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
