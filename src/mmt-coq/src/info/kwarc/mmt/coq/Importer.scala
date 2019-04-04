@@ -349,6 +349,8 @@ class Importer extends archives.Importer {
       case <style>{_*}</style> =>
         // TODO something
         Nil
+      case <tt>{_*}</tt> =>
+        Nil
       case _ : scala.xml.Comment => Nil
       case sec @ <SECTION>{ch @ _*}</SECTION> =>
         val uri = URI((sec\"@uri").mkString)
