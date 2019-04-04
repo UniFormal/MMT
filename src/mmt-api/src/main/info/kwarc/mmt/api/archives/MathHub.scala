@@ -141,7 +141,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
   }
 
   /** find all the archives known to the controller */
-  def entries_ : List[MathHubEntry] = {
+  def installedEntries : List[MathHubEntry] = {
     val folders = new ListBuffer[File]
 
     debug("scanning for archives")

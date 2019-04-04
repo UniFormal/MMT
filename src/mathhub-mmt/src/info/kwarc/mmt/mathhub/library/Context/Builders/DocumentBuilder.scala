@@ -23,7 +23,7 @@ trait DocumentBuilder { this: Builder =>
 
   private def makeDocumentRef(path: DPath): Option[IDocumentRef] = {
     // if we are the narrationBase of an archive, that is our parent
-    val parent = mathHub.entries_.find({
+    val parent = mathHub.installedEntries.find({
       case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == path.toPath
       case _ => false
     }) match {

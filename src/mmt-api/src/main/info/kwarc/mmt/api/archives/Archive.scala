@@ -138,13 +138,13 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   }
 
   /** Returns (#Theories,#Constants)**/
-  def stats(implicit controller: Controller) = {
+  def stats(implicit controller: Controller): SimpleStatistics = {
     // val arch = controller.backend.getArchive(a).get
     val ths = allContent.flatMap{mp =>
       Try(controller.get(mp).asInstanceOf[Theory]).toOption
     }
     val const = ths.flatMap(_.getConstants)
-    (ths.length,const.length)
+    SimpleStatistics(ths.length,const.length)
   }
 
   /**
@@ -291,4 +291,14 @@ object Archive {
 
   /** returns a trivial TraverseMode */
   def traverseIf(e: String): TraverseMode = TraverseMode(extensionIs(e), _ => true, parallel = false)
+}
+
+/** very simple statistics implementation */
+case class SimpleStatistics(theoryCount: Int, constantCount: Int) {
+  def + (other: SimpleStatistics): SimpleStatistics = {
+    SimpleStatistics(theoryCount + other.theoryCount, constantCount + other.constantCount)
+  }
+}
+object SimpleStatistics {
+  val empty: SimpleStatistics = SimpleStatistics(0, 0)
 }
