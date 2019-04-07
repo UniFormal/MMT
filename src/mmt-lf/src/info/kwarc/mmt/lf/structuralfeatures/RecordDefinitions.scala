@@ -14,7 +14,7 @@ import InternalDeclarationUtil._
 
 import RecordUtil._
 import symbols.StructuralFeatureUtil._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import TermConstructingFeatureUtil._
 
 

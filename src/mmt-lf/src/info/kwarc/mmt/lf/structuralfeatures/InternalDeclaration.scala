@@ -188,7 +188,7 @@ object InternalDeclaration {
   }
 }
 
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 
 /** helper class for the various declarations in an inductive type */ 
 sealed abstract class InternalDeclaration {

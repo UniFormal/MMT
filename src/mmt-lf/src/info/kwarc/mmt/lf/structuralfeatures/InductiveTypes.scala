@@ -11,6 +11,7 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
+import StructuralFeatureUtils._
 import StructuralFeatureUtil._
 
 object inductiveUtil {
@@ -38,7 +39,6 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
-  
     
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -50,10 +50,20 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
     val context = Type.getParameters(dd)
     implicit val parentTerm = dd.path
+        
+    val decls = parseInternalDeclarations(dd, controller, Some(context))
+    elaborateDeclarations(context, decls)
+    }
+  
+  /** Elaborates an derived declaration D using the inductive feature. This is used to reuse the functionality of this feature in different features, speciafically the reflection feature.
+   *  @param context The context of D
+   *  @param parentTerm The path to D, used as prefix for the external declarations
+   *  @param decls The internal declaration of the D
+   */
+  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration])(implicit parentTerm: GlobalName) : Elaboration = {
     // to hold the result
     var elabDecls : List[Constant] = Nil
     
-    val decls = parseInternalDeclarations(dd, controller, Some(context))
     val tpdecls = tpls(decls)
     val tmdecls = tmls(decls)
     val constrdecls = constrs(tmdecls)
@@ -69,29 +79,22 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
      * some of the (in)equality axioms would be ill-typed because
      * the type system already forces elements of different instances of a dependent type to be unequal and of unequal type
      */
-    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls, types)(dd.path))
+    elabDecls = elabDecls.reverse ::: tmdecls.flatMap(x => noConf(x, tmdecls, types)(parentTerm))
     
     // the no junk axioms
-    elabDecls ++= noJunks(decls, context)(dd.path)
+    elabDecls ++= noJunks(decls, context)(parentTerm)
     
     // the testers
-    elabDecls ++= testers(tmdecls, tpdecls, decls, context)(dd.path)
+    elabDecls ++= testers(tmdecls, tpdecls, decls, context)(parentTerm)
     
     // the unappliers
-    elabDecls ++= unappliers(constrdecls, tpdecls, decls, context)(dd.path)
+    elabDecls ++= unappliers(constrdecls, tpdecls, decls, context)(parentTerm)
     
     // the inductive proof declarations
-    elabDecls ++= indProofs(tpdecls, constrdecls, context)(dd.path)
+    elabDecls ++= indProofs(tpdecls, constrdecls, context)(parentTerm)
     
-    //elabDecls foreach {d =>log(defaultPresenter(d)(controller))}    //This typically prints all external declarations several times
-    new Elaboration {
-      def domain = elabDecls map {d => d.name}
-      def getO(n: LocalName) = {
-        elabDecls.find(_.name == n) foreach(c => log(defaultPresenter(c)(controller)))
-        elabDecls.find(_.name == n)
-      }
-    }
-  }
+    externalDeclarationsToElaboration(elabDecls)
+}
   
   /** Check whether the TermLevel has a higher order argument of an inductively defined type
    *  In that case an error is thrown

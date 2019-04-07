@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import inductiveUtil._
 
 /** theories as a set of types of expressions */ 

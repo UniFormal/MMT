@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf._
 import InternalDeclarationUtil._
 import InternalDeclaration._
 
-object StructuralFeatureUtil {
+object StructuralFeatureUtils {
   val theory: MPath = LF._base ? "DHOL"
   object Ded {
     val path = LF._base ? "Ded" ? "DED"
@@ -83,7 +83,7 @@ object StructuralFeatureUtil {
   }
 }
 
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 object TermConstructingFeatureUtil {
     def correspondingDecl(dd: DerivedDeclaration, d: LocalName): Option[Constant] = {
       dd.getO(d) map {

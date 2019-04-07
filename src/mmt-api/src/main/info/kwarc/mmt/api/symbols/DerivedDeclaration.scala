@@ -688,14 +688,16 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
 
 
 object StructuralFeatureUtil {
-  def singleExternalDeclaration(d: Constant) = {
+  def externalDeclarationsToElaboration(decls: List[Constant]) = {
     new Elaboration {
-      val elabDecls = List(d)
+      val elabDecls = decls
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
         elabDecls.find(_.name == n)
       }
     }
   }
-  
+  def singleExternalDeclaration(d: Constant) = {
+    externalDeclarationsToElaboration(List(d))
+  }
 }

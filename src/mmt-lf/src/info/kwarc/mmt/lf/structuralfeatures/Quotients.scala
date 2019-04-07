@@ -9,7 +9,7 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import InternalDeclarationUtil._
 
 @deprecated("this is experimental and may still be removed", "")
