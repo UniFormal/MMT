@@ -402,4 +402,15 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
   }
 }
 
+object InductiveTypes {
+  /** Elaborates an derived declaration D using the inductive feature. This is used to reuse the functionality of this feature in different features, speciafically the reflection feature.
+   *  @param context The context of D
+   *  @param parentTerm The path to D, used as prefix for the external declarations
+   *  @param decls The internal declaration of the D
+   */
+  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration])(implicit parentTerm: GlobalName) : Elaboration = {
+    InductiveTypes.elaborateDeclarations(context, decls)  
+  }
+}
+
 object InductiveRule extends StructuralFeatureRule(classOf[InductiveTypes], "inductive")
