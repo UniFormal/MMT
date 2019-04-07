@@ -17,7 +17,6 @@ import symbols.StructuralFeatureUtil._
 import StructuralFeatureUtils._
 import TermConstructingFeatureUtil._
 
-
 /** theories as a set of types of expressions */ 
 class RecordDefinitions extends StructuralFeature("record_term") with TypedParametricTheoryLike {
 
@@ -93,9 +92,9 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
   
   def elaborateToRecordExp(ctx: Context, params: List[Term])(implicit parent: GlobalName) = {
     val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
-    singleExternalDeclaration(makeConst(parent.name, 
+    Elaboration(List(makeConst(parent.name, 
         () => {OMA(OMS(recTypePath), recordFields)}, 
-        () => {Some(OMA(OMS(recExpPath), params))}))
+        () => {Some(OMA(OMS(recExpPath), params))})))
   }
 }
 

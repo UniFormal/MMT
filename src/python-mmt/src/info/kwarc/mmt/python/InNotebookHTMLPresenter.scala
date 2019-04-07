@@ -24,7 +24,7 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
   }
   
   /** local class so that we can import htmlRh and build HTML programmatically */
-  private class PresentationScope(htmlRh: utils.HTML) {
+  private class PresentationScope(htmlRh: utils.HTML)(implicit rh : RenderingHandler) {
      import htmlRh._
      def apply(e: StructuralElement) {
         e match {

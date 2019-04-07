@@ -18,7 +18,7 @@ import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
 
 /** used by [[MMTStructureSimplifier]] */
-@deprecated("needs review","")
+@MMT_TODO("needs review")
 case class ByStructureSimplifier(home: Term, view: Term) extends Origin
 
 /**
@@ -82,7 +82,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     ElaboratedElement.setInprogress(s)
     // internal flattening
     s match {
-      case Include(_) =>
+      case Include(_, _, _) =>
         // no need to flatten inside an include (this case is needed so that the next case can handle declared modules and strucutres together)
       case _: DerivedDeclaration =>
         // nothing to do, but would otherwise be caught be next case
@@ -151,7 +151,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     env.task.reportProgress(Elaborated(s))
   }
 
-  @deprecated("needs to be reviewed","")
+  @MMT_TODO("needs to be reviewed")
   def elaborateContext(outer: Context, con: Context) : Context = {
     var ret = Context.empty
     def currentContext = outer ++ ret
@@ -420,7 +420,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
           }
           // copies of the local declarations of p
           val decls = pThy.getDeclarations.flatMap {
-            case Include(_) =>
+            case Include(_, _, _) =>
               // because pThy is already flattened transitively, we do not have to do a transitive closure
               Nil
             case d: Declaration =>
@@ -438,7 +438,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         sElab foreach {d => ElaboratedElement.setFully(d)} // recursive elaboration already handled by recursively elaborating fromThy
         sElab
       // ************** derived declarations: elaborate
-      case (thy: Theory, dd: DerivedDeclaration) =>
+      case (thy: AbstractTheory, dd: DerivedDeclaration) =>
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
            case None => Nil
            case Some(sf) =>

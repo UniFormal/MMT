@@ -67,7 +67,7 @@ object TMList extends ListCodec[JSON](Codecs.standardList, LFList.path, ListNil.
   }
 }
 
-object StandardVector extends CodecOperator[JSON](Codecs.standardVector, MitM.vector) {self =>
+object StandardVector extends CodecOperator[JSON,Codec[JSON]](Codecs.standardVector, MitM.vector) {self =>
   val typeParameterPositions : List[Int] = List(1)
 
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
@@ -98,7 +98,7 @@ object StandardVector extends CodecOperator[JSON](Codecs.standardVector, MitM.ve
 }
 
 
-object StandardMatrix extends CodecOperator[JSON](Codecs.standardMatrix, MitM.matrix) {self =>
+object StandardMatrix extends CodecOperator[JSON,Codec[JSON]](Codecs.standardMatrix, MitM.matrix) {self =>
 
   val typeParameterPositions : List[Int] = List(1)
 

@@ -77,6 +77,7 @@ class MitMComputation(controller: frontend.Controller) extends Logger {
         case s : StringValue => StringLiterals(s.string)
         case _ => ???
       }
+      case _ => throw ImplementationError("invalid result")
     }
   }
 

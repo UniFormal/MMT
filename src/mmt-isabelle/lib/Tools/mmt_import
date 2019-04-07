@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#
-# DESCRIPTION: import Isabelle sessions into MMT
-
-isabelle java info.kwarc.mmt.isabelle.Importer "$@"

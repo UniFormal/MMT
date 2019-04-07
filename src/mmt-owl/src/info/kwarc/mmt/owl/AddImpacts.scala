@@ -27,6 +27,7 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
     val gname = path match {
       case CPath(parent: GlobalName, comp) => parent
       case gn: GlobalName => gn
+      case _ => throw ImplementationError("invalid path")
     }
 
     val whichConstant = memory.content.getConstant(gname)
@@ -114,6 +115,7 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
         case path: GlobalName => path
         case _ => None
       })
+      case _ => throw ImplementationError("invalid change")
     }
     val changedConstant: Constant = memory.content.getConstant(changePath)
     //set key for metadatum

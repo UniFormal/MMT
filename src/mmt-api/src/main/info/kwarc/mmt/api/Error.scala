@@ -22,6 +22,13 @@ abstract class Error(val shortMsg: String) extends java.lang.Exception(shortMsg)
 
   def getCausedBy : Option[Throwable] = causedBy
 
+  def getAllCausedBy: List[Throwable] = getCausedBy match {
+    case None => Nil
+    case Some(e: Error) =>
+      e :: e.getAllCausedBy
+    case Some(e) => List(e)
+  }
+  
   /** get the error due to which this error was thrown */
   def setCausedBy(e: Throwable): this.type = {
     causedBy = Some(e)

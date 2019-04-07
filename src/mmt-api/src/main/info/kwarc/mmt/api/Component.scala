@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api
 
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects._
 
 /** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
@@ -69,14 +70,14 @@ case object TypeComponent extends TermComponentKey("type")
 /** definiens of [[symbols.Constant]], DefinedTheory, DefinedView, DefinedStructure */
 case object DefComponent  extends TermComponentKey("definition")
 /** domain of a [[modules.Link]], meta-theory of a theory */
-@deprecated("replace with TypeComponent", "")
+@MMT_TODO("replace with TypeComponent")
 case object DomComponent  extends TermComponentKey("domain")
 /** codomain of a [[modules.Link]] */
-@deprecated("replace with TypeComponent", "")
+@MMT_TODO("replace with TypeComponent")
 case object CodComponent  extends TermComponentKey("codomain")
 
 /** parameters */
-@deprecated("replace with TypeComponent", "")
+@MMT_TODO("replace with TypeComponent")
 case object ParamsComponent extends ObjComponentKey("params")
 
 /** custom component, e.g., in a [[info.kwarc.mmt.api.symbols.DerivedDeclaration]] */

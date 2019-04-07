@@ -281,6 +281,7 @@ sealed abstract class InternalDeclaration {
       case out: OutgoingTermLevel => new OutgoingTermLevel(out.path, argsT, tr.applyType(context, ret), out.df, out.notC, out.ctx)
       case tl: TypeLevel => tl.copy(args = argsT)
       case sl: StatementLevel => sl.copy(args = argsT)
+      case _ => throw ImplementationError("invalid InternalDeclaration")
     }    
   }
 

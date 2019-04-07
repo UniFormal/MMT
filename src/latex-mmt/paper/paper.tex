@@ -1,0 +1,72 @@
+\documentclass[orivec]{llncs}
+\pagestyle{plain}
+
+\usepackage{url}
+\usepackage{wrapfig}
+\usepackage{amsmath,amssymb}
+\usepackage{xspace}
+
+\usepackage{listings}
+
+\usepackage{graphicx}
+%\usepackage{xparse} % custom argument syntax
+
+\newcommand{\mmttex}{MMTTeX\xspace}
+\newcommand{\sTeX}{sTeX\xspace}
+
+\setlength{\hfuzz}{3pt} \hbadness=10001
+\setcounter{tocdepth}{2} % for pdf bookmarks
+
+\usepackage[bookmarks,linkcolor=red,citecolor=blue,urlcolor=gray,colorlinks,breaklinks,bookmarksopen,bookmarksnumbered]{hyperref}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% local macros and configurations
+\usepackage[show]{ed}
+\usepackage{basics}
+
+\usepackage{local}
+
+\newcommand{\mmttexmathhubroot}{c:/other/oaff/}
+\usepackage{../latex/mmttex}
+
+\mmtimport{ex}{http://cds.omdoc.org/examples}
+
+\title{MMTTeX: Connecting Content and Narration-Oriented Document Formats}
+\author{Florian Rabe}
+\institute{Universities Paris-Sud and Erlangen-Nuremberg}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+\maketitle
+\begin{abstract}
+Narrative, presentation-oriented assistant systems for mathematics on the one hand and formal, content-oriented ones on the other hand have so far been developed and used largely independently.
+The former excel at communicating mathematical knowledge and the latter at certifying its correctness.
+
+\mmttex aims at combining the advantages of the two paradigms.
+Concretely, we use \latex for the narrative and {\mmt} for the content-oriented representation.
+Formal objects may be written in MMT and imported into \latex documents or written in the \latex document directly.
+In the latter case, \mmt parses and checks the formal content during \latex compilation and substitutes it with \latex presentation macros.
+
+Besides checking the formal objects, this allows generating higher-quality \latex than could easily be produced by hand, e.g., by inserting hyperlinks and tooltips into formulas.
+Moreover, it allows reusing formalizations across narrative documents as well as between formal and narrative ones.
+As a case study, the present document was already written with \mmttex.
+\end{abstract}
+
+
+\lstMakeShortInline[basicstyle=]!
+\lstset{mathescape,basicstyle={\footnotesize\color{gray}}}
+
+\section{Introduction}\label{sec:intro}
+  \input{intro}
+
+\section{Design and Behavior} \label{sec:pdflatex}
+  \input{system}
+  
+\section{Conclusion}\label{sec:conc}
+  \input{conc}
+
+\bibliographystyle{alpha}
+\bibliography{../../../../Program_Data/Latex/bib/rabe,../../../../Program_Data/Latex/bib/systems,../../../../Program_Data/Latex/bib//pub_rabe}
+
+\end{document}

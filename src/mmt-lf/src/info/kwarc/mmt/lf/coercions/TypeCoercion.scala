@@ -3,8 +3,8 @@ package info.kwarc.mmt.lf.coercions
 import info.kwarc.mmt.api._
 import objects._
 import checking._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import objects.Conversions._
-
 import info.kwarc.mmt.lf._
 
 /**
@@ -14,7 +14,7 @@ import info.kwarc.mmt.lf._
  * This rule does not do anything by itself.
  * Instead, it provides multiple rules that insert the lifting function during type-checking, see the respective members
  */
-@deprecated("this is a nice idea, but it doesn't quite work; it's not used yet", "")
+@MMT_TODO("this is a nice idea, but it doesn't quite work; it's not used yet")
 abstract class TypeCoercionRule(val head: GlobalName, under: List[GlobalName]) extends CheckingRule {self =>
   /** auxiliary object for checking applicability */
   private object Applicable extends ApplicableUnder {

@@ -19,19 +19,21 @@ import scala.concurrent.duration._
 import scala.sys.process.{ProcessBuilder, ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
-abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments {
-  val localpathsFile = "localpaths.tex"
-  val inDim = source
-  var pipeOutput: Boolean = false
-  val pipeOutputOption: String = "pipe-worker-output"
+abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
+{
+  val localpathsFile   : String = "localpaths.tex"
+  val inDim            : RedirectableDimension = source
+  var pipeOutput       : Boolean = false
+  val pipeOutputOption : String = "pipe-worker-output"
+
   /** timout in seconds */
-  private val timeoutDefault: Int = 300
-  protected var timeoutVal: Int = timeoutDefault
-  protected val timeoutOption: String = "timeout"
-  protected var nameOfExecutable: String = ""
+  private   val timeoutDefault   : Int = 300
+  protected var timeoutVal       : Int = timeoutDefault
+  protected val timeoutOption    : String = "timeout"
+  protected var nameOfExecutable : String = ""
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
-    override val extraMessage = l
+    override val extraMessage : String = l
   }
 
   protected def commonOpts: OptionDescrs = List(
@@ -46,9 +48,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   override def start(args: List[String]) {
     anaStartArgs(args)
     pipeOutput = optionsMap.get(pipeOutputOption).isDefined
-    optionsMap.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
-    optionsMap.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
-    optionsMap.get("execute").foreach { case v =>
+    optionsMap.get(timeoutOption).foreach(v => timeoutVal = v.getIntVal)
+    optionsMap.get(key).foreach(v => nameOfExecutable = v.getStringVal)
+    optionsMap.get("execute").foreach { v =>
       if (nameOfExecutable.isEmpty) nameOfExecutable = v.getStringVal
       else logError("executable already set by: --" + key + "=" + nameOfExecutable)
     }
@@ -111,8 +113,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   /** to be implemented */
   def reallyBuildFile(bt: BuildTask): BuildResult
 
-  def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
-  else BuildEmpty("file excluded by MANIFEST")
+  def buildFile(bt: BuildTask): BuildResult = {
+    if (!skip(bt)) reallyBuildFile(bt) else BuildEmpty("file excluded by MANIFEST")
+  }
 
   protected def readingSource(a: Archive, in: File, amble: Option[File] = None): List[Dependency] = {
     val res = getDeps(a, in, Set(in), amble)
@@ -136,20 +139,28 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     safe
   }
 
-  override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val in = bt.inFile
-    val a = bt.archive
-    val ds = if (in.exists && in.isFile) {
-      readingSource(a, in) ++
-        (if (noAmble(in) || key == "sms") Nil
-        else {
-          val pre = getAmbleFile("pre", bt)
-          val post = getAmbleFile("post", bt)
-          List(pre, post).map(PhysicalDependency) ++
-            readingSource(a, in, Some(pre)) ++
-            readingSource(a, in, Some(post))
-        })
-    } else if (in.isDirectory) Nil
+  override def estimateResult(bt: BuildTask) : BuildSuccess =
+  {
+    val in      = bt.inFile
+    val archive = bt.archive
+
+    val ds: List[Dependency] = if (in.exists && in.isFile) {
+
+      var dps: List[Dependency] = Nil
+
+      if (!noAmble(in) || key != "sms")
+      {
+        val pre  = getAmbleFile(preOrPost = "pre",  bt)
+        val post = getAmbleFile(preOrPost = "post", bt)
+
+        dps = List(pre, post).map(PhysicalDependency) ++
+                   readingSource(archive, in, Some(pre)) ++
+                   readingSource(archive, in, Some(post))
+      }
+
+      readingSource(archive, in) ++ dps
+
+    } else if (in.isDirectory) { Nil }
     else {
       logResult("unknown file: " + in)
       logResult(" for: " + key)
@@ -199,7 +210,7 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "tex"
 
-  override def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath
+  override def getFolderOutFile(a: Archive, inPath: FilePath): File = a / outDim / inPath
 
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): BuildResult = BuildEmpty("nothing to do for files")
@@ -251,7 +262,7 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case _ =>
+      _ =>
     }, {
       case (c@Current(inDir, inPath), _) =>
         buildDir(a, inPath, inDir, force = false)

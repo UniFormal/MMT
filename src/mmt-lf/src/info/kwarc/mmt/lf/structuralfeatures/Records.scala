@@ -20,7 +20,6 @@ object RecordUtil {
     val recExpPath = recHome ? "Recexp"
 }
 import RecordUtil._
-import symbols.StructuralFeatureUtil._
 
 /** theories as a set of types of expressions */ 
 class Records extends StructuralFeature("record") with ParametricTheoryLike {
@@ -208,7 +207,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   
   def elaborateToRecord(ctx: Context)(implicit parent: GlobalName) = {
     val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
-    singleExternalDeclaration(makeConst(parent.name, () => {OMA(OMS(recTypePath), recordFields)}))
+    Elaboration(List((makeConst(parent.name, () => {OMA(OMS(recTypePath), recordFields)}))))
   }
 }
 

@@ -14,7 +14,6 @@ import info.kwarc.mmt.jedit._
   * copies jars, modes, abbreviations etc. to jEdit settings directory
   * installation is idempotent
   *
-  * @param logger Optional function to print interactive setup statements in. Defaults to println
   */
 class Setup extends ShellExtension("jeditsetup") {
   def helpText = "needed arguments: (install | uninstall) [JEDIT/SETTINGS/FOLDER]"
@@ -35,10 +34,10 @@ class Setup extends ShellExtension("jeditsetup") {
       return true
     }
     val doIt = new DoIt(shell, jedit)
-    if (args(0) == "customize") {
-      doIt.customize
+    if (args.head == "customize") {
+      doIt.customize()
     } else {
-      val installOpt = args(0) match {
+      val installOpt = args.head match {
         case "install" => Some(true)
         case "uninstall" => Some(false)
         case _ => None
@@ -59,11 +58,11 @@ class Setup extends ShellExtension("jeditsetup") {
 
 
   private class DoIt(shell: Shell, jedit: File) {
-    val jarFolder = jedit / "jars"
-    val propsFile = jedit / "properties"
+    val jarFolder: File = jedit / "jars"
+    val propsFile: File = jedit / "properties"
     val keymapPath = List("keymaps", "imported_keys.props")
 
-    val rl = shell.runStyle
+    val rl: MMTSystem.RunStyle = shell.runStyle
 
     def getResource(path: String): String = {
       rl match {
@@ -72,7 +71,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
     }
     def getPluginResource(f: List[String]): String = getResource("/plugin/" + f.mkString("/"))
-    def handleResourceLineWise(path: String)(proc: String => Unit) =
+    def handleResourceLineWise(path: String)(proc: String => Unit): Unit =
        stringToList(getResource(path), "\\n").foreach(proc)
 
     /** merge properties from a resource into a jEdit file */
@@ -102,21 +101,19 @@ class Setup extends ShellExtension("jeditsetup") {
 
     /** the actual install/uninstall process
       *
-      * @param jedit   the jEdit settings folder
       * @param install true/false for install/uninstall
-      * @param fat install fat jar
       */
     def install(install: Boolean) {
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
       def copyOrDeleteJar(dir: File, f: List[String], g: List[String]) {
         if (install) {
-          copy(dir / f, jedit / g, true)
+          copy(dir / f, jedit / g, overwrite = true)
         } else {
           delete(jedit / g)
         }
       }
       /** copies or deletes a file depending on install/uninstall, always overwrites existing files */
-      def copyOrDeleteResource(f: List[String], replace: Boolean) = {
+      def copyOrDeleteResource(f: List[String], replace: Boolean) {
         val file = jedit / f
         if (install) {
           if (!file.exists || replace) {
@@ -147,7 +144,7 @@ class Setup extends ShellExtension("jeditsetup") {
       // modes
       // * copy/delete the mode files
       val modeFiles = List("mmt.xml", "mmtlog.xml", "msl.xml")
-      modeFiles.foreach { e => copyOrDeleteResource(List("modes", e), true) }
+      modeFiles.foreach { e => copyOrDeleteResource(List("modes", e), replace = true) }
       // * read, update, write the catalog file
       val scat = "/plugin/modes/catalog"
       val jcat = jedit / "modes" / "catalog"
@@ -206,7 +203,7 @@ class Setup extends ShellExtension("jeditsetup") {
       }
       // copy/delete pluginFolder
       val plug = List("plugins", "info.kwarc.mmt.jedit.MMTPlugin")
-      copyOrDeleteResource(plug ::: List("startup.msl"), false)
+      copyOrDeleteResource(plug ::: List("startup.msl"), replace = false)
       if (!install) {
         val d = jedit / plug
         if (d.isDirectory) {
@@ -217,7 +214,7 @@ class Setup extends ShellExtension("jeditsetup") {
       // add properties that depend on MMT installation folder
       val propsOld = if (propsFile.exists) File.read(propsFile) else ""
       val archKey = MMTOptions.archives.jeditKey + "="
-      if (install) controller.getMathHub.map {mh =>
+      if (install) controller.getMathHub.foreach {mh =>
         val contentFolder = mh.local
         log("adding property for content folder " + contentFolder)
         val encoded = contentFolder.toString.replace("\\", "\\\\").replace(":", "\\:").replace("=", "\\=")
@@ -236,12 +233,12 @@ class Setup extends ShellExtension("jeditsetup") {
 
     val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), /*("ContextMenu","0.4"),*/ ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
-    def customize {
+    def customize() {
        // download jars from jEdit plugin central
-       jars.foreach {case (name,version) =>
-         val target = jarFolder / (name + ".jar")
+       jars.foreach {case (pluginName,pluginVersion) =>
+         val target = jarFolder / (pluginName + ".jar")
          if (!target.exists) {
-           val url = URI(s"https://sourceforge.net/projects/jedit-plugins/files/$name/$version/$name-$version-bin.zip")
+           val url = URI(s"https://sourceforge.net/projects/jedit-plugins/files/$pluginName/$pluginVersion/$pluginName-$pluginVersion-bin.zip")
            val zip = target.setExtension("zip")
            log("downloading " + url)
            try {

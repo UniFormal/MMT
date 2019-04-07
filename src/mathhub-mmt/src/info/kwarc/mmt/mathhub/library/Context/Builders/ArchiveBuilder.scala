@@ -1,16 +1,19 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
+import info.kwarc.mmt.api.{DPath, NamespaceMap, Path}
+import info.kwarc.mmt.api.archives.LMHHubArchiveEntry
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IArchive, IArchiveRef}
+
+import scala.util.Try
 
 trait ArchiveBuilder { this: Builder =>
 
   /** tries to find an archive with a given id */
   protected def tryArchive(id: String) : Option[LMHHubArchiveEntry] = {
     logDebug(s"trying $id as archive")
-    val optEntry = mathHub.entries_.collectFirst({
+    val optEntry = mathHub.installedEntries.collectFirst({
       case e: LMHHubArchiveEntry if e.id == id => e
     })
 
@@ -47,19 +50,24 @@ trait ArchiveBuilder { this: Builder =>
     val tags = entry.tags.map(t => getTagRef("@" + t).getOrElse(return buildFailure(entry.id, s"getTagRef(archive.tag[@$t])")))
 
     // get the description file
-    val file = entry.root / entry.archive.properties.getOrElse("description", "desc.html")
-    val description = if(entry.root <= file && file.exists()) {
-      File.read(file)
-    } else { "No description provided" }
+    val description = entry.readLongDescription.getOrElse("No description provided")
 
-    val responsible = entry.archive.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
+    val responsible = entry.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
-    val narrativeRoot = getDocument(entry.archive.narrationBase.toString)
-      .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)"))
+    val narrativeRootPath = entry.archive.narrationBase.toString
+    val narrativeRoot = getDocument(narrativeRootPath)
+      .getOrElse({
+        val pseudoPath = Path.fromURI(entry.archive.narrationBase, entry.archive.namespaceMap) match {
+          case d: DPath => d
+          case _ => return buildFailure(entry.id, s"Path.parseD(archive.narrativeRoot")
+        }
+        logDebug(s"Archive ${ref.id} has empty narrative root, using pseudo-document")
+        buildPseudoDocument(pseudoPath, "This archive has no content")
+      })
 
     Some(IArchive(
       ref.parent, ref.id, ref.name,
-      getStats(ref.id),
+      getStats(entry.statistics),
       ref.title, ref.teaser,
       tags,
       version,

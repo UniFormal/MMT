@@ -4,7 +4,7 @@ import java.net.URLDecoder
 import java.util.jar.JarFile
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.lmh.{Git, UnixGit, WindowsGit}
+import info.kwarc.mmt.api.archives.{Git, UnixGit, WindowsGit}
 
 object MMTSystem {
   /** information about how MMT was run, needed to access resources */
@@ -88,7 +88,10 @@ object MMTSystem {
   }
 
   /** the git used by this MMT instance */
-  lazy val git: Git = OS.detect match {case Windows => new WindowsGit() case _ => UnixGit }
+  lazy val git: Git = OS.detect match {
+    case Windows => new WindowsGit() 
+    case _ => UnixGit
+  }
 
   /** the git version (branch) used by mmt, if available */
   lazy val gitVersion: Option[String] = runStyle match {

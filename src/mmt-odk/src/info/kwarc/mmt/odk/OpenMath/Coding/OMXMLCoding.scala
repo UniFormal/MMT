@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.OpenMath.Coding
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.api.utils.URI
 
@@ -24,7 +25,7 @@ class OMXMLCoding extends OMCoding[Node] {
   private def getOAttr(v : Node, attr : String) : Option[String] = v.attribute(attr).map(_.text)
 
   private def setAttr(e : Elem, av : String*) : Elem = {
-    av.toList.sliding(2, 2).map({
+    av.toList.sliding(2, 2).collect({
       case a::v::Nil => (a, v)
     }).foldLeft(e)({
       case (f, (attr, null)) => f
@@ -35,7 +36,7 @@ class OMXMLCoding extends OMCoding[Node] {
 
   private def decodeAttributionPairs( v : Node ) : OMAttributionPairs = v match {
     case <OMATP>{cnodes @ _*}</OMATP> =>
-      val pairs = cnodes.toList.sliding(2, 2).map({case a :: b :: Nil => (decodeSymbol(a), decodeAnyVal(b))}).toList
+      val pairs = cnodes.toList.sliding(2, 2).collect({case a :: b :: Nil => (decodeSymbol(a), decodeAnyVal(b))}).toList
 
       val id = getOAttr(v, ATTR_ID)
       val cdbase = getOAttr(v, ATTR_CDBASE).map(URI.apply)
@@ -329,6 +330,7 @@ class OMXMLCoding extends OMCoding[Node] {
         ATTR_ID, id orNull,
         ATTR_CDBASE, cdbase.map(_.toString) orNull
       )
+    case _ => throw ImplementationError("OMObject passed to encodeNode")
   }
 
   /**

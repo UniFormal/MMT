@@ -1,20 +1,49 @@
 package info.kwarc.mmt.coq.coqxml
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
-import info.kwarc.mmt.api.objects.{OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.NestedModule
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq._
+import info.kwarc.mmt.lf.{ApplySpine, Lambda}
 
 import scala.collection.mutable
 
 trait CoqEntry
 
+trait CoqXml extends CoqEntry
+trait theoryexpr extends CoqEntry
+
+case class TopXML(e : CoqEntry) extends CoqXml
+case class TypesXML(e : CoqEntry) extends CoqXml
+case class BodyXML(e : CoqEntry) extends CoqXml
+case class ExprXML(e : theoryexpr) extends CoqXml
+case class SupXML(e : supertypes) extends CoqXml
+case class Constraints(e : List[CoqEntry]) extends CoqXml
+case class supertypes(ls : List[CoqEntry]) extends CoqXml
+
+
 // ---------------------------------------------------------------------------
 
 trait theorystructure extends CoqEntry
 
+case class Requirement(uri : URI) extends theorystructure
+
+object constantlike {
+  def unapply(ts:theorystructure) : Option[(URI,String,List[CoqEntry])] = ts match {
+    case AXIOM(uri,as,components) => Some((uri,as,components))
+    case DEFINITION(uri,as,components) => Some((uri,as,components))
+    case THEOREM(uri,as,components) => Some((uri,as,components))
+    case CHILD(uri,components) => Some((uri,"",components))
+    case _ => None
+  }
+}
+
 // as \in Axiom | Declaration
-case class AXIOM(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
+case class AXIOM(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure {
+}
 // as \in Definition | InteractiveDefinition | Inductive | CoInductive | Record
 case class DEFINITION(uri : URI,as:String, components : List[CoqEntry]) extends theorystructure
 // as \in Theorem | Lemma | Corollary | Fact | Remark
@@ -23,6 +52,29 @@ case class THEOREM(uri:URI,as:String, components : List[CoqEntry]) extends theor
 case class VARIABLE(uri:URI,as:String, components : List[CoqEntry]) extends theorystructure
 
 case class SECTION(uri:URI,statements:List[theorystructure]) extends theorystructure
+
+case class MODULE(uri : URI, params : List[List[CoqXml]], as:String,components:List[theorystructure],componentsImpl : List[theorystructure],attributes : List[CoqXml],attributesImpl:List[CoqXml]) extends theorystructure {
+  as match {
+    case "Module" =>
+    case "ModuleType" =>
+    case _ =>
+      println(as)
+      ???
+  }
+}
+case class MODULEExpr(uri : URI, params : List[List[CoqXml]], as:String,components:List[CoqXml],children : List[CHILD]) extends theorystructure {
+  as match {
+    case "AlgebraicModule" =>
+    case "AlgebraicModuleType" =>
+  }
+}
+case class CHILD(uri:URI,components : List[CoqEntry]) extends theorystructure
+
+case class MREF(uri : URI) extends theoryexpr
+case class FUNAPP(f : theoryexpr, args : List[theoryexpr]) extends theoryexpr
+case class WITH(a : theoryexpr, d : theoryexpr) extends theoryexpr
+case class THDEF(relUri : URI,df : term) extends theoryexpr
+case class ABS(uri : URI,mod:theoryexpr)extends theoryexpr
 
 // --------------------------------------------------------------------------
 
@@ -51,7 +103,7 @@ case class Constructor(name:String,_type:term) extends CoqEntry
 
 // ------------------------------------------------------------------------
 
-class TranslationState(theories : Map[URI,MPath], symbols : Map[URI,GlobalName]) {
+class TranslationState(val controller : Controller, val current:MPath) {
   private var _vars : List[Option[String]] = Nil
   def addVar = _vars ::= None
   def solveVar(i : Int, name : String): LocalName = {
@@ -89,16 +141,12 @@ class TranslationState(theories : Map[URI,MPath], symbols : Map[URI,GlobalName])
     varnames+=1
     LocalName("MMT_internal_" + varnames.toString)
   }
-
-  def toMPath(uri : URI) = theories.getOrElse(uri,???) // TODO
-  def toGlobalName(uri : URI) = symbols.getOrElse(uri,Coq.fail) // TODO
-
 }
 
 trait term extends CoqEntry {
-  def toOMDoc(theories : Map[URI,MPath], symbols : Map[URI,GlobalName]) : Term = {
+  def toOMDoc(controller : Controller, current:MPath) : Term = {
     // TODO implicit arguments
-    recOMDoc(new TranslationState(theories,symbols))
+    recOMDoc(new TranslationState(controller,current))
   }
   private[coqxml] def recOMDoc(implicit variables : TranslationState) : Term
 }
@@ -111,12 +159,13 @@ case class SORT(value : String, id : String) extends term {
 case class LAMBDA(sort : String, decls:List[decl] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val tps = decls.map{d =>
-      val ret = (d.id,d._vartype.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vartype.recOMDoc)
+      // variables.addVar
+      // ret
+      (d.binder,d._vartype.recOMDoc)
     }
     val ret = target.tm.recOMDoc
-    val vars = tps.reverse.map(d => (LocalName(variables.getVar.getOrElse(OMV.anonymous.toString)),d._2))
+    val vars = tps.reverse.map(d => (LocalName(d._1),d._2))
     // println("VARIABLES: " + vars.map(_._1.toString))
     CoqLambda(sort,vars,ret)
   }
@@ -125,12 +174,13 @@ case class LAMBDA(sort : String, decls:List[decl] ,target:target) extends term {
 case class LETIN(sort : String, defs:List[_def] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val dfs = defs.map{d =>
-      val ret = (d.id,d._vardef.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vardef.recOMDoc)
+      // variables.addVar
+      // ret
+      (d.binder,d._vardef.recOMDoc)
     }
     val body = target.tm.recOMDoc
-    val vars = dfs.reverse.map(d => (variables.getVar.getOrElse(OMV.anonymous.toString),d._2))
+    val vars = dfs.reverse.map(d => (d._1,d._2))
     vars.foldLeft(body)((b,p) => Let(LocalName(p._1),p._2,b))
   }
 
@@ -138,18 +188,21 @@ case class LETIN(sort : String, defs:List[_def] ,target:target) extends term {
 case class PROD(_type : String, decls:List[decl] ,target:target) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
     val tps = decls.map{d =>
-      val ret = (d.id,d._vartype.recOMDoc)
-      variables.addVar
-      ret
+      // val ret = (d.id,d._vartype.recOMDoc)
+      //variables.addVar
+      // ret
+      (d.binder,d._vartype.recOMDoc)
     }
     val body = target.tm.recOMDoc
-    val vars = tps.reverse.map(d => (variables.getVar.getOrElse(OMV.anonymous.toString),d._2))
+    val vars = tps.reverse.map(d => (d._1,d._2))
     // println("VARIABLES: " + vars.map(_._1.toString))
     CoqPROD(_type,vars,body)
   }
 }
 case class CAST(id : String, sort : String, tm : term, _type : _type) extends term {
-  def recOMDoc(implicit variables : TranslationState) : Term = tm.recOMDoc // TODO
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    tm.recOMDoc // type casts are only for the coq type checker
+  }
 }
 case class APPLY(id : String, sort : String, tms : List[term]) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
@@ -158,55 +211,81 @@ case class APPLY(id : String, sort : String, tms : List[term]) extends term {
   }
 }
 case class VAR(uri : URI, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(variables.toGlobalName(uri))
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    OMS(variables.current ? uri.path.last.replace(".var",""))
+  }
 }// OMS (because sections)
 case class CONST(uri : URI, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(variables.toGlobalName(uri))
+  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.toGlobalName(uri))
 }// OMS
 case class MUTIND(uri : URI, noType : Int, id : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    val gn = variables.toGlobalName(uri)
-    OMS(gn.module ? (gn.name.toString + noType.toString))
+    val gn = Coq.toGlobalName(uri)
+    OMS(gn.module ? (gn.name.toString /* + "_" + noType.toString */)) // TODO
   }
 } // OMS
 //                                ^  starts from 0, index in list of mututally recursive types
 case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.fail) // TODO
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    val gn = Coq.toGlobalName(uri)
+    OMS(gn.module ? (gn.name + "_C_" + noConstr ))
+  }
 }// OMS
 //                                     ^  from 0      ^ starts from 1, index in list of constructors
+import objects.Conversions._
 case class FIX(noFun : Int, id : String, sort : String, fixFunctions : List[FixFunction]) extends term {
-  def recOMDoc(implicit variables : TranslationState) : Term = ???
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    val vars = fixFunctions.map(f => (LocalName(f.name),f._type.tm.recOMDoc,f.body.tm.recOMDoc))
+    ApplySpine(OMS(Coq.fix),Lambda(vars.map(v => v._1%v._2),ApplySpine(OMS(Coq.fix),vars.map(_._3):_*))) // TODO ???
+  }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class FixFunction(name : String, id : String, recIndex: Int,_type : _type, body : body) extends CoqEntry {
-  def recOMDoc(implicit variables : TranslationState) : Term = ???
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+   ??? // TODO ???
+  }
 }
 //                                                      ^ index of decreasing argument, from 0 (proof for termination)
 case class COFIX(noFun : Int, id : String, sort : String, cofixFunctions : List[CofixFunction]) extends term {
-  def recOMDoc(implicit variables : TranslationState) : Term = ???
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    val vars = cofixFunctions.map(f => (LocalName(f.name),f._type.tm.recOMDoc,f.body.tm.recOMDoc))
+    ApplySpine(OMS(Coq.cofix),Lambda(vars.map(v => v._1%v._2),ApplySpine(OMS(Coq.cofix),vars.map(_._3):_*))) // TODO ???
+  }
 }
 //              ^ from 0 n                                  ^ no-empty
 case class CofixFunction(id : String, name : String, _type : _type, body : body) extends CoqEntry {
-  def recOMDoc(implicit variables : TranslationState) : Term = ???
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    ??? // TODO ???
+  }
 }
 case class MUTCASE(uriType: URI, noType : Int, id : String, sort : String, patternsType : patternsType,
 //                     ^  inductive type to match on                                ^ lambda abstracted return type (over both indices and mathcing value)
                    inductiveTerm : inductiveTerm, patterns : List[pattern]) extends term {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.fail) // TODO
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    ApplySpine(OMS(Coq.ccase),patternsType.tm.recOMDoc :: inductiveTerm.tm.recOMDoc :: patterns.map(_.tm.recOMDoc):_*)
+  } // TODO
 }
 //                    ^  the thing I'm matching      ^ lambda-abstracted cases
 case class instantiate(id: String, oo:objectOccurence,args:List[arg]) extends term {
   // println("Args: " + args)
-  def recOMDoc(implicit variables : TranslationState) : Term = Sub(args(1).arg.recOMDoc,oo.recOMDoc,args.head.arg.recOMDoc)
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+
+    ApplySpine(oo.recOMDoc,args.map(_.arg.recOMDoc):_*)
+  }
     // TODO check that this is correct
 }
 //                                                             ^ non-empty
 case class REL(value : Int, binder : String, id : String, idref:String,sort : String) extends term {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    OMV(variables.solveVar(value,binder))
+    OMV(binder)
   }
 }// OMV
 //               ^ deBruijn-index(from 1) ^ (ideally) the name ^ id of binder
+case class PROJ(uri: URI, noType : Int, id : String, sort : String, tm : term) extends term {
+  def recOMDoc(implicit variables : TranslationState) : Term = {
+    ApplySpine(OMS(Coq.proj),tm.recOMDoc)
+  } // TODO
+}
 
 case class arg(relUri : URI, arg : term) extends CoqEntry // explicit substitution
 case class patternsType(tm : term) extends CoqEntry
@@ -214,5 +293,5 @@ case class inductiveTerm(tm : term) extends CoqEntry
 case class pattern(tm : term) extends CoqEntry
 case class _type(tm : term) extends CoqEntry
 case class target(tm : term) extends CoqEntry
-case class decl(id: String, _type : String /* sort , binder : String */, _vartype : term) extends CoqEntry
+case class decl(id: String, _type : String /* sort , binder : String */, binder : String, _vartype : term) extends CoqEntry
 case class _def(id: String, sort : String , binder : String, _vardef : term) extends CoqEntry

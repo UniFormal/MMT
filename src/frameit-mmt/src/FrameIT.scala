@@ -78,7 +78,6 @@ class FrameViewer extends Extension {
 class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {
 
   override val logPrefix = "frameit"
-  val test : Class[FrameViewer] = classOf[FrameViewer]
   lazy val fv = controller.extman.get(classOf[FrameViewer]).headOption.getOrElse {
     val a = new FrameViewer
     controller.extman.addExtension(a)
@@ -163,7 +162,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
      })(objects.Stack(con),NoHistory)._1
      */
      //val tS = solver.forcesimplify(t)(objects.Stack(con),NoHistory)
-     tS = controller.simplifier(tS,con)//controller.simplifier(t, objects.Context(home))
+     tS = controller.simplifier(tS,SimplificationUnit(con, false, true))//controller.simplifier(t, objects.Context(home))
      log("After: " + tS.toString)
      tS
    }
@@ -199,7 +198,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     controller.extman.addExtension(ret)
     ret
   }
-  implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
+  implicit lazy val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
 
   val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
   val sitpath = dpath ? "situation_theory"
