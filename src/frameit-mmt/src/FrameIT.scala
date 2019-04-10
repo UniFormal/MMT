@@ -78,7 +78,6 @@ class FrameViewer extends Extension {
 class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask {
 
   override val logPrefix = "frameit"
-  val test : Class[FrameViewer] = classOf[FrameViewer]
   lazy val fv = controller.extman.get(classOf[FrameViewer]).headOption.getOrElse {
     val a = new FrameViewer
     controller.extman.addExtension(a)
@@ -199,7 +198,7 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
     controller.extman.addExtension(ret)
     ret
   }
-  implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
+  implicit lazy val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
 
   val dpath = DPath(URI.http colon "cds.omdoc.org") / "FrameIT"
   val sitpath = dpath ? "situation_theory"

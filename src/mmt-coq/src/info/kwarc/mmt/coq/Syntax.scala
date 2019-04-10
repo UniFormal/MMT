@@ -83,7 +83,15 @@ object Coq {
     val parent = current.asInstanceOf[Theory].path
     state.controller.library.getImplicit(mp,parent) match {
       case Some(_) =>
-      case None => state.controller.add(PlainInclude(mp,parent),AtBegin)
+      case None => try {
+        state.controller.add(PlainInclude(mp,parent),AtBegin)
+      }
+        catch {
+          case e:ExtensionError =>
+          case e =>
+            println(e.getClass)
+            ???
+        }
     }
   }
   def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {

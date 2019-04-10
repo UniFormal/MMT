@@ -3,7 +3,7 @@ package info.kwarc.mmt.mathhub.library.Context.Builders
 import info.kwarc.mmt.api.archives.{LMHHubArchiveEntry, LMHHubGroupEntry}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{IGroup, IGroupRef}
+import info.kwarc.mmt.mathhub.library.{IGroup, IGroupRef, IStatistic}
 
 /** a builder for groups */
 trait GroupBuilder { this: Builder =>
@@ -12,7 +12,7 @@ trait GroupBuilder { this: Builder =>
   protected def tryGroup(id: String) : Option[LMHHubGroupEntry] = {
     logDebug(s"trying $id as group")
 
-    val optEntry = mathHub.entries_.collectFirst({
+    val optEntry = mathHub.installedEntries.collectFirst({
       case e: LMHHubGroupEntry if e.group == id => e
     })
 
@@ -47,11 +47,11 @@ trait GroupBuilder { this: Builder =>
     val description = entry.readLongDescription.getOrElse("No description provided")
     val responsible = entry.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
-    val archives = mathHub.entries_.collect({case archive: LMHHubArchiveEntry if archive.group == ref.id => archive.id })
+    val archives = entry.members.collect({case archive: LMHHubArchiveEntry => archive.id })
 
     Some(IGroup(
       ref.id, ref.name,
-      getStats(ref.id),
+      getStats(entry.statistics),
       ref.title, ref.teaser,
 
       description,

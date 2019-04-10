@@ -13,7 +13,7 @@ trait ArchiveBuilder { this: Builder =>
   /** tries to find an archive with a given id */
   protected def tryArchive(id: String) : Option[LMHHubArchiveEntry] = {
     logDebug(s"trying $id as archive")
-    val optEntry = mathHub.entries_.collectFirst({
+    val optEntry = mathHub.installedEntries.collectFirst({
       case e: LMHHubArchiveEntry if e.id == id => e
     })
 
@@ -67,7 +67,7 @@ trait ArchiveBuilder { this: Builder =>
 
     Some(IArchive(
       ref.parent, ref.id, ref.name,
-      getStats(ref.id),
+      getStats(entry.statistics),
       ref.title, ref.teaser,
       tags,
       version,

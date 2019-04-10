@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives.{Archive, MathHub}
+import info.kwarc.mmt.api.archives.{Archive, MathHub, SimpleStatistics}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Controller, Logger}
@@ -313,4 +313,7 @@ trait Getters { this: Builder =>
 trait Statistics { this: Builder =>
   // TODO: Build statistics in a cached form
   protected def getStats(path: String): Option[List[IStatistic]] = None
+  protected def getStats(stats: Option[SimpleStatistics]): Option[List[IStatistic]] = stats.map {s =>
+    List(IStatistic("any_con", s.constantCount), IStatistic("theo", s.theoryCount))
+  }
 }

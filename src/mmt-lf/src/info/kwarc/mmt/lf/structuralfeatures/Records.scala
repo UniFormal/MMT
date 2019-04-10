@@ -11,7 +11,7 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 
 import InternalDeclaration._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import InternalDeclarationUtil._
 
 object RecordUtil {

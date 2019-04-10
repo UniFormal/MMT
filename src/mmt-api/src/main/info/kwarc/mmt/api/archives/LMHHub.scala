@@ -15,16 +15,16 @@ abstract class LMHHub extends Logger {
   protected def report = controller.report
 
   /** find all locally installed entries */
-  protected def entries_ : List[LMHHubEntry]
+  def installedEntries : List[LMHHubEntry]
 
   /** find all repositories given a specification */
-  def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
+  def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) installedEntries.filter(e => spec.exists(e.matches)) else installedEntries
   /** finds all archive entries available locally */
-  def archiveEntries: List[LMHHubArchiveEntry] = entries_.collect({case a: LMHHubArchiveEntry => a})
+  def archiveEntries: List[LMHHubArchiveEntry] = installedEntries.collect({case a: LMHHubArchiveEntry => a})
   /** finds all group entries available locally */
-  def groupEntries: List[LMHHubGroupEntry] = entries_.collect({case g: LMHHubGroupEntry => g})
+  def groupEntries: List[LMHHubGroupEntry] = installedEntries.collect({case g: LMHHubGroupEntry => g})
   /** finds all directory entries available locally */
-  def dirEntries: List[LMHHubDirectoryEntry] = entries_.collect({case d: LMHHubDirectoryEntry => d})
+  def dirEntries: List[LMHHubDirectoryEntry] = installedEntries.collect({case d: LMHHubDirectoryEntry => d})
 
   /** checks if a group exists remotely */
   def hasGroup(name: String): Boolean
@@ -182,6 +182,7 @@ trait LMHHubDirectoryEntry extends LMHHubEntry {
   def load(): Unit = {}
 
   def properties: Map[String, String] = Map()
+  def statistics: Option[SimpleStatistics] = None
 
   // Read the properties from the manifest
   lazy val id: String = {
@@ -214,6 +215,9 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
 
   /** reads the archive props */
   override def properties: Map[String, String] = archive.properties.toMap
+
+  /** reads archive statistics */
+  override def statistics: Option[SimpleStatistics] = Some(archive.stats(controller))
 
   /** the list of dependencies of this archive */
   def dependencies: List[String] = {
@@ -248,6 +252,21 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
     } catch {
       case e: Exception => throw NotLoadableGroupEntry(root).setCausedBy(e)
     }
+  }
+
+  /** finds all LMH Hub entries that are a member of this group */
+  def members: List[LMHHubEntry] = {
+    hub.installedEntries.filter(c => c.group == group && c.id != id)
+  }
+
+  /** collects statistics in this archive */
+  override def statistics: Option[SimpleStatistics] = {
+    Some(
+      members
+        .collect({case de: LMHHubDirectoryEntry => de.statistics})
+        .collect({ case Some(s: SimpleStatistics) => s})
+        .fold(SimpleStatistics.empty)(_ + _)
+    )
   }
 
   /** the group properties */

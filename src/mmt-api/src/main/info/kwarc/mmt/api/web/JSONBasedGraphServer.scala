@@ -12,17 +12,18 @@ import info.kwarc.mmt.api.presentation.{HTMLPresenter, MMTDocExporter, MathMLPre
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
+
 import scala.util.Try
 
 /**
   * Created by jazzpirate on 07.06.17.
   */
-class JSONBasedGraphServer extends ServerExtension("jgraph") {
-  override val logPrefix = "jgraph"
-  private case class CatchError(s : String) extends Throwable
+
+class DirectGraphBuilder extends Extension {
+
+  private case class CatchError(s: String) extends Throwable
 
   override def start(args: List[String]) {
-    controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new JDocgraph)
     controller.extman.addExtension(new JThgraph)
     controller.extman.addExtension(new JPgraph)
@@ -31,27 +32,44 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     super.start(args)
   }
 
+
+  def apply(uri: String, key: String, sem: String = "none", comp: String = "default solver"): JSON = {
+    val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
+      throw CatchError(s"exporter $key not available")
+    }
+    log("Computing " + key + " for " + uri + "... ")
+    val ret = exp.buildGraph(uri)
+    log("Done")
+    ret
+  }
+}
+
+class JSONBasedGraphServer extends ServerExtension("jgraph") {
+  override val logPrefix = "jgraph"
+  private case class CatchError(s : String) extends Throwable
+
+  override def start(args: List[String]) {
+    controller.extman.addExtension(new JGraphSideBar)
+    controller.extman.addExtension(new DirectGraphBuilder)
+  }
+
   lazy val sidebar = controller.extman.get(classOf[JGraphSideBar]).head
+  lazy val buil = controller.extman.get(classOf[DirectGraphBuilder]).head
 
-
-  def apply(request: ServerRequest): ServerResponse = {
+  def apply(request:ServerRequest): ServerResponse = {
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
     if (request.pathForExtension.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
-      log("Returing menu for " + id)
+      log("Returning menu for " + id)
       if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
     } else if (request.pathForExtension.headOption == Some("json")) {
       val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
-      val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
-        throw CatchError(s"exporter $key not available")
-      }
-      log("Computing " + key + " for " + uri + "... ")
-      val ret = ServerResponse.fromJSON(exp.buildGraph(uri))
-      log("Done")
+      val graph = buil(uri, key)
+      val ret = ServerResponse.fromJSON(graph)
       ret
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
@@ -155,7 +173,6 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
   override def logPrefix: String = key
   val builder : JGraphBuilder
   val selector : JGraphSelector
-
   def buildGraph(s : String) : JSON = {
     val (ths,vs) = selector.select(s)(controller)
     log("building...")
@@ -163,8 +180,9 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
     log("Done.")
     res
   }
-
 }
+
+
 
 class JDocgraph extends SimpleJGraphExporter("docgraph"){
   val builder = GraphBuilder.PlainBuilder
@@ -248,6 +266,15 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
     log("Done.")
     ret
   }
+  /** private def allattacks = {
+    log("Loading attacks...")
+    val ret = (controller.depstore.getInds(IsAttack) collect {
+      case mp : MPath => mp
+    }).toList
+    log("Done.")
+    ret
+  }
+  */
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))
@@ -293,7 +320,10 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         c.rl.get match {
           case "Law" => "model"
           case "BoundaryCondition" => "boundarycondition"
-          case _ => "theory"}
+          case _ => "theory"
+          case "Accepted" => "acceptedtheory"
+          case "Rejected" => "rejectedtheory"
+          case "Undecided" => "undecidedtheory"}
       }).get
 
       ostyle match {
