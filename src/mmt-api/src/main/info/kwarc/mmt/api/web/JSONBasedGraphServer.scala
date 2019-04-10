@@ -19,9 +19,9 @@ import scala.util.Try
   * Created by jazzpirate on 07.06.17.
   */
 
-class DirectGraphBuilder extends Extension{
+class DirectGraphBuilder extends Extension {
 
-  private case class CatchError(s : String) extends Throwable
+  private case class CatchError(s: String) extends Throwable
 
   override def start(args: List[String]) {
     controller.extman.addExtension(new JDocgraph)
@@ -37,12 +37,12 @@ class DirectGraphBuilder extends Extension{
     val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
       throw CatchError(s"exporter $key not available")
     }
-      log("Computing " + key + " for " + uri + "... ")
-      val ret = exp.buildGraph(uri)
-      log("Done")
-      ret
+    log("Computing " + key + " for " + uri + "... ")
+    val ret = exp.buildGraph(uri)
+    log("Done")
+    ret
+  }
 }
-
 
 class JSONBasedGraphServer extends ServerExtension("jgraph") {
   override val logPrefix = "jgraph"
