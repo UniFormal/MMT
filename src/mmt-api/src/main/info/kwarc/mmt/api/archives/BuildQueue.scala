@@ -18,7 +18,7 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   var lowPriority: Boolean = true
 
   /** task should be queued at beginning */
-  def highPriority: Boolean = !lowPriority
+  def highPriority = !lowPriority
 
   /** task was not requested directly but added as dependency of some other task */
   // TODO make this part of constructor to avoid having a var?
