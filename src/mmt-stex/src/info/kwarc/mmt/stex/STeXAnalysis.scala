@@ -80,6 +80,22 @@ trait STeXAnalysis {
           os.toList.map(s => PhysicalDependency(p.setExtension(s)))
         }
 
+      case useMhModule(r,b) => {
+        println("\nuseMhModule mit r = " + r + " und b = " + b)
+
+        val argm : Map[String,String] = getArgMap(r)
+
+        val archiveS : String = argm.getOrElse("repos", archString(archive))
+
+        assert(getArgMap(r).get("path").isDefined)
+        val pathS    : FilePath = FilePath(getArgMap(r)("path"))
+
+        val nu_dep : Dependency = toKeyDep(mkFileDep(archive,pathS), key = "sms")
+        println("useMhModule nu_dep: " + nu_dep)
+
+        List(nu_dep)
+      }
+
       case importOrUseModule(r) =>
         getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms"))).toList
 
@@ -180,53 +196,37 @@ trait STeXAnalysis {
     structure
   }
 
-  def matchSmsEntry(archive: Archive, line: String) : List[STeXStructure] = {
+  def matchSmsEntry(a: Archive, line: String) : List[STeXStructure] = {
     line match {
       case importMhModule(r, b) =>
         //println("smsEntry: a = " + a.id + " line = " + line)
-        val foo = createMhImport(archive, r, b)
+        val foo = createMhImport(a, r, b)
         //println("foo (deps) = " + foo.head.deps.toString())
         foo
-      case useMhModule(r,b) => {
-        //println("\nuseMhModule mit r = " + r + " und b = " + b)
-
-        val argm : Map[String,String] = getArgMap(r)
-
-        val archiveS : String = argm.getOrElse("repos", archString(archive))
-
-        assert(getArgMap(r).get("path").isDefined)
-        val pathS    : FilePath = FilePath(getArgMap(r)("path"))
-
-        val nu_dep : Dependency = toKeyDep(mkFileDep(archive,pathS), key = "sms")
-        //println("useMhModule nu_dep: " + nu_dep)
-        //println("useMhModule archive: " + archive.id + " // line: " + line)
-
-        List(STeXStructure(List(line), List(nu_dep)))
-      }
       case gimport(_, r, p) =>
-        List(createGImport(archive, r, p))
+        List(createGImport(a, r, p))
       case smsGStruct(_, r, _, p) =>
-        List(createGImport(archive, r, p))
+        List(createGImport(a, r, p))
       case smsMhStruct(r, _, p) =>
-        createMhImport(archive, r, p)
+        createMhImport(a, r, p)
       case smsSStruct(r, _, p) =>
         List(createImport(r, p))
       case smsViewsig(r, _, f, t) =>
         val m = getArgMap(r)
-        val fr = m.getOrElse("fromrepos", archString(archive))
-        val tr = m.getOrElse("torepos", archString(archive))
-        List(mkGImport(archive, fr, f), mkGImport(archive, tr, t))
+        val fr = m.getOrElse("fromrepos", archString(a))
+        val tr = m.getOrElse("torepos", archString(a))
+        List(mkGImport(a, fr, f), mkGImport(a, tr, t))
       case smsViewnl(_, r, p) =>
-        List(createGImport(archive, archString(archive), p))
+        List(createGImport(a, archString(a), p))
       case smsMhView(r, _, f, t) =>
         val m = getArgMap(r)
         var ofp = m.get("frompath")
         var otp = m.get("topath")
-        val fr = m.getOrElse("fromrepos", archString(archive))
-        val tr = m.getOrElse("torepos", archString(archive))
+        val fr = m.getOrElse("fromrepos", archString(a))
+        val tr = m.getOrElse("torepos", archString(a))
         (ofp, otp) match {
           case (Some(fp), Some(tp)) =>
-            List(mkMhImport(archive, fr, fp, f), mkMhImport(archive, tr, tp, t))
+            List(mkMhImport(a, fr, fp, f), mkMhImport(a, tr, tp, t))
           case _ => Nil
         }
       case smsView(r, f, t) =>
