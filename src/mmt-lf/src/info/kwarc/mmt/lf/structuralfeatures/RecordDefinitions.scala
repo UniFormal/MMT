@@ -13,10 +13,9 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 
 import RecordUtil._
+import symbols.StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import TermConstructingFeatureUtil._
-
-import StructuralFeatureUtil._
-
 
 /** theories as a set of types of expressions */ 
 class RecordDefinitions extends StructuralFeature("record_term") with TypedParametricTheoryLike {

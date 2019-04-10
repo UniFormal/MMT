@@ -540,9 +540,16 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
             thy_draft.declare_item(item, segment.meta_data)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`object`))
-            if (segment.is_axiomatization)
+            if (segment.is_axiomatization) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+            }
+
+            if (decl.propositional) {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.predicate))
+            }
+            else {
+              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.function))
+            }
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
             val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
@@ -668,7 +675,22 @@ object Importer
         }
       }
 
-      // RDF document
+      for (segment <- thy_export.segments) {
+        // information about recursion (from Spec_Rules): after all types have been exported
+        for (decl <- segment.consts) {
+          val item = thy_draft.content.get_const(decl.entity.name)
+          decl.primrec_types match {
+            case List(type_name) =>
+              val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
+              thy_draft.rdf_triple(
+                Ontology.binary(item.global_name, predicate,
+                  thy_draft.content.get_type(type_name).global_name))
+            case _ =>
+          }
+        }
+      }
+
+        // RDF document
       {
         val path = thy_archive.archive_rdf_path.ext("xz")
         isabelle.Isabelle_System.mkdirs(path.dir)
@@ -1088,12 +1110,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       }
     }
 
-    private val rdf_author_info: Set[String] =
-      Set(
-        isabelle.RDF.Property.creator,
-        isabelle.RDF.Property.contributor,
-        isabelle.RDF.Property.license)
-
+    private def rdf_author_info(entry: isabelle.Properties.Entry): Option[isabelle.Properties.Entry] =
+    {
+      val (a, b) = entry
+      if (a == isabelle.RDF.Property.creator || a == isabelle.RDF.Property.contributor) {
+        Some(a -> isabelle.AFP.trim_mail(b))
+      }
+      else if (a == isabelle.RDF.Property.license) Some(entry)
+      else None
+    }
 
     def read_theory_export(rendering: isabelle.Rendering): Theory_Export =
     {
@@ -1115,7 +1140,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         isabelle.Thy_Element.parse_elements(syntax.keywords, snapshot.node.commands.toList)
 
       val theory_session_meta_data =
-        session_meta_data(theory_qualifier(node_name)).filter(p => rdf_author_info(p._1))
+        session_meta_data(theory_qualifier(node_name)).flatMap(rdf_author_info)
 
       val theory_meta_data =
         node_elements.find(element => element.head.span.name == isabelle.Thy_Header.THEORY) match {

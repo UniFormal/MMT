@@ -13,7 +13,7 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
 import inductiveUtil._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 
 /** theories as a set of types of expressions */ 
 class InductiveMatch extends StructuralFeature("match") with TypedParametricTheoryLike {

@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
@@ -134,6 +135,16 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       }
       else Some(onFile(Current(inFile, in)))
     else None
+  }
+
+  /** Returns (#Theories,#Constants)**/
+  def stats(implicit controller: Controller): SimpleStatistics = {
+    // val arch = controller.backend.getArchive(a).get
+    val ths = allContent.flatMap{mp =>
+      Try(controller.get(mp).asInstanceOf[Theory]).toOption
+    }
+    val const = ths.flatMap(_.getConstants)
+    SimpleStatistics(ths.length,const.length)
   }
 
   /**
@@ -280,4 +291,14 @@ object Archive {
 
   /** returns a trivial TraverseMode */
   def traverseIf(e: String): TraverseMode = TraverseMode(extensionIs(e), _ => true, parallel = false)
+}
+
+/** very simple statistics implementation */
+case class SimpleStatistics(theoryCount: Int, constantCount: Int) {
+  def + (other: SimpleStatistics): SimpleStatistics = {
+    SimpleStatistics(theoryCount + other.theoryCount, constantCount + other.constantCount)
+  }
+}
+object SimpleStatistics {
+  val empty: SimpleStatistics = SimpleStatistics(0, 0)
 }
