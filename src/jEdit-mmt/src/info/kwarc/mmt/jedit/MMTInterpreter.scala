@@ -7,9 +7,9 @@ import modules._
 import objects._
 import parser._
 import utils._
-
 import console._
-import org.gjt.sp.jedit.{View => JEditView,_}
+import info.kwarc.mmt.api.uom.SimplificationUnit
+import org.gjt.sp.jedit.{View => JEditView, _}
 import org.gjt.sp.jedit.bufferset._
 
 import scala.collection.mutable
@@ -204,7 +204,7 @@ Non-commands are MMT code.
 
           def simp(k: Term) = {
             val uE = controller.globalLookup.ExpandDefinitions(k, p => p.doc == scratchnspace)
-            controller.simplifier(uE, Context(theory))
+            controller.simplifier(uE, SimplificationUnit(Context(theory), false, true))
           }
           val tRS = simp(tR)
           val tpRS = simp(tpR)

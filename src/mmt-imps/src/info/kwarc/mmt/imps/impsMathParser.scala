@@ -1,8 +1,6 @@
 package info.kwarc.mmt.imps
 
-import scala.util.parsing.combinator._
-import scala.util.parsing.combinator.PackratParsers
-import scala.util.Random
+import scala.util.parsing.combinator.{PackratParsers, _}
 
 package object impsMathParser
 {

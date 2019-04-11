@@ -7,7 +7,7 @@ import scala.io.{BufferedSource, Codec}
 import scala.util.matching.Regex
 
 object STeXUtils {
-  val c = java.io.File.pathSeparator
+  val c : String = java.io.File.pathSeparator
 
   def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
 
@@ -111,15 +111,15 @@ object STeXUtils {
 
   private def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
 
-  val smsSStruct = optArg2("sstructure").r
-  val smsGStruct = (bs + begin("gstructure") + opt0 + arg + arg).r
-  val smsMhStruct = optArg2("mhstructure").r
-  val smsViewsig = (optArg2("gviewsig") + arg).r
-  val smsViewnl = (bs + begin("gviewnl") + opt0 + arg + any).r
-  val smsMhView = (optArg2("mhview") + arg).r
-  val smsView = optArg2("view").r
+  val smsSStruct  : Regex = optArg2("sstructure").r
+  val smsGStruct  : Regex = (bs + begin("gstructure") + opt0 + arg + arg).r
+  val smsMhStruct : Regex = optArg2("mhstructure").r
+  val smsViewsig  : Regex = (optArg2("gviewsig") + arg).r
+  val smsViewnl   : Regex = (bs + begin("gviewnl") + opt0 + arg + any).r
+  val smsMhView   : Regex = (optArg2("mhview") + arg).r
+  val smsView     : Regex = optArg2("view").r
 
-  def entryToPath(p: String) = File(p).setExtension("tex").toFilePath
+  def entryToPath(p: String) : FilePath = File(p).setExtension("tex").toFilePath
 
   def noAmble(f: File): Boolean = {
     val source = readSourceRebust(f)

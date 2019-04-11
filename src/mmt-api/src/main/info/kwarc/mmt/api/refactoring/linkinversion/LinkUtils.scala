@@ -1,13 +1,25 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.refactoring.linkinversion
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.modules.Link
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.utils.URI
 
 object LinkUtils {
+	/**
+		* For a declaration of a [[Link]] get its definiens term, i.e. the
+		* assignment.
+		*
+		* @todo Figure out what this function returns for
+		* non-[[info.kwarc.mmt.api.symbols.Constant]] declarations of a link, e.g.
+		* [[info.kwarc.mmt.api.symbols.Structure]]
+		*
+		* @param decl A declaration from a link, e.g. obtained via [[Link.getDeclarations]]
+		* @throws AssertionError If the declaration has no definiens component or that
+		*                        definiens component does not contain a term.
+		* @return The assigned term.
+		*/
 	def getDefiniensTerm(decl: Declaration): Term = {
 		val defComponent = decl.getComponent(DefComponent).getOrElse(throw new AssertionError(
 			"The declaration '" + decl.path + "' inside its link had no definiens component."
@@ -27,6 +39,10 @@ object LinkUtils {
 		}
 	}
 
+	/**
+		* As [[getDomainPathFromLinkDeclarationPath()]] but for every declaration of
+		* `link` as returned by [[Link.getDeclarations]]
+		*/
 	def getLinkDomainPaths(link: Link): List[GlobalName] = {
 		link.getDeclarations.map(decl => getDomainPathFromLinkDeclarationPath(decl.path))
 	}
@@ -73,28 +89,4 @@ object LinkUtils {
 			})
 			.toMap
 	}
-
-	/**
-		* For an injective link get the inverse term mapping. It is just the inverted map from
-		* [[LinkUtils.getTermMappingForLink()]].
-		*
-		* A link is injective :<=> for every two declarations of it the assigned terms are
-		* *not* equal (as in terms of the MMT Scala API).
-		*
-		* @return The inverse mapping.
-		* @throws AssertionError It asserts that the link is injective.
-		*/
-	def getInverseTermMappingForInjectiveLink(link: Link)(implicit ctrl: Controller)
-	: Map[Term, Term] = {
-		val forwardMapping = getTermMappingForLink(link)
-
-		assert(forwardMapping.values.toSet.size == forwardMapping.size, "Link is not " +
-			"injective!")
-
-		forwardMapping.map(_.swap)
-
-		??? // now changed forwardMapping, adjust!
-	}
-
-
 }

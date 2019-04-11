@@ -55,15 +55,16 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
          log("ignoring constant " + c.name)
          return None
      }
+
      val isNullable = false  //TODO
-     val isPrimaryKey = SchemaLang.primaryKey.get(c)
+     val isForeignKey = SchemaLang.foreignKey.get(c)
      val isOpaque = SchemaLang.opaque.get(c)
      val isHidden = SchemaLang.hidden.get(c)
      val collection = if (SchemaLang.collection.get(c)) {
        Some(CollectionInfo(c.path,c.metadata))
      } else 
        None
-     val col = Column(c.path, mathType, codecTermChecked, dbtype, isNullable, isPrimaryKey, isOpaque, !isHidden, collection)
+     val col = Column(c.path, mathType, codecTermChecked, dbtype, isForeignKey, isOpaque, !isHidden, collection)
      Some(col)
    }
       
@@ -155,18 +156,6 @@ object SQLBridge {
     val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
     val table = bridge.theoryToTable(thy)
     table
-    } catch {
-      case e:Error => println(e.toStringLong)
-    }
-  }
-  def test2(controller: Controller, thyP: MPath) = {
-    try {
-      val rules = RuleSet.collectRules(controller, Context(thyP))
-      val bridge = new SQLBridge(controller, rules, Nil)
-      controller.handleLine("log+ " + bridge.logPrefix)
-      val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
-      val table = bridge.theoryToTable(thy)
-      table
     } catch {
       case e:Error => println(e.toStringLong)
     }

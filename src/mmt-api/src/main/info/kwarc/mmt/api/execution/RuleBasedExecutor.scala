@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import objects._
 import symbols._
 import frontend._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 
 class RuntimeEnvironment(val heap: Heap, val stack: Stack, val rules: RuleSet) {
   val stdin = System.in
@@ -29,7 +30,7 @@ class Runtime(controller: Controller, env: RuntimeEnvironment, val logPrefix: St
 
    def execute(progOrg: Term): Term = {
       val context = env.stack.top
-      val prog = controller.simplifier(progOrg, context)
+      val prog = controller.simplifier(progOrg, SimplificationUnit(context, false, true))
       prog match {
         // foundation-independent cases
         case l: OMLITTrait =>

@@ -1,9 +1,12 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
+import info.kwarc.mmt.api.{DPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.archives.LMHHubArchiveEntry
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IArchive, IArchiveRef}
+
+import scala.util.Try
 
 trait ArchiveBuilder { this: Builder =>
 
@@ -54,8 +57,16 @@ trait ArchiveBuilder { this: Builder =>
 
     val responsible = entry.archive.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
-    val narrativeRoot = getDocument(entry.archive.narrationBase.toString)
-      .getOrElse(return buildFailure(entry.id, "getDocument(archive.narrativeRoot)"))
+    val narrativeRootPath = entry.archive.narrationBase.toString
+    val narrativeRoot = getDocument(narrativeRootPath)
+      .getOrElse({
+        val pseudoPath = Path.fromURI(entry.archive.narrationBase, entry.archive.namespaceMap) match {
+          case d: DPath => d
+          case _ => return buildFailure(entry.id, s"Path.parseD(archive.narrativeRoot")
+        }
+        logDebug(s"Archive ${ref.id} has empty narrative root, using pseudo-document")
+        buildPseudoDocument(pseudoPath, "This archive has no content")
+      })
 
     Some(IArchive(
       ref.parent, ref.id, ref.name,

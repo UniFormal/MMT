@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.refactoring.linkinversion._
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
+import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import info.kwarc.mmt.intellij.checking.{Checker, ErrorViewer}
 import info.kwarc.mmt.refactoring.linkinversion.LFLinkInverter
 import javax.swing.tree.DefaultMutableTreeNode
@@ -306,19 +306,6 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 
 	def checkUpdate: Option[(String, String)] = Try(MMTSystem.getLatestVersion).toOption
 
-	private var hasReadAllRelationalContent = false
-
-	private def readAllRelationalContent(): Unit = {
-		if (!hasReadAllRelationalContent) {
-			controller.backend.getArchives.foreach(archive => {
-				archive.allContent
-				archive.readRelational(FilePath("/"), controller, "rel")
-			})
-
-			hasReadAllRelationalContent = true
-		}
-	}
-
 	/* Generalizer Tool */
 	def generalize(
 									errorTreeRootNode: DefaultMutableTreeNode,
@@ -402,9 +389,6 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 
 		val newModulePath = T.path.parent ? (T.path.name + "Generalized")
 		val generatedMorphismPath = T.path.parent ? (T.path.name + "GeneralizedMorphism")
-
-		// [[LinkInverter]] needs all relational data
-		readAllRelationalContent()
 
 		val (invertedTheory, generatedMorphism) = LFLinkInverter.invertLink(
 			R,

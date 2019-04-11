@@ -3,14 +3,26 @@ package info.kwarc.mmt.refactoring.linkinversion
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Link
-import info.kwarc.mmt.api.modules.LinkUtils.getTermMappingForLink
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.linkinversion.LinkInversionRulesProvider
+import info.kwarc.mmt.api.refactoring.linkinversion.LinkUtils.getTermMappingForLink
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, LF}
 
-// TODO(ComFreek) document this
+/**
+	* Provide link inversion rules for links in a LF setting, i.e.
+	* both domain and codomain modules import LF in some way.
+	*
+	* @param ctrl    The controller.
+	* @param matcher A matcher to use, it should include LF typing rules, see example.
+	* @example   ```val matcher = new Matcher(
+	*            ctrl,
+	*            // where T is a module which has LF imported (transitively)
+	*            RuleSet.collectRules(ctrl, Context(T.path))
+	*            )```
+	* @see [[LFLinkInverter]]
+	**/
 class LFLinkInversionRulesProvider(private val ctrl: Controller, private val matcher: Matcher)
 	extends LinkInversionRulesProvider {
 

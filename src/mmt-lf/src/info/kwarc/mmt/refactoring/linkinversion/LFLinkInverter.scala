@@ -6,7 +6,14 @@ import info.kwarc.mmt.api.objects.{Context, Matcher}
 import info.kwarc.mmt.api.refactoring.linkinversion.{LinkInverter, RewriteErrorHandler}
 import info.kwarc.mmt.api.{MPath, RuleSet}
 
-// TODO(ComFreek) Document
+/**
+	* Invert links.
+	*
+	* @todo ComFreek: Add bluenote describing this.
+	*
+	* @see [[info.kwarc.mmt.api.refactoring.linkinversion.LinkInversionRulesProvider]]
+	* @see [[LFLinkInversionRulesProvider]]
+	*/
 object LFLinkInverter {
 	def invertLink(R: Theory, S: Theory, RToS: Link,
 								 newModulePath: MPath,

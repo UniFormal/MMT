@@ -66,7 +66,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
     val term = cr.term
 
     // simplify it and extract the types
-    val termS = interpreter.simplifier(term, context, true)
+    val termS = interpreter.simplifier(term, SimplificationUnit(context, true, true))
     val df = Some(termS)
     val tp = cr.solution.flatMap(_.getO(CheckingUnit.unknownType).flatMap(_.df))
 

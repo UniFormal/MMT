@@ -8,8 +8,9 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.{OMID, OMS}
 import info.kwarc.mmt.api.refactoring.{NotDone, ViewFinder}
 import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import javax.swing.JMenu
-import org.gjt.sp.jedit.{View => JEditView,_}
+import org.gjt.sp.jedit.{View => JEditView, _}
 import textarea._
 
 import scala.concurrent.Future
@@ -54,7 +55,7 @@ class EditActions(mmtplugin: MMTPlugin) {
     as match {
       case oa: JObjAsset =>
         val obj = oa.obj
-        val objS = mmtplugin.controller.simplifier(obj, oa.context, true)
+        val objS = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true, true))
         val str = mmtplugin.asString(objS)
         val textArea = view.getTextArea
         if (selected && replace) {
