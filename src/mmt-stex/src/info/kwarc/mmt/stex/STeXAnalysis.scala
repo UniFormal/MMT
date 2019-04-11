@@ -171,8 +171,18 @@ trait STeXAnalysis {
     line match {
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
+      case useMhModule(opt,_) =>
+        val argmap = getArgMap(opt)
+        val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+        assert(deps.length == 1)
+        List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
+      case guse(opt,_) =>
+        val argmap = getArgMap(opt)
+        val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+        assert(deps.length == 1)
+        List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
       case smsGStruct(_, r, _, p) =>
         List(createGImport(a, r, p))
       case smsMhStruct(r, _, p) =>
