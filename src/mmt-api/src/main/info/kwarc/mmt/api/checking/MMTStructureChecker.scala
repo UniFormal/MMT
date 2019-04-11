@@ -9,6 +9,7 @@ import objects._
 import ontology._
 import parser._
 import frontend._
+import info.kwarc.mmt.api.utils.MMT_TODO
 import opaque._
 import objects.Conversions._
 
@@ -93,7 +94,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     new Notify(controller.extman.get(classOf[ChangeListener]), report).onCheck(e)
   }
 
-  @deprecated("unclear what happens here", "")
+  @MMT_TODO("unclear what happens here")
   def elabContext(th : Theory)(implicit ce: CheckingEnvironment): Context = {
     //val con = getContext(th)
     val rules = RuleSet.collectRules(controller,Context.empty)
@@ -480,7 +481,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   }
   
   /** checks if a view is total and returns the missing assignments */
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   private def isTotal(context: Context, view: View, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
     val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[Theory]
     env.ce.simplifier(dom)
@@ -756,7 +757,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       // resolve type and parse unknown literal, return OMLIT
       case u @ UnknownOMLIT(v, synType) =>
         checkTerm(context, synType)
-        u.recognize(env.rules).getOrElse {
+        controller.recognizeLiteral(env.rules, u).getOrElse {
           env.errorCont(InvalidObject(s, "unknown literal type " + synType))
           u
         }

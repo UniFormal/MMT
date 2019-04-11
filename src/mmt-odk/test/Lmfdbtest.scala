@@ -5,9 +5,6 @@ import info.kwarc.mmt.api.symbols.{FinalConstant, RuleConstant}
 import info.kwarc.mmt.lf.Apply
 import info.kwarc.mmt.odk
 
-/**
-  * Created by raupi on 28.12.15.
-  */
 object Lmfdbtest {
   def main (args: Array[String]) {
     println("Start...")
@@ -31,8 +28,8 @@ object Lmfdbtest {
 
 
     val cond = controller.get(Path.parse("http://www.lmfdb.org/schema/elliptic_curves?curves?conductor")).asInstanceOf[FinalConstant]
-    val res1 = controller.simplifier.apply(Apply(cond.toTerm,c.toTerm),Context(p))
-    val res2 = controller.simplifier.apply(Apply(cond.toTerm,d.toTerm),Context(p))
+    val res1 = controller.simplifier.apply(Apply(cond.toTerm,c.toTerm),SimplificationUnit(Context(p), false, true))
+    val res2 = controller.simplifier.apply(Apply(cond.toTerm,d.toTerm),SimplificationUnit(Context(p), false, true))
     println(res1)
     println(res2)
 

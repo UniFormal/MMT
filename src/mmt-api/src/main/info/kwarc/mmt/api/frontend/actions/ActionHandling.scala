@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import parser._
 import frontend.actions._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import objects._
 
 /**
@@ -88,7 +89,7 @@ trait ActionHandling extends
         val context = contOpt.getOrElse(Context.empty)
         val pu = ParsingUnit(SourceRef.anonymous(text), context, text, getNamespaceMap)
         val checked = interpreter(pu)(ErrorThrower)
-        val simplified = simplifier(checked.term, context)
+        val simplified = simplifier(checked.term, SimplificationUnit(context, false, true))
         val presented = presenter.asString(simplified)
         ObjectResponse(presented, "html")
 

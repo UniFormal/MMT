@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 
 
 /** A class to quickly convert objects between Scala and JSON */
-@deprecated("this is unused, but is kept to be unified with ScalaTo in a future refactor", "")
+@MMT_TODO("this is unused, but is kept to be unified with ScalaTo in a future refactor")
 trait JSONConverter[T] {
   def toJSON(obj: T) : JSON
 

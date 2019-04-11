@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import symbols._
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils.MMT_TODO
 
 //TODO definition expansion everywhere
 
@@ -330,11 +331,11 @@ object ModExp extends uom.TheoryScala {
   val morphismapplication = _path ? "morphismapplication"
   val instantiation = _path ? "theoryinstantiate"
 
-  @deprecated("use anonymous theories", "")
+  @MMT_TODO("use anonymous theories")
   val complextheory = _path ? "complextheory"
-  @deprecated("use anonymous morphisms", "")
+  @MMT_TODO("use anonymous morphisms")
   val complexmorphism = _path ? "complexmorphism"
-  @deprecated("not needed but still used by Twelf", "")
+  @MMT_TODO("not needed but still used by Twelf")
   val tunion = _path ? "theory-union"
 }
 

@@ -116,7 +116,7 @@ abstract class ImpactPropagator(mem : ROMemory) extends Propagator(mem) {
     case UpdateComponent(path, name, old, nw) => new HashSet[Path]() + CPath(path,name)
     case UpdateMetadata(path, key, old, nw) => new HashSet[Path]() + path
     case PragmaticChange(name, diff, tp, mp, desc) => new HashSet[Path]() ++ diff.changes.flatMap(affectedPaths(_))
-
+    case _ => throw ImplementationError("can not computed affected paths")
   }
 
   /**
@@ -229,6 +229,8 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
       case (c : Constant, TypeComponent) => makeChange(c.tp)
       case (c : Constant, DefComponent) => makeChange(c.df)
 
+      /* everything else */
+      case _ => throw ImplementationError("invalid (parent, component) pair")
     }
     chOpt.toList
     case _ => Nil
@@ -281,6 +283,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
         } catch {
           case _ : Exception => //TODO
         }
+         case a => throw ImplementationError("DependsOn can only contain ContentPaths")
       }
 
     }
@@ -327,6 +330,8 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
       /* Constants */
       case (c : Constant, TypeComponent) => makeChange(c.tp)
       case (c : Constant, DefComponent) => makeChange(c.df)
+
+      case _ => throw ImplementationError("invalid (parent, component) pair")
 
     }
     chOpt.toList

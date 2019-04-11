@@ -17,14 +17,14 @@ trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
 
 /** a theory given by meta-theory and body */
 class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
-  def rename(oldNew: (LocalName,LocalName)*) = {
-    val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, OML(nw))}
+  def rename(oldNew: (LocalName,Term)*) = {
+    val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, nw)}
     val trav = symbols.OMLReplacer(sub)
     val newDecls = decls map {oml =>
       // TODO this renaming is too aggressive if there is OML shadowing or if OMLs are used for other purposes
-      val omlR = trav(oml, Context.empty).asInstanceOf[OML] // this traverser always maps OMLs to OMLs
+      val omlR : OML = trav(oml, Context.empty).asInstanceOf[OML] // this traverser always maps OMLs to OMLs
       listmap(oldNew, oml.name) match {
-        case Some(nw) => omlR.copy(name = nw)
+        case Some(nw) => omlR.copy(name = nw.asInstanceOf[OML].name)
         case None => omlR
       }
     }
@@ -135,6 +135,25 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
       case None => Nil
       case Some(a) => a :: getDistArrowsTo(a.from)
     }
+  }
+  def getAllArrowsTo(label : LocalName) : List[DiagramArrow] = {
+    arrows.filter(a => a.to == label)
+  }
+  def viewOf(from:DiagramNode,to:DiagramNode): List[OML] = {
+    /* Finding the rename arrows */
+    val distTo = getDistArrowsTo(to.label)
+    val rens: List[OML] = distTo.filter(_.label.toString.contains("rename")).flatMap(a => a.morphism.decls)
+    val new_decls = from.theory.decls.map { curr =>
+      var curr_ren = rens.find(oml => (oml.name == curr.name))
+      var new_decl = curr
+      while (curr_ren != None) {
+        var df = curr_ren.get.df // TODO: Do we want to have getOrElse here?
+        new_decl = df.get.asInstanceOf[OML]
+        curr_ren = rens.find(oml => (oml.name == new_decl.name))
+      }
+      new_decl
+    }
+    new_decls
   }
   def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}
   def getElements = nodes:::arrows

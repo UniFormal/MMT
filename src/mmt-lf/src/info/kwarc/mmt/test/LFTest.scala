@@ -109,7 +109,7 @@ object Orders {
     // ,"tutorial/???" TODO broken!
     ,"arithmetic_rules.mmt"
     ,"base-arith.mmt"
-    ,"hott.mmt"
+    // ,"hott.mmt"
     ,"instances.mmt" // currently mostly commented out?
     ,"nat.mmt"
     ,"int.mmt"

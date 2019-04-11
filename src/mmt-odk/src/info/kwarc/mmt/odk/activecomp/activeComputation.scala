@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.activecomp
 
 import info.kwarc.mmt.api.{GlobalName, NamespaceMap, Path}
-import info.kwarc.mmt.api.utils.{JSON, JSONObject, JSONString}
+import info.kwarc.mmt.api.utils.{JSON, JSONObject, JSONString, MMT_TODO}
 
 import scala.util.Try
 import scala.xml.Node
@@ -27,6 +27,7 @@ object EMEPaths {
 }
 
 /** An evaluation combination */
+@MMT_TODO("We should remove this in favor of the Jupyter stuff")
 case class Evaluation() extends activeComputation("eval", "Evaluate") {
   def apply(mathElement : Node, values: ACContext) : ACContext = {
 

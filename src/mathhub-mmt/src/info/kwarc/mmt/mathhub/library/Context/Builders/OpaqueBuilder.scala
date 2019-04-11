@@ -1,8 +1,9 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
+import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{IOpaqueElement, IOpaqueElementRef}
+import info.kwarc.mmt.mathhub.library.{IDocumentRef, IOpaqueElement, IOpaqueElementRef}
 
 trait OpaqueBuilder { this: Builder =>
 
@@ -34,5 +35,17 @@ trait OpaqueBuilder { this: Builder =>
       opaque.format,
       opaque.raw.toString
     ))
+  }
+  /** builds a pseudo opqaue-element with the given content */
+  protected def pseudoOpaqueElement(parent: IDocumentRef, parentPath: DPath, text: String) : IOpaqueElement = {
+    val path = parentPath ? "pseudo"
+
+    IOpaqueElement(
+      Some(parent), path.toPath, "pseudo",
+      None,
+
+      "text",
+      text
+    )
   }
 }

@@ -137,6 +137,7 @@ class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, ma
                   }.orElse(declOpt)
                }
          }
+         extraMessages :::= e.getAllCausedBy.map(_.toString)
          val ref = causeOpt.flatMap {cause => SourceRef.get(cause)}.getOrElse {
             mainMessage = "error with unknown location: " + mainMessage
             SourceRef(utils.FileURI(mainFile), SourceRegion(SourcePosition(0,0,0), SourcePosition(0,0,0)))

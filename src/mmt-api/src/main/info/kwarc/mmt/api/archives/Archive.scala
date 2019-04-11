@@ -141,7 +141,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     * TODO do properly
     * @return
     */
-  @deprecated("inefficient and brittle; use the relational dimension for this", "")
+  @MMT_TODO("inefficient and brittle; use the relational dimension for this")
   lazy val allContent : List[MPath] = {
     log("Reading Content " + id)
     var ret : List[MPath] = Nil
@@ -161,15 +161,19 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         val thexp = "name=\"([^\"]+)\" base=\"([^\"]+)\"".r
         def getLine = {
           val reader = File.Reader(inFile)
-          val str = reader.readLine()
+          val str = Try(reader.readLine()).getOrElse("")
           reader.close()
           if (str == null) "" else str
         }
         // def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
         thexp.findAllIn(getLine).toList foreach {
           case thexp(name, base) =>
-            //println(base + "?" + name)
-            ret ::= Path.parseD(base, NamespaceMap.empty) ? name
+            // Dirty fix for https://github.com/UniFormal/MMT/issues/439
+            // until allContent is completely replaced.
+            Path.parse(base, NamespaceMap.empty) match {
+              case dPath: DPath => ret ::= dPath ? name
+              case _ => /* do nothing */
+            }
         }
       }
     }

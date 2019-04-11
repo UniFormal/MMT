@@ -16,6 +16,24 @@ class EmbedStringToJSON(c: Codec[String]) extends Embedding[String,JSON](c) {
    }
 }
 
+/** embeds JSON codecs into codecs that use Scala values as codes */
+class EmbedJSONToScala(c: Codec[JSON]) extends Embedding[JSON,Any](c) {
+  def embed(j: JSON): Any = j match {
+    case JSONNull => null
+    case v: JSONValue => v.value
+    case a: JSONArray =>
+      a.values map embed
+    case _: JSONObject => throw GeneralError("unsupported")  
+  }
+  def extract(a: Any) = a match {
+    case null => Some(JSONNull)
+    case b: Boolean => Some(JSONBoolean(b))
+    case s: String => Some(JSONString(s))
+    case x: BigInt => Some(JSONInt(x))
+    case _ => None
+  }
+}
+
 /** auxiliary class for transforming integer into different bases */
 class BigIntSplitter(base: Int) {
    /** the representation of b>=0 in base 'base' using positive Ints as digits (least to most) */

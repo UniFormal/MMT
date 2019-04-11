@@ -197,7 +197,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           readInDocument(doc)(state)
           (doc.getDeclarations.last,state)
        case IsMod(mp, rd) =>
-          val mod = controller.globalLookup.getAs(classOf[Module],mp)
+          val mod = controller.globalLookup.getAs(classOf[ModuleOrLink],mp)
           readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
           (mod.getDeclarations.last, state)
     }

@@ -9,18 +9,25 @@ import info.kwarc.mmt.lf.ApplySpine
 object Codecs {
   val odkpath = DPath(URI("http","www.opendreamkit.org"))
   val path = odkpath ? "Codecs"
-
-  val standardInt = path ? "standardInt"
-  val standardNat = path ? "standardNat"
-  val standardPos = path ? "standardPos"
-  val standardString = path ? "standardString"
-  val standardBool = path ? "standardBool"
-  val boolAsString = path ? "boolAsString"
-  val boolAsInt = path ? "boolAsInt"
-  val standardList = path ? "standardList"
-  val standardVector = path ? "standardVector"
-  val standardMatrix = path ? "standardMatrix"
-  val rationalPolynomial = path ? "rationalPolynomial"
+  
+  val BoolC = odkpath ? "BoolCodecs"
+  val NatC = odkpath ? "NatCodecs"
+  val IntC = odkpath ? "IntCodecs"
+  val StringC = odkpath ? "StringCodecs"
+  
+  val standardInt = IntC ? "standardInt"
+  val standardNat = NatC ? "standardNat"
+  val standardPos = NatC ? "standardPos"
+  val standardString = StringC ? "standardString"
+  val standardBool = BoolC ? "standardBool"
+  val boolAsString = BoolC ? "boolAsString"
+  val boolAsInt = BoolC ? "boolAsInt"
+  
+  val MitMC = odkpath ? "MitMCodecs"
+  val standardList = MitMC ? "standardList"
+  val standardVector = MitMC ? "standardVector"
+  val standardMatrix = MitMC ? "standardMatrix"
+  val rationalPolynomial = MitMC ? "rationalPolynomial"
 }
 
 object LMFDBCoder extends Coder(List(TMInt,TMString,BoolAsInt,StandardBool,TMNat,TMPos,StandardPolynomial), List(TMList,StandardVector,StandardMatrix)) {

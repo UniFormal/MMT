@@ -382,7 +382,7 @@ object JSONXML {
           case _ => throw JSON.JSONError(s"attribute value must be JSON values")
         }
         val childX = child map jsonToXML
-        Elem(null, l, attsX, TopScope, childX:_*)
+        Elem(null, l, attsX, TopScope, childX.isEmpty, childX:_*)
       case j: JSONValue => Text(j.value.toString)
       case _ => throw JSON.JSONError(s"array or text expected")
     }
