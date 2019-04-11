@@ -76,9 +76,10 @@ trait STeXAnalysis {
         getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms"))).toList
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
+        val alldeps = getDeps(a,fp.toFile,Set.empty)
         Option(r) match {
-          case Some(id) => mkDep(a, id, fp)
-          case None => List(mkFileDep(a, fp))
+          case Some(id) => mkDep(a, id, fp)   ::: alldeps
+          case None => List(mkFileDep(a, fp)) ::: alldeps
         }
       case tikzinput(_, r, b) => mhRepos(a, r, b).map(toKeyDep(_, "tikzsvg"))
       case guse(r, b) => mkDep(a, r, entryToPath(b))
