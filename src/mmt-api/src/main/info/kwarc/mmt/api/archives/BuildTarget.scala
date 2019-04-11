@@ -482,7 +482,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
     val errorFile = bt.asDependency.getErrorFile(controller)
     val errs = hadErrors(errorFile, level)
     val mod = modified(bt.inFile, errorFile)
-    level <= Level.Force || mod || errs ||
+    val ex  = !bt.outFile.exists()
+    level <= Level.Force || ex || mod || errs ||
       deps.exists {
         case bd: BuildDependency =>
           val errFile = bd.getErrorFile(controller)
