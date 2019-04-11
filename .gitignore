@@ -27,8 +27,6 @@ scripts/travis/deploy_key
 # IntelliJ Failes
 .idea
 .idea_modules
-*.iml
-
 
 # Eclipse Files
 bin
