@@ -198,8 +198,8 @@ object Importer
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
       header.nonEmpty &&
-        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
-          locales.nonEmpty || locale_dependencies.nonEmpty)
+        (heading.isDefined || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
+          facts.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def command_name: String = element.head.span.name
 
