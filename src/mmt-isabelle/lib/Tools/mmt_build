@@ -2,6 +2,22 @@
 #
 # DESCRIPTION: build and deploy MMT, using sbt
 
-isabelle_admin_build jars || exit $?
+set -e
 
-cd "$ISABELLE_MMT_ROOT/src" && sbt mmt/deploy "$@"
+# Isabelle Scala/Java components
+isabelle_admin_build jars
+
+# MMT build
+cd "$ISABELLE_MMT_ROOT/src"
+sbt mmt/deploy "$@"
+
+# strip material already present in Isabelle classpath
+cd "$ISABELLE_MMT_ROOT/deploy"
+rm -rf tmp
+mkdir tmp
+cd tmp
+jar xf ../mmt.jar
+rm -r isabelle org/jline org/tukaani scala
+jar cf ../mmt.jar .
+cd ..
+rm -rf tmp
