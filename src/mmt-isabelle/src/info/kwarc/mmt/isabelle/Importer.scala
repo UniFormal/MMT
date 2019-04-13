@@ -184,6 +184,7 @@ object Importer
     element_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
     command_kind: Option[String] = None,
     document_tags: List[String] = Nil,
+    document_command: Boolean = false,
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     proof: Option[Proof_Text] = None,
@@ -198,7 +199,7 @@ object Importer
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
       header.nonEmpty &&
-        (heading.isDefined || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
+        (document_command || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
           facts.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def command_name: String = element.head.span.name
@@ -1133,6 +1134,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val syntax = resources.session_base.node_syntax(snapshot.version.nodes, node_name)
 
+      def document_command(element: isabelle.Thy_Element.Element_Command): Boolean =
+        isabelle.Document_Structure.is_document_command(syntax.keywords, element.head)
+
       val node_timing =
         isabelle.Document_Status.Overall_Timing.make(
           snapshot.state, snapshot.version, snapshot.node.commands)
@@ -1153,7 +1157,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         val relevant_elements =
           node_elements.filter(element =>
-              isabelle.Document_Structure.is_heading_command(element.head) ||
+              document_command(element) ||
               element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
 
         val relevant_ids =
@@ -1232,6 +1236,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             element_timing = element_timing,
             command_kind = syntax.keywords.kinds.get(element.head.span.name),
             document_tags = document_tags,
+            document_command = document_command(element),
             meta_data = meta_data,
             heading = heading,
             proof = proof,
