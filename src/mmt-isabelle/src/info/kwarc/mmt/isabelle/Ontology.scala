@@ -59,6 +59,9 @@ object Ontology
     val derived = ulo("derived") // HOL typedefs, proven statements
     val experimental = ulo("experimental") // proof contains "sorry"
 
+    val important = ulo("important")  // command is tagged as "important"
+    val unimportant = ulo("unimportant")  // command is tagged as "unimportant"
+
 
     /* binaries */
 
