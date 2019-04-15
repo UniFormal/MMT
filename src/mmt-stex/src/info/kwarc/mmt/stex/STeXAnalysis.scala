@@ -61,15 +61,47 @@ trait STeXAnalysis {
     case fd => fd
   }
 
-  protected def matchPathAndRep(a: Archive, inFile: File, line: String, parents: Set[File]): List[Dependency] =
-    line match {
+  protected def matchPathAndRepository(a: Archive, inFile: File, line: String, parents: Set[File]) : List[Dependency] =
+  {
+    line match
+    {
       case beginModnl(_, _, b) => List(mkFileDep(a, entryToPath(b)))
+
+      // ToDo: These four (at least) rely on the included file being in the same directory. Fix that.
       case input(_, _, _, b) =>
+        // As below with slight alterations for libinputs.
         val p = if (line.startsWith("\\lib"))
           STeXUtils.getAmbleFile(b + ".tex", a, None)
         else (inFile.up / b).setExtension("tex")
         val d = PhysicalDependency(p)
         d :: (if (!parents.contains(p)) getDeps(a, p, parents + p) else Nil)
+
+      case includeAssignment(_,_,b) =>
+        // "a13" -> File(a13.tex)
+        val pfile : File = (inFile.up / b).setExtension("tex")
+        // The including file naturally physically depends on the included file.
+        val pdep : Dependency = PhysicalDependency(pfile)
+        // All dependencies of the included file are now also dependencies of the including file.
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(a, pfile, parents + pfile)
+        } else { List(pdep) }
+
+      case inputAssignment(_,_,b) =>
+        // As above.
+        val pfile : File       = (inFile.up / b).setExtension("tex")
+        val pdep  : Dependency = PhysicalDependency(pfile)
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(a, pfile, parents + pfile)
+        } else { List(pdep) }
+
+      case includeProblem(_,_,b) =>
+        // As above.
+        val pfile : File       = (inFile.up / b).setExtension("tex")
+        val pdep  : Dependency = PhysicalDependency(pfile)
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(a, pfile, parents + pfile)
+        } else { List(pdep) }
+
       case includeGraphics(_, _, b) =>
         val gExts = List("png", "jpg", "eps", "pdf")
         val p = inFile.up / b
@@ -81,8 +113,10 @@ trait STeXAnalysis {
           if (os.isEmpty) log(inFile + " misses graphics file: " + b)
           os.toList.map(s => PhysicalDependency(p.setExtension(s)))
         }
+
       case importOrUseModule(r) =>
         getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms"))).toList
+
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         val alldeps = getDeps(a,fp.toFile,Set.empty)
@@ -90,11 +124,19 @@ trait STeXAnalysis {
           case Some(id) => mkDep(a, id, fp)   ::: alldeps
           case None => List(mkFileDep(a, fp)) ::: alldeps
         }
+
       case tikzinput(_, r, b) => mhRepos(a, r, b).map(toKeyDep(_, "tikzsvg"))
+
       case guse(r, b) => mkDep(a, r, entryToPath(b))
-      case includeMhProblem(_, r, b) => mhRepos(a, r, b) ::: getDeps(a,entryToPath(b).toFile,Set.empty)
+
+      // These three are supposed to work exactly alike, see https://github.com/UniFormal/MMT/issues/465.
+      case inputMhAssignment(_,r,b) =>   mhRepos(a, r, b) ::: getDeps(a,entryToPath(b).toFile,Set.empty)
+      case includeMhAssignment(_,r,b) => mhRepos(a, r, b) ::: getDeps(a,entryToPath(b).toFile,Set.empty)
+      case includeMhProblem(_, r, b) =>  mhRepos(a, r, b) ::: getDeps(a,entryToPath(b).toFile,Set.empty)
+
       case _ => Nil
     }
+  }
 
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String): String =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s + "%"
@@ -172,7 +214,7 @@ trait STeXAnalysis {
         val sl = matchSmsEntry(a, l)
         sl.foreach(combine)
         if (key != "sms") {
-          val od = matchPathAndRep(a, in, l, parents)
+          val od = matchPathAndRepository(a, in, l, parents)
           od.foreach(d => combine(STeXStructure(Nil, List(d))))
         }
       }
