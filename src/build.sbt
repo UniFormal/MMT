@@ -430,6 +430,12 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
+// plugin for computing argumentation semantics
+lazy val argsemcomp = (project in file("mmt-argsemcomp")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*)
+  libraryDependencies += "com.spotify" % "docker-client" % "latest.integration"
+
 // =================================
 // DEPENDENT PROJECTS (projects that do not use mmt-api)
 // =================================
