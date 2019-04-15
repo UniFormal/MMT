@@ -4,10 +4,19 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.stex.STeXUtils._
 
-case class STeXStructure(smslines: List[String], deps: List[Dependency]) {
-  def join(s2: STeXStructure): STeXStructure =
-    if (s2.smslines.isEmpty && s2.deps.isEmpty) this
-    else STeXStructure(s2.smslines ++ smslines, s2.deps ++ deps)
+/**
+  * Monoidal accumulator for SMS content and dependencies.
+  * @param smslines SMS content (List[String])
+  * @param deps Collected dependencies (List[Dependency])
+  */
+case class STeXStructure(smslines: List[String], deps: List[Dependency])
+{
+  def empty : STeXStructure = STeXStructure(List.empty,List.empty)
+
+  def <>(that : STeXStructure) : STeXStructure =
+    if (that.smslines.isEmpty && that.deps.isEmpty) {
+      this
+    } else STeXStructure(that.smslines ++ smslines, that.deps ++ deps)
 }
 
 /**
@@ -131,11 +140,12 @@ trait STeXAnalysis {
   private def createImport(r: String, p: String): STeXStructure =
     STeXStructure(List("\\importmodule[" + r + "]{" + p + "}%"), Nil)
 
-  /** create sms file */
-  def createSms(a: Archive, inFile: File, outFile: File) {
-    val smsLines = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
-    if (smsLines.nonEmpty) File.write(outFile, smsLines.reverse.mkString("", "\n", "\n"))
-    else log("no sms content")
+  /** Collect sms content and write to outFile. */
+  def createSms(a: Archive, inFile: File, outFile: File) : Unit = {
+    val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
+
+    if (smsContent.isEmpty) {log("no sms content")}
+    else { File.write(outFile, smsContent.reverse.mkString("", "\n", "\n")) }
   }
 
   /** get dependencies */
@@ -146,26 +156,29 @@ trait STeXAnalysis {
     else Nil
   }
 
-  /** in file is used for relative \input paths */
-  def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure = {
-    var struct = STeXStructure(Nil, Nil)
-    def join(s: STeXStructure) = {
-      struct = struct.join(s)
+  /** inFile is used for relative \input paths */
+  def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure =
+  {
+    var localStruct = STeXStructure(Nil,Nil)
+
+    def combine(s: STeXStructure) : Unit = {
+      localStruct = localStruct <> s
     }
 
     lines.foreach { line =>
       val l = stripComment(line).trim
-      val verbIndex = l.indexOf("\\verb")
-      if (verbIndex <= -1) {
+      val isVerbatim = l.contains("\\verb")
+      if (!isVerbatim)
+      {
         val sl = matchSmsEntry(a, l)
-        sl.foreach(join)
+        sl.foreach(combine)
         if (key != "sms") {
           val od = matchPathAndRep(a, in, l, parents)
-          od.foreach(d => join(STeXStructure(Nil, List(d))))
+          od.foreach(d => combine(STeXStructure(Nil, List(d))))
         }
       }
     }
-    struct
+    localStruct
   }
 
   def matchSmsEntry(a: Archive, line: String): List[STeXStructure] = {

@@ -9,15 +9,12 @@ import scala.util.matching.Regex
 object STeXUtils {
   val c : String = java.io.File.pathSeparator
 
-  def mathHubDir(bt: BuildTask): File = bt.archive.root.up.up.up
+  def mathHubDir(bt: BuildTask) : File = bt.archive.root.up.up.up
+  def extBase(bt: BuildTask)    : File = mathHubDir(bt) / "ext"
+  def stexStyDir(bt: BuildTask) : File = extBase(bt) / "sTeX" / "sty"
+  def styPath(bt: BuildTask)    : File = mathHubDir(bt) / "sty"
 
-  def extBase(bt: BuildTask): File = mathHubDir(bt) / "ext"
-
-  def stexStyDir(bt: BuildTask): File = extBase(bt) / "sTeX" / "sty"
-
-  def styPath(bt: BuildTask): File = mathHubDir(bt) / "sty"
-
-  def sysEnv(v: String): String = sys.env.getOrElse(v, "")
+  def sysEnv(v: String) : String = sys.env.getOrElse(v, "")
 
   def env(bt: BuildTask): List[(String, String)] = {
     val sty = "STEXSTYDIR"
@@ -79,46 +76,50 @@ object STeXUtils {
 
   private def begin(s: String): String = "begin\\{" + s + "\\}"
 
-  private val space = "\\s*"
-  private val opt = "\\[(.*?)\\]"
-  private val opt0 = "(" + opt + ")?"
-  private val arg = space + "\\{(.*?)\\}"
-  private val any = ".*"
-  private val arg1 = arg + any
-  private val optArg1 = opt0 + arg1
-  private val bs = "\\\\"
-  private val oStar = "\\*?"
-  val input: Regex = (bs + "(lib)?input" + oStar + optArg1).r
-  val includeGraphics: Regex = (bs + "includegraphics" + oStar + optArg1).r
-  val importOrUseModule: Regex = (bs + "(import|use)Module" + opt + any).r
-  val guse: Regex = (bs + "guse" + opt + arg1).r
-  val useMhProblem: Regex = (bs + "usemhproblem" + optArg1).r
-  val useMhModule    : Regex = (bs + "usemhmodule" + opt + arg1).r
-  val includeMhProblem: Regex = (bs + "includemhproblem" + optArg1).r
-  val beginModnl: Regex = (bs + begin("m?h?modnl") + optArg1).r
-  val mhinputRef: Regex = (bs + "n?m?h?inputref" + optArg1).r
-  val tikzinput: Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
-  private val smsKeys: List[String] = List("gadopt", "symvariant", "gimport") ++
+  private val space   : String = "\\s*"
+  private val opt     : String = "\\[(.*?)\\]"
+  private val opt0    : String = "(" + opt + ")?"
+  private val arg     : String = space + "\\{(.*?)\\}"
+  private val any     : String = ".*"
+  private val arg1    : String = arg + any
+  private val optArg1 : String = opt0 + arg1
+  private val bs      : String = "\\\\"
+  private val oStar   : String = "\\*?"
+
+  val input             : Regex = (bs + "(lib)?input" + oStar + optArg1).r
+  val includeGraphics   : Regex = (bs + "includegraphics" + oStar + optArg1).r
+  val importOrUseModule : Regex = (bs + "(import|use)Module" + opt + any).r
+  val guse              : Regex = (bs + "guse" + opt + arg1).r
+  val useMhProblem      : Regex = (bs + "usemhproblem" + optArg1).r
+  val useMhModule       : Regex = (bs + "usemhmodule" + opt + arg1).r
+  val includeMhProblem  : Regex = (bs + "includemhproblem" + optArg1).r
+  val beginModnl        : Regex = (bs + begin("m?h?modnl") + optArg1).r
+  val mhinputRef        : Regex = (bs + "n?m?h?inputref" + optArg1).r
+  val tikzinput         : Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
+
+  private val smsKeys : List[String] = List("gadopt", "symvariant", "gimport") ++
     List("sym", "abbr", "key", "listkey").map(_ + "def") ++
     List("import", "adopt", "adoptmh").map(_ + "module")
+
   private val smsTopKeys: List[String] = List("module", "importmodulevia", "importmhmodulevia")
+
   val smsRegs: Regex = {
     val begins: String = begin(mkRegGroup(smsTopKeys))
     val ends: String = smsTopKeys.mkString("|end\\{(", "|", ")\\}")
     ("^\\\\(" + mkRegGroup(smsKeys) + "|" + begins + ends + ")").r
   }
-  val importMhModule: Regex = (bs + "importmhmodule" + opt + "(.*?)").r
-  val gimport: Regex = (bs + "gimport" + oStar + optArg1).r
 
   private def optArg2(s: String): String = bs + begin(s) + opt + arg + arg
 
-  val smsSStruct  : Regex = optArg2("sstructure").r
-  val smsGStruct  : Regex = (bs + begin("gstructure") + opt0 + arg + arg).r
-  val smsMhStruct : Regex = optArg2("mhstructure").r
-  val smsViewsig  : Regex = (optArg2("gviewsig") + arg).r
-  val smsViewnl   : Regex = (bs + begin("gviewnl") + opt0 + arg + any).r
-  val smsMhView   : Regex = (optArg2("mhview") + arg).r
-  val smsView     : Regex = optArg2("view").r
+  val importMhModule : Regex = (bs + "importmhmodule" + opt + "(.*?)").r
+  val gimport        : Regex = (bs + "gimport" + oStar + optArg1).r
+  val smsSStruct     : Regex = optArg2("sstructure").r
+  val smsGStruct     : Regex = (bs + begin("gstructure") + opt0 + arg + arg).r
+  val smsMhStruct    : Regex = optArg2("mhstructure").r
+  val smsViewsig     : Regex = (optArg2("gviewsig") + arg).r
+  val smsViewnl      : Regex = (bs + begin("gviewnl") + opt0 + arg + any).r
+  val smsMhView      : Regex = (optArg2("mhview") + arg).r
+  val smsView        : Regex = optArg2("view").r
 
   def entryToPath(p: String) : FilePath = File(p).setExtension("tex").toFilePath
 
