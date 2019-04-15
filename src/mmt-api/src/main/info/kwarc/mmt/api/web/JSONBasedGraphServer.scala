@@ -172,13 +172,13 @@ class JGraphSideBar extends Extension {
   }
 }
 
-abstract class JGraphExporter(val key : String, val semantic : String = "none", val computer : String = "best") extends FormatBasedExtension {
+abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
   def isApplicable (format: String): Boolean = format == key
   def buildGraph(s : String) : JSON
   def computeSem(f: JSON, sem: String, comp: String) : JSON
 }
 
-abstract class SimpleJGraphExporter (key : String, semantic : String = "none", computer : String = "default") extends JGraphExporter(key,semantic,computer) {
+abstract class SimpleJGraphExporter (key : String) extends JGraphExporter(key) {
   override def logPrefix: String = key
   val builder : JGraphBuilder
   val selector : JGraphSelector
@@ -190,7 +190,7 @@ abstract class SimpleJGraphExporter (key : String, semantic : String = "none", c
     res
   }
 
-  def computeSem(f: JSONObject, sem: String, comp: String = "default"): JSONObject = {
+  def computeSem(f: JSON, sem: String, comp: String = "default"): JSON = {
     val semcomp = new SemanticComputer(f, sem, comp)
     val ret = semcomp.TgfToJson(semcomp.CallComputer(semcomp.JsonToTgf(f), sem, comp))
     ret
@@ -553,7 +553,7 @@ object GraphBuilder {
   }
 }
 
-class SemanticComputer (val f: JSONObject, val sem: String, val computer: String = "default") {
+class SemanticComputer (val f: JSON, val sem: String, val computer: String = "default") {
   def JsonToTgf (f: JSONObject) : List[String] = {
     val edgelist: JSON = f("edges").getOrElse(return List())
     val includes: List[String] = {
