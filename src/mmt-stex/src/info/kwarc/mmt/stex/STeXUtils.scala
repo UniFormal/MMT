@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.utils._
 import scala.io.{BufferedSource, Codec}
 import scala.util.matching.Regex
 
-object STeXUtils {
+object STeXUtils
+{
   val c : String = java.io.File.pathSeparator
 
   def mathHubDir(bt: BuildTask) : File = bt.archive.root.up.up.up
@@ -53,8 +54,7 @@ object STeXUtils {
     else getLangAmbleFile(ambleFile(groupMetaInf(a)), lang)
   }
 
-  def readSourceRebust(f: File): BufferedSource =
-    scala.io.Source.fromFile(f)(Codec.UTF8)
+  def readSourceRebust(f: File): BufferedSource = scala.io.Source.fromFile(f)(Codec.UTF8)
 
   def stripComment(line: String): String = {
     val idx = line.indexOf('%')
@@ -93,9 +93,9 @@ object STeXUtils {
   val useMhProblem      : Regex = (bs + "usemhproblem" + optArg1).r
   val useMhModule       : Regex = (bs + "usemhmodule" + opt + arg1).r
   val includeMhProblem  : Regex = (bs + "includemhproblem" + optArg1).r
-  val beginModnl        : Regex = (bs + begin("m?h?modnl") + optArg1).r
-  val mhinputRef        : Regex = (bs + "n?m?h?inputref" + optArg1).r
-  val tikzinput         : Regex = (any + bs + "c?m?h?tikzinput" + optArg1).r
+  val beginModnl        : Regex = (bs + begin("(?:mh)?modnl") + optArg1).r
+  val mhinputRef        : Regex = (bs + "n?(?:mh)?inputref" + optArg1).r
+  val tikzinput         : Regex = (any + bs + "c?(?:mh)?tikzinput" + optArg1).r
 
   private val smsKeys : List[String] = List("gadopt", "symvariant", "gimport") ++
     List("sym", "abbr", "key", "listkey").map(_ + "def") ++

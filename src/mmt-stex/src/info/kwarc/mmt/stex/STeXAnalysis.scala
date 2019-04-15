@@ -156,7 +156,8 @@ trait STeXAnalysis {
     else Nil
   }
 
-  /** inFile is used for relative \input paths */
+  /** Method for creating STeXStructures, used for generating sms content and finding dependencies.
+    * inFile is used for relative \input paths */
   def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure =
   {
     var localStruct = STeXStructure(Nil,Nil)
@@ -181,10 +182,13 @@ trait STeXAnalysis {
     localStruct
   }
 
-  def matchSmsEntry(a: Archive, line: String): List[STeXStructure] = {
-    line match {
+  def matchSmsEntry(a: Archive, line: String): List[STeXStructure] =
+  {
+    line match
+    {
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
+
       case useMhModule(opt,_) =>
         val argmap = getArgMap(opt)
         if (argmap.contains("path")) {
@@ -192,8 +196,10 @@ trait STeXAnalysis {
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
+
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
+
       case guse(opt,_) =>
         val argmap = getArgMap(opt)
         if (argmap.contains("path")) {
@@ -201,19 +207,25 @@ trait STeXAnalysis {
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
+
       case smsGStruct(_, r, _, p) =>
         List(createGImport(a, r, p))
+
       case smsMhStruct(r, _, p) =>
         createMhImport(a, r, p)
+
       case smsSStruct(r, _, p) =>
         List(createImport(r, p))
+
       case smsViewsig(r, _, f, t) =>
         val m = getArgMap(r)
         val fr = m.getOrElse("fromrepos", archString(a))
         val tr = m.getOrElse("torepos", archString(a))
         List(mkGImport(a, fr, f), mkGImport(a, tr, t))
+
       case smsViewnl(_, r, p) =>
         List(createGImport(a, archString(a), p))
+
       case smsMhView(r, _, f, t) =>
         val m = getArgMap(r)
         var ofp = m.get("frompath")
@@ -225,6 +237,7 @@ trait STeXAnalysis {
             List(mkMhImport(a, fr, fp, f), mkMhImport(a, tr, tp, t))
           case _ => Nil
         }
+
       case smsView(r, f, t) =>
         val m = getArgMap(r)
         val ofr = m.get("from")
@@ -234,7 +247,9 @@ trait STeXAnalysis {
             List(createImport(fr, f), createImport(tr, t))
           case _ => Nil
         }
+
       case _ if smsRegs.findFirstIn(line).isDefined => List(STeXStructure(List(line + "%"), Nil))
+
       case _ => Nil
     }
   }
