@@ -92,8 +92,6 @@ trait STeXAnalysis {
         }
       case tikzinput(_, r, b) => mhRepos(a, r, b).map(toKeyDep(_, "tikzsvg"))
       case guse(r, b) => mkDep(a, r, entryToPath(b))
-      // ToDo: The use of tikzsvg in useMhProblem seems like a bug. Verify?
-      case useMhProblem(_, r, b) => createMhImport(a, r, b).flatMap(_.deps).map(toKeyDep(_, "tikzsvg"))
       case includeMhProblem(_, r, b) => mhRepos(a, r, b) ::: getDeps(a,entryToPath(b).toFile,Set.empty)
       case _ => Nil
     }

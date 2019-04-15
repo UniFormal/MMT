@@ -90,7 +90,6 @@ object STeXUtils
   val includeGraphics   : Regex = (bs + "includegraphics" + oStar + optArg1).r
   val importOrUseModule : Regex = (bs + "(import|use)Module" + opt + any).r
   val guse              : Regex = (bs + "guse" + opt + arg1).r
-  val useMhProblem      : Regex = (bs + "usemhproblem" + optArg1).r
   val useMhModule       : Regex = (bs + "usemhmodule" + opt + arg1).r
   val includeMhProblem  : Regex = (bs + "includemhproblem" + optArg1).r
   val beginModnl        : Regex = (bs + begin("(?:mh)?modnl") + optArg1).r
