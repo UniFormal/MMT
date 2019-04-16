@@ -191,9 +191,12 @@ abstract class SimpleJGraphExporter (key : String) extends JGraphExporter(key) {
   }
 
   def computeSem(f: JSON, sem: String, comp: String = "default"): JSON = {
-    val semcomp = new SemanticComputer(f, sem, comp)
-    val ret = semcomp.TgfToJson(semcomp.CallComputer(semcomp.JsonToTgf(f), sem, comp))
-    ret
+    val key = "default"
+    controller.extman.get(classOf[GraphSolverExtension]).find(_.key == key) match {
+      case Some(e) => e(f, sem, comp)
+      case None => log("No solver present")
+        f
+    }
   }
 }
 
@@ -553,7 +556,12 @@ object GraphBuilder {
   }
 }
 
-class SemanticComputer (val f: JSON, val sem: String, val computer: String = "default") {
+abstract class GraphSolverExtension extends Extension {
+  val key: String
+  def apply(graph: JSON, semantics: String, comp: String): JSON
+}
+
+/* class SemanticComputer (val f: JSON, val sem: String, val computer: String = "default") {
   def JsonToTgf (f: JSONObject) : List[String] = {
     val edgelist: JSON = f("edges").getOrElse(return List())
     val includes: List[String] = {
@@ -564,4 +572,4 @@ class SemanticComputer (val f: JSON, val sem: String, val computer: String = "de
   }
   def TgfToJson (tgf: List[String]) : JSONObject = null
   def CallComputer (tgf: List[String], semantic: String, computer: String) : List[String] =List("test")
-}
+} */
