@@ -95,13 +95,11 @@ class SemanticComputer {
 
 object Graphtester extends MagicTest("jgraph") {
   def run : Unit = {
-    val test = WebQuery("type=archivegraph&graphdata=MMT/urtheories&semantic=grounded")
+    hl("extension info.kwarc.mmt.argsemcomp.ArgumentationSemanticComputer")
+    //val test = WebQuery("type=archivegraph&graphdata=MMT/urtheories&semantic=grounded")
     // println(test)
     //println( test("graphdata"))
     //val serve = new JSONBasedGraphServer()
-
-
-
   }
 
 
@@ -114,8 +112,8 @@ object Jsonprinter extends MagicTest {
   }
 }**/
 
-class SemanticComputer (f: JSON, sem: String, computer: String = "best") {
+/* class SemanticComputer (f: JSON, sem: String, computer: String = "best") {
   def JsonToTgf (f: JSON) : String ="test"
   def TgfToJson (tgf: String) : JSON = null
   def CallComputer (tgf: String, computer: String) : String ="test"
-}
+} */
