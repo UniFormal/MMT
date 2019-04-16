@@ -4,10 +4,19 @@ import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.stex.STeXUtils._
 
-case class STeXStructure(smslines: List[String], deps: List[Dependency]) {
-  def join(s2: STeXStructure): STeXStructure =
-    if (s2.smslines.isEmpty && s2.deps.isEmpty) this
-    else STeXStructure(s2.smslines ++ smslines, s2.deps ++ deps)
+/**
+  * Monoidal accumulator for SMS content and dependencies.
+  * @param smslines SMS content (List[String])
+  * @param deps Collected dependencies (List[Dependency])
+  */
+case class STeXStructure(smslines: List[String], deps: List[Dependency])
+{
+  def empty : STeXStructure = STeXStructure(List.empty,List.empty)
+
+  def <>(that : STeXStructure) : STeXStructure =
+    if (that.smslines.isEmpty && that.deps.isEmpty) {
+      this
+    } else STeXStructure(that.smslines ++ smslines, that.deps ++ deps)
 }
 
 /**
@@ -47,20 +56,79 @@ trait STeXAnalysis {
     }
   }
 
+  def mhReposClosure(archive: Archive, parents : Set[File], r : String, b : String) : List[Dependency] =
+  {
+    // Single dependency
+    val nu_dep : List[Dependency] = mhRepos(archive, r, b)
+
+    // Find distant archive given by r.
+    val distantArchive : Archive = Option(r).map(getArgMap) match
+    {
+      case Some(m) =>
+        // Compare mkDep
+        assert(m.get("mhrepos").isDefined)
+        val root = archive.root.up.up / m("mhrepos")
+        controller.addArchive(root)
+        val thearchive = controller.backend.getArchive(root)
+        assert(thearchive.isDefined)
+        thearchive.get
+
+      case None => archive // fallback
+    }
+
+    val theFile : File = if (archive == distantArchive) { entryToPath(b).toFile }
+                         else { (distantArchive.root / "source" / b).setExtension("tex") }
+
+    val closure : List[Dependency] = getDeps(distantArchive,theFile,parents + theFile)
+    nu_dep ::: closure
+  }
+
   protected def toKeyDep(d: Dependency, key: String): Dependency = d match {
     case FileBuildDependency(_, ar, fp) => FileBuildDependency(key, ar, fp)
     case fd => fd
   }
 
-  protected def matchPathAndRep(a: Archive, inFile: File, line: String, parents: Set[File]): List[Dependency] =
-    line match {
-      case beginModnl(_, _, b) => List(mkFileDep(a, entryToPath(b)))
+  protected def matchPathAndRepo(archive: Archive, inFile: File, line: String, parents: Set[File]) : List[Dependency] =
+  {
+    line match
+    {
+      case beginModnl(_, _, b) => List(mkFileDep(archive, entryToPath(b)))
+
+      // The next four take relative paths so it's okay not to include that.
       case input(_, _, _, b) =>
+        // As below with slight alterations for libinputs.
         val p = if (line.startsWith("\\lib"))
-          STeXUtils.getAmbleFile(b + ".tex", a, None)
+          STeXUtils.getAmbleFile(b + ".tex", archive, None)
         else (inFile.up / b).setExtension("tex")
         val d = PhysicalDependency(p)
-        d :: (if (!parents.contains(p)) getDeps(a, p, parents + p) else Nil)
+        d :: (if (!parents.contains(p)) getDeps(archive, p, parents + p) else Nil)
+
+      case includeAssignment(_,_,b) =>
+        // "a13" -> File(a13.tex)
+        val pfile : File = (inFile.up / b).setExtension("tex")
+        // The including file naturally physically depends on the included file.
+        val pdep : Dependency = PhysicalDependency(pfile)
+        // All dependencies of the included file are now also dependencies of the including file.
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(archive, pfile, parents + pfile)
+        } else { List(pdep) }
+
+      case inputAssignment(_,_,b) =>
+        // As above.
+        val pfile : File       = (inFile.up / b).setExtension("tex")
+        val pdep  : Dependency = PhysicalDependency(pfile)
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(archive, pfile, parents + pfile)
+        } else { List(pdep) }
+
+      case includeProblem(_,_,b) =>
+        // As above.
+        val pfile : File       = (inFile.up / b).setExtension("tex")
+        val pdep  : Dependency = PhysicalDependency(pfile)
+        if (!parents.contains(pfile)) {
+          pdep :: getDeps(archive, pfile, parents + pfile)
+        } else { List(pdep) }
+
       case includeGraphics(_, _, b) =>
         val gExts = List("png", "jpg", "eps", "pdf")
         val p = inFile.up / b
@@ -72,20 +140,30 @@ trait STeXAnalysis {
           if (os.isEmpty) log(inFile + " misses graphics file: " + b)
           os.toList.map(s => PhysicalDependency(p.setExtension(s)))
         }
+
       case importOrUseModule(r) =>
         getArgMap(r).get("load").map(f => PhysicalDependency(File(f).setExtension(".sms"))).toList
+
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
+        val alldeps = getDeps(archive,fp.toFile,Set.empty)
         Option(r) match {
-          case Some(id) => mkDep(a, id, fp)
-          case None => List(mkFileDep(a, fp))
+          case Some(id) => mkDep(archive, id, fp)   ::: alldeps
+          case None => List(mkFileDep(archive, fp)) ::: alldeps
         }
-      case tikzinput(_, r, b) => mhRepos(a, r, b).map(toKeyDep(_, "tikzsvg"))
-      case guse(r, b) => mkDep(a, r, entryToPath(b))
-      case useMhProblem(_, r, b) => createMhImport(a, r, b).flatMap(_.deps).map(toKeyDep(_, "tikzsvg"))
-      case includeMhProblem(_, r, b) => mhRepos(a, r, b)
+
+      case tikzinput(_, r, b) => mhRepos(archive, r, b).map(toKeyDep(_, "tikzsvg"))
+
+      case guse(r, b) => mkDep(archive, r, entryToPath(b))
+
+      // These three are supposed to work exactly alike, see https://github.com/UniFormal/MMT/issues/465.
+      case inputMhAssignment(_,r,b)   => mhReposClosure(archive, parents, r, b)
+      case includeMhAssignment(_,r,b) => mhReposClosure(archive, parents, r, b)
+      case includeMhProblem(_, r, b)  => mhReposClosure(archive, parents, r, b)
+
       case _ => Nil
     }
+  }
 
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String): String =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s + "%"
@@ -129,11 +207,12 @@ trait STeXAnalysis {
   private def createImport(r: String, p: String): STeXStructure =
     STeXStructure(List("\\importmodule[" + r + "]{" + p + "}%"), Nil)
 
-  /** create sms file */
-  def createSms(a: Archive, inFile: File, outFile: File) {
-    val smsLines = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
-    if (smsLines.nonEmpty) File.write(outFile, smsLines.reverse.mkString("", "\n", "\n"))
-    else log("no sms content")
+  /** Collect sms content and write to outFile. */
+  def createSms(a: Archive, inFile: File, outFile: File) : Unit = {
+    val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
+
+    if (smsContent.isEmpty) {log("no sms content")}
+    else { File.write(outFile, smsContent.reverse.mkString("", "\n", "\n")) }
   }
 
   /** get dependencies */
@@ -144,47 +223,76 @@ trait STeXAnalysis {
     else Nil
   }
 
-  /** in file is used for relative \input paths */
-  def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure = {
-    var struct = STeXStructure(Nil, Nil)
-    def join(s: STeXStructure) = {
-      struct = struct.join(s)
+  /** Method for creating STeXStructures, used for generating sms content and finding dependencies.
+    * inFile is used for relative \input paths */
+  def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure =
+  {
+    var localStruct = STeXStructure(Nil,Nil)
+
+    def combine(s: STeXStructure) : Unit = {
+      localStruct = localStruct <> s
     }
 
     lines.foreach { line =>
       val l = stripComment(line).trim
-      val verbIndex = l.indexOf("\\verb")
-      if (verbIndex <= -1) {
+      val isVerbatim = l.contains("\\verb")
+      if (!isVerbatim)
+      {
         val sl = matchSmsEntry(a, l)
-        sl.foreach(join)
+        sl.foreach(combine)
         if (key != "sms") {
-          val od = matchPathAndRep(a, in, l, parents)
-          od.foreach(d => join(STeXStructure(Nil, List(d))))
+          val od = matchPathAndRepo(a, in, l, parents)
+          od.foreach(d => combine(STeXStructure(Nil, List(d))))
         }
       }
     }
-    struct
+    localStruct
   }
 
-  def matchSmsEntry(a: Archive, line: String): List[STeXStructure] = {
-    line match {
+  def matchSmsEntry(a: Archive, line: String): List[STeXStructure] =
+  {
+    line match
+    {
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
+
+      case useMhModule(opt,_) =>
+        val argmap = getArgMap(opt)
+        if (argmap.contains("path")) {
+          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+          assert(deps.length == 1)
+          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
+        } else { Nil }
+
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
+
+      case guse(opt,_) =>
+        val argmap = getArgMap(opt)
+        if (argmap.contains("path")) {
+          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+          assert(deps.length == 1)
+          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
+        } else { Nil }
+
       case smsGStruct(_, r, _, p) =>
         List(createGImport(a, r, p))
+
       case smsMhStruct(r, _, p) =>
         createMhImport(a, r, p)
+
       case smsSStruct(r, _, p) =>
         List(createImport(r, p))
+
       case smsViewsig(r, _, f, t) =>
         val m = getArgMap(r)
         val fr = m.getOrElse("fromrepos", archString(a))
         val tr = m.getOrElse("torepos", archString(a))
         List(mkGImport(a, fr, f), mkGImport(a, tr, t))
+
       case smsViewnl(_, r, p) =>
         List(createGImport(a, archString(a), p))
+
       case smsMhView(r, _, f, t) =>
         val m = getArgMap(r)
         var ofp = m.get("frompath")
@@ -196,6 +304,7 @@ trait STeXAnalysis {
             List(mkMhImport(a, fr, fp, f), mkMhImport(a, tr, tp, t))
           case _ => Nil
         }
+
       case smsView(r, f, t) =>
         val m = getArgMap(r)
         val ofr = m.get("from")
@@ -205,7 +314,9 @@ trait STeXAnalysis {
             List(createImport(fr, f), createImport(tr, t))
           case _ => Nil
         }
+
       case _ if smsRegs.findFirstIn(line).isDefined => List(STeXStructure(List(line + "%"), Nil))
+
       case _ => Nil
     }
   }

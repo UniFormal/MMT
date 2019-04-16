@@ -478,20 +478,33 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /** auxiliary method of runBuildTaskIfNeeded: implements the semantics of Update to determine whether a task has to be built */
   // TODO specify the semantics of Update
-  private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
-    val errorFile = bt.asDependency.getErrorFile(controller)
-    val errs = hadErrors(errorFile, level)
-    val mod = modified(bt.inFile, errorFile)
-    level <= Level.Force || mod || errs ||
-      deps.exists {
+  private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean =
+  {
+    val errorFile : File = bt.asDependency.getErrorFile(controller)
+
+    lazy val forced  : Boolean = level <= Level.Force
+    lazy val outex   : Boolean = {
+      // usually, we build outfiles, that don't exist.
+      // However, for .deps files, we don't need to.
+      val ext = bt.outFile.getExtension
+      !bt.outFile.exists() && (if (ext.isDefined) { ext.get != "deps" } else true)
+    }
+    lazy val modded  : Boolean = modified(bt.inFile, errorFile)
+    lazy val errors  : Boolean = hadErrors(errorFile, level)
+
+    lazy val depsModded : Boolean = deps.exists {
         case bd: BuildDependency =>
           val errFile = bd.getErrorFile(controller)
           modified(errFile, errorFile)
         case PhysicalDependency(fFile) => modified(fFile, errorFile)
         case _ => false // for now
-      } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
+    }
+
+    lazy val isDir : Boolean = bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
       modified(bf.asDependency.getErrorFile(controller), errorFile)
     }
+
+    forced || outex || modded || errors || depsModded || isDir
   }
 
   /** auxiliary method of runBuildTaskIfNeeded */
