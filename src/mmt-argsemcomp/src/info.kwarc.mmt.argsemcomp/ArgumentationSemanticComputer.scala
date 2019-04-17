@@ -1,6 +1,5 @@
 package info.kwarc.mmt.argsemcomp
 import info.kwarc.mmt.api.utils._
-import java.io._
 
 import com.spotify.docker.client.DefaultDockerClient
 import com.spotify.docker.client.messages.ContainerConfig
@@ -12,22 +11,27 @@ class ArgumentationSemanticComputer (val f: JSON, val sem: String, val computer:
   def apply (f: JSON, sem: String, comp: String = "default") :JSON = {TgfToJson(CallComputer(JsonToTgf(f), sem, comp))}
 
   def JsonToTgf (f: JSON) : List[String] = {
-    val edgelist: JSON = f("edges").getOrElse(return List())
-    val includes: List[String] = {
-      for (edge:JSONObject <- edgelist if edge("style").getOrElse(return List()) == JSONString("include")) yield edge("from").toString +" "+ edge("to").toString
+    val edgelist: JSON = f(Left("edges")).getOrElse(return List())
+    val includes: List[String] = edgelist match {
+      case a: JSONArray => for (edge: JSON <- a if edge(Left("style")).getOrElse(return List()) == JSONString("include")) yield edge(Left("from")).toString + " " + edge(Left("to")).toString
+      case _ => List()
     }
     println(includes)
     includes
   }
 
   def CallComputer (tgf: List[String], semantic: String, computer: String) : List[String] = {
-    val inputfile = new File("input.tgf")
-    val writer = new PrintWriter (inputfile)
-    for (item:String <- tgf ) writer.write(item +"\n")
-    writer.close()
-    for (line<-inputfile) println(line)
+    val inputfile = File("input.tgf")
+    File.WriteLineWise(inputfile, tgf)
+    //val writer = new StandardPrintWriter (inputfile, false)
+    //for (item:String <- tgf ) writer.write(item +"\n")
+    //writer.close()
+    File.ReadLineWise(inputfile)(println)
+    //for(line <- Source.fromFile("input.tgf").getLines())
+      //println(line)
+
     val docker = DefaultDockerClient.fromEnv().build()
-    val config = ContainerConfig.builder.image(computer).cmd("-v inputfile.tgf:"+inputfile.getName + " " + computer + "	600	-f inputfile.tgf	-fo	tgf	-p "+ semantic).build
+    val config = ContainerConfig.builder.image(computer).cmd("-v inputfile.tgf:"+inputfile.name + " " + computer + "	600	-f inputfile.tgf	-fo	tgf	-p "+ semantic).build
     val container = docker.createContainer(ContainerConfig.builder.build)
     docker.startContainer(computer)
     inputfile.delete()
