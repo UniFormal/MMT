@@ -19,8 +19,19 @@ import scala.util.Try
   * Created by jazzpirate on 07.06.17.
   */
 
-class DirectGraphBuilder extends Extension{
 
+abstract class Graphs (val pathPrefix: String) extends FormatBasedExtension {
+
+/**
+  * @param cont the context of the request
+  * @return true if cont is equal to this.context
+  */
+def isApplicable(cont: String): Boolean = cont == pathPrefix
+}
+
+
+class DirectGraphBuilder extends Graphs("jgraph"){
+  override val logPrefix = "jgraph"
   private case class CatchError(s : String) extends Throwable
 
   override def start(args: List[String]) {
