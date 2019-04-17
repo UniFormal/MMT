@@ -418,7 +418,8 @@ lazy val argsemcomp = (project in file("mmt-argsemcomp")).
   dependsOn(api).
   settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
   settings(
-    libraryDependencies += "com.spotify" % "docker-client" % "latest.integration"
+    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
+    "org.slf4j" % "slf4j-simple" % "1.7.26")
   )
 
 // =================================
