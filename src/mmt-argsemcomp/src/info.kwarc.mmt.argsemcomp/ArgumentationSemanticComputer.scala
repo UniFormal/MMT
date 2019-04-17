@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.web.GraphSolverExtension
 class ArgumentationSemanticComputer extends GraphSolverExtension {
   val key = "default"
   def apply (f: JSON, sem: String, comp: String = "default") :JSON = {
-    log("Starting Argumentation Semantic Computer")
+    println("Starting Argumentation Semantic Computer")
     val ret = TgfToJson(CallComputer(JsonToTgf(f), sem, comp))
     println("return" + ret)
     ret}
@@ -25,31 +25,41 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
   }
 
   def CallComputer (tgf: List[String], semantic: String, computer: String) : List[String] = {
-    val inputfile = File("input.tgf")
+    println("Calling computer")
+    val inputfile = File("mmt-argsemcomp\\src\\info.kwarc.mmt.argsemcomp\\input.tgf")
     File.WriteLineWise(inputfile, tgf)
+    println(inputfile)
     //val writer = new StandardPrintWriter (inputfile, false)
     //for (item:String <- tgf ) writer.write(item +"\n")
     //writer.close()
     File.ReadLineWise(inputfile)(println)
+    println("Should have printed lines")
     //for(line <- Source.fromFile("input.tgf").getLines())
       //println(line)
 
     val docker = DefaultDockerClient.fromEnv().build()
-    val config = ContainerConfig.builder.image(computer).cmd("-v inputfile.tgf:"+inputfile.name + " " + computer + "	600	-f inputfile.tgf	-fo	tgf	-p "+ semantic).build
-    val container = docker.createContainer(ContainerConfig.builder.build)
-    docker.startContainer(computer)
-    inputfile.delete()
-
+    //val config = ContainerConfig.builder().image(computer).cmd("docker run -v "+ inputfile.getAbsolutePath + ":inputfile.tgf " + computer + "	600	-f inputfile.tgf	-fo	tgf	-p "+ semantic).build()
+    val config = ContainerConfig.builder().image(computer).cmd("docker run -v //c\\mmt2\\MMT\\src\\mmt-argsemcomp\\src\\info.kwarc.mmt.argsemcomp\\input.tgf:inputfile.tgf " + computer + "	600	-f inputfile.tgf	-fo	tgf	-p "+ semantic).build()
+    val container = docker.createContainer(config)
+    val id : String = container.id()
+    print(id)
+    docker.startContainer(id)
+    println("Docker container started and input file deleted")
     var logs : String = null
     try {
-      val stream  = docker.logs(computer, LogsParam.stdout, LogsParam.stderr)
+      val stream  = docker.logs(id, LogsParam.stdout, LogsParam.stderr)
       try
         logs = stream.readFully
       finally if (stream != null) stream.close()
     }
-    docker.killContainer(computer)
+    println("docker logs " + logs)
+    //docker.killContainer(id)
+    docker.removeContainer(id)
+    docker.close
+    //inputfile.delete()
+    println("Removed docker container closed the docker client and deleted input file")
     val accepted: List[String] = logs.split(" ").toList
-    println(accepted)
+    println("accepted first attempt" + accepted)
     accepted
   }
 
