@@ -147,7 +147,7 @@ lazy val src = (project in file(".")).
     mmt, api,
     lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
-    jedit, intellij
+    jedit, intellij, argsemcomp
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
