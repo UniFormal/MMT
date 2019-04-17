@@ -6,9 +6,13 @@ import com.spotify.docker.client.messages.ContainerConfig
 import com.spotify.docker.client.DockerClient.LogsParam
 import info.kwarc.mmt.api.web.GraphSolverExtension
 
-class ArgumentationSemanticComputer (val f: JSON, val sem: String, val computer: String = "default") extends GraphSolverExtension {
+class ArgumentationSemanticComputer extends GraphSolverExtension {
   val key = "default"
-  def apply (f: JSON, sem: String, comp: String = "default") :JSON = {TgfToJson(CallComputer(JsonToTgf(f), sem, comp))}
+  def apply (f: JSON, sem: String, comp: String = "default") :JSON = {
+    log("Starting Argumentation Semantic Computer")
+    val ret = TgfToJson(CallComputer(JsonToTgf(f), sem, comp))
+    println("return" + ret)
+    ret}
 
   def JsonToTgf (f: JSON) : List[String] = {
     val edgelist: JSON = f(Left("edges")).getOrElse(return List())
@@ -16,7 +20,7 @@ class ArgumentationSemanticComputer (val f: JSON, val sem: String, val computer:
       case a: JSONArray => for (edge: JSON <- a if edge(Left("style")).getOrElse(return List()) == JSONString("include")) yield edge(Left("from")).toString + " " + edge(Left("to")).toString
       case _ => List()
     }
-    println(includes)
+    println("includes" + includes)
     includes
   }
 
