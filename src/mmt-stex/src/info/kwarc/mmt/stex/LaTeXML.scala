@@ -19,7 +19,7 @@ class AllPdf extends LaTeXDirTarget {
     BuildResult.empty
   }
 
-  override def estimateResult(bt: BuildTask) = {
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
@@ -259,7 +259,7 @@ class LaTeXML extends LaTeXBuildTarget {
     var optLevel: Option[Level.Level] = None
     var msg: List[String] = Nil
     var newMsg = true
-    var region = SourceRegion.none
+    var region : SourceRegion = SourceRegion.none
     var phase = 1
 
     def phaseToString(p: Int): String = "latexml-" + (p match {
@@ -557,14 +557,16 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 }
 
-class TikzSvg extends PdfLatex {
-  override val key = "tikzsvg"
-  override val outExt = "svg"
-  override val outDim = source
+class TikzSvg extends PdfLatex
+{
+  override val key    : String = "tikzsvg"
+  override val outExt : String = "svg"
+  override val outDim : ArchiveDimension = source
 
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
-  override def reallyBuildFile(bt: BuildTask): BuildResult = {
+  override def reallyBuildFile(bt: BuildTask): BuildResult =
+  {
     val pdfFile = bt.inFile.setExtension("pdf")
     val svgFile = bt.inFile.setExtension("svg")
     bt.outFile.delete()
