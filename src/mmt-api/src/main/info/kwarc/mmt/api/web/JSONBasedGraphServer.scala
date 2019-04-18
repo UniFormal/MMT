@@ -44,7 +44,7 @@ class DirectGraphBuilder extends Graphs("jgraph"){
   }
 
 
-  def apply(uri: String, key: String, sem: String = "none", comp: String = "iccma19/conarg"): JSON = {
+  def apply(uri: String, key: String, sem: String = "none", comp: String = "default solver"): JSON = {
     val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
       throw CatchError(s"exporter $key not available")
     }
@@ -86,7 +86,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
       val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
       val sem = request.parsedQuery("semantic").getOrElse("none")
-      val comp = request.parsedQuery("comp").getOrElse("iccma19/conarg")
+      val comp = request.parsedQuery("comp").getOrElse("default solver")
       val graph = buil(uri, key , sem , comp)
       val ret = ServerResponse.fromJSON(graph)
       ret
