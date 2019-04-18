@@ -492,13 +492,16 @@ abstract class TraversingBuildTarget extends BuildTarget {
     lazy val modded  : Boolean = modified(bt.inFile, errorFile)
     lazy val errors  : Boolean = hadErrors(errorFile, level)
 
-    lazy val depsModded : Boolean = deps.exists {
-        case bd: BuildDependency =>
-          val errFile = bd.getErrorFile(controller)
-          modified(errFile, errorFile)
-        case PhysicalDependency(fFile) => modified(fFile, errorFile)
-        case _ => false // for now
+    def singleDepModded(dep : Dependency) : Boolean = dep match {
+      case bd: BuildDependency =>
+        val errFile = bd.getErrorFile(controller)
+        modified(errFile, errorFile)
+
+      case PhysicalDependency(fFile) => modified(fFile, errorFile)
+      case _ => false // for now
     }
+
+    lazy val depsModded : Boolean = deps.exists(singleDepModded)
 
     lazy val isDir : Boolean = bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
       modified(bf.asDependency.getErrorFile(controller), errorFile)
