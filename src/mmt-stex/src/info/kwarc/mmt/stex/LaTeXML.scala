@@ -561,17 +561,26 @@ class TikzSvg extends PdfLatex
 {
   override val key    : String = "tikzsvg"
   override val outExt : String = "svg"
-  override val outDim : ArchiveDimension = source
+  override val outDim : ArchiveDimension = Dim("content", "images")
 
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
   override def reallyBuildFile(bt: BuildTask): BuildResult =
   {
-    val pdfFile = bt.inFile.setExtension("pdf")
-    val svgFile = bt.inFile.setExtension("svg")
+    // SVG file is generated content and goes elsewhere.
+    val svgFile : File = bt.outFile
+
+    // ToDo: This pdf is ~technically~ also generated content,
+    //       suggesting it should be elsewhere. But a bunch
+    //       of things assume it's a sibling from the inFile so
+    //       its complicated. Link? Copy? Ignore?
+    val pdfFile : File = bt.inFile.setExtension("pdf")
+
+
     bt.outFile.delete()
     createLocalPaths(bt)
     val output = new StringBuffer()
+
     try {
       val exit = runPdflatex(bt, output)
       if (exit != 0) {
@@ -583,6 +592,7 @@ class TikzSvg extends PdfLatex
           val exitConvert = timeout(pb, procLogger(output, pipeOutput = pipeOutput))
           if (exitConvert == 0 && svgFile.length() > 0)
             logSuccess(bt.outPath)
+
           else {
             bt.errorCont(LatexError(if (exitConvert != 0) "exit code " + exitConvert
             else "no svg created", output.toString))
