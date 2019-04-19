@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.web.GraphSolverExtension
 import net.sf.jargsemsat.jargsemsat.alg.GroundedSemantics
 import net.sf.jargsemsat.jargsemsat.datastructures.DungAF
 
-/** TO DO: Implement proper error catching
+/** TO DO: Implement proper error catching. Make loggable. Make switch to docker.
   *
   */
 
@@ -64,11 +64,12 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
         for (string <- retstring.split(",")) print(string)
         //val retlist = (for (string <- retstring.trim.split(",")) print(JSONString(string)))
         //println("retlist" + retlist)
-        val ret = (for (string:String <- retstring.stripPrefix("[").stripSuffix("]").split(",")) yield(string)).toList
+        val ret = (for (string:String <- retstring.stripPrefix("[").stripSuffix("]").split(",")) yield(string.stripPrefix("\"").stripSuffix("\""))).toList
         //val ret = JSONConversions.fromList((for (string <- retstring.trim.split(",")) yield JSONString(string)).toList)
         //val ret :JSONArray =  JSONConversions.fromList((for (item <- solver.getGroundedExt.toArray) JSONString(item.toString.trim.split(","))))
         println("type of solverreturn " + ret.getClass())
-        println("should be tgf" + ret)
+        println("should be tgf" + JSONConversions.fromString(ret(0)))
+        println("should be tgf type" + ret(0).getClass)
         for (item <- ret) println(item)
         println("Returnstuff" + JSONConversions.fromList(for (item <- ret) yield JSONString(item)))
         return JSONConversions.fromList(for (item <- ret) yield JSONString(item))
@@ -136,23 +137,30 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
   }
 
   def TgfToJson (f: JSON, tgf: JSONArray) : JSON = {
-    print("tgf " + tgf(0))
+    println("InputJSON" + f)
+    println("testjsonstring" + JSONString("Wie viele Anführungszeichen?"))
     val nodelist: JSON = f(Left("nodes")).getOrElse(return JSONNull)
+    val idlist = nodelist match {
+      case a: JSONArray => for (item: JSON <- a) yield item(Left("id")).getOrElse(return JSONNull)
+      case _  => List()}
+    println("tgf " + tgf)
+    println ("idlist" + idlist)
+    println("Exists?" + tgf.exists(sth => idlist.contains(sth)))
     println("got here")
-    println("nodelistitem" + nodelist(Right(1)))
+    println("nodelist" + nodelist)
     val nodes : List[JSON] = nodelist match {
-      case a: JSONArray => for (item: JSON <- a) yield (if (tgf.exists(sth => sth == item(Left("id")).getOrElse(return JSONNull)))
+      case a: JSONArray => for (item: JSON <- a) yield (if (tgf.exists(sth => sth == item(Left("id")).getOrElse(JSONNull)))
       JSONObject(
-          ("id", item(Left("id")).getOrElse(return JSONNull)),
+          ("id", item(Left("id")).getOrElse(JSONNull)),
           ("style", JSONString("sceptically_accepted")),
-          ("label", item(Left("label")).getOrElse(return JSONNull)),
-          ("uri", item(Left("uri")).getOrElse(return JSONNull)),
-          ("mathml", item(Left("mathml")).getOrElse(return JSONNull))
+          ("label", item(Left("label")).getOrElse(JSONNull)),
+          ("uri", item(Left("uri")).getOrElse(JSONNull)),
+          ("mathml", item(Left("mathml")).getOrElse(JSONNull))
           )
         else item)
       case _ => List()
       }
-    println("got here too")
+    println("got here too" + nodes)
     val outputjson : JSONObject = JSONObject(
       ("nodes", JSONConversions.fromList(nodes)),
       ("edges", f(Left("edges")).getOrElse(return JSONNull))
