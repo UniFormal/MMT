@@ -6,6 +6,7 @@ import com.spotify.docker.client.DockerClient.LogsParam
 import info.kwarc.mmt.api.web.GraphSolverExtension
 import net.sf.jargsemsat.jargsemsat.alg.GroundedSemantics
 import net.sf.jargsemsat.jargsemsat.datastructures.DungAF
+import scala.collection.JavaConverters._
 
 /** TO DO: Implement proper error catching. Make loggable. Make switch to docker. Take care of border nodes.
   *
@@ -36,7 +37,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
     } */
 
     val includes: JSONArray = edgelist match {
-      case a: JSONArray => JSONConversions.fromList(for (edge: JSON <- a if edge(Left("style")).getOrElse(return JSONNull) == JSONString("include")) yield JSONArray(edge(Left("from")).getOrElse(JSONNull), edge(Left("to")).getOrElse(JSONNull)))
+      case a: JSONArray => JSONConversions.fromList(for (edge: JSON <- a if edge(Left("style")).getOrElse(return JSONNull) == JSONString("view")) yield JSONArray(edge(Left("from")).getOrElse(JSONNull), edge(Left("to")).getOrElse(JSONNull)))
       case _ => JSONArray()
     }
     println("theories " + theories)
@@ -44,7 +45,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
     JSONArray(theories, includes)
   }
 
-  def CallComputer (tgf: JSON, semantic: String, computer: String) : JSONArray = {
+  def CallComputer (tgf: JSON, semantic: String, computer: String) : Set[Set[JSONString]] = {
 
     if (computer == "default solver") {
       println("Input Json" + tgf)
@@ -72,24 +73,30 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
       val solver = new DungAF(args, atts)
 
       if (semantic == "grounded") {
-        val output = solver.getGroundedExt.toArray
-        val ret = JSONConversions.fromList((for (string <- output) yield JSONString(string.toString.stripPrefix("\"").stripSuffix("\""))).toList)
+        //val output = solver.getGroundedExt.toArray
+        //val ret = JSONConversions.fromList((for (string <- output) yield JSONString(string.toString.stripPrefix("\"").stripSuffix("\""))).toList)
+        val ret = Set((for (item <- solver.getGroundedExt.asScala) yield JSONString(item.toString.stripPrefix("\"").stripSuffix("\""))).toSet)
         return ret
       }
       else if (semantic == "stable"){
-        val ret = solver.getStableExts
-        println("type of solverreturn" + ret.getClass())
+        val output = solver.getStableExts.asScala
+        val output2 = output.map(x => x.asScala.map(y => JSONConversions.fromString(y.toString.stripPrefix("\"").stripSuffix("\""))))
+        val output3 = output2.map(x => x.toSet)
+        val ret = output3.toSet
+        //val ret = for (item:java.util.HashSet[java.lang.String] <- solver.getStableExts.asScala.toSet) yield item.asScala.toSet.map(x => JSONConversions.fromString(x.toString.stripPrefix("\"").stripSuffix("\"")))
+        println("type of modified return" + ret.getClass)
+        print("item classses ")
+        //for (item <- ret) for (itemitem <- item) println(itemitem.getClass)
         println(ret)
-        ret
-        JSONArray()
+        return ret
       }
       else {println("Error: not a supported semantic")}
-      JSONArray()
+      Set()
     }
 
     else {
       println("Docker implementation broken")
-      JSONArray()
+      Set()
           /* println("Calling computer")
           val inputfile = File("mmt-argsemcomp\\src\\info.kwarc.mmt.argsemcomp\\input.tgf")
           File.WriteLineWise(inputfile, tgf)
@@ -129,34 +136,48 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
       }
   }
 
-  def TgfToJson (f: JSON, tgf: JSONArray) : JSON = {
+  def TgfToJson (f: JSON, tgf: Set[Set[JSONString]]) : JSON = {
     println("InputJSON" + f)
     val nodelist: JSON = f(Left("nodes")).getOrElse(return JSONNull)
-    val idlist:List[JSON] = nodelist match {
-      case a: JSONArray => for (item: JSON <- a) yield item(Left("id")).getOrElse(return JSONNull)
-      case _  => List()}
-    println("tgf " + tgf)
-    println ("idlist" + idlist)
-    println("Exists?" + tgf.exists(sth => idlist.contains(sth)))
-    println("Exists not accepted?" + idlist.exists(sth => !tgf.contains(sth)))
-    println(tgf.getClass())
-    println("equal?" + tgf.toList==idlist)
-    println("got here")
-    println("nodelist" + nodelist)
-    val accepted_nodes : List[JSON] = nodelist match {
-      case a: JSONArray => for (item: JSON <- a if tgf.contains(item(Left("id")).getOrElse(JSONNull))) yield
-      JSONObject(
+    println("tgf" + tgf)
+    /*nodelist match {
+      case a: JSONArray => for (item: JSON <- a) println (tgf.exists(x => x.contains(JSONString(item(Left("id")).getOrElse(JSONNull).toString.stripPrefix("\"").stripSuffix("\"")))))
+      case _ => List()}
+
+    nodelist match {
+      case a: JSONArray => for (item: JSON <- a) println ("JSONStrings" + item(Left("id")).getOrElse(JSONNull).getClass)
+      case _ => List()}*/
+
+    val sceptically_accepted_nodes : List[JSON] = nodelist match {
+      case a: JSONArray => for (item: JSON <- a if tgf.forall(x => x.contains(JSONString(item(Left("id")).getOrElse(JSONNull).toString.stripPrefix("\"").stripSuffix("\""))))) yield
+        JSONObject(
           ("id", item(Left("id")).getOrElse(JSONNull)),
           ("style", JSONString("sceptically_accepted")),
+          ("label", item(Left("label")).getOrElse(JSONNull)),
+          ("uri", item(Left("uri")).getOrElse(JSONNull)),
+          ("mathml", item(Left("mathml")).getOrElse(JSONNull))
+        )
+      case _ => List()
+    }
+    println(sceptically_accepted_nodes)
+
+    val credulously_accepted_nodes : List[JSON] = nodelist match {
+      case a: JSONArray => for (item: JSON <- a
+                                if tgf.exists(x => x.contains(JSONString(item(Left("id")).getOrElse(JSONNull).toString.stripPrefix("\"").stripSuffix("\""))))
+                                if !tgf.forall(x => x.contains(JSONString(item(Left("id")).getOrElse(JSONNull).toString.stripPrefix("\"").stripSuffix("\"")))))
+        yield JSONObject(
+          ("id", item(Left("id")).getOrElse(JSONNull)),
+          ("style", JSONString("credulously_accepted")),
           ("label", item(Left("label")).getOrElse(JSONNull)),
           ("uri", item(Left("uri")).getOrElse(JSONNull)),
           ("mathml", item(Left("mathml")).getOrElse(JSONNull))
           )
       case _ => List()
     }
+    println("CredNodes" + credulously_accepted_nodes)
 
     val rejected_nodes : List[JSON] = nodelist match {
-      case a: JSONArray => for (item: JSON <- a if !tgf.contains(item(Left("id")).getOrElse(JSONNull))) yield
+      case a: JSONArray => for (item: JSON <- a if !tgf.exists(x => x.contains(JSONString(item(Left("id")).getOrElse(JSONNull).toString.stripPrefix("\"").stripSuffix("\""))))) yield
         JSONObject (
       ("id", item (Left ("id") ).getOrElse (JSONNull) ),
       ("style", JSONString ("rejected") ),
@@ -168,7 +189,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
     }
     println("got here too" + rejected_nodes)
     val outputjson : JSONObject = JSONObject(
-      ("nodes", JSONConversions.fromList(accepted_nodes++rejected_nodes)),
+      ("nodes", JSONConversions.fromList(credulously_accepted_nodes++sceptically_accepted_nodes++rejected_nodes)),
       ("edges", f(Left("edges")).getOrElse(return JSONNull))
     )
     println("outputjson" + outputjson)
