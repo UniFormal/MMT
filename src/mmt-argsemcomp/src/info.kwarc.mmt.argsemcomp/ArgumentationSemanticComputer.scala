@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.web.GraphSolverExtension
 import net.sf.jargsemsat.jargsemsat.alg.GroundedSemantics
 import net.sf.jargsemsat.jargsemsat.datastructures.DungAF
 
-/** TO DO: Implement proper error catching. Make loggable. Make switch to docker.
+/** TO DO: Implement proper error catching. Make loggable. Make switch to docker. Take care of border nodes.
   *
   */
 
@@ -24,7 +24,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
     val nodelist: JSON = f(Left("nodes")).getOrElse(return JSONNull)
     val edgelist: JSON = f(Left("edges")).getOrElse(return JSONNull)
     println("nodelist" + nodelist)
-    val theories: JSON = nodelist match {
+    val theories: JSONArray = nodelist match {
       case a: JSONArray => for (node: JSON <- a) println("Nodes" + node(Left("id")).getOrElse(JSONNull))
         println("case JSONArray")
         JSONConversions.fromList(for (node: JSON <- a) yield node(Left("id")).getOrElse(JSONNull))
@@ -35,7 +35,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
       case _ => List()
     } */
 
-    val includes: JSON = edgelist match {
+    val includes: JSONArray = edgelist match {
       case a: JSONArray => JSONConversions.fromList(for (edge: JSON <- a if edge(Left("style")).getOrElse(return JSONNull) == JSONString("include")) yield JSONArray(edge(Left("from")).getOrElse(JSONNull), edge(Left("to")).getOrElse(JSONNull)))
       case _ => JSONArray()
     }
@@ -47,43 +47,36 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
   def CallComputer (tgf: JSON, semantic: String, computer: String) : JSONArray = {
 
     if (computer == "default solver") {
+      println("Input Json" + tgf)
+      println("tgf items class " + tgf(Right(0)).getClass)
       var args:java.util.Vector[String]= new java.util.Vector[String]()
-      for (node <- tgf(Right(0))) args.add(node.toString)
-      println("Args " + args)
-      var atts:java.util.Vector[net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String]]= new java.util.Vector[net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String]]()
-      for (edge <- tgf(Right(1))) atts.add(new net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String](edge(Right(0)).toString, edge(Right(1)).toString))
-      println("Atts " + atts)
-      if (semantic == "grounded") {
-        val solver = new DungAF(args, atts)
-        println("solver output" + solver.getGroundedExt.getClass)
-        for (item <- solver.getGroundedExt.toArray) println("item " + item)
-        val output = solver.getGroundedExt.toArray
-        val retstring : String = output(0).toString
-        println("retstring " + retstring.getClass)
-        println ("retstringarray " + retstring.split(","))
-        for (string <- retstring.split(",")) print(string)
-        //val retlist = (for (string <- retstring.trim.split(",")) print(JSONString(string)))
-        //println("retlist" + retlist)
-        val ret = (for (string:String <- retstring.stripPrefix("[").stripSuffix("]").split(",")) yield(string.stripPrefix("\"").stripSuffix("\""))).toList
-        //val ret = JSONConversions.fromList((for (string <- retstring.trim.split(",")) yield JSONString(string)).toList)
-        //val ret :JSONArray =  JSONConversions.fromList((for (item <- solver.getGroundedExt.toArray) JSONString(item.toString.trim.split(","))))
-        println("type of solverreturn " + ret.getClass())
-        println("should be tgf" + JSONConversions.fromString(ret(0)))
-        println("should be tgf type" + ret(0).getClass)
-        for (item <- ret) println(item)
-        println("Returnstuff" + JSONConversions.fromList(for (item <- ret) yield JSONString(item)))
-        return JSONConversions.fromList(for (item <- ret) yield JSONString(item))
+      println("InitArgs " + args)
+      //args.add("test")
+      println("TestArgs " + args)
 
-        //import net.sf.jargsemsat.jargsemsat.datastructures.DungAF
-        /*val args = new Nothing
-        args.add("a")
-        args.add("b")
-        val atts = new Nothing
-        atts.add(Array[String]("a", "b"))
-        new DungAF(args, atts).getStableExts*/
+      tgf(Right(0)).getOrElse(JSONArray()) match
+      {case a:JSONArray => for (edge <-a) args.add(edge.toString)
+        case _ => println("Not a JSONArray")
+      }
+      //print("Args"+ args)
+      // for (node <- arguments) args.add(node.toString)
+
+      var atts:java.util.Vector[net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String]]= new java.util.Vector[net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String]]()
+      tgf(Right(1)).getOrElse(JSONArray()) match
+      {case a:JSONArray => for (edge <-a) atts.add(new net.sf.jargsemsat.jargsemsat.datastructures.Pair[String,String](edge(Right(0)).getOrElse(JSONNull).toString, edge(Right(1)).getOrElse(JSONNull).toString))
+        case _ => println("Not a JSONArray")
+      }
+
+      println("Args " + args)
+      println("Atts " + atts)
+      val solver = new DungAF(args, atts)
+
+      if (semantic == "grounded") {
+        val output = solver.getGroundedExt.toArray
+        val ret = JSONConversions.fromList((for (string <- output) yield JSONString(string.toString.stripPrefix("\"").stripSuffix("\""))).toList)
+        return ret
       }
       else if (semantic == "stable"){
-        val solver = new DungAF(args, atts)
         val ret = solver.getStableExts
         println("type of solverreturn" + ret.getClass())
         println(ret)
@@ -138,18 +131,20 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
 
   def TgfToJson (f: JSON, tgf: JSONArray) : JSON = {
     println("InputJSON" + f)
-    println("testjsonstring" + JSONString("Wie viele Anführungszeichen?"))
     val nodelist: JSON = f(Left("nodes")).getOrElse(return JSONNull)
-    val idlist = nodelist match {
+    val idlist:List[JSON] = nodelist match {
       case a: JSONArray => for (item: JSON <- a) yield item(Left("id")).getOrElse(return JSONNull)
       case _  => List()}
     println("tgf " + tgf)
     println ("idlist" + idlist)
     println("Exists?" + tgf.exists(sth => idlist.contains(sth)))
+    println("Exists not accepted?" + idlist.exists(sth => !tgf.contains(sth)))
+    println(tgf.getClass())
+    println("equal?" + tgf.toList==idlist)
     println("got here")
     println("nodelist" + nodelist)
-    val nodes : List[JSON] = nodelist match {
-      case a: JSONArray => for (item: JSON <- a) yield (if (tgf.exists(sth => sth == item(Left("id")).getOrElse(JSONNull)))
+    val accepted_nodes : List[JSON] = nodelist match {
+      case a: JSONArray => for (item: JSON <- a if tgf.contains(item(Left("id")).getOrElse(JSONNull))) yield
       JSONObject(
           ("id", item(Left("id")).getOrElse(JSONNull)),
           ("style", JSONString("sceptically_accepted")),
@@ -157,12 +152,23 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
           ("uri", item(Left("uri")).getOrElse(JSONNull)),
           ("mathml", item(Left("mathml")).getOrElse(JSONNull))
           )
-        else item)
       case _ => List()
-      }
-    println("got here too" + nodes)
+    }
+
+    val rejected_nodes : List[JSON] = nodelist match {
+      case a: JSONArray => for (item: JSON <- a if !tgf.contains(item(Left("id")).getOrElse(JSONNull))) yield
+        JSONObject (
+      ("id", item (Left ("id") ).getOrElse (JSONNull) ),
+      ("style", JSONString ("rejected") ),
+      ("label", item (Left ("label") ).getOrElse (JSONNull) ),
+      ("uri", item (Left ("uri") ).getOrElse (JSONNull) ),
+      ("mathml", item (Left ("mathml") ).getOrElse (JSONNull) )
+      )
+      case _ => List()
+    }
+    println("got here too" + rejected_nodes)
     val outputjson : JSONObject = JSONObject(
-      ("nodes", JSONConversions.fromList(nodes)),
+      ("nodes", JSONConversions.fromList(accepted_nodes++rejected_nodes)),
       ("edges", f(Left("edges")).getOrElse(return JSONNull))
     )
     println("outputjson" + outputjson)
