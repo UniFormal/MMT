@@ -47,7 +47,7 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
 
   def CallComputer (tgf: JSON, semantic: String, computer: String) : Set[Set[JSONString]] = {
 
-    if (computer == "default solver") {
+    if (computer == "default") {
       println("Input Json" + tgf)
       println("tgf items class " + tgf(Right(0)).getClass)
       var args:java.util.Vector[String]= new java.util.Vector[String]()
@@ -154,8 +154,8 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
           ("id", item(Left("id")).getOrElse(JSONNull)),
           ("style", JSONString("sceptically_accepted")),
           ("label", item(Left("label")).getOrElse(JSONNull)),
-          ("uri", item(Left("uri")).getOrElse(JSONNull)),
-          ("mathml", item(Left("mathml")).getOrElse(JSONNull))
+          ("url", item(Left("url")).getOrElse(JSONNull)),
+          //("mathml", item(Left("mathml")).getOrElse(JSONNull))
         )
       case _ => List()
     }
@@ -169,8 +169,8 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
           ("id", item(Left("id")).getOrElse(JSONNull)),
           ("style", JSONString("credulously_accepted")),
           ("label", item(Left("label")).getOrElse(JSONNull)),
-          ("uri", item(Left("uri")).getOrElse(JSONNull)),
-          ("mathml", item(Left("mathml")).getOrElse(JSONNull))
+          ("url", item(Left("url")).getOrElse(JSONNull)),
+          //("mathml", item(Left("mathml")).getOrElse(JSONNull))
           )
       case _ => List()
     }
@@ -182,8 +182,8 @@ class ArgumentationSemanticComputer extends GraphSolverExtension {
       ("id", item (Left ("id") ).getOrElse (JSONNull) ),
       ("style", JSONString ("rejected") ),
       ("label", item (Left ("label") ).getOrElse (JSONNull) ),
-      ("uri", item (Left ("uri") ).getOrElse (JSONNull) ),
-      ("mathml", item (Left ("mathml") ).getOrElse (JSONNull) )
+      ("url", item (Left ("url") ).getOrElse (JSONNull) ),
+      //("mathml", item (Left ("mathml") ).getOrElse (JSONNull) )
       )
       case _ => List()
     }
