@@ -11,8 +11,9 @@ import scala.language.existentials
   *  @param schemaGroup metadatum
   *  @param columns sequence of all columns
   *  @param collections sequence of all collections
+  *  @param includes list of all includes (in particular, referenced tables)
   */
-case class Table(path: MPath, datasetName: Option[String], schemaGroup: Option[String], columns: Seq[Column]) {
+case class Table(path: MPath, datasetName: Option[String], schemaGroup: Option[String], columns: Seq[Column], includes: List[MPath]) {
   /** db name of the table, underscore style */
   def name = path.name.toString
   /** retrieve all columns that are collections */

@@ -1,8 +1,11 @@
 package info.kwarc.mmt.sql.codegen
 
+import info.kwarc.mmt.api.MPath
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.sql.{SQLBridge, SchemaLang, Table}
+import info.kwarc.mmt.sql.{Column, SQLBridge, SchemaLang, Table}
+
+import scala.collection.mutable
 
 object CodeGenerator {
 
@@ -27,23 +30,23 @@ object CodeGenerator {
     )
     val jdbcInfo = JDBCInfo("jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
     val prefix = "MBGEN"
-    val generate = true
 
     val controller = Controller.make(true, true, List())
     // remove later
     controller.handleLine(s"build $archiveId mmt-omdoc")
 
-    val tableCodes = controller.backend.getArchive(archiveId).get.allContent.map(controller.getO).collect({
-      case Some(theory : Theory) if isInputTheory(theory, schemaGroup) => {
-        SQLBridge.test2(theory.path, controller) match {
-          case table: Table => Some(TableCode(prefix, dirPaths.dbPackagePath, table))
-          case _ => None
-        }
-      }
-    }).collect({ case Some(t: TableCode) => t })
+    // add input theories to search
+    val paths = controller.backend.getArchive(archiveId).get.allContent.map(controller.getO).collect({
+      case Some(theory : Theory) if isInputTheory(theory, schemaGroup) => theory.path
+    })
+
+    val tables = new Tables(prefix, dirPaths.dbPackagePath, p => SQLBridge.test2(p, controller))
+    val tableCodes = tables.processTables(paths)
+
+    tables.print()
 
     val dbCode = DatabaseCode(dirPaths, prefix, tableCodes, jdbcInfo)
-    dbCode.writeAll(generate)
+    dbCode.writeAll(true)
 
   }
 

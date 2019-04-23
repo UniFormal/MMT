@@ -2,69 +2,69 @@ package info.kwarc.mmt.sql.codegen
 
 import info.kwarc.mmt.sql.{Column, Table}
 
-case class TableCode(prefix: String, dbPackagePath: String, table: Table) {
-
-  def tableName: String = table.name
-  def tablePackageName : String = prefix + tableName
-
-  private def packageString = s"xyz.discretezoo.web.db.$tablePackageName" // package for the table specific files
-  private def columnCodeList: Seq[ColumnCode] = table.columns.map(ColumnCode)
-  private def tableObject: String = s"tb$tableName"
+case class TableCode( info: TableInfo,
+                      dbPackagePath: String,
+                      columns: Seq[ColumnCode],
+                      datasetName: String,
+                      joins: Seq[TableInfo]
+) {
 
   private val baseRepl: Map[String, String] = Map(
-    "//package" -> s"package $packageString",
-    "%caseClass%" -> caseClass,
-    "%dbTableName%" -> s"${prefix}_${tableName.toUpperCase}" // table name in the database
+    "//package" -> s"package ${info.packageString}",
+    "%caseClass%" -> info.caseClass
   )
 
   // CaseClass
-  private def caseClass: String = table.name
   def caseClassRepl: Map[String, String] = baseRepl ++ Map(
-    "//cols" -> columnCodeList.map(_.caseClassField).mkString(",\n"),
-    "//selectMap" -> columnCodeList.map(_.selectMapCaseClass).mkString(",\n")
+    "//cols" -> columns.map(_.caseClassField).mkString(",\n"),
+    "//selectMap" -> columns.map(_.selectMapCaseClass).mkString(",\n")
   )
 
   // PlainQueryObject
-  private def plainQueryObject: String = s"${tableName}PlainQuery"
+  private def plainQueryObject: String = s"${info.name}PlainQuery"
   def plainQueryRepl: Map[String, String] = baseRepl ++ Map(
     "%plainQueryObject%" -> plainQueryObject,
-    "%tableName%" -> tableName,
-    "%getResultParameters%" -> table.columns.map(c => ColumnCode(c).getResultItem).mkString(", ")
+    "%tableName%" -> info.name,
+    "%getResultParameters%" -> columns.map(_.getResultItem).mkString(", "),
+    "%sqlFrom%" -> info.dbTableName, // table name in the database
+    "//columns" -> ("ID" +: columns.filter(_.join.isEmpty).map(_.nameDb)).map(c => s"""      |"${info.dbTableName}"."$c"""").mkString(",\n")
   )
 
   // TableClass
-  private def tableClass = s"${tableName}Table"
   def tableClassRepl: Map[String, String] = baseRepl ++ Map(
-    "//accessorMethods" -> columnCodeList.map(_.accessorMethod).mkString("\n"),
-    "//caseClassMapParameters" -> columnCodeList.map(_.nameCamelCase).mkString(" ::\n"),
-    "//selectMap" -> columnCodeList.map(_.selectMapTableClass).mkString(",\n"),
-    "%tableClass%" -> tableClass
+    "//joinImports" -> joins.map(_.joinImport).mkString("\n"),
+    "//joinQueries" -> joins.map(_.joinQuery).mkString("\n"),
+    "//accessorMethods" -> columns.map(_.accessorMethod).mkString("\n"),
+    "//caseClassMapParameters" -> columns.map(_.nameCamelCase).mkString(" ::\n"),
+    "//selectMap" -> columns.map(_.selectMapTableClass).mkString(",\n"),
+    "%dbTableName%" -> info.dbTableName, // table name in the database
+    "%tableClass%" -> info.tableClass
   )
 
   // Create
-  def zooCreateImport: String = s"import $packageString.$tableClass"
-  def zooSchemaCreate: String = s"$tableObject.schema.create"
+  def tableClassImport: String = s"import ${info.packageString}.${info.tableClass}"
+  def zooSchemaCreate: String = s"${info.tableObject}.schema.create"
 
   // ZooDb
-  def zooDbImport: String = s"import $packageString.{$plainQueryObject, $tableClass}"
-  def zooDbObject: String = s"object $tableObject extends TableQuery(new $tableClass(_))"
+  def zooDbImport: String = s"import ${info.packageString}.{$plainQueryObject, ${info.tableClass}}"
+  def dbTableObject: String = s"  object ${info.tableObject} extends TableQuery(new ${info.tableClass}(_))"
   def dbCountQueryMatches: String =
-    s"""      case ("$tableObject", true) => $plainQueryObject.count(qp)
-       |      case ("$tableObject", false) => tb$tableName.dynamicQueryCount(qp).length.result""".stripMargin
+    s"""      case ("${info.tableObject}", true) => $plainQueryObject.count(qp)
+       |      case ("${info.tableObject}", false) => tb${info.name}.dynamicQueryCount(qp).length.result""".stripMargin
 
   def dbGetQueryMatches: String =
-    s"""      case ("$tableObject", true) => $plainQueryObject.get(rp)
-       |      case ("$tableObject", false) => tb$tableName.dynamicQueryResults(rp).result""".stripMargin
+    s"""      case ("${info.tableObject}", true) => $plainQueryObject.get(rp)
+       |      case ("${info.tableObject}", false) => tb${info.name}.dynamicQueryResults(rp).result""".stripMargin
 
-//  TODO def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
+  //  TODO def inCollectionMap: String = collections.map(_.inCollectionItem).mkString(",\n")
 
   // JsonSupport
-  def jsonSupportImport: String = s"import $packageString.$caseClass"
+  def jsonSupportImport: String = s"import ${info.packageString}.${info.caseClass}"
   def jsonSupportMap: String = {
-    val columns = columnCodeList.map(c => s"        ${c.jsonWriterMapItem}").mkString(",\n")
-    s"""case o: $caseClass => JsObject(
+    val cols = columns.map(c => s"        ${c.jsonWriterMapItem}").mkString(",\n")
+    s"""case o: ${info.caseClass} => JsObject(
        |        List(
-       |$columns
+       |$cols
        |        ).flatten: _*
        |      )""".stripMargin
   }
@@ -72,26 +72,26 @@ case class TableCode(prefix: String, dbPackagePath: String, table: Table) {
   // from here on react stuff
 
   def jsonObjectProperties: String = {
-    val columns = columnCodeList.map(_.jsonObjectProperties).mkString(",\n")
-    s""""$tableObject": {
-       |$columns
+    val cols = columns.map(_.jsonObjectProperties).mkString(",\n")
+    s""""${info.tableObject}": {
+       |$cols
        |}
      """.stripMargin
   }
 
   def collectionsData: String = {
-    s""""$tableObject": {
-       |  "$tableName": {
-       |    "id": "$tableName",
-       |    "name": "${table.datasetName}"
+    s""""${info.tableObject}": {
+       |  "${info.name}": {
+       |    "id": "${info.name}",
+       |    "name": "$datasetName"
        |  }
        |}
      """.stripMargin
   }
 
   def defaultColumns: String = {
-    val columns = table.columns.filter(_.isDisplayedByDefault).map(c => s""""${c.name}"""").mkString(", ")
-    s"""      "$tableObject": [$columns]""".stripMargin
+    val cols = columns.filter(_.isDisplayedByDefault).map(c => s""""${c.name}"""").mkString(", ")
+    s"""      "${info.tableObject}": [$cols]""".stripMargin
   }
 
 }
