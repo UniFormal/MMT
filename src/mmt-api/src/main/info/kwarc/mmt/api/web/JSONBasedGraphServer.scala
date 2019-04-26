@@ -19,9 +19,20 @@ import scala.util.Try
   * Created by jazzpirate on 07.06.17.
   */
 
-class DirectGraphBuilder extends Extension {
 
-  private case class CatchError(s: String) extends Throwable
+abstract class Graphs (val pathPrefix: String) extends FormatBasedExtension {
+
+/**
+  * @param cont the context of the request
+  * @return true if cont is equal to this.context
+  */
+def isApplicable(cont: String): Boolean = cont == pathPrefix
+}
+
+
+class DirectGraphBuilder extends Graphs("jgraph"){
+  override val logPrefix = "jgraph"
+  private case class CatchError(s : String) extends Throwable
 
   override def start(args: List[String]) {
     controller.extman.addExtension(new JDocgraph)
@@ -33,16 +44,21 @@ class DirectGraphBuilder extends Extension {
   }
 
 
-  def apply(uri: String, key: String, sem: String = "none", comp: String = "default solver"): JSON = {
+  def apply(uri: String, key: String, sem: String = "none", comp: String = "default"): JSON = {
     val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
       throw CatchError(s"exporter $key not available")
     }
-    log("Computing " + key + " for " + uri + "... ")
-    val ret = exp.buildGraph(uri)
-    log("Done")
-    ret
-  }
-}
+    if (sem == "none") {
+      log("Computing " + key + " for " + uri + "... ")
+      val ret = exp.buildGraph(uri)
+      log("Done")
+      ret
+    } else {log("Got here and computing " + key + " for " + uri + "with" + sem + "semantic" + "using" + comp + "...")
+      val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
+      log("Done")
+      ret }
+}}
+
 
 class JSONBasedGraphServer extends ServerExtension("jgraph") {
   override val logPrefix = "jgraph"
@@ -60,6 +76,7 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
+    log("Semantic: " + request.parsedQuery("semantic"))
     if (request.pathForExtension.headOption == Some("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
       log("Returning menu for " + id)
@@ -68,7 +85,9 @@ class JSONBasedGraphServer extends ServerExtension("jgraph") {
     } else if (request.pathForExtension.headOption == Some("json")) {
       val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
-      val graph = buil(uri, key)
+      val sem = request.parsedQuery("semantic").getOrElse("none")
+      val comp = request.parsedQuery("comp").getOrElse("default")
+      val graph = buil(uri, key , sem , comp)
       val ret = ServerResponse.fromJSON(graph)
       ret
     } else ServerResponse.errorResponse("Invalid path", "json")
@@ -167,9 +186,10 @@ class JGraphSideBar extends Extension {
 abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
   def isApplicable (format: String): Boolean = format == key
   def buildGraph(s : String) : JSON
+  def computeSem(f: JSON, sem: String, comp: String) : JSON
 }
 
-abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
+abstract class SimpleJGraphExporter (key : String) extends JGraphExporter(key) {
   override def logPrefix: String = key
   val builder : JGraphBuilder
   val selector : JGraphSelector
@@ -179,6 +199,15 @@ abstract class SimpleJGraphExporter(key : String) extends JGraphExporter(key) {
     val res = builder.build(ths,vs)(controller)
     log("Done.")
     res
+  }
+
+  def computeSem(f: JSON, sem: String, comp: String = "default"): JSON = {
+    val key = "default"
+    controller.extman.get(classOf[GraphSolverExtension]).find(_.key == key) match {
+      case Some(e) => e(f, sem, comp)
+      case None => log("No solver present")
+        f
+    }
   }
 }
 
@@ -537,3 +566,21 @@ object GraphBuilder {
     }
   }
 }
+
+abstract class GraphSolverExtension extends Extension {
+  val key: String
+  def apply(graph: JSON, semantics: String, comp: String): JSON
+}
+
+/* class SemanticComputer (val f: JSON, val sem: String, val computer: String = "default") {
+  def JsonToTgf (f: JSONObject) : List[String] = {
+    val edgelist: JSON = f("edges").getOrElse(return List())
+    val includes: List[String] = {
+      for (edge:JSONObject <- edgelist if edge("style").getOrElse(return List()) == JSONString("include")) yield edge("from").toString +" "+ edge("to").toString
+    }
+    println(includes)
+    includes
+  }
+  def TgfToJson (tgf: List[String]) : JSONObject = null
+  def CallComputer (tgf: List[String], semantic: String, computer: String) : List[String] =List("test")
+} */

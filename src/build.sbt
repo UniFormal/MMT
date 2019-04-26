@@ -147,7 +147,7 @@ lazy val src = (project in file(".")).
     mmt, api,
     lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq,
     tiscaf, lfcatalog,
-    jedit, intellij
+    jedit, intellij, argsemcomp
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -411,6 +411,15 @@ lazy val oeis = (project in file("mmt-oeis")).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
+  )
+
+// plugin for computing argumentation semantics
+lazy val argsemcomp = (project in file("mmt-argsemcomp")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
+  settings(
+    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
+    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
   )
 
 // =================================
