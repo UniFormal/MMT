@@ -16,6 +16,7 @@ sealed abstract class Unary(override val toString : String) {
 case object IsDocument extends Unary("document")
 case object IsTheory extends Unary("theory")
 case object IsView extends Unary("view")
+case object IsDerivedModule extends Unary("DerivedModule")
 case object IsStructure extends Unary("structure")
 case object IsConstant extends Unary("constant")
 case object IsUntypedConstant extends Unary("untypedconstant")

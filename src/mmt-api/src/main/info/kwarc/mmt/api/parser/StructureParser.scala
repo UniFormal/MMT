@@ -55,7 +55,6 @@ object ViewKey {
   }
 }
 
-
 /**
  * A StructureParser reads MMT declarations (but not objects) and
  * defers to continuation functions for the found StructuralElement, ParsingUnits, and SourceErrors.

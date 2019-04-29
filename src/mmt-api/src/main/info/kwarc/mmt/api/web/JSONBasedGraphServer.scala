@@ -295,15 +295,14 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
     log("Done.")
     ret
   }
-  /** private def allattacks = {
-    log("Loading attacks...")
-    val ret = (controller.depstore.getInds(IsAttack) collect {
+  private def allattacks = {
+    log("Loading derived modules...")
+    val ret = (controller.depstore.getInds(IsDerivedModule) collect {
       case mp : MPath => mp
     }).toList
     log("Done.")
     ret
   }
-  */
 }
 class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
   val builder = GraphBuilder.AlignmentBuilder(log(_,None))

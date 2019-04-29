@@ -416,10 +416,15 @@ lazy val oeis = (project in file("mmt-oeis")).
 // plugin for computing argumentation semantics
 lazy val argsemcomp = (project in file("mmt-argsemcomp")).
   dependsOn(api).
-  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*)
+
+// plugin for context graphs
+lazy val contextgraphs = (project in file("mmt-contextgraphs")).
+  dependsOn(api,argsemcomp).
+  settings(mmtProjectsSettings("mmt-contextgraphs"): _*).
   settings(
     libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
-    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
+      "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
   )
 
 // =================================
