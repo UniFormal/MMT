@@ -152,7 +152,7 @@ trait STeXAnalysis {
           case None => List(mkFileDep(archive, fp)) ::: alldeps
         }
 
-      case tikzinput(_, r, b) => mhRepos(archive, r, b).map(toKeyDep(_, "tikzsvg"))
+      case tikzinput(_, r, b) => mhRepos(archive, r, b).map(toKeyDep(_, key = "tikzsvg"))
 
       case guse(r, b) => mkDep(archive, r, entryToPath(b))
 
@@ -240,9 +240,15 @@ trait STeXAnalysis {
       {
         val sl = matchSmsEntry(a, l)
         sl.foreach(combine)
-        if (key != "sms") {
-          val od = matchPathAndRepo(a, in, l, parents)
-          od.foreach(d => combine(STeXStructure(Nil, List(d))))
+        if (key != "sms")
+        {
+          val od  : List[Dependency] = matchPathAndRepo(a, in, l, parents)
+          // Forget all tikzsvg dependencies unless we're inside a latexml target.
+          val odp : List[Dependency] = if (key == "latexml") { od } else { od.filter {
+            case FileBuildDependency(akey, _, _) => akey != "tikzsvg"
+            case _ => true
+          }}
+          odp.foreach(d => combine(STeXStructure(Nil, List(d))))
         }
       }
     }
