@@ -3,10 +3,9 @@ package info.kwarc.mmt.sql.codegen
 import info.kwarc.mmt.api.objects.{OMA, OMS}
 import info.kwarc.mmt.sql.Column
 
-case class ColumnCode(column: Column) {
+case class ColumnCode(column: Column, join: Option[JoinCode] = None) {
 
   private def nameQuotes = s""""${column.name}""""
-  private def nameDb: String = column.name.toUpperCase
 
   private def typeString: String = {
     if (column.dbtype.toString == "List[List[Int]]" || column.dbtype.toString == "List[Int]") s"List[Int]"
@@ -18,24 +17,34 @@ case class ColumnCode(column: Column) {
     case OMA(_, codecArgs) => codecArgs.head.toMPath.name.last.toString
   }
 
+  def name: String = column.name
+  def nameDb: String = column.name.toUpperCase
+  def isDisplayedByDefault: Boolean = column.isDisplayedByDefault
+
   // JsonSupport
   def jsonWriterMapItem: String = s"""Some($nameQuotes -> o.$nameCamelCase.toJson)"""
 
   // CaseClass
   def caseClassField: String = s"  $nameCamelCase: $typeString"
-  def selectMapCaseClass: String = s"""    "${column.name}" -> $nameCamelCase"""
+  def selectMapCaseClass: String = s"""    "$name" -> $nameCamelCase"""
 
   // PlainQueryObject
-  def getResultItem: String = typeString match {
-    case "UUID" => "r.nextObject.asInstanceOf[UUID]"
-    case "List[Int]" => "r.<<[Seq[Int]].toList"
-    case _ => "r.<<"
+  def getResultItem: String = {
+    if (join.nonEmpty) "None"
+    else typeString match {
+      case "UUID" => "r.nextObject.asInstanceOf[UUID]"
+      case "List[Int]" => "r.<<[Seq[Int]].toList"
+      case _ => "r.<<"
+    }
   }
 
   // TableClass
-  def nameCamelCase: String = "_([a-z\\d])".r.replaceAllIn(column.name, _.group(1).toUpperCase())
-  def accessorMethod: String = s"""def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb")"""
-  def selectMapTableClass: String = s"""    "${column.name}" -> this.$nameCamelCase"""
+  def nameCamelCase: String = ColumnCode.camelCase(name)
+  def accessorMethod: String = {
+    val fk = join.map(_.fkMethod).map(m => s"\n$m").getOrElse("")
+    s"""  def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb")$fk"""
+  }
+  def selectMapTableClass: String = s"""    "$name" -> this.$nameCamelCase"""
 
   // Frontend
   def jsonObjectProperties: String = {
@@ -46,5 +55,11 @@ case class ColumnCode(column: Column) {
     }
     s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$codecName"}"""
   }
+
+}
+
+object ColumnCode {
+
+  def camelCase(s: String): String = "_([a-z\\d])".r.replaceAllIn(s, _.group(1).toUpperCase())
 
 }
