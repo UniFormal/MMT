@@ -16,8 +16,8 @@ cd "$ISABELLE_MMT_ROOT/deploy"
 rm -rf tmp
 mkdir tmp
 cd tmp
-jar xf ../mmt.jar
+isabelle_jdk jar xf ../mmt.jar
 rm -r isabelle org/jline org/tukaani scala
-jar cf ../mmt.jar .
+isabelle_jdk jar cf ../mmt.jar .
 cd ..
 rm -rf tmp
