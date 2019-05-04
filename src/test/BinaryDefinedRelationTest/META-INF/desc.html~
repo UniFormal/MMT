@@ -1,0 +1,6 @@
+<p>
+This repository contains a basic example of a theory graph serving 
+as a graph for argument contexts. Namely, it models a Dung 
+argumentation framework with the supported propositions of the
+arguments as rudimentary contexts. 
+</p>

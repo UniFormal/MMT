@@ -22,6 +22,3 @@ class BinaryDefinedRelation(feature: String, p : DPath, n : LocalName, meta: Opt
   extends DerivedModule(feature, p, n, meta, tpC, dfC, notC) with Link {
 
   def namePrefix = LocalName(path)
-
-
-}

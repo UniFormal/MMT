@@ -1,0 +1,8 @@
+id: ALMANAC/BinaryDerivedRelation
+narration-base: http://mathhub.info/ALMANAC/BinaryDerivedRelation
+responsible: max.rapp@fau.de
+title: BinaryDerivedRelation
+classpath: bin
+teaser: Testing Binary Derived Relation declarations
+description: desc.html
+
