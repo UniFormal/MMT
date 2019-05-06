@@ -24,7 +24,8 @@ import info.kwarc.mmt.api.utils.MMT_TODO
   def namePrefix = LocalName(path)
 } */
 
-class BinaryDefinedRelation extends ModuleLevelFeature("attack"){
-  def getHeaderNotation = List(SimpArg(1),Delim("->"), SimpArg(2), Delim("with"), SimpArg(3))
+class BinaryDefinedRelation extends StructuralFeature("attack"){
+  // def getHeaderNotation = Nil
+  def getHeaderNotation = List(SimpArg(1), Delim(">"), SimpArg(2))
   def check(dd: DerivedModule)(implicit env: ExtendedCheckingEnvironment) {}
 }

@@ -17,7 +17,7 @@ import scala.io.Source
 import scala.xml.{Node, parsing}
 import scala.xml.parsing.XhtmlParser
 
-class Importer extends archives.Importer {
+/* class Importer extends archives.Importer {
   val key = "coq-omdoc"
 
 
@@ -683,3 +683,4 @@ class Importer extends archives.Importer {
     }
   }
 }
+ */
