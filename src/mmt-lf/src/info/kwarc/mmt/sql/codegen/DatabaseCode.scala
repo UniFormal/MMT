@@ -2,15 +2,22 @@ package info.kwarc.mmt.sql.codegen
 
 import java.io.PrintWriter
 
-import info.kwarc.mmt.api.MPath
-
-case class DatabaseCode(paths: ProjectPaths, prefix: String, tables: Map[MPath, TableCode], dbInfo: JDBCInfo) {
+case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableInfo, TableCode], dbInfo: JDBCInfo, views: Seq[(String, String)]) {
 
   private def writeToFile(f: String, s: String, write: Boolean): Unit = {
     if (write) {
       val pw = new PrintWriter(new java.io.File(f))
       try pw.write(s) finally pw.close()
     }
+    else println(s)
+  }
+
+  private def tableFiles(t: TableCode): Seq[(Map[String, String], String, String)] = {
+    Seq(
+      (t.caseClassRepl, "CaseClass", ""),
+      (t.plainQueryRepl, "PlainQueryObject", "PlainQuery"),
+      (t.tableClassRepl, "TableClass", "Table")
+    )
   }
 
   def writeAll(generate: Boolean = true): Unit = {
@@ -25,13 +32,10 @@ case class DatabaseCode(paths: ProjectPaths, prefix: String, tables: Map[MPath, 
       val dir = new java.io.File(tPath)
       if (generate && !dir.exists()) dir.mkdir()
 //      val name = t.table.name
-      Seq(
-        (t.caseClassRepl, "CaseClass", ""),
-        (t.plainQueryRepl, "PlainQueryObject", "PlainQuery"),
-        (t.tableClassRepl, "TableClass", "Table")
-      ).foreach(f =>
-        CodeFile(f._1, tableTempPath(f._2), Some(s"$tPath/${t.info.name}${f._3}.scala")).writeToFile(generate)
-      )
+      tableFiles(t).foreach(f => {
+        val out = Some(s"$tPath/${t.info.name}${f._3}.scala")
+        CodeFile(f._1, tableTempPath(f._2), out).writeToFile(generate)
+      })
     })
 
     // delete temp dir
@@ -57,10 +61,12 @@ case class DatabaseCode(paths: ProjectPaths, prefix: String, tables: Map[MPath, 
 
   // backend code
 
-  private def zooCreateRepl: Map[String, String] = Map(
+  def zooCreateRepl: Map[String, String] = Map(
     "//tableObjects" -> tableObjects,
+    "//views" -> views.map(_._2).mkString("\n"),
     "//importTablePackages" -> tables.map(_._2.tableClassImport).mkString("\n"),
-    "//schemaCreateList" -> tables.map(_._2.zooSchemaCreate).mkString(", ")
+    "//schemaCreateList" -> tables.map(_._2.zooSchemaCreate).mkString(", "),
+    "//viewCreateList" -> views.map(_._1).mkString(", ")
   )
 
   private def jsonSupportRepl: Map[String, String] = Map(

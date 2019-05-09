@@ -40,13 +40,8 @@ object CodeGenerator {
       case Some(theory : Theory) if isInputTheory(theory, schemaGroup) => theory.path
     })
 
-    val tables = new Tables(prefix, dirPaths.dbPackagePath, p => SQLBridge.test2(p, controller))
-    val tableCodes = tables.processTables(paths)
-
-    tables.print()
-
-    val dbCode = DatabaseCode(dirPaths, prefix, tableCodes, jdbcInfo)
-    dbCode.writeAll(true)
+    val tables = new Tables(prefix, dirPaths, p => SQLBridge.test2(p, controller), jdbcInfo, paths)
+    tables.databaseCode.writeAll(true)
 
   }
 

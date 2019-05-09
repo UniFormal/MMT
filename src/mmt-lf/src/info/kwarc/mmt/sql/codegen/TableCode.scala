@@ -1,13 +1,11 @@
 package info.kwarc.mmt.sql.codegen
 
-import info.kwarc.mmt.sql.{Column, Table}
-
 case class TableCode( info: TableInfo,
                       dbPackagePath: String,
                       columns: Seq[ColumnCode],
                       datasetName: String,
                       joins: Seq[TableInfo]
-) {
+) extends CodeHelper {
 
   private val baseRepl: Map[String, String] = Map(
     "//package" -> s"package ${info.packageString}",
@@ -27,7 +25,7 @@ case class TableCode( info: TableInfo,
     "%tableName%" -> info.name,
     "%getResultParameters%" -> columns.map(_.getResultItem).mkString(", "),
     "%sqlFrom%" -> info.dbTableName, // table name in the database
-    "//columns" -> ("ID" +: columns.filter(_.join.isEmpty).map(_.nameDb)).map(c => s"""      |"${info.dbTableName}"."$c"""").mkString(",\n")
+    "//columns" -> ("ID" +: columns.filter(_.join.isEmpty).map(_.nameDbQuoted)).map(c => s"""      |${quoted(info.dbTableName)}.$c""").mkString(",\n")
   )
 
   // TableClass
@@ -93,5 +91,23 @@ case class TableCode( info: TableInfo,
     val cols = columns.filter(_.isDisplayedByDefault).map(c => s""""${c.name}"""").mkString(", ")
     s"""      "${info.tableObject}": [$cols]""".stripMargin
   }
+
+  def dbColumns: Seq[String] = columns.map(c => s"${quoted(info.dbTableName)}.${c.nameDbQuoted}")
+  def dbJoinSQL: String = {
+    columns.collect({
+      case ColumnCode(c, Some(j)) => (c, j)
+    }).map(t => {
+      val tbName = quoted(t._2.tbInfo.dbTableName)
+      s"""JOIN $tbName ON $tbName."ID" = ${quoted(info.dbTableName)}.${columnNameDB(t._1)}"""
+    }).mkString("\n")
+  }
+
+  override def toString: String =
+    s"""TableCode: ${info.prefix} ${info.name} ($dbPackagePath) "$datasetName"
+       |#columns:
+       |${columns.map(_.toString).mkString("\n")}
+       |#joins:
+       |${joins.map(t => s"${t.prefix} ${t.name}").mkString("\n")}
+     """.stripMargin
 
 }

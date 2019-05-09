@@ -3,9 +3,9 @@ package info.kwarc.mmt.sql.codegen
 import info.kwarc.mmt.api.objects.{OMA, OMS}
 import info.kwarc.mmt.sql.Column
 
-case class ColumnCode(column: Column, join: Option[JoinCode] = None) {
+case class ColumnCode(column: Column, join: Option[JoinCode] = None) extends CodeHelper {
 
-  private def nameQuotes = s""""${column.name}""""
+  private def nameQuotes: String = quoted(column.name)
 
   private def typeString: String = {
     if (column.dbtype.toString == "List[List[Int]]" || column.dbtype.toString == "List[Int]") s"List[Int]"
@@ -18,7 +18,7 @@ case class ColumnCode(column: Column, join: Option[JoinCode] = None) {
   }
 
   def name: String = column.name
-  def nameDb: String = column.name.toUpperCase
+  def nameDbQuoted: String = columnNameDB(column)
   def isDisplayedByDefault: Boolean = column.isDisplayedByDefault
 
   // JsonSupport
@@ -39,10 +39,10 @@ case class ColumnCode(column: Column, join: Option[JoinCode] = None) {
   }
 
   // TableClass
-  def nameCamelCase: String = ColumnCode.camelCase(name)
+  def nameCamelCase: String = camelCase(name)
   def accessorMethod: String = {
     val fk = join.map(_.fkMethod).map(m => s"\n$m").getOrElse("")
-    s"""  def $nameCamelCase: Rep[$typeString] = column[$typeString]("$nameDb")$fk"""
+    s"""  def $nameCamelCase: Rep[$typeString] = column[$typeString]($nameDbQuoted)$fk"""
   }
   def selectMapTableClass: String = s"""    "$name" -> this.$nameCamelCase"""
 
@@ -55,11 +55,5 @@ case class ColumnCode(column: Column, join: Option[JoinCode] = None) {
     }
     s"""$nameQuotes: {"isFilter": ${!column.opaque}, "display": $nameQuotes, "type": "$codecName"}"""
   }
-
-}
-
-object ColumnCode {
-
-  def camelCase(s: String): String = "_([a-z\\d])".r.replaceAllIn(s, _.group(1).toUpperCase())
 
 }

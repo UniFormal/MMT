@@ -5,14 +5,43 @@ import info.kwarc.mmt.sql.Table
 
 import scala.collection.mutable
 
-class Tables(prefix: String, dbPackagePath: String, readerCallback: MPath => Any) {
+class Tables(prefix: String, dirPaths: ProjectPaths, readerCallback: MPath => Any, jdbcInfo: JDBCInfo, inputTheories: Seq[MPath] = Seq()) extends CodeHelper {
 
   // - None: haven't attempted retrieval yet
   // - Some(None): retrieved, not table
-  private val pathsToTables: mutable.Map[MPath, Option[Option[TableCode]]] = mutable.Map[MPath, Option[Option[TableCode]]]()
+  private val dbPackagePath: String = dirPaths.dbPackagePath
+  private val builder: mutable.Map[MPath, Option[Option[TableCode]]] = mutable.Map[MPath, Option[Option[TableCode]]]()
 
-  def processTables(paths: Seq[MPath] = Seq()): Map[MPath, TableCode] = {
-    if (paths.nonEmpty) paths.foreach(addPath)
+  val tableMap: Map[TableInfo, TableCode] = processTables()
+  val viewMap: Map[TableInfo, TableCode] = processViews()
+  val views: Seq[(String, String)] = tableMap.filter(_._2.joins.nonEmpty).map(generateView).toSeq
+
+  def databaseCode: DatabaseCode = DatabaseCode(prefix, dirPaths, tableMap, jdbcInfo, views)
+
+  def printBuilder(): Unit = builder.foreach({
+    case (p, None) => println(s"Unchecked: $p")
+    case (p, Some(None)) => println(s"Not table: $p")
+    case (p, Some(Some(t))) => println(s"Table:     ${t.info.name}")
+  })
+
+  private def generateView(tableMapPair: (TableInfo, TableCode)): (String, String) = {
+    val i = tableMapPair._1
+    val t = tableMapPair._2
+    val joins = t.joins
+    val columnList = t.dbColumns ++ joins.flatMap(j => tableMap(j).dbColumns)
+    val viewSQL = s"""  val ${i.viewObject}: DBIO[Int] =
+       |    sqlu${quotes}
+       |        CREATE VIEW ${quoted(i.dbViewName)} AS
+       |        SELECT ${columnList.mkString(", ")}
+       |        FROM ${quoted(i.dbTableName)}
+       |        ${t.dbJoinSQL};
+       |    $quotes
+     """.stripMargin
+    (i.viewObject, viewSQL)
+  }
+
+  private def processTables(): Map[TableInfo, TableCode] = {
+    if (inputTheories.nonEmpty) inputTheories.foreach(addPath)
     while (unprocessed.nonEmpty) {
       unprocessed.foreach(path => {
         readerCallback(path) match {
@@ -23,7 +52,21 @@ class Tables(prefix: String, dbPackagePath: String, readerCallback: MPath => Any
         }
       })
     }
-    pathsToTables.collect({ case (p: MPath, Some(Some(t: TableCode))) => (p, t) }).toMap
+    builder.collect({ case (_, Some(Some(t: TableCode))) => (t.info, t) }).toMap
+  }
+
+  private def processViews(): Map[TableInfo, TableCode] = {
+    inputTheories.map(builder).collect({
+      case Some(Some(t: TableCode)) => t
+    }).filter(_.joins.nonEmpty).map(t => getView(t.info)).map(view => (view.info, view)).toMap
+  }
+
+  // assume that the column names are unique
+  private def getView(t: TableInfo): TableCode = {
+    val tbCode = tableMap(t)
+    def getColumns(t: TableInfo) = tableMap(t).columns.filter(_.join.isEmpty)
+    val cols = getColumns(t) ++ tbCode.joins.flatMap(getColumns)
+    TableCode(TableInfo(t.prefix, t.viewName), dbPackagePath, cols, tbCode.datasetName, Seq())
   }
 
   private def getTableCode(table: Table): TableCode = {
@@ -35,20 +78,14 @@ class Tables(prefix: String, dbPackagePath: String, readerCallback: MPath => Any
   }
 
   private def addPath(p: MPath): Unit = {
-    if (!pathsToTables.contains(p)) pathsToTables += (p -> None)
+    if (!builder.contains(p)) builder += (p -> None)
   }
 
   private def processPath(p: MPath, t: Option[TableCode]): Unit = {
-    if (pathsToTables.contains(p)) pathsToTables -= p
-    pathsToTables += (p -> Some(t))
+    if (builder.contains(p)) builder -= p
+    builder += (p -> Some(t))
   }
 
-  private def unprocessed: Seq[MPath] = pathsToTables.collect({ case (p, None) => p }).toSeq
-
-  def print(): Unit = pathsToTables.foreach({
-    case (p, None) => println(s"Unchecked: $p")
-    case (p, Some(None)) => println(s"Not table: $p")
-    case (p, Some(Some(t))) => println(s"Table:     ${t.info.name}")
-  })
+  private def unprocessed: Seq[MPath] = builder.collect({ case (p, None) => p }).toSeq
 
 }
