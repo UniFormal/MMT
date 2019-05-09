@@ -11,12 +11,18 @@ class Tables(prefix: String, dirPaths: ProjectPaths, readerCallback: MPath => An
   // - Some(None): retrieved, not table
   private val dbPackagePath: String = dirPaths.dbPackagePath
   private val builder: mutable.Map[MPath, Option[Option[TableCode]]] = mutable.Map[MPath, Option[Option[TableCode]]]()
+  private def inputTableCodes: Seq[TableCode] = inputTheories.map(builder).collect({
+    case Some(Some(t: TableCode)) => t
+  })
 
   val tableMap: Map[TableInfo, TableCode] = processTables()
   val viewMap: Map[TableInfo, TableCode] = processViews()
-  val views: Seq[(String, String)] = tableMap.filter(_._2.joins.nonEmpty).map(generateView).toSeq
+  val views: Seq[(String, String)] = tableMap.values.filter(_.joins.nonEmpty).map(generateView).toSeq
 
-  def databaseCode: DatabaseCode = DatabaseCode(prefix, dirPaths, tableMap, jdbcInfo, views)
+  def databaseCode: DatabaseCode = {
+    val tables = tableMap.map(t => Seq(t._2) ++ viewMap.get(t._2.info)).toSeq
+    DatabaseCode(prefix, dirPaths, tables, jdbcInfo, views)
+  }
 
   def printBuilder(): Unit = builder.foreach({
     case (p, None) => println(s"Unchecked: $p")
@@ -24,20 +30,18 @@ class Tables(prefix: String, dirPaths: ProjectPaths, readerCallback: MPath => An
     case (p, Some(Some(t))) => println(s"Table:     ${t.info.name}")
   })
 
-  private def generateView(tableMapPair: (TableInfo, TableCode)): (String, String) = {
-    val i = tableMapPair._1
-    val t = tableMapPair._2
+  private def generateView(t: TableCode): (String, String) = {
     val joins = t.joins
-    val columnList = t.dbColumns ++ joins.flatMap(j => tableMap(j).dbColumns)
-    val viewSQL = s"""  val ${i.viewObject}: DBIO[Int] =
-       |    sqlu${quotes}
-       |        CREATE VIEW ${quoted(i.dbViewName)} AS
+    val columnList =  t.dbColumns(true) ++ joins.flatMap(j => tableMap(j).dbColumns(false))
+    val viewSQL = s"""  val ${t.info.viewObject}: DBIO[Int] =
+       |    sqlu$quotes
+       |        CREATE VIEW ${quoted(t.info.dbViewName)} AS
        |        SELECT ${columnList.mkString(", ")}
-       |        FROM ${quoted(i.dbTableName)}
+       |        FROM ${quoted(t.info.dbTableName)}
        |        ${t.dbJoinSQL};
        |    $quotes
      """.stripMargin
-    (i.viewObject, viewSQL)
+    (t.info.viewObject, viewSQL)
   }
 
   private def processTables(): Map[TableInfo, TableCode] = {
@@ -56,9 +60,10 @@ class Tables(prefix: String, dirPaths: ProjectPaths, readerCallback: MPath => An
   }
 
   private def processViews(): Map[TableInfo, TableCode] = {
-    inputTheories.map(builder).collect({
-      case Some(Some(t: TableCode)) => t
-    }).filter(_.joins.nonEmpty).map(t => getView(t.info)).map(view => (view.info, view)).toMap
+    inputTableCodes.filter(_.joins.nonEmpty).map(t => {
+      val view = getView(t.info)
+      (t.info, view)
+    }).toMap
   }
 
   // assume that the column names are unique

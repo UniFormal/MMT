@@ -2,7 +2,7 @@ package info.kwarc.mmt.sql.codegen
 
 import java.io.PrintWriter
 
-case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableInfo, TableCode], dbInfo: JDBCInfo, views: Seq[(String, String)]) {
+case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Seq[Seq[TableCode]], dbInfo: JDBCInfo, viewCreation: Seq[(String, String)]) {
 
   private def writeToFile(f: String, s: String, write: Boolean): Unit = {
     if (write) {
@@ -26,16 +26,16 @@ case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableIn
       .foreach(t => CodeFile(t._1, s"${paths.backendPackagePath}/${t._2}.scala").writeToFile(generate))
     val tempDir = s"${paths.dbPackagePath}/temp"
     def tableTempPath(s: String) = s"$tempDir/$s.scala"
-    tables.foreach(mapItem => {
-      val t = mapItem._2
+    tables.foreach(s => {
+      val t = s.head
       val tPath = tablePackagePath(t.info.name)
       val dir = new java.io.File(tPath)
       if (generate && !dir.exists()) dir.mkdir()
 //      val name = t.table.name
-      tableFiles(t).foreach(f => {
+      s.foreach(t => tableFiles(t).foreach(f => {
         val out = Some(s"$tPath/${t.info.name}${f._3}.scala")
         CodeFile(f._1, tableTempPath(f._2), out).writeToFile(generate)
-      })
+      }))
     })
 
     // delete temp dir
@@ -56,39 +56,41 @@ case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableIn
 
   private def tablePackagePrefix: String = prefix
   private def tablePackagePath(name: String) = s"${paths.dbPackagePath}/$tablePackagePrefix$name"
+  private def allTableCodes: Seq[TableCode] = tables.flatten
+  private def nonViewTableCodes: Seq[TableCode] = tables.map(_.head)
 
-  private val tableObjects = tables.map(_._2.dbTableObject).mkString("\n")
+  private def tableObjects(seq: Seq[TableCode]) = seq.map(_.dbTableObject).mkString("\n")
 
   // backend code
 
   def zooCreateRepl: Map[String, String] = Map(
-    "//tableObjects" -> tableObjects,
-    "//views" -> views.map(_._2).mkString("\n"),
-    "//importTablePackages" -> tables.map(_._2.tableClassImport).mkString("\n"),
-    "//schemaCreateList" -> tables.map(_._2.zooSchemaCreate).mkString(", "),
-    "//viewCreateList" -> views.map(_._1).mkString(", ")
+    "//tableObjects" -> tableObjects(nonViewTableCodes),
+    "//views" -> viewCreation.map(_._2).mkString("\n"),
+    "//importTablePackages" -> nonViewTableCodes.map(_.tableClassImport).mkString("\n"),
+    "//schemaCreateList" -> nonViewTableCodes.map(_.zooSchemaCreate).mkString(", "),
+    "//viewCreateList" -> viewCreation.map(_._1).mkString(", ")
   )
 
   private def jsonSupportRepl: Map[String, String] = Map(
-    "//importTablePackages" -> tables.map(_._2.jsonSupportImport).mkString("\n"),
-    "//casesToJson" -> tables.map(_._2.jsonSupportMap).mkString("\n")
+    "//importTablePackages" -> allTableCodes.map(_.jsonSupportImport).mkString("\n"),
+    "//casesToJson" -> allTableCodes.map(_.jsonSupportMap).mkString("\n")
   )
 
 
   private def zooDbRepl: Map[String, String] = Map(
-    "//tableObjects" -> tableObjects,
+    "//tableObjects" -> tableObjects(allTableCodes),
     "%jdbc%" -> dbInfo.jdbc,
     "%user%" -> dbInfo.user,
     "%pass%" -> dbInfo.pass,
-    "//importTablePackages" -> tables.map(_._2.zooDbImport).mkString("\n"),
-    "//getQueryMatches" -> tables.map(_._2.dbGetQueryMatches).mkString("\n"),
-    "//countQueryMatches" -> tables.map(_._2.dbCountQueryMatches).mkString("\n")
+    "//importTablePackages" -> allTableCodes.map(_.zooDbImport).mkString("\n"),
+    "//getQueryMatches" -> allTableCodes.map(_.dbGetQueryMatches).mkString("\n"),
+    "//countQueryMatches" -> allTableCodes.map(_.dbCountQueryMatches).mkString("\n")
   )
 
   // frontend jsons
 
   private def objectPropertiesJSON: String = {
-    val code = tables.map(_._2.jsonObjectProperties).mkString(",\n")
+    val code = allTableCodes.map(_.jsonObjectProperties).mkString(",\n")
     s"""{
        |$code
        |}
@@ -96,7 +98,7 @@ case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableIn
   }
 
   private def collectionDataJSON: String = {
-    val code = tables.map(_._2.collectionsData).mkString(",\n")
+    val code = allTableCodes.map(_.collectionsData).mkString(",\n")
     s"""{
        |$code
        |}
@@ -104,7 +106,7 @@ case class DatabaseCode(prefix: String, paths: ProjectPaths, tables: Map[TableIn
   }
 
   private def settingsJSON: String = {
-    val code = tables.map(_._2.defaultColumns).mkString(",\n")
+    val code = allTableCodes.map(_.defaultColumns).mkString(",\n")
     s"""{
        |    "title": "Search",
        |    "defaultColumns": {

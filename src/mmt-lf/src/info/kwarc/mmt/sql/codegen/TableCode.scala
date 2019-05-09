@@ -25,7 +25,7 @@ case class TableCode( info: TableInfo,
     "%tableName%" -> info.name,
     "%getResultParameters%" -> columns.map(_.getResultItem).mkString(", "),
     "%sqlFrom%" -> info.dbTableName, // table name in the database
-    "//columns" -> ("ID" +: columns.filter(_.join.isEmpty).map(_.nameDbQuoted)).map(c => s"""      |${quoted(info.dbTableName)}.$c""").mkString(",\n")
+    "//columns" -> (quoted("ID") +: columns.filter(_.join.isEmpty).map(_.nameDbQuoted)).map(c => s"""      |${quoted(info.dbTableName)}.$c""").mkString(",\n")
   )
 
   // TableClass
@@ -41,7 +41,7 @@ case class TableCode( info: TableInfo,
 
   // Create
   def tableClassImport: String = s"import ${info.packageString}.${info.tableClass}"
-  def zooSchemaCreate: String = s"${info.tableObject}.schema.create"
+  def zooSchemaCreate: String = s"${info.tableObject}.schema.createIfNotExists"
 
   // ZooDb
   def zooDbImport: String = s"import ${info.packageString}.{$plainQueryObject, ${info.tableClass}}"
@@ -92,7 +92,11 @@ case class TableCode( info: TableInfo,
     s"""      "${info.tableObject}": [$cols]""".stripMargin
   }
 
-  def dbColumns: Seq[String] = columns.map(c => s"${quoted(info.dbTableName)}.${c.nameDbQuoted}")
+  def dbColumns(withID: Boolean): Seq[String] = {
+    val maybeID = if (withID) Seq(quoted("ID")) else Seq()
+    (maybeID ++ columns.filter(_.join.isEmpty).map(_.nameDbQuoted)).map(c => s"${quoted(info.dbTableName)}.$c")
+  }
+
   def dbJoinSQL: String = {
     columns.collect({
       case ColumnCode(c, Some(j)) => (c, j)
