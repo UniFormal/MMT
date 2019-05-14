@@ -3,24 +3,27 @@ Isabelle/MMT
 
 ## Requirements
 
-Until the next official release after Isabelle2018 (presumably Isabelle2019
-in June 2019), Isabelle/MMT requires a suitable development snapshot from
-https://isabelle.sketis.net/devel/release_snapshot or a repository clone
-from http://isabelle.in.tum.de/repos/isabelle -- see also its
-`README_REPOSITORY` file with the all-important **Quick start in 30min**.
+Isabelle/MMT requires a version of Isabelle that fits precisely to it. For the
+current stable release that is Isabelle2019 (June 2019). For intermediate
+repository versions, a suitable Isabelle development snapshot is required, e.g.
+from https://isabelle.sketis.net/devel/release_snapshot or a repository clone
+from https://isabelle.sketis.net/repos/isabelle -- see also its
+`README_REPOSITORY` file within the Isabelle repository with the all-important
+**Quick start in 30min**.
 
-In particular, the following versions from Nov-2018 should fit together:
+In particular, the following versions from May-2019 should fit together:
 
-  * Isabelle/1bee990d443c from https://isabelle.in.tum.de/repos/isabelle
-  * AFP/1566e3fc3118 from https://bitbucket.org/isa-afp/afp-devel
-  * MMT/55f297239a45 from https://github.com/UniFormal/MMT/commits/devel
-  * MathHub/MMT/urtheories/efe7963422a3 from
+  * Isabelle/805250bb7363 from https://isabelle.sketis.net/repos/isabelle-release
+  * AFP/2170a6647f04 from https://isabelle.sketis.net/repos/afp-devel
+  * MMT/da1d91942801 from https://github.com/UniFormal/MMT/commits/devel
+  * MathHub/MMT/urtheories/01102b90e8bd from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
-The corresponding OMDoc content is available here:
+The corresponding OMDoc content is available here (commit messages refer to the
+underlying versions of Isabelle + AFP):
 
-  * https://gl.mathhub.info/Isabelle/Distribution (version 3faa7f9c7742)
-  * https://gl.mathhub.info/Isabelle/AFP (version 30a0dc372eaa)
+  * https://gl.mathhub.info/Isabelle/Distribution
+  * https://gl.mathhub.info/Isabelle/AFP
 
 
 ## Setup
@@ -52,8 +55,7 @@ Here are some example invocations of the main command-line tools:
 * importer:
 
       isabelle mmt_import -B ZF
-      isabelle mmt_import HOL
-      isabelle mmt_import -B HOL-Analysis
+      isabelle mmt_import -g main
       isabelle mmt_import -o record_proofs=2 -B HOL-Proofs
 
 * HTTP server to browse the results:
@@ -82,7 +84,7 @@ Recall that Isabelle consists of two processes:
 
 Big examples require generous heap space for both, typically 30 GB. Note
 that both platforms have a discontinuity when switching from short 32-bit
-pointers to full 64-bit ones: *4 GB* for Poly/ML and *32 GB* for Java. Going
+pointers to full 64-bit ones: *16 GB* for Poly/ML and *32 GB* for Java. Going
 beyond that doubles the baseline memory requirements.
 
 The subsequent setup works well for hardware with 64 GB of main memory:
@@ -100,7 +102,6 @@ The subsequent setup works well for hardware with 64 GB of main memory:
 Examples:
 
       isabelle mmt_import -a -X doc -X no_doc
-      isabelle mmt_import -d '$AFP' -B HOL-Analysis -X doc -X no_doc -X slow
       isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X slow
       isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X very_slow
 
@@ -123,7 +124,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X slow -x HOL-ODE-Numerics -x Diophantine_Eqns_Lin_Hom -x HLDE
+      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X very_slow
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,
@@ -149,7 +150,8 @@ shown to end-users by default.
 ## isabelle mmt_build
 
 This is a thin wrapper for `sbt mmt/deploy` within the formal Isabelle
-environment and the correct directory in the MMT source tree. It also
+environment and the correct directory in the MMT source tree; it trims the
+resulting jar to avoid duplicates of Scala libraries. Furthermore, it
 ensures that Isabelle/Scala has been properly bootstrapped beforehand (e.g.
 when working from the Isabelle repository).
 
@@ -173,7 +175,6 @@ directories. Its command-line usage is as follows:
         -a           select all sessions
         -d DIR       include session directory
         -g NAME      select session group NAME
-        -l NAME      logic session name (default: "Pure")
         -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
         -v           verbose mode
         -x NAME      exclude session NAME and all descendants
@@ -204,10 +205,6 @@ provides its own options in `src/mmt-isabelle/etc/options` (with short
 descriptions).
 
 Option `-v` enables verbose mode, similar to `isabelle build`.
-
-Option `-l` allows to use a different base logic images than the `Pure`. It
-rarely makes sense to use something else, because formal content between
-`Pure` and the base logic is *missing* from the import.
 
 
 ## isabelle mmt_server
