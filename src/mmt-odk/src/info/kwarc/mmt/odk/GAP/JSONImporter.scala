@@ -20,7 +20,7 @@ sealed abstract class ParsedObject {
 case class ParsedMethod(op : String, filters : List[List[String]], comment : String, rank : Int) {
   val dependencies = op :: filters.flatten.distinct
 }
-case class ParsedProperty(name : String, aka : List[String], implied : List[String], isTrue :Boolean = false,location : (String,Int)) extends ParsedObject {
+case class ParsedProperty(name : String, aka : List[String], implied : List[String], isTrue :Boolean = false,location : (String,Int),methods:List[ParsedMethod]) extends ParsedObject {
   val dependencies = implied
   val tp = "GAPProperty"
 }
@@ -33,7 +33,7 @@ case class ParsedCategory(name : String, aka : List[String], implied : List[Stri
   val dependencies = implied
   val tp = "GAPCategory"
 }
-case class ParsedAttribute(name : String, aka : List[String], filters : List[String],location : (String,Int)) extends ParsedObject {
+case class ParsedAttribute(name : String, aka : List[String], filters : List[String],location : (String,Int),methods:List[ParsedMethod]) extends ParsedObject {
   val dependencies = filters
   val tp = "GAPAttribute"
 }
@@ -44,6 +44,11 @@ case class ParsedRepresentation(name : String, aka : List[String], implied : Lis
 case class ParsedFilter(name : String, aka : List[String], implied : List[String],location : (String,Int)) extends ParsedObject {
   val dependencies = implied
   val tp = "GAPFilter"
+}
+
+case class ParsedConstructor(name : String, aka : List[String],location : (String,Int),filters: List[String],methods:List[ParsedMethod]) extends ParsedObject {
+  override val dependencies: List[String] = filters
+  val tp = "Constructor"
 }
 
 case class ParsedDefinedFilter(name : String, aka : List[String], conjof : List[String],location : (String,Int)) extends ParsedObject {
@@ -153,11 +158,13 @@ class GAPJSONImporter extends Importer {
     */
 
 
-    val locations = {
+    val locations = try {
       val locobj = try { obj.getAsList(classOf[JSONObject],"locations").head } catch {
         case e : Exception => obj.getAs(classOf[JSONObject],"location")
       }
-      (locobj.getAsString("file"),locobj.getAsInt("line").toInt)
+      (locobj.getAsString("file"),Try(locobj.getAsInt("line").toInt).getOrElse(0))
+    } catch {
+      case ParseError(_) => ("",0)
     }
     // TODO: don't just take the head!
 
@@ -165,12 +172,14 @@ class GAPJSONImporter extends Importer {
       case "GAP_AndFilter" =>
         val conjs = obj.getAsList(classOf[String],"conjunction_of").filter(redfilter(name))
         (ParsedDefinedFilter(name,aka,conjs,locations),List("conjunction_of"))
-      case "GAP_Property" | "GAP_TrueProperty" =>
+      case "GAP_Property" | "GAP_TrueProperty"| "Property" =>
         val impls = Try(obj.getAsList(classOf[String],"implied")).getOrElse(
           obj.getAsList(classOf[String],"filters")).filter(redfilter(name))
-        (ParsedProperty(name,aka,impls,if (tp == "GAP_TrueProperty") true else false,locations),List("implied","filters"))
+        val methods = doMethods(obj.getAs(classOf[JSONObject],"methods"),name)
+        allmethods :::= methods
+        (ParsedProperty(name,aka,impls,if (tp == "GAP_TrueProperty") true else false,locations,methods),List("implied","filters","methods"))
 
-      case "GAP_Operation" =>
+      case "GAP_Operation"| "Operation" =>
         val filters = obj.getAsList(classOf[JSONArray],"filters") map (_.values.toList map {
           case JSONArray(ls@_*) => (ls.toList map {
             case JSONString(s) => s
@@ -182,9 +191,11 @@ class GAPJSONImporter extends Importer {
         allmethods :::= methods
         (ParsedOperation(name,aka,filters,methods,locations),List("filters","methods"))
 
-      case "GAP_Attribute" =>
+      case "GAP_Attribute"| "Attribute" =>
         val filters = obj.getAsList(classOf[String],"filters").filter(redfilter(name))
-        (ParsedAttribute(name,aka,filters,locations),List("filters"))
+        val methods = doMethods(obj.getAs(classOf[JSONObject],"methods"),name)
+        allmethods :::= methods
+        (ParsedAttribute(name,aka,filters,locations,methods),List("filters","methods"))
 
       case "GAP_Representation" =>
         val implied = obj.getAsList(classOf[String],"implied").filter(redfilter(name))
@@ -198,10 +209,19 @@ class GAPJSONImporter extends Importer {
         val implied = obj.getAsList(classOf[String],"implied").filter(redfilter(name))
         (ParsedFilter(name,aka,implied,locations),List("implied"))
 
+      case "Constructor" =>
+        val filters = obj.getAsList(classOf[String],"filters").filter(redfilter(name))
+        val methods = doMethods(obj.getAs(classOf[JSONObject],"methods"),name)
+        allmethods :::= methods
+        (ParsedConstructor(name,aka,locations,filters,methods),List("filters","methods"))
+
+      case "Function" =>
+        // TODO?
+        return
       case _ => throw new ParseError("Type not yet implemented: " + tp + " in " + obj)
     }
     val missings = obj.map.filter(p => !("name" :: "type" :: "aka" :: "location" :: "locations" :: eaten).contains(p._1.value))
-    if (missings.nonEmpty) throw new ParseError("Type " + tp + " has additional fields " + missings)
+    if (missings.nonEmpty) println("Type " + tp + " has additional fields " + missings) // throw new ParseError("Type " + tp + " has additional fields " + missings)
     // log("Added: " + ret)
     all ::= ret
   }
@@ -247,9 +267,9 @@ class GAPJSONImporter extends Importer {
         new DeclaredFilter(LocalName(name),implied map deps,loc)
       case ParsedRepresentation(name,aka,implied,loc) =>
         new GAPRepresentation(LocalName(name),implied map deps,loc)
-      case ParsedProperty(name,aka,implied,istrue,loc) =>
+      case ParsedProperty(name,aka,implied,istrue,loc,methods) =>
         new DeclaredProperty(LocalName(name),implied map deps,istrue,loc)
-      case ParsedAttribute(name,aka,filters,loc) =>
+      case ParsedAttribute(name,aka,filters,loc,methods) =>
         new DeclaredAttribute(LocalName(name), filters map deps,loc)
       case ParsedCategory(name,aka,implied,locations) =>
         new DeclaredCategory(LocalName(name), implied map deps,locations)
@@ -257,6 +277,8 @@ class GAPJSONImporter extends Importer {
         new DeclaredOperation(LocalName(name),filters map (_ map (_ map deps)),locations)
       case ParsedDefinedFilter(name,aka,conjof,location) =>
         new DefinedFilter(LocalName(name), conjof map deps,location)
+      case ParsedConstructor(name, aka, location, filters, methods) =>
+        new Constructor(LocalName(name),filters map deps,location)
     }
     dones += ((po,ret))
     ret
@@ -438,8 +460,10 @@ class DeclaredFilter(val name : LocalName, val implied : List[GAPObject], val lo
 class DefinedFilter(val name : LocalName, val conjs : List[GAPObject], val locations : (String,Int)) extends DeclaredObject with GAPFilter {
   override def toString = "DefinedFilter " + name + " " + locations
   val dependencies = conjs.flatMap(_.getInner).distinct
-  def defi : Term = if (conjs.length == 1) Translator.objtotype(conjs.head) else
-    conjs.init.foldRight(Translator.objtotype(conjs.last))((o,t) => GAP.termconj(Translator.objtotype(o),t))
+  def defi : Option[Term] = if (conjs.isEmpty) {
+    None
+  } else if (conjs.length == 1) Some(Translator.objtotype(conjs.head)) else
+    Some(conjs.init.foldRight(Translator.objtotype(conjs.last))((o,t) => GAP.termconj(Translator.objtotype(o),t)))
 }
 
 trait GAPCategory extends GAPFilter
@@ -469,6 +493,12 @@ class DeclaredAttribute(val name : LocalName, val filters: List[GAPObject], val 
   extends DeclaredObject with GAPAttribute {
   override def toString = "DeclaredAttribute " + name + " " + locations
   val dependencies = filters.flatMap(_.getInner).distinct
+}
+class Constructor (val name : LocalName, val filters: List[GAPObject], val locations : (String,Int))
+  extends DeclaredObject {
+  override def toString: String = "Constructor " + name + " " + locations
+  override val dependencies: List[DeclaredObject] = filters.flatMap(_.getInner).distinct
+  val returntype : Option[GAPObject] = None
 }
 trait GAPProperty extends GAPAttribute
 class DeclaredProperty(name : LocalName, implied : List[GAPObject], val istrue : Boolean, locations : (String,Int))
