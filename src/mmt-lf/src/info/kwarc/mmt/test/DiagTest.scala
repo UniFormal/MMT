@@ -6,6 +6,6 @@ object DiagTest extends MMTIntegrationTest()(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin")
 ) {
   def main(): Unit = {
-    shouldCheck("MMT/mathscheme", "Example.mmt")()
+    shouldCheck("MMT/Mathscheme", "Example.mmt")()
   }
 }

@@ -312,11 +312,11 @@ object ComputeRename extends ComputationRule(Rename.path) {
 trait Pushout extends ConstantScala {
   val parent = Combinators._path
 
-  def apply(d1: Term, r1: List[Term], d2: Term, r2: List[Term]) = {
-    path(d1 :: r1 ::: List(d2) ::: r2)
+  def apply(d1: Term, r1: List[Term], d2: Term, r2: List[Term], over : Term) = {
+    path(d1 :: r1 ::: List(d2) ::: r2 ::: List(over))
   }
 
-  def unapply(t: Term): Option[(Term,List[Term],Term,List[Term])] = t match {
+  def unapply(t: Term): Option[(Term,List[Term],Term,List[Term],Term)] = t match {
     case OMA(OMS(this.path), args) =>
       var left = args
       val d1 = left.headOption.getOrElse(return None)
@@ -327,14 +327,16 @@ trait Pushout extends ConstantScala {
       left = left.tail
       val r2 = left.takeWhile(t => Rename1.unapply(t).isDefined)
       left = left.drop(r2.length)
+      val over = left.headOption.getOrElse(return None)
+      left = left.tail
       if (left.nonEmpty) return None
-      Some((d1,r1,d2,r2))
+      Some((d1,r1,d2,r2,over))
     case _ => None
   }
 }
 
 object PushoutUtils {
-  case class BranchInfo(anondiag: AnonymousDiagram, dom: LocalName, distNode: DiagramNode,
+  case class BranchInfo(anondiag: AnonymousDiagram, distNode: DiagramNode,
                         distTo: List[DiagramArrow], renames: List[(LocalName,Term)]) {
     def extend(label: LocalName, po: DiagramNode) = {
       //val morph = new AnonymousMorphism(po.theory.decls.diff(distNode.theory.decls))
@@ -345,10 +347,9 @@ object PushoutUtils {
   def collectBranchInfo(solver: CheckingCallback,d: Term,rename : List[Term])(implicit stack: Stack, history: History): Option[BranchInfo] = {
     val ren = Common.asSubstitution(rename)
     val ad = Common.asAnonymousDiagram(solver, d).getOrElse(return None)
-    val dom = ad.getDistArrow.getOrElse(return None).from
     val distNode = ad.getDistNode.getOrElse(return None)
     val distTo = ad.getDistArrowsTo(distNode.label)
-    Some(PushoutUtils.BranchInfo(ad,dom,distNode,distTo,ren))
+    Some(PushoutUtils.BranchInfo(ad,distNode,distTo,ren))
   }
 }
 
@@ -363,61 +364,59 @@ object Combine extends Pushout {
 
 object ComputeCombine extends ComputationRule(Combine.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    val Combine(d1,r1,d2,r2) = tm
+    /**************** Input pieces *****************/
+    val Combine(d1, r1, d2, r2, over) = tm
+    val List(ad1, ad2, ad_over) = List(d1, d2, over).map(d => Common.asAnonymousDiagram(solver, d).get) // TODO: Handle errors here
 
-    /* Calculate branch info */
-    val b1 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d1,r1).getOrElse(return Recurse)
-    val b2 : BranchInfo = PushoutUtils.collectBranchInfo(solver,d2,r2).getOrElse(return Recurse)
+    /**************** Calculate the views from the source to the two nodes (after renaming) ****************/
+    val List(renames1,renames2) : List[List[OML]] = List(r1,r2).map{r => Common.asSubstitution(r).map{case (o,n) => OML(o,None,Some(n))}}
+    val List(in_view1,in_view2) : List[List[OML]] = List(ad1,ad2).map{d => d.viewOf(ad_over.getDistNode.get, d.getDistNode.get)} // TODO: Handle errors here
+    val view1: List[OML] = ad1.compose(in_view1,renames1)
+    val view2: List[OML] = ad2.compose(in_view2,renames2)
 
-    /* Finding the common source (\Gamma) */
-    val extArrows1 = b1.distTo.filter(_.label.toString.contains("extend"))
-    val extArrows2 = b2.distTo.filter(_.label.toString.contains("extend"))
-    val List(sN1,sN2) = List(b1,b2).map(b => b.distTo.filter(_.label.toString.contains("extend")).map(a => a.from))
-    val sourceName : LocalName = (sN1 intersect sN2).head
-    val source : DiagramNode = sourceName match {
-      case Common.ExistingName(s) => b1.anondiag.getNode(sourceName).get
-      case _ => return Recurse
-    }
+    /**************** Check The Guard *******************/
+    /* - Now, view1 and view2 have the list of assignments from the source to the targets (after applying the renames)
+     * - We compare them to make sure the names matches
+     * - Order does not matter, so we convert the list to a set.
+     *  */
+    if (view1.toSet != view2.toSet) throw (new GeneralError("Wrong renames"))
 
-    /* Applying renames on the theories */
-    val List(renamedThry1,renamedThry2) = List(b1,b2).map(b => b.distNode.theory.rename(b.renames:_*))
+    /**************** Define the new theory ***************/
+    // apply the rename
+    def view_as_sub(v : List[OML]) = v.map{case OML(o,_,Some(n),_,_) => (o,n)}
+    val List(renThry1,renThry2) : List[AnonymousTheory] = List(ad1,ad2).map(b => b.getDistNode.get.theory.rename(view_as_sub(view1):_*))
 
-    /* Checking for the guard:
-     *  If two decls are renamed to the same name, they should be the same in the source node */
-    // Going through the rename arrows:
-    // val List(view_ad1,view_ad2) = List(b1,b2).map(b => b.anondiag.viewOf(source,b.distNode))
-    val view_ad1 = b1.anondiag.viewOf(source,new DiagramNode(LocalName("n1"),renamedThry1))
-    val view_ad2 = b2.anondiag.viewOf(source,new DiagramNode(LocalName("n2"),renamedThry2))
-    if(view_ad1 != view_ad2) throw (new GeneralError("Wrong renames"))
+    /* Calculate the pushout as distinct union
+     * TODO: Find a better way to choose the meta-theory
+     * */
+    val new_decls : List[OML] = (renThry1.decls union renThry2.decls).distinct
+    val new_theory : AnonymousTheory = new AnonymousTheory(ad1.getDistNode.get.theory.mt,new_decls)
 
-    /* Theory with the new declarations */
-    val new_thy = renamedThry1 union renamedThry2
-
-    /* TODO: How to choose the meta-theory? We need to have a constraint that one of them contains the other? */
-    val result_node = DiagramNode(Combine.nodeLabel, new_thy)
-    val diag   = DiagramArrow(Combine.arrowLabel,  source.label, result_node.label, new AnonymousMorphism(Nil), true)
+    /****************** Build the new diagram *******************/
+    val dist_node: DiagramNode = DiagramNode(Combine.nodeLabel, new_theory)
+    // TODO: The assignments in the arrow need to be the identity
+    val impl_arrow = DiagramArrow(Combine.arrowLabel, ad_over.distNode.get, dist_node.label, new AnonymousMorphism(Nil), true)
 
     /* This is used in case theories are not built in a tiny-theories way. In this case, we need to generate names for the arrows. */
-    val jointDiag = Common.prefixLabels(b1.anondiag, LocalName("left")) union Common.prefixLabels(b2.anondiag, LocalName("right"))
-    /* val List(dom1,dom2) = List(ad1,ad2) map {d =>
-      val fromT = d.getDistArrow.getOrElse(return Recurse).from
-      fromT match {
-        case Common.ExistingName(p) => p
-        case _ => return Recurse
-      }
-    }*/
-    val arrow1 = b1.extend(Combine.arrowLabel1, result_node)
-    val arrow2 = b2.extend(Combine.arrowLabel2, result_node)
-    val ad = new AnonymousDiagram(jointDiag.nodes ::: List(result_node), jointDiag.arrows:::List(arrow1,arrow2, diag), Some(result_node.label))
-    Simplify(ad.toTerm)
+    val jointDiag: AnonymousDiagram = (Common.prefixLabels(ad1, LocalName("left")) union Common.prefixLabels(ad2, LocalName("right")))
+
+    val List(map1,map2) = List(view1,view2).map{v => Common.asSubstitution(v).map { case (o, n) => OML(o, None, Some(n))}}
+
+    val arrow1 = DiagramArrow(Combine.arrowLabel1, ad1.distNode.get, dist_node.label, new AnonymousMorphism(map1), false)
+    val arrow2 = DiagramArrow(Combine.arrowLabel2, ad2.distNode.get, dist_node.label, new AnonymousMorphism(map2), false)
+
+    val result_diag = new AnonymousDiagram(jointDiag.nodes ::: List(dist_node), jointDiag.arrows ::: List(arrow1, arrow2, impl_arrow), Some(dist_node.label))
+
+    Simplify(result_diag.toTerm)
   }
+
 }
 
 object Mixin extends Pushout {
   val name = "mixin"
 
   val nodeLabel = LocalName("pres")
-  val arrowLabel1 = LocalName("extend")
+  val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("view")
   val arrowLabel = LocalName("extend")
 }
@@ -430,7 +429,7 @@ object Mixin extends Pushout {
  * inclusion from B to Translate(m,T)
  */
 
-
+/*
 object ComputeMixin extends ComputationRule(Mixin.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     /* Both combine and translate takes two diagrams and two renames. The difference is in the content of the second diagram */
@@ -450,8 +449,6 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
     val view_renamed :  AnonymousMorphism = new AnonymousMorphism(Common.applySubstitution(view.morphism.decls,ren2))
     val view_from : DiagramNode = ad2.getNode(view.from).getOrElse(return Recurse)
 
-    val iter = view.morphism.decls.map(oml => oml.df)
-
     /** TODO: THis part needs to be CHANGED */
     val mor = view.morphism.decls.map {oml => (LocalName(oml.name),oml.df.getOrElse(return Recurse))}
     val morAsSub = view.morphism.decls.flatMap{oml => oml.df.toList.map {d => Sub(oml.name, d)}}
@@ -469,7 +466,7 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
     Simplify(result.toTerm)
   }
 }
-
+*/
 // TODO better name
 /** see [[Mixin]] */
 object Expand extends BinaryConstantScala(Combinators._path, "expand")

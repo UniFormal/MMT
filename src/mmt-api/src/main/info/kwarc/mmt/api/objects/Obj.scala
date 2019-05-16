@@ -407,7 +407,6 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
-    def toSubstitution : Sub = Sub(name,df.get)
 }
 
 object OML {

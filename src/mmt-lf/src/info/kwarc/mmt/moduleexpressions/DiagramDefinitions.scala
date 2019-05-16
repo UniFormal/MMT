@@ -19,7 +19,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
    def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment) {}
    
    override def modules(dm: DerivedModule) = {
-     val diag = dm.dfC.normalized.getOrElse {throw LocalError("no definiens found")}
+     val diag : Term = dm.dfC.normalized.getOrElse {throw LocalError("no definiens found")}
      val ad = diag match {
        case AnonymousDiagramCombinator(ad) => ad
        case df => throw LocalError("definiens not a diagram: " + controller.presenter.asString(df)) // TODO should use proper error handler 
