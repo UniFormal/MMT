@@ -96,6 +96,7 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
   private def doSageObject(obj : SageObject) : Unit = obj match {
     case pc : ParsedClass => doClass(pc)
     case pc : ParsedCategory => doCategory(pc)
+    case _ => throw ImplementationError("doSageObject() expected a ParsedClass or ParsedCategory")
   }
 
   private def doClass(clss : ParsedClass) =
@@ -150,8 +151,14 @@ class SageTranslator(controller: Controller, bt: BuildTask, index: Document => U
 
     cat.includes foreach (s => doSageObject(sobject(s)))
     cat.includes foreach (s => controller add PlainInclude(theories(s).path,th.path))
-    val importedaxioms = cat.includes.map(sobject).flatMap{case s : ParsedCategory => s.axioms}.distinct
-    val importedstructs = (cat.includes ::: cat.structure.filterNot(_ == cat.steps.last)).map(sobject).flatMap{case s :ParsedCategory => s.structure}.distinct
+    val importedaxioms = cat.includes.map(sobject).flatMap{
+      case s : ParsedCategory => s.axioms
+      case _ => throw ImplementationError("expected ParsedCategory")
+    }.distinct
+    val importedstructs = (cat.includes ::: cat.structure.filterNot(_ == cat.steps.last)).map(sobject).flatMap{
+      case s :ParsedCategory => s.structure
+      case _ => throw ImplementationError("expected ParsedCategory")
+    }.distinct
     val newaxioms = cat.axioms.filter(!importedaxioms.contains(_))
     val newstructs = cat.structure.filter(s => !importedstructs.contains(s) && allstructures.contains(Structure(s)))
 

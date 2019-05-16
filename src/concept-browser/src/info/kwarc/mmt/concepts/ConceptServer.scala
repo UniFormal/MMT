@@ -305,6 +305,7 @@ class ConceptServer extends ServerExtension("concepts") {
                 presenter(src, false)
               }
             }
+            case _ => throw ImplementationError("expected triples of Some(arch) and Some(src")
             }
             if (pairs.exists(p => p._1.isEmpty && p._2.isDefined)) tr {
               td {
@@ -319,6 +320,7 @@ class ConceptServer extends ServerExtension("concepts") {
                       presenter(src, false)
                     }
                   }
+                  case _ => throw ImplementationError("expected triples of Some(src)")
                   }
                 }
               }

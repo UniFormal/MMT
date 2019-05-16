@@ -114,8 +114,10 @@ object Common {
                    case AnonymousMorphismCombinator(at) => at
                      // TODO: handle stuff here !!
                  }
+               case _ => throw ImplementationError("invalid normalization")
              }
              Some(at)
+           case _ => throw ImplementationError("missing view")
          }
        case AnonymousMorphismCombinator(at) => Some(at) // explicit anonymous theories
        case _ => None

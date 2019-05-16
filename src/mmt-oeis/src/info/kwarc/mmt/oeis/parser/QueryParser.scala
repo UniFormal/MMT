@@ -2,12 +2,13 @@ package info.kwarc.mmt.oeis.parser
 
 import java.io.{File, PrintWriter}
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.oeis.processor._
 
 import scala.collection.mutable
 import scala.io.Source
 import scala.util.matching.Regex
-import scala.util.parsing.combinator.{PackratParsers, JavaTokenParsers}
+import scala.util.parsing.combinator.{JavaTokenParsers, PackratParsers}
 import scala.xml.Elem
 
 
@@ -342,6 +343,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
     unary_plusminus~term ^^ {
       case "-"~(fctr : Expression) => Neg(fctr)
       case "+"~(fctr : Expression) => fctr
+      case _ => throw ImplementationError("unsupported")
     }|
       term ^^ {
         case (a : Expression) => a
@@ -367,10 +369,10 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
     unsigned_factor~rep(multiply | lazy_multiply) ^^ {
       case (fctr : Expression)~(divs) if divs.length != 0 =>
         applyFunctionsInOrder(fctr :: divs.collect({
-          case x : (Any~Expression)  => x._2
+          case x : (Any@unchecked~Expression@unchecked)  => x._2
           case x : Expression => x
         }), funcs = divs.collect({
-          case x: (((Expression, Expression) => Expression) ~ Expression) => x._1
+          case x: (((Expression, Expression) => Expression)@unchecked ~ Expression@unchecked) => x._1
           case x =>
             (x: Expression, y: Expression) => (x, y) match {
               case (x: Var, y: ArgList) => y match {
@@ -405,6 +407,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
     unary_plusminus~unsigned_factor ^^ {
       case "-"~(fctr : Expression) => Neg(fctr)
       case "+"~(fctr : Expression) => fctr
+      case _ => throw ImplementationError("unsupported")
     } |
       unsigned_factor ^^ {x=>x}
 
@@ -414,6 +417,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
     unsigned_factor ~ suffix_functions ^^ {
       case x ~ "even" => Divisible(x,Num(2))
       case x ~ "?" => QVar(x)
+      case _ => throw ImplementationError("unsupported")
     } |
       factor~opt("!") ^^ {
         case (a:Expression)~ None => a
@@ -471,6 +475,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
           Power(ar, signed)
         case (a : Expression)~Some("^"~(signed : Expression)) =>
           Power(a,signed)
+        case _ => throw ImplementationError("unsupported")
 
       }
 
@@ -478,6 +483,7 @@ class QueryParser extends JavaTokenParsers with PackratParsers {
     argument ~ suffix_functions ^^ {
       case (x : Expression) ~ "even" => Divisible(x, Num(2))
       case (x : Expression) ~ "?" => QVar(x)
+      case _ => throw ImplementationError("unsupported")
     } |
       argument ^^ {x => x}
 

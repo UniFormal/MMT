@@ -9,7 +9,7 @@ import info.kwarc.mmt.lf.{ApplySpine, Apply}
   * like the one in valuebases, but for LF-based lists
   */
 abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName, cons: GlobalName)
-  extends CodecOperator[Code](id, list) {self =>
+  extends CodecOperator[Code,Codec[Code]](id, list) {self =>
 
   val typeParameterPositions = List(1)
 

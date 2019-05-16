@@ -12,6 +12,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.runtime.NonLocalReturnControl
 
 /** the essential subalgorithms of a bidirectional type-checking,
  *  factored out from the [[Solver]] class, which holds all bureaucracy
@@ -1000,13 +1001,37 @@ trait SolverAlgorithms {self: Solver =>
   // *** auxiliary functions for solving
   // ******************************************************************************************
 
+  /**
+    * For cycle detection in solveEquality
+    */
+  private object SolveEqualityStack {
+    private var stack : List[Equality] = Nil
+    def apply(j : Equality)(a : => Boolean): Boolean = try {
+      if (stack contains j) {
+        log("Cycle in solveEquality!")
+        return false
+      }
+      stack ::= j
+      val ret = a
+      assert(stack.head == j)
+      stack = stack.tail
+      ret
+    } catch {
+      case rc : NonLocalReturnControl[Boolean@unchecked] =>
+        assert(stack.head == j)
+        stack = stack.tail
+        rc.value
+    }
+  }
+
    /** tries to solve an unknown occurring in tm1 in terms of tm2
     *
     *  returns true if the unknowns were solved and the equality proved
     *  otherwise, returns false without state change (returning false here does not signal that the equality is disproved)
     */
-   private def solveEquality(j: Equality)(implicit history: History): Boolean = {
+   private def solveEquality(j: Equality)(implicit history: History): Boolean = SolveEqualityStack(j) {
       implicit val stack = j.stack
+     log("Solving " + j.present)
       j.tm1 match {
          //foundation-independent case: direct solution of an unknown variable
         case Unknown(m, as) =>
@@ -1035,6 +1060,7 @@ trait SolverAlgorithms {self: Solver =>
                 sr(j) match {
                   case Some((j2,msg)) =>
                     history += "Using solution rule " + rs.head.toString
+                    log("Using solution rule " + rs.head.toString)
                     return solveEquality(j2)((history + msg).branch)
                   case _ =>
                 }
@@ -1087,8 +1113,8 @@ trait SolverAlgorithms {self: Solver =>
    def solveSubtyping(j: Subtyping)(implicit history: History): Boolean = {
      implicit val stack = j.stack
      val (unk, bound, below) = (j.tp1,j.tp2) match {
-       case (u@Unknown(_), b) => (u,b,true)
-       case (b, u@Unknown(_)) => (u,b,false)
+       case (u@Unknown(_, _), b) => (u,b,true)
+       case (b, u@Unknown(_, _)) => (u,b,false)
        case _ => return false
      }
      unk match {

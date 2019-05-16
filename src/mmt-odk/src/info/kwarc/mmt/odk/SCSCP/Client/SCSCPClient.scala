@@ -2,6 +2,7 @@ package info.kwarc.mmt.odk.SCSCP.Client
 
 import java.net.Socket
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.odk.OpenMath.{OMApplication, OMExpression, OMObject, OMSymbol}
 import info.kwarc.mmt.odk.SCSCP.CD.{SymbolSet, scscp2}
 import info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers.SCSCPReader
@@ -277,6 +278,7 @@ class SCSCPClient(socket: Socket, encoding: String = "UTF-8", codingState: OMCod
     */
   def apply(app: OMApplication): SCSCPClientComputation = app match {
     case OMApplication(s: OMSymbol, arguments, _, _) => apply(s, arguments: _*)
+    case _ => throw ImplementationError("SCSCP: apply(OMApplication()) must contain a symbol")
   }
 
   /**

@@ -64,8 +64,10 @@ case object IBMJava8 extends MatrixKey[YAMLString]("jdk", "ibmjava8")
 case object OpenJDK6 extends MatrixKey[YAMLString]("jdk", "openjdk6")
 case object OpenJDK7 extends MatrixKey[YAMLString]("jdk", "openjdk7")
 case object OpenJDK8 extends MatrixKey[YAMLString]("jdk", "openjdk8")
-case object OracleJDK8 extends MatrixKey[YAMLString]("jdk", "oraclejdk8")
-case object OracleJDK9 extends MatrixKey[YAMLString]("jdk", "oraclejdk9")
+case object OpenJDK11 extends MatrixKey[YAMLString]("jdk", "openjdk11")
+// case object OracleJDK8 extends MatrixKey[YAMLString]("jdk", "oraclejdk8")
+// case object OracleJDK9 extends MatrixKey[YAMLString]("jdk", "oraclejdk9")
+
 
 /** the versions of Scala being used */
 case class Scala[YAMLString](version: String) extends MatrixKey("scala", YAMLString.fromString(version))

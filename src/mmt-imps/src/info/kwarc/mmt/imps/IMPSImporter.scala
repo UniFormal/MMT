@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   {
     val tState : TranslationState = new TranslationState()
     tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.impsMathLibrary
+    val targetSection : Section = impsLibrarySections.basicGroupTheory
     if (tState.verbosity > 0)
     {
       println("\nReading index file: " + bf.inFile.getName)
@@ -149,7 +149,8 @@ class IMPSImporter extends Importer
       }
       if (tState.verbosity > 0)
       {
-        println("Done! Succesfully parsed " + e.length.toString + " def-forms!")
+        val weight = Math.round(e.toString().length / 100.0) / 10.0
+        println("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K")
       }
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
@@ -305,10 +306,11 @@ class TheoryEnsemble(nm : String, base : Theory, fixed : List[Theory], renamer: 
 class TranslationState ()
 {
   var theories_raw       : List[DFTheory]       = Nil
-  var theories_decl      : List[Theory] = Nil
+  var theories_decl      : List[Theory]         = Nil
   var ensembles          : List[TheoryEnsemble] = Nil
 
-  var languages          : List[DFLanguage]     = Nil
+  var languages_raw      : List[DFLanguage]     = Nil
+  var languages_decl     : List[Theory]         = Nil
 
   var translations_raw   : List[DFTranslation]  = Nil
   var translations_decl  : List[View]   = Nil
@@ -319,11 +321,14 @@ class TranslationState ()
 
   var jsons              : List[JSONObject]     = Nil
 
+  var supersorts         : Map[Term,List[Term]] = Map.empty
+  var knownsubtyperules  : Set[LocalName]       = Set.empty
+
   var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil
-  var hashCount          : Int = 0
+  var hashCount          : Int                  = 0
 
-  var verbosity          : Int = 0
+  var verbosity          : Int                  = 0
 
   protected var unknowns : Int                  = 0
 
@@ -379,5 +384,16 @@ class TranslationState ()
   {
     hashCount += 1
     hashCount.toString.hashCode()
+  }
+
+  def allSupersorts(sub : Term) : List[Term] = {
+    var list  = List(sub)
+    var delta = true
+    while (delta) {
+      val tmplst : List[Term] = list ::: list.flatMap(e => supersorts.getOrElse(e,Nil))
+      delta = list.distinct != tmplst.distinct
+      list  = tmplst
+    }
+    list.distinct.filter(e => e != sub)
   }
 }

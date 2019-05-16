@@ -313,12 +313,13 @@ class LFDBTranslator(implicit db: Database) {
                 case _ => ty
               }), t)
           }
+          case _ => throw ImplementationError("expected HypNode()")
         }))
     }
   }
 
   class ScanExpr(free: Option[TreeSet[Floating]] = None)(implicit val dependVars: DependVars) {
-    val stack = new Stack[Floating]
+    var stack: List[Floating] = Nil
 
     def scan(p: ParseTree) {
       p match {
@@ -332,9 +333,9 @@ class LFDBTranslator(implicit db: Database) {
           for ((c, i) <- child.zipWithIndex if c.stmt.typecode != SET) {
             val oldLen = stack.size
             for ((d, j) <- child.zipWithIndex; arr <- bv(j) if (arr(i) & 1) != 0)
-              stack push c.stmt.asInstanceOf[Floating]
+              stack = c.stmt.asInstanceOf[Floating] +: stack
             scan(c)
-            while (stack.size > oldLen) stack.pop
+            while (stack.size > oldLen) stack = stack.tail
           }
       }
     }

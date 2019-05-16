@@ -1,32 +1,106 @@
 package info.kwarc.mmt.coq
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.{DerivedDeclaration, PlainInclude}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.coq.coqxml.TranslationState
 import info.kwarc.mmt.lf._
 
+import scala.util.Try
+
 object Coq {
   val namespace = DPath(URI.http colon "coq.inria.fr")
-  val foundation = (namespace / "foundation") ? "COC"
+  val foundation = (namespace / "foundation") ? "CoqSyntax"
 
-  val tp = foundation ? "Type"
+  val tp = foundation ? "tp"
   val sort = foundation ? "sort"
   val prop = foundation ? "Prop"
   val set = foundation ? "Set"
+  val utype = foundation ? "Type"
+  val fix = foundation ? "fix"
+  val cofix = foundation ? "cofix"
+  val ccase = foundation ? "match"
+  val proj = foundation ? "proj"
+
+  val decltype = foundation ? "DeclarationType"
 
   def makeSort(value : String) = value match {
-    case "Type" => OMS(Coq.tp)
+    case "Type" => Apply(OMS(Coq.utype),OMS(foundation ? "BaseType"))
     case "Set" => OMS(Coq.set)
     case "Prop" => OMS(Coq.prop)
     case _ =>
-      println(value)
-      ???
+      // println(value) // TODO
+      Apply(OMS(Coq.utype),OML(LocalName(value),Some(OMS(foundation ? "univ")),None))
   }
 
   val fail = foundation ? "FAIL"
 
   def makeImplicit : OMV = ???
+
+  private def coqtoomdoc(uri : URI)(implicit controller : Controller): ContentPath = {
+    var paths = uri.path
+    def error : Nothing = ???
+    var currentD : DPath = Path.parseD("cic:/",NamespaceMap.empty)
+    var currentM : MPath = null
+    while (paths.nonEmpty) {
+      controller.getO(currentD ? paths.head) match {
+        case Some(_) =>
+          currentM = currentD ? paths.head
+          paths = paths.tail
+          while (paths.nonEmpty) {
+            controller.getO(currentM.parent ? (currentM.name / paths.head)) match {
+              case Some(_) =>
+                currentM = currentM.parent ? (currentM.name / paths.head)
+                paths = paths.tail
+              case None =>
+                return currentM ? paths.mkString("/").split('.').head
+            }
+          }
+          return currentM
+        case None =>
+          currentD = currentD / paths.head
+          paths = paths.tail
+      }
+    }
+    error
+  }
+  def toMPath(uri : URI)(implicit state : TranslationState) : MPath = Try(coqtoomdoc(uri)(state.controller)).toOption match {
+    case Some(mp:MPath) =>
+      ensure(mp)
+      mp
+    case _ =>
+      Coq.foundation // TODO
+  }
+  private def ensure(p : ContentPath)(implicit state : TranslationState): Unit = {
+    val mp = p.module
+    var current = state.controller.get(state.current)
+    while (!current.isInstanceOf[Theory]) {
+      current = state.controller.get(current.parent)
+    } // .parent ? state.current.name.head
+    val parent = current.asInstanceOf[Theory].path
+    state.controller.library.getImplicit(mp,parent) match {
+      case Some(_) =>
+      case None => try {
+        state.controller.add(PlainInclude(mp,parent),AtBegin)
+      }
+        catch {
+          case e:ExtensionError =>
+          case e =>
+            println(e.getClass)
+            ???
+        }
+    }
+  }
+  def toGlobalName(uri : URI)(implicit state : TranslationState) : GlobalName = Try(coqtoomdoc(uri)(state.controller)).toOption match {
+    case Some(gn:GlobalName) =>
+      ensure(gn)
+      gn
+    case _ =>
+      Coq.fail // TODO
+  }
 }
 
 object Let {
@@ -44,7 +118,7 @@ object Let {
   def apply(x:LocalName,df:Term,bd:Term) = OMBINDC(OMS(path),Context(VarDecl(x)),List(df,bd))
 }
 
-object Sub {
+object LFXSub {
   val baseURI = Let.baseURI
   val th = baseURI ? "SubSymbol"
 
@@ -65,26 +139,15 @@ abstract class Coqsymbol(name : String) {
 }
 
 object Coqtp extends Coqsymbol("tp") {
-  def apply(s : String) : Term = apply(Coq.makeSort(s))
-  def apply(sort : Term) : Term = Apply(tm,sort)
+  def apply(t : Term) = Apply(this.tm,t)
 }
 
-object expr extends Coqsymbol("expr") {
-  def apply(s : String,tp : Term): Term = apply(Coq.makeSort(s),tp)
-  def apply(sort : Term,tp : Term) : Term = ApplySpine(tm,sort,tp)
-}
+object expr extends Coqsymbol("expr")
 
 object CoqPROD extends Coqsymbol("PROD") {
   def apply(sort : String, name : String, tp : Term, body : Term)(implicit implicits:TranslationState) : Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = tp
-    val s = Lambda(LocalName(name), tp, body)
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s)
+    val s = Lambda(LocalName(name), expr.tm, body)
+    ApplySpine(tm,Coqtp(tp),s)
   }
   def apply(_type : String,vars : List[(String,Term)],body : Term)(implicit implicits:TranslationState) : Term =
     vars.foldLeft(body)((tm,p) => apply(_type,p._1,p._2,tm))
@@ -92,20 +155,13 @@ object CoqPROD extends Coqsymbol("PROD") {
 
 object CoqApply extends Coqsymbol("APPLY") {
   def apply(sort : String,f : Term,arg : Term)(implicit implicits:TranslationState): Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = implicits.newImplicit(Some(Coqtp(u1)))
-    val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
+    // val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
+    //val u2 = Coq.makeSort(sort)
+    // val t = implicits.newImplicit(Some(Coqtp(u1)))
+    // val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
     // val x = implicits.pickFresh
     // val ftp = implicits.newImplicit(Some(Pi(x,expr(u1,t),expr(u2,Apply(s,OMV(x))))))
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s,
-      f,
-      arg
-    )
+    ApplySpine(tm,f,arg)
   }
   def apply(sort : String,f : Term, args : List[Term])(implicit implicits:TranslationState) : Term = {
     args.foldLeft(f)((fi,arg) => apply(sort,fi,arg))
@@ -114,18 +170,12 @@ object CoqApply extends Coqsymbol("APPLY") {
 
 object CoqLambda extends Coqsymbol("LAMBDA") {
   def apply(sort : String,name:LocalName,tp : Term,body : Term)(implicit implicits:TranslationState): Term = {
-    val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
-    val u2 = Coq.makeSort(sort)
-    val t = tp
-    val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
-    val ftp = Lambda(name,expr(u1,t),body)
-    ApplySpine(tm,
-      u1,
-      u2,
-      t,
-      s,
-      ftp
-    )
+    // val u1 = implicits.newImplicit(Some(OMS(Coq.sort)))
+    // val u2 = Coq.makeSort(sort)
+    // val t = tp
+    // val s = implicits.newImplicit(Some(Arrow(expr(u1,t),Coqtp(u2))))
+    val ftp = Lambda(name,Coqtp(tp),body)
+    ApplySpine(tm,tp,ftp)
   }
   def apply(sort : String,args : List[(LocalName,Term)],body : Term)(implicit implicits:TranslationState) : Term = {
     args.foldLeft(body)((fi,arg) => apply(sort,arg._1,arg._2,fi))

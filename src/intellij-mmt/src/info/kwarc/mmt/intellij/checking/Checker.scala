@@ -1,5 +1,6 @@
 package info.kwarc.mmt.intellij.checking
 
+import scala.language.reflectiveCalls
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api._

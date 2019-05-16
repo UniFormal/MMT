@@ -26,7 +26,7 @@ trait DotEdge extends DotObject {
   /** must be alphanumeric, space-separeated */
   def cls: String
   def weight = 1
-  @deprecated("","")
+  @MMT_TODO("")
   def toJSON : JSONObject = {
     val dones = List("graphinclude","graphview","graphstructure","graphmeta","alignment")
     if (!dones.contains(cls)) println(cls)
@@ -49,9 +49,9 @@ trait DotGraph {
    def externalNodes: Option[Iterable[DotNode]]
    def edges: Iterable[DotEdge]
 
-  @deprecated("","")
+  @MMT_TODO("")
   def JSONNodes : Iterable[JSONObject] = nodes.map(_.toJSON)
-  @deprecated("","")
+  @MMT_TODO("")
   def JSONEdges : Iterable[JSONObject] = edges.map(_.toJSON)
 }
 

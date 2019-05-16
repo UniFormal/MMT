@@ -206,7 +206,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   def findOwningArchive(p: MPath): Option[Archive] = {
     val cp = Archive.MMTPathToContentPath(p.mainModule)
     getArchives find { a =>
-      (a / content / cp).exists
+      (a / content / cp).existsCompressed
     }
   }
 

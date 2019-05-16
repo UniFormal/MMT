@@ -46,21 +46,21 @@ object JustificationParser {
   def makeAuxiliaryItems(nds : Seq[Node]) : Seq[Node] = {
     var i = 0
     val n = nds.length
-    var newNodes : collection.mutable.Stack[Node] = new collection.mutable.Stack[Node]
+    var newNodes : List[Node] = Nil
     while (i < n) {
       val node = nds(i)
       if (node.label == "Proposition") {
         //constructing justified proposition node for more sane parsing
         val justProp = <PropWithJust>{node}{nds(i+1)}</PropWithJust>
         i += 1
-        newNodes.push(justProp)
+        newNodes = justProp +: newNodes
       } else {
-        newNodes.push(node)
+        newNodes = node +: newNodes
       }
       i += 1
     }
-    //TODO change Stack datatype to something else to avoid .reverse
-    newNodes.toSeq.reverse
+    // TODO: Avoid this by pusshing into stack appropriatly
+    newNodes.reverse
   }
 
 

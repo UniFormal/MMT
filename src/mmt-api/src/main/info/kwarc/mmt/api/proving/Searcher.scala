@@ -5,6 +5,7 @@ import checking._
 import modules._
 import objects._
 import frontend._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import symbols._
 import objects.Conversions._
 import utils._
@@ -164,11 +165,11 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
 
    /** statefully changes g to a simpler goal */
    private def simplifyGoal(g: Goal) {
-      g.setConc(controller.simplifier(g.conc, g.fullContext, rules, false))
+      g.setConc(controller.simplifier(g.conc, SimplificationUnit(g.fullContext, false, true), rules))
    }
    /** simplify a fact */
    private[proving] def simplifyFact(f: Fact): Fact = {
-      val tpS = controller.simplifier(f.tp, f.goal.fullContext, rules, false)
+      val tpS = controller.simplifier(f.tp, SimplificationUnit(f.goal.fullContext, false, true), rules)
       f.copy(tp = tpS)
    }
 

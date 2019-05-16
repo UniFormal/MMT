@@ -127,7 +127,7 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    def getDeclarationsElaborated = getDeclarations.filter {
      case _: Constant => true
      case _: RuleConstant => true
-     case Include(_) => true
+     case Include(_, _, _) => true
      case s => ! ElaboratedElement.isFully(s)
    }
 }

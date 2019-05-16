@@ -1,16 +1,15 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.{DPath, GlobalName, MPath, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.ontology.{SetResult, IsTheory, Paths}
+import info.kwarc.mmt.api.ontology.{IsTheory, Paths, SetResult}
 import info.kwarc.mmt.api.utils.FilePath
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
-
 import info.kwarc.mmt.api.ontology.QueryResultConversion._
 
 abstract class FullArchive {
@@ -91,6 +90,7 @@ class ArchiveStore extends Extension {
         }
       case s : GlobalName =>
         declares(s.module)
+      case e => throw ImplementationError("Invalid path: Not declared")
     }
   }
 

@@ -147,7 +147,7 @@ object OMS {
 }
 
 /**
- * An OMBINDC represents a binding with condition
+ * An OMBINDC represents a binding with arbitrarily many scopes
  * @param binder the binder
  * @param context the bound variables (from outside to inside)
  * @param scopes the scopes/bodies/matrices of the binder (usually exactly 1)
@@ -342,13 +342,6 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
  */
 case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OMLITTrait {
    override def toStr(implicit shortURIs: Boolean) = valueString
-
-   /** convert to OMLIT by choosing an applicable rule */
-   def recognize(rules: RuleSet) = {
-     rules.get(classOf[uom.RealizedType]).find(_.synType == synType).map {rule =>
-       rule.parse(valueString).from(this)
-     }
-   }
 }
 
 /**
@@ -367,7 +360,7 @@ case class OMFOREIGN(node : Node) extends Term {
 
 
 /** An OMSemiFormal represents a mathematical object that mixes formal and informal components */
-@deprecated("this should be replaced with the urtheory for semiformal objects","")
+@MMT_TODO("this should be replaced with the urtheory for semiformal objects")
 case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFormalObjectList {
    def head = None
    def toStr(implicit shortURIs: Boolean) = toString
