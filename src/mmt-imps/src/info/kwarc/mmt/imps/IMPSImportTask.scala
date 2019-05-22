@@ -346,7 +346,7 @@ class IMPSImportTask(val controller  : Controller,
           }
 
         // If it's none of these, fall back to doDeclaration
-        case _                             => doDeclaration(exp,uri)
+        case _ => doDeclaration(exp,uri)
       }
     }
 
@@ -358,11 +358,13 @@ class IMPSImportTask(val controller  : Controller,
 
   def doTheory (t : DFTheory, docPath: DPath, ns:DPath, uri : URI) : Unit =
   {
+    val thyname : String = if (findLangOrTheory(t.name.s).isEmpty) { t.name.s } else { t.name.s + "_thy" }
+
     val nu_theory = new Theory(ns,
-                                       LocalName(t.name.toString),
-                                       Some(IMPSTheory.QCT.quasiLutinsPath),
-                                       modules.Theory.noParams,
-                                       modules.Theory.noBase)
+      LocalName(thyname),
+      Some(IMPSTheory.QCT.quasiLutinsPath),
+      modules.Theory.noParams,
+      modules.Theory.noBase)
 
     log("adding theory " + t.name.toString, log_overview)
 
@@ -390,7 +392,7 @@ class IMPSImportTask(val controller  : Controller,
 
     // Build correct union of languages
     if (t.lang.isDefined) {
-      val fnd : Option[Theory] = tState.languages_decl.find(th => th.name.toString.toLowerCase == t.lang.get.lang.toString.toLowerCase)
+      val fnd : Option[Theory] = findLanguage(t.lang.get.lang.s)
       hAssert(fnd.nonEmpty, tState.languages_decl)
 
       val includee : Theory = fnd.get
@@ -450,12 +452,11 @@ class IMPSImportTask(val controller  : Controller,
           for (c2 : Name <- dist.filter(e => e != c1))
           {
             /* Assert the two constants to be distinct exist in the theory */
-            assert(nu_theory.getDeclarations.exists(d => d.name == LocalName(c1.s)))
-            assert(nu_theory.getDeclarations.exists(d => d.name == LocalName(c2.s)))
+            assert(locateMathSymbolHome(c1.s, nu_theory).isDefined && locateMathSymbolHome(c1.s, nu_theory).isDefined)
 
             /* add axiom that they are indeed distinct */
-            val g1 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c1.s)).get.path
-            val g2 : GlobalName = nu_theory.getDeclarations.find(d => d.name == LocalName(c2.s)).get.path
+            val g1 : GlobalName = getConstant(c1.s,nu_theory).path
+            val g2 : GlobalName = getConstant(c2.s,nu_theory).path
 
             val dist_formula : IMPSMathExp = IMPSNegation(IMPSEquals(IMPSMathSymbol(c1.s), IMPSMathSymbol(c2.s)))
             val mth          : Term = tState.bindUnknowns(IMPSTheory.Thm(doMathExp(dist_formula, nu_theory, Nil)))
@@ -475,13 +476,14 @@ class IMPSImportTask(val controller  : Controller,
 
     tState.theories_decl = tState.theories_decl :+ nu_theory
     tState.theories_raw  = tState.theories_raw  :+ t
-
   }
 
   def doLanguage(l : DFLanguage, docPath : DPath, ns : DPath, uri : URI) : Unit =
   {
+    val langname : String = if (findLangOrTheory(l.name.s).isEmpty) { l.name.s } else { l.name.s + "_lang" }
+
     val nu_lang = new Theory(ns,
-      LocalName(l.name.toString),
+      LocalName(langname),
       Some(IMPSTheory.QCT.quasiLutinsPath),
       modules.Theory.noParams,
       modules.Theory.noBase)
@@ -512,7 +514,7 @@ class IMPSImportTask(val controller  : Controller,
         assert(thyl.isDefined)
         hAssert(thyl.get.lang.isDefined,thyl.get)
         val bandelang = thyl.get.lang.get.lang.toString.toLowerCase
-        fnd = tState.languages_decl.find(la => la.name.toString.toLowerCase == bandelang)
+        fnd = findLanguage(bandelang)
       }
 
       hAssert(fnd.isDefined, "wanted " + embl.toString.toLowerCase + " but only had " + pool.map(_.name).mkString("\n"))
@@ -618,11 +620,11 @@ class IMPSImportTask(val controller  : Controller,
       log("translating Translation " + name, log_overview)
 
       // Source and Target need to be defined!
-      assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(sourcet.thy.s).toString.toLowerCase))
+      assert(findTheory(sourcet.thy.s).isDefined)
       val source_thy   : Theory = getTheory(doName(sourcet.thy.s).toString.toLowerCase)
       val source_thy_t : Term = source_thy.toTerm
 
-      assert(tState.theories_decl.exists(t => t.name.toString.toLowerCase == doName(targett.thy.s).toString.toLowerCase))
+      assert(findTheory(targett.thy.s).isDefined)
       val target_thy : Theory = getTheory(doName(targett.thy.s).toString.toLowerCase)
       val target_thy_t : Term = target_thy.toTerm
 
@@ -706,12 +708,11 @@ class IMPSImportTask(val controller  : Controller,
 
             case scala.util.Right(n) =>
               tar = n.s
-              val quelle = locateMathSymbolHome(n.s,target_thy)
-
-              if (quelle.isDefined) { doMathExp(IMPSMathSymbol(n.s),quelle.get,Nil) }
-              else {
-                assert(isDecLiteral(n.s) || isIntLiteral(n.s) || isOctLiteral(n.s))
-                doLiteral(n.s)
+              if (isSupportedLiteral(tar)) {
+                doLiteral(tar)
+              } else {
+                val quelle = locateMathSymbolHome(n.s,target_thy)
+                doMathExp(IMPSMathSymbol(n.s),quelle.get,Nil)
               }
           }
 
@@ -1035,7 +1036,7 @@ class IMPSImportTask(val controller  : Controller,
         }
 
         val fxd : List[Theory] = if (fixed.isDefined) {
-          fixed.get.ts.map(t => t.s).map(nm => tState.theories_decl.find(thy => thy.name.toString.toLowerCase == nm.toLowerCase).get)
+          fixed.get.ts.map(t => t.s).map(findTheory(_).get)
         } else {
           List.empty
         }
@@ -1132,10 +1133,10 @@ class IMPSImportTask(val controller  : Controller,
   {
     // Create a new replica
     val nu_replica = new Theory(ns,
-                                        LocalName(renamer(base.name.toString)),
-                                        Some(IMPSTheory.QCT.quasiLutinsPath),
-                                        modules.Theory.noParams,
-                                        modules.Theory.noBase)
+      LocalName(renamer(base.name.toString)),
+      Some(IMPSTheory.QCT.quasiLutinsPath),
+      modules.Theory.noParams,
+      modules.Theory.noBase)
 
     log("creating replica " + nu_replica.name.toString, log_specifics)
 
@@ -2047,8 +2048,8 @@ class IMPSImportTask(val controller  : Controller,
 
   def getTheory(name : String) : Theory =
   {
-    var thy = tState.theories_decl.find(t => t.name.toString.toLowerCase == name.toLowerCase)
-    if (thy.isEmpty) { tState.theories_decl.find(t => t.name.toString.toLowerCase == name.toLowerCase + "_ensemble") }
+    var thy = findTheory(name)
+    if (thy.isEmpty) { findTheory(name + "_ensemble") }
     if (thy.isEmpty) { ??!(name) }
     assert(thy.isDefined)
     thy.get
@@ -2066,14 +2067,33 @@ class IMPSImportTask(val controller  : Controller,
     }
   }
 
+  def strCaseEq(ying : Any, yang : Any) : Boolean = {
+    ying.toString.toLowerCase == yang.toString.toLowerCase
+  }
+
+  def findTheory(name : Any) : Option[Theory] = {
+    val pool = tState.theories_decl
+    pool.find(t => strCaseEq(t.name,name)).orElse(pool.find(t => strCaseEq(t.name,name.toString + "_thy")))
+  }
+
+  def findLanguage(name : Any) : Option[Theory] = {
+    val pool = tState.languages_decl
+    pool.find(l => strCaseEq(l.name,name)).orElse(pool.find(l => strCaseEq(l.name,name.toString + "_lang")))
+  }
+
+  def findLangOrTheory(name : Any) : Option[Theory] = {
+    findLanguage(name).orElse(findTheory(name))
+  }
+
   def recursiveIncludes(ts : List[Theory]) : List[Theory] =
   {
     var is : List[Theory] = ts
 
     for (t <- ts)
     {
-      val recs = recursiveIncludes(t.getIncludesWithoutMeta.map(m => controller.getTheory(m)))
-      is = is ::: recs
+      val includes : List[Theory] = t.getIncludesWithoutMeta.map(controller.getTheory).filter(thy => !is.contains(thy)).distinct
+      val recs     : List[Theory] = recursiveIncludes(includes).filter(thy => !is.contains(thy)).distinct
+      is = (is ::: recs).distinct
     }
 
     is.distinct
@@ -2098,6 +2118,7 @@ class IMPSImportTask(val controller  : Controller,
 
     if (srcthy.isEmpty) {
       logError(" >>> location for " + s + " could not be found, starting from " + thy.name)
+      println(thy)
     }
     srcthy
   }

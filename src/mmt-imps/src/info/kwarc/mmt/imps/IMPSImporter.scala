@@ -70,7 +70,7 @@ class IMPSImporter extends Importer
     json_report += "\n"
     log(json_report, log_details)
 
-    log("# Reading json files!", log_structure)
+    log("# Reading json files. This may take a while...", log_structure)
     for (file <- translatejsonFiles)
     {
       log("# Reading json file: " + file,log_details)
@@ -145,7 +145,7 @@ class IMPSImporter extends Importer
       }
 
       val weight = Math.round(e.toString().length / 100.0) / 10.0
-      log("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K", log_specifics)
+      log("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K in " + file.getName, log_specifics)
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 
@@ -160,13 +160,17 @@ class IMPSImporter extends Importer
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
     val fakeexp : List[DefForm] = List(theKernelLang,theKernelTheory,unitSortTheorem)
 
-    log("########## Translating: " + fakeURI, log_structure)
+    val len = parsed_t.length + 1
+    var run = 1
+
+    log("########## (1/" + len + ") Translating: " + fakeURI, log_structure)
     importTask.doDocument(fakeexp,fakeURI)
     log("Success", log_structure)
 
     for (e <- parsed_t)
     {
-      log("########## Translating: " + e._2, log_structure)
+      run += 1
+      log("########## (" + run + "/" + len + ") Translating: " + e._2, log_structure)
 
       try {
         importTask.doDocument(e._1, e._2)
