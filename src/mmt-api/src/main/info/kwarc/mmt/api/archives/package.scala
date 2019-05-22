@@ -12,13 +12,14 @@ import archives._
   *
   * The list of currently open archives (from which MMT will load content if needed) is maintained by the [[backend.Backend]].
   */
-package object archives {
-   val source = RedirectableDimension("source")
-   val content = RedirectableDimension("content")
-   val narration = RedirectableDimension("narration")
-   val relational = RedirectableDimension("relational")
-   val notational = RedirectableDimension("notations")
-   val errors = RedirectableDimension("errors")
-   val export = RedirectableDimension("export")
-   val flat = RedirectableDimension("flat")
+package object archives
+{
+  val source     : ArchiveDimension = RedirectableDimension("source")
+  val content    : ArchiveDimension = RedirectableDimension("content")
+  val narration  : ArchiveDimension = RedirectableDimension("narration")
+  val relational : ArchiveDimension = RedirectableDimension("relational")
+  val notational : ArchiveDimension = RedirectableDimension("notations")
+  val errors     : ArchiveDimension = RedirectableDimension("errors")
+  val export     : ArchiveDimension = RedirectableDimension("export")
+  val flat       : ArchiveDimension = RedirectableDimension("flat")
 }

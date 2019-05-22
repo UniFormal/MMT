@@ -13,7 +13,7 @@ trait ArchiveBuilder { this: Builder =>
   /** tries to find an archive with a given id */
   protected def tryArchive(id: String) : Option[LMHHubArchiveEntry] = {
     logDebug(s"trying $id as archive")
-    val optEntry = mathHub.entries_.collectFirst({
+    val optEntry = mathHub.installedEntries.collectFirst({
       case e: LMHHubArchiveEntry if e.id == id => e
     })
 
@@ -50,12 +50,9 @@ trait ArchiveBuilder { this: Builder =>
     val tags = entry.tags.map(t => getTagRef("@" + t).getOrElse(return buildFailure(entry.id, s"getTagRef(archive.tag[@$t])")))
 
     // get the description file
-    val file = entry.root / entry.archive.properties.getOrElse("description", "desc.html")
-    val description = if(entry.root <= file && file.exists()) {
-      File.read(file)
-    } else { "No description provided" }
+    val description = entry.readLongDescription.getOrElse("No description provided")
 
-    val responsible = entry.archive.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
+    val responsible = entry.properties.getOrElse("responsible", "").split(",").map(_.trim).toList
 
     val narrativeRootPath = entry.archive.narrationBase.toString
     val narrativeRoot = getDocument(narrativeRootPath)
@@ -70,7 +67,7 @@ trait ArchiveBuilder { this: Builder =>
 
     Some(IArchive(
       ref.parent, ref.id, ref.name,
-      getStats(ref.id),
+      getStats(entry.statistics),
       ref.title, ref.teaser,
       tags,
       version,

@@ -15,16 +15,16 @@ abstract class LMHHub extends Logger {
   protected def report = controller.report
 
   /** find all locally installed entries */
-  protected def entries_ : List[LMHHubEntry]
+  def installedEntries : List[LMHHubEntry]
 
   /** find all repositories given a specification */
-  def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) entries_.filter(e => spec.exists(e.matches)) else entries_
+  def entries(spec: String*): List[LMHHubEntry] = if (spec.nonEmpty) installedEntries.filter(e => spec.exists(e.matches)) else installedEntries
   /** finds all archive entries available locally */
-  def archiveEntries: List[LMHHubArchiveEntry] = entries_.collect({case a: LMHHubArchiveEntry => a})
+  def archiveEntries: List[LMHHubArchiveEntry] = installedEntries.collect({case a: LMHHubArchiveEntry => a})
   /** finds all group entries available locally */
-  def groupEntries: List[LMHHubGroupEntry] = entries_.collect({case g: LMHHubGroupEntry => g})
+  def groupEntries: List[LMHHubGroupEntry] = installedEntries.collect({case g: LMHHubGroupEntry => g})
   /** finds all directory entries available locally */
-  def dirEntries: List[LMHHubDirectoryEntry] = entries_.collect({case d: LMHHubDirectoryEntry => d})
+  def dirEntries: List[LMHHubDirectoryEntry] = installedEntries.collect({case d: LMHHubDirectoryEntry => d})
 
   /** checks if a group exists remotely */
   def hasGroup(name: String): Boolean
@@ -127,35 +127,52 @@ trait LMHHubEntry extends Logger {
   val logPrefix: String = "lmh"
   def report: Report = controller.report
 
-  /** the name of the group of this entry */
-  lazy val group: String = id.split("/").toList.headOption.getOrElse("")
-  /** the name of this archive */
-  lazy val name: String = id.split("/").toList.lastOption.getOrElse("")
-
-  // Things to be implemented
+  /** the local root of this archive entry */
+  val root: File
 
   /** loads the LMHHubEntry or throw an error if it is invalid */
   def load(): Unit
+
+  /** the properties of this entry, if any */
+  def properties: Map[String, String]
+
+  /** reads the long description */
+  def readLongDescription: Option[String] = {
+    val filename = properties.getOrElse("description", "desc.html")
+    List(root, root / "META-INF").map(_ / filename).find(_.exists).map(File.read)
+  }
+
+
   /** the id of this archive entry */
   val id: String
-  /** the local root of this archive entry */
-  val root: File
+  /** the name of the group of this entry */
+  lazy val group: String = id.split("/").dropRight(1).mkString("/")
+  /** the name of this archive */
+  lazy val name: String = id.split("/").lastOption.getOrElse("")
+
   /** check if this archive matches a given spec */
   def matches(spec : String): Boolean = LMHHub.matchesComponents(spec, id)
+
+
+  // version control things
+
   /** download information about archive versions from the remote */
   def fetch: Boolean
   /** push the newest version of this archive to the remote */
   def push: Boolean
   /** pull the newest version of this archive from the remote */
   def pull: Boolean
+
   /** reset the remote url of this archive to a given one */
   def setRemote(remote : String) : Boolean
   /** fix the remote url of the archive */
   def fixRemote: Boolean = setRemote(hub.remoteURL(id))
+
   /** returns the physical version (a.k.a commit hash) of an installed archive */
   def physicalVersion: Option[String]
   /** returns the logical version (a.k.a branch) of an installed archive */
   def logicalVersion: Option[String]
+
   /** gets the version of an installed archive, a.k.a. the branch of the git commit hash */
   def version: Option[String] = logicalVersion.map(Some(_)).getOrElse(physicalVersion)
 }
@@ -164,16 +181,21 @@ trait LMHHubEntry extends Logger {
 trait LMHHubDirectoryEntry extends LMHHubEntry {
   def load(): Unit = {}
 
-  lazy val id: String = (root / "..").canonical.name + "/" + root.canonical.name
+  def properties: Map[String, String] = Map()
+  def statistics: Option[SimpleStatistics] = None
+
+  // Read the properties from the manifest
+  lazy val id: String = {
+    properties.getOrElse("id", {
+      val canon = s"${(root / "..").canonical.name}/${root.canonical.name}"
+      log(s"Unable to read id from manifest, falling back to $canon")
+      canon
+    })
+  }
 }
 
 /** represents a single archive inside an [[LMHHub]] that is installed on disk */
 trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
-  /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
-  def archive : Archive = {
-    load()
-    controller.backend.getArchive(root).get
-  }
   /** loads this archive into the controller (if not done already) */
   override def load() {
     controller.backend.getArchive(root).getOrElse {
@@ -185,12 +207,21 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
     }
   }
 
-  /** get the id of this archive */
-  override lazy val id: String = archive.id
+  /** returns the [[Archive]] instance belonging to this local ArchiveHub entry */
+  lazy val archive : Archive = {
+    load()
+    controller.backend.getArchive(root).get
+  }
+
+  /** reads the archive props */
+  override def properties: Map[String, String] = archive.properties.toMap
+
+  /** reads archive statistics */
+  override def statistics: Option[SimpleStatistics] = Some(archive.stats(controller))
 
   /** the list of dependencies of this archive */
   def dependencies: List[String] = {
-    val string = archive.properties.getOrElse("dependencies", "").replace(",", " ")
+    val string = properties.getOrElse("dependencies", "").replace(",", " ")
     // check if we have a meta-inf repository, and if yes install it
     val deps = (if(hub.hasGroup(group)) List(group + "/meta-inf") else Nil) ::: stringToList(string)
     deps.distinct
@@ -199,7 +230,7 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
   // TODO: Change meta-inf property used here
   /** the list of tags associated with this archive */
   def tags: List[String] = {
-    val mfTags = archive.properties.get("tags").map(stringToList(_, ",")).getOrElse(Nil)
+    val mfTags = properties.get("tags").map(stringToList(_, ",")).getOrElse(Nil)
     (List("group/"+group) ::: mfTags).map(_.toLowerCase)
   }
 }
@@ -209,7 +240,7 @@ case class NotLoadableArchiveEntry(root: File) extends api.Error("not a loadable
 
 /** represents a group archive inside an [[LMHHub]] that is installed on disk */
 trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
-  private var groupManifest: mutable.Map[String, String] = null
+  private var groupManifest: Map[String, String] = null
 
   override def load(): Unit = {
     val manifest = {
@@ -217,20 +248,32 @@ trait LMHHubGroupEntry extends LMHHubDirectoryEntry {
         .find(_.exists).getOrElse(throw NotLoadableGroupEntry(root))
     }
     try {
-      groupManifest = File.readProperties(manifest)
+      groupManifest = File.readProperties(manifest).toMap
     } catch {
       case e: Exception => throw NotLoadableGroupEntry(root).setCausedBy(e)
     }
   }
 
+  /** finds all LMH Hub entries that are a member of this group */
+  def members: List[LMHHubEntry] = {
+    hub.installedEntries.filter(c => c.group == group && c.id != id)
+  }
+
+  /** collects statistics in this archive */
+  override def statistics: Option[SimpleStatistics] = {
+    Some(
+      members
+        .collect({case de: LMHHubDirectoryEntry => de.statistics})
+        .collect({ case Some(s: SimpleStatistics) => s})
+        .fold(SimpleStatistics.empty)(_ + _)
+    )
+  }
+
   /** the group properties */
-  def properties : mutable.Map[String, String] = {
+  override def properties : Map[String, String] = {
     load()
     groupManifest
   }
-
-  // TODO: Do we want to read the entry from the folder
-  // override lazy val id: String = properties.getOrElse("id", (root / "..").name) + "/" + "meta-inf"
 }
 
 /** Error that is thrown when an archive on disk is not an actual archive */

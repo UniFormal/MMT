@@ -108,8 +108,8 @@ jbigoplus|⨁
 jbigotimes|⨂
 jsubset|⊂
 jsupset|⊃
-jsq|⊆‍
-jsubseteq|⊆‍
+jsq|⊆
+jsubseteq|⊆
 jsupseteq|⊇
 jnsubset|⊄
 jnsupset|⊅
@@ -148,6 +148,8 @@ jtriangleright|▷
 jtriangleleft|◁
 jblacktriangleright|▶
 jblacktriangleleft|◀
+jsmblksquare|▪
+jsmwhtsquare|▫
 jder|⊦
 jrightassert|⊦
 jvdash|⊢
