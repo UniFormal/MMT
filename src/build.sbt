@@ -280,7 +280,7 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
 
-// MMT in the interview server. Maintainer: Teresa
+// Glf server. Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
   dependsOn(api, repl, lf).
   settings(mmtProjectsSettings("mmt-glf"): _*)
