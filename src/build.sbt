@@ -145,7 +145,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij
   ).
@@ -160,7 +160,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -279,6 +279,12 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
+
+// MMT in the interview server. Maintainer: Teresa
+lazy val glf = (project in file("mmt-glf")).
+  dependsOn(api, repl).
+  settings(mmtProjectsSettings("mmt-glf"): _*)
+
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
