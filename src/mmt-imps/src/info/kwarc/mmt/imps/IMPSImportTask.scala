@@ -502,15 +502,20 @@ class IMPSImportTask(val controller  : Controller,
     }
 
     for (embl <- emblangs) {
-      var fnd : Option[Theory] = tState.languages_decl.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
-      if (fnd.isEmpty) {
+
+      val pool : List [Theory] = tState.languages_decl ::: tState.theories_decl
+      var fnd : Option[Theory] = pool.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
+
+      if (fnd.isEmpty)
+      {
         val thyl = tState.theories_raw.find(la => la.name.toString.toLowerCase == embl.toString.toLowerCase)
         assert(thyl.isDefined)
+        hAssert(thyl.get.lang.isDefined,thyl.get)
         val bandelang = thyl.get.lang.get.lang.toString.toLowerCase
         fnd = tState.languages_decl.find(la => la.name.toString.toLowerCase == bandelang)
       }
 
-      hAssert(fnd.isDefined, "wanted " + embl.toString.toLowerCase + " but only had " + tState.languages_decl.map(_.name).mkString("\n"))
+      hAssert(fnd.isDefined, "wanted " + embl.toString.toLowerCase + " but only had " + pool.map(_.name).mkString("\n"))
 
       val includee : Theory = fnd.get
       val includer : Theory = nu_lang
@@ -632,13 +637,24 @@ class IMPSImportTask(val controller  : Controller,
       {
         for (ft <- fixed.get.ts.indices)
         {
-          log("translation " + name.s + " fixes theory " + fixed.get.ts(ft).s, log_specifics)
+          log("Translation " + name.s + " fixes theory " + fixed.get.ts(ft).s, log_specifics)
 
           val fix : Theory    = getTheory(fixed.get.ts(ft).s.toLowerCase)
           val cn  : LocalName = LocalName(ComplexStep(fix.path))
 
           val id_fix = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false) // get it? :D
           controller add id_fix
+        }
+
+        val bothInclude = (source_thy.getIncludesWithoutMeta ::: target_thy.getIncludesWithoutMeta).distinct.map(m => controller.getTheory(m))
+        for (bothinc <- bothInclude)
+        {
+          log("Both " + source_thy.name + " and " + target_thy.name + " include " + bothinc.name, log_specifics)
+          log("Additionally fixing " + bothinc.name, log_specifics)
+
+          val cn  : LocalName = LocalName(ComplexStep(bothinc.path))
+          val add_fix = Structure(nu_view.toTerm,cn,bothinc.toTerm, Some(OMIDENT(bothinc.toTerm)), isImplicit = false)
+          controller add add_fix
         }
       }
 
@@ -723,25 +739,6 @@ class IMPSImportTask(val controller  : Controller,
             val orig_c = findConstant(c.name.toString,quelle)
             val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.path) / c.name,c.alias,c.tp,Some(orig_c.toTerm),c.rl)
             controller add nu_id_const
-          }
-        }
-      } else {
-        assert(source_thy != target_thy)
-
-        val bothInclude = (source_thy.getIncludesWithoutMeta ::: target_thy.getIncludesWithoutMeta).distinct.map(m => controller.getTheory(m))
-        for (bothinc <- bothInclude)
-        {
-          log("Both " + source_thy.name + " and " + target_thy.name + " include " + bothinc.name, log_details)
-          log("Adding constant endo-mappings for " + bothinc.name, log_details)
-
-          for (c <- bothinc.getConstants) {
-            if (!translated_constant_names.contains(c.name))
-            {
-              log("adding constant-endo-mapping for " + c.name, log_details)
-              val orig_c = findConstant(c.name.toString,bothinc)
-              val nu_id_const = symbols.Constant(nu_view.toTerm,ComplexStep(bothinc.path) / c.name,c.alias,c.tp,Some(orig_c.toTerm),c.rl)
-              controller add nu_id_const
-            }
           }
         }
       }
@@ -2097,7 +2094,7 @@ class IMPSImportTask(val controller  : Controller,
 
     val candidates : List[Theory]   = (recursiveIncludes(List(thy)).reverse ::: multipleCandidates).distinct
     val srcthy     : Option[Theory] = candidates.find(t => t.getConstants.exists(c => cmatch(c,s)))
-    log("Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString, log_details)
+    log("Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString, log_steps)
 
     if (srcthy.isEmpty) {
       logError(" >>> location for " + s + " could not be found, starting from " + thy.name)
