@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.checking.{Checker, CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents._
+import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf.Typed
@@ -21,14 +22,11 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    tState.verbosity = 3
-    val targetSection : Section = impsLibrarySections.basicGroupTheory
-    if (tState.verbosity > 0)
-    {
-      println("\nReading index file: " + bf.inFile.getName)
-      println("\n== BUILDING DEPENDENCY TREE ==\n")
-      println("Target section: " + targetSection.name)
-    }
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
+
+    log("Reading index file: " + bf.inFile.getName, log_structure)
+    log("== BUILDING DEPENDENCY TREE ==",           log_structure)
+    log("Target section: " + targetSection.name,    log_structure)
 
     var readingT : List[String] = Nil
     var readingJ : List[String] = Nil
@@ -37,11 +35,8 @@ class IMPSImporter extends Importer
     {
       val indent : String = "  " * n  // This syntax makes me shiver!
 
-      if (tState.verbosity > 1)
-      {
-        println(indent + "> " + t.name)
-        for (f <- t.files) { println(indent + "  | " + f) }
-      }
+      log(indent + "> " + t.name, log_details)
+      for (f <- t.files) { log(indent + "  | " + f, log_details) }
 
       readingT = t.files ::: readingT
       readingJ = t.jsons ::: readingJ
@@ -54,144 +49,131 @@ class IMPSImporter extends Importer
     readingJ = readingJ.distinct
     readingT = readingT.distinct
 
-    if (tState.verbosity > 0)
-    {
-      println("\n== DEPENDECIES CLEAR ; BEGINNING JSON PARSING ==\n")
-    }
+    log("== DEPENDECIES CLEAR ; BEGINNING JSON PARSING ==", log_structure)
 
     val jsonfiles = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".json"))
     var parsed_json : List[JSONObject] = Nil
     val translatejsonFiles = readingJ.map(fn => {
       val foo = jsonfiles.find(p => p.getName == fn)
-      if (foo.isEmpty) { println(" ERROR: JSON NOT FOUND: " + fn) }
+      if (foo.isEmpty) { logError(" ERROR: JSON NOT FOUND: " + fn) }
       foo.get
     })
 
     assert(translatejsonFiles.length == readingJ.length)
 
-    if (tState.verbosity > 0)
+    var json_report : String = ""
+    for (rj <- readingJ)
     {
-      for (rj <- readingJ)
-      {
-        if (translatejsonFiles.exists(f => f.getName == rj)) { print("✓ ") } else { print("  ") }
-        println(rj)
-      }
-      println("")
+      json_report += (if (translatejsonFiles.exists(f => f.getName == rj)) { "✓ " } else { "  " })
+      json_report += rj + "\n"
     }
+    json_report += "\n"
+    log(json_report, log_details)
 
+    log("# Reading json files!", log_structure)
     for (file <- translatejsonFiles)
     {
-      if (tState.verbosity > 0)
-      {
-        println("# Reading json file: " + file)
-      }
+      log("# Reading json file: " + file,log_details)
 
-      val fileLines = Source.fromFile(file).getLines
-      var contents: String = ""
-      for (line <- fileLines) {
-        contents = contents + line + "\n"
-      }
+      // Prevent leakage of underlying file handle.
+      val json_source = Source.fromFile(file)
 
-      val j : JSONObject = JSON.parse(contents).asInstanceOf[JSONObject]
-      parsed_json = parsed_json.::(j)
+      try {
+        val fileLines = json_source.getLines
+        var contents: String = ""
+        for (line <- fileLines) {
+          contents = contents + line + "\n"
+        }
+
+        val j : JSONObject = JSON.parse(contents).asInstanceOf[JSONObject]
+        parsed_json = parsed_json.::(j)
+      } finally {
+        json_source.close()
+      }
 
     }
     tState.jsons = parsed_json
 
-    if (tState.verbosity > 0)
-    {
-      println("\n== JSON PARSING COMPLETE ; BEGINNING T PARSING ==\n")
-    }
+    log("== JSON PARSING COMPLETE ; BEGINNING T PARSING ==", log_structure)
 
     val tfiles    = bf.inFile.up.canonical.listFiles.filter(_.getName.endsWith(".t")).toList
     val translateFiles = readingT.map(fn => {
       val foo = tfiles.find(p => p.getName == fn)
-      if (foo.isEmpty) { println(" ERROR: T NOT FOUND: " + fn) }
+      if (foo.isEmpty) { logError("ERROR: T NOT FOUND: " + fn) }
       foo.get
     })
 
-    if (tState.verbosity > 0)
+
+    var imps_report : String = ""
+    for (rt <- readingT)
     {
-      for (rt <- readingT)
-      {
-        if (translateFiles.exists(f => f.getName == rt)) { print("✓ ") } else { print("  ") }
-        println(rt)
-      }
+      imps_report += (if (translateFiles.exists(f => f.getName == rt)) { "✓ " } else { "  " })
+      imps_report += rt + "\n"
     }
+    imps_report += "\n"
+    log(imps_report,log_details)
 
     assert(translateFiles.length == readingT.length)
 
     var parsed_t : List[(List[DefForm], URI)] = Nil
 
+    log("Reading imps files!", log_structure)
     for (file <- translateFiles)
     {
-      if (tState.verbosity > 0)
-      {
-        println("\n###########\nReading imps file: " + file)
-      }
+      log("Reading imps file: " + file, log_details)
 
       val e : List[DefForm] = try
       {
-        val contents = Source.fromFile(file).mkString
-
-        val nlp : NEWIMPSParser = new NEWIMPSParser()
-        val res = nlp.parse(contents, FileURI(file), parsed_json)
-        res
-      } catch {
-        case e : IMPSDependencyException => {
-          println(" > Failure: " + e.getMessage)
-          sys.exit
+        val imps_source = Source.fromFile(file)
+        try {
+          val contents = imps_source.mkString
+          val nlp : NEWIMPSParser = new NEWIMPSParser()
+          val res = nlp.parse(contents, FileURI(file), parsed_json)
+          Source.fromFile(file).close()
+          res
+        } finally {
+          imps_source.close()
         }
-        case e: ExtractError => {
+      } catch {
+        case e : IMPSDependencyException =>
+          logError("Failure: " + e.getMessage)
+          sys.exit
+
+        case e: ExtractError =>
           log(e.getMessage)
           sys.exit
-        }
       }
-      if (tState.verbosity > 0)
-      {
-        val weight = Math.round(e.toString().length / 100.0) / 10.0
-        println("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K")
-      }
+
+      val weight = Math.round(e.toString().length / 100.0) / 10.0
+      log("Done! Succesfully parsed " + e.length.toString + " def-forms with a weight of " + weight + "K", log_specifics)
       parsed_t = parsed_t ::: List((e,FileURI(file)))
     }
 
-    if (tState.verbosity > 0)
-    {
-      println("\n== PARSING COMPLETE ; BEGINNING T TRANSLATION ==\n")
-    }
+    log("== PARSING COMPLETE ; BEGINNING T TRANSLATION ==", log_structure)
 
     val doc = new Document(IMPSImportTask.docpath, FileLevel)
     controller.add(doc)
 
     val importTask = new IMPSImportTask(controller, bf, tState,doc, index)
 
+    // We fake a few things for the kernel theory since it's not translated from a file.
     val fakeURI : URI = URI(bf.inFile.getParentFile.getParentFile.getAbsolutePath + "/the-kernel-theory.t")
     val fakeexp : List[DefForm] = List(theKernelLang,theKernelTheory,unitSortTheorem)
 
-    if (tState.verbosity > 0)
-    {
-      println("#> Translating: " + fakeURI)
-    }
+    log("########## Translating: " + fakeURI, log_structure)
     importTask.doDocument(fakeexp,fakeURI)
-    if (tState.verbosity > 0)
-    {
-      println(" > Success!")
-    }
+    log("Success", log_structure)
 
     for (e <- parsed_t)
     {
-      if (tState.verbosity > 0) {
-        println("\n#> Translating: " + e._2)
-      }
+      log("########## Translating: " + e._2, log_structure)
 
       try {
         importTask.doDocument(e._1, e._2)
-        if (tState.verbosity > 0) {
-          println(" > Success!")
-        }
+        log("Success", log_structure)
       }
       catch {
-        case e : IMPSDependencyException => { println(" > Failure! " + e.getMessage) ; sys.exit }
+        case e : IMPSDependencyException => logError("Failure! " + e.getMessage); sys.exit
       }
     }
 
@@ -204,7 +186,7 @@ class IMPSImporter extends Importer
       log("Checking:")
       logGroup
       {
-        val checker = controller.extman.get(classOf[Checker], "mmt").getOrElse {
+        val checker = controller.extman.get(classOf[Checker], format = "mmt").getOrElse {
           throw GeneralError("no checker found")
         }.asInstanceOf[MMTStructureChecker]
         tState.theories_decl foreach { p =>
@@ -214,7 +196,7 @@ class IMPSImporter extends Importer
       }
     }
     index(doc)
-    println("> translation process imps-omdoc complete!")
+    log("Translation process imps-omdoc complete!",log_structure)
     BuildSuccess(Nil, Nil)
   }
 
@@ -270,16 +252,19 @@ class IMPSImporter extends Importer
   }
 }
 
-class NEWIMPSParser
+class NEWIMPSParser extends Logger
 {
+  override def report    : Report = new Report()
+  override def logPrefix : String = "imps-parsing"
+
   def parse(s: String, uri : URI, js : List[JSONObject]) : List[DefForm]
-  = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
+    = parse(new Unparsed(s, msg => throw GeneralError(msg)), uri, js)
 
   def parse(u : Unparsed, uri : URI, js : List[JSONObject]) : List[DefForm] =
   {
     val dfp = new DefFormParsers(js)
     val foo  = ParserWithSourcePosition.parseAll(dfp.parseImpsSource,u)
-    if (!foo.successful) { println("### Parsing Error near: Line " + u.pos.line + " Column" + u.pos.column) }
+    if (!foo.successful) { logError("### Parsing Error near: Line " + u.pos.line + " Column" + u.pos.column) }
     assert(foo.successful)
 
     val dfs : List[DefForm] = foo.get
@@ -328,8 +313,6 @@ class TranslationState ()
   var knownUnknowns      : List[(Int,Term)]     = Nil
   var hashCount          : Int                  = 0
 
-  var verbosity          : Int                  = 0
-
   protected var unknowns : Int                  = 0
 
   protected def doiName(i : Int, isType : Boolean) : LocalName = {
@@ -360,11 +343,11 @@ class TranslationState ()
       case ln if ln.toString.startsWith("""/i/""") => ln
     }
     val cont = symbs.flatMap(n => {
-      val i = (0 until unknowns).find(j => n == doiName(j,false))/*.getOrElse(
+      val i = (0 until unknowns).find(j => n == doiName(j,isType = false))/*.getOrElse(
           throw new Exception("Wrong free Variable: " + n + " in " + t)
         )*/
       if (i.isDefined)
-        List(VarDecl(doiName(i.get,true), OMS(Typed.ktype)), VarDecl(n, OMV(doiName(i.get,true))))
+        List(VarDecl(doiName(i.get,isType = true), OMS(Typed.ktype)), VarDecl(n, OMV(doiName(i.get,isType = true))))
       else throw GeneralError("No unknown " + n)
     })
     if (unknowns > 0 && cont.nonEmpty) OMBIND(OMS(Path.parseS("http://cds.omdoc.org/mmt?mmt?unknown", NamespaceMap.empty)),

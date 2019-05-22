@@ -814,7 +814,7 @@ class DefFormParsers(js : List[JSONObject])
   )
 
   def parseArbitrary(str : String) : Parser[ArbitraryScript] = fullParser(
-    "(" ~> str.r ~ parseScript <~ ")" ^^ { case n ~ s => println(n + ";" + s) ; ArbitraryScript(n,s,None,None) }
+    "(" ~> str.r ~ parseScript <~ ")" ^^ { case n ~ s => ArbitraryScript(n,s,None,None) }
   )
 
   lazy val pSimplog1stWrapper : Parser[Simplog1stWrapper] = fullParser(

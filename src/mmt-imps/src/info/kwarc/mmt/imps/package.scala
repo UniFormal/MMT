@@ -24,4 +24,9 @@ package object imps
     }
     assert(b)
   }
+
+  val log_structure = Some("structure")
+  val log_overview  = Some("overview")
+  val log_specifics = Some("specifics")
+  val log_details   = Some("details")
 }
