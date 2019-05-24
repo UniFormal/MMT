@@ -37,11 +37,12 @@ object Ontology
     /* unaries */
 
     val `type` = ulo("type") // type constructors
-    val `object` = ulo("object") // term constants
+    val function = ulo("function") // term constants
     val statement = ulo("statement") // fact items (thm)
     val universe = ulo("universe") // type classes (primitive entity)
 
     val name = ulo("name") // external entity name (xname)
+    val predicate = ulo("predicate") // term constants with propositional body type
 
     val theory = ulo("theory") // theory, locale (subsumes type classes as logical specification)
 
@@ -58,12 +59,18 @@ object Ontology
     val derived = ulo("derived") // HOL typedefs, proven statements
     val experimental = ulo("experimental") // proof contains "sorry"
 
+    val important = ulo("important")  // command is tagged as "important"
+    val unimportant = ulo("unimportant")  // command is tagged as "unimportant"
+
 
     /* binaries */
 
     val paratype = ulo("paratype") // name of theorem-like statements as its type (e.g. "theorem")
 
     val instance_of = ulo("instance-of") // locale interpretation
+
+    val inductive_on = ulo("inductive-on") // const is specified via primitive recursion on type
+    val coinductive_for = ulo("coinductive-for") // const is specified via primitive co-recursion for type
 
     val specifies = ulo("specifies") // theory/locale declares item
     val specified_in = ulo("specified-in") // inverse of "specifies"

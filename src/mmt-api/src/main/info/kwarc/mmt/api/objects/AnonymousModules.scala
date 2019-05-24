@@ -11,6 +11,7 @@ import utils._
 trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
   val decls: List[OML]
   def getDeclarations = decls
+  def toSubstitution : Substitution = decls.map{case OML(name,_,df,_,_) => Sub(name,df.get)}
   def toTerm: Term
   override def toString = getDeclarations.mkString("{", ", ", "}")
 }
@@ -41,6 +42,14 @@ class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends Anony
     val m = mt.map(_.toString).getOrElse("")
     m + super.toString
   }
+  def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: AnonymousTheory => (that.mt == this.mt) && (that.decls == this.decls)
+      case _ => false
+    }
+   override def hashCode: Int = { mt.hashCode() + decls.hashCode() }
+
 }
 
 /** bridges between [[AnonymousTheory]] and [[Term]] */
@@ -64,6 +73,7 @@ object AnonymousTheoryCombinator {
 class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
   def toTerm = AnonymousMorphismCombinator(decls)
   def add(d: OML) = new AnonymousMorphism(decls ::: List(d))
+
 }
 
 /** bridges between [[AnonymousMorphism]] and [[Term]] */
@@ -91,6 +101,13 @@ sealed abstract class DiagramElement {
 case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
   override def toString = s"$label:THEY=$theory"
+  def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
+  override def equals(that: Any): Boolean =
+    that match {
+      case that: DiagramNode => (that.label == this.label) && (that.theory == this.theory)
+      case _ => false
+    }
+  override def hashCode: Int = { label.hashCode() + theory.hashCode() }
 }
 /** an arrow in an [[AnonymousDiagram]]
   *  @param label the label of this arrow
@@ -139,22 +156,47 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
   def getAllArrowsTo(label : LocalName) : List[DiagramArrow] = {
     arrows.filter(a => a.to == label)
   }
-  def viewOf(from:DiagramNode,to:DiagramNode): List[OML] = {
-    /* Finding the rename arrows */
-    val distTo = getDistArrowsTo(to.label)
-    val rens: List[OML] = distTo.filter(_.label.toString.contains("rename")).flatMap(a => a.morphism.decls)
-    val new_decls = from.theory.decls.map { curr =>
-      var curr_ren = rens.find(oml => (oml.name == curr.name))
-      var new_decl = curr
-      while (curr_ren != None) {
-        var df = curr_ren.get.df // TODO: Do we want to have getOrElse here?
-        new_decl = df.get.asInstanceOf[OML]
-        curr_ren = rens.find(oml => (oml.name == new_decl.name))
-      }
-      new_decl
+  /* Finding the path between two nodes using their labels */
+  def path(sourceLabel : LocalName, targetLabel : LocalName) : List[DiagramArrow] ={
+    arrows.find(a => a.to == targetLabel) match {
+      case None => Nil
+      case Some(a) =>
+        a :: (if (a.label == sourceLabel) Nil else path(sourceLabel,a.label))
     }
-    new_decls
   }
+
+  /* A function to compose two substitutions
+   * The function assume that assign1 has no duplicate assignments for the same symbol.
+   */
+  def compose(assign1 : List[OML],assign2 : List[OML]): List[OML] = {
+      val new_assigns : List[OML] = assign1.map{ curr : OML =>
+         var temp = curr.name
+         val it = assign2.iterator
+         while(it.hasNext){
+           val n = it.next()
+           if(temp == n.name){
+             temp = n.df.asInstanceOf[OML].name
+           }
+         }
+         val new_decl = new OML(temp,None,None,None)
+         new OML(curr.name,curr.tp,Some(new_decl),curr.nt,curr.featureOpt)
+      }
+      new_assigns
+  }
+
+  /* Finding the views
+   * - each view is a list of assignments of terms to constants TODO: we consider now only constants to constants
+   * - find the path (list of views) from the source to the target
+   * - calculate the flat list of assignments in these views (order matters for cases like [a |-> b, b |-> c])
+   * An assignment name = definition is represented as an OML(name, type, definition, notationOpt, featureOpt)
+   * */
+  def viewOf(source : DiagramNode, target : DiagramNode): List[OML] = {
+
+    val arrows: List[DiagramArrow] = path(source.label, target.label)
+    val assignments: List[OML] = arrows.flatMap(a => a.morphism.decls)
+    compose(source.theory.decls,assignments)
+  }
+
   def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}
   def getElements = nodes:::arrows
   /** replaces every label l with r(l) */
@@ -204,7 +246,6 @@ object AnonymousDiagramCombinator {
       Some(ad)
     case _ => None
   }
-
 }
 
 object OMLList {

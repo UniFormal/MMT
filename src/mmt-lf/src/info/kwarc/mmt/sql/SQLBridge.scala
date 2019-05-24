@@ -22,14 +22,18 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
    val logPrefix = "sql"
    
    def theoryToTable(t: Theory): Table = {
+     val datasetName: Option[String] = SchemaLang.datasetNameAnnotator.get(t)
+     val schemaGroup: Option[String] = SchemaLang.schemaGroupAnnotator.get(t)
+     val includes = t.getAllIncludesWithoutMeta.map(_._1)
      val cols = t.getConstants flatMap {
        case c: Constant => constantToColumn(c).toList
      }
-     Table(t.path, cols)
+     Table(t.path, datasetName, schemaGroup, cols, includes)
    }
-   
+
    def constantToColumn(c: Constant): Option[Column] = {
      val codecTerm = Codecs.codecAnnotator.get(c).getOrElse(return None) // no codec given
+     val foreignKeyTerm: Option[MPath] = SchemaLang.foreignKeyAnnotator.get(c).map(_.toMPath)
      val context = Context(c.home.toMPath)
      val mathType = c.tp.getOrElse {
         log("no mathematical type given " + c.name)
@@ -56,25 +60,24 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
          return None
      }
 
-     val isNullable = false  //TODO
-     val isForeignKey = SchemaLang.foreignKey.get(c)
      val isOpaque = SchemaLang.opaque.get(c)
      val isHidden = SchemaLang.hidden.get(c)
      val collection = if (SchemaLang.collection.get(c)) {
        Some(CollectionInfo(c.path,c.metadata))
-     } else 
+     } else
        None
-     val col = Column(c.path, mathType, codecTermChecked, dbtype, isForeignKey, isOpaque, !isHidden, collection)
+     // TODO foreign key
+     val col = Column(c.path, mathType, codecTermChecked, dbtype, foreignKeyTerm, isOpaque, !isHidden, collection)
      Some(col)
    }
-      
+
    private def defaultCodec(rt: RealizedType): Term = rt.synType match {
      case OMS(MathData.bool)   => OMS(Codecs.BoolIdent)
      case OMS(MathData.int)    => OMS(Codecs.IntIdent)
      case OMS(MathData.string) => OMS(Codecs.StringIdent)
      case OMS(MathData.uuid)   => OMS(Codecs.UUIDIdent)
    }
-  
+
   /**
     *  converts a term over a schema theory into the corresponding SQL expression and the codec that allows decoding it
     */
@@ -105,7 +108,7 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
            val (params,argsToEncode) = args.splitAt(cp.mathParams.length)
            /* TODO recursive call should alternate with matching
               if the free variables in an inCodec have already been solved, they are passed as the expected codec
-              if an expected codec is passed, it is matched against the outCodec */ 
+              if an expected codec is passed, it is matched against the outCodec */
            val (argsE, argsC) = args.map {a => termToExpr(table, a, None)}.unzip
            val res = matcher(context, cp.context) {eq =>
              ((params zip cp.mathParams) forall {case (a,b) => eq(a,b)}) &&
@@ -122,9 +125,9 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
          throw CannotTranslate(tm)
      }
    }
-   
+
    def termToFilter(table: Table, tm: Term): Filter = {
-     // determine type and codec for each subterm, then translate according to commutativity annotations 
+     // determine type and codec for each subterm, then translate according to commutativity annotations
      val (e,_) = termToExpr(table, tm, None)
      Filter(e)
    }
@@ -143,8 +146,8 @@ object SQLBridge {
     case b: BaseType[_] => OMS(utils.invlistmap(basetypes, b).get)
     case ArrayType(t) => array(typeToTerm(t))
   }
-  
-  /** MPath of example schema */ 
+
+  /** MPath of example schema */
   val example = SchemaLang._base ? "Example"
   /** convert a theory to a table */
   def test(thyP: MPath) = {
@@ -156,6 +159,18 @@ object SQLBridge {
     val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
     val table = bridge.theoryToTable(thy)
     table
+    } catch {
+      case e:Error => println(e.toStringLong)
+    }
+  }
+  def test2(thyP: MPath, controller: Controller) = {
+    try {
+      val rules = RuleSet.collectRules(controller, Context(thyP))
+      val bridge = new SQLBridge(controller, rules, Nil)
+      controller.handleLine("log+ " + bridge.logPrefix)
+      val thy = controller.globalLookup.getAs(classOf[Theory], thyP)
+      val table = bridge.theoryToTable(thy)
+      table
     } catch {
       case e:Error => println(e.toStringLong)
     }

@@ -19,19 +19,21 @@ import scala.concurrent.duration._
 import scala.sys.process.{ProcessBuilder, ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
-abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments {
-  val localpathsFile = "localpaths.tex"
-  val inDim = source
-  var pipeOutput: Boolean = false
-  val pipeOutputOption: String = "pipe-worker-output"
+abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
+{
+  val localpathsFile   : String = "localpaths.tex"
+  val inDim  : ArchiveDimension = source
+  var pipeOutput      : Boolean = false
+  val pipeOutputOption : String = "pipe-worker-output"
+
   /** timout in seconds */
-  private val timeoutDefault: Int = 300
-  protected var timeoutVal: Int = timeoutDefault
-  protected val timeoutOption: String = "timeout"
-  protected var nameOfExecutable: String = ""
+  private val timeoutDefault        : Int = 300
+  protected var timeoutVal          : Int = timeoutDefault
+  protected val timeoutOption    : String = "timeout"
+  protected var nameOfExecutable : String = ""
 
   protected case class LatexError(s: String, l: String) extends ExtensionError(key, s) {
-    override val extraMessage = l
+    override val extraMessage : String = l
   }
 
   protected def commonOpts: OptionDescrs = List(
@@ -46,9 +48,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   override def start(args: List[String]) {
     anaStartArgs(args)
     pipeOutput = optionsMap.get(pipeOutputOption).isDefined
-    optionsMap.get(timeoutOption).foreach { case v => timeoutVal = v.getIntVal }
-    optionsMap.get(key).foreach { case v => nameOfExecutable = v.getStringVal }
-    optionsMap.get("execute").foreach { case v =>
+    optionsMap.get(timeoutOption).foreach(v => timeoutVal = v.getIntVal)
+    optionsMap.get(key).foreach(v => nameOfExecutable = v.getStringVal)
+    optionsMap.get("execute").foreach { v =>
       if (nameOfExecutable.isEmpty) nameOfExecutable = v.getStringVal
       else logError("executable already set by: --" + key + "=" + nameOfExecutable)
     }
@@ -199,7 +201,7 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "tex"
 
-  override def getFolderOutFile(a: Archive, inPath: FilePath) = a / outDim / inPath
+  override def getFolderOutFile(a: Archive, inPath: FilePath) : File = a / outDim / inPath
 
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): BuildResult = BuildEmpty("nothing to do for files")
@@ -251,7 +253,7 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     a.traverse[Unit](inDim, in, TraverseMode(includeFile, includeDir, parallel))({
-      case _ =>
+      _ =>
     }, {
       case (c@Current(inDir, inPath), _) =>
         buildDir(a, inPath, inDir, force = false)

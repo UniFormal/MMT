@@ -11,7 +11,7 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import TermConstructingFeatureUtil._
 import inductiveUtil._
 

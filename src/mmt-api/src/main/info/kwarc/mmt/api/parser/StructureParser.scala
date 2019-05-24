@@ -195,11 +195,15 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
        case IsDoc(dp) =>
           val doc = controller.globalLookup.getAs(classOf[Document],dp)
           readInDocument(doc)(state)
-          (doc.getDeclarations.last,state)
+          (doc.getDeclarations.lastOption.getOrElse {
+            throw ParseError(dp + " is empty: " + state)
+          },state)
        case IsMod(mp, rd) =>
           val mod = controller.globalLookup.getAs(classOf[ModuleOrLink],mp)
           readInModule(mod, mod.getInnerContext, new Features(Nil,Nil))(state)
-          (mod.getDeclarations.last, state)
+          (mod.getDeclarations.lastOption.getOrElse {
+            throw ParseError(mp + " is empty: " + state)
+          }, state)
     }
   }
 
