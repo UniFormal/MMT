@@ -302,7 +302,7 @@ class TranslationState ()
   var languages_decl     : List[Theory]         = Nil
 
   var translations_raw   : List[DFTranslation]  = Nil
-  var translations_decl  : List[View]   = Nil
+  var translations_decl  : List[View]           = Nil
 
   var renamers           : List[DFRenamer]      = Nil
 
@@ -310,8 +310,11 @@ class TranslationState ()
 
   var jsons              : List[JSONObject]     = Nil
 
-  var supersorts         : Map[Term,List[Term]] = Map.empty
-  var knownsubtyperules  : Set[LocalName]       = Set.empty
+  var memoised_homes     : Map[(String,Theory),Theory] = Map.empty
+  var supersorts         : Map[Term,List[Term]]        = Map.empty
+  var knownsubtyperules  : Set[LocalName]              = Set.empty
+
+  var nativeConstants    : Map[LocalName, Set[String]] = Map.empty
 
   var vars               : Context              = Context.empty
   var knownUnknowns      : List[(Int,Term)]     = Nil

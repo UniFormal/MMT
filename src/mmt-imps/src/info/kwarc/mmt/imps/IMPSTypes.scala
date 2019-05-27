@@ -2052,7 +2052,8 @@ object FrmFnd extends Logger
     assert(thesexp.nonEmpty)
 
     val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-    val lsp = sp.parseAll(sp.parseSEXP,cheat(thesexp))
+    val cheatedsexp : String = cheat(thesexp)
+    val lsp = sp.parseAll(sp.parseSEXP, cheatedsexp)
     assert(lsp.successful)
 
     impsMathParser.makeSEXPFormula(lsp.get)

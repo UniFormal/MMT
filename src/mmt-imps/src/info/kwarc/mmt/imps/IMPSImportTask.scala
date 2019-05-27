@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.opaque.{OpaqueText, StringFragment}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -123,6 +124,8 @@ class IMPSImportTask(val controller  : Controller,
                 modules.Theory.noParams,
                 modules.Theory.noBase)
 
+              tState.nativeConstants += nu_multiple.name -> Set.empty
+
               val mref : MRef = MRef(doc.path,nu_multiple.path)
               controller.add(nu_multiple)
               controller.add(mref)
@@ -150,6 +153,8 @@ class IMPSImportTask(val controller  : Controller,
               controller add theInclude
               controller endAdd theInclude
 
+              controller endAdd nu_multiple
+
               // register new Theory Multiple
               ensemble.multipleMap = ensemble.multipleMap + (j -> nu_multiple)
               tState.theories_decl = nu_multiple :: tState.theories_decl
@@ -169,6 +174,7 @@ class IMPSImportTask(val controller  : Controller,
           } else throw ImplementationError("No target theory or target multiple.")
                  // should not happen, either argument is always present
 
+          // Find source theories. For details, see page 191 of the IMPS Manual.
           var permutations : List[List[Int]] = List.empty
 
           if (perms.isDefined) {
@@ -194,9 +200,12 @@ class IMPSImportTask(val controller  : Controller,
 
               controller add union
               controller add MRef(doc.path,union.path)
-              controller add PlainInclude(t1.path,union.path)
-              controller add PlainInclude(t2.path,union.path)
-              ??!("these still need endAdds")
+
+              val ui1 = PlainInclude(t1.path,union.path)
+              val ui2 = PlainInclude(t2.path,union.path)
+
+              controller endAdd ui1
+              controller endAdd ui2
               union
             }
           }
@@ -204,13 +213,13 @@ class IMPSImportTask(val controller  : Controller,
           val allJSONTranslations : List[JSONObject] = tState.jsons.flatMap(j => j.getAsList(classOf[JSONObject],"translations"))
 
           for (permutation <- permutations) {
-            val targets: List[Theory] = permutation.map(p => candidates(p))
-            val target: Theory = targets.tail.foldRight(targets.head)(tUnion)
-            val source: Theory = ensemble.multipleMap(permutation.last + 1)
-            val fooname: String = source.name.toString + "-TO-" + target.name.toString
-            val vname: LocalName = LocalName(fooname.toUpperCase)
+            val targets : List[Theory] = permutation.map(p => candidates(p))
+            val target  : Theory       = targets.tail.foldRight(targets.head)(tUnion)
+            val source  : Theory       = ensemble.multipleMap(permutation.last + 1)
+            val toName  : String       = source.name.toString + "-TO-" + target.name.toString
+            val vname   : LocalName    = LocalName(toName.toUpperCase)
 
-            val relevantTranslations: List[JSONObject] = allJSONTranslations.filter(j => j.getAsString("name").toLowerCase == fooname.toLowerCase)
+            val relevantTranslations: List[JSONObject] = allJSONTranslations.filter(j => j.getAsString("name").toLowerCase == toName.toLowerCase)
             if (relevantTranslations.length == 1)
             {
               log("adding view " + vname + " (source: " + source.name.toString + ", target: " + target.name.toString + ")", log_specifics)
@@ -309,39 +318,67 @@ class IMPSImportTask(val controller  : Controller,
                   val nu_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(quelle.get.path) / doName(renamer(sourceName)),List(doName(sourceName)),target_tp,Some(target_term),None)
                   controller add nu_const_map
 
-                  log("adding ensemble-instance const-mapping: " + leftExpStr + " → " + trgt.toString, log_details)
+                  log("Adding ensemble-instance const-mapping: " + leftExpStr + " → " + trgt.toString, log_details)
                 }
               }
 
-              // Translate natively defined constants here (see manual pg. 109)
-              for (nativec <- source.getConstants)
-              {
-                log("translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name, log_specifics)
-                val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
-                val nuname : LocalName = ComplexStep(target.path) / nativec.name
-                val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
-                controller add nu_trans_native
-                log(nu_trans_native.toString, log_details)
+              // Some cheating^W special directions.
+              vname.toString.toLowerCase match {
+                case "metric-spaces-2-tuples-to-metric-spaces"
+                   | "metric-spaces-2-tuples-to-ms-subspace" =>
+                  // All variables X_0 and X_1 go to regular X
+                  val metricSpaces = getTheory(name = "metric-spaces")
+                  for (targetc <- metricSpaces.getConstants) {
+                    for (n <- List("0","1")) {
+                      val cname = targetc.name.toString + "_" + n
+                      val home = getTheory(name = "metric-spaces_" + n)
+                      val special_const_map = symbols.Constant(nu_view.toTerm,ComplexStep(home.path) / doName(cname),Nil,None,Some(targetc.toTerm),Some("hand-translated constant"))
+                      log("Adding special constant mapping: " + special_const_map.name + " -> " + targetc.name, log_details)
+                      controller add special_const_map
+                    }
+                  }
+                case _ =>
+              }
 
+              controller endAdd nu_view
+              controller.simplifier.apply(nu_view)
+
+              // Don't think about commenting this code out again.
+              // I know the manual gives unclear wording but you do need these, too.
+
+              val nativeConsts : List[Constant] = source.getConstants
+
+              log("We will now translate these native constants:", log_details)
+              log(nativeConsts.filter(nc => tState.nativeConstants(source.name).contains(nc.name.toString)).map(_.name).mkString(", "),log_details)
+
+              // Translate natively defined constants here (see manual pg. 109)
+              // Maybe do this not here but under the special renamings?
+              for (nativec <- nativeConsts.filter(nc => tState.nativeConstants(source.name).contains(nc.name.toString)))
+              {
+                log("Translating native constant " + nativec.name + "(from " + source.name + ") along " + nu_view.name, log_specifics)
+
+                val image : Term = controller.library.ApplyMorphs(nativec.toTerm,nu_view.toTerm)
+                val nuname : LocalName = nativec.name
+                val nu_trans_native = symbols.Constant(target.toTerm,nuname,Nil,None,Some(image),Some("translated native constant"))
+
+                controller add nu_trans_native
               }
 
               if (renamings.isDefined)
               {
                 for (re <- renamings.get.ns) {
                   //val q : Theory  = locateMathSymbolHome(re.old.toString,source).get
-                  val locname : LocalName = api.ComplexStep(target.path) / LocalName(re.nu.toString)
+                  val locname : LocalName = LocalName(re.nu.toString)
                   val c       : Constant  = getConstant(re.old.toString,target)
 
                   val nu_constant = symbols.Constant(target.toTerm,locname,List.empty,c.tp,Some(c.toTerm),Some("Special Renaming"))
                   controller add nu_constant
 
-                  log("adding special renaming: " + re.nu.toString + " for " + c.path + " in  " + target.name + " // " + nu_constant, log_specifics)
+                  log("adding special renaming: " + re.nu.toString + " for " + c.name.toString + " in  " + target.name + " // " + nu_constant, log_specifics)
                 }
               }
 
-              controller endAdd nu_view
-
-            } else { logError("[TES] No unique applicable translation in source for " + fooname + ", skipping!") }
+            } else { logError("[TES] No unique applicable translation in source for " + toName + ", skipping!") }
 
           }
 
@@ -367,6 +404,7 @@ class IMPSImportTask(val controller  : Controller,
       modules.Theory.noBase)
 
     log("adding theory " + t.name.toString, log_overview)
+    tState.nativeConstants += nu_theory.name -> Set.empty
 
     val mref : MRef = MRef(docPath,nu_theory.path)
     controller.add(nu_theory)
@@ -487,6 +525,8 @@ class IMPSImportTask(val controller  : Controller,
       Some(IMPSTheory.QCT.quasiLutinsPath),
       modules.Theory.noParams,
       modules.Theory.noBase)
+
+    tState.nativeConstants += nu_lang.name -> Set.empty
 
     val mref : MRef = MRef(docPath,nu_lang.path)
     controller.add(nu_lang)
@@ -842,6 +882,9 @@ class IMPSImportTask(val controller  : Controller,
 
         controller add nu_constant
 
+        log("Registering constant " + name.s + " as native to " + parent.name + ".", log_details)
+        tState.nativeConstants += parent.name -> (tState.nativeConstants(parent.name) + name.s.toLowerCase())
+
       case DFRecursiveConstant(names,defs,maths,sorts,argthy,usgs,defname,src,cmt) =>
 
         val ln: LocalName = LocalName(argthy.thy.s.toLowerCase())
@@ -871,6 +914,9 @@ class IMPSImportTask(val controller  : Controller,
           log("Adding recursive constant " + nm + " : "  + theseSorts(i).toString + " to theory " + parent.name.toString, log_overview)
 
           controller add nu_constant
+
+          log("Registering recursive constant " + names.nms(i) + " as native to " + parent.name + ".", log_details)
+          tState.nativeConstants += parent.name -> (tState.nativeConstants(parent.name) + names.nms(i).s)
         }
 
       case t@DFTheorem(name,defn,frm,modr,modl,theory,usages,trans,macete,homeTheory,proof,src,cmt) =>
@@ -1058,9 +1104,8 @@ class IMPSImportTask(val controller  : Controller,
         val multiples : List[Theory] = nums.map(j => ensemble.multipleMap(j))
         for (m <- multiples) {
           for (mc <- m.getConstants) {
-            for (dest <- tState.translations_decl) {
-              log("[overloading for " + mc.name + " along " + dest.name + " goes here]", log_specifics)
-            }
+            // Overloading not necessary because we give the constants good names the first time.
+            log("Overloading for " + mc.name + " not necessary, skipping.", log_specifics)
           }
         }
 
@@ -1070,8 +1115,8 @@ class IMPSImportTask(val controller  : Controller,
 
         for (pair <- pairs)
         {
-          val thy : Theory = getTheory(pair.tname.s)
-          val c   : Constant       = getConstant(pair.sname.s,thy)
+          val thy : Theory   = getTheory(pair.tname.s)
+          val c   : Constant = getConstant(pair.sname.s,thy)
 
           val nu_constant = symbols.Constant(thy.toTerm,name,List.empty,c.tp,Some(c.toTerm),Some("Overloading"))
           controller add nu_constant
@@ -1147,40 +1192,46 @@ class IMPSImportTask(val controller  : Controller,
     val nu_name : String = renamer(base.name.toString)
 
     // Fix all includes
-    val includes : List[Theory] = base.getIncludesWithoutMeta.map(controller.getTheory)
+    val includes : List[Theory] = base :: base.getIncludesWithoutMeta.map(controller.getTheory)
 
     for (fix <- includes) {
       val theInclude = PlainInclude(fix.path,nu_replica.path)
       controller add theInclude
       controller endAdd theInclude
     }
-    // Each replica only carries one structure (a  kind of theory morphism) from the base theory into it.
-    val rep_struc = Structure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
-    controller add rep_struc
 
-    for (fix <- includes) {
-      val fixname = LocalName(ComplexStep(fix.path))
-      val nu_fix = Structure(rep_struc.toTerm,fixname,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false)
-      controller add nu_fix
-    }
+    // Each replica only carries one structure (a  kind of theory morphism) from the base theory into it.
+    //val rep_struc = Structure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
+    //controller add rep_struc
+
+    //for (fix <- includes) {
+    //  val fixname = LocalName(ComplexStep(fix.path))
+    //  val nu_fix = Structure(rep_struc.toTerm,fixname,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false)
+    //  controller add nu_fix
+    //}
 
     val replic_trans : View = View(docPath,LocalName(renamer("replicating_translation")),base.toTerm,nu_replica.toTerm,isImplicit = false)
     controller add replic_trans
 
-    /**
-    for (c <- base.getConstants)
+    for (rec <- recursiveIncludes(List(base)))
     {
-      val chome : Term            = OMMOD(rep_struc.path.toMPath)
-      val alias : List[LocalName] = LocalName(renamer(c.name.toString)) :: c.alias
-      val nu_constant = symbols.Constant(chome,ComplexStep(c.parent)/c.name,alias,None,None,None)
-      controller add nu_constant
+      log("Adding constants from " + rec.name + " to replica theory " + nu_replica.name, log_details)
 
-      if (tState.verbosity > 2) {
-        println("     > adding constant " + nu_constant.name + " to replica theory " + rep_struc.name)
+      for (c <- rec.getConstants)
+      {
+        val chome : Term            = nu_replica.toTerm
+        val alias : List[LocalName] = c.alias.map(a => LocalName(renamer(a.toString)))
+        val nu_constant = symbols.Constant(chome,LocalName(renamer(c.name.toString)),alias,None,None,None)
+        controller add nu_constant
+
+        log("Adding constant " + nu_constant.name + ", originally from " + rec.name + " to replica theory " + nu_replica.name, log_steps)
       }
-    }**/
+    }
 
     controller endAdd replic_trans
+    controller endAdd nu_replica
+
+    tState.theories_decl = tState.theories_decl :+ nu_replica
 
     // Elaborate Structures
     controller.simplifier(nu_replica)
@@ -2050,7 +2101,7 @@ class IMPSImportTask(val controller  : Controller,
   {
     var thy = findTheory(name)
     if (thy.isEmpty) { findTheory(name + "_ensemble") }
-    if (thy.isEmpty) { ??!(name) }
+    if (thy.isEmpty) { ??!("Theory not gettable: " + name) }
     assert(thy.isDefined)
     thy.get
   }
@@ -2099,10 +2150,27 @@ class IMPSImportTask(val controller  : Controller,
     is.distinct
   }
 
+  // We're accumulating a lookup table here because some of these get called _a lot_!
   def locateMathSymbolHome(s : String, thy : Theory) : Option[Theory] =
   {
+    val probe : Option[Theory] = tState.memoised_homes.get(s,thy)
+    if (probe.isDefined) { probe } else {
+      val result : Option[Theory] = locateMathSymbolHomePrime(s,thy)
+      if (result.isDefined) { tState.memoised_homes += (s,thy) -> result.get }
+      result
+    }
+  }
+
+  def locateMathSymbolHomePrime(s : String, thy : Theory) : Option[Theory] =
+  {
     def cmatch(c : Constant, s : String) : Boolean = {
-      c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) || (c.name.toString.toLowerCase == s.toLowerCase || c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase))
+      c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase) ||
+        (c.name.toString.toLowerCase == s.toLowerCase ||
+          c.alias.map(_.toString.toLowerCase).contains(s.toLowerCase))
+    }
+
+    def tmatch(t : Theory, s : String) : Boolean = {
+      t.getConstants.exists(cmatch(_,s))
     }
 
     var multipleCandidates : List[Theory] = List.empty
@@ -2113,12 +2181,16 @@ class IMPSImportTask(val controller  : Controller,
     }
 
     val candidates : List[Theory]   = (recursiveIncludes(List(thy)).reverse ::: multipleCandidates).distinct
-    val srcthy     : Option[Theory] = candidates.find(t => t.getConstants.exists(c => cmatch(c,s)))
+
     log("Locating IMPSMathSymbol " + s + " for use in theory " + thy.name.toString, log_steps)
+    log("         candidates are: " + candidates.map(_.name).mkString(", "), log_steps)
+
+    var srcthy     : Option[Theory] = candidates.find(tmatch(_,s))
 
     if (srcthy.isEmpty) {
       logError(" >>> location for " + s + " could not be found, starting from " + thy.name)
-      println(thy)
+    } else {
+      log("         found in " + srcthy.get.name, log_steps)
     }
     srcthy
   }
