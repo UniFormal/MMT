@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    val targetSection : Section = impsLibrarySections.impsMathLibrary
+    val targetSection : Section = impsLibrarySections.abstractCalculus
 
     log("Reading index file: " + bf.inFile.getName, log_structure)
     log("== BUILDING DEPENDENCY TREE ==",           log_structure)

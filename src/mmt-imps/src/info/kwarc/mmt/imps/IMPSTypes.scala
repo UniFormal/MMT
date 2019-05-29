@@ -1991,7 +1991,7 @@ object FrmFnd extends Logger
   def findFormula(thyname : String, dfstr : Option[DefString], g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
   {
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
-    assert(json_theory.isDefined)
+    hAssert(json_theory.isDefined, thyname.toLowerCase)
     assert(json_theory.get.getAsString("type") == "imps-theory")
 
     val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)

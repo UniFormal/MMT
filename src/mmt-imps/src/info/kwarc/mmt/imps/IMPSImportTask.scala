@@ -76,6 +76,30 @@ class IMPSImportTask(val controller  : Controller,
 
     var excps : List[Exception] = Nil
 
+    def tUnion : (Theory, Theory) => Theory = (t1, t2) =>
+    {
+      if      (recursiveIncludes(List(t1)).contains(t2)) t1
+      else if (recursiveIncludes(List(t2)).contains(t1)) t2
+      else {
+        ??!("!!! Actual theory union between " + t1.name + " and " + t2.name)
+        val union = new Theory(bt.narrationDPath,
+          LocalName(t1.name.toString + "_union_" + t2.name.toString),
+          Some(IMPSTheory.QCT.quasiLutinsPath),
+          modules.Theory.noParams,
+          modules.Theory.noBase)
+
+        controller add union
+        controller add MRef(doc.path,union.path)
+
+        val ui1 = PlainInclude(t1.path,union.path)
+        val ui2 = PlainInclude(t2.path,union.path)
+
+        controller endAdd ui1
+        controller endAdd ui2
+        union
+      }
+    }
+
     for (exp <- es)
     {
       exp match
@@ -185,30 +209,6 @@ class IMPSImportTask(val controller  : Controller,
             }
           } else throw ImplementationError("No permutations or multiples defined")
                  // should not happen, either argument is always present
-
-          def tUnion : (Theory, Theory) => Theory = (t1, t2) =>
-          {
-            if      (recursiveIncludes(List(t1)).contains(t2)) t1
-            else if (recursiveIncludes(List(t2)).contains(t1)) t2
-            else {
-              ??!("!!! Actual theory union between " + t1.name + " and " + t2.name)
-              val union = new Theory(bt.narrationDPath,
-                LocalName(t1.name.toString + "_union_" + t2.name.toString),
-                Some(IMPSTheory.QCT.quasiLutinsPath),
-                modules.Theory.noParams,
-                modules.Theory.noBase)
-
-              controller add union
-              controller add MRef(doc.path,union.path)
-
-              val ui1 = PlainInclude(t1.path,union.path)
-              val ui2 = PlainInclude(t2.path,union.path)
-
-              controller endAdd ui1
-              controller endAdd ui2
-              union
-            }
-          }
 
           val allJSONTranslations : List[JSONObject] = tState.jsons.flatMap(j => j.getAsList(classOf[JSONObject],"translations"))
 
@@ -381,6 +381,55 @@ class IMPSImportTask(val controller  : Controller,
             } else { logError("[TES] No unique applicable translation in source for " + toName + ", skipping!") }
 
           }
+
+        case DFTheoryInstance(nm,sr,tar,trans,fts,rnm,ntn,src,cmt) =>
+
+          val t1       : Theory = getTheory(sr.thy.s.toLowerCase)
+          val t1_prime : Theory = getTheory(tar.thy.s.toLowerCase)
+
+          val phi_raw_opt = tState.translations_raw.find(v => v.n.s.toLowerCase == trans.t.s.toLowerCase)
+          assert(phi_raw_opt.isDefined)
+          val phi_raw : DFTranslation = phi_raw_opt.get
+
+          val t0       : Theory = getTheory(phi_raw.sour.thy.s.toLowerCase)
+          val t0_prime : Theory = getTheory(phi_raw.tar.thy.s.toLowerCase)
+
+          val phi_opt = tState.translations_decl.find(v => v.name.toString.toLowerCase == trans.t.s.toLowerCase)
+          assert(phi_opt.isDefined)
+          val phi : View = phi_opt.get
+
+          var f : List[Theory]  = Nil
+          if (fts.isDefined) {
+            for (ft <- fts.get.ts.map(_.s)) {
+              val nu_fix : Option[Theory] = findTheory(ft)
+              if (nu_fix.isDefined) { f = f ::: List(nu_fix.get) }
+            }
+          }
+
+          val rename : String => String = {
+            if (rnm.isDefined) {
+              val rnmr = tState.renamers.find(r => r.nm.s.toLowerCase == rnm.get.rn.s.toLowerCase)
+              if (rnmr.isEmpty) { logError("could not find renamer " + rnm.get.rn.s.toLowerCase) }
+              assert(rnmr.isDefined)
+              rnmr.get.toFunction
+            } else { identity }
+          }
+
+          // First, the primitive vocabulary of T 1
+          //which is outside of T 0 and F is added to the language of T 1 0 ; the vocabulary
+          //is renamed using the value of renamer .
+          ???
+
+          // Next, the translations of the axioms
+          //of T 1 which are outside of T 0 and F are added to the axioms of T 1 0 ; the
+          //axioms are renamed using the value of renamer .
+          ???
+
+          // U is union of the resulting theory and the members of F.
+          ???
+
+          // The translation Φ 0 from T 1 to U extending Φ is created with name new-trans-name.
+          ???
 
         // If it's none of these, fall back to doDeclaration
         case _ => doDeclaration(exp,uri)
@@ -1164,6 +1213,7 @@ class IMPSImportTask(val controller  : Controller,
          | DFParseSyntax(_,_,_,_,_,_,_,_) => // Not used, because they are hardcoded.
       case Heralding(_,_,_)
            | DFIncludeFiles(_,_,_,_,_)
+           | TeXCorrespondence(_,_,_)  // ToDo: Can we use these for Notations?
            | DFSection(_,_,_,_,_)
            | Define(_,_,_)
            | ArgSet(_,_,_)

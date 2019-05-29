@@ -286,6 +286,7 @@ package object impsLibrarySections
     List(banachFixedPointTheorem, basicFields),
     List("vector-spaces.t", "normed-spaces.t", "derivatives.t", "integrals.t", "open-mapping.t", "derivatives-supplements.t"),
     List("normed-linear-spaces.json", "metric-spaces-2-tuples.json", "vector-spaces-over-rr.json", "vector-spaces.json",
+      "mappings-from-an-interval.json",
     "mappings-from-an-interval-to-a-normed-space.json", "mappings-from-an-interval-with-endpoints-to-a-normed-space.json")
   )
 
@@ -353,5 +354,4 @@ package object impsLibrarySections
     machineArithmetic,
     impsMathLibrary
   )
-
 }
