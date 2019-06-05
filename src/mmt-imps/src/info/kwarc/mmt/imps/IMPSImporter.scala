@@ -22,7 +22,7 @@ class IMPSImporter extends Importer
   def importDocument(bf: BuildTask, index: Document => Unit): BuildResult =
   {
     val tState : TranslationState = new TranslationState()
-    val targetSection : Section = impsLibrarySections.abstractCalculus
+    val targetSection : Section = impsLibrarySections.impsMathLibrary
 
     log("Reading index file: " + bf.inFile.getName, log_structure)
     log("== BUILDING DEPENDENCY TREE ==",           log_structure)
@@ -304,7 +304,8 @@ class TranslationState ()
   var translations_raw   : List[DFTranslation]  = Nil
   var translations_decl  : List[View]           = Nil
 
-  var renamers           : List[DFRenamer]      = Nil
+  /* Has the trivial renamer preinstalled */
+  var renamers           : List[DFRenamer]      = List(DFRenamer(Name("identity",None,None),None,None,None))
 
   var delayed            : List[(DefForm,URI)]  = Nil
 

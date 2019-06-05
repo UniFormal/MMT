@@ -1602,7 +1602,7 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
                 for (t <- haystack)
                 {
                   for (a <- t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase)) {
-                    logError(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                    println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
                   }
                 }
               }
@@ -2156,6 +2156,7 @@ object FrmFnd extends Logger
       case "lambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))" => "(mullambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))"
       case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
       case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
+      case "lambda(x,y:uu,norm(x-y))" => "lambda(x,y:uu,norm(sub_vv(x,y)))"
       case _ => str
     }
   }
