@@ -2032,17 +2032,17 @@ object FrmFnd extends Logger
 
     if (theThing.isEmpty)
     {
-      if (n.isDefined) { logError("looking for " + n.get.toLowerCase) } else { logError("looking for nameless formula") }
+      if (n.isDefined) { println("looking for " + n.get.toLowerCase) } else { println("looking for nameless formula") }
       assert(needle != "")
       val bar = removeWhitespace(needle)
-      logError("> s = " + needle)
+      println("> s = " + needle)
 
       for (t <- haystack)
       {
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val numb = math.min(foo.length,9)
         if (foo.take(numb) == bar.take(numb)) {
-          logError("> json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
+          println("> json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
         }
       }
     }
@@ -2157,6 +2157,9 @@ object FrmFnd extends Logger
       case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
       case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
       case "lambda(x,y:uu,norm(x-y))" => "lambda(x,y:uu,norm(sub_vv(x,y)))"
+      case "forall(x,y,z:bfun,bfun%dist(x,z)<=bfun%dist(x,y)+bfun%dist(y,z))" => "forall(x,y,z:ms%bfun,dist(x,z)<=dist(x,y)+dist(y,z))"
+      case "forall(x,y:bfun,bfun%dist(x,y)=bfun%dist(y,x))" => "forall(x,y:ms%bfun,dist(x,y)=dist(y,x))"
+      case "forall(x,y:bfun,x=yiffbfun%dist(x,y)=0)" => "forall(x,y:ms%bfun,x=yiffdist(x,y)=0)"
       case _ => str
     }
   }
