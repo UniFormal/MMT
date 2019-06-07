@@ -181,9 +181,28 @@ class IMPSImporter extends Importer
       }
     }
 
+    if (tState.delayed.nonEmpty) {
+      log("Principle translation finished, starting translation of delayed def-forms.", log_structure)
+
+      for (d <- tState.delayed) {
+        importTask.doDeclaration(d._1,d._2)
+      }
+
+      log("Starting translation of delayed translations.", log_structure)
+      for (d <- tState.delayedTrans) {
+        importTask.doTranslation(d._1,d._2,d._3)
+      }
+    }
+
     // Run Checker (to resolve unknowns, etc)
     // Set to true to run
-    val typecheck : Boolean = true
+    val typecheck : Boolean = false
+
+    if (typecheck) {
+      log("Translation complete! Starting type-checking.", log_structure)
+    } else {
+      log("Translation complete! Type-checking disabled, skipping.", log_structure)
+    }
 
     if (typecheck)
     {
@@ -307,7 +326,9 @@ class TranslationState ()
   /* Has the trivial renamer preinstalled */
   var renamers           : List[DFRenamer]      = List(DFRenamer(Name("identity",None,None),None,None,None))
 
-  var delayed            : List[(DefForm,URI)]  = Nil
+  var delayed            : List[(DefForm,URI)]              = Nil
+  var delayedTrans       : List[(DFTranslation,DPath,URI)]  = Nil
+
 
   var jsons              : List[JSONObject]     = Nil
 

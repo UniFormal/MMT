@@ -852,9 +852,9 @@ class IMPSImportTask(val controller  : Controller,
 
     case t@DFTranslation(name,force,forceQL,dontEnrich,sourcet,targett,_,fixed,sortPairs,constPairs,None,_,src,_) =>
 
-      // TODO: Deal with these delays.
+      /* Some of these delayed def-forms have weird, circular dependencies, so we translate them at the end. */
       val delays : List[String] = List("ACT->LEFT%TRANS","ACT->RIGHT%TRANS", "ACT->SET%CONJUGATE", "ACT->LEFT-MUL", "ACT->RIGHT-MUL")
-      if (delays.contains(name.s)) { tState.delayed = (t,uri) :: tState.delayed ; return }
+      if (delays.contains(name.s)) { tState.delayedTrans = (t,docPath,uri) :: tState.delayedTrans ; return }
 
       var translated_constant_names : List[LocalName] = Nil
 
@@ -1159,7 +1159,7 @@ class IMPSImportTask(val controller  : Controller,
 
       case t@DFTheorem(name,defn,frm,modr,modl,theory,usages,trans,macete,homeTheory,proof,src,cmt) =>
 
-        // TODO: Deal with these delays, too!
+        /* Some of these delayed def-forms have weird, circular dependencies, so we translate them at the end. */
         val delays : List[String] = List("LEFT-LEFT%TRANS-INV", "LEFT-RIGHT%TRANS-INV", "RIGHT-LEFT%TRANS-INV", "RIGHT-RIGHT%TRANS-INV",
         "LEFT-TRANSLATION-MACETE", "RIGHT-TRANSLATION-MACETE", "REVERSE-SET%CONJUGATE-ASSOCIATIVITY", "REVERSE-LEFT%TRANS-ASSOCIATIVITY",
           "REVERSE-RIGHT%TRANS-ASSOCIATIVITY", "LEFT-MUL-MACETE", "RIGHT-MUL-MACETE")
