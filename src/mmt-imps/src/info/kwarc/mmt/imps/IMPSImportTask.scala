@@ -438,9 +438,13 @@ class IMPSImportTask(val controller  : Controller,
               }
 
             } else {
-              logError("No unique applicable translation in source for " + toName + ", skipping!")
-              logError("There were " + relevantTranslations.length + " options.")
-              if (relevantTranslations.nonEmpty) { logError(relevantTranslations.map(_.getAsString("name")).mkString(", ")) }
+              //logError("No unique applicable translation in source for " + toName + ", skipping!")
+              //logError("There were " + relevantTranslations.length + " options.")
+              //if (relevantTranslations.nonEmpty) { logError(relevantTranslations.map(_.getAsString("name")).mkString(", ")) }
+
+              // There are a few (non-essential) translations without supporting json-data, for some reason.
+              // We skip those instead of erroring.
+              log("Skipping translation " + toName + " because of no underlying data in JSON.", log_overview)
             }
           }
 
@@ -1411,6 +1415,8 @@ class IMPSImportTask(val controller  : Controller,
         log("adding script: " + nm.s, log_specifics)
         controller add opaque
 
+      case Simplog1stWrapper(defform,_,_) => doDeclaration(defform,uri)
+
       case DFPrintSyntax(_,_,_,_,_,_,_,_)
          | DFParseSyntax(_,_,_,_,_,_,_,_) => // Not used, because they are hardcoded.
       case Heralding(_,_,_)
@@ -1419,6 +1425,9 @@ class IMPSImportTask(val controller  : Controller,
            | DFSection(_,_,_,_,_)
            | Define(_,_,_)
            | ArgSet(_,_,_)
+           | EnsembleDontTranslateConst(_,_,_)
+           | QCConstantlike(_,_,_)
+           | DFImportedRewriteRules(_,_,_,_,_)
            | DFLoadSection(_,_,_) => // Not used, because information is present elsewhere.
       case some =>
         logError("Error: Unknown decl encountered, not translated!")
@@ -1452,16 +1461,6 @@ class IMPSImportTask(val controller  : Controller,
       controller add theInclude
       controller endAdd theInclude
     }
-
-    // Each replica only carries one structure (a  kind of theory morphism) from the base theory into it.
-    //val rep_struc = Structure(nu_replica.toTerm,LocalName(nu_name),base.toTerm,isImplicit = false)
-    //controller add rep_struc
-
-    //for (fix <- includes) {
-    //  val fixname = LocalName(ComplexStep(fix.path))
-    //  val nu_fix = Structure(rep_struc.toTerm,fixname,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false)
-    //  controller add nu_fix
-    //}
 
     val replic_trans : View = View(docPath,LocalName(renamer("replicating_translation")),base.toTerm,nu_replica.toTerm,isImplicit = false)
     controller add replic_trans

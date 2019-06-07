@@ -181,7 +181,7 @@ class IMPSImporter extends Importer
       }
     }
 
-    if (tState.delayed.nonEmpty) {
+    if (tState.delayed.nonEmpty || tState.delayedTrans.nonEmpty) {
       log("Principle translation finished, starting translation of delayed def-forms.", log_structure)
 
       for (d <- tState.delayed) {
