@@ -24,8 +24,40 @@ import info.kwarc.mmt.api.utils.MMT_TODO
   def namePrefix = LocalName(path)
 } */
 
-class BinaryDefinedRelation extends StructuralFeature("attack"){
+class BinaryDefinedRelation extends ModuleLevelFeature("attack"){
   // def getHeaderNotation = Nil
-  def getHeaderNotation = List(SimpArg(1), Delim(">"), SimpArg(2))
-  def check(dd: DerivedModule)(implicit env: ExtendedCheckingEnvironment) {}
+  def getHeaderNotation = List(LabelArg(1,LabelInfo.none), Delim(":"), SimpArg(2), Delim("→"), SimpArg(3), Delim("with"), SimpArg(4))
+
+  def getInnerContext(dd: DerivedModule) = {
+    deconstructHeader(dd) match {
+      case Some((f,t,_)) => Context(f) ++ Context(t)
+      case _ => Context.empty
+    }
+  }
+
+
+  private def deconstructHeader(dd:DerivedModule) : Option[(MPath,MPath,MPath)] = dd.tp match {
+    case Some(OMA(OMMOD(`mpath`),List(OMMOD(dom),OMMOD(cod),OMMOD(wit)))) =>
+      Some((dom,cod,wit))
+    case _ => None
+  }
+
+  def check(dd: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {
+    deconstructHeader(dd) match {
+      case Some((dom,cod,wit)) =>
+      case _ => env.errorCont(ParseError("Not a valid head"))
+    }
+  }
+
+  override def modules(dd: DerivedModule): List[Module] = deconstructHeader(dd) match {
+    case Some((dom,cod,wit)) =>
+      val declarations = dd.getDeclarations // dd.getConstants
+      // ???
+      val union = Theory(???,???,???)
+      val constant1 = Constant(union.toTerm,???,Nil,???,???,None)
+      union add constant1
+      val view = View(???,???,???,???,false)
+      List(union,view)
+    case _ => Nil
+  }
 }
