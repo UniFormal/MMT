@@ -1,13 +1,19 @@
 package info.kwarc.mmt.sql.codegen
 
-import info.kwarc.mmt.api.MPath
-import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.frontend.actions.{Action, ActionCompanion, ActionState}
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.sql.{Column, SQLBridge, SchemaLang, Table}
-
-import scala.collection.mutable
+import info.kwarc.mmt.sql.{SQLBridge, SchemaLang}
 
 class CodeGenerator extends Extension {
+  override def start(args: List[String]): Unit = {
+    controller.extman.addExtension(MBGenActionCompanion)
+  }
+
+}
+
+case class MBGenAction(args: List[String]) extends Action {
+  override def toParseString: String = "mbgen "+args.mkString(" ")
 
   private def isInputTheory(t: Theory, schemaGroup: Option[String]): Boolean = {
     val schemaLangIsMetaTheory = t.meta.contains(SchemaLang._path)
@@ -17,7 +23,7 @@ class CodeGenerator extends Extension {
     schemaLangIsMetaTheory && isInSchemaGroup
   }
 
-  override def start(args: List[String]): Unit = {
+  def apply() {
     val outputDir = args(0)
     val archiveId = args(1)
     val schemaGroup = if (args.length > 2) Some(args(2)) else None
@@ -44,5 +50,10 @@ class CodeGenerator extends Extension {
 
 
   }
+}
+object MBGenActionCompanion extends ActionCompanion("run mbgen", "mbgen") {
 
+  import Action._
+
+  def parserActual(implicit state: ActionState) = str.* ^^ { l => MBGenAction(l) }
 }
