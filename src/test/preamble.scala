@@ -117,6 +117,8 @@ object MagicTest {
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael
+      home / "Versioned" / "Archives", // Katja
+
       //File("C:/mmt2/content/Mathhub"), //Max
       File("C:") / "/mmt2" / "/content" / "/MathHub", // Max
       File("C:") / "other" / "oaff",

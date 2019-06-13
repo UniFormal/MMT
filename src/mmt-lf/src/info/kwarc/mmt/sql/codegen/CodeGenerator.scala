@@ -1,13 +1,13 @@
 package info.kwarc.mmt.sql.codegen
 
 import info.kwarc.mmt.api.MPath
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.sql.{Column, SQLBridge, SchemaLang, Table}
 
 import scala.collection.mutable
 
-object CodeGenerator {
+class CodeGenerator extends Extension {
 
   private def isInputTheory(t: Theory, schemaGroup: Option[String]): Boolean = {
     val schemaLangIsMetaTheory = t.meta.contains(SchemaLang._path)
@@ -17,7 +17,7 @@ object CodeGenerator {
     schemaLangIsMetaTheory && isInSchemaGroup
   }
 
-  def main(args: Array[String]): Unit = {
+  override def start(args: List[String]): Unit = {
     val outputDir = args(0)
     val archiveId = args(1)
     val schemaGroup = if (args.length > 2) Some(args(2)) else None
@@ -31,7 +31,6 @@ object CodeGenerator {
     val jdbcInfo = JDBCInfo("jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
     val prefix = "MBGEN"
 
-    val controller = Controller.make(true, true, List())
     // remove later
     controller.handleLine(s"build $archiveId mmt-omdoc")
 
@@ -42,6 +41,7 @@ object CodeGenerator {
 
     val tables = new Tables(prefix, dirPaths, p => SQLBridge.test2(p, controller), jdbcInfo, paths)
     tables.databaseCode.writeAll(true)
+
 
   }
 
