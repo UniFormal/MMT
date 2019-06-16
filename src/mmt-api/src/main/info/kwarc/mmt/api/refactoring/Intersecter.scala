@@ -1,39 +1,44 @@
 package info.kwarc.mmt.api.refactoring
 
-import info.kwarc.mmt.api.{ComplexStep, LocalName}
+import info.kwarc.mmt.api.{ComplexStep, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.Term
-import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
+import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, IdentityTranslator, Structure}
 
 import scala.util.{Success, Try}
 
 class Intersecter extends Extension {
 
-  def apply(view : View) : (Theory, Theory, Theory) = {
+  def apply(view : View) : (Theory, Theory, Theory, Theory) = {
     apply(controller.getTheory(view.from.toMPath), controller.getTheory(view.to.toMPath), view)
   }
 
-  def apply(th1 : Theory, th2 : Theory, view : View) : (Theory, Theory, Theory) = {
+  def apply(th1 : Theory, th2 : Theory, view : View) : (Theory, Theory, Theory, Theory) = {
     val th1p = Theory.empty(th1.parent, LocalName(th1.name.toString+"Mod"), th1.meta) // T1'
     val th2p = Theory.empty(th2.parent, LocalName(th2.name.toString+"Mod"), th2.meta) // T2'
-    val sec = Theory.empty(th1.parent, LocalName(th1.name.toString+"CUT"+th2.name.toString), th1.meta) // intersection between T1 and T2
+    val sec1 = Theory.empty(th1.parent, LocalName(th1.name.toString+"CUT"+th2.name.toString), th1.meta) // intersection between T1 and T2
+    val sec2 = Theory.empty(th1.parent, LocalName(th2.name.toString+"CUT"+th1.name.toString), th2.meta) // intersection between T2 and T1
 
     val renaming = ViewSplitter(view)(controller)
 
-    val constSec = renaming.map(_._1)
+    val constSec1 = renaming.map(_._1)
+    val constSec2 = renaming.map(_._2)
 
     val constRem1 = th1.getConstants.filter(!renaming.map(_._1).contains(_)).map(_.asInstanceOf[FinalConstant])
-    val structRem1 = th1.getDeclarations.flatMap(_ match{case s : Structure => Some(s)})
-
+    val structRem1 = th1.getDeclarations.flatMap(_ match{case s : Structure => Some(s) case _ => None})
     val constRem2 = th2.getConstants.filter(!renaming.map(_._2).contains(_)).map(_.asInstanceOf[FinalConstant])
-    val structRem2 = th2.getIncludes ++ th2.getNamedStructures
+    val structRem2 = th2.getDeclarations.flatMap(_ match{case s : Structure => Some(s) case _ => None})
 
-    Moduleadder(sec, constSec)
+    Moduleadder(sec1, constSec1)
+    Moduleadder(sec2, constSec2)
+    structRem1.foreach{moveStructure(_, th1p)}
     Moduleadder(th1p, constRem1)
+    structRem2.foreach{moveStructure(_, th2p)}
     Moduleadder(th2p, constRem2)
 
-    (sec, th1p, th2p)
+    (sec1, sec2, th1p, th2p)
+
   }
 }
 
@@ -109,11 +114,17 @@ object ViewSplitter {
   }
 }
 
-object StructureMover {
-  def apply(struct : Structure, src : Theory, dest : Theory) : Structure = {
+object moveStructure {
+  def apply(struct : Structure, dest : Theory) : Structure = {
+    val structMod = repatriateStructure(struct, dest)
+    dest.add(structMod)
+    structMod
+  }
+
+  def repatriateStructure(struct : Structure, dest : Theory) : Structure = {
     val structMod = Structure(dest.toTerm, struct.name, struct.from, struct.isImplicit)
     for (decl <- struct.getDeclarations) {
-      structMod.add(decl)//TODO copy
+      structMod.add(decl.translate(dest.toTerm, LocalName.empty, IdentityTranslator, dest.parameters))
     }
     structMod
   }

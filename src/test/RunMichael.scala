@@ -64,21 +64,9 @@ object RunMichael extends MagicTest {
   }
 
   def intersect: Unit = {
-    /*val vf = new ViewFinder
-    controller.extman.addExtension(vf,List(
-      "MitM/smglom"
-      //,"HOLLight/basic"
-      // ,"PVS/Prelude"
-      // ,"PVS/NASA"
-    ))*/
     val int = new Intersecter
     controller.extman.addExtension(int, Nil)
-    /*while(!vf.isInitialized) {
-      Thread.sleep(500)
-    }*/
 
-    val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
-    val to = "MitM/smglom"
     val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?homo",NamespaceMap.empty)).asInstanceOf[View]
     println(int(view))
   }
