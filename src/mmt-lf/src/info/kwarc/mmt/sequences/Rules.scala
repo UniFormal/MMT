@@ -222,8 +222,8 @@ object RepTypeCheck extends SequenceTypeCheck(rep.path)
  */
 class SequenceEqualityCheck(op: GlobalName) extends ExtensionalityRule(Nil, op) {
   val introForm = new {def unapply(tm: Term) = tm match {
-    case Sequences.ellipsis(x) => Some(x)
-    case Sequences.rep(x) => Some(x)
+    case Sequences.ellipsis(x, _, _) => Some(x)
+    case Sequences.rep(x, _) => Some(x)
     case Sequences.flatseq(x) => Some(x)
     case _ => None 
   }}

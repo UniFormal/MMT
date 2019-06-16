@@ -47,7 +47,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     if (up.errorLevel < errorLevel) up else this
 }
 
-@deprecated("needs review", "")
+@MMT_TODO("needs review")
 //TODO this is only needed if called on the shell; check if any user actually calls it (presumably at most stex building, possibly in mathhub)
 case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
   def toString(dim: String) = dim + "&"
@@ -365,7 +365,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   //TODO why is this not protected?
   def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
 
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   protected def getTestOutFile(a: Archive, inPath: FilePath) =
     (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
@@ -478,20 +478,36 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /** auxiliary method of runBuildTaskIfNeeded: implements the semantics of Update to determine whether a task has to be built */
   // TODO specify the semantics of Update
-  private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean = {
-    val errorFile = bt.asDependency.getErrorFile(controller)
-    val errs = hadErrors(errorFile, level)
-    val mod = modified(bt.inFile, errorFile)
-    level <= Level.Force || mod || errs ||
-      deps.exists {
-        case bd: BuildDependency =>
-          val errFile = bd.getErrorFile(controller)
-          modified(errFile, errorFile)
-        case PhysicalDependency(fFile) => modified(fFile, errorFile)
-        case _ => false // for now
-      } || bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
+  private def rebuildNeeded(deps: Set[Dependency], bt: BuildTask, level: Level): Boolean =
+  {
+    val errorFile : File = bt.asDependency.getErrorFile(controller)
+
+    lazy val forced  : Boolean = level <= Level.Force
+    lazy val outex   : Boolean = {
+      // usually, we build outfiles, that don't exist.
+      // However, for .deps files, we don't need to.
+      val ext = bt.outFile.getExtension
+      !bt.outFile.exists() && (if (ext.isDefined) { ext.get != "deps" } else true)
+    }
+    lazy val modded  : Boolean = modified(bt.inFile, errorFile)
+    lazy val errors  : Boolean = hadErrors(errorFile, level)
+
+    def singleDepModded(dep : Dependency) : Boolean = dep match {
+      case bd: BuildDependency =>
+        val errFile = bd.getErrorFile(controller)
+        modified(errFile, errorFile)
+
+      case PhysicalDependency(fFile) => modified(fFile, errorFile)
+      case _ => false // for now
+    }
+
+    lazy val depsModded : Boolean = deps.exists(singleDepModded)
+
+    lazy val isDir : Boolean = bt.isDir && bt.children.getOrElse(Nil).exists { bf =>
       modified(bf.asDependency.getErrorFile(controller), errorFile)
     }
+
+    forced || outex || modded || errors || depsModded || isDir
   }
 
   /** auxiliary method of runBuildTaskIfNeeded */
@@ -637,11 +653,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
 
   // TODO called by AllTeX target
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
     val inFile = a / inDim / in
     if (inFile.isDirectory)
@@ -651,7 +667,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     else Set.empty
   }
 
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
@@ -664,7 +680,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   // TODO called by AllTeX target
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   protected def getDepsMap(args: Set[Dependency]): Map[Dependency, Set[Dependency]] = {
     var visited: Set[Dependency] = Set.empty
     var unknown = args
@@ -683,7 +699,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     deps
   }
 
-  @deprecated("needs review", "")
+  @MMT_TODO("needs review")
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))

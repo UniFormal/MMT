@@ -49,7 +49,9 @@ object XMLObjectParser extends ObjectParser {
 }
 
 /**
- * similar to [[XMLReader]] but streams parsed elements into the continuation function
+ * The parser for OMDoc XML.
+ * 
+ * This class is in charge of streaming XML. To do so, it wraps around [[XMLReader]], which does the actual parsing of XML elements into MMT data structures.
  */
 class XMLStreamer extends Parser(XMLObjectParser) {streamer =>
    val format = "omdoc"

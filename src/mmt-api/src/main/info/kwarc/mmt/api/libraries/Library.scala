@@ -43,16 +43,21 @@ class ModuleHashMap {
   }
 }
 
-/** A Library represents an MMT theory graph.
+/** A Library is the in-memory representation of an MMT diagram, including the implicit-diagram, and all root documents.
   *
-  * The Library implements the central structural algorithms, in particular lookup.
-  * All access of the main data structures is through the library's get/add/update/delete methods.
-  *
-  * Invariance: This class guarantees structural well-formedness in the sense that
+  * It implements the lookup and change of MMT URIs via get/add/update/delete/reorder methods. 
+  * 
+  * Invariant: This class guarantees structural well-formedness in the sense that
   * libraries conform to the MMT grammar and all declarations have canonical URIs.
   * The well-formedness of the objects in the declarations is not guaranteed.
   *
+  * The [[Controller]] own a library and uses it to load elements into memory dynamically.
+  * Therefore, access should always be through the corresponding methods of the controller.
+  * Elements are unloaded dynamically if MMT runs out of memory.
+  * 
+  * @param extman the controller's extension manager
   * @param report parameter for logging.
+  * @param previous a second library that stores the previous version whenever an element is changed
   */
 class Library(extman: ExtensionManager, val report: Report, previous: Option[Library]) extends Lookup with Logger {self =>
   val logPrefix = "library"
@@ -401,7 +406,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            getO(mpath) match {
              case Some(included: Theory) =>
                // continue lookup in (possibly implicitly) included theory
-               val imp = implicitGraph(OMMOD(mpath), t.toTerm) getOrElse {
+               val imp = implicitGraph(OMMOD(mpath), t match {
+                 case _:Theory => t.toTerm
+                 case d:DerivedDeclaration => OMMOD(d.modulePath)
+               }) getOrElse {
                  error("no implicit morphism from " + mpath + " to " + t.path)
                }
                if (ln.isEmpty) {

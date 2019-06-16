@@ -254,20 +254,19 @@ class ErrorManager extends Extension with Logger {self =>
     (rest.map(_._2), date.head._2)
   }
 
-  def serveJson(path: List[String], query: String): JSON = {
-    val wq = WebQuery.parse(query)
-    val ps = wq.pairs map (_._1) map (_.filter(_.isDigit)) filter (_.nonEmpty) map (_.toInt)
+  def serveJson(path: List[String], query: WebQuery): JSON = {
+    val ps = query.pairs map (_._1) map (_.filter(_.isDigit)) filter (_.nonEmpty) map (_.toInt)
     val mx = if (ps.isEmpty) -1 else ps.max
     var hideQueries: List[List[String]] = Nil
     for (i <- 0 to mx) {
-      var as = Table.columns map (c => wq.string(c + i))
+      var as = Table.columns map (c => query.string(c + i))
       hideQueries ::= as
     }
-    val hide = wq.boolean("hide")
-    val args = Table.columns.filter(_ != "fileDate" || hide).map(wq.string(_))
-    val limit = wq.int("limit", defaultLimit)
-    val compare = wq.string("compare")
-    val dateStr = wq.string("fileDate")
+    val hide = query.boolean("hide")
+    val args = Table.columns.filter(_ != "fileDate" || hide).map(query.string(_))
+    val limit = query.int("limit", defaultLimit)
+    val compare = query.string("compare")
+    val dateStr = query.string("fileDate")
     val result: Iterator[BuildError] = iterator.filter { be2 =>
       val be3 = be2.toStrList map (_.replace('+', ' ')) // '+' is turned to ' ' in query
       val (be, date) = toStrListAndDate(be3)
@@ -321,7 +320,7 @@ class ErrorManager extends Extension with Logger {self =>
         val source = scala.io.Source.fromFile(request.query)
         val lines = try source.mkString finally source.close()
         ServerResponse.TextResponse(lines)
-      case _ => ServerResponse.JsonResponse(serveJson(request.path, request.query))
+      case _ => ServerResponse.JsonResponse(serveJson(request.path, request.parsedQuery))
     }
   }
 }

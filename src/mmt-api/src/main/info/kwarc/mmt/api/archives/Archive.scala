@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend._
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.utils._
@@ -136,12 +137,22 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     else None
   }
 
+  /** Returns (#Theories,#Constants)**/
+  def stats(implicit controller: Controller): SimpleStatistics = {
+    // val arch = controller.backend.getArchive(a).get
+    val ths = allContent.flatMap{mp =>
+      Try(controller.get(mp).asInstanceOf[Theory]).toOption
+    }
+    val const = ths.flatMap(_.getConstants)
+    SimpleStatistics(ths.length,const.length)
+  }
+
   /**
     * Kinda hacky; can be used to get all Modules residing in this archive somewhat quickly
     * TODO do properly
     * @return
     */
-  @deprecated("inefficient and brittle; use the relational dimension for this", "")
+  @MMT_TODO("inefficient and brittle; use the relational dimension for this")
   lazy val allContent : List[MPath] = {
     log("Reading Content " + id)
     var ret : List[MPath] = Nil
@@ -161,15 +172,19 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         val thexp = "name=\"([^\"]+)\" base=\"([^\"]+)\"".r
         def getLine = {
           val reader = File.Reader(inFile)
-          val str = reader.readLine()
+          val str = Try(reader.readLine()).getOrElse("")
           reader.close()
           if (str == null) "" else str
         }
         // def mods(s : String) : Option[String] = Some(StringMatcher("<theory",">").findFirstIn(s).getOrElse(StringMatcher("<view",">").findFirstIn(s).getOrElse(return None)))
         thexp.findAllIn(getLine).toList foreach {
           case thexp(name, base) =>
-            //println(base + "?" + name)
-            ret ::= Path.parseD(base, NamespaceMap.empty) ? name
+            // Dirty fix for https://github.com/UniFormal/MMT/issues/439
+            // until allContent is completely replaced.
+            Path.parse(base, NamespaceMap.empty) match {
+              case dPath: DPath => ret ::= dPath ? name
+              case _ => /* do nothing */
+            }
         }
       }
     }
@@ -276,4 +291,14 @@ object Archive {
 
   /** returns a trivial TraverseMode */
   def traverseIf(e: String): TraverseMode = TraverseMode(extensionIs(e), _ => true, parallel = false)
+}
+
+/** very simple statistics implementation */
+case class SimpleStatistics(theoryCount: Int, constantCount: Int) {
+  def + (other: SimpleStatistics): SimpleStatistics = {
+    SimpleStatistics(theoryCount + other.theoryCount, constantCount + other.constantCount)
+  }
+}
+object SimpleStatistics {
+  val empty: SimpleStatistics = SimpleStatistics(0, 0)
 }

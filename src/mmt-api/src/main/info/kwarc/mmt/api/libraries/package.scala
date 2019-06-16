@@ -3,12 +3,10 @@ package info.kwarc.mmt.api
 import libraries._
 
 /**
-  * [[Library]] maintains the theory diagrams and responds to get, add, delete commands.
+  * [[Library]] maintains the structural elements that have been loaded into memory.
+  * That includes the theory diagram and all documents.
   *
   * [[ImplicitGraph]] maintains the commutative sub-diagram of implicit morphisms.
-  *
-  * To enable dynamic loading, read access should go through the [[frontend.Controller]].
-  *
   */
 package object libraries {
 }

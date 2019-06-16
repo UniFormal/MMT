@@ -1,14 +1,14 @@
 package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api.Path
-import info.kwarc.mmt.api.archives.Archive
+import info.kwarc.mmt.api.archives.{Archive, BuildTarget}
 import info.kwarc.mmt.api.ontology._
-import java.nio.file.{FileSystems, Files}
+import java.io.File
 
 import scala.xml._
 import scala.collection.mutable
 
-/** Extension for reading built optimizations from info.kwarc.mmt.got.GraphOptimizationTool and providing annotations
+/** Extension for reading built optimizations from [[GraphOptimizationTool]] and providing annotations
   */
 class MMTOptimizationAnnotationReader extends AnnotationProvider{
 
@@ -16,7 +16,7 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
 
   /** extracts Path attribute from xml node
     *
-    * @param node xml node
+    * @param node
     * @return
     */
   private  def nodeToPath(node: Node) : Path = {
@@ -39,10 +39,10 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
     * @return annotation
     */
   private def replaceTooltip(node : Node): Annotation ={
-      simpleAnnotation("replace inclusion " + nodeToPath(node) + " with:\n" +
+      simpleAnnotation("replace inclusion " + nodeToPath(node) + " with:<br>" +
       (node\"replacement").map({
         r => "&emsp;"+ nodeToPath(r)
-      }).mkString("\n"), 'o')
+      }).mkString("<br>"), 'o')
   }
 
   /** converts xml node <removeInclusion.../> to tooltip
@@ -61,34 +61,28 @@ class MMTOptimizationAnnotationReader extends AnnotationProvider{
     * @param a archive whose optimizations should be read
     * */
   private def readArchive(a : Archive) : Unit = {
-    val fs = FileSystems.getDefault
-    val optPath = fs.getPath(a.root + "/export/got/")
-    if (!Files.exists(optPath) || !Files.isDirectory(optPath)) {
+    val optFolder = new File(a.root + "/export/got/")
+    if (!optFolder.exists || !optFolder.isDirectory) {
       return
     }
-    Files.walk(optPath).forEach(
+    val optFiles = optFolder.listFiles.filter(_.getName.endsWith("xml"))
+    optFiles.foreach(
       f => {
-        if (f.toString.endsWith(".xml") && Files.exists(f) && Files.isRegularFile(f)) {
-          val xml = Utility.trim(XML.loadFile(f.toString))
-          (xml \ "theory" \ "replaceInclusion").foreach(node => {
-            try {
-              annotationMap.put(nodeToPath(node), replaceTooltip(node) :: Nil)
-            }
-            catch {
-              case _: java.util.NoSuchElementException => Console.err.println("error reading file: " + f)
-              case e => throw e
-            }
-          })
-          (xml \ "theory" \ "removeInclusion").foreach(node => {
-            try {
-              annotationMap.put(nodeToPath(node), removeTooltip(node) :: Nil)
-            }
-            catch {
-              case _: java.util.NoSuchElementException => Console.err.println("error reading file: " + f)
-              case e => throw e
-            }
-          })
-        }
+        val xml = Utility.trim(XML.loadFile(f.getPath))
+        (xml\"theory"\"replaceInclusion").foreach(node => {
+          try {annotationMap.put(nodeToPath(node), replaceTooltip(node)::Nil)}
+          catch {
+            case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e: Throwable => throw e
+          }
+        })
+        (xml\"theory"\"removeInclusion").foreach(node => {
+          try {annotationMap.put(nodeToPath(node), removeTooltip(node)::Nil)}
+          catch {
+            case _ : java.util.NoSuchElementException => Console.err.println("error reading file: " + f.getName)
+            case e : Throwable => throw e
+          }
+        })
       }
     )
   }

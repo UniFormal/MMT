@@ -173,19 +173,4 @@ object WebQuery {
   def encode(pairs : List[(String, String)]) : String = {
     WebQuery(pairs).asString
   }
-
-  /** same as WebQuery.apply, for backwards compatibility */
-  @deprecated("you should probably use [[ServerRequest.parsedQuery]], if you still need to parse manually use [[WebQuery.apply]]. Beware that the new method takes care of URLDecoding", "")
-  def parse(query: String) : WebQuery = {
-    val kvs = utils.stringToList(query, "&")
-    val pairs = kvs map { s =>
-      val i = s.indexOf("=")
-
-      val (k, v) = if (i == -1 || i == s.length - 1) (s, "")
-      else (s.substring(0, i), s.substring(i + 1))
-
-      (k, v)
-    }
-    WebQuery(pairs)
-  }
 }

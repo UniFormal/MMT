@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf._
 import InternalDeclarationUtil._
 import InternalDeclaration._
 
-object StructuralFeatureUtil {
+object StructuralFeatureUtils {
   val theory: MPath = LF._base ? "DHOL"
   object Ded {
     val path = LF._base ? "Ded" ? "DED"
@@ -70,7 +70,8 @@ object StructuralFeatureUtil {
           case constr: Constructor => new Constructor(constr.path, constr.args, constr.ret, repDf, constr.notC, constr.ctx)
           case out: OutgoingTermLevel => new OutgoingTermLevel(out.path, out.args, out.ret, repDf, out.notC, out.ctx)
           case d : TypeLevel => d.copy(df = repDf)
-          case d : StatementLevel => d.copy(df = repDf) 
+          case d : StatementLevel => d.copy(df = repDf)
+          case _ => throw ImplementationError("invalid InternalDeclaration")
          }
       if (decl.isTypeLevel) types +:= decl.path
       decl
@@ -83,7 +84,7 @@ object StructuralFeatureUtil {
   }
 }
 
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 object TermConstructingFeatureUtil {
     def correspondingDecl(dd: DerivedDeclaration, d: LocalName): Option[Constant] = {
       dd.getO(d) map {

@@ -1,12 +1,13 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
 import info.kwarc.mmt.api.{DPath, LocalName, Path, archives}
-import info.kwarc.mmt.api.archives.ImporterAnnotator
-import info.kwarc.mmt.api.archives.lmh.LMHHubArchiveEntry
+import info.kwarc.mmt.api.archives.{ImporterAnnotator, LMHHubArchiveEntry}
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.mathhub.library.{IDocument, IDocumentParentRef, IDocumentRef, ISourceReference}
+
+import scala.util.Try
 
 trait DocumentBuilder { this: Builder =>
   /** gets a reference to a document */
@@ -22,7 +23,7 @@ trait DocumentBuilder { this: Builder =>
 
   private def makeDocumentRef(path: DPath): Option[IDocumentRef] = {
     // if we are the narrationBase of an archive, that is our parent
-    val parent = mathHub.entries_.find({
+    val parent = mathHub.installedEntries.find({
       case ae: LMHHubArchiveEntry => ae.archive.narrationBase.toString == path.toPath
       case _ => false
     }) match {
@@ -36,7 +37,7 @@ trait DocumentBuilder { this: Builder =>
         parent.map(Some(_))
           .getOrElse(return buildFailure(path.toPath, "getRef(document.parent)")),/* parent */
         path.toPath, /* id */
-        path.name.last.toPath /* name */
+        path.name.toPath /* name */
       )
     )
   }
@@ -93,5 +94,21 @@ trait DocumentBuilder { this: Builder =>
       getStats(ref.id),
       decls
     ))
+  }
+
+  /** builds a pseudo-document containing specific text */
+  protected def buildPseudoDocument(path: DPath, text: String): IDocument = {
+    val ref = makeDocumentRef(path).get
+    val child = pseudoOpaqueElement(ref, path, text)
+
+    IDocument(
+      ref.parent, ref.id, ref.name,
+
+      List(),
+      None,
+
+      getStats(ref.id),
+      List(child)
+    )
   }
 }

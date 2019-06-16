@@ -6,9 +6,13 @@ import libraries._
 import notations._
 
 /**
- * Declaration unifies MMT symbols and MMT assignments.
- *
- * These are the named statements living in [[info.kwarc.mmt.api.modules.Module]]s
+ * Declarations are the children of [[Module]]s.
+ * 
+ * They are mostly [[Constant]]s for the syntax and [[RuleConstant]]s for the semantics (= rule-based implementation).
+ * The MMT data model is extensible via [[DerivedDeclaration]]s.
+ * 
+ * [[Structure]]s (except for includes) are conceptually a derived declaration but are hard-coded as a separate kind of declaration.
+ * Inlcudes are represented as special cases of structures.
  */
 abstract class Declaration extends ContentElement {
    /** to allow for sharper types of fields, every subclass of Declaration defines this to be itself */
@@ -112,7 +116,7 @@ class NestedModule(val home: Term, val name: LocalName, mod: Module) extends Dec
 }
 
 trait HasType {
-  def tpC: AbstractTermContainer
+  def tpC: TermContainer
   def tp = tpC.get
   def tpNode = if (tp.isDefined) <type>{tp.get.toOBJNode}</type> else Nil
   def translateTp(translator: Translator, context : Context) = TermContainer(tp map {t => translator.applyType(context, t)})

@@ -139,7 +139,7 @@ sealed trait IArchiveItem extends IAPIObjectItem {
   val kind: String = "archive"
   val parent: Some[IGroupRef]
 
-  /** the id of the archive $parent.id/$name */
+  /** the id of the archive parent.id/name */
   val id: String
 
   /** the name of this archive */

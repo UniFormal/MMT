@@ -43,10 +43,11 @@ case class NamespaceMap(base: Path, meta: Option[MPath] = None, prefixes: List[(
    /** compactifies a URI into a CURIE */
    def compact(s: String): String = {
       val long = URI(s)
+      if (base.doc.uri <= long) long.toString.substring(base.toString.length)
       prefixes.foreach {
-         case (p,base) => if (base <= long) return p + ":" + long.toString.substring(base.toString.length)
+         case (p,nbase) => if (nbase <= long) return p + ":" + long.toString.substring(nbase.toString.length)
       }
-      return s
+      s
    }
    /** parses, expands CURIE and resolves against base */
    def resolve(u : String) = base.doc.uri resolve expand(utils.URI(u))

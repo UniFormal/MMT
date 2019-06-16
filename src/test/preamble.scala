@@ -21,11 +21,11 @@ import scala.concurrent.{Await, Future}
   * @param gotoshell      : if true, it will drop to the MMT shell afterwards
   * @param logfile        : If defined, will log into file
   */
-abstract class Test(archivepath : String,
-                    logprefixes : List[String] = Nil,
-                    alignmentspath : String = "",
-                    serverport : Option[Int] = None,
-                    logfile : Option[String] = None) extends Logger {
+abstract class Test(val archivepath : String,
+                    val logprefixes : List[String] = Nil,
+                    val alignmentspath : String = "",
+                    val serverport : Option[Int] = None,
+                    val logfile : Option[String] = None) extends Logger {
   val gotoshell: Boolean = true
   val controller = Run.controller
   def logPrefix = "user"
@@ -117,6 +117,10 @@ object MagicTest {
       home / "Projects" / "gl.mathhub.info", // Tom
       home / "Development" / "KWARC" / "content", // Jonas
       home / "content", // Michael
+      home / "Versioned" / "Archives", // Katja
+
+      //File("C:/mmt2/content/Mathhub"), //Max
+      File("C:") / "/mmt2" / "/content" / "/MathHub", // Max
       File("C:") / "other" / "oaff",
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
@@ -132,7 +136,10 @@ object MagicTest {
   lazy val logfile: Option[File] = {
     if((home / "work").exists){
       Some(home / "work" / "mmtlog.html") // Dennis
-    } else {
+    } // else if ((File("C:") / "/mmt2" / "/My stuff").exists) {
+      // Some(File("C:") / "/mmt2" / "/My stuff"/"mmtlog.html") // Max
+    //}
+     else {
       None
     }
   }

@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-#
-# DESCRIPTION: MMT HTTP server
-
-isabelle java info.kwarc.mmt.isabelle.Server "$@"

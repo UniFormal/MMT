@@ -75,7 +75,7 @@ jobs:
       env:
         - "INFO='Check mmt.jar generation and integration tests'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: openjdk11
       language: scala
       scala: "2.12.3"
       script:
@@ -98,7 +98,7 @@ jobs:
       env:
         - "INFO='Check that unit tests run'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: openjdk11
       language: scala
       scala: "2.12.3"
       script:
@@ -119,7 +119,7 @@ jobs:
       env:
         - "INFO='Check lfcatalog.jar generation using `sbt deployLFCatalog`'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: openjdk11
       language: scala
       scala: "2.12.3"
       script:
@@ -139,7 +139,7 @@ jobs:
       env:
         - "INFO='Check that apidoc generation works'"
         - 'SBT_VERSION_CMD="^validate"'
-      jdk: oraclejdk8
+      jdk: openjdk11
       language: scala
       scala: "2.12.3"
       script:

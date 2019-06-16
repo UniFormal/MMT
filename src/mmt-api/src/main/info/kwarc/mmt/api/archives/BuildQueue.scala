@@ -471,11 +471,17 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     addTask(up, qt)
   }
 
+  /**
+    * Checks if there any jobs left on the buildquenue
+    * @return
+    */
+  def isEmpty : Boolean = queued.isEmpty && blocked.isEmpty && currentQueueTask.isEmpty
+
  
   // ******************* web interface
 
   /** a ServerExtension for interacting with the queue through the browser */
-    private def getQueueInfo: JSON = synchronized {
+      private def getQueueInfo: JSON = synchronized {
         val qSize = queued.size
         val iter = queued.iterator.asScala
         val num = 48

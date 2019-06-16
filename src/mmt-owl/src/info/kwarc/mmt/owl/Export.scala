@@ -20,7 +20,7 @@ import uom.OMLiteral._
  import org.semanticweb.owlapi.vocab.OWLFacet
  import uk.ac.manchester.cs.owl.owlapi._
 
- import scala.collection.JavaConversions._
+ import scala.collection.JavaConverters._
  import scala.collection.immutable.List
 
 class Export(manager: OWLOntologyManager, controller: Controller) {
@@ -80,11 +80,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2SUB", "objectIntersectionOf"), args) =>
         val argsList = args.map(classToOWL)
-        dataFactory.getOWLObjectIntersectionOf(argsList.toSet)
+        dataFactory.getOWLObjectIntersectionOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2RL", "objectUnionOf"), args) =>
         val argsList = args.map(classToOWL)
-        dataFactory.getOWLObjectUnionOf(argsList.toSet)
+        dataFactory.getOWLObjectUnionOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2QLRL", "objectComplementOf"), args) =>
         val operand = classToOWL(args(0))
@@ -178,7 +178,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2ELRL", "objectOneOf"), args) =>
         val argsList = args.map(individualToOWL)
-        dataFactory.getOWLObjectOneOf(argsList.toSet)
+        dataFactory.getOWLObjectOneOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2ELRL", "objectHasValue"), args) =>
         val property = propertyToOWL(args(0))
@@ -237,11 +237,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2SUB", "dataIntersectionOf"), args) =>
         val argsList = args.map(dataRangeToOWL)
-        dataFactory.getOWLDataIntersectionOf(argsList.toSet)
+        dataFactory.getOWLDataIntersectionOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2", "dataUnionOf"), args) =>
         val argsList = args.map(dataRangeToOWL)
-        dataFactory.getOWLDataUnionOf(argsList.toSet)
+        dataFactory.getOWLDataUnionOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2", "dataComplementOf"), args) =>
         val dataRange = dataRangeToOWL(args(0))
@@ -249,7 +249,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2EL", "dataOneOf"), args) =>
         val argsList = args.map(literalToOWL)
-        dataFactory.getOWLDataOneOf(argsList.toSet)
+        dataFactory.getOWLDataOneOf(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "dataTypeRestriction"), args) =>
         val dataType = dataRangeToOWL(args(0)) match {
@@ -258,7 +258,7 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
         }
         val argsList = args.tail.map(facetToOWL)
         // argsList.toSet returns one-element set even when argsList has two different elements. Bug?
-        dataFactory.getOWLDatatypeRestriction(dataType, argsList.toSet)
+        dataFactory.getOWLDatatypeRestriction(dataType, argsList.toSet.asJava)
 
       case _ => throw Exception("none of the data ranges")
     }
@@ -361,11 +361,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2SUB", "equivalentClasses"), args) =>
         val argsList = args.map(classToOWL)
-        dataFactory.getOWLEquivalentClassesAxiom(argsList.toSet)
+        dataFactory.getOWLEquivalentClassesAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "disjointClasses"), args) =>
         val argsList = args.map(classToOWL)
-        dataFactory.getOWLDisjointClassesAxiom(argsList.toSet)
+        dataFactory.getOWLDisjointClassesAxiom(argsList.toSet.asJava)
       // ObjectPropertyAxiom
       case OMA(OWL2OMS("OWL2SUB", "subObjectPropertyOf"), args) =>
         val subProperty = propertyToOWL(args(0))
@@ -374,11 +374,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2SUB", "equivalentObjectProperties"), args) =>
         val argsList = args.map(propertyToOWL)
-        dataFactory.getOWLEquivalentObjectPropertiesAxiom(argsList.toSet)
+        dataFactory.getOWLEquivalentObjectPropertiesAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2QLRL", "disjointObjectProperties"), args) =>
         val argsList = args.map(propertyToOWL)
-        dataFactory.getOWLDisjointObjectPropertiesAxiom(argsList.toSet)
+        dataFactory.getOWLDisjointObjectPropertiesAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2QLRL", "inverseObjectProperties"), args) =>
         val forwardProperty = propertyToOWL(args(0))
@@ -430,11 +430,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2SUB", "equivalentDataProperties"), args) =>
         val argsList = args.map(dataPropertyToOWL)
-        dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet)
+        dataFactory.getOWLEquivalentDataPropertiesAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2QLRL", "disjointDataProperties"), args) =>
         val argsList = args.map(dataPropertyToOWL)
-        dataFactory.getOWLDisjointDataPropertiesAxiom(argsList.toSet)
+        dataFactory.getOWLDisjointDataPropertiesAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "dataPropertyDomain"), args) =>
         val property = dataPropertyToOWL(args(0))
@@ -466,11 +466,11 @@ class Export(manager: OWLOntologyManager, controller: Controller) {
 
       case OMA(OWL2OMS("OWL2ELRL", "sameIndividual"), args) =>
         val argsList = args.map(individualToOWL)
-        dataFactory.getOWLSameIndividualAxiom(argsList.toSet)
+        dataFactory.getOWLSameIndividualAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "differentIndividuals"), args) =>
         val argsList = args.map(individualToOWL)
-        dataFactory.getOWLDifferentIndividualsAxiom(argsList.toSet)
+        dataFactory.getOWLDifferentIndividualsAxiom(argsList.toSet.asJava)
 
       case OMA(OWL2OMS("OWL2SUB", "objectPropertyAssertion"), args) =>
         val property = propertyToOWL(args(0))

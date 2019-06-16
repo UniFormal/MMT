@@ -316,6 +316,7 @@ abstract class LMFDBStore extends Storage with LMFDBBackend {
            case _ => throw NotApplicable("schema theory not found")
         }
         LMFDBStore.getOrAddVirtualTheory(controller, sch)
+       case _ => throw ImplementationError("invalid dropComp path")
     }
   }
 
@@ -424,7 +425,7 @@ class LMFDBSystem extends VRESystem("lmfdb",MitMSystems.lmfdbsym) with LMFDBBack
   private def constantFromJson(dbT : DBTheory, j : JSONObject)(implicit controller: Controller) : Option[GlobalName] = {
     val (omls,path) = dbT.parents.headOption.map { case (db,schema) =>
       val key = getKey(schema)
-      val cpath = db.dbPath ? j(key).map{case JSONString(st) => st}.getOrElse(???)
+      val cpath = db.dbPath ? j(key).collect{case JSONString(st) => st}.getOrElse(???)
       if (dbT.parents.head._2.isDeclared(cpath.name)) return Some(cpath)
 
       log("materializing " + cpath)

@@ -1,0 +1,86 @@
+%A compelling vision for upcoming decades in mathematical content creation is to build a system that automatically verifies mathematical documents as they are written.
+%State of the art systems tend to focus on either informal, present-oriented document creation or content-oriented formalization, with {\LaTeX} resp. proof assistants being the leading systems.
+
+A major open problem in mathematical document authoring is to elegantly combine formal and informal mathematical knowledge.
+Multiple proof assistants and controlled natural language systems have developed custom formats for that purpose, e.g., \cite{isabelle_documentoriented,mizar,plato,naproche}.
+Other languages $L$ allow for integrating \latex into $L$-source files in a literate programming style (e.g., lhs2tex\footnote{\url{https://www.andres-loeh.de/lhs2tex/}} for Haskell) or for integrating $L$-source chunks into \latex files (e.g., SageTeX\footnote{\url{https://github.com/sagemath/sagetex}} for SageMath).
+The design of \mmttex is close to the latter, i.e., to combine \mmt and \latex sources.
+
+%Mizar's document format \cite{mizar} has always been designed to closely resemble common narrative mathematical language.
+%Recent work for Isabelle opens up the Isabelle kernel in order to permit better integration with other applications, in particular document-oriented editors\cite{isabelle_documentoriented}.
+%%\cite{largeformalwikis} develops a general Wiki infrastructure that can use Mizar and Coq as verification backends.
+%In the Plato system \cite{plato}, TeXMacs is used as a document-oriented frontend whose documents are parsed and verified by a proof assistant.
+
+%Also, several proof assistants can export a {\LaTeX} version of their native input language (e.g., Isabelle and Mizar).
+%Similarly, most can export documents and libraries as HTML, which provides added-value features like navigation and dynamic display.
+%The exported documents do not fully utilize the narrative flexibility of {\LaTeX} or HTML and are not meant for further editing.
+%Controlled natural language systems such as Naproche \cite{CramerFKKSV09}, MathLang \cite{KMW:MAEDLoM}, and MathNat \cite{HumayounMNMTCNL} support much more flexible informal language than proof assistants, and some permit \latex fragments as a part of their input language.
+
+%A major bottleneck has been that both proof assistants and controlled natural language systems are usually based on a fixed foundation (a logic in which all formalizations are carried out) and a fixed implementation that verifies documents written in a native input language.
+%Therefore, the formalization of a mathematical document $D$ in a proof assistant usually requires the -- expensive -- formalization of the background theory that connects $D$ to the foundation.
+%Moreover, the fixed implementation is limited to its input language, which in turn cannot be fully understood by any other system.
+
+The goal of \mmttex is very similar to \sTeX \cite{stex}, where authors add content markup that allows converting a \latex to an OMDoc document.
+%Via \latex ML \cite{latexml}, this permits generating \omdoc from the same source code that produces PDF documents.
+%\omdoc itself \cite{omdoc} is an XML format that integrates both content and narration markup.
+%Both \omdoc and sTeX do not define a reference semantics that would permit verifying the documents.
+%However, they are also sufficiently generic to eventually allow interfacing with verification systems in principle.
+\mmttex differs in several ways: authors write \emph{fully formal} content in \mmt syntax \cite{RK:mmt:10} directly in the \latex source, either in addition to or instead of informal text; and \mmt is used to type-check the formal parts during \latex compilation workflow.
+This enables several advanced features:
+Formal content in \latex sources can use or be used by \mmt content written elsewhere; in particular, background knowledge formalized elsewhere can be used inside the \latex document.
+And formulas written in \mmt syntax are not only type-checked but result in high-quality pdf by, e.g., displaying inferred types as tooltips or adding hyperlinks to operator occurrences.
+
+%{\mmt} \cite{RK:mmt:10} has been developed as a foundation-independent document format coupled with an application-independent implementation.
+%Foundation-independence means that {\mmt} makes no assumptions about the underlying logic and instead represents this logic explicitly as an {\mmt} theory itself.
+%This provides the flexibility to adapt the language to any formal system used to describe a mathematical domain.
+%Application-independence means that the {\mmt} system focuses on building a simple and transparent API along with reusable services.
+%This permits integrating {\mmt} easily into concrete applications and workflows.
+
+%In this paper, we leverage and evaluate {\mmt} by integrating its content-oriented services with the \latex document format.
+%We extend \mmt with a concrete input language for mathematical formulas and use that to supplement \latex's own formula language.
+%\mmt processes these formulas and transforms them into plain \latex.
+%This has three advantages:
+%\begin{inparaenum}[\it i\rm)]
+%\item formulas become easy to write and read (e.g., \lstinline|1+2 in Z|) while still providing the benefits of content markup (like in \lstinline|\isin\plus{x}{y}\Z|),
+%\item \mmt can apply type reconstruction services to infer implicit types and arguments and to signal errors for ill-typed formulas,
+%\item \mmt can produce enriched formulas that include hyper-references, tooltips, and interactive display.
+%\end{inparaenum}
+%
+%We overcome two major challenges to integrate this processing with existing \latex workflows.
+%Firstly, on the technical side, the formulas have to be recognized in the {\latex} document, processed by {\mmt}, and replaced with generated {\latex} fragments that are inserted into the document.
+%Secondly, on the theoretical side, we have to account for the fact that formulas are usually not self-contained and depend on a context defined both by the containing document and other documents, e.g., cited \latex documents or formalizations of background theories in proof assistants.
+%Therefore, we have to make these dependencies explicit in the \latex source and make \mmt aware of them.
+
+%We introduce the input language for \mmt in Sect.~\ref{sec:not-lang} and solve the above theoretical challenge in Sect.~\ref{sec:doc-format}.
+%Then we provide two solutions to the technical challenge by integrating \mmt with the pdflatex and the \latexml \cite{latexml} processors in Sect.~\ref{sec:pdflatex} and~\ref{sec:latexml}, respectively.
+%
+%We exemplify our development using a running example comprising \mmt theories for the logical framework LF \cite{lf}, sorted-first order logic (SFOL) defined in LF, and monoids and monoid actions defined in SFOL.
+%The present paper is already written in \mmt-\latex.
+%Therefore, it contains the running example not only as \latex listings but also as processed \latex, which permits experiencing the added-value functionality directly.
+
+\paragraph{Online Resources}
+All resources are available as a part of the \mmt repository, specifically at \url{https://github.com/UniFormal/MMT/tree/devel/src/latex-mmt} for the current version.
+These resources include the \mmt and \latex side of the implementation, the system documentation, and the sources of this paper, which is itself written with \mmttex.
+
+\paragraph{Acknowledgments}
+Both this paper and the \mmttex implementation were redone from scratch by the author.
+But that work benefited substantially from two unpublished prototypes that were previously developed in collaboration with Deyan Ginev, Mihnea Iancu, and Michael Kohlhase.
+The author was supported by DFG grant RA-18723-1 OAF and EU grant Horizon 2020 ERI 676541 OpenDreamKit.
+
+%While users will be willing to sacrifice some automation support for that, \mmt must still provide substantial automation support.
+%Every formalization of mathematical knowledge is carried out in the most natural and weakest foundation, which is itself defined in the framework, and formalizations can be reused and moved between foundations.
+%All assistance functionality is realized in reusable libraries and services that make no assumptions about the application they are used in.
+%This permits integrating assistant systems with each other and with other systems such as web browsers, IDEs, and domain-specific document processors.
+%The combination of application- and foundation-independence maximizes interoperability and reuse.
+
+%The IMPS system \cite{imps} is based on a variant of higher-order logic with partial functions.
+%Regarding mathematical knowledge, Wiedijk identifies \cite{qedrevisited} HOL Light, Coq, ProofPower, Mizar, and Isabelle/HOL as the most advanced systems using a sample of 100 representative mathematical theorems.
+%In addition, many systems support complex conservative extension principles, such as type definitions in HOL, provably terminating recursive functions in Coq or Isabelle/HOL\ednote{check}, or provably well-defined indirect definitions in Mizar.
+
+%Foundation-independence goes beyond the similar approach of logical frameworks \cite{logicalframeworks} such as Twelf \cite{twelf} based on the dependent type theory $\cn{LF}$ \cite{lf} and \cite{isabelle} based on intuitionistic higher-order logic.
+%{\pn} represents even these as particular foundations, whose semantics is defined within the {\pn} framework using the narrative or computational paradigm.
+%Reuse extends to these definitions as well: In the example on the right, $\cn{LF}^<$, an extension of $\cn{LF}$ with subtyping, is used to define PVS and ZFC set theory.
+
+%Dually, executable papers\footnote{Elsevier Executable Paper Grand Challenge, \url{http://www.executablepapers.com/}} or computable documents\footnote{Wolfram, Computable Document Format, \url{http://www.wolfram.com/cdf/}} supplement narration with computation.
+
+% Combine narrative and type-checking worlds; MMT and LaTeX(ML) need to communicate. Achieve formal content type-checking and verification inside LaTeX.

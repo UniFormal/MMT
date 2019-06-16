@@ -1,5 +1,6 @@
 package info.kwarc.mmt.odk.SCSCP.Protocol
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.odk.OpenMath._
 import info.kwarc.mmt.odk.SCSCP.CD.scscp1
 
@@ -84,6 +85,7 @@ object SCSCPCallArguments {
       // the id of the call
       val call_id = pairs(scscp1(scscp1.callId)) match {
         case Some(OMString(s, _)) => s
+        case _ => throw ImplementationError("invalid call arguments: must contain a string")
       }
 
       // the return method

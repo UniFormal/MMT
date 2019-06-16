@@ -2,6 +2,8 @@ package info.kwarc.mmt.odk.SCSCP.Lowlevel.Readers
 
 import java.io.{InputStream, InputStreamReader}
 
+import info.kwarc.mmt.api.ImplementationError
+
 import scala.collection.mutable
 
 /**
@@ -130,6 +132,7 @@ class BufferedLineReader(stream: InputStream, val encoding: String = "UTF-8") {
       case (Some(CARRIAGE_RETURN_CHAR), Some(NEWLINE_CHAR)) =>
         chars.dequeue()
         chars.dequeue()
+      case _ => throw ImplementationError("line must end with \\n or \\r\\n")
     }
   }
 

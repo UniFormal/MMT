@@ -1,0 +1,178 @@
+\subsection{Overview}
+
+MMTTeX consists of two components:
+\begin{compactitem}
+ \item an \mmt plugin \texttt{latex-mmt} that converts \mmt theories to \latex packages,
+ \item a small \latex package \texttt{mmttex.sty} (about $100$ loc with only standard dependencies), which allows for embedding \mmt content.
+\end{compactitem}
+The two components are tied together in bibtex-style, i.e.,
+\begin{compactenum}
+ \item While running \latex on \texttt{doc.tex}, \texttt{mmttex.sty} produces an additional output file \texttt{doc.tex.mmt}, which is a regular \mmt file.
+ \texttt{doc.tex.mmt} contains all formal content that was embedded in the \texttt{tex} document.
+ \item \texttt{latex-mmt} is run on \texttt{doc.tex.mmt} and produces \texttt{doc.tex.mmt.sty}.
+  This type-checks the embedded formal content and generates macro definitions for rendering it in the following step.
+ \item When running \latex the next time, the package \texttt{doc.tex.mmt.sty} is included at the beginning. Now all embedded formal content is rendered using the macro definitions from the previous step. If the formal content changed, \texttt{doc.tex.mmt} also changes.
+\end{compactenum}
+
+\noindent
+Note that \texttt{latex-mmt} only needs to be re-run if the formal content document changed.
+That is important for sharing documents with colleagues or publishers who want to or can only run plain \latex: by simply supplying \texttt{doc.tex.mmt.sty} along with \texttt{doc.tex}, running plain \latex is sufficient to build \texttt{doc.pdf}.
+
+\subsection{Formal Content in LaTeX Documents}
+
+% Throughout this document, !text! is an abbreviation for \verb|text|
+
+\texttt{mmttex.sty} provides presentation-\emph{irrelevant} and presentation-\emph{relevant} macros for embedding formal content in addition to resp. instead of informal text.
+\medskip
+
+\textbf{Presentation-irrelevant macros} only affect \texttt{doc.tex.mmt} and do not produce anything that is visible in the pdf document.
+These macros can be used to embed a (partial) formalization of the informal text.
+The formalization can occur as a single big chunk, be interspersed with the \latex source akin to parallel markup, or be anything in between.
+Importantly, if split into multiple chunks, one formal chunk may introduce names that are referred to in other formal chunks, and \latex environments are used to build nested scopes for these names.
+
+At the lowest level, this is implemented by a single macro that takes a string and appends it to \texttt{doc.tex.mmt}.
+On top, we provide a suite of syntactic sugar that mimics the structure of the \mmt language.
+
+As a simple example, we will now define the theory of groups informally and embed its parallel \mmt formalization into this paper.
+Of course, the embedded formalization is invisible in the pdf.
+Therefore, we added \lstinline|listings in gray| that show the presentation-irrelevant macros that occur in the \latex sources of this paper and that embed the formalization.
+If this is confusing, readers may want to inspect the source code of this paper at the URL given above.
+
+Our example will refer to the theory !SFOLEQ!, which formalizes sorted first-order logic with equality and is defined in the \texttt{examples} archive of \mmt.\footnote{See \url{https://gl.mathhub.info/MMT/examples/blob/master/source/logic/sfol.mmt}.}
+To refer to it conveniently, we will import its namespace under the abbreviation !ex!.
+
+\begin{mmttheory}{Group}{ex:?SFOLEQ}
+\begin{lstlisting}
+\mmtimport{ex}{http://cds.omdoc.org/examples}
+\begin{mmttheory}{Group}{ex:?SFOLEQ}
+\end{lstlisting}
+
+A group consists of
+\begin{compactitem}
+ \item a set $U$,
+\mmtconstant{U}{sort}{}{}
+\begin{lstlisting}
+\mmtconstant{U}{sort}{}{}
+\end{lstlisting}
+
+ \item an operation $U\to U \to U$, written as infix $*$,
+\mmtconstant{operation}{tm U --> tm U --> tm U}{}{1 * 2 prec 50}
+\begin{lstlisting}
+\mmtconstant{operation}{tm U --> tm U --> tm U}{}{1 * 2 prec 50}
+\end{lstlisting}
+
+ \item an element $e$ of $U$ called the unit
+\mmtconstant{unit}{tm U}{}{e}
+\begin{lstlisting}
+\mmtconstant{unit}{tm U}{}{e}
+\end{lstlisting}
+
+\item an inverse element function $U\to U$, written as postfix $'$ and with higher precedence than $*$.
+\mmtconstant{inv}{tm U --> tm U}{}{1 ' prec 60}
+\begin{lstlisting}
+\mmtconstant{inv}{tm U --> tm U}{}{1 ' prec 60}
+\end{lstlisting}
+\end{compactitem}
+We omit the axioms.
+
+\end{mmttheory}
+\begin{lstlisting}
+\end{mmttheory}
+\end{lstlisting}
+
+Here the environment !mmttheory! wraps around the theory.
+It takes two arguments: the name and the meta-theory, i.e., the logic in which the theory is written.
+
+The macro !mmtconstant! introduces a constant declaration inside a theory.
+It takes $4$ arguments: the name, type, definiens, and notation. All but the name may be empty.
+
+We can also use the \mmt module system, e.g., the following creates a theory that extends !Group! with a definition of division (where square brackets are the notation for $\lambda$-abstraction employed by !SFOLEQ!):
+
+\begin{lstlisting}
+\begin{mmttheory}{Division}{ex:?SFOLEQ}
+\mmtinclude{?Group}
+\mmtconstant{division}
+   {tm U --> tm U --> tm U}{[x,y] x*y'}{1 / 2 prec 50}
+\end{lstlisting}
+
+\begin{mmttheory}{Division}{ex:?SFOLEQ}
+\mmtinclude{?Group}
+\mmtconstant{division}{tm U --> tm U --> tm U}{[x,y] x*y'}{1 / 2 prec 50}
+
+\noindent
+Note that we have not closed the theory yet, i.e., future formal objects will be processed in the scope of !Division!.
+\medskip
+
+\textbf{Presentation-relevant macros} result in changes to the pdf document.
+The most important such macro provided by \texttt{mmttex.sty} is one that takes a math formula in \mmt syntax and parses, type-checks, and renders it.
+For this macro, we provide special syntax that allows using quotes instead of dollars to have formulas processed by \mmt:
+if we write !"$F$"! (including the quotes) instead of $\mathdollar F\mathdollar$, then $F$ is considered to be a math formula in \mmt syntax and processed by \mmt.
+For example, the formula !"forall [x] x / x = e"! is parsed by \mmt relative to the current theory, i.e., !Division!; then \mmt type-checks it and substitutes it with \latex commands. In the previous sentence, the \latex source of the quoted formula is additionally wrapped into a verbatim macro to avoid processing by \mmt; if we remove that wrapper, the quoted formula is rendered into pdf as "forall [x] x / x = e".
+
+Type checking the above formula infers the type !tm U! of the bound variable !x!.
+This is shown as a tooltip when hovering over the binding location of !x!.
+(Tooltip display is supported by many but not all pdf viewers.
+Unfortunately, pdf tooltips  are limited to strings so that we cannot show tooltips containing \latex or MathML renderings even though we could generate them easily.)
+Similarly, the sort argument of equality is inferred.
+Moreover, every operator carries a hyperlink to the point of its declaration.
+%This permits easy type and definition lookup by clicking on symbols.
+Currently, these links point to the \mmt server, which is assumed to run locally.
+%An alternative solution is to put the inferred type into the margin or next to the formula.
+%Then we can make it visible upon click using pdf JavaScript.
+%As this is poorly supported by pdf viewers though, we propose another solution: Similar to a list of figures, we produce a list of formulas, in which every numbered formula occurs with all inferred parts.
+%This has the additional benefit that the added value is preserved even in the printed version.
+\medskip
+
+\noindent
+This is implemented as follows:
+\begin{compactenum}
+ \item An \mmt formula !"$F$"! simply produces a macro call !\mmt@X! for a running counter !X!.
+ If that macro is undefined, a placeholder is shown and the user is warned that a second compilation is needed.
+ Additionally, a definition !mmt@X = $F$! in \mmt syntax is placed into \texttt{doc.tex.mmt}.
+ \item When \texttt{latex-mmt} processes that definition, it additionally generates a macro definition !\newcommand{\mmt@X}{$\ov{F}$}! in \texttt{doc.tex.mmt.sty}, where $\ov{F}$ is the intended \latex representation of $F$.
+ \item During the next compilation, \mmt@X produces the rendering of $\ov{F}$.
+ If $F$ did not type-check, additional a \latex error is produced with the error message.
+\end{compactenum}
+
+\noindent
+Before we continue, we close the current theory:
+\end{mmttheory}
+\begin{lstlisting}
+\end{mmttheory}
+\end{lstlisting}
+
+
+%Actually, the above example is simplified -- the snippets returned by \mmt are much more complex in order to produce semantically enriched output.
+%For the pdf workflow, we have realized three example features.
+%Recall that the present paper is an \mmt-\latex document so that these features can be tried out directly.
+
+
+\subsection{Converting MMT Content To LaTeX}
+
+%In a second step, the background is made available to \latex in the form of \latex packages.
+%\mmt already provides a build management infrastructure that allows writing exporters to other formats.
+
+We run \texttt{latex-mmt} on every theory $T$ that is part of the background knowledge, e.g., !SFOLEQ!, and on all theories that are part of \texttt{doc.tex.mmt}, resulting in one \latex package (sty file) each.
+This package contains one \lstinline|\RequirePackage| macro for every dependency and one \lstinline|\newcommand| macro for every constant declaration.
+\texttt{doc.tex.mmt.sty} is automatically included at the beginning of the document and thus brings all necessary generated \latex packages into scope.
+
+The generated \lstinline|\newcommand| macros use (only) the notation of the constant.
+For example, for the constant named !operator! from above, the generated command is essentially !\newcommand{\operator}[2]{#1*#2}!.
+Technically, however, the macro definition is much more complex:
+Firstly, instead of !#1*#2!, we produce a a macro definition that generates the right tooltips, hyperreferences, etc.
+Secondly, instead of !\operator!, we use the fully qualified \mmt URI as the \latex macro name to avoid ambiguity when multiple theories define constants of the same local name.
+
+The latter is an important technical difference between \mmttex and \sTeX \cite{stex}: \sTeX intentionally generates short human-friendly macro names because they are meant to be called by humans.
+That requires relatively complex scope management and dynamic loading of macro definitions to avoid ambiguity.
+But that is inessential in our case because our macros are called by generated \latex commands (namely those in the definiens of !\mmt@X!).
+Nonetheless, it would be easy to add macros to \texttt{mmttex.sty} for creating aliases with human-friendly names.
+
+The conversion from \mmt to \latex can be easily run in batch mode so that any content available in \mmt can be easily used as background knowledge in \latex documents.
+
+%sTeX uses a more complex mechanism that defines macros only when a theory is included and undefines them when the theory goes out of scope.
+%This does not solve the name clash problem and is more brittle when flexibly switching scopes in a document.
+%But it results in human-usable macro names, which is the main design goal of sTeX.
+
+%In particular, this allows using \lstinline|\mmt@symref{$U$}{\wedge}| instead of \lstinline|\wedge|, where $U$ is as above.
+%\lstinline|\mmt@symref| is defined in \lstinline|mmttex| and adds a hyperref and a tooltip to the $\wedge$ symbol.
+%We will see this in action below.

@@ -43,7 +43,7 @@ object Patcher {
         val md = controller.memory.content.get(path).metadata
         md.update(key, nw:_*)
       case PragmaticChange(name, diff, tp, mp, desc) => patch(diff, controller)
-
+      case _ => throw ImplementationError("change is not applicable")
     }
 
   }

@@ -21,10 +21,10 @@ object ParsingController {
    var selectors : Map[String,Map[Int,Tuple2[Int,Int]]] = new HashMap()
    val attributes : Map[String,Map[Int,Int]] = new HashMap()
    //var definitions : LinkedList[XMLDefinition] = new LinkedList()
-   var elems : LinkedList[MizAny] = new LinkedList()
+   var elems : MutableList[MizAny] = new MutableList()
    var defBlockCounter = 0
-   var definiens : HashMap[Int,LinkedList[XMLDefiniens]] = HashMap()
-   var deftheorems : HashMap[Int,LinkedList[MizDefTheorem]] = HashMap()
+   var definiens : HashMap[Int,MutableList[XMLDefiniens]] = HashMap()
+   var deftheorems : HashMap[Int,MutableList[MizDefTheorem]] = HashMap()
    //var currentDefBlock : Option[XMLDefinitionBlock] = None
    //var currentArticle : Option[MizArticle] = None
    var currentAid = ""
@@ -50,8 +50,8 @@ object ParsingController {
    }
 
    def addDefinitionBlock(db : XMLDefinitionBlock) = {
-     deftheorems(defBlockCounter) = LinkedList() //deftheorems will be added as they follow the def block
-     definiens(defBlockCounter) = LinkedList() //definiens will be added as they follow the def block
+     deftheorems(defBlockCounter) = MutableList() //deftheorems will be added as they follow the def block
+     definiens(defBlockCounter) = MutableList() //definiens will be added as they follow the def block
      defBlockCounter += 1
      elems = elems ++ db.defs
    }
@@ -65,7 +65,7 @@ object ParsingController {
          art.addElem(x)
      })
 
-     elems = new LinkedList()
+     elems = new MutableList()
      definiens = HashMap()
      deftheorems = HashMap()
      art
@@ -82,7 +82,7 @@ object ParsingController {
      //      "(" + matchedDfns.length + ") matching definiens for " + d.defaid + d.constrkind + d.defnr)
 
      d.setDefiniens(matchedDfns.headOption)
-     val leftOvers = if (matchedDfns.length > 1) matchedDfns.tail else Nil
+     val leftOvers = if (matchedDfns.length > 1) matchedDfns.tail else MutableList.empty
 
      definiens(d.defBlockNr) = unmatchedDfns ++ leftOvers
      //getting matching def theorems (0 to *)

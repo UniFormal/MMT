@@ -8,7 +8,7 @@ import org.semanticweb.owlapi.model._
 
 //
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 //
 
@@ -31,7 +31,7 @@ class AddIdentifiers(managerID: OWLOntologyManager) {
     val ontoIRI: IRI = ontology.getOntologyID.getOntologyIRI
     val ontologyIDs = managerID.createOntology(IRI.create(ontoIRI.toString))
 
-    val axioms: List[OWLAxiom] = ontology.getAxioms.toList
+    val axioms: List[OWLAxiom] = ontology.getAxioms.asScala.toList
     val (logicals, nonLogicals) = axioms.partition((a: OWLAxiom) => a.isLogicalAxiom)
 
     nonLogicals.foreach(axiom => managerID.addAxiom(ontologyIDs, axiom)) // declaration and annotataion axioms
@@ -42,7 +42,7 @@ class AddIdentifiers(managerID: OWLOntologyManager) {
 
   def axiomToAxiomID(ax: OWLAxiom): OWLAxiom = {
     var annotationsID = new java.util.HashSet(ax.getAnnotations)
-    ax.getAnnotations.find(annot => annot.getProperty.getIRI == omdocIRI) match {
+    ax.getAnnotations.asScala.find(annot => annot.getProperty.getIRI == omdocIRI) match {
       case Some(annot) =>
       case None => annotationsID.add(createAnnotationID(ax))
     }

@@ -1,10 +1,21 @@
-import scala.io.Source
+import Utils.utils
 import sbt.Keys._
+
+import scala.io.Source
+
+utils in ThisBuild := Utils((baseDirectory in src).value)
+
+// If in doubt, always use utils.root or the other File properties on utils to construct
+// paths!
+// This ensures other SBT projects being able to use MMT as a subproject in a multiproject SBT
+// build, see https://github.com/UniFormal/MMT/pull/449.
 
 // =================================
 // META-DATA and Versioning
 // =================================
-version in ThisBuild := {Source.fromFile("mmt-api/resources/versioning/system.txt").getLines.mkString.trim}
+version in ThisBuild := {
+  Source.fromFile(baseDirectory.value / "mmt-api/resources/versioning/system.txt").getLines.mkString.trim
+}
 
 val now = {
   import java.text.SimpleDateFormat
@@ -30,9 +41,9 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.3"
+scalaVersion in Global := "2.12.8"
 scalacOptions in Global := Seq(
-  "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation", 
+  "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
   "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative
 )
@@ -60,7 +71,7 @@ scalacOptions in(ScalaUnidoc, unidoc) ++=
     Opts.doc.title("MMT") ++:
     Opts.doc.sourceUrl({
       val repo = System.getenv("TRAVIS_REPO_SLUG")
-      s"https://github.com/${if(repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
+      s"https://github.com/${if (repo != null) repo else "UniFormal/MMT"}/blob/master/src€{FILE_PATH}.scala"
     })
 target in(ScalaUnidoc, unidoc) := file("../apidoc")
 
@@ -104,9 +115,9 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
   scalaSource in Test := baseDirectory.value / "test" / "scala",
   resourceDirectory in Compile := baseDirectory.value / "resources",
 
-  unmanagedBase := baseDirectory.value  / "lib",
+  unmanagedBase := baseDirectory.value / "lib",
 
-  publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
+  publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
 
   install := {},
   deploy := Utils.deployPackage("main/" + nameStr + ".jar").value
@@ -116,6 +127,7 @@ def mmtProjectsSettings(nameStr: String) = commonSettings(nameStr) ++ Seq(
 // EXCLUDED PROJECTS
 // =================================
 import VersionSpecificProject._
+
 lazy val excludedProjects = {
   Exclusions()
     .java7(repl, odk)
@@ -132,13 +144,13 @@ lazy val src = (project in file(".")).
   enablePlugins(ScalaUnidocPlugin).
   exclusions(excludedProjects).
   aggregatesAndDepends(
-      mmt, api,
-      lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, webEdit, mathhub, planetary, interviews, latex, openmath, oeis, repl, got,
-      tiscaf, lfcatalog,
-      jedit, intellij
+    mmt, api,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    tiscaf, lfcatalog,
+    jedit, intellij
   ).
   settings(
-    unidocProjectFilter in (ScalaUnidoc, unidoc) := excludedProjects.toFilter,
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
     // add the test folder to the test sources
     // but don't actually run any of them
     scalaSource in Test := baseDirectory.value / "test",
@@ -148,13 +160,17 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, webEdit, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, got).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
     publish := {},
-    deploy := {
-      assembly in Compile map Utils.deployTo(Utils.deploy / "mmt.jar")
+    deploy := Def.taskDyn {
+      val jar = (assembly in Compile).value
+      val u = utils.value
+      Def.task {
+        Utils.deployTo(u.deploy / "mmt.jar")(jar)
+      }
     }.value,
     assemblyExcludedJars in assembly := {
       val cp = (fullClasspath in assembly).value
@@ -172,13 +188,13 @@ lazy val mmt = (project in file("mmt")).
 
 // MMT is split into multiple subprojects to that are managed independently.
 
-val apiJars = Seq(
+def apiJars(u: Utils) = Seq(
   "scala-compiler.jar",
   "scala-reflect.jar",
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
-).map(Utils.lib.toJava / _ )
+).map(u.lib.toJava / _)
 
 // The kernel upon which everything else depends. Maintainer: Florian
 lazy val api = (project in file("mmt-api")).
@@ -188,8 +204,8 @@ lazy val api = (project in file("mmt-api")).
   settings(
     scalacOptions in Compile ++= Seq("-language:existentials"),
     scalaSource in Compile := baseDirectory.value / "src" / "main",
-    unmanagedJars in Compile ++= apiJars,
-    unmanagedJars in Test ++= apiJars,
+    unmanagedJars in Compile ++= apiJars(utils.value),
+    unmanagedJars in Test ++= apiJars(utils.value),
   )
 
 
@@ -200,7 +216,7 @@ lazy val lf = (project in file("mmt-lf")).
   dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
-//    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.3" % "test",
+    //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.8" % "test",
   )
 
 // =================================
@@ -226,14 +242,18 @@ lazy val jedit = (project in file("jEdit-mmt")).
     resourceDirectory in Compile := baseDirectory.value / "src/resources",
     unmanagedJars in Compile ++= jeditJars map (baseDirectory.value / "lib" / _),
     deploy := Utils.deployPackage("main/MMTPlugin.jar").value,
-    install := Utils.installJEditJars
+    install := utils.value.installJEditJars
   )
 
 // MMT IntelliJ-Plugin. Maintainer: Dennis
 lazy val intellij = (project in file("intellij-mmt")).
-  dependsOn(api).
+  dependsOn(api, lf).
   settings(mmtProjectsSettings("intellij-mmt"): _*)
-  
+
+lazy val coq = (project in file("mmt-coq")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-coq"): _*)
+
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
@@ -254,10 +274,17 @@ lazy val planetary = (project in file("planetary-mmt")).
   dependsOn(stex).
   settings(mmtProjectsSettings("planetary-mmt"): _*)
 
-// using MMT in the editing frontends. Orginally developed by Mihnea (?), functional but presumably obsolete
+/* using MMT in the editing frontends. Orginally developed by Mihnea (?), functional but presumably obsolete
 lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
+*/
+
+// MMT in the interview server. Maintainer: Teresa
+lazy val glf = (project in file("mmt-glf")).
+  dependsOn(api, repl).
+  settings(mmtProjectsSettings("mmt-glf"): _*)
+
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
@@ -266,10 +293,10 @@ lazy val interviews = (project in file("mmt-interviews")).
 
 // using MMT from Python via Py4J, maintainer: Florian
 lazy val python = (project in file("python-mmt")).
-  dependsOn(api,odk).
+  dependsOn(api, odk).
   settings(mmtProjectsSettings("python-mmt"): _*).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "py4j0.10.7.jar")
-  
+
 // graph optimization. Maintainer: Michael Banken
 lazy val got = (project in file("mmt-got")).
   dependsOn(api).
@@ -299,8 +326,8 @@ lazy val concepts = (project in file("concept-browser")).
     libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
     ),
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
- )
+    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
+  )
 
 // =================================
 // MMT Projects: plugins for working with other languages in MMT
@@ -350,14 +377,14 @@ lazy val metamath = (project in file("mmt-metamath")).
 // plugin for reading isabelle. Author: Makarius Wenzel
 // This only works if an Isabelle environment is present. If not, we use an empty dummy project.
 lazy val isabelle_root =
-  System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
+System.getenv().getOrDefault("ISABELLE_ROOT", System.getProperty("isabelle.root", ""))
 lazy val isabelle_jars =
   if (isabelle_root == "") Nil else List(file(isabelle_root) / "lib" / "classes" / "Pure.jar")
 lazy val isabelle =
   (project in file(if (isabelle_root == "") "mmt-isabelle/dummy" else "mmt-isabelle")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-isabelle"): _*).
-  settings(unmanagedJars in Compile ++= isabelle_jars)
+    dependsOn(api, lf).
+    settings(mmtProjectsSettings("mmt-isabelle"): _*).
+    settings(unmanagedJars in Compile ++= isabelle_jars)
 
 // plugin for reading TPS
 lazy val tps = (project in file("mmt-tps")).
@@ -389,9 +416,9 @@ lazy val oeis = (project in file("mmt-oeis")).
   dependsOn(planetary).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-parser-combinators.jar"
+    unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
- 
+
 // =================================
 // DEPENDENT PROJECTS (projects that do not use mmt-api)
 // =================================
@@ -403,7 +430,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalacOptions in Compile ++= Seq("-language:reflectiveCalls"),
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
-//      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
+      //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
       "org.slf4j" % "slf4j-simple" % "1.7.12" % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ),
@@ -416,11 +443,15 @@ lazy val lfcatalog = (project in file("lfcatalog")).
   settings(commonSettings("lfcatalog")).
   settings(
     scalaSource in Compile := baseDirectory.value / "src",
-    publishTo := Some(Resolver.file("file", Utils.deploy.toJava / " main")),
-    deployLFCatalog := {
-      assembly in Compile map Utils.deployTo(Utils.deploy / "lfcatalog" / "lfcatalog.jar")
+    publishTo := Some(Resolver.file("file", utils.value.deploy.toJava / " main")),
+    deployLFCatalog := Def.taskDyn {
+      val jar = (assembly in Compile).value
+      val u = utils.value
+      Def.task {
+        Utils.deployTo(u.deploy / "lfcatalog" / "lfcatalog.jar")(jar)
+      }
     }.value,
-    unmanagedJars in Compile += Utils.lib.toJava / "scala-xml.jar"
+    unmanagedJars in Compile += utils.value.lib.toJava / "scala-xml.jar"
   )
 
 // =================================

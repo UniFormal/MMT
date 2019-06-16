@@ -289,7 +289,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     val nbpr = new NotationBasedPresenter {
       override def twoDimensional = false
     }
-    val msp = new MMTStructurePresenter(nbpr)
+    val msp = new MMTSyntaxPresenter(nbpr)
     val rbs = new RuleBasedSimplifier
     val mss = new ElaborationBasedSimplifier(rbs)
     val mmtint = new TwoStepInterpreter(kwp, msc, mss)// with MMTStructureEstimator
@@ -312,7 +312,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     }
     List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
       new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
-      new MMTStructurePresenter(nbpr), new FlatMMTStructurePresenter(nbpr)).foreach(addExtension(_))
+      new MMTSyntaxPresenter(nbpr), new FlatMMTSyntaxPresenter(nbpr)).foreach(addExtension(_))
     //parser extensions
     List(new symbols.RuleConstantParser, parser.MetadataParser, parser.CommentIgnorer).foreach(addExtension(_))
     //serverPlugins
@@ -342,7 +342,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion
+        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)

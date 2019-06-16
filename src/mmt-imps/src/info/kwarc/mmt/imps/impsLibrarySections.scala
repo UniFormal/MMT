@@ -90,17 +90,10 @@ package object impsLibrarySections
     Nil
   )
 
-  def sequences : Section = Section(
-    "sequences",
-    List(foundation),
-    List("sequences.t", "sequences-supplements.t"),
-    List("sequences.json")
-  )
-
-  def binaryRelaions : Section = Section(
+  def binaryRelations : Section = Section(
     "binary-relations",
     List(foundation),
-    List("binary-relations.t", "quotients.t"),
+    List("binary-relations-and-predicates.t", "binary-relations.t", "quotients.t"),
     Nil
   )
 
@@ -121,8 +114,15 @@ package object impsLibrarySections
   def advancedCardinality : Section = Section(
     "advanced-cardinality",
     List(basicCardinality),
-    List("omega-embedding-supplements.t", "cardinality-supplements.t", "combinatorics.t"),
+    List("omega-embedding.t","omega-embedding-supplements.t", "cardinality-supplements.t", "combinatorics.t"),
     Nil
+  )
+
+  def sequences : Section = Section(
+    "sequences",
+    List(advancedCardinality),
+    List("sequences.t", "sequences-supplements.t"),
+    List("sequences.json")
   )
 
   def schroederBernsteinTheorem1 : Section = Section(
@@ -170,7 +170,7 @@ package object impsLibrarySections
   def knasterFixedPointTheorem : Section = Section(
     "knaster-fixed-point-theorem",
     List(partialOrders),
-    List("knaster-fixed-point-theorem.t", "applications.t", "schroeder-bernstein.t"),
+    List("interval-in-cpos.t", "knaster-fixed-point-theorem.t", "applications.t", "schroeder-bernstein.t"),
     List("interval-in-cpo.json")
   )
 
@@ -197,7 +197,7 @@ package object impsLibrarySections
 
   def auxiliaryMonoids : Section = Section(
     "auxiliary-monoids",
-    List(basicMonoids),
+    List(basicMonoids, basicCardinality),
     List("monoids-and-cardinality.t", "monoids-examples.t"),
     Nil
   )
@@ -260,7 +260,7 @@ package object impsLibrarySections
 
   def metricSpaceContinuity : Section = Section(
     "metric-space-continuity",
-    List(metricSpacePairs),
+    List(partialOrders, metricSpacePairs),
     List("metric-space-triples.t", "examples-of-continuity.t", "examples-of-uniform-continuity.t",
                                    "mappings-from-an-interval.t", "inequalities-and-continuity.t"),
     List("metric-spaces-3-tuples.json", "mappings-from-an-interval.json", "fixed-interval-theory.json")
@@ -268,7 +268,7 @@ package object impsLibrarySections
 
   def mappingSpaces : Section = Section(
     "mapping-spaces",
-    List(partialOrders, metricSpacePairs),
+    List(partialOrders, metricSpaceSubspaces),
     List("pointed-metric-spaces.t", "mappings-into-pointed-metric-spaces.t", "continuous-mapping-spaces.t",
          "ptwise-continuous-mapping-spaces.t", "uniformly-continuous-mapping-spaces.t"),
     List("pointed-ms-2-tuples.json", "pointed-metric-spaces.json", "mappings-into-a-pointed-metric-space.json")
@@ -283,15 +283,17 @@ package object impsLibrarySections
 
   def abstractCalculus : Section = Section(
     "abstract-calculus",
-    List(banachFixedPointTheorem, basicFields),
-    List("vector-spaces.t", "normed-spaces.t", "derivatives.t", "integrals.t", "open-mapping.t", "derivatives-supplements.t"),
+    List(banachFixedPointTheorem, basicFields, metricSpaceContinuity),
+    List("vector-spaces.t", "normed-spaces.t", "one-sided-limits.t", "derivatives.t", "integrals.t", "open-mapping.t",
+      "derivatives-supplements.t"),
     List("normed-linear-spaces.json", "metric-spaces-2-tuples.json", "vector-spaces-over-rr.json", "vector-spaces.json",
+      "mappings-from-an-interval.json",
     "mappings-from-an-interval-to-a-normed-space.json", "mappings-from-an-interval-with-endpoints-to-a-normed-space.json")
   )
 
   def machineArithmetic : Section = Section(
     "machine-arithmetic",
-    Nil,
+    List(numberTheory),
     List("machine-arithmetic.t", "gcd.t", "octets.t"),
     List("pre-octets.json", "octets.json", "machine-arithmetic.json", "h-o-real-arithmetic.json")
   )
@@ -300,12 +302,12 @@ package object impsLibrarySections
   def impsMathLibrary : Section = Section(
     "imps-math-library",
     List(preReals,foundation,foundationSupplements,numberTheory,machineArithmetic,calculusOverTheReals,pairs,
-      sequences,binaryRelaions,iterate,advancedCardinality,schroederBernsteinTheorem1,countingTheoremsForGroups,
+      sequences,binaryRelations,iterate,advancedCardinality,schroederBernsteinTheorem1,countingTheoremsForGroups,
       groupInterpretations,realArithmeticExponentiation,auxiliaryMonoids,groupsAsMonoids,metricSpaceSubspaces,
-      metricSpaceContinuity,abstractCalculus,binomialTheorem,schroederBernsteinTheorem2),
-    List("quotient-structures.t", "ptwise-continuous-mapping-spaces.t", "normed-groups.t", "real-derivatives.t",
-      "intermediate-value-thm.t", "more-convergence-and-order.t", "linear-order.t", "more-applications.t", "additional-arithmetic-macetes.t"),
-    List("relational-theory.json", "relational-theory-2-tuples.json", "pointed-ms-2-tuples.json", "groups-alt.json",
+      metricSpaceContinuity,abstractCalculus,binomialTheorem,schroederBernsteinTheorem2,mappingSpaces),
+    List("quotient-structures.t", "normed-groups.t", "real-derivatives.t", "intermediate-value-thm.t",
+      "more-convergence-and-order.t", "linear-order.t", "more-applications.t", "additional-arithmetic-macetes.t"),
+    List("relational-theory.json", "relational-theory-2-tuples.json", "groups-alt.json",
     "normed-groups.json", "linear-order.json")
   )
 
@@ -323,7 +325,7 @@ package object impsLibrarySections
     calculusOverTheReals,
     pairs,
     sequences,
-    binaryRelaions,
+    binaryRelations,
     iterate,
     basicCardinality,
     advancedCardinality,
@@ -353,5 +355,4 @@ package object impsLibrarySections
     machineArithmetic,
     impsMathLibrary
   )
-
 }

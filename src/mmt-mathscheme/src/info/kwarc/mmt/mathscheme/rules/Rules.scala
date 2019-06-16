@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{OfType, Typed}
+import scala.language.reflectiveCalls
 
 object MSTheory {
   val _base = DPath(utils.URI("http", "test.org") / "mathscheme")
@@ -115,9 +116,10 @@ object Labcont extends {
   }
 
   def elaborate(prev : Context, df : Term)(implicit elab : (Context,Term) => Context) : Context = df match {
-    case compth(ls) => ls.map {
+    case compth(ls) => ls.collect {
       case o:OML => o.vd
     }
+    case _ => throw ImplementationError("expected LabCont to elabortate")
     // case _ => Nil
   }
 

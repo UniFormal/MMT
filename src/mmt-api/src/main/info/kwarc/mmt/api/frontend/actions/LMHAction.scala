@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.frontend.actions
 
 import info.kwarc.mmt.api._
-import archives.lmh.{LMHHubGroupEntry, _}
+import archives._
 import frontend._
 import utils._
 

@@ -12,7 +12,7 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
-import StructuralFeatureUtil._
+import StructuralFeatureUtils._
 import inductiveUtil._
 
 /** theories as a set of types of expressions */ 
@@ -42,7 +42,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     }
     implicit val parent = indD.path
     val indDefs = parseInternalDeclarations(indD, controller, None)
-    var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).map{case t:TypeLevel => t}
+    var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
     
     val indTplNames = indTpls map (_.name)
     
@@ -59,7 +59,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
     }
     
-    val proof_paths = indTpls.map(t=>t.path.copy(name=proofName(t.name)))
+    val proof_paths = indTpls.map(t=>t.path.copy(name=indD.name/proofName(t.name)))
     
     val modelDf = decls map (_.df.get)
     val indTplsArgs = indTpls map(_.argContext(None)._1)
