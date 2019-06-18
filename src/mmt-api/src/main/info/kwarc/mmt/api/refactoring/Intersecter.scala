@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.{ComplexStep, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.Term
-import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, IdentityTranslator, Structure}
+import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, IdentityTranslator, Include, Renamer, Structure}
 
 import scala.util.{Success, Try}
 
@@ -34,8 +34,10 @@ class Intersecter extends Extension {
     Moduleadder(sec2, constSec2)
     structRem1.foreach{moveStructure(_, th1p)}
     Moduleadder(th1p, constRem1)
+    th1p.add(Include(th1p.toTerm, sec1.path, List()))
     structRem2.foreach{moveStructure(_, th2p)}
     Moduleadder(th2p, constRem2)
+    th2p.add(Include(th2p.toTerm, sec2.path, List()))
 
     (sec1, sec2, th1p, th2p)
 
