@@ -44,7 +44,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
               +" but no derived declaration found at that location.")
       }
       
-      var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+      var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), recD.path)
       val recDefs = parseInternalDeclarations(recD, controller, None)
       val types = tpls(recDefs) map (_.path)
           
@@ -56,13 +56,13 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
       recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
       
       val Ltp = () => {
-        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("type")), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
       }
       val Ldf = () => {
-        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("make")), indParams), decls.map(_.df.get))))
+        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(makeName)), indParams), decls.map(_.df.get))))
       }
       
-      val make = makeConst(LocalName("make"), Ltp, Ldf)
+      val make = makeConst(LocalName(makeName), Ltp, false, Ldf)
       //log(defaultPresenter(make)(controller))
       
       new Elaboration {
@@ -93,7 +93,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
   def elaborateToRecordExp(ctx: Context, params: List[Term])(implicit parent: GlobalName) = {
     val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
     Elaboration(List(makeConst(parent.name, 
-        () => {OMA(OMS(recTypePath), recordFields)}, 
+        () => {OMA(OMS(recTypePath), recordFields)}, false,
         () => {Some(OMA(OMS(recExpPath), params))})))
   }
 }

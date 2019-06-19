@@ -44,14 +44,18 @@ case class OuterInnerNames(outer: GlobalName, implArgsOuter: List[Int], before: 
    def outerArity = implArgsOuter.length+before.length+1+after.length
 }
 
-class SimplificationRuleGenerator extends ChangeListener {
-  override val logPrefix = "simp-rule-gen"
+object SimplificationRuleGenerator {
   /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */
-  protected val SimplifyTag = "Simplify"
+  val SimplifyTag = "Simplify"
   protected val SolutionTag = "Solve"
   protected val under = List(Apply.path)
-  private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag
+  private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag  
+}
 
+import SimplificationRuleGenerator._
+
+class SimplificationRuleGenerator extends ChangeListener {
+  override val logPrefix = "simp-rule-gen"
   private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
      p match {
         case p: GlobalName =>

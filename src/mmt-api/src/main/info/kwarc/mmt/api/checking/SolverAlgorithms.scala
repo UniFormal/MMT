@@ -417,7 +417,16 @@ trait SolverAlgorithms {self: Solver =>
     */
    private def checkEqualityTermBased(t1: Term, t2: Term)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
      log("equality (trying congruence): " + presentObj(t1) + " = " + presentObj(t2))
+     val interesting = presentObj(t2) == "nat/z+m"
+     if (interesting) 
+       history+="running headNormalize on terms term1: "+presentObj(t1)+" and term2: "+presentObj(t2)
+     if (interesting) 
+       println("running headNormalize on terms term1: "+presentObj(t1)+" and term2: "+presentObj(t2))
      val List(t1S,t2S) = List(t1, t2) map headNormalize
+     if (interesting)
+       history+="headNormalize returned the terms term1: "+presentObj(t1S)+" and term2: "+presentObj(t2S)
+     if (interesting)
+       println("headNormalize returned the terms term1: "+presentObj(t1S)+" and term2: "+presentObj(t2S))
      if (t1S hasheq t2S) {
        true
      } else if (!Stability.is(t1S) || !Stability.is(t2S)) {

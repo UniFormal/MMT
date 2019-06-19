@@ -40,18 +40,19 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
             +" but no derived declaration found at that location.")
     }
-    implicit val parent = indD.path
-    val indDefs = parseInternalDeclarations(indD, controller, None)
+    
+    //The internal definitions we need to give definiens for
+    val indDefs = parseInternalDeclarations(indD, controller, None)(indD.path)
     var indTpls = tpls(indDefs)
     
     val indTplNames = indTpls map (_.name)
     
-    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
     
     // check whether all declarations match their corresponding constructors
     decls foreach { 
       d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None))
+      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None)(indD.path))
       }
     }
     // and whether we have all necessary declarations
@@ -59,19 +60,19 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
     }
     
-    val induct_paths = indTpls.map(t=>t.path.copy(name=inductName(t.name)))
+    val induct_paths = indTpls.map(t=>t.path.copy(name=indD.name/inductName(t.name)))
     
     val modelDf = decls map (_.df.get)
-    val indTplsArgs = indTpls map(_.argContext(None)._1)
+    val indTplsArgs = indTpls map(_.argContext(None)(indD.path)._1)
     
     val indTplsDef = indTplNames map (nm => decls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = indTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
+    val Tps = indTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm(indD.path), indTplDef))}
     val Dfs = indTplsArgs zip induct_paths map {case (indTplArgs, induct_path) => 
       PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(induct_path), indParams++modelDf++indTplArgs.map(_.toTerm))))}
     
     val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
-      makeConst(dd.name/tpl.name, ()=> {tp}, () => {Some(df)})}
+      makeConst(tpl.name, ()=> {tp}, false, () => {Some(df)})(dd.path)}
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     new Elaboration {

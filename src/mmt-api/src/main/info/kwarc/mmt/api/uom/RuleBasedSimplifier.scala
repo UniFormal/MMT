@@ -60,6 +60,20 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
     * Therefore, structure sharing or multiple calls to this method do not cause multiple traversals.
     */
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType = {
+      def presentObj(obj: Obj)=controller.presenter.asString(obj)
+      def presentContext(ctx:Context)=if (ctx.isEmpty) "Context.empty" else if (ctx.variables.length == 1) "Context("+presentObj(ctx.variables.head)+")" else
+        ctx.variables.tail.foldLeft("Context("+presentObj(ctx.variables.head))((a,b)=>a+", "+presentObj(b))+")"
+      def presentSU(su:SimplificationUnit)={
+        "SimplificationUnit(context:"+presentContext(su.context)+", expandDefinitions:"+su.expandDefinitions.toString()+", definitionExpansion:"+su.expandDefinitions+")"
+      }
+      val interesting = presentObj(obj) == "nat/z+m"
+      val moreInteresting = presentObj(obj) == "plusn/n"
+      if (interesting)
+         println("Running RuleBasedSimplifier on term: \""+presentObj(obj)+"\".")
+      if (moreInteresting) {
+         println("Running RuleBasedSimplifier on term: \""+presentObj(obj)+"\".")
+         println("SimplificationUnit: "+presentSU(su))
+      }
       val context = su.context
       //log("called on " + controller.presenter.asString(obj) + " in context " + controller.presenter.asString(context))
       val result: Obj = obj match {
@@ -93,6 +107,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
       // by marking with and testing for Simplified(_), we avoid traversing a term twice
       // Note that certain operations remove the simplified marker: changing the toplevel, substitution application
       def traverse(t: Term)(implicit context : Context, state: SimplifierState) : Term = {
+         def presentObj(obj: Obj)=controller.presenter.asString(obj)
+         val moreInteresting = presentObj(t) == "plusn/n"
        if (state.unit.isKilled) return t
        //log("traversing into " + controller.presenter.asString(t))
        //log("in context " + controller.presenter.asString(context))
@@ -201,11 +217,25 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            }
            // TODO does not work yet; how does definition expansion interact with other steps?
            if (state.unit.expandDefinitions) {
+              if (moreInteresting)
+                 println("Doing a definition expansion of the term OMS("+p.toString()+").")
               val pC = controller.globalLookup.getO(ComplexTheory(context),ComplexStep(p.module) / p.name) /* controller.globalLookup.getO(p) */
               pC flatMap {
               case c: Constant =>
-                normalizeConstant(c, state.unit.fullRecursion)
-                c.dfC.normalized
+                normalizeConstant(c, state.unit.fullRecursion)  // TODO: Debug this function
+                if (moreInteresting) {
+                   println(c.df.map(df=>"The definition: "+presentObj(df)).getOrElse(""))
+                   println("c.dfC.normalized: "+c.dfC.normalized.map(presentObj))
+                }
+                //CR: I modified this in an attempt to work around a bug in MMT, it seems to improve the situation, without fully fixing the bug
+                //TODO: Fix the underlying bug and remove this workaround
+                // Quick hack to work around the bug that prevents definitions expansions in some cases
+                if (c.dfC.normalized.isDefined) c.dfC.normalized else c.df map {df => 
+                  val (su,rules) = state match {
+                    case SimplifierState(_, su, rules, _) => (su,rules)
+                  }
+                  println(rules)
+                  self.apply(df, su, rules)}
               case _ =>
                 None
             } match {
@@ -266,6 +296,11 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
    *  This may under-normalize occasionally.
    */
   private def normalizeConstant(c: Constant, fullRec: Boolean) {
+    def presentObj(obj: Obj)=controller.presenter.asString(obj)
+    def presentConst(c: StructuralElement)=controller.presenter.asString(c)
+    val moreInteresting = c.name == LocalName("plusn")/LocalName("n")
+    if (moreInteresting)
+       println("Running normalize constant on the constant "+c.name)
     c.dfC.normalize {u =>
       val cont = controller.getContext(c)
       val rs = RuleSet.collectRules(controller, cont)

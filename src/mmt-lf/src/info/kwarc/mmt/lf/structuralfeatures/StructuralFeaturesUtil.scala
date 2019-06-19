@@ -78,9 +78,16 @@ object StructuralFeatureUtils {
     }
   }
   
+  /**
+   * Parse the internal declarations of dd expanding previous definitions
+   * @param dd the derived declaration whoose internal declarations to parse
+   * @param con the controller
+   * @param ctx (optional) a context to parse the declarations in
+   * @param parent (implicit) path of the derived declaration over which we want to define a term
+   */
   def parseInternalDeclarations(dd: ModuleOrLink, con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
     val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
-    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx)
+    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx)(parent)
   }
 }
 
@@ -92,8 +99,15 @@ object TermConstructingFeatureUtil {
         case dec => throw GeneralError("Expected a constant at "+dec.path+".")
       }
     }
-    def parseInternalDeclarationsWithDefiniens(dd: ModuleOrLink, con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
-      val decls = parseInternalDeclarations(dd, con, ctx)
+    /**
+   * Parse the internal declarations of dd expanding previous definitions
+   * @param dd the derived declaration whoose internal declarations to parse
+   * @param con the controller
+   * @param ctx (optional) a context to parse the declarations in
+   * @param parent path of the derived declaration over which we want to define a term
+   */ 
+    def parseInternalDeclarationsWithDefiniens(dd: ModuleOrLink, con: Controller, ctx: Option[Context], parent : GlobalName): List[InternalDeclaration] = {
+      val decls = parseInternalDeclarations(dd, con, ctx)(parent)
       decls.map(d => if (d.df.isEmpty) throw GeneralError("Unsupported corresponding declaration: Expected constant with definien at "+d.path))
       decls
     }

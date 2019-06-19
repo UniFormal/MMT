@@ -92,6 +92,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
     // the inductive proof declarations
     elabDecls ++= indProofs(tpdecls, constrdecls, context)(parentTerm)
+    elabDecls map {d => log(defaultPresenter(d)(controller))}
     
     externalDeclarationsToElaboration(elabDecls)
 }
@@ -216,7 +217,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
       }
       decls = decls.reverse
       if(a.args.length > 0)
-        decls ++= a.injDecls
+        decls ++= a.injDecls()
       decls
     }
   }
