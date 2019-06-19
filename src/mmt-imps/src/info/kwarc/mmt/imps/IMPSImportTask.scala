@@ -1577,7 +1577,7 @@ class IMPSImportTask(val controller  : Controller,
     def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       Some(true)
     }
-    def applicableToTerm(tm: Term): Boolean = true
+    def applicableToTerm(solver: Solver, tm: Term): Boolean = true
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */

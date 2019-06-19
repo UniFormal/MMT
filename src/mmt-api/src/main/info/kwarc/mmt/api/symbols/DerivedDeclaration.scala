@@ -450,7 +450,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
           ddN
         }
         // translate each declaration and merge the assignment (if any) into it
-        private val translator = new ApplyMorphism(morphism.toTerm)
+        private val translator = ApplyMorphism(controller.globalLookup, morphism.toTerm)
         def getO(name: LocalName): Option[Declaration] =
           if (name.steps.startsWith(dd.name.steps)) {
             val rest = name.drop(dd.name.steps.length)

@@ -60,7 +60,7 @@ class XMLReader(controller: Controller) extends Logger {
            val level = DocumentLevel.parseO(xml.attr(node, "level")).getOrElse(FileLevel) // defaulting to file level for backwards compatibility
            val nsMapB = nsMap(base)
            log("document with URI " + dpath + " and level " + level + " found")
-           val d = new Document(dpath, level, nsMap = nsMapB)
+           val d = new Document(dpath, level, initNsMap = nsMapB)
            add(d,md)
            modules foreach {m =>
              readIn(nsMapB, d, m)
@@ -108,7 +108,7 @@ class XMLReader(controller: Controller) extends Logger {
             endAdd(innerdoc)
          case <instruction/> =>
            val text = xml.attr(node, "text")
-           val ii = InterpretationInstruction.parse(doc.path, text, nsMap)
+           val ii = InterpretationInstruction.parse(controller, doc.path, text, nsMap)
            add(ii, None)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
@@ -403,7 +403,8 @@ class XMLReader(controller: Controller) extends Logger {
    private def parseImplicit(n: Node): Boolean = {
       xml.attr(n, "implicit") match {
          case "true" => true
-         case "false" | "" => xml.attr(n, "name") == ""
+         case "false" => false
+         case "" => xml.attr(n, "name") == "" // true for includes, false otherwise (needed for backwards compatiblity with pre-realization OMDoc files)
          case s => throw ParseError("true|false expected in implicit attribute, found " + s)
       }
    }

@@ -18,12 +18,13 @@ import utils._
   * @param term the term to parse
   * @param top an optional notation that the whole input must match;
   */
-case class ParsingUnit(source: SourceRef, context: Context, term: String, nsMap: NamespaceMap, top: Option[ParsingRule] = None) extends MMTTask {
+case class ParsingUnit(source: SourceRef, context: Context, term: String, iiContext: InterpretationInstructionContext, top: Option[ParsingRule] = None) extends MMTTask {
    /** level determines the notation extension: approximated by the largest known containing theory */
    def getLevel = {
      val levelCandidates = context.getIncludes
      levelCandidates.filter(_.name.length == 1).lastOption.getOrElse(levelCandidates.last)
    }
+   def nsMap = iiContext.namespaces
 }
 // TODO top should be Option[GlobalName]
 
@@ -111,7 +112,7 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   * @param stream the stream to parse
   */
 case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) extends MMTTask {
-  /** @return the whole stream as a string */
+  /** the whole stream as a string */
   def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
 }
 

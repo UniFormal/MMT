@@ -62,7 +62,10 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
    private implicit val sa = new MemoizedSubstitutionApplier
    /** used for rendering objects, should be used by rules if they want to log */
    implicit val presentObj : Obj => String = o => controller.presenter.asString(o)
-
+   /** for marking objects as stable, created fresh for every run because stability depends on the context and we do not want to have to remove the marker */
+   // There is a memory leak here because we never remove Stability markers. But it's unclear when and how it's best to remove them.
+   val stability = Stability.make
+   
    /**
     * to have better control over state changes, all stateful variables are encapsulated a second time
     */
@@ -430,8 +433,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
   // TODO this should track lookups for dependency management
   def lookup = controller.globalLookup
 
-  private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] =
-    lookup.getO(ComplexTheory(constantContext), LocalName(p.module) / p.name) match {
+  private def getConstant(p : GlobalName)(implicit h: History): Option[Constant] = {
+    lookup.getO(ComplexTheory(constantContext), p.toLocalName) match {
       case Some(c: Constant) => Some(c)
       case Some(_) =>
         error("not a constant: " + p)
@@ -439,6 +442,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       case None =>
         error("constant not found: " + p)
         None
+    }
   }
 
    /** retrieves the type type of a constant and registers the dependency
@@ -980,12 +984,12 @@ object Solver {
 object InferredType extends TermProperty[(Branchpoint,Term)](Solver.propertyURI / "inferred")
 
 /** used by [[Solver]] to mark a term as head-normal: no simplification rule can change the head symbol */
-object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
+class Stability(id: Int) extends BooleanTermProperty(Solver.propertyURI / "stability" / id.toString) {
   def hasStableShape(o: Obj, sh: Shape): Boolean = {
     (o,sh) match {
       case (_, Wildcard) => true
       case (t, AtomicShape(s)) =>
-        t == s && Stability.is(t)
+        t == s && this.is(t)
       case (ComplexTerm(op,_,_,_), ComplexShape(sop, children)) if op == sop =>
         (o.subobjects zip children) forall {case ((_,t), c) =>
             hasStableShape(t,c)
@@ -993,6 +997,11 @@ object Stability extends BooleanTermProperty(Solver.propertyURI / "stability") {
       case _ => false
     }
   }
+}
+
+object Stability {
+  private var id = -1
+  def make = {id += 1; new Stability(id)}
 }
 
 /** stores a type bound for an unknown as used in the [[Solver]] */

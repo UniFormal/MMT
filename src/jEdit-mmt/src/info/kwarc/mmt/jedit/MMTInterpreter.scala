@@ -7,6 +7,7 @@ import modules._
 import objects._
 import parser._
 import utils._
+import documents._
 import console._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import org.gjt.sp.jedit.{View => JEditView, _}
@@ -188,7 +189,7 @@ Non-commands are MMT code.
           val str = command
           val theory = ct
 
-          val pu = ParsingUnit(SourceRef.anonymous(str), Context(theory), str, NamespaceMap(theory.doc), None)
+          val pu = ParsingUnit(SourceRef.anonymous(str), Context(theory), str, InterpretationInstructionContext(NamespaceMap(theory.doc)), None)
           val parser = controller.extman.get(classOf[Parser], "mmt").get
           val t = parser(pu)(ErrorThrower).toTerm
           //Type checking

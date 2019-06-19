@@ -99,8 +99,8 @@ case class MMTTeX(tex: File) extends Action {
              }
           case nm: NestedModule =>
              doModule(nm.module)
-          case i @ Include(_,from,_) =>
-            if (from.doc == dpath) {
+          case i @ Include(id) =>
+            if (id.from.doc == dpath) {
                // skip locally defined theories
             } else {
               presenter(i)(jobFile)

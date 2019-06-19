@@ -106,7 +106,7 @@ class MMTPlugin extends EBPlugin with Logger {
               case ViewUpdate.CREATED =>
                  log("handling " + vup.paramString)
                  customizeView(view)
-                 // set tooltip font; this is only needed once and should be done is start; but it's unclear how to get the font if there is no view yet
+                 // set tooltip font; this is only needed once and should be done in start; but it's unclear how to get the font if there is no view yet
                  val font = view.getTextArea.getPainter().getFont()
                  javax.swing.UIManager.put("ToolTip.font",font)
               case ViewUpdate.CLOSED =>
@@ -141,11 +141,13 @@ class MMTPlugin extends EBPlugin with Logger {
       val tooltipExt = new MMTToolTips(controller, editPane)
       val gutterExt = new MMTGutterExtension(this, editPane)
       val annotExt = new MMTGutterAnnotations(this, editPane)
-      painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
+      // this only painted delimiters, which is now done by syntax highlighting, and did semantic highlighting, which never worked anyway
+      //painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
-      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
-      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
-      ta.getGutter.addMouseListener(annotExt.mouseAdapter)
+      // jEdit mess still happens with the following 3 lines commented out
+      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
+      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
+      //ta.getGutter.addMouseListener(annotExt.mouseAdapter)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)

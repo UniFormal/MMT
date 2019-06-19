@@ -175,7 +175,7 @@ class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule
                     // It is not clear whether it is better to type-check the return type or the arguments first.
                     // Conceivably the latter allows solving more unknowns early and localize errors.
                     // But it can also introduce complex terms early, thus slowing down (factor 2  in experiments) checking and 
-                    // even lead to failures where beta-reductions substitutions to the arguments of unknowns.
+                    // even lead to failures where beta-reductions lead to substitutions to the arguments of unknowns.
                     // Using tryToCheckWithoutDelay instead of check here avoids the latter but not the former.
                     // Therefore, the early check of the type is skipped. Future experiments may find better heuristics.
                     //val resCheckResult = tpO flatMap {tp =>

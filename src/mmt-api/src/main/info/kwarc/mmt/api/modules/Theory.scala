@@ -44,15 +44,17 @@ trait AbstractTheory extends ModuleOrLink {
         case _ => Nil
      }
    }
-   /** like getIncludes but also with includes of parametric theories and their instantiations */
-   def getAllIncludes: List[(MPath,List[Term])] = meta.map(m => (m,Nil)).toList ::: getAllIncludesWithoutMeta
+   /** like getIncludes but also with includes of parametric theories and defined includes */
+   def getAllIncludes: List[IncludeData] = meta.map(m => IncludeData(toTerm,m,Nil,None,false)).toList ::: getAllIncludesWithoutMeta
    /** like getIncludesWithoutMeta but also with includes of parametric theories and their instantiations */
-   def getAllIncludesWithoutMeta: List[(MPath,List[Term])] = {
+   def getAllIncludesWithoutMeta: List[IncludeData] = {
      getDeclarations.flatMap {
-       case Include(_,p,args) => List((p,args))
+       case Include(id) => List(id)
        case _ => Nil
      }     
    }
+   /** return all includes that are realizations */ 
+   def getRealizees: List[IncludeData] = getAllIncludesWithoutMeta.filter(_.isRealization)
    /** convenience method to obtain all named structures */
    def getNamedStructures:List[Structure] = getDeclarations.flatMap {
       case s: Structure if ! s.isInclude => List(s)

@@ -15,7 +15,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def domain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
-    case OMINST(p,args) => Some(OMMOD(p))
+    case OMINST(p,args) => None // TODO this is almost OMPMOD(p,args), but not quite
     case OMCOMP(n :: _) => domain(n)
     case OMStructuralInclude(f,_) => Some(OMMOD(f))
     case OMMOD(path) => try {
@@ -37,7 +37,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def codomain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
-    case OMINST(p,args) => None
+    case OMINST(p,args) => Some(OMPMOD(p,args))
     case OMCOMP(l) if l.nonEmpty => codomain(l.last)
     case OMStructuralInclude(_,t) => Some(OMMOD(t))
     case OMMOD(path) => try {
@@ -64,18 +64,27 @@ object Morph {
     */
   def simplify(mor: Term, preserveType: Boolean = false)(implicit lib: Lookup): Term = {
     mor match {
-      case OMMOD(p) => mor
-      case OMS(p) => // TODO dangerous assumption that [mpath] is always a PlainInclude!
-        if (p.name.length == 1 && p.name.steps.head.isInstanceOf[ComplexStep])
-          OMCOMP()
-        else
-          mor
+      case OMID(p) =>
+        lib.getO(p) match {
+          case Some(l: Link) =>
+            // expand definition
+            l.df match {
+              case Some(d) => simplify(d, preserveType)
+              case None =>
+                // expand undefined includes into identities
+                l match {
+                  case Include(id) => id.asMorphism
+                  case _ => mor
+                }
+            }
+          case _ => mor
+        }
       case OMIDENT(t) => if (preserveType) mor else OMCOMP()
       case OMINST(t,args) => mor
       case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
         val parts = associateComposition(ms)
-        var partsS = parts map {m => simplify(m,true)} //TODO can we skip simplification? Nothing much happens because there are no nested compositions anymore
+        var partsS = parts map {m => simplify(m,true)}
         var left = associateComposition(partsS) // usually redundant, but simplification may occasionally introduce a composition
         var result: List[Term] = Nil
         // we go through all morphisms m in 'ms', building the simplification in 'result' (in reverse order)
@@ -89,7 +98,6 @@ object Morph {
           left = left.tail
           // the codomain of R
           lazy val cod = result.headOption.flatMap(h => codomain(h))
-          // TODO OMINST(p,args);m ---> OMINST(p, args * m) 
           m match {
             case OMID(p) =>
               cod match {
@@ -98,7 +106,7 @@ object Morph {
                     case p: MPath => p ? ComplexStep(t) // p is view
                     case p: GlobalName => p / ComplexStep(t) // p is structure
                   }
-                  // check if p contains an assignment to t (will fail if cod = p.from)
+                  // check if p contains an assignment to t (if cod = p.from, lib.getO will fail leading to the correct behavior)
                   val ptL = lib.getO(pt)
                   ptL match {
                     case Some(l: Structure) =>
@@ -106,7 +114,7 @@ object Morph {
                       l.df match {
                         case Some(mR) =>
                           if (!isInclude(mR)) // the smaller we keep the codomain, the better
-                             result ::= mR
+                             result ::= simplify(mR)
                         case None =>
                           result ::= m
                       }
@@ -122,7 +130,25 @@ object Morph {
                 result ::= m
               }
             case OMStructuralInclude(from,to) =>
-              val mergeWithPreviousTo = result.headOption flatMap {
+              val append = cod match {
+                case Some(OMMOD(t)) =>
+                  // t -include-> from ; StructuralInclude(from, to): try to restrict the latter to t
+                  lib.getO(to ? ComplexStep(t)) match {
+                    case Some(Include(id)) if !id.isRealization =>
+                      /* defined include t -> to: use definiens
+                       * undefined include t -> to: structural include t -> to must be identity, drop
+                       * realization t -> to: use t as morphism, no simplification possible 
+                       */
+                      id.df map {d => simplify(d)}
+                    case _ => Some(m)
+                  }
+                case _ => Some(m)
+              }
+              append foreach {m => 
+                result ::= m
+              }
+            /* old version for previous structural includes 
+            val mergeWithPreviousTo = result.headOption flatMap {
                 case OMStructuralInclude(from1,to1) =>
                   if (to1 == from) {
                     // merge two successive structural includes: StructuralInclude(a,b);StructuralInclude(b,c)=StructuralInclude(a,c)
@@ -153,7 +179,7 @@ object Morph {
                   case _ =>
                     result ::= m
                 }
-              }
+              }*/
             case OMINST(p,as) =>
               val mergeWithPrevious = result.headOption flatMap {
                 case OMINST(q,bs) =>
@@ -201,18 +227,38 @@ object Morph {
     case OMIDENT(_) => true
     case OMCOMP(ms) => ms forall isInclude
     case OMS(p) => lib.get(p) match {
-      case Include(_,_,_) => true
+      case Include(id) => id.df.isEmpty
       case _ => false
     }
     case _ => false
   }
+  
+  /** pre/postcomposes implicit morphisms if any
+   *  pre: from -mor-> to
+   *  returns OMCOMP(b,mor,a) such that from -b-> dom(mor) -mor-> cod(mor) -a-> to for implicit morphisms b, a
+   */
+  def insertImplicits(mor: Term, from: Term, to: Term)(implicit lib: Lookup) = {
+    if (mor == OMCOMP()) {
+      lib.getImplicit(from,to).getOrElse(mor)
+    } else {
+      val dom = domain(mor)
+      val before = dom.flatMap {d => lib.getImplicit(from, d)}
+      val cod = codomain(mor)
+      val after = cod.flatMap {c => lib.getImplicit(c, to)}
+      OMCOMP(before.toList ::: mor :: after.toList:_*)
+    }
+  }
+
 
   /** checks equality of two morphisms using the simplify method; sound but not complete
    *  pre: a and b are well-formed, include all implicit morphisms, and have domain 'from'
    */
-  def equal(a: Term, b: Term, from: Term)(implicit lib: Lookup): Boolean = {
+  def equal(a: Term, b: Term, from: Term, to: Term)(implicit lib: Lookup): Boolean = {
     if (a hasheq b) return true // optimization
-    val List(aS,bS) = List(a,b) map {m => simplify(OMCOMP(OMIDENT(from),m))}
+    val List(aS,bS) = List(a,b) map {m =>
+      val mI = Morph.insertImplicits(m, from, to)
+      simplify(OMCOMP(OMIDENT(from),mI))
+    }
     aS == bS
   }
 }

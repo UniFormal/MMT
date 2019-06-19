@@ -60,7 +60,7 @@ class Setup extends ShellExtension("setup") {
             val con = shell.getFile("Enter a folder into which archives should be checked out", Some(mmt.up / "content"))
             (mmt, con)
           case _ =>
-            val root = shell.getFile("Enter a folder into which MMT should be installed: ", Some(shell.controller.getHome))
+            val root = shell.getFile("Enter a folder into which MMT should be installed: ", Some(shell.controller.getHome / "MMT"))
             (root / "systems" / "MMT", root / "content")
         }
         // get jEdit folder (if any)

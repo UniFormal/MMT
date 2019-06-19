@@ -123,22 +123,54 @@ abstract class Lookup {self =>
       }
       (dom,Some(l))
    }
+   
+  /** returns the container element that contains a declarations */
+  def getParent(d: Declaration): ModuleOrLink = {
+    val homePath = d.home match {
+      case OMID(p) => p
+      case _ => throw GetError("can't get parent with complex home")
+    }
+    get(homePath) match {
+       case m: ModuleOrLink => m
+       case nm: NestedModule => nm.module
+       case _ => throw GetError("unknown home encountered while getting domain of " + d.path)
+    }
+  }
 
-  /** resolves a LocalName in a theory or in any theory visible to it, returns None if ambiguous */
-  def resolve(home: Term, name: LocalName) : Option[StructuralElement] = {
-      {
-         getO(home, name)  // symbol in the current theory
-/*      } orElse {
-         home match {
-            case OMMOD(p) => getO(p.parent ? name) // module in the namespace of the current theory
-            case _ => None
-         }*/
-      } orElse {
-         val incls = visible(home).toList
-         val es = incls mapPartial {i => getO(i, name)}
-         if (es.length == 1) Some(es.head) else None  // uniquely resolvable symbol in an included theory
+  /** resolves a name in a module using any included or realized theories */
+  def resolveRealizedName(parent: ModuleOrLink, name: LocalName): List[GlobalName] = {
+    val direct = parent match {
+      case t: AbstractTheory =>
+        t.getRealizees.map(_.from)
+      case l: Link =>
+        TheoryExp.getSupport(l.from)
+    }
+    val withIncludes = direct.flatMap {p =>
+      getO(p).toList.flatMap {
+        case thy: Theory => p :: thy.getAllIncludes.mapPartial {i =>
+          if (i.df.isEmpty) Some(i.from) else None
+        }
+        case _ => Nil
       }
-   }
+    }.distinct
+    def resolveIn(p: MPath) = {
+      getO(p).toList.flatMap {
+        case pMod: Module =>
+          val dom = pMod.domain
+          if (dom contains name) List(p ? name)
+          else {
+            dom.mapPartial {n =>
+              // drop all complex steps and try again
+              val nS = LocalName(n.steps.filter(_.isInstanceOf[SimpleStep]))
+              if (nS == name) Some(p ? n)
+              else None
+            }
+          }
+        case _ => Nil
+      }
+    }
+    withIncludes flatMap resolveIn
+  }
   
   /**
    * all constants for which c is a quasi-alias (recursively)

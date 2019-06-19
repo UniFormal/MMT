@@ -100,11 +100,15 @@ class NotationContainer extends ComponentContainer {
     
    /** a copy of this NotationContainer with some other notations merged in */
    def merge(that: NotationContainer) = {
-      val ntC = NotationContainer()
-      ntC.add(this)
-      ntC
+      val ntMerged = copy
+      ntMerged.add(that)
+      ntMerged
    }
-   def copy = NotationContainer() merge this
+   def copy = {
+     val ntCopy = NotationContainer()
+     ntCopy.add(this)
+     ntCopy
+   }
 
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
    def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::

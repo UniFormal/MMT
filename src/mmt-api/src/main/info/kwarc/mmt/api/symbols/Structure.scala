@@ -56,14 +56,14 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
    }
    
    private def nameOrKeyword = this match {
-      case Include(_, fromPath, _) => "include "
+      case Include(id) => if (id.isRealization) "realize " else "include "
       case _ => implicitString + feature + " " + name + " : "
    }
    protected def outerString = nameOrKeyword + from.toString
    
    def toNode = {
       val nameAtt = if (isInclude) null else name.toPath
-      val implAtt = if (isInclude) null else if (isImplicit) "true" else null
+      val implAtt = if (isImplicit) "true" else null
       val node = <import name={nameAtt} implicit={implAtt}>{headerNodes}{innerNodes}</import>
       val fromN = Obj.toStringOrNode(from)
       utils.xml.addAttrOrChild(node, "from", fromN)
@@ -107,20 +107,57 @@ object SimpleStructure {
  * they do not carry assignments
  * their name is LocalName(from)
  */
+/* an include can be constitutive/definitional (typical include) or postulated (= realizations)
+ * in the latter case, we set the implicit flag to false; this is awkward but works for now
+ * The two concepts coincide if there is a definiens.
+ */
 object Include {
-   //TODO can there be assignments?
-   def apply(home: Term, from: MPath, args: List[Term]): Structure = apply(home, from, args, None)
-   def apply(home: Term, from: MPath, args: List[Term], df: Option[Term]): Structure =
-      Structure(home, LocalName(from), OMPMOD(from, args), df, true)   
-   // TODO the apply method already allows for defined includes (= implicit morphisms),
-   //  but unapply does not support it yet because all algorithms must be adapted to consider defined includes
-   def unapply(t: ContentElement) : Option[(Term,MPath,List[Term])] = t match {
+   // if definiens is given, any args are shifted into the definiens as OMINST
+   def apply(home: Term, from: MPath, args: List[Term], df: Option[Term] = None, postulated: Boolean = false): Structure = {
+      val (argsN,dfN) = if (df.isEmpty)
+        (args,df)
+      else
+        (Nil, Some(OMCOMP(OMINST(from,args) :: df.toList)))
+      Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, !postulated)
+   }
+   def unapply(t: ContentElement) : Option[IncludeData] = t match {
       case d: Structure => d.fromC.get match {
-         case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some((d.home, from, args)) // , d.df
+         case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some(IncludeData(d.home, from, args, d.df, !d.isImplicit))
          case _ => None
       }
       case _ => None
    }
+}
+
+/** auxiliary class that collects information about a structure that acts like an include
+ *  @param home the module in which this include is declared (theory, view, etc.)
+ *  @param from the domain of the included theory
+ *  @param args instantiations of the parameters of from (if any)
+ *  @param df definiens (i.e., the included morphism if in a theory)
+ *  @param postulated if true, this specifies a structural include that must be implemented by the containing theory;
+ *   this becomes available as a morphism only at the end of the containing theory (even if there is a definiens,
+ *     which can happen, e.g., if the definiens refers to other postulated includes) 
+ *  
+ *  invariants: if df contains mor then args.isEmpty && from is domain of df
+ *              else OMPMOD(from,args) is included theory
+ */
+case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], postulated: Boolean) {
+  /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
+  def asMorphism = {
+    if (isRealization) OMStructuralInclude(from, home.toMPath)
+    else OMCOMP(OMINST(from, args) :: df.toList)
+  }
+
+  def toStructure = Include(home, from, args, df, postulated)
+  
+  /** true if this represents a realization */
+  def isRealization = postulated
+  
+  def isPlain = (home,args,df) match {
+    case (OMMOD(h),Nil,None) => Some((h,from))
+    case _ => None
+  }
+  def isDefined = df map {d => (from,d)}
 }
 
 /**
@@ -132,7 +169,7 @@ object Include {
 object PlainInclude {
    def apply(from : MPath, to : MPath) = Include(OMMOD(to), from, Nil)
    def unapply(t: ContentElement) : Option[(MPath,MPath)] = t match {
-      case Include(OMMOD(to), from, Nil) => Some((from, to))
+      case Include(id) => id.isPlain
       case _ => None
    }
 }

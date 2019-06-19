@@ -128,7 +128,7 @@ object OpaqueText {
         i += 1
         def delayedParse(localCon: Context) {
           val contextNot = if (decl) Some(Context.parsingRule) else None
-          val pU = ParsingUnit(srcref, pu.context ++ localCon, s, pu.nsMap, contextNot)
+          val pU = ParsingUnit(srcref, pu.context ++ localCon, s, pu.iiContext, contextNot)
           val pr = oP(pU)
           tc match {
             case tc: TermContainer =>

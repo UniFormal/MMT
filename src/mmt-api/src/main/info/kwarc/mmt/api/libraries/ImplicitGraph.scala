@@ -60,6 +60,7 @@ case class AlreadyDefined[E](from: Term, to: Term, old: E, nw: E) extends java.l
  *  Morph.simplify is used to normalize paths, and equality of paths is checked by comparing normal forms;
  *  this criterion is sound and efficient but not complete.
  */
+// note that Library may instantiate lib with itself, i.e., local lookup
 class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
    /**
     * overrides update to check for existing morphisms
@@ -70,10 +71,11 @@ class UniqueGraph(lib: Lookup) extends LabeledHashRelation[Term,Term] {
       val fromN  = TheoryExp.simplify(from)
       val toN    = TheoryExp.simplify(to)
       val morphN = Morph.simplify(morph)(lib)
+      // compare to the current edge
       val current = apply(fromN,toN)
       current foreach {c =>
-        // note that Library may instantiate this with itself, i.e., local lookup
-        if (Morph.equal(c, morphN, from)(lib)) {
+        // append a final implicit morphism (which Morph.equal would not know about otherwise)
+        if (Morph.equal(c, morphN, from, to)(lib)) {
           return
         } else {
           throw AlreadyDefined(from, to, c, morphN)
@@ -130,12 +132,12 @@ class ThinGeneratedCategory(lib: Lookup) {
 
    def applyAtomic(from: MPath, to: MPath) = if (from == to) Some(OMCOMP()) else impl(OMMOD(from), OMMOD(to))
 
-   private def checkUnique(mors: List[Term], from: Term) = {
+   private def checkUnique(mors: List[Term], from: Term, to: Term) = {
       if (mors.isEmpty)
         None
       else {
         val h = mors.head
-        if (mors.tail.forall(m => Morph.equal(h,m, from)(lib)))
+        if (mors.tail.forall(m => Morph.equal(h,m, from, to)(lib)))
          Some(mors.head)
         else
          None
@@ -155,10 +157,10 @@ class ThinGeneratedCategory(lib: Lookup) {
          case (OMMOD(f), OMPMOD(t,_)) => applyAtomic(f,t)
          case (OMMOD(f), TUnion(ts)) =>
             val tsMors = ts.flatMap {t => apply(from,t).toList}
-            checkUnique(tsMors, from)
+            checkUnique(tsMors, from, to)
          case (OMMOD(f), ComplexTheory(toCont)) =>
             val toMors = toCont.getIncludes.flatMap {t => applyAtomic(f,t).toList}
-            checkUnique(toMors, from)
+            checkUnique(toMors, from, to)
          // otherwise: case split on domain for arbitrary codomain
          case (OMPMOD(p, args), _) =>
             // TODO check agreement with args

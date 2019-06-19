@@ -172,7 +172,7 @@ class Setup extends ShellExtension("jeditsetup") {
         File.WriteLineWise(jcat, newCatalog.reverse)
       }
       // abbrevs
-      val sabb = MMTSystem.getResourceAsString("latex/unicode-latex-map")
+      val sabb = parser.UnicodeMap.readMap("unicode/unicode-latex-map") ::: parser.UnicodeMap.readMap("unicode/unicode-ascii-map") 
       val jabb = jedit / "abbrevs"
       var newAbbrevs: List[String] = Nil
       var remove = false
@@ -192,7 +192,10 @@ class Setup extends ShellExtension("jeditsetup") {
       // append MMT abbrevs if installing
       if (install) {
         newAbbrevs ::= "[mmt]"
-        stringToList(sabb,"\\n") foreach {l => newAbbrevs ::= l}
+        sabb foreach {case (c,r) =>
+          val cE = c.replace("|", "'") // jEdit gets confused by |
+          newAbbrevs ::= s"$cE|$r"
+        }
       }
       // write new abbrevs
       if (newAbbrevs.nonEmpty) {
@@ -231,7 +234,7 @@ class Setup extends ShellExtension("jeditsetup") {
     }
 
 
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), /*("ContextMenu","0.4"),*/ ("BufferTabs","1.2.4"))
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize() {
        // download jars from jEdit plugin central
@@ -245,7 +248,9 @@ class Setup extends ShellExtension("jeditsetup") {
              File.download(url, zip)
              File.unzip(zip, jarFolder)
            } catch {
-             case e: Exception => log(e.getMessage)
+             case e: Exception =>
+               log(e.getMessage)
+               log(s"the above error occurred while downloading the $pluginName plugin of jEdit; you must install it manually via the jEdit plugin manager")
            } finally {
              zip.delete
            }

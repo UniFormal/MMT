@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.symbols
 import info.kwarc.mmt.api._
 import objects._
 import uom._
+import libraries._
 
 /**
  * a general purpose term translator
@@ -69,8 +70,13 @@ object TraversingTranslator {
 }
 
 /** a translator that applies a morphism (lazily) */
-case class ApplyMorphism(morph: Term) extends UniformTranslator {
+case class ApplyMorphismLazy(morph: Term) extends UniformTranslator {
    def apply(context: Context, tm: Term) = OMM(tm, morph)
+}
+
+/** a translator that applies a morphism (lazily) */
+case class ApplyMorphism(lup: Lookup, morph: Term) extends UniformTranslator {
+   def apply(context: Context, tm: Term) = lup.ApplyMorphs(tm, morph)
 }
 
 /** a translator that performs substitution */

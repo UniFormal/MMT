@@ -321,9 +321,12 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           case "Law" => "model"
           case "BoundaryCondition" => "boundarycondition"
           case _ => "theory"
+          /*
           case "Accepted" => "acceptedtheory"
           case "Rejected" => "rejectedtheory"
-          case "Undecided" => "undecidedtheory"}
+          case "Undecided" => "undecidedtheory"
+          */
+        }
       }).get
 
       ostyle match {

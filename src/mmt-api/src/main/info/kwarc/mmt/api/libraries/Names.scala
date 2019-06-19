@@ -56,6 +56,7 @@ object Names {
       }
    }
 
+   /** if name is not visible for home, return all declarations of that name in all loaded theories */
    def resolveIncludes(home : Term, name : String)(implicit lib : Library) : Option[List[IncludeOption]] = {
       val incls = lib.visible(home).toList
       val current = incls flatMap {i =>

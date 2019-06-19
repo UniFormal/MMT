@@ -35,6 +35,7 @@ trait SolverAlgorithms {self: Solver =>
    private lazy val typeBasedEqualityRules = rules.getOrdered(classOf[TypeBasedEqualityRule])
    private lazy val solutionRules = rules.getOrdered(classOf[ValueSolutionRule])
    private lazy val typeSolutionRules = rules.getOrdered(classOf[TypeSolutionRule])
+   private lazy val typeCoercionRules = rules.getOrdered(classOf[TypeCoercionRule])
    private lazy val forwardSolutionRules = rules.getOrdered(classOf[ForwardSolutionRule])
    private lazy val abbreviationRules = rules.getOrdered(classOf[AbbrevRule])
 
@@ -241,6 +242,7 @@ trait SolverAlgorithms {self: Solver =>
        case tm =>
          logAndHistoryGroup {
            history += "trying typing rules"
+           //TODO something is weird here: only the first applicable rule is every tried; is tryAllRules redundant?
            val tmT = tryAllRules(typingRules,tp) {(rule,tpS,h) =>
              try {
                rule(this)(tm,tpS)(stack,h)
@@ -249,10 +251,6 @@ trait SolverAlgorithms {self: Solver =>
                  return checkByInference(tpS, history + "switching to inference")
                case rule.DelayJudgment(msg) =>
                  return delay(Typing(stack, tm, tpS, j.tpSymb))(history + msg)
-               case e:AbstractMethodError => 
-                 println("\n\n\n\n\nAbstract method error when trying to apply the typing rule \""+rule.toString()+"\"")
-                 println("at "+rule.mpath)
-                 throw e
              }
            }
            history += "trying inference/typing rules"
@@ -385,7 +383,7 @@ trait SolverAlgorithms {self: Solver =>
       // try to simplify the type until an equality rule is applicable
       val (tpS, rOpt) = safeSimplifyUntil(tp) {t =>
         typeBasedEqualityRules find {r =>
-          r.applicable(t) && (r.applicableToTerm(tm1S) || r.applicableToTerm(tm2S))
+          r.applicable(t) && (r.applicableToTerm(this, tm1S) || r.applicableToTerm(this, tm2S))
         }
       }
       rOpt match {
@@ -405,7 +403,7 @@ trait SolverAlgorithms {self: Solver =>
             }
          case None =>
             // this is either a base type or an equality rule is missing
-            history += " no applicable type-based rule, trying term-based equality"
+            history += " no applicable type-based rule, trying congruence"
             checkEqualityTermBased(tm1S, tm2S)(stack, history, tp)
       }
    }
@@ -420,7 +418,7 @@ trait SolverAlgorithms {self: Solver =>
      val List(t1S,t2S) = List(t1, t2) map headNormalize
      if (t1S hasheq t2S) {
        true
-     } else if (!Stability.is(t1S) || !Stability.is(t2S)) {
+     } else if (!stability.is(t1S) || !stability.is(t2S)) {
        history += "terms not stable"
        delay(Equality(stack,t1S,t2S,Some(tp)))
      } else {
@@ -441,7 +439,6 @@ trait SolverAlgorithms {self: Solver =>
               var i = 0
               val argseq = (args1 zip args2) map {case (a1,a2) =>
                 i += 1
-                
                 check(Equality(stack++cont1, a1, a2 ^? sub2to1, None))(history + ("comparing argument " + i))
               }
               argseq.forall(_ == true) // comparing all arguments is inefficient if an early argument has an error, but may help make sense of the error
@@ -454,6 +451,15 @@ trait SolverAlgorithms {self: Solver =>
 
   /* ********************** end of equality checking methods ***************************/
 
+  private def coerceToType(tm: Term)(implicit stack: Stack, history: History): Term = {
+    inferType(tm, true).flatMap {tp =>
+      safeSimplifyUntilRuleApplicable(tp, typeCoercionRules) match {
+        case (tpS, Some(rule)) => rule(tm, tpS)
+        case _ => None
+      }
+    }.getOrElse(tm)
+  }
+   
   /** proves a subtyping judgement
     *
     * MMT does not natively implement any subtyping and delegates to equality checking by default.
@@ -464,8 +470,10 @@ trait SolverAlgorithms {self: Solver =>
     */
    private def checkSubtyping(j: Subtyping)(implicit history: History): Boolean = {
      implicit val stack = j.stack
-     val tp1 = headNormalize(j.tp1)
-     val tp2 = headNormalize(j.tp2)
+     val tp1L = coerceToType(j.tp1)
+     val tp2L = coerceToType(j.tp2)
+     val tp1 = headNormalize(tp1L)
+     val tp2 = headNormalize(tp2L)
      // optimization for reflexivity
      if (tp1 hasheq tp2) return true
      val r = solveSubtyping(j.copy(tp1=tp1, tp2=tp2))
@@ -482,7 +490,7 @@ trait SolverAlgorithms {self: Solver =>
      // otherwise, apply a subtyping rule
      history += "not obviously equal, trying subtyping rules"
      val res = tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S,h) =>
-       rule(this)(tp1,tp2)(stack,h)
+       rule(this)(tp1S,tp2S)(stack,h)
      }
      res.getOrElse {
        history += "falling back to checking equality"
@@ -760,7 +768,7 @@ trait SolverAlgorithms {self: Solver =>
    
   /** special case of simplify: expansion, limited recursion */
   private def headNormalize(t: Term)(implicit stack: Stack, history: History): Term = {
-    if (Stability.is(t)) t
+    if (stability.is(t)) t
     else simplify(t, true, false)
   }
 
@@ -779,7 +787,7 @@ trait SolverAlgorithms {self: Solver =>
              tD
            case None =>
              // TODO apply abbrev rules?
-             Stability.set(tm) // undefined constants are stable 
+             stability.set(tm) // undefined constants are stable 
              tm             
          }
        case OMV(n) =>
@@ -792,7 +800,7 @@ trait SolverAlgorithms {self: Solver =>
              history += "expanding definition of " + n
              tD
            case _ =>
-             Stability.set(tm)
+             stability.set(tm)
              tm
          }
        case OMAorAny(Free(cont,bd), args) if cont.length == args.length =>
@@ -800,7 +808,7 @@ trait SolverAlgorithms {self: Solver =>
            val sub = (cont / args).get // defined due to guard
            bd ^? sub
        case t: OMLITTrait =>
-         Stability.set(t) // literals are always stable
+         stability.set(t) // literals are always stable
          t
        case ComplexTerm(op,subs,con,args) =>
           // use first applicable rule
@@ -840,19 +848,19 @@ trait SolverAlgorithms {self: Solver =>
               val oN = o match {
                 case s: Sub =>
                   val sN = s.map(t => safeSimplifyOne(t)(stack,h))
-                  if (Stability.is(sN.target))
-                    Stability.set(sN)
+                  if (stability.is(sN.target))
+                    stability.set(sN)
                   sN
                 case vd: VarDecl =>
                   val vdN = vd.map {t => safeSimplifyOne(t)(stack ++ con.take(i-subs.length), h)}
-                  if ((vdN.tp.toList ::: vdN.df.toList).forall {t => Stability.is(t)})
-                    Stability.set(vdN)
+                  if ((vdN.tp.toList ::: vdN.df.toList).forall {t => stability.is(t)})
+                    stability.set(vdN)
                   vdN
                 case t: Term =>
                   safeSimplifyOne(t)(stack ++ con, h) 
               }
               if (o hasheq oN) {
-                stable &&= Stability.is(oN)
+                stable &&= stability.is(oN)
                 o // if no change, retain the old pointer
               } else {
                 simplified = true
@@ -867,7 +875,7 @@ trait SolverAlgorithms {self: Solver =>
           } else {
             // mark original term as head-stable if all relevant subterms are 
             if (stable)
-              Stability.set(tm)
+              stability.set(tm)
             tm
           }
        case t => t
@@ -1163,26 +1171,23 @@ trait SolverAlgorithms {self: Solver =>
   
   /** like below but for a single term */
   private def tryAllRules[A <: SingleTermBasedCheckingRule,B](rules: List[A],term: Term)(rulecheck : (A,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
-    var done = false
     var rulesV = rules
     var tmS = term
     var ret : Option[B] = None
-    while (!done) {
+    While (ret.isEmpty) {
       safeSimplifyUntilRuleApplicable(tmS, rulesV) match {
         case (tS,Some(rule)) =>
-          done = true
           tmS = tS
           log("Trying " + rule.toString)
           ret = rulecheck(rule, tmS, history + ("trying " + rule.toString))
           if (ret.isEmpty) {
-            done = false
             log("Rule " + rule.toString + " not applicable")
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
-          done = true
           log("no rule applicable")
           history += "no rule applicable"
+          While.break
       }
     }
     ret
@@ -1199,27 +1204,24 @@ trait SolverAlgorithms {self: Solver =>
    */
   private def tryAllRules[A <: CheckingRule,B](rules: List[A], tm1: Term, tm2: Term)
        (condition: (A,Term,Term) => Boolean)(rulecheck: (A,Term,Term,History) => Option[B])(implicit stack: Stack, history: History) : Option[B] = {
-    var done = false
     var rulesV = rules
     var ret : Option[B] = None
     var (tm1S,tm2S) = (tm1,tm2)
-    while (!done) {
+    While (ret.isEmpty) {
       safeSimplifyUntil(tm1S,tm2S)((t1,t2) => rulesV.find(condition(_,t1,t2))) match {
         case (t1S,t2S,Some(rule)) =>
           tm1S = t1S
           tm2S = t2S
-          done = true
           log("Trying rule " + rule.toString)
           ret = rulecheck(rule,tm1S,tm2S,history + ("trying " + rule.toString))
           if (ret.isEmpty) {
-            log("Rule " + rule.toString + " not applicable")
-            done = false
+            log("rule " + rule.toString + " not applicable")
             rulesV = dropJust(rulesV, rule)
           }
         case _ =>
-          done = true
           log("no rule applicable")
           history += "no rule applicable"
+          While.break
       }
     }
     ret

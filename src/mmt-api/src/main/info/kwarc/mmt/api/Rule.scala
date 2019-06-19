@@ -31,7 +31,40 @@ trait Rule extends SemanticObject {
    */
    // TODO priority is used only in some situations so far, in particular for lexer extensions, type inference, or term-transformation
   def priority: Int = 0
+}
 
+object Rule {
+  def loadRule(controller: Controller, homeO: Option[Term], rl: Term) = {
+    val (rlP,rlArgs) = rl match {
+        case OMPMOD(p,as) => (p,as)
+        case _ => throw InvalidObject(rl, "cannot interpret as semantic object: " + rl)
+    }
+    controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
+        case Some(sf: StructuralFeature) =>
+          if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
+          sf.getRule
+        case Some(_) => throw InvalidObject(rl, "extension exists but does not provide a rule: " + rl)
+        case None =>
+          val so = controller.backend.loadObjectO(rlP).getOrElse {
+            throw InvalidObject(rl, "semantic object not found")
+          }
+          so match {
+            case r: Rule =>
+              if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
+              r
+            case r: ParametricRule =>
+              val home = homeO getOrElse {
+                throw ImplementationError("rule is parametric, but not home theory provided")
+              }
+              try {
+                r(controller, home, rlArgs)
+              } catch {case e: Exception =>
+                throw InvalidObject(rl, "error while instantiating parametric rule").setCausedBy(e)
+              }
+            case _ => throw InvalidObject(rl, "semantic object exists but is not a rule: " + rl)
+          }
+      }
+  }
 }
 
 /** parametric rules can be instantiated to obtain rules */

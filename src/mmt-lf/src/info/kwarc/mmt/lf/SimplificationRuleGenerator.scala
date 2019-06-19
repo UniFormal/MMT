@@ -358,7 +358,7 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
                    }
                 }
               }
-              RecurseOnly(List(names.innerPos+under.length))
+              RecurseOnly(List(under.length+1+names.innerPos)) // under + outer.name + innerPos 
           case _ =>
             Simplifiability.NoRecurse
         }

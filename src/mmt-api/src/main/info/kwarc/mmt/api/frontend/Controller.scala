@@ -519,6 +519,8 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                *  (Incidentally, Java pointers to the elements stay valid.)
                * Reuse is only possible if the elements are compatible;
                *  intuitively, that means they have to agree in all fields except possibly for components and children.
+               * Additionally, we require that both elements are from the same source container -
+               *  otherwise, modules of the same name in different files would be replaced by each other.
                * In that case, they new components replace the old ones (if different);
                *   and the new child declarations are recursively added or merged into the old ones later on.
                * Otherwise, the new element is added as usual.
@@ -526,7 +528,12 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                *  but when adding to a Document (including Body.asDocument), the order matters.
                *  Therefore, we call reorder after every add/update.
                */
-              if (old.compatible(nw)) {
+              val compatible = old.compatible(nw)
+              val replace = compatible && {
+                val List(oldcont,nwcont) = List(old,nw).map{e => SourceRef.get(old).map(_.container)}
+                oldcont == nwcont && oldcont.isDefined
+              }
+              if (replace) {
                 log("reusing deactivated " + old.path)
                 // update everything but components and children
                 old.merge(nw)

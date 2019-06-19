@@ -65,6 +65,7 @@ class FlatteningMWSExporter extends Exporter {
       case d => d.getComponents.foreach {
          case DeclarationComponent(comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
+               // TODO MWS interface requires mws:data node, for which we can probably put dummy nodes here 
                val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
                rh(node.toString + "\n")
             }

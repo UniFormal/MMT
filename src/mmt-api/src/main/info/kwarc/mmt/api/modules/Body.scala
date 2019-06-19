@@ -52,6 +52,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
    }
    import narrativeStructure._
 
+   def getAllIncludes: List[IncludeData]
+   
    /** true iff a declaration for a name is present */
    def declares(name: LocalName) = statements.isDefinedAt(name)
    /** the list of names of all declarations */

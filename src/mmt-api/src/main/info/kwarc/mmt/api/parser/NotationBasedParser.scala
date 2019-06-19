@@ -1,10 +1,12 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
+import modules._
+import notations._
+import objects._
+import symbols._
+import documents._
+import utils._
 
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
@@ -188,7 +190,7 @@ class NotationBasedParser extends ObjectParser {
     }
     implicit val puI = pu
     //gathering notations and lexer extensions in scope
-    val (parsing, lexing, _) = getRules(pu.context)
+    val (parsing, lexing, _) = getRules(pu.context , Some(pu.iiContext))
     val notations = tableNotations(parsing)
     Variables.reset()
     log("parsing: " + pu.term + " in context " + pu.context)
@@ -231,14 +233,21 @@ class NotationBasedParser extends ObjectParser {
   }
   
   /** auxiliary function to collect all lexing and parsing rules in a given context */
-  private def getRules(context: Context): RuleLists = {
+  private def getRules(context: Context, iiCO: Option[InterpretationInstructionContext]): RuleLists = {
     val support = context.getIncludes
     //TODO we might also collect notations attached to variables
     support.foreach {p =>
       controller.simplifier(p)
     }
+    val iis = iiCO.map(_.getInstructions).getOrElse(Nil)
+    val docRules = iis.mapPartial {
+      case r: DocumentRule => r.rule
+      case _ => None
+    }
     var nots: List[ParsingRule] = Nil
-    var les: List[LexerExtension] = Nil
+    var les: List[LexerExtension] = docRules.collect {
+      case le: LexerExtension => le
+    }
     var notExts: List[NotationExtension] = Nil
     support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
       // TODO technically, d must be translated along via first; but that never changes the notations that we collect
@@ -278,10 +287,10 @@ class NotationBasedParser extends ObjectParser {
   private def getRules(thy: Term): RuleLists = {
     // this used to simplify thy first, but that may be dangerous and/or inefficient
     thy match {
-      case OMPMOD(mp,_) => getRules(Context(mp))
+      case OMPMOD(mp,_) => getRules(Context(mp), None)
       case AnonymousTheoryCombinator(at) =>
         //we could also collect all notations in decls, but we do not have parsing rules for OML's
-        at.mt.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
+        at.mt.map(m => getRules(Context(m), None)).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }
@@ -550,7 +559,7 @@ class NotationBasedParser extends ObjectParser {
      val cons = consVar.reverse
 
      // hard-coded special case for a bracketed subterm
-     if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {
+     if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot) || cons == List(utils.mmt.andrewsDotRight)) {
        //TODO add metadata for keeping track of brackets
        // source ref of the returned term will be overridden with the source ref of the bracketed term
        return args.head._2

@@ -58,6 +58,8 @@ class BooleanClientProperty[-C <: ClientProperties](p: URI) extends ClientProper
           case _ => None
       }
    def set(t: C) {
+     if (t.toString.contains("fold"))
+       true
      put(t, true)
    }
    def unset(t: C) {

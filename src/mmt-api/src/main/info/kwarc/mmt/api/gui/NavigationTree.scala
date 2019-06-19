@@ -69,8 +69,13 @@ abstract class NavigationTreeBuilder(controller:Controller) {
 
   protected def moduleLabel(m: Module) = m.feature + " " + m.name.last
   protected def declarationLabel(dec : Declaration) = dec match {
-    case Include(_, from,_) => "include " + from.last
-    case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
+    case Include(id) =>
+      val s = id.df match {
+        case Some(OMMOD(incl)) => incl.last
+        case _ => id.from.last
+      }
+      val kw = if (id.isRealization) "realize" else "include"
+      kw + " " + s
     case r: RuleConstant => r.feature
     case d => d.feature + " " + d.name.toStr(true)
   }

@@ -22,7 +22,7 @@ class EscapeManager(handlers: List[LexerExtension]) {
     *   detects an escape at this position
     */
    def apply(s: String, i: Int, firstPosition: SourcePosition): Option[PrimitiveTokenListElem] = {
-      handlers.find(_.applicable(s,i)) map {eh => eh.apply(s,i,firstPosition)}
+      handlers.mapFind(_.apply(s,i,firstPosition))
    }
 }
 
@@ -33,16 +33,14 @@ abstract class LexerExtension extends Rule {
    /**
     * @param s the string to lex
     * @param i the current character
-    * @return true iff this extension accepts a Token that begins at s(i)
-    */
-   def applicable(s: String, i: Int): Boolean
-   /** pre: applicable(s,i) == true
-    * @param s the string to lex
-    * @param i the current character
     * @param firstPosition the SourcePosition of the first character
-    * @return the lexed Token
+    * @return the lexed Token, if applicable
+    * 
+    * lexer extensions are called at every position of the input and therefore must fail very quickly if they are not applicable
+    * 
+    * Make sure to call StringSlice(s,i) instead of s.substring(i) for efficiency.
     */
-   def apply(s: String, i: Int, firstPosition: SourcePosition): PrimitiveTokenListElem
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[PrimitiveTokenListElem]
 }
 
 /**
@@ -53,8 +51,8 @@ abstract class LexerExtension extends Rule {
  * typical example: PrefixedTokenLexer(\)
  */
 class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim: Boolean = true) extends LexerExtension {
-  def applicable(s: String, i: Int) = s(i) == delim
-  def apply(s: String, index: Int, firstPosition: SourcePosition) = {
+  def apply(s: String, index: Int, firstPosition: SourcePosition): Option[Token] = {
+     if (s(index) != delim) return None
      var i = index+1
      while (i < s.length && !s(i).isWhitespace && (!onlyLetters || s(i).isLetter)) {
         i += 1
@@ -62,7 +60,7 @@ class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim:
      val start = if (includeDelim) index else index + 1
      val word = s.substring(start, i)
      val text = if (includeDelim) None else Some(delim + word)
-     Token(word, firstPosition, true, text)
+     Some(Token(word, firstPosition, true, text))
   }
 }
 
@@ -70,16 +68,17 @@ object MMTURILexer extends PrefixedTokenLexer('`', false, false)
 
 /**
  * replaces words during lexing
- * @param maps a list of pairs (a,b) such that a will be lexed as the Token b
  */
 abstract class WordReplacer extends LexerExtension {
-   val maps: List[(String,String)]
-   /** caches the result of applicable so that apply does not have to traverse the list again */
-   // TODO not thread safe
-   private var memory: Option[(String,Int,(String,String))] = None
-   def applicable(s: String, i: Int) = {
-      val si = s.substring(i)
-      val km = maps mapFind {case (k,m) =>
+   /** a list of pairs (a,b) such that a will be lexed as the Token b;
+    *  this method is called only once
+    */
+   def maps: List[(String,String)]
+   /** longest keys are tried first */
+   private val mapsSorted = maps.sortBy {case (k,_) => -k.length} 
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
+      val si = StringSlice(s,i)
+      val km = mapsSorted mapFind {case (k,m) =>
          if (si.startsWith(k)) {
             val next = i+k.length
             if (next == s.length || ! TokenList.canFollow(k.last, s(next)))
@@ -88,35 +87,42 @@ abstract class WordReplacer extends LexerExtension {
          } else
             None
       }
-      if (km.isDefined) {
-         memory = Some((s,i,km.get))
-         true
-      } else
-         false
-   }
-   def apply(s: String, i: Int, firstPosition: SourcePosition): Token = {
-      val (k,m) = memory match {
-         case Some((ms, mi, km)) if ms == s && mi == i => km
-         case _ =>
-            applicable(s, i)
-            memory.get._3
+      km map {case (k,m) =>
+        val wsBefore = i == 0 || TokenList.isWhitespace(s(i-1))
+        Token(m, firstPosition, wsBefore, Some(k))
       }
-      val wsBefore = i == 0 || TokenList.isWhitespace(s(i-1))
-      Token(m, firstPosition, wsBefore, Some(k))
    }
 }
 
-/** replaces typical multi-symbol operators (e.g., arrows and double brackets) with the corresponding Unicode symbol */
+/** replaces typical multi-ascii-symbol operators (e.g., arrows and double brackets) with the corresponding Unicode symbol
+ *  defined by the file */
 object UnicodeReplacer extends WordReplacer {
-   val maps = List("->" -> "→", "<-" -> "←", "<->" -> "↔",
-                   "=>" -> "⇒", "<=" -> "⇐", "<=>" -> "⇔",
-                   "-->" -> "⟶", "<--" -> "⟵", "<-->" -> "⟷",
-                   "==>" -> "⟹", "<==" -> "⟸","<==>" -> "⟺",
-                   "=<" -> "≤", ">=" -> "≥",
-                   "<<" -> "⟪", ">>" -> "⟫", "[[" -> "⟦", "]]" -> "⟧",
-                   "\\/" -> "∨", "/\\" -> "∧",
-                   "!=" -> "≠"
-              )
+  def maps = UnicodeMap.readMap("unicode/unicode-ascii-map")
+}
+
+object UnicodeMap {
+  /** parses resource files of the form command|result into a list of (command,result)
+   *  if multiple | occur, the last one is used
+   *  empty lines and lines starting with // are skipped
+   */
+  def readMap(fileName: String) = {
+    var m: List[(String,String)] = Nil
+    val s = MMTSystem.getResourceAsString(fileName)
+    stringToList(s,"\\n") foreach {l =>
+      val lT = l.trim
+      if (!lT.isEmpty && !lT.startsWith("//")) {
+        val i = lT.lastIndexOf("|")
+        if (i == -1 || i == lT.length - 1) {
+          // | not in l or | is last character of l
+          throw GeneralError(s"illegal line in $fileName: $l")
+        }
+        val command = lT.substring(0,i)
+        val result = lT.substring(i+1)
+        m ::= (command,result)
+      }
+    }
+    m
+  }
 }
 
 /** the lexing part of a [[LexParseExtension]] */
@@ -155,11 +161,12 @@ abstract class ParseFunction {
  * A LexParseExtension is a LexerExtension with a lex and a parse component.
  */
 class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtension {
-   def applicable(s: String, i: Int) = lc.applicable(s, i) && pc.applicable(lc.apply(s,i)._1)
-   def apply(s: String, i: Int, firstPosition: SourcePosition): CFExternalToken = {
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[CFExternalToken] = {
+      if (!lc.applicable(s, i)) return None
       val (text,eaten) = lc(s, i)
+      if (!pc.applicable(text)) return None
       val t = pc(text)
-      CFExternalToken(eaten, firstPosition, t)
+      Some(CFExternalToken(eaten, firstPosition, t))
    }
 
    def unapply(t: Term) = lc.unapply(pc.unapply(t))
@@ -252,16 +259,16 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
  * typical example: AsymmetricEscapeHandler(/*, */)
  */
 class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
-  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
+  def applicable(s: String, i: Int) = StringSlice(s,i).startsWith(begin)
   def apply(s: String, index: Int) = {
      val first = index+begin.length
      var i = first
      var level = 1
      while (i < s.length && level > 0) {
-        if (s.substring(i).startsWith(begin)) {
+        if (StringSlice(s,i).startsWith(begin)) {
            level += 1
            i += begin.length
-        } else if (s.substring(i).startsWith(end)) {
+        } else if (StringSlice(s,i).startsWith(end)) {
            level -= 1
            i += end.length
         } else
@@ -287,7 +294,7 @@ class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction {
   def apply(s: String, index: Int) = {
      var i = index+1
      while (i < s.length && s(i) != delim) {
-        if (s.substring(i).startsWith(exceptAfter.toString + delim)) {
+        if (StringSlice(s,i).startsWith(exceptAfter.toString + delim)) {
            i += 2
         } else
            i += 1
@@ -300,12 +307,12 @@ class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction {
 }
 
 class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) extends LexerExtension {
-   def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
-   def apply(s: String, i: Int, firstPosition: SourcePosition) = {
+   def apply(s: String, i: Int, firstPosition: SourcePosition): Option[CFExternalToken] = {
+      if (!StringSlice(s,i).startsWith(begin)) return None
       val from = i+begin.length
       val text = s.substring(from, from+length)
       val t = rt.parse(text)
-      CFExternalToken(begin+text, firstPosition, t)
+      Some(CFExternalToken(begin+text, firstPosition, t))
    }
 }
 
@@ -317,12 +324,12 @@ case class FiniteKeywordsLexer(keys : List[String]) extends LexFunction {
 
   override def applicable(s : String, i : Int) : Boolean = {
     if (i!=0 && s(i-1).isLetterOrDigit) return false
-    val si = s.substring(i)
-    sortedkeys.exists {k => si == k || (si.startsWith(k) && !si(k.length).isLetterOrDigit)}
+    val si = StringSlice(s,i)
+    sortedkeys.exists {k => si.startsWith(k) && (si.length == k.length || !si.charAt(k.length).isLetterOrDigit)}
   }
 
   override def apply(s: String, i: Int): (String,String) = {
-    val ret = sortedkeys.find(k => s.substring(i).startsWith(k)).get
+    val ret = sortedkeys.find(k => StringSlice(s,i).startsWith(k)).get
     (ret,ret)
   }
 }
@@ -365,11 +372,6 @@ class SemiFormalParser(formatOpt: Option[String]) extends ParseFunction {
    }
 }
 
-object GenericEscapeLexer extends LexParseExtension(
-   new AsymmetricEscapeLexer(Reader.escapeChar.toString, Reader.unescapeChar.toString),
-   new SemiFormalParser(None)
-)
-
 object QuoteLexer extends LexParseExtension(
    new SymmetricEscapeLexer('\"', '\\'), new SemiFormalParser(Some("quoted"))
 )
@@ -393,7 +395,7 @@ case class StringInterpolationToken(text: String, firstPosition: SourcePosition,
             val boundVars = BoundName.getVars(eti.boundNames)
             val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
             val ref = eti.outer.source.copy(region = m.reg)
-            val pu = ParsingUnit(ref, cont, e, eti.outer.nsMap)
+            val pu = ParsingUnit(ref, cont, e, eti.outer.iiContext)
             m.term = eti.parser(pu)(eti.errorCont).toTerm
        }
        lexer.makeTerm(this, eti)
@@ -422,8 +424,8 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
    */
   def makeTerm(token: StringInterpolationToken, eti: ExternalTokenParsingInput): Term
 
-  def applicable(s: String, i: Int) = s.substring(i).startsWith(begin)
-  def apply(s: String, index: Int, fp: SourcePosition) = {
+  def apply(s: String, index: Int, fp: SourcePosition): Option[StringInterpolationToken] = {
+     if (!StringSlice(s,index).startsWith(begin)) return None
      var level = 1 // nesting of string and mmt parts, odd: string part, even: mmt part, 0: end of token reached
      // the current position, current part, and list of parts, and the methods to move the position and create parts
      var currentPos = fp
@@ -456,7 +458,7 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
      advanceBy(begin, false)
      // step through the string
      while (i < s.length && level > 0) {
-        val si = StringSlice(s,i) // efficient substring
+        val si = StringSlice(s,i)
         if (si.startsWith(str.begin) && level % 2 == 0) {
            level += 1
            advanceBy(str.begin, true)
@@ -492,7 +494,7 @@ abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: 
      }
      parts = parts.reverse
      val text = s.substring(index,i)
-     new StringInterpolationToken(text, fp, parts, this)
+     Some(new StringInterpolationToken(text, fp, parts, this))
   }
 }
 
@@ -516,7 +518,7 @@ class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends Strin
     val str = strings.mkString
     val fullcontext = eti.outer.context ++ context //TODO not obvious which context should be used for the quoted term
     val srcref = eti.outer.source.copy(region = token.region)
-    val pu = ParsingUnit(srcref, fullcontext, str, eti.outer.nsMap)
+    val pu = ParsingUnit(srcref, fullcontext, str, eti.outer.iiContext)
     val t = eti.parser(pu)(eti.errorCont).toTerm
     val freeVars = t.freeVars diff names
     if (freeVars.nonEmpty) {

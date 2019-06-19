@@ -100,8 +100,8 @@ class EditActions(mmtplugin: MMTPlugin) {
   }
 
   private def presentView(v : View) : String = v.name.toString + " : " +
-    v.from.toMPath.module.name.toString + " -> " + v.to.toMPath.module.name.toString + "\n" + (v.getIncludes.map { i =>
-      "  include " + i._2.toStr(true)
+    v.from.toMPath.module.name.toString + " -> " + v.to.toMPath.module.name.toString + "\n" + (v.getAllIncludes.map {id =>
+      "  include " + id.df.map(_.toStr(true)).getOrElse("(undefined)")
     } ::: v.getDeclarations.collect {
       case c : FinalConstant if c.df.isDefined =>
         "  " + c.name + " = " + (c.df match {

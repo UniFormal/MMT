@@ -35,56 +35,49 @@ object Common {
   
   /** escapes of characters within latex commands */
   private val commandEscapes = "\\_-1234567890".toList zip List("B", "U", "M", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Zero")
-
   /** escapes of characters within latex delimiters */
   private val delimEscapes = '\\' -> "\\backslash " :: '~' -> "\\sim " :: ' ' -> "\\;" :: "$#%&{}_^".toList.map(c => (c, "\\" + c))
-
   /** maintains a map of unicode-latex replacements, populated on initialization from the resource as jEdit abbreviations
    * later maps overwrite earlier ones; so make sure the resource always contain the non-standard commands (e.g., \ra) before their latex analogs  
    */
   private val rawUnicodeMap = new scala.collection.mutable.HashMap[Char,String]()
   private def macroUnicodeMap(c: Char): Option[String] = rawUnicodeMap.get(c).map(x => "\\" + x + " ")
   private val inverseUnicodeMap = new scala.collection.mutable.HashMap[String,String]
-  
-  /** this is not used by default; users can add as a rule if they have difficulties typing Unicode characters in LaTeX */
+  /** this is not used by default; users can add it as a rule if they have difficulties typing Unicode characters in LaTeX */
   object LatexToUnicodeConverter extends LexerExtension {
-    def applicable(s: String, i: Int) = s(i) == '\\'
-    def apply(s: String, i: Int, firstPosition: SourcePosition): Token = {
+    def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
+      if (s(i) != '\\') return None
       var j = i+1
       val l = s.length
       while (j < l && s(j).isLetter) {j+=1}
       val commandName = s.substring(i+1,j)
       val command = "\\" + commandName
       val wsBefore = i == 0 || TokenList.isWhitespace(s(i-1))
-      inverseUnicodeMap.get(commandName) match {
+      val t = inverseUnicodeMap.get(commandName) match {
         case Some(unicode) =>
           Token(unicode, firstPosition, wsBefore, Some(command))
         case None =>
           Token(command, firstPosition, wsBefore)
       }
-    }
-  }
-  
-  private def fillMap(s: String) {
-    utils.stringToList(s,"\n").foreach {l =>
-      val lT = l.trim
-      if (!lT.isEmpty && ! lT.startsWith("//")) {
-        // lT is of the form jCOMMAND|CHAR
-        val i = lT.indexOf("|")
-        if (i == -1 || lT.length <= i+1)
-          throw GeneralError(s"illegal line in unicode-latex map: $l")
-        val command = lT.substring(1,i) // remove 'j'
-        val char = lT(i+1)
-        rawUnicodeMap(char) = command
-        inverseUnicodeMap(command) = char.toString
-      }
+      Some(t)
     }
   }
   private def init {
-    val basicmap = MMTSystem.getResourceAsString("latex/unicode-latex-map")
+    val basicmap = UnicodeMap.readMap("unicode/unicode-latex-map")
     fillMap(basicmap)
   }
   init
+  
+  private def fillMap(map: List[(String,String)]) {
+    map.foreach {case (c,r) =>
+      // command starts with j
+      val command = c.substring(1)
+      if (r.length != 1) throw GeneralError(s"expected single character in symbol map: $c|$r")
+      val char = r(0)
+      rawUnicodeMap(char) = command
+      inverseUnicodeMap(command) = r
+    }
+  }
 }
 
 import Common._
@@ -127,18 +120,18 @@ class MacroGeneratingPresenter extends Presenter(new MacroUsingPresenter) {
   private def doDeclaration(d: Declaration)(implicit rh : RenderingHandler) {
     d match {
       case c: Constant => doConstant(c)
-      case i @ Include(_,p,_) =>
+      case i @ Include(id) =>
         // skip redundant includes
         if (i.isGenerated)
           return
         // ignore includes of theories written in scala 
-        if (p.doc.uri.scheme contains "scala")
+        if (id.from.doc.uri.scheme contains "scala")
           return
-        val arch = controller.backend.findOwningArchive(p).getOrElse {
-          logError("cannot find archive holding " + p + " (ignoring)")
+        val arch = controller.backend.findOwningArchive(id.from).getOrElse {
+          logError("cannot find archive holding " + id.from + " (ignoring)")
           return
         }
-        val pLAbs = arch / outDim / "content" / archives.Archive.MMTPathToContentPath(p.mainModule).stripExtension
+        val pLAbs = arch / outDim / "content" / archives.Archive.MMTPathToContentPath(id.from.mainModule).stripExtension
         val pLRel = arch.root.up.up.relativize(pLAbs)
         val pL = pLRel.segments.mkString("/")
         rh << "\\RequireMMTPackage{" + pL + "}\n"
