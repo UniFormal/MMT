@@ -65,7 +65,7 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
     obj.dependencies.foreach(doObject)
     val (deps,cs) = obj match {
       case df : DefinedFilter =>
-        var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),Some(df.defi),None))
+        var consts = List(Constant(OMMOD(df.path.module),df.name,Nil,Some(GAP.filter),df.defi,None))
         addDependencies(df.path.module,df.dependencies)
         (IsFilter(consts.last.path) :: doImpls(consts.head,df.dependencies),consts)
 
@@ -86,6 +86,17 @@ class Translator(controller: Controller, bt: BuildTask, index: Document => Unit,
         }
         addDependencies(a.path.module,obj.dependencies)
         (IsAttribute(consts.last.path) :: doImpls(consts.head,a.dependencies),consts)
+      case a : Constructor =>
+        val filters = a.filters
+        var consts = List(Constant(OMMOD(a.path.module),a.name,Nil,Some(Arrow(GAP.obj,GAP.obj)),None,None))
+        //addConstant(c)
+        if (a.returntype.isDefined) {
+          consts ::= Constant(OMMOD(a.path.module),LocalName(a.name + "_type"),Nil,Some(
+            typeax(a,List(filters),a.returntype.get)
+          ),None,None)
+        }
+        addDependencies(a.path.module,obj.dependencies)
+        (doImpls(consts.head,a.dependencies),consts)
       case op : DeclaredOperation =>
         opcounter = 0
         val filters = op.filters

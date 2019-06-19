@@ -32,6 +32,25 @@ object ArchiveBuildCompanion extends ActionCompanion("builds a dimension in a pr
   private def optFilePath(implicit state: ActionState) = (str ?) ^^ { case in => FilePath(stringToList(in.getOrElse(""), "/")) }
 }
 
+case object FinishBuild extends ArchiveAction with ResponsiveAction {
+  override def toParseString: String = "finish build"
+  private val pollingInterval = 1000
+  def apply() {
+    respond("Waiting for build to finish")
+    while(true) {
+
+      // if the q is empty, break the loop
+      if(controller.extman.get(classOf[BuildQueue]).headOption.forall(_.isEmpty)){
+        return
+      }
+
+      // wait for sleep
+      Thread.sleep(pollingInterval)
+    }
+  }
+}
+object FinishBuildCompanion extends ObjectActionCompanion(FinishBuild, "wait for build process to finish", "finish build")
+
 case class ConfBuild(mod : String, targets : List[String], profile : String) extends ArchiveAction {
   def apply() = controller.configBuild(mod, targets, profile)
   def toParseString = "cbuild " + mod + " " + MyList(targets).mkString("[", ",", "]") + " " + profile

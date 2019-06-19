@@ -342,7 +342,7 @@ class ExtensionManager(controller: Controller) extends Logger {
         ClearCompanion, ExitCompanion, SetBaseCompanion,
         ListExtensionsCompanion, AddExtensionCompanion, RemoveExtensionCompanion, AddMWSCompanion,
         WindowCloseCompanion, WindowPositionCompanion, GUIOnCompanion, GUIOffCompanion,
-        ArchiveBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion
+        ArchiveBuildCompanion, FinishBuildCompanion, ConfBuildCompanion, MakeActionCompanion, ArchiveMarCompanion,
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)

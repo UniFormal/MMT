@@ -2,6 +2,8 @@ package info.kwarc.mmt.imps
 
 /* IMPORTS */
 
+import info.kwarc.mmt.api
+import info.kwarc.mmt.api.frontend.{Logger, Report}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.{JSONObject, JSONString, URI}
 import info.kwarc.mmt.imps.FrmFnd.{handpick, removeWhitespace}
@@ -602,7 +604,9 @@ trait DefForm
   }
 }
 
-abstract class Comp[T <: DefForm](js : List[JSONObject] = Nil) {
+abstract class Comp[T <: DefForm](js : List[JSONObject] = Nil) extends Logger {
+  override def report    : Report = new Report()
+  override def logPrefix : String = "imps-scalatypes"
   def build[S <: DefForm](args : List[Any]) : S
 }
 
@@ -1260,10 +1264,6 @@ class DFConstantC(js : List[JSONObject]) extends Comp[DFConstant] {
       val frm : IMPSMathExp = FrmFnd.findFormula(thy.get.thy.s,Some(d),"defconsts","",Some(n.s),js)
       val srt : IMPSSort    = FrmFnd.findSort(thy.get.thy.s,d,"defconsts",Some(n.s),js)
 
-      if (n.s == "continuous") {
-        println("hook > " + frm)
-      }
-
       DFConstant(n,d,frm,srt,thy.get,s,u,None,None).asInstanceOf[T]
     case _ => ??!(args)
   }
@@ -1494,8 +1494,6 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
 
           if (needle.nonEmpty)
           {
-            //println(" > looking for formula for sort-pair: " + sps.get.defs(sp))
-
             val json_theory2 : Option[JSONObject] = js.find(j => j.getAsString("name") == tar.get.thy.s.toLowerCase)
             assert(json_theory2.isDefined)
             assert(json_theory2.get.getAsString("type") == "imps-theory")
@@ -1527,13 +1525,13 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
             if (theThing.isEmpty)
             {
               assert(needle != "")
-              println("\n > needle     = " + needle)
-              println(" > handpicked = " + handpick(needle))
+              logError("> needle     = " + needle)
+              logError("> handpicked = " + handpick(needle))
 
-              println("\nCandidates:\n")
+              logError("Candidates:")
               for (t <- haystack) {
                 for (a <- t.getAsList(classOf[JSONString],"sort-pairs").map(_.value.toLowerCase)) {
-                  println(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
+                  logError(removeWhitespace(a.dropWhile(c => !c.isWhitespace).trim.init))
                 }
               }
             }
@@ -1597,10 +1595,10 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
               if (theThing.isEmpty)
               {
                 assert(needle != "")
-                println("\n > needle     = " + needle)
-                println(" > handpicked = " + handpick(needle))
+                logError("> needle     = " + needle)
+                logError("> handpicked = " + handpick(needle))
 
-                println("\nCandidates:\n")
+                logError("Candidates:")
                 for (t <- haystack)
                 {
                   for (a <- t.getAsList(classOf[JSONString],"constant-pairs").map(_.value.toLowerCase)) {
@@ -1662,17 +1660,18 @@ class DFTranslationC(js : List[JSONObject]) extends Comp[DFTranslation] {
             theThing = tempt
           }
 
+
           if (theThing.isEmpty)
           {
             assert(needle != "")
-            println("\n > needle     = " + needle)
-            println(" > handpicked = " + handpick(needle))
+            logError("> needle     = " + needle)
+            logError("> handpicked = " + handpick(needle))
 
             for (t <- haystack)
             {
-              println("\nCandidates:\n")
+              logError("Candidates:")
               for (a <- t.getAsList(classOf[JSONString],"assumptions").map(_.value.toLowerCase)) {
-                println(removeWhitespace(a))
+                logError(removeWhitespace(a))
               }
             }
           }
@@ -1734,20 +1733,16 @@ class DFRecursiveConstantC(js : List[JSONObject]) extends Comp[DFRecursiveConsta
 
       for (k <- ns.nms.indices)
       {
-        //println(" > Working on recursive constant " + names(k))
-
         val thesexp = realsexps(k)
         val lsp = sp.parseAll(sp.parseSEXP,thesexp)
         assert(lsp.successful)
 
         val defexp = impsMathParser.makeSEXPFormula(lsp.get)
         frms = frms ::: List(defexp)
-        //println("     > Formula generation successful: " + defexp.toString)
 
-        var thesorts  : List[String]     = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
+        var thesorts  : List[String] = theconst.get.getAsList(classOf[JSONString],"sortings").map(g => g.value)
 
-        if (thesorts.length < ns.nms.length)
-        {
+        if (thesorts.length < ns.nms.length) {
           assert(thesorts.length == 1)
           thesorts = thesorts.head.split(", ").toList
         }
@@ -1898,7 +1893,6 @@ object  DFTheoryEnsembleInstances extends Comp[DFTheoryEnsembleInstances] {
               case scala.util.Left(tuple) => tuple match {
                 case (df,Some(ime)) => nu_t = nu_t ::: List(t)
                 case (df,None)      =>
-                  println(" > [TES] Looking for constants mapping: " + c.nm + " -> " + df)
                   nu_t = nu_t ::: List(t)
               }
               case scala.util.Right(_)  => nu_t = nu_t ::: List(t)
@@ -1984,8 +1978,11 @@ object DFComment extends Comp[DFComment] {
   }
 }
 
-object FrmFnd
+object FrmFnd extends Logger
 {
+  override protected def report    : Report = new Report()
+  override           def logPrefix : String = "imps-formula-finder"
+
   def removeWhitespace(str : String) : String = str.replaceAll(" ", "").replaceAll("\t","").replaceAll("\n","").toLowerCase
 
   def findAxiom(thyname : String, spec : AxiomSpec, js : List[JSONObject]) : IMPSMathExp =
@@ -1994,7 +1991,7 @@ object FrmFnd
   def findFormula(thyname : String, dfstr : Option[DefString], g1 : String, g2 : String = "", n : Option[String], js : List[JSONObject]) : IMPSMathExp =
   {
     val json_theory : Option[JSONObject] = js.find(j => j.getAsString("name") == thyname.toLowerCase)
-    assert(json_theory.isDefined)
+    hAssert(json_theory.isDefined, thyname.toLowerCase)
     assert(json_theory.get.getAsString("type") == "imps-theory")
 
     val group1 : List[JSONObject] = json_theory.get.getAsList(classOf[JSONObject],g1)
@@ -2018,7 +2015,7 @@ object FrmFnd
     if (theThing.isEmpty)
     {
       // At this point, we need the actual def-string
-      if (dfstr.isEmpty) { println(" > No defstr for " + n.get + " but nothing found via name either.") }
+      if (dfstr.isEmpty) { logError(" > No defstr for " + n.get + " but nothing found via name either.") }
       assert(dfstr.isDefined)
 
       // unmodified string
@@ -2038,14 +2035,14 @@ object FrmFnd
       if (n.isDefined) { println("looking for " + n.get.toLowerCase) } else { println("looking for nameless formula") }
       assert(needle != "")
       val bar = removeWhitespace(needle)
-      println(" > s = " + needle)
+      println("> s = " + needle)
 
       for (t <- haystack)
       {
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val numb = math.min(foo.length,9)
         if (foo.take(numb) == bar.take(numb)) {
-          println("     > json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
+          println("> json candidate: " + (if (!(t.getAsString("name") == "")) { t.getAsString("name") + ": " } else {""}) + foo)
         }
       }
     }
@@ -2055,7 +2052,8 @@ object FrmFnd
     assert(thesexp.nonEmpty)
 
     val sp : SymbolicExpressionParser = new SymbolicExpressionParser
-    val lsp = sp.parseAll(sp.parseSEXP,cheat(thesexp))
+    val cheatedsexp : String = cheat(thesexp)
+    val lsp = sp.parseAll(sp.parseSEXP, cheatedsexp)
     assert(lsp.successful)
 
     impsMathParser.makeSEXPFormula(lsp.get)
@@ -2076,12 +2074,10 @@ object FrmFnd
       group1.find(j => j.getAsString("name") == n.get.toLowerCase)
     } else {
       s = dfstr.s.tail.init
-      //println("     > scala theorem: " + removeWhitespace(dfstr.s.tail.init))
       var tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == removeWhitespace(dfstr.s.tail.init))
 
       if (tempt.isEmpty) {
         val handpicked = handpick(removeWhitespace(dfstr.s.tail.init))
-        //println("     > handpicked: " +handpicked)
         tempt = group1.find(j => removeWhitespace(j.getAsString("formula-string")) == handpicked)
       }
       tempt
@@ -2091,20 +2087,20 @@ object FrmFnd
     {
       assert(s != "")
       val bar = removeWhitespace(s)
-      println(" > s = " + s)
+      logError("> s = " + s)
 
       for (t <- group1)
       {
         val foo = removeWhitespace(t.getAsString("formula-string"))
         val n = 5
         if (foo.take(n) == bar.take(n)) {
-          println("     > json theorem: " + foo)
+          logError("> json theorem: " + foo)
         }
       }
     }
 
     if (theThing.isEmpty) {
-      println("ERROR: Didn't find thing for " + g1 + " or " + " / " + dfstr)
+      logError("ERROR: Didn't find thing for " + g1 + " or " + " / " + dfstr)
     }
 
     assert(theThing.isDefined)
@@ -2160,6 +2156,10 @@ object FrmFnd
       case "lambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))" => "(mullambda(x,y:kk,if(not(x=o_kk)andnot(y=o_kk),x*_kky,?kk))"
       case "(indicwith(a:sets[ind_1],a))" => "with(a:sets[ind_1],lambda(x_0:ind_1,x_0ina))"
       case "(indicwith(b:sets[ind_2],b))" => "with(b:sets[ind_2],lambda(x_0:ind_2,x_0inb))"
+      case "lambda(x,y:uu,norm(x-y))" => "lambda(x,y:uu,norm(sub_vv(x,y)))"
+      case "forall(x,y,z:bfun,bfun%dist(x,z)<=bfun%dist(x,y)+bfun%dist(y,z))" => "forall(x,y,z:ms%bfun,dist(x,z)<=dist(x,y)+dist(y,z))"
+      case "forall(x,y:bfun,bfun%dist(x,y)=bfun%dist(y,x))" => "forall(x,y:ms%bfun,dist(x,y)=dist(y,x))"
+      case "forall(x,y:bfun,x=yiffbfun%dist(x,y)=0)" => "forall(x,y:ms%bfun,x=yiffdist(x,y)=0)"
       case _ => str
     }
   }

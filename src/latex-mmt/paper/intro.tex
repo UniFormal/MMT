@@ -3,10 +3,14 @@
 
 A major open problem in mathematical document authoring is to elegantly combine formal and informal mathematical knowledge.
 Multiple proof assistants and controlled natural language systems have developed custom formats for that purpose, e.g., \cite{isabelle_documentoriented,mizar,plato,naproche}.
+Other languages $L$ allow for integrating \latex into $L$-source files in a literate programming style (e.g., lhs2tex\footnote{\url{https://www.andres-loeh.de/lhs2tex/}} for Haskell) or for integrating $L$-source chunks into \latex files (e.g., SageTeX\footnote{\url{https://github.com/sagemath/sagetex}} for SageMath).
+The design of \mmttex is close to the latter, i.e., to combine \mmt and \latex sources.
+
 %Mizar's document format \cite{mizar} has always been designed to closely resemble common narrative mathematical language.
 %Recent work for Isabelle opens up the Isabelle kernel in order to permit better integration with other applications, in particular document-oriented editors\cite{isabelle_documentoriented}.
 %%\cite{largeformalwikis} develops a general Wiki infrastructure that can use Mizar and Coq as verification backends.
-%In the Plato system \cite{plato}, TeXMacs is used as a document-oriented frontend whose documents are parsed and verified by the Omega proof assistant.
+%In the Plato system \cite{plato}, TeXMacs is used as a document-oriented frontend whose documents are parsed and verified by a proof assistant.
+
 %Also, several proof assistants can export a {\LaTeX} version of their native input language (e.g., Isabelle and Mizar).
 %Similarly, most can export documents and libraries as HTML, which provides added-value features like navigation and dynamic display.
 %The exported documents do not fully utilize the narrative flexibility of {\LaTeX} or HTML and are not meant for further editing.
@@ -16,8 +20,7 @@ Multiple proof assistants and controlled natural language systems have developed
 %Therefore, the formalization of a mathematical document $D$ in a proof assistant usually requires the -- expensive -- formalization of the background theory that connects $D$ to the foundation.
 %Moreover, the fixed implementation is limited to its input language, which in turn cannot be fully understood by any other system.
 
-The goal of \mmttex is not to introduce a new format but to use \latex documents as the primary user-written documents.
-That makes it most similar to \sTeX \cite{stex}, where authors add content markup that allows converting a \latex to an OMDoc document.
+The goal of \mmttex is very similar to \sTeX \cite{stex}, where authors add content markup that allows converting a \latex to an OMDoc document.
 %Via \latex ML \cite{latexml}, this permits generating \omdoc from the same source code that produces PDF documents.
 %\omdoc itself \cite{omdoc} is an XML format that integrates both content and narration markup.
 %Both \omdoc and sTeX do not define a reference semantics that would permit verifying the documents.

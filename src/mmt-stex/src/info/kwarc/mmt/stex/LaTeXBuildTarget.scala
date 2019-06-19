@@ -22,13 +22,13 @@ import scala.sys.process.{ProcessBuilder, ProcessLogger}
 abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
 {
   val localpathsFile   : String = "localpaths.tex"
-  val inDim            : RedirectableDimension = source
-  var pipeOutput       : Boolean = false
+  val inDim  : ArchiveDimension = source
+  var pipeOutput      : Boolean = false
   val pipeOutputOption : String = "pipe-worker-output"
 
   /** timout in seconds */
-  private   val timeoutDefault   : Int = 300
-  protected var timeoutVal       : Int = timeoutDefault
+  private val timeoutDefault        : Int = 300
+  protected var timeoutVal          : Int = timeoutDefault
   protected val timeoutOption    : String = "timeout"
   protected var nameOfExecutable : String = ""
 
@@ -113,9 +113,8 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   /** to be implemented */
   def reallyBuildFile(bt: BuildTask): BuildResult
 
-  def buildFile(bt: BuildTask): BuildResult = {
-    if (!skip(bt)) reallyBuildFile(bt) else BuildEmpty("file excluded by MANIFEST")
-  }
+  def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
+  else BuildEmpty("file excluded by MANIFEST")
 
   protected def readingSource(a: Archive, in: File, amble: Option[File] = None): List[Dependency] = {
     val res = getDeps(a, in, Set(in), amble)
@@ -139,28 +138,20 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     safe
   }
 
-  override def estimateResult(bt: BuildTask) : BuildSuccess =
-  {
-    val in      = bt.inFile
-    val archive = bt.archive
-
-    val ds: List[Dependency] = if (in.exists && in.isFile) {
-
-      var dps: List[Dependency] = Nil
-
-      if (!noAmble(in) || key != "sms")
-      {
-        val pre  = getAmbleFile(preOrPost = "pre",  bt)
-        val post = getAmbleFile(preOrPost = "post", bt)
-
-        dps = List(pre, post).map(PhysicalDependency) ++
-                   readingSource(archive, in, Some(pre)) ++
-                   readingSource(archive, in, Some(post))
-      }
-
-      readingSource(archive, in) ++ dps
-
-    } else if (in.isDirectory) { Nil }
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val in = bt.inFile
+    val a = bt.archive
+    val ds = if (in.exists && in.isFile) {
+      readingSource(a, in) ++
+        (if (noAmble(in) || key == "sms") Nil
+        else {
+          val pre = getAmbleFile("pre", bt)
+          val post = getAmbleFile("post", bt)
+          List(pre, post).map(PhysicalDependency) ++
+            readingSource(a, in, Some(pre)) ++
+            readingSource(a, in, Some(post))
+        })
+    } else if (in.isDirectory) Nil
     else {
       logResult("unknown file: " + in)
       logResult(" for: " + key)
@@ -210,7 +201,7 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
   val outDim: ArchiveDimension = source
   override val outExt = "tex"
 
-  override def getFolderOutFile(a: Archive, inPath: FilePath): File = a / outDim / inPath
+  override def getFolderOutFile(a: Archive, inPath: FilePath) : File = a / outDim / inPath
 
   // we do nothing for single files
   def reallyBuildFile(bt: BuildTask): BuildResult = BuildEmpty("nothing to do for files")

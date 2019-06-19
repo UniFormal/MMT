@@ -1,23 +1,39 @@
 package info.kwarc.mmt.sql.codegen
 
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.actions.{Action, ActionCompanion, ActionState}
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.sql.{SQLBridge, SchemaLang, Table}
+import info.kwarc.mmt.sql.{SQLBridge, SchemaLang}
 
-object CodeGenerator {
+class CodeGenerator extends Extension {
+  override def start(args: List[String]): Unit = {
+    controller.extman.addExtension(MBGenActionCompanion)
+  }
+
+}
+
+case class MBGenAction(args: List[String]) extends Action {
+  override def toParseString: String = "mbgen "+args.mkString(" ")
 
   private def isInputTheory(t: Theory, schemaGroup: Option[String]): Boolean = {
     val schemaLangIsMetaTheory = t.meta.contains(SchemaLang._path)
     val isInSchemaGroup = schemaGroup.forall(sg => {
       t.metadata.get(SchemaLang.schemaGroup).headOption.exists(_.value.toString == sg)
     })
+    if (schemaLangIsMetaTheory) println(t.metadata.get(SchemaLang.schemaGroup))
     schemaLangIsMetaTheory && isInSchemaGroup
   }
 
-  def main(args: Array[String]): Unit = {
-    val outputDir = args(0)
-    val archiveId = args(1)
-    val schemaGroup = if (args.length > 2) Some(args(2)) else None
+  def apply() {
+    val outputDir = args.head
+    val handle = scala.io.Source.fromFile(outputDir + "/settings.txt")
+    val settings = try {
+      val lines = handle.getLines.toSeq
+      val schemaGroup = if (lines(1).nonEmpty) Some(lines(1)) else None
+      val jdbc = JDBCInfo(lines(2), lines(3), lines(4))
+      val prefix = if (lines.length < 6 || lines(5).nonEmpty) lines(5) else "MBGEN"
+      CodeGenSettings(lines.head, schemaGroup, jdbc, prefix)
+    } finally handle.close()
 
     val dirPaths = ProjectPaths(
       outputDir,
@@ -25,26 +41,32 @@ object CodeGenerator {
       "frontend/src",
       "db"
     )
-    val jdbcInfo = JDBCInfo("jdbc:postgresql://localhost:5432/discretezoo2", "discretezoo", "D!screteZ00")
-    val prefix = "MBGEN"
-    val generate = true
 
-    val controller = Controller.make(true, true, List())
     // remove later
-    controller.handleLine(s"build $archiveId mmt-omdoc")
+    controller.handleLine(s"build ${settings.archiveId} mmt-omdoc")
+    controller.handleLine("finish build")
 
-    val tableCodes = controller.backend.getArchive(archiveId).get.allContent.map(controller.getO).collect({
-      case Some(theory : Theory) if isInputTheory(theory, schemaGroup) => {
-        SQLBridge.test2(theory.path, controller) match {
-          case table: Table => Some(TableCode(prefix, dirPaths.dbPackagePath, table))
-          case _ => None
-        }
-      }
-    }).collect({ case Some(t: TableCode) => t })
+    // add input theories to search
+    val t = controller.backend.getArchive(settings.archiveId).get.allContent.map(controller.getO)
+    t.collect({
+      case Some(theory : Theory) => theory.path //  if isInputTheory(theory, schemaGroup)
+    }).foreach(println)
 
-    val dbCode = DatabaseCode(dirPaths, prefix, tableCodes, jdbcInfo)
-    dbCode.writeAll(generate)
+    val paths = t.collect({
+      case Some(theory : Theory) if isInputTheory(theory, settings.schemaGroup) => theory.path
+    })
+
+    val tables = new Tables(settings.prefix, dirPaths, p => SQLBridge.test2(p, controller), settings.jdbcInfo, paths)
+    tables.databaseCode.writeAll(true)
 
   }
-
 }
+
+object MBGenActionCompanion extends ActionCompanion("run mbgen", "mbgen") {
+
+  import Action._
+
+  def parserActual(implicit state: ActionState) = str.* ^^ { l => MBGenAction(l) }
+}
+
+case class CodeGenSettings(archiveId: String, schemaGroup: Option[String], jdbcInfo: JDBCInfo, prefix: String)

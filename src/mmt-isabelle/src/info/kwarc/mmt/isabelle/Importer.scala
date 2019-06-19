@@ -183,6 +183,8 @@ object Importer
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
     element_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
     command_kind: Option[String] = None,
+    document_tags: List[String] = Nil,
+    document_command: Boolean = false,
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     proof: Option[Proof_Text] = None,
@@ -197,8 +199,8 @@ object Importer
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
     def header_relevant: Boolean =
       header.nonEmpty &&
-        (classes.nonEmpty || types.nonEmpty || consts.nonEmpty || facts.nonEmpty ||
-          locales.nonEmpty || locale_dependencies.nonEmpty)
+        (document_command || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
+          facts.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def command_name: String = element.head.span.name
 
@@ -503,14 +505,14 @@ object Importer
         // document headings
         for (i <- segment.heading) {
           val item = make_dummy("heading", i)
-          thy_draft.declare_item(item, segment.meta_data)
+          thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
           thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.section))
         }
 
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
-            val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
+            val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.universe))
             val tp = Isabelle.Class()
             add_constant(item, tp, None)
@@ -521,7 +523,7 @@ object Importer
         for (decl <- segment.types) {
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax)
-            thy_draft.declare_item(item, segment.meta_data)
+            thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`type`))
             if (thy_export.typedefs.exists(typedef => typedef.name == item.entity_name)) {
@@ -538,7 +540,7 @@ object Importer
         for (decl <- segment.consts) {
           decl_error(decl.entity) {
             val item = thy_draft.make_item(decl.entity, decl.syntax, (decl.typargs, decl.typ))
-            thy_draft.declare_item(item, segment.meta_data)
+            thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
             if (segment.is_axiomatization) {
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
@@ -561,7 +563,7 @@ object Importer
         val facts: List[Item] =
           segment.facts_single.flatMap(decl =>
             decl_error(decl.entity) {
-              val item = thy_draft.declare_entity(decl.entity, segment.meta_data)
+              val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
 
               if (segment.is_definition) {
@@ -610,7 +612,7 @@ object Importer
         for (locale <- segment.locales) {
           decl_error(locale.entity) {
             val content = thy_draft.content
-            val item = thy_draft.declare_entity(locale.entity, segment.meta_data)
+            val item = thy_draft.declare_entity(locale.entity, segment.document_tags, segment.meta_data)
             thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.theory))
             val loc_name = item.local_name
             val loc_thy = Theory.empty(thy.path.doc, thy.name / loc_name, None)
@@ -661,7 +663,7 @@ object Importer
         // locale dependencies (inclusions)
         for (dep <- segment.locale_dependencies if dep.is_inclusion) {
           decl_error(dep.entity) {
-            val item = thy_draft.declare_entity(dep.entity, segment.meta_data)
+            val item = thy_draft.declare_entity(dep.entity, segment.document_tags, segment.meta_data)
             val content = thy_draft.content
 
             val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
@@ -1132,6 +1134,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val syntax = resources.session_base.node_syntax(snapshot.version.nodes, node_name)
 
+      def document_command(element: isabelle.Thy_Element.Element_Command): Boolean =
+        isabelle.Document_Structure.is_document_command(syntax.keywords, element.head)
+
       val node_timing =
         isabelle.Document_Status.Overall_Timing.make(
           snapshot.state, snapshot.version, snapshot.node.commands)
@@ -1152,7 +1157,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         val relevant_elements =
           node_elements.filter(element =>
-              isabelle.Document_Structure.is_heading_command(element.head) ||
+              document_command(element) ||
               element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
 
         val relevant_ids =
@@ -1169,6 +1174,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           val element_timing =
             isabelle.Document_Status.Overall_Timing.make(
               snapshot.state, snapshot.version, element.iterator.toList)
+
+          val element_range = commands_range(rendering.snapshot, element.head, element.last)
+
+          val document_tags = rendering.document_tags(element_range)
 
           val meta_data = element_meta_data(rendering, element)
 
@@ -1226,6 +1235,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             element = element,
             element_timing = element_timing,
             command_kind = syntax.keywords.kinds.get(element.head.span.name),
+            document_tags = document_tags,
+            document_command = document_command(element),
             meta_data = meta_data,
             heading = heading,
             proof = proof,
@@ -1464,7 +1475,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def rdf_triple(triple: isabelle.RDF.Triple): Unit =
         _state.change({ case (content, triples) => (content, triple :: triples) })
 
-      def declare_item(item: Item, props: isabelle.Properties.T)
+      def declare_item(item: Item, tags: List[String], props: isabelle.Properties.T)
       {
         _state.change(
           { case (content, triples) =>
@@ -1477,8 +1488,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               val source_ref =
                 item.source_ref.map(sref =>
                     Ontology.binary(item.global_name, Ontology.ULO.sourceref, sref.toURI))
+              val important =
+                tags.reverse.collectFirst({
+                  case isabelle.Markup.Document_Tag.IMPORTANT => true
+                  case isabelle.Markup.Document_Tag.UNIMPORTANT => false
+                }).toList.map(b =>
+                  Ontology.unary(item.global_name, if (b) Ontology.ULO.important else Ontology.ULO.unimportant))
               val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
-              val triples1 = name :: specs ::: source_ref.toList ::: properties.reverse ::: triples
+
+              val triples1 = name :: specs ::: source_ref.toList ::: important ::: properties.reverse ::: triples
               (content1, triples1)
           })
       }
@@ -1515,10 +1533,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           type_scheme = type_scheme)
       }
 
-      def declare_entity(entity: isabelle.Export_Theory.Entity, props: isabelle.Properties.T): Item =
+      def declare_entity(
+        entity: isabelle.Export_Theory.Entity,
+        tags: List[String],
+        props: isabelle.Properties.T): Item =
       {
         val item = make_item(entity)
-        declare_item(item, props)
+        declare_item(item, tags, props)
         item
       }
 

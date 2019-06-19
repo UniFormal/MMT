@@ -43,6 +43,6 @@ models     http://models.latin.omdoc.org/
 
 // entries for MitM systems, moved here from mitm/config.default.json
 #mitm
-GAP        localhost 26133
+GAP        field.informatik.uni-erlangen.de 26133
 Sage       localhost 26136
-Singular   localhost 26135
+Singular   field.informatik.uni-erlangen.de 26135

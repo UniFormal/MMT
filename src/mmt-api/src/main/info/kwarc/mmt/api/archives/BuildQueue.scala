@@ -18,7 +18,7 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   var lowPriority: Boolean = true
 
   /** task should be queued at beginning */
-  def highPriority: Boolean = !lowPriority
+  def highPriority = !lowPriority
 
   /** task was not requested directly but added as dependency of some other task */
   // TODO make this part of constructor to avoid having a var?
@@ -471,11 +471,17 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     addTask(up, qt)
   }
 
+  /**
+    * Checks if there any jobs left on the buildquenue
+    * @return
+    */
+  def isEmpty : Boolean = queued.isEmpty && blocked.isEmpty && currentQueueTask.isEmpty
+
  
   // ******************* web interface
 
   /** a ServerExtension for interacting with the queue through the browser */
-    private def getQueueInfo: JSON = synchronized {
+      private def getQueueInfo: JSON = synchronized {
         val qSize = queued.size
         val iter = queued.iterator.asScala
         val num = 48
