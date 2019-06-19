@@ -206,7 +206,7 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
     AnonymousDiagram(nodesR, arrowsR, distNode map r)
   }
   def union(that: AnonymousDiagram) = {
-    new AnonymousDiagram((this.nodes ::: that.nodes).distinct, (this.arrows:::that.arrows).distinct, None)
+    new AnonymousDiagram((this.nodes ::: that.nodes).groupBy(_.label).map(_._2.head).toList, (this.arrows ::: that.arrows).groupBy(_.label).map(_._2.head).toList, None)
   }
 
   def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode)
