@@ -186,7 +186,10 @@ jder|⊦
 jrightassert|⊦
 jvdash|⊢
 jdashv|⊣
+jVdash|⊩
+jVvdash|⊪
 jmodels|⊧
+jModels|⊫
 jtop|⊤
 jbot|⊥
 jneg|¬
