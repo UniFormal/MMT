@@ -100,7 +100,7 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
       case IncludeVarDecl(_, OMPMOD(p, args), _) =>
         Include(home, p, args) //TODO defined include
       case StructureVarDecl(n, from, dfO) =>
-        Structure(home, name, from, dfO, false)
+        Structure(home, name, from, dfO, false, false)
       case DerivedVarDeclFeature(n, f, tp, None) =>
         new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not), TermContainer(df))
     }

@@ -568,10 +568,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 case Some(OMPMOD(p,_)) => LocalName(p)
                 case _ => fail("domain must be atomic")
               }
-              val isImplicit = keyword == "include"
-              val as = new Structure(mod.toTerm, name, tpC, dfC, isImplicit)
+              val isTotal = keyword == "realize"
+              val as = new Structure(mod.toTerm, name, tpC, dfC, true, isTotal)
               addDeclaration(as)
-        case "structure" => readStructure(parentInfo, mod, context, isImplicit = false)
+        case "structure" => readStructure(parentInfo, mod, context, isImplicit = false, isTotal = false)
         case "theory" => readTheory(parentInfo, context)
         case ViewKey(_) => readView(parentInfo, context, isImplicit = false)
         case k if k.forall(_ == '#') =>
@@ -633,8 +633,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
             case ViewKey(_) => readView(parentInfo, context, isImplicit = true)
-            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true)
+            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true, isTotal = true)
             case _ => throw makeError(reg2, "only links can be implicit here")
+          }
+        case "total" =>
+          val (keyword2, reg2) = state.reader.readToken
+          keyword2 match {
+            case "structure" => readStructure(parentInfo, mod, context, isImplicit = false, isTotal = true)
+            case _ => throw makeError(reg2, "only structures can be total")
           }
         case k =>
           // other keywords are treated as ...
@@ -1024,7 +1030,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     * @param isImplicit whether the structure is implicit
     */
   private def readStructure(parentInfo: IsMod, mod: ModuleOrLink, context: Context,
-                            isImplicit: Boolean)(implicit state: ParserState) {
+                            isImplicit: Boolean, isTotal: Boolean)(implicit state: ParserState) {
     val link = mod match {case l: Link => Some(l) case _ => None}
     val givenName = readName
     val home = OMMOD(parentInfo.modParent)
@@ -1035,7 +1041,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     // shared code for creating the structure
     def createStructure(df: Option[Term]) = {
       val dfC = TermContainer(df)
-      val s = new Structure(home, name, tpC, dfC, isImplicit)
+      val s = new Structure(home, name, tpC, dfC, isImplicit, isTotal)
       s.setDocumentHome(parentInfo.relDocParent)
       seCont(s)
       s

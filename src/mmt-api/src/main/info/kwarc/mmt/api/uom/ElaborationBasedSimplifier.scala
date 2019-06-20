@@ -441,6 +441,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case Include(_) =>
               // because pThy is already flattened transitively, we do not have to do a transitive closure
               Nil
+            case nm: NestedModule => Nil // TODO compute pushout
             case d: Declaration =>
               if (skipWhenFlattening(d.getOrigin))
                 Nil

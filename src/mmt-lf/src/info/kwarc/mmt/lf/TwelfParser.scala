@@ -822,9 +822,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, Context(parent.path))
         i = positionAfter
         domain match {
-          case Some(dom) => structure = Structure(parent.toTerm, LocalName(name), OMMOD(dom), Some(morphism), isImplicit)
+          case Some(dom) => structure = Structure(parent.toTerm, LocalName(name), OMMOD(dom), Some(morphism), isImplicit, false)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted
-          case None => structure = Structure(parent.toTerm, LocalName(name), null, Some(morphism), isImplicit)
+          case None => structure = Structure(parent.toTerm, LocalName(name), null, Some(morphism), isImplicit, false)
         }
         add(structure)
       }

@@ -6,7 +6,7 @@ import symbols._
 import objects._
 import symbols._
 
-class Instance(heap: MPath, of: MPath, id: Int) extends Structure(OMMOD(heap), LocalName(id.toString), TermContainer(OMMOD(of)), new TermContainer(), false) {
+class Instance(heap: MPath, of: MPath, id: Int) extends Structure(OMMOD(heap), LocalName(id.toString), TermContainer(OMMOD(of)), new TermContainer(), false, false) {
    def assign(p: GlobalName, t: Term) {
       val name = p.toLocalName
       getO(name) match {

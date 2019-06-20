@@ -463,7 +463,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
       case v: View =>
         checkTotalTop(v, v.from)
+      case Include(_) =>
       case s: Structure =>
+        if (s.isTotal) {
+          checkTotalTop(s, s.from)
+        }
       case dm: DerivedModule =>
         val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
         // error for sfOpt.isEmpty is raised in checkElementegin already
@@ -506,7 +510,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
    *  @return all names for which an assignment is missing
    *  pre: thyTerm has been simplified already
    */
-  private def checkTotalTop(mod: Module, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
+  private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
     val unmappedNames = checkTotal(mod, thyTerm)
     val total = unmappedNames.isEmpty
     if (!total) {
@@ -517,7 +521,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       env.errorCont(ie)
     }
   }
-  private def checkTotal(mod: Module, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
+  private def checkTotal(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
     val thyPath = thyTerm match {
       case OMPMOD(p,_) => p
       case _ => return Nil // TODO make sure this does not happen
@@ -526,7 +530,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // convenience for the two kinds of results
     def mapped = Nil
     def unmapped(n: LocalName) = List(thyPath ? n)
-    thy.getDeclarations flatMap {
+    val unm = thy.getDeclarations flatMap {
       case c: Constant =>
         if (c.df.isDefined) mapped else {
           val names = c.name.prefixes
@@ -564,6 +568,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // TODO add more cases if needed
         unmapped(d.name)
     }
+    unm.distinct
   }
 
   // *****
