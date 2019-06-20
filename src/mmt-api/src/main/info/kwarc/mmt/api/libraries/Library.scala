@@ -499,6 +499,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               }
             }
             val dom = afrom.toMPath
+            // TODO this can cause an infinite recursion
             val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head
@@ -851,7 +852,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   (id.df.isEmpty, oldImpl) match {
                     case (true, Some(i)) =>
                       // an undefined include acquires an existing non-include implicit morphism as its definiens
-                      c.asInstanceOf[Structure].dfC.analyzed = Some(i)
+                      //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
                     case _ =>
                       //if (!id.isRealization)
                         //realizations are only added when totality has been checked at the end of the theory
