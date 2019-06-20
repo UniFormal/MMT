@@ -41,12 +41,12 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
             +" but no derived declaration found at that location.")
     }
     implicit val parent = indD.path
-    val indDefs = parseInternalDeclarations(indD, controller, None)
+    val indDefs = parseInternalDeclarations(indD, controller, None)(indD.path)
     var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
     
     val indTplNames = indTpls map (_.name)
     
-    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
      
     // check whether all declarations match their corresponding constructors
     decls foreach {
@@ -71,7 +71,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
       PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(proof_path), indParams++indTplsDef++modelDf++indTplArgs.map(_.toTerm))))}
     
     val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
-      makeConst(dd.name/tpl.name, ()=> {tp}, () => {Some(df)})}
+      makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     new Elaboration {

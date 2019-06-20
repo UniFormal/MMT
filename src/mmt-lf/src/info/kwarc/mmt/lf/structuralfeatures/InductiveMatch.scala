@@ -41,12 +41,12 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
             +" but no derived declaration found at that location.")
     }
     implicit val parent = indD.path
-    val indDefs = parseInternalDeclarations(indD, controller, None)
+    val indDefs = parseInternalDeclarations(indD, controller, None)(indD.path)
     var indTpls = tpls(indDefs)
     
     val indTplNames = indTpls map (_.name)
     
-    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
     
     val induct_paths = indTpls.map(t=>t.path.copy(name=inductName(t.name)))
     val unapply_paths = indDefs.map(t=>t.path.copy(name=unapplierName(t.name)))
@@ -78,7 +78,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
       PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(induct_path), indParams++modelDf++indTplArgs.map(_.toTerm))))}
     
     val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
-      makeConst(dd.name/tpl.name, ()=> {tp}, () => {Some(df)})}
+      makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     new Elaboration {

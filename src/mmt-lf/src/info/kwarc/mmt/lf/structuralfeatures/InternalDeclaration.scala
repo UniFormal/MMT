@@ -90,7 +90,7 @@ private object InternalDeclarationUtil {
    *  @param df (optional) the definition of the constant
    *  @param parent (implicit) the inductive definition to elaborate
    */
-  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None, Lnot: () => Option[TextNotation] = () => None)(implicit parent:  GlobalName): Constant = {
+  def makeConst(name: LocalName, Ltp: () => Term, simplifyTag: Boolean = false, Ldf: () => Option[Term] = () => None, Lnot: () => Option[TextNotation] = () => None)(implicit parent:  GlobalName): Constant = {
     val p = externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
       otherDefined = true
@@ -98,20 +98,30 @@ private object InternalDeclarationUtil {
         _tp = Some(Ltp())
         _df = Ldf()
         _not = Lnot()
+        _rl = if (simplifyTag) {
+          Some(SimplificationRuleGenerator.SimplifyTag)
+        } else {
+          None
+        }
       }
     }
   }
 //  def makeConst(name: LocalName, Ltp: () => Term, Ldf: () => Option[Term] = () => None)(implicit parent:  GlobalName): Constant = {makeConst(name, Ltp, () => None, Ldf)}
-  def makeConst(name: LocalName, Ltp: () => Term)(implicit parent: GlobalName):Constant = {makeConst(name, Ltp, ()=>{None})}
-  def injDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
-    val decl = InternalDeclaration.fromConstant(c, con, Nil, ctx)
-    val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
-    tmdecl.injDecls
+def makeConst(name: LocalName, Ltp: () => Term, simplifyTag: Boolean)(implicit parent: GlobalName):Constant = {
+    makeConst(name, Ltp, simplifyTag, ()=>{None})
   }
-  def surjDecl(c: Constant, con: Controller, ctx: Option[Context])(implicit parent: GlobalName) = {
+  def makeConst(name: LocalName, Ltp: () => Term)(implicit parent: GlobalName):Constant = {
+    makeConst(name, Ltp, false, ()=>{None})
+  }
+  def injDecl(c: Constant, con: Controller, ctx: Option[Context], simplifyTag: Boolean=false)(implicit parent: GlobalName) = {
     val decl = InternalDeclaration.fromConstant(c, con, Nil, ctx)
     val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
-    tmdecl.surjDecl
+    tmdecl.injDecls(simplifyTag)
+  }
+  def surjDecl(c: Constant, con: Controller, ctx: Option[Context], simplifyTag: Boolean=false)(implicit parent: GlobalName) = {
+    val decl = InternalDeclaration.fromConstant(c, con, Nil, ctx)
+    val tmdecl = decl match {case tmd: TermLevel => tmd case _ => throw ImplementationError("Termlevel declaration expected.")}
+    tmdecl.surjDecl(simplifyTag)
   }
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
@@ -184,7 +194,7 @@ object InternalDeclaration {
     val Ltp = () => {
       PiOrEmpty(context getOrElse Context.empty, Univ(1))
     }
-    makeConst(uniqueLN(name getOrElse "type"), Ltp)
+    makeConst(uniqueLN(name getOrElse "type"), Ltp, false)
   }
 }
 
@@ -251,7 +261,7 @@ sealed abstract class InternalDeclaration {
   }
   
   def toVarDecl = VarDecl(name, tp)
-  def toConstant(implicit parent: GlobalName): Constant = {
+  def toConstant(simplifyTag: Boolean)(implicit parent: GlobalName): Constant = {
     // for n parameters, copy over notation but add n implicit arguments at beginning
     def not = notation.parsing.flatMap {n =>
       val numPars = context.length
@@ -261,8 +271,9 @@ sealed abstract class InternalDeclaration {
         case ImplementationError(m) => println(m+" in the notation for the externalized internal declaration: "+name); None
       }
     }
-    makeConst(name, () => externalTp, () => externalDf, () => not)(parent)
+    makeConst(name, () => externalTp, simplifyTag, () => externalDf, () => not)(parent)
   }
+  def toConstant(implicit parent: GlobalName): Constant = {toConstant(false)}
   def toTerm(implicit parent: GlobalName): Term = ApplyGeneral(OMS(externalName(parent, name)), context.map(_.toTerm))
   
   /** apply the internal declaration to the given argument context */
@@ -324,7 +335,7 @@ abstract case class TermLevel(path: GlobalName, args: List[(Option[LocalName], T
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param d the term level for which to generate the injectivity axiom
    */
-  def injDecls(implicit parent: GlobalName): List[Constant] = {
+  def injDecls(simplifyTag: Boolean=false)(implicit parent: GlobalName): List[Constant] = {
     val (aCtx, aApplied) = argContext(Some("_0"))
     val (bCtx, bApplied) = argContext(Some("_1"))
     val abi = (aCtx zip bCtx) zipWithIndex
@@ -336,7 +347,7 @@ abstract case class TermLevel(path: GlobalName, args: List[(Option[LocalName], T
         val res=PiOrEmpty(context++aCtx ++ bis.map(_._1._2),  Arrow(argNeq, resNeq))
         res
       }
-      makeConst(uniqueLN("injective_"+name+"_"+i.toString), Ltp, ()=>{None})(parent)
+      makeConst(uniqueLN("injective_"+name+"_"+i.toString), Ltp, simplifyTag, ()=>{None})(parent)
     }
   }
   
@@ -345,14 +356,14 @@ abstract case class TermLevel(path: GlobalName, args: List[(Option[LocalName], T
    * @param parent the parent declared module of the derived declaration to elaborate
    * @param d the term level for which to generate the surjectivity axiom
    */
-  def surjDecl(implicit parent: GlobalName): Constant = {
+  def surjDecl(simplifyTag: Boolean=false)(implicit parent: GlobalName): Constant = {
     val Ltp = () => {
       val im = newVar("image_point", ret, Some(context))
       val (aCtx, aApplied) = argContext(None)
     
       PiOrEmpty(context++im,  neg(PiOrEmpty(aCtx, neg(Eq(ret, aApplied, im.toTerm)))))
     }
-    makeConst(uniqueLN("surjective_"+name), Ltp, ()=>{None})(parent)
+    makeConst(uniqueLN("surjective_"+name), Ltp, simplifyTag)(parent)
   }
 }
 
