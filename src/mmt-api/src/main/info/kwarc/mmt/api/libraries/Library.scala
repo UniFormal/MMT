@@ -499,7 +499,6 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               }
             }
             val dom = afrom.toMPath
-            // TODO this can cause an infinite recursion
             val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head
@@ -852,8 +851,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   (id.df.isEmpty, oldImpl) match {
                     case (true, Some(i)) =>
                       // an undefined include acquires an existing non-include implicit morphism as its definiens
+                      // MoC design flaw because the implicit morphism may depend on a previous version of the theory
+                      // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
                       //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
                     case _ =>
+                      // this should be done at (*) below for realizations to avoid dependency cycles
+                      // but it causes problems when includes are registered as implicit before the realization is encoutered
                       //if (!id.isRealization)
                         //realizations are only added when totality has been checked at the end of the theory
                         addIncludeToImplicit(id)
@@ -863,6 +866,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case _ =>
           }
         case t: Theory =>
+           // (*)
            //t.getRealizees foreach addIncludeToImplicit
         case l: Link if l.isImplicit =>
           implicitGraph(l.from, l.to) = l.toTerm
