@@ -149,7 +149,15 @@ jni|∋
 jnni|∌
 jneq|≠
 jdoteq|≐
+jbotdoteq|⩦
 jbigeq|⚌
+jcirceq|≗
+jtpeq|≘
+jbpeq|≚
+jdeltaeq|≜
+jcorresponds|≙
+jasteq|≛
+jqmeq|≟
 jdotplus|∔
 jplusdot|⨥
 jdotminus|∸
@@ -168,6 +176,7 @@ jsimplus|⨤
 jbarelem|⋷
 jequiv|≡
 jnequiv|≢
+jsequiv|≣
 jsim|∼
 jsimeq|≃
 jnsimeq|≄
@@ -213,6 +222,7 @@ jsm|∖
 jsetminus|∖
 jcolon|∶
 jcoloneq|≔
+jeqcolon|≕
 jlparen|(
 jrparen|)
 jllparen|⸨
