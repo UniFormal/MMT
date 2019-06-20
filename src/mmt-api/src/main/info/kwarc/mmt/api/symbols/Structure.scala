@@ -137,9 +137,9 @@ object Include {
  *  @param from the domain of the included theory
  *  @param args instantiations of the parameters of from (if any)
  *  @param df definiens (i.e., the included morphism if in a theory)
- *  @param postulated if true, this specifies a structural include that must be implemented by the containing theory;
+ *  @param total a total include is one that must be implemented by the containing theory
  *   this becomes available as a morphism only at the end of the containing theory (even if there is a definiens,
- *     which can happen, e.g., if the definiens refers to other postulated includes) 
+ *     which can happen, e.g., if the definiens refers to other total includes) 
  *  
  *  invariants: if df contains mor then args.isEmpty && from is domain of df
  *              else OMPMOD(from,args) is included theory

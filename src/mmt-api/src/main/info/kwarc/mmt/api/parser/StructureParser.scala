@@ -519,9 +519,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val name = readName
           val c = readConstant(name, mod, context)
           addDeclaration(c)
-        //Include resp. LinkInclude
+        //Include
         case "include" | "realize" =>
-          // FR: unifying includes in theories and links; this code is kept as a reference for the original behavior in case of theories and be removed eventually
+          // FR: unifying includes in theories and links; this code is kept as a reference for the original behavior in case of theories and to be removed eventually
           /*mod match {
             case thy: Theory =>
               val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
