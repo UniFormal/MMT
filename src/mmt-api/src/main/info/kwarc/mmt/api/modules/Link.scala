@@ -20,7 +20,9 @@ trait Link extends ModuleOrLink {
    /** the codomain of the link (mutable for views but not structures) */
    def toC: AbstractTermContainer
    /** the domain of this link; pre: must have be given explicitly or have been inferred */
-   def from = fromC.get.getOrElse(throw ImplementationError("can only call this method after domain has been inferred"))
+   def from = fromC.get.getOrElse {
+     throw ImplementationError("can only call this method after domain has been inferred")
+   }
    /** the codomain of this link; pre: must have be given explicitly or have been inferred */
    def to = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
    /** the codomain as a context; pre: same as `to` */

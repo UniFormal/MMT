@@ -200,8 +200,6 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           }
           // TODO does not work yet; how does definition expansion interact with other steps?
           if (state.unit.expandDefinitions) {
-            if (p.toString.endsWith("embed"))
-                true
             val pCons = controller.globalLookup.getO(ComplexTheory(context), p.toLocalName)
             val pDf = pCons.flatMap {
               case c: Constant =>

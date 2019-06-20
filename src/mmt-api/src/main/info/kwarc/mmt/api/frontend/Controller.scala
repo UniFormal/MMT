@@ -504,11 +504,6 @@ class Controller(report_ : Report = new Report) extends ROController with Action
    *  None adds at beginning, null (default) at end
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
-    // invalidate cache entry for the notation
-    nw.path match {
-      case p: ContentPath => memory.notations.delete(p)
-      case _ =>
-    }
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>

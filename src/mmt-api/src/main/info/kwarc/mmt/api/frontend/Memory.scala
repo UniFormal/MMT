@@ -20,9 +20,6 @@ class Memory(extman: ExtensionManager, val report: Report) extends ROMemory {
   val previousContent = new Library(extman, report, None)
   /** maintains all content elements */
   val content = new Library(extman, report, Some(previousContent))
-
-  val notations = new NotationCache
-  //extman.addExtension(notations) // TODO needs to be improved before deploying
   
   /** forgets everything */
   def clear {
