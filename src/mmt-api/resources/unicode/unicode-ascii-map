@@ -15,7 +15,7 @@
 // arrows with |
 |->|↦
 |-->|⟼
-// turnstyles etc.
+// turnstyles etc. (| must be typed as ! in jEdit)
 |-|⊦
 ||-|
 -||⊣
@@ -38,7 +38,7 @@
 =°|⊜
 °°|⊚
 .°|⊙
-°|∘
+:°|⦂
 // stacking symbols, bottom to top, and their negations
 =~|≅
 !=~|≇

@@ -131,15 +131,24 @@ object Morph {
               }
             case OMStructuralInclude(from,to) =>
               val append = cod match {
-                case Some(OMMOD(t)) =>
-                  // t -include-> from ; StructuralInclude(from, to): try to restrict the latter to t
-                  lib.getO(to ? ComplexStep(t)) match {
-                    case Some(Include(id)) if !id.isRealization =>
-                      /* defined include t -> to: use definiens
-                       * undefined include t -> to: structural include t -> to must be identity, drop
-                       * realization t -> to: use t as morphism, no simplification possible 
+                case Some(OMMOD(f)) =>
+                  // m = StructuralInclude(from,to)
+                  // t -include-> from ; m: try to restrict m to t
+                  lib.getO(to ? ComplexStep(f)) match {
+                    case Some(Include(id)) =>
+                      /* defined include f -> to: use definiens
+                       * undefined include f -> to: m|_to must be identity, drop m
+                       * realization f -> to: m|_to is restricted realization 
                        */
-                      id.df map {d => simplify(d)}
+                      id.df match {
+                        case Some(d) => Some(simplify(d))
+                        case None =>
+                          if (id.isRealization) {
+                            Some(OMStructuralInclude(f,to))
+                          } else {
+                            None
+                          }
+                      }
                     case _ => Some(m)
                   }
                 case _ => Some(m)
