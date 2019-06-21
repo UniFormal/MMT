@@ -79,7 +79,7 @@ object ComputeHom extends ComputationRule(Hom.path) {
         val r = new OMLReplacer(l => utils.listmap(renames, l).map(n => OML(n)))
         r(t, Context.empty)
       }
-      val declsR = decls map {o =>
+      val declsR : List[OML] = decls map {o =>
         val newname = LocalName(prefix) /  o.name
         val d = new OML(newname, o.tp map replace, o.df map replace)
         renames ::= (o.name, newname)
