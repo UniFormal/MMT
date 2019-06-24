@@ -74,6 +74,7 @@ jbullet|∙
 jtimes|×
 jpm|±
 jmp|∓
+jdiv|÷
 jwedge|∧
 jvee|∨
 jcap|∩
@@ -221,6 +222,7 @@ jcomplement|∁
 jsm|∖
 jsetminus|∖
 jcolon|∶
+jzcolon|⦂
 jcoloneq|≔
 jeqcolon|≕
 jlparen|(

@@ -100,7 +100,7 @@ sealed abstract class DiagramElement {
   */
 case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
-  override def toString = s"$label:THEY=$theory"
+  override def toString = s"$label:THY=$theory"
   def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
   override def equals(that: Any): Boolean =
     that match {

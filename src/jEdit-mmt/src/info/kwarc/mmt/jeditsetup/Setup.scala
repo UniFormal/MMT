@@ -193,7 +193,7 @@ class Setup extends ShellExtension("jeditsetup") {
       if (install) {
         newAbbrevs ::= "[mmt]"
         sabb foreach {case (c,r) =>
-          val cE = c.replace("|", "'") // jEdit gets confused by |
+          val cE = c.replace("|", "!") // jEdit always uses the first | as separator
           newAbbrevs ::= s"$cE|$r"
         }
       }

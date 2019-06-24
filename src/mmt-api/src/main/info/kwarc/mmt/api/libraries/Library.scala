@@ -366,7 +366,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case ca: Constant if ca.df.isEmpty =>
               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
             case sa: Structure if sa.df.isEmpty =>
-              new Structure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit)
+              new Structure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit, sa.isTotal)
             case a => a
          }
       case nm: NestedModule =>
@@ -472,7 +472,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
      def default = {
         val da = get(from, name, sourceError) match {
           case c: Constant => Constant(l.toTerm, name, Nil, None, None, None)
-          case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false)
+          case d: Structure => new Structure(l.toTerm, name, d.tpC, new TermContainer, false, false)
           case rc: RuleConstant => new RuleConstant(l.toTerm, name, new TermContainer, None)
           case _ => throw ImplementationError(s"unimplemented default assignment (while looking up $name in link ${l.path})")
         }
@@ -499,6 +499,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
               }
             }
             val dom = afrom.toMPath
+            // TODO this can cause an infinite recursion
             val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head

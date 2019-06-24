@@ -411,12 +411,10 @@ object ComputeCombine extends ComputationRule(Combine.path) {
 
     Simplify(result_diag.toTerm)
   }
-
 }
 
 object Mixin extends Pushout {
   val name = "mixin"
-
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("view")
@@ -431,12 +429,21 @@ object Mixin extends Pushout {
  * inclusion from B to Translate(m,T)
  */
 
-/*
+
 object ComputeMixin extends ComputationRule(Mixin.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    /* Both combine and translate takes two diagrams and two renames. The difference is in the content of the second diagram */
-    val Mixin(d1, r1, d2, r2) = tm
-    val List(ad1,ad2) = List(d1,d2).map{d => Common.asAnonymousDiagram(solver, d).getOrElse{return RecurseOnly(List(1))}}
+    /**************** Input pieces *****************/
+    val Mixin(d1, r1, d2, r2, over) = tm
+    val List(ad1, ad2, ad_over) = List(d1, d2, over).map(d => Common.asAnonymousDiagram(solver, d).getOrElse(return  RecurseOnly(List(1)))) // TODO: Handle errors here
+    
+    /**************** Calculate the views from the source to the two nodes (after renaming) ****************/
+    /*
+    val List(renames1,renames2) : List[List[OML]] = List(r1,r2).map{r => Common.asSubstitution(r).map{case (o,n) => OML(o,None,Some(n))}}
+    val List(in_view1,in_view2) : List[List[OML]] = List(ad1,ad2).map{d => d.viewOf(ad_over.getDistNode.get, d.getDistNode.get)} // TODO: Handle errors here
+    val view1: List[OML] = ad1.compose(in_view1,renames1)
+    val view2: List[OML] = ad2.compose(in_view2,renames2)
+    */
+
     val List(ren1,ren2) = List(r1,r2).map{r => Common.asSubstitution(r)}
     // val anonMor = Common.asAnonymousMorphism(solver,ad2.getDistArrow.getOrElse(return Recurse).from)
 
@@ -468,7 +475,7 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
     Simplify(result.toTerm)
   }
 }
-*/
+
 // TODO better name
 /** see [[Mixin]] */
 object Expand extends BinaryConstantScala(Combinators._path, "expand")

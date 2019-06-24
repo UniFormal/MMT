@@ -14,7 +14,7 @@ import presentation._
  * @param tpC the domain theory
  * @param isImplicit true iff the link is implicit
  */
-class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean) extends Declaration with Link with HasType {
+class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean, val isTotal: Boolean) extends Declaration with Link with HasType {
    type ThisType = Structure
    val feature = "structure"
    /** the domain of a structure is its type */
@@ -30,7 +30,7 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
    
    def translate(newHome: Term, prefix: LocalName, translator: Translator,context : Context): Structure = {
      def tl(m: Term)= translator.applyModule(context, m)
-     val res = new Structure(home, prefix/name, tpC map tl, dfC map tl, isImplicit)
+     val res = new Structure(home, prefix/name, tpC map tl, dfC map tl, isImplicit, isTotal)
      getDeclarations foreach {d =>
        res.add(d.translate(res.toTerm, LocalName.empty, translator,context))
      }
@@ -39,7 +39,7 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
    def merge(that: Declaration): Structure = {
      that match {
        case that: Structure =>
-         val res = new Structure(this.home, this.name, tpC.copy, dfC.copy, isImplicit)
+         val res = new Structure(this.home, this.name, tpC.copy, dfC.copy, isImplicit, isTotal)
          // TODO maybe use val dfM = that.dfC merge this.dfC
          this.getDeclarations foreach {dThis =>
             res.add(dThis)
@@ -55,16 +55,19 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
      }
    }
    
+   protected def totalString = if (isTotal) "total " else ""
+   
    private def nameOrKeyword = this match {
       case Include(id) => if (id.isRealization) "realize " else "include "
-      case _ => implicitString + feature + " " + name + " : "
+      case _ => implicitString + totalString + feature + " " + name + " : "
    }
    protected def outerString = nameOrKeyword + from.toString
    
    def toNode = {
       val nameAtt = if (isInclude) null else name.toPath
       val implAtt = if (isImplicit) "true" else null
-      val node = <import name={nameAtt} implicit={implAtt}>{headerNodes}{innerNodes}</import>
+      val totalAtt = if (isTotal) "true" else null
+      val node = <import name={nameAtt} implicit={implAtt} total={totalAtt}>{headerNodes}{innerNodes}</import>
       val fromN = Obj.toStringOrNode(from)
       utils.xml.addAttrOrChild(node, "from", fromN)
    }
@@ -72,19 +75,19 @@ class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, v
 
 /** apply/unapply functions for [[DeclaredStructure]]s whose domain is an MPath */
 object SimpleDeclaredStructure {
-   def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean) =
-      new Structure(home, name, TermContainer(OMMOD(tp)), new TermContainer(), isImplicit)
+   def apply(home : Term, name : LocalName, tp: MPath, isImplicit : Boolean, isTotal: Boolean = false) =
+      new Structure(home, name, TermContainer(OMMOD(tp)), new TermContainer(), isImplicit, isTotal)
    def unapply(ce: ContentElement) = ce match {
-      case SimpleStructure(s: Structure, p) => Some((s.home, s.name, p, s.isImplicit))
+      case SimpleStructure(s: Structure, p) => Some((s.home, s.name, p, s.isImplicit, s.isTotal))
       case _ => None
    }
 }
 
 /** auxiliary functions */
 object Structure {
-   def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean): Structure = apply(home, name, from, None, isImplicit)
-   def apply(home : Term, name : LocalName, from : Term, df: Option[Term], isImplicit : Boolean): Structure =
-      new Structure(home, name, TermContainer(from), TermContainer(df), isImplicit)
+   def apply(home : Term, name : LocalName, from : Term, isImplicit : Boolean, isTotal: Boolean): Structure = apply(home, name, from, None, isImplicit, isTotal)
+   def apply(home : Term, name : LocalName, from : Term, df: Option[Term], isImplicit : Boolean, isTotal: Boolean): Structure =
+      new Structure(home, name, TermContainer(from), TermContainer(df), isImplicit, isTotal)
 }
 
 /**
@@ -113,16 +116,16 @@ object SimpleStructure {
  */
 object Include {
    // if definiens is given, any args are shifted into the definiens as OMINST
-   def apply(home: Term, from: MPath, args: List[Term], df: Option[Term] = None, postulated: Boolean = false): Structure = {
+   def apply(home: Term, from: MPath, args: List[Term], df: Option[Term] = None, total: Boolean = false): Structure = {
       val (argsN,dfN) = if (df.isEmpty)
         (args,df)
       else
         (Nil, Some(OMCOMP(OMINST(from,args) :: df.toList)))
-      Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, !postulated)
+      Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, true, total)
    }
    def unapply(t: ContentElement) : Option[IncludeData] = t match {
       case d: Structure => d.fromC.get match {
-         case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some(IncludeData(d.home, from, args, d.df, !d.isImplicit))
+         case Some(OMPMOD(from, args)) if d.name == LocalName(from) => Some(IncludeData(d.home, from, args, d.df, d.isTotal))
          case _ => None
       }
       case _ => None
@@ -134,24 +137,24 @@ object Include {
  *  @param from the domain of the included theory
  *  @param args instantiations of the parameters of from (if any)
  *  @param df definiens (i.e., the included morphism if in a theory)
- *  @param postulated if true, this specifies a structural include that must be implemented by the containing theory;
+ *  @param total a total include is one that must be implemented by the containing theory
  *   this becomes available as a morphism only at the end of the containing theory (even if there is a definiens,
- *     which can happen, e.g., if the definiens refers to other postulated includes) 
+ *     which can happen, e.g., if the definiens refers to other total includes) 
  *  
  *  invariants: if df contains mor then args.isEmpty && from is domain of df
  *              else OMPMOD(from,args) is included theory
  */
-case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], postulated: Boolean) {
+case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], total: Boolean) {
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
   def asMorphism = {
     if (isRealization) OMStructuralInclude(from, home.toMPath)
     else OMCOMP(OMINST(from, args) :: df.toList)
   }
 
-  def toStructure = Include(home, from, args, df, postulated)
+  def toStructure = Include(home, from, args, df, total)
   
   /** true if this represents a realization */
-  def isRealization = postulated
+  def isRealization = total
   
   def isPlain = (home,args,df) match {
     case (OMMOD(h),Nil,None) => Some((h,from))

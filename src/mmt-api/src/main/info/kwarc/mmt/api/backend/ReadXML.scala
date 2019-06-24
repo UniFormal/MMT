@@ -289,12 +289,13 @@ class XMLReader(controller: Controller) extends Logger {
             }
             log("import " + adjustedName + " found")
             val isImplicit = parseImplicit(symbol)
+            val isTotal = parseTotal(symbol)
             val (dfN,assignmentsN) = rest.child.map(xml.trimOneLevel) match {
                case <definition>{d}</definition> :: as => (Some(d),as)
                case as => (None,as)
             }
             val df = dfN map {n => Obj.parseTerm(n, nsMap)}
-            val s = Structure(homeTerm, adjustedName, from, df, isImplicit)
+            val s = Structure(homeTerm, adjustedName, from, df, isImplicit, isTotal)
             addDeclaration(s)
             assignmentsN foreach {a =>
               readInModule(s.path.toMPath, nsMap, s, a)
@@ -405,6 +406,14 @@ class XMLReader(controller: Controller) extends Logger {
          case "true" => true
          case "false" => false
          case "" => xml.attr(n, "name") == "" // true for includes, false otherwise (needed for backwards compatiblity with pre-realization OMDoc files)
+         case s => throw ParseError("true|false expected in implicit attribute, found " + s)
+      }
+   }
+   private def parseTotal(n: Node): Boolean = {
+      xml.attr(n, "total") match {
+         case "true" => true
+         case "false" => false
+         case "" => false
          case s => throw ParseError("true|false expected in implicit attribute, found " + s)
       }
    }
