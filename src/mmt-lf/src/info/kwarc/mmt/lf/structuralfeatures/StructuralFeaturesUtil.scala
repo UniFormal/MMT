@@ -65,19 +65,22 @@ object StructuralFeatureUtils {
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
   
-  /** To allow for more user friendly inductive-proof declarations */
-  object CONG {
+  /** To allow for more user friendly inductive-proof declarations
+   * Takes a predicate pr: ⊦ x ≐ y for x: A, y: A, a (initial) function f: A → B and returns a predicate ⊦ f a ≐ f b
+   * @param pr the predicate : ⊦ x ≐ y
+   * @param f the function f : ⊦ A → B
+   */  object CONG {
     val path = theory ? "CONG"
     def apply(A: Term, B: Term, x: Term, y: Term, p_xeqy: Term, f: Term) = ApplyGeneral(OMS(path), List(A,B,x,y, p_xeqy, f))
   }
-  /** More convenient version, which manually infers the first four arguments */
+  /** More convenient version of CONG, which manually infers the first four arguments */
   def Cong(pr: VarDecl, func: VarDecl) = {
     val (pred, ptp) = (pr.toTerm, pr.tp.getOrElse(throw ImplementationError("Type missing for the proof passed to Cong.")))
     val (tp, x, y) = ptp match {
       case Eq(tp, tm1, tm2) => (tp, tm1, tm2)
       case _ => throw ImplementationError("Unexpected type found for the proof. Can't apply Cong. ")  
     }
-    val (f, ftp) = (func.toTerm, func.tp.getOrElse(throw ImplementationError("Type missing for the function. Can't apply Cong.")))
+    val (f, ftp) = (func.df.getOrElse(throw ImplementationError("Definition for function required to apply Cong.")), func.tp.getOrElse(throw ImplementationError("Type missing for the function. Can't apply Cong.")))
     val (a, b) = ftp match {
       case Arrow(dom, codom) => (dom, codom)
       case _ => throw ImplementationError("Unexpected type found for the function. Can't apply Cong.")
@@ -85,6 +88,33 @@ object StructuralFeatureUtils {
     CONG.apply(a, b, x, y, pred, f)
   }
   
+  /**
+   * Takes a predicate pr: ⊦ x ≐ y for x: C → D, y: C → D, the type tp=C → D and a term tm: C and returns a predicate ⊦ f a ≐ f b, where f x := x tm
+   * @param pr the predicate : ⊦ x ≐ y
+   * @param f the function f : ⊦ f x ≐ f y
+   * @param tm the term tm: C
+   */
+  def Cong(pr: VarDecl, tp: Term, tm: Term) : Term = {
+    val (c, d) = tp match {case Arrow(c, d) => (c, d)}
+    val x = newVar("x", tp, Some(pr))
+    val df = Lambda(x, Apply(x.toTerm, tm))
+    Cong(pr, VarDecl(LocalName("f"), tp, df))
+  }
+  
+  def Cong(pr: VarDecl, tpInitial: Term, argCtx: Context) : Term = {
+    val start = (pr, tpInitial)
+    val (finalTm, _) = argCtx.foldLeft(start)({
+      case ((prc, tp), tm) => 
+        val prNextDf = Cong(prc, tp, tm)
+        val FunType(l, termTp) = tp
+        val d = FunType(l.tail, termTp)
+        val tpNext = d
+        val Eq(_, x, y) = pr.tp.get
+        val prNextTp = Eq(d, Apply(x, tm.toTerm), Apply(y, tm.toTerm))
+        (VarDecl(LocalName("tp"), prNextTp, prNextDf), tpNext)
+    })
+    finalTm.df.getOrElse(finalTm.toTerm)
+  }
   
   def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)

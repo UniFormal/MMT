@@ -142,6 +142,7 @@ object InternalDeclaration {
   def tpls(decls: List[InternalDeclaration]): List[TypeLevel] = {decls.map{case s: TypeLevel=> Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   def tmls(decls: List[InternalDeclaration]): List[TermLevel] = {decls.map{case s: TermLevel=> Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   def constrs(decls: List[InternalDeclaration]): List[Constructor] = {decls.map{case s: Constructor=> Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
+  def outs(decls: List[InternalDeclaration]): List[OutgoingTermLevel] = {decls.map{case s: OutgoingTermLevel=> Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   def stats(decls: List[InternalDeclaration]): List[StatementLevel] = {decls.map{case s: StatementLevel => Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   
   /**
@@ -213,6 +214,8 @@ sealed abstract class InternalDeclaration {
   def internalTp = FunType(args, ret)
   def df : Option[Term]
   def isTypeLevel: Boolean
+  def isOutgoing = {InternalDeclaration.outs(List(this)) != Nil}
+  def isConstructor = {InternalDeclaration.constrs(List(this)) != Nil}
   
   /** like tp but with all names externalized */
   def externalTp(implicit parent: GlobalName) = externalizeNamesAndTypes(parent, context)(tp)
