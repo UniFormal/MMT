@@ -103,10 +103,10 @@ class ViewFinder extends frontend.Extension {
               }
             case _ =>
               log("No preproccesor for archive " + a.id)
-            /* getArchive(a) match {
+            getArchive(a) match {
             case Some(r) => theories(a.id) = r
             case _ =>
-          } */
+          }
           }
         } catch {case t : Throwable => t.printStackTrace()} }
       }
