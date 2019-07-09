@@ -72,10 +72,14 @@ object Common {
     map.foreach {case (c,r) =>
       // command starts with j
       val command = c.substring(1)
-      if (r.length != 1) throw GeneralError(s"expected single character in symbol map: $c|$r")
-      val char = r(0)
-      rawUnicodeMap(char) = command
-      inverseUnicodeMap(command) = r
+      if (r.length == 1) {
+        val char = r(0)
+        rawUnicodeMap(char) = command
+        inverseUnicodeMap(command) = r
+      } else {
+        // better to ignore this because they can be useful in other contexts
+        // throw GeneralError(s"expected single character in symbol map: $c|$r")
+      }
     }
   }
 }
