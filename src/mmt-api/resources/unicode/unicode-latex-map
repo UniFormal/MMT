@@ -3,7 +3,6 @@ jDD|❙
 jOD|❘
 jsharp|♯
 jflat|♭
-jU|𝒰
 jra|→
 jla|←
 jlra|↔
@@ -371,5 +370,7 @@ jln|㏑
 jperp|⟂
 jparallel|∥
 jnparallel|∦
+// these have lenght 2 in Java and won't work everywhere
 jcalC|𝒞
 jcalD|𝒟
+jU|𝒰
