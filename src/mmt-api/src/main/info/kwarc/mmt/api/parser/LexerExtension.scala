@@ -75,7 +75,8 @@ abstract class WordReplacer extends LexerExtension {
     */
    def maps: List[(String,String)]
    /** longest keys are tried first */
-   private val mapsSorted = maps.sortBy {case (k,_) => -k.length} 
+   // lazy to make sure it does not run during class initialization, which is hard to debug
+   private lazy val mapsSorted = maps.sortBy {case (k,_) => -k.length} 
    def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
       val si = StringSlice(s,i)
       val km = mapsSorted mapFind {case (k,m) =>
