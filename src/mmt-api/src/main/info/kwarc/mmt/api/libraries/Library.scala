@@ -824,7 +824,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case dd: DerivedDeclaration =>
           implicitGraph(dd.home, OMMOD(dd.modulePath)) = OMIDENT(dd.home)
         case e: NestedModule =>
-          add(e.module, at)
+          add(e.module)//, at)
           //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of
           //  whether the declaration comes before or after S
           implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)

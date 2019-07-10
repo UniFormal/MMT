@@ -51,7 +51,7 @@ trait StructureSimplifier extends Extension {
    /** called in conjunction with applyElementBegin */ 
    def applyElementEnd(ce: ContainerElement[_])(implicit env: SimplificationEnvironment): Unit
 
-   def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): Module
+   def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): AbstractTheory
 
    def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement]
 

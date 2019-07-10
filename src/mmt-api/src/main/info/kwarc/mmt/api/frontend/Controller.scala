@@ -378,6 +378,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
       case m: Module => m.superModule match {
         case None => Context.empty
         case Some(smP) => get(smP) match {
+          case sm: AbstractTheory => getContextWithInner(sm)
           case sm: Module => getContextWithInner(sm)
           case _ => throw InvalidElement(m, "super module of module must be module")
         }

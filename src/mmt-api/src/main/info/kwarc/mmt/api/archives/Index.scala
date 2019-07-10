@@ -38,7 +38,9 @@ trait GeneralImporter extends Extension {
     xml.writeFile(node, narrFile)
     // write relational file
     writeToRel(doc, a / relational / docPath)
-    doc.getModulesResolved(controller.globalLookup) foreach { mod => indexModule(a, mod) }
+    doc.getModulesResolved(controller.globalLookup) foreach { mod =>
+      if (!mod.isGenerated) indexModule(a, mod)
+    }
   }
 
   /** index a module */

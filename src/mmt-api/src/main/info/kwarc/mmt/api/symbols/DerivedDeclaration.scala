@@ -38,7 +38,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
       {tpNode}
       {dfNode}
       {notNode}
-      {getDeclarations map (_.toNode)}
+      {getDeclarations.filter(d => !d.isGenerated) map (_.toNode)}
     </derived>
   }
   // override def toNodeElab
@@ -47,7 +47,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
     (getMetaDataNode++tpNode++dfNode++notNode) foreach {n =>
       rh(n)
     }
-    getDeclarations foreach(_.toNode(rh))
+    getDeclarations foreach(d => if (!d.isGenerated) d.toNode(rh))
     rh << "</derived>"
   }
 }

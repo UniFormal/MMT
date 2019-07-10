@@ -424,7 +424,8 @@ object ReadXML {
   def getTermFromAttributeOrChild(n: Node, component: String, nsMap: NamespaceMap) : (Node, Option[Term]) = {
       val (newnode, value) = xml.getAttrOrChild(n, component)
       val thy = value match {
-         case Left(s) => if (s.isEmpty) null else OMMOD(Path.parseM(s, nsMap))
+         case Left(s) =>
+            if (s.isEmpty) null else OMMOD(Path.parseM(s, nsMap))
          case Right(c) =>
              val cT = xml.trimOneLevel(c)
              if (cT.child.length == 1) Obj.parseTerm(cT.child(0), nsMap)

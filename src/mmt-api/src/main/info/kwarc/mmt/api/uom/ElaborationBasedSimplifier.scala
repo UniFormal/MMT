@@ -141,6 +141,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case dm: DerivedModule =>
         flattenDerivedModule(dm, None)
       case m: Module =>
+      case PlainInclude(_,_) =>
       case d: Declaration =>
         // external flattening of structures, declared declarations
         flattenExternally(d, None, None)
@@ -310,7 +311,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      * @return the list of includes resulting from flattening (from,mor) 
      */
     def flattenInclude(ID: IncludeData, alreadyIncluded: List[IncludeData], target: Term): List[Declaration] = {
-      val fromThy = lup.getAs(classOf[Theory], ID.from)
+      val fromThy = lup.getAs(classOf[AbstractTheory], ID.from)
       applyChecked(fromThy)
       val fromIncls = fromThy.getAllIncludes
       fromIncls.flatMap {id =>
@@ -408,7 +409,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case (_, struc: Structure) =>
         val fromThy = struc.from match {
           case OMPMOD(p,_) =>
-            val t = lup.getAs(classOf[Theory], p)
+            val t = lup.getAs(classOf[AbstractTheory], p)
             t
           case exp =>
             // TODO also materialize pushout if a nested theory is visible via an implicit morphism
@@ -417,15 +418,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         applyChecked(fromThy)
         // copy all declarations in theories p reflexive-transitively included into fromThy
         // no need to consider the instantiation arguments or definitions because the lookup methods are used to obtain the declarations in the elaboration
-        val sElab = (fromThy.getAllIncludesWithoutMeta.map(_.from) ::: List(fromThy.path)).flatMap {p =>
-          val refl = p == fromThy.path
+        val sElab = (fromThy.getAllIncludesWithoutMeta.map(_.from) ::: List(fromThy.modulePath)).flatMap {p =>
+          val refl = p == fromThy.modulePath
           // in theories:
           //   !refl: pThy --OMINST/df--> fromThy --struc--> thy
           //   refl:  pThy == fromThy --struc--> thy
           // in views:
           //   !refl: pThy--OMINST/df--> fromThy --struc--> vw.from --vw--> vw.to with vw|_fromThy = struc.df
           //   refl:  pThy == fromThy --struc--> vw.from --vw--> vw.to with vw|_fromThy = struc.df
-          val pThy = if (refl) fromThy else lup.getAs(classOf[Theory], p)
+          val pThy = if (refl) fromThy else lup.getAs(classOf[AbstractTheory], p)
           // pThy is already elaborated at this point
           val prefix = if (refl) struc.name else struc.name / ComplexStep(p)
           // the defined structure with morphism pThy-->target that arises by composing the include with struc
@@ -461,6 +462,13 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
          controller.extman.get(classOf[StructuralFeature], dd.feature) match {
            case None => Nil
            case Some(sf) =>
+             var i = 0
+             while (dd.getDeclarations.isDefinedAt(i)) { // awkward, but necessary to elaborate generated things as well
+               try { apply(dd.getDeclarations(i)) } catch {
+                 case GetError(_) =>
+               }
+               i+=1
+             }
              val elab = sf.elaborate(thy, dd)
              elab.getDeclarations
          }
@@ -640,7 +648,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
    *  @param pathOpt the path to use if a new theory has to be created
    *  @param tcOpt the term container hold exp
    */
-  def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): Theory = {
+  def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): AbstractTheory = {
     // return previously materialized theory
     tcOpt foreach {tc =>
       tc.normalized foreach {tcN =>
@@ -649,7 +657,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     }
     val (dt, isNew) = exp match {
       case OMMOD(p: MPath) =>
-        val d = lup.getTheory(p)
+        val d = lup.getAs(classOf[AbstractTheory],p)
         (d, false)
       case OMPMOD(p, args) =>
         //TODO DefinedTheory (deprecated anyway)
@@ -677,7 +685,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
     if (isNew) {
       dt.setOrigin(Materialized(exp))
       controller.add(dt)
-      tcOpt.foreach {tc => tc.normalized = Some(OMMOD(dt.path))}
+      tcOpt.foreach {tc => tc.normalized = Some(OMMOD(dt.modulePath))}
     }
     dt
   }
