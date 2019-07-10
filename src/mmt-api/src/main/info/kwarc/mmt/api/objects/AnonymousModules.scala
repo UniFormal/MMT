@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.symbols.OMLReplacer
 import notations._
 import utils._
 
@@ -17,7 +18,7 @@ trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
 }
 
 /** a theory given by meta-theory and body */
-class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
+case class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
   def rename(oldNew: (LocalName,Term)*) = {
     val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, nw)}
     val trav = symbols.OMLReplacer(sub)
@@ -29,7 +30,7 @@ class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends Anony
         case None => omlR
       }
     }
-    new AnonymousTheory(mt, newDecls)
+    AnonymousTheory(mt, newDecls)
   }
   def add(d: OML) = new AnonymousTheory(mt, decls ::: List(d))
   def union(that: AnonymousTheory) = {
@@ -42,14 +43,6 @@ class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends Anony
     val m = mt.map(_.toString).getOrElse("")
     m + super.toString
   }
-  def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
-  override def equals(that: Any): Boolean =
-    that match {
-      case that: AnonymousTheory => (that.mt == this.mt) && (that.decls == this.decls)
-      case _ => false
-    }
-   override def hashCode: Int = { mt.hashCode() + decls.hashCode() }
-
 }
 
 /** bridges between [[AnonymousTheory]] and [[Term]] */
@@ -70,10 +63,28 @@ object AnonymousTheoryCombinator {
 }
 
 /** a morphism given by domain, codomain, and body */
-class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
+case class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
   def toTerm = AnonymousMorphismCombinator(decls)
   def add(d: OML) = new AnonymousMorphism(decls ::: List(d))
 
+  /** creates a traverser for morphism application (more efficient if multiple applications are needed) */
+  def applier = {
+    val subs = decls map {o => Sub(o.name, o.df.get)}
+    OMLReplacer(subs)
+  }
+
+  /** applies this morphism to a term */
+  def apply(t: Term): Term = applier(t, Context.empty)
+
+  /** diagram-order composition: this ; that */
+  def compose(that: AnonymousMorphism) = {
+    val applyThat = that.applier
+    val declsMapped = decls map {o =>
+       val dfMapped = o.df map {d => applyThat(d, Context.empty)}
+       OML(o.name, None, dfMapped)
+     }
+    AnonymousMorphism(declsMapped)
+  }
 }
 
 /** bridges between [[AnonymousMorphism]] and [[Term]] */
@@ -170,12 +181,19 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
    */
   def compose(assign1 : List[OML],assign2 : List[OML]): List[OML] = {
       val new_assigns : List[OML] = assign1.map{ curr : OML =>
-         var temp = curr.name
+         var temp : LocalName = curr.name
          val it = assign2.iterator
          while(it.hasNext){
-           val n = it.next()
+           val n : OML = it.next()
            if(temp == n.name){
-             temp = n.df.asInstanceOf[OML].name
+             temp = n.df match {
+               case Some(d: OML) => d.name
+
+             }
+            /* temp = n.df match {
+               case OML(n,_,_,_,_) => n
+               case _ => temp
+             }*/
            }
          }
          val new_decl = new OML(temp,None,None,None)

@@ -174,7 +174,7 @@ object Common {
     ad.relabel(f)
   }
 
-  /* Applying a substitution function to on OML */
+  /* Applying a substitution function to an OML */
   def applySubstitution (decls : List[OML], renames : List[(LocalName,Term)]): List[OML] =
     decls.map(
       d => d match {

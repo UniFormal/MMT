@@ -65,7 +65,7 @@ object ComputeHom extends ComputationRule(Hom.path) {
 
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Hom(thyT) = tm
-    val dia = Common.asAnonymousDiagram(solver, thyT).getOrElse {return RecurseOnly(List(1))}
+    val dia : AnonymousDiagram = Common.asAnonymousDiagram(solver, thyT).getOrElse {return RecurseOnly(List(1))}
     val node = dia.getDistNode.getOrElse(return Recurse)
     val thy = node.theory // Common.asAnonymousTheory(solver, thyT).getOrElse {return RecurseOnly(List(1))}
     if (covered || !thy.mt.contains(SFOL._path)) {

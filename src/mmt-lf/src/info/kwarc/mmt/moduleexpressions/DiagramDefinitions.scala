@@ -22,7 +22,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
      val diag : Term = dm.dfC.normalized.getOrElse {throw LocalError("no definiens found for " + dm.path)}
      val ad = diag match {
        case AnonymousDiagramCombinator(ad) => ad
-       case df => throw LocalError("definiens not a diagram: " + controller.presenter.asString(df)) // TODO should use proper error handler 
+       case df => throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(df)) // TODO should use proper error handler
      }
      /* defines the name of the generated modules */
      def labelToName(l: LocalName) = LocalName(dm.name.toPath + "_" + l.toPath)
