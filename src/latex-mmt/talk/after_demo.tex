@@ -1,0 +1,52 @@
+\section{Conclusion}
+
+
+\begin{frame}[fragile]\frametitle{Sidenote: Call for Help}
+How do I make LaTeX forward a Unicode symbol unchanged to the generated \texttt{.mmt}?
+\bigskip
+
+I have a macro \verb|\toMMT{#1}| that
+\begin{itemize}
+ \item appends \verb|#1| to the \texttt{.mmt} file
+ \item does not produce any output for the \texttt{.pdf} file
+\end{itemize}
+
+But it goes haywire if \verb|#1| contains Unicode characters.
+\bigskip
+
+Current workaround:
+\begin{itemize}
+\item avoid Unicode in MMT chunks
+\item if required by background knowledge, add parsing rules\\
+ e.g., MMT can parse \verb|->| or \verb|\rightarrow| as $\rightarrow$
+\end{itemize}
+\end{frame}
+
+\begin{frame}\frametitle{Prior Attempts}
+Two predecessors (papers rejected, systems abandoned)
+\begin{itemize}
+ \item CICM 2013: with M. Iancu, D. Ginev
+  \begin{itemize}
+  \item also LaTeX-led but with single LaTeX run only
+  \item LaTeX talked to MMT dynamically via HTTP
+   \lec{requires LaTeX flag (awkward)}
+  \item main problem: badly chosen story
+  \end{itemize}
+ \item CICM 2016: with M. Iancu, M. Kohlhase, H. Yuan
+  \begin{itemize}
+  \item symmetric design
+  \item general infrastructure
+  \item arbitrary nesting of MMT and LaTeX
+  \item MMT and LaTeXML output merged into OMDoc
+  \item main problem: complex design hard to implement
+  \end{itemize}
+\end{itemize}
+Current paper: much narrower focus, much simpler system
+\end{frame}
+
+\begin{frame}\frametitle{Summary}
+\begin{itemize}
+ \item 
+ \item 
+\end{itemize}
+\end{frame}

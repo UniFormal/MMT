@@ -19,6 +19,18 @@ constant inv
  : tm U --> tm U 
  # 1 ' prec 60 
 
+theory CONTEXT_1
+ = 
+constant a
+ : tm U 
+
+constant b
+ : tm U 
+
+constant mmt@2.0 = a
+constant mmt@2.1 = b
+constant mmt@2.2 = a*b'
+
 
 theory Division
  : ex:?SFOLEQ
@@ -29,5 +41,5 @@ constant division
  = [x,y] x*y' 
  # 1 / 2 prec 50 
 
-constant mmt@2.2.0 = \forall [x] x / x =. e
+constant mmt@3.0 = \forall [x] x / x =. e
 

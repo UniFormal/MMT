@@ -281,7 +281,7 @@ class MacroUsingPresenter extends ObjectPresenter {
         doObj(VarDecl(s.name, df = s.target))
       case t =>
         logError("unexportable: " + t)
-        "ERROR"
+        "\\mmt@error{unknown object}"
     }
     objS
   }
