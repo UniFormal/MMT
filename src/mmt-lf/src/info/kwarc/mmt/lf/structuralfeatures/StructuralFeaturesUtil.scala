@@ -101,20 +101,44 @@ object StructuralFeatureUtils {
     Cong(pr, VarDecl(LocalName("f"), tp, df))
   }
   
-  def Cong(pr: VarDecl, tpInitial: Term, argCtx: Context) : Term = {
-    val start = (pr, tpInitial)
-    val (finalTm, _) = argCtx.foldLeft(start)({
-      case ((prc, tp), tm) => 
-        val prNextDf = Cong(prc, tp, tm)
-        val FunType(l, termTp) = tp
-        val d = FunType(l.tail, termTp)
-        val tpNext = d
-        val Eq(_, x, y) = pr.tp.get
-        val prNextTp = Eq(d, Apply(x, tm.toTerm), Apply(y, tm.toTerm))
-        (VarDecl(LocalName("tp"), prNextTp, prNextDf), tpNext)
-    })
-    finalTm.df.getOrElse(finalTm.toTerm)
+  /**
+   * Folds a chain of Congs over a list of arguments, given the initial predicate prInitial and the type of the initial terms
+   * @param prInitial the initial predicate : ⊦ x ≐ y
+   * @param tpInitial the type Z of the initial arguments x, y
+   * @param argCtx the chain of arguments to which the terms are to be applied
+   */
+  def Cong(prInitial: VarDecl, tpInitial: Term, argCtx: Context) : Term = {
+      val start = (prInitial.tp.get, prInitial.df.get, tpInitial)
+      val (_, finalTm, _) = argCtx.map(_.toTerm).foldLeft(start)({
+        case ((prcTp, prcDf, tp), tm) => 
+          val prNextDf = Cong(VarDecl(LocalName.empty, prcTp, prcDf), tp, tm)
+          val FunType(l, termTp) = tp
+          val d = if (l.isEmpty) termTp else FunType(l.tail, termTp)
+          val tpNext = d
+          val Eq(_, x, y) = prcTp
+          val prNextTp = Eq(d, Apply(x, tm), Apply(y, tm))
+          (prNextTp, prNextDf, tpNext)
+      })
+      finalTm
   }
+  
+  
+    /*argCtx.toList match {
+      case tm => Cong(prInitial, tpInitial, tm)
+      case tm::tms =>
+        val prDef = Cong(prInitial, tpInitial, tm)
+        val FunType(l, termTp) = tpInitial
+        val tp = l match {
+          case Nil => throw ImplementationError("Cong applied with two several arguments, but unary function type found for the initial terms.")
+          case List(arg) => termTp
+          case arg::args => FunType(args, termTp)
+        }
+        val Eq(_, x, y) = prInitial.tp.get
+        val prTp = Eq(tp, Apply(x,tm.toTerm), Apply(y,tm.toTerm))
+        Cong(VarDecl(LocalName.empty, prTp, prDef), tp, tms)
+    }
+  }*/
+  
   
   def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)

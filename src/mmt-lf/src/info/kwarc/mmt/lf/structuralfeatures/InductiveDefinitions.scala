@@ -41,57 +41,58 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
             +" but no derived declaration found at that location.")
     }
     //The internal definitions we need to give definiens for
-    val indDefs = parseInternalDeclarations(indD, controller, None)(indD.path) filterNot (_.isOutgoing)
-    var (indTpls, indTmls) = (tpls(indDefs), tmls(indDefs))
+    val intDecls = parseInternalDeclarations(indD, controller, None)(indD.path) filterNot (_.isOutgoing)
+    var (tpls, tmls) = (InternalDeclaration.tpls(intDecls), InternalDeclaration.tmls(intDecls))
     
-    val (indTplNames, indTmlNames, indDeclsNames) = (indTpls map (_.name), indTmls map (_.name), indDefs map (_.name))
+    val (tplNames, tmlNames, intDeclNames) = (tpls map (_.name), tmls map (_.name), intDecls map (_.name))
     
-    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
+    var defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
     
     // check whether all declarations match their corresponding constructors
-    decls foreach { 
+    defDecls foreach { 
       d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None)(indD.path))
+      checkDecl(d, fromConstant(decl, controller, tpls.map(_.path), None)(indD.path))
       }
     }
     // and whether we have all necessary declarations
-    indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {
+    indD.getDeclarations.map(_.name).find(n => !defDecls.map(_.name).contains(n)) foreach {
       n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
     }
     
-    val induct_paths = indDefs map (t=>t.path.copy(name=indD.name/inductName(t.name)))
+    val induct_paths = intDecls map (t=>t.path.copy(name=indD.name/inductName(t.name)))
     
-    val modelDf = decls map (_.df.get)
-    val indDeclsArgs = indDefs map(_.argContext(None)(indD.path)._1)
+    val modelDf = defDecls map (_.df.get)
+    val intDeclsArgs = intDecls map(_.argContext(None)(indD.path)._1)
     
-    val indDeclsDef = indDeclsNames map (nm => decls.find(_.name == nm).getOrElse(
-        throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = indDefs zip indDeclsDef map {
-      case (indTpl, indTplDef) if indTpl.isTypeLevel => PiOrEmpty(context, Arrow(indTpl.toTerm(indD.path), indTplDef))
-      case (indTml: Constructor, indTmlDef) => 
-        val indTpl = indTml.getTpl(indTpls)
-        val tml = decls.find(_.name == indTml.name).get
+    // Correctly sorted version of decls
+    val defDeclsDef = intDeclNames map (nm => defDecls.find(_.name == nm).getOrElse(
+        throw LocalError("No declaration found for the typelevel: "+nm)))
+    val Tps = intDecls zip defDeclsDef map {
+      case (tpl, tplDef) if tpl.isTypeLevel => PiOrEmpty(context, Arrow(tpl.toTerm(indD.path), tplDef.df.get))
+      case (tml: Constructor, tmlDef) => 
+        val tpl = tml.getTpl(tpls)
+        val tplDef = defDecls.find(_.name == tpl.name).get
         val (args, dApplied) = tml.argContext(None)(indD.path)
-        PiOrEmpty(context++args, Eq(indTpl.df.get, indTpl.applyTo(dApplied)(dd.path), indTmlDef))
+        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), tmlDef.df.get))
     }
-    val Dfs = indDefs zip indDeclsArgs zip induct_paths.map(OMS(_)) map {case ((indDef, indDefArgs), tm) => 
-        PiOrEmpty(context++indDefArgs, ApplyGeneral(tm, indParams++modelDf++indDefArgs.map(_.toTerm)))
+    val Dfs = intDecls zip intDeclsArgs zip induct_paths.map(OMS(_)) map {case ((intDecl, intDeclArgs), tm) => 
+        PiOrEmpty(context++intDeclArgs, ApplyGeneral(tm, indParams++modelDf++intDeclArgs.map(_.toTerm)))
     }
     
-    
-    var inductDefs = (indDefs zip Tps zip Dfs) map {case ((tpl, tp), df) => 
+    var inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false,() => {Some(df)})(dd.path)}
     
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
-    val indTmlVDDecls = (indDefs zip inductDefs) filter({case (d, _) => d.isConstructor}) map {case (d, c) => (OMV(c.name) % c.tp.get, d)}
-    val tpInitials : List[Term] = indTmlVDDecls map {case (_, d:Constructor) => 
-      val indTpl = d.getTpl(indTpls)
-      Arrow(indTpl.externalTp(dd.path), externalizeNamesAndTypes(dd.path, indTpl.context)(
-          PiOrEmpty(indTpl.context, FunType(indTpl.args.tail, indTpl.ret))))
+    val tpInitials : List[Term] = constrs(intDecls) map {d => 
+      val intTpl = d.getTpl(tpls)
+      //Arrow(intTpl.externalTp(dd.path), externalizeNamesAndTypes(dd.path, intTpl.context)(
+      //    PiOrEmpty(intTpl.context, FunType(intTpl.args.tail, intTpl.ret))))
+      intTpl.tp
     }
     
-    val inductTmlsAppliedDfs : List[Term] = (tpInitials zip indTmlVDDecls) map {case (tpInitial, (vd, d)) => Cong(vd, tpInitial, d.argContext(None)(dd.path)._1)}
-    val inductTmlsApplied = indTmls zip inductTmlsAppliedDfs map {
+    val intTmlVDDecls = (intDecls zip inductDefs) filter({case (d, _) => d.isConstructor}) map {case (d, c) => (OMV(c.name) % c.tp.get, d)} 
+    val inductTmlsAppliedDfs : List[Term] = (tpInitials zip intTmlVDDecls) map {case (tpInitial, (vd, d)) => Cong(vd, tpInitial, d.argContext(None)(dd.path)._1)}
+    val inductTmlsApplied = tmls zip inductTmlsAppliedDfs map {
       case (c,df) => makeConst(c.name, () => {c.tp}, false, () => {Some(df)})(dd.path)
     }
     inductDefs ++ inductTmlsApplied
