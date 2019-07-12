@@ -9,6 +9,28 @@ import utils.MyList._
 
 import scala.collection.mutable.HashSet
 
+class ImplicitGraph {
+  case class FromTo(from: MPath, to: MPath)
+  case class ImplicitMorph(path: List[MPath], morph: Term)
+  type Cause = MPath
+  val underlying = new utils.MoCHashMapToSet[FromTo,ImplicitMorph,Cause] {
+    private def mentions(mor: Term): Iterator[Cause] = mor match {
+      case OMS(q) => Iterator(q.module)
+      case OMPMOD(q,_) => Iterator(q)
+      case OMIDENT(OMPMOD(q,_)) => Iterator(q)
+      case OMStructuralInclude(q,r) => Iterator(q, r) 
+      case OMCOMP(ms) => ms.iterator flatMap mentions
+      case _ => Iterator.empty
+    }
+      
+    def getCauses(ft: FromTo, im: ImplicitMorph) = {
+      Iterator(ft.from, ft.to) ++ im.path ++ mentions(im.morph)
+    }
+  }
+}
+
+
+
 /** maintains a binary relation on N where pairs in the relation are labeled with values from E
  * hashes in both directions are used to make all lookups fast
  */
