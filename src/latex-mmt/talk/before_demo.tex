@@ -1,17 +1,13 @@
 \section{Motivation}
 
-\begin{frame}\frametitle{Subsume All Aspects of Knowledge}
+\begin{frame}\frametitle{Tetrapod of Knowledge}
 \begin{itemize}
 \item Narration: informal-but-rigorous math
-  \lec{needed for human consumption}
 \item Deduction: logic and type systems
-  \lec{needed for machine understanding}
-\item Computation: data structures and algorithms
-  \lec{needed for practical applications}
-\item Data: tabulate large sets and functions
-  \lec{needed for examples, exploration and efficiency}
-\item<2> Universal representation language
- \lec{key to universality, inter-operability}
+\item Computation: algorithms
+\item Data: tables for large sets and functions
+\item Representation: content dictionaries, ontologies
+ \lec{essential for inter-operability}
 \end{itemize}
 
 \begin{center}
@@ -30,7 +26,7 @@
 \end{center}
 \end{frame}
 
-\begin{frame}\frametitle{MMT as System Integration Platform}
+\begin{frame}\frametitle{MMT as a System Integration Platform}
 All system interfaces formalized in MMT \\
 $\to$ semantics-aware tool integration while maintaining existing work flows
 \begin{center}
@@ -78,11 +74,10 @@ $\to$ semantics-aware tool integration while maintaining existing work flows
 \section{Design}
 
 \begin{frame}\frametitle{Ideal System}
-Requirements:
-\begin{itemize}
-\item Author flexibly switches between MMT and LaTeX
+\begin{blockitems}{Requirements}
+\item Authors can mix (at least) MMT and LaTeX in the same file
  \begin{itemize}
- \item multiple nesting levels allowed
+ \item multiple nesting levels
  \item top level can be either format
  \end{itemize}
 \item Control passes between MMT and LaTeX processor
@@ -90,55 +85,37 @@ Requirements:
  \item sharing the same context
  \item communicating context changes
  \end{itemize}
-  \glec{e.g., introduce name in MMT chunk, use it in LaTeX chunk}
 \item Produces OMDoc, pdf, HTML, etc.
-\end{itemize}
+\end{blockitems}
 
-Problems:
-\begin{itemize}
-\item No way to get LaTeX processor to interact flexibly
+\begin{blockitems}{Problems}
+\item No way to get LaTeX processor to interact dynamically with other systems
 \item No way to write a new LaTeX processor for the occasion
-\end{itemize}
+\end{blockitems}
 \end{frame}
 
 \begin{frame}\frametitle{Realistic Options}
 \begin{blockitems}{Symmetric}
-\item new document format with new processor
-\item interspersed MMT and LaTeX chunks
-\item generate \texttt{.tex} and \texttt{.mmt} files, process separately, merge the outputs into OMDoc
+\item new document format with alternating/nested MMT and LaTeX chunks
+\item generate \texttt{.tex} and \texttt{.mmt} files, process separately, merge the outputs
 \end{blockitems}
-\lec{failed 2016 CICM submission}
+\lec{failed 2016 CICM submission, difficult but still interesting}
 
 \begin{blockitems}{MMT-led}
-\item .mmt file processed by MMT
-\item interspersed LaTeX chunks
+\item .mmt file with interspersed LaTeX chunks
 \item MMT generates \texttt{.tex} file
 \end{blockitems}
+\lec{future work}
 
 \begin{blockitems}{LaTeX-led}
-\item .tex file processed by LaTeX
-\item interspersed MMT chunks
+\item .tex file with interspersed MMT chunks
 \item LaTeX generates \texttt{.mmt} file
 \end{blockitems}
 \lec{\color{red}this talk}
 \end{frame}
 
 \begin{frame}\frametitle{Work flow}
-2 components using BibTeX model
-
-\begin{itemize}
-\item \texttt{mmttex.sty} package for LaTeX
- \begin{itemize}
- \item first run: writes out MMT chunks to \texttt{d.tex.mmt}
- \item second run: replaces MMT chunks with code from \texttt{d.tex.sty}
- \end{itemize}
-\item \texttt{latex-mmt} plugin for MMT
- \begin{itemize}
- \item processes \texttt{d.tex.mmt} as usual
- \item generates \texttt{d.tex.sty} with special LaTeX code
- \end{itemize}
-\end{itemize}
-
+BibTeX model:
 \begin{center}
 \begin{tabular}{|l||l|l|l|}
 \hline
@@ -155,26 +132,59 @@ Step 3 & \multicolumn{3}{c|}{Run LaTeX again} \\
 \hline
 \end{tabular}
 \end{center}
+
+2 components:
+\begin{itemize}
+\item \texttt{mmttex.sty} package for LaTeX
+ \begin{itemize}
+ \item Step 1: writes out MMT chunks to \texttt{d.tex.mmt}
+ \item Step 3: replaces MMT chunks with code from \texttt{d.tex.sty}
+ \end{itemize}
+\item \texttt{latex-mmt} plugin for MMT
+ \begin{itemize}
+ \item Step 2: processes \texttt{d.tex.mmt}, generates \texttt{d.tex.sty}
+ \item once at beginning: generates \texttt{.sty} files for any other MMT content
+ \end{itemize}
+\end{itemize}
+
 \end{frame}
 
-\begin{frame}\frametitle{Advantages}
-Semantics-aware formula processing
-\begin{itemize}
-\item MMT parsing and type-checking
-\item semantic errors in MMT content produce LaTeX compilation errors
+\begin{frame}\frametitle{Easy to Integrate with Existing Work Flows}
+ \begin{blockitems}{One extra LaTeX package}
+ \item no conflicts with other packages
+ \item no dependency on LaTeX editor
+ \end{blockitems}
+
+ \begin{blockitems}{One extra shell command}
+ \item run MMT as black box
+ \item easy to integrate with makefiles, editor shortcuts
+ \end{blockitems}
+
+ \begin{blockitems}{Documents re-compilable without MMT}
+ \item just include \texttt{d.tex.sty} when uploading sources
+ \item running LaTeX still produces \texttt{d.tex.mmt} but it has no effect
+  \lec{needed for academic publication}
+ \end{blockitems}
+
+\end{frame}
+
+\begin{frame}\frametitle{Enables Semantic Formulas inside LaTeX}
+\begin{blockitems}{Semantics processing of \texttt{.tex} files}
+\item MMT parsing and type-checking during LaTeX compilation
+ \lec{semantic errors produce LaTeX errors}
 \item formulas enriched with inferred information
  \lec{implicit arguments, omitted types}
-\end{itemize}
+\end{blockitems}
 
-Semantically enriched formulas in \texttt{.pdf}
-\begin{itemize}
-\item tooltips on symbols
-\item hyper-references from usage to definition
+\begin{blockitems}{Semantically enriched formulas in \texttt{.pdf}}
+\item tooltips with variable types
+\item hyperlinks from symbol usage to definition
 \item whatever else we can get the pdf viewers to support
- \lec{e.g., JavaScript barely supported}
-\end{itemize}
+ \lec{e.g., pdf JavaScript exists but barely supported}
+\end{blockitems}
 \end{frame}
 
+\section{Example and Demo}
 
 \begin{frame}\frametitle{3 kinds of MMT content}
 \begin{center}
@@ -195,27 +205,25 @@ Backgr. Knowledge         & elsewhere & \\
 \begin{itemize}
 \item Presentation-\textbf{relevant} MMT chunks
  \begin{itemize}
- \item formulas defined in MMT instead of LaTeX syntax
+ \item formulas written in MMT syntax, processed by MMT
  \item produce semantically enriched formulas in the \texttt{.pdf} file
  \end{itemize}
- \lec{e.g., $2+2=4$}
+ \lec{e.g., $2+x$}
 \item Presentation-\textbf{irrelevant} MMT chunks
  \begin{itemize}
  \item provide context for the pres.-rel. chunks
  \item part of \texttt{.tex} file
  \item no effect on \texttt{.pdf} file
  \end{itemize}
-  \lec{e.g., definition of $+$}
+  \lec{e.g., type of $x$}
 \item Background knowledge
  \begin{itemize}
  \item available in MMT independent of LaTeX document
  \item define formal language(s) used in \texttt{tex} file
  \end{itemize}
- \lec{e.g., formalization of logic, including $=$}
+ \lec{e.g., definition of $+$}
 \end{itemize}
 \end{frame}
-
-\section{Example and Demo}
 
 \begin{frame}\frametitle{Game Plan}
 \begin{itemize}

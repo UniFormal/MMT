@@ -24,29 +24,39 @@ Current workaround:
 
 \begin{frame}\frametitle{Prior Attempts}
 Two predecessors (papers rejected, systems abandoned)
-\begin{itemize}
- \item CICM 2013: with M. Iancu, D. Ginev
-  \begin{itemize}
+\begin{blockitems}{CICM 2013: with M. Iancu, D. Ginev}
   \item also LaTeX-led but with single LaTeX run only
   \item LaTeX talked to MMT dynamically via HTTP
-   \lec{requires LaTeX flag (awkward)}
-  \item main problem: badly chosen story
-  \end{itemize}
- \item CICM 2016: with M. Iancu, M. Kohlhase, H. Yuan
-  \begin{itemize}
+  \item main problem: badly chosen story, LaTeX run with \texttt{shell-escape} flag
+\end{blockitems}
+
+\begin{blockitems}{CICM 2016: with M. Iancu, M. Kohlhase, H. Yuan}
   \item symmetric design
   \item general infrastructure
   \item arbitrary nesting of MMT and LaTeX
   \item MMT and LaTeXML output merged into OMDoc
   \item main problem: complex design hard to implement
-  \end{itemize}
-\end{itemize}
+\end{blockitems}
 Current paper: much narrower focus, much simpler system
 \end{frame}
 
 \begin{frame}\frametitle{Summary}
 \begin{itemize}
- \item 
- \item 
+ \item First step towards integration of LaTeX and MMT
+  \lec{type-checking while type-setting}
+ \item Semantic analysis and enriched presentation of formulas
+ \item Very simple system
+ \item Easy to extend by users
+  \begin{itemize}
+  \item new background knowledge using logical frameworks in MMT
+  \item new LaTeX macros for writing and displaying MMT content
+  \item variants of MMT plugin for more semantic enrichment
+  \end{itemize}
+ \item Future work
+  \begin{itemize}
+  \item use MitM as default background knowledge library
+  \item use MMT also for definitions, proofs, \ldots
+  \item combine with MMT-led integration
+  \end{itemize}
 \end{itemize}
 \end{frame}
