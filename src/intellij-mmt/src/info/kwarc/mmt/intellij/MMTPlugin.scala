@@ -34,8 +34,9 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 	}
 
 	private object Abbreviations {
-		lazy val pairstrings = MMTSystem.getResourceAsString("latex/unicode-latex-map").split("\n")
-		lazy val pairs: List[(String, String)] = pairstrings.collect { case s if s.nonEmpty =>
+		lazy val pairstrings = (MMTSystem.getResourceAsString("unicode/unicode-latex-map") + "\n" +
+			MMTSystem.getResourceAsString("unicode/unicode-ascii-map")).split("\n")
+		lazy val pairs: List[(String, String)] = pairstrings.collect { case s if s.nonEmpty && !s.trim.startsWith("//") =>
 			val ls = s.split('|')
 			if (ls.length != 2) {
 				println(ls.mkString(", "))
