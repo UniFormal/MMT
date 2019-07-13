@@ -64,7 +64,7 @@ class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim:
   }
 }
 
-object MMTURILexer extends PrefixedTokenLexer('`', false, false)
+object MMTURILexer extends PrefixedTokenLexer('☞', false, false)
 
 /**
  * replaces words during lexing
