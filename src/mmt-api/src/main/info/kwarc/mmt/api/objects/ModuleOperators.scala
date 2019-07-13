@@ -141,7 +141,8 @@ object Morph {
                        * realization f -> to: m|_to is restricted realization 
                        */
                       id.df match {
-                        case Some(d) => Some(simplify(d))
+                        case Some(d) => 
+                          Some(simplify(d))
                         case None =>
                           if (id.isRealization) {
                             Some(OMStructuralInclude(f,to))

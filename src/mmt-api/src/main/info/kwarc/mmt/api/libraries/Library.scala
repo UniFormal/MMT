@@ -884,8 +884,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def alreadyDefinedHandler(e: StructuralElement)(code: => Unit) {
     try {code}
     catch {case AlreadyDefined(from, to, old, nw) =>
-      // logError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
-      throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+      logError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+      //throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
     }
   }
 

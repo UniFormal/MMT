@@ -40,8 +40,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		* @param standalone if true, include appropriate header and footer
 		* @param rh         output stream
 		*/
-	override def apply(element: StructuralElement, standalone: Boolean = false)(implicit
-																																							rh: RenderingHandler) {
+	override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
 		controller.simplifier(element) //TODO simplifying here is bad for elements that are not part of the diagram yet
 		present(element, rh)(new PersistentNamespaceMap)
 	}
@@ -296,9 +295,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 		}
 	}
 
-	/** `= df` if df is preset, returns true if there was a df */
-	private def doDefComponent(m: ModuleOrLink, rh: RenderingHandler): Boolean
-	= {
+	/** `= df` if df is present, returns true if there was one */
+	private def doDefComponent(m: ModuleOrLink, rh: RenderingHandler): Boolean = {
 		m.df match {
 			case Some(df) =>
 				rh(" = ")
