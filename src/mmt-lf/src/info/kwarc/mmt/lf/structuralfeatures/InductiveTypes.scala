@@ -28,6 +28,8 @@ object inductiveUtil {
     
   /** name of the declarations generated in indProofs */
   def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
+  /** name of the applied version of the inductive definition declaration generated for constructors */
+  def appliedName(n: LocalName) : LocalName = {n / LocalName("Applied")}
 }
 import inductiveUtil._
 
