@@ -370,7 +370,8 @@ jln|㏑
 jperp|⟂
 jparallel|∥
 jnparallel|∦
-// these have lenght 2 in Java and won't work everywhere
+jURI|☞
+// these have length 2 in Java and won't work everywhere
 jcalC|𝒞
 jcalD|𝒟
 jU|𝒰

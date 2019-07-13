@@ -37,12 +37,16 @@ class MMTPluginInterface(homestr: String, reportF: Any) {
 		lazy val pairstrings = (MMTSystem.getResourceAsString("unicode/unicode-latex-map") + "\n" +
 			MMTSystem.getResourceAsString("unicode/unicode-ascii-map")).split("\n")
 		lazy val pairs: List[(String, String)] = pairstrings.collect { case s if s.nonEmpty && !s.trim.startsWith("//") =>
+			val ps = s.splitAt(s.lastIndexOf('|'))
+			(ps._1.trim,ps._2.trim.drop(1))
+			/*
 			val ls = s.split('|')
 			if (ls.length != 2) {
 				println(ls.mkString(", "))
 				???
 			}
 			( /*"""\""" + */ ls.head.trim /*.drop(1)*/ , ls.last.trim)
+			 */
 		}.filterNot(p => List("❚", "❙", "❘").contains(p._2)).toList
 	}
 
