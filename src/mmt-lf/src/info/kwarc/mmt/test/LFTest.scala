@@ -91,7 +91,7 @@ object Orders {
     ,"measures/measures.mmt"
     ,"calculus/integration/SimpleFunctions.mmt"
     ,"calculus/integration/LebesgueIntegral.mmt"
-    ,"categories/basics.mmt"
+    ,"categories/categories.mmt"
     ,"categories/functors.mmt"
   )
 
