@@ -46,7 +46,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     
     val (tplNames, tmlNames, intDeclNames) = (tpls map (_.name), tmls map (_.name), intDecls map (_.name))
     
-    var defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
+    val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
+    val (defTpls, defConstrs) = (InternalDeclaration.tpls(defDecls), constrs(defDecls))
     
     // check whether all declarations match their corresponding constructors
     defDecls foreach { 
@@ -81,22 +82,21 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     
     var inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false,() => {Some(df)})(dd.path)}
+    inductDefs map(d => println(defaultPresenter(d)(controller)))
     
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
-    val tpInitials : List[Term] = constrs(intDecls) map {d => 
-      val intTpl = d.getTpl(tpls)
-      //Arrow(intTpl.externalTp(dd.path), externalizeNamesAndTypes(dd.path, intTpl.context)(
-      //    PiOrEmpty(intTpl.context, FunType(intTpl.args.tail, intTpl.ret))))
-      intTpl.tp
+    val inductTmlsApplied = defDeclsDef zip (Tps zip Dfs) filter(_._1.isConstructor) map {
+      case (d: Constructor, (tp, df)) =>
+        val defTplDef = d.getTpl(defTpls).df.get
+        val ags = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) List((None, rt)) else ags.tail.+:(None,rt)}
+        val args = ags.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
+        val argsCtx = args map {case (n, tp) => newVar(n, tp, d.ctx)}
+        
+        val inductDefApplied = Congs(tp, df, argsCtx)
+        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx,inductDefApplied._1)}, false, () => Some(Lambda(argsCtx,inductDefApplied._2)))(dd.path)
     }
-    
-    val intTmlVDDecls = (intDecls zip inductDefs) filter({case (d, _) => d.isConstructor}) map {case (d, c) => (OMV(c.name) % c.tp.get, d)} 
-    val inductTmlsAppliedDfs : List[Term] = (tpInitials zip intTmlVDDecls) map {case (tpInitial, (vd, d)) => Cong(vd, tpInitial, d.argContext(None)(dd.path)._1)}
-    val inductTmlsApplied = tmls zip inductTmlsAppliedDfs map {
-      case (c,df) => makeConst(c.name, () => {c.tp}, false, () => {Some(df)})(dd.path)
-    }
+
     inductDefs ++ inductTmlsApplied
-    inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     new Elaboration {
       def domain = inductDefs map (_.name)
