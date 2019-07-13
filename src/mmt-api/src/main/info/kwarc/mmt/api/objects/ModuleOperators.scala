@@ -113,7 +113,7 @@ object Morph {
                       // restrict m to t
                       l.df match {
                         case Some(mR) =>
-                          if (!isInclude(mR)) // the smaller we keep the codomain, the better
+                          if (!isInclude(mR) && mR != mor) // the smaller we keep the codomain, the better
                              result ::= simplify(mR)
                         case None =>
                           result ::= m
