@@ -141,7 +141,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       case dm: DerivedModule =>
         flattenDerivedModule(dm, None)
       case m: Module =>
-      case PlainInclude(_,_) =>
+      // case PlainInclude(_,_) =>
       case d: Declaration =>
         // external flattening of structures, declared declarations
         flattenExternally(d, None, None)

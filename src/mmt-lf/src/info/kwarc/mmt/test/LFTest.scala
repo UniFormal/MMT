@@ -91,7 +91,8 @@ object Orders {
     ,"measures/measures.mmt"
     ,"calculus/integration/SimpleFunctions.mmt"
     ,"calculus/integration/LebesgueIntegral.mmt"
-    // "categories/basics.mmt"
+    ,"categories/basics.mmt"
+    ,"categories/functors.mmt"
   )
 
   val testgeneral = List(
@@ -123,5 +124,18 @@ object Orders {
     ,"shallow_polymorphism.mmt"
     ,"sigma.mmt"
     // ,"IFIP21_tutorial.mmt" TODO broke the tests
+    ,"lists.mmt"
+    ,"logic/itp.mmt"
+    ,"logic/linear.mmt"
+    ,"logic/sfol.mmt"
+    ,"logic/hol.mmt"
+    ,"magmas.mmt"
+    ,"mam.mmt"
+    ,"patterns.mmt"
+    ,"program.mmt"
+    ,"real.mmt"
+    ,"quantities.mmt"
+    ,"sedel.mmt"
+    ,"sequences.mmt"
   )
 }
