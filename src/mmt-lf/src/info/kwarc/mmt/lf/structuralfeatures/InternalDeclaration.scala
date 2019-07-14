@@ -125,6 +125,12 @@ def makeConst(name: LocalName, Ltp: () => Term, simplifyTag: Boolean)(implicit p
   }
   
   def PiOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
+  def unapplyPiOrEmpty(tm: Term) : (Context, Term) = tm match {
+    case Pi(n, tp, x) => 
+      val (ctx, body) = unapplyPiOrEmpty(x)
+      (OMV(n) % tp::ctx, body)
+    case t => (Context.empty, t)
+  }
   def LambdaOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
 }
 import InternalDeclarationUtil._

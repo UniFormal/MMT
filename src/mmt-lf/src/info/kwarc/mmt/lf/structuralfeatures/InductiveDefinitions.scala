@@ -82,21 +82,22 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     
     var inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false,() => {Some(df)})(dd.path)}
-    inductDefs map(d => println(defaultPresenter(d)(controller)))
     
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
     val inductTmlsApplied = defDeclsDef zip (Tps zip Dfs) filter(_._1.isConstructor) map {
       case (d: Constructor, (tp, df)) =>
         val defTplDef = d.getTpl(defTpls).df.get
-        val ags = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) List((None, rt)) else ags.tail.+:(None,rt)}
+        val ags = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
         val args = ags.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
         val argsCtx = args map {case (n, tp) => newVar(n, tp, d.ctx)}
         
-        val inductDefApplied = Congs(tp, df, argsCtx)
-        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx,inductDefApplied._1)}, false, () => Some(Lambda(argsCtx,inductDefApplied._2)))(dd.path)
+        val (dargs, tpBody) = unapplyPiOrEmpty(tp)
+        val inductDefApplied = Congs(tpBody, df, argsCtx)
+        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx++dargs,inductDefApplied._1)}, false, () => Some(Lambda(argsCtx,inductDefApplied._2)))(dd.path)
     }
+    //inductTmlsApplied foreach (c => log(defaultPresenter(c)(controller)))
 
-    inductDefs ++ inductTmlsApplied
+    inductDefs = inductDefs ++ inductTmlsApplied
     
     new Elaboration {
       def domain = inductDefs map (_.name)

@@ -19,6 +19,7 @@ object StructuralFeatureUtils {
     def apply(t: Term) = ApplySpine(OMS(path), t)
     def unapply(t: Term) : Option[Term] = t match {
       case Apply(OMS(path),tm) => Some(tm)
+      case t => throw ImplementationError("Unexpected term found in unapply method for Ded: "+t)
     }
   }
   object Eq {
@@ -99,7 +100,7 @@ object StructuralFeatureUtils {
    */
   def CongAppl(prTp: Term, prDf: Term, tm: Term) : (Term, Term) = {
     val Eq(tp, x, y) = prTp
-    val (c, d) = tp match {case FunType(a, b) => (a.head._2, FunType(a.tail, b))}
+    val (c, d) = tp match {case FunType(a::as, b) => (a._2, FunType(as, b)) case _ => throw ImplementationError("Expected terms of a function type in CongAppl for "+prTp.toStr(true)+", but found "+tp.toStr(true))}
     val f = newVar("f", tp)
     val df = Lambda(f, Apply(f.toTerm, tm))
     (Eq(d, Apply(df, x), Apply(df, y)), Cong(prTp, prDf, Arrow(tp, d), df))
