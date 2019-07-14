@@ -160,7 +160,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -253,6 +253,16 @@ lazy val intellij = (project in file("intellij-mmt")).
 lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-coq"): _*)
+
+lazy val lsp = (project in file("mmt-lsp")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-lsp"): _*).
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar")
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).

@@ -113,7 +113,7 @@ object Morph {
                       // restrict m to t
                       l.df match {
                         case Some(mR) =>
-                          if (!isInclude(mR)) // the smaller we keep the codomain, the better
+                          if (!isInclude(mR) && mR != mor) // the smaller we keep the codomain, the better
                              result ::= simplify(mR)
                         case None =>
                           result ::= m
@@ -141,7 +141,8 @@ object Morph {
                        * realization f -> to: m|_to is restricted realization 
                        */
                       id.df match {
-                        case Some(d) => Some(simplify(d))
+                        case Some(d) => 
+                          Some(simplify(d))
                         case None =>
                           if (id.isRealization) {
                             Some(OMStructuralInclude(f,to))

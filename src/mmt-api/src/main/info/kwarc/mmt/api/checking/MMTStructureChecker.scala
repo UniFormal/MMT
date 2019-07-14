@@ -129,7 +129,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path)//+ " using the following rules: " + env.rules.toString)
+    log("checking " + path,e match {
+      case _:AbstractTheory | _:Constant => Some("simple")
+      case _ => None
+    })//+ " using the following rules: " + env.rules.toString)
     UncheckedElement.set(e)
     e match {
       case c: ContainerElement[_] =>

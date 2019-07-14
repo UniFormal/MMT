@@ -566,7 +566,8 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
               }
               val name = tpC.get match {
                 case Some(OMPMOD(p,_)) => LocalName(p)
-                case _ => fail("domain must be atomic")
+                case _ =>
+                  fail("domain must be atomic: " + tpC.get)
               }
               val isTotal = keyword == "realize"
               val as = new Structure(mod.toTerm, name, tpC, dfC, true, isTotal)

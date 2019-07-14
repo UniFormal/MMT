@@ -69,52 +69,58 @@ object StructuralFeatureUtils {
    * Takes a predicate pr: ⊦ x ≐ y for x: A, y: A, a (initial) function f: A → B and returns a predicate ⊦ f a ≐ f b
    * @param pr the predicate : ⊦ x ≐ y
    * @param f the function f : ⊦ A → B
-   */  object CONG {
+   */  
+  object CONG {
     val path = theory ? "CONG"
-    def apply(A: Term, B: Term, x: Term, y: Term, p_xeqy: Term, f: Term) = ApplyGeneral(OMS(path), List(A,B,x,y, p_xeqy, f))
+    def apply(A: Term, B: Term, x: Term, y: Term, p_xeqy: Term, f: Term) = ApplyGeneral(OMS(path), List(A,B,f,x,y, p_xeqy))
   }
+  
   /** More convenient version of CONG, which manually infers the first four arguments */
-  def Cong(pr: VarDecl, func: VarDecl) = {
-    val (pred, ptp) = (pr.toTerm, pr.tp.getOrElse(throw ImplementationError("Type missing for the proof passed to Cong.")))
-    val (tp, x, y) = ptp match {
+  def Cong(prTp: Term, prDf : Term, funcTp: Term, funcDf: Term) : Term = {
+    val (tp, x, y) = prTp match {
       case Eq(tp, tm1, tm2) => (tp, tm1, tm2)
       case _ => throw ImplementationError("Unexpected type found for the proof. Can't apply Cong. ")  
     }
-    val (f, ftp) = (func.df.getOrElse(throw ImplementationError("Definition for function required to apply Cong.")), func.tp.getOrElse(throw ImplementationError("Type missing for the function. Can't apply Cong.")))
-    val (a, b) = ftp match {
+    val (a, b) = funcTp match {
       case Arrow(dom, codom) => (dom, codom)
       case _ => throw ImplementationError("Unexpected type found for the function. Can't apply Cong.")
     }
-    CONG.apply(a, b, x, y, pred, f)
+    CONG(a, b, x, y, prDf, funcDf)
   }
   
+  def Cong(pr: VarDecl, func: VarDecl) : Term = {Cong(pr.tp.get, pr.toTerm, func.tp.get, func.toTerm)}
+  
   /**
-   * Takes a predicate pr: ⊦ x ≐ y for x: C → D, y: C → D, the type tp=C → D and a term tm: C and returns a predicate ⊦ f a ≐ f b, where f x := x tm
+   * Takes a predicate pr: ⊦ x ≐ y for x: C → D, y: C → D and a term tm: C and returns a predicate ⊦ f x ≐ f y, where f x := x tm
    * @param pr the predicate : ⊦ x ≐ y
    * @param f the function f : ⊦ f x ≐ f y
    * @param tm the term tm: C
+   * @return the type and and proof of the resulting predicate
    */
-  def Cong(pr: VarDecl, tp: Term, tm: Term) : Term = {
-    val (c, d) = tp match {case Arrow(c, d) => (c, d)}
-    val x = newVar("x", tp, Some(pr))
-    val df = Lambda(x, Apply(x.toTerm, tm))
-    Cong(pr, VarDecl(LocalName("f"), tp, df))
+  def CongAppl(prTp: Term, prDf: Term, tm: Term) : (Term, Term) = {
+    val Eq(tp, x, y) = prTp
+    val (c, d) = tp match {case FunType(a, b) => (a.head._2, FunType(a.tail, b))}
+    val f = newVar("f", tp)
+    val df = Lambda(f, Apply(f.toTerm, tm))
+    (Eq(d, Apply(df, x), Apply(df, y)), Cong(prTp, prDf, Arrow(tp, d), df))
   }
   
-  def Cong(pr: VarDecl, tpInitial: Term, argCtx: Context) : Term = {
-    val start = (pr, tpInitial)
-    val (finalTm, _) = argCtx.foldLeft(start)({
-      case ((prc, tp), tm) => 
-        val prNextDf = Cong(prc, tp, tm)
-        val FunType(l, termTp) = tp
-        val d = FunType(l.tail, termTp)
-        val tpNext = d
-        val Eq(_, x, y) = pr.tp.get
-        val prNextTp = Eq(d, Apply(x, tm.toTerm), Apply(y, tm.toTerm))
-        (VarDecl(LocalName("tp"), prNextTp, prNextDf), tpNext)
-    })
-    finalTm.df.getOrElse(finalTm.toTerm)
+  /**
+   * Folds a chain of Congs over a list of arguments, given the initial predicate prInitial and the type of the initial terms
+   * @param prInitialTp the type of the initial predicate : ⊦ x ≐ y
+   * @param prInitialDf the proof of the initial predicate : ⊦ x ≐ y
+   * @param argCtx the chain of arguments to which the terms are to be applied
+   * @return the type and and proof of the resulting predicate
+   */
+  def Congs(prInitialTp: Term, prInitialDf: Term, argCtx: Context) : (Term, Term) = {
+      val start = (prInitialTp, prInitialDf)
+      argCtx.map(_.toTerm).foldLeft(start)({
+        case ((prcTp, prcDf), tm) => 
+          val Eq(tp, x, y) = prcTp
+          CongAppl(prcTp, prcDf, tm)
+      })
   }
+  
   
   def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
@@ -152,6 +158,7 @@ object StructuralFeatureUtils {
 }
 
 import StructuralFeatureUtils._
+
 object TermConstructingFeatureUtil {
     def correspondingDecl(dd: DerivedDeclaration, d: LocalName): Option[Constant] = {
       dd.getO(d) map {
