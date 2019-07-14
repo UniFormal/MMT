@@ -64,6 +64,7 @@ object Morph {
     */
   def simplify(mor: Term, preserveType: Boolean = false)(implicit lib: Lookup): Term = {
     mor match {
+      case AnonymousMorphismCombinator(_) => mor
       case OMID(p) =>
         lib.getO(p) match {
           case Some(l: Link) =>
