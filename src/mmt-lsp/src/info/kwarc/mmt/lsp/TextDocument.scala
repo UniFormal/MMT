@@ -3,108 +3,127 @@ package info.kwarc.mmt.lsp
 import java.util
 import java.util.concurrent.CompletableFuture
 
-import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, ReferenceParams, RenameParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit}
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
-
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
+import org.eclipse.lsp4j.services.TextDocumentService
 
 trait TextDocument { self : Server =>
-  /*
-  @JsonNotification("textDocument/didOpen")
-  def didOpen(params: DidOpenTextDocumentParams): CompletableFuture[Unit] = Completable {}
+    protected object a_TD extends TextDocumentService {
+      override def didSave(params: DidSaveTextDocumentParams): Unit = {
+        log("didSave",Some("methodcall-textDocument"))
+      }
 
-  @JsonNotification("textDocument/didChange")
-  def didChange(
-                 params: DidChangeTextDocumentParams
-               ): CompletableFuture[Unit] = Completable {}
+      override def didClose(params: DidCloseTextDocumentParams): Unit = {
+        log("didClose",Some("methodcall-textDocument"))
+      }
 
+      override def didOpen(params: DidOpenTextDocumentParams): Unit = {
+        log("didOpen",Some("methodcall-textDocument"))
+      }
 
-  @JsonNotification("textDocument/didClose")
-  def didClose(params: DidCloseTextDocumentParams): Unit = {}
+      override def didChange(
+                              params: DidChangeTextDocumentParams
+                            ): Unit = {
+        log("didChange",Some("methodcall-textDocument"))
+      }
+    }
 
+  protected object a_TD2 {
 
-  @JsonNotification("textDocument/didSave")
-  def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable {}
+    def definition(
+                             position: TextDocumentPositionParams
+                           ): CompletableFuture[JEither[util.List[Location],util.List[LocationLink]]] = {
+      log("definition",Some("methodcall-textDocument"))
+      null
+    }
 
+    def typeDefinition(
+                                 position: TextDocumentPositionParams
+                               ): CompletableFuture[JEither[util.List[Location],util.List[LocationLink]]] = {
+      log("typeDefinition",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/definition")
-  def definition(
-                  position: TextDocumentPositionParams
-                ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
+    def implementation(
+                                 position: TextDocumentPositionParams
+                               ): CompletableFuture[util.List[Location]] = {
+      log("implementation",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
+    def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = Completable {
+      log("hover",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/typeDefinition")
-  def typeDefinition(
-                      position: TextDocumentPositionParams
-                    ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
+    def documentHighlights(
+                            params: TextDocumentPositionParams
+                          ): CompletableFuture[util.List[DocumentHighlight]] = {
+      log("documentHighlights",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
+    def documentSymbol(
+                                 params: DocumentSymbolParams
+                               ): CompletableFuture[JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]] = Completable {
+      log("documentSymbol",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/implementation")
-  def implementation(
-                      position: TextDocumentPositionParams
-                    ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
+    def formatting(
+                             params: DocumentFormattingParams
+                           ): CompletableFuture[util.List[TextEdit]] = {
+      log("formatting",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
+    def rename(
+                         params: RenameParams
+                       ): CompletableFuture[WorkspaceEdit] = Completable {
+      log("rename",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/hover")
-  def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = Completable {null}
+    def references(
+                             params: ReferenceParams
+                           ): CompletableFuture[util.List[Location]] = {
+      log("references",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
+    def completion(params: CompletionParams): CompletableFuture[CompletionList] = Completable {
+      log("completion",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/documentHighlight")
-  def documentHighlights(
-                          params: TextDocumentPositionParams
-                        ): CompletableFuture[util.List[DocumentHighlight]] = Completable.list(Nil)
+    def signatureHelp(
+                                params: TextDocumentPositionParams
+                              ): CompletableFuture[SignatureHelp] = Completable {
+      log("signatureHelp",Some("methodcall-textDocument"))
+      null
+    }
 
-  @JsonRequest("textDocument/documentSymbol")
-  def documentSymbol(
-                      params: DocumentSymbolParams
-                    ): CompletableFuture[
-    JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]
-    ] = Completable {null}
+    def codeAction(
+                             params: CodeActionParams
+                           ): CompletableFuture[util.List[CodeAction]] = {
+      log("codeAction",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
+    def codeLens(
+                           params: CodeLensParams
+                         ): CompletableFuture[util.List[CodeLens]] = {
+      log("codeLens",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
-  @JsonRequest("textDocument/formatting")
-  def formatting(
-                  params: DocumentFormattingParams
-                ): CompletableFuture[util.List[TextEdit]] = Completable.list(Nil)
+    def foldingRange(
+                               params: FoldingRangeRequestParams
+                             ): CompletableFuture[util.List[FoldingRange]] = {
+      log("foldingRange",Some("methodcall-textDocument"))
+      Completable.list(Nil)
+    }
 
-  @JsonRequest("textDocument/rename")
-  def rename(
-              params: RenameParams
-            ): CompletableFuture[WorkspaceEdit] = Completable {null}
-
-
-  @JsonRequest("textDocument/references")
-  def references(
-                  params: ReferenceParams
-                ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
-
-
-  @JsonRequest("textDocument/completion")
-  def completion(params: CompletionParams): CompletableFuture[CompletionList] = Completable { null }
-
-
-  @JsonRequest("textDocument/signatureHelp")
-  def signatureHelp(
-                     params: TextDocumentPositionParams
-                   ): CompletableFuture[SignatureHelp] = Completable { null }
-
-
-  @JsonRequest("textDocument/codeAction")
-  def codeAction(
-                  params: CodeActionParams
-                ): CompletableFuture[util.List[CodeAction]] = Completable.list(Nil)
-
-
-  @JsonRequest("textDocument/codeLens")
-  def codeLens(
-                params: CodeLensParams
-              ): CompletableFuture[util.List[CodeLens]] = Completable.list(Nil)
-
-
-  @JsonRequest("textDocument/foldingRange")
-  def foldingRange(
-                    params: FoldingRangeRequestParams
-                  ): CompletableFuture[util.List[FoldingRange]] = Completable.list(Nil)
-
-   */
+  }
 }

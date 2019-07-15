@@ -2,76 +2,95 @@ package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
 
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionList, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionList, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.{BufferedWriter, FileWriter, InputStream, OutputStream, PrintWriter}
+import java.net.ServerSocket
 import java.util
 import java.util.concurrent.ExecutionException
 import java.util.logging.LogManager
 import java.util.logging.Logger
 
-import org.eclipse.lsp4j.jsonrpc.services.{JsonDelegate, JsonNotification, JsonRequest}
-import org.eclipse.lsp4j.websocket.{WebSocketEndpoint, WebSocketLauncherBuilder}
+import info.kwarc.mmt.api.frontend.{Extension, Run}
+import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+import org.eclipse.lsp4j.launch.LSPLauncher
 
-object Main {
+object Local {
   @throws[InterruptedException]
   @throws[ExecutionException]
   def main(args: Array[String]): Unit = {
     LogManager.getLogManager.reset()
     val globalLogger = Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME)
     globalLogger.setLevel(java.util.logging.Level.OFF)
-    println("MMT Started")
+    print("MMT Started")
     startLocalServer(System.in, System.out)
   }
 
   @throws[InterruptedException]
   @throws[ExecutionException]
   def startLocalServer(in: InputStream, out: OutputStream): Unit = {
+    val controller = Run.controller
     val server = new Server
+    controller.extman.addExtension(server,"local"::Nil)
     val launcher = Launcher.createLauncher(server, classOf[MMTClient], in, out)
     val client = launcher.getRemoteProxy//.asInstanceOf[LanguageClient]
     server.connect(client)
     val startListening = launcher.startListening
-    println("Server started")
+    print("Server started")
     startListening.get
   }
 
 }
 
-object Remote {
-  @throws[InterruptedException]
-  @throws[ExecutionException]
-  def main(args: Array[String]): Unit = {
-    LogManager.getLogManager.reset()
-    val globalLogger = Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME)
-    globalLogger.setLevel(java.util.logging.Level.OFF)
-    println("MMT Started")
-    startRemoteServer
-  }
+class Server extends LanguageClientAware with Workspace with TextDocument with Extension {
+  override def logPrefix: String = "lsp"
+  private var port = 9090
+  lazy val ss = new ServerSocket(port)
+  private val selfServer = this
+  private var client : MMTClient = null
 
-  def startRemoteServer: Unit = {
-    val server = new Server
-    val launcher = new MMTEndpoint
-  }
-
-  class MMTEndpoint extends WebSocketEndpoint[MMTClient] {
-    override def configure(builder: Launcher.Builder[MMTClient]): Unit = {
-      builder.setInput(System.in)
-      builder.setOutput(System.out)
-    }
-
-    override def connect(localServices: util.Collection[Object], remoteProxy: MMTClient): Unit = {
-      ???
+  override def log(s: => String, subgroup: Option[String]): Unit = {
+    super.log(s, subgroup)
+    if (client != null) {
+      val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
+      client.logMessage(new MessageParams(MessageType.Info,msg))
     }
   }
-}
 
-class Server extends LanguageClientAware with Workspace with TextDocument {
+  lazy val thread = new Thread {
+    override def run(): Unit = {
+      while (true) try {
+        log("Waiting for connection...")
+        val conn = ss.accept()
+        log("connected.")
+        val logFile = java.io.File.createTempFile("mmtlsp/log_","")
+        val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
+        log(logFile.toString)
+        val launcher = new Launcher.Builder().setLocalService(selfServer).setRemoteInterface(classOf[MMTClient]).setInput(conn.getInputStream).
+          setOutput(conn.getOutputStream).validateMessages(true).traceMessages(wr).create()
 
-  object Completable {
+        // val launcher = LSPLauncher.createServerLauncher(server,conn.getInputStream,conn.getOutputStream,true,wr)
+        connect(launcher.getRemoteProxy)
+        launcher.startListening()
+      }
+    }
+  }
+
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    args match {
+      case "local"::_ =>
+        return
+      case "port"::nr::_ =>
+        port = nr.toInt
+      case _ =>
+    }
+    thread.start()
+  }
+
+  protected object Completable {
     import scala.concurrent.Future
     import scala.concurrent.ExecutionContext.Implicits._
     import scala.compat.java8.FutureConverters._
@@ -83,160 +102,141 @@ class Server extends LanguageClientAware with Workspace with TextDocument {
 
   @JsonRequest("initialize")
   def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
-    println("Initialize test")
+    log("Initialize",Some("methodcall"))
     Completable {
       new InitializeResult(new ServerCapabilities)
     } //.completedFuture(new InitializeResult(new ServerCapabilities))
   }
 
-  /* {_ =>
-    new InitializeResult(new ServerCapabilities())
-  }
-
-   */
-
   @JsonRequest("shutdown")
   def shutdown(): CompletableFuture[Object] = {
-    println("shutdown")
-
+    log("shutdown",Some("methodcall"))
     Completable{ "shutdown"}
   }
 
+  @JsonNotification("connect")
+  override def connect(clientO: LanguageClient): Unit = {
+    log("Connected: " + client.toString,Some("methodcall"))
+    client = clientO.asInstanceOf[MMTClient]
+    client.logMessage(new MessageParams(MessageType.Info,"Connected to MMT!"))
+  }
 
+  @JsonNotification("exit")
+  def exit(): Unit = {
+    log("Exit")
+  }
+
+  @JsonNotification("initialized")
+  def initialized(params: InitializedParams): Unit = {
+    log("Initialized",Some("methodcall"))
+  }
 
   @JsonNotification("workspace/didChangeConfiguration")
   def didChangeConfiguration(
                               params: DidChangeConfigurationParams
-                            ): CompletableFuture[Unit] = Completable {}
+                            ): CompletableFuture[Unit] = a_WSP2.didChangeConfiguration(params)
 
   @JsonNotification("workspace/didChangeWatchedFiles")
   def didChangeWatchedFiles(
                              params: DidChangeWatchedFilesParams
-                           ): CompletableFuture[Unit] = Completable {}
+                           ): CompletableFuture[Unit] = a_WSP2.didChangeWatchedFiles(params)
 
 
   @JsonRequest("workspace/symbol")
   def workspaceSymbol(
                        params: WorkspaceSymbolParams
-                     ): CompletableFuture[util.List[SymbolInformation]] = Completable.list(Nil)
+                     ): CompletableFuture[util.List[SymbolInformation]] = a_WSP.workspaceSymbol(params)
 
 
   @JsonRequest("workspace/executeCommand")
-  def executeCommand(params: ExecuteCommandParams): CompletableFuture[Object] = Completable { null }
+  def executeCommand(params: ExecuteCommandParams): CompletableFuture[Object] = a_WSP.executeCommand(params)
 
   @JsonNotification("textDocument/didOpen")
-  def didOpen(params: DidOpenTextDocumentParams): CompletableFuture[Unit] = Completable {}
+  def didOpen(params: DidOpenTextDocumentParams): CompletableFuture[Unit] = Completable { a_TD.didOpen(params) }
 
   @JsonNotification("textDocument/didChange")
   def didChange(
                  params: DidChangeTextDocumentParams
-               ): CompletableFuture[Unit] = Completable {}
+               ): CompletableFuture[Unit] = Completable { a_TD.didChange(params) }
 
 
   @JsonNotification("textDocument/didClose")
-  def didClose(params: DidCloseTextDocumentParams): Unit = {}
+  def didClose(params: DidCloseTextDocumentParams): Unit = a_TD.didClose(params)
 
 
   @JsonNotification("textDocument/didSave")
-  def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable {}
+  def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable { a_TD.didSave(params) }
 
 
   @JsonRequest("textDocument/definition")
   def definition(
                   position: TextDocumentPositionParams
-                ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
+                ): CompletableFuture[JEither[util.List[Location],util.List[LocationLink]]] = a_TD2.definition(position)
 
 
   @JsonRequest("textDocument/typeDefinition")
   def typeDefinition(
                       position: TextDocumentPositionParams
-                    ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
+                    ): CompletableFuture[JEither[util.List[Location],util.List[LocationLink]]] = a_TD2.typeDefinition(position)
 
 
   @JsonRequest("textDocument/implementation")
   def implementation(
                       position: TextDocumentPositionParams
-                    ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
-
+                    ): CompletableFuture[util.List[Location]] = a_TD2.implementation(position)
 
   @JsonRequest("textDocument/hover")
-  def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = Completable {null}
-
+  def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = a_TD.hover(params)
 
   @JsonRequest("textDocument/documentHighlight")
   def documentHighlights(
                           params: TextDocumentPositionParams
-                        ): CompletableFuture[util.List[DocumentHighlight]] = Completable.list(Nil)
+                        ): CompletableFuture[util.List[DocumentHighlight]] = a_TD2.documentHighlights(params)
 
   @JsonRequest("textDocument/documentSymbol")
   def documentSymbol(
                       params: DocumentSymbolParams
                     ): CompletableFuture[
     JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]
-    ] = Completable {null}
-
+    ] = a_TD2.documentSymbol(params)
 
   @JsonRequest("textDocument/formatting")
   def formatting(
                   params: DocumentFormattingParams
-                ): CompletableFuture[util.List[TextEdit]] = Completable.list(Nil)
+                ): CompletableFuture[util.List[TextEdit]] = a_TD2.formatting(params)
 
   @JsonRequest("textDocument/rename")
   def rename(
               params: RenameParams
-            ): CompletableFuture[WorkspaceEdit] = Completable {null}
-
+            ): CompletableFuture[WorkspaceEdit] = a_TD.rename(params)
 
   @JsonRequest("textDocument/references")
   def references(
                   params: ReferenceParams
-                ): CompletableFuture[util.List[Location]] = Completable.list(Nil)
-
+                ): CompletableFuture[util.List[Location]] = a_TD2.references(params)
 
   @JsonRequest("textDocument/completion")
-  def completion(params: CompletionParams): CompletableFuture[CompletionList] = Completable { null }
-
+  def completion(params: CompletionParams): CompletableFuture[CompletionList] = a_TD2.completion(params)
 
   @JsonRequest("textDocument/signatureHelp")
   def signatureHelp(
                      params: TextDocumentPositionParams
-                   ): CompletableFuture[SignatureHelp] = Completable { null }
-
+                   ): CompletableFuture[SignatureHelp] = a_TD.signatureHelp(params)
 
   @JsonRequest("textDocument/codeAction")
   def codeAction(
                   params: CodeActionParams
-                ): CompletableFuture[util.List[CodeAction]] = Completable.list(Nil)
-
+                ): CompletableFuture[util.List[CodeAction]] = a_TD2.codeAction(params)
 
   @JsonRequest("textDocument/codeLens")
   def codeLens(
                 params: CodeLensParams
-              ): CompletableFuture[util.List[CodeLens]] = Completable.list(Nil)
-
+              ): CompletableFuture[util.List[CodeLens]] = a_TD2.codeLens(params)
 
   @JsonRequest("textDocument/foldingRange")
   def foldingRange(
                     params: FoldingRangeRequestParams
-                  ): CompletableFuture[util.List[FoldingRange]] = Completable.list(Nil)
-
-  @JsonNotification("connect")
-  // @JsonRequest("connect")
-  override def connect(client: LanguageClient): Unit = {
-    println("Connected: " + client.toString)
-    client.logMessage(new MessageParams(MessageType.Info,"Connected Info"))
-  }
-
-
-  @JsonNotification("exit")
-  def exit(): Unit = {
-    println("Exit")
-  }
-
-  @JsonNotification("initialized")
-  def initialized(params: InitializedParams): Unit = {
-    println("Initialized")
-  }
+                  ): CompletableFuture[util.List[FoldingRange]] = a_TD.foldingRange(params)
 
 }
 
