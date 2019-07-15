@@ -12,6 +12,7 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 import StructuralFeatureUtils._
+import StructuralFeatureUtil._
 import TermConstructingFeatureUtil._
 import inductiveUtil._
 
@@ -74,13 +75,13 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         val tpl = tml.getTpl(tpls)
         val tplDef = defDecls.find(_.name == tpl.name).get
         val (args, dApplied) = tml.argContext(None)(indD.path)
-        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), tmlDef.df.get))
+        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg => induct(tpls map (_.externalPath(indD.path)), defTpls, dd.path, arg)})))
     }
     val Dfs = intDecls zip intDeclsArgs zip induct_paths.map(OMS(_)) map {case ((intDecl, intDeclArgs), tm) => 
         LambdaOrEmpty(context++intDeclArgs, ApplyGeneral(tm, indParams++modelDf++intDeclArgs.map(_.toTerm)))
     }
     
-    var inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
+    val inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false,() => {Some(df)})(dd.path)}
     
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
@@ -88,25 +89,15 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       case (d: Constructor, (tp, df)) =>
         val (dargs, tpBody) = unapplyPiOrEmpty(tp)
         val defTplDef = d.getTpl(defTpls).df.get
-        val ags = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
-        val args = ags.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
-        val argsCtx = args map {case (n, tp) => newVar(n, tp, Some(d.context++dargs))}
+        val mdlAgs = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
+        val mdlArgs = mdlAgs.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
+        val mdlArgsCtx = mdlArgs map {case (n, tp) => newVar(n, tp, Some(d.context++dargs))}
         
-        val inductDefApplied = Congs(tpBody, df, argsCtx)
-        //println(noLookupPresenter.asString(inductDefApplied._2))
-        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx++dargs,inductDefApplied._1)}, false, () => Some(LambdaOrEmpty(argsCtx++dargs, inductDefApplied._2)))(dd.path)
+        val inductDefApplied = Congs(tpBody, df, mdlArgsCtx)
+        makeConst(appliedName(d.name), () => {PiOrEmpty(mdlArgsCtx++dargs,inductDefApplied._1)}, false, () => Some(LambdaOrEmpty(mdlArgsCtx++dargs, inductDefApplied._2)))(dd.path)
     }
-    //inductTmlsApplied foreach (c => log(defaultPresenter(c)(controller)))
-
-    inductDefs = inductDefs ++ inductTmlsApplied
-    
-    new Elaboration {
-      def domain = inductDefs map (_.name)
-      def getO(n: LocalName) = {
-        inductDefs find (_.name == n) foreach(d=>log(defaultPresenter(d)(controller)+"\n="+d.df.get.toStr(true)))
-        inductDefs find (_.name == n)
-      }
-    }
+   
+    externalDeclarationsToElaboration(inductDefs++inductTmlsApplied, Some({c => log(defaultPresenter(c)(controller))}))
   }
   
   /**
@@ -118,6 +109,17 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
   def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {
     //TODO: This should be implemented to provide more accurate error messages
     //TODO: It should set the tp.analize fields of the internal declarations to the expected types (and definitions if any)
+  }
+  
+  def induct(tpls: List[GlobalName], defTpls: List[TypeLevel], dd: GlobalName, tm: VarDecl) : Term = {
+    val maps : List[(GlobalName, Term => Term)] = tpls map {tpl => 
+      (tpl, {t:Term => defTpls.find(_.name.last == tpl.name.last).get.applyTo(t)(dd)})
+    }
+    tm.tp match {
+      case Some(OMS(tpl)) if tpls.contains(tpl) => utils.listmap(maps, tpl).getOrElse(throw ImplementationError("map: "+maps.toString()))(tm.toTerm)
+      case Some(OMS(p)) => log("OMS("+p+") not of an inductively-defined type."); tm.toTerm
+      case _ => tm.toTerm
+    }
   }
 }
 
