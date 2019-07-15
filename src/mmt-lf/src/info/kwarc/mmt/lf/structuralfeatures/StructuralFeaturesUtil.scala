@@ -74,6 +74,9 @@ object StructuralFeatureUtils {
   object CONG {
     val path = theory ? "CONG"
     def apply(A: Term, B: Term, x: Term, y: Term, p_xeqy: Term, f: Term) = ApplyGeneral(OMS(path), List(A,B,f,x,y, p_xeqy))
+    def unapply(tm: Term) : Option[(Term, Term, Term, Term, Term, Term)] = tm match {
+      case ApplyGeneral(OMS(path), List(a, b, x, y, p, f)) => Some((a, b, x, y, p, f))
+    }
   }
   
   /** More convenient version of CONG, which manually infers the first four arguments */

@@ -13,6 +13,7 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
 import StructuralFeatureUtils._
+import StructuralFeatureUtil._
 import inductiveUtil._
 
 /** theories as a set of types of expressions */ 
@@ -74,13 +75,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
       makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
-    new Elaboration {
-      def domain = inductDefs map (_.name)
-      def getO(n: LocalName) = {
-        inductDefs find (_.name == n) foreach(d=>log(defaultPresenter(d)(controller)))
-        inductDefs find (_.name == n)
-      }
-    }
+    externalDeclarationsToElaboration(inductDefs, Some({c => log(defaultPresenter(c)(controller))}))
   }
   
   /**

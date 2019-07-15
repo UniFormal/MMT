@@ -77,7 +77,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), tmlDef.df.get))
     }
     val Dfs = intDecls zip intDeclsArgs zip induct_paths.map(OMS(_)) map {case ((intDecl, intDeclArgs), tm) => 
-        PiOrEmpty(context++intDeclArgs, ApplyGeneral(tm, indParams++modelDf++intDeclArgs.map(_.toTerm)))
+        LambdaOrEmpty(context++intDeclArgs, ApplyGeneral(tm, indParams++modelDf++intDeclArgs.map(_.toTerm)))
     }
     
     var inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
@@ -86,14 +86,15 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
     val inductTmlsApplied = defDeclsDef zip (Tps zip Dfs) filter(_._1.isConstructor) map {
       case (d: Constructor, (tp, df)) =>
+        val (dargs, tpBody) = unapplyPiOrEmpty(tp)
         val defTplDef = d.getTpl(defTpls).df.get
         val ags = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
         val args = ags.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
-        val argsCtx = args map {case (n, tp) => newVar(n, tp, d.ctx)}
+        val argsCtx = args map {case (n, tp) => newVar(n, tp, Some(d.context++dargs))}
         
-        val (dargs, tpBody) = unapplyPiOrEmpty(tp)
         val inductDefApplied = Congs(tpBody, df, argsCtx)
-        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx++dargs,inductDefApplied._1)}, false, () => Some(Lambda(argsCtx,inductDefApplied._2)))(dd.path)
+        //println(noLookupPresenter.asString(inductDefApplied._2))
+        makeConst(appliedName(d.name), () => {PiOrEmpty(argsCtx++dargs,inductDefApplied._1)}, false, () => Some(LambdaOrEmpty(argsCtx++dargs, inductDefApplied._2)))(dd.path)
     }
     //inductTmlsApplied foreach (c => log(defaultPresenter(c)(controller)))
 
@@ -102,7 +103,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     new Elaboration {
       def domain = inductDefs map (_.name)
       def getO(n: LocalName) = {
-        inductDefs find (_.name == n) foreach(d=>log(defaultPresenter(d)(controller)))
+        inductDefs find (_.name == n) foreach(d=>log(defaultPresenter(d)(controller)+"\n="+d.df.get.toStr(true)))
         inductDefs find (_.name == n)
       }
     }

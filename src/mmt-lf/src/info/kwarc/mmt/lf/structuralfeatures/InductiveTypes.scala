@@ -94,9 +94,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
     // the inductive proof declarations
     elabDecls ++= indProofs(tpdecls, constrdecls, context)(parentTerm)
-    elabDecls map {d => log(defaultPresenter(d)(controller))}
     
-    externalDeclarationsToElaboration(elabDecls)
+    externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
 }
   
   /** Check whether the TermLevel has a higher order argument of an inductively defined type
