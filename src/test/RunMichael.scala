@@ -3,10 +3,10 @@ import info.kwarc.mmt.MitM.MitM.{eq, implicitProof, logic}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
-import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, Viewset}
-import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
+import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
+import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
+import info.kwarc.mmt.api.{ComplexStep, LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.got.GraphOptimizationTool
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
@@ -15,7 +15,20 @@ object RunMichael extends MagicTest {
 
   def run : Unit = {
     intersect
-    //viewfinder
+  }
+
+  def getConst : Unit = {
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?AtoB",NamespaceMap.empty)).asInstanceOf[View]
+    //val (s1, s2, t1, t2) =
+    val d = view.getDeclarations.head
+    val th = controller.getTheory(Path.parseM("http://mydomain.org/testarchive/mmt-example?A",NamespaceMap.empty))
+    val struct = controller.getTheory(view.from.toMPath).getO(LocalName(d.name.tail.head)).get.asInstanceOf[Structure]
+    println(th)
+    println(struct)
+    println(view)
+    //println(struct.get(ComplexStep(struct.from.toMPath)/d.name.tail.tail))
+    //println(ViewSplitter.getConst(th, d.name.tail))
+    println(ViewSplitter(view)(controller))
   }
 
   def got : Unit = {
@@ -96,9 +109,11 @@ object RunMichael extends MagicTest {
 
   def intersect: Unit = {
     val int = new Intersecter
+    val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(int, Nil)
+    controller.extman.addExtension(presenter, List())
 
-    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?mono",NamespaceMap.empty)).asInstanceOf[View]
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?AtoB",NamespaceMap.empty)).asInstanceOf[View]
     //val (s1, s2, t1, t2) =
     println(int(view))
     //println(s1)
