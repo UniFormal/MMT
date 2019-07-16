@@ -1,5 +1,9 @@
 package info.kwarc.mmt.api
 
+import java.security.MessageDigest
+import java.math.BigInteger
+
+
 import utils._
 
 import scala.collection.TraversableLike
@@ -192,4 +196,10 @@ package object utils {
    def firstDefined[T](alternatives: (Unit => Option[T])*): Option[T] = {
      alternatives.view.map(x => x(())).find(_.isDefined).flatten
    }
+
+  lazy private val sha256MessageDigest = MessageDigest.getInstance("SHA-256")
+  /** sha256 computes the sha256 checksum of a string */
+  def sha256(s: String): String = {
+    String.format("%032x", new BigInteger(1, sha256MessageDigest.digest(s.getBytes("UTF-8"))))
+  }
 }

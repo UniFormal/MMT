@@ -4,17 +4,18 @@ import info.kwarc.mmt.api._
 import parser._
 import objects._
 import Conversions._
+import info.kwarc.mmt.api.frontend.Controller
 import notations._
 
 import scala.xml.Node
 
 /** a query to be sent to a [[MathWebSearch]] */
 case class MathWebSearchQuery(pattern: TermPattern, answsize: Int = 1000, limitmin: Int = 0) {
-   def toXML = {
+   def toXML(controller: Controller) = {
       val queryCML = if (pattern.qvars.isEmpty)
-         pattern.query.toCML
+      pattern.query.toCML(controller)
       else
-         pattern.query.toCMLQVars(pattern.qvars)
+         pattern.query.toCMLQVars(controller, pattern.qvars)
       <mws:query xmlns:mws="http://www.mathweb.org/mws/ns" xmlns:m="http://www.w3.org/1998/Math/MathML"
              limitmin={limitmin.toString} answsize={answsize.toString} totalreq="yes" output="xml">
             <mws:expr>{queryCML}</mws:expr>
@@ -32,7 +33,7 @@ class MathWebSearch(val url: java.net.URL) extends frontend.Extension {
     *  @return MathWebSearch's reply
     */
    def apply(query: MathWebSearchQuery): List[SearchResult] = {
-      val responseXML = utils.xml.post(url, query.toXML)
+      val responseXML = utils.xml.post(url, query.toXML(controller))
       val response = responseXML match {
          case <mws:answset>{answs @_*}</mws:answset> =>
             answs.toList.map {

@@ -116,16 +116,16 @@ class MwsService() extends QueryTransformer {
        case "Not" | "And" | "For" | "Pred" | "PrivPred" | "Is" | "Verum" | "Exists"  =>
          val mizq = PropositionParser.parseFormula(p)
          val mmtq = PropositionTranslator.translateFormula(mizq)
-         mmtq.toCML
+         mmtq.toCML(controller)
        case "Typ" =>
          val mizq = TypeParser.parseTyp(p)
          val mmtq = TypeTranslator.translateTyp(mizq)
-         mmtq.toCML
+         mmtq.toCML(controller)
 
        case _ =>
          val mizq = TypeParser.parseTerm(p)
          val mmtq = TypeTranslator.translateTerm(mizq)
-         mmtq.toCML
+         mmtq.toCML(controller)
     }
     TranslationController.clearVarContext()
     val q = makeQVars(removeLFApp(cml), Nil, Nil)

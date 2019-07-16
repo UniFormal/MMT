@@ -3,20 +3,92 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import modules._
 import symbols._
-import notations._
-import frontend._
-import backend._
+
 import objects._
 import utils._
 import documents._
-import parser._
+import info.kwarc.mmt.api.presentation.{ContentMathMLPresenter, ParallelMathMLPresenter}
 import uom._
 
-import scala.collection.immutable.{HashMap}
-import scala.xml.Node
+import scala.collection.mutable
 
 class MWSHarvestExporter extends Exporter {
-  val key = "mws"
+  val key="mwsmmt"
+  override val outExt = "harvest"
+
+  private lazy val dualPresenter = controller.extman.get(classOf[ParallelMathMLPresenter]).head
+  private lazy val contentPresenter = controller.extman.get(classOf[ContentMathMLPresenter]).head
+
+  override def exportTheory(t: Theory, bf: BuildTask): Unit = {
+    val id = t.path.toPath
+    val uuid = utils.sha256(id)
+    val formulae = new mutable.ListBuffer[MWSHarvestFormula]()
+    val text = ""
+    val metadata = ""
+
+    // collect all formulae
+    t.getDeclarations foreach {d =>
+      d.getComponents.foreach {
+        case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+          tc.get.foreach {t => {
+            val cpath = CPath(d.path,comp)
+            val (content, presentation) = dualPresenter.applyParallel(t, Some(cpath))
+            formulae.append(MWSHarvestFormula(
+              cpath.toPath,
+              presentation,
+              content,
+            ))
+          } }
+        case _ =>
+      }
+    }
+
+    // write out the harvest
+    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
+    rh(MWSHarvestData(id, uuid, formulae.toList, text, metadata).toHarvestNode.buildString(false))
+  }
+  def exportView(v: View, bf: BuildTask) {
+    //excluding expressions from views for now
+  }
+
+
+  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
+    //Nothing to do - MathML in namespaces
+  }
+
+  def exportDocument(doc : Document, bt: BuildTask) {
+    //Nothing to do - no MathML at document level
+  }
+}
+
+case class MWSHarvestData(id: String, uuid: String, formulae: List[MWSHarvestFormula], text: String, metadata: String) {
+  /** toNode turns this harvest data into an xml node */
+  def toHarvestNode: scala.xml.Node =
+    <mws:harvest xmlns:mws={MWSHarvestData.xmlnsMWS}>
+      <mws:data id={uuid}>
+          <id>{id}</id>
+          <text>{text}</text>
+          <metadata>{metadata}</metadata>
+          {formulae.map(_.toMathNode(this))}
+      </mws:data>
+      {formulae.map(_.toExprNode(this))}
+    </mws:harvest>
+}
+case class MWSHarvestFormula(url: String, math: scala.xml.Node, mathCMML: scala.xml.Node) {
+  /** returns this harvested formula as a harvest element */
+  def toExprNode(parent: MWSHarvestData): scala.xml.Node =
+    <mws:expr url={url} mws:data_id={parent.uuid} xmlns:mws={MWSHarvestData.xmlnsMWS}>{mathCMML}</mws:expr>
+  /** returns this harvest formula as a 'math' element */
+  def toMathNode(parent: MWSHarvestData): scala.xml.Node = <math local_id={url}>{math.buildString(false)}</math>
+}
+
+object MWSHarvestData {
+  val xmlnsMath = "http://www.w3.org/1998/Math/MathML"
+  val xmlnsMWS = "http://search.mathweb.org/ns"
+}
+
+class LegacyMWSHarvestExporter extends Exporter {
+  val key = "mwslegacy"
   override val outExt = "harvest"
 
   def exportTheory(t: Theory, bf: BuildTask) {
@@ -26,7 +98,7 @@ class MWSHarvestExporter extends Exporter {
       d.getComponents.foreach {
          case DeclarationComponent(comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
-               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
+               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML(controller)}</mws:expr>
                rh(node.toString + "\n")
             }
          case _ =>
@@ -65,8 +137,8 @@ class FlatteningMWSExporter extends Exporter {
       case d => d.getComponents.foreach {
          case DeclarationComponent(comp, tc: AbstractTermContainer) =>
             tc.get.foreach {t =>
-               // TODO MWS interface requires mws:data node, for which we can probably put dummy nodes here 
-               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML}</mws:expr>
+               // TODO MWS interface requires mws:data node, for which we can probably put dummy nodes here
+               val node = <mws:expr url={CPath(d.path,comp).toPath}>{t.toCML(controller)}</mws:expr>
                rh(node.toString + "\n")
             }
          case _ =>
@@ -101,6 +173,7 @@ class FlatteningMWSExporter extends Exporter {
 import presentation._
 import utils.xml._
 
+
 class IDMathMLPresenter extends MathMLPresenter {
    override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
       val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
@@ -114,7 +187,7 @@ class IDMathMLPresenter extends MathMLPresenter {
       pc.out(openTag("semantics", Nil))
       body
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
+      pc.out(o.toCML(controller).toString)
       pc.out(closeTag("annotation-xml"))
       pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))

@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.backend
-import scala.xml.{Node,Elem}
+import scala.xml.{Elem, Node}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 
 /** Helper class to permit customizing archives */
@@ -9,12 +10,12 @@ abstract class ArchiveCustomization {
   /**
    * Any post-processing on the query object should be done here
    */
-  def prepareQuery(t: Obj): scala.xml.Node
+  def prepareQuery(t: Obj, controller: Controller): scala.xml.Node
 }
 
 class DefaultCustomization extends ArchiveCustomization {
   def mwsurl(p: Path) : String = p.toPath
-  def prepareQuery(t: Obj): scala.xml.Node = t.toCML
+  def prepareQuery(t: Obj, controller: Controller): scala.xml.Node = t.toCML(controller)
 }
 
 /** Customization for Mizar */
@@ -28,8 +29,8 @@ class MML extends ArchiveCustomization {
       // "http://www.mizar.org/version/current/html/" + "%m.html#o"
   }
 
-  def prepareQuery(t: Obj): scala.xml.Node = {
-    makeHVars(removeLFApp(t.toCML), Nil, Nil, true)
+  def prepareQuery(t: Obj, controller: Controller): scala.xml.Node = {
+    makeHVars(removeLFApp(t.toCML(controller)), Nil, Nil, true)
   }
 
   private def removeLFApp(n : scala.xml.Node) : scala.xml.Node = n match {
@@ -107,7 +108,7 @@ class TPTP extends ArchiveCustomization {
   /**
    * Traverse the node, fixing symbol names and translating $$ terms to qvar
    */
-  def prepareQuery(t: Obj): Node = process(t.toCML)
+  def prepareQuery(t: Obj, controller: Controller): Node = process(t.toCML(controller))
   def process(n: Node) : Node = n match {
       case <csymbol>{s}</csymbol> =>
         val ss = getSymbolName(s.toString)

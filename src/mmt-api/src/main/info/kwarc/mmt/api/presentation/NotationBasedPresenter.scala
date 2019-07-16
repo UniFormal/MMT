@@ -23,6 +23,8 @@ case class VarData(decl : VarDecl, binder : Option[GlobalName], declpos : Positi
 
 case class PresentationContext(rh: RenderingHandler, owner: Option[CPath], ids: List[(String,String)],
       source: Option[SourceRef], pos : Position, globalContext: Context, context : List[VarData], style: Option[PresentationContext => String]) {
+   /** a hashed string verison of owner */
+   lazy val hashedOwner = owner.map(_.toPath).map(utils.sha256)
    /** the output stream to print into */
    def out(s: String) {rh(s)}
    /** convenience method to change the position field */

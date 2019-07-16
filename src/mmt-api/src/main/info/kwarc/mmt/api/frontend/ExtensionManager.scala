@@ -306,11 +306,15 @@ class ExtensionManager(controller: Controller) extends Logger {
     // pragmatic-strict converter
     addExtension(new notations.Pragmatics)
     //targets, opaque formats, and presenters
-    val mp = new MathMLPresenter
-    val hp = new HTMLPresenter(mp) {
+    val pmlp = new PresentationMathMLPresenter
+    val cmlp = new ContentMathMLPresenter
+    List(pmlp, cmlp).foreach(addExtension(_))
+
+    val fmlp = new ParallelMathMLPresenter(cmlp)
+    val hp = new HTMLPresenter(fmlp) {
       val key = "html"
     }
-    List(mp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
+    List(fmlp, hp, new archives.PythonExporter, new uom.GenericScalaExporter, new OpenMathScalaExporter,
       new TextInterpreter, new HTMLInterpreter, TextPresenter, OMDocPresenter,
       new MMTSyntaxPresenter(nbpr), new FlatMMTSyntaxPresenter(nbpr)).foreach(addExtension(_))
     //parser extensions

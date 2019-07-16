@@ -30,7 +30,7 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
          case None => Nil
          case Some(vd) => List(HTMLAttributes.varref -> vd.declpos.toString)
       }
-      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: jobadattribs, n.toString)
+      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: dataattibs, n.toString)
       pc.out(mi)
    }
   //TODO duplicate code found also in informal presenter, to fix
@@ -110,7 +110,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
       body
       pc.out(closeTag("mrow"))
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
+      pc.out(o.toCML(controller).toString)
       pc.out(closeTag("annotation-xml"))
       pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))

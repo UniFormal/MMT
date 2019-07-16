@@ -187,7 +187,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
           case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(x => genQVars(x)): _*)
         }
 
-        val processedQuery = genQVars(tm.toCML)
+        val processedQuery = genQVars(tm.toCML(controller))
         (<mws:expr>
           {processedQuery}
         </mws:expr>, Nil)

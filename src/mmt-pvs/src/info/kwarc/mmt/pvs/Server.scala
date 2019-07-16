@@ -27,7 +27,7 @@ class PVSServer extends ServerExtension("pvs") {
       case _ => testterm
     }
     val mwsquery = doWebQuery(tm)
-    println(mwsquery.toXML)
+    println(mwsquery.toXML(controller)) // TODO@jazzpirate: This shouldn't be a println, we should use logging instead
     val results = mws(mwsquery).map(makeReply) // TODO
     ServerResponse.JsonResponse(JSONArray(results:_*))
     // ServerResponse.XmlResponse(mwsquery.toXML)
