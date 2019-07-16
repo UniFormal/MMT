@@ -25,7 +25,7 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
-case class Expectation(scope: Term, tp: Option[Term], df: Option[Term])
+case class Expectation(tp: Option[Term], df: Option[Term])
 
 /** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
   * 
@@ -193,7 +193,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case c: Constant =>
         // determine the expected type and definiens (if any) based on the parent element
         val parent = content.getParent(c)
-        lazy val defaultExp = Expectation(parent.toTerm, None, None)
+        lazy val defaultExp = Expectation(None, None)
         val expectation = parent match {
           case thy: Theory =>
             c.name.steps.head match {
@@ -207,7 +207,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
                         def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
-                        Expectation(thy.toTerm, cOrg.tp map tr, cOrg.df map tr)
+                        Expectation(cOrg.tp map tr, cOrg.df map tr)
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
                         defaultExp                      
@@ -220,13 +220,20 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             content.get(link.from, c.name, msg => throw GetError("cannot find realized constant")) match {
               case cOrg: Constant =>
                 def tr(t: Term) = content.ApplyMorphs(t, link.toTerm) 
-                Expectation(link.to, cOrg.tp map tr, cOrg.df map tr)
+                Expectation(cOrg.tp map tr, cOrg.df map tr)
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
-                Expectation(link.to, None, None)
+                Expectation(None, None)
+            }
+          case dd: DerivedDeclaration =>
+            val sfOpt = extman.getOrAddExtension(classOf[StructuralFeature], dd.feature)
+            sfOpt match {
+              case None => defaultExp
+              case Some(sf) =>
+                val expTpO = sf.expectedType(dd, controller, c)
+                Expectation(expTpO, None)
             }
           case _ =>
-            // TODO if parent is a derived declaration, we can ask the structural feature for expectations
             defaultExp
         }
         // now the actual checking
