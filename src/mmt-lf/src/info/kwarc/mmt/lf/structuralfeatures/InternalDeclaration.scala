@@ -252,7 +252,7 @@ sealed abstract class InternalDeclaration {
 	 *  and the term of this constructor applied to those arguments
 	 * @param suffix (optional) a suffix to append to the local name of each independent variable declaration in the returned context
    */
-  def argContext(suffix: Option[String])(implicit parent: GlobalName): (Context, Term) = { 
+  def argContext(suffix: Option[String]=None)(implicit parent: GlobalName): (Context, Term) = { 
     val suf = suffix getOrElse ""
     val dargs = args.zipWithIndex map {
       case ((Some(loc), arg), _) => (loc, arg)
@@ -265,7 +265,7 @@ sealed abstract class InternalDeclaration {
       if (loc != locSuf) subs = subs ++ OMV(loc) / OMV(locSuf)
       newVar(locSuf.toString, externalizeNamesAndTypes(parent, context)(tp ^? subs), None)
     }
-    val tp = ApplyGeneral(toTerm, con.map(_.toTerm))
+    val tp = applyTo(con)
     (con, tp)
   }
   
