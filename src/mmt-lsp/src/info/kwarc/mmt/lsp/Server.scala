@@ -23,7 +23,7 @@ object Local {
     LogManager.getLogManager.reset()
     val globalLogger = Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME)
     globalLogger.setLevel(java.util.logging.Level.OFF)
-    print("MMT Started")
+    // print("MMT Started")
     startLocalServer(System.in, System.out)
   }
 
@@ -33,12 +33,15 @@ object Local {
     val controller = Run.controller
     val server = new Server
     controller.extman.addExtension(server,"local"::Nil)
-    val launcher = Launcher.createLauncher(server, classOf[MMTClient], in, out)
+    val logFile = java.io.File.createTempFile("mmtlsp/log_","")
+    val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
+    val launcher = new Launcher.Builder().setLocalService(server).setRemoteInterface(classOf[MMTClient]).setInput(in).
+      setOutput(out).validateMessages(true).traceMessages(wr).create()
     val client = launcher.getRemoteProxy//.asInstanceOf[LanguageClient]
     server.connect(client)
-    val startListening = launcher.startListening
-    print("Server started")
-    startListening.get
+    launcher.startListening()
+    // print("Server started")
+    // startListening.get
   }
 
 }
