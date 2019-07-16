@@ -2,7 +2,7 @@ package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
 
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionList, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
@@ -15,7 +15,6 @@ import java.util.logging.Logger
 
 import info.kwarc.mmt.api.frontend.{Extension, Run}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
-import org.eclipse.lsp4j.launch.LSPLauncher
 
 object Local {
   @throws[InterruptedException]
@@ -46,16 +45,17 @@ object Local {
 
 class Server extends LanguageClientAware with Workspace with TextDocument with Extension {
   override def logPrefix: String = "lsp"
-  private var port = 9090
+  private var port = 5007
   lazy val ss = new ServerSocket(port)
   private val selfServer = this
-  private var client : MMTClient = null
+  private var _client : MMTClient = null
+  def client = _client
 
   override def log(s: => String, subgroup: Option[String]): Unit = {
     super.log(s, subgroup)
-    if (client != null) {
+    if (_client != null) {
       val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
-      client.logMessage(new MessageParams(MessageType.Info,msg))
+      _client.logMessage(new MessageParams(MessageType.Info,msg))
     }
   }
 
@@ -90,11 +90,12 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
     thread.start()
   }
 
+  import scala.collection.JavaConverters._
+
   protected object Completable {
     import scala.concurrent.Future
     import scala.concurrent.ExecutionContext.Implicits._
     import scala.compat.java8.FutureConverters._
-    import scala.collection.JavaConverters._
 
     def apply[T](t : => T) = Future.apply(t).toJava.toCompletableFuture
     def list[T](t : => List[T]) : CompletableFuture[util.List[T]] = apply{ t.asJava }
@@ -104,7 +105,15 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
   def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
     log("Initialize",Some("methodcall"))
     Completable {
-      new InitializeResult(new ServerCapabilities)
+      val result = new InitializeResult(new ServerCapabilities)
+
+      val completion = new CompletionOptions()
+      completion.setTriggerCharacters(List("j").asJava)
+      result.getCapabilities.setCompletionProvider(completion)
+
+      result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
+
+      result
     } //.completedFuture(new InitializeResult(new ServerCapabilities))
   }
 
@@ -116,9 +125,9 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
 
   @JsonNotification("connect")
   override def connect(clientO: LanguageClient): Unit = {
-    log("Connected: " + client.toString,Some("methodcall"))
-    client = clientO.asInstanceOf[MMTClient]
-    client.logMessage(new MessageParams(MessageType.Info,"Connected to MMT!"))
+    log("Connected: " + _client.toString,Some("methodcall"))
+    _client = clientO.asInstanceOf[MMTClient]
+    _client.logMessage(new MessageParams(MessageType.Info,"Connected to MMT!"))
   }
 
   @JsonNotification("exit")
@@ -216,7 +225,7 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
                 ): CompletableFuture[util.List[Location]] = a_TD2.references(params)
 
   @JsonRequest("textDocument/completion")
-  def completion(params: CompletionParams): CompletableFuture[CompletionList] = a_TD2.completion(params)
+  def completion(position: CompletionParams): CompletableFuture[JEither[util.List[CompletionItem], CompletionList]] = a_TD.completion(position)
 
   @JsonRequest("textDocument/signatureHelp")
   def signatureHelp(
