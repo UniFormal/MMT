@@ -328,7 +328,7 @@ class NotationBasedParser extends ObjectParser {
         } else if (word == "_") {
           // unbound _ is a fresh unknown variable
           newUnknown(newExplicitUnknown, boundNames)
-        } else if (word.count(_ == '?') > 0) {
+        } else if (word.count(c => c == '?' || c == '/') > 0) {
           // ... or qualified identifiers
           makeIdentifier(te).map(OMID).getOrElse(unparsed)
         } else if (mayBeFree(word)) {
@@ -378,11 +378,25 @@ class NotationBasedParser extends ObjectParser {
     // but we cannot always prepend ? because the identifier could also be NS?THY
     // Therefore, we turn word into ?word using a heuristic
     segments match {
+      case only :: Nil =>
+        val ln = LocalName.parse(word)
+        val options = lup.resolveName(pu.context.getIncludes, ln)
+        val name = options match {
+          case Nil =>
+            makeError("ill-formed constant reference " + ln, te.region)
+            None
+          case hd :: Nil =>
+            Some(hd)
+          case _ => 
+            makeError("ambiguous constant reference " + ln, te.region)
+            None
+        }
+        return name
       case fst :: _ :: Nil if !fst.contains(':') && fst != "" && Character.isUpperCase(fst.charAt(0)) =>
         word = "?" + word
       case _ =>
     }
-    // recognizing prefix:REST is awkward because : is usually used in notations
+    // recognizing prefix:REST is awkward because : is often used in notations
     // therefore, we turn prefix/REST into prefix:/REST if prefix is a known namespace prefix
     // this introduces the (less awkward problem) that relative paths may not start with a namespace prefix
     val beforeFirstSlash = segments.headOption.getOrElse(word).takeWhile(_ != '/')
