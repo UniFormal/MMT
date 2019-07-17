@@ -373,8 +373,8 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     /**************** Calculate the views from the source to the two nodes (after renaming) ****************/
     val List(renames1,renames2) : List[List[OML]] = List(r1,r2).map{r => Common.asSubstitution(r).map{case (o,n) => OML(o,None,Some(n))}}
     val List(in_view1,in_view2) : List[List[OML]] = List(ad1,ad2).map{d => d.viewOf(ad_over.getDistNode.get, d.getDistNode.get)} // TODO: Handle errors here
-    val view1: List[OML] = ad1.compose(in_view1,renames1)
-    val view2: List[OML] = ad2.compose(in_view2,renames2)
+    val view1: List[OML] = (AnonymousMorphism(in_view1) compose AnonymousMorphism(renames1)).decls
+    val view2: List[OML] = (AnonymousMorphism(in_view2) compose AnonymousMorphism(renames2)).decls
 
     /**************** Check The Guard *******************/
     /* - Now, view1 and view2 have the list of assignments from the source to the targets (after applying the renames)

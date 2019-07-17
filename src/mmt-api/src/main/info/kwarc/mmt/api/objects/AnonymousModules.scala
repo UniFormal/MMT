@@ -179,28 +179,6 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
   /* A function to compose two substitutions
    * The function assume that assign1 has no duplicate assignments for the same symbol.
    */
-  def compose(assign1 : List[OML],assign2 : List[OML]): List[OML] = {
-      val new_assigns : List[OML] = assign1.map{ curr : OML =>
-         var temp : LocalName = curr.name
-         val it = assign2.iterator
-         while(it.hasNext){
-           val n : OML = it.next()
-           if(temp == n.name){
-             temp = n.df match {
-               case Some(d: OML) => d.name
-
-             }
-            /* temp = n.df match {
-               case OML(n,_,_,_,_) => n
-               case _ => temp
-             }*/
-           }
-         }
-         val new_decl = new OML(temp,None,None,None)
-         new OML(curr.name,curr.tp,Some(new_decl),curr.nt,curr.featureOpt)
-      }
-      new_assigns
-  }
 
   /* Finding the views
    * - each view is a list of assignments of terms to constants TODO: we consider now only constants to constants
@@ -209,10 +187,9 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
    * An assignment name = definition is represented as an OML(name, type, definition, notationOpt, featureOpt)
    * */
   def viewOf(source : DiagramNode, target : DiagramNode): List[OML] = {
-
     val arrows: List[DiagramArrow] = path(source.label, target.label)
     val assignments: List[OML] = arrows.flatMap(a => a.morphism.decls)
-    compose(source.theory.decls,assignments)
+    assignments
   }
 
   def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}

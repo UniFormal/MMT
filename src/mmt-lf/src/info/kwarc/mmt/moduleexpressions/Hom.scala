@@ -11,7 +11,7 @@ import info.kwarc.mmt.lf._
 
 import scala.collection.mutable.HashSet
 
-object Hom extends UnaryConstantScala(Combinators._path, "homomorphism")
+object Hom extends UnaryConstantScala(Combinators._path, "hom")
 
 /** MMT declarations
  *  
@@ -66,14 +66,21 @@ object ComputeHom extends ComputationRule(Hom.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Hom(thyT) = tm
     val dia : AnonymousDiagram = Common.asAnonymousDiagram(solver, thyT).getOrElse {return RecurseOnly(List(1))}
-    val node = dia.getDistNode.getOrElse(return Recurse)
+    val node : DiagramNode = dia.getDistNode.getOrElse(return Recurse)
     val thy = node.theory // Common.asAnonymousTheory(solver, thyT).getOrElse {return RecurseOnly(List(1))}
+
+    /* TODO: Check that the meta-theory contains SFOL, not that it is SFOL */
+    /*
     if (covered || !thy.mt.contains(SFOL._path)) {
       solver.error("wrong meta theory; expected: SFOL; found " + thy.mt)
       return Recurse
-    }
-    val decls = thy.decls
+    }*/
+ /* **************************************************************** */
+ /* *************** Creating the two models ************************ */
+ /* **************************************************************** */
+    val decls : List[OML] = thy.decls /* The declarations of the theory */
     def copy(prefix: String) = {
+      /* The list of new declarations */
       var renames : List[(LocalName,LocalName)] = Nil
       def replace(t: Term) = {
         val r = new OMLReplacer(l => utils.listmap(renames, l).map(n => OML(n)))
@@ -86,7 +93,7 @@ object ComputeHom extends ComputationRule(Hom.path) {
         d
       }
       (declsR, renames)
-    }
+   }
     val (mod1, ren1) = copy(ComputeHom.m1label.toString)
     val (mod2, ren2) = copy(ComputeHom.m2label.toString)
 
@@ -94,50 +101,57 @@ object ComputeHom extends ComputationRule(Hom.path) {
 
     import SFOL._
 
+    /* **************************************************************** */
+    /* *************** Computing the homomorphisms ******************** */
+    /* **************************************************************** */
     val homdecls = decls mapOrSkip {o =>
-       val tp: Term = o.tp.get match {
-         // sort symbol, i.e., c: sort
-         // generate morphism map c: m1/c -> m2/c
-         case OMS(SFOL.sort) =>
-           Arrow(OML(m1label/o.name), OML(m2label/o.name))
-         // function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
-         // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. r(m1/c x1 ... xn) = m2/c (s1 x1) ... (sn xn)
-         case FunType(args, SFOL.term(r)) =>
-            val argsorts = args.map {
-              case (None, SFOL.term(s)) => s
-            }
-            val vars = makeNames("x", args.length)
-            val varSorts = vars zip argsorts
-            val left = Apply(r, ApplySpine(OML(m1label/o.name), vars.map(OMV(_)):_*))
-            val right = ApplySpine(OML(m2label/ o.name),varSorts map {case (x,s) => Apply(s,OMV(x))}:_*)
-            val body = equal(left,right)
-            val ax = forall.multiple(varSorts, body)
-            PL.ded(ax)
-         // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
-         // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. m1/c x1 ... xn => m2/c (s1 x1) ... (sn xn)
-         case FunType(args, OMS(PL.prop)) =>
-            val argsorts = args.map {
-              case (None, SFOL.term(s)) => s
-            }
-            val ax = ???
-            PL.ded(ax)
-         // axiom, i.e., c: ded F
-         case PL.ded(_) =>
-           // skip
-           throw SkipThis
-       }
-       OML(o.name, Some(tp), None)
-    }
-    // val homNode = DiagramNode(homlabel,new AnonymousTheory(Some(SFOL._path),mod1:::mod2:::homdecls))
-    val arrow1 = DiagramArrow(m1label, node.label, homlabel , Rename.pairsToMorph(ren1), false)
-    val arrow2 = DiagramArrow(m2label, node.label, homlabel , Rename.pairsToMorph(ren2), false)
+      val tp: Term = o.tp.get match {
+      /* TODO: This OML part is wrong. I need to throw it away */
+      case OML(n, typ, df, nt, featureOpt) =>
+        Arrow(OML(m1label/o.name), OML(m2label/o.name))
+      // sort symbol, i.e., c: sort
+      // generate morphism map c: m1/c -> m2/c
+      case OMS(SFOL.sort) =>
+         Arrow(OML(m1label/o.name), OML(m2label/o.name))
+      /* function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
+       * generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. r(m1/c x1 ... xn) = m2/c (s1 x1) ... (sn xn) */
+      case FunType(args, SFOL.term(r)) =>
+        val argsorts = args.map { /* list of sorts of the input to the function */
+          case (None, SFOL.term(s)) => s
+        }
+        /* variables associated with their sorts */
+        val vars = makeNames("x", args.length)
+        val varSorts = vars zip argsorts
+        val left = Apply(r, ApplySpine(OML(m1label/o.name), vars.map(OMV(_)):_*))
+        val right = ApplySpine(OML(m2label/ o.name),varSorts map {case (x,s) => Apply(s,OMV(x))}:_*)
+        val body = equal(left,right)
+        val ax = forall.multiple(varSorts, body)
+        PL.ded(ax)
+     // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
+     // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. m1/c x1 ... xn => m2/c (s1 x1) ... (sn xn)
+      case FunType(args, OMS(PL.prop)) => throw SkipThis
+        /*
+        val argsorts = args.map {
+          case (None, SFOL.term(s)) => s
+        }
+        val ax = ???
+        PL.ded(ax) */
+     // axiom, i.e., c: ded F
+      case PL.ded(_) => throw SkipThis
+       // skip
+   }
+   OML(o.name, Some(tp), None)
+}
+// val homNode = DiagramNode(homlabel,new AnonymousTheory(Some(SFOL._path),mod1:::mod2:::homdecls))
+val arrow1 = DiagramArrow(m1label, node.label, homlabel , Rename.pairsToMorph(ren1), false)
+val arrow2 = DiagramArrow(m2label, node.label, homlabel , Rename.pairsToMorph(ren2), false)
 
-    val hom = DiagramNode(homlabel, new AnonymousTheory(thy.mt, mod1:::mod2)) // TODO: include :::homdecls in the list of declarations
-    /* Try to use the Mod operator to get the two mdoels */
+val hom = DiagramNode(homlabel, new AnonymousTheory(thy.mt, mod1:::mod2)) // TODO: include :::homdecls in the list of declarations
+/* Try to use the Mod operator to get the two mdoels */
 
-    val result = new AnonymousDiagram(List(hom), List(arrow1,arrow2), Some(homlabel))
-    Simplify(result.toTerm)
-  }
+val result = new AnonymousDiagram(List(hom), List(arrow1,arrow2), Some(homlabel))
+Simplify(result.toTerm)
+}
 }
 
 /*
@@ -146,14 +160,14 @@ tm S --> tm S
 
 OMDoc, MMT terms:
 OMA(OMS(LF?Arrow), List(
-   OMA(OMS(LF?Apply),List(OMS(SFOL?term), OMV(S))))
-   OMA(OMS(LF?Apply),List(OMS(SFOL?term), OMV(S))))
+OMA(OMS(LF?Apply),List(OMS(SFOL?term), OMV(S))))
+OMA(OMS(LF?Apply),List(OMS(SFOL?term), OMV(S))))
 )
 
 MMT terms with LF helper objects
 Arrow(
-  Apply(OMS(SFOL?term), OMV(S))
-  Apply(OMS(SFOL?term), OMV(S))
+Apply(OMS(SFOL?term), OMV(S))
+Apply(OMS(SFOL?term), OMV(S))
 )
 
 MMT terms with SFOL helper objects
