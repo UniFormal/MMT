@@ -253,15 +253,26 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                   delete(1)
                   deleteDelim(currentIndex)
                }
-            // create a single arg for each available token
-            case _ if ns.length == numCurrentTokens =>
+            case _ =>
+              if (ns.length == numCurrentTokens) {
+               // create a single arg for each available token
                onApplyI {currentIndex =>
                   PickSingles(ns)
                   delete(numCurrentTokens)
                   deleteDelim(currentIndex)
                }
-            case _ =>
+              } else if (ns.length > numCurrentTokens) {
+               // if more tokens available than needed, merge all remaining tokens into the last argument
+               //TODO use matched tokens as delimiters, merge in between them 
+               onApplyI {currentIndex =>
+                  PickSingles(ns.init)
+                  PickAll(ns.length,ns.last._2)
+                  delete(numCurrentTokens)
+                  deleteDelim(currentIndex)
+               }
+              } else {
                NotApplicable
+              }
          }
          // the notation expects a sequence whose separator is the current token: all previously shifted tokens become the first element, and we start the sequence
          case (Nil, SimpSeqArg(n, Delimiter(s),_) :: _) if matches(s) =>

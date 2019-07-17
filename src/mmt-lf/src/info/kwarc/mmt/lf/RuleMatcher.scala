@@ -33,12 +33,13 @@ case class DeclarativeRule(parameters: Context, assumptions: List[ComplexJudgeme
  *  @param roles the roles that form atomic judgements
  *  @param dedTag role of truth judgements
  */
-class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
+class RuleMatcher(lup: Lookup, roles: List[String]) {
    private def checkRole(p: GlobalName, allowedRoles: List[String]): Option[String] = {
       lup.get(p) match {
          case c: Constant => c.rl match {
-            case Some(rl) if roles contains rl => Some(rl)
-            case _ => None
+            case Some(rl) if allowedRoles contains rl => Some(rl)
+            case _ =>
+              None
          }
          case _ => None
       }
@@ -46,15 +47,12 @@ class RuleMatcher(lup: Lookup, roles: List[String], dedTag: String) {
    /** matches an AtomicJudgement whose role is in roles */
    object Atomic {
       def unapply(t: Term): Option[AtomicJudgement] = {
-         val t2 = t match {
-            case Apply(OMS(ded), a) if checkRole(ded, List(dedTag)).isDefined => a
-            case _ => t
-         }
-         t2 match {
-            case ApplySpine(OMS(f), args) =>
+        t match {
+            case ApplyGeneral(OMS(f), args) =>
                checkRole(f, roles) map {rl => AtomicJudgement(rl, f,args)}
-            case _ => None
-         }
+            case _ =>
+              None
+        }
       }
    }
 
