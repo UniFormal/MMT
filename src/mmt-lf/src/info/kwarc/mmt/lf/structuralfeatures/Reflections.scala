@@ -40,7 +40,7 @@ class Reflections extends StructuralFeature("reflect") with TypedParametricTheor
       case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
             +" but no derived declaration found at that location.")
     }
-    val decls = parseInternalDeclarations(indD, controller, Some(context))(dd.path)
+    val decls = parseInternalDeclarations(indD, controller, Some(context))
         
     
     structuralfeatures.InductiveTypes.elaborateDeclarations(context, decls)(dd.path)

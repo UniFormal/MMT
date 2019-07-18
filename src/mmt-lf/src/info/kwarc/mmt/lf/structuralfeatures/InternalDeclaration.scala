@@ -12,14 +12,20 @@ import info.kwarc.mmt.lf._
 /** utility functions for elaborating structural features from typed internal declarations */
 private object InternalDeclarationUtil {
   /**
-   * Make a new unique local name from the given string which is unique in the given context
+   * Make a new unique local name from the given one which is unique in the given context
+   * @param name the suggested local name
+   * @param ctx (optional) the context
+   */
+  def makeUnique(name: LocalName, ctx: Option[Context] = None): LocalName = {
+    val c = ctx.getOrElse(Context.empty)
+     Context.pickFresh(c, name)._1
+  }
+  /**
+   * Make a new unique local name from the given String which is unique in the given context
    * @param nm the string from which the local name is generated
    * @param ctx (optional) the context
    */
-  def uniqueLN(nm: String, ctx: Option[Context] = None): LocalName = {
-    val c = ctx.getOrElse(Context.empty)
-     Context.pickFresh(c, LocalName(nm))._1
-  }
+  def uniqueLN(nm: String, ctx: Option[Context] = None): LocalName = {makeUnique(LocalName(nm), ctx)}
   
   def uniqueGN(nm: String)(implicit parent: GlobalName): GlobalName = parent.module ? nm
 
@@ -33,6 +39,9 @@ private object InternalDeclarationUtil {
    def newVar(name: String, tp: Term, con: Option[Context] = None) : VarDecl = {
      VarDecl(uniqueLN(name.toString, con), tp)
    }
+  def newVar(nm: LocalName, tp: Term, con: Context) : VarDecl = {
+    VarDecl(makeUnique(nm, Some(con)), tp)
+  }
     
    /** a very detailed presenter, useful for debugging */
   def present(c: Constant) : String = {

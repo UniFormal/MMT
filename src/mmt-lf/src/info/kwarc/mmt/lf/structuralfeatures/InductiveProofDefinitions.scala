@@ -25,6 +25,28 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
   
+  /**
+   * Checks that each definien matches the expected type
+   */
+  override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
+    val (intDeclsPath, _, indParams) = ParamType.getParams(dd)
+    val (indD, indCtx) = controller.library.get(intDeclsPath) match {
+      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
+      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+intDeclsPath+" but none found at that location.")
+    }
+    //check the indParams match the indCtx at least in length
+    // TODO: Check the types match as well
+    if (indCtx.length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
+
+    
+    val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
+    val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
+    val (_, _, indProofDeclMap, ctx) = InductiveTypes.inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
+    
+    val intDecl = intDecls.find(_.name == c.name)
+    
+    utils.listmap(indProofDeclMap, intDecl) map (_.tp.get)
+  }
 
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -42,36 +64,31 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
             +" but no derived declaration found at that location.")
     }
     implicit val parent = indD.path
-    val indDefs = parseInternalDeclarations(indD, controller, None)(indD.path)
-    var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
+    val intDecls = parseInternalDeclarations(indD, controller, None)
+    var intTpls: List[TypeLevel] = intDecls.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
     
-    val indTplNames = indTpls map (_.name)
+    val indTplNames = intTpls map (_.name)
     
-    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), indD.path)
+    var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
-    // check whether all declarations match their corresponding constructors
-    decls foreach {
-      d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None))
-      }
-    }
     // and whether we have all necessary declarations
-    indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {
-      n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
+    intDecls filter {d => decls forall (_.name != d.name)} map {d => 
+      decls map (d => println(d.toString()))
+      throw LocalError("No declaration found for the internal declaration "+d.name+" of "+indD.name+":\n The declarations (at "+dd.path+") are: \n"+decls.map(_.toString()).toString())
     }
     
-    val proof_paths = indTpls.map(t=>t.path.copy(name=indD.name/proofName(t.name)))
+    val proof_paths = intTpls.map(t=>t.path.copy(name=indD.name/proofName(t.name)))
     
     val modelDf = decls map (_.df.get)
-    val indTplsArgs = indTpls map(_.argContext(None)._1)
+    val indTplsArgs = intTpls map(_.argContext(None)._1)
     
     val indTplsDef = indTplNames map (nm => decls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = indTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
+    val Tps = intTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
     val Dfs = indTplsArgs zip proof_paths map {case (indTplArgs, proof_path) => 
-      PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(proof_path), indParams++indTplsDef++modelDf++indTplArgs.map(_.toTerm))))}
+      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), indParams++indTplsDef++modelDf++indTplArgs.map(_.toTerm)))}
     
-    val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
+    val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     

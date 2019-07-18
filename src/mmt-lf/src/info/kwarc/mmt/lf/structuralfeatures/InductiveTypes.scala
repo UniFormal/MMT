@@ -26,6 +26,7 @@ object inductiveUtil {
   /** Name of the declaration generated in unappliers */
   def unapplierName(n: LocalName) = {n / LocalName("-1")}
     
+  def proofPredName(n: LocalName): LocalName = {LocalName("pred") / n}
   /** name of the declarations generated in indProofs */
   def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
   /** name of the applied version of the inductive definition declaration generated for constructors */
@@ -291,70 +292,15 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param parent the URI of I
    */
   def indProofs(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName): List[Constant] = {
-    var predMap : List[(GlobalName, (Term, Term) => Term)] = Nil
+    val (preds, predMap, _, ctx) = InductiveTypes.inductionHypotheses(tpdecls, tmdecls, context)
     
-    /**
-     * Tries to apply the correct predicate to the term tm of type tp
-     * @return the predicate applied to this term, if a corresponding predicate is found, none otherwise
-     */
-    def mapTerm(tm: Term, tp: Term, predMap: List[(GlobalName, (Term, Term) => Term)], ctx: Context) : Option[Term] = tp match {
-      case OMS(p) => utils.listmap(predMap, p).map(_(tm, tp))
-      case ApplyGeneral(OMS(p), args) if tpdecls map (_.externalPath) contains p => utils.listmap(predMap, p).map(_(tm, tp))
-      case Pi(n, ntp, body) => 
-        val arg = (OMV(n)%ntp)
-        val argMapped = mapTerm(OMV(n), ntp, predMap, ctx++arg) map (rtp => newVar("p_"+n, rtp, Some(ctx++arg)))
-        argMapped match {
-          case None => None
-          case Some(m) => 
-            val argBar = Context(arg)++m
-            mapTerm(Apply(tm, arg.toTerm), body, predMap, ctx++argBar) map {res =>
-              Lambda(argBar, res)
-            }
-        }
-      case Arrow(a, b) => 
-        val aNamed = newVar("x", a, Some(ctx))
-        mapTerm(tm, Pi(aNamed, b), predMap, ctx)
-    }
-    
-    //rBar:= (x => x zip applyPred x) flatMap  {(a,Some(b)) => a, b; (a,None) => a }
-    def rBar(intDecl: InternalDeclaration, predMap: List[(GlobalName, (Term, Term) => Term)]) : Context = {
-      val (argCon, dApplied) = intDecl.argContext(None)(parent)
-      val rPrime = argCon map {x => (x, mapTerm(x.toTerm, x.tp.get, predMap, argCon))}
-      rPrime.flatMap {
-        case (x, Some(y)) => List(x, newVar("r_"+x.name, y, Some(argCon)))
-        case (x, None) => List(x)
-      }
-    }
-    
-    //a context of the predicates for each inductively-defined type
-    //For a tpl: Pi r. type this returns a predicate of type Pi rBar.tpl(x) -> pred, where
-    //rBar:= flatMap (x => x zip applyPred x) 
-    //x=r
-    val preds = tpdecls map {tpl =>
+    preds zip tpdecls map {case (pred, tpl) =>
       val (argCon, dApplied) = tpl.argContext()
-      val tp = PiOrEmpty(rBar(tpl, predMap), Arrow(dApplied, Prop))
-      val pred = makeConst(proofName(tpl.name), () => {tp})
-      
-      val map : (GlobalName, (Term, Term) => Term) = (tpl.externalPath, {
-        (tm, tp) => tp match {
-          case OMS(p) if p == tpl.externalPath => Apply(pred.toTerm, tm)
-          case ApplyGeneral(OMS(p), args) if p == tpl.externalPath => ApplyGeneral(pred.toTerm, args.+:(tm))
-          case _ => throw ImplementationError(tm.toString())
-        }
-      })
-       
-      predMap ::= map
-      pred
+      val rb = InductiveTypes.rBar(tpl, tpdecls, predMap)
+      val x = newVar("x", dApplied, Some(ctx++rb))
+      val tp = PiOrEmpty(ctx++rb++x, ApplyGeneral(pred.toTerm, (rb++x).map(_.toTerm)))
+      makeConst(proofName(tpl.name), ()=>{tp})
     }
-    
-    val inductCases = constrs(tmdecls) map {tml =>
-      val (argCon, dApplied) = tml.argContext()
-      val (tpl, tplArgs) = (tml.getTpl(tpdecls), tml.getTplArgs)
-      val pred = preds.find(_.name == externalName(parent, proofName(tpl.name)).name).getOrElse(throw ImplementationError(""))
-      val claim = ApplyGeneral(pred.toTerm, tplArgs.+:(dApplied))
-      makeConst(proofName(tml.name), () => {PiOrEmpty(rBar(tml, predMap), claim)})
-    }
-    preds++inductCases
   }
     
   /**
@@ -390,6 +336,84 @@ object InductiveTypes {
    */
   def elaborateDeclarations(context: Context, decls: List[InternalDeclaration])(implicit parentTerm: GlobalName) : Elaboration = {
     InductiveTypes.elaborateDeclarations(context, decls)  
+  }
+  
+  /**
+   * Tries to apply the correct predicate to the term tm of type tp
+   * @return the predicate applied to this term, if a corresponding predicate is found, none otherwise
+   */
+  def mapTerm(tm: Term, tp: Term, tpdecls: List[TypeLevel], predMap: List[(GlobalName, (Term, Term) => Term)], ctx: Context)(implicit parent: GlobalName) : Option[Term] = tp match {
+    case OMS(p) => utils.listmap(predMap, p).map(_(tm, tp))
+    case ApplyGeneral(OMS(p), args) if tpdecls map (_.externalPath) contains p => utils.listmap(predMap, p).map(_(tm, tp))
+    case Pi(n, ntp, body) => 
+      val arg = (OMV(n)%ntp)
+      val argMapped = mapTerm(OMV(n), ntp, tpdecls, predMap, ctx++arg) map (rtp => newVar("p_"+n, rtp, Some(ctx++arg)))
+      argMapped match {
+        case None => None
+        case Some(m) => 
+          val argBar = Context(arg)++m
+          mapTerm(Apply(tm, arg.toTerm), body, tpdecls, predMap, ctx++argBar) map {res =>
+            Lambda(argBar, res)
+          }
+      }
+    case Arrow(a, b) => 
+      val aNamed = newVar("x", a, Some(ctx))
+      mapTerm(tm, Pi(aNamed, b), tpdecls, predMap, ctx)
+  }
+   
+  
+  //rBar:= (x => x zip applyPred x) flatMap  {(a,Some(b)) => a, b; (a,None) => a }
+  def rBar(intDecl: InternalDeclaration, tpdecls: List[TypeLevel], predMap: List[(GlobalName, (Term, Term) => Term)])(implicit parent: GlobalName) : Context = {
+    val (argCon, dApplied) = intDecl.argContext(None)(parent)
+    val rPrime = argCon map {x => (x, mapTerm(x.toTerm, x.tp.get, tpdecls, predMap, argCon))}
+    rPrime.flatMap {
+      case (x, Some(y)) => List(x, newVar("r_"+x.name, y, Some(argCon)))
+      case (x, None) => List(x)
+    }
+  }
+  
+  /**
+   * Produces the proof predicate for each Type-Level and the corresponding induction hypothesis for each constructor
+   */
+  def inductionHypotheses(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName) = {
+    var ctx = context
+    var indProofDeclMap : List[(GlobalName, (Term, Term) => Term)] = Nil
+    var predsMap : List[(InternalDeclaration, VarDecl)] = Nil
+    
+    //a context of the predicates for each inductively-defined type
+    //For a tpl: Pi r. type this returns a predicate of type Pi rBar.tpl(x) -> pred, where
+    //rBar:= flatMap (x => x zip applyPred x) 
+    //x=r
+    val preds = tpdecls map {tpl =>
+      val (argCon, dApplied) = tpl.argContext()
+      val tp = PiOrEmpty(rBar(tpl, tpdecls, indProofDeclMap), Arrow(dApplied, Prop))
+      val pred = newVar(proofPredName(tpl.name).toString(), tp, Some(ctx++argCon))
+      
+      val map : (GlobalName, (Term, Term) => Term) = (tpl.externalPath, {
+        (tm, tp) => tp match {
+          case OMS(p) if p == tpl.externalPath => Apply(pred.toTerm, tm)
+          case ApplyGeneral(OMS(p), args) if p == tpl.externalPath => ApplyGeneral(pred.toTerm, args.+:(tm))
+          case _ => throw ImplementationError(tm.toString())
+        }
+      })
+       
+      indProofDeclMap ::= map
+      predsMap ::= (tpl, pred)
+      ctx++=pred
+      pred
+    }
+    
+    //The required assumptions for the constructors
+    val inductCases = constrs(tmdecls) map {tml =>
+      val (argCon, dApplied) = tml.argContext()
+      val (tpl, tplArgs) = (tml.getTpl(tpdecls), tml.getTplArgs)
+      val pred = utils.listmap(predsMap, tpl).getOrElse(throw ImplementationError(""))
+      val claim = ApplyGeneral(pred.toTerm, tplArgs.+:(dApplied))
+      val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(rBar(tml, tpdecls, indProofDeclMap), claim), ctx++argCon)
+      predsMap ::= (tml, inductCase)
+      ctx++=inductCase; inductCase
+    }
+    (preds, indProofDeclMap, predsMap, ctx)
   }
 }
 

@@ -155,15 +155,20 @@ object StructuralFeatureUtils {
    * @param ctx (optional) a context to parse the declarations in
    * @param parent (implicit) path of the derived declaration over which we want to define a term
    */
-  def parseInternalDeclarations(dd: ModuleOrLink, con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
+  def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context]): List[InternalDeclaration] = {
     val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
-    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx)(parent)
+    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx)(dd.path)
   }
 }
 
 import StructuralFeatureUtils._
 
 object TermConstructingFeatureUtil {
+    /**
+     * Fetches the constant internal declaration of given local name in the given derived declaration
+     * @param dd the derived declaration in which to fetch the constant
+     * @param d the name of the constant to fetch
+     */
     def correspondingDecl(dd: DerivedDeclaration, d: LocalName): Option[Constant] = {
       dd.getO(d) map {
         case c: Constant=> c
@@ -177,8 +182,8 @@ object TermConstructingFeatureUtil {
    * @param ctx (optional) a context to parse the declarations in
    * @param parent path of the derived declaration over which we want to define a term
    */ 
-    def parseInternalDeclarationsWithDefiniens(dd: ModuleOrLink, con: Controller, ctx: Option[Context], parent : GlobalName): List[InternalDeclaration] = {
-      val decls = parseInternalDeclarations(dd, con, ctx)(parent)
+    def parseInternalDeclarationsWithDefiniens(dd: DerivedDeclaration, con: Controller, ctx: Option[Context]): List[InternalDeclaration] = {
+      val decls = parseInternalDeclarations(dd, con, ctx)
       decls.map(d => if (d.df.isEmpty) throw GeneralError("Unsupported corresponding declaration: Expected constant with definien at "+d.path))
       decls
     }

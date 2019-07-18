@@ -44,7 +44,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
               +" but no derived declaration found at that location.")
       }
       
-      var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), recD.path)
+      var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
       val recDefs = parseInternalDeclarations(recD, controller, None)
       val types = tpls(recDefs) map (_.path)
           

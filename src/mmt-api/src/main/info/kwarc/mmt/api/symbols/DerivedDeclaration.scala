@@ -405,6 +405,20 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     case OMMOD(p) => p.toGlobalName
     case _ => throw InvalidObject(t, "ill-formed header") 
   }
+  
+  /*def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: String) : (Context, DerivedDeclaration, Context) = {
+    val (indDefPath, context, indParams) = ParamType.getParams(dd)
+    val (indD, indCtx) = controller.library.get(indDefPath) match {
+    case indD: DerivedDeclaration if (indD.feature == expectedFeature) => (indD, Type.getParameters(indD))
+    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature "+expectedFeature+" but of the feature "+d.feature+".")
+    case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
+          +" but no derived declaration found at that location.")
+    }
+    //check the indParams match the indCtx at least in length
+    // TODO: Check the types match as well
+    if (indCtx .length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
+    (context, indD, indCtx)
+  } */
 }
 
 /** helper object */
