@@ -792,22 +792,37 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(p)
         s
       case OMS(path) =>
-        val ceOpt = content.getO(path)
-        if (ceOpt.isEmpty) {
-          env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+        val ceOpt = content.getO(path) orElse {
+          // heuristically try to resolve an unknown path
+          val options = content.resolveName(List(path.module), path.name)
+          options match {
+            case Nil =>
+              env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+              None
+            case hd :: Nil =>
+              content.getO(hd)
+            case _ => 
+              env.errorCont(InvalidObject(s, "ambiguous constant reference " + path))
+              None
+          }
         }
         ceOpt match {
           case Some(d: Declaration) =>
+            val pathR = d.path
             if (!content.hasImplicit(d.home, ComplexTheory(context)))
               env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
             if (UncheckedElement.is(d))
               env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
-          case _ =>
+            env.pCont(pathR)
+            //TODO wrap in implicit morphism?
+            OMS(pathR).from(s)
+          case Some(_) =>
             env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            s
+          case None =>
+            // error was thrown above already 
+            s
         }
-        env.pCont(path)
-        //TODO wrap in implicit morphism?
-        s
       case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
@@ -822,13 +837,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMA(f, args) =>
         val fR = checkTerm(context, f)
         val argsR = args map { a => checkTerm(context, a) }
-        OMA(fR, argsR)
+        OMA(fR, argsR).from(s)
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
         val conR = checkContext(context, con)
         val contextCon = context ++ conR
         val argsR = args map {a => checkTerm(contextCon, a)}
-        OMBINDC(binR, conR, argsR)
+        OMBINDC(binR, conR, argsR).from(s)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)
         checkTerm(context, key)

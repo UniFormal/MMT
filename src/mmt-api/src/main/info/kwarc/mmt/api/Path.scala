@@ -222,6 +222,8 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def id = Sub(this, OMV(this))
    /** returns the list of all prefixes of this name, from atomic to this one */
    def prefixes : List[LocalName] = if (this.length <= 1) List(this) else init.prefixes ::: List(this)
+   /** removes all complex steps; possibly ambiguous, but often much nicer for priting/parsing */
+   def dropComplex = LocalName(steps.filterNot(_.isInstanceOf[ComplexStep]))
    /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */

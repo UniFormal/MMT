@@ -714,3 +714,4 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 }
+

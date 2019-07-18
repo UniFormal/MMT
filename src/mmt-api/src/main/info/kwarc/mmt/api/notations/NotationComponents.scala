@@ -73,7 +73,7 @@ abstract class PlaceholderDelimiter extends Delimiter {
  */
 case class InstanceName() extends PlaceholderDelimiter {
    override def toString = "%i"
-   override def expand(path: ContentPath, alias: List[LocalName]) = Delim(if (path.name.length <= 1) "" else path.name.init.toPath)
+   override def expand(path: ContentPath, alias: List[LocalName]) = Delim(if (path.name.length <= 1) "" else path.name.dropComplex.init.toPath)
 }
 
 /**
@@ -84,7 +84,7 @@ case class InstanceName() extends PlaceholderDelimiter {
 case class SymbolName() extends PlaceholderDelimiter {
    override def toString = "%n"
    override def expand(path: ContentPath, alias: List[LocalName]) = {
-     val shortest = (path.name :: alias).sortBy(_.length).find(_.nonEmpty)
+     val shortest = (path.name.dropComplex :: alias).sortBy(_.length).find(_.nonEmpty)
      Delim(shortest.map(_.toPath).getOrElse(""))
    }
 }
