@@ -359,6 +359,7 @@ object InductiveTypes {
     case Arrow(a, b) => 
       val aNamed = newVar("x", a, Some(ctx))
       mapTerm(tm, Pi(aNamed, b), tpdecls, predMap, ctx)
+    case _ => None
   }
    
   

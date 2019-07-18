@@ -56,10 +56,10 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
       recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
       
       val Ltp = () => {
-        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), context map (_.toTerm)), decls.filter(_.isTypeLevel).map(d => d.df.get)))
       }
       val Ldf = () => {
-        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(makeName)), indParams), decls.map(_.df.get))))
+        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(makeName)), context map (_.toTerm)), decls.map(_.df.get))))
       }
       
       val make = makeConst(LocalName(makeName), Ltp, false, Ldf)

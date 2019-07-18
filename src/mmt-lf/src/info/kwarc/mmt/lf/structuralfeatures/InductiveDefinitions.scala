@@ -42,22 +42,14 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-    case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-    case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
-          +" but no derived declaration found at that location.")
-    }
-    //check the indParams match the indCtx at least in length
-    // TODO: Check the types match as well
-    if (indCtx .length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
-
+    val (context, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    
     //The internal definitions we need to give definiens for
     val intDecls = parseInternalDeclarations(indD, controller, None) filterNot (_.isOutgoing)
     var (tpls, tmls) = (InternalDeclaration.tpls(intDecls), InternalDeclaration.tmls(intDecls))
     
     val (tplNames, tmlNames, intDeclNames) = (tpls map (_.name), tmls map (_.name), intDecls map (_.name))
+    val tplExtNames = tplNames map (externalName(indD.path, _))
     
     val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
     val (defTpls, defConstrs) = (InternalDeclaration.tpls(defDecls), constrs(defDecls))
@@ -67,7 +59,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       throw LocalError("No declaration found for the internal declaration "+d.name+" of "+indD.name+".")
     }
     
-    val induct_paths = intDecls map (t=>t.path.copy(name=indD.name/inductName(t.name)))
+    val induct_paths = intDecls map (t=>t.path.copy(name=externalName(indD.path, inductName(t.name)).name))
     
     val modelDf = defDecls map (_.df.get)
     val intDeclsArgs = intDecls map(_.argContext(None)(indD.path)._1)
@@ -81,7 +73,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         val tpl = tml.getTpl(tpls)
         val tplDef = defDecls.find(_.name == tpl.name).get
         val (args, dApplied) = tml.argContext(None)(indD.path)
-        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg => induct(tpls map (_.externalPath(indD.path)), defTpls, dd.path, arg)})))
+        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg =>
+          induct(tpls map (_.externalPath(indD.path)), defTpls, dd.path, arg)})))
     }
     val Dfs = intDecls zip intDeclsArgs zip induct_paths.map(OMS(_)) map {case ((intDecl, intDeclArgs), tm) => 
         LambdaOrEmpty(context++intDeclArgs, ApplyGeneral(tm, context.map(_.toTerm)++modelDf++intDeclArgs.map(_.toTerm)))
@@ -123,7 +116,9 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     }
     tm.tp match {
       case Some(OMS(tpl)) if tpls.contains(tpl) => utils.listmap(maps, tpl).getOrElse(throw ImplementationError("map: "+maps.toString()))(tm.toTerm)
-      case Some(OMS(p)) => log("OMS("+p+") not of an inductively-defined type."); tm.toTerm
+      case Some(OMS(p)) => log("OMS("+p+") not of an inductively-defined type."); 
+      println("tpls:"+tpls)
+      tm.toTerm
       case _ => tm.toTerm
     }
   }

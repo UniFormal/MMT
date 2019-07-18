@@ -29,15 +29,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * Checks that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
-    val (intDeclsPath, _, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(intDeclsPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+intDeclsPath+" but none found at that location.")
-    }
-    //check the indParams match the indCtx at least in length
-    // TODO: Check the types match as well
-    if (indCtx.length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
-
+    val (_, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
     val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
@@ -56,18 +48,13 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration found at that location.")
-    }
+    val (context, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     implicit val parent = indD.path
+
     val intDecls = parseInternalDeclarations(indD, controller, None)
     var intTpls: List[TypeLevel] = intDecls.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
     
-    val indTplNames = intTpls map (_.name)
+    val intTplNames = intTpls map (_.name)
     
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
@@ -82,11 +69,11 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     val modelDf = decls map (_.df.get)
     val indTplsArgs = intTpls map(_.argContext(None)._1)
     
-    val indTplsDef = indTplNames map (nm => decls.find(_.name == nm).getOrElse(
+    val intTplsDef = intTplNames map (nm => decls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = intTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
+    val Tps = intTpls zip intTplsDef map {case (intTpl, indTplDef) => PiOrEmpty(context, Arrow(intTpl.toTerm, indTplDef))}
     val Dfs = indTplsArgs zip proof_paths map {case (indTplArgs, proof_path) => 
-      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), indParams++indTplsDef++modelDf++indTplArgs.map(_.toTerm)))}
+      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), context.map(_.toTerm)++intTplsDef++modelDf++indTplArgs.map(_.toTerm)))}
     
     val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}

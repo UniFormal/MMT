@@ -43,18 +43,9 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration found at that location.")
-    }
-    //check the indParams match the indCtx at least in length
-    // TODO: Check the types match as well
-    if (indCtx.length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
-    
+    val (context, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")   
     implicit val parent = indD.path
+    
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     var intTpls = tpls(intDecls)
     
