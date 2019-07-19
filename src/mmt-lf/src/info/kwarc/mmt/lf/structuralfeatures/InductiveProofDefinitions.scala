@@ -23,13 +23,16 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    checkParams(indCtx, indParams, Context(dd.parent)++context, env)
+  }
   
   /**
    * Checks that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
-    val (_, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
     val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
@@ -48,7 +51,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (context, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     implicit val parent = indD.path
 
     val intDecls = parseInternalDeclarations(indD, controller, None)
@@ -80,17 +83,6 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     externalDeclarationsToElaboration(inductDefs, Some({c => log(defaultPresenter(c)(controller))}))
-  }
-  
-  /**
-   * checks whether d.tp matches the type decl.externalTp
-   * @param d the declaration whoose type to check
-   * @param decl the corresponding declaration which is to be defined by d
-   * @note this will return an error if d.tp doesn't match decl.externalTp
-   */
-  def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {
-    //TODO: This should be implemented to provide more accurate error messages
-    //TODO: It should set the tp.analize fields of the internal declarations to the expected types (and definitions if any)
   }
 }
 

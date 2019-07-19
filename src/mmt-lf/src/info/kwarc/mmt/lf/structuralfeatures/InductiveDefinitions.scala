@@ -23,15 +23,26 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    checkParams(indCtx, indParams, Context(dd.parent)++context, env)
+  }
   
    /**
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
-    val (intDeclsPath, _, _) = ParamType.getParams(dd)
-       
-    con.library.getO(externalName(intDeclsPath, c.name)) match {case Some(c: Constant) => c.tp case _ => None}
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    
+    val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
+    val tpdecls = tpls(intDecls)
+    val tplPathMap = tpdecls map {tpl =>
+      (tpl.externalPath(indD.path), correspondingDecl(dd, tpl.name).get.df.get)
+    }
+    
+    val intC = intDecls.find(_.name == c.name).get
+    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
+    Some(tr(Context.empty, intC.externalTp(indD.path)))
   }
 
   /**
@@ -42,7 +53,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (context, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
     //The internal definitions we need to give definiens for
     val intDecls = parseInternalDeclarations(indD, controller, None) filterNot (_.isOutgoing)
@@ -97,17 +108,6 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     }
    
     externalDeclarationsToElaboration(inductDefs++inductTmlsApplied, Some({c => log(defaultPresenter(c)(controller))}))
-  }
-  
-  /**
-   * checks whether d.tp matches the type decl.externalTp
-   * @param d the declaration whoose type to check
-   * @param decl the corresponding declaration which is to be defined by d
-   * @note this will return an error if d.tp doesn't match decl.externalTp
-   */
-  def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {
-    //TODO: This should be implemented to provide more accurate error messages
-    //TODO: It should set the tp.analize fields of the internal declarations to the expected types (and definitions if any)
   }
   
   def induct(tpls: List[GlobalName], defTpls: List[TypeLevel], dd: GlobalName, tm: VarDecl) : Term = {

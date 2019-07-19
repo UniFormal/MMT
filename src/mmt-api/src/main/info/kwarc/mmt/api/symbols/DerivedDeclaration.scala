@@ -406,7 +406,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     case _ => throw InvalidObject(t, "ill-formed header") 
   }
   
-  def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: String) : (Context, DerivedDeclaration, Context) = {
+  def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: String) : (Context, List[Term], DerivedDeclaration, Context) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val indD = controller.library.get(indDefPath) match {
     case indD: DerivedDeclaration if (indD.feature == expectedFeature) => indD
@@ -419,11 +419,24 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
       case _ => Context.empty
     }
     //check the indParams match the indCtx at least in length
-    // TODO: Check the types match as well
     if (indCtx .length != indParams.length) {
       throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\n"+
           "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
-    (context, indD, indCtx)
+    (context, indParams, indD, indCtx)
+  }
+  
+  def checkParams(indCtx: Context, indParams: List[Term], context: Context, env: ExtendedCheckingEnvironment) : Unit = {
+    //A first attempt to check the indParams match the indCtx
+		//TODO: Check this code
+    indCtx zip indParams map {case (vd, tm) =>
+      vd.tp map {expectedType =>
+        val tpJudgement = Typing(Stack.empty, tm, expectedType)
+        val typeComponent = tm.governingPath map (CPath(_, DefComponent))
+        val cu = CheckingUnit.apply(typeComponent, context, Context.empty, tpJudgement)
+        val (objChecker, rules) = (env.objectChecker, env.rules)
+        objChecker(cu, rules)(env.ce)
+      }
+    }
   }
 }
 
