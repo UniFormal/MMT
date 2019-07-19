@@ -37,11 +37,15 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
     implicit val parentTerm = dd.path
     val (recDefPath, context, indParams) = ParamType.getParams(dd)
     if (declaresRecords(parent)) {elaborateToRecordExp(context, indParams)} else {
-      val (recD, indCtx) = controller.library.get(recDefPath) match {
-        case recD: DerivedDeclaration if (recD.feature == "record") => (recD, Type.getParameters(recD))
+      val recD = controller.library.get(recDefPath) match {
+        case recD: DerivedDeclaration if (recD.feature == "record") => recD
         case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
         case _ => throw LocalError("Expected definition of corresponding record at "+recDefPath.toString()
               +" but no derived declaration found at that location.")
+      }
+      val indCtx = controller.extman.get(classOf[StructuralFeature], recD.feature).getOrElse(throw LocalError("Structural feature "+recD.feature+" not found.")) match {
+        case f: ParametricTheoryLike => f.Type.getParameters(recD)
+        case _ => Context.empty
       }
       
       var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
@@ -56,7 +60,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
       recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
       
       val Ltp = () => {
-        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), context map (_.toTerm)), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), indCtx map (_.toTerm)), decls.filter(_.isTypeLevel).map(d => d.df.get)))
       }
       val Ldf = () => {
         Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(makeName)), context map (_.toTerm)), decls.map(_.df.get))))

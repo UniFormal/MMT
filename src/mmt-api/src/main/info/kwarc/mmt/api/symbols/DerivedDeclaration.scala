@@ -408,15 +408,21 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   
   def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: String) : (Context, DerivedDeclaration, Context) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-    case indD: DerivedDeclaration if (indD.feature == expectedFeature) => (indD, Type.getParameters(indD))
+    val indD = controller.library.get(indDefPath) match {
+    case indD: DerivedDeclaration if (indD.feature == expectedFeature) => indD
     case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature "+expectedFeature+" but of the feature "+d.feature+".")
     case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
           +" but no derived declaration found at that location.")
     }
+    val indCtx = controller.extman.get(classOf[StructuralFeature], indD.feature).getOrElse(throw LocalError("Structural feature "+indD.feature+" not found.")) match {
+      case f: ParametricTheoryLike => f.Type.getParameters(indD)
+      case _ => Context.empty
+    }
     //check the indParams match the indCtx at least in length
     // TODO: Check the types match as well
-    if (indCtx .length != indParams.length) throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\nExpected "+indCtx.length+" parameters but found "+indParams.length+".")
+    if (indCtx .length != indParams.length) {
+      throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\n"+
+          "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
     (context, indD, indCtx)
   }
 }

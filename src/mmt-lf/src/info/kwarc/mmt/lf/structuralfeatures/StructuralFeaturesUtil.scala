@@ -31,7 +31,7 @@ object StructuralFeatureUtils {
   }
   object Neq {
     val path = theory ? "NOTEQUAL"
-    def apply(tp: Term, tm1: Term, tm2: Term) = Ded(ApplySpine(OMS(path), tp, tm2, tm2))
+    def apply(tp: Term, tm1: Term, tm2: Term) = Ded(ApplySpine(OMS(path), tp, tm1, tm2))
     def unapply(t: Term) : Option[(Term, Term, Term)] = t match {
       case Ded(ApplyGeneral(OMS(path), List(tp, tm1, tm2))) => Some((tp, tm1, tm2))
     }

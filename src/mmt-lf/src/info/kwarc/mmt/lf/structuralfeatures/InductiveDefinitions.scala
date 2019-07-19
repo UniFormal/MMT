@@ -116,9 +116,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     }
     tm.tp match {
       case Some(OMS(tpl)) if tpls.contains(tpl) => utils.listmap(maps, tpl).getOrElse(throw ImplementationError("map: "+maps.toString()))(tm.toTerm)
-      case Some(OMS(p)) => log("OMS("+p+") not of an inductively-defined type."); 
-      println("tpls:"+tpls)
-      tm.toTerm
+      case Some(OMS(p)) => tm.toTerm
       case _ => tm.toTerm
     }
   }
