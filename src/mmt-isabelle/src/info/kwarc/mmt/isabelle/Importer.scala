@@ -338,26 +338,7 @@ object Importer
     }
 
     def typargs(typ: isabelle.Term.Typ): List[isabelle.Term.Typ] =
-    {
-      var subst = Map.empty[String, isabelle.Term.Typ]
-      def bad_match(): Nothing = isabelle.error("Bad type arguments for " + key + ": " + typ)
-      def raw_match(arg: (isabelle.Term.Typ, isabelle.Term.Typ))
-      {
-        arg match {
-          case (isabelle.Term.TFree(a, _), ty) =>
-            subst.get(a) match {
-              case None => subst += (a -> ty)
-              case Some(ty1) => if (ty != ty1) bad_match()
-            }
-          case (isabelle.Term.Type(c1, args1), isabelle.Term.Type(c2, args2)) if c1 == c2 =>
-            (args1 zip args2).foreach(raw_match)
-          case _ => bad_match()
-        }
-      }
-
-      raw_match(type_scheme._2, typ)
-      type_scheme._1.map(subst(_))
-    }
+      isabelle.Term.const_typargs(key.toString, typ, type_scheme._1, type_scheme._2)
   }
 
   def dependencies(term: Term): Set[ContentPath] =
