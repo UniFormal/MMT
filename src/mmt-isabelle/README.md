@@ -5,11 +5,11 @@ Isabelle/MMT
 
 Isabelle/MMT requires a version of Isabelle that fits precisely to it. For the
 current stable release that is Isabelle2019 (June 2019). For intermediate
-repository versions, a suitable Isabelle development snapshot is required, e.g.
-from https://isabelle.sketis.net/devel/release_snapshot or a repository clone
-from https://isabelle.sketis.net/repos/isabelle -- see also its
-`README_REPOSITORY` file within the Isabelle repository with the all-important
-**Quick start in 30min**.
+repository versions, a suitable Isabelle development snapshot is required
+(according to ISABELLE_VERSION). For example, see from
+https://isabelle.sketis.net/devel/release_snapshot or a repository clone from
+https://isabelle.sketis.net/repos/isabelle -- the file `README_REPOSITORY`
+within the Isabelle repository explains a **Quick start in 30min**.
 
 In particular, the following versions from May-2019 should fit together:
 
