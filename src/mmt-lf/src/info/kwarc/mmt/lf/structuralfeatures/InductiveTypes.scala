@@ -236,7 +236,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     constrs(tmdecls) map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
-        val tpl = constr.getTpl(tpdecls)
+        val tpl = constr.getTpl
         val induct = ApplyGeneral(OMS(tpl.path.copy(name=inductName(tpl.name))), context.map(_.toTerm))
         val chain = decls map {
           case d: TypeLevel => 
@@ -265,7 +265,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     constrdecls map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
-        val tpl = constr.getTpl(tpdecls)
+        val tpl = constr.getTpl
         val induct = ApplyGeneral(OMS(tpl.path.copy(name=inductName(tpl.name))), context.map(_.toTerm))
         val chain = decls map {
           case d: TypeLevel => 
@@ -407,7 +407,7 @@ object InductiveTypes {
     //The required assumptions for the constructors
     val inductCases = constrs(tmdecls) map {tml =>
       val (argCon, dApplied) = tml.argContext()
-      val (tpl, tplArgs) = (tml.getTpl(tpdecls), tml.getTplArgs)
+      val (tpl, tplArgs) = (tml.getTpl, tml.getTplArgs)
       val pred = utils.listmap(predsMap, tpl).getOrElse(throw ImplementationError(""))
       val claim = ApplyGeneral(pred.toTerm, tplArgs.+:(dApplied))
       val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(rBar(tml, tpdecls, indProofDeclMap), claim), ctx++argCon)

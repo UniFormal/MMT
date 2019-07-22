@@ -21,28 +21,34 @@ import StructuralFeatureUtil._
 class InductiveMatch extends StructuralFeature("match") with TypedParametricTheoryLike {
   
   /**
-   * Checks the validity of the inductive type(s) to be constructed
-   * @param dd the derived declaration from which the inductive type(s) are to be constructed
+   * Compute the expected type for an inductive definition case
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
-    checkParams(indCtx, indParams, Context(dd.parent)++context, env)
+  def expectedType(dd: DerivedDeclaration, con: Controller, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
+    val tpdecls = tpls(intDecls)
+    val tplPathMap = tpdecls map {tpl =>
+      (tpl.externalPath(indDPath), correspondingDecl(dd, tpl.name).get.df.get)
+    }
+    
+    val intC = intDecls.find(_.name == c.name).get
+    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
+    val cons = intC match {
+      case const : Constructor => 
+        val intTpl = const.getTpl
+        val tplC = dd.getDeclarations.find(_.name == intTpl.name).get.path
+        (true, Some(tplC))
+      case _ => (false, None)
+    }
+    (tr(Context.empty, intC.externalTp(indDPath)), cons)
   }  
-  /**
+  
+   /**
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
     val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
-    val tpdecls = tpls(intDecls)
-    val tplPathMap = tpdecls map {tpl =>
-      (tpl.externalPath(indD.path), correspondingDecl(dd, tpl.name).get.df.get)
-    }
-    
-    val intC = intDecls.find(_.name == c.name).get
-    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
-    Some(tr(Context.empty, intC.externalTp(indD.path)))
+    Some(expectedType(dd, con, intDecls, indD.path, c)._1)
   }
 
   /**
@@ -75,7 +81,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
       case d: TypeLevel if defined(d) =>  
         PiOrEmpty(context++indCtx++d.argContext(None)._1, definition(d))
       case constr: Constructor if (defined(constr)) => 
-        val tpl = constr.getTpl(intTpls)
+        val tpl = constr.getTpl
         val Arrow(_, ret) = definition(tpl)
         PiOrEmpty(context++indCtx++constr.argContext(None)._1, MAP(constr.externalRet(indD.path), ret, definition(constr)))
       case d: Constructor => PiOrEmpty(context++indCtx++d.argContext(None)._1, NONE(d.externalRet))

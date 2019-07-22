@@ -125,8 +125,17 @@ object StructuralFeatureUtils {
       })
   }
   
-  
-  def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
+  /**
+   * Reads in the given constants and parses them into Internal declarations.
+   * It also will expand any references to previous declarations in terms of their definiens, if existent
+   * @param decls the declarations to parse
+   * @param con the controller, needed to parse the delarations
+   * @param ctx (optional) the (outer) context of the declarations
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
+   */
+  def readInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
 
@@ -137,7 +146,7 @@ object StructuralFeatureUtils {
       val repDf = intDecl.df map (mpDf)
       
       val decl = intDecl match {
-          case constr: Constructor => new Constructor(constr.path, constr.args, constr.ret, repDf, constr.notC, constr.ctx)
+          case constr: Constructor => new Constructor(constr.path, constr.args, constr.ret, constr.getTpl, repDf, constr.notC, constr.ctx)
           case out: OutgoingTermLevel => new OutgoingTermLevel(out.path, out.args, out.ret, repDf, out.notC, out.ctx)
           case d : TypeLevel => d.copy(df = repDf)
           case d : StatementLevel => d.copy(df = repDf)
@@ -147,19 +156,43 @@ object StructuralFeatureUtils {
       decl
     }
   }
+
+  /**
+   * Reads in the internal declarations of the given derived declaration and parses them into internal declarations.
+   * It also will expand any references to previous declarations in terms of their definiens, if existent
+   * @param dd the derived declaration whoose declarations to parse
+   * @param con the controller, needed to parse the delarations
+   * @param ctx (optional) the (outer) context of the declarations
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
+   */
+  def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
+    val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
+    readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, isConstructor)(dd.path)
+  }
+
   
   /**
-   * Parse the internal declarations of dd expanding previous definitions
+   * Parse the internal declarations of dd
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
    * @param ctx (optional) a context to parse the declarations in
-   * @param expectedTypes (optional) computes the expected type of each constant
-   * Needs to be given for declarations without a type
-   * @param parent (implicit) path of the derived declaration over which we want to define a term
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
     val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
-    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, isConstructor)(dd.path)
+    val context = ctx.getOrElse(Context.empty)
+    var types: List[TypeLevel] = Nil
+    
+    consts map {c =>
+      val intDecl = fromConstant(c, con, types, ctx, isConstructor map (_(c)))(dd.path)
+      
+      intDecl match {case tpl: TypeLevel => types +:= tpl case _ =>}
+      intDecl
+    }
   }
 }
 
@@ -183,12 +216,12 @@ object TermConstructingFeatureUtil {
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
    * @param ctx (optional) a context to parse the declarations in
-   * @param expectedTypes (optional) computes the expected type of each constant
-   * Needs to be given for declarations without a type
-   * @param parent path of the derived declaration over which we want to define a term
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */ 
     def parseInternalDeclarationsWithDefiniens(dd: DerivedDeclaration, con: Controller, ctx: Option[Context], isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-      val decls = parseInternalDeclarations(dd, con, ctx, isConstructor)
+      val decls = parseInternalDeclarationsSubstitutingDefiniens(dd, con, ctx, isConstructor)
       decls.map(d => if (d.df.isEmpty) throw GeneralError("Unsupported corresponding declaration: Expected constant with definien at "+d.path))
       decls
     }

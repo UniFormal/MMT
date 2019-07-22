@@ -27,6 +27,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
+  
   /**
    * Compute the expected type for an inductive definition case
    */
@@ -40,7 +41,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
     val cons = intC match {
       case const : Constructor => 
-        val intTpl = const.getTpl(tpdecls)
+        val intTpl = const.getTpl
         val tplC = dd.getDeclarations.find(_.name == intTpl.name).get.path
         (true, Some(tplC))
       case _ => (false, None)
@@ -57,8 +58,6 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
     Some(expectedType(dd, con, intDecls, indD.path, c)._1)
   }
-  
-
 
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -97,7 +96,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val Tps = intDecls zip defDeclsDef map {
       case (tpl, tplDef) if tpl.isTypeLevel => PiOrEmpty(context, Arrow(tpl.toTerm(indD.path), tplDef.df.get))
       case (tml: Constructor, tmlDef) => 
-        val tpl = tml.getTpl(tpls)
+        val tpl = tml.getTpl
         val tplDef = defDecls.find(_.name == tpl.name).get
         val (args, dApplied) = tml.argContext(None)(indD.path)
         PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg =>
@@ -115,7 +114,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val inductTmlsApplied = defDeclsDef zip (Tps zip Dfs) filter(_._1.isConstructor) map {
       case (d: Constructor, (tp, df)) =>
         val (dargs, tpBody) = unapplyPiOrEmpty(tp)
-        val defTplDef = d.getTpl(defTpls).df.get
+        val defTplDef = d.getTpl.df.get
         val mdlAgs = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
         val mdlArgs = mdlAgs.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
         val mdlArgsCtx = mdlArgs map {case (n, tp) => newVar(n, tp, Some(d.context++dargs))}
