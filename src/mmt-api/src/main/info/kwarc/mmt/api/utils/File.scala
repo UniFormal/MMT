@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.utils
 
-import info.kwarc.mmt.api._
+import java.awt.Desktop
 
+import info.kwarc.mmt.api._
 import java.io._
 import java.util.zip._
 
@@ -27,6 +28,12 @@ case class File(toJava: java.io.File) {
     val relURI = FileURI(this).relativize(FileURI(f))
     File(relURI.toString()) // java URIs need to be sbolute in Files. Previous variant as well as any other
       //threw java errors
+  }
+
+
+  /** opens this file using the associated (native) application */
+  def openInOS() {
+    Desktop.getDesktop.open(toJava)
   }
 
   def canonical = File(toJava.getCanonicalFile)
