@@ -50,7 +50,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
       
       var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
       val recDefs = parseInternalDeclarations(recD, controller, None)
-      val types = tpls(recDefs) map (_.path)
+      val types = tpls(recDefs)
           
       // check whether all declarations match their corresponding constructors
       decls foreach { d => correspondingDecl(recD, d.name) map {decl =>

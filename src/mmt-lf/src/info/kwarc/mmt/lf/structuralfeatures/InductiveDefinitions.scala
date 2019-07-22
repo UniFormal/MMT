@@ -27,6 +27,26 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
+  /**
+   * Compute the expected type for an inductive definition case
+   */
+  def expectedType(dd: DerivedDeclaration, con: Controller, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
+    val tpdecls = tpls(intDecls)
+    val tplPathMap = tpdecls map {tpl =>
+      (tpl.externalPath(indDPath), correspondingDecl(dd, tpl.name).get.df.get)
+    }
+    
+    val intC = intDecls.find(_.name == c.name).get
+    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
+    val cons = intC match {
+      case const : Constructor => 
+        val intTpl = const.getTpl(tpdecls)
+        val tplC = dd.getDeclarations.find(_.name == intTpl.name).get.path
+        (true, Some(tplC))
+      case _ => (false, None)
+    }
+    (tr(Context.empty, intC.externalTp(indDPath)), cons)
+  }  
   
    /**
    * Check that each definien matches the expected type
@@ -35,15 +55,10 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
     val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
-    val tpdecls = tpls(intDecls)
-    val tplPathMap = tpdecls map {tpl =>
-      (tpl.externalPath(indD.path), correspondingDecl(dd, tpl.name).get.df.get)
-    }
-    
-    val intC = intDecls.find(_.name == c.name).get
-    val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
-    Some(tr(Context.empty, intC.externalTp(indD.path)))
+    Some(expectedType(dd, con, intDecls, indD.path, c)._1)
   }
+  
+
 
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -62,7 +77,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val (tplNames, tmlNames, intDeclNames) = (tpls map (_.name), tmls map (_.name), intDecls map (_.name))
     val tplExtNames = tplNames map (externalName(indD.path, _))
     
-    val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
+//    val expectations = {c:Constant => expectedType(dd, controller, intDecls, indD.path, c)}
+    val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), Some(expectedType(dd, controller, intDecls, indD.path, _)._2))
     val (defTpls, defConstrs) = (InternalDeclaration.tpls(defDecls), constrs(defDecls))
     
     // and whether we have all necessary declarations
@@ -94,6 +110,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false,() => {Some(df)})(dd.path)}
     
+    //defDeclsDef map (d => println(d.toString(Some(noLookupPresenter.asString(_)))))
     // Add a more convenient version of the declarations for the tmls by adding application to the function arguments via a chain of Congs
     val inductTmlsApplied = defDeclsDef zip (Tps zip Dfs) filter(_._1.isConstructor) map {
       case (d: Constructor, (tp, df)) =>

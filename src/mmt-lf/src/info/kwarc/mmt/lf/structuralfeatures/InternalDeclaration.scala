@@ -160,13 +160,26 @@ object InternalDeclaration {
   def outs(decls: List[InternalDeclaration]): List[OutgoingTermLevel] = {decls.map{case s: OutgoingTermLevel=> Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   def stats(decls: List[InternalDeclaration]): List[StatementLevel] = {decls.map{case s: StatementLevel => Some(s) case _ => None}.filter(_.isDefined).map(_.get)}
   
-  /**
+/*  def canReturn(tp: Term, ret: Term) : Boolean = {
+    if (tp == ret) true
+    tp match {
+      case ApplyGeneral(f, hd::tl) => 
+        val ApplyGeneral(g, argsR) = ret
+        canReturn(f, g)
+      case Arrow(a, b) => canReturn(b, ret)
+      case Pi(n, tp, body) => canReturn(body, ret)
+    }
+  }*/
+  
+   /**
    * convert the given constant into the appropriate internal declaration
    * @param c the constant to convert
    * @param con the controller
+   * @param expectedType the expected type of the declaration (optional)
+   * Needs to be given if the constant does not have a type
    */
-  def fromConstant(c: Constant, con: Controller, types: List[GlobalName], ctx: Option[Context])(implicit parent : GlobalName) : InternalDeclaration = {
-    val tp = c.tp getOrElse {throw InvalidElement(c, "missing type")}
+  def fromConstant(c: Constant, con: Controller, types: List[TypeLevel], ctx: Option[Context], isConstructor: Option[(Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName) : InternalDeclaration = {
+    val tp = c.tp.get
     val FunType(args, ret) = tp
     val context = Some(ctx getOrElse Context.empty)
     val p = c.path
@@ -177,19 +190,31 @@ object InternalDeclaration {
         case Univ(1) => TypeLevel(p, args, c.df, context, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
         case r => 
-          val isConstr = ret match {case ApplyGeneral(OMS(p), _) => types contains p case _ => false}
-          if (isConstr) new Constructor(p, args, ret, c.df, Some(c.notC), ctx) else new OutgoingTermLevel(p, args, ret, c.df, Some(c.notC), ctx)
+          val isConstr = isConstructor.map(_._1).getOrElse (ret match {
+            case ApplyGeneral(OMS(p), _) if (types map (_.path) contains p)=> true
+            case t => 
+              types exists {tpl =>
+                tpl.df match {
+                  case None => false
+                  case Some(tm) => tm == ret
+                    
+                }
+              }
+            })
+          val tplOpt = isConstructor match {
+            case Some((true, Some(p))) => types.find(_.path == p)
+            case _ => None}
+          if (isConstr) new Constructor(p, args, ret, c.df, Some(c.notC), ctx, tplOpt) else new OutgoingTermLevel(p, args, ret, c.df, Some(c.notC), ctx)
       }
     }
   }
-  
   
   /**
    * convert the given VarDecl into the appropriate internal declaration
    * @param vd the vd to convert
    * @param con the controller
    */
-  def fromVarDecl(vd: VarDecl, ctx: Option[Context], con: Controller, types: List[GlobalName], context: Context)(implicit parent: GlobalName) : InternalDeclaration = {
+  def fromVarDecl(vd: VarDecl, ctx: Option[Context], con: Controller, types: List[TypeLevel], context: Context)(implicit parent: GlobalName) : InternalDeclaration = {
     fromConstant(vd.toConstant(parent.module, ctx getOrElse Context.empty), con, types, Some(context))
   }
   
@@ -314,7 +339,12 @@ sealed abstract class InternalDeclaration {
     }    
   }
 
-  override def toString = name+": "+tp+(if(df != None) " = "+df.get else "")
+  def toString(termPresenter:Option[Term=>String]) = {
+    def pre(t: Term):String = {termPresenter.getOrElse({tm:Term => present(tm, true)})(t)}
+    val Type = if (isTypeLevel) "Typelevel" else if (isConstructor) "Constructor" else "Outgoing termlevel"
+    Type+"("+ name+": "+pre(tp)+(if(df != None) " = "+pre(df.get) else "")+")"
+  }
+  override def toString() = {toString(None)}
 }
 
 /** type declaration */
@@ -399,10 +429,12 @@ object OutgoingTermLevel {
     case _ => None
   }
 }
-class Constructor(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None) extends TermLevel(path, args, ret: Term, df, notC, ctx) {
+class Constructor(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None, tpl: Option[TypeLevel] = None) extends TermLevel(path, args, ret: Term, df, notC, ctx) {
   override def isConstructor = {true}
-  def getTpl(tpdecls: List[TypeLevel]): TypeLevel = ret match {
-    case ApplyGeneral(OMS(tpl), args) => tpdecls.find(_.path == tpl).get
+  def getTpl(tpdecls: List[TypeLevel]): TypeLevel = {
+    tpl getOrElse(ret match {
+      case ApplyGeneral(OMS(tpl), args) => tpdecls.find(_.path == tpl).get
+    })
   }
   def getTplArgs: List[Term] = ret match {
     case ApplyGeneral(_, args) => args

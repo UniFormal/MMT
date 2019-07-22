@@ -126,12 +126,12 @@ object StructuralFeatureUtils {
   }
   
   
-  def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context])(implicit parent : GlobalName): List[InternalDeclaration] = {
+  def parseInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
-    var types: List[GlobalName] = Nil
+    var types: List[TypeLevel] = Nil
 
     decls map {c =>
-      val intDecl = fromConstant(c, con, types, ctx)
+      val intDecl = fromConstant(c, con, types, ctx, isConstructor map (_(c)))
       def repDfs(df: GlobalName) = {utils.listmap(decls.map(t => (t.path, ApplyGeneral(t.df.get, context.map(_.toTerm)))), df)}
       def mpDf(df: Term):Term = OMSReplacer(repDfs)(df, Context.empty)
       val repDf = intDecl.df map (mpDf)
@@ -143,7 +143,7 @@ object StructuralFeatureUtils {
           case d : StatementLevel => d.copy(df = repDf)
           case _ => throw ImplementationError("invalid InternalDeclaration")
          }
-      if (decl.isTypeLevel) types +:= decl.path
+      decl match {case tpl: TypeLevel => types +:= tpl case _ =>}
       decl
     }
   }
@@ -153,11 +153,13 @@ object StructuralFeatureUtils {
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
    * @param ctx (optional) a context to parse the declarations in
+   * @param expectedTypes (optional) computes the expected type of each constant
+   * Needs to be given for declarations without a type
    * @param parent (implicit) path of the derived declaration over which we want to define a term
    */
-  def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context]): List[InternalDeclaration] = {
+  def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
     val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
-    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx)(dd.path)
+    parseInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, isConstructor)(dd.path)
   }
 }
 
@@ -175,15 +177,18 @@ object TermConstructingFeatureUtil {
         case dec => throw GeneralError("Expected a constant at "+dec.path+".")
       }
     }
-    /**
+    
+   /**
    * Parse the internal declarations of dd expanding previous definitions
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
    * @param ctx (optional) a context to parse the declarations in
+   * @param expectedTypes (optional) computes the expected type of each constant
+   * Needs to be given for declarations without a type
    * @param parent path of the derived declaration over which we want to define a term
    */ 
-    def parseInternalDeclarationsWithDefiniens(dd: DerivedDeclaration, con: Controller, ctx: Option[Context]): List[InternalDeclaration] = {
-      val decls = parseInternalDeclarations(dd, con, ctx)
+    def parseInternalDeclarationsWithDefiniens(dd: DerivedDeclaration, con: Controller, ctx: Option[Context], isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
+      val decls = parseInternalDeclarations(dd, con, ctx, isConstructor)
       decls.map(d => if (d.df.isEmpty) throw GeneralError("Unsupported corresponding declaration: Expected constant with definien at "+d.path))
       decls
     }
