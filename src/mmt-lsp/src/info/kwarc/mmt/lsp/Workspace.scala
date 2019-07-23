@@ -4,10 +4,9 @@ import java.util
 import java.util.concurrent.CompletableFuture
 
 import org.eclipse.lsp4j.{DidChangeConfigurationParams, DidChangeWatchedFilesParams, ExecuteCommandParams, SymbolInformation, WorkspaceSymbolParams}
-import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
 import org.eclipse.lsp4j.services.WorkspaceService
 
-trait Workspace { self : Server =>
+trait Workspace { self : ServerEndpoint =>
   protected object a_WSP extends WorkspaceService {
     override def didChangeWatchedFiles(didChangeWatchedFilesParams: DidChangeWatchedFilesParams): Unit = {}
 

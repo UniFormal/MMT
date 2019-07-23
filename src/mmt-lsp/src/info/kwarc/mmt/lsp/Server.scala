@@ -2,7 +2,7 @@ package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
 
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, SemanticHighlightingServerCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
@@ -15,6 +15,7 @@ import java.util.logging.Logger
 
 import info.kwarc.mmt.api.frontend.{Extension, Run}
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+import scala.collection.JavaConverters._
 
 object Local {
   @throws[InterruptedException]
@@ -31,7 +32,7 @@ object Local {
   @throws[ExecutionException]
   def startLocalServer(in: InputStream, out: OutputStream): Unit = {
     val controller = Run.controller
-    val server = new Server
+    val server = new ServerEndpoint
     controller.extman.addExtension(server,"local"::Nil)
     val logFile = java.io.File.createTempFile("mmtlsp/log_","")
     val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
@@ -46,40 +47,10 @@ object Local {
 
 }
 
-class Server extends LanguageClientAware with Workspace with TextDocument with Extension {
+class Server extends Extension {
   override def logPrefix: String = "lsp"
   private var port = 5007
   lazy val ss = new ServerSocket(port)
-  private val selfServer = this
-  private var _client : MMTClient = null
-  def client = _client
-
-  override def log(s: => String, subgroup: Option[String]): Unit = {
-    super.log(s, subgroup)
-    if (_client != null) {
-      val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
-      _client.logMessage(new MessageParams(MessageType.Info,msg))
-    }
-  }
-
-  lazy val thread = new Thread {
-    override def run(): Unit = {
-      while (true) try {
-        log("Waiting for connection...")
-        val conn = ss.accept()
-        log("connected.")
-        val logFile = java.io.File.createTempFile("mmtlsp/log_","")
-        val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
-        log(logFile.toString)
-        val launcher = new Launcher.Builder().setLocalService(selfServer).setRemoteInterface(classOf[MMTClient]).setInput(conn.getInputStream).
-          setOutput(conn.getOutputStream).validateMessages(true).traceMessages(wr).create()
-
-        // val launcher = LSPLauncher.createServerLauncher(server,conn.getInputStream,conn.getOutputStream,true,wr)
-        connect(launcher.getRemoteProxy)
-        launcher.startListening()
-      }
-    }
-  }
 
   override def start(args: List[String]): Unit = {
     super.start(args)
@@ -93,7 +64,40 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
     thread.start()
   }
 
-  import scala.collection.JavaConverters._
+  lazy val thread = new Thread {
+    override def run(): Unit = {
+      while (true) try {
+        log("Waiting for connection...")
+        val conn = ss.accept()
+        log("connected.")
+        val logFile = java.io.File.createTempFile("mmtlsp/log_","")
+        val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
+        log(logFile.toString)
+        val end = new ServerEndpoint
+        controller.extman.addExtension(end,Nil)
+        val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(classOf[MMTClient]).setInput(conn.getInputStream).
+          setOutput(conn.getOutputStream).validateMessages(true).traceMessages(wr).create()
+
+        // val launcher = LSPLauncher.createServerLauncher(server,conn.getInputStream,conn.getOutputStream,true,wr)
+        end.connect(launcher.getRemoteProxy)
+        launcher.startListening()
+      }
+    }
+  }
+}
+
+class ServerEndpoint extends LanguageClientAware with Workspace with TextDocument with Extension {
+  override def logPrefix: String = "lsp"
+  private var _client : MMTClient = null
+  def client = _client
+
+  override def log(s: => String, subgroup: Option[String]): Unit = {
+    super.log(s, subgroup)
+    if (_client != null) {
+      val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
+      _client.logMessage(new MessageParams(MessageType.Info,msg))
+    }
+  }
 
   protected object Completable {
     import scala.concurrent.Future
@@ -114,6 +118,10 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
       completion.setTriggerCharacters(List("j").asJava)
       result.getCapabilities.setCompletionProvider(completion)
 
+      val sh = new SemanticHighlightingServerCapabilities()
+      sh.setScopes(Colors.scopes)
+      result.getCapabilities.setSemanticHighlighting(sh)
+
       result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
 
       result
@@ -123,7 +131,10 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
   @JsonRequest("shutdown")
   def shutdown(): CompletableFuture[Object] = {
     log("shutdown",Some("methodcall"))
-    Completable{ "shutdown"}
+    Completable{
+      exit()
+      "exit"
+    }
   }
 
   @JsonNotification("connect")
@@ -136,6 +147,7 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
   @JsonNotification("exit")
   def exit(): Unit = {
     log("Exit")
+    this.controller.extman.removeExtension(this)
   }
 
   @JsonNotification("initialized")
@@ -254,31 +266,12 @@ class Server extends LanguageClientAware with Workspace with TextDocument with E
 
 trait MMTClient extends LanguageClient
 
-/*
-trait MMTClient {
-  @JsonRequest("workspace/applyEdit") def applyEdit(params: ApplyWorkspaceEditParams): CompletableFuture[ApplyWorkspaceEditResponse] = throw new UnsupportedOperationException
+object Colors {
+  val keyword = 0
+  val comment = 1
+  val scomment = 2
+  val name = 3
 
-  @JsonRequest("client/registerCapability") def registerCapability(params: RegistrationParams): CompletableFuture[Void] = throw new UnsupportedOperationException
-
-  @JsonRequest("client/unregisterCapability") def unregisterCapability(params: UnregistrationParams): CompletableFuture[Void] = throw new UnsupportedOperationException
-
-  @JsonNotification("telemetry/event") def telemetryEvent(var1: Any): Unit
-
-  @JsonNotification("textDocument/publishDiagnostics") def publishDiagnostics(var1: PublishDiagnosticsParams): Unit
-
-  @JsonNotification("window/showMessage") def showMessage(var1: MessageParams): Unit
-
-  @JsonRequest("window/showMessageRequest") def showMessageRequest(var1: ShowMessageRequestParams): CompletableFuture[MessageActionItem]
-
-  @JsonNotification("window/logMessage") def logMessage(var1: MessageParams): Unit
-
-  @JsonRequest("workspace/workspaceFolders") def workspaceFolders: CompletableFuture[util.List[WorkspaceFolder]] = throw new UnsupportedOperationException
-
-  @JsonRequest("workspace/configuration") def configuration(configurationParams: ConfigurationParams): CompletableFuture[util.List[Any]] = throw new UnsupportedOperationException
-
-  @JsonNotification("textDocument/semanticHighlighting")
-  def semanticHighlighting(params: SemanticHighlightingParams): Unit = {
-    throw new UnsupportedOperationException
-  }
+  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language")
+  val scopes = scopesO.map(_.split('.').toList.asJava).asJava
 }
-*/
