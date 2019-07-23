@@ -71,4 +71,6 @@ abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSi
 
 class SimplificationEnvironment(val covered: Boolean, val errorCont: ErrorHandler, val task: MMTTask)
 
+class ExtendedSimplificationEnvironment(se: SimplificationEnvironment, objectSimplifier: ObjectSimplifier, rules: RuleSet)
+
 object TrivialSimplificationEnvironment extends SimplificationEnvironment(true, ErrorThrower, MMTTask.generic)
