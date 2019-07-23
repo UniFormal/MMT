@@ -31,10 +31,10 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
   /**
    * Checks that each definien matches the expected type
    */
-  override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
+  override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
     val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
-    val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
+    val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
     val (_, _, indProofDeclMap, ctx) = InductiveTypes.inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
     
@@ -59,6 +59,8 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val intTplNames = intTpls map (_.name)
     
+    //The constructors amongst the following declarations will most likely be misparsed as outgoing termlevels
+    //However, as the below code doesn't use the distinction this is acceptable
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
     // and whether we have all necessary declarations
@@ -80,7 +82,6 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
-    //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
     
     externalDeclarationsToElaboration(inductDefs, Some({c => log(defaultPresenter(c)(controller))}))
   }

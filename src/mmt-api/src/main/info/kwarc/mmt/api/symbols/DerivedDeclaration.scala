@@ -157,7 +157,7 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
   /** compute the expected type of a constant inside a derived declaration of this feature
    *  none by default, override as needed
    */
-  def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = None
+  def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = None
   
    /**
     * defines the outer perspective of a derived declaration

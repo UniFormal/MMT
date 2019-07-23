@@ -31,7 +31,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
   /**
    * Compute the expected type for an inductive definition case
    */
-  def expectedType(dd: DerivedDeclaration, con: Controller, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
+  def expectedType(dd: DerivedDeclaration, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
     val tpdecls = tpls(intDecls)
     val tplPathMap = tpdecls map {tpl =>
       (tpl.externalPath(indDPath), correspondingDecl(dd, tpl.name).get.df.get)
@@ -52,11 +52,11 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    /**
    * Check that each definien matches the expected type
    */
-  override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
+  override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
-    val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
-    Some(expectedType(dd, con, intDecls, indD.path, c)._1)
+    val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
+    Some(expectedType(dd, intDecls, indD.path, c)._1)
   }
 
   /**
@@ -77,7 +77,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val tplExtNames = tplNames map (externalName(indD.path, _))
     
 //    val expectations = {c:Constant => expectedType(dd, controller, intDecls, indD.path, c)}
-    val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), Some(expectedType(dd, controller, intDecls, indD.path, _)._2))
+    val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), Some(expectedType(dd, intDecls, indD.path, _)._2))
     val (defTpls, defConstrs) = (InternalDeclaration.tpls(defDecls), constrs(defDecls))
     
     // and whether we have all necessary declarations
@@ -116,7 +116,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         val (dargs, tpBody) = unapplyPiOrEmpty(tp)
         val defTplDef = d.getTpl.df.get
         val mdlAgs = defTplDef match {case FunType(ags, rt) => if (ags.isEmpty) Nil else ags.tail.+:(None,rt)}
-        val mdlArgs = mdlAgs.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("x_"+i), t)}
+        val mdlArgs = mdlAgs.zipWithIndex map {case ((n, t), i) => (n.map(_.toString()).getOrElse("y_"+i), t)}
         val mdlArgsCtx = mdlArgs map {case (n, tp) => newVar(n, tp, Some(d.context++dargs))}
         
         val inductDefApplied = Congs(tpBody, df, mdlArgsCtx)

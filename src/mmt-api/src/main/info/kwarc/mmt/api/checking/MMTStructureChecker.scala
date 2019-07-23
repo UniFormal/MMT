@@ -230,7 +230,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             sfOpt match {
               case None => defaultExp
               case Some(sf) =>
-                val expTpO = sf.expectedType(dd, controller, c)
+                val expTpO = sf.expectedType(dd, c)
                 Expectation(expTpO, None)
             }
           case _ =>
@@ -271,7 +271,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //objectChecker(ValidationUnit(c.path $ TypeComponent, Context(), j))
             case None =>
               // c has no type: copy over the expected type
-              c.tpC.analyzed = expTp
+              val tr = env.ce.simplifier.objectLevel.toTranslator(env.rules, false)
+              val expTpS = tr(context, expTp)
+              c.tpC.analyzed = expTpS
           }
         }
         // check that the definiens of c (if given) type-checks against the type of c (if given or expected)
