@@ -23,9 +23,22 @@ case class ComplexJudgement(parameters: Context, hypotheses: List[AtomicJudgemen
    }
 }
 /**
- * {params} Complex1 -> ... -> Complexn -> Atomic
+ * simplest case: {params} Complex1 -> ... -> Complexn -> Atomic
+ * general case: parameters and assumptions may alternate
  */
-case class DeclarativeRule(parameters: Context, assumptions: List[ComplexJudgement], conclusion: AtomicJudgement)
+case class DeclarativeRule(arguments: List[RuleArgument], conclusion: AtomicJudgement) {
+  def parameters: Context = arguments.collect {
+    case RuleParameter(n,tp) => VarDecl(n,tp)
+  }
+  def assumptions = arguments.collect {
+    case RuleAssumption(j) => j
+  }
+}
+
+/** argument of a declarative rule: a parameter or an assumption */
+abstract class RuleArgument
+case class RuleParameter(name: LocalName, tp: Term) extends RuleArgument
+case class RuleAssumption(judgment: ComplexJudgement) extends RuleArgument
 
 /**
  *  defines pattern matchers on terms for [[InferenceRule]]s
@@ -74,12 +87,12 @@ class RuleMatcher(lup: Lookup, roles: List[String]) {
    object Rule {
       def unapply(t: Term): Option[DeclarativeRule] = t match {
          case FunType(args, Atomic(conc)) =>
-            val params = args.takeWhile(_._1.isDefined)
-            val assumps = args.drop(params.length).map {
-               case (None, Complex(c)) => c
-               case _ => return None
+            val ruleArgs = args map {
+              case (Some(n), t) => RuleParameter(n,t)
+              case (None, Complex(cj)) => RuleAssumption(cj)
+              case (None, _) => return None
             }
-            Some(DeclarativeRule(FunType.argsAsContext(params), assumps, conc))
+            Some(DeclarativeRule(ruleArgs, conc))
          case _ => None
       }
    }

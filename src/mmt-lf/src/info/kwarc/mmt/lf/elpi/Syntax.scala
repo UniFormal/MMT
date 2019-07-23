@@ -22,20 +22,19 @@ object ELPI {
     def toELPI: String
   }
   
-  case class Rule(rule: Expr, comment: Option[String]) extends Decl {
+  case class Rule(rule: Expr) extends Decl {
     def toELPI = {
-      val commentS = comment.map(s => Comment(s).toELPI + "\n").getOrElse("")
       val ruleS = rule match {
         case Forall(x, scope) =>
           // skip all leading Forall's
-          Rule(scope,None).toELPI
+          Rule(scope).toELPI
         case Impl(left, right) =>
           // switch to toplevel notation of implication
           right.toELPI(false) + " :- " + left.toELPI(false) + "."
         case _ =>
           rule.toELPI(false) + "." 
       }
-      commentS + ruleS
+      ruleS
     }
   }
   
@@ -50,6 +49,7 @@ object ELPI {
   /** expressions (including rules as a special case) */
   abstract class Expr {
     def apply(args: Expr*) = if (args.isEmpty) this else Apply(this, args:_*)
+    def apply(args: List[LocalName]) = if (args.isEmpty) this else Apply(this, args.map(ELPI.Variable(_)):_*)
     
     def toELPI(bracket: Boolean = true): String
     override def toString = toELPI()
@@ -78,6 +78,16 @@ object ELPI {
       Bracket(bracket)(s"$name \\ ${scope.toELPI(false)}")
     }
   }
+  object Lambda {
+    def apply(names: List[LocalName], scope: Expr): Expr = {
+      names match {
+        case Nil => scope
+        case hd::tl => Lambda(hd, apply(tl, scope))
+      }
+    }
+  }
+  
+  
   abstract class Application(val fun: Expr, val args: Expr*) extends Expr {
    /* precedence rules: applications binds more strongly than lambda, except for last argument
        f (x \ x) (x \ x)  can be written as f (x \ x) x \ x

@@ -300,7 +300,7 @@ object StringOperations {
 
   object Empty extends SemanticValue(S, "")
 
-  object Concat extends InvertibleBinary(S,S,S, {case (S(x),S(y)) => x+y}) {
+  object Concat extends Binary(S,S,S, {case (S(x),S(y)) => x+y}) {
     def invertLeft(x:Any,r:Any) = (x,r) match {
       case (S(x),S(r)) => if (r.startsWith(x)) Some(r.substring(x.length)) else None
     }
