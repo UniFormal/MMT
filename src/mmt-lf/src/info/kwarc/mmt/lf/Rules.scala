@@ -331,6 +331,23 @@ object NormalizeCurrying extends TermBasedEqualityRule {
    }
 }
 
+/** computation rule for apply that normalizes currying by rewriting terms into uncurried form
+ */
+object FlattenCurrying extends ComputationRule(Apply.path) {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) = {
+    tm match {
+      case ApplySpine(c,args) =>
+        val tmS = ApplySpine(c,args :_*) // this flattens currying because ApplySpine.unapply uncurries
+        if (tm != tmS)
+          Simplify(tmS)
+        else
+          RecurseOnly(List(1))
+      case _ => RecurseOnly(List(1))
+    }
+  }
+}
+
+
 /**
  * the beta-reduction rule reducible(s,A)  --->  (lambda x:A.t) s = t [x/s]
  *
