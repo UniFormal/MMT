@@ -3,19 +3,77 @@ package info.kwarc.mmt.lsp
 import java.util
 import java.util.concurrent.CompletableFuture
 
+import info.kwarc.mmt.api.parser.SourceRegion
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
-import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit}
-import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SemanticHighlightingInformation, SemanticHighlightingParams, SignatureHelp, SymbolInformation, TextDocumentItem, TextDocumentPositionParams, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
 import org.eclipse.lsp4j.services.TextDocumentService
+import org.eclipse.lsp4j.util.SemanticHighlightingTokens
 
 import scala.collection.JavaConverters._
 
-trait TextDocument { self : Server =>
+
+trait TextDocument { self : ServerEndpoint =>
+  object Documents {
+
+  }
+  private var doctext :String = ""
+
+  private def toLC(offset:Int) = {
+    val before = doctext.take(offset)
+    val lines = before.split('\n')
+    (lines.length-1,lines.last.length)
+  }
+
+  /*
+  case class Highlight(offset:Int,length:Int,cls:Int) {
+    lazy val (line,char) = toLC(offset)
+    lazy val token = new SemanticHighlightingTokens.Token(char,length,cls)
+  }
+   */
+  case class Highlight(line: Int,char:Int,length:Int,cls:Int) {
+    lazy val token = new SemanticHighlightingTokens.Token(char,length,cls)
+  }
+
+  object Highlight {
+    def apply(sr:SourceRegion,cls:Int):Highlight = {
+      val (line,char) = if (sr.start.line>=0 && sr.start.column>=0) (sr.start.line,sr.start.column) else toLC(sr.start.offset)
+      Highlight(line,char,sr.end.offset-sr.start.offset,cls)
+    }
+    def apply(offset:Int,length:Int,cls:Int):Highlight = {
+      val (line,char) = toLC(offset)
+      Highlight(line,char,length,cls)
+    }
+  }
+
     protected object a_TD extends TextDocumentService {
       override def didSave(params: DidSaveTextDocumentParams): Unit = {
         log("didSave",Some("methodcall-textDocument"))
       }
+
+      def semanticHighlight(doc:TextDocumentItem, ls : List[Highlight]):Unit = {
+        val tdi = new VersionedTextDocumentIdentifier(doc.getUri,doc.getVersion)
+        semanticHighlight(tdi,ls)
+      }
+
+      def semanticHighlight(doc:VersionedTextDocumentIdentifier, highs : List[Highlight]):Unit = {
+        var lines = highs.sortBy(_.line)
+        var result : List[List[Highlight]] = Nil
+        while (lines.nonEmpty) {
+          var index = lines.indexWhere(_.line != lines.head.line)
+          if (index == -1) index = lines.length
+          val split = lines.take(index)
+          lines = lines.drop(index)
+          result ::= split.sortBy(_.char)
+        }
+        val highlights = result.reverse.map(ls => new SemanticHighlightingInformation(ls.head.line,SemanticHighlightingTokens.encode(ls.map(_.token).asJava)))
+        // val highlights = new SemanticHighlightingInformation(line,SemanticHighlightingTokens.encode(ls.asJava))
+        val params = new SemanticHighlightingParams()
+        params.setTextDocument(doc)
+        params.setLines(highlights.asJava)
+        self.client.semanticHighlighting(params)
+      }
+
 
       override def didClose(params: DidCloseTextDocumentParams): Unit = {
         log("didClose",Some("methodcall-textDocument"))
@@ -23,10 +81,12 @@ trait TextDocument { self : Server =>
 
       override def didOpen(params: DidOpenTextDocumentParams): Unit = {
         log("didOpen",Some("methodcall-textDocument"))
-        val file = File(params.getTextDocument.getUri.drop(7))
+        val document = params.getTextDocument
+        val file = File(document.getUri.drop(7))
         log("File: " + file,Some("didOpen"))
-        val document = params.getTextDocument.getText
-        log("document: " + document,Some("didOpen"))
+        // log("document: " + document,Some("didOpen"))
+        val ls = List(Highlight(0,0,"namespace".length,Colors.keyword))//List(new SemanticHighlightingTokens.Token(0,"namespace".length,0))
+        semanticHighlight(document,ls)
       }
 
       override def didChange(
