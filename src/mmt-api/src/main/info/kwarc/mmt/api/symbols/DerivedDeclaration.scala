@@ -11,6 +11,7 @@ import notations._
 import scala.xml.Elem
 import Theory._
 import info.kwarc.mmt.api.utils.MMT_TODO
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 
 /** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
@@ -157,7 +158,7 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
   /** compute the expected type of a constant inside a derived declaration of this feature
    *  none by default, override as needed
    */
-  def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = None
+  def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = None
   
    /**
     * defines the outer perspective of a derived declaration
@@ -165,7 +166,7 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
     * @param parent the containing module
     * @param dd the derived declaration
     */
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration
 
    def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
    def checkInContext(prev: Context, dv: VarDecl) {}
@@ -291,7 +292,7 @@ trait Untyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   }
   override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
-  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -308,7 +309,7 @@ trait UnnamedUntyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   override def makeHeader(dd: DerivedDeclaration) = OMMOD(mpath)
 
-  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -469,7 +470,7 @@ object TypedParametricTheoryLike {
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
 
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None) = {
       val parentThy = parent match {
         case thy: Theory => thy
         case _ => throw LocalError("generative pushout must occur in theory")
@@ -577,7 +578,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       }.toList
     case _ => Context.empty
   }
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) : Elaboration = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None) : Elaboration = {
     // println(parent.name + " <- " + dd.name)
     val dom = getDomain(dd)
     val parenth = parent match {

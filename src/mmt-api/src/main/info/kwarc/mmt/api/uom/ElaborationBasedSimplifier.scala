@@ -314,7 +314,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      * @param target as above
      * @return the list of includes resulting from flattening (from,mor) 
      */
-    def flattenInclude(ID: IncludeData, alreadyIncluded: List[IncludeData], target: Term): List[Declaration] = {
+    def flattenInclude(ID: IncludeData, alreadyIncluded: List[IncludeData], target: Term)(implicit env: SimplificationEnvironment): List[Declaration] = {
       val fromThy = lup.getAs(classOf[AbstractTheory], ID.from)
       applyChecked(fromThy)
       val fromIncls = fromThy.getAllIncludes
@@ -473,7 +473,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                }
                i+=1
              }
-             val elab = sf.elaborate(thy, dd)
+             val elab = sf.elaborate(thy, dd)(Some(ExtendedSimplificationEnvironment(env, this.objectLevel, rules)))
              elab.getDeclarations
          }
       // the treatment of derived declarations in links has not been specified yet

@@ -447,7 +447,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       val sf = extman.get(classOf[StructuralFeature], dd.feature) getOrElse {
         error("structural feature " + dd.feature + " not known")
       }
-      val elaboration = sf.elaborate(parent, dd)
+      val elaboration = sf.elaborate(parent, dd)(None)
       elaboration.getMostSpecific(name) match {
         case Some((d: DerivedDeclaration, ln)) =>
           if (ln.isEmpty)

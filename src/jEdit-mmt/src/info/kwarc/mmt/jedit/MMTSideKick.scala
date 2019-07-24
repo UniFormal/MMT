@@ -111,6 +111,7 @@ class MMTSideKick extends SideKickParser("mmt") with Logger {
          log("parsing " + path)
          // store the task for cancellation and progress reports
          mmt.progressTracker(buffer) = ps
+         // This may have caused the jEdit mess
          //ps.addListener(new LineInvalidator(buffer))
          // read the document
          val doc = controller.read(ps, true, true)(errorCont) match {

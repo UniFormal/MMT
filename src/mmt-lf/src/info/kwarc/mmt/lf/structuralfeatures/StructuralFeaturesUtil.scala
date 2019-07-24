@@ -197,6 +197,7 @@ object StructuralFeatureUtils {
 }
 
 import StructuralFeatureUtils._
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 object TermConstructingFeatureUtil {
     /**
@@ -224,5 +225,11 @@ object TermConstructingFeatureUtil {
       val decls = parseInternalDeclarationsSubstitutingDefiniens(dd, con, ctx, isConstructor)
       decls.map(d => if (d.df.isEmpty) throw GeneralError("Unsupported corresponding declaration: Expected constant with definien at "+d.path))
       decls
+    }
+    
+    def simplify(tm: Term, ctx: Context = Context.empty, expDef: Boolean=false)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) : Term = env match {
+      case None => tm
+      case Some(en) =>
+        en.objectSimplifier.toTranslator(en.rules, expDef)(ctx, tm)
     }
 }

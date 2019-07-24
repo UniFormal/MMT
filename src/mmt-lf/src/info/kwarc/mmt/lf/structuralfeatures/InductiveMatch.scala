@@ -23,7 +23,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
   /**
    * Compute the expected type for an inductive definition case
    */
-  def expectedType(dd: DerivedDeclaration, con: Controller, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
+  def expectedType(dd: DerivedDeclaration, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : (Term, (Boolean, Option[GlobalName])) = {
     val tpdecls = tpls(intDecls)
     val tplPathMap = tpdecls map {tpl =>
       (tpl.externalPath(indDPath), correspondingDecl(dd, tpl.name).get.df.get)
@@ -44,21 +44,21 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    /**
    * Check that each definien matches the expected type
    */
-  override def expectedType(dd: DerivedDeclaration, con: Controller, c: Constant): Option[Term] = {
+  override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     
-    val intDecls = parseInternalDeclarations(indD, con, Some(indCtx))
-    Some(expectedType(dd, con, intDecls, indD.path, c)._1)
+    val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
+    Some(expectedType(dd, intDecls, indD.path, c)._1)
   }
 
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
    * as well as the corresponding no confusion and no junk axioms
    * Constructs a structure whose models are exactly the (not necessarily initial) models of the declared inductive types
-   * @param parent The parent module of the declared inductive types
+   * @param parent The parent module of the inductive type to be elaborated
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")   
     implicit val parent = indD.path
     

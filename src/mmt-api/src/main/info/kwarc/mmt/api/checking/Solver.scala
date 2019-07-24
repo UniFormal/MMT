@@ -939,7 +939,8 @@ object Solver {
       val cu = CheckingUnit(None, context, Context.empty, null) // awkward but works because we do not call applyMain
       val solver = new Solver(controller, cu, rules)
       val tpOpt = solver.inferType(tm, true)
-      tpOpt // map {tp => solver.simplify(tp)}
+      val tpSOpt = tpOpt map {t => solver.simplify(t)}
+      tpSOpt // map {tp => solver.simplify(tp)}
   }
 
   /** checks a term without unknowns against a type, returns the solver if not successful */
