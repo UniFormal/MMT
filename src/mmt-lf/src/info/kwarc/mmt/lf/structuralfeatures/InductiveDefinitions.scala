@@ -120,7 +120,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
         val mdlArgsCtx = mdlArgs map {case (n, tpi) => newVar(n, tpi, Some(d.context++dargs))}
         
         val inductDefApplied = Congs(tpBody, dfi, mdlArgsCtx)
-        val context = mdlArgsCtx++dargs
+        val context = dargs++mdlArgsCtx
         val (tp, df) = (PiOrEmpty(context,inductDefApplied._1), LambdaOrEmpty(context, inductDefApplied._2))
         makeConst(appliedName(d.name), () => {simplify(tp, context)}, false, () => Some(simplify(df, context)))(dd.path)
     }
