@@ -15,6 +15,7 @@ import TermConstructingFeatureUtil._
 import StructuralFeatureUtils._
 import StructuralFeatureUtil._
 import inductiveUtil._
+import InductiveTypes._
 
 /** theories as a set of types of expressions */ 
 class InductiveProofDefinitions extends StructuralFeature("ind_proof") with TypedParametricTheoryLike {
@@ -36,7 +37,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
-    val (_, _, indProofDeclMap, ctx) = InductiveTypes.inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
+    val (_, _, indProofDeclMap, ctx) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
     
     val intDecl = intDecls.find(_.name == c.name)
     
@@ -63,25 +64,23 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     //However, as the below code doesn't use the distinction this is acceptable
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
-    // and whether we have all necessary declarations
-    intDecls filter {d => decls forall (_.name != d.name)} map {d => 
-      decls map (d => println(d.toString()))
-      throw LocalError("No declaration found for the internal declaration "+d.name+" of "+indD.name+":\n The declarations (at "+dd.path+") are: \n"+decls.map(_.toString()).toString())
-    }
-    
-    val proof_paths = intTpls.map(t=>t.path.copy(name=indD.name/proofName(t.name)))
+    val proof_paths = intTpls.map(t=>externalName(indD.path, proofName(t.name)))
+    val (preds, indProofDeclMap, predsMap, _) = inductionHypotheses(intTpls, constrs(intDecls), indCtx)
     
     val modelDf = decls map (_.df.get)
     val indTplsArgs = intTpls map(_.argContext(None)._1)
     
     val intTplsDef = intTplNames map (nm => decls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = intTpls zip intTplsDef map {case (intTpl, indTplDef) => PiOrEmpty(context, Arrow(intTpl.toTerm, indTplDef))}
+    val Tps = intTpls zip intTplsDef map {case (intTpl, indTplDef) => 
+      val (indTplDefArgs, indTplDefBody) = unapplyLambdaOrEmpty(indTplDef)
+      //val indTplDefArgsBar = rBar(indTplDefArgs, intTpls, indProofDeclMap)
+      PiOrEmpty(context++indTplDefArgs, indTplDefBody)}
     val Dfs = indTplsArgs zip proof_paths map {case (indTplArgs, proof_path) => 
       LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), context.map(_.toTerm)++intTplsDef++modelDf++indTplArgs.map(_.toTerm)))}
     
     val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
-      makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}
+      makeConst(tpl.name, ()=> {tp}, false, () => {Some(df)})(dd.path)}
     
     externalDeclarationsToElaboration(inductDefs, Some({c => log(defaultPresenter(c)(controller))}))
   }

@@ -141,6 +141,12 @@ def makeConst(name: LocalName, Ltp: () => Term, simplifyTag: Boolean)(implicit p
     case t => (Context.empty, t)
   }
   def LambdaOrEmpty(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
+  def unapplyLambdaOrEmpty(tm: Term) : (Context, Term) = tm match {
+    case Lambda(n, tp, x) => 
+      val (ctx, body) = unapplyLambdaOrEmpty(x)
+      (OMV(n) % tp::ctx, body)
+    case t => (Context.empty, t)
+  }
 }
 import InternalDeclarationUtil._
 

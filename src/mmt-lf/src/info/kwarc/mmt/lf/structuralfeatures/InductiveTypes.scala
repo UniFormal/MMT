@@ -296,7 +296,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
     preds zip tpdecls map {case (pred, tpl) =>
       val (argCon, dApplied) = tpl.argContext()
-      val rb = InductiveTypes.rBar(tpl, tpdecls, predMap)
+      val rb = InductiveTypes.rBar(argCon, tpdecls, predMap)
       val x = newVar("x", dApplied, Some(ctx++rb))
       val tp = PiOrEmpty(ctx++rb++x, ApplyGeneral(pred.toTerm, (rb++x).map(_.toTerm)))
       makeConst(proofName(tpl.name), ()=>{tp})
@@ -364,9 +364,8 @@ object InductiveTypes {
    
   
   //rBar:= (x => x zip applyPred x) flatMap  {(a,Some(b)) => a, b; (a,None) => a }
-  def rBar(intDecl: InternalDeclaration, tpdecls: List[TypeLevel], predMap: List[(GlobalName, (Term, Term) => Term)])(implicit parent: GlobalName) : Context = {
-    val (argCon, dApplied) = intDecl.argContext(None)(parent)
-    val rPrime = argCon map {x => (x, mapTerm(x.toTerm, x.tp.get, tpdecls, predMap, argCon))}
+  def rBar(argCon: Context, tpdecls: List[TypeLevel], indProofDeclMap: List[(GlobalName, (Term, Term) => Term)])(implicit parent: GlobalName) : Context = {
+    val rPrime = argCon map {x => (x, mapTerm(x.toTerm, x.tp.get, tpdecls, indProofDeclMap, argCon))}
     rPrime.flatMap {
       case (x, Some(y)) => List(x, newVar("r_"+x.name, y, Some(argCon)))
       case (x, None) => List(x)
@@ -387,7 +386,7 @@ object InductiveTypes {
     //x=r
     val preds = tpdecls map {tpl =>
       val (argCon, dApplied) = tpl.argContext()
-      val tp = PiOrEmpty(rBar(tpl, tpdecls, indProofDeclMap), Arrow(dApplied, Prop))
+      val tp = PiOrEmpty(rBar(argCon, tpdecls, indProofDeclMap), Arrow(dApplied, Prop))
       val pred = newVar(proofPredName(tpl.name).toString(), tp, Some(ctx++argCon))
       
       val map : (GlobalName, (Term, Term) => Term) = (tpl.externalPath, {
@@ -410,7 +409,7 @@ object InductiveTypes {
       val (tpl, tplArgs) = (tml.getTpl, tml.getTplArgs)
       val pred = utils.listmap(predsMap, tpl).getOrElse(throw ImplementationError(""))
       val claim = ApplyGeneral(pred.toTerm, tplArgs.+:(dApplied))
-      val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(rBar(tml, tpdecls, indProofDeclMap), claim), ctx++argCon)
+      val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(rBar(argCon, tpdecls, indProofDeclMap), claim), ctx++argCon)
       predsMap ::= (tml, inductCase)
       ctx++=inductCase; inductCase
     }
