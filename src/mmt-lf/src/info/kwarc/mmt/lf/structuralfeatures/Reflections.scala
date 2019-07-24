@@ -32,7 +32,7 @@ class Reflections extends StructuralFeature("reflect") with TypedParametricTheor
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val (indD, indCtx) = controller.library.get(indDefPath) match {
       case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))

@@ -50,7 +50,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val context = Type.getParameters(dd)
     implicit val parentTerm = dd.path
         

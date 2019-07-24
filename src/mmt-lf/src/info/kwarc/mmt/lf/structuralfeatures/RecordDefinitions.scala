@@ -33,7 +33,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     implicit val parentTerm = dd.path
     val (recDefPath, context, indParams) = ParamType.getParams(dd)
     if (declaresRecords(parent)) {elaborateToRecordExp(context, indParams)} else {

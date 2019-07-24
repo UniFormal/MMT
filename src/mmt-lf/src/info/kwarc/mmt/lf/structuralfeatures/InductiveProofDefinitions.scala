@@ -50,7 +50,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
     implicit val parent = indD.path
 

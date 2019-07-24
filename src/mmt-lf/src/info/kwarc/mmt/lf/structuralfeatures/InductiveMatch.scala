@@ -58,7 +58,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * @param parent The parent module of the inductive type to be elaborated
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")   
     implicit val parent = indD.path
     
