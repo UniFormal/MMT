@@ -167,17 +167,19 @@ object FileURI {
     URI(Some("file"), None, if (ss.headOption.contains("")) ss.tail else ss, f.isAbsolute)
   }
 
-  def unapply(u: URI): Option[File] = {
+  def unapply(u: URI): Option[File] =
+  {
+    /* In contrast to RFC 8089 (https://tools.ietf.org/html/rfc8089), we allow for empty schemes for
+       "File URI References" that, like URIs, allow omitting stuff from the left. */
+    val valid_scheme    : Boolean = u.scheme.isEmpty || u.scheme.contains("file")
+
     // empty authority makes some Java versions throw errors
     val valid_authority : Boolean = u.authority.isEmpty || u.authority.contains("") || u.authority.contains("localhost")
 
-    if (u.scheme.contains("file") && valid_authority) {
-      if (u.authority.contains("localhost"))
-        Some(File(new java.io.File(u)))
-      else
-        Some(File(new java.io.File(u.copy(authority = None))))
-    }
-    else None
+    // We set authority to None because it's ignored later, anyway. No use to distinguish.
+    if (valid_scheme && valid_authority) {
+      Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
+    } else None
   }
 }
 
