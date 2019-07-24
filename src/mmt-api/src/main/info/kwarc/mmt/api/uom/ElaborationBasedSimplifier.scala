@@ -11,8 +11,8 @@ import patterns._
 import objects._
 import notations._
 import libraries.AlreadyDefined
-
 import Theory._
+import info.kwarc.mmt.api.parser.SourceRef
 
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
@@ -198,6 +198,10 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case AnonymousTheoryCombinator(at) =>
               if (at.mt.isDefined) {
                 val mtTerm = OMMOD(at.mt.get)
+                thy.metaC.get match {
+                  case Some(old) =>
+                    SourceRef.get(old).foreach(r => SourceRef.update(mtTerm,r))
+                }
                 // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
                 thy.metaC.analyzed = Some(mtTerm)
                 controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
