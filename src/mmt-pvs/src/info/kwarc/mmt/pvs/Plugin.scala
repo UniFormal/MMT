@@ -70,7 +70,7 @@ object PVSNotation extends NotationExtension {
 // Structural Features
 
 class LambdaPiInclude extends StructuralFeature("BoundInclude") with IncludeLike {
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None): Elaboration = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration = {
     val dom = getDomain(dd)
     val body = controller.simplifier.getBody(Context.empty, dom) match {
       case t : Theory => t.path
