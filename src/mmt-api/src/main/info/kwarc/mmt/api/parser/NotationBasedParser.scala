@@ -217,6 +217,7 @@ class NotationBasedParser extends ObjectParser {
         val tm = logGroup {
           makeTerm(ul, Nil)
         }
+        SourceRef.update(tm,pu.source) // weirdly necessary,apparently
         log("parse result: " + tm.toString)
         val (unk, free) = getVariables
         ParseResult(unk, free, tm)

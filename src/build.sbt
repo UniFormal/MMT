@@ -261,7 +261,7 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
+  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
 

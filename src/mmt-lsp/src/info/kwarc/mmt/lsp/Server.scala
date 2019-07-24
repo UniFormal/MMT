@@ -271,7 +271,8 @@ object Colors {
   val comment = 1
   val scomment = 2
   val name = 3
+  val terminit = 4
 
-  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language")
+  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language","todo")
   val scopes = scopesO.map(_.split('.').toList.asJava).asJava
 }

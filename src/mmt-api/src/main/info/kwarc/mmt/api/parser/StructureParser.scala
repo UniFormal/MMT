@@ -177,7 +177,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
    */
   private def puCont(pu: ParsingUnit)(implicit state: ParserState): ParseResult = {
-    def default = DefaultObjectParser(pu)(state.errorCont) 
+    def default = DefaultObjectParser(pu)(state.errorCont)
     if (state.ps.isKilled) return default
     try {
       pu.diesWith(state.ps)
@@ -349,6 +349,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
       val notation = TextNotation.parse(notString, state.namespaces)
+      SourceRef.update(notation,state.makeSourceRef(SourceRegion(treg.start,state.reader.getLastReadSourcePosition)))
       nc(c) = notation
     }
   }

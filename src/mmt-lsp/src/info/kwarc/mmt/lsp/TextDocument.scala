@@ -3,7 +3,7 @@ package info.kwarc.mmt.lsp
 import java.util
 import java.util.concurrent.CompletableFuture
 
-import info.kwarc.mmt.api.parser.SourceRegion
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
 import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SemanticHighlightingInformation, SemanticHighlightingParams, SignatureHelp, SymbolInformation, TextDocumentItem, TextDocumentPositionParams, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
@@ -14,16 +14,8 @@ import scala.collection.JavaConverters._
 
 
 trait TextDocument { self : ServerEndpoint =>
-  object Documents {
 
-  }
-  private var doctext :String = ""
-
-  private def toLC(offset:Int) = {
-    val before = doctext.take(offset)
-    val lines = before.split('\n')
-    (lines.length-1,lines.last.length)
-  }
+  private var documents : List[LSPDocument] = Nil
 
   /*
   case class Highlight(offset:Int,length:Int,cls:Int) {
@@ -31,47 +23,10 @@ trait TextDocument { self : ServerEndpoint =>
     lazy val token = new SemanticHighlightingTokens.Token(char,length,cls)
   }
    */
-  case class Highlight(line: Int,char:Int,length:Int,cls:Int) {
-    lazy val token = new SemanticHighlightingTokens.Token(char,length,cls)
-  }
-
-  object Highlight {
-    def apply(sr:SourceRegion,cls:Int):Highlight = {
-      val (line,char) = if (sr.start.line>=0 && sr.start.column>=0) (sr.start.line,sr.start.column) else toLC(sr.start.offset)
-      Highlight(line,char,sr.end.offset-sr.start.offset,cls)
-    }
-    def apply(offset:Int,length:Int,cls:Int):Highlight = {
-      val (line,char) = toLC(offset)
-      Highlight(line,char,length,cls)
-    }
-  }
 
     protected object a_TD extends TextDocumentService {
       override def didSave(params: DidSaveTextDocumentParams): Unit = {
         log("didSave",Some("methodcall-textDocument"))
-      }
-
-      def semanticHighlight(doc:TextDocumentItem, ls : List[Highlight]):Unit = {
-        val tdi = new VersionedTextDocumentIdentifier(doc.getUri,doc.getVersion)
-        semanticHighlight(tdi,ls)
-      }
-
-      def semanticHighlight(doc:VersionedTextDocumentIdentifier, highs : List[Highlight]):Unit = {
-        var lines = highs.sortBy(_.line)
-        var result : List[List[Highlight]] = Nil
-        while (lines.nonEmpty) {
-          var index = lines.indexWhere(_.line != lines.head.line)
-          if (index == -1) index = lines.length
-          val split = lines.take(index)
-          lines = lines.drop(index)
-          result ::= split.sortBy(_.char)
-        }
-        val highlights = result.reverse.map(ls => new SemanticHighlightingInformation(ls.head.line,SemanticHighlightingTokens.encode(ls.map(_.token).asJava)))
-        // val highlights = new SemanticHighlightingInformation(line,SemanticHighlightingTokens.encode(ls.asJava))
-        val params = new SemanticHighlightingParams()
-        params.setTextDocument(doc)
-        params.setLines(highlights.asJava)
-        self.client.semanticHighlighting(params)
       }
 
 
@@ -84,17 +39,32 @@ trait TextDocument { self : ServerEndpoint =>
         val document = params.getTextDocument
         val file = File(document.getUri.drop(7))
         log("File: " + file,Some("didOpen"))
+        documents.find(_.uri == document.getUri).getOrElse {
+          val d = new LSPDocument(document.getUri,self.client,self.controller)
+          d.setVersion(document.getVersion)
+          d.init(document.getText)
+          documents ::= d
+        }
         // log("document: " + document,Some("didOpen"))
-        val ls = List(Highlight(0,0,"namespace".length,Colors.keyword))//List(new SemanticHighlightingTokens.Token(0,"namespace".length,0))
-        semanticHighlight(document,ls)
+        // val ls = List(Highlight(0,0,"namespace".length,Colors.keyword))//List(new SemanticHighlightingTokens.Token(0,"namespace".length,0))
+        // semanticHighlight(document,ls)
       }
 
       override def didChange(
                               params: DidChangeTextDocumentParams
                             ): Unit = {
         log("didChange",Some("methodcall-textDocument"))
-        val file = File(params.getTextDocument.getUri.drop(7))
-        log("File: " + file,Some("didChange"))
+        val uri = params.getTextDocument.getUri
+        val file = File(uri.drop(7))
+        // log("File: " + file,Some("didChange"))
+        val doc = documents.find(_.uri == uri).getOrElse {
+          log("Document not found: " + uri)
+          return
+        }
+        params.getContentChanges.asScala.foreach {change =>
+          doc.update(change.getRange,change.getText)
+        }
+        /*
         val changes = params.getContentChanges
         changes.asScala foreach { change =>
           val range = Range(change.getRange,file)
@@ -107,6 +77,7 @@ trait TextDocument { self : ServerEndpoint =>
               log("Changed " + r + " to \"" + newText + "\"",Some("didChange"))
           }
         }
+         */
       }
 
       lazy val completionls : CompletionList = {
@@ -228,40 +199,4 @@ trait TextDocument { self : ServerEndpoint =>
     }
 
   }
-}
-
-case class MyRange(start:MyPosition,end:MyPosition) {
-  assert(start.file==end.file)
-  override def toString: String = this match {
-    case Position(i,j,f) => Position(i,j,f).toString
-    case _ => start.file.name + ":" + start.line + "." + start.column + ":" +
-      end.line + "." + end.column
-  }
-}
-case class MyPosition(line:Int,column:Int,file:File) {
-
-  override def toString: String = file.name + ":" + line + "." + column
-}
-
-object Position {
-  def apply(r : org.eclipse.lsp4j.Position,f:File) = {
-    MyPosition(r.getLine,r.getCharacter,f)
-  }
-  def apply(line:Int,column:Int,file:File) = MyPosition(line,column,file)
-
-  def unapply(arg: Any): Option[(Int,Int,File)] = arg match {
-    case MyPosition(l,c,f) => Some((l,c,f))
-    case MyRange(s,e) if s==e => Some((s.line,s.column,s.file))
-    case _ => None
-  }
-
-}
-
-object Range {
-  def apply(r:org.eclipse.lsp4j.Range,f:File) = {
-    MyRange(Position(r.getStart,f),Position(r.getEnd,f))
-  }
-  def apply(start:MyPosition,end:MyPosition) = MyRange(start,end)
-
-  def unapply(myRange: MyRange) = MyRange.unapply(myRange)
 }
