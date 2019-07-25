@@ -9,8 +9,7 @@ import info.kwarc.mmt.test.testers.BaseTester
 object TestRunner {
 
   def main(args: Array[String]): Unit = {
-    val a = List("info.kwarc.mmt.test.APITest") // args.toList
-    if(run(a)) {
+    if(run(args.toList)) {
       sys.exit(0)
     } else {
       sys.exit(1)
