@@ -40,7 +40,7 @@ object TestRunner {
         logSuccess(clz, "Test reported success")
         (clz, true)
       } else {
-        logSuccess(clz, "Test reported failure")
+        logError(clz, "Test reported failure")
         (clz, false)
       }
     })

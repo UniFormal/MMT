@@ -50,7 +50,7 @@ before_cache:
 before_install:
   - 'if [[ "$TRAVIS_OS_NAME" = "osx" ]]; then brew update; brew install sbt; fi'
 before_script:
-  - 'if [ "$TRAVIS_BRANCH" == "devel" ]; then export TEST_USE_DEVEL=1; fi; echo $TEST_USE_DEVEL;'
+  - "export TEST_USE_BRANCH=$TRAVIS_BRANCH; echo TEST_USE_BRANCH=;"
 install:
   - "cd src && (cat /dev/null | sbt ++2.12.8 update) && cd .."
 jobs:
