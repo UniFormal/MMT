@@ -32,6 +32,7 @@ object Local {
   @throws[ExecutionException]
   def startLocalServer(in: InputStream, out: OutputStream): Unit = {
     val controller = Run.controller
+    // TODO initialize controller properly
     val server = new ServerEndpoint
     controller.extman.addExtension(server,"local"::Nil)
     val logFile = java.io.File.createTempFile("mmtlsp/log_","")

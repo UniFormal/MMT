@@ -130,7 +130,7 @@ object Orders {
     ,"logic/sfol.mmt"
     ,"logic/hol.mmt"
     ,"magmas.mmt"
-    ,"mam.mmt"
+    // ,"mam.mmt"
     ,"patterns.mmt"
     ,"program.mmt"
     ,"real.mmt"

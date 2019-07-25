@@ -739,7 +739,7 @@ class NotationBasedParser extends ObjectParser {
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     // TODO evil hack to allow OML names with slashes, must be removed at next opportunity
     val filter : Error => Boolean = {
-      case SourceError(_,_,msg,_,_) if msg startsWith "unbound token:" => false
+      case SourceError(_,_,msg,_,_) if (msg startsWith "unbound token:") || (msg startsWith "ill-formed constant reference") => false
       case _ => true
     }
     val t = makeTerm(te,boundNames)(pu,new FilteringErrorHandler(errorCont,filter))

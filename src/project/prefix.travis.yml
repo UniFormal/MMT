@@ -35,6 +35,18 @@ notifications:
 git:
   depth: 1
 
+# cache the dependencies for sbt so that we do not need to re-download them all the time
+# adapted from https://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+before_cache:
+  # Cleanup the cached directories to avoid unnecessary cache updates
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
+
 # +===============================================================+
 # |Anything below this line has been generated automatically      |
 # |from src/travis.sbt.                                           |
