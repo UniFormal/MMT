@@ -4,7 +4,7 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, StructuralElement}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.parser.{AnnotatedComment, AnnotatedCommentToken, AnnotatedKeyword, AnnotatedName, AnnotatedOpaque, AnnotatedTermToken, AnnotatedText, ErrorText, KeywordBasedParser, NotationBasedParser, ObjectParser, ParsingStream, SourceRegion, StructureParserContinuations}
+import info.kwarc.mmt.api.parser.{AnnotatedComment, AnnotatedCommentToken, AnnotatedKeyword, AnnotatedName, AnnotatedOpaque, AnnotatedPath, AnnotatedTermToken, AnnotatedText, DeclarationDelimiter, ErrorText, KeywordBasedParser, ModuleDelimiter, NotationBasedParser, ObjectDelimiter, ObjectParser, ParsingStream, SourceRegion, StructureParserContinuations}
 import info.kwarc.mmt.api.utils.{File, URI}
 import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, SemanticHighlightingInformation, SemanticHighlightingParams, TextDocumentItem, VersionedTextDocumentIdentifier}
 import org.eclipse.lsp4j.util.SemanticHighlightingTokens
@@ -89,10 +89,19 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
         hls ::= Highlight(c.region,Colors.comment)
       case t:AnnotatedTermToken =>
         hls ::= Highlight(t.region,Colors.terminit)
+      case md:ModuleDelimiter =>
+        hls ::= Highlight(md.region,Colors.md)
+      case md:DeclarationDelimiter =>
+        hls ::= Highlight(md.region,Colors.dd)
+      case md:ObjectDelimiter =>
+        hls ::= Highlight(md.region,Colors.od)
+      case p:AnnotatedPath =>
+        hls ::= Highlight(p.region,Colors.termchecked)
       case e:ErrorText =>
         val diag = new Diagnostic(toRange(e.region),"Err0r",DiagnosticSeverity.Error,e.text)
         val params = new PublishDiagnosticsParams(uri,List(diag).asJava)
         client.publishDiagnostics(params)
+        hls ::= Highlight(e.region,Colors.termerrored)
       case _ =>
     }
     semanticHighlight(hls.reverse)
