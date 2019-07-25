@@ -41,9 +41,9 @@ trait TextDocument { self : ServerEndpoint =>
         log("File: " + file,Some("didOpen"))
         documents.find(_.uri == document.getUri).getOrElse {
           val d = new LSPDocument(document.getUri,self.client,self.controller)
+          documents ::= d
           d.setVersion(document.getVersion)
           d.init(document.getText)
-          documents ::= d
         }
         // log("document: " + document,Some("didOpen"))
         // val ls = List(Highlight(0,0,"namespace".length,Colors.keyword))//List(new SemanticHighlightingTokens.Token(0,"namespace".length,0))
