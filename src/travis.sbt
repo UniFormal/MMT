@@ -15,9 +15,6 @@ travisConfig := {
     s"cd src && (cat /dev/null | sbt ++$ourScalaVersion $task) && cd .."
   ) ::: check.toList
 
-  // convenience wrapper to tun a specific test class
-  def runTestClasses(cls: String*): List[String] = List(s"java -cp deploy/mmt.jar info.kwarc.mmt.test.TestRunner ${cls.mkString(" ")}")
-
   // convenience functions for checks
   def file(name: String): Option[String] = Some("[[ -f \"" + name + "\" ]]")
 
@@ -67,11 +64,7 @@ travisConfig := {
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
       TravisJob("Check that unit tests run", sbt("test")),
       TravisJob("Check mmt.jar generation and integration tests",
-        sbt("deploy", file("deploy/mmt.jar"))::: runTestClasses(
-          "info.kwarc.mmt.test.APITest",
-          "info.kwarc.mmt.test.LFTest",
-          "info.kwarc.mmt.odk.ODKTest", "info.kwarc.mmt.odk.MitMTest"
-        )),
+        sbt("deploy", file("deploy/mmt.jar")) ::: List("java -cp deploy/mmt.jar info.kwarc.mmt.test.TestRunner")),
     ),
 
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deployLFCatalog' targets work")(
