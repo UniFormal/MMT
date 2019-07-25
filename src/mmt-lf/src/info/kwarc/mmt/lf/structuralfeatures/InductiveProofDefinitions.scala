@@ -53,6 +53,10 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    // TODO: Proper handling of non-context arguments passed for the context variables of indD
+    // Use return a reduced version of the arguments (with those included in the context being already removed) and supply them to applyGenerals
+    // Additionally run a translator replacing those context variables of indD with their definitions when reading in the derived declarations of indD
+    // Probably supply the corresponding mapping as an additional optional argument to parInternalDeclarations
     implicit val parent = indD.path
 
     val intDecls = parseInternalDeclarations(indD, controller, None)
@@ -77,7 +81,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
       //val indTplDefArgsBar = rBar(indTplDefArgs, intTpls, indProofDeclMap)
       PiOrEmpty(context++indTplDefArgs, indTplDefBody)}
     val Dfs = indTplsArgs zip proof_paths map {case (indTplArgs, proof_path) => 
-      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), context.map(_.toTerm)++intTplsDef++modelDf++indTplArgs.map(_.toTerm)))}
+      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), context.map(_.toTerm)++modelDf++indTplArgs.map(_.toTerm)))}
     
     val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(tpl.name, ()=> {tp}, false, () => {Some(df)})(dd.path)}
