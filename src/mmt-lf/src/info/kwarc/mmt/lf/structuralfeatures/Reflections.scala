@@ -34,13 +34,12 @@ class Reflections extends StructuralFeature("reflect") with TypedParametricTheor
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration found at that location.")
+    val consts = controller.getO(indDefPath) match {
+      case Some(m : ModuleOrLink) => getConstants(m.getDeclarations, controller)
+      case Some(t) => throw GeneralError("reflection over unsupported target (expected module or link)"+t.path)
+      case None => throw GeneralError("target of reflection not found at "+indDefPath)
     }
-    val decls = parseInternalDeclarations(indD, controller, Some(context))
+    val decls = readInternalDeclarations(consts, controller, Some(context))(indDefPath)
         
     
     structuralfeatures.InductiveTypes.elaborateDeclarations(context, decls)(dd.path)
