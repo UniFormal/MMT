@@ -24,7 +24,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
   
@@ -53,7 +53,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     Some(expectedType(dd, intDecls, indD.path, c)._1)
@@ -67,7 +67,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-    val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     
     //The internal definitions we need to give definiens for
     val intDecls = parseInternalDeclarations(indD, controller, None) filterNot (_.isOutgoing)
@@ -94,16 +94,16 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     val defDeclsDef = intDeclNames map (nm => defDecls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)))
     val Tps = intDecls zip defDeclsDef map {
-      case (tpl, tplDef) if tpl.isTypeLevel => PiOrEmpty(context, Arrow(tpl.toTerm(indD.path), tplDef.df.get))
+      case (tpl, tplDef) if tpl.isTypeLevel => PiOrEmpty(context, Arrow(tpl.toTermInstanciated(indParams)(indD.path), tplDef.df.get))
       case (tml: Constructor, tmlDef) => 
         val tpl = tml.getTpl
         val tplDef = defDecls.find(_.name == tpl.name).get
         val (args, dApplied) = tml.argContext(None)(indD.path)
-        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyTo(dApplied)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg =>
+        PiOrEmpty(context++args, Eq(tplDef.df.get, tpl.applyInstanciated(dApplied, indParams)(dd.path), ApplyGeneral(tmlDef.df.get, args map {arg =>
           induct(tpls map (_.externalPath(indD.path)), defTpls, dd.path, arg)})))
     }
     val Dfs = intDecls zip intDeclsArgs zip induct_paths.map(OMS(_)) map {case ((intDecl, intDeclArgs), tm) => 
-        LambdaOrEmpty(context++intDeclArgs, ApplyGeneral(tm, context.map(_.toTerm)++modelDf++intDeclArgs.map(_.toTerm)))
+        LambdaOrEmpty(context++intDeclArgs, ApplyGeneral(tm, indParams++modelDf++intDeclArgs.map(_.toTerm)))
     }
     
     val inductDefs = (intDecls zip Tps zip Dfs) map {case ((tpl, tp), df) => 

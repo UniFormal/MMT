@@ -45,7 +45,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     Some(expectedType(dd, intDecls, indD.path, c)._1)
@@ -59,7 +59,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-    val (context, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, "inductive")   
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     implicit val parent = indD.path
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
@@ -95,7 +95,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
     val Tps = intTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
     val Dfs = indTplsArgs zip induct_paths map {case (indTplArgs, induct_path) => 
-      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(induct_path), context.map(_.toTerm)++modelDf++indTplArgs.map(_.toTerm)))}
+      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(induct_path), indParams++modelDf++indTplArgs.map(_.toTerm)))}
     
     val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
       makeConst(dd.name/tpl.name, ()=> {tp}, false, () => {Some(df)})}

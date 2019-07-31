@@ -126,6 +126,37 @@ object StructuralFeatureUtils {
   }
   
   /**
+   * parse the declarations into constants, flattening PlainIncludes
+   * @param decls the declarations to parse
+   * @param con the controller
+   */
+  def getConstants(decls: List[Declaration], con: Controller): List[Constant] = {
+    decls.map({d:Declaration => 
+      d match {
+        case c: Constant => List(c)
+        case PlainInclude(from, to) => 
+          val target = con.getO(to)
+          target match {
+            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
+            case Some(m : ModuleOrLink) => getConstants(m.getDeclarations, con)
+            case Some(t) => throw GeneralError("unsupported include of"+t.path)
+            case None => throw GeneralError("found empty include")
+          }
+        case _ => throw GeneralError("unsupported declaration")
+      }
+    }).flatten
+  }
+  
+   /**
+   * Reads the internal declarations (assumed to be constants) of a derivedDeclaration unfolding PlainIncludes
+   * @param dd the derived declaration whoose internal declaration to read
+   * @param con the controller
+   */
+  def parseInternalDeclarationsIntoConstants(dd:DerivedDeclaration, con: Controller) : List[Constant] = {
+    getConstants(dd.getDeclarations, con)
+  }
+
+  /**
    * Reads in the given constants and parses them into Internal declarations.
    * It also will expand any references to previous declarations in terms of their definiens, if existent
    * @param decls the declarations to parse
@@ -156,7 +187,7 @@ object StructuralFeatureUtils {
       decl
     }
   }
-
+  
   /**
    * Reads in the internal declarations of the given derived declaration and parses them into internal declarations.
    * It also will expand any references to previous declarations in terms of their definiens, if existent
@@ -168,7 +199,7 @@ object StructuralFeatureUtils {
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-    val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
+    var consts : List[Constant] = parseInternalDeclarationsIntoConstants(dd, con)
     readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, isConstructor)(dd.path)
   }
 
@@ -183,17 +214,21 @@ object StructuralFeatureUtils {
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-    val consts = dd.getDeclarations map {case c: Constant=> c case _ => throw GeneralError("unsupported declaration")}
+    readInternalDeclarations(parseInternalDeclarationsIntoConstants(dd, con), con, ctx, isConstructor)(dd.path)   
+  }
+  
+  def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
     
     consts map {c =>
-      val intDecl = fromConstant(c, con, types, ctx, isConstructor map (_(c)))(dd.path)
+      val intDecl = fromConstant(c, con, types, ctx, isConstructor map (_(c)))
       
       intDecl match {case tpl: TypeLevel => types +:= tpl case _ =>}
       intDecl
     }
   }
+ 
 }
 
 import StructuralFeatureUtils._
@@ -227,6 +262,12 @@ object TermConstructingFeatureUtil {
       decls
     }
     
+    /**
+     * Simplify the given term in the given context (if specified)
+     * @param tm the term to simplify
+     * @param ctx (optional) the context in which to simplify the term
+     * @param expDef (optional) whether to use definition expansions in the simplification process (by default not)
+     */
     def simplify(tm: Term, ctx: Context = Context.empty, expDef: Boolean=false)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) : Term = env match {
       case None => tm
       case Some(en) =>

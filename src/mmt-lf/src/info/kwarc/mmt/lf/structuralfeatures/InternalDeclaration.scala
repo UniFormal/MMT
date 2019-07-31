@@ -305,16 +305,33 @@ sealed abstract class InternalDeclaration {
     makeConst(name, () => externalTp, simplifyTag, () => externalDf, () => not)(parent)
   }
   def toConstant(implicit parent: GlobalName): Constant = {toConstant(false)}
+  /** apply the internal declaration to its context
+   * @param parent (implicit) the path of the parent derived declaration
+   */
   def toTerm(implicit parent: GlobalName): Term = ApplyGeneral(OMS(externalName(parent, name)), context.map(_.toTerm))
+  /** apply the internal declaration to a list of parameters instanciating its context
+   * @param params the parameters to instanciate the context to
+   * @param parent (implicit) the path of the parent derived declaration
+   */
+  def toTermInstanciated(params: List[Term])(implicit parent: GlobalName): Term = ApplyGeneral(OMS(externalName(parent, name)), params)
   
   /** apply the internal declaration to the given argument context */
-  def applyTo(args: Context)(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args.map(_.toTerm))
   def applyTo(args: List[Term])(implicit parent: GlobalName): Term = ApplyGeneral(toTerm, args)
+  def applyTo(args: Context)(implicit parent: GlobalName): Term = applyTo(args map (_.toTerm))
   def applyTo(tm: Term)(implicit parent: GlobalName): Term = applyTo(List(tm))
- 
+  /** apply the internal declaration to the given argument context and with its context instanciated to the given parameters
+   * @param args the arguments to apply the internal declaration to
+   * @param params the parameters to instanciate the context to
+   * @param parent (implicit) the path of the parent derived declaration
+   */
+  def applyInstanciated(args: List[Term], params: List[Term])(implicit parent: GlobalName): Term = ApplyGeneral(toTermInstanciated(params), args)
+  def applyInstanciated(args: Context, params: List[Term])(implicit parent: GlobalName): Term = applyInstanciated(args map (_.toTerm), params)
+  def applyInstanciated(arg: Term, params: List[Term])(implicit parent: GlobalName): Term = applyInstanciated(List(arg), params)
+  
   
   /**
-   * applies a term translator
+   * applies a term translator to the arguments and definien of an internal declaration
+   * @param tr the translator to apply
    */
   def translate(tr: Translator) : InternalDeclaration = {
     val argsT = args map {case (nO, t) => (nO, tr.applyType(context, t))}
