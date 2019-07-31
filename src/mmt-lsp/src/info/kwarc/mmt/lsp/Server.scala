@@ -13,8 +13,10 @@ import java.util.concurrent.ExecutionException
 import java.util.logging.LogManager
 import java.util.logging.Logger
 
-import info.kwarc.mmt.api.frontend.{Extension, Run}
+import info.kwarc.mmt.api.frontend.{Controller, Extension, MMTConfig, ReportHandler, Run}
+import info.kwarc.mmt.api.utils.File
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+
 import scala.collection.JavaConverters._
 
 object Local {
@@ -25,27 +27,19 @@ object Local {
     val globalLogger = Logger.getLogger(java.util.logging.Logger.GLOBAL_LOGGER_NAME)
     globalLogger.setLevel(java.util.logging.Level.OFF)
     // print("MMT Started")
-    startLocalServer(System.in, System.out)
-  }
+    // startLocalServer(System.in, System.out)
 
-  @throws[InterruptedException]
-  @throws[ExecutionException]
-  def startLocalServer(in: InputStream, out: OutputStream): Unit = {
-    val controller = Run.controller
-    // TODO initialize controller properly
-    val server = new ServerEndpoint
-    controller.extman.addExtension(server,"local"::Nil)
+    val controller = new Controller()
+    val end = new ServerEndpoint
+    controller.extman.addExtension(end,"local"::args.toList)
     val logFile = java.io.File.createTempFile("mmtlsp/log_","")
     val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
-    val launcher = new Launcher.Builder().setLocalService(server).setRemoteInterface(classOf[MMTClient]).setInput(in).
-      setOutput(out).validateMessages(true).traceMessages(wr).create()
+    val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(classOf[MMTClient]).setInput(System.in).
+      setOutput(System.out).validateMessages(true).traceMessages(wr).create()
     val client = launcher.getRemoteProxy//.asInstanceOf[LanguageClient]
-    server.connect(client)
+    end.connect(client)
     launcher.startListening()
-    // print("Server started")
-    // startListening.get
   }
-
 }
 
 class Server extends Extension {
@@ -56,8 +50,6 @@ class Server extends Extension {
   override def start(args: List[String]): Unit = {
     super.start(args)
     args match {
-      case "local"::_ =>
-        return
       case "port"::nr::_ =>
         port = nr.toInt
       case _ =>
@@ -91,12 +83,22 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
   override def logPrefix: String = "lsp"
   private var _client : MMTClient = null
   def client = _client
+  private var _path = ""
+
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    args match {
+      case "local" :: path :: Nil =>
+        _path = path
+      case _ =>
+    }
+  }
 
   override def log(s: => String, subgroup: Option[String]): Unit = {
     super.log(s, subgroup)
     if (_client != null) {
       val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
-      _client.logMessage(new MessageParams(MessageType.Info,msg))
+      _client.logMessage(new MessageParams(MessageType.Log,msg))
     }
   }
 
@@ -125,6 +127,15 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
 
       result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
 
+      _report = Some(new ReportHandler("LSP " + _client.hashCode()) {
+        override def apply(ind: Int, caller: => String, group: String, msgParts: List[String]): Unit = {
+          _client.logMessage(new MessageParams(if (group=="error") MessageType.Error else MessageType.Info,msgParts.mkString("\n")))
+        }
+      })
+      controller.report.addHandler(_report.get)
+
+      if (_path != "") initController
+
       result
     } //.completedFuture(new InitializeResult(new ServerCapabilities))
   }
@@ -138,6 +149,8 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
     }
   }
 
+  private var _report: Option[ReportHandler] = None
+
   @JsonNotification("connect")
   override def connect(clientO: LanguageClient): Unit = {
     log("Connected: " + _client.toString,Some("methodcall"))
@@ -145,9 +158,36 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
     _client.logMessage(new MessageParams(MessageType.Info,"Connected to MMT!"))
   }
 
+  private def initController: Unit = {
+    val home = File(_path)
+    log("Project directory: " + File(_path).toString)
+
+    /** Options */
+    val mslf = home / "startup.msl"
+    if (mslf.toJava.exists())
+      controller.runMSLFile(mslf, None)
+    else {
+      mslf.createNewFile()
+      File.append(mslf, "extension info.kwarc.mmt.odk.Plugin")
+    }
+
+    val rc = home / "mmtrc"
+    if (!rc.toJava.exists()) {
+      rc.createNewFile()
+      File.append(rc, "\n", "#backends\n", "lmh .")
+    }
+
+    controller.loadConfig(MMTConfig.parse(rc), false)
+
+    /** MathHub Folder */
+    controller.setHome(home)
+    controller.addArchive(home)
+  }
+
   @JsonNotification("exit")
   def exit(): Unit = {
     log("Exit")
+    _report.foreach(r => controller.report.removeHandler(r.id))
     this.controller.extman.removeExtension(this)
   }
 
@@ -272,8 +312,20 @@ object Colors {
   val comment = 1
   val scomment = 2
   val name = 3
-  val terminit = 4
+  val md = 4
+  val dd = 5
+  val od = 6
+  val terminit = 7
+  val termchecked = 8
+  val termerrored = 9
+  val notation = 10
 
-  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language","todo")
+  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language","mmt.md"
+    ,"mmt.dd"
+    ,"mmt.od"
+    ,"mmt.terminit"
+    ,"mmt.termchecked"
+    ,"mmt.termerrored"
+    ,"mmt.notation")
   val scopes = scopesO.map(_.split('.').toList.asJava).asJava
 }
