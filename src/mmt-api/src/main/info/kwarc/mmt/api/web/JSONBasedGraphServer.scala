@@ -568,19 +568,13 @@ object GraphBuilder {
 }
 
 abstract class GraphSolverExtension extends Extension {
+  /** An abstract class for graph solver extensions.
+    * key: identifier for the extension handler.
+    * graph: a theory graph json.
+    * semantics: an argumentation semantic.
+    * comp: the solver to be used.
+    *
+    */
   val key: String
   def apply(graph: JSON, semantics: String, comp: String): JSON
 }
-
-/* class SemanticComputer (val f: JSON, val sem: String, val computer: String = "default") {
-  def JsonToTgf (f: JSONObject) : List[String] = {
-    val edgelist: JSON = f("edges").getOrElse(return List())
-    val includes: List[String] = {
-      for (edge:JSONObject <- edgelist if edge("style").getOrElse(return List()) == JSONString("include")) yield edge("from").toString +" "+ edge("to").toString
-    }
-    println(includes)
-    includes
-  }
-  def TgfToJson (tgf: List[String]) : JSONObject = null
-  def CallComputer (tgf: List[String], semantic: String, computer: String) : List[String] =List("test")
-} */
