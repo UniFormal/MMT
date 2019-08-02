@@ -121,6 +121,7 @@ object MagicTest {
 
       //File("C:/mmt2/content/Mathhub"), //Max
       File("C:") / "/mmt2" / "/content" / "/MathHub", // Max
+      File("C:") / "Users" / "Max" / "Uni" / "MMT-Archives", // Max
       File("C:") / "other" / "oaff",
       home / "MMT" / "myformalizations"  // Max Mac
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
