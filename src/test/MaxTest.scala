@@ -1,7 +1,7 @@
 //import info.kwarc.mmt.argsemcomp
-import MagicTest.home
-import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.imps
+//import MagicTest.home
+//import info.kwarc.mmt.api.utils.File
+//import info.kwarc.mmt.imps
 
 
 object Graphtester extends MagicTest("jgraph") {

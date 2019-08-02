@@ -53,7 +53,7 @@ class DirectGraphBuilder extends Graphs("jgraph"){
       val ret = exp.buildGraph(uri)
       log("Done")
       ret
-    } else {log("Got here and computing " + key + " for " + uri + "with" + sem + "semantic" + "using" + comp + "...")
+    } else {log("With" + sem + "semantic" + "using" + comp + "computing " + key + " for " + uri + "...")
       val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
       log("Done")
       ret }
