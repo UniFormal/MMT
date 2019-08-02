@@ -20,7 +20,7 @@ import scala.util.Try
   */
 
 
-abstract class Graphs (val pathPrefix: String) extends FormatBasedExtension {
+abstract class Graphs(val pathPrefix: String) extends FormatBasedExtension {
 
 /**
   * @param cont the context of the request
@@ -53,7 +53,7 @@ class DirectGraphBuilder extends Graphs("jgraph"){
       val ret = exp.buildGraph(uri)
       log("Done")
       ret
-    } else {log("With" + sem + "semantic" + "using" + comp + "computing " + key + " for " + uri + "...")
+    } else {log("With " + sem + " semantic " + "using " + comp + " solver " + "computing " + key + " for " + uri + "...")
       val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
       log("Done")
       ret }
@@ -349,13 +349,10 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         c.rl.get match {
           case "Law" => "model"
           case "BoundaryCondition" => "boundarycondition"
-          case _ => "theory"
-          /*
           case "Accepted" => "acceptedtheory"
           case "Rejected" => "rejectedtheory"
           case "Undecided" => "undecidedtheory"
-          */
-        }
+          case _ => "theory"}
       }).get
 
       ostyle match {

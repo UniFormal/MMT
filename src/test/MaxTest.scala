@@ -4,9 +4,9 @@
 //import info.kwarc.mmt.imps
 
 
-object Graphtester extends MagicTest("jgraph") {
+object Graphtester extends MagicTest("jgraph", "argcomp") {
   def run : Unit = {
-    println(MagicTest.archiveRoot)
+    //println(MagicTest.archiveRoot)
     //List(File(System.getProperty("user.home") / "MMT" / "myformalizations")find.(_exists).getOrElse(println("Does not exist"))
     hl("extension info.kwarc.mmt.argsemcomp.ArgumentationSemanticComputer")
     //val test = WebQuery("type=archivegraph&graphdata=MMT/urtheories&semantic=grounded")
