@@ -811,8 +811,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         ceOpt match {
           case Some(d: Declaration) =>
             val pathR = d.path
-            if (!content.hasImplicit(d.home, ComplexTheory(context)))
+            if (!content.hasImplicit(d.home, ComplexTheory(context))) {
               env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+            }
             if (UncheckedElement.is(d))
               env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
             env.pCont(pathR)

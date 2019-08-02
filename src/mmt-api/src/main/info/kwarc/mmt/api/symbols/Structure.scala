@@ -120,7 +120,7 @@ object Include {
       val (argsN,dfN) = if (df.isEmpty)
         (args,df)
       else
-        (Nil, Some(OMCOMP(OMINST(from,args) :: df.toList)))
+        (Nil, Some(OMCOMP(OMINST(from,home.toMPath,args) :: df.toList)))
       Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, true, total)
    }
    def unapply(t: ContentElement) : Option[IncludeData] = t match {
@@ -148,7 +148,7 @@ case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Ter
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
   def asMorphism = {
     if (isRealization) OMStructuralInclude(from, home.toMPath)
-    else OMCOMP(OMINST(from, args) :: df.toList)
+    else OMCOMP(OMINST(from, home.toMPath, args) :: df.toList)
   }
 
   def toStructure = Include(home, from, args, df, total)

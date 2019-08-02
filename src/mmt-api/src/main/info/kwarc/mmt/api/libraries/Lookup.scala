@@ -78,7 +78,7 @@ abstract class Lookup {self =>
       }
    }
 
-   def visible(to: Term): HashSet[Term]
+   def visible(to: Term): Iterable[MPath]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined

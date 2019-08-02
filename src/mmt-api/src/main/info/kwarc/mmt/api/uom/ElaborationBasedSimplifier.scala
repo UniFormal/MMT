@@ -64,8 +64,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
   private def applyWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
-    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
+    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s)) {
       return
+    }
     applyElementBeginWithParent(s, parentO, rulesO)
     s match {
       case m: ContainerElement[_] =>
@@ -198,13 +199,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case AnonymousTheoryCombinator(at) =>
               if (at.mt.isDefined) {
                 val mtTerm = OMMOD(at.mt.get)
-                thy.metaC.get match {
-                  case Some(old) =>
-                    SourceRef.get(old).foreach(r => SourceRef.update(mtTerm,r))
+                thy.metaC.get foreach {old =>
+                  SourceRef.get(old).foreach(r => SourceRef.update(mtTerm,r))
                 }
-                // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
                 thy.metaC.analyzed = Some(mtTerm)
-                controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
+                controller.memory.content.update(thy) // update is redundant except for recomputing implicits
               }
               var translations = Substitution() // replace all OML's with corresponding OMS's
               // TODO this replaces too many OML's if OML-shadowing occurs
@@ -339,7 +338,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // if both id and ID are undefined and id has instantiation, than so is idID, and we produce an undefined include with arguments
         // np != id.from occurs id is not an instantiation but ID is
         val newArgs = if (newDf.isDefined) Nil else newMorN match {
-            case OMINST(np, nas) if np == id.from =>
+            case OMINST(np, _, nas) if np == id.from =>
                nas
             case _ =>
               Nil

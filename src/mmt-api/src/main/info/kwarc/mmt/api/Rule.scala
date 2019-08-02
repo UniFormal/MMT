@@ -134,7 +134,7 @@ class MutableRuleSet extends RuleSet {
 }
 
 object RuleSet {
-   /** collects all rules visible to a context, based on what is currently loaded into memory */
+   /** collects all rules visible to a context */
    def collectRules(controller: Controller, context: Context): MutableRuleSet = {
       collectAdditionalRules(controller, None, context)
    }
@@ -148,6 +148,7 @@ object RuleSet {
       val rs = new MutableRuleSet
       addTo.foreach {a => rs.imports(a)}
       support.foreach {p =>
+        //TODO this must be much more efficient
         controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
          case rc: RuleConstant =>
             rc.df foreach {r =>

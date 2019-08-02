@@ -70,7 +70,7 @@ class Searcher(controller: Controller, val goal: Goal, rules: RuleSet, provingUn
    }
    private def initFacts {
       val imports = controller.library.visibleDirect(ComplexTheory(goal.context))
-      imports.foreach(doTerm)
+      imports.map(OMMOD(_)).foreach(doTerm)
       // atoms from variables are collected during the first round of forward search (somewhat weirdly, by ForwardPiElimination)
       log("Initialized facts are:  \n"+facts)
    }

@@ -74,7 +74,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** all known root modules (which also induce root documents) */
   private val modules = new ModuleHashMap
   /** the diagram of implicit morphisms */
-  private val implicitGraph = new ThinGeneratedCategory(asLocalLookup)
+  private val implicitGraph = new ImplicitGraph
 
   override def toString = modules.values.map(_.toString).mkString("", "\n\n", "")
 
@@ -85,13 +85,17 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   def getModules = modules.values
 
   
+  private def ifActive[E <: StructuralElement](se: E): Option[se.type] = {
+    if (InactiveElement.is(se)) None else Some(se)
+  }
+  
   /** direct lookup of p for mp = p / ln, also returns ln */
   private def modulesGetRoot(mp: MPath): (Module, LocalName) = {
     val top = mp.doc
     val name = mp.name
     val rootMod = name.prefixes.mapFind {n =>
        modules.get(top ? n)
-    }.getOrElse {throw NotFound(mp)}
+    }.getOrElse{throw NotFound(mp)}
     val ln = name.drop(rootMod.name.length)
     (rootMod, ln)
   }
@@ -117,15 +121,23 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** top level retrieval method */
   def get(p: Path): StructuralElement = {
      val error = (msg:String) => throw GetError("error while retrieving " + p + ": " + msg)
-     p match {
+     val se = p match {
         case d: DPath => getNarrative(d, error)
         case p: MPath => getContent(p, error)
         case GlobalName(mp, n) => getDeclarationInTerm(OMMOD(mp), n, error)
         case c: CPath => throw GetError("retrieval of components not possible")
      }
+     ifActive(se).getOrElse {
+       throw GetError("element used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
+     }  
   }
   /** retrieval in a module expression */
-  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = getDeclarationInTerm(home, name, error)
+  def get(home: Term, name: LocalName, error: String => Nothing): Declaration = {
+    val d = getDeclarationInTerm(home, name, error)
+    ifActive(d).getOrElse {
+       throw GetError("declaration used to exist but is not valid anymore (this may also be caused by an illegal forward-reference)")
+    }   
+  }
 
   // ******************* document level retrieval
   /**
@@ -319,9 +331,9 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         }
       case OMIDENT(t) =>
         makeAssignment(t,name,None)
-      case OMINST(p,_) =>
+      case OMINST(f,t,_) =>
         // arguments are only relevant when looking up a declaration in the target, because this represents an include 
-        makeAssignment(OMMOD(p),name,None)
+        makeAssignment(OMMOD(f),name,None)
       case OMStructuralInclude(f,t) =>
          val mod = seeAsMod(getContent(t, error), error)
          getAssignmentInModuleOrLink(mod, OMMOD(f), name, error)
@@ -405,15 +417,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            getO(mpath) match {
              case Some(included: Theory) =>
                // continue lookup in (possibly implicitly) included theory
-               val imp = implicitGraph(OMMOD(mpath), t match {
-                 case _:Theory => t.toTerm
-                 case d:DerivedDeclaration => OMMOD(d.modulePath)
+               val imp = implicitGraph(mpath, t match {
+                 case t:Theory => t.path
+                 case d:DerivedDeclaration => d.modulePath
                }) getOrElse {
                  error("no implicit morphism from " + mpath + " to " + t.path)
                }
                if (ln.isEmpty) {
                  imp match {
-                   case OMINST(_, impargs) =>
+                   case OMINST(_, _, impargs) =>
                      Include(t.toTerm, mpath, impargs)
                    case OMIDENT(_) | OMCOMP(Nil) =>
                      Include(t.toTerm, mpath, Nil)
@@ -491,15 +503,15 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val afrom = a.from
             val adf = a.df getOrElse {
               (l,a) match {
-                case (_: AbstractTheory, Include(id)) =>
-                  // if l is a theory that already includes afrom, the assignment is just the identity 
+                case (_: AbstractTheory, Include(id)) if !id.isRealization =>
+                  // if l is a theory that already includes afrom
+                  // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
                   id.asMorphism
                 case _ =>
                   throw GetError("element " + a.path + " found when trying to find assignment for " + nameS)
               }
             }
             val dom = afrom.toMPath
-            // TODO this can cause an infinite recursion
             val dfAssig = getDeclarationInTerm(adf, ComplexStep(dom)/ln, error)
             // dfAssig has the right definiens, but we need to change its home and name to fit the original request
             val h = dfAssig.name.head
@@ -576,7 +588,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         }
         //TODO better copy d and change home to t and name to d.home/d.name
         translate(d, imp, error)
-      case OMINST(p,args) =>
+      case OMINST(p,_,args) =>
         getDeclarationInTerm(OMPMOD(p,args), LocalName(d.path.module)/d.name, error)
       case OMStructuralInclude(f,t) =>
         val thy = getTheory(t)
@@ -693,7 +705,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   def forDeclarationsInScope(mod: Term)(f: (MPath,Term,Declaration) => Unit) {
     val impls = visibleVia(mod).toList
     impls.foreach {
-      case (OMMOD(p), m) =>
+      case (p, m) =>
         val thO = get(p) match {
           case t: Theory =>
             Some(t)
@@ -712,29 +724,20 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** retrieve the implicit morphism "from --implicit--> to" */
   def getImplicit(from: Term, to: Term): Option[Term] = implicitGraph(from, to)
 
-  /** set the implicit morphism "from --implicit--> to" */
-  // TODO should be private, public only because of Archive.readRelational
-  def addImplicit(from: Term, to: Term, morph: Term) {
-    implicitGraph(from, to) = morph
-  }
-
   /** retrieve all implicit morphisms into a theory
-    *
     * @param to the theory
     * @return all pairs (theory,via) such that "via: theory --implicit--> to" (transitive and reflexive)
     */
-  private def visibleVia(to: Term): mutable.HashSet[(Term, Term)] = {
-    val hs = implicitGraph.into(to)
-    TheoryExp.getSupport(to) foreach {p => hs add(OMMOD(p), OMCOMP())}
-    hs
+  private def visibleVia(to: Term): List[(MPath, Term)] = {
+    TheoryExp.getSupport(to) flatMap {p => implicitGraph.getToWithEmpty(p)}
   }
 
 
   /** as visibleVia but dropping the implicit morphisms */
-  def visible(to: Term): mutable.HashSet[Term] = visibleVia(to).map(_._1)
+  def visible(to: Term) = visibleVia(to).map(_._1)
 
   /** as visible but only those where the morphism is trivial (i.e., all includes) */
-  def visibleDirect(to: Term): mutable.HashSet[Term] = {
+  def visibleDirect(to: Term) = {
     val via = visibleVia(to)
     via.flatMap {
       case (from, OMCOMP(Nil)) => List(from)
@@ -817,76 +820,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
        case _ =>
           adder.run
     }
-    alreadyDefinedHandler(e) {
-      e match {
-        case t: Theory =>
-          t.getAllIncludes foreach addIncludeToImplicit
-        case dd: DerivedDeclaration =>
-          implicitGraph(dd.home, OMMOD(dd.modulePath)) = OMIDENT(dd.home)
-        case e: NestedModule =>
-          add(e.module)//, at)
-          //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of
-          //  whether the declaration comes before or after S
-          implicitGraph(e.home, e.module.toTerm) = OMIDENT(e.home)
-        case _ =>
-        //TODO add equational axioms
-      }
-    }
+    addImplicits(e, true)
   }
   
   /** add-related work that has to be done at the end of an element
    *  in particular: implicit morphisms are registered only when the inducing element has been checked 
    */
   def endAdd(c: ContainerElement[_]) {
-    alreadyDefinedHandler(c) {
-      c match {
-        case Include(id) =>
-          id.home match {
-            case OMMOD(h) =>
-              get(h) match {
-                case thy: Theory =>
-                  val oldImpl = implicitGraph(OMMOD(id.from), id.home) flatMap {
-                    case OMCOMP(Nil) => None
-                    case i => Some(i)
-                  }
-                  (id.df.isEmpty, oldImpl) match {
-                    case (true, Some(i)) =>
-                      // an undefined include acquires an existing non-include implicit morphism as its definiens
-                      // MoC design flaw because the implicit morphism may depend on a previous version of the theory
-                      // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
-                      //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
-                    case _ =>
-                      // this should be done at (*) below for realizations to avoid dependency cycles
-                      // but it causes problems when includes are registered as implicit before the realization is encoutered
-                      //if (!id.isRealization)
-                        //realizations are only added when totality has been checked at the end of the theory
-                        addIncludeToImplicit(id)
-                  }
-                case _ =>
-              }
-            case _ =>
-          }
-        case t: Theory =>
-           // (*)
-           //t.getRealizees foreach addIncludeToImplicit
-        case l: Link if l.isImplicit =>
-          implicitGraph(l.from, l.to) = l.toTerm
-        case _ =>
-      }
-    }
-  }
-  // shared code for adding an include
-  private def addIncludeToImplicit(id: IncludeData) {
-    implicitGraph(OMMOD(id.from), id.home) = id.asMorphism
-  }
-  
-  /** exception handler for [[AlreadyDefined]] */
-  private def alreadyDefinedHandler(e: StructuralElement)(code: => Unit) {
-    try {code}
-    catch {case AlreadyDefined(from, to, old, nw) =>
-      logError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
-      //throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
-    }
+    addImplicits(c, false)
   }
 
   /** the bureaucracy of adding 'se' */
@@ -924,6 +865,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            case mod: Module =>
               modules.get(mp).foreach {m =>
                 previous.foreach {_.modules(mp) = m}
+                deleteImplicits(mod.path)
               }
               modules(mp) = mod
            case _ =>
@@ -945,6 +887,84 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
 
+  private def addImplicits(se: StructuralElement, before: Boolean) {
+    se match {
+      // before == true
+      case t: Theory if before =>
+        t.getAllIncludes foreach addIncludeToImplicit
+      case dd: DerivedDeclaration if before =>
+        implicitGraph.add(dd.home.toMPath, dd.modulePath, None)
+      case e: NestedModule if before =>
+        add(e.module)//, at)
+        //TODO this makes every declaration in a theory T visible to any theory S nested in T, regardless of
+        //  whether the declaration comes before or after S
+        implicitGraph.add(e.home.toMPath, e.module.path, None)
+      //TODO add equational axioms
+      // before == false
+      case Include(id) if !before =>
+        id.home match {
+          case OMMOD(h) =>
+            get(h) match {
+              case thy: Theory =>
+                val oldImpl = implicitGraph(OMMOD(id.from), id.home) flatMap {
+                  case OMCOMP(Nil) => None
+                  case i => Some(i)
+                }
+                (id.df.isEmpty, oldImpl) match {
+                  case (true, Some(i)) =>
+                  // an undefined include acquires an existing non-include implicit morphism as its definiens
+                  // MoC design flaw because the implicit morphism may depend on a previous version of the theory
+                  // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
+                  //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
+                  case _ =>
+                    // this should be done at (*) below for realizations to avoid dependency cycles
+                    // but it causes problems when includes are registered as implicit before the realization is encountered
+                    //if (!id.isRealization)
+                    //realizations are only added when totality has been checked at the end of the theory
+                    addIncludeToImplicit(id)
+                }
+              case _ =>
+            }
+          case _ =>
+        }
+      case t: Theory if !before  =>
+      // (*)
+      //t.getRealizees foreach addIncludeToImplicit
+      case l: Link if l.isImplicit && !before =>
+        val f = checkAtomic(l.from)
+        val t = checkAtomic(l.to)
+        implicitGraph.add(f, t, Some(l.toTerm))
+      case _ =>
+    }
+  }
+
+  private def deleteImplicits(p: Path) {
+    p match {
+      case p: MPath => implicitGraph.delete(p)
+      case _ =>
+    }
+  }
+
+  private def checkAtomic(t: Term) = t match {
+    case OMMOD(p) => p
+    case _ => throw AddError("implicit morphism must have atomic domain and codomain")
+  }
+
+  // shared code for adding an include
+  private def addIncludeToImplicit(id: IncludeData) {
+    val mor = if (!id.isRealization && !id.df.isDefined) None else Some(id.asMorphism)
+    implicitGraph.add(id.from, id.home.toMPath, mor)
+  }
+
+  /* not used anymore
+  private def alreadyDefinedHandler(e: StructuralElement)(code: => Unit) {
+    try {code}
+    catch {case AlreadyDefined(from, to, old, nw) =>
+      logError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+      //throw AddError(s"implicit morphism $nw from $from to $to induced by ${e.path} in conflict with existing implicit morphism $old")
+    }
+  }*/
+
  // ******************* deleting elements
 
   /** deletes the element with the given URI
@@ -952,8 +972,19 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * @param path the path to the element to be deleted
     */
   def delete(path: Path) {
-    log("deleting " + path)
+    deleteImplicits(path)
     Deleter.apply(path)
+  }
+  
+  def deactivate(se: StructuralElement) {
+    InactiveElement.set(se)
+    deleteImplicits(se.path)
+  }
+  
+  def reactivate(se: StructuralElement) {
+    InactiveElement.erase(se)
+    addImplicits(se, true)
+    addImplicits(se, false)
   }
 
   private val lib = this
@@ -997,7 +1028,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   /** updates a StructuralElement */
   def update(e: StructuralElement) {
     log("updating " + e.path)
+    deleteImplicits(e.path)
     new Updater(e).run
+    addImplicits(e, true)
+    addImplicits(e, false)
   }
 
   /** almost the same as Adder; the only overrides are replacing "add" and "Add" with "update" and "Update"
@@ -1090,3 +1124,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     documents.clear
   }
 }
+
+/**
+ * if set, the element is deactivated
+ */
+object InactiveElement extends BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "status")

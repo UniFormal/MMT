@@ -412,7 +412,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   // ******************************* semantics objects and literals
 
   /** the semantic type of all semantic objects
-   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflections. 
+   *  This cannot be a stand-alone rule because it needs access to the backend to load semantic objects via Java reflection 
    */
   private object SemanticObjectType extends uom.Atomic[SemanticObject] {
      def asString = "semantic-object"
@@ -508,6 +508,9 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     iterate {
           localLookup.getO(nw.path) match {
             case Some(old) if InactiveElement.is(old) =>
+              /* this code was unintentionally never called because elements were never deactivated
+               * this has now been fixed, but the library will never return deactivated objects so that the code still isn't called
+               */
               /* optimization for change management
                * If an inactive element with the same path already exists, we try to reuse it.
                * That way, already-performed computations and checks do not have to be redone;
@@ -556,7 +559,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                   }
                 }
                 // activate the old one
-                InactiveElement.erase(old)
+                memory.content.reactivate(old)
                 // notify listeners if a component changed
                 if (hasChanged)
                    notifyListeners.onUpdate(old, nw)
@@ -598,16 +601,12 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     memory.content.endAdd(c)
   }
   
-  /**
-   * if set, the element is deactivated
-   */
-  private val InactiveElement = new BooleanClientProperty[StructuralElement](utils.mmt.baseURI / "clientProperties" / "controller" / "status")
-
   /** marks this and its descendants as inactive */
   private def deactivate(se: StructuralElement) {
-     if (!se.isGenerated)
+     if (!se.isGenerated) {
        // generated constants and refs to them (see (*)) should be updated/removed by change listeners
-       InactiveElement.is(se)
+       memory.content.deactivate(se)
+     }
      //log("deactivating " + se.path)
      se match {
         case b: modules.ModuleOrLink =>
