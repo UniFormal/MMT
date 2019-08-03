@@ -421,6 +421,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         applyChecked(fromThy)
         // copy all declarations in theories p reflexive-transitively included into fromThy
         // no need to consider the instantiation arguments or definitions because the lookup methods are used to obtain the declarations in the elaboration
+        // TODO this generates declarations out of order if the includes of fromThy are not at the beginning
         val sElab = (fromThy.getAllIncludesWithoutMeta.map(_.from) ::: List(fromThy.modulePath)).flatMap {p =>
           val refl = p == fromThy.modulePath
           // in theories:
@@ -449,10 +450,15 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case d: Declaration =>
               if (skipWhenFlattening(d.getOrigin))
                 Nil
-              else {
+              else if (d.name.head.isInstanceOf[ComplexStep]) {
+                // definitions of realized constants must be skipped because they are already handled by the realized theory (which is part of the includes)
+                Nil
+              } else {
                 val sdname = prefix / d.name
                 try {
+                  println(sdname)
                   val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
+                  println(sd)
                   List(sd)
                 } catch {case e: Error =>
                   val eS = InvalidElement(dOrig, "error while generating " + sdname).setCausedBy(e)
