@@ -501,8 +501,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   // ******************************* adding elements and in-memory change management
 
   /** adds a knowledge item
-   *  @param afterOpt the name of the declaration after which it should be added (only inside modules, documents)
-   *  None adds at beginning, null (default) at end
+   *  @param at the position where it should be added (only inside modules, documents)
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
     iterate {
@@ -570,9 +569,14 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                 notifyListeners.onUpdate(old, nw)
               }
               memory.content.reorder(nw.path)
-            case Some(old) if getO(old.parent).map(_.getDeclarations).getOrElse(Nil) contains old =>
-              // This condition is necessary in case lookup succeeds even though the element has not been added to the body yet.
+            case Some(old) if {
+              val p = getO(old.parent)
+              val ds = p.map(_.getDeclarations).getOrElse(Nil)
+              p contains old
+            } =>
+              // This condition is necessary in case lookup succeeds for an element that is not physically present
               // This happens, e.g., during elaboration or in links where elements are generated dynamically by the library.
+              // TODO there should be two kinds of lookup - physcial and logical
               memory.content.update(nw)
               notifyListeners.onUpdate(old, nw)
             case _ =>

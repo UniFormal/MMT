@@ -293,7 +293,7 @@ lazy val webEdit = (project in file("mmt-webEdit")).
 
 // Glf server. Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
-  dependsOn(api, repl, lf).
+  dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
 
 
@@ -431,7 +431,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   )
 
 // =================================
-// DEPENDENT PROJECTS (projects that do not use mmt-api)
+// DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)

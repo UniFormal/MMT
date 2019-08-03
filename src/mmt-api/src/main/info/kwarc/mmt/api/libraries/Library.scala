@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.libraries
 import info.kwarc.mmt.api._
 import frontend._
 import documents._
+import info.kwarc.mmt.api.notations.NotationContainer
 import modules._
 import objects._
 import symbols._
@@ -378,7 +379,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             case ca: Constant if ca.df.isEmpty =>
               new FinalConstant(ca.home, ca.name, ca.alias, ca.tpC, defaultDef, ca.rl, ca.notC, ca.vs)
             case sa: Structure if sa.df.isEmpty =>
-              new Structure(sa.toTerm, sa.name, sa.tpC, defaultDef, sa.isImplicit, sa.isTotal)
+              new Structure(sa.home, sa.name, sa.tpC, defaultDef, sa.isImplicit, sa.isTotal)
             case a => a
          }
       case nm: NestedModule =>
@@ -508,7 +509,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                   // we have to be careful to avoid a cycle because the realization itself is found at this point if an assignment is missing
                   id.asMorphism
                 case _ =>
-                  throw GetError("element " + a.path + " found when trying to find assignment for " + nameS)
+                  throw GetError("element " + a.path + " found when trying to find assignment for " + nameS + " (This may happen when trying to use a realization that is not total.)")
               }
             }
             val dom = afrom.toMPath
@@ -519,8 +520,13 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             dfAssig.translate(l.toTerm, prefix, IdentityTranslator, Context.empty)
         }
         case None =>
+          // check if name lives in a theory theo included into from or directly in from; if the former, use an included morphism
           val (theo, tname) = nameS.steps match {
-            case ComplexStep(theo)::tname => (theo,tname)
+            case ComplexStep(theo)::tname =>
+              if (from == OMMOD(theo))
+                return default
+              else
+                (theo,tname)
             case _ => return default
           }
           def defaultMorph(p: MPath) = IncludeData(l.toTerm, p, Nil, Some(OMIDENT(OMMOD(p))), false)
@@ -652,12 +658,29 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         // translate declT along assigOpt
         val newDecl = declT match {
           case c: Constant =>
+            // c: original constant in domain
+            // a: assignment provided by link
+            // general idea: use components of a and fill omitted ones with translated counterparts of c
             val a = assig.asInstanceOf[Constant] // succeeds because of (*)
             val newAlias = a.alias ::: c.alias.map(namePrefix / _)
             val newTp = a.tp orElse c.tp.map(mapTerm)
             val newDef = a.df orElse c.df.map(mapTerm)
-            val newNotC = a.notC merge c.notC // maybe drop notations of cs if a has new notations?
             val newRole = a.rl orElse c.rl
+            // translating notations is the trickiest part, especially verbalization notations are experimental
+            val newNotC = a.notC.copy
+            // most important special case: copy over notation of c if a does not have one and it is unambiguous
+            (a.notC.parsing, c.notC.parsing) match {
+              case (None, Some(cn)) =>
+                // TODO automatically make the notation inambiguous by changing its delimiters
+                lazy val impl = l match {
+                  case _: AbstractTheory => true
+                  case l: Link => l.isImplicit
+                }
+                if (cn.fixity.isRelative || impl) {
+                  newNotC.update(ParsingNotationComponent, cn)
+                }
+              case _ =>
+            }
             Constant(to, newName, newAlias, newTp, newDef, newRole, newNotC)
           case s: Structure =>
             val a = assig.asInstanceOf[Structure] // succeeds because of (*)
@@ -901,9 +924,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         implicitGraph.add(e.home.toMPath, e.module.path, None)
       //TODO add equational axioms
       // before == false
-      case Include(id) if !before =>
+      case Include(id) if !before  =>
+        // elaboration includes do not have to be added to implicits because the implicitGraph computes them anyway
         id.home match {
-          case OMMOD(h) =>
+          case OMMOD(h) if !se.getOrigin.isInstanceOf[ElaborationOf] =>
             get(h) match {
               case thy: Theory =>
                 val oldImpl = implicitGraph(OMMOD(id.from), id.home) flatMap {
@@ -946,7 +970,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   private def checkAtomic(t: Term) = t match {
-    case OMMOD(p) => p
+    case OMPMOD(p,_) => p
     case _ => throw AddError("implicit morphism must have atomic domain and codomain")
   }
 

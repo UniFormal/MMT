@@ -185,6 +185,14 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     }
   }
 
+  /** unregisters all archives */
+  def closeAllArchives {
+    stores foreach {
+      case a: Archive => closeArchive(a.id)
+      case _ =>
+    }
+  }
+
   /** retrieve an [[Archive]] by its id */
   def getArchive(id: String): Option[Archive] = stores collectFirst {
     case a: Archive if a.properties.get("id").contains(id) => a

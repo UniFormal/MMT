@@ -44,7 +44,12 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
       }
     }
     val clrButton = Swing.Button("Clear", tooltip = "Clears MMT memory") {
+      mmtp.errorSource.clear
       controller.clear
+    }
+    val restartButton = Swing.Button("Restart", tooltip = "shutdown MMT plugin and reload everything") {
+      mmtp.stop
+      mmtp.start
     }
 
     val clrIMG = (new ImageIcon(this.getClass().getResource("/images/clear_button.png"))).getImage()
@@ -70,8 +75,9 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     add(stopButton)
     add(buildButton)
     add(buildOpenButton)
-    add(clrButton)
     add(clrFileButton)
+    add(clrButton)
+    add(restartButton)
   }
 
   init

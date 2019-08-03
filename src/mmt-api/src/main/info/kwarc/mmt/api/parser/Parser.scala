@@ -202,7 +202,7 @@ object DefaultObjectParser extends ObjectParser {
   def isApplicable(format: String) = true
 
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
-    val t = OMSemiFormal(objects.Text("unparsed", pu.term))
+    val t = OMSemiFormal(objects.Text("unparsed", "\"" + pu.term + "\""))
     SourceRef.update(t, pu.source)
     ParseResult(Context.empty, Context.empty, t)
   }
