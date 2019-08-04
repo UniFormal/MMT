@@ -264,7 +264,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
      oldDocOpt.foreach {doc =>
         // (M): deactivate the old structure
         log("deactivating " + doc.path)
-        deactivate(doc)
+        //deactivate(doc)
      }
      // find an appropriate interpreter
      log((if (interpret) "interpreting " else "parsing ") + ps.source + " with format " + ps.format +
