@@ -178,8 +178,8 @@ class Setup extends ShellExtension("setup") {
         // log("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
         log("cloning content repositories via git")
         try {
-          controller.handleLine("lmh install MMT/examples")
-          controller.handleLine("lmh install MMT/LATIN2")
+          controller.handleLine("lmh install MMT/urtheories")
+          controller.handleLine("lmh install MMT/LATIN2@esslli2019")
         } catch {case e: Error =>
           log(e.toStringLong)
         }

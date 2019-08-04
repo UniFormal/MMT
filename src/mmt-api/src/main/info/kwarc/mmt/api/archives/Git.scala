@@ -32,7 +32,7 @@ object UnixGit extends Git {
 /**
   * git behaves rather weirdly under windows, especially if authentication is needed
   *
-  * this runs the [[UnixGit]] commands in the bash shell that comes with windows git
+  * this runs the [[UnixGit]] commands in the bash shell that comes with Windows git
   *
   * @param sh the path to git's bash (may contain spaces), defaults to "sh"
   */

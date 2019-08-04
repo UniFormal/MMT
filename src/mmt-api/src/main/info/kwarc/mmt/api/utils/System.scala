@@ -89,7 +89,7 @@ object MMTSystem {
 
   /** the git used by this MMT instance */
   lazy val git: Git = OS.detect match {
-    case Windows => new WindowsGit() 
+    //case Windows => new WindowsGit() // the special treatment of Windows may be needed for cloning via ssh
     case _ => UnixGit
   }
 
