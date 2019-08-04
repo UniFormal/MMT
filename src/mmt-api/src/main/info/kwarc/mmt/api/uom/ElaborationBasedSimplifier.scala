@@ -456,9 +456,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               } else {
                 val sdname = prefix / d.name
                 try {
-                  println(sdname)
                   val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
-                  println(sd)
                   List(sd)
                 } catch {case e: Error =>
                   val eS = InvalidElement(dOrig, "error while generating " + sdname).setCausedBy(e)

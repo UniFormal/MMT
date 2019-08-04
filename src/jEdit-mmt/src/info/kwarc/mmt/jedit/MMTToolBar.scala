@@ -77,7 +77,7 @@ class MMTToolBar(mmtp: MMTPlugin) extends JToolBar {
     add(buildOpenButton)
     add(clrFileButton)
     add(clrButton)
-    add(restartButton)
+    //add(restartButton) // doesn't work correctly
   }
 
   init
