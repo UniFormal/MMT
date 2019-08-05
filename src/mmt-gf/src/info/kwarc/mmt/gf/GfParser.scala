@@ -5,7 +5,7 @@ package info.kwarc.mmt.gf
   * This code likely only covers a subset of GF abstract syntax.
   */
 
-import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
@@ -22,7 +22,9 @@ case object ARROW extends GfToken
 case object SEMICOLON extends GfToken
 case object COMMA extends GfToken
 case object DOUBLE_ASTERISK extends GfToken
-case class OTHER_OPERATOR(str : String) extends GfToken   // operators we don't care about
+case object LEFT_BRACE extends GfToken
+case object RIGHT_BRACE extends GfToken
+// case class OTHER_OPERATOR(str : String) extends GfToken   // operators we don't care about
 
 // keywords
 case object ABSTRACT extends GfToken
@@ -45,7 +47,9 @@ class GfLexer extends RegexParsers {
   def semicolon : Parser[SEMICOLON.type] = ";" ^^ (_ => SEMICOLON)
   def comma : Parser[COMMA.type] = ";" ^^ (_ => COMMA)
   def double_asterisk : Parser[DOUBLE_ASTERISK.type] = "**" ^^ (_ => DOUBLE_ASTERISK)
-  def other_operator : Parser[OTHER_OPERATOR] = "=" ^^ (str => OTHER_OPERATOR(str))
+  def l_brace : Parser[LEFT_BRACE.type] = "{" ^^ (_ => LEFT_BRACE)
+  def r_brace : Parser[RIGHT_BRACE.type] = "{" ^^ (_ => RIGHT_BRACE)
+  // def other_operator : Parser[OTHER_OPERATOR] = "=" ^^ (str => OTHER_OPERATOR(str))
 
   // keywords
   def abstract_ : Parser[ABSTRACT.type] = "abstract" ^^ (_ => ABSTRACT)
@@ -56,14 +60,14 @@ class GfLexer extends RegexParsers {
 
   def tokens: Parser[List[GfToken]] = {
     phrase(rep1(abstract_ | of_ | cat_ | fun_ | other_segment |
-                equal | colon | arrow | semicolon | comma | double_asterisk | other_operator |
+                equal | colon | arrow | semicolon | comma | double_asterisk /* | other_operator */ |
                 identifier))
   }
 
   def apply(str : String) : List[GfToken] = {
     parse(tokens, str) match {
-      case Success(result, next) => result
-      case NoSuccess(message, next) => throw GfLexerException(message)
+      case Success(result, _) => result
+      case NoSuccess(message, _) => throw GfLexerException(message)
     }
   }
 }
@@ -74,6 +78,8 @@ class GfAbstractSyntax {
     */
   var syntaxName : Option[String] = None
   var includes : Seq[String] = Seq()
+  val types : ArrayBuffer[String] = ArrayBuffer()
+  val functions : ArrayBuffer[(String, Seq[String])] = ArrayBuffer()
 }
 
 class GfParserContext(tokens : List[GfToken]) {
@@ -114,8 +120,12 @@ class GfParser {
     if (tokens.isEmpty) throw GfEmptySyntaxException()
     val ctx = new GfParserContext(tokens)
 
-    // ... - TODO: do the actual work
     parseHeader(ctx)
+    parseBody(ctx)
+
+    if (!ctx.reachedEOF()) {
+      throw GfUnexpectedTokenException("Finished parsing before reaching EOF")
+    }
 
     ctx.gfAbstractSyntax
   }
@@ -137,7 +147,51 @@ class GfParser {
   }
 
   def parseBody(ctx : GfParserContext): Unit = {
+    expectToken(LEFT_BRACE, ctx)
+    var ignoremode = false
+    while (true) {
+      ctx.popToken() match {
+        case CAT =>
+          parseCat(ctx)
+          ignoremode = false
+        case FUN =>
+          parseFun(ctx)
+          ignoremode= false
+        case OTHER_SEGMENT(_) =>
+          ignoremode = true
+        case RIGHT_BRACE =>
+          if (! ignoremode) return
+        case token =>
+          if (!ignoremode) throw GfUnexpectedTokenException("Expected segment type (like cat or fun), found: '" + token.toString + "'")
+      }
+    }
+    throw GfUnexpectedTokenException("Unexpectedly reached EOF")
+  }
 
+  def parseCat(ctx : GfParserContext): Unit = {
+    // parses segment of categories
+    ctx.peekToken() match {
+      case IDENTIFIER(_) => ctx.gfAbstractSyntax.types ++= parseIdList(SEMICOLON, ctx)
+      case _ =>    // empty segment?
+    }
+  }
+
+  def parseFun(ctx : GfParserContext): Unit = {
+    // parses segment of function constants
+    while (true) {
+      ctx.peekToken() match {
+        case IDENTIFIER(_) =>
+          val names = parseIdList(COMMA, ctx)
+          expectToken(COLON, ctx)
+          val type_ = parseIdList(ARROW, ctx)
+          expectToken(SEMICOLON, ctx)
+          for (name <- names) {
+            // todo: improve this
+            ctx.gfAbstractSyntax.functions ++= List((name, type_))
+          }
+        case _ => return
+      }
+    }
   }
 
   def parseIdList(separator : GfToken, ctx : GfParserContext) : Seq[String] = {
@@ -145,7 +199,7 @@ class GfParser {
       * parses a list of identifiers separated by the separator (could e.g. be a COMMA)
       * Expects at least one identifier
       */
-    val identifiers : mutable.ArrayBuffer[String] = new mutable.ArrayBuffer[String]()
+    val identifiers : ArrayBuffer[String] = new ArrayBuffer[String]()
     do {
       identifiers += expectIdentifier(ctx)
     } while (ctx.popToken() == separator)
