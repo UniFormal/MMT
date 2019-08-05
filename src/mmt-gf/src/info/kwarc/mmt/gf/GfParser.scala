@@ -5,6 +5,7 @@ package info.kwarc.mmt.gf
   * This code likely only covers a subset of GF abstract syntax.
   */
 
+import scala.collection.mutable
 import scala.util.matching.Regex
 import scala.util.parsing.combinator.RegexParsers
 
@@ -15,6 +16,7 @@ sealed trait GfToken
 case class IDENTIFIER(str : String) extends GfToken
 
 // operators
+case object EQUAL extends GfToken
 case object COLON extends GfToken
 case object ARROW extends GfToken
 case object SEMICOLON extends GfToken
@@ -37,6 +39,7 @@ class GfLexer extends RegexParsers {
     "[a-zA-Z_][a-zA-Z0-9_]*".r ^^ { str => IDENTIFIER(str) }
 
   // operators
+  def equal : Parser[EQUAL.type] = "=" ^^ (_ => EQUAL)
   def colon : Parser[COLON.type] = ":" ^^ (_ => COLON)
   def arrow : Parser[ARROW.type] = "->" ^^ (_ => ARROW)
   def semicolon : Parser[SEMICOLON.type] = ";" ^^ (_ => SEMICOLON)
@@ -53,7 +56,7 @@ class GfLexer extends RegexParsers {
 
   def tokens: Parser[List[GfToken]] = {
     phrase(rep1(abstract_ | of_ | cat_ | fun_ | other_segment |
-                colon | arrow | semicolon | comma | double_asterisk | other_operator |
+                equal | colon | arrow | semicolon | comma | double_asterisk | other_operator |
                 identifier))
   }
 
@@ -69,10 +72,33 @@ class GfAbstractSyntax {
   /**
     * Contains all the data read from an abstract syntax
     */
+  var syntaxName : Option[String] = None
+  var includes : Seq[String] = Seq()
 }
 
-class GfParserContext {
+class GfParserContext(tokens : List[GfToken]) {
   val gfAbstractSyntax = new GfAbstractSyntax
+  var pos = 0
+
+  def popToken() : GfToken = {
+    if (reachedEOF()) throw GfUnexpectedEOF("Reached end of file unexpectedly")
+    val token = tokens(pos)
+    pos = pos + 1
+    token
+  }
+
+  def unpopToken(): Unit = {
+    assert(pos > 0)
+    pos -= 1
+  }
+
+  def peekToken() : GfToken = {
+    val token = popToken()
+    unpopToken()
+    token
+  }
+
+  def reachedEOF() : Boolean = pos >= tokens.size
 }
 
 class GfParser {
@@ -83,13 +109,62 @@ class GfParser {
     * Maybe this should be improved in the future...
     */
   def parse(str : String) : GfAbstractSyntax = {
-    val context = new GfParserContext
     val lexer = new GfLexer
     val tokens = lexer(str)
     if (tokens.isEmpty) throw GfEmptySyntaxException()
+    val ctx = new GfParserContext(tokens)
 
     // ... - TODO: do the actual work
+    parseHeader(ctx)
 
-    context.gfAbstractSyntax
+    ctx.gfAbstractSyntax
+  }
+
+  def parseHeader(ctx : GfParserContext): Unit = {
+    // parses the "first line", like e.g. "abstract Combined = Lexicon, Grammar **"
+    expectToken(ABSTRACT, ctx)
+    ctx.gfAbstractSyntax.syntaxName = Some(expectIdentifier(ctx))
+    expectToken(EQUAL, ctx)
+
+    // if the next token is an identifier, we should expect a list of includes
+    ctx.peekToken() match {
+      case IDENTIFIER(_) =>
+        ctx.gfAbstractSyntax.includes = parseIdList(COMMA, ctx)
+        expectToken(DOUBLE_ASTERISK, ctx)
+      case DOUBLE_ASTERISK => ctx.popToken() // remove it
+      case _ => // continue normally
+    }
+  }
+
+  def parseBody(ctx : GfParserContext): Unit = {
+
+  }
+
+  def parseIdList(separator : GfToken, ctx : GfParserContext) : Seq[String] = {
+    /**
+      * parses a list of identifiers separated by the separator (could e.g. be a COMMA)
+      * Expects at least one identifier
+      */
+    val identifiers : mutable.ArrayBuffer[String] = new mutable.ArrayBuffer[String]()
+    do {
+      identifiers += expectIdentifier(ctx)
+    } while (ctx.popToken() == separator)
+    ctx.unpopToken()
+    identifiers
+  }
+
+  def expectIdentifier(ctx : GfParserContext) : String = {
+    val token = ctx.popToken()
+    token match {
+      case IDENTIFIER(str) => str
+      case other => throw GfUnexpectedTokenException("Expected identifier - found '" + other.toString + "'")
+    }
+  }
+
+  def expectToken(expectedToken : GfToken, ctx : GfParserContext): Unit = {
+    val token = ctx.popToken()
+    if (token != expectedToken) {
+      throw GfUnexpectedTokenException("Unexpected token '" + token.toString + "' - expected '" + expectedToken.toString + "'")
+    }
   }
 }
