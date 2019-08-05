@@ -213,6 +213,9 @@ class Setup extends ShellExtension("setup") {
           val settingsFile = "mmt-sbt-settings"
           val srcFolder = systemFolder / "src"
           File.copy(srcFolder / (settingsFile + ".example"),  srcFolder / settingsFile, false)
+          setupJEdit foreach {case (_,jsf) =>
+            File.append(srcFolder/settingsFile, s"jedit-settings-folder: $jsf")
+          }
           log("done\n")
         case _ =>
       }
