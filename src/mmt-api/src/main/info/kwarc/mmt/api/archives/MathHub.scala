@@ -200,7 +200,7 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     // and return the repository
     root.mkdirs
     // create all the files needed by the repository
-    // TODO: Build a proper templating system into the resources folder
+    // TODO: Build a proper templating system
     File.WriteLineWise(root / "META-INF" / "MANIFEST.MF", List(
       s"id: $id",
       s"narration-base: http://mathhub.info/$id"
