@@ -16,6 +16,34 @@ object Theory {
      new Theory(doc, n, mt, params, df)
    
    def empty(doc: DPath, n: LocalName, mt: Option[MPath]) = apply(doc, n, mt)
+
+  /** if this theory is flattened already, an iterator over all constants is a set of theories
+    * @param paths the theories and the morphisms via which they are visible (if not direct)
+    * @param lup lookup to retrieve included theories
+    * @param withIncludes if false, only local declarations; if true, also included declarations
+    * @param seen theories to exclude (used by recursive implementation)
+    */
+  // not used, does not work yet
+  def flatIterator(paths: Iterable[(MPath,Option[Term])], lup: Lookup, withIncludes: Boolean = true, seen: List[MPath] = Nil): Iterator[(Declaration,Option[Term])] = {
+    var seenHere: List[MPath] = seen
+    paths.iterator.flatMap {case (p,via) =>
+      if (seen.contains(p)) Iterator.empty else {
+        seenHere ::= p
+        val thy = lup.getAs(classOf[Theory], p)
+        val mtI = thy.meta.iterator.flatMap {m =>
+          flatIterator(List((m,None)), lup, false, seenHere)
+        }
+        mtI ++ thy.getDeclarations.iterator.flatMap {
+          case Include(id) =>
+            flatIterator(List((id.from, id.df)), lup, false, seenHere)
+          case rc: RuleConstant => Iterator((rc,via))
+          case c: Constant => Iterator((c,via))
+          case d: DerivedDeclaration => Iterator.empty
+          case s: Structure => Iterator.empty
+        }
+      }
+    }
+  }
 }
 
 /** abstract interface of theories and related classes, analog to [[Link]] */

@@ -9,6 +9,7 @@ class Timer(key: String) {
     val aft = java.lang.System.currentTimeMillis()
     val d = aft - bef
     count += d
+    //println(this)
     a
   }
   override def toString = key + ": " + count

@@ -210,7 +210,7 @@ class ImplicitGraph {
     outgoing.clear
     primaryPath.clear
     dependants.clear
-    //println(Timing.timers.mkString("\n"))
+    println(Timing.timers.mkString("\n"))
   }
   
    /** retrieves the implicit morphism between two theory expressions (if any)

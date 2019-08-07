@@ -181,8 +181,9 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
       try {
         asset match {
           case ta: MMTObjAsset =>
+            lazy val tp = ta.inferType.map(asString).getOrElse(null)
             if (selected) {
-              ta.inferType.map(asString).getOrElse(null)
+              tp
             } else {
               ta.obj match {
                 case OMV(n) =>
@@ -190,10 +191,14 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
                 case vd : VarDecl =>
                   asString(vd)
                 case OMA(OMID(p), args) =>
-                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
-                  if (implicits.isEmpty) null
-                  else implicits.map(asString).mkString("   ")
-                case _ => null
+                  val opWithImplicits = args.takeWhile(a => parser.SourceRef.get(a).isEmpty)
+                  val opWithImplicitsT = OMA(OMID(p), opWithImplicits)
+                  val opS = opWithImplicits.map(asString).mkString("  ")
+                  val opTp = checking.Solver.infer(controller, ta.getFullContext, opWithImplicitsT, None)
+                  val opTpS = opTp.map(t => "  :  " + asString(t)).getOrElse("")
+                  opS + opTpS
+                case _ =>
+                  tp
               }
             }
           case _ => null

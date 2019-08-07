@@ -518,10 +518,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     elementChecked(e)
   }
   
-  /** checks if a modules realizes a theory
-   *  @return all names for which an assignment is missing
-   *  pre: thyTerm has been simplified already
-   */
   private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
     val unmappedNames = checkTotal(mod, thyTerm)
     val total = unmappedNames.isEmpty
@@ -533,6 +529,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       env.errorCont(ie)
     }
   }
+  /** checks if a modules (theory, view, or structure) is total for a given theory
+    * @param mod the module
+    * @param thyTerm the theory
+    * @return all names for which an assignment is missing
+    * pre: thyTerm has been simplified already
+    */
   private def checkTotal(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
     val thyPath = thyTerm match {
       case OMPMOD(p,_) => p
@@ -556,6 +558,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
       case s: Structure =>
         if (s.df.isDefined) mapped else s match {
+          case Include(id) if id.isRealization =>
+            mapped
           case Include(id) =>
             mod.getO(LocalName(id.from)) match {
               case Some(nS: Structure) =>
