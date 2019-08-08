@@ -1,7 +1,7 @@
 package info.kwarc.mmt.gf
 
 import info.kwarc.mmt.api.{DPath, LocalName, modules, symbols}
-import info.kwarc.mmt.api.archives.{BuildSuccess, BuildTask, Importer}
+import info.kwarc.mmt.api.archives.{BuildResult, BuildSuccess, BuildTask, Importer}
 import info.kwarc.mmt.api.documents.{DRef, Document, FileLevel, MRef, SectionLevel}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMS, OMV, Term, VarDecl}
@@ -20,9 +20,15 @@ class GfImporter extends Importer {
 
   val rootdpath = DPath(URI.https colon "glf.kwarc.info")    // at least for now...
   val docpath = rootdpath / "gfImport"
+  val log_progress = Some("progress")
 
-  def importDocument(bt: BuildTask, index: Document => Unit) = {
+  def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     val s = File.read(bt.inFile)
+    if (!s.contains("abstract")) {
+      log("Skipping " + bt.inPath, log_progress)
+      return BuildSuccess(Nil, Nil)  // TODO: Is this correct BuildResult?
+    }
+    log("Importing " + bt.inPath, log_progress)
     val name = bt.inFile.name
     val gf = (new GfParser).parse(s)
 
@@ -36,6 +42,8 @@ class GfImporter extends Importer {
     val langTheory = new Theory(bt.narrationDPath,
       LocalName(name), Some(LF.theoryPath),
       modules.Theory.noParams, modules.Theory.noBase)
+
+    // TODO: Includes
 
     for (typename <- gf.types) {
       val c = symbols.Constant(langTheory.toTerm, LocalName(typename), Nil, Some(OMS(Typed.ktype)), None, None)

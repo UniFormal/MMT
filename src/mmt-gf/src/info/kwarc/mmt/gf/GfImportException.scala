@@ -8,7 +8,8 @@ class GfImportException(private val message: String = "",
 case class GfLexerException(private val message: String = "")
   extends GfImportException(message)
 
-case class GfParserException(private val message: String = "",
+
+class GfParserException(private val message: String = "",
                              private val cause: Throwable = None.orNull)
   extends GfImportException(message, cause)
 

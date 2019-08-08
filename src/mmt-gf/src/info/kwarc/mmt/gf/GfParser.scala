@@ -33,6 +33,7 @@ case object CAT extends GfToken
 case object FUN extends GfToken
 case class OTHER_SEGMENT(str : String) extends GfToken   // segments we don't care about (like flags)
 
+// TODO: Comments!
 class GfLexer extends RegexParsers {
   override def skipWhitespace = true
   override val whiteSpace: Regex = "[ \t\r\f\n]+".r
@@ -45,10 +46,10 @@ class GfLexer extends RegexParsers {
   def colon : Parser[COLON.type] = ":" ^^ (_ => COLON)
   def arrow : Parser[ARROW.type] = "->" ^^ (_ => ARROW)
   def semicolon : Parser[SEMICOLON.type] = ";" ^^ (_ => SEMICOLON)
-  def comma : Parser[COMMA.type] = ";" ^^ (_ => COMMA)
+  def comma : Parser[COMMA.type] = "," ^^ (_ => COMMA)
   def double_asterisk : Parser[DOUBLE_ASTERISK.type] = "**" ^^ (_ => DOUBLE_ASTERISK)
   def l_brace : Parser[LEFT_BRACE.type] = "{" ^^ (_ => LEFT_BRACE)
-  def r_brace : Parser[RIGHT_BRACE.type] = "{" ^^ (_ => RIGHT_BRACE)
+  def r_brace : Parser[RIGHT_BRACE.type] = "}" ^^ (_ => RIGHT_BRACE)
   // def other_operator : Parser[OTHER_OPERATOR] = "=" ^^ (str => OTHER_OPERATOR(str))
 
   // keywords
@@ -61,6 +62,7 @@ class GfLexer extends RegexParsers {
   def tokens: Parser[List[GfToken]] = {
     phrase(rep1(abstract_ | of_ | cat_ | fun_ | other_segment |
                 equal | colon | arrow | semicolon | comma | double_asterisk /* | other_operator */ |
+                l_brace | r_brace |
                 identifier))
   }
 
@@ -102,6 +104,13 @@ class GfParserContext(tokens : List[GfToken]) {
     val token = popToken()
     unpopToken()
     token
+  }
+
+  def nextTokenIsIdentifier() : Boolean = {
+    peekToken() match {
+      case IDENTIFIER(_) => true
+      case _ => false
+    }
   }
 
   def reachedEOF() : Boolean = pos >= tokens.size
@@ -170,9 +179,9 @@ class GfParser {
 
   def parseCat(ctx : GfParserContext): Unit = {
     // parses segment of categories
-    ctx.peekToken() match {
-      case IDENTIFIER(_) => ctx.gfAbstractSyntax.types ++= parseIdList(SEMICOLON, ctx)
-      case _ =>    // empty segment?
+    while (ctx.nextTokenIsIdentifier()) {
+      ctx.gfAbstractSyntax.types += expectIdentifier(ctx)
+      expectToken(SEMICOLON, ctx)
     }
   }
 
