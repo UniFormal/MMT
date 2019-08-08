@@ -88,6 +88,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
      }
      None
   }
+
   /** like load but tries to load a Java class */
   def loadClass(cls: String): Option[Class[_]] = {
      val p = SemanticObject.javaToMMT(cls)

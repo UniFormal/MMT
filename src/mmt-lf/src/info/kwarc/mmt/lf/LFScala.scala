@@ -4,6 +4,10 @@ import info.kwarc.mmt.api._
 import uom._
 import objects._
 
+class NullaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+  def filter(args: List[Term]) = args.filterNot {a => a == term}
+}
+
 class UnaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
    def apply(arg: Term) = Apply(OMS(path), arg)
    def unapply(t: Term) = t match {
@@ -18,11 +22,15 @@ class BinaryLFConstantScala(val parent: MPath, val name: String) extends Constan
        case Nil => neutral
        case hd::tl => tl.fold(hd) {case (x,y) => apply(x,y)}
      }
-     
    }
    def unapply(t: Term) = t match {
       case ApplySpine(OMS(this.path), List(a1, a2)) => Some((a1,a2))
       case _ => None
+   }
+
+   def associativeArguments(t: Term):List[Term] = unapply(t) match {
+     case Some((x,y)) => associativeArguments(x):::associativeArguments(y)
+     case None => List(t)
    }
 }
 

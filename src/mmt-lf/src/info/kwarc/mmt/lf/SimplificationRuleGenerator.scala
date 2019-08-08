@@ -15,12 +15,13 @@ import notations.ImplicitArg
 /**
  * convenience class for storing the names of an OuterInnerTerm
  *
- * @param before names of the before arguments (excluding implicit ones)
- * @param after names of the after arguments (excluding implicit ones)
- * @param inside names of the inside-arguments (excluding implicit ones)
- * @param position of innner term (= before.length)
+ * @param outer outer operator
  * @param implArgsOuter positions of the implicit arguments of 'outer' (counting from 0)
+ * @param before names of the before arguments (excluding implicit ones)
+ * @param innerPos of innner term (= before.length)
+ * @param inside names of the inside-arguments (excluding implicit ones)
  * @param implArgsInner positions of the implicit arguments of 'inner' (counting from 0)
+ * @param after names of the after arguments (excluding implicit ones)
  *
  * this represents a left hand side of the form (excluding implicit arguments)
  *   outer(before,inner(inside),after)
