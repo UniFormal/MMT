@@ -198,14 +198,14 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
   def transitiveDependencies(backend: Backend): List[Archive] = {
     val handles = scala.collection.mutable.Set[Archive]()
 
-    // keep a quenue of element to scan for dependencies
+    // keep a q of element to scan for dependencies
     // and keep picking one of them, until there are none left
-    val quenue = scala.collection.mutable.Queue[Archive](this)
-    while(quenue.nonEmpty) {
-      val next = quenue.dequeue()
+    val q = scala.collection.mutable.Queue[Archive](this)
+    while(q.nonEmpty) {
+      val next = q.dequeue()
       if (!handles.contains(next)) {
         handles.add(next)
-        quenue.enqueue( next.dependencies.flatMap(backend.getArchive) :_* )
+        q.enqueue(next.dependencies.flatMap(s => backend.getArchive(s)): _*)
       }
     }
 
