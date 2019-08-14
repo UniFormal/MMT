@@ -13,8 +13,17 @@ object ScalaOutDim extends RedirectableDimension("bin")
 /** a build target that delegates to the standard scala compiler */
 class ScalaCompiler extends BuildTarget {
   val key = "scala-bin"
-  /** finds all the jars in subfolders of f, or Nil if the folder does not exist */
-  private def jars(f: File) = Try(f.children.filter(_.getExtension.contains("jar"))).getOrElse(Nil)
+
+  /** recursively finds the classpath of all dependencies of an archive */
+  private def transitiveArchiveClasspath(a : Archive) = {
+    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(":")
+  }
+
+  /** find the classpath of a single archive */
+  private def singleArchiveClassPath(a : Archive) = {
+    a.properties.get("classpath").map(p => a.root / p).mkString(":")
+  }
+
 
    def build(a: Archive, up: Update, in: FilePath) {
      (a / ScalaOutDim).mkdirs
@@ -30,11 +39,14 @@ class ScalaCompiler extends BuildTarget {
        return
      }
 
+     // compute the classpath of the archives
+     val cp = transitiveArchiveClasspath(a)
+
      // prepare a process for the compiler to run in
      val args = (
        if(report.groups.contains("compiler")) List("-verbose") else Nil
      ) ::: List(
-       "-classpath", System.getProperty("java.class.path"),
+       "-classpath", System.getProperty("java.class.path") + ":" + cp,
        "-d", (a / ScalaOutDim).toString,
      ) ::: files
 
