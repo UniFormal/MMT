@@ -50,7 +50,8 @@ object GenericScalaExporter {
       (segments.reverse, Nil)
     else
       (segments.take(i).reverse, segments.drop(i + key.length))
-    DPath(utils.URI("http", auth.mkString(".")) / path)
+    val authO = if (auth.isEmpty) None else Some(auth.mkString("."))
+    DPath(utils.URI(Some("http"), authO) / path)
   }
 
   /** package URI . modname */
@@ -195,7 +196,7 @@ class GenericScalaExporter extends Exporter {
   /* the companion object */
 
   /** generates a companion object with fields for the MMT URIs
-    * @param extraFields fields appended to the object
+    * @param t the theory
     */
   protected def outputCompanionObject(t: Theory) {
     val tpathS = t.path.toString
@@ -204,10 +205,8 @@ class GenericScalaExporter extends Exporter {
       "    along with apply/unapply methods for them */")
     rh.writeln(s"object $name extends TheoryScala {")
     val baseUri = t.parent.uri
-    rh.writeln("  val _base = DPath(utils.URI(\"" + baseUri.scheme.getOrElse("") +
-      "\", \"" + baseUri.authority.getOrElse("") + "\")" +
-      baseUri.path.foldRight("")((a, b) => " / \"" + a + "\"" + b) +
-      ")"
+    rh.writeln(s"  val _base = DPath(utils.URI(${toParsableString(baseUri.scheme)}, ${toParsableString(baseUri.authority)}, abs=true)" +
+      baseUri.path.map(toParsableString).mkString(" / ") + ")"
     )
     rh.writeln("  val _name = LocalName(\"" + t.name + "\")")
     t.getPrimitiveDeclarations foreach {
@@ -225,6 +224,15 @@ class GenericScalaExporter extends Exporter {
       case _ =>
     }
     rh.writeln("\n}")
+  }
+
+  private def toParsableString(v: Any) : String = v match {
+    case Nil => "Nil"
+    case List(a @_*) => (a map toParsableString).mkString("List(", ", ", ")")
+    case Some(a) => s"Some(${toParsableString(a)})"
+    case None => "None"
+    case v: String => "\"" + v + "\""
+    case i: Int => i.toString
   }
 
   private def arityToScala(markers: List[ArityComponent]): ArgumentList = {

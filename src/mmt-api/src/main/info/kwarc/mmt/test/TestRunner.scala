@@ -1,7 +1,6 @@
 package info.kwarc.mmt.test
 
-import info.kwarc.mmt.api.utils.MMTSystem
-import info.kwarc.mmt.api.utils.MMTSystem.IsFat
+import info.kwarc.mmt.api.utils.{MMTSystem, RunJavaClass}
 
 /**
   * The TestRunner class represents a single run on multiple Main-Classes
@@ -72,21 +71,7 @@ object TestRunner {
     * @return
     */
   private def runTest(clz: String): Boolean = {
-
-    // get the classpath, which is either the jar that is provided
-    // or the jar (when run from a jar)
-    val cp = MMTSystem.runStyle match {
-      case fat: IsFat => fat.jar.toString
-      case _ => System.getProperty("java.class.path")
-    }
-
-    // run the test in a subprocess
-    val process = new ProcessBuilder(
-      System.getProperty("java.home") + java.io.File.separator + "bin" + java.io.File.separator + "java",
-      "-cp",
-      cp,
-      clz
-    )
+    val process = RunJavaClass(clz)
 
     logInfo(Some(clz), "Starting Test")
     logInfo(Some(clz), String.join(" ", process.command()))

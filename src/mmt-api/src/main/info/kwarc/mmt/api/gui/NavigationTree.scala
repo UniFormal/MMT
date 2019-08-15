@@ -299,9 +299,6 @@ trait MMTElemAsset extends MMTAsset {
 }
 
 /** node for objects
-  * @param term the node in the MMT syntax tree
-  * @param parent the component containing the term
-  * @param subobjectPosition the position in that term
   */
 trait MMTObjAsset extends MMTAsset {
   protected val controller : Controller
@@ -315,12 +312,14 @@ trait MMTObjAsset extends MMTAsset {
     case _ => None
   }
 
+  def getFullContext = getScope.map(Context(_)).getOrElse(Context.empty) ++ context
+
   /** tries to infer the type of this asset (may throw exceptions) */
   def inferType: Option[Term] = {
     obj match {
       case t: Term =>
         val thy = getScope.getOrElse(return None)
-        checking.Solver.infer(controller, Context(thy) ++ context, t, None)
+        checking.Solver.infer(controller, getFullContext, t, None)
       case _ => None
     }
   }

@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
 import symbols._
 import objects._
+import libraries._
 
 /**
  * MMT modules, unifies theories and views

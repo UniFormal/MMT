@@ -64,7 +64,6 @@ trait RealizationStorage {
    */
   def loader: java.lang.ClassLoader
   /**
-   * @param cls the class name
    * @param p the path to use in error messages
    */
   def loadObject(p: MPath): SemanticObject = {

@@ -32,6 +32,13 @@ trait StandardIOHelper {
        case None => File(answer)
      }
   }
+
+  def getString(msg: String, default: Option[String]) = {
+    val defMsg = default.map(d => s" ($d)").getOrElse("")
+    println(msg + defMsg)
+    val answer = input.readLine
+    if (answer.isEmpty) default.getOrElse("") else answer
+  }
 }
 
 /** Creates a Controller and provides a shell interface to it.

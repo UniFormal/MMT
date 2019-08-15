@@ -46,7 +46,7 @@ class EditActions(mmtplugin: MMTPlugin) {
   }
 
   /**
-    * shows the normalization of the current asset (selection or cursor)
+    * shows the normalization of the current asset (selection or cursor) and its type
     *
     * @param replace if true, replace selected asset; otherwise, show popup
     */
@@ -55,16 +55,25 @@ class EditActions(mmtplugin: MMTPlugin) {
     as match {
       case oa: JObjAsset =>
         val obj = oa.obj
-        val objS = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true, true))
-        val str = mmtplugin.asString(objS)
+        val objN = mmtplugin.controller.simplifier(obj, SimplificationUnit(oa.context, true, true))
+        val objNS = mmtplugin.asString(objN)
         val textArea = view.getTextArea
         if (selected && replace) {
-          textArea.setSelectedText(str)
+          textArea.setSelectedText(objNS)
         } else {
           if (selected) {
             textArea.setSelection(oa.toSelection)
           }
-          new TextareaPopup(textArea, oa.region.start.offset, str) // to be closed by user clicking the button
+          val objS = mmtplugin.asString(obj)
+          val objStr = s"  $objS\n= $objNS"
+          val tpO = oa.inferType
+          val tpStr = tpO.map {tp =>
+            val tpS = mmtplugin.asString(tp)
+            val tpN = mmtplugin.controller.simplifier(tp,SimplificationUnit(oa.context,true,true))
+            val tpNS = mmtplugin.asString(tpN)
+            s"\n: $tpS\n= $tpNS"
+          }.getOrElse("")
+          new TextareaPopup(textArea, oa.region.start.offset, objStr + tpStr) // to be closed by user clicking the button
         }
       case _ =>
     }

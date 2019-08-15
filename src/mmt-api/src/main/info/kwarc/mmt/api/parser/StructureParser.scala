@@ -944,10 +944,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)}
 
   /** reads the components of a [[Constant]]
- *
+    *
     * @param givenName the name of the constant
-    * @param parent the containing [[DeclaredModule]]
-    * @param link the home theory for term components
+    * @param mod the containing element
+    * @param context the context for term components
     */
   private def readConstant(givenName: LocalName, mod: ModuleOrLink,
                            context: Context)(implicit state: ParserState): Constant = {

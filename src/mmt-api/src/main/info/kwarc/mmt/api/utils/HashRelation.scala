@@ -33,81 +33,15 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
    }
 }
 
-import java.util.Date
-
-class InvalidatableValue[B](val value: B) {
-  var validSince = new Date()
-}
-
-/** represents a map this:A -> Set[B] in a way that supports change management
- *  
- *  entries know their cause, and classes of entries with the same cause can be invalidated in constant time
- */
-abstract class MoCHashMapToSet[A,B,Cause] {
-  /** the underlying map
-   *  entries may be invalid and must be checked using isValid before exposing to the outside
-   */
-  private val underlying = new HashMapToSet[A,InvalidatableValue[B]]
-  
-  /** invalidSince(k) == d means that all entries with cause k added before d are invalid */
-  private val invalidSince = new HashMap[Cause,Date]
-
-  /** the causes of an entry
-   *  if there are multiple causes, they must all be valid for the entry to be valid
-   */ 
-  def getCauses(a: A, b: B): Iterator[Cause]
-  
-  /** checks if v is valid */
-  private def isValid(a: A, v: InvalidatableValue[B]) = {
-    getCauses(a,v.value) forall {c => 
-      invalidSince.get(c) match {
-        case None =>
-          // cause is valid
-          true
-        case Some(d) =>
-          // cause was invalidated: check if value was restored more recently 
-          v.validSince after d
-      }
-    }
-  }
-  
-  /** adds b to this(a) */
-  def +=(a: A, b: B) {
-    val current = underlying.getOrEmpty(a)
-    val exists = current.find {v =>
-      v.value == b
-    }
-    exists match {
-      case None =>
-        // new value: add
-        current += new InvalidatableValue(b)
-      case Some(v) =>
-        // existing value: keep and update validity timestamp
-        v.validSince = new Date()
-    }
-  }
-  
-  /** retrieves (a copy of) the set of values for a */ 
-  def apply(a: A) = {
-    val vs = underlying.getOrEmpty(a)
-    // filter out the invalid values and (clean up) remove them
-    vs foreach {v =>
-      if (!isValid(a,v)) {
-        vs -= v
-      }
-    }
-    vs.map(_.value)
-  }
-  
-  /** invalidates all entries with a given cause */
-  def invalidate(c: Cause) {
-    invalidSince(c) = new Date()
-  }
-  
-  /** delete all data */
-  def clear {
-    underlying.clear
-    invalidSince.clear
+import scala.collection.mutable.ListBuffer
+abstract class HashMapToOrderedSet[A,B] extends HashMap[A,ListBuffer[B]] {
+  def value(b: B): Int
+  override def apply(a: A) = getOrElseUpdate(a, new ListBuffer[B])
+  def insert(a: A, b: B) {
+    val bs = apply(a)
+    val v = value(b)
+    val i = bs.indexWhere(x => value(x) > v)
+    bs.insert(i,b)
   }
 }
 

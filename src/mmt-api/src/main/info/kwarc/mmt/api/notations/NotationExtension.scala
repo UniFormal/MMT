@@ -13,6 +13,11 @@ import Conversions._
 abstract class Fixity {
    /** the elaboration into markers */
    def markers: List[Marker]
+   /** true if this notation can be used for multiple constants without ambiguity because it contains placeholders */
+   def isRelative = markers exists {
+       case _: PlaceholderDelimiter => true
+       case _ => false
+   }
    /** the string representation to use when serializing notations
     *  pair of "fixity type" and type-specific argument(s)
     */

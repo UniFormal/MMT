@@ -2,33 +2,271 @@ package info.kwarc.mmt.api.libraries
 
 import info.kwarc.mmt.api._
 import objects._
-import objects.Conversions._
+import utils._
 import modules._
-import utils.HashMapToSet
-import utils.MyList._
 
-import scala.collection.mutable.HashSet
+import scala.collection.mutable
+import scala.collection.mutable._
 
-class ImplicitGraph {
-  case class FromTo(from: MPath, to: MPath)
-  case class ImplicitMorph(path: List[MPath], morph: Term)
-  type Cause = MPath
-  val underlying = new utils.MoCHashMapToSet[FromTo,ImplicitMorph,Cause] {
-    private def mentions(mor: Term): Iterator[Cause] = mor match {
-      case OMS(q) => Iterator(q.module)
-      case OMPMOD(q,_) => Iterator(q)
-      case OMIDENT(OMPMOD(q,_)) => Iterator(q)
-      case OMStructuralInclude(q,r) => Iterator(q, r) 
-      case OMCOMP(ms) => ms.iterator flatMap mentions
-      case _ => Iterator.empty
+private object ImplicitGraph {
+  def emptyPath(i: MPath) = new IPath(i, Nil)
+
+  /** mutable, so must not be case class */
+  class IEdge(val from: MPath, val to: MPath, val mor: Option[Term]) {
+    def dependencies = to :: mor.map(mentions).getOrElse(Nil) // edges only depend on codomain
+    var valid = true
+    def toPath = new IPath(to, List(this))
+  }
+  class IPath(val to: MPath, val parts: List[IEdge]) {
+    def from = parts.headOption.map(_.from).getOrElse(to)
+    lazy val morphism = OMCOMP(parts.flatMap(_.mor.toList))
+    lazy val length = parts.count(_.mor.isDefined)
+    private var invalid = false
+    def valid = !invalid && {
+      val v = parts.forall(_.valid)
+      if (!v) invalid = true
+      v
     }
-      
-    def getCauses(ft: FromTo, im: ImplicitMorph) = {
-      Iterator(ft.from, ft.to) ++ im.path ++ mentions(im.morph)
+    def conc(that: IPath) = new IPath(that.to, this.parts ::: that.parts)
+  }
+  
+  private def mentions(mor: Term): List[MPath] = mor match {
+    case OMS(q) => List(q.module)
+    case OMPMOD(q,_) => List(q)
+    case OMIDENT(t) => mentions(t)
+    case OMStructuralInclude(q,r) => List(q, r) 
+    case OMCOMP(ms) => ms flatMap mentions
+    case OMINST(f,t,_) => List(f,t)
+    case _ => Nil
+  }
+
+  class PathMap extends HashMapToSet[MPath,IPath]
+}
+
+import ImplicitGraph._
+
+/** maintains a diagram o moprhisms; used in particular by [[Library]] for the diagram of implicit morphisms
+ * 
+ *  the diagram does not have to be commutative
+ *  
+ *  the generated category is cached so that lookups do not require traversals of the diagram
+ *  
+ *  every edge maintains its dependencies and paths can be invalidated by calling delete
+ *  invalidation is efficient: invalid paths are marked as invalid and removed only whenever they are encountered 
+ *  if an invalid path becomes valid again later, a new path instance is created for it
+ *  JVM garbage collection collects the invalid paths whenever they have been removed from everywhere
+ */
+class ImplicitGraph {
+  /** maps a node to all incoming paths; may contain invalid paths, see getIncoming */
+  private val incoming = new PathMap
+  /** maps a node to all outgoing paths; may contain invalid paths, see getOutgoing */
+  private val outgoing = new PathMap
+
+  private val primaryPath = new HashMap[(MPath,MPath),IPath]
+
+  /** maps a structural element to all edges that depends on it */
+  private val dependants = new HashMap[MPath,List[IEdge]]
+  
+  /** permanently removes invalid paths from the values of incoming or outgoing */
+  private def collectGarbage(ps: mutable.HashSet[IPath]) = {
+    //ps.foreach {p => if (!p.valid) ps -= p}
+    ps
+  }
+  
+  /** maps a node to all valid incoming paths */
+  private def getIncoming(to: MPath) = {
+    val ps = incoming(to)
+    collectGarbage(ps)
+  }
+  private def getIncomingWithEmpty(to: MPath) = {
+    Iterator(emptyPath(to)) ++ getIncoming(to).iterator
+  }
+  /** maps a node to all valid outgoing paths */
+  private def getOutgoing(from: MPath) = {
+    val ps = outgoing(from)
+    collectGarbage(ps)
+  }
+  private def getOutgoingWithEmpty(from: MPath) = {
+    Iterator(emptyPath(from)) ++ getOutgoing(from).iterator
+  }
+
+  /** maps a path to its dependants */
+  private def getDependants(p: MPath) = dependants.getOrElse(p, Nil)
+
+  /** adds a path to all stateful data structures */
+  private def addPath(p: IPath) {
+      incoming(p.to) += p
+      outgoing(p.from) += p
+      val tf = (p.from,p.to)
+      val update = primaryPath.get(tf) match {
+        case Some(q) => !q.valid || p.length < q.length
+        case None => true
+      }
+      if (update) primaryPath(tf) = p
+  }
+
+  private object Timing {
+    val timers @ List(add,add2,lup,lup2,del) = List(new Timer("add"), new Timer("add2"), new Timer("lup"), new Timer("lup2"), new Timer("delete"))
+  }
+  /** adds an implicit morphism
+   *  @param from domain
+   *  @param to codomain
+   *  @param mor the morphism; absent if identity (i.e., plain include)
+   */
+  def add(from: MPath, to: MPath, mor: Option[Term]) {
+    Timing.add {
+      val edge = new IEdge(from,to,mor)
+      val edgeP = edge.toPath
+      edge.dependencies.foreach {d => dependants(d) = edge :: getDependants(d)}
+      val intoFrom = getIncomingWithEmpty(from).toList
+      val outofTo = getOutgoingWithEmpty(to)
+      outofTo foreach {q =>
+        if (q.valid) {
+          val eq = edgeP conc q
+          intoFrom foreach {p =>
+            // peq = -p-> from -edge-> to -q->
+            // includes cases where p or q are empty paths, i.e., in particular e itself
+            if (p.valid) {
+              val peq = p conc eq
+              addPath(peq)
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  /** deletes all implicit morphisms that depend on an element, must be called when that element is deleted */
+  def delete(d: MPath) {
+    Timing.del {
+      getDependants(d) foreach {p =>
+        p.valid = false
+      }
+      dependants -= d
+      incoming -= d
+      //outgoing -= d // experimental: edges only depend on codomain
+    }
+  }
+
+  /** retrieves all implicit morphisms between two theories */
+  private def get(from: MPath, to: MPath) = {
+      val paths = getIncomingWithEmpty(to).filter {p =>
+        p.valid && p.from == from
+      }
+      val mors = paths.map(_.morphism)
+      mors.toList.distinct // TODO "toList" is unnecessary and very inefficient but scala complains (multiple places in this class)
+  }
+  
+  /** the most common lookup method: retrieves the implicit morphism between two theories (first if multiple), similar to get(from,to).headOption */
+  def apply(from: MPath, to: MPath): Option[Term] = {
+    val tf = (from,to)
+    Timing.lup {
+      val pp = primaryPath.get(tf)
+      pp match {
+        case Some(pp) if pp.valid => return Some(pp.morphism)
+        case _ =>
+      }
+      var least: Option[IPath] = None
+      getIncomingWithEmpty(to).foreach {p =>
+        if (p.valid && p.from == from) {
+          if (p.length == 0) {
+            primaryPath(tf) = p
+            return Some(p.morphism)
+          }
+          least match {
+            case Some(l) => if (p.length < l.length) least = Some(p)
+            case None => least = Some(p)
+          }
+        }
+      }
+      least.foreach {p => primaryPath(tf) = p}
+      least.map(_.morphism)
+    }
+  }
+  
+  /** retrieves all implicit morphisms into a theory */
+  private def getTo(to: MPath) = {
+    val paths = getIncoming(to)
+    val hs = new HashSet[(MPath,Term)]
+    paths.foreach {p =>
+      if (p.valid) {
+        hs += ((p.from, p.morphism))
+      }
+    }
+    hs
+  }
+  /** like getTo but with identity morphism */
+  def getToWithEmpty(to: MPath) = {
+    Timing.lup2 {
+    val hs = getTo(to)
+    hs += ((to, OMCOMP()))
+    hs
+    }
+  }
+
+  /** clears all data */
+  def clear {
+    incoming.clear
+    outgoing.clear
+    primaryPath.clear
+    dependants.clear
+    println(Timing.timers.mkString("\n"))
+  }
+  
+   /** retrieves the implicit morphism between two theory expressions (if any)
+    * @param from domain
+    * @param to codomain
+    * @return the implicit morphism if one exists
+    */
+   def apply(from: Term, to: Term) : Option[Term] = {
+      if (from == to) Some(OMCOMP()) else (from, to) match {
+         // atomic domain: case split on codomain
+         case (OMMOD(f), OMPMOD(t,_)) => apply(f,t)
+         case (OMMOD(f), TUnion(ts)) =>
+            val tsMors = ts.flatMap {t => apply(from,t).toList}
+            checkUnique(tsMors, from, to)
+         case (OMMOD(f), ComplexTheory(toCont)) =>
+            val toMors = toCont.getIncludes.flatMap {t => apply(f,t).toList}
+            checkUnique(toMors, from, to)
+         // otherwise: case split on domain for arbitrary codomain
+         case (OMPMOD(p, args), _) =>
+            // TODO check agreement with args
+            apply(OMMOD(p), to)
+         case (TUnion(ts), _) =>
+            if (ts.isEmpty) return Some(OMCOMP())
+            val tsMors = ts.map {t => (t, apply(t, from).getOrElse(return None))}
+            //TODO check agreement and return amalgamation of morphisms
+            None
+         // TODO remove unions or handle their interaction with ComplexTheory
+         case (ComplexTheory(fromC), _) =>
+            val fromCMors = fromC.map {
+               case IncludeVarDecl(_, tp,_) =>
+                  apply(tp, to)
+               case vd => to match {
+                  case ComplexTheory(toC) => Some(OMCOMP())
+                  case _ => None
+               }
+            }
+            //TODO check agreement and return amalgamation of morphisms
+            None
+         case _ => None // catches semiformal theories, which may be generated by the parser
+      }
+  }
+
+  private def checkUnique(mors: List[Term], from: Term, to: Term) = {
+    if (mors.isEmpty)
+      None
+    else {
+      val h = mors.head
+      if (mors.tail.forall(m => h == m))
+       Some(mors.head)
+      else {
+       println("not unique: " + mors)
+       None
+      }
     }
   }
 }
-
 
 
 /** maintains a binary relation on N where pairs in the relation are labeled with values from E

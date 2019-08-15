@@ -185,7 +185,7 @@ trait SolverAlgorithms {self: Solver =>
      // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term, h: History): Boolean = {
        log("checking by inference")
-       inferType(tm)(stack, h + "infering type") match {
+       inferType(tm)(stack, h + "inferring type") match {
          case Some(tmI) =>
            checkAfterInference(tmI, tpS, h)
          case None =>

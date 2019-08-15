@@ -250,36 +250,39 @@ class NotationBasedParser extends ObjectParser {
       case le: LexerExtension => le
     }
     var notExts: List[NotationExtension] = Nil
-    support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
-      // TODO technically, d must be translated along via first; but that never changes the notations that we collect
-      case c: Constant => // Declaration with HasNotation might collect too much here
-        var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
-        if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
-        //the unapplied notations consisting just of the name
-        val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
-        val app = c.not.toList
-        (unapp:::app).foreach {n =>
-          nots ::= ParsingRule(c.path, c.alternativeNames, n)
+    support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) =>
+      // TODO d must be translated along via first
+      // TODO notations from implicit structures and realizations are already in the theory; collecting them again causes ambiguity
+      d match {
+        case c: Constant => // Declaration with HasNotation might collect too much here
+          var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
+          if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
+          //the unapplied notations consisting just of the name
+          val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
+          val app = c.not.toList
+          (unapp:::app).foreach {n =>
+            nots ::= ParsingRule(c.path, c.alternativeNames, n)
+          }
+        case r: RuleConstant => r.df.foreach {
+          case ne: NotationExtension =>
+            notExts ::= ne
+          case le: LexerExtension =>
+            les ::= le
+          case rt: uom.RealizedType =>
+            rt.lexerExtension.foreach {les ::= _}
+          case _ =>
         }
-      case r: RuleConstant => r.df.foreach {
-        case ne: NotationExtension =>
-          notExts ::= ne
-        case le: LexerExtension =>
-          les ::= le
-        case rt: uom.RealizedType =>
-          rt.lexerExtension.foreach {les ::= _}
+        case de: DerivedContentElement =>
+          nots ::= unappNotation(de, Nil, 0)
+        case nm: NestedModule =>
+          val args = nm.module match {
+            case t: Theory => t.parameters.length
+            case v: View => 0
+          }
+          nots ::= unappNotation(nm.module, Nil, args)
         case _ =>
       }
-      case de: DerivedContentElement =>
-        nots ::= unappNotation(de, Nil, 0)
-      case nm: NestedModule =>
-        val args = nm.module match {
-          case t: Theory => t.parameters.length
-          case v: View => 0
-        }
-        nots ::= unappNotation(nm.module, Nil, args)
-      case _ =>
-    }}}
+    }}
     les = les.sortBy(- _.priority)
     (nots.distinct, les.distinct, notExts.distinct)
   }
@@ -309,7 +312,7 @@ class NotationBasedParser extends ObjectParser {
  /**
    * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
    * @param te the element to transform
-   * @param boundVars the variable names bound in this term (excluding the variables of the context of the parsing unit)
+   * @param boundNames the names bound in this term (excluding the variables of the context of the parsing unit)
    * @param pu the original ParsingUnit (constant during recursion)
    * @param attrib the resulting term should be a variable attribution
    */

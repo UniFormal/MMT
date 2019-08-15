@@ -58,7 +58,7 @@ object InferAmbiguous extends InferenceAndTypingRule(ObjectParser.oneOf,ObjectPa
                val stackN = stack ++ namedPartsI
                history += "trying to disambiguate: inferring type of all alternatives"
                // now try dryRun type inference on every alternative
-               val results = alternatives.zipWithIndex.map { case (a, i) =>
+               val results = alternatives.zipWithIndex.map {case (a, i) =>
                   history += s"trying number $i"
                   val res = checker.dryRun(true, (_: Any) => false) {
                      history.indented {
@@ -86,8 +86,8 @@ object InferAmbiguous extends InferenceAndTypingRule(ObjectParser.oneOf,ObjectPa
                   // but we can return the right result immediately
                   choose(theOne)
                } else if (nonFailures.count(_._1.isInstanceOf[Success[_]]) > 1) {
-                  history += "more than one alternative could be well-typed at this point"
-                  (None,None)
+                  checker.error("more than one alternative could be well-typed")
+                  (None,Some(false))
                } else if (nonFailures.length == alternatives.length) {
                   history += "unable to disambiguate"
                   // we learned nothing new
