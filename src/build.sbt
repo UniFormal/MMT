@@ -190,7 +190,7 @@ lazy val mmt = (project in file("mmt")).
 
 def apiJars(u: Utils) = Seq(
   "scala-compiler.jar",
-  "scala-reflect.jar",
+  "scala-library.jar",
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
