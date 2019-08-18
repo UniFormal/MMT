@@ -221,9 +221,8 @@ trait LMHHubArchiveEntry extends LMHHubDirectoryEntry {
 
   /** the list of dependencies of this archive */
   def dependencies: List[String] = {
-    val string = properties.getOrElse("dependencies", "").replace(",", " ")
     // check if we have a meta-inf repository, and if yes install it
-    val deps = (if(hub.hasGroup(group)) List(group + "/meta-inf") else Nil) ::: stringToList(string)
+    val deps = (if(hub.hasGroup(group)) List(group + "/meta-inf") else Nil) ::: archive.dependencies
     deps.distinct
   }
 
