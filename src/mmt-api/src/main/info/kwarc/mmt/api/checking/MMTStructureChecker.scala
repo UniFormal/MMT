@@ -391,6 +391,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.fromC.get foreach {t => checkTheory(Some(CPath(s.path, TypeComponent)), context, t)}
         // check definiens, use it to update/infer domain
         val (thy, linkOpt) = content.getDomain(s)
+        linkOpt foreach {l =>
+          if (s.isImplicit && linkOpt.isDefined) {
+            throw InvalidElement(s,s.feature + " in a " + l.feature + " may not be implicit")
+          }
+        }
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>

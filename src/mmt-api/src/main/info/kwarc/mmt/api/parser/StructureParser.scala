@@ -570,8 +570,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 case _ =>
                   fail("domain must be atomic: " + tpC.get)
               }
+              // includes into theories are implicit morphisms
+              val isImplicit = mod match {
+                case _: AbstractTheory => true
+                case _ => false
+              }
+              // realizations must be total
               val isTotal = keyword == "realize"
-              val as = new Structure(mod.toTerm, name, tpC, dfC, true, isTotal)
+              val as = new Structure(mod.toTerm, name, tpC, dfC, isImplicit=isImplicit, isTotal=isTotal)
               addDeclaration(as)
         case "structure" => readStructure(parentInfo, mod, context, isImplicit = false, isTotal = false)
         case "theory" => readTheory(parentInfo, context)

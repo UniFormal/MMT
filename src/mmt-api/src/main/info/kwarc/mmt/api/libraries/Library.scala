@@ -980,7 +980,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   private def checkAtomic(t: Term) = t match {
     case OMPMOD(p,_) => Some(p)
     case OMSemiFormal(_) => None // this basically only happens when the parsing has previously failedterm has previously failpeople would not expect this to be implicit; error
-    case _ => throw AddError("implicit morphism must have atomic domain and codomain")
+    case _ =>
+      throw AddError("implicit morphism must have atomic domain and codomain")
   }
 
   // shared code for adding an include
