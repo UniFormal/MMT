@@ -66,28 +66,31 @@ class ImplicitGraph {
 
   /** maps a structural element to all edges that depends on it */
   private val dependants = new HashMap[MPath,List[IEdge]]
-  
-  /** permanently removes invalid paths from the values of incoming or outgoing */
-  private def collectGarbage(ps: mutable.HashSet[IPath]) = {
-    //ps.foreach {p => if (!p.valid) ps -= p}
-    ps
+
+  /** iterates over the valid paths in a set and, as a side effect, removes all invalid ones from the set */
+  private def iterateValid(ps: HashSet[IPath]) = {
+     ps.iterator.filter {p =>
+       val v = p.valid
+       if (!v) ps -= p
+       v
+     }
   }
   
   /** maps a node to all valid incoming paths */
   private def getIncoming(to: MPath) = {
     val ps = incoming(to)
-    collectGarbage(ps)
-  }
-  private def getIncomingWithEmpty(to: MPath) = {
-    Iterator(emptyPath(to)) ++ getIncoming(to).iterator
+    iterateValid(ps)
   }
   /** maps a node to all valid outgoing paths */
   private def getOutgoing(from: MPath) = {
     val ps = outgoing(from)
-    collectGarbage(ps)
+    iterateValid(ps)
+  }
+  private def getIncomingWithEmpty(to: MPath) = {
+    Iterator(emptyPath(to)) ++ getIncoming(to)
   }
   private def getOutgoingWithEmpty(from: MPath) = {
-    Iterator(emptyPath(from)) ++ getOutgoing(from).iterator
+    Iterator(emptyPath(from)) ++ getOutgoing(from)
   }
 
   /** maps a path to its dependants */
@@ -121,16 +124,12 @@ class ImplicitGraph {
       val intoFrom = getIncomingWithEmpty(from).toList
       val outofTo = getOutgoingWithEmpty(to)
       outofTo foreach {q =>
-        if (q.valid) {
-          val eq = edgeP conc q
-          intoFrom foreach {p =>
-            // peq = -p-> from -edge-> to -q->
-            // includes cases where p or q are empty paths, i.e., in particular e itself
-            if (p.valid) {
-              val peq = p conc eq
-              addPath(peq)
-            }
-          }
+        val eq = edgeP conc q
+        intoFrom foreach {p =>
+          // peq = -p-> from -edge-> to -q->
+          // includes cases where p or q are empty paths, i.e., in particular e itself
+          val peq = p conc eq
+          addPath(peq)
         }
       }
     }
@@ -151,7 +150,7 @@ class ImplicitGraph {
   /** retrieves all implicit morphisms between two theories */
   private def get(from: MPath, to: MPath) = {
       val paths = getIncomingWithEmpty(to).filter {p =>
-        p.valid && p.from == from
+        p.from == from
       }
       val mors = paths.map(_.morphism)
       mors.toList.distinct // TODO "toList" is unnecessary and very inefficient but scala complains (multiple places in this class)
@@ -168,7 +167,7 @@ class ImplicitGraph {
       }
       var least: Option[IPath] = None
       getIncomingWithEmpty(to).foreach {p =>
-        if (p.valid && p.from == from) {
+        if (p.from == from) {
           if (p.length == 0) {
             primaryPath(tf) = p
             return Some(p.morphism)
@@ -189,9 +188,7 @@ class ImplicitGraph {
     val paths = getIncoming(to)
     val hs = new HashSet[(MPath,Term)]
     paths.foreach {p =>
-      if (p.valid) {
-        hs += ((p.from, p.morphism))
-      }
+      hs += ((p.from, p.morphism))
     }
     hs
   }
