@@ -958,9 +958,14 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       // (*)
       //t.getRealizees foreach addIncludeToImplicit
       case l: Link if l.isImplicit && !before =>
-        val f = checkAtomic(l.from)
-        val t = checkAtomic(l.to)
-        implicitGraph.add(f, t, Some(l.toTerm))
+        val fO = checkAtomic(l.from)
+        val tO = checkAtomic(l.to)
+        (fO,tO) match {
+          case (Some(f),Some(t)) =>
+            implicitGraph.add(f, t, Some(l.toTerm))
+          case _ =>
+        }
+
       case _ =>
     }
   }
@@ -973,7 +978,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   private def checkAtomic(t: Term) = t match {
-    case OMPMOD(p,_) => p
+    case OMPMOD(p,_) => Some(p)
+    case OMSemiFormal(_) => None // this basically only happens when the parsing has previously failedterm has previously failpeople would not expect this to be implicit; error
     case _ => throw AddError("implicit morphism must have atomic domain and codomain")
   }
 
