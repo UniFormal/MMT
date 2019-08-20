@@ -563,6 +563,11 @@ object Importer
                 thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.experimental))
               }
 
+              for (dep <- decl.deps) {
+                val dep_item = thy_draft.content.get_thm(dep)
+                thy_draft.rdf_triple(Ontology.binary(item.global_name, Ontology.ULO.uses, dep_item.global_name))
+              }
+
               val tp = thy_draft.content.import_prop(decl.prop)
               add_constant(item, tp, Some(Isabelle.Unknown.term))
 
