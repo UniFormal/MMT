@@ -752,7 +752,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * @return all pairs (theory,via) such that "via: theory --implicit--> to" (transitive and reflexive)
     */
   private def visibleVia(to: Term): List[(MPath, Term)] = {
-    TheoryExp.getSupport(to) flatMap {p => implicitGraph.getToWithEmpty(p)}
+    TheoryExp.getSupport(to) flatMap {p => implicitGraph.getTo(p,true)}
   }
 
 
@@ -929,30 +929,33 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       // before == false
       case Include(id) if !before  =>
         // elaboration includes do not have to be added to implicits because the implicitGraph computes them anyway
-        id.home match {
-          case OMMOD(h) if !se.getOrigin.isInstanceOf[ElaborationOf] =>
-            get(h) match {
-              case thy: Theory =>
-                val oldImpl = implicitGraph(OMMOD(id.from), id.home) flatMap {
-                  case OMCOMP(Nil) => None
-                  case i => Some(i)
-                }
-                (id.df.isEmpty, oldImpl) match {
-                  case (true, Some(i)) =>
-                  // an undefined include acquires an existing non-include implicit morphism as its definiens
-                  // MoC design flaw because the implicit morphism may depend on a previous version of the theory
-                  // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
-                  //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
-                  case _ =>
-                    // this should be done at (*) below for realizations to avoid dependency cycles
-                    // but it causes problems when includes are registered as implicit before the realization is encountered
-                    //if (!id.isRealization)
-                    //realizations are only added when totality has been checked at the end of the theory
-                    addIncludeToImplicit(id)
-                }
-              case _ =>
-            }
-          case _ =>
+        if (!se.getOrigin.isInstanceOf[ElaborationOf]) {
+          //println("implicit edge: " + id.from + " " + id.home + " " + id.asMorphism)
+          id.home match {
+            case OMMOD(h) =>
+              get(h) match {
+                case thy: Theory =>
+                  val oldImpl = implicitGraph(OMMOD(id.from),id.home) flatMap {
+                    case OMCOMP(Nil) => None
+                    case i => Some(i)
+                  }
+                  (id.df.isEmpty,oldImpl) match {
+                    case (true,Some(i)) =>
+                    // an undefined include acquires an existing non-include implicit morphism as its definiens
+                    // MoC design flaw because the implicit morphism may depend on a previous version of the theory
+                    // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
+                    //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
+                    case _ =>
+                      // this should be done at (*) below for realizations to avoid dependency cycles
+                      // but it causes problems when includes are registered as implicit before the realization is encountered
+                      //if (!id.isRealization)
+                      //realizations are only added when totality has been checked at the end of the theory
+                      addIncludeToImplicit(id)
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
         }
       case t: Theory if !before  =>
       // (*)

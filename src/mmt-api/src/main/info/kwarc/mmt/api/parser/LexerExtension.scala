@@ -51,15 +51,16 @@ abstract class LexerExtension extends Rule {
  * a LexerExtension that detects id (letter sequences) Tokens prefixed by delim
  *
  * @param delim the begin Char
+ * @param includeDelim whether the delimiter is part of the token
  *
  * typical example: PrefixedTokenLexer(\)
  */
-class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim: Boolean = true) extends LexerExtension {
+abstract class PrefixedTokenLexer(delim: Char, includeDelim: Boolean = true) extends LexerExtension {
   def trigger = Some(delim.toString)
   def apply(s: String, index: Int, firstPosition: SourcePosition): Option[Token] = {
      if (s(index) != delim) return None
      var i = index+1
-     while (i < s.length && !s(i).isWhitespace && (!onlyLetters || s(i).isLetter)) {
+     while (i < s.length && include(s(i))) {
         i += 1
      }
      val start = if (includeDelim) index else index + 1
@@ -67,9 +68,13 @@ class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim:
      val text = if (includeDelim) None else Some(delim + word)
      Some(Token(word, firstPosition, true, text))
   }
+  /** true for the characters to be included before ending the token */
+  @inline def include(c: Char): Boolean
 }
 
-object MMTURILexer extends PrefixedTokenLexer('☞', false, false)
+object MMTURILexer extends PrefixedTokenLexer('☞', false) {
+  @inline override def include(c: Char) = !c.isWhitespace && ! ("()" contains c)
+}
 
 /**
  * replaces words during lexing

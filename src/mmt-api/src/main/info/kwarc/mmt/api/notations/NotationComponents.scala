@@ -614,6 +614,7 @@ object Marker {
 
    def parse(s: String) : Marker = s match {
          case s : String if s.startsWith("%L") =>
+           // %L`i[d|c][!]_m resulting in LocalNotationInfo(i,[d|c],[!]) added to marker m, i.e., argument i determines notations to use for argument m
            var i = 2
            while (charAtIs(s, i, _.isDigit)) {i+=1}
            val n = s.substring(2,i).toInt
