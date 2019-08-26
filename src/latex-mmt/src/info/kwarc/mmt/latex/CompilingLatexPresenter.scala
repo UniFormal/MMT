@@ -45,7 +45,6 @@ object Common {
   private val inverseUnicodeMap = new scala.collection.mutable.HashMap[String,String]
   /** this is not used by default; users can add it as a rule if they have difficulties typing Unicode characters in LaTeX */
   object LatexToUnicodeConverter extends LexerExtension {
-    override def trigger: Option[String] = None
     def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
       if (s(i) != '\\') return None
       var j = i+1
