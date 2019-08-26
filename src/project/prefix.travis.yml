@@ -15,6 +15,7 @@ env:
   global:
   - ENCRYPTION_LABEL: "25a07036478c"
   - COMMIT_AUTHOR_EMAIL: "45969094+kwarcbot@users.noreply.github.com"
+  - JAVA_OPTS: "-Xmx8192m"
 
 # use java, and install sbt on OS X
 language: java

@@ -13,6 +13,7 @@ object RunJavaClass {
 
     val args = List(
       System.getProperty("java.home") + java.io.File.separator + "bin" + java.io.File.separator + "java",
+    ) ::: sys.env.get("JAVA_OPTS").map(_.split(" ").toList).getOrElse(Nil) ::: List(
       "-cp",
       cp,
       clz,
