@@ -671,13 +671,17 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             // most important special case: copy over notation of c if a does not have one and it is unambiguous
             (a.notC.parsing, c.notC.parsing) match {
               case (None, Some(cn)) =>
-                // TODO automatically make the notation inambiguous by changing its delimiters
                 lazy val impl = l match {
                   case _: AbstractTheory => true
                   case l: Link => l.isImplicit
                 }
-                if (cn.fixity.isRelative || impl) {
-                  newNotC.update(ParsingNotationComponent, cn)
+                val cnR = if (impl) Some(cn) else {
+                  // make inambiguous by inserting instance name
+                  val fixR = cn.fixity.relativize
+                  fixR map {f => cn.copy(fixity = f)}
+                }
+                cnR foreach {n =>
+                  newNotC.update(ParsingNotationComponent, n)
                 }
               case _ =>
             }

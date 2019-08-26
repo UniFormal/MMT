@@ -67,13 +67,20 @@ abstract class PlaceholderDelimiter extends Delimiter {
 }
 
 /**
- * expands to the name of the instance
+ * expands by prepending the instance name to a delimiter
  *
- * only legal for notations within patterns
+ * @param base delimiter independent of instance name
  */
-case class InstanceName() extends PlaceholderDelimiter {
-   override def toString = "%i"
-   override def expand(path: ContentPath, alias: List[LocalName]) = Delim(if (path.name.length <= 1) "" else path.name.dropComplex.init.toPath)
+case class InstanceName(base: Delim) extends PlaceholderDelimiter {
+   override def toString = "%i" + base
+   override def expand(path: ContentPath, alias: List[LocalName]) = {
+     val simpleName = path.name.dropComplex
+     val d = if (simpleName.length <= 1)
+       ""
+     else
+       simpleName.init.toPath+"/"
+     base.copy(s = d+base.s)
+   }
 }
 
 /**
@@ -161,11 +168,7 @@ sealed abstract class Arg extends ArgumentMarker {
   }
 }
 
-/** a sequence argument
-  *
-  * @param n absolute value is the argument position, negative iff it is in the binding scope
- * @param sep the delimiter between elements of the sequence
- */
+/** a sequence argument */
 sealed abstract class SeqArg extends ArgumentMarker {
   val sep: Delim
   def makeCorrespondingArg(n: Int, remap: Int => Int): Arg
@@ -635,7 +638,12 @@ object Marker {
              case am: ArgumentMarker => am.addLocalNotationInfo(lni)
              case _ => throw ParseError("only argument markers can use local notations" + s)
            }
-         case "%i" => InstanceName()
+         case s if s.startsWith("%i") =>
+           val base = parse(s.substring(2))
+           base match {
+             case d: Delim => InstanceName(d)
+             case _ => throw ParseError("%i must be followed by plain delimiter: " + s)
+           }
          case "%n" => SymbolName()
          case "%a" => AttributedObject
          case s: String if s.startsWith("%D") || s.startsWith("%R") =>

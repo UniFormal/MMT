@@ -641,7 +641,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
             case ViewKey(_) => readView(parentInfo, context, isImplicit = true)
-            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true, isTotal = true)
+            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true, isTotal = false)
             case _ => throw makeError(reg2, "only links can be implicit here")
           }
         case "total" =>
