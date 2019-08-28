@@ -831,7 +831,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         .real.update("headless_check_delay", options.real("mmt_check_delay"))
         .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
         .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
-        .bool.update("execution_eager", true)
 
     private val session_deps =
       isabelle.Dump.dependencies(dump_options, progress = progress,
