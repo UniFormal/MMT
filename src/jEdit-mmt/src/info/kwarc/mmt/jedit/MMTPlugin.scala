@@ -150,12 +150,11 @@ class MMTPlugin extends EBPlugin with Logger {
       val gutterExt = new MMTGutterExtension(this, editPane)
       val annotExt = new MMTGutterAnnotations(this, editPane)
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
-      //jEdit mess still happens with the following 4 lines commented out
       // This only painted delimiters, which is now done by syntax highlighting, and did semantic highlighting, which never worked anyway
-      //painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
-      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
-      //ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
-      //ta.getGutter.addMouseListener(annotExt.mouseAdapter)
+      painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
+      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
+      ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
+      ta.getGutter.addMouseListener(annotExt.mouseAdapter)
     }
     val ma = new MMTMouseAdapter(editPane)
     painter.addMouseListener(ma)

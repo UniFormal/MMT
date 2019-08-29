@@ -214,7 +214,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
 
 /** A variant of InferenceRule that may additionally use the expected type.
  *  Thus it can be used both for type inference and for type checking.
- *  @param head the head of the term whose type this rule infers
+ *  @param h the head of the term whose type this rule infers
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**

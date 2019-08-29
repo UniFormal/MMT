@@ -177,7 +177,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    * Fatal errors are recovered from by defaulting to [[DefaultObjectParser]]
    */
   private def puCont(pu: ParsingUnit)(implicit state: ParserState): ParseResult = {
-    def default = DefaultObjectParser(pu)(state.errorCont) 
+    def default = DefaultObjectParser(pu)(state.errorCont)
     if (state.ps.isKilled) return default
     try {
       pu.diesWith(state.ps)
@@ -349,6 +349,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
       val notation = TextNotation.parse(notString, state.namespaces)
+      SourceRef.update(notation,state.makeSourceRef(SourceRegion(treg.start,state.reader.getLastReadSourcePosition)))
       nc(c) = notation
     }
   }
@@ -569,8 +570,14 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                 case _ =>
                   fail("domain must be atomic: " + tpC.get)
               }
+              // includes into theories are implicit morphisms
+              val isImplicit = mod match {
+                case _: AbstractTheory => true
+                case _ => false
+              }
+              // realizations must be total
               val isTotal = keyword == "realize"
-              val as = new Structure(mod.toTerm, name, tpC, dfC, true, isTotal)
+              val as = new Structure(mod.toTerm, name, tpC, dfC, isImplicit=isImplicit, isTotal=isTotal)
               addDeclaration(as)
         case "structure" => readStructure(parentInfo, mod, context, isImplicit = false, isTotal = false)
         case "theory" => readTheory(parentInfo, context)
@@ -634,7 +641,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           val (keyword2, reg2) = state.reader.readToken
           keyword2 match {
             case ViewKey(_) => readView(parentInfo, context, isImplicit = true)
-            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true, isTotal = true)
+            case "structure" => readStructure(parentInfo, mod, context, isImplicit = true, isTotal = false)
             case _ => throw makeError(reg2, "only links can be implicit here")
           }
         case "total" =>
@@ -943,10 +950,10 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     List("#" -> ParsingNotationComponent, "##" -> PresentationNotationComponent).map{case (s,k) => s -> (k,nc)}
 
   /** reads the components of a [[Constant]]
- *
+    *
     * @param givenName the name of the constant
-    * @param parent the containing [[DeclaredModule]]
-    * @param link the home theory for term components
+    * @param mod the containing element
+    * @param context the context for term components
     */
   private def readConstant(givenName: LocalName, mod: ModuleOrLink,
                            context: Context)(implicit state: ParserState): Constant = {

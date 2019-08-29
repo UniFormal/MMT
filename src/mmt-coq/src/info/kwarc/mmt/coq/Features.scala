@@ -17,7 +17,7 @@ import scala.collection.mutable
 class Inductive extends StructuralFeature("Inductive") {
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = ???
-  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = new Elaboration {
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment] = None): Elaboration = new Elaboration {
     override def getO(name: LocalName): Option[Declaration] = dd.getO(name) match {
       case Some(c: Constant) => Some(Constant(parent.toTerm,c.name,/*LocalName(dd.name + "_C_" + dd.getPrimitiveDeclarations.indexOf(c)) ::*/ c.alias,c.tp,None,c.rl))
       case _ => None
@@ -30,7 +30,7 @@ class Inductive extends StructuralFeature("Inductive") {
 class CoInductive extends StructuralFeature("CoInductive") {
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = ???
-  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = new Elaboration {
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment] = None): Elaboration = new Elaboration {
     override def getO(name: LocalName): Option[Declaration] = dd.getO(name) match {
       case Some(c: Constant) => Some(Constant(parent.toTerm,c.name,Nil,c.tp,None,c.rl))
       case _ => None
@@ -45,7 +45,7 @@ class Section extends StructuralFeature("Section") {
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = ???
 
-  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = new Elaboration {
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment] = None): Elaboration = new Elaboration {
 
     lazy val constants = {
       var variables: List[GlobalName] = Nil
@@ -118,7 +118,7 @@ class CoqModule extends StructuralFeature("Module") {
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
-  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = {
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment] = None): Elaboration = {
     val (iresult,mp) = Modules.moduleElab(parent,dd,controller)
     val result = iresult ::: {
       val inc = PlainInclude(mp,parent.modulePath)
@@ -163,7 +163,7 @@ class CoqModuleType extends StructuralFeature("ModuleType") {
 
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
-  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration = {
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment] = None): Elaboration = {
     val (result,_) = Modules.moduleElab(parent,dd,controller)
 
     new Elaboration {

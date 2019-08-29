@@ -12,14 +12,15 @@ import presentation._
  * @param home the [[Term]] representing the parent theory
  * @param name the name of the structure
  * @param tpC the domain theory
- * @param isImplicit true iff the link is implicit
+ * @param isImplicit true iff the link is implicit; only allowed if the structure is inside a theory
  */
 class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean, val isTotal: Boolean) extends Declaration with Link with HasType {
    type ThisType = Structure
    val feature = "structure"
    /** the domain of a structure is its type */
    def fromC = tpC
-   /** the domain of a structure is its home theory*/
+   /** the codomain of a structure is its home theory */
+   // TODO this is not the codomain for a structure assignment in a link
    val toC = new FinalTermContainer(home)
    def namePrefix = name
    def isInclude = Include.unapply(this).isDefined
@@ -120,7 +121,7 @@ object Include {
       val (argsN,dfN) = if (df.isEmpty)
         (args,df)
       else
-        (Nil, Some(OMCOMP(OMINST(from,args) :: df.toList)))
+        (Nil, Some(OMCOMP(OMINST(from,home.toMPath,args) :: df.toList)))
       Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, true, total)
    }
    def unapply(t: ContentElement) : Option[IncludeData] = t match {
@@ -148,7 +149,7 @@ case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Ter
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */
   def asMorphism = {
     if (isRealization) OMStructuralInclude(from, home.toMPath)
-    else OMCOMP(OMINST(from, args) :: df.toList)
+    else OMCOMP(OMINST(from, home.toMPath, args) :: df.toList)
   }
 
   def toStructure = Include(home, from, args, df, total)

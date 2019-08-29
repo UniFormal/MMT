@@ -185,7 +185,7 @@ trait SolverAlgorithms {self: Solver =>
      // continuation if we resort to infering the type of tm
      def checkByInference(tpS: Term, h: History): Boolean = {
        log("checking by inference")
-       inferType(tm)(stack, h + "infering type") match {
+       inferType(tm)(stack, h + "inferring type") match {
          case Some(tmI) =>
            checkAfterInference(tmI, tpS, h)
          case None =>
@@ -322,8 +322,8 @@ trait SolverAlgorithms {self: Solver =>
       val tm2 = j.tm2
       val tpOpt = j.tpOpt
       implicit val stack = j.stack
-      val tm1S = simplify(tm1)
-      val tm2S = simplify(tm2)
+      val tm1S = simplify(headNormalize(tm1))
+      val tm2S = simplify(headNormalize(tm2))
       // 1) foundation-independent cases, e.g., identical terms, solving unknowns
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) =>
@@ -379,7 +379,7 @@ trait SolverAlgorithms {self: Solver =>
            val itp = inferType(tm1S)(stack, history + "inferring omitted type") orElse
                      inferType(tm2S)(stack, history + "inferring omitted type")
            itp.getOrElse(return delay(Equality(stack, tm1S, tm2S, None)))
-     }
+      }
       // try to simplify the type until an equality rule is applicable
       val (tpS, rOpt) = safeSimplifyUntil(tp) {t =>
         typeBasedEqualityRules find {r =>
@@ -413,9 +413,8 @@ trait SolverAlgorithms {self: Solver =>
     *
     * @return true if equal
     */
-   private def checkEqualityTermBased(t1: Term, t2: Term)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
-     log("equality (trying congruence): " + presentObj(t1) + " = " + presentObj(t2))
-     val List(t1S,t2S) = List(t1, t2) map headNormalize
+   private def checkEqualityTermBased(t1S: Term, t2S: Term)(implicit stack : Stack, history: History, tp: Term) : Boolean = {
+     log("equality (trying congruence): " + presentObj(t1S) + " = " + presentObj(t2S))
      if (t1S hasheq t2S) {
        true
      } else if (!stability.is(t1S) || !stability.is(t2S)) {

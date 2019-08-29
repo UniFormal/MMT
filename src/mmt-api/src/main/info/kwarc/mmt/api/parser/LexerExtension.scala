@@ -41,20 +41,26 @@ abstract class LexerExtension extends Rule {
     * Make sure to call StringSlice(s,i) instead of s.substring(i) for efficiency.
     */
    def apply(s: String, i: Int, firstPosition: SourcePosition): Option[PrimitiveTokenListElem]
+   /** if given, only applies to tokens that start with trigger */
+   def trigger: Option[String]
+   /** lexer with longer triggers have higher priority */
+   override def priority = trigger.map(_.length).getOrElse(0)
 }
 
 /**
  * a LexerExtension that detects id (letter sequences) Tokens prefixed by delim
  *
  * @param delim the begin Char
+ * @param includeDelim whether the delimiter is part of the token
  *
  * typical example: PrefixedTokenLexer(\)
  */
-class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim: Boolean = true) extends LexerExtension {
+abstract class PrefixedTokenLexer(delim: Char, includeDelim: Boolean = true) extends LexerExtension {
+  def trigger = Some(delim.toString)
   def apply(s: String, index: Int, firstPosition: SourcePosition): Option[Token] = {
      if (s(index) != delim) return None
      var i = index+1
-     while (i < s.length && !s(i).isWhitespace && (!onlyLetters || s(i).isLetter)) {
+     while (i < s.length && include(s(i))) {
         i += 1
      }
      val start = if (includeDelim) index else index + 1
@@ -62,9 +68,13 @@ class PrefixedTokenLexer(delim: Char, onlyLetters: Boolean = true, includeDelim:
      val text = if (includeDelim) None else Some(delim + word)
      Some(Token(word, firstPosition, true, text))
   }
+  /** true for the characters to be included before ending the token */
+  @inline def include(c: Char): Boolean
 }
 
-object MMTURILexer extends PrefixedTokenLexer('☞', false, false)
+object MMTURILexer extends PrefixedTokenLexer('☞', false) {
+  @inline override def include(c: Char) = !c.isWhitespace && ! ("()" contains c)
+}
 
 /**
  * replaces words during lexing
@@ -76,7 +86,8 @@ abstract class WordReplacer extends LexerExtension {
    def maps: List[(String,String)]
    /** longest keys are tried first */
    // lazy to make sure it does not run during class initialization, which is hard to debug
-   private lazy val mapsSorted = maps.sortBy {case (k,_) => -k.length} 
+   private lazy val mapsSorted = maps.sortBy {case (k,_) => -k.length}
+   def trigger = None
    def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
       val si = StringSlice(s,i)
       val km = mapsSorted mapFind {case (k,m) =>
@@ -134,6 +145,8 @@ abstract class LexFunction {
     * @return true iff this extension accepts a Token that begins at s(i)
     */
    def applicable(s: String, i: Int): Boolean
+   def trigger: Option[String]
+
    /** @param s the string to lex
     *  @param i the current position in s
     *  @return the result of lexing, and the original input that was lexed (including escape sequences etc.)
@@ -171,6 +184,7 @@ class LexParseExtension(lc: LexFunction, pc: ParseFunction) extends LexerExtensi
    }
 
    def unapply(t: Term) = lc.unapply(pc.unapply(t))
+   def trigger = lc.trigger
 }
 
 
@@ -217,6 +231,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
       containsperiod
     } else isnumber
   }
+  def trigger = None
   def apply(s: String, index: Int) = {
      var i = index
      def scanDigits {
@@ -261,6 +276,7 @@ class NumberLiteralLexer(floatAllowed: Boolean, fractionAllowed: Boolean, floatR
  */
 class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
   def applicable(s: String, i: Int) = StringSlice(s,i).startsWith(begin)
+  def trigger = Some(begin)
   def apply(s: String, index: Int) = {
      val first = index+begin.length
      var i = first
@@ -292,6 +308,7 @@ class AsymmetricEscapeLexer(begin: String, end: String) extends LexFunction {
  */
 class SymmetricEscapeLexer(delim: Char, exceptAfter: Char) extends LexFunction {
   def applicable(s: String, i: Int) = s(i) == delim
+  def trigger = Some(delim.toString)
   def apply(s: String, index: Int) = {
      var i = index+1
      while (i < s.length && s(i) != delim) {
@@ -315,6 +332,7 @@ class FixedLengthLiteralLexer(rt: uom.RealizedType, begin: String, length: Int) 
       val t = rt.parse(text)
       Some(CFExternalToken(begin+text, firstPosition, t))
    }
+  def trigger = None
 }
 
 
@@ -323,13 +341,14 @@ case class FiniteKeywordsLexer(keys : List[String]) extends LexFunction {
   val sortedkeys = keys.sortBy(k => -k.length)
   override def unapply(s: String): String = s
 
-  override def applicable(s : String, i : Int) : Boolean = {
+  def applicable(s : String, i : Int) : Boolean = {
     if (i!=0 && s(i-1).isLetterOrDigit) return false
     val si = StringSlice(s,i)
     sortedkeys.exists {k => si.startsWith(k) && (si.length == k.length || !si.charAt(k.length).isLetterOrDigit)}
   }
+  def trigger = None
 
-  override def apply(s: String, i: Int): (String,String) = {
+  def apply(s: String, i: Int): (String,String) = {
     val ret = sortedkeys.find(k => StringSlice(s,i).startsWith(k)).get
     (ret,ret)
   }
@@ -406,19 +425,20 @@ case class StringInterpolationToken(text: String, firstPosition: SourcePosition,
 /**
  * A LexerExtension for string interpolation.
  *
- * @param trigger the first part of the opening  string before
+ * @param operator the first part of the opening  string before
  * @param str string delimiters for
  * @param mmt delimiters for mmt terms inside the string
  *
- * The opening bracket is split into two parts so that multiple instances with different triggers can coexist if they use the same str-bracket.
- * The lexed string is of the form: trigger str.begin S(0) mmt.begin M(0) mmt.end S(1) ... str.end
- * str.begin and str.end may occur inside M(i) if and only if they are part of another string interpolation (possibly with a different trigger).
+ * The opening bracket is split into two parts so that multiple instances with different operators can coexist if they use the same str-bracket.
+ * The lexed string is of the form: operator str.begin S(0) mmt.begin M(0) mmt.end S(1) ... str.end
+ * str.begin and str.end may occur inside M(i) if and only if they are part of another string interpolation (possibly with a different operator).
  *
  * We do not store this nesting structure here - that is handled when recursively parsing M(i) later. But we keep track of it to avoid stopping too early.
  */
-abstract class StringInterpolationLexer(trigger: String, str: Bracket, val mmt: Bracket) extends LexerExtension {
-  def begin = trigger + str.begin
+abstract class StringInterpolationLexer(operator: String, str: Bracket, val mmt: Bracket) extends LexerExtension {
+  def begin = operator + str.begin
   def end = str.end
+  def trigger = Some(begin)
   /**
    * builds a term from the interpolated string
    * pre: parts begins and ends with StringPart, part types alternate

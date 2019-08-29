@@ -78,7 +78,7 @@ abstract class Lookup {self =>
       }
    }
 
-   def visible(to: Term): HashSet[Term]
+   def visible(to: Term): Iterable[MPath]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
@@ -137,15 +137,9 @@ abstract class Lookup {self =>
     }
   }
 
-  /** resolves a name in a module using any included or realized theories */
-  def resolveRealizedName(parent: ModuleOrLink, name: LocalName): List[GlobalName] = {
-    val direct = parent match {
-      case t: AbstractTheory =>
-        t.getRealizees.map(_.from)
-      case l: Link =>
-        TheoryExp.getSupport(l.from)
-    }
-    val withIncludes = direct.flatMap {p =>
+  /** resolves a name in a list of theories using any included theory, possibly inserting include steps */
+  def resolveName(parents: List[MPath], name: LocalName): List[GlobalName] = {
+    val withIncludes = parents.flatMap {p =>
       getO(p).toList.flatMap {
         case thy: Theory => p :: thy.getAllIncludes.mapPartial {i =>
           if (i.df.isEmpty) Some(i.from) else None
@@ -161,7 +155,7 @@ abstract class Lookup {self =>
           else {
             dom.mapPartial {n =>
               // drop all complex steps and try again
-              val nS = LocalName(n.steps.filter(_.isInstanceOf[SimpleStep]))
+              val nS = n.dropComplex
               if (nS == name) Some(p ? n)
               else None
             }
@@ -170,6 +164,17 @@ abstract class Lookup {self =>
       }
     }
     withIncludes flatMap resolveIn
+  }
+
+  /** resolves a name in a module using any included or realized theories */
+  def resolveRealizedName(parent: ModuleOrLink, name: LocalName): List[GlobalName] = {
+    val direct = parent match {
+      case t: AbstractTheory =>
+        t.getRealizees.map(_.from)
+      case l: Link =>
+        TheoryExp.getSupport(l.from)
+    }
+    resolveName(direct, name)
   }
   
   /**

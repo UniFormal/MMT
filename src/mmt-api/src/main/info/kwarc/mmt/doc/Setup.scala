@@ -42,7 +42,7 @@ class Setup extends ShellExtension("setup") {
       log("\n\n\n\nThis is MMT's setup routine.\n" +
               "MMT is provided self-contained, so there is not much to do.\n" +
               "But I'll create a few auxiliary files for you and (if you have 'git' and internet) checkout some basic archives.\n" +
-              "I can also setup the integration with jEdit for you.\n\n\n"
+              "I will also try to setup the integration with jEdit for you.\n\n\n"
       )
       val l = args.length
       if (l > 4) {
@@ -57,11 +57,11 @@ class Setup extends ShellExtension("setup") {
         val (sf, cf) = shell.runStyle match {
           case d: DeployRunStyle =>
             val mmt = d.deploy.up
-            val con = shell.getFile("Enter a folder into which archives should be checked out", Some(mmt.up / "content"))
+            val con = shell.getFile("Enter a folder into which archives should be checked out", Some(mmt.up / "MMT-content"))
             (mmt, con)
           case _ =>
             val root = shell.getFile("Enter a folder into which MMT should be installed: ", Some(shell.controller.getHome / "MMT"))
-            (root / "systems" / "MMT", root / "content")
+            (root / "systems" / "MMT", root / "MMT-content")
         }
         // get jEdit folder (if any)
         val jsf = OS.jEditSettingsFolder orElse {
@@ -78,7 +78,7 @@ class Setup extends ShellExtension("setup") {
         // setup via command line arguments
         val sf = File(args(0))
         val cf = if (l >= 2) File(args(1)) else {
-          sf.up / "content"
+          sf.up / "MMT-content"
         }
         val jsf = if (l >= 3) {
           if(args(2) == ":"){
@@ -93,6 +93,7 @@ class Setup extends ShellExtension("setup") {
         (sf, cf, jsf, ic)
       }
       setup(sysFolder, conFolder, jeditSettingsFolder.map(f => (shell,f)), installContent=installContent)
+      shell.getString("\n\nPress return to exit.", None)
       true
    }
 
@@ -173,11 +174,12 @@ class Setup extends ShellExtension("setup") {
 
       contentFolder.mkdirs
 
-      if(installContent){
+      if (installContent) {
         // log("cloning or downloading content repositories (I'll try to use git; if that fails, I download a zip file)")
         log("cloning content repositories via git")
         try {
-         controller.handleLine("lmh install MMT/examples")
+          controller.handleLine("lmh install MMT/examples")
+          controller.handleLine("lmh install MMT/LATIN2")
         } catch {case e: Error =>
           log(e.toStringLong)
         }
@@ -190,7 +192,7 @@ class Setup extends ShellExtension("setup") {
               log("jedit-mmt is not on the classpath, so I can't set up jEdit.")
             case Some(jEditSetup) =>
               log("installing jEdit plugin")
-               jEditSetup.run(shell, List("install",jsf.toString))
+              jEditSetup.run(shell, List("install",jsf.toString))
               log("done\n")
 
                if (!(jsf / "jars" / "SideKick.jar").exists) {
@@ -216,7 +218,8 @@ class Setup extends ShellExtension("setup") {
       }
 
      log("\n\n\nThat's it. If there are no error messages above, you're ready to go.")
-     log("\nThe main jar to execute is " + deploy/"mmt.jar" + ".")
-     log("\n\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup`.")
+     log("\n\n\nIf git caused errors, you can just clone the archives manually.")
+     log(s"\n\nFor standalone use of MMT, the main jar to execute is `${deploy}/mmt.jar`. jEdit will find MMT automatically.")
+     log("\n\nTo force rerunning setup or to update MMT, just run `java -jar mmt.jar :setup` (or delete the generated `mmtrc` file and rerun MMT).")
      }
 }

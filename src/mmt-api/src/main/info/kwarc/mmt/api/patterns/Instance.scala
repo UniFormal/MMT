@@ -7,6 +7,7 @@ import notations._
 import symbols._
 import utils._
 import checking._
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 class InstanceFeature extends StructuralFeature(Instance.feature) {
 
@@ -62,7 +63,7 @@ class InstanceFeature extends StructuralFeature(Instance.feature) {
      }*/
    }
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None) = new Elaboration {
      private lazy val (pattern,args) = getPattern(dd).getOrElse {
        throw InvalidElement(dd, "ill-formed instance")
      }

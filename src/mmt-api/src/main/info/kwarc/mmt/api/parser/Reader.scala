@@ -134,7 +134,7 @@ class Reader(val jr: java.io.BufferedReader) {
        var c: Int = readSkipWS
        val start = sourcePosition
        while (continue) {
-          if (c == -1 || (goal.contains(c))) {
+          if (c == -1 || goal.contains(c)) {
              continue = false
           } else {
              buffer.append(c.toChar)
@@ -142,11 +142,17 @@ class Reader(val jr: java.io.BufferedReader) {
           }
        }
        lastDelimiter = c
-       val end = sourcePosition
-       var res = buffer.result
+      var res = buffer.result
+
+       val end = { // there's some weird error here
+          val diff = (sourcePosition.offset-start.offset)- res.length
+          if (diff == 0) sourcePosition else sourcePosition-diff
+       }
+
        // remove trailing whitespace
-       while (res != "" && whitespace(res.last))
-          res = res.substring(0, res.length - 1)
+       while (res != "" && whitespace(res.last)) {
+          res = res.dropRight(1)
+       }
        (res, SourceRegion(start, end))
    }
    /** reads until end of current document, terminated by the ASCII character FS (decimal 28)

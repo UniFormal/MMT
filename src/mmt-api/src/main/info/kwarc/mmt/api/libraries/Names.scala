@@ -39,7 +39,7 @@ object Names {
    def resolve(home: Term, qualifiers: List[String], partialName: String)(implicit lib: Lookup) : List[Completion] = {
       val incls = lib.visible(home).toList
       if (qualifiers.isEmpty) {
-         incls flatMap {i => lookIn(i, partialName)}
+         incls flatMap {i => lookIn(OMMOD(i), partialName)}
       } else {
          val name = LocalName(qualifiers map SimpleStep)
          lib.getO(home, name) match {
@@ -47,11 +47,10 @@ object Names {
             case Some(_) => Nil
             case None =>
                val hd :: tl = qualifiers
-               val inclsP = incls filter {
-                  case OMMOD(p) => p.last == hd
-                  case _ => false
+               val inclsP = incls filter {p =>
+                  p.last == hd
                }
-               inclsP flatMap {i => resolve(i, tl, partialName)}
+               inclsP flatMap {i => resolve(OMMOD(i), tl, partialName)}
          }
       }
    }
@@ -60,7 +59,7 @@ object Names {
    def resolveIncludes(home : Term, name : String)(implicit lib : Library) : Option[List[IncludeOption]] = {
       val incls = lib.visible(home).toList
       val current = incls flatMap {i =>
-        get(i) match {
+        get(OMMOD(i)) match {
          case None => Nil
          case Some(t) =>
             val names = t.domain.toList

@@ -61,6 +61,7 @@ object Common {
       }
       Some(t)
     }
+    def trigger = Some("\\")
   }
   private def init {
     val basicmap = UnicodeMap.readMap("unicode/unicode-latex-map")

@@ -25,7 +25,7 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
-case class Expectation(scope: Term, tp: Option[Term], df: Option[Term])
+case class Expectation(tp: Option[Term], df: Option[Term])
 
 /** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
   * 
@@ -193,7 +193,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case c: Constant =>
         // determine the expected type and definiens (if any) based on the parent element
         val parent = content.getParent(c)
-        lazy val defaultExp = Expectation(parent.toTerm, None, None)
+        lazy val defaultExp = Expectation(None, None)
         val expectation = parent match {
           case thy: Theory =>
             c.name.steps.head match {
@@ -207,7 +207,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
                         def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
-                        Expectation(thy.toTerm, cOrg.tp map tr, cOrg.df map tr)
+                        Expectation(cOrg.tp map tr, cOrg.df map tr)
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
                         defaultExp                      
@@ -220,13 +220,20 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             content.get(link.from, c.name, msg => throw GetError("cannot find realized constant")) match {
               case cOrg: Constant =>
                 def tr(t: Term) = content.ApplyMorphs(t, link.toTerm) 
-                Expectation(link.to, cOrg.tp map tr, cOrg.df map tr)
+                Expectation(cOrg.tp map tr, cOrg.df map tr)
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
-                Expectation(link.to, None, None)
+                Expectation(None, None)
+            }
+          case dd: DerivedDeclaration =>
+            val sfOpt = extman.getOrAddExtension(classOf[StructuralFeature], dd.feature)
+            sfOpt match {
+              case None => defaultExp
+              case Some(sf) =>
+                val expTpO = sf.expectedType(dd, c)
+                Expectation(expTpO, None)
             }
           case _ =>
-            // TODO if parent is a derived declaration, we can ask the structural feature for expectations
             defaultExp
         }
         // now the actual checking
@@ -264,7 +271,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             //objectChecker(ValidationUnit(c.path $ TypeComponent, Context(), j))
             case None =>
               // c has no type: copy over the expected type
-              c.tpC.analyzed = expTp
+              val tr = env.ce.simplifier.objectLevel.toTranslator(env.rules, false)
+              val expTpS = tr(context, expTp)
+              c.tpC.analyzed = expTpS
           }
         }
         // check that the definiens of c (if given) type-checks against the type of c (if given or expected)
@@ -382,6 +391,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.fromC.get foreach {t => checkTheory(Some(CPath(s.path, TypeComponent)), context, t)}
         // check definiens, use it to update/infer domain
         val (thy, linkOpt) = content.getDomain(s)
+        linkOpt foreach {l =>
+          if (s.isImplicit && linkOpt.isDefined) {
+            throw InvalidElement(s,s.feature + " in a " + l.feature + " may not be implicit")
+          }
+        }
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>
@@ -509,10 +523,6 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     elementChecked(e)
   }
   
-  /** checks if a modules realizes a theory
-   *  @return all names for which an assignment is missing
-   *  pre: thyTerm has been simplified already
-   */
   private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
     val unmappedNames = checkTotal(mod, thyTerm)
     val total = unmappedNames.isEmpty
@@ -524,6 +534,12 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       env.errorCont(ie)
     }
   }
+  /** checks if a modules (theory, view, or structure) is total for a given theory
+    * @param mod the module
+    * @param thyTerm the theory
+    * @return all names for which an assignment is missing
+    * pre: thyTerm has been simplified already
+    */
   private def checkTotal(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
     val thyPath = thyTerm match {
       case OMPMOD(p,_) => p
@@ -547,6 +563,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
       case s: Structure =>
         if (s.df.isDefined) mapped else s match {
+          case Include(id) if id.isRealization =>
+            mapped
           case Include(id) =>
             mod.getO(LocalName(id.from)) match {
               case Some(nS: Structure) =>
@@ -785,22 +803,38 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(p)
         s
       case OMS(path) =>
-        val ceOpt = content.getO(path)
-        if (ceOpt.isEmpty) {
-          env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+        val ceOpt = content.getO(path) orElse {
+          // heuristically try to resolve an unknown path
+          val options = content.resolveName(List(path.module), path.name)
+          options match {
+            case Nil =>
+              env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+              None
+            case hd :: Nil =>
+              content.getO(hd)
+            case _ => 
+              env.errorCont(InvalidObject(s, "ambiguous constant reference " + path))
+              None
+          }
         }
         ceOpt match {
           case Some(d: Declaration) =>
-            if (!content.hasImplicit(d.home, ComplexTheory(context)))
+            val pathR = d.path
+            if (!content.hasImplicit(d.home, ComplexTheory(context))) {
               env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+            }
             if (UncheckedElement.is(d))
               env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
-          case _ =>
+            env.pCont(pathR)
+            //TODO wrap in implicit morphism?
+            OMS(pathR).from(s)
+          case Some(_) =>
             env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            s
+          case None =>
+            // error was thrown above already 
+            s
         }
-        env.pCont(path)
-        //TODO wrap in implicit morphism?
-        s
       case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
@@ -815,13 +849,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMA(f, args) =>
         val fR = checkTerm(context, f)
         val argsR = args map { a => checkTerm(context, a) }
-        OMA(fR, argsR)
+        OMA(fR, argsR).from(s)
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
         val conR = checkContext(context, con)
         val contextCon = context ++ conR
         val argsR = args map {a => checkTerm(contextCon, a)}
-        OMBINDC(binR, conR, argsR)
+        OMBINDC(binR, conR, argsR).from(s)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)
         checkTerm(context, key)

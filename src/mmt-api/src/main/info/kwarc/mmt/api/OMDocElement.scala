@@ -50,35 +50,75 @@ trait StructuralElement extends Content with NamedElement {
   def getOrigin = origin
   def isGenerated = origin != Original
 
+  /** header information of this elements
+    * includes the MMT types (e.g., domain, codomain of links) but not the logical types of constants
+    */
+  def headerInfo: HeaderInfo = {
+    val attributes = this match {
+      case d: Document => List(d.root, d.contentAncestor)
+      case r: NRef => List(r.target)
+      case e: OpaqueElement => Nil
+      case t: Theory => List(t.meta, t.parameters)
+      case v: View => List(v.from, v.to, v.isImplicit)
+      case m: DerivedModule => List(m.meta, m.tp)
+      case n: NestedModule => n.module.headerInfo.attributes
+      case c: Constant => List(c.alias, c.rl)
+      case s: Structure => List(s.from, s.isImplicit)
+      case d: DerivedDeclaration => List(d.tp)
+    }
+    HeaderInfo(feature, path, attributes)
+  }
+
+  /** logically equivalent: compares headerInfo, components, and declarations */
+  def equivalentTo(that: StructuralElement): Boolean = {
+    if (this.headerInfo != that.headerInfo)
+      return false
+    val thisComps = this.getComponents
+    val thatComps = that.getComponents
+    if (thisComps.length != thatComps.length)
+      return false
+    (thisComps zip thatComps).foreach {case (c,d) =>
+      if (c.key != d.key)
+        return false
+      if (!c.value.equivalentTo(d.value))
+        return false
+    }
+    val thisDecl = this.getDeclarations
+    val thatDecl = that.getDeclarations
+    if (thatDecl.length != that.getDeclarations.length)
+      return false
+    (thisDecl zip thatDecl) forall {case (d,e) =>
+      d equivalentTo e
+    }
+  }
+
   /** two StructuralElement's are compatible
     * if they have the same type, same Path, and agree in all parts that are TermContainer's
     */
   def compatible(that: StructuralElement): Boolean = {
     if (this.path != that.path || this.getClass != that.getClass || this.getOrigin != that.getOrigin)
        return false
+    if (this.headerInfo != that.headerInfo)
+      return false
     ((this, that) match {
         case (a: Document, b: Document) =>
-           a.root == b.root && a.contentAncestor == b.contentAncestor
+           true
         case (a: NRef, b: NRef) =>
-           a.target == b.target
+           true
         case (a: OpaqueElement, b: OpaqueElement) =>
            false // subclasses of OpaqueElement may override this method to give better results
         case (a: Theory, b: Theory) =>
-          a.meta == b.meta && a.df == b.df && a.parameters == b.parameters
+          a.df == b.df
         case (a: View, b: View) =>
-          a.from == b.from &&
-            a.to == b.to &&
-            a.df == b.df && (a.isImplicit == b.isImplicit)
+          a.df == b.df
         case (a: NestedModule, b: NestedModule) =>
           a.module.compatible(b.module)
         case (a: Constant, b: Constant) =>
-          a.alias == b.alias && a.rl == b.rl
+          true
         case (a: Structure, b: Structure) =>
-          a.from == b.from &&
-          a.df == b.df &&
-          (a.isImplicit == b.isImplicit)
+          a.df == b.df
         case (a: DerivedDeclaration, b: DerivedDeclaration) =>
-          a.feature == b.feature && a.tp == b.tp && a.df == b.df
+          a.df == b.df
         case _ => false
       })
   }
@@ -87,6 +127,11 @@ trait StructuralElement extends Content with NamedElement {
      this.metadata = that.metadata
   }
 }
+
+/** all information that defines the nature of this element
+  * a change to this information is so fundamental that it should be treated like a delete-add, not an update event
+  */
+case class HeaderInfo(feature: String, path: Path, attributes: List[Any])
 
 /** A ContentElement is any knowledge item that is used to represent mathematical content.
   *

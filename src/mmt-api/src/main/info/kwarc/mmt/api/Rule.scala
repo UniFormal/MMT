@@ -134,29 +134,40 @@ class MutableRuleSet extends RuleSet {
 }
 
 object RuleSet {
-   /** collects all rules visible to a context, based on what is currently loaded into memory */
-   def collectRules(controller: Controller, context: Context): MutableRuleSet = {
-      collectAdditionalRules(controller, None, context)
-   }
+   /** collects all rules visible to a context */
+  def collectRules(controller: Controller,context: Context): MutableRuleSet = {
+    collectAdditionalRules(controller,None,context)
+  }
 
-   /**
+  /**
     * incremental collection of rules: collectAdditionalRules(c, collectRules(c, con1), con2) = collectRules(c, con1++con2)
     */
-   def collectAdditionalRules(controller: Controller, addTo: Option[RuleSet], context: Context): MutableRuleSet = {
-      val support = context.getIncludes
-      var shadowed: List[Rule] = Nil
-      val rs = new MutableRuleSet
-      addTo.foreach {a => rs.imports(a)}
-      support.foreach {p =>
-        controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
-         case rc: RuleConstant =>
-            rc.df foreach {r =>
-              rs.declares(r.providedRules :_*)
-              shadowed :::= r.shadowedRules
-            }
-         case _ =>
-        }}
+  def collectAdditionalRules(controller: Controller,addTo: Option[RuleSet],context: Context): MutableRuleSet = {
+    val support = context.getIncludes
+    var shadowed: List[Rule] = Nil
+    val rs = new MutableRuleSet
+    addTo.foreach {a => rs.imports(a)}
+    support.foreach {p =>
+      //TODO this takes around 20% of processing time when reading mmt files - investigate if it is due to this method or due to some lower method (e.g., reading OMDoc files)
+      controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
+        case rc: RuleConstant =>
+          rc.df foreach { r =>
+            rs.declares(r.providedRules: _*)
+            shadowed :::= r.shadowedRules
+          }
+        case _ =>
       }
+      }
+    }
+     /* not faster:
+      Theory.flatIterator(support, controller.globalLookup).foreach {
+        case (rc: RuleConstant,None) =>
+          rc.df foreach { r =>
+            rs.declares(r.providedRules: _*)
+            shadowed :::= r.shadowedRules
+          }
+        case _ =>
+      }*/
       rs.shadow(shadowed:_*)
       rs
    }

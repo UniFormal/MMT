@@ -177,16 +177,19 @@ class Setup extends ShellExtension("jeditsetup") {
       var newAbbrevs: List[String] = Nil
       var remove = false
       // read current abbrevs without MMT abbrevs
-      if (jabb.exists) File.ReadLineWise(jabb) { line =>
-        if (install)
+      if (jabb.exists) File.ReadLineWise(jabb) {line =>
+        if (install) {
           newAbbrevs ::= line
-        else {
-          if (remove && line.startsWith("["))
+        } else {
+          if (remove && line.startsWith("[")) {
             remove = false
-          if (line.trim == "[mmt]")
+          }
+          if (line.trim == "[mmt]") {
             remove = true
-          if (!remove)
+          }
+          if (!remove) {
             newAbbrevs ::= line
+          }
         }
       }
       // append MMT abbrevs if installing

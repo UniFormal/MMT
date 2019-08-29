@@ -71,6 +71,25 @@ object LMHInitCompanion extends ActionCompanion("create a new lmh archive", "lmh
   def parserActual(implicit state: ActionState) = str ~ (str?) ^^ {case p ~ t => LMHInit(p, t)}
 }
 
+case class LMHOpen(id: String) extends LMHAction {
+  def apply(): Unit = {
+    val archive = mathHub.getEntry(id)
+    try {
+      val root = archive.get.root
+      root.openInOS()
+      log(s"Opened $root")
+    } catch {
+      case e: Exception => log(s"Unable to open: ${e.toString}")
+    }
+
+  }
+  override def toParseString = s"lmh open $id"
+}
+object LMHOpenCompanion extends ActionCompanion("opens the folder belonging to an archive", "lmh open"){
+  import Action._
+  def parserActual(implicit state: ActionState) = str ^^ LMHOpen
+}
+
 case class LMHInstall(spec: List[String]) extends LMHAction {
   def apply() {
     val resolved = mathHub.available(spec: _*)

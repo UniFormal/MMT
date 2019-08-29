@@ -11,8 +11,8 @@ import patterns._
 import objects._
 import notations._
 import libraries.AlreadyDefined
-
 import Theory._
+import info.kwarc.mmt.api.parser.SourceRef
 
 import collection.immutable.{HashMap, HashSet}
 import scala.util.{Success, Try}
@@ -64,8 +64,9 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   // internal and external flattening of s
   // equivalent to calling applyElementBegin and (if applicable) applyElementEnd
   private def applyWithParent(s: StructuralElement, parentO: Option[ModuleOrLink], rulesO: Option[RuleSet])(implicit env: SimplificationEnvironment) {
-    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s))
+    if (ElaboratedElement.isInprogress(s) || ElaboratedElement.isFully(s)) {
       return
+    }
     applyElementBeginWithParent(s, parentO, rulesO)
     s match {
       case m: ContainerElement[_] =>
@@ -198,9 +199,11 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case AnonymousTheoryCombinator(at) =>
               if (at.mt.isDefined) {
                 val mtTerm = OMMOD(at.mt.get)
-                // awkward: library must be explicitly notified about update of meta-theory because changes to meta-theory cannot go through controller.add
+                thy.metaC.get foreach {old =>
+                  SourceRef.get(old).foreach(r => SourceRef.update(mtTerm,r))
+                }
                 thy.metaC.analyzed = Some(mtTerm)
-                controller.memory.content.addImplicit(mtTerm, thy.toTerm, OMIDENT(mtTerm))
+                controller.memory.content.update(thy) // update is redundant except for recomputing implicits
               }
               var translations = Substitution() // replace all OML's with corresponding OMS's
               // TODO this replaces too many OML's if OML-shadowing occurs
@@ -310,7 +313,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      * @param target as above
      * @return the list of includes resulting from flattening (from,mor) 
      */
-    def flattenInclude(ID: IncludeData, alreadyIncluded: List[IncludeData], target: Term): List[Declaration] = {
+    def flattenInclude(ID: IncludeData, alreadyIncluded: List[IncludeData], target: Term)(implicit env: SimplificationEnvironment): List[Declaration] = {
       val fromThy = lup.getAs(classOf[AbstractTheory], ID.from)
       applyChecked(fromThy)
       val fromIncls = fromThy.getAllIncludes
@@ -335,7 +338,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         // if both id and ID are undefined and id has instantiation, than so is idID, and we produce an undefined include with arguments
         // np != id.from occurs id is not an instantiation but ID is
         val newArgs = if (newDf.isDefined) Nil else newMorN match {
-            case OMINST(np, nas) if np == id.from =>
+            case OMINST(np, _, nas) if np == id.from =>
                nas
             case _ =>
               Nil
@@ -418,6 +421,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
         applyChecked(fromThy)
         // copy all declarations in theories p reflexive-transitively included into fromThy
         // no need to consider the instantiation arguments or definitions because the lookup methods are used to obtain the declarations in the elaboration
+        // TODO this generates declarations out of order if the includes of fromThy are not at the beginning
         val sElab = (fromThy.getAllIncludesWithoutMeta.map(_.from) ::: List(fromThy.modulePath)).flatMap {p =>
           val refl = p == fromThy.modulePath
           // in theories:
@@ -446,10 +450,19 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
             case d: Declaration =>
               if (skipWhenFlattening(d.getOrigin))
                 Nil
-              else {
+              else if (d.name.head.isInstanceOf[ComplexStep]) {
+                // definitions of realized constants must be skipped because they are already handled by the realized theory (which is part of the includes)
+                Nil
+              } else {
                 val sdname = prefix / d.name
-                val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
-                List(sd)
+                try {
+                  val sd = lup.getAs(classOf[Declaration], parentMPath ? sdname)
+                  List(sd)
+                } catch {case e: Error =>
+                  val eS = InvalidElement(dOrig, "error while generating " + sdname).setCausedBy(e)
+                  env.errorCont(eS)
+                  Nil
+                }
               }
           }
           structure ::: decls
@@ -469,7 +482,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
                }
                i+=1
              }
-             val elab = sf.elaborate(thy, dd)
+             val elab = sf.elaborate(thy, dd)(Some(ExtendedSimplificationEnvironment(env, this.objectLevel, rules)))
              elab.getDeclarations
          }
       // the treatment of derived declarations in links has not been specified yet

@@ -12,6 +12,7 @@ import info.kwarc.mmt.lf._
 
 import InternalDeclaration._
 import StructuralFeatureUtils._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 object RecordUtil {
@@ -44,7 +45,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val params = Type.getParameters(dd)
     implicit val parentTerm = dd.path
 
@@ -77,15 +78,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       elabDecls :+= equalityDecl(recordType.path, make.path, declCtx, origDecls, context)
       elabDecls ++= convEqualityDecls(recordType.path, make.path, declCtx, origDecls, context)
       
-      //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
-      new Elaboration {
-        val elabs : List[Declaration] = Nil
-        def domain = elabDecls map {d => d.name}
-        def getO(n: LocalName) = {
-          elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
-          elabDecls.find(_.name == n)
-        }
-      }
+      externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
     }
   }
   

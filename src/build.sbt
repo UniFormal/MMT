@@ -190,7 +190,7 @@ lazy val mmt = (project in file("mmt")).
 
 def apiJars(u: Utils) = Seq(
   "scala-compiler.jar",
-  "scala-reflect.jar",
+  "scala-library.jar",
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
@@ -261,8 +261,9 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar")
+  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
@@ -290,9 +291,9 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
 
-// MMT in the interview server. Maintainer: Teresa
+// Glf server. Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
-  dependsOn(api, repl).
+  dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
 
 
@@ -430,7 +431,7 @@ lazy val oeis = (project in file("mmt-oeis")).
   )
 
 // =================================
-// DEPENDENT PROJECTS (projects that do not use mmt-api)
+// DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)

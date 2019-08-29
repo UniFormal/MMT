@@ -15,7 +15,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def domain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
-    case OMINST(p,args) => None // TODO this is almost OMPMOD(p,args), but not quite
+    case OMINST(f,_,_) => Some(OMMOD(f)) // covariant interpretation: domain is not OMPMOD(f,args) but simply OMMOD(f)
     case OMCOMP(n :: _) => domain(n)
     case OMStructuralInclude(f,_) => Some(OMMOD(f))
     case OMMOD(path) => try {
@@ -37,7 +37,7 @@ object Morph {
   /** pre: m is a well-structured morphism */
   def codomain(m: Term)(implicit lib: Lookup): Option[Term] = m match {
     case OMIDENT(t) => Some(t)
-    case OMINST(p,args) => Some(OMPMOD(p,args))
+    case OMINST(_,t,_) => Some(OMMOD(t))
     case OMCOMP(l) if l.nonEmpty => codomain(l.last)
     case OMStructuralInclude(_,t) => Some(OMMOD(t))
     case OMMOD(path) => try {
@@ -64,6 +64,7 @@ object Morph {
     */
   def simplify(mor: Term, preserveType: Boolean = false)(implicit lib: Lookup): Term = {
     mor match {
+      case AnonymousMorphismCombinator(_) => mor
       case OMID(p) =>
         lib.getO(p) match {
           case Some(l: Link) =>
@@ -80,7 +81,7 @@ object Morph {
           case _ => mor
         }
       case OMIDENT(t) => if (preserveType) mor else OMCOMP()
-      case OMINST(t,args) => mor
+      case OMINST(_) => mor
       case OMStructuralInclude(f,t) => mor
       case OMCOMP(ms) =>
         val parts = associateComposition(ms)
@@ -113,8 +114,11 @@ object Morph {
                       // restrict m to t
                       l.df match {
                         case Some(mR) =>
-                          if (!isInclude(mR) && mR != mor) // the smaller we keep the codomain, the better
-                             result ::= simplify(mR)
+                          // the smaller we keep the codomain, the better
+                          if (!isInclude(mR)) {
+                             val mRS = expandUnlessCircular(mR,m)
+                             result ::= mRS
+                          }
                         case None =>
                           result ::= m
                       }
@@ -141,8 +145,9 @@ object Morph {
                        * realization f -> to: m|_to is restricted realization 
                        */
                       id.df match {
-                        case Some(d) => 
-                          Some(simplify(d))
+                        case Some(d) =>
+                          val dS = expandUnlessCircular(d,m)
+                          Some(dS)
                         case None =>
                           if (id.isRealization) {
                             Some(OMStructuralInclude(f,to))
@@ -190,13 +195,13 @@ object Morph {
                     result ::= m
                 }
               }*/
-            case OMINST(p,as) =>
+            case OMINST(f,t,as) =>
               val mergeWithPrevious = result.headOption flatMap {
-                case OMINST(q,bs) =>
-                  // merge two successive instantiations: OMINST(q,bs);OMINST(p,as) = OMINST(q, bs[as])
-                  val pThy = lib.getAs(classOf[Theory],p)
+                case OMINST(f2,t2,bs) =>
+                  // merge two successive instantiations: OMINST(f2,t2,bs);OMINST(f,t,as) = OMINST(f2,t, bs[as])
+                  val pThy = lib.getAs(classOf[Theory],f)
                   (pThy.parameters / as) map {asub =>
-                     OMINST(q, bs map {b => b ^? asub})
+                     OMINST(f2,t, bs map {b => b ^? asub})
                   }
                 case _ =>
                   None
@@ -205,11 +210,11 @@ object Morph {
                 case Some(n) =>
                   result = n :: result.tail
                 case None =>
-                  // R ; OMINST(p,args) = R  if the parameters do not occur in the image of R
-                  // that is definitely the case if codomain(R) != p: in that case codomain(R) is properly included into p so that R cannot refer to the parameters of p
+                  // R ; OMINST(f,t,args) = R  if the parameters do not occur in the image of R
+                  // that is definitely the case if codomain(R) != f: in that case codomain(R) is properly included into f so that R cannot refer to the parameters of f
                   cod match {
                     case Some(OMMOD(t)) =>
-                      if (t == p)
+                      if (t == f)
                         result ::= m
                     case _ =>
                       result ::= m
@@ -229,6 +234,17 @@ object Morph {
         }
         // OMCOMP disappears if result has length 1
         OMCOMP(result)
+    }
+  }
+
+  /** auxiliary method of simplify:
+    * if atom has definiens df, expanding it would yield a cycle if the definiens is just a default definiens that composes an include with atom
+    * this method checks for this and retains atom in that case
+    */
+  private def expandUnlessCircular(df: Term, atom: Term)(implicit lib: Lookup) = {
+    df match {
+      case OMCOMP(ms) if ms contains atom => atom
+      case _ => simplify(df)
     }
   }
   
@@ -560,17 +576,17 @@ object ComplexMorphism {
 }
 
 /**
- * an auxiliary morphism used only internally
- * OMINST(S, args): S -> T iff OMPMOD(S,args) -include-> T
- * The left side is well-typed if we think of the parameters of S as a part of S (which works if S is the domain of a morphism).
+ * Covariant interpretation of theory parameters: a morphism  m:S(args) --> T is seen as a morphism args,m: S --> T 
+ * Such morphisms occur in particular if S(args) is included into T, i.e., if m is the identity of S
+ * This case is represented by OMINST(S,T,args). args must be well-typed relative to T.
  * invariant: args.nonEmpty (apply method allows it by using OMIDENT instead; unapply method does not match OMIDENT) 
  */
 object OMINST {
   val path = ModExp.instantiation
-  def apply(p: MPath, args: List[Term]) =
-    if (args.isEmpty) OMIDENT(OMMOD(p)) else OMA(OMS(this.path), OMMOD(p)::args)
-  def unapply(morph : Term) : Option[(MPath,List[Term])] = morph match {
-    case OMA(OMS(this.path), OMMOD(p) :: args) => Some((p,args))
+  def apply(from: MPath, to: MPath, args: List[Term]) =
+    if (args.isEmpty) OMIDENT(OMMOD(from)) else OMA(OMS(this.path), OMMOD(from):: OMMOD(to)::args)
+  def unapply(morph : Term) : Option[(MPath,MPath,List[Term])] = morph match {
+    case OMA(OMS(this.path), OMMOD(from) :: OMMOD(to) :: args) => Some((from,to,args))
     case _ => None
   }
 }

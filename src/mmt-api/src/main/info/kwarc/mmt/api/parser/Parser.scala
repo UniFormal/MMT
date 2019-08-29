@@ -42,6 +42,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
       if (unknown.nonEmpty) {
          res = OMBIND(OMS(ParseResult.unknown), unknown, res)
       }
+      SourceRef.get(term).foreach(SourceRef.update(res,_))
       res
   }
    /** true if no unknowns/free variables found */
@@ -201,7 +202,7 @@ object DefaultObjectParser extends ObjectParser {
   def isApplicable(format: String) = true
 
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
-    val t = OMSemiFormal(objects.Text("unparsed", pu.term))
+    val t = OMSemiFormal(objects.Text("unparsed", "\"" + pu.term + "\""))
     SourceRef.update(t, pu.source)
     ParseResult(Context.empty, Context.empty, t)
   }

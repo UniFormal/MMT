@@ -91,7 +91,7 @@ object Orders {
     ,"measures/measures.mmt"
     ,"calculus/integration/SimpleFunctions.mmt"
     ,"calculus/integration/LebesgueIntegral.mmt"
-    ,"categories/basics.mmt"
+    ,"categories/categories.mmt"
     ,"categories/functors.mmt"
   )
 
@@ -130,7 +130,7 @@ object Orders {
     ,"logic/sfol.mmt"
     ,"logic/hol.mmt"
     ,"magmas.mmt"
-    ,"mam.mmt"
+    // ,"mam.mmt"
     ,"patterns.mmt"
     ,"program.mmt"
     ,"real.mmt"
