@@ -9,12 +9,12 @@ import utils._
   *
   * anonymous modules are object that can be converted into these helper classes using the objects [[AnonymousTheory]] and [[AnonymousMorphism]]
   */
-trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
+trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] with ShortURIPrinter{
   val decls: List[OML]
   def getDeclarations = decls
   def toSubstitution : Substitution = decls.map{case OML(name,_,df,_,_) => Sub(name,df.get)}
   def toTerm: Term
-  override def toString = getDeclarations.mkString("{", ", ", "}")
+  def toStr(implicit shortURIs: Boolean) = getDeclarations.map(_.toStr).mkString("{", ", ", "}")
 }
 
 /** a theory given by meta-theory and body */
@@ -101,7 +101,7 @@ object AnonymousMorphismCombinator {
 }
 
 /** used in [[AnonymousDiagram]] */
-sealed abstract class DiagramElement {
+sealed abstract class DiagramElement extends ShortURIPrinter {
   def label: LocalName
   def toTerm: Term
 }
@@ -111,7 +111,7 @@ sealed abstract class DiagramElement {
   */
 case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
-  override def toString = s"$label:THY=$theory"
+  def toStr(implicit shortURIs: Boolean) = s"$label:THY=${theory.toStr}"
   def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
   override def equals(that: Any): Boolean =
     that match {
@@ -131,9 +131,9 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
     val f = if (isImplicit) Some("implicit") else None
     OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm), None, f)
   }
-  override def toString = {
+  def toStr(implicit shortURIs: Boolean) = {
     val a = if (isImplicit) "-i->" else "--->"
-    s"$label:$from$a$to=$morphism"
+    s"$label:$from$a$to=${morphism.toStr}"
   }
 }
 /** a diagram in the category of theories and morphisms
