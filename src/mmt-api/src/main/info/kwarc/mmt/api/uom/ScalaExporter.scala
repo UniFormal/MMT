@@ -9,7 +9,7 @@ import symbols._
 
 object GenericScalaExporter {
   /** reserved identifiers */
-  private val keywords = List("type", "val", "var", "def", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit",
+  private val keywords = List("type", "val", "var", "def", "return", "new", "class", "trait", "object", "extends", "with", "abstract", "implicit",
       "match", "case", "if", "else", "while", "do", "for")
   /** preused identifiers, i.e., declared in Object */
   private val reserved = List("true", "false", "eq", "List", "Nil", "Set", "String", "Boolean", "Option", "None", "Some", "Term", "OML", "Context", "VarDecl")
@@ -206,21 +206,24 @@ class GenericScalaExporter extends Exporter {
     rh.writeln(s"object $name extends TheoryScala {")
     val baseUri = t.parent.uri
     rh.writeln(s"  val _base = DPath(utils.URI(${toParsableString(baseUri.scheme)}, ${toParsableString(baseUri.authority)}, abs=true)" +
-      baseUri.path.map(toParsableString).mkString(" / ") + ")"
+      baseUri.path.map(s => " / " + toParsableString(s)).mkString + ")"
     )
     rh.writeln("  val _name = LocalName(\"" + t.name + "\")")
     t.getPrimitiveDeclarations foreach {
       case c: Constant =>
         val extraFields = companionObjectFields(c)
-        val lines = List(
-          s"",
-          s"object ${nameToScala(c.name)} extends ConstantScala {",
-          s"  val parent = _path\n",
-           "  val name = \"" + c.name + "\""
-        ) ::: extraFields.map("  " + _) ::: List(
-          s"}"
-        )
-        lines foreach {l => rh.writeln("  " + l)}
+        // TODO handle structures
+        if (c.name.length == 1) {
+          val lines = List(
+            s"",
+            s"object ${nameToScala(c.name)} extends ConstantScala {",
+            s"  val parent = _path\n",
+            "  val name = \"" + c.name + "\""
+          ) ::: extraFields.map("  " + _) ::: List(
+            s"}"
+          )
+          lines foreach {l => rh.writeln("  " + l)}
+        }
       case _ =>
     }
     rh.writeln("\n}")

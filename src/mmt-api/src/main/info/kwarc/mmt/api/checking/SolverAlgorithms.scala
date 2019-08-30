@@ -322,8 +322,10 @@ trait SolverAlgorithms {self: Solver =>
       val tm2 = j.tm2
       val tpOpt = j.tpOpt
       implicit val stack = j.stack
-      val tm1S = simplify(headNormalize(tm1))
-      val tm2S = simplify(headNormalize(tm2))
+      val tm1N = headNormalize(tm1)
+      val tm2N = headNormalize(tm2)
+      val tm1S = simplify(tm1N)
+      val tm2S = simplify(tm2N)
       // 1) foundation-independent cases, e.g., identical terms, solving unknowns
       (tm1S, tm2S) match {
          case (l1: OMLIT, l2: OMLIT) =>
