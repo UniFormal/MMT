@@ -40,6 +40,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
        val path = labelToPath(e.label)
        val name = path.name
        oldNew ::= (e.label,LocalName(path))
+       log("diagram definition generates " + e.toStr(true))
        e match {
          case node: DiagramNode =>
            val anonThy = node.theory

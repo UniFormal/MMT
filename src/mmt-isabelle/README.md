@@ -11,9 +11,9 @@ particular the file `README_REPOSITORY` section **Quick start in 30min**.
 
 In particular, the following versions from Aug-2019 should fit together:
 
-  * Isabelle/b85a12c2e2bf from https://isabelle.sketis.net/repos/isabelle
-  * AFP/db325e159983 from https://isabelle.sketis.net/repos/afp-devel
-  * MMT/bf515a82012c from https://github.com/UniFormal/MMT/commits/devel
+  * Isabelle/7bf683f3672d from https://isabelle.sketis.net/repos/isabelle
+  * AFP/482f1b8d56ea from https://isabelle.sketis.net/repos/afp-devel
+  * MMT/7ce4fac80722 from https://github.com/UniFormal/MMT/commits/devel
   * MathHub/MMT/urtheories/12cc343c279c from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
