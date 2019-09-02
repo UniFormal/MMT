@@ -12,14 +12,15 @@ import presentation._
  * @param home the [[Term]] representing the parent theory
  * @param name the name of the structure
  * @param tpC the domain theory
- * @param isImplicit true iff the link is implicit
+ * @param isImplicit true iff the link is implicit; only allowed if the structure is inside a theory
  */
 class Structure(val home : Term, val name : LocalName, val tpC: TermContainer, val dfC: TermContainer, val isImplicit : Boolean, val isTotal: Boolean) extends Declaration with Link with HasType {
    type ThisType = Structure
    val feature = "structure"
    /** the domain of a structure is its type */
    def fromC = tpC
-   /** the domain of a structure is its home theory*/
+   /** the codomain of a structure is its home theory */
+   // TODO this is not the codomain for a structure assignment in a link
    val toC = new FinalTermContainer(home)
    def namePrefix = name
    def isInclude = Include.unapply(this).isDefined

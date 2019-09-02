@@ -214,7 +214,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
 
 /** A variant of InferenceRule that may additionally use the expected type.
  *  Thus it can be used both for type inference and for type checking.
- *  @param head the head of the term whose type this rule infers
+ *  @param h the head of the term whose type this rule infers
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**
@@ -390,7 +390,7 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
 /** A ForwardSolutionRule solves for an unknown by inspecting its declarations (as opposed to its use)
  * It can solve a variable directly (e.g., if it has unit type) or apply a variable transformation (e.g., X --> (X1,X2) if X has product type).
  * @param head the head of the type of the unknown to which this rule applies
- * @param priority rules with high priority are applied to a freshly activated constraint is activated;
+ * @param p rules with high priority are applied to a freshly activated constraint is activated;
  *   others when no activatable constraint exists
  */
 abstract class ForwardSolutionRule(val head: GlobalName, p: ForwardSolutionRule.Priority) extends SingleTermBasedCheckingRule {

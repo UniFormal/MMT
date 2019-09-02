@@ -4,6 +4,14 @@ import info.kwarc.mmt.api._
 import uom._
 import objects._
 
+object LFConstantScala {
+  implicit def toNullary(cs: ConstantScala) = new NullaryLFConstantScala(cs.parent, cs.name)
+  implicit def toUnary(cs: ConstantScala) = new UnaryLFConstantScala(cs.parent, cs.name)
+  implicit def toBinary(cs: ConstantScala) = new BinaryLFConstantScala(cs.parent, cs.name)
+  implicit def toTernary(cs: ConstantScala) = new TernaryLFConstantScala(cs.parent, cs.name)
+  implicit def toFourary(cs: ConstantScala) = new FouraryLFConstantScala(cs.parent, cs.name)
+}
+
 class NullaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
   def filter(args: List[Term]) = args.filterNot {a => a == term}
 }
@@ -28,9 +36,21 @@ class BinaryLFConstantScala(val parent: MPath, val name: String) extends Constan
       case _ => None
    }
 
-   def associativeArguments(t: Term):List[Term] = unapply(t) match {
-     case Some((x,y)) => associativeArguments(x):::associativeArguments(y)
-     case None => List(t)
+   /**
+     * collects the list of arguments of an associative operator
+     * @param t the term
+     * @param drop if given, drop this argumet
+     * @param distinct drop repetitions
+     */
+   def associativeArguments(t: Term, drop: Option[Term], distinct: Boolean):List[Term] = {
+     val args = unapply(t) match {
+       case Some((x,y)) => associativeArguments(x, drop, false):::associativeArguments(y,drop,false)
+       case None => if (drop contains t) Nil else List(t)
+     }
+     if (distinct) {
+       args.distinct
+     } else
+       args
    }
 }
 

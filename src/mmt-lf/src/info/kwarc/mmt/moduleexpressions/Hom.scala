@@ -32,6 +32,7 @@ object PL extends TheoryScala {
   val _name = LocalName("PL")
   val prop = _path ? "prop"
   object ded extends UnaryLFConstantScala(_path, "ded")
+  object implies extends BinaryLFConstantScala(_path, "impl")
 }
 
 object SFOL extends TheoryScala {
@@ -82,8 +83,8 @@ object ComputeHom extends ComputationRule(Hom.path) {
     def copy(prefix: String) = {
       /* The list of new declarations */
       var renames : List[(LocalName,LocalName)] = Nil
+      val r = new OMLReplacer(l => utils.listmap(renames, l).map(n => OML(n)))
       def replace(t: Term) = {
-        val r = new OMLReplacer(l => utils.listmap(renames, l).map(n => OML(n)))
         r(t, Context.empty)
       }
       val declsR : List[OML] = decls map {o =>
@@ -92,10 +93,12 @@ object ComputeHom extends ComputationRule(Hom.path) {
         renames ::= (o.name, newname)
         d
       }
-      (declsR, renames)
+      (declsR, renames.reverse)
    }
     val (mod1, ren1) = copy(ComputeHom.m1label.toString)
     val (mod2, ren2) = copy(ComputeHom.m2label.toString)
+    val mor1 = Rename.pairsToMorph(ren1)
+    val mor2 = Rename.pairsToMorph(ren2)
 
     def makeNames(base: String, n: Int) = Range(0,n).toList.map(i => LocalName(base+i))
 
@@ -105,53 +108,67 @@ object ComputeHom extends ComputationRule(Hom.path) {
     /* *************** Computing the homomorphisms ******************** */
     /* **************************************************************** */
     val homdecls = decls mapOrSkip {o =>
-      val tp: Term = o.tp.get match {
-      /* TODO: This OML part is wrong. I need to throw it away */
-      case OML(n, typ, df, nt, featureOpt) =>
-        Arrow(OML(m1label/o.name), OML(m2label/o.name))
-      // sort symbol, i.e., c: sort
-      // generate morphism map c: m1/c -> m2/c
-      case OMS(SFOL.sort) =>
-         Arrow(OML(m1label/o.name), OML(m2label/o.name))
-      /* function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
-       * generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. r(m1/c x1 ... xn) = m2/c (s1 x1) ... (sn xn) */
-      case FunType(args, SFOL.term(r)) =>
-        val argsorts = args.map { /* list of sorts of the input to the function */
-          case (None, SFOL.term(s)) => s
-        }
-        /* variables associated with their sorts */
-        val vars = makeNames("x", args.length)
-        val varSorts = vars zip argsorts
-        val left = Apply(r, ApplySpine(OML(m1label/o.name), vars.map(OMV(_)):_*))
-        val right = ApplySpine(OML(m2label/ o.name),varSorts map {case (x,s) => Apply(s,OMV(x))}:_*)
-        val body = equal(left,right)
-        val ax = forall.multiple(varSorts, body)
-        PL.ded(ax)
-     // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
-     // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. m1/c x1 ... xn => m2/c (s1 x1) ... (sn xn)
-      case FunType(args, OMS(PL.prop)) => throw SkipThis
-        /*
-        val argsorts = args.map {
-          case (None, SFOL.term(s)) => s
-        }
-        val ax = ???
-        PL.ded(ax) */
-     // axiom, i.e., c: ded F
-      case PL.ded(_) => throw SkipThis
-       // skip
-   }
-   OML(o.name, Some(tp), None)
-}
-// val homNode = DiagramNode(homlabel,new AnonymousTheory(Some(SFOL._path),mod1:::mod2:::homdecls))
-val arrow1 = DiagramArrow(m1label, node.label, homlabel , Rename.pairsToMorph(ren1), false)
-val arrow2 = DiagramArrow(m2label, node.label, homlabel , Rename.pairsToMorph(ren2), false)
+      val o1 = OML(m1label/o.name)
+      val o2 = OML(m2label/o.name)
+      val tpOld: Term = o.tp.get
+      val tp: Term = tpOld match {
+        // sort symbol, i.e., c: sort
+        // generate morphism map c: m1/c -> m2/c
+        case OMS(SFOL.sort) =>
+           Arrow(OML(m1label/o.name), OML(m2label/o.name))
+        /* function symbol, i.e., c: tm s1 -> ... -> tm sn -> tm r
+         * generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. r(m1/c x1 ... xn) = m2/c (s1 x1) ... (sn xn) */
+        case FunType(args, SFOL.term(r)) =>
+          if (o.df.isDefined) {
+            // TODO emit warning that we are omitting the proof
+          }
+          val argsorts = args.map { /* list of sorts of the input to the function */
+            case (None, SFOL.term(s)) => s
+          }
+          /* variables associated with their sorts */
+          val vars = makeNames("x", args.length)
+          val varSorts = vars zip argsorts
+          val left = Apply(r, ApplyGeneral(o1, vars.map(OMV(_))))
+          val right = ApplyGeneral(o2,varSorts map {case (x,s) => Apply(s,OMV(x))})
+          val r2 = mor2(r)
+          val body = equal(SFOL.term(r2), left, right) /* The first argument is the sort of the = */
+          val ax = forall.multiple(varSorts, body)
+          PL.ded(ax)
+       // predicate symbol, i.e., c: tm s1 -> ... -> tm sn -> prop
+       // generate preservation axiom c: ded forall x1: tm s1, ..., xn: tm sn. m1/c x1 ... xn => m2/c (s1 x1) ... (sn xn)
+         /* The case of prediacte symbols */
+        case FunType(args, OMS(PL.prop)) =>
+          if (o.df.isDefined) {
+            // TODO this usually has to be forbidden, so throw error here
+            // (technically, only forall, implies, negation are forbidden)
+          }
+          val argsorts = args.map { /* list of sorts of the input to the function */
+            case (None, SFOL.term(s)) => s
+          }
+          /* variables associated with their sorts */
+          val vars = makeNames("x", args.length)
+          val varSorts = vars zip argsorts
+          val left = ApplyGeneral(o1, vars.map(OMV(_)))
+          val right = ApplyGeneral(o2,varSorts map {case (x,s) => Apply(s,OMV(x))})
+          val body = PL.implies(left, right) /* The first argument is the sort of the = */
+          val ax = forall.multiple(varSorts, body)
+          PL.ded(ax)
+       // axiom, i.e., c: ded F
+        case PL.ded(_) => throw SkipThis
+         // skip
+     }
+     OML(o.name, Some(tp), None)
+    }
+    // val homNode = DiagramNode(homlabel,new AnonymousTheory(Some(SFOL._path),mod1:::mod2:::homdecls))
+    val arrow1 = DiagramArrow(m1label, node.label, homlabel , mor1, false)
+    val arrow2 = DiagramArrow(m2label, node.label, homlabel , mor2, false)
 
-val hom = DiagramNode(homlabel, new AnonymousTheory(thy.mt, mod1:::mod2)) // TODO: include :::homdecls in the list of declarations
-/* Try to use the Mod operator to get the two mdoels */
+    val hom = DiagramNode(homlabel, new AnonymousTheory(thy.mt, mod1:::mod2 ::: homdecls))
+    /* Try to use the Mod operator to get the two mdoels */
 
-val result = new AnonymousDiagram(List(hom), List(arrow1,arrow2), Some(homlabel))
-Simplify(result.toTerm)
-}
+    val result = new AnonymousDiagram(List(hom), List(arrow1,arrow2), Some(homlabel))
+    Simplify(result.toTerm)
+  }
 }
 
 /*

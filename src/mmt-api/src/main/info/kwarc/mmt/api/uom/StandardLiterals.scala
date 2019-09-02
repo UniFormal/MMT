@@ -291,7 +291,7 @@ object StandardString extends Atomic[String] {
    def asString = "string"
    val cls = classOf[String]
    def fromString(s: String) = s
-   override def lex = quotedLiteral("")
+   override def lex = Some(new SymmetricEscapeLexer('\"', '\\'))
 }
 
 object StringOperations {

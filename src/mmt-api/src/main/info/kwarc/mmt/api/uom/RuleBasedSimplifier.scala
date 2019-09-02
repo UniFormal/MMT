@@ -48,8 +48,9 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
   override val logPrefix = "object-simplifier"
 
    /** the main simplification method
-    * @param t the term to simplify
-    * @param context its context, if non-empty
+    * @param obj the object to simplify
+    * @param su additional arguments
+    * @param rules rules to use (precomputed for efficiency)
     * @return the simplified Term (if a sensible collection of rules is used that make this method terminate)
     *
     * The input term must be fully strictified, and so will be the output term.
@@ -240,12 +241,12 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
                log("expanding and simplifying definition of variable " + n)
                traverse(d)(context.before(n), state)
              case None =>
-               //TODO awkward special case to avoid marking an unknown as stable
-               val isUnknown = n.steps.length > 1 && (n.steps.head match {
-                 case SimpleStep(s) => s.startsWith("/")
+               //special case to avoid marking an unknown as stable
+               val isUnknown = state.unit.solverO match {
+                 case Some(solver) => solver.Unknown.unapply(t).isDefined
                  case _ => false
-               })
-               if (isUnknown)
+               }
+               if (!isUnknown)
                  setStable(t)
                t
            }
@@ -256,8 +257,12 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
            uR
          case _ =>
             val tS = Traverser(this, t)
-            SimplificationResult.put(t, tS)
-            tS
+            if (tS != t) {
+              traverse(tS)
+            } else {
+              SimplificationResult.put(t,tS)
+              tS
+            }
        }
       }
    }

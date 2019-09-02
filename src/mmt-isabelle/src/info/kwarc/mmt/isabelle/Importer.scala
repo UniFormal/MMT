@@ -191,7 +191,7 @@ object Importer
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
-    facts: List[isabelle.Export_Theory.Fact_Multi] = Nil,
+    thms: List[isabelle.Export_Theory.Thm] = Nil,
     locales: List[isabelle.Export_Theory.Locale] = Nil,
     locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
   {
@@ -200,7 +200,7 @@ object Importer
     def header_relevant: Boolean =
       header.nonEmpty &&
         (document_command || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
-          facts.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
+          thms.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def command_name: String = element.head.span.name
 
@@ -216,12 +216,6 @@ object Importer
     def is_axiomatization: Boolean = command_name == "axiomatization"
 
     def is_experimental: Boolean = element.iterator.exists(cmd => cmd.span.name == "sorry")
-
-    def facts_single: List[isabelle.Export_Theory.Fact_Single] =
-      (for {
-        decl_multi <- facts.iterator
-        decl <- decl_multi.split.iterator
-      } yield decl).toList
   }
 
 
@@ -540,9 +534,10 @@ object Importer
           }
         }
 
-        // facts
-        val facts: List[Item] =
-          segment.facts_single.flatMap(decl =>
+        // theorems
+        val thms: List[Item] =
+          segment.thms.flatMap(decl =>
+          {
             decl_error(decl.entity) {
               val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
@@ -568,12 +563,17 @@ object Importer
                 thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.experimental))
               }
 
+              for (dep <- decl.deps) {
+                val dep_item = thy_draft.content.get_thm(dep)
+                thy_draft.rdf_triple(Ontology.binary(item.global_name, Ontology.ULO.uses, dep_item.global_name))
+              }
+
               val tp = thy_draft.content.import_prop(decl.prop)
               add_constant(item, tp, Some(Isabelle.Unknown.term))
 
               item
             }
-          )
+          })
 
         // optional proof
         for (proof <- segment.proof) yield {
@@ -584,8 +584,8 @@ object Importer
 
           rdf_timing(proof.timing.total)
 
-          for (fact <- facts) {
-            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, fact.global_name))
+          for (thm <- thms) {
+            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, thm.global_name))
           }
         }
 
@@ -970,7 +970,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 decl.entity.name != isabelle.Pure_Thy.PROP
             } yield decl,
           consts = pure_theory.consts,
-          facts = pure_theory.facts,
+          thms = pure_theory.thms,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
       Theory_Export(pure_name, segments = List(segment))
@@ -1224,7 +1224,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
-            facts = for (decl <- theory.facts if defined(decl.entity)) yield decl,
+            thms = for (decl <- theory.thms if defined(decl.entity)) yield decl,
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
             locale_dependencies =
               for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
@@ -1299,13 +1299,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
-            isabelle.Export_Theory.Kind.FACT).map(kind => report_kind(kind.toString)))
+            isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
 
       def get(key: Item.Key): Item = items.getOrElse(key, isabelle.error("Undeclared " + key.toString))
       def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
       def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
-      def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT.toString, name))
+      def get_thm(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
       def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
       def get_locale_dependency(name: String): Item =
         get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))

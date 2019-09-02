@@ -671,13 +671,17 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             // most important special case: copy over notation of c if a does not have one and it is unambiguous
             (a.notC.parsing, c.notC.parsing) match {
               case (None, Some(cn)) =>
-                // TODO automatically make the notation inambiguous by changing its delimiters
                 lazy val impl = l match {
                   case _: AbstractTheory => true
                   case l: Link => l.isImplicit
                 }
-                if (cn.fixity.isRelative || impl) {
-                  newNotC.update(ParsingNotationComponent, cn)
+                val cnR = if (impl) Some(cn) else {
+                  // make inambiguous by inserting instance name
+                  val fixR = cn.fixity.relativize
+                  fixR map {f => cn.copy(fixity = f)}
+                }
+                cnR foreach {n =>
+                  newNotC.update(ParsingNotationComponent, n)
                 }
               case _ =>
             }
@@ -752,7 +756,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     * @return all pairs (theory,via) such that "via: theory --implicit--> to" (transitive and reflexive)
     */
   private def visibleVia(to: Term): List[(MPath, Term)] = {
-    TheoryExp.getSupport(to) flatMap {p => implicitGraph.getToWithEmpty(p)}
+    TheoryExp.getSupport(to) flatMap {p => implicitGraph.getTo(p,true)}
   }
 
 
@@ -929,38 +933,46 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
       // before == false
       case Include(id) if !before  =>
         // elaboration includes do not have to be added to implicits because the implicitGraph computes them anyway
-        id.home match {
-          case OMMOD(h) if !se.getOrigin.isInstanceOf[ElaborationOf] =>
-            get(h) match {
-              case thy: Theory =>
-                val oldImpl = implicitGraph(OMMOD(id.from), id.home) flatMap {
-                  case OMCOMP(Nil) => None
-                  case i => Some(i)
-                }
-                (id.df.isEmpty, oldImpl) match {
-                  case (true, Some(i)) =>
-                  // an undefined include acquires an existing non-include implicit morphism as its definiens
-                  // MoC design flaw because the implicit morphism may depend on a previous version of the theory
-                  // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
-                  //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
-                  case _ =>
-                    // this should be done at (*) below for realizations to avoid dependency cycles
-                    // but it causes problems when includes are registered as implicit before the realization is encountered
-                    //if (!id.isRealization)
-                    //realizations are only added when totality has been checked at the end of the theory
-                    addIncludeToImplicit(id)
-                }
-              case _ =>
-            }
-          case _ =>
+        if (!se.getOrigin.isInstanceOf[ElaborationOf]) {
+          //println("implicit edge: " + id.from + " " + id.home + " " + id.asMorphism)
+          id.home match {
+            case OMMOD(h) =>
+              get(h) match {
+                case thy: Theory =>
+                  val oldImpl = implicitGraph(OMMOD(id.from),id.home) flatMap {
+                    case OMCOMP(Nil) => None
+                    case i => Some(i)
+                  }
+                  (id.df.isEmpty,oldImpl) match {
+                    case (true,Some(i)) =>
+                    // an undefined include acquires an existing non-include implicit morphism as its definiens
+                    // MoC design flaw because the implicit morphism may depend on a previous version of the theory
+                    // but elaboration anyway handles this case now for the relevant case of include-induced morphisms
+                    //c.asInstanceOf[Structure].dfC.analyzed = Some(i)
+                    case _ =>
+                      // this should be done at (*) below for realizations to avoid dependency cycles
+                      // but it causes problems when includes are registered as implicit before the realization is encountered
+                      //if (!id.isRealization)
+                      //realizations are only added when totality has been checked at the end of the theory
+                      addIncludeToImplicit(id)
+                  }
+                case _ =>
+              }
+            case _ =>
+          }
         }
       case t: Theory if !before  =>
       // (*)
       //t.getRealizees foreach addIncludeToImplicit
       case l: Link if l.isImplicit && !before =>
-        val f = checkAtomic(l.from)
-        val t = checkAtomic(l.to)
-        implicitGraph.add(f, t, Some(l.toTerm))
+        val fO = checkAtomic(l.from)
+        val tO = checkAtomic(l.to)
+        (fO,tO) match {
+          case (Some(f),Some(t)) =>
+            implicitGraph.add(f, t, Some(l.toTerm))
+          case _ =>
+        }
+
       case _ =>
     }
   }
@@ -973,8 +985,10 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   }
 
   private def checkAtomic(t: Term) = t match {
-    case OMPMOD(p,_) => p
-    case _ => throw AddError("implicit morphism must have atomic domain and codomain")
+    case OMPMOD(p,_) => Some(p)
+    case OMSemiFormal(_) => None // this basically only happens when the parsing has previously failedterm has previously failpeople would not expect this to be implicit; error
+    case _ =>
+      throw AddError("implicit morphism must have atomic domain and codomain")
   }
 
   // shared code for adding an include

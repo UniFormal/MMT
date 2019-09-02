@@ -61,24 +61,24 @@ object InterpretationInstructionContext {
 
 /** defines the default namespace */
 case class Namespace(parent: DPath, namespace: Path) extends InterpretationInstruction {
-  val feature = "namespace"
+  val feature = InterpretationInstruction.namespace
   def arguments = List(namespace.toPath)
 }
 
 /** defines a namespace as an abbreviation for a Path */
 case class NamespaceImport(parent: DPath, prefix: String, namespace: DPath) extends InterpretationInstruction {
-  val feature = "import"
+  val feature = InterpretationInstruction.namespaceImport
   def arguments = List(prefix, namespace.toPath)
 }
 
 /** defines a fixed meta-theory */
 case class FixedMeta(parent: DPath, meta: MPath) extends InterpretationInstruction {
-  val feature = "fixmeta"
+  val feature = InterpretationInstruction.fixedmeta
   def arguments = List(meta.toPath)
 }
 
 case class DocumentRule(parent: DPath, rulepath: MPath, rule: Option[Rule]) extends InterpretationInstruction {
-  val feature = "documentrule"
+  val feature = InterpretationInstruction.documentrule
   def arguments = List(rulepath.toPath)
 }
 
@@ -94,7 +94,8 @@ object InterpretationInstruction {
       case this.namespace :: ns :: Nil => Namespace(parent, Path.parse(ns, nsMap)) 
       case this.namespaceImport :: pr :: ns :: Nil => NamespaceImport(parent, pr, Path.parseD(ns, nsMap))
       case this.fixedmeta :: mt :: Nil => FixedMeta(parent, Path.parseM(mt, nsMap))
-      case this.documentrule :: r :: Nil =>
+      // "documentrule" is not used anymore but still present in old OMDoc files; remove in 2020-01
+      case (this.documentrule | "documentrule") :: r :: Nil =>
         val rP = Path.parseM(r, nsMap)
         val rl = Rule.loadRule(controller, None, objects.OMMOD(rP))
         val rlO = Some(rl)
