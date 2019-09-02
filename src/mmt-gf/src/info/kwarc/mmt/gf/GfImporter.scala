@@ -1,6 +1,6 @@
 package info.kwarc.mmt.gf
 
-import info.kwarc.mmt.api.{DPath, LocalName, modules, symbols}
+import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, modules, symbols}
 import info.kwarc.mmt.api.archives.{BuildResult, BuildSuccess, BuildTask, Importer}
 import info.kwarc.mmt.api.documents.{Document, FileLevel, MRef}
 import info.kwarc.mmt.api.modules.Theory
@@ -43,8 +43,9 @@ class GfImporter extends Importer {
 
     for ((funname, funtypes) <- gf.functions) {
       val c = symbols.Constant(langTheory.toTerm, LocalName(funname), Nil,
-        Some(FunType(funtypes.dropRight(1).map(s => (None, OMV(LocalName(s)))).toList, OMV(LocalName(funtypes.last)))),
-        None, None)
+        Some(FunType(funtypes.dropRight(1).map(s => (None, OMS(GlobalName(langTheory.path, LocalName(s.toString))))).toList,
+                     OMS(GlobalName(langTheory.path, LocalName(funtypes.last))))),
+        None, None)       // TODO: can langTheory.path be wrong module? - how to determine right one?
       langTheory.add(c)
     }
 
