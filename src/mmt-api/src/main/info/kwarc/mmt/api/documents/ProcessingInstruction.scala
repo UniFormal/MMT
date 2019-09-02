@@ -86,7 +86,7 @@ object InterpretationInstruction {
   val namespace = "namespace"
   val namespaceImport = "import"
   val fixedmeta = "fixmeta"
-  val documentrule = "documentrule"
+  val documentrule = "rule"
   val all = List(namespace, namespaceImport, fixedmeta, documentrule)
   def parse(controller: frontend.Controller, parent: DPath, text: String, nsMap: NamespaceMap) = {
     val parts = stringToList(text)
@@ -94,7 +94,8 @@ object InterpretationInstruction {
       case this.namespace :: ns :: Nil => Namespace(parent, Path.parse(ns, nsMap)) 
       case this.namespaceImport :: pr :: ns :: Nil => NamespaceImport(parent, pr, Path.parseD(ns, nsMap))
       case this.fixedmeta :: mt :: Nil => FixedMeta(parent, Path.parseM(mt, nsMap))
-      case this.documentrule :: r :: Nil =>
+      // "documentrule" is not used anymore but still present in old OMDoc files; remove in 2020-01
+      case (this.documentrule | "documentrule") :: r :: Nil =>
         val rP = Path.parseM(r, nsMap)
         val rl = Rule.loadRule(controller, None, objects.OMMOD(rP))
         val rlO = Some(rl)
