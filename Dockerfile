@@ -1,12 +1,12 @@
 # Start from the sbt builder image
-FROM kwarc/sbt-builder
+FROM mozilla/sbt:8u212_1.2.8
 
 # Add all of MMT
 ADD src/ /build/MMT/src
 ADD deploy/ /build/MMT/deploy
 
 WORKDIR /build/MMT/src
-RUN sbt deploy
+RUN sbt ++2.12.8 deploy
 
 # Runtime dependencies
 FROM openjdk:jre-alpine
