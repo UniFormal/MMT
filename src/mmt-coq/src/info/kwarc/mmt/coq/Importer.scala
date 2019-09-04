@@ -1,21 +1,26 @@
 package info.kwarc.mmt.coq
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, RedirectableDimension}
+import info.kwarc.mmt.api.archives.{BuildFailure, BuildResult, BuildSuccess, BuildTask, Dim, LogicalDependency, MissingDependency, RedirectableDimension}
 import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMID, OML, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.xml.XMLError
 import info.kwarc.mmt.api.utils.{File, URI, xml}
-import info.kwarc.mmt.coq.coqxml.{CoqEntry, CoqXml}
+import info.kwarc.mmt.coq.coqxml.{CoqEntry, CoqXml, SupXML, TranslationState}
+import info.kwarc.mmt.lf.ApplySpine
 
 import scala.collection.mutable
 import scala.io.Source
+import scala.util.Try
 import scala.xml.{Node, parsing}
 import scala.xml.parsing.XhtmlParser
+
+
+case class CoqDependency(uri: URI) extends Throwable
 
 class Importer extends archives.Importer {
   val key = "coq-omdoc"
@@ -38,175 +43,380 @@ class Importer extends archives.Importer {
         sys.exit
     }
 
-    val ns = Path.parseD("cic:/" + bf.inPath.init.mkString("/"),NamespaceMap.empty)
+    val ns = bf.inPath.init.tail.foldLeft(Path.parseD("cic://" + bf.inPath.head,NamespaceMap.empty))((b,s) => b / s)
+    val ls = mutable.LinkedHashSet.empty[URI]
+    val (used,doc) = try {
+      doDocument(bf.narrationDPath,ns,bf.inFile.name.replace(".theory.xml",""),es,ls)
+    }catch {
+      case CoqDependency(u) =>
+        return MissingDependency(LogicalDependency(DPath(u.^) ? u.path.last) :: Nil,ls.toList.map(u => LogicalDependency(DPath(u.^) ? u.path.last)),Nil)
+        // return BuildFailure(Nil,Nil)
+    }
+    index(doc)
 
-    index(doDocument(bf.narrationDPath,ns,bf.inFile.name.replace(".theory.xml",""),es))
-
-    BuildResult.empty
+    BuildSuccess(Nil,used.map(u => LogicalDependency(DPath(u.^) ? u.path.last)))
   }
 
-  def doDocument(nb : DPath, dp : DPath,file : String,elems : List[coqxml.theorystructure]): Document = {
+  def doDocument(nb : DPath, dp : DPath,file : String,elems : List[coqxml.theorystructure], used_uris:mutable.LinkedHashSet[URI]): (List[URI],Document) = {
     val d = new Document(nb)
     val top = Theory(dp,LocalName(file),Some(Coq.foundation))
     // log("Adding " + top.path)
     controller add d
     controller add top
     controller add MRef(d.path,top.path)
-    elems.foreach(doDecl(top,_))
-    d
+    elems.foreach(doDecl(top,_,used_uris))
+    (used_uris.toList,d)
   }
 
-  def doDecl(parent : AbstractTheory, elem : coqxml.theorystructure): Unit = elem match {
-    case coqxml.MODULEExpr(uri,params,as,components,children) =>
-      val name = parent.name / uri.path.last
-      val th = Theory(parent.asInstanceOf[Theory].parent,name,Some(Coq.foundation))
-      val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
-      nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
-      log("Module " + th.path.toString)
-      controller add nt
+  object CoqURI {
 
-      components.collectFirst {
-        case coqxml.ExprXML(tx) =>
-          // val t = tx.toOMDoc(controller)
+    private def toomdoc(uri: URI, in: AbstractTheory): ContentPath = {
+      val fulluri = URI(uri.toString.replace("cic:/","cic://"))
+      var path = fulluri.path
+      if (path.last contains ".")
+        path = path.init ::: List(path.last.split('.').head)
+      var inpath = in.modulePath.parent.uri.path
+      var modpath = in.modulePath.name.steps.map(_.toString)
+
+      var currentD: DPath = Path.parseD("cic://" + fulluri.authority.get, NamespaceMap.empty)
+      var currentM: MPath = null
+
+      var is_in = fulluri.authority == in.modulePath.parent.uri.authority
+      while (path.nonEmpty) {
+        if (is_in && inpath.nonEmpty) {
+          if (path.head == inpath.head || (path.head + "_impl") == inpath.head) {
+            currentD = currentD / inpath.head
+            path = path.tail
+            inpath = inpath.tail
+          } else is_in = false
+        } else if (is_in && modpath.nonEmpty) {
+          if (path.head == modpath.head || (path.head + "_impl") == modpath.head) {
+            if (currentM == null) {
+              currentM = currentD ? modpath.head
+              path = path.tail
+              modpath = modpath.tail
+            } else {
+              currentM = currentM.parent ? (currentM.name / modpath.head)
+              path = path.tail
+              modpath = modpath.tail
+            }
+          } else is_in = false
+        } else if (currentM == null) controller.getO(currentD ? path.head) match {
+          case Some(_) =>
+            currentM = currentD ? path.head
+            path = path.tail
+          case None =>
+            currentD = currentD / path.head
+            path = path.tail
+        } else {
+          val np = currentM.parent ? (currentM.name / path.head)
+          controller.getO(np) match {
+            case Some(_) =>
+              currentM = np
+              path = path.tail
+            case None =>
+              return currentM ? path.mkString("/") //throw Dependency(uri) //.split('.').head // TODO is split('.') correct?
+          }
+        }
+      }
+      if (currentM != null) currentM else ???
+      /*
+    while (paths.nonEmpty) {
+      if (is_in && uri.)
+      controller.getO(currentD ? paths.head) match {
+        case Some(_) =>
+          currentM = currentD ? paths.head
+          paths = paths.tail
+          while (paths.nonEmpty) {
+            controller.getO(currentM.parent ? (currentM.name / paths.head)) match {
+              case Some(_) =>
+                currentM = currentM.parent ? (currentM.name / paths.head)
+                paths = paths.tail
+              case None =>
+                return currentM ? paths.mkString("/").split('.').head
+            }
+          }
+          return currentM
+        case None =>
+          currentD = currentD / paths.head
+          paths = paths.tail
+      }
+    }
+    error
+    */
+    }
+
+    def toMPath(uri: URI, in: AbstractTheory): MPath = Try(toomdoc(uri, in)).toOption match {
+      case Some(mp: MPath) =>
+        // ensure(mp,in)
+        mp
+      case Some(_) =>
+        ???
+      case _ =>
+        throw CoqDependency(uri) // TODO
+    }
+
+    def toGlobalName(uri: URI,in: AbstractTheory): GlobalName = Try(toomdoc(uri.^,in)).toOption match {
+      case Some(mp :MPath) =>
+        // ensure(gn,in)
+        mp ? uri.path.last.split('.').head
+      case Some(_) =>
+        ???
+      case _ =>
+        throw CoqDependency(uri.^) // TODO
+    }
+
+    private def ensure(p: ContentPath, in: AbstractTheory): Unit = {
+      val mp = p.toMPath
+      var current = in
+      while (current match {
+        case _ : Theory => false
+        case d : DerivedDeclaration if List("Module","ModuleType") contains d.feature => false
+        case _ => true
+      }) {
+        current = controller.get(current.parent).asInstanceOf[AbstractTheory]
+      }
+
+      val parent = current.modulePath
+      controller.library.getImplicit(mp, parent) match {
+        case Some(_) =>
+        case None => try {
+          controller.add(PlainInclude(mp, parent), AtBegin)
+        }
+        catch {
+          case e: ExtensionError =>
+          case e =>
+            println(e.getClass)
+            ???
+        }
+      }
+    }
+  }
+
+  def doDecl(parent : AbstractTheory, elem : coqxml.theorystructure, used_uris:mutable.LinkedHashSet[URI]): Unit = {
+    val state = TranslationState(controller,CoqURI.toMPath(_,parent),CoqURI.toGlobalName(_,parent),parent)
+    elem match {
+      // Simple Modules
+      case m:coqxml.MODULE =>
+
+        val (tp,impl) = if (m.attributes.isEmpty) (OMS(Coq.noConf),false)
+        else m.attributes match {
+          case List(SupXML(coqxml.supertypes(ms))) =>
+            val mps = ms.map {
+              case coqxml.MREF(uri) =>
+                CoqURI.toMPath(uri,parent)
+              case coqxml.WITH(coqxml.MREF(uri),_) =>
+                CoqURI.toMPath(uri,parent)
+                // TODO
+            }
+            (ApplySpine(OMS(Coq.confsubtp),mps.map(OMMOD(_)):_*),false)
+          case ls =>
+            val mps = ls.map {
+              case coqxml.ExprXML(coqxml.MREF(uri)) =>
+                CoqURI.toMPath(uri,parent)
+              case coqxml.ExprXML(coqxml.WITH(coqxml.MREF(uri),_)) =>
+                CoqURI.toMPath(uri,parent)
+              // TODO
+            }
+            (ApplySpine(OMS(Coq.confcolon),mps.map(OMMOD(_)):_*),false)
+        } // <: ~~> SupXML(supertypes(List()))
+        // : ~~> ExprXML(MREF())
+        print("")
+        val (name,comp) = tp match {
+          case _ : OMID | ApplySpine(OMS(Coq.confsubtp),_) =>
+            (LocalName(m.uri.path.last), m.components)
+          case _ =>
+            (LocalName(m.uri.path.last + "_impl"),m.componentsImpl)
+        } // parent.name / m.uri.path.last
+
+        val nt = new DerivedDeclaration(parent.toTerm,name,m.as,TermContainer(Some(tp)),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        used_uris += m.uri
+        controller add nt
+        log("Module " + nt.modulePath.toString)
+        if (m.params.nonEmpty) {
+          nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Functor")))
+          m.params foreach {
+            case (name,coqxml.ExprXML(coqxml.MREF(uri)) :: Nil) =>
+              nt.metadata.add(new MetaDatum(Coq.foundation ? "Parameter",OML(LocalName(name))))
+              Modules.covariant(uri,LocalName(name),nt,state)
+            case (name,coqxml.ExprXML(coqxml.WITH(coqxml.MREF(uri),_)) :: Nil) =>
+              nt.metadata.add(new MetaDatum(Coq.foundation ? "Parameter",OML(LocalName(name))))
+              Modules.covariant(uri,LocalName(name),nt,state)
+              // TODO
+          }
+        }
+        comp.foreach(doDecl(nt,_,used_uris))
+
+        try {
+          controller.simplifier(nt.path)
+        } catch {
+          case GetError(_) =>
+          case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
+        }
+
+      case coqxml.MODULEExpr(uri,params,as,components,children) =>
+        val name = parent.modulePath.name / uri.path.last
+        val th = Theory(parent.modulePath.parent,name,Some(Coq.foundation))
+        val nt = new NestedModule(OMMOD(parent.modulePath), LocalName(uri.path.last), th)
+        nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
+        log("Module " + th.path.toString)
+        controller add nt
+
+        if (params.nonEmpty) {
+          nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Functor")))
+          params foreach {
+            case (name,coqxml.ExprXML(coqxml.MREF(uri)) :: Nil) =>
+              nt.metadata.add(new MetaDatum(Coq.foundation ? "Parameter",OML(LocalName(name))))
+              Modules.covariant(uri,LocalName(name),nt.module.asInstanceOf[Theory],state)
+            case (name,coqxml.ExprXML(coqxml.WITH(coqxml.MREF(uri),_)) :: Nil) =>
+              nt.metadata.add(new MetaDatum(Coq.foundation ? "Parameter",OML(LocalName(name))))
+              Modules.covariant(uri,LocalName(name),nt.module.asInstanceOf[Theory],state)
+            // TODO
+          }
+        }
+
+        components.collectFirst {
+          case coqxml.ExprXML(tx) =>
+            // val t = tx.toOMDoc(controller)
+            // TODO
+            def getRec(it : coqxml.theoryexpr) : (URI,List[URI]) = it match {
+              case coqxml.MREF(iuri) =>
+                (iuri,Nil)
+              case coqxml.FUNAPP(f,args) =>
+                val (h,fi) = getRec(f)
+                (h,fi ::: args.flatMap { a =>
+                  val rec = getRec(a)
+                  rec._1 :: rec._2
+                })
+              case coqxml.WITH(a,b) =>
+                val ra = getRec(a)
+                //val rb = getRec(b)
+                //(ra._1,rb._1 :: ra._2 ::: rb._2)
+                ra
+              case coqxml.ABS(iuri,mod) =>
+                val r = getRec(mod)
+                (iuri,r._1 :: r._2)
+              case _ =>
+                ???
+            }
+            val (modtp,incls) = getRec(tx)
+            (modtp :: incls).foreach { u =>
+              val p = CoqURI.toMPath(u,th)
+              controller add PlainInclude(p,th.path)
+            }
+            Nil
+        }.getOrElse{
+          print("wut?")
+          ???
+        }
+        children.foreach(doDecl(th,_,used_uris))
+        if (as =="AlgebraicModule") controller add PlainInclude(th.path,parent.modulePath)
+
+      case coqxml.MODULE(uri,params,as,comp,implcomp,modcomps,modcompsimpl) =>
+        val name = parent.name / uri.path.last
+        val th = Theory(parent.modulePath.parent,name,Some(Coq.foundation))
+        // log("Adding " + th.path)
+        //controller add th
+        params map { u =>
           // TODO
-          def getRec(it : coqxml.theoryexpr) : (URI,List[URI]) = it match {
-            case coqxml.MREF(iuri) =>
-              (iuri,Nil)
-            case coqxml.FUNAPP(f,args) =>
-              val (h,fi) = getRec(f)
-              (h,fi ::: args.flatMap { a =>
-                val rec = getRec(a)
-                rec._1 :: rec._2
-              })
-            case coqxml.WITH(a,b) =>
-              val ra = getRec(a)
-              //val rb = getRec(b)
-              //(ra._1,rb._1 :: ra._2 ::: rb._2)
-              ra
-            case coqxml.ABS(iuri,mod) =>
-              val r = getRec(mod)
-              (iuri,r._1 :: r._2)
+        }
+        val nt = new NestedModule(OMMOD(parent.modulePath), LocalName(uri.path.last), th)
+        nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
+        log("Module " + th.path.toString)
+        controller add nt
+
+        if (as=="Module" && implcomp.isEmpty) {
+          comp.foreach(doDecl(th,_,used_uris))
+          modcomps foreach {
+            case coqxml.SupXML(coqxml.supertypes(ts)) =>
+            // TODO
+            case coqxml.ExprXML(ts) =>
+            // TODO
             case _ =>
               ???
           }
-          val (modtp,incls) = getRec(tx)
-          (modtp :: incls).foreach { u =>
-            val p = Coq.toMPath(u)(new coqxml.TranslationState(controller,th.path))
-            controller add PlainInclude(p,th.path)
+          controller add PlainInclude(th.path,parent.modulePath)
+        }
+        else if (as=="Module") {
+          implcomp.foreach(doDecl(th,_,used_uris))
+          (modcomps ::: modcompsimpl) foreach {
+            case coqxml.SupXML(coqxml.supertypes(ts)) =>
+            // TODO
+            case coqxml.ExprXML(ts) =>
+            // TODO
+            case _ =>
+              ???
           }
-          Nil
-      }.getOrElse{
-        print("wut?")
-        ???
-      }
-      children.foreach(doDecl(th,_))
-      if (as =="AlgebraicModule") controller add PlainInclude(th.path,parent.modulePath)
-
-    case coqxml.MODULE(uri,params,as,comp,implcomp,modcomps,modcompsimpl) =>
-      val name = parent.name / uri.path.last
-      val th = Theory(parent.asInstanceOf[Theory].parent,name,Some(Coq.foundation))
-      // log("Adding " + th.path)
-      //controller add th
-      params map { u =>
-        // TODO
-      }
-      val nt = new NestedModule(OMMOD(parent.asInstanceOf[Theory].path), LocalName(uri.path.last), th)
-      nt.metadata.add(new MetaDatum(Coq.decltype, OMS(Coq.foundation ? as)))
-      log("Module " + th.path.toString)
-      controller add nt
-
-      if (as=="Module" && implcomp.isEmpty) {
-        comp.foreach(doDecl(th,_))
-        modcomps foreach {
-          case coqxml.SupXML(coqxml.supertypes(ts)) =>
-            // TODO
-          case coqxml.ExprXML(ts) =>
-            // TODO
-          case _ =>
-            ???
+          controller add PlainInclude(th.path,parent.modulePath)
         }
-        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
-      }
-      else if (as=="Module") {
-        implcomp.foreach(doDecl(th,_))
-        (modcomps ::: modcompsimpl) foreach {
-          case coqxml.SupXML(coqxml.supertypes(ts)) =>
-          // TODO
-          case coqxml.ExprXML(ts) =>
-          // TODO
-          case _ =>
-            ???
+        else if (as=="ModuleType" && implcomp.isEmpty) {
+          comp.foreach(doDecl(th,_,used_uris))
+          // controller add PlainInclude(th.path,parent.path)
+        } else {
+          ???
         }
-        controller add PlainInclude(th.path,parent.asInstanceOf[Theory].path)
-      }
-      else if (as=="ModuleType" && implcomp.isEmpty) {
-        comp.foreach(doDecl(th,_))
-        // controller add PlainInclude(th.path,parent.path)
-      } else {
-        ???
-      }
       // if (implcomp.nonEmpty) implcomp foreach (doDecl(th,_)) else comp.foreach(doDecl(th,_))
       // controller add PlainInclude(th.path,parent.path)
-    case coqxml.SECTION(uri,statements) =>
-      val name = parent.name / uri.path.last
-      //val th = Theory(parent.parent,name,Some(Coq.foundation))
-      val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
-      nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Section")))
-      log("Section " + nt.path.toString)
-      controller add nt
-      statements.foreach(doDecl(nt,_))
-      try {
-        controller.simplifier(nt.path)
-      } catch {
-        case GetError(_) =>
-        case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
-      }
+      case coqxml.SECTION(uri,statements) =>
+        val name = parent.name / uri.path.last
+        //val th = Theory(parent.parent,name,Some(Coq.foundation))
+        val nt = new DerivedDeclaration(parent.toTerm,LocalName(uri.path.last),"Section",TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        nt.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? "Section")))
+        log("Section " + nt.path.toString)
+        controller add nt
+        statements.foreach(doDecl(nt,_,used_uris))
+        try {
+          controller.simplifier(nt.path)
+        } catch {
+          case GetError(_) =>
+          case GeneralError(_) => // TODO err obviously something blablabla variables not declared in context blabla
+        }
       // controller add PlainInclude(th.path,parent.path)
-    case coqxml.VARIABLE(uri,as,components) =>
-      val (name,tp,df) = components.collectFirst {
-        case coqxml.TopXML(coqxml.Variable(nm,params,_,body,tptm)) =>
-          (LocalName(nm),Some(Coqtp(tptm.tm.toOMDoc(controller,parent.modulePath))),body.map(_.tm.toOMDoc(controller,parent.modulePath))) // TODO
-      }.getOrElse {
-        ???
-      }
-      // val tp : Option[Term] = None
-      // val df : Option[Term] = None
-      val c = Constant(parent.toTerm,name,Nil,tp,df,Some("Variable"))
-      c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
-      // log("Variable " + c.path.toString + ":: " + c.toString)
-      controller add c
-    case coqxml.constantlike(uri,as,components) if as == "Inductive" || as == "CoInductive" =>
-      val tps = components.collectFirst {
-        case coqxml.TopXML(coqxml.InductiveDefinition(noParams, _, _, tpn)) =>
-          tpn
-      }.getOrElse {
-        components.foreach(println)
-        ???
-      }
-      val dname = LocalName(tps.map {
-        case coqxml.InductiveType(namei,_,_,_,_) => namei
-      }.mkString + "_DEF")
-      val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
-      controller add dd
+      case coqxml.VARIABLE(uri,as,components) =>
+        val (name,tp,df) = components.collectFirst {
+          case coqxml.TopXML(coqxml.Variable(nm,params,_,body,tptm)) =>
+            (LocalName(nm),Some(Coqtp(tptm.tm.toOMDoc(state))),body.map(_.tm.toOMDoc(state))) // TODO
+        }.getOrElse {
+          ???
+        }
+        // val tp : Option[Term] = None
+        // val df : Option[Term] = None
+        val c = Constant(parent.toTerm,name,Nil,tp,df,Some("Variable"))
+        c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
+        // log("Variable " + c.path.toString + ":: " + c.toString)
+        controller add c
+      case coqxml.constantlike(uri,as,components) if as == "Inductive" || as == "CoInductive" =>
+        val tps = components.collectFirst {
+          case coqxml.TopXML(coqxml.InductiveDefinition(noParams, _, _, tpn)) =>
+            tpn
+        }.getOrElse {
+          components.foreach(println)
+          ???
+        }
+        val dname = LocalName(tps.map {
+          case coqxml.InductiveType(namei,_,_,_,_) => namei
+        }.mkString + "_DEF")
+        val dd = new DerivedDeclaration(parent.toTerm,dname,as,TermContainer(None),NotationContainer()) //new NestedModule(OMMOD(parent.path),LocalName(uri.path.last),th) // TODO handle sections
+        controller add dd
 
-      tps foreach {
-        case coqxml.InductiveType(namei,indbool,_,arity,consts) =>
-          val name = LocalName(namei)
-          val tp = Some(Coqtp(arity.tm.toOMDoc(controller,parent.modulePath)))
-          val df = None // TODO
+        tps foreach {
+          case coqxml.InductiveType(namei,indbool,_,arity,consts) =>
+            val name = LocalName(namei)
+            val tp = Some(Coqtp(arity.tm.toOMDoc(state)))
+            val df = None // TODO
           val c = Constant(dd.toTerm,name,Nil,tp,df,Some("Type"))
-          controller add c
-          consts.zipWithIndex foreach {
-            case (coqxml.Constructor(cname,ctp),i) =>
-              controller add Constant(dd.toTerm,LocalName(cname),LocalName(namei + "_C_" + (i+1)) :: Nil,Some(ctp.toOMDoc(controller,parent.modulePath)),None,Some("Constructor"))
+            controller add c
+            consts.zipWithIndex foreach {
+              case (coqxml.Constructor(cname,ctp),i) =>
+                controller add Constant(dd.toTerm,LocalName(cname),LocalName(namei + "_C_" + (i+1)) :: Nil,Some(ctp.toOMDoc(state)),None,Some("Constructor"))
 
-          }
-      }
-      try {
-        controller.simplifier(parent.path)
-      } catch {
-        case GetError(_) =>
-      }
+            }
+        }
+        try {
+          controller.simplifier(parent.path)
+        } catch {
+          case GetError(_) =>
+        }
       /*
       val (name,tp,df) = components.collectFirst {
         case coqxml.TopXML(coqxml.InductiveDefinition(noParams,_,_,tps)) =>
@@ -224,34 +434,35 @@ class Importer extends archives.Importer {
       log("Definition " + c.path.toString + ":: " + c.toString)
       controller add c
       */
-    case coqxml.constantlike(uri,as,components) if as == "Scheme" =>
+      case coqxml.constantlike(uri,as,components) if as == "Scheme" =>
 
-    case coqxml.constantlike(uri,as,components) if as == "Record" =>
+      case coqxml.constantlike(uri,as,components) if as == "Record" =>
       // TODO
-    case coqxml.constantlike(uri,as,components) =>
-      val (name,tp,df) = components.collectFirst {
-        case coqxml.TopXML(coqxml.ConstantType(namei,params,id,tpi)) =>
-          val dfi = components.collectFirst {
-            case coqxml.BodyXML(coqxml.ConstantBody(_,_,_,body)) =>
-              body.toOMDoc(controller,parent.modulePath) // TODO
-          }
-          val ret = (LocalName(namei),Some(Coqtp(tpi.toOMDoc(controller,parent.modulePath))),dfi) // TODO
-          ret
-      }.getOrElse {
-        println("Oops")
-        ???
-      }
-      val c = Constant(parent.toTerm,name,Nil,tp,df,Some(as))
-      c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
-      // log("Definition " + c.path.toString + ":: " + c.toString)
-      controller add c
-    case coqxml.Requirement(uri) =>
-      val mp = Coq.toMPath(uri)(new coqxml.TranslationState(controller,parent.modulePath))
+      case coqxml.constantlike(uri,as,components) =>
+        val (name,tp,df) = components.collectFirst {
+          case coqxml.TopXML(coqxml.ConstantType(namei,params,id,tpi)) =>
+            val dfi = components.collectFirst {
+              case coqxml.BodyXML(coqxml.ConstantBody(_,_,_,body)) =>
+                body.toOMDoc(state) // TODO
+            }
+            val ret = (LocalName(namei),Some(Coqtp(tpi.toOMDoc(state))),dfi) // TODO
+            ret
+        }.getOrElse {
+          println("Oops")
+          ???
+        }
+        val c = Constant(parent.toTerm,name,Nil,tp,df,Some(as))
+        c.metadata.add(new MetaDatum(Coq.decltype,OMS(Coq.foundation ? as)))
+        // log("Definition " + c.path.toString + ":: " + c.toString)
+        controller add c
+      case coqxml.Requirement(uri) =>
+        val mp = CoqURI.toMPath(uri,parent)//(new coqxml.TranslationState(controller,parent.modulePath))
       val inc = PlainInclude(mp,parent.modulePath)
-      controller add inc
-    case _ =>
-      println(elem.getClass)
-      ???
+        controller add inc
+      case _ =>
+        println(elem.getClass)
+        ???
+    }
   }
 
   class Parser(tfile: File) {
@@ -383,7 +594,11 @@ class Importer extends archives.Importer {
           case "" => Nil
           case s =>
             val ps = s.split(' ').map(URI(_)).toList// List(URI(s))
-            ps.map(u => handleXml(namespaces ::: List(uri.path.last),u.path.last))
+            ps.map{u =>
+              val name = u.path.last
+              val xm = handleXml(namespaces ::: List(uri.path.last),name)
+              (name,xm)
+            }
             // TODO
         }
         if (as=="AlgebraicModule" || as=="AlgebraicModuleType") {

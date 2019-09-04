@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import frontend._
 import objects._
+import documents._
 import presentation.Presenter
 import QueryResultConversion._
 import QueryTypeConversion._
@@ -70,7 +71,7 @@ class Parse extends QueryFunctionExtension("parse", StringType, ObjType) {
     val mp = mpath(params)
     argument match {
       case StringValue(s) =>
-        val pu = ParsingUnit(SourceRef.anonymous(s), Context(mp), s, NamespaceMap.empty)
+        val pu = ParsingUnit(SourceRef.anonymous(s), Context(mp), s, InterpretationInstructionContext())
         controller.objectParser(pu)(ErrorThrower).toTerm
       case _ => throw ImplementationError("evaluation of ill-typed query")
     }

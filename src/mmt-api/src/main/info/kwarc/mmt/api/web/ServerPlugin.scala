@@ -467,10 +467,10 @@ class ActionServer extends ServerExtension("action") {
     controller.handle(act)
     val r = logCache.stop
     logCache.clear
-    val html = utils.HTML.build { h =>
+    val html = utils.HTML.build {h =>
       import h._
       div {
-        r foreach { l => div {
+        r foreach {l => div {
           text {
             l
           }

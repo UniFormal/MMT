@@ -364,12 +364,13 @@ class STeXImporter extends Importer {
           } catch {
             case e: NotFound => None
           }
+          def getstex(elem: Node,attr:String) = elem \ ("@{http://kwarc.info/ns/sTeX}" + attr)
           cO match {
             case Some(c) =>
               //getting macro info
               try {
-                val macro_name = (n \ "@macro_name").text
-                val nrArgs = (n \ "@nargs").text.toInt
+                val macro_name = getstex(n,"macro_name").text
+                val nrArgs = getstex(n,"nargs").text.toInt
                 val macroMk = Delim("\\" + macro_name)
                 val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: SimpArg(i + 1) :: Delim("}") :: Nil)
                 val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)

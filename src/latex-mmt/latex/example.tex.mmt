@@ -1,0 +1,61 @@
+import ex http://cds.omdoc.org/examples
+theory Group
+ : ex:?FOLEQNatDed
+ = 
+constant op
+ : term ? term ? term 
+ # 1 ? 2 
+
+constant unit
+ : term 
+ # e 
+
+constant inv
+ : term ? term 
+ # 1 ' 
+
+constant division
+ : term ? term ? term 
+ = [x,y] x?y' 
+ # 1 / 2 
+
+constant commutator
+ : term ? term ? term 
+ = [x,y] x?y?x'?y' 
+ # < 1 , 2 > 
+
+constant mmt@2.4.0 = [x,y] x?y?x'?y'
+constant mmt@2.4.1 = [x,y]<x,y>
+theory CONTEXT_1
+ = 
+constant a
+ : term 
+
+constant mmt@2.4.2 = a'
+theory CONTEXT_2
+ = 
+constant b
+ : term 
+
+constant mmt@2.4.3 = a?b?a'?b'
+constant mmt@2.4.4 = a
+constant mmt@2.4.5 = b
+
+
+
+theory Group2
+ : ex:?FOLEQNatDed
+ = 
+include ?Group 
+include ex:?Nat 
+constant power
+ : term ? nat ? term 
+ # 1 ^ 2 
+
+
+theory Group3
+ : ex:?FOLEQNatDed
+ = 
+include ?Group2 
+constant mmt@3.0.0 = [n,x,y] x'^n / y
+

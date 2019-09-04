@@ -172,27 +172,33 @@ class Setup extends ShellExtension("jeditsetup") {
         File.WriteLineWise(jcat, newCatalog.reverse)
       }
       // abbrevs
-      val sabb = MMTSystem.getResourceAsString("latex/unicode-latex-map")
+      val sabb = parser.UnicodeMap.readMap("unicode/unicode-latex-map") ::: parser.UnicodeMap.readMap("unicode/unicode-ascii-map") 
       val jabb = jedit / "abbrevs"
       var newAbbrevs: List[String] = Nil
       var remove = false
       // read current abbrevs without MMT abbrevs
-      if (jabb.exists) File.ReadLineWise(jabb) { line =>
-        if (install)
+      if (jabb.exists) File.ReadLineWise(jabb) {line =>
+        if (install) {
           newAbbrevs ::= line
-        else {
-          if (remove && line.startsWith("["))
+        } else {
+          if (remove && line.startsWith("[")) {
             remove = false
-          if (line.trim == "[mmt]")
+          }
+          if (line.trim == "[mmt]") {
             remove = true
-          if (!remove)
+          }
+          if (!remove) {
             newAbbrevs ::= line
+          }
         }
       }
       // append MMT abbrevs if installing
       if (install) {
         newAbbrevs ::= "[mmt]"
-        stringToList(sabb,"\\n") foreach {l => newAbbrevs ::= l}
+        sabb foreach {case (c,r) =>
+          val cE = c.replace("|", "!") // jEdit always uses the first | as separator
+          newAbbrevs ::= s"$cE|$r"
+        }
       }
       // write new abbrevs
       if (newAbbrevs.nonEmpty) {
@@ -231,7 +237,7 @@ class Setup extends ShellExtension("jeditsetup") {
     }
 
 
-    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), /*("ContextMenu","0.4"),*/ ("BufferTabs","1.2.4"))
+    val jars = List(("ErrorList", "2.3"), ("SideKick", "1.8"), ("Hyperlinks","1.1.0"), ("Console","5.1.4"), ("BufferTabs","1.2.4"))
     /** installs plugin dependencies and useful properties */
     def customize() {
        // download jars from jEdit plugin central
@@ -245,7 +251,9 @@ class Setup extends ShellExtension("jeditsetup") {
              File.download(url, zip)
              File.unzip(zip, jarFolder)
            } catch {
-             case e: Exception => log(e.getMessage)
+             case e: Exception =>
+               log(e.getMessage)
+               log(s"the above error occurred while downloading the $pluginName plugin of jEdit; you must install it manually via the jEdit plugin manager")
            } finally {
              zip.delete
            }

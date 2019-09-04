@@ -270,28 +270,31 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
  */
 object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-      val OMM(t,m) = tm
-      if (t.freeVars.nonEmpty) {
-        solver.error("cannot apply morphism to term with free variables yet")
+      tm match {
+        case OMM(t,m) =>
+          if (t.freeVars.nonEmpty) {
+            solver.error("cannot apply morphism to term with free variables yet")
+          }
+          val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+          val (mDom,mCod) = mI match {
+            case Some(MorphType(d,c)) => (d,c)
+            case _ => return None
+          }
+          val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
+            solver.error("morphism does not translate into the current theory")
+            return None
+          }
+          val mDomContext = mDom match {
+            case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
+            case _ =>
+              history += "domain of morphism is not an instance of a named theory"
+              return None
+          }
+          // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
+          val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
+          tI map {tp => OMM(tp,OMCOMP(m,impl))}
+        case _ => None
       }
-      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
-      val (mDom,mCod) = mI match {
-        case Some(MorphType(d,c)) => (d,c)
-        case _ => return None
-      }
-      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
-        solver.error("morphism does not translate into the current theory")
-        return None
-      }
-      val mDomContext = mDom match {
-        case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
-        case _ =>
-          history += "domain of morphism is not an instance of a named theory"
-          return None
-      }
-      // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
-      val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
-      tI map {tp => OMM(tp,OMCOMP(m,impl))}
    }
 }
 
@@ -313,11 +316,10 @@ object MorphismApplicationCompute extends ComputationRule(ModExp.morphismapplica
             solver.error("morphism does not translate into the current theory")
             return Recurse
           }
-          val translator = ApplyMorphism(OMCOMP(m,impl))
           if (t.freeVars.nonEmpty) {
             solver.error("cannot apply morphism to term with free variables yet")
           }
-          val tT = translator(Context.empty, t)
+          val tT = solver.lookup.ApplyMorphs(t, OMCOMP(m,impl))
           Simplify(tT)
         case _ => Simplifiability.NoRecurse // may happen if in binder of OMBIND
       }

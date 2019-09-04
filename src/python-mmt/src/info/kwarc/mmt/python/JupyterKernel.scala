@@ -111,7 +111,7 @@ class JupyterKernel extends Extension {
         val tail = s.substring("present ".length)
 
         // get the object to present
-        val path = Path.parse(tail, session.doc.nsMap)
+        val path = Path.parse(tail, session.doc.getNamespaceMap)
         val obj = controller.get(path)
 
         // and present the returned object

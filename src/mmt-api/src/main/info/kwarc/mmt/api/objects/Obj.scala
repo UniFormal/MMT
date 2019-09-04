@@ -12,10 +12,19 @@ import info.kwarc.mmt.api.notations.TextNotation
 
 import scala.xml.{Node,Elem,Utility}
 
+trait ShortURIPrinter {
+   /** configurable string representation
+     *  @param shortURIs print OMS without namespace, theory
+     */
+   def toStr(implicit shortURIs: Boolean): String
+   /** defaults to toStr(false) */
+   override def toString = toStr(false)
+}
+
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj] {
+abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter with HashEquality[Obj] {
    /** the type of this instance
     *
     *  This is needed to provide sharper return types for inductive functions,
@@ -24,12 +33,6 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    type ThisType >: this.type <: Obj
    protected def mdNode = metadata.toNode
 
-   /** defaults to toStr(false) */
-   override def toString = toStr(false)
-   /** configurable string representation
-    *  @param shortURIs print OMS without namespace, theory
-    */
-   def toStr(implicit shortURIs: Boolean): String
    /** prints to OpenMath */
    def toNode : scala.xml.Node
    /** prints to OpenMath (with OMOBJ wrapper) */

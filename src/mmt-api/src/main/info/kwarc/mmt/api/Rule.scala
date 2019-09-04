@@ -31,7 +31,40 @@ trait Rule extends SemanticObject {
    */
    // TODO priority is used only in some situations so far, in particular for lexer extensions, type inference, or term-transformation
   def priority: Int = 0
+}
 
+object Rule {
+  def loadRule(controller: Controller, homeO: Option[Term], rl: Term) = {
+    val (rlP,rlArgs) = rl match {
+        case OMPMOD(p,as) => (p,as)
+        case _ => throw InvalidObject(rl, "cannot interpret as semantic object: " + rl)
+    }
+    controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
+        case Some(sf: StructuralFeature) =>
+          if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
+          sf.getRule
+        case Some(_) => throw InvalidObject(rl, "extension exists but does not provide a rule: " + rl)
+        case None =>
+          val so = controller.backend.loadObjectO(rlP).getOrElse {
+            throw InvalidObject(rl, "semantic object not found")
+          }
+          so match {
+            case r: Rule =>
+              if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
+              r
+            case r: ParametricRule =>
+              val home = homeO getOrElse {
+                throw ImplementationError("rule is parametric, but not home theory provided")
+              }
+              try {
+                r(controller, home, rlArgs)
+              } catch {case e: Exception =>
+                throw InvalidObject(rl, "error while instantiating parametric rule").setCausedBy(e)
+              }
+            case _ => throw InvalidObject(rl, "semantic object exists but is not a rule: " + rl)
+          }
+      }
+  }
 }
 
 /** parametric rules can be instantiated to obtain rules */
@@ -101,29 +134,40 @@ class MutableRuleSet extends RuleSet {
 }
 
 object RuleSet {
-   /** collects all rules visible to a context, based on what is currently loaded into memory */
-   def collectRules(controller: Controller, context: Context): MutableRuleSet = {
-      collectAdditionalRules(controller, None, context)
-   }
+   /** collects all rules visible to a context */
+  def collectRules(controller: Controller,context: Context): MutableRuleSet = {
+    collectAdditionalRules(controller,None,context)
+  }
 
-   /**
+  /**
     * incremental collection of rules: collectAdditionalRules(c, collectRules(c, con1), con2) = collectRules(c, con1++con2)
     */
-   def collectAdditionalRules(controller: Controller, addTo: Option[RuleSet], context: Context): MutableRuleSet = {
-      val support = context.getIncludes
-      var shadowed: List[Rule] = Nil
-      val rs = new MutableRuleSet
-      addTo.foreach {a => rs.imports(a)}
-      support.foreach {p =>
-        controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
-         case rc: RuleConstant =>
-            rc.df foreach {r =>
-              rs.declares(r.providedRules :_*)
-              shadowed :::= r.shadowedRules
-            }
-         case _ =>
-        }}
+  def collectAdditionalRules(controller: Controller,addTo: Option[RuleSet],context: Context): MutableRuleSet = {
+    val support = context.getIncludes
+    var shadowed: List[Rule] = Nil
+    val rs = new MutableRuleSet
+    addTo.foreach {a => rs.imports(a)}
+    support.foreach {p =>
+      //TODO this takes around 20% of processing time when reading mmt files - investigate if it is due to this method or due to some lower method (e.g., reading OMDoc files)
+      controller.globalLookup.forDeclarationsInScope(OMMOD(p)) {case (p,m,d) => d match {
+        case rc: RuleConstant =>
+          rc.df foreach { r =>
+            rs.declares(r.providedRules: _*)
+            shadowed :::= r.shadowedRules
+          }
+        case _ =>
       }
+      }
+    }
+     /* not faster:
+      Theory.flatIterator(support, controller.globalLookup).foreach {
+        case (rc: RuleConstant,None) =>
+          rc.df foreach { r =>
+            rs.declares(r.providedRules: _*)
+            shadowed :::= r.shadowedRules
+          }
+        case _ =>
+      }*/
       rs.shadow(shadowed:_*)
       rs
    }

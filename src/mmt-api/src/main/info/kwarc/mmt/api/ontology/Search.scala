@@ -5,6 +5,7 @@ import objects._
 import parser._
 import notations._
 import frontend._
+import documents._
 
 /** regular expressions to be matched against components of a [[Path]] */
 case class PathPattern(basePattern: Option[String], modulePattern: Option[String], namePattern: Option[String]) {
@@ -45,7 +46,7 @@ object TermPattern {
    /** parses $ qvars:query, all unknown or free variables are turned into additional query variables */
    def parse(controller: Controller, theory: String, pattern: String, format: String): TermPattern = {
       val mp = Path.parseM(theory, NamespaceMap(utils.mmt.mmtcd))
-      val pu = ParsingUnit(SourceRef.anonymous(pattern), Context(mp), pattern, NamespaceMap(mp), Some(qvarRule))
+      val pu = ParsingUnit(SourceRef.anonymous(pattern), Context(mp), pattern, InterpretationInstructionContext(NamespaceMap(mp)), Some(qvarRule))
       val parser = controller.extman.get(classOf[ObjectParser], format).getOrElse(throw ParseError("no parser found for $format"))
       val pr = parser(pu)(ErrorThrower)
       val qPM = (new RemoveUnknowns(pr.unknown++pr.free)).apply(pr.term, Context.empty)

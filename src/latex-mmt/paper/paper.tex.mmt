@@ -1,9 +1,11 @@
+rule scala://parser.api.mmt.kwarc.info?UnicodeReplacer
+rule scala://latex.mmt.kwarc.info?Common/LatexToUnicodeConverter
 import ex http://cds.omdoc.org/examples
 theory Group
  : ex:?SFOLEQ
  = 
 constant U
- : sort 
+ : tp 
 
 constant operation
  : tm U --> tm U --> tm U 
@@ -18,6 +20,12 @@ constant inv
  # 1 ' prec 60 
 
 
+\protect \begingroup \immediate \write \@unused   \def \MessageBreak  
+ \let \protect \edef  You may provide a definition with\MessageBreak \DeclareUnicodeCharacter   \errhelp \let \def \MessageBreak  
+(inputenc)                 \def   \errmessage  Package inputenc Error: Unicode character ﹕ (U+FE55)\MessageBreak not set up for use with LaTeX.
+
+See the inputenc package documentation for explanation.
+Type  H <return>  for immediate help   \endgroup 
 theory Division
  : ex:?SFOLEQ
  = 
@@ -27,5 +35,5 @@ constant division
  = [x,y] x*y' 
  # 1 / 2 prec 50 
 
-constant mmt@2.2.0 = forall [x] x / x = e
+constant mmt@2.2.0 = \forall [x] x / x =. e
 

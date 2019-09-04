@@ -24,7 +24,8 @@ class ShellCommand extends ShellExtension("run") {
      controller.getConfig.getEntries(classOf[LMHConf]).foreach { e => controller.addArchive(e.local)}
      val con = Context(thy)
      val progS = args.tail.mkString(" ")
-     val pu = ParsingUnit(SourceRef.anonymous(progS), con, progS, nsMap)
+     val iiC = new documents.InterpretationInstructionContext(nsMap)
+     val pu = ParsingUnit(SourceRef.anonymous(progS), con, progS, iiC)
      val parser = controller.extman.get(classOf[Parser], "mmt").get
      val progP = parser(pu)(makeErrorThrower("ill-formed program")).toTerm
       val progC = checking.Solver.check(controller, Stack(con), progP) match {

@@ -145,9 +145,9 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf, gf,
     tiscaf, lfcatalog,
-    jedit, intellij
+    jedit, intellij, argsemcomp
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -160,7 +160,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp, gf).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -190,7 +190,7 @@ lazy val mmt = (project in file("mmt")).
 
 def apiJars(u: Utils) = Seq(
   "scala-compiler.jar",
-  "scala-reflect.jar",
+  "scala-library.jar",
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
@@ -254,6 +254,17 @@ lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-coq"): _*)
 
+lazy val lsp = (project in file("mmt-lsp")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-lsp"): _*).
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
+  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
+
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
@@ -279,6 +290,16 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   dependsOn(stex).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
+
+// Glf server. Maintainer: Frederik
+lazy val glf = (project in file("mmt-glf")).
+  dependsOn(api, lf, repl).
+  settings(mmtProjectsSettings("mmt-glf"): _*)
+
+// plugin for reading GF. Maintainer: Frederik
+lazy val gf = (project in file("mmt-gf")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-gf"): _*)
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
@@ -413,8 +434,17 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
+// plugin for computing argumentation semantics
+lazy val argsemcomp = (project in file("mmt-argsemcomp")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
+  settings(
+    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
+    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
+  )
+
 // =================================
-// DEPENDENT PROJECTS (projects that do not use mmt-api)
+// DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)

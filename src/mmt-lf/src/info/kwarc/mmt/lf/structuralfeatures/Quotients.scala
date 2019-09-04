@@ -17,7 +17,7 @@ import info.kwarc.mmt.api.utils.MMT_TODO
 class Quotients extends StructuralFeature("quotient") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val name = LocalName(dd.path.last)
     implicit val parentTerm = dd.path
     val params = Type.getParameters(dd)

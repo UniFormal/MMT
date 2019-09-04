@@ -15,7 +15,7 @@ case class MyPosition(offset : Int) extends javax.swing.text.Position {
 }
 
 /** node in the sidekick outline tree: common ancestor class
- * @param name the label of the asset
+ * @param label the label of the asset
  * @param region the source region of the asset
  */
 sealed abstract class JAsset(protected val label: String, val region: SourceRegion) extends enhanced.SourceAsset(label, region.start.line, MyPosition(region.start.offset))
@@ -44,9 +44,9 @@ class JElemAsset(val elem : StructuralElement, name: String, reg: SourceRegion) 
 }
 
 /** node for objects
- * @param term the node in the MMT syntax tree
+ * @param obj the node in the MMT syntax tree
  * @param parent the component containing the term
- * @param subobjectPosition the position in that term
+ * @param reg the region of the term
  */
 class JObjAsset(mmtplugin: MMTPlugin, val obj: Obj, val pragmatic: Obj, val context: Context, val parent: CPath, name: String, reg: SourceRegion)
   extends JAsset(name, reg) with MMTObjAsset {

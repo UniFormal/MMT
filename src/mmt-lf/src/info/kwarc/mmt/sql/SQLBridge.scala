@@ -24,7 +24,7 @@ class SQLBridge(controller: Controller, rules: RuleSet, commProps: List[Commutin
    def theoryToTable(t: Theory): Table = {
      val datasetName: Option[String] = SchemaLang.datasetNameAnnotator.get(t)
      val schemaGroup: Option[String] = SchemaLang.schemaGroupAnnotator.get(t)
-     val includes = t.getAllIncludesWithoutMeta.map(_._1)
+     val includes = t.getAllIncludesWithoutMeta.map(_.from)
      val cols = t.getConstants flatMap {
        case c: Constant => constantToColumn(c).toList
      }

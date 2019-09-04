@@ -191,7 +191,7 @@ object Importer
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
-    facts: List[isabelle.Export_Theory.Fact_Multi] = Nil,
+    thms: List[isabelle.Export_Theory.Thm] = Nil,
     locales: List[isabelle.Export_Theory.Locale] = Nil,
     locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
   {
@@ -200,7 +200,7 @@ object Importer
     def header_relevant: Boolean =
       header.nonEmpty &&
         (document_command || classes.nonEmpty || types.nonEmpty || consts.nonEmpty ||
-          facts.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
+          thms.nonEmpty || locales.nonEmpty || locale_dependencies.nonEmpty)
 
     def command_name: String = element.head.span.name
 
@@ -216,12 +216,6 @@ object Importer
     def is_axiomatization: Boolean = command_name == "axiomatization"
 
     def is_experimental: Boolean = element.iterator.exists(cmd => cmd.span.name == "sorry")
-
-    def facts_single: List[isabelle.Export_Theory.Fact_Single] =
-      (for {
-        decl_multi <- facts.iterator
-        decl <- decl_multi.split.iterator
-      } yield decl).toList
   }
 
 
@@ -338,26 +332,7 @@ object Importer
     }
 
     def typargs(typ: isabelle.Term.Typ): List[isabelle.Term.Typ] =
-    {
-      var subst = Map.empty[String, isabelle.Term.Typ]
-      def bad_match(): Nothing = isabelle.error("Bad type arguments for " + key + ": " + typ)
-      def raw_match(arg: (isabelle.Term.Typ, isabelle.Term.Typ))
-      {
-        arg match {
-          case (isabelle.Term.TFree(a, _), ty) =>
-            subst.get(a) match {
-              case None => subst += (a -> ty)
-              case Some(ty1) => if (ty != ty1) bad_match()
-            }
-          case (isabelle.Term.Type(c1, args1), isabelle.Term.Type(c2, args2)) if c1 == c2 =>
-            (args1 zip args2).foreach(raw_match)
-          case _ => bad_match()
-        }
-      }
-
-      raw_match(type_scheme._2, typ)
-      type_scheme._1.map(subst(_))
-    }
+      isabelle.Term.const_typargs(key.toString, typ, type_scheme._1, type_scheme._2)
   }
 
   def dependencies(term: Term): Set[ContentPath] =
@@ -559,9 +534,10 @@ object Importer
           }
         }
 
-        // facts
-        val facts: List[Item] =
-          segment.facts_single.flatMap(decl =>
+        // theorems
+        val thms: List[Item] =
+          segment.thms.flatMap(decl =>
+          {
             decl_error(decl.entity) {
               val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
               thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
@@ -587,12 +563,17 @@ object Importer
                 thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.experimental))
               }
 
+              for (dep <- decl.deps) {
+                val dep_item = thy_draft.content.get_thm(dep)
+                thy_draft.rdf_triple(Ontology.binary(item.global_name, Ontology.ULO.uses, dep_item.global_name))
+              }
+
               val tp = thy_draft.content.import_prop(decl.prop)
               add_constant(item, tp, Some(Isabelle.Unknown.term))
 
               item
             }
-          )
+          })
 
         // optional proof
         for (proof <- segment.proof) yield {
@@ -603,8 +584,8 @@ object Importer
 
           rdf_timing(proof.timing.total)
 
-          for (fact <- facts) {
-            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, fact.global_name))
+          for (thm <- thms) {
+            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, thm.global_name))
           }
         }
 
@@ -843,25 +824,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* resources */
+    /* session */
 
-    val dump_options: isabelle.Options =
-      isabelle.Dump.make_options(options, isabelle.Dump.known_aspects)
-        .real.update("headless_check_delay", options.real("mmt_check_delay"))
-        .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-        .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
+    val session =
+      isabelle.Dump.Session(
+        options
+          .real.update("headless_check_delay", options.real("mmt_check_delay"))
+          .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
+          .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout")),
+        logic,
+        aspects = isabelle.Dump.known_aspects,
+        progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
-    private val session_deps =
-      isabelle.Dump.dependencies(dump_options, progress = progress,
-        dirs = dirs, select_dirs = select_dirs, selection = selection)
-
-    val resources: isabelle.Headless.Resources =
-      isabelle.Headless.Resources.make(dump_options, logic, progress = progress,
-        session_dirs = dirs ::: select_dirs,
-        include_sessions = session_deps.sessions_structure.imports_topological_order)
-
-    private val import_theories =
-      resources.used_theories(session_deps, progress = progress)
+    val resources = session.resources
 
 
     /* theories */
@@ -891,7 +866,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val session_name = theory_qualifier(name)
       val session_info =
-        session_deps.sessions_structure.get(session_name) getOrElse
+        session.deps.sessions_structure.get(session_name) getOrElse
           err("Undefined session info " + isabelle.quote(session_name))
 
       val chapter = session_info.chapter
@@ -937,18 +912,17 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* import session theories */
 
-    import_theories.foreach(theory_archive)
+    session.used_theories.foreach(theory_archive)
 
     def import_session(import_theory: Theory_Export => Unit)
     {
-      if (import_theories.isEmpty) {
+      if (session.used_theories.isEmpty) {
         progress.echo_warning("Nothing to import")
       }
       else {
         import_theory(pure_theory_export)
-        isabelle.Dump.session(session_deps, resources,
+        session.run(
           unicode_symbols = true,
-          progress = progress,
           process_theory = (args: isabelle.Dump.Args) =>
             {
               val snapshot = args.snapshot
@@ -989,7 +963,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 decl.entity.name != isabelle.Pure_Thy.PROP
             } yield decl,
           consts = pure_theory.consts,
-          facts = pure_theory.facts,
+          thms = pure_theory.thms,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
       Theory_Export(pure_name, segments = List(segment))
@@ -1243,7 +1217,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
-            facts = for (decl <- theory.facts if defined(decl.entity)) yield decl,
+            thms = for (decl <- theory.thms if defined(decl.entity)) yield decl,
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
             locale_dependencies =
               for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
@@ -1318,13 +1292,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CLASS,
             isabelle.Export_Theory.Kind.TYPE,
             isabelle.Export_Theory.Kind.CONST,
-            isabelle.Export_Theory.Kind.FACT).map(kind => report_kind(kind.toString)))
+            isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
 
       def get(key: Item.Key): Item = items.getOrElse(key, isabelle.error("Undeclared " + key.toString))
       def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
       def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
       def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
-      def get_fact(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.FACT.toString, name))
+      def get_thm(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
       def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
       def get_locale_dependency(name: String): Item =
         get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))

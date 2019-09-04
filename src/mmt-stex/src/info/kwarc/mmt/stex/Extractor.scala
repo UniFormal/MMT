@@ -32,13 +32,12 @@ class sTeXExtractor extends RelationalExtractor {
       }
       if (foundPrimarySymbol) {
         f(IsMathStructure(m.path))
-        m.getDeclarations collect {i => i match {
-          case PlainInclude(from,_) =>
+        m.getDeclarations collect {
+          case i@PlainInclude(from,_) =>
             if (!i.metadata.get(sTeXMetaData.rolePath).map(_.value).contains(OMSTR("conservative-extension"))) {
               f(IsHypernymOf(m.path, from))
             }
         }}
-      }
     case _ => //do nothing
   }}
 }

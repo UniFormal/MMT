@@ -46,32 +46,7 @@ class RuleConstantInterpreter(controller: frontend.Controller) {
       val rl = rc.tp.getOrElse {
         return
       }
-      val (rlP,rlArgs) = rl match {
-        case OMPMOD(p,as) => (p,as)
-        case _ => throw InvalidObject(rl, "cannot interpret as semantic object: " + rl)
-      }
-      val rule = controller.extman.addExtensionO(SemanticObject.mmtToJava(rlP, true), Nil) match {
-        case Some(sf: StructuralFeature) =>
-          if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
-          sf.getRule
-        case Some(_) => throw InvalidObject(rl, "extension exists but does not provide a rule: " + rl)
-        case None =>
-          val so = controller.backend.loadObjectO(rlP).getOrElse {
-            throw InvalidObject(rl, "semantic object not found")
-          }
-          so match {
-            case r: Rule =>
-              if (rlArgs.nonEmpty) throw InvalidObject(rl, "too many arguments")
-              r
-            case r: ParametricRule =>
-              try {
-                r(controller, rc.home, rlArgs)
-              } catch {case e: Exception =>
-                throw InvalidObject(rl, "error while instantiating parametric rule").setCausedBy(e)
-              }
-            case _ => throw InvalidObject(rl, "semantic object exists but is not a rule: " + rl)
-          }
-      }
+      val rule = Rule.loadRule(controller, Some(rc.home), rl)
       rc.df = Some(rule)
    }
 

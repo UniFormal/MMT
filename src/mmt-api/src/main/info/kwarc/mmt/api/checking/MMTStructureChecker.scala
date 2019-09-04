@@ -14,15 +14,18 @@ import opaque._
 import objects.Conversions._
 
 /** variant of CheckingEnvironment that carries around more structure */
-case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, p: Path, var timeout: Int = 0) {
+case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: ObjectChecker, rules: RuleSet, current: Path, var timeout: Int = 0) {
   def pCont(q: Path) {
-    ce.reCont(RefersTo(q, p))
+    ce.reCont(RefersTo(q, current))
   }
 
   def errorCont(e: Error) {
     ce.errorCont(e)
   }
 }
+
+/** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */
+case class Expectation(tp: Option[Term], df: Option[Term])
 
 /** A StructureChecker traverses structural elements and checks them, calling the object checker as needed.
   * 
@@ -126,8 +129,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
   private def check(context: Context, e: StructuralElement, streamed: Boolean)(implicit env: ExtendedCheckingEnvironment) {
     implicit val ce = env.ce
     val path = e.path
-    log("checking " + path ,Some("simple"))
-    log("checking " + path)//+ " using the following rules: " + env.rules.toString)
+    log("checking " + path,e match {
+      case _:AbstractTheory | _:Constant => Some("simple")
+      case _ => None
+    })//+ " using the following rules: " + env.rules.toString)
     UncheckedElement.set(e)
     e match {
       case c: ContainerElement[_] =>
@@ -142,7 +147,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
-            check(contextI, d, false)(envI)
+            check(contextI, d, false)(envI.copy(current = d.path))
           }
         }
         if (!streamed)
@@ -170,7 +175,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         check(context, nm.module, streamed)
       case rc: RuleConstant =>
         rc.tp foreach {tp =>
-          val tpR = checkTerm(context, tp)
+          val (tpR,_) = checkTermTop(context, tp)
           rc.tpC.analyzed = tpR
           if (rc.df.isEmpty) {
             if (ParseResult.fromTerm(tpR).isPlainTerm) {
@@ -186,22 +191,52 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           }
         }
       case c: Constant =>
-        // determine whether we are in a theory or a link
-        //   (thy,None): c is constant in theory thy
-        //   (thy, Some(l)): c is assignment in link l from thy
-        val (thy, linkOpt) = content.getDomain(c)
-        // the home theory of the components of c
-        val scope = linkOpt match {
-          case None => thy.toTerm
-          case Some(link) => link.to
+        // determine the expected type and definiens (if any) based on the parent element
+        val parent = content.getParent(c)
+        lazy val defaultExp = Expectation(None, None)
+        val expectation = parent match {
+          case thy: Theory =>
+            c.name.steps.head match {
+              case ComplexStep(r) =>
+                val reals = thy.getRealizees
+                reals.find(_.from == r) match {
+                  case None =>
+                    env.errorCont(InvalidElement(c, "cannot find realized constant"))
+                    defaultExp
+                  case Some(real) =>
+                    content.getO(r ? c.name.tail) match {
+                      case Some(cOrg: Constant) =>
+                        def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
+                        Expectation(cOrg.tp map tr, cOrg.df map tr)
+                      case _ =>
+                        env.errorCont(InvalidElement(c, "cannot find realized constant"))
+                        defaultExp                      
+                    }
+                }
+              case _ =>
+                defaultExp
+            }
+          case link: Link =>
+            content.get(link.from, c.name, msg => throw GetError("cannot find realized constant")) match {
+              case cOrg: Constant =>
+                def tr(t: Term) = content.ApplyMorphs(t, link.toTerm) 
+                Expectation(cOrg.tp map tr, cOrg.df map tr)
+              case _ =>
+                env.errorCont(InvalidElement(c, "cannot find realized constant"))
+                Expectation(None, None)
+            }
+          case dd: DerivedDeclaration =>
+            val sfOpt = extman.getOrAddExtension(classOf[StructuralFeature], dd.feature)
+            sfOpt match {
+              case None => defaultExp
+              case Some(sf) =>
+                val expTpO = sf.expectedType(dd, c)
+                Expectation(expTpO, None)
+            }
+          case _ =>
+            defaultExp
         }
-        // if link: the source constant and its translated components
-        val linkInfo = linkOpt map { link =>
-          val cOrg = content.getConstant(thy.modulePath ? c.name)
-          val expTypeOpt = cOrg.tp map { t => content.ApplyMorphs(t, link.toTerm) }
-          val expDefOpt = cOrg.df map { t => content.ApplyMorphs(t, link.toTerm) }
-          (cOrg, expTypeOpt, expDefOpt)
-        }
+        // now the actual checking
         /* auxiliary function for structural checking of a term:
          * @return unknown variables, structural reconstruction, boolean result of latter
          */
@@ -220,29 +255,28 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           
         }
         // = checking the type =
-        // check that the type of c (if given) is in a universe
-        getTermToCheck(c.tpC, "type") foreach { t =>
+        // check that the type of c (if given) is inhabitable
+        getTermToCheck(c.tpC, "type") foreach {t =>
           val (pr, valid) = prepareTerm(t)
           if (valid) {
             checkInhabitable(pr)
           }
         }
-        // == additional check in a link ==
-        // translate the type of cOrg
-        linkInfo foreach {
-          case (_, Some(expType), _) => c.tp match {
+        // additional treatment if there is an expected type
+        expectation.tp foreach {expTp =>
+          c.tp match {
             case Some(tp) =>
             // c already has a type: keep it, but check compatibility
             //val j = Subtype(Stack(scope, parR), tp, expType)
             //objectChecker(ValidationUnit(c.path $ TypeComponent, Context(), j))
             case None =>
-              // c has no type: use the translated type
-              c.tpC.analyzed = expType
+              // c has no type: copy over the expected type
+              val tr = env.ce.simplifier.objectLevel.toTranslator(env.rules, false)
+              val expTpS = tr(context, expTp)
+              c.tpC.analyzed = expTpS
           }
-          case _ => // cOrg has no type, nothing to do
         }
-        // = checking the definiens =
-        // check that the definiens of c (if given) type-checks against the type of c (if given)
+        // check that the definiens of c (if given) type-checks against the type of c (if given or expected)
         val tpVar = CheckingUnit.unknownType
         getTermToCheck(c.dfC, "definiens") foreach {d =>
           val (pr, valid) = prepareTerm(d)
@@ -255,7 +289,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                 // try to guess the type of d by inferring without checking
                 val dIO = Solver.infer(controller, context ++ pr.unknown ++ pr.free, d, Some(env.rules))
                 dIO match {
-                  // we can only use the infered type if no extra variables are left in it
+                  // we can only use the inferred type if no extra variables are left in it
                   case Some(dI) if dI.freeVars.forall(x => context.isDeclared(x))  =>
                     // dI was not computed by trusting d, so we need to check it as well; also this call sets c.tp 
                     checkInhabitable(ParseResult(Context.empty,Context.empty, dI))
@@ -278,19 +312,17 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
           }
         }
-        // == additional check in a link ==
-        // translate the definiens of cOrg
-        linkInfo foreach {
-          case (_, _, Some(expDef)) => c.df match {
+        // additional treatment if there is an expected definiens
+        expectation.df foreach {expDef =>
+          c.df match {
             case Some(df) =>
             // c already has a definiens: keep it, but check equality
             //val j = Equality(Stack(scope, parR), df, expDef, None)
             //objectChecker(ValidationUnit(c.path $ DefComponent, Context(), j))
             case None =>
-              // c has no definiens: use the translated definiens
+              // c has no definiens: copy over the expected definiens
               c.dfC.analyzed = expDef
           }
-          case _ => // cOrg has no definiens, nothing to do
         }
       case _ =>
         //succeed for everything else but signal error
@@ -359,6 +391,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         s.fromC.get foreach {t => checkTheory(Some(CPath(s.path, TypeComponent)), context, t)}
         // check definiens, use it to update/infer domain
         val (thy, linkOpt) = content.getDomain(s)
+        linkOpt foreach {l =>
+          if (s.isImplicit && linkOpt.isDefined) {
+            throw InvalidElement(s,s.feature + " in a " + l.feature + " may not be implicit")
+          }
+        }
         s.df.foreach {df =>
           val (expectedDomain, expectedCodomain) = linkOpt match {
             case None =>
@@ -408,11 +445,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             env.errorCont(InvalidElement(dd, s"structural feature '${dd.feature}' not registered"))
           case Some(sf) =>
             dd.tpC.get foreach {tp =>
-              val tpR = checkTerm(context, tp)
+              val tpR = checkTermTop(context, tp)
               // not using tpR here because source references are gone
             }
             dd.dfC.get foreach {df =>
-              val dfR = checkTerm(context, df)
+              val dfR = checkTermTop(context, df)
               // not using dfR here because source references are gone
             }
         }
@@ -432,16 +469,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     e match {
       case d: Document =>
       case t: Theory =>
-      case v: View =>
-        val istotal = isTotal(context,v)
-        if (istotal.nonEmpty) {
-          val ie = new InvalidElement(v, "View is not total") {
-            override def level = Level.Warning
-            override def extraMessage = istotal.map(_.toString).mkString("\n")
+        val reals = t.getRealizees
+        reals foreach {r =>
+          r.df match {
+            case None =>
+              checkTotalTop(t, OMMOD(r.from))
+            case Some(df) =>
+              checkMorphism(context, df, Some(OMMOD(r.from)), Some(t.toTerm))
           }
-          env.errorCont(ie)
         }
+      case v: View =>
+        checkTotalTop(v, v.from)
+      case Include(_) =>
       case s: Structure =>
+        if (s.isTotal) {
+          checkTotalTop(s, s.from)
+        }
       case dm: DerivedModule =>
         val sfOpt = extman.get(classOf[ModuleLevelFeature], dm.feature)
         // error for sfOpt.isEmpty is raised in checkElementegin already
@@ -480,22 +523,73 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     elementChecked(e)
   }
   
-  /** checks if a view is total and returns the missing assignments */
-  @MMT_TODO("needs review")
-  private def isTotal(context: Context, view: View, currentincl: Option[Term] = None)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
-    val dom = env.ce.simplifier.materialize(context,currentincl.getOrElse(view.from),None,None).asInstanceOf[Theory]
-    env.ce.simplifier(dom)
-    val consts = dom.getConstants collect {
-      case c : Constant if c.df.isEmpty && !view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name) => c.path
-    }
-    val incls = dom.getIncludesWithoutMeta.view.filterNot {from =>
-        view.getDeclarations.exists(d => d.name == LocalName(from))
-      }.filterNot {from =>
-        controller.library.getImplicit(OMMOD(from),view.to).isDefined
-      }.flatMap {case from =>
-        isTotal(context,view,Some(OMMOD(from)))
+  private def checkTotalTop(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment) {
+    val unmappedNames = checkTotal(mod, thyTerm)
+    val total = unmappedNames.isEmpty
+    if (!total) {
+      val ie = new InvalidElement(mod, mod.feature + " is not total") {
+        override def level = Level.Warning
+        override def extraMessage = unmappedNames.mkString("\n")
       }
-    (consts ::: incls.toList).distinct
+      env.errorCont(ie)
+    }
+  }
+  /** checks if a modules (theory, view, or structure) is total for a given theory
+    * @param mod the module
+    * @param thyTerm the theory
+    * @return all names for which an assignment is missing
+    * pre: thyTerm has been simplified already
+    */
+  private def checkTotal(mod: ModuleOrLink, thyTerm: Term)(implicit env: ExtendedCheckingEnvironment): List[GlobalName] = {
+    val thyPath = thyTerm match {
+      case OMPMOD(p,_) => p
+      case _ => return Nil // TODO make sure this does not happen
+    }
+    val thy = content.getAs(classOf[Theory], thyPath)
+    // convenience for the two kinds of results
+    def mapped = Nil
+    def unmapped(n: LocalName) = List(thyPath ? n)
+    val unm = thy.getDeclarations flatMap {
+      case c: Constant =>
+        if (c.df.isDefined) mapped else {
+          val names = c.name.prefixes
+          val isMapped = names.exists {n => mod.getO(LocalName(thyPath) / c.name) match {
+            case Some(nA: Constant) => nA.df.isDefined
+            case Some(nS: Structure) => nS.df.isDefined
+            case _ => false
+          }}
+          if (isMapped) mapped
+          else unmapped(c.name)
+        }
+      case s: Structure =>
+        if (s.df.isDefined) mapped else s match {
+          case Include(id) if id.isRealization =>
+            mapped
+          case Include(id) =>
+            mod.getO(LocalName(id.from)) match {
+              case Some(nS: Structure) =>
+                // no need to look for assignments to theories that subsume id.from because thy is flattened
+                mapped // in theories, id is allowed to be undefined; in views, definedness of id is checked elsewhere anyway 
+              case _ => 
+                // recurse into includes
+                checkTotal(mod, s.from)
+            }
+          case _ =>
+            // we assume a structure is mapped if its elaboration is
+            mapped
+        }
+      case nm: NestedModule => Nil
+      case dd: DerivedDeclaration =>
+        if (dd.df.isDefined) mapped else {
+          // TODO treatment of derived declarations in links not specified yet
+          // for now we assume it is mapped if its elaboration is
+          mapped
+        }
+      case d =>
+        // TODO add more cases if needed
+        unmapped(d.name)
+    }
+    unm.distinct
   }
 
   // *****
@@ -610,7 +704,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
     val (mR, domI, codI) = m match {
       case OMMOD(p) =>
-        val l = controller.globalLookup.getLink(p)
+        val l = content.getAs(classOf[Link], p)
         env.pCont(p)
         (m, l.from, l.to)
       case OMS(p) =>
@@ -641,6 +735,14 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         // get domain and codomain as contexts
         val bodyR = checkSubstitution(context, body, domC, codC, false)
         (ComplexMorphism(bodyR), dom, cod)
+      case OMStructuralInclude(f,t) =>
+        val tThy = content.getAs(classOf[Theory], t)
+        tThy.getRealizees.find(_.from == f) match {
+          case None =>
+            throw InvalidObject(m, "no such realization declared")
+          case Some(id) =>
+        }
+        (m, OMMOD(f), OMMOD(t))
       case _ =>
         throw InvalidObject(m, "unknown morphism")
     }
@@ -666,7 +768,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *
     * @param context the context
     * @param t       the term
-    * @return the reconstructed term
+    * @return the reconstructed term and a flag to signal if there were errors
     */
   private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
     env.ce.errorCont.mark
@@ -701,22 +803,38 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         env.pCont(p)
         s
       case OMS(path) =>
-        val ceOpt = content.getO(path)
-        if (ceOpt.isEmpty) {
-          env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+        val ceOpt = content.getO(path) orElse {
+          // heuristically try to resolve an unknown path
+          val options = content.resolveName(List(path.module), path.name)
+          options match {
+            case Nil =>
+              env.errorCont(InvalidObject(s, "ill-formed constant reference " + path))
+              None
+            case hd :: Nil =>
+              content.getO(hd)
+            case _ => 
+              env.errorCont(InvalidObject(s, "ambiguous constant reference " + path))
+              None
+          }
         }
         ceOpt match {
           case Some(d: Declaration) =>
-            if (!content.hasImplicit(d.home, ComplexTheory(context)))
+            val pathR = d.path
+            if (!content.hasImplicit(d.home, ComplexTheory(context))) {
               env.errorCont(InvalidObject(s, "constant " + d.path + " is not imported into current context " + context))
+            }
             if (UncheckedElement.is(d))
               env.errorCont(InvalidObject(s, "constant " + d.path + " is used before being declared " + context))
-          case _ =>
+            env.pCont(pathR)
+            //TODO wrap in implicit morphism?
+            OMS(pathR).from(s)
+          case Some(_) =>
             env.errorCont(InvalidObject(s, path + " does not refer to constant"))
+            s
+          case None =>
+            // error was thrown above already 
+            s
         }
-        env.pCont(path)
-        //TODO wrap in implicit morphism?
-        s
       case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
@@ -731,13 +849,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OMA(f, args) =>
         val fR = checkTerm(context, f)
         val argsR = args map { a => checkTerm(context, a) }
-        OMA(fR, argsR)
+        OMA(fR, argsR).from(s)
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
         val conR = checkContext(context, con)
         val contextCon = context ++ conR
         val argsR = args map {a => checkTerm(contextCon, a)}
-        OMBINDC(binR, conR, argsR)
+        OMBINDC(binR, conR, argsR).from(s)
       case OMATTR(arg, key, value) =>
         val argR = checkTerm(context, arg)
         checkTerm(context, key)
@@ -823,7 +941,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @param allowPartial if true, do not require totality of subs
     * @return the reconstructed substitution
     */
-  private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)(implicit env: ExtendedCheckingEnvironment): Substitution = {
+  private def checkSubstitution(context: Context, subs: Substitution, from: Context, to: Context, allowPartial: Boolean)
+                               (implicit env: ExtendedCheckingEnvironment): Substitution = {
     // collect all names to be mapped
     var fromDomain = from.getDomain
     var subsDomain = subs.asContext.getDomain

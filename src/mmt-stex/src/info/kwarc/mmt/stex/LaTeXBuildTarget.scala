@@ -27,7 +27,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   val pipeOutputOption : String = "pipe-worker-output"
 
   /** timout in seconds */
-  private val timeoutDefault        : Int = 300
+  private val timeoutDefault        : Int = 600
   protected var timeoutVal          : Int = timeoutDefault
   protected val timeoutOption    : String = "timeout"
   protected var nameOfExecutable : String = ""

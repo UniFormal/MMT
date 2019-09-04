@@ -75,3 +75,14 @@ trait ListWrapperCompanion[A, W <: ListWrapper[A,W]] {
   implicit def toList(w: ListWrapper[A,W]) = w._as
   implicit def toMyList(w: ListWrapper[A,W]) = MyList(w._as)
 }
+
+sealed abstract class NestableList[+A] extends Iterable[A]
+case class EmptyNestable[+A]() extends NestableList[A] {
+  def iterator = Iterator.empty
+}
+case class ConsNestable[+A](hd: A, tl: NestableList[A]) extends NestableList[A] {
+  def iterator = Iterator(hd) ++ tl.iterator
+}
+case class ConcatNestable[+A](left: NestableList[A], right: NestableList[A]) extends NestableList[A] {
+  def iterator = left.iterator ++ right.iterator
+}
