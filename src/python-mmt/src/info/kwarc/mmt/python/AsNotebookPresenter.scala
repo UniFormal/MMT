@@ -45,10 +45,10 @@ class AsNotebookStructurePresenter(oP: ObjectPresenter) extends Presenter(oP) {
          c.df.foreach {t => s += " = " + oP.asString(t)}
          // TODO add notations etc.
          s
-       case Include(_, p, args) =>
+       case Include(id) =>
          var s = "include "
-         val dom = if (args.isEmpty) p.toString
-         else oP.asString(OMA(OMMOD(p), args))
+         val dom = if (id.args.isEmpty) id.from.toString
+         else oP.asString(OMA(OMMOD(id.from), id.args))
          s + dom
        case d =>
          "// ignored declaration " + d

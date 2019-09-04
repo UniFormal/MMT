@@ -1,4 +1,4 @@
-    package info.kwarc.mmt.jedit
+package info.kwarc.mmt.jedit
 
 import java.awt.Font
 
@@ -101,19 +101,27 @@ class MMTPlugin extends EBPlugin with Logger {
              case _ =>
             }
         case vup: ViewUpdate =>
-           val view = vup.getView
-           vup.getWhat match {
-              case ViewUpdate.CREATED =>
+          val view = vup.getView
+          vup.getWhat match {
+            case ViewUpdate.CREATED =>
                  log("handling " + vup.paramString)
                  customizeView(view)
-                 // set tooltip font; this is only needed once and should be done is start; but it's unclear how to get the font if there is no view yet
+                 // set tooltip font; this is only needed once and should be done in start; but it's unclear how to get the font if there is no view yet
                  val font = view.getTextArea.getPainter().getFont()
                  javax.swing.UIManager.put("ToolTip.font",font)
-              case ViewUpdate.CLOSED =>
+            case ViewUpdate.CLOSED =>
                  log("handling " + vup.paramString)
                  clearMMTToolBar(view)
-              case _ =>
+            case _ =>
            }
+        case bup: BufferUpdate =>
+          val buffer = bup.getBuffer
+          val file = utils.File(buffer.getPath)
+          bup.getWhat match {
+            case BufferUpdate.CLOSED =>
+              errorSource.removeFileErrors(file)
+            case _ =>
+          }
         case _ =>
       }
    }
@@ -141,8 +149,9 @@ class MMTPlugin extends EBPlugin with Logger {
       val tooltipExt = new MMTToolTips(controller, editPane)
       val gutterExt = new MMTGutterExtension(this, editPane)
       val annotExt = new MMTGutterAnnotations(this, editPane)
-      painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       painter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, tooltipExt) // jedit tries lower layers first when looking for a tooltip; we must be below error list
+      // This only painted delimiters, which is now done by syntax highlighting, and did semantic highlighting, which never worked anyway
+      painter.addExtension(TextAreaPainter.TEXT_LAYER, taExt)
       ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER, gutterExt)
       ta.getGutter.addExtension(TextAreaPainter.BELOW_MOST_EXTENSIONS_LAYER-1, annotExt)
       ta.getGutter.addMouseListener(annotExt.mouseAdapter)

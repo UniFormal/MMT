@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import parser._
 import frontend.actions._
+import documents._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import objects._
 
@@ -87,7 +88,7 @@ trait ActionHandling extends
           return ErrorResponse("no presenter found for " + out)
         }
         val context = contOpt.getOrElse(Context.empty)
-        val pu = ParsingUnit(SourceRef.anonymous(text), context, text, getNamespaceMap)
+        val pu = ParsingUnit(SourceRef.anonymous(text), context, text, InterpretationInstructionContext(getNamespaceMap))
         val checked = interpreter(pu)(ErrorThrower)
         val simplified = simplifier(checked.term, SimplificationUnit(context, false, true))
         val presented = presenter.asString(simplified)

@@ -1,0 +1,19 @@
+\RequireMMTPackage{MMT/examples/export/presentation/mmt-sty/content/http..cds.omdoc.org/examples/$F$O$L$E$Q$Nat$Ded}
+\newcommand{\Group@@op}[2]{#1\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?op}{\circ }#2}
+\newcommand{\Group@@unit}{\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?unit}{e}}
+\newcommand{\Group@@inv}[1]{#1\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?inv}{'}}
+\newcommand{\Group@@division}[2]{\frac{#1}{#2}}
+\newcommand{\Group@@commutator}[2]{\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?commutator}{<}#1\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?commutator}{,}#2\mmt@symref{file:/C:/frabe/MMT-devel/src/latex-mmt/latex/example.tex?Group?commutator}{>}}
+\expandafter\def\csname mmt@2.4.0\endcsname{\mmt@group{\LambdaPi@@lambda{{\mmt@vardecl[term]{x}{\FOL@@term}{}},{\mmt@vardecl[term]{y}{\FOL@@term}{}}}{\mmt@group{\Group@@inv{\mmt@group{\Group@@op{\mmt@group{\Group@@inv{\mmt@group{\Group@@op{\mmt@group{\Group@@op{x}{y}}}{x}}}}}{y}}}}}}}
+\expandafter\def\csname mmt@2.4.1\endcsname{\mmt@group{\LambdaPi@@lambda{{\mmt@vardecl[term]{x}{\FOL@@term}{}},{\mmt@vardecl[term]{y}{\FOL@@term}{}}}{\mmt@group{\Group@@commutator{x}{y}}}}}
+\newcommand{\Group@CONTEXTUOne@@a}{a}
+\expandafter\def\csname mmt@2.4.2\endcsname{\mmt@group{\Group@@inv{\Group@CONTEXTUOne@@a}}}
+\newcommand{\Group@CONTEXTUOne@CONTEXTUTwo@@b}{b}
+\expandafter\def\csname mmt@2.4.3\endcsname{\mmt@group{\Group@@inv{\mmt@group{\Group@@op{\mmt@group{\Group@@inv{\mmt@group{\Group@@op{\mmt@group{\Group@@op{\Group@CONTEXTUOne@@a}{\Group@CONTEXTUOne@CONTEXTUTwo@@b}}}{\Group@CONTEXTUOne@@a}}}}}{\Group@CONTEXTUOne@CONTEXTUTwo@@b}}}}}
+\expandafter\def\csname mmt@2.4.4\endcsname{\Group@CONTEXTUOne@@a}
+\expandafter\def\csname mmt@2.4.5\endcsname{\Group@CONTEXTUOne@CONTEXTUTwo@@b}
+\RequireMMTPackage{MMT/examples/export/presentation/mmt-sty/content/http..cds.omdoc.org/examples/$F$O$L$E$Q$Nat$Ded}
+\RequireMMTPackage{MMT/examples/export/presentation/mmt-sty/content/http..cds.omdoc.org/examples/$Nat}
+\newcommand{\GroupTwo@@power}[2]{{#1}^{#2}}
+\RequireMMTPackage{MMT/examples/export/presentation/mmt-sty/content/http..cds.omdoc.org/examples/$F$O$L$E$Q$Nat$Ded}
+\expandafter\def\csname mmt@3.0.0\endcsname{\mmt@group{\LambdaPi@@lambda{{\mmt@vardecl[nat]{n}{\Nat@@nat}{}},{\mmt@vardecl[term]{x}{\FOL@@term}{}},{\mmt@vardecl[term]{y}{\FOL@@term}{}}}{\mmt@group{\Group@@division{\mmt@group{\GroupTwo@@power{\mmt@group{\Group@@inv{x}}}{n}}}{y}}}}}

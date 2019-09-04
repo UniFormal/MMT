@@ -11,12 +11,13 @@ import info.kwarc.mmt.lf._
 import InternalDeclaration._
 import InternalDeclarationUtil._
 import info.kwarc.mmt.api.utils.MMT_TODO
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 @MMT_TODO("this is experimental and may still be removed")
 class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricTheoryLike {
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
 
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = { 
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = { 
     //val name = LocalName(dd.path.last)
     implicit val parentTerm = dd.path
     val context = Type.getParameters(dd)
@@ -40,7 +41,7 @@ class EquivalenceRelation extends StructuralFeature("equivRel") with ParametricT
       val symmTp = OMV(uniqueLN("symm_"+eqRel.name, params)) % Pi(context++a++b, Arrow(rel(a, b), rel(b, a)))
       val reflTp = OMV(uniqueLN("refl_"+eqRel.name, params)) % Pi(context++a, rel(a, a))
       
-      val elabDecls = eqRel.toConstant::(List(transTp, symmTp, reflTp) map {x => makeConst(x.name, () => {x.tp.get})})
+      val elabDecls = eqRel.toConstant(false)::(List(transTp, symmTp, reflTp) map {x => makeConst(x.name, () => {x.tp.get})})
       //elabDecls map {d => log(controller.presenter.asString(d))}
       new Elaboration {
         def domain = elabDecls map {d => d.name}

@@ -62,7 +62,7 @@ class NotationBasedPresenter extends ObjectPresenter {
   /** called once at the beginning of each presentation, override as needed */
   protected def preparePresentation(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {
       origin.map(_.parent).foreach {
-        case p: ContentPath => controller.simplifier(p.module)
+        case p: ContentPath => if (p.module != p) controller.simplifier(p.module)
         case _ =>
       }
       val globalCont = origin match {

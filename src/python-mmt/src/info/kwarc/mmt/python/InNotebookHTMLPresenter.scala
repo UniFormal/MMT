@@ -59,13 +59,13 @@ class InNotebookHTMLPresenter(oP: ObjectPresenter) extends Presenter(oP) {
               doOperator("=")
               doTerm(t)
             }
-          case Include(_, from, args) =>
+          case Include(id) =>
             doKeyword("include")
-            doPath(from)
-            val last = args.length
+            doPath(id.from)
+            val last = id.args.length
             if (last != 0) {
               doOperator("(")
-              args.zipWithIndex.foreach {case (a,i) =>
+              id.args.zipWithIndex.foreach {case (a,i) =>
                 doTerm(a)
                 if (i != last) doOperator(",")
               }

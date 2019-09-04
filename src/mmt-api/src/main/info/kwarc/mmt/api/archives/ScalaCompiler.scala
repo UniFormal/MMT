@@ -13,35 +13,17 @@ object ScalaOutDim extends RedirectableDimension("bin")
 /** a build target that delegates to the standard scala compiler */
 class ScalaCompiler extends BuildTarget {
   val key = "scala-bin"
-  /** finds all the jars in subfolders of f, or Nil if the folder does not exist */
-  private def jars(f: File) = Try(f.children.filter(_.getExtension.contains("jar"))).getOrElse(Nil)
 
-  /** gets the current class path */
-  private def getCurrentClassPath: List[File] = {
-    import scala.collection.JavaConverters._
-    val it = ClassLoader.getSystemClassLoader.getResources("").asScala
-    it.toList.map(u => File(u.getPath))
+  /** recursively finds the classpath of all dependencies of an archive */
+  private def transitiveArchiveClasspath(a : Archive) = {
+    a.transitiveDependencies(controller.backend).map(singleArchiveClassPath).mkString(":")
   }
 
-  /** find the class path needed for compilation */
-  private def getClassPath: List[File] = MMTSystem.runStyle match {
-    // fat jar => use the jar path directly
-    case rs: IsFat =>
-      report("debug", s"using FatJar classpath for 'scala-bin'")
-      List(rs.jar)
-    // thin jars => add all classpaths to weird jars
-    case ThinJars(d) =>
-      // TODO: We need to load all the dependencies in the scala-bin target
-      report("debug", s"using ThinJar classpath for 'scala-bin'")
-      jars(d / "lib") ::: jars(d / "main")
-    case r: Classes =>
-      report("debug", s"using Classes classpath for 'scala-bin'")
-      // val lf = File(r.classFolder.toString.replace("mmt-api","mmt-lf"))
-      jars(r.deploy / "lib") ::: List(r.classFolder)//, lf) //TODO don't hard-code LF path here
-    // we are running some other (weird) way, so we do not know the classpath
-    case OtherStyle =>
-      Nil
+  /** find the classpath of a single archive */
+  private def singleArchiveClassPath(a : Archive) = {
+    a.properties.get("classpath").map(p => a.root / p).mkString(":")
   }
+
 
    def build(a: Archive, up: Update, in: FilePath) {
      (a / ScalaOutDim).mkdirs
@@ -56,25 +38,28 @@ class ScalaCompiler extends BuildTarget {
        log("no scala files found in folders " + folders.mkString(", "))
        return
      }
-     
-     // try to magically find the class path
-     val styleClassPath = getClassPath
-     report("debug", s"found style class path ${styleClassPath.mkString(sep)}")
 
-     // re-use the current (active) class path
-     val currentClassPath = getCurrentClassPath
-     report("debug", s"found current class path ${currentClassPath.mkString(sep)}")
+     // compute the classpath of the archives
+     val cp = transitiveArchiveClasspath(a)
 
-     // make the class path distinct
-     val classPath = (styleClassPath ::: currentClassPath).distinct
-     val classPathS = classPath.map(_.toString).mkString(sep)
-     report("debug", s"set 'scala-bin' classpath to $classPathS")
+     // prepare a process for the compiler to run in
+     val args = (
+       if(report.groups.contains("compiler")) List("-verbose") else Nil
+     ) ::: List(
+       "-classpath", System.getProperty("java.class.path") + ":" + cp,
+       "-d", (a / ScalaOutDim).toString,
+     ) ::: files
 
-     // run the compiler: -verbose -nowarn
-     val args = (if(report.groups.contains("compiler")) List("-verbose") else Nil) ::: ("-d" :: (a / ScalaOutDim).toString :: "-cp" :: classPathS :: files)
+     val process = RunJavaClass("scala.tools.nsc.Main", args)
+     report("debug", process.command().toArray.mkString(" "))
 
-     report("debug", s"scalac ${args.mkString(" ")}")
-     scala.tools.nsc.Main.process(args.toArray)
+     // run the process and wait for it
+     val proc = process.inheritIO().start()
+     proc.waitFor()
+
+     if(proc.exitValue() != 0) {
+       throw GeneralError("scalac returned error code")
+     }
    }
 
    def clean(a: Archive, in: FilePath) {

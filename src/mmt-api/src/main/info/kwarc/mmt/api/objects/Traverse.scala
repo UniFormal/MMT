@@ -92,17 +92,3 @@ object Traverser {
        }
    }
 }
-
-/** A Traverser that moves all morphisms to the inside of a term. */
-object PushMorphs extends Traverser[Term] {
-   // morph is the composition of all morphisms encountered so far
-   def traverse(t: Term)(implicit con : Context, morph : Term) : Term = t match {
-      // change state: via is added to the morphisms
-      case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
-      // apply the morphism to symbols
-      case OMID(path) => OMM(t, morph)
-      // in all other cases, traverse
-      case t => Traverser(this,t)
-   }
-   def apply(t: Term, thy : MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
-}

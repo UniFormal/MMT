@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.symbols.OMLReplacer
 import notations._
 import utils._
 
@@ -8,16 +9,16 @@ import utils._
   *
   * anonymous modules are object that can be converted into these helper classes using the objects [[AnonymousTheory]] and [[AnonymousMorphism]]
   */
-trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] {
+trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] with ShortURIPrinter{
   val decls: List[OML]
   def getDeclarations = decls
   def toSubstitution : Substitution = decls.map{case OML(name,_,df,_,_) => Sub(name,df.get)}
   def toTerm: Term
-  override def toString = getDeclarations.mkString("{", ", ", "}")
+  def toStr(implicit shortURIs: Boolean) = getDeclarations.map(_.toStr).mkString("{", ", ", "}")
 }
 
 /** a theory given by meta-theory and body */
-class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
+case class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
   def rename(oldNew: (LocalName,Term)*) = {
     val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, nw)}
     val trav = symbols.OMLReplacer(sub)
@@ -29,7 +30,7 @@ class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends Anony
         case None => omlR
       }
     }
-    new AnonymousTheory(mt, newDecls)
+    AnonymousTheory(mt, newDecls)
   }
   def add(d: OML) = new AnonymousTheory(mt, decls ::: List(d))
   def union(that: AnonymousTheory) = {
@@ -42,14 +43,6 @@ class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends Anony
     val m = mt.map(_.toString).getOrElse("")
     m + super.toString
   }
-  def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
-  override def equals(that: Any): Boolean =
-    that match {
-      case that: AnonymousTheory => (that.mt == this.mt) && (that.decls == this.decls)
-      case _ => false
-    }
-   override def hashCode: Int = { mt.hashCode() + decls.hashCode() }
-
 }
 
 /** bridges between [[AnonymousTheory]] and [[Term]] */
@@ -70,10 +63,28 @@ object AnonymousTheoryCombinator {
 }
 
 /** a morphism given by domain, codomain, and body */
-class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
+case class AnonymousMorphism(val decls: List[OML]) extends AnonymousBody {
   def toTerm = AnonymousMorphismCombinator(decls)
   def add(d: OML) = new AnonymousMorphism(decls ::: List(d))
 
+  /** creates a traverser for morphism application (more efficient if multiple applications are needed) */
+  def applier = {
+    val subs = decls map {o => Sub(o.name, o.df.get)}
+    OMLReplacer(subs)
+  }
+
+  /** applies this morphism to a term */
+  def apply(t: Term): Term = applier(t, Context.empty)
+
+  /** diagram-order composition: this ; that */
+  def compose(that: AnonymousMorphism) = {
+    val applyThat = that.applier
+    val declsMapped = decls map {o =>
+       val dfMapped = o.df map {d => applyThat(d, Context.empty)}
+       OML(o.name, None, dfMapped)
+     }
+    AnonymousMorphism(declsMapped)
+  }
 }
 
 /** bridges between [[AnonymousMorphism]] and [[Term]] */
@@ -90,7 +101,7 @@ object AnonymousMorphismCombinator {
 }
 
 /** used in [[AnonymousDiagram]] */
-sealed abstract class DiagramElement {
+sealed abstract class DiagramElement extends ShortURIPrinter {
   def label: LocalName
   def toTerm: Term
 }
@@ -100,7 +111,7 @@ sealed abstract class DiagramElement {
   */
 case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
   def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
-  override def toString = s"$label:THEY=$theory"
+  def toStr(implicit shortURIs: Boolean) = s"$label:THY=${theory.toStr}"
   def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
   override def equals(that: Any): Boolean =
     that match {
@@ -120,9 +131,9 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
     val f = if (isImplicit) Some("implicit") else None
     OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm), None, f)
   }
-  override def toString = {
+  def toStr(implicit shortURIs: Boolean) = {
     val a = if (isImplicit) "-i->" else "--->"
-    s"$label:$from$a$to=$morphism"
+    s"$label:$from$a$to=${morphism.toStr}"
   }
 }
 /** a diagram in the category of theories and morphisms
@@ -168,21 +179,6 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
   /* A function to compose two substitutions
    * The function assume that assign1 has no duplicate assignments for the same symbol.
    */
-  def compose(assign1 : List[OML],assign2 : List[OML]): List[OML] = {
-      val new_assigns : List[OML] = assign1.map{ curr : OML =>
-         var temp = curr.name
-         val it = assign2.iterator
-         while(it.hasNext){
-           val n = it.next()
-           if(temp == n.name){
-             temp = n.df.asInstanceOf[OML].name
-           }
-         }
-         val new_decl = new OML(temp,None,None,None)
-         new OML(curr.name,curr.tp,Some(new_decl),curr.nt,curr.featureOpt)
-      }
-      new_assigns
-  }
 
   /* Finding the views
    * - each view is a list of assignments of terms to constants TODO: we consider now only constants to constants
@@ -191,10 +187,9 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
    * An assignment name = definition is represented as an OML(name, type, definition, notationOpt, featureOpt)
    * */
   def viewOf(source : DiagramNode, target : DiagramNode): List[OML] = {
-
     val arrows: List[DiagramArrow] = path(source.label, target.label)
     val assignments: List[OML] = arrows.flatMap(a => a.morphism.decls)
-    compose(source.theory.decls,assignments)
+    assignments
   }
 
   def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}
@@ -206,7 +201,7 @@ case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[Diagr
     AnonymousDiagram(nodesR, arrowsR, distNode map r)
   }
   def union(that: AnonymousDiagram) = {
-    new AnonymousDiagram((this.nodes ::: that.nodes).distinct, (this.arrows:::that.arrows).distinct, None)
+    new AnonymousDiagram((this.nodes ::: that.nodes).groupBy(_.label).map(_._2.head).toList, (this.arrows ::: that.arrows).groupBy(_.label).map(_._2.head).toList, None)
   }
 
   def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode)

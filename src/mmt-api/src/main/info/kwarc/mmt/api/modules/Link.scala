@@ -20,22 +20,24 @@ trait Link extends ModuleOrLink {
    /** the codomain of the link (mutable for views but not structures) */
    def toC: AbstractTermContainer
    /** the domain of this link; pre: must have be given explicitly or have been inferred */
-   def from = fromC.get.getOrElse(throw ImplementationError("can only call this method after domain has been inferred"))
-   /** the codomain of this link; pre: must have be given explicitly or have been inferred */
+   def from = fromC.get.getOrElse {
+     throw ImplementationError("can only call this method after domain has been inferred")
+   }
+   /** the codomain of this link; pre: must have been given explicitly or have been inferred */
    def to = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
    /** the codomain as a context; pre: same as `to` */
    def codomainAsContext = toC.get match {
-       case Some(ComplexTheory(cont)) => cont
-       case _ => throw ImplementationError("codomain of link must be theory")
-    }
+    case Some(ComplexTheory(cont)) => cont
+    case _ => throw ImplementationError("codomain of link must be theory")
+   }
 
    /** true if this link is implicit */
    def isImplicit : Boolean
    protected def implicitString = if (isImplicit) "implicit " else ""
 
    /** like getIncludes but also with includes of parametric theories and their instantiations */
-   def getIncludes: List[(MPath,Term)] = getDeclarations.flatMap {
-     case LinkInclude(_, from, df) => List((from,df))
+   def getAllIncludes: List[IncludeData] = getDeclarations.flatMap {
+     case Include(id) => List(id)
      case _ => Nil
    }
    

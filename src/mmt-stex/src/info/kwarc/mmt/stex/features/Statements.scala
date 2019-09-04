@@ -38,7 +38,7 @@ object DefinitionFeature extends StructuralFeature("stex-definition") {
      }
    }
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = new Elaboration {
      lazy val domain = {
        dd.getDeclarations.map {d =>
          dd.name / d.name
@@ -81,7 +81,7 @@ object ExampleFeature extends StructuralFeature("stex-example") {
      }
    }
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = new Elaboration {
      lazy val domain = {
        dd.getDeclarations.map {d =>
          dd.name / d.name

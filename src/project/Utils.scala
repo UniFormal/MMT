@@ -103,8 +103,10 @@ class Utils(base: File) {
   def settings: Map[String, String] = if (settingsFile.exists) File.readProperties(settingsFile) else Map[String, String]()
 
   /** executes a shell command (in the src folder) */
-  def runscript(command: String): String =
-    sys.process.Process(Seq(command), src.getAbsoluteFile).!!
+  def runscript(command: String, waitFor: Boolean = true): Option[String] = {
+    val pb = sys.process.Process(Seq(command), src.getAbsoluteFile)
+    if (waitFor) Some(pb.!!) else {pb.run; None}
+  }
 
   // ************************************************** jEdit-specific code
 
@@ -120,7 +122,7 @@ class Utils(base: File) {
   /** These methods are used by the target jedit/install to copy files to the local jEdit installation */
   /** copy MMT jar to jEdit settings directory */
   def installJEditJars {
-    settings.get(killJEdit).foreach { x => runscript(x) }
+    settings.get(killJEdit).foreach {x => runscript(x, true)}
     Thread.sleep(500)
     val fname = settings.get(jeditSettingsFolder).getOrElse {
       Utils.error(s"cannot copy jars because there is no setting '$jeditSettingsFolder' in $settingsFile")
@@ -128,7 +130,7 @@ class Utils(base: File) {
     }
     val jsf = File(fname) / "jars"
     copyJEditJars(jsf)
-    settings.get(startJEDit).foreach { x => runscript(x) }
+    settings.get(startJEDit).foreach {x => runscript(x, false)}
   }
 
   /** copy all jars to jEditPluginRelease */

@@ -53,10 +53,11 @@
 			<KEYWORD1>view</KEYWORD1>
 			<KEYWORD1>constant</KEYWORD1>
 			<KEYWORD1>include</KEYWORD1>
-			<KEYWORD1>struct</KEYWORD1>
+			<KEYWORD1>realize</KEYWORD1>
 			<KEYWORD1>pattern</KEYWORD1>
 			<KEYWORD1>structure</KEYWORD1>
 			<KEYWORD1>implicit</KEYWORD1>
+			<KEYWORD1>total</KEYWORD1>
 			<KEYWORD1>prec</KEYWORD1>
 	      <KEYWORD1>role</KEYWORD1>
 		<!-- typical meta-theory delimiters, e.g., LF -->

@@ -68,8 +68,14 @@ trait Exporter extends BuildTarget {self =>
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]): Unit
 
   def build(a: Archive, up: Update, in: FilePath) {
-    contentExporter.build(a, up, in)
     narrationExporter.build(a, up, in)
+    // find all modules in documents at path 'in'
+    val doc = controller.getAs(classOf[Document], DPath(a.narrationBase / in))
+    val mods = doc.getModules(controller.globalLookup)
+    mods.foreach {p =>
+      val modPath = Archive.MMTPathToContentPath(p)
+      contentExporter.build(a, up, modPath)
+    }
   }
 
   def clean(a: Archive, in: FilePath) {
@@ -88,6 +94,13 @@ trait Exporter extends BuildTarget {self =>
   /** the dimension for storing generated files, defaults to export/key, override as needed */
   protected def outDim = Dim("export", key)
 
+  /** returns the output file that this exporter uses for some module */
+  protected def getOutFileForModule(p: MPath): Option[File] = {
+    controller.backend.findOwningArchive(p).map {arch =>
+      (arch / contentExporter.outDim / archives.Archive.MMTPathToContentPath(p.mainModule)).addExtension(outExt)
+    }
+  }
+  
   /** the common properties of the content and the narration exporter */
   private trait ExportInfo extends TraversingBuildTarget {
     def key = self.key + "_" + inDim.toString
@@ -106,7 +119,8 @@ trait Exporter extends BuildTarget {self =>
         inPath
       super.getOutFile(a, inPathNoXz)
     }
-
+    
+    
     override protected val folderName = self.folderName
 
     override def parallel = false

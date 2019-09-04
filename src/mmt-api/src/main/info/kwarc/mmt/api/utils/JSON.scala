@@ -140,7 +140,7 @@ case class JSONObject(map: List[(JSONString, JSON)]) extends JSON {
 
 object JSONObject {
    def apply(cases: (String,JSON)*): JSONObject = JSONObject(cases.toList map {case (k,v) => (JSONString(k),v)})
-   implicit def toList(j: JSONObject): List[(JSONString,JSON)] = j.map 
+   implicit def toList(j: JSONObject): List[(JSONString,JSON)] = j.map
 }
 
 

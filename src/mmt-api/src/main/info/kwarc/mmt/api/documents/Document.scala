@@ -15,10 +15,11 @@ import scala.xml.Elem
  * @param path the URI of the document; for toplevel documents, this is a URL
  * @param level the role of this document in a hierarchy of nested documents, default is [[FileLevel]] the role of source files containing modules
  * @param contentAncestor the closest container of this document that is a module (if any)
- * @param nsMap the namespaces declared in this document
+ * @param initNsMap the namespace map that applies at the beginning of the document
  */
 //TODO check if we can mixin DefaultLookup
-class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[ModuleOrLink] = None, inititems: List[NarrativeElement] = Nil, val nsMap: NamespaceMap = NamespaceMap.empty)
+class Document(val path: DPath, val level: DocumentLevel = FileLevel, val contentAncestor: Option[ModuleOrLink] = None,
+               inititems: List[NarrativeElement] = Nil, initNsMap: NamespaceMap = NamespaceMap.empty)
      extends NarrativeElement with ContainerElement[NarrativeElement] with DefaultMutability[NarrativeElement] {
   val feature = "document:" + level
   /** not a section (which is stored as part of some other document) */
@@ -32,8 +33,18 @@ class Document(val path: DPath, val level: DocumentLevel = FileLevel, val conten
   private var items: List[NarrativeElement] = inititems
   def domain = items.map(_.name)
 
-  /** returns the namespace map that was used while parsing the document */
-  def getNamespaceMap: NamespaceMap = nsMap
+  /** returns the interpretation contex that applies at the end of this document */
+  def getIIContext: InterpretationInstructionContext = {
+    var iiC = new InterpretationInstructionContext(initNsMap)
+    items foreach {
+      case ii:InterpretationInstruction => iiC process ii
+      case _ =>
+    }
+    iiC
+  }
+
+  /** returns the namespace map that applies at the end of this document */
+  def getNamespaceMap: NamespaceMap = getIIContext.namespaces
 
   /** returns the list of children of the document (including narration) */
   def getDeclarations: List[NarrativeElement] = items

@@ -715,8 +715,8 @@ object CovariantParameterPreprocessor extends Preprocessor {
     }
     // val sub = Substitution(th.parameters.map(v => v.name / Hasher.Complex(OMV(v.name))):_*)
     th.getDeclarations foreach {
-      case Include(_,from,args) /* if args.nonEmpty */ => // get rid of parametric includes
-        nth.add(Include(nth.toTerm,from,Nil))
+      case Include(id) /* if id.args.nonEmpty */ => // get rid of parametric includes
+        nth.add(Include(nth.toTerm,id.from,Nil))
       case c : FinalConstant if sub.asContext.nonEmpty =>
         val nc = Constant(nth.toTerm,c.name,c.alias,c.tp map(_ ^? sub),c.df map(_ ^? sub),c.rl,c.notC)
         nth add nc
@@ -749,8 +749,8 @@ object DefinitionExpander extends Preprocessor {
   override def apply(th: Theory): Theory = {
     val nth = new Theory(th.parent,th.name,th.meta,th.paramC,TermContainer(None))
     th.getDeclarations foreach {
-      case Include(_,from,args) if args.nonEmpty => // get rid of parametric includes
-        nth.add(Include(nth.toTerm,from,Nil))
+      case Include(id) if id.args.nonEmpty => // get rid of parametric includes
+        nth.add(Include(nth.toTerm,id.from,Nil))
       case c : FinalConstant =>
         val ntp = c.tp.map { tp =>
           val ret = traverser(tp, ())

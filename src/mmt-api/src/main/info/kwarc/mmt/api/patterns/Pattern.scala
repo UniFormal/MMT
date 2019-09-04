@@ -7,11 +7,12 @@ import notations._
 import symbols._
 import utils._
 import checking._
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 /** patterns are derived declarations that are syntactically parametric theories */
 class PatternFeature extends StructuralFeature(Pattern.feature) with ParametricTheoryLike {
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment]=None) = new Elaboration {
      def domain = Nil
      def getO(n: LocalName) = None
    }

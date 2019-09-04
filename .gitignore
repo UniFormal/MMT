@@ -29,7 +29,6 @@ scripts/travis/deploy_key
 .idea_modules
 *.iml
 
-
 # Eclipse Files
 bin
 .cache-main

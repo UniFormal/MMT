@@ -15,12 +15,13 @@ import notations.ImplicitArg
 /**
  * convenience class for storing the names of an OuterInnerTerm
  *
- * @param before names of the before arguments (excluding implicit ones)
- * @param after names of the after arguments (excluding implicit ones)
- * @param inside names of the inside-arguments (excluding implicit ones)
- * @param position of innner term (= before.length)
+ * @param outer outer operator
  * @param implArgsOuter positions of the implicit arguments of 'outer' (counting from 0)
+ * @param before names of the before arguments (excluding implicit ones)
+ * @param innerPos of innner term (= before.length)
+ * @param inside names of the inside-arguments (excluding implicit ones)
  * @param implArgsInner positions of the implicit arguments of 'inner' (counting from 0)
+ * @param after names of the after arguments (excluding implicit ones)
  *
  * this represents a left hand side of the form (excluding implicit arguments)
  *   outer(before,inner(inside),after)
@@ -44,14 +45,17 @@ case class OuterInnerNames(outer: GlobalName, implArgsOuter: List[Int], before: 
    def outerArity = implArgsOuter.length+before.length+1+after.length
 }
 
-class SimplificationRuleGenerator extends ChangeListener {
-  override val logPrefix = "simp-rule-gen"
+object SimplificationRuleGenerator {
   /** the Tag used to spot constants with name N from which to simplification rules with name N/SimplifyTag */
-  protected val SimplifyTag = "Simplify"
+  val SimplifyTag = "Simplify"
   protected val SolutionTag = "Solve"
   protected val under = List(Apply.path)
   private def rulePath(r: GeneratedDepthRule) = r.from.path / SimplifyTag
+}
+import SimplificationRuleGenerator._
 
+class SimplificationRuleGenerator extends ChangeListener {
+  override val logPrefix = "simp-rule-gen"
   private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
      p match {
         case p: GlobalName =>
@@ -358,7 +362,7 @@ class GeneratedDepthRule(val from: Constant, desc: String, under: List[GlobalNam
                    }
                 }
               }
-              RecurseOnly(List(names.innerPos+under.length))
+              RecurseOnly(List(under.length+1+names.innerPos)) // under + outer.name + innerPos 
           case _ =>
             Simplifiability.NoRecurse
         }

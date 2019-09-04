@@ -1,6 +1,6 @@
 package info.kwarc.mmt.coq.coqxml
 
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{AbstractTheory, Theory}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
@@ -53,7 +53,7 @@ case class VARIABLE(uri:URI,as:String, components : List[CoqEntry]) extends theo
 
 case class SECTION(uri:URI,statements:List[theorystructure]) extends theorystructure
 
-case class MODULE(uri : URI, params : List[List[CoqXml]], as:String,components:List[theorystructure],componentsImpl : List[theorystructure],attributes : List[CoqXml],attributesImpl:List[CoqXml]) extends theorystructure {
+case class MODULE(uri : URI, params : List[(String,List[CoqXml])], as:String,components:List[theorystructure],componentsImpl : List[theorystructure],attributes : List[CoqXml],attributesImpl:List[CoqXml]) extends theorystructure {
   as match {
     case "Module" =>
     case "ModuleType" =>
@@ -62,7 +62,7 @@ case class MODULE(uri : URI, params : List[List[CoqXml]], as:String,components:L
       ???
   }
 }
-case class MODULEExpr(uri : URI, params : List[List[CoqXml]], as:String,components:List[CoqXml],children : List[CHILD]) extends theorystructure {
+case class MODULEExpr(uri : URI, params : List[(String,List[CoqXml])], as:String,components:List[CoqXml],children : List[CHILD]) extends theorystructure {
   as match {
     case "AlgebraicModule" =>
     case "AlgebraicModuleType" =>
@@ -103,7 +103,9 @@ case class Constructor(name:String,_type:term) extends CoqEntry
 
 // ------------------------------------------------------------------------
 
-class TranslationState(val controller : Controller, val current:MPath) {
+case class TranslationState(controller:Controller, toMPath : URI => MPath, toGlobalName : URI => GlobalName, currentT : AbstractTheory) {
+  val current = currentT.modulePath
+  /*
   private var _vars : List[Option[String]] = Nil
   def addVar = _vars ::= None
   def solveVar(i : Int, name : String): LocalName = {
@@ -140,13 +142,13 @@ class TranslationState(val controller : Controller, val current:MPath) {
   def pickFresh : LocalName = {
     varnames+=1
     LocalName("MMT_internal_" + varnames.toString)
-  }
+  } */
 }
 
 trait term extends CoqEntry {
-  def toOMDoc(controller : Controller, current:MPath) : Term = {
+  def toOMDoc(s:TranslationState) : Term = {
     // TODO implicit arguments
-    recOMDoc(new TranslationState(controller,current))
+    recOMDoc(s)
   }
   private[coqxml] def recOMDoc(implicit variables : TranslationState) : Term
 }
@@ -216,18 +218,18 @@ case class VAR(uri : URI, id : String, sort : String) extends term with objectOc
   }
 }// OMS (because sections)
 case class CONST(uri : URI, id : String, sort : String) extends term with objectOccurence {
-  def recOMDoc(implicit variables : TranslationState) : Term = OMS(Coq.toGlobalName(uri))
+  def recOMDoc(implicit variables : TranslationState) : Term = OMS(variables.toGlobalName(uri))
 }// OMS
 case class MUTIND(uri : URI, noType : Int, id : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    val gn = Coq.toGlobalName(uri)
+    val gn = variables.toGlobalName(uri)
     OMS(gn.module ? (gn.name.toString /* + "_" + noType.toString */)) // TODO
   }
 } // OMS
 //                                ^  starts from 0, index in list of mututally recursive types
 case class MUTCONSTRUCT(uri : URI, noType : Int, noConstr : Int, id : String, sort : String) extends term with objectOccurence {
   def recOMDoc(implicit variables : TranslationState) : Term = {
-    val gn = Coq.toGlobalName(uri)
+    val gn = variables.toGlobalName(uri)
     OMS(gn.module ? (gn.name + "_C_" + noConstr ))
   }
 }// OMS

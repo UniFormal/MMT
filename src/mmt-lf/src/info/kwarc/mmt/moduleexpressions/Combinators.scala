@@ -11,6 +11,7 @@ import utils._
 import uom._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.moduleexpressions.Combine.path
+import info.kwarc.mmt.moduleexpressions.Common.OMStoOML
 import info.kwarc.mmt.moduleexpressions.PushoutUtils.BranchInfo
 
 import scala.collection.mutable.HashSet
@@ -29,6 +30,23 @@ object Common {
     }
   }
 
+  // code for translating OMS's to OML references
+  class OMStoOML(cont: Context) {
+    private var names: List[GlobalName] = Nil
+    val trav = OMSReplacer { p =>
+      if (names contains p) Some(OML(p.name)) else None
+    }
+
+    def apply(tm: Term): Term = trav(tm, cont)
+
+    def apply(c: Constant): (OML,Boolean) = {
+      val cT = OML(c.name, c.tp map apply, c.df map apply, c.not)
+      val dupl = names.exists(p => p.name == c.name)
+      names ::= c.path
+      (cT,dupl)
+    }
+  }
+
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
   def anonymize(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
     // collect included theories
@@ -41,23 +59,18 @@ object Common {
       case None =>
         Nil
     }}
-    // code for translating OMS's to OML references
-    var names: List[GlobalName] = Nil
-    val trav = OMSReplacer {p =>
-      if (names contains p) Some(OML(p.name)) else None
-    }
-    def translate(tm: Term) = trav(tm, stack.context)
+    val tr = new OMStoOML(stack.context)
     // turn all constants into OML's
-    val omls = (includes:::List(namedTheory)).flatMap {th =>
-      th.getDeclarationsElaborated.flatMap {
+    val decls = (includes:::List(namedTheory)).flatMap { th =>
+      th.getDeclarationsElaborated
+    }
+    val omls = decls.flatMap {
         case c: Constant =>
-          val cT = OML(c.name,  c.tp map translate, c.df map translate, c.not)
-          if (names.exists(p => p.name == c.name))
-            solver.error("theory has duplicate name: " + c.name)
-          names ::= c.path
+          val (cT,dupl) = tr(c)
+          if (dupl)
+            solver.error("theory has duplicate local name: " + c.name)
           List(cT)
         case _ => Nil
-      }
     }
     //val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
     new AnonymousTheory(namedTheory.meta, omls)
@@ -132,7 +145,8 @@ object Common {
         solver.lookup.getO(p) match {
           case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
             dm.dfC.normalized flatMap {
-              case AnonymousDiagramCombinator(ad) => Some(ad)
+              case AnonymousDiagramCombinator(ad) =>
+                Some(ad)
               case _ => None
             }
           case Some(thy: Theory) =>
@@ -174,7 +188,7 @@ object Common {
     ad.relabel(f)
   }
 
-  /* Applying a substitution function to on OML */
+  /* Applying a substitution function to an OML */
   def applySubstitution (decls : List[OML], renames : List[(LocalName,Term)]): List[OML] =
     decls.map(
       d => d match {
@@ -231,18 +245,29 @@ object ComputeExtends extends ComputationRule(Extends.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     val Extends(diag,wth@_*) = tm
     val ad = Common.asAnonymousDiagram(solver, diag).getOrElse {return RecurseOnly(List(1))}
-    // Getting the new declarations as List[OML]
-    val extD = wth match {
-      case OMLList(extDecl) => extDecl
-      case _ => return RecurseOnly(List(2))
-    }
     // dN : distinguished node of the input diagram
     val dN = ad.getDistNode.getOrElse {
       solver.error("distinguished node not found")
       return Simplifiability.NoRecurse
     }
+    val old_decls = dN.theory.decls
+    val old_names = old_decls.map(_.name)
+    // Getting the new declarations as List[OML]
+    val ext_decls = wth match {
+      case OMLList(ds) =>
+        // references to symbols in the extended theory were parsed as OMS's, need to be changed into OML's
+        val trav = OMSReplacer { p =>
+          if (old_names contains p.name) Some(OML(p.name)) else None
+        }
+        def tr(t: Term) = trav(t, stack.context)
+        ds map {o =>
+          val oT = OML(o.name, o.tp map tr, o.df map tr)
+          oT
+        }
+      case _ => return RecurseOnly(List(2))
+    }
     // creating the new AnonymousDiagram
-    val new_decls = dN.theory.decls ::: extD
+    val new_decls = old_decls ::: ext_decls
     val new_dN = DiagramNode(Extends.nodeLabel, new AnonymousTheory(dN.theory.mt,new_decls))
     val extM = new AnonymousMorphism(Nil)
     val extA = DiagramArrow(Extends.arrowLabel, dN.label, new_dN.label, extM, true)
@@ -373,15 +398,15 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     /**************** Calculate the views from the source to the two nodes (after renaming) ****************/
     val List(renames1,renames2) : List[List[OML]] = List(r1,r2).map{r => Common.asSubstitution(r).map{case (o,n) => OML(o,None,Some(n))}}
     val List(in_view1,in_view2) : List[List[OML]] = List(ad1,ad2).map{d => d.viewOf(ad_over.getDistNode.get, d.getDistNode.get)} // TODO: Handle errors here
-    val view1: List[OML] = ad1.compose(in_view1,renames1)
-    val view2: List[OML] = ad2.compose(in_view2,renames2)
+    val view1: List[OML] = (AnonymousMorphism(in_view1) compose AnonymousMorphism(renames1)).decls
+    val view2: List[OML] = (AnonymousMorphism(in_view2) compose AnonymousMorphism(renames2)).decls
 
     /**************** Check The Guard *******************/
     /* - Now, view1 and view2 have the list of assignments from the source to the targets (after applying the renames)
      * - We compare them to make sure the names matches
      * - Order does not matter, so we convert the list to a set.
      *  */
-    if (view1.toSet != view2.toSet) throw (new GeneralError("Wrong renames"))
+    // if (view1.toSet != view2.toSet) throw (new GeneralError("Wrong renames"))
 
     /**************** Define the new theory ***************/
     // apply the rename
@@ -411,12 +436,10 @@ object ComputeCombine extends ComputationRule(Combine.path) {
 
     Simplify(result_diag.toTerm)
   }
-
 }
 
 object Mixin extends Pushout {
   val name = "mixin"
-
   val nodeLabel = LocalName("pres")
   val arrowLabel1 = LocalName("extend1")
   val arrowLabel2 = LocalName("view")
@@ -431,12 +454,21 @@ object Mixin extends Pushout {
  * inclusion from B to Translate(m,T)
  */
 
-/*
+
 object ComputeMixin extends ComputationRule(Mixin.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    /* Both combine and translate takes two diagrams and two renames. The difference is in the content of the second diagram */
-    val Mixin(d1, r1, d2, r2) = tm
-    val List(ad1,ad2) = List(d1,d2).map{d => Common.asAnonymousDiagram(solver, d).getOrElse{return RecurseOnly(List(1))}}
+    /**************** Input pieces *****************/
+    val Mixin(d1, r1, d2, r2, over) = tm
+    val List(ad1, ad2, ad_over) = List(d1, d2, over).map(d => Common.asAnonymousDiagram(solver, d).getOrElse(return  RecurseOnly(List(1)))) // TODO: Handle errors here
+    
+    /**************** Calculate the views from the source to the two nodes (after renaming) ****************/
+    /*
+    val List(renames1,renames2) : List[List[OML]] = List(r1,r2).map{r => Common.asSubstitution(r).map{case (o,n) => OML(o,None,Some(n))}}
+    val List(in_view1,in_view2) : List[List[OML]] = List(ad1,ad2).map{d => d.viewOf(ad_over.getDistNode.get, d.getDistNode.get)} // TODO: Handle errors here
+    val view1: List[OML] = ad1.compose(in_view1,renames1)
+    val view2: List[OML] = ad2.compose(in_view2,renames2)
+    */
+
     val List(ren1,ren2) = List(r1,r2).map{r => Common.asSubstitution(r)}
     // val anonMor = Common.asAnonymousMorphism(solver,ad2.getDistArrow.getOrElse(return Recurse).from)
 
@@ -468,7 +500,7 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
     Simplify(result.toTerm)
   }
 }
-*/
+
 // TODO better name
 /** see [[Mixin]] */
 object Expand extends BinaryConstantScala(Combinators._path, "expand")

@@ -13,7 +13,9 @@ import InternalDeclaration._
 import InternalDeclarationUtil._
 import TermConstructingFeatureUtil._
 import StructuralFeatureUtils._
+import StructuralFeatureUtil._
 import inductiveUtil._
+import InductiveTypes._
 
 /** theories as a set of types of expressions */ 
 class InductiveProofDefinitions extends StructuralFeature("ind_proof") with TypedParametricTheoryLike {
@@ -22,8 +24,25 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
+    checkParams(indCtx, indParams, Context(dd.parent)++context, env)
+  }
   
+  /**
+   * Checks that each definien matches the expected type
+   */
+  override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
+    val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
+    
+    val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
+    val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
+    val (_, _, indProofDeclMap, ctx) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
+    
+    val intDecl = intDecls.find(_.name == c.name)
+    
+    utils.listmap(indProofDeclMap, intDecl) map (_.tp.get)
+  }
 
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
@@ -32,66 +51,38 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
-    val (indDefPath, context, indParams) = ParamType.getParams(dd)
-    val (indD, indCtx) = controller.library.get(indDefPath) match {
-      case indD: DerivedDeclaration if (indD.feature == "inductive") => (indD, Type.getParameters(indD))
-      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature inductive but of the feature "+d.feature+".")
-      case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
-            +" but no derived declaration found at that location.")
-    }
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
     implicit val parent = indD.path
-    val indDefs = parseInternalDeclarations(indD, controller, None)
-    var indTpls: List[TypeLevel] = indDefs.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
+
+    val intDecls = parseInternalDeclarations(indD, controller, None)
+    var intTpls: List[TypeLevel] = intDecls.filter(_.isTypeLevel).collect{case t:TypeLevel => t}
     
-    val indTplNames = indTpls map (_.name)
+    val intTplNames = intTpls map (_.name)
     
+    //The constructors amongst the following declarations will most likely be misparsed as outgoing termlevels
+    //However, as the below code doesn't use the distinction this is acceptable
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
-    // check whether all declarations match their corresponding constructors
-    decls foreach {
-      d => correspondingDecl(indD, d.name) map { decl => 
-      checkDecl(d, fromConstant(decl, controller, indTpls.map(_.path), None))
-      }
-    }
-    // and whether we have all necessary declarations
-    indD.getDeclarations.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {
-      n => throw LocalError("No declaration found for the internal declaration "+n+" of "+indD.name+".")
-    }
-    
-    val proof_paths = indTpls.map(t=>t.path.copy(name=indD.name/proofName(t.name)))
+    val proof_paths = intTpls.map(t=>externalName(indD.path, proofName(t.name)))
+    val (preds, indProofDeclMap, predsMap, _) = inductionHypotheses(intTpls, constrs(intDecls), indCtx)
     
     val modelDf = decls map (_.df.get)
-    val indTplsArgs = indTpls map(_.argContext(None)._1)
+    val indTplsArgs = intTpls map(_.argContext(None)._1)
     
-    val indTplsDef = indTplNames map (nm => decls.find(_.name == nm).getOrElse(
+    val intTplsDef = intTplNames map (nm => decls.find(_.name == nm).getOrElse(
         throw LocalError("No declaration found for the typelevel: "+nm)).df.get)
-    val Tps = indTpls zip indTplsDef map {case (indTpl, indTplDef) => PiOrEmpty(context, Arrow(indTpl.toTerm, indTplDef))}
+    val Tps = intTpls zip intTplsDef map {case (intTpl, indTplDef) => 
+      val (indTplDefArgs, indTplDefBody) = unapplyLambdaOrEmpty(indTplDef)
+      //val indTplDefArgsBar = rBar(indTplDefArgs, intTpls, indProofDeclMap)
+      PiOrEmpty(context++indTplDefArgs, indTplDefBody)}
     val Dfs = indTplsArgs zip proof_paths map {case (indTplArgs, proof_path) => 
-      PiOrEmpty(context, PiOrEmpty(indTplArgs, ApplyGeneral(OMS(proof_path), indParams++indTplsDef++modelDf++indTplArgs.map(_.toTerm))))}
+      LambdaOrEmpty(context++indTplArgs, ApplyGeneral(OMS(proof_path), indParams++modelDf++indTplArgs.map(_.toTerm)))}
     
-    val inductDefs = (indTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
-      makeConst(dd.name/tpl.name, ()=> {tp}, () => {Some(df)})}
-    //inductDefs foreach (d => log(defaultPresenter(d)(controller)))
+    val inductDefs = (intTpls zip Tps zip Dfs) map {case ((tpl, tp), df) => 
+      makeConst(tpl.name, ()=> {tp}, false, () => {Some(df)})(dd.path)}
     
-    new Elaboration {
-      def domain = inductDefs map (_.name)
-      def getO(n: LocalName) = {
-        inductDefs find (_.name == n) foreach(d=>log(defaultPresenter(d)(controller)))
-        inductDefs find (_.name == n)
-      }
-    }
-  }
-  
-  /**
-   * checks whether d.tp matches the type decl.externalTp
-   * @param d the declaration whoose type to check
-   * @param decl the corresponding declaration which is to be defined by d
-   * @note this will return an error if d.tp doesn't match decl.externalTp
-   */
-  def checkDecl(d: InternalDeclaration, decl: InternalDeclaration) {
-    //TODO: This should be implemented to provide more accurate error messages
-    //TODO: It should set the tp.analize fields of the internal declarations to the expected types (and definitions if any)
+    externalDeclarationsToElaboration(inductDefs, Some({c => log(defaultPresenter(c)(controller))}))
   }
 }
 

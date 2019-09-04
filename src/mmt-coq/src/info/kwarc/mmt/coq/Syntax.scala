@@ -25,6 +25,10 @@ object Coq {
   val ccase = foundation ? "match"
   val proj = foundation ? "proj"
 
+  val confcolon = foundation ? "conform"
+  val confsubtp = foundation ? "extend"
+  val noConf = foundation ? "noConf"
+
   val decltype = foundation ? "DeclarationType"
 
   def makeSort(value : String) = value match {
@@ -39,7 +43,7 @@ object Coq {
   val fail = foundation ? "FAIL"
 
   def makeImplicit : OMV = ???
-
+/*
   private def coqtoomdoc(uri : URI)(implicit controller : Controller): ContentPath = {
     var paths = uri.path
     def error : Nothing = ???
@@ -101,6 +105,7 @@ object Coq {
     case _ =>
       Coq.fail // TODO
   }
+*/
 }
 
 object Let {

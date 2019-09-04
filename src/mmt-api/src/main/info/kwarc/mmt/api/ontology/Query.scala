@@ -1,11 +1,12 @@
 package info.kwarc.mmt.api.ontology
 
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser.{ParsingUnit, SourceRef}
-import info.kwarc.mmt.api.utils.{Sourceable, URI, mmt, stringToList, xml}
 import info.kwarc.mmt.api._
+import frontend.Controller
+import objects._
+import documents._
+import parser.{ParsingUnit, SourceRef}
+import utils.{Sourceable, URI, mmt, stringToList, xml}
 
 import scala.xml.Node
 
@@ -86,7 +87,7 @@ object Query {
     * @param controller
     */
   def parse(s : String, context: Context, controller: Controller): Query = {
-    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(QMTPaths.QMT), s, NamespaceMap.empty)
+    val pu = ParsingUnit(SourceRef.anonymous(s), context ++ Context(QMTPaths.QMT), s, InterpretationInstructionContext())
     val term = controller.objectParser(pu)(ErrorThrower).toTerm
     parse(term)(controller.extman.get(classOf[QueryFunctionExtension]), controller.relman)
   }

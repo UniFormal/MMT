@@ -42,7 +42,7 @@ object MMTSystem {
   case object OtherStyle extends RunStyle
 
   /** the [[RunStyle]] of the current run */
-  lazy val runStyle = {
+  lazy val runStyle: RunStyle = {
      val location = getClass.getProtectionDomain.getCodeSource.getLocation
      if (location == null)
         OtherStyle

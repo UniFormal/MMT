@@ -33,20 +33,24 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     implicit val parentTerm = dd.path
     val (recDefPath, context, indParams) = ParamType.getParams(dd)
     if (declaresRecords(parent)) {elaborateToRecordExp(context, indParams)} else {
-      val (recD, indCtx) = controller.library.get(recDefPath) match {
-        case recD: DerivedDeclaration if (recD.feature == "record") => (recD, Type.getParameters(recD))
+      val recD = controller.library.get(recDefPath) match {
+        case recD: DerivedDeclaration if (recD.feature == "record") => recD
         case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature record but of the feature "+d.feature+".")
         case _ => throw LocalError("Expected definition of corresponding record at "+recDefPath.toString()
               +" but no derived declaration found at that location.")
       }
+      val indCtx = controller.extman.get(classOf[StructuralFeature], recD.feature).getOrElse(throw LocalError("Structural feature "+recD.feature+" not found.")) match {
+        case f: ParametricTheoryLike => f.Type.getParameters(recD)
+        case _ => Context.empty
+      }
       
       var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
       val recDefs = parseInternalDeclarations(recD, controller, None)
-      val types = tpls(recDefs) map (_.path)
+      val types = tpls(recDefs)
           
       // check whether all declarations match their corresponding constructors
       decls foreach { d => correspondingDecl(recD, d.name) map {decl =>
@@ -56,13 +60,13 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
       recDefs.map(_.name).find(n => !decls.map(_.name).contains(n)) foreach {n => throw LocalError("No declaration found for the internal declaration "+n+" of "+recD.name+".")}
       
       val Ltp = () => {
-        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("type")), indParams), decls.filter(_.isTypeLevel).map(d => d.df.get)))
+        PiOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(recTypeName)), indCtx map (_.toTerm)), decls.filter(_.isTypeLevel).map(d => d.df.get)))
       }
       val Ldf = () => {
-        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName("make")), indParams), decls.map(_.df.get))))
+        Some(LambdaOrEmpty(context, ApplyGeneral(ApplyGeneral(OMS(recDefPath / LocalName(makeName)), context map (_.toTerm)), decls.map(_.df.get))))
       }
       
-      val make = makeConst(LocalName("make"), Ltp, Ldf)
+      val make = makeConst(LocalName(makeName), Ltp, false, Ldf)
       //log(defaultPresenter(make)(controller))
       
       new Elaboration {
@@ -93,7 +97,7 @@ class RecordDefinitions extends StructuralFeature("record_term") with TypedParam
   def elaborateToRecordExp(ctx: Context, params: List[Term])(implicit parent: GlobalName) = {
     val recordFields = ctx.filter(d=>isTypeLevel(d.tp.get)).map(_.toOML)
     Elaboration(List(makeConst(parent.name, 
-        () => {OMA(OMS(recTypePath), recordFields)}, 
+        () => {OMA(OMS(recTypePath), recordFields)}, false,
         () => {Some(OMA(OMS(recExpPath), params))})))
   }
 }

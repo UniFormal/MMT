@@ -22,8 +22,7 @@ abstract class RuleGenerator extends ChangeListener {
   protected val nameSuffix = "Rule"
   def ruleTags: List[String]
   def judgementTags: List[String]
-  def dedTag: String
-  private val matcher = new RuleMatcher(controller.globalLookup, judgementTags, dedTag)
+  private val matcher = new RuleMatcher(controller.globalLookup, judgementTags)
 
   private def getGeneratedRule(p: Path): Option[GeneratedRule] = {
      p match {

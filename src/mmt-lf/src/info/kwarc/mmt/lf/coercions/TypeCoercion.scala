@@ -7,26 +7,20 @@ import info.kwarc.mmt.api.utils.MMT_TODO
 import objects.Conversions._
 import info.kwarc.mmt.lf._
 
-/**
- * a type coercion rule lifts a non-type A to the type lift(A)
- * if applicable(A) and A occurs where a type is expected
- * 
- * This rule does not do anything by itself.
- * Instead, it provides multiple rules that insert the lifting function during type-checking, see the respective members
- */
-@MMT_TODO("this is a nice idea, but it doesn't quite work; it's not used yet")
-abstract class TypeCoercionRule(val head: GlobalName, under: List[GlobalName]) extends CheckingRule {self =>
+/** the typical case where lift(A) = Apply(operator, A) */  
+class LFTypeCoercionRule(h: GlobalName, u: List[GlobalName], operator: GlobalName) extends TypeCoercionRule(h,u) {
+  def apply(tp: Term, tm: Term) = Some(Apply(OMS(operator), tm))
+}
+
+/* old attempt, never used
+
   /** auxiliary object for checking applicability */
   private object Applicable extends ApplicableUnder {
     val head = self.head
     def under = self.under
     def apply(tm: Term) = applicable(tm)
   }
-  /** the lifting function
-   *  pre: Applicable(tm)
-   *  post: |- lift(tm): type
-   */
-  def lift(tm: Term): Term
+
   /** convenience for rules with multiple terms where only some have to be lifted */
   protected def liftIfApplicable(tm: Term) = if (Applicable(tm)) (lift(tm),true) else (tm,false)
 
@@ -100,9 +94,5 @@ abstract class TypeCoercionRule(val head: GlobalName, under: List[GlobalName]) e
   }
   
   override def providedRules = super.providedRules ::: List(AsTermInTyping, AsTypeInTyping, AsTermInEquality, AsTypeInEquality, InSubtyping, InInhabitable)
-}
-
-/** the typical case where lift(A) = Apply(operator, A) */  
-class LFTypeCoercionRule(h: GlobalName, u: List[GlobalName], operator: GlobalName) extends TypeCoercionRule(h,u) {
-  def lift(tm: Term) = Apply(OMS(operator), tm)
-}
+ 
+*/

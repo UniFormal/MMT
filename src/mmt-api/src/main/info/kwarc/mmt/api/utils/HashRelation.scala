@@ -1,4 +1,6 @@
 package info.kwarc.mmt.api.utils
+import info.kwarc.mmt.api.GeneralError
+
 import scala.collection.mutable._
 
 /**
@@ -31,6 +33,18 @@ class HashMapToSet[A,B] extends HashMap[A,HashSet[B]] {
       }
       sb.result
    }
+}
+
+import scala.collection.mutable.ListBuffer
+abstract class HashMapToOrderedSet[A,B] extends HashMap[A,ListBuffer[B]] {
+  def value(b: B): Int
+  override def apply(a: A) = getOrElseUpdate(a, new ListBuffer[B])
+  def insert(a: A, b: B) {
+    val bs = apply(a)
+    val v = value(b)
+    val i = bs.indexWhere(x => value(x) > v)
+    bs.insert(i,b)
+  }
 }
 
 /**
@@ -119,4 +133,199 @@ class ReflTransHashRelation[A] extends HashRelation[A,A] {
        addReachedFrom(a)
        result.reverse
    }
+}
+
+
+/** efficiently maintains the transitive closure a changing relation on a type T
+  * the generating relation is defined calls to add and delete
+  *
+  * lookup is constant time
+  * adding/deleting is linear in the number of paths using the new/deleted edge
+  */
+class IncrementalTransitiveClosure[T] {
+  /** direct edges */
+  private val edges = new HashSet[(T,T)]
+  /* t in pathsFrom(f) iff there is a path from f to t */
+  private val pathsFrom = new HashMapToSet[T,T]
+  /* f in pathsTo(t) iff there is a path from f to t */
+  private val pathsTo = new HashMapToSet[T,T]
+  /* numPaths(f,t) is the number of paths from f to t, use getNumPaths for lookup */
+  private val numPaths = new HashMap[(T,T),Int]
+
+  /** number of paths including reflexive edges, defaults to 0 */
+  @inline private def getNumPaths(f: T, t: T) = {
+    if (f == t) 1 else numPaths.getOrElse((f,t), 0)
+  }
+
+  private def checkInvariant(s: String) {
+    //println(s)
+    numPaths.keys foreach {case (a,b) =>
+      if (! (pathsFrom(a) contains b)) {
+        println("class invariant violated after " + s)
+        println(s"no path from $a to $b exists but number of paths is non-zero")
+      }
+      if (! (pathsTo(b) contains a)) {
+        println("class invariant violated after " + s)
+        println(s"no path to $b from $a exists but number of paths is non-zero")
+      }
+    }
+    pathsFrom foreach {case (f,ts) =>
+      ts foreach {t =>
+        if (!(pathsTo(t) contains f)) {
+          println("class invariant violated after " + s)
+          println(s"path from $f to $t but no path to $t from $f")
+        }
+      }
+    }
+    pathsTo foreach {case (t,fs) =>
+      fs foreach {f =>
+        if (!(pathsFrom(f) contains t)) {
+          println("class invariant violated after " + s)
+          println(s"path to $t from $f but no path from $f to $t")
+        }
+      }
+    }
+    edges foreach {case (f,t) =>
+      if (!apply(f,t)) {
+        println("class invariant violated after " + s)
+        println(s"edge $f -> $t but no path $f -> $t")
+      }
+    }
+    pathsFrom.keys foreach {f =>
+      val outEdges = edges.filter {case (a,b) => a == f}.toList
+      pathsTo.keys foreach {t =>
+        val pathsAfter = outEdges.map {case (_,b) =>
+          (b,getNumPaths(b,t))
+        }
+        val npExpected = if (f == t) 1 else pathsAfter.map(_._2).sum
+        val npStored = getNumPaths(f,t)
+        if (npExpected != npStored) {
+          println("class invariant violated after " + s)
+          println(s"paths $f -> $t via: " + pathsAfter.mkString("\n","\n",""))
+          println(s"$npExpected paths exist but $npStored paths stored")
+          //throw GeneralError(s"invalid state")
+        }
+      }
+    }
+  }
+
+  /** add a number of paths from f to t */
+  @inline private def addPaths(f:T, t: T, num: Int) {
+    if (f == t) println(s"invariant violated: self-edge $f -> $t")
+    numPaths((f,t)) = getNumPaths(f,t) + num
+    pathsFrom(f) += t
+    pathsTo(t) += f
+  }
+  /** remove a number of paths from f to t */
+  @inline private def deletePaths(f:T, t: T, num: Int) {
+    if (f == t && num == 1) {
+      // reflexive paths are not stored
+      return
+    }
+    val np = numPaths((f,t)) - num
+    if (np < 0) throw GeneralError(s"invalid state: $np paths $f -> $t")
+    if (np == 0) {
+      // no more path, remove from closure
+      pathsFrom(f) -= t
+      pathsTo(t) -= f
+      numPaths -= ((f,t))
+    } else {
+      numPaths((f,t)) = np
+    }
+  }
+  /** iterate over nodes y such y < x; y <= x if refl == true */
+  @inline private def iterateBelow(x: T, refl: Boolean)(f: T => Unit) {
+    if (refl) f(x)
+    pathsTo.getOrEmpty(x) foreach f
+  }
+  /** iterate over nodes y such x < y; x <= y if refl == true */
+  @inline private def iterateAbove(x: T, refl: Boolean)(f: T => Unit) {
+    if (refl) f(x)
+    pathsFrom.getOrEmpty(x) foreach f
+  }
+
+  /** true if (from,to) is in the transitive closure */
+  def apply(from: T, to: T) = getNumPaths(from,to) > 0
+
+  @inline def getAbove(x: T, refl: Boolean) = {
+    val it = pathsFrom(x).iterator
+    if (refl) Iterator(x) ++ it else it
+  }
+  @inline def getBelow(x: T, refl: Boolean) = {
+    val it = pathsTo(x).iterator
+    if (refl) Iterator(x) ++ it else it
+  }
+
+  /** add an edge to the underlying relation */
+  def add(from: T, to: T) {
+    if (edges contains (from,to)) {
+      return
+    } else {
+      edges += ((from,to))
+    }
+    iterateBelow(from, true) {b =>
+      iterateAbove(to, true) {a =>
+        // b in below  -old path-> from -new edge-> to -old path-> a in above
+        addPaths(b,a, getNumPaths(b, from)*getNumPaths(to,a))
+      }
+    }
+    //checkInvariant(s"adding $from -> $to")
+  }
+  /** delete an edge from the underlying relation */
+  def delete(from: T, to: T) {
+    if (!(edges contains (from,to))) {
+      if (apply(from,to))
+        throw GeneralError("cannot remove edge induced by transitive closure")
+      else
+        return
+    }
+    edges -= ((from,to))
+    iterateBelow(from, true) {b =>
+      iterateAbove(to, true) {a =>
+        // b in below  -old path-> from -deleted edge-> to -old path-> a in above
+        deletePaths(b,a, getNumPaths(b, from)*getNumPaths(to,a))
+      }
+    }
+    //checkInvariant(s"deleting $from -> $to")
+  }
+  /** delete node x and paths involving x
+    * @param into delete paths into x
+    * @param outOf delete paths out of x
+    * @param through delete paths strictly through x
+    */
+  def delete(x: T, into: Boolean, outOf: Boolean, through: Boolean) {
+    if (through) {
+      iterateBelow(x,false) {b =>
+        iterateAbove(x,false) {a =>
+          // b -old path-> x -old path-> a
+          deletePaths(b,a,getNumPaths(b,x) * getNumPaths(x,a))
+        }
+      }
+    }
+    // paths into/out of x must be deleted after paths through x, because the former are needed for the latter
+    if (outOf) {
+      iterateAbove(x,false) {a =>
+        edges -= ((x,a)) // only some of these edges exist
+        pathsTo(a) -= x
+        numPaths -= ((x,a))
+      }
+      pathsFrom -= x
+    }
+    if (into) {
+      iterateBelow(x,false) {b =>
+        edges -= ((b,x))
+        pathsFrom(b) -= x
+        numPaths -= ((b,x))
+      }
+      pathsTo -= x
+    }
+    //checkInvariant(s"deleting $x")
+  }
+  /** empty the underlying relation */
+  def clear {
+    edges.clear
+    pathsFrom.clear
+    pathsTo.clear
+    numPaths.clear
+  }
 }

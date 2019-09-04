@@ -57,9 +57,9 @@ object HTMLAttributes {
    val bracketsOpt = brackets + "-opt"
    
    /** implicit arguments */
-   val implicitarg = prefix + "implicit-arg"
+   val implicitarg = cssprefix + "implicit-arg"
    /** reconstructed type of bound variables */
-   val reconstructedtype = prefix + "reconstructed-type"
+   val reconstructedtype = cssprefix + "reconstructed-type"
    
    /** additionally present on optional components if they are currently hidden,
     *  for example, a UI can use select("cls").toggleAttribute("hidden(cls)") to toggle the display of a group

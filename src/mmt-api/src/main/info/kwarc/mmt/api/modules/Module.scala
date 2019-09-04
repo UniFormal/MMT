@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
 import symbols._
 import objects._
+import libraries._
 
 /**
  * MMT modules, unifies theories and views
@@ -29,6 +30,8 @@ trait ModuleWrapper extends ContentElement {
   def getDeclarations = module.getDeclarations
   // bend over metadata pointer
   this.metadata = module.metadata
+  // bend over clientProperty pointer, never tested
+  // override lazy val clientProperty = module.clientProperty
   //default
   def toNode = module.toNode
   override def toString = module.toString
