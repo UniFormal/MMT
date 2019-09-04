@@ -1,6 +1,5 @@
 package info.kwarc.mmt.glf
 
-
 class GlfException(private val message: String = "",
                    private val cause: Throwable = None.orNull)
   extends Exception(message, cause)
