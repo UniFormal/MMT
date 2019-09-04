@@ -186,6 +186,23 @@ class AlignmentsServer extends ServerExtension("align") {
     save(a)
   }
 
+  def json(from : Reference => Boolean, to :Reference => Boolean) = {
+    val starts = alignments.toList.collect {
+      case a if from(a.from) => a.from
+    }
+    val all = starts.flatMap(s => alignments.get(s,Some(_=>true))).filter(a => to(a.to))
+    val ret = all.map { align =>
+      val fr = ("from",JSONString(align.from.toString))
+      val to = ("to",JSONString(align.to.toString))
+      val kvpairs = JSONArray(align.props.map {case (k,v) =>
+        JSONObject((k,JSONString(v)))
+      }:_*)
+      val arr : List[(String,JSON)] = List(fr,to,("properties",kvpairs))
+      JSONObject(arr:_*)
+    }
+    JSONArray(ret:_*)
+  }
+
   def apply(request: ServerRequest): ServerResponse = {
     request.pathForExtension match {
       case "from" :: _ ⇒
