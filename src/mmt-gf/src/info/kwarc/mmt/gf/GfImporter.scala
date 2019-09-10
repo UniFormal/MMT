@@ -18,21 +18,21 @@ class GfImporter extends Importer {
   val log_progress = Some("progress")
 
   def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    val docpath = DPath(URI(bt.narrationDPath.toPath.dropRight(3)))
+    val docpath = DPath(URI(bt.narrationDPath.toPath))
     val s = File.read(bt.inFile)
     if (!s.contains("abstract")) {
       log("Skipping " + bt.inPath, log_progress)
       return BuildSuccess(Nil, Nil)  // TODO: Is this correct BuildResult?
     }
     log("Importing " + bt.inPath, log_progress)
-    val name = bt.inFile.name
+    val name = bt.inFile.name.dropRight(3)
     val gf = (new GfParser).parse(s)
 
 
     val toplevelDoc = new Document(docpath, FileLevel)
     controller.add(toplevelDoc)
 
-    val langTheory = new Theory(bt.narrationDPath,
+    val langTheory = new Theory(docpath,
       LocalName(name), Some(LF.theoryPath),
       modules.Theory.noParams, modules.Theory.noBase)
 

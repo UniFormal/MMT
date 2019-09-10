@@ -13,17 +13,24 @@ class GlfServer extends ServerExtension("glf"){
   def apply(request: ServerRequest): ServerResponse = {
     val query : Query = Query.fromJSON(request.body.asJSON)
 
-    val theory : Theory = controller.getO(query.languageTheory) match {
-      case Some(th : Theory) => th
-      case None => throw ServerError("Could not find theory " + query.languageTheory)
-      case _ => throw ServerError(query.languageTheory + " does not appear to be a theory")
-    }
-
     val view : Option[View] = query.semanticsView.map(controller.getO(_) match {
       case Some(v : View) => { controller.simplifier.apply(v) ; v }
       case None => throw ServerError("Could not find view " + query.semanticsView)
       case _ => throw ServerError(query.semanticsView + " does not appear to be a view")
     })
+
+    val langTheo = if (query.languageTheory.isEmpty) {
+      view.getOrElse(throw ServerError("Neither language theory nor semantics view provided")).from.toMPath
+    } else {
+      query.languageTheory.get
+    }
+
+    val theory : Theory = controller.getO(langTheo) match {
+      case Some(th : Theory) => th
+      case None => throw ServerError("Could not find theory " + langTheo)
+      case _ => throw ServerError(langTheo + " does not appear to be a theory")
+    }
+
 
     val theorymap : Map[String, Constant] = {
       controller.simplifier(theory)
@@ -50,7 +57,7 @@ class GlfServer extends ServerExtension("glf"){
 }
 
 class Query(val asts : List[String],
-            val languageTheory : MPath,
+            val languageTheory : Option[MPath],
             val semanticsView : Option[MPath],
             val simplify : Boolean,
             val deltaExpansion : Boolean)
@@ -84,8 +91,8 @@ object Query {
         }
       case _ => throw ServerError("Invalid JSON: Expected object")
     }
-    val languageTheory = DPath(URI(langTheo.getOrElse(throw ServerError("no language theory provided")))).toMPath
     val semanticsView : Option[MPath] = semView.map(s => DPath(URI(s)).toMPath)
+    val languageTheory = langTheo.map(p => DPath(URI(p)).toMPath)
     new Query(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion)
   }
 }
