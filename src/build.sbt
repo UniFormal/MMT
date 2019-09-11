@@ -145,9 +145,9 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf, gf,
     tiscaf, lfcatalog,
-    jedit, intellij
+    jedit, intellij, argsemcomp
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -160,7 +160,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp, gf).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -296,6 +296,10 @@ lazy val glf = (project in file("mmt-glf")).
   dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
 
+// plugin for reading GF. Maintainer: Frederik
+lazy val gf = (project in file("mmt-gf")).
+  dependsOn(api, lf).
+  settings(mmtProjectsSettings("mmt-gf"): _*)
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
@@ -428,6 +432,15 @@ lazy val oeis = (project in file("mmt-oeis")).
   settings(mmtProjectsSettings("mmt-oeis"): _*).
   settings(
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
+  )
+
+// plugin for computing argumentation semantics
+lazy val argsemcomp = (project in file("mmt-argsemcomp")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
+  settings(
+    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
+    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
   )
 
 // =================================

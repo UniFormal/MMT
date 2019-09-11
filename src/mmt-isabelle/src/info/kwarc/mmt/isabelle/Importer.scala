@@ -824,25 +824,19 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* resources */
+    /* session */
 
-    val dump_options: isabelle.Options =
-      isabelle.Dump.make_options(options, isabelle.Dump.known_aspects)
-        .real.update("headless_check_delay", options.real("mmt_check_delay"))
-        .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-        .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
+    val session =
+      isabelle.Dump.Session(
+        options
+          .real.update("headless_check_delay", options.real("mmt_check_delay"))
+          .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
+          .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout")),
+        logic,
+        aspects = isabelle.Dump.known_aspects,
+        progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
-    private val session_deps =
-      isabelle.Dump.dependencies(dump_options, progress = progress,
-        dirs = dirs, select_dirs = select_dirs, selection = selection)
-
-    val resources: isabelle.Headless.Resources =
-      isabelle.Headless.Resources.make(dump_options, logic, progress = progress,
-        session_dirs = dirs ::: select_dirs,
-        include_sessions = session_deps.sessions_structure.imports_topological_order)
-
-    private val import_theories =
-      resources.used_theories(session_deps, progress = progress)
+    val resources = session.resources
 
 
     /* theories */
@@ -872,7 +866,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val session_name = theory_qualifier(name)
       val session_info =
-        session_deps.sessions_structure.get(session_name) getOrElse
+        session.deps.sessions_structure.get(session_name) getOrElse
           err("Undefined session info " + isabelle.quote(session_name))
 
       val chapter = session_info.chapter
@@ -918,18 +912,17 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* import session theories */
 
-    import_theories.foreach(theory_archive)
+    session.used_theories.foreach(theory_archive)
 
     def import_session(import_theory: Theory_Export => Unit)
     {
-      if (import_theories.isEmpty) {
+      if (session.used_theories.isEmpty) {
         progress.echo_warning("Nothing to import")
       }
       else {
         import_theory(pure_theory_export)
-        isabelle.Dump.session(session_deps, resources,
+        session.run(
           unicode_symbols = true,
-          progress = progress,
           process_theory = (args: isabelle.Dump.Args) =>
             {
               val snapshot = args.snapshot
