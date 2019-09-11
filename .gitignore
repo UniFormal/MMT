@@ -41,3 +41,4 @@ target
 
 # scala-bin compilation articfacts
 out/
+.DS_Store
