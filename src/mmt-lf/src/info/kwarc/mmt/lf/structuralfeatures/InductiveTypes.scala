@@ -31,11 +31,12 @@ object inductiveUtil {
   def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
   /** name of the applied version of the inductive definition declaration generated for constructors */
   def appliedName(n: LocalName) : LocalName = {n / LocalName("Applied")}
+  def feature = {"inductive"}
 }
 import inductiveUtil._
 
 /** theories as a set of types of expressions */ 
-class InductiveTypes extends StructuralFeature("inductive") with ParametricTheoryLike {
+class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with ParametricTheoryLike {
   
   /**
    * Checks the validity of the inductive type(s) to be constructed
@@ -55,7 +56,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     implicit val parentTerm = dd.path
         
     val decls = parseInternalDeclarations(dd, controller, Some(context))
-    elaborateDeclarations(context, decls)
+    elaborateDeclarations(context, decls, Some({c => log(defaultPresenter(c)(controller))}))
     }
   
   /** Elaborates an derived declaration D using the inductive feature. This is used to reuse the functionality of this feature in different features, speciafically the reflection feature.
@@ -63,7 +64,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    *  @param parentTerm The path to D, used as prefix for the external declarations
    *  @param decls The internal declaration of the D
    */
-  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration])(implicit parentTerm: GlobalName) : Elaboration = {
+  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration], logger: Option[Constant => Unit] = None)(implicit parentTerm: GlobalName) : Elaboration = {
     // to hold the result
     var elabDecls : List[Constant] = Nil
     
@@ -75,7 +76,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
     tmdecls foreach { tmdecl => checkTermLevel(tmdecl, types)}
-        
+
     // the no confusion axioms for the data constructors
     /*
      * For dependently-typed constructors, we cannot elaborate into plain LF:
@@ -95,8 +96,8 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
     
     // the inductive proof declarations
     elabDecls ++= indProofs(tpdecls, constrdecls, context)(parentTerm)
-    
-    externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
+
+    externalDeclarationsToElaboration(elabDecls, logger)
 }
   
   /** Check whether the TermLevel has a higher order argument of an inductively defined type
@@ -232,7 +233,7 @@ class InductiveTypes extends StructuralFeature("inductive") with ParametricTheor
    * @param context the context of I
    */
   def testers(tmdecls : List[TermLevel], tpdecls: List[TypeLevel], decls: List[InternalDeclaration], context: Context)(implicit parent : GlobalName): List[Constant] = {
-    //val types = tpdecls.map(_.path)
+    //val types = tpdecls.map(_.path)InductiveTypes
     constrs(tmdecls) map {constr =>
       val Ltp = () => {
         val (argCon, _) = constr.argContext(None)
@@ -334,8 +335,12 @@ object InductiveTypes {
    *  @param parentTerm The path to D, used as prefix for the external declarations
    *  @param decls The internal declaration of the D
    */
-  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration])(implicit parentTerm: GlobalName) : Elaboration = {
-    InductiveTypes.elaborateDeclarations(context, decls)  
+  def elaborateDeclarations(context: Context, decls: List[InternalDeclaration], controller: Controller, logger: Option[Constant=> Unit] = None)(implicit parentTerm: GlobalName) : Elaboration = {
+    val indTp:InductiveTypes = controller.extman.get(classOf[StructuralFeature], inductiveUtil.feature) match {
+      case Some(indtp:InductiveTypes) => indtp
+      case _ => throw ImplementationError("Structural feature "+inductiveUtil.feature+" not loaded, but required here. ")
+    }
+    indTp.elaborateDeclarations(context, decls, logger)
   }
   
   /**
