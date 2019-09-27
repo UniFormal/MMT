@@ -9,12 +9,17 @@ import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, Serv
 import scala.collection.immutable.HashMap
 import scala.collection.mutable.ArrayBuffer
 
-class GlfServer extends ServerExtension("glf"){
+/*
+  Technically, the GlfConstructServer simply applies a view to particular terms.
+  This is used to apply the semantics construction (a view) to a GF parse tree (which can be seen as an LF term).
+ */
+
+class GlfConstructServer extends ServerExtension("glf-construct"){
   def apply(request: ServerRequest): ServerResponse = {
-    val query : Query = Query.fromJSON(request.body.asJSON)
+    val query : GlfConstructQuery = GlfConstructQuery.fromJSON(request.body.asJSON)
 
     val view : Option[View] = query.semanticsView.map(controller.getO(_) match {
-      case Some(v : View) => { controller.simplifier.apply(v) ; v }
+      case Some(v : View) => controller.simplifier.apply(v) ; v
       case None => throw ServerError("Could not find view " + query.semanticsView)
       case _ => throw ServerError(query.semanticsView + " does not appear to be a view")
     })
@@ -56,14 +61,14 @@ class GlfServer extends ServerExtension("glf"){
   }
 }
 
-class Query(val asts : List[String],
-            val languageTheory : Option[MPath],
-            val semanticsView : Option[MPath],
-            val simplify : Boolean,
-            val deltaExpansion : Boolean)
+class GlfConstructQuery(val asts : List[String],
+                        val languageTheory : Option[MPath],
+                        val semanticsView : Option[MPath],
+                        val simplify : Boolean,
+                        val deltaExpansion : Boolean)
 
-object Query {
-  def fromJSON(json : JSON) : Query = {
+object GlfConstructQuery {
+  def fromJSON(json : JSON) : GlfConstructQuery = {
     var asts = ArrayBuffer[String]()
     var langTheo : Option[String] = None
     var semView : Option[String] = None
@@ -74,13 +79,12 @@ object Query {
       case JSONObject(map) =>
         for (entry <- map) {
           entry match {
-            case (JSONString("ASTs"), array : JSONArray) => {
+            case (JSONString("ASTs"), array : JSONArray) =>
               for (jsonstr <- array) {
                 jsonstr match {
                   case JSONString(s) => asts += s
                   case _ => ServerError("Invalid JSON: ASTs should be list of strings")
                 }
-              }
             }
             case (JSONString("languageTheory"), JSONString(value)) => langTheo = Some(value)
             case (JSONString("semanticsView"), JSONString(value)) => semView = Some(value)
@@ -93,6 +97,6 @@ object Query {
     }
     val semanticsView : Option[MPath] = semView.map(s => DPath(URI(s)).toMPath)
     val languageTheory = langTheo.map(p => DPath(URI(p)).toMPath)
-    new Query(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion)
+    new GlfConstructQuery(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion)
   }
 }

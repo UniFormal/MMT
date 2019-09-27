@@ -291,15 +291,15 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
 
-// Glf server. Maintainer: Frederik
-lazy val glf = (project in file("mmt-glf")).
-  dependsOn(api, lf, repl).
-  settings(mmtProjectsSettings("mmt-glf"): _*)
-
 // plugin for reading GF. Maintainer: Frederik
 lazy val gf = (project in file("mmt-gf")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-gf"): _*)
+
+// Glf server. Maintainer: Frederik
+lazy val glf = (project in file("mmt-glf")).
+  dependsOn(api, lf, repl, gf).
+  settings(mmtProjectsSettings("mmt-glf"): _*)
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
