@@ -36,6 +36,14 @@ class GfImporter extends Importer {
       LocalName(name), Some(LF.theoryPath),
       modules.Theory.noParams, modules.Theory.noBase)
 
+    controller.add(langTheory)
+    controller.add(MRef(toplevelDoc.path, langTheory.path))
+
+    for (incl <- gf.includes) {
+      val pi = PlainInclude((docpath.toMPath.parent / (incl+".gf") / incl).toMPath, langTheory.toTerm.toMPath)
+      controller.add(pi)
+    }
+
     for (typename <- gf.types) {
       val c = symbols.Constant(langTheory.toTerm, LocalName(typename), Nil, Some(OMS(Typed.ktype)), None, None)
       langTheory.add(c)
@@ -49,13 +57,6 @@ class GfImporter extends Importer {
       langTheory.add(c)
     }
 
-    controller.add(langTheory)
-    controller.add(MRef(toplevelDoc.path, langTheory.path))
-
-    for (incl <- gf.includes) {
-      val pi = PlainInclude((docpath.toMPath.parent / incl).toMPath, langTheory.toTerm.toMPath)
-      controller.add(pi)
-    }
 
     index(toplevelDoc)
 
