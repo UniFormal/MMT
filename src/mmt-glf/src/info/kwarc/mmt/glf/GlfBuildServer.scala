@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.checking.Interpreter
 import info.kwarc.mmt.api.{ErrorContainer, MultipleErrorHandler}
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONBoolean, JSONObject, JSONString}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.gf.GfImporter
+import info.kwarc.mmt.gf.{GfImportException, GfImporter}
 
 
 class GlfBuildServer extends ServerExtension("glf-build"){
@@ -38,18 +38,41 @@ class GlfBuildServer extends ServerExtension("glf-build"){
             val buildtask = new BuildTask("mmt-gf", archive, archive / gfImporter.inDim / file,
                 None, file, archive / gfImporter.outDim / file.setExtension(gfImporter.outExt),
                 new MultipleErrorHandler(List(errorcontainer)))
-            gfImporter.buildFile(buildtask)
+            try {
+                gfImporter.buildFile(buildtask)
+            } catch {
+                case e : Exception => return errorResponse(e)
+            }
         } else {   // MMT file
             val buildtask = new BuildTask("mmt-omdoc", archive, archive / mmtImporter.inDim / file,
                 None, file, archive / mmtImporter.outDim / file.setExtension(mmtImporter.outExt),
                 new MultipleErrorHandler(List(errorcontainer)))
-            mmtImporter.buildFile(buildtask)
+            try {
+                mmtImporter.buildFile(buildtask)
+            } catch {
+                case e : Exception => return errorResponse(e)
+            }
         }
         ServerResponse.JsonResponse(JSONObject(
             ("isSuccessful", JSONBoolean(result.isInstanceOf[BuildSuccess])),
             ("errors", JSONArray(errorcontainer.getErrors.map(error => JSONString(error.toString)) : _*))
         ))
+    }
 
+    private def errorResponse(ex : Exception): ServerResponse = {
+        ex match {
+            case _ : GfImportException =>
+                ServerResponse.JsonResponse(JSONObject(
+                    ("isSuccessful", JSONBoolean(false)),
+                    ("errors", JSONArray(JSONString(ex.getClass.toString + ": " + ex.getMessage)))
+                ))
+            case _ =>
+                ex.printStackTrace()
+                ServerResponse.JsonResponse(JSONObject(
+                    ("isSuccessful", JSONBoolean(false)),
+                    ("errors", JSONArray(JSONString("Unexpected error: " + ex.getClass + ": " + ex.getMessage)))
+                ))
+        }
     }
 }
 
