@@ -830,9 +830,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       isabelle.Dump.Session(
         options
           .real.update("headless_check_delay", options.real("mmt_check_delay"))
+          .real.update("editor_consolidate_delay", options.real("mmt_consolidate_delay"))
+          .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
           .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-          .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout")),
+          .int.update("headless_load_limit", options.int("mmt_load_limit")),
         logic,
+        dump_checkpoints = options.bool("mmt_dump_checkpoints"),
         aspects = isabelle.Dump.known_aspects,
         progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
