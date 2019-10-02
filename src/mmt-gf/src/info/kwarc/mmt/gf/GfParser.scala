@@ -36,7 +36,7 @@ case class OTHER_SEGMENT(str : String) extends GfToken   // segments we don't ca
 // TODO: Comments!
 class GfLexer extends RegexParsers {
   override def skipWhitespace = true
-  override val whiteSpace: Regex = "([ \t\r\f\n]|--.*)+".r
+  override val whiteSpace: Regex = "([ \t\r\f\n]|--.*|\\{-(.|\n)*-\\})+".r
 
   def identifier: Parser[IDENTIFIER] =    // TODO: Can identifiers contain unicode?
     "[a-zA-Z_][a-zA-Z0-9_]*".r ^^ { str => IDENTIFIER(str) }
