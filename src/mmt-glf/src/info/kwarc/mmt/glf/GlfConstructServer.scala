@@ -1,12 +1,12 @@
 package info.kwarc.mmt.glf
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.symbols.{Constant, Structure}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /*
@@ -36,8 +36,32 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
       case _ => throw ServerError(langTheo + " does not appear to be a theory")
     }
 
+    // theory.getIncludesWithoutMeta doesn't appear to work
+    def mygetincludes(t : Theory) : List[MPath] = {
+      t.getDeclarations.flatMap(d => d match {
+        case s : Structure => s.from.toMPath :: Nil
+        case _ => Nil
+      })
+    }
 
-    val theorymap : Map[String, Constant] = {
+
+    val theoryMap : mutable.Map[String, Constant] = mutable.Map()
+    val inclSet : mutable.Set[MPath] = mutable.Set()  // already included theories
+    def fillTheoryMap(mpath : MPath) : Unit = {
+      if (inclSet.contains(mpath)) return
+      else inclSet.add(mpath)
+
+      controller.get(mpath) match {
+        case t : Theory =>
+          // for (incl <- t.getIncludesWithoutMeta) fillTheoryMap(incl)
+          for (incl <- mygetincludes(t)) fillTheoryMap(incl)
+          for (const <- t.getConstants) theoryMap.put(const.name.toString, const)
+        case _ => throw new Exception(mpath.toString + "doesn't appear to be a theory")
+      }
+    }
+    fillTheoryMap(theory.toTerm.toMPath)
+
+    /* val theorymap : Map[String, Constant] = {
       controller.simplifier(theory)
       val consts = theory.getConstants ::: theory.getIncludes.map(controller.get).collect {
         case t : Theory =>
@@ -46,10 +70,11 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
       }.flatten
       HashMap(consts.map(c => (c.name.toString,c)):_*)
     }
+    */
 
     val trees = query.asts
       .map(GfAST.parseAST)
-      .map(_.toOMDocRec(theorymap))
+      .map(_.toOMDocRec(theoryMap.toMap))
       .map(t => view match {
         case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
         case None => t })
