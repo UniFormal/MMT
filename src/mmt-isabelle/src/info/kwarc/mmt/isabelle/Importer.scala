@@ -330,9 +330,6 @@ object Importer
       for (sref <- source_ref) SourceRef.update(c, sref)
       c
     }
-
-    def typargs(typ: isabelle.Term.Typ): List[isabelle.Term.Typ] =
-      isabelle.Term.const_typargs(key.toString, typ, type_scheme._1, type_scheme._2)
   }
 
   def dependencies(term: Term): Set[ContentPath] =
@@ -1369,9 +1366,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         def term(bounds: List[String], t: isabelle.Term.Term): Term =
           t match {
-            case isabelle.Term.Const(c, ty) =>
+            case isabelle.Term.Const(c, typargs) =>
               val item = get_const(c)
-              Type.app(OMS(item.global_name), item.typargs(ty).map(content.import_type(_, env)))
+              Type.app(OMS(item.global_name), typargs.map(content.import_type(_, env)))
             case isabelle.Term.Free(x, _) => env.get(x)
             case isabelle.Term.Var(xi, _) =>
               isabelle.error("Illegal schematic variable " + xi.toString)
