@@ -904,7 +904,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def make_theory(theory: String): Theory =
     {
-      val archive = theory_archive(import_name(theory)).archive
+      val name = import_name(theory)
+      assert(name.theory == theory)
+
+      val archive = theory_archive(name).archive
       val module = DPath(archive.narrationBase) ? theory
       Theory.empty(module.doc, module.name, None)
     }
