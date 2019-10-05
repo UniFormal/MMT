@@ -315,28 +315,29 @@ object Importer
 
     def apply(
       theory_path: MPath,
-      theory_source: Option[URI] = None,
-      node_source: Source = Source.empty,
       entity_kind: String,
       entity_name: String,
-      entity_xname: String,
-      entity_pos: isabelle.Position.T,
+      entity_xname: String = "",
+      entity_pos: isabelle.Position.T = isabelle.Position.none,
       syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
-      type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
+      type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme,
+      theory_source: Option[URI] = None,
+      node_source: Source = Source.empty): Item =
     {
       val name = Name(theory_path, entity_kind, entity_name)
-      new Item(name, theory_source, node_source, entity_xname, entity_pos, syntax, type_scheme)
+      new Item(name, if (entity_xname.nonEmpty) entity_xname else entity_name,
+        entity_pos, syntax, type_scheme, theory_source, node_source)
     }
   }
 
   final class Item private(
     val name: Item.Name,
-    val theory_source: Option[URI],
-    val node_source: Source,
     val entity_xname: String,
     val entity_pos: isabelle.Position.T,
     val syntax: isabelle.Export_Theory.Syntax,
-    val type_scheme: (List[String], isabelle.Term.Typ))
+    val type_scheme: (List[String], isabelle.Term.Typ),
+    val theory_source: Option[URI],
+    val node_source: Source)
   {
     def source_ref: Option[SourceRef] =
       node_source.ref(theory_source, entity_pos)
@@ -484,7 +485,7 @@ object Importer
         {
           val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, i.toString))
           val pos = segment.element.head.span.position
-          thy_draft.make_item0(kind, name, entity_pos = pos)
+          Item(thy.path, kind, name, entity_pos = pos)
         }
 
         // source text
@@ -1495,35 +1496,20 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           })
       }
 
-      def make_item0(
-        entity_kind: String,
-        entity_name: String,
-        entity_xname: String = "",
-        entity_pos: isabelle.Position.T = isabelle.Position.none,
-        syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
-        type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
-      {
-        Item(
-          theory_path = thy.path,
-          theory_source = thy_source,
-          node_source = node_source,
-          entity_kind = entity_kind,
-          entity_name = entity_name,
-          entity_xname = if (entity_xname.nonEmpty) entity_xname else entity_name,
-          entity_pos = entity_pos,
-          syntax = syntax,
-          type_scheme = type_scheme)
-      }
-
       def make_item(entity: isabelle.Export_Theory.Entity,
         syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
         type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
       {
-        make_item0(entity.kind.toString, entity.name,
+        Item(
+          thy.path,
+          entity.kind.toString,
+          entity.name,
           entity_xname = entity.xname,
           entity_pos = entity.pos,
           syntax = syntax,
-          type_scheme = type_scheme)
+          type_scheme = type_scheme,
+          theory_source = thy_source,
+          node_source = node_source)
       }
 
       def declare_entity(
