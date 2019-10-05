@@ -1,10 +1,13 @@
 (* :mode=isabelle-options: *)
 
-option mmt_check_delay : real = 15
-  -- "delay for theory status check during PIDE processing (seconds)"
-
 option mmt_consolidate_delay : real = 30
   -- "delay to consolidate status of command evaluation (execution forks)"
+
+option mmt_prune_delay : real = 60
+  -- "delay to prune history (delete old versions)"
+
+option mmt_check_delay : real = 10
+  -- "delay for theory status check during PIDE processing (seconds)"
 
 option mmt_dump_checkpoints : bool = true
   -- "observe option dump_checkpoint for theories"
@@ -15,7 +18,7 @@ option mmt_watchdog_timeout : real = 3600
 option mmt_commit_cleanup_delay : real = 120
   -- "delay for cleanup of already imported theories (seconds, 0 = disabled)"
 
-option mmt_load_limit : int = 500
+option mmt_load_limit : int = 100
   -- "limit for loaded theories (0 = unlimited)"
 
 option mmt_type_checking : bool = false

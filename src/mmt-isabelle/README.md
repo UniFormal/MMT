@@ -9,10 +9,10 @@ development versions require a later Isabelle repository clone according to
 ISABELLE_VERSION -- see also https://isabelle.sketis.net/repos/isabelle and in
 particular the file `README_REPOSITORY` section **Quick start in 30min**.
 
-In particular, the following versions from Aug-2019 should fit together:
+In particular, the following versions from Oct-2019 should fit together:
 
-  * Isabelle/799437173553 from https://isabelle.sketis.net/repos/isabelle
-  * AFP/dcb063b90519 from https://isabelle.sketis.net/repos/afp-devel
+  * Isabelle/15656ad28691 from https://isabelle.sketis.net/repos/isabelle
+  * AFP/dfa7db541b8e from https://isabelle.sketis.net/repos/afp-devel
   * MMT/50c8dba3aca1 from https://github.com/UniFormal/MMT/commits/devel
   * MathHub/MMT/urtheories/26100f0b425d from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
