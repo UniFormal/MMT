@@ -1350,29 +1350,30 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def import_type(ty: isabelle.Term.Typ, env: Env = Env.empty): Term =
       {
-        try {
-          ty match {
-            case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) =>
-              lf.Arrow(import_type(a, env), import_type(b, env))
+        def typ(t: isabelle.Term.Typ): Term =
+          t match {
+            case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
             case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Prop()
             case isabelle.Term.Type(name, args) =>
               val op = OMS(get_type(name).global_name)
-              if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(content.import_type(_, env)))
+              if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ))
             case isabelle.Term.TFree(a, _) => env.get(a)
             case isabelle.Term.TVar(xi, _) =>
               isabelle.error("Illegal schematic type variable " + xi.toString)
           }
-        }
+
+        try { typ(ty) }
         catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
       }
 
       def import_term(tm: isabelle.Term.Term, env: Env = Env.empty): Term =
       {
+        def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
+
         def term(bounds: List[String], t: isabelle.Term.Term): Term =
           t match {
             case isabelle.Term.Const(c, typargs) =>
-              val item = get_const(c)
-              Type.app(OMS(item.global_name), typargs.map(content.import_type(_, env)))
+              Type.app(OMS(get_const(c).global_name), typargs.map(typ))
             case isabelle.Term.Free(x, _) => env.get(x)
             case isabelle.Term.Var(xi, _) =>
               isabelle.error("Illegal schematic variable " + xi.toString)
@@ -1385,7 +1386,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 }
               OMV(x)
             case isabelle.Term.Abs(x, ty, b) =>
-              lf.Lambda(LocalName(x), import_type(ty, env), term(x :: bounds, b))
+              lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
             case isabelle.Term.App(a, b) =>
               lf.Apply(term(bounds, a), term(bounds, b))
           }
