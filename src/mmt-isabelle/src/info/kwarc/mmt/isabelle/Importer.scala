@@ -287,16 +287,16 @@ object Importer
       object Ordering extends scala.math.Ordering[Key]
       {
         def compare(key1: Key, key2: Key): Int =
-          key1.kind compare key2.kind match {
-            case 0 => key1.name compare key2.name
+          key1.entity_kind compare key2.entity_kind match {
+            case 0 => key1.entity_name compare key2.entity_name
             case ord => ord
           }
       }
     }
 
-    sealed case class Key(kind: String, name: String)
+    sealed case class Key(entity_kind: String, entity_name: String)
     {
-      override def toString: String = kind + " " + isabelle.quote(name)
+      override def toString: String = entity_kind + " " + isabelle.quote(entity_name)
     }
 
     object Name
@@ -307,9 +307,8 @@ object Importer
 
     final class Name private(val theory_path: MPath, val key: Key)
     {
-      def entity_kind: String = key.kind
-      def entity_name: String = key.name
-
+      def entity_kind: String = key.entity_kind
+      def entity_name: String = key.entity_name
       def local: LocalName = LocalName(entity_name + "|" + entity_kind)
       def global: GlobalName = GlobalName(theory_path, local)
     }
