@@ -311,13 +311,7 @@ object Importer
       def entity_name: String = key.name
 
       def local: LocalName = LocalName(entity_name + "|" + entity_kind)
-      def global: GlobalName =
-      {
-        val path1 = Constant(OMID(theory_path), local, Nil, None, None, None).path
-        val path2 = GlobalName(theory_path, local)
-        if (path1 != path2) isabelle.error("Bad global names " + path1 + " " + path2)
-        path1
-      }
+      def global: GlobalName = GlobalName(theory_path, local)
     }
 
     def apply(
