@@ -316,7 +316,6 @@ object Importer
     def apply(
       theory_path: MPath,
       theory_source: Option[URI] = None,
-      node_name: isabelle.Document.Node.Name,
       node_source: Source = Source.empty,
       entity_kind: String,
       entity_name: String,
@@ -326,14 +325,13 @@ object Importer
       type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
     {
       val name = Name(theory_path, entity_kind, entity_name)
-      new Item(name, theory_source, node_name, node_source, entity_xname, entity_pos, syntax, type_scheme)
+      new Item(name, theory_source, node_source, entity_xname, entity_pos, syntax, type_scheme)
     }
   }
 
   final class Item private(
     val name: Item.Name,
     val theory_source: Option[URI],
-    val node_name: isabelle.Document.Node.Name,
     val node_source: Source,
     val entity_xname: String,
     val entity_pos: isabelle.Position.T,
@@ -1330,14 +1328,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def is_empty: Boolean = item_names.isEmpty
       def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
 
-      def declare(item: Item): Content =
-      {
-        if (defined(item.name.key)) {
-          isabelle.error("Duplicate " + item.name.key.toString + " in theory " +
-            isabelle.quote(item.node_name.theory))
+      def declare(theory_name: String, name: Item.Name): Content =
+        if (defined(name.key)) {
+          isabelle.error("Duplicate " + name.key.toString + " in theory " + isabelle.quote(theory_name))
         }
-        else content + item.name
-      }
+        else content + name
 
       def + (name: Item.Name): Content =
         if (defined(name.key)) content
@@ -1478,7 +1473,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         _state.change(
           { case (content, triples) =>
-              val content1 = content.declare(item)
+              val content1 = content.declare(node_name.theory, item.name)
               val name = Ontology.binary(item.name.global, Ontology.ULO.name, item.entity_xname)
               val specs =
                 List(
@@ -1511,7 +1506,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         Item(
           theory_path = thy.path,
           theory_source = thy_source,
-          node_name = node_name,
           node_source = node_source,
           entity_kind = entity_kind,
           entity_name = entity_name,
