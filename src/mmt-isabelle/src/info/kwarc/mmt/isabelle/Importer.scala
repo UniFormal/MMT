@@ -1294,22 +1294,22 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     {
       val empty: Content =
         new Content(
-          SortedMap.empty[Item.Key, Item](Item.Key.Ordering),
+          SortedMap.empty[Item.Key, Item.Name](Item.Key.Ordering),
           SortedMap.empty[String, Triples_Stats])
       def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
     }
 
     final class Content private(
-      private val items: SortedMap[Item.Key, Item],  // exported formal entities per theory
+      private val item_names: SortedMap[Item.Key, Item.Name],  // imported entities per theory
       private val triples: SortedMap[String, Triples_Stats])  // RDF triples per theory
     {
       content =>
 
-      def items_size: Int = items.size
+      def items_size: Int = item_names.size
       def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
 
       def report_kind(kind: String): String =
-        print_int(items.count({ case (_, item) => item.name.entity_kind == kind }), len = 12) + " " + kind
+        print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
 
       def report: String =
         isabelle.Library.cat_lines(
@@ -1321,7 +1321,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CONST,
             isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
 
-      def get(key: Item.Key): Item.Name = items.getOrElse(key, isabelle.error("Undeclared " + key.toString)).name
+      def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
       def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
       def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
       def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
@@ -1330,8 +1330,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def get_locale_dependency(name: String): Item.Name =
         get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
 
-      def is_empty: Boolean = items.isEmpty
-      def defined(key: Item.Key): Boolean = items.isDefinedAt(key)
+      def is_empty: Boolean = item_names.isEmpty
+      def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
 
       def declare(item: Item): Content =
       {
@@ -1339,16 +1339,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           isabelle.error("Duplicate " + item.name.key.toString + " in theory " +
             isabelle.quote(item.node_name.theory))
         }
-        else content + item
+        else content + item.name
       }
 
-      def + (item: Item): Content =
-        if (defined(item.name.key)) content
-        else new Content(items + (item.name.key -> item), triples)
+      def + (name: Item.Name): Content =
+        if (defined(name.key)) content
+        else new Content(item_names + (name.key -> name), triples)
 
       def + (entry: (String, Triples_Stats)): Content =
         triples.get(entry._1) match {
-          case None => new Content(items, triples + entry)
+          case None => new Content(item_names, triples + entry)
           case Some(stats) =>
             if (stats == entry._2) content
             else isabelle.error("Incoherent triple stats for theory: " + isabelle.quote(entry._1))
@@ -1358,13 +1358,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         if (content eq other) content
         else if (is_empty) other
         else {
-          val items1 = (content /: other.items)({ case (map, (_, item)) => map + item }).items
+          val items1 = (content /: other.item_names)({ case (map, (_, name)) => map + name }).item_names
           val triples1 = (content /: other.triples)({ case (map, entry) => map + entry }).triples
           new Content(items1, triples1)
         }
 
       override def toString: String =
-        items.iterator.map(_._2).mkString("Content(", ", ", ")")
+        item_names.iterator.map(_._2).mkString("Content(", ", ", ")")
 
 
       /* MMT import of Isabelle classes, types, terms etc. */
