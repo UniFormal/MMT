@@ -340,8 +340,6 @@ object Importer
     val syntax: isabelle.Export_Theory.Syntax,
     val type_scheme: (List[String], isabelle.Term.Typ))
   {
-    def key: Item.Key = name.key
-
     def source_ref: Option[SourceRef] =
       node_source.ref(theory_source, entity_pos)
 
@@ -1337,16 +1335,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       def declare(item: Item): Content =
       {
-        if (defined(item.key)) {
-          isabelle.error("Duplicate " + item.key.toString + " in theory " +
+        if (defined(item.name.key)) {
+          isabelle.error("Duplicate " + item.name.key.toString + " in theory " +
             isabelle.quote(item.node_name.theory))
         }
         else content + item
       }
 
       def + (item: Item): Content =
-        if (defined(item.key)) content
-        else new Content(items + (item.key -> item), triples)
+        if (defined(item.name.key)) content
+        else new Content(items + (item.name.key -> item), triples)
 
       def + (entry: (String, Triples_Stats)): Content =
         triples.get(entry._1) match {
