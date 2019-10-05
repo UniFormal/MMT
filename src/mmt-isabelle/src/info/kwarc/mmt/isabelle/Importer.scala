@@ -298,24 +298,56 @@ object Importer
     {
       override def toString: String = kind + " " + isabelle.quote(name)
     }
+
+    object Name
+    {
+      def apply(theory_path: MPath, entity_kind: String, entity_name: String): Name =
+        new Name(theory_path, Key(entity_kind, entity_name))
+    }
+
+    final class Name private(val theory_path: MPath, val key: Key)
+    {
+      def entity_kind: String = key.kind
+      def entity_name: String = key.name
+
+      def local: LocalName = LocalName(entity_name + "|" + entity_kind)
+      def global: GlobalName =
+      {
+        val path1 = Constant(OMID(theory_path), local, Nil, None, None, None).path
+        val path2 = GlobalName(theory_path, local)
+        if (path1 != path2) isabelle.error("Bad global names " + path1 + " " + path2)
+        path1
+      }
+    }
+
+    def apply(
+      theory_path: MPath,
+      theory_source: Option[URI] = None,
+      node_name: isabelle.Document.Node.Name,
+      node_source: Source = Source.empty,
+      entity_kind: String,
+      entity_name: String,
+      entity_xname: String,
+      entity_pos: isabelle.Position.T,
+      syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
+      type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme): Item =
+    {
+      val name = Name(theory_path, entity_kind, entity_name)
+      new Item(name, theory_source, node_name, node_source, entity_xname, entity_pos, syntax, type_scheme)
+    }
   }
 
-  sealed case class Item(
-    theory_path: MPath,
-    theory_source: Option[URI] = None,
-    node_name: isabelle.Document.Node.Name,
-    node_source: Source = Source.empty,
-    entity_kind: String,
-    entity_name: String,
-    entity_xname: String,
-    entity_pos: isabelle.Position.T,
-    syntax: isabelle.Export_Theory.Syntax = isabelle.Export_Theory.No_Syntax,
-    type_scheme: (List[String], isabelle.Term.Typ) = dummy_type_scheme)
+  final class Item private(
+    val name: Item.Name,
+    val theory_source: Option[URI],
+    val node_name: isabelle.Document.Node.Name,
+    val node_source: Source,
+    val entity_xname: String,
+    val entity_pos: isabelle.Position.T,
+    val syntax: isabelle.Export_Theory.Syntax,
+    val type_scheme: (List[String], isabelle.Term.Typ))
   {
-    val key: Item.Key = Item.Key(entity_kind, entity_name)
-
-    def local_name: LocalName = LocalName(entity_name + "|" + entity_kind)
-    def global_name: GlobalName = constant(None, None).path
+    def key: Item.Key = name.key
 
     def source_ref: Option[SourceRef] =
       node_source.ref(theory_source, entity_pos)
@@ -326,7 +358,7 @@ object Importer
     def constant(tp: Option[Term], df: Option[Term]): Constant =
     {
       val notC = notation(Some(entity_xname), type_scheme._1.length, syntax)
-      val c = Constant(OMID(theory_path), local_name, Nil, tp, df, None, notC)
+      val c = Constant(OMID(name.theory_path), name.local, Nil, tp, df, None, notC)
       for (sref <- source_ref) SourceRef.update(c, sref)
       c
     }
@@ -478,14 +510,14 @@ object Importer
         for (i <- segment.heading) {
           val item = make_dummy("heading", i)
           thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
-          thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.section))
+          thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.section))
         }
 
         // classes
         for (decl <- segment.classes) {
           decl_error(decl.entity) {
             val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.universe))
+            thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.universe))
             val tp = Isabelle.Class()
             add_constant(item, tp, None)
           }
@@ -497,9 +529,9 @@ object Importer
             val item = thy_draft.make_item(decl.entity, decl.syntax)
             thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.`type`))
-            if (thy_export.typedefs.exists(typedef => typedef.name == item.entity_name)) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
+            thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.`type`))
+            if (thy_export.typedefs.exists(typedef => typedef.name == item.name.entity_name)) {
+              thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.derived))
             }
 
             val tp = Isabelle.Type(decl.args.length)
@@ -515,14 +547,14 @@ object Importer
             thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
 
             if (segment.is_axiomatization) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+              thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.primitive))
             }
 
             if (decl.propositional) {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.predicate))
+              thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.predicate))
             }
             else {
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.function))
+              thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.function))
             }
 
             val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
@@ -537,32 +569,32 @@ object Importer
           {
             decl_error(decl.entity) {
               val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
-              thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.statement))
+              thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.statement))
 
               if (segment.is_definition) {
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.definition))
+                thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.definition))
               }
 
               if (segment.is_statement) {
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.para))
+                thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.para))
                 thy_draft.rdf_triple(
-                  Ontology.binary(item.global_name, Ontology.ULO.paratype, segment.command_name))
+                  Ontology.binary(item.name.global, Ontology.ULO.paratype, segment.command_name))
               }
 
               if (segment.is_axiomatization) {
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.primitive))
+                thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.primitive))
               }
               else {
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.derived))
+                thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.derived))
               }
 
               if (segment.is_experimental) {
-                thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.experimental))
+                thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.experimental))
               }
 
               for (dep <- decl.deps) {
-                val dep_item = thy_draft.content.get_thm(dep)
-                thy_draft.rdf_triple(Ontology.binary(item.global_name, Ontology.ULO.uses, dep_item.global_name))
+                val dep_name = thy_draft.content.get_thm(dep)
+                thy_draft.rdf_triple(Ontology.binary(item.name.global, Ontology.ULO.uses, dep_name.global))
               }
 
               val tp = thy_draft.content.import_prop(decl.prop)
@@ -582,7 +614,7 @@ object Importer
           rdf_timing(proof.timing.total)
 
           for (thm <- thms) {
-            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, thm.global_name))
+            thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.justifies, thm.name.global))
           }
         }
 
@@ -591,8 +623,8 @@ object Importer
           decl_error(locale.entity) {
             val content = thy_draft.content
             val item = thy_draft.declare_entity(locale.entity, segment.document_tags, segment.meta_data)
-            thy_draft.rdf_triple(Ontology.unary(item.global_name, Ontology.ULO.theory))
-            val loc_name = item.local_name
+            thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.theory))
+            val loc_name = item.name.local
             val loc_thy = Theory.empty(thy.path.doc, thy.name / loc_name, None)
 
             def loc_decl(d: Declaration): Unit =
@@ -644,11 +676,11 @@ object Importer
             val item = thy_draft.declare_entity(dep.entity, segment.document_tags, segment.meta_data)
             val content = thy_draft.content
 
-            val from = OMMOD(content.get_locale(dep.source).global_name.toMPath)
-            val to = OMMOD(content.get_locale(dep.target).global_name.toMPath)
+            val from = OMMOD(content.get_locale(dep.source).global.toMPath)
+            val to = OMMOD(content.get_locale(dep.target).global.toMPath)
 
-            val view = View(thy.path.doc, thy.name / item.local_name, from, to, false)
-            controller.add(new NestedModule(thy.toTerm, item.local_name, view))
+            val view = View(thy.path.doc, thy.name / item.name.local, from, to, false)
+            controller.add(new NestedModule(thy.toTerm, item.name.local, view))
 
             thy_draft.rdf_triple(Ontology.binary(to.path, Ontology.ULO.instance_of, from.path))
           }
@@ -658,13 +690,13 @@ object Importer
       for (segment <- thy_export.segments) {
         // information about recursion (from Spec_Rules): after all types have been exported
         for (decl <- segment.consts) {
-          val item = thy_draft.content.get_const(decl.entity.name)
+          val const_name = thy_draft.content.get_const(decl.entity.name)
           decl.primrec_types match {
             case List(type_name) =>
               val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
               thy_draft.rdf_triple(
-                Ontology.binary(item.global_name, predicate,
-                  thy_draft.content.get_type(type_name).global_name))
+                Ontology.binary(const_name.global, predicate,
+                  thy_draft.content.get_type(type_name).global))
             case _ =>
           }
         }
@@ -982,7 +1014,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               entity_kind = entity.kind.toString,
               entity_name = entity.name,
               entity_xname = entity.xname,
-              entity_pos = entity.pos).global_name
+              entity_pos = entity.pos).name.global
         }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
@@ -1286,7 +1318,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
 
       def report_kind(kind: String): String =
-        print_int(items.count({ case (_, item) => item.entity_kind == kind }), len = 12) + " " + kind
+        print_int(items.count({ case (_, item) => item.name.entity_kind == kind }), len = 12) + " " + kind
 
       def report: String =
         isabelle.Library.cat_lines(
@@ -1298,13 +1330,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             isabelle.Export_Theory.Kind.CONST,
             isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
 
-      def get(key: Item.Key): Item = items.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-      def get_class(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
-      def get_type(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
-      def get_const(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
-      def get_thm(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
-      def get_locale(name: String): Item = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
-      def get_locale_dependency(name: String): Item =
+      def get(key: Item.Key): Item.Name = items.getOrElse(key, isabelle.error("Undeclared " + key.toString)).name
+      def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
+      def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
+      def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
+      def get_thm(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
+      def get_locale(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
+      def get_locale_dependency(name: String): Item.Name =
         get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
 
       def is_empty: Boolean = items.isEmpty
@@ -1346,7 +1378,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       /* MMT import of Isabelle classes, types, terms etc. */
 
-      def import_class(name: String): Term = OMS(get_class(name).global_name)
+      def import_class(name: String): Term = OMS(get_class(name).global)
 
       def import_type(ty: isabelle.Term.Typ, env: Env = Env.empty): Term =
       {
@@ -1355,7 +1387,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
             case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Prop()
             case isabelle.Term.Type(name, args) =>
-              val op = OMS(get_type(name).global_name)
+              val op = OMS(get_type(name).global)
               if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ))
             case isabelle.Term.TFree(a, _) => env.get(a)
             case isabelle.Term.TVar(xi, _) =>
@@ -1373,7 +1405,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         def term(bounds: List[String], t: isabelle.Term.Term): Term =
           t match {
             case isabelle.Term.Const(c, typargs) =>
-              Type.app(OMS(get_const(c).global_name), typargs.map(typ))
+              Type.app(OMS(get_const(c).global), typargs.map(typ))
             case isabelle.Term.Free(x, _) => env.get(x)
             case isabelle.Term.Var(xi, _) =>
               isabelle.error("Illegal schematic variable " + xi.toString)
@@ -1459,21 +1491,21 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         _state.change(
           { case (content, triples) =>
               val content1 = content.declare(item)
-              val name = Ontology.binary(item.global_name, Ontology.ULO.name, item.entity_xname)
+              val name = Ontology.binary(item.name.global, Ontology.ULO.name, item.entity_xname)
               val specs =
                 List(
-                  Ontology.binary(thy.path, Ontology.ULO.specifies, item.global_name),
-                  Ontology.binary(item.global_name, Ontology.ULO.specified_in, thy.path))
+                  Ontology.binary(thy.path, Ontology.ULO.specifies, item.name.global),
+                  Ontology.binary(item.name.global, Ontology.ULO.specified_in, thy.path))
               val source_ref =
                 item.source_ref.map(sref =>
-                    Ontology.binary(item.global_name, Ontology.ULO.sourceref, sref.toURI))
+                    Ontology.binary(item.name.global, Ontology.ULO.sourceref, sref.toURI))
               val important =
                 tags.reverse.collectFirst({
                   case isabelle.Markup.Document_Tag.IMPORTANT => true
                   case isabelle.Markup.Document_Tag.UNIMPORTANT => false
                 }).toList.map(b =>
-                  Ontology.unary(item.global_name, if (b) Ontology.ULO.important else Ontology.ULO.unimportant))
-              val properties = props.map({ case (a, b) => Ontology.binary(item.global_name, a, b) })
+                  Ontology.unary(item.name.global, if (b) Ontology.ULO.important else Ontology.ULO.unimportant))
+              val properties = props.map({ case (a, b) => Ontology.binary(item.name.global, a, b) })
 
               val triples1 = name :: specs ::: source_ref.toList ::: important ::: properties.reverse ::: triples
               (content1, triples1)
