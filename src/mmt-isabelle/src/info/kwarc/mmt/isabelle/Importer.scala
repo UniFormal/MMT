@@ -999,13 +999,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
       entities.collectFirst(
         { case entity if entity.name == name =>
-            Item(
+            Item.Name(
               theory_path = pure_path,
-              node_name = pure_name,
               entity_kind = entity.kind.toString,
-              entity_name = entity.name,
-              entity_xname = entity.xname,
-              entity_pos = entity.pos).name.global
+              entity_name = entity.name).global
         }).getOrElse(isabelle.error("Unknown entity " + isabelle.quote(name)))
 
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
