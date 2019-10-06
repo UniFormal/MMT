@@ -371,7 +371,7 @@ object Importer
 
   /** Isabelle to MMT importer **/
 
-  def importer(options: isabelle.Options,
+  def importer(options: isabelle.Options, logic: String,
     dirs: List[isabelle.Path] = Nil,
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
@@ -386,7 +386,7 @@ object Importer
     controller.extman.addExtension(MMT_Importer, Nil)
 
     object Isabelle extends
-      Isabelle(options, progress, dirs, select_dirs, selection, archives, chapter_archive)
+      Isabelle(options, logic, progress, dirs, select_dirs, selection, archives, chapter_archive)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -724,6 +724,7 @@ object Importer
         var requirements = false
         var exclude_session_groups: List[String] = Nil
         var all_sessions = false
+        var logic = isabelle.Thy_Header.PURE
         var dirs: List[isabelle.Path] = Nil
         var session_groups: List[String] = Nil
         var options = isabelle.Options.init()
@@ -741,6 +742,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
+    -b NAME      base logic image (default """ + isabelle.quote(logic) + """)
     -d DIR       include session directory
     -g NAME      select session group NAME
     -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
@@ -763,6 +765,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "R" -> (_ => requirements = true),
         "X:" -> (arg => exclude_session_groups = exclude_session_groups ::: List(arg)),
         "a" -> (_ => all_sessions = true),
+        "b:" -> (arg => logic = arg),
         "d:" -> (arg => { dirs = dirs ::: List(isabelle.Path.explode(arg)) }),
         "g:" -> (arg => session_groups = session_groups ::: List(arg)),
         "o:" -> (arg => { options += arg }),
@@ -787,19 +790,34 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
           }
 
-        val start_date = isabelle.Date.now()
-        if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
-
-        try {
-          importer(options,
-            dirs = dirs,
-            select_dirs = select_dirs,
-            selection = selection,
+        def run_importer(importer_logic: String,
+          importer_dirs: List[isabelle.Path],
+          importer_select_dirs: List[isabelle.Path],
+          importer_selection: isabelle.Sessions.Selection)
+        {
+          importer(options, importer_logic,
+            dirs = importer_dirs,
+            select_dirs = importer_select_dirs,
+            selection = importer_selection,
             archive_dirs = archive_dirs,
             chapter_archive =
               (ch: String) => chapter_archive_map.get(ch) orElse
                 isabelle.proper_string(chapter_archive_default),
             progress = progress)
+        }
+
+        val start_date = isabelle.Date.now()
+        if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
+
+        try {
+          if (logic != isabelle.Thy_Header.PURE) {
+            val build_dirs = dirs ::: select_dirs
+            isabelle.Build.build_logic(options + "export_theory", logic,
+              progress = progress, build_heap = true, dirs = build_dirs, fresh = true, strict = true)
+            run_importer(isabelle.Thy_Header.PURE, build_dirs, Nil,
+              isabelle.Sessions.Selection.session(logic))
+          }
+          run_importer(logic, dirs, select_dirs, selection)
         }
         finally {
           val end_date = isabelle.Date.now()
@@ -815,6 +833,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   class Isabelle(
     options: isabelle.Options,
+    logic: String,
     progress: isabelle.Progress,
     dirs: List[isabelle.Path],
     select_dirs: List[isabelle.Path],
@@ -822,12 +841,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     archives: List[Archive],
     chapter_archive: String => Option[String])
   {
-    private val logic = isabelle.Thy_Header.PURE
     val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
     val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
 
-    isabelle.Build.build_logic(options, logic, build_heap = true, progress = progress,
-      dirs = dirs ::: select_dirs, strict = true)
+    isabelle.Build.build_logic(options, isabelle.Thy_Header.PURE, progress = progress, strict = true)
 
 
     /* Isabelle + AFP library info */
@@ -946,7 +963,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         progress.echo_warning("Nothing to import")
       }
       else {
-        import_theory(pure_theory_export)
+        if (logic == isabelle.Thy_Header.PURE) import_theory(pure_theory_export)
+        else load_base_theories()
+
         session.run(
           unicode_symbols = true,
           process_theory = (args: isabelle.Dump.Args) =>
@@ -1427,6 +1446,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* management of imported content */
 
+    private val loaded = isabelle.Synchronized(Map.empty[String, Content])
     private val imported = isabelle.Synchronized(Map.empty[String, Content])
 
     def report_imported: String =
@@ -1441,7 +1461,27 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
     def theory_content(name: String): Content =
-      imported.value.getOrElse(name, isabelle.error("Unknown theory " + isabelle.quote(name)))
+      imported.value.getOrElse(name,
+        loaded.value.getOrElse(name,
+          isabelle.error("Missing theory export " + isabelle.quote(name))))
+
+    def load_base_theories()
+    {
+      val session_export =
+        isabelle.Export_Theory.read_session(
+          store, session.deps.sessions_structure, logic, progress = progress)
+      for (thy <- session_export.theories) {
+        val thy_path = make_theory(thy.name).path
+        val thy_content =
+          (Content.merge(thy.parents.map(theory_content)) /: thy.entity_iterator) {
+            case (content, entity) =>
+              val entity_kind = entity.kind.toString.intern
+              val entity_name = entity.name.intern
+              content + Item.Name(thy_path, entity_kind, entity_name)
+          }
+        loaded.change(map => map + (thy.name -> thy_content))
+      }
+    }
 
     def begin_theory(thy_export: Theory_Export, thy_source: Option[URI]): Theory_Draft =
       new Theory_Draft(thy_export, thy_source)
