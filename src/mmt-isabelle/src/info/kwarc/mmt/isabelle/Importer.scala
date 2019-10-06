@@ -1444,7 +1444,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                       val line_pos =
                         snapshot.find_command_position(command.id, 0) match {
                           case None => ""
-                          case Some(node_pos) => " (line " + node_pos.line + ")"
+                          case Some(node_pos) => " (line " + node_pos.line1 + ")"
                         }
                       isabelle.error(msg + " -- it refers to command " +
                         isabelle.Symbol.cartouche_decoded(st.command.source) + " in " +
