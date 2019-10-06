@@ -220,6 +220,57 @@ object Importer
 
 
 
+  /** bootstrap theory according to MathHub/MMT/urtheories/source/isabelle.mmt **/
+
+  object Bootstrap
+  {
+    val theory: MPath = lf.Typed._base ? "Isabelle"
+
+    object Unknown
+    {
+      val path: GlobalName = GlobalName(theory, LocalName("unknown"))
+      val term: Term = OMS(path)
+    }
+
+    object Type
+    {
+      def apply(n: Int = 0): Term =
+      {
+        val t = OMS(lf.Typed.ktype)
+        if (n == 0) t else lf.Arrow(isabelle.Library.replicate(n, t), t)
+      }
+
+      def all(as: List[String], t: Term): Term =
+        if (as.isEmpty) t else lf.Pi(as.map(a => OMV(a) % Type()), t)
+
+      def abs(as: List[String], t: Term): Term =
+        if (as.isEmpty) t else lf.Lambda(as.map(a => OMV(a) % Type()), t)
+
+      def app(t: Term, tps: List[Term]): Term =
+        if (tps.isEmpty) t else OMA(lf.Apply.term, t :: tps)
+    }
+
+    object Prop
+    {
+      val path: GlobalName = GlobalName(theory, LocalName("prop"))
+      def apply(): Term = OMS(path)
+    }
+
+    object Ded
+    {
+      val path: GlobalName = GlobalName(theory, LocalName("ded"))
+      def apply(t: Term): Term = lf.Apply(OMS(path), t)
+    }
+
+    object Proof
+    {
+      val path: GlobalName = GlobalName(theory, LocalName("proof"))
+      def apply(): Term = OMS(path)
+    }
+  }
+
+
+
   /** MMT import structures **/
 
   class Indexed_Name(val name: String)
@@ -369,9 +420,208 @@ object Importer
   }
 
 
+  /* theory content and statistics */
+
+  private def print_int(n: Int, len: Int = 8): String =
+    String.format(java.util.Locale.ROOT, "%" + len + "d", new Integer(n))
+
+  object Triples_Stats
+  {
+    def empty: Triples_Stats = Triples_Stats(SortedMap.empty)
+    def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = (empty /: triples)(_ + _)
+    def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = (empty /: args)(_ + _)
+  }
+
+  sealed case class Triples_Stats(stats: SortedMap[String, Int])
+  {
+    def + (name: String, count: Int): Triples_Stats =
+      Triples_Stats(stats + (name -> (stats.getOrElse(name, 0) + count)))
+
+    def + (t: isabelle.RDF.Triple): Triples_Stats = this + (t.predicate, 1)
+
+    def + (other: Triples_Stats): Triples_Stats =
+      (this /: other.stats)({ case (a, (b, n)) => a + (b, n) })
+
+    def total: Int = stats.iterator.map(_._2).sum
+
+    def report: String =
+      (for {(name, count) <- stats.iterator }
+        yield { print_int(count, len = 12) + " " + name }).mkString("\n")
+  }
+
+  object Content
+  {
+    val empty: Content =
+      new Content(
+        SortedMap.empty[Item.Key, Item.Name](Item.Key.Ordering),
+        SortedMap.empty[String, Triples_Stats])
+    def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
+  }
+
+  final class Content private(
+    private val item_names: SortedMap[Item.Key, Item.Name],  // imported entities per theory
+    private val triples: SortedMap[String, Triples_Stats])  // RDF triples per theory
+  {
+    content =>
+
+    def items_size: Int = item_names.size
+    def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
+
+    def report_kind(kind: String): String =
+      print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
+
+    def report: String =
+      isabelle.Library.cat_lines(
+        List(
+          isabelle.Export_Theory.Kind.LOCALE,
+          isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
+          isabelle.Export_Theory.Kind.CLASS,
+          isabelle.Export_Theory.Kind.TYPE,
+          isabelle.Export_Theory.Kind.CONST,
+          isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
+
+    def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
+    def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
+    def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
+    def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
+    def get_thm(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
+    def get_locale(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
+    def get_locale_dependency(name: String): Item.Name =
+      get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
+
+    def is_empty: Boolean = item_names.isEmpty
+    def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
+
+    def declare(theory_name: String, name: Item.Name): Content =
+      if (defined(name.key)) {
+        isabelle.error("Duplicate " + name.key.toString + " in theory " + isabelle.quote(theory_name))
+      }
+      else content + name
+
+    def + (name: Item.Name): Content =
+      if (defined(name.key)) content
+      else new Content(item_names + (name.key -> name), triples)
+
+    def + (entry: (String, Triples_Stats)): Content =
+      triples.get(entry._1) match {
+        case None => new Content(item_names, triples + entry)
+        case Some(stats) =>
+          if (stats == entry._2) content
+          else isabelle.error("Incoherent triple stats for theory: " + isabelle.quote(entry._1))
+      }
+
+    def ++ (other: Content): Content =
+      if (content eq other) content
+      else if (is_empty) other
+      else {
+        val items1 = (content /: other.item_names)({ case (map, (_, name)) => map + name }).item_names
+        val triples1 = (content /: other.triples)({ case (map, entry) => map + entry }).triples
+        new Content(items1, triples1)
+      }
+
+    override def toString: String =
+      item_names.iterator.map(_._2).mkString("Content(", ", ", ")")
+
+
+    /* MMT import of Isabelle classes, types, terms etc. */
+
+    def import_class(name: String): Term = OMS(get_class(name).global)
+
+    def import_type(ty: isabelle.Term.Typ, env: Env = Env.empty): Term =
+    {
+      def typ(t: isabelle.Term.Typ): Term =
+        t match {
+          case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
+          case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Bootstrap.Prop()
+          case isabelle.Term.Type(name, args) =>
+            val op = OMS(get_type(name).global)
+            if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ))
+          case isabelle.Term.TFree(a, _) => env.get(a)
+          case isabelle.Term.TVar(xi, _) =>
+            isabelle.error("Illegal schematic type variable " + xi.toString)
+        }
+
+      try { typ(ty) }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
+    }
+
+    def import_term(tm: isabelle.Term.Term, env: Env = Env.empty): Term =
+    {
+      def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
+
+      def term(bounds: List[String], t: isabelle.Term.Term): Term =
+        t match {
+          case isabelle.Term.Const(c, typargs) =>
+            Bootstrap.Type.app(OMS(get_const(c).global), typargs.map(typ))
+          case isabelle.Term.Free(x, _) => env.get(x)
+          case isabelle.Term.Var(xi, _) =>
+            isabelle.error("Illegal schematic variable " + xi.toString)
+          case isabelle.Term.Bound(i) =>
+            val x =
+              try { bounds(i) }
+              catch {
+                case _: IndexOutOfBoundsException =>
+                  isabelle.error("Loose de-Bruijn index " + i)
+              }
+            OMV(x)
+          case isabelle.Term.Abs(x, ty, b) =>
+            lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
+          case isabelle.Term.App(a, b) =>
+            lf.Apply(term(bounds, a), term(bounds, b))
+        }
+
+      try { term(Nil, tm) }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
+    }
+
+    def import_sorts(typargs: List[(String, isabelle.Term.Sort)]): List[Term] =
+      typargs.flatMap({ case (a, s) => s.map(c => Bootstrap.Ded(lf.Apply(import_class(c), OMV(a)))) })
+
+    def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
+    {
+      val types = prop.typargs.map(_._1)
+      val sorts = import_sorts(prop.typargs)
+      val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
+      val t = import_term(prop.term, env)
+      Bootstrap.Type.all(types, lf.Arrow(sorts, Bootstrap.Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
+    }
+  }
+
+
+
   /** Isabelle to MMT importer **/
 
-  def importer(options: isabelle.Options, logic: String,
+  private class State(options: isabelle.Options)
+  {
+    val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
+    val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
+
+    private val imported = isabelle.Synchronized(Map.empty[String, Content])
+
+    def report_imported: String =
+    {
+      val theories = imported.value
+      val content = Content.merge(theories.valuesIterator)
+      val all_triples = content.all_triples
+
+      print_int(theories.size) + " theories\n" +
+        print_int(content.items_size) + " individuals:\n" + content.report + "\n" +
+        print_int(all_triples.total) + " relations:\n" + all_triples.report
+    }
+
+    def theory_unknown(theory: String): Boolean = !imported.value.isDefinedAt(theory)
+
+    def theory_content(theory: String): Content =
+      imported.value.getOrElse(theory, isabelle.error("Missing theory export " + isabelle.quote(theory)))
+
+    def end_theory(theory: String, content: Content): Unit =
+      imported.change(map => map + (theory -> content))
+  }
+
+  def importer(
+    state: State,
+    options: isabelle.Options,
+    logic: String,
     dirs: List[isabelle.Path] = Nil,
     select_dirs: List[isabelle.Path] = Nil,
     selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
@@ -386,7 +636,7 @@ object Importer
     controller.extman.addExtension(MMT_Importer, Nil)
 
     object Isabelle extends
-      Isabelle(options, logic, progress, dirs, select_dirs, selection, archives, chapter_archive)
+      Isabelle(state, options, logic, progress, dirs, select_dirs, selection, archives, chapter_archive)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -428,7 +678,7 @@ object Importer
       rdf_timing(thy_export.node_timing.total)
 
       if (thy_is_pure) {
-        controller.add(PlainInclude(Isabelle.bootstrap_theory, thy.path))
+        controller.add(PlainInclude(Bootstrap.theory, thy.path))
       }
       for (parent <- thy_export.parents) {
         controller.add(PlainInclude(Isabelle.make_theory(parent).path, thy.path))
@@ -438,10 +688,10 @@ object Importer
       {
         val context = Context(thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- Iterator(tp) ++ df.iterator if t != Isabelle.Unknown.term) {
+          for (t <- Iterator(tp) ++ df.iterator if t != Bootstrap.Unknown.term) {
             check_term(controller, context, t)
           }
-          if (df.isDefined && df.get != Isabelle.Unknown.term) {
+          if (df.isDefined && df.get != Bootstrap.Unknown.term) {
             check_term_type(controller, context, df.get, tp)
           }
         }
@@ -524,8 +774,8 @@ object Importer
               thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.derived))
             }
 
-            val tp = Isabelle.Type(decl.args.length)
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
+            val tp = Bootstrap.Type(decl.args.length)
+            val df = decl.abbrev.map(rhs => Bootstrap.Type.abs(decl.args, thy_draft.content.import_type(rhs)))
             add_constant(item, tp, df)
           }
         }
@@ -547,8 +797,8 @@ object Importer
               thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.function))
             }
 
-            val tp = Isabelle.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
-            val df = decl.abbrev.map(rhs => Isabelle.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
+            val tp = Bootstrap.Type.all(decl.typargs, thy_draft.content.import_type(decl.typ))
+            val df = decl.abbrev.map(rhs => Bootstrap.Type.abs(decl.typargs, thy_draft.content.import_term(rhs)))
             add_constant(item, tp, df)
           }
         }
@@ -588,7 +838,7 @@ object Importer
               }
 
               val tp = thy_draft.content.import_prop(decl.prop)
-              add_constant(item, tp, Some(Isabelle.Unknown.term))
+              add_constant(item, tp, Some(Bootstrap.Unknown.term))
 
               item
             }
@@ -597,7 +847,7 @@ object Importer
         // optional proof
         for (proof <- segment.proof) yield {
           val item = make_dummy("proof", proof.index)
-          val c = item.constant(Some(Isabelle.Proof()), None)
+          val c = item.constant(Some(Bootstrap.Proof()), None)
           for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
 
@@ -628,7 +878,7 @@ object Importer
             val type_env =
               (Env.empty /: locale.typargs) {
                 case (env, (a, _)) =>
-                  val c = Constant(loc_thy.toTerm, LocalName(a), Nil, Some(Isabelle.Type()), None, None)
+                  val c = Constant(loc_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
                   loc_decl(c)
                   env + (a -> c.toTerm)
               }
@@ -706,8 +956,7 @@ object Importer
       MMT_Importer.importDocument(thy_archive.archive, doc)
     }
 
-    try { Isabelle.import_session(import_theory) }
-    finally { progress.echo("Finished import of\n" + Isabelle.report_imported) }
+    Isabelle.import_session(import_theory)
   }
 
 
@@ -790,12 +1039,14 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
           }
 
+        val state = new State(options)
+
         def run_importer(importer_logic: String,
           importer_dirs: List[isabelle.Path],
           importer_select_dirs: List[isabelle.Path],
           importer_selection: isabelle.Sessions.Selection)
         {
-          importer(options, importer_logic,
+          importer(state, options, importer_logic,
             dirs = importer_dirs,
             select_dirs = importer_select_dirs,
             selection = importer_selection,
@@ -810,7 +1061,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
 
         try {
-          if (logic != isabelle.Thy_Header.PURE) {
+          if (logic == isabelle.Thy_Header.PURE) {
+            isabelle.Build.build_logic(options, isabelle.Thy_Header.PURE, progress = progress, strict = true)
+          }
+          else {
             val build_dirs = dirs ::: select_dirs
             isabelle.Build.build_logic(options + "export_theory", logic,
               progress = progress, build_heap = true, dirs = build_dirs, fresh = true, strict = true)
@@ -821,6 +1075,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         }
         finally {
           val end_date = isabelle.Date.now()
+          progress.echo("Finished import of\n" + state.report_imported)
           if (verbose) progress.echo("\nFinished at " + isabelle.Build_Log.print_date(end_date))
           progress.echo((end_date.time - start_date.time).message_hms + " elapsed time")
         }
@@ -829,9 +1084,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
 
 
-  /** Isabelle session with imported content **/
+  /** Isabelle session **/
 
   class Isabelle(
+    state: State,
     options: isabelle.Options,
     logic: String,
     progress: isabelle.Progress,
@@ -841,12 +1097,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     archives: List[Archive],
     chapter_archive: String => Option[String])
   {
-    val store: isabelle.Sessions.Store = isabelle.Sessions.store(options)
-    val cache: isabelle.Term.Cache = isabelle.Term.make_cache()
-
-    isabelle.Build.build_logic(options, isabelle.Thy_Header.PURE, progress = progress, strict = true)
-
-
     /* Isabelle + AFP library info */
 
     private val isabelle_sessions: Set[String] =
@@ -963,9 +1213,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         progress.echo_warning("Nothing to import")
       }
       else {
-        if (logic == isabelle.Thy_Header.PURE) import_theory(pure_theory_export)
-        else load_base_theories()
-
+        if (state.theory_unknown(pure_name.theory)) {
+          import_theory(pure_theory_export)
+        }
         session.run(
           unicode_symbols = true,
           process_theory = (args: isabelle.Dump.Args) =>
@@ -975,7 +1225,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 new isabelle.Rendering(args.snapshot, options, args.session) {
                   override def model: isabelle.Document.Model = ???
                 }
-              import_theory(read_theory_export(rendering))
+              if (state.theory_unknown(snapshot.node_name.theory)) {
+                import_theory(read_theory_export(rendering))
+              }
             })
       }
     }
@@ -983,17 +1235,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* Pure theory */
 
-    /* bootstrap theory according to MathHub/MMT/urtheories/source/isabelle.mmt */
-
-    val bootstrap_theory: MPath = lf.Typed._base ? "Isabelle"
-
     def PURE: String = isabelle.Thy_Header.PURE
     def pure_name: isabelle.Document.Node.Name = import_name(PURE)
 
     lazy val pure_path: MPath = make_theory(PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
-      isabelle.Export_Theory.read_pure_theory(store, cache = Some(cache))
+      isabelle.Export_Theory.read_pure_theory(state.store, cache = Some(state.cache))
 
     def pure_theory_export: Theory_Export =
     {
@@ -1026,51 +1274,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     def pure_type(name: String): GlobalName = pure_entity(pure_theory.types.map(_.entity), name)
     def pure_const(name: String): GlobalName = pure_entity(pure_theory.consts.map(_.entity), name)
 
-    object Unknown
-    {
-      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("unknown"))
-      val term: Term = OMS(path)
-    }
-
-    object Type
-    {
-      def apply(n: Int = 0): Term =
-      {
-        val t = OMS(lf.Typed.ktype)
-        if (n == 0) t else lf.Arrow(isabelle.Library.replicate(n, t), t)
-      }
-
-      def all(as: List[String], t: Term): Term =
-        if (as.isEmpty) t else lf.Pi(as.map(a => OMV(a) % Type()), t)
-
-      def abs(as: List[String], t: Term): Term =
-        if (as.isEmpty) t else lf.Lambda(as.map(a => OMV(a) % Type()), t)
-
-      def app(t: Term, tps: List[Term]): Term =
-        if (tps.isEmpty) t else OMA(lf.Apply.term, t :: tps)
-    }
-
-    object Prop
-    {
-      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("prop"))
-      def apply(): Term = OMS(path)
-    }
-
-    object Ded
-    {
-      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("ded"))
-      def apply(t: Term): Term = lf.Apply(OMS(path), t)
-    }
-
-    object Proof
-    {
-      val path: GlobalName = GlobalName(bootstrap_theory, LocalName("proof"))
-      def apply(): Term = OMS(path)
-    }
-
     object Class
     {
-      def apply(): Term = lf.Arrow(Type(), Prop())
+      def apply(): Term = lf.Arrow(Bootstrap.Type(), Bootstrap.Prop())
     }
 
     object All
@@ -1276,212 +1482,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     }
 
 
-    /* theory content and statistics */
-
-    def print_int(n: Int, len: Int = 8): String =
-      String.format(java.util.Locale.ROOT, "%" + len + "d", new Integer(n))
-
-    object Triples_Stats
-    {
-      def empty: Triples_Stats = Triples_Stats(SortedMap.empty)
-      def make(triples: List[isabelle.RDF.Triple]): Triples_Stats = (empty /: triples)(_ + _)
-      def merge(args: TraversableOnce[Triples_Stats]): Triples_Stats = (empty /: args)(_ + _)
-    }
-
-    sealed case class Triples_Stats(stats: SortedMap[String, Int])
-    {
-      def + (name: String, count: Int): Triples_Stats =
-        Triples_Stats(stats + (name -> (stats.getOrElse(name, 0) + count)))
-
-      def + (t: isabelle.RDF.Triple): Triples_Stats = this + (t.predicate, 1)
-
-      def + (other: Triples_Stats): Triples_Stats =
-        (this /: other.stats)({ case (a, (b, n)) => a + (b, n) })
-
-      def total: Int = stats.iterator.map(_._2).sum
-
-      def report: String =
-        (for {(name, count) <- stats.iterator }
-          yield { print_int(count, len = 12) + " " + name }).mkString("\n")
-    }
-
-    object Content
-    {
-      val empty: Content =
-        new Content(
-          SortedMap.empty[Item.Key, Item.Name](Item.Key.Ordering),
-          SortedMap.empty[String, Triples_Stats])
-      def merge(args: TraversableOnce[Content]): Content = (empty /: args)(_ ++ _)
-    }
-
-    final class Content private(
-      private val item_names: SortedMap[Item.Key, Item.Name],  // imported entities per theory
-      private val triples: SortedMap[String, Triples_Stats])  // RDF triples per theory
-    {
-      content =>
-
-      def items_size: Int = item_names.size
-      def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
-
-      def report_kind(kind: String): String =
-        print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
-
-      def report: String =
-        isabelle.Library.cat_lines(
-          List(
-            isabelle.Export_Theory.Kind.LOCALE,
-            isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
-            isabelle.Export_Theory.Kind.CLASS,
-            isabelle.Export_Theory.Kind.TYPE,
-            isabelle.Export_Theory.Kind.CONST,
-            isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
-
-      def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
-      def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
-      def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
-      def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
-      def get_thm(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
-      def get_locale(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
-      def get_locale_dependency(name: String): Item.Name =
-        get(Item.Key(isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY.toString, name))
-
-      def is_empty: Boolean = item_names.isEmpty
-      def defined(key: Item.Key): Boolean = item_names.isDefinedAt(key)
-
-      def declare(theory_name: String, name: Item.Name): Content =
-        if (defined(name.key)) {
-          isabelle.error("Duplicate " + name.key.toString + " in theory " + isabelle.quote(theory_name))
-        }
-        else content + name
-
-      def + (name: Item.Name): Content =
-        if (defined(name.key)) content
-        else new Content(item_names + (name.key -> name), triples)
-
-      def + (entry: (String, Triples_Stats)): Content =
-        triples.get(entry._1) match {
-          case None => new Content(item_names, triples + entry)
-          case Some(stats) =>
-            if (stats == entry._2) content
-            else isabelle.error("Incoherent triple stats for theory: " + isabelle.quote(entry._1))
-        }
-
-      def ++ (other: Content): Content =
-        if (content eq other) content
-        else if (is_empty) other
-        else {
-          val items1 = (content /: other.item_names)({ case (map, (_, name)) => map + name }).item_names
-          val triples1 = (content /: other.triples)({ case (map, entry) => map + entry }).triples
-          new Content(items1, triples1)
-        }
-
-      override def toString: String =
-        item_names.iterator.map(_._2).mkString("Content(", ", ", ")")
-
-
-      /* MMT import of Isabelle classes, types, terms etc. */
-
-      def import_class(name: String): Term = OMS(get_class(name).global)
-
-      def import_type(ty: isabelle.Term.Typ, env: Env = Env.empty): Term =
-      {
-        def typ(t: isabelle.Term.Typ): Term =
-          t match {
-            case isabelle.Term.Type(isabelle.Pure_Thy.FUN, List(a, b)) => lf.Arrow(typ(a), typ(b))
-            case isabelle.Term.Type(isabelle.Pure_Thy.PROP, Nil) => Prop()
-            case isabelle.Term.Type(name, args) =>
-              val op = OMS(get_type(name).global)
-              if (args.isEmpty) op else OMA(lf.Apply.term, op :: args.map(typ))
-            case isabelle.Term.TFree(a, _) => env.get(a)
-            case isabelle.Term.TVar(xi, _) =>
-              isabelle.error("Illegal schematic type variable " + xi.toString)
-          }
-
-        try { typ(ty) }
-        catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
-      }
-
-      def import_term(tm: isabelle.Term.Term, env: Env = Env.empty): Term =
-      {
-        def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
-
-        def term(bounds: List[String], t: isabelle.Term.Term): Term =
-          t match {
-            case isabelle.Term.Const(c, typargs) =>
-              Type.app(OMS(get_const(c).global), typargs.map(typ))
-            case isabelle.Term.Free(x, _) => env.get(x)
-            case isabelle.Term.Var(xi, _) =>
-              isabelle.error("Illegal schematic variable " + xi.toString)
-            case isabelle.Term.Bound(i) =>
-              val x =
-                try { bounds(i) }
-                catch {
-                  case _: IndexOutOfBoundsException =>
-                    isabelle.error("Loose de-Bruijn index " + i)
-                }
-              OMV(x)
-            case isabelle.Term.Abs(x, ty, b) =>
-              lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
-            case isabelle.Term.App(a, b) =>
-              lf.Apply(term(bounds, a), term(bounds, b))
-          }
-
-        try { term(Nil, tm) }
-        catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
-      }
-
-      def import_sorts(typargs: List[(String, isabelle.Term.Sort)]): List[Term] =
-        typargs.flatMap({ case (a, s) => s.map(c => Ded(lf.Apply(import_class(c), OMV(a)))) })
-
-      def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
-      {
-        val types = prop.typargs.map(_._1)
-        val sorts = import_sorts(prop.typargs)
-        val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
-        val t = import_term(prop.term, env)
-        Type.all(types, lf.Arrow(sorts, Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
-      }
-    }
-
-
     /* management of imported content */
-
-    private val loaded = isabelle.Synchronized(Map.empty[String, Content])
-    private val imported = isabelle.Synchronized(Map.empty[String, Content])
-
-    def report_imported: String =
-    {
-      val theories = imported.value
-      val content = Content.merge(theories.valuesIterator)
-      val all_triples = content.all_triples
-
-      print_int(theories.size) + " theories\n" +
-      print_int(content.items_size) + " individuals:\n" + content.report + "\n" +
-      print_int(all_triples.total) + " relations:\n" + all_triples.report
-    }
-
-    def theory_content(name: String): Content =
-      imported.value.getOrElse(name,
-        loaded.value.getOrElse(name,
-          isabelle.error("Missing theory export " + isabelle.quote(name))))
-
-    def load_base_theories()
-    {
-      val session_export =
-        isabelle.Export_Theory.read_session(
-          store, session.deps.sessions_structure, logic, progress = progress)
-      for (thy <- session_export.theories) {
-        val thy_path = make_theory(thy.name).path
-        val thy_content =
-          (Content.merge(thy.parents.map(theory_content)) /: thy.entity_iterator) {
-            case (content, entity) =>
-              val entity_kind = entity.kind.toString.intern
-              val entity_name = entity.name.intern
-              content + Item.Name(thy_path, entity_kind, entity_name)
-          }
-        loaded.change(map => map + (thy.name -> thy_content))
-      }
-    }
 
     def begin_theory(thy_export: Theory_Export, thy_source: Option[URI]): Theory_Draft =
       new Theory_Draft(thy_export, thy_source)
@@ -1496,7 +1497,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       private val _state =
         isabelle.Synchronized[(Content, List[isabelle.RDF.Triple])](
-          Content.merge(thy_export.parents.map(theory_content)), Nil)
+          Content.merge(thy_export.parents.map(state.theory_content)), Nil)
 
       def content: Content = _state.value._1
       def end_content: Content =
@@ -1562,8 +1563,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         item
       }
 
-      def end_theory(): Unit =
-        imported.change(map => map + (node_name.theory -> end_content))
+      def end_theory(): Unit = state.end_theory(node_name.theory, end_content)
     }
   }
 }
