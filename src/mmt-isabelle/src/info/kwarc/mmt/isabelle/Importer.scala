@@ -324,7 +324,7 @@ object Importer
       theory_source: Option[URI] = None,
       node_source: Source = Source.empty): Item =
     {
-      val name = Name(theory_path, entity_kind, entity_name)
+      val name = Name(theory_path, entity_kind.intern, entity_name.intern)
       new Item(name, if (entity_xname.nonEmpty) entity_xname else entity_name,
         entity_pos, syntax, type_scheme, theory_source, node_source)
     }
@@ -1127,7 +1127,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val theory =
         isabelle.Export_Theory.read_theory(isabelle.Export.Provider.snapshot(snapshot),
-          isabelle.Sessions.DRAFT, theory_name, cache = Some(cache))
+          isabelle.Sessions.DRAFT, theory_name)
 
       val syntax = resources.session_base.node_syntax(snapshot.version.nodes, node_name)
 
