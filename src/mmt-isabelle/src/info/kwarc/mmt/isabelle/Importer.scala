@@ -1061,16 +1061,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
 
         try {
-          if (logic == isabelle.Thy_Header.PURE) {
-            isabelle.Build.build_logic(options, isabelle.Thy_Header.PURE, progress = progress, strict = true)
-          }
-          else {
-            val build_dirs = dirs ::: select_dirs
-            isabelle.Build.build_logic(options + "export_theory", logic,
-              progress = progress, build_heap = true, dirs = build_dirs, fresh = true, strict = true)
+          val build_dirs = dirs ::: select_dirs
+          isabelle.Build.build_logic(options, logic, progress = progress, dirs = build_dirs,
+            build_heap = true, strict = true)
+
+          if (logic != isabelle.Thy_Header.PURE) {
             run_importer(isabelle.Thy_Header.PURE, build_dirs, Nil,
               isabelle.Sessions.Selection.session(logic))
           }
+
           run_importer(logic, dirs, select_dirs, selection)
         }
         finally {
@@ -1122,7 +1121,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
           .int.update("headless_load_limit", options.int("mmt_load_limit")),
         logic,
-        dump_checkpoints = options.bool("mmt_dump_checkpoints"),
         aspects = isabelle.Dump.known_aspects,
         progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
