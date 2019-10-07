@@ -51,14 +51,6 @@ class GfImporter extends Importer {
       INCLUDES (we need to fill up the constMap)
     */
 
-    // theory.getIncludesWithoutMeta doesn't appear to work
-    def mygetincludes(t : Theory) : List[MPath] = {
-      t.getDeclarations.flatMap(d => d match {
-        case s : Structure => s.from.toMPath :: Nil
-        case _ => Nil
-      })
-    }
-
     val directlyincluded : mutable.Set[LogicalDependency] = mutable.Set() // included theories
     val inclSet : mutable.Set[LogicalDependency] = mutable.Set()          // transitively included theories
     def doIncludes(mpath : MPath) : Boolean = {
@@ -71,8 +63,7 @@ class GfImporter extends Importer {
 
       controller.get(mpath) match {
         case t : Theory =>
-          // for (incl <- t.getIncludesWithoutMeta) doIncludes(incl)
-          for (incl <- mygetincludes(t)) doIncludes(incl)
+          for (incl <- t.getIncludesWithoutMeta) doIncludes(incl)
           for (const <- t.getConstants) constMap.put(const.name.toString, const)
         case _ => throw new Exception(mpath.toString + "doesn't appear to be a theory")
       }

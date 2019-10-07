@@ -36,15 +36,6 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
       case _ => throw ServerError(langTheo + " does not appear to be a theory")
     }
 
-    // theory.getIncludesWithoutMeta doesn't appear to work
-    def mygetincludes(t : Theory) : List[MPath] = {
-      t.getDeclarations.flatMap(d => d match {
-        case s : Structure => s.from.toMPath :: Nil
-        case _ => Nil
-      })
-    }
-
-
     val theoryMap : mutable.Map[String, Constant] = mutable.Map()
     val inclSet : mutable.Set[MPath] = mutable.Set()  // already included theories
     def fillTheoryMap(mpath : MPath) : Unit = {
@@ -53,8 +44,7 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
 
       controller.get(mpath) match {
         case t : Theory =>
-          // for (incl <- t.getIncludesWithoutMeta) fillTheoryMap(incl)
-          for (incl <- mygetincludes(t)) fillTheoryMap(incl)
+          for (incl <- t.getIncludesWithoutMeta) fillTheoryMap(incl)
           for (const <- t.getConstants) theoryMap.put(const.name.toString, const)
         case _ => throw new Exception(mpath.toString + "doesn't appear to be a theory")
       }
