@@ -156,9 +156,9 @@ case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Ter
   
   /** true if this represents a realization */
   def isRealization = total
-  
+
   def isPlain = (home,args,df) match {
-    case (OMMOD(h),Nil,None) => Some((h,from))
+    case (OMMOD(h),Nil,None) => Some((from,h))
     case _ => None
   }
   def isDefined = df map {d => (from,d)}
