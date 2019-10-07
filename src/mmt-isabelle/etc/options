@@ -9,9 +9,6 @@ option mmt_prune_delay : real = 60
 option mmt_check_delay : real = 10
   -- "delay for theory status check during PIDE processing (seconds)"
 
-option mmt_dump_checkpoints : bool = true
-  -- "observe option dump_checkpoint for theories"
-
 option mmt_watchdog_timeout : real = 3600
   -- "watchdog timeout for PIDE processing of broken theories (seconds, 0 = disabled)"
 
