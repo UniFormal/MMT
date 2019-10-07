@@ -15,8 +15,8 @@ option mmt_watchdog_timeout : real = 3600
 option mmt_commit_cleanup_delay : real = 120
   -- "delay for cleanup of already imported theories (seconds, 0 = disabled)"
 
-option mmt_load_limit : int = 100
-  -- "limit for loaded theories (0 = unlimited)"
+option mmt_load_limit : int = 5
+  -- "limit in MB for loaded theory files (0 = unlimited)"
 
 option mmt_type_checking : bool = false
   -- "explicit type-checking for imported items"
