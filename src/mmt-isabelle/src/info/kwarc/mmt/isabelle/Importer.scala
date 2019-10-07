@@ -1119,7 +1119,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           .real.update("headless_check_delay", options.real("mmt_check_delay"))
           .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
           .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-          .int.update("headless_load_limit", options.int("mmt_load_limit")),
+          .real.update("headless_load_limit", options.real("mmt_load_limit")),
         logic,
         aspects = isabelle.Dump.known_aspects,
         progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
