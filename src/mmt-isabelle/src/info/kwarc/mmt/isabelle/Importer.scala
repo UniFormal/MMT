@@ -561,6 +561,8 @@ object Importer
             catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable " + i) }
           case isabelle.Term.Abs(x, ty, b) =>
             lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
+          case isabelle.Term.OFCLASS(ty, c) =>
+            lf.Apply(import_class(c), typ(ty))
           case isabelle.Term.App(a, b) =>
             lf.Apply(term(bounds, a), term(bounds, b))
         }
