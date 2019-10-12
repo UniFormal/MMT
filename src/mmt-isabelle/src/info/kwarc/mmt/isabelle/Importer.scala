@@ -557,13 +557,8 @@ object Importer
           case isabelle.Term.Var(xi, _) =>
             isabelle.error("Illegal schematic variable " + xi.toString)
           case isabelle.Term.Bound(i) =>
-            val x =
-              try { bounds(i) }
-              catch {
-                case _: IndexOutOfBoundsException =>
-                  isabelle.error("Loose de-Bruijn index " + i)
-              }
-            OMV(x)
+            try { OMV(bounds(i)) }
+            catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable " + i) }
           case isabelle.Term.Abs(x, ty, b) =>
             lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
           case isabelle.Term.App(a, b) =>
