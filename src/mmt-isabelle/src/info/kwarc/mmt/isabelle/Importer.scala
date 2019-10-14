@@ -1108,18 +1108,18 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* session */
 
-    val session =
-      isabelle.Dump.Session(
-        options
-          .real.update("headless_consolidate_delay", options.real("mmt_consolidate_delay"))
-          .real.update("headless_prune_delay", options.real("mmt_prune_delay"))
-          .real.update("headless_check_delay", options.real("mmt_check_delay"))
-          .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
-          .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-          .real.update("headless_load_limit", options.real("mmt_load_limit")),
-        logic,
-        aspects = isabelle.Dump.known_aspects,
-        progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
+    val context = isabelle.Dump.Context(
+      options
+        .real.update("headless_consolidate_delay", options.real("mmt_consolidate_delay"))
+        .real.update("headless_prune_delay", options.real("mmt_prune_delay"))
+        .real.update("headless_check_delay", options.real("mmt_check_delay"))
+        .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
+        .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
+        .real.update("headless_load_limit", options.real("mmt_load_limit")),
+      aspects = isabelle.Dump.known_aspects,
+      progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
+
+    val session = context.session(logic)
 
     val resources = session.resources
 
@@ -1151,7 +1151,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val session_name = theory_qualifier(name)
       val session_info =
-        session.deps.sessions_structure.get(session_name) getOrElse
+        context.deps.sessions_structure.get(session_name) getOrElse
           err("Undefined session info " + isabelle.quote(session_name))
 
       val chapter = session_info.chapter
@@ -1211,7 +1211,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         if (state.theory_unknown(pure_name.theory)) {
           import_theory(pure_theory_export)
         }
-        session.run(
+        session.process(
           unicode_symbols = true,
           process_theory = (args: isabelle.Dump.Args) =>
             {
