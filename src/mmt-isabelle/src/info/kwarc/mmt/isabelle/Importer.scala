@@ -1187,11 +1187,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           process_theory = (args: isabelle.Dump.Args) =>
             {
               val snapshot = args.snapshot
-              val rendering =
-                new isabelle.Rendering(args.snapshot, options, args.session) {
-                  override def model: isabelle.Document.Model = ???
-                }
               if (state.theory_unknown(snapshot.node_name.theory)) {
+                val rendering =
+                  new isabelle.Rendering(snapshot, options, args.session) {
+                    override def model: isabelle.Document.Model = ???
+                  }
                 import_theory(read_theory_export(rendering))
               }
             })
