@@ -617,23 +617,20 @@ object Importer
 
   def importer(
     state: State,
-    options: isabelle.Options,
-    logic: String,
-    dirs: List[isabelle.Path] = Nil,
-    select_dirs: List[isabelle.Path] = Nil,
-    selection: isabelle.Sessions.Selection = isabelle.Sessions.Selection.empty,
+    session: isabelle.Dump.Session,
     archive_dirs: List[isabelle.Path],
-    chapter_archive: String => Option[String],
-    progress: isabelle.Progress = isabelle.No_Progress)
+    chapter_archive: String => Option[String])
   {
+    val options = session.context.options
+    val progress = session.context.progress
+
     val (controller, archives) =
       init_environment(options, progress = progress, archive_dirs = archive_dirs, init_archive = true)
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
 
-    object Isabelle extends
-      Isabelle(state, options, logic, progress, dirs, select_dirs, selection, archives, chapter_archive)
+    object Isabelle extends Isabelle(state, session, archives, chapter_archive)
 
     def import_theory(thy_export: Theory_Export)
     {
@@ -970,7 +967,7 @@ object Importer
         var requirements = false
         var exclude_session_groups: List[String] = Nil
         var all_sessions = false
-        var logic = isabelle.Thy_Header.PURE
+        var logic = isabelle.Dump.default_logic
         var dirs: List[isabelle.Path] = Nil
         var session_groups: List[String] = Nil
         var options = isabelle.Options.init()
@@ -988,7 +985,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
     -R           operate on requirements of selected sessions
     -X NAME      exclude sessions from group NAME and all descendants
     -a           select all sessions
-    -b NAME      base logic image (default """ + isabelle.quote(logic) + """)
+    -b NAME      base logic image (default """ + isabelle.quote(isabelle.Dump.default_logic) + """)
     -d DIR       include session directory
     -g NAME      select session group NAME
     -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
@@ -1036,38 +1033,30 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               if (verbose) echo("Processing " + theory.print_theory + theory.print_percentage)
           }
 
+        def chapter_archive(ch: String): Option[String] =
+          chapter_archive_map.get(ch) orElse isabelle.proper_string(chapter_archive_default)
+
         val state = new State(options)
 
-        def run_importer(importer_logic: String,
-          importer_dirs: List[isabelle.Path],
-          importer_select_dirs: List[isabelle.Path],
-          importer_selection: isabelle.Sessions.Selection)
-        {
-          importer(state, options, importer_logic,
-            dirs = importer_dirs,
-            select_dirs = importer_select_dirs,
-            selection = importer_selection,
-            archive_dirs = archive_dirs,
-            chapter_archive =
-              (ch: String) => chapter_archive_map.get(ch) orElse
-                isabelle.proper_string(chapter_archive_default),
-            progress = progress)
-        }
+        val context = isabelle.Dump.Context(
+          options
+            .real.update("headless_consolidate_delay", options.real("mmt_consolidate_delay"))
+            .real.update("headless_prune_delay", options.real("mmt_prune_delay"))
+            .real.update("headless_check_delay", options.real("mmt_check_delay"))
+            .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
+            .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
+            .real.update("headless_load_limit", options.real("mmt_load_limit")),
+          aspects = isabelle.Dump.known_aspects,
+          progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
+
+        context.build_logic(logic)
 
         val start_date = isabelle.Date.now()
         if (verbose) progress.echo("Started at " + isabelle.Build_Log.print_date(start_date) + "\n")
-
         try {
-          val build_dirs = dirs ::: select_dirs
-          isabelle.Build.build_logic(options, logic, progress = progress, dirs = build_dirs,
-            build_heap = true, strict = true)
-
-          if (logic != isabelle.Thy_Header.PURE) {
-            run_importer(isabelle.Thy_Header.PURE, build_dirs, Nil,
-              isabelle.Sessions.Selection.session(logic))
+          for (session <- context.sessions(logic)) {
+            importer(state, session, archive_dirs, chapter_archive)
           }
-
-          run_importer(logic, dirs, select_dirs, selection)
         }
         finally {
           val end_date = isabelle.Date.now()
@@ -1084,15 +1073,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
   class Isabelle(
     state: State,
-    options: isabelle.Options,
-    logic: String,
-    progress: isabelle.Progress,
-    dirs: List[isabelle.Path],
-    select_dirs: List[isabelle.Path],
-    selection: isabelle.Sessions.Selection,
+    session: isabelle.Dump.Session,
     archives: List[Archive],
     chapter_archive: String => Option[String])
   {
+    private val options = session.context.options
+    private val progress = session.context.progress
+    private val resources = session.resources
+
+
     /* Isabelle + AFP library info */
 
     private val isabelle_sessions: Set[String] =
@@ -1104,24 +1093,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       if (isabelle.Isabelle_System.getenv("AFP_BASE").isEmpty) None
       else Some(isabelle.AFP.init(options))
     }
-
-
-    /* session */
-
-    val context = isabelle.Dump.Context(
-      options
-        .real.update("headless_consolidate_delay", options.real("mmt_consolidate_delay"))
-        .real.update("headless_prune_delay", options.real("mmt_prune_delay"))
-        .real.update("headless_check_delay", options.real("mmt_check_delay"))
-        .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
-        .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-        .real.update("headless_load_limit", options.real("mmt_load_limit")),
-      aspects = isabelle.Dump.known_aspects,
-      progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
-
-    val session = context.session(logic)
-
-    val resources = session.resources
 
 
     /* theories */
@@ -1151,7 +1122,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val session_name = theory_qualifier(name)
       val session_info =
-        context.deps.sessions_structure.get(session_name) getOrElse
+        session.context.deps.sessions_structure.get(session_name) getOrElse
           err("Undefined session info " + isabelle.quote(session_name))
 
       val chapter = session_info.chapter
