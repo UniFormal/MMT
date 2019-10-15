@@ -606,8 +606,6 @@ object Importer
         print_int(all_triples.total) + " relations:\n" + all_triples.report
     }
 
-    def theory_unknown(theory: String): Boolean = !imported.value.isDefinedAt(theory)
-
     def theory_content(theory: String): Content =
       imported.value.getOrElse(theory, isabelle.error("Missing theory export " + isabelle.quote(theory)))
 
@@ -1057,6 +1055,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           for (session <- context.sessions(logic)) {
             importer(state, session, archive_dirs, chapter_archive)
           }
+          context.check_errors
         }
         finally {
           val end_date = isabelle.Date.now()
@@ -1179,7 +1178,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         progress.echo_warning("Nothing to import")
       }
       else {
-        if (state.theory_unknown(pure_name.theory)) {
+        if (session.context.process_theory(pure_name.theory)) {
           import_theory(pure_theory_export)
         }
         session.process(
@@ -1187,13 +1186,11 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           process_theory = (args: isabelle.Dump.Args) =>
             {
               val snapshot = args.snapshot
-              if (state.theory_unknown(snapshot.node_name.theory)) {
-                val rendering =
-                  new isabelle.Rendering(snapshot, options, args.session) {
-                    override def model: isabelle.Document.Model = ???
-                  }
-                import_theory(read_theory_export(rendering))
-              }
+              val rendering =
+                new isabelle.Rendering(snapshot, options, args.session) {
+                  override def model: isabelle.Document.Model = ???
+                }
+              import_theory(read_theory_export(rendering))
             })
       }
     }
