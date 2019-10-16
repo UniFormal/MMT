@@ -3,19 +3,26 @@ package info.kwarc.mmt.api.refactoring
 import java.io.PrintWriter
 
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath}
+import info.kwarc.mmt.api.{AddError, ComplexStep, DPath, GlobalName, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, Term}
 import info.kwarc.mmt.api.presentation.Presenter
 import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, IdentityTranslator, Include, PlainInclude, Renamer, SimpleDeclaredStructure, Structure, TraversingTranslator}
-import info.kwarc.mmt.api.utils.FilePath
+import info.kwarc.mmt.api.utils.{FilePath, URI}
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
 
 class Intersecter extends Extension {
   val DEBUG = true
+  var optimizer = new GraphOptimizationTool()
+
+
+  override def start(args : List[String]): Unit = {
+    super.start(args)
+    controller.extman.addExtension(optimizer)
+  }
 
   private def debugOut(arg: Any) = if (DEBUG) println(arg)
 
@@ -38,33 +45,53 @@ class Intersecter extends Extension {
     */
   def intersect(view: View): (List[Theory], List[(Theory, Theory)], List[Theory]) = {
     val intersections = collection.mutable.HashMap[(MPath, MPath), (Theory, Theory)]()
-    val view_map = ViewSplitter(view)(controller).toMap
-    val view_map_inverse = ViewSplitter(view)(controller).map(_.swap).toMap
     val th1 = controller.getTheory(view.from.toMPath)
     val th2 = controller.getTheory(view.to.toMPath)
     val renamings = mutable.HashMap[GlobalName, GlobalName]()
-    intersect(th1, th2, view_map, view_map_inverse, intersections, renamings)
-    val rem1 = remainder1(th1, th2, view_map, view_map_inverse, intersections, renamings)
-    val rem2 = remainder2(th1, th2, view_map, view_map_inverse, intersections, renamings)
-    (rem1, intersections.values.toList, rem2)
+    intersect(th1, th2, view, intersections, renamings)
+    val rem1 = remainder1(th1, th2, intersections, renamings)
+    val rem2 = remainder2(th1, th2, intersections, renamings)
+    //println(intersections)
+    (rem1, intersections.values.toSet.toList, rem2)
   }
 
-  protected def interSectionDeclarations(th1 : Theory, th2 : Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant]) = {
-    th1.getDeclarations.flatMap {
+  protected def intersectionDeclarations(th1 : Theory, th2 : Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant]) = {
+    //debugOut(th1 + "\n" + th2)
+    val res = getSubDeclarations(th1).filter {
+      _ match {
+        case c: FinalConstant => {
+          view_map.contains(c) && (view_map.get(c).get.parent == th2.path || th2.getDeclarations.collect{case subModule: ModuleOrLink => subModule}.map(m => m.modulePath).contains(view_map.get(c).get.parent))
+        }
+        case PlainInclude(from, to) => false
+      }
+    }
+    res
+  }
+
+  /** returns Declarations of theory including submodules
+    *
+    * returns List of all direct Declarations in a given Theory, including those that are declared in direct submodules
+    *
+    * @param th left side theory to intersect
+    * @return list of all Declarations
+    */
+  protected def getSubDeclarations(th : Theory): List[Declaration] = {
+    th.getDeclarations.flatMap {
       _ match {
         case c: FinalConstant => Some(c)
-        case PlainInclude(from, to) => Some(PlainInclude(from, to)) //TODO correct theories
-        case s: Structure => None //TODO
+        case PlainInclude(from, to) => Some(PlainInclude(from, to)) //TODO correct theories or remove
+        case s: Structure => {
+          s.getDeclarations
+        }
+        case t : Theory => {
+          t.getDeclarations
+        }
         //TODO all cases???
         case default => None
       }
-    }.filter {
-      _ match {
-        case c: FinalConstant => view_map.contains(c) && view_map.get(c).get.parent == th2.path
-        case PlainInclude(from, to) => true
-      }
     }
   }
+
   /** Creates intersection
     *
     * creates intersection of th1 and th2 over view
@@ -78,10 +105,10 @@ class Intersecter extends Extension {
     */
   protected def fillConstantsIntersection(th1: Theory, th2: Theory, int1 : Theory, int2 : Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], renamings: mutable.HashMap[GlobalName, GlobalName]): (Theory, Theory) = {
     //Add constants from th1
-    interSectionDeclarations(th1, th2, view_map).map(addDeclaration(_, int1, renamings))
+    intersectionDeclarations(th1, th2, view_map).map(addDeclaration(_, int1, renamings))
 
     //Add constants from th2
-    interSectionDeclarations(th2, th1, view_map_inverse).map(addDeclaration(_, int2, renamings))
+    intersectionDeclarations(th2, th1, view_map_inverse).map(addDeclaration(_, int2, renamings))
 
     (int1, int2)
   }
@@ -92,14 +119,12 @@ class Intersecter extends Extension {
     *
     * @param th1 left side theory to intersect
     * @param th2 right side theory to intersect
-    * @param view_map mapping of view to intersect over
-    * @param view_map_inverse reverse mapping of view to intersect over
-    * @param intersections map of generated intersections, is filled recursively in this method
+    * @param view view to intersect over
     * @param renamings map of renamings of GlobalNames
     * @return
     */
-  protected def intersect(th1: Theory, th2: Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): Unit = {
-    debugOut("call: "+th1+th2)
+  protected def intersect(th1: Theory, th2: Theory, view : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): Unit = {
+    //debugOut("call intersect on:\n"+th1+"\n"+th2)
     if (intersections.contains((th1.path, th2.path))) { //TODO optimize multiple calls for empty theory
       return
     }
@@ -110,15 +135,13 @@ class Intersecter extends Extension {
     //th1:
     includes1.foreach(_ match {
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        intersect(controller.getTheory(from), th2, view_map, view_map_inverse, intersections, renamings)
-        //remainder1(controller.getTheory(from), th2, view_map, view_map_inverse, intersections, renamings)
+        intersect(controller.getTheory(from), th2, view, intersections, renamings)
       case default => ???
     })
     //th2:
     includes2.foreach(_ match {
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        intersect(th1, controller.getTheory(from), view_map, view_map_inverse, intersections, renamings)
-        //remainder2(th1, controller.getTheory(from), view_map, view_map_inverse, intersections, renamings)
+        intersect(th1, controller.getTheory(from), view, intersections, renamings)
       case default => ???
     })
 
@@ -128,68 +151,130 @@ class Intersecter extends Extension {
 
     //Generate inclusions of dependent intersections
     includes1.foreach{_ match {
-      case Include(_, from, args) =>
-        intersections.get((from, th1.path)).foreach (
+      case PlainInclude(from, to) =>
+        intersections.get((from, th2.path)).foreach (
           _ match { case (pre_int1, pre_int2) =>
-            int1.add(PlainInclude(int1.path, pre_int1.path))
-            int2.add(PlainInclude(int2.path, pre_int2.path))
+            addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
+            addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
           }
         )
       case s : Structure => //TODO
       case default => ???
     }}
-    includes2.foreach{_ match {case Include(_, from, args) =>
-      case Include(_, from, args) =>
-        intersections.get((th2.path, from)).foreach (
+    includes2.foreach{_ match {
+      case PlainInclude(from, to) =>
+        intersections.get((th1.path, from)).foreach (
           _ match { case (pre_int1, pre_int2) =>
-            int1.add(PlainInclude(int1.path, pre_int1.path))
-            int2.add(PlainInclude(int2.path, pre_int2.path))
+            addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
+            addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
           }
         )
       case s : Structure => //TODO
       case default => ???
     }}
-
+    val view_map = ViewSplitter.getPairs(view, th1, th2).toMap
+    val view_map_inverse = ViewSplitter.getPairs(view, th1, th2).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int1, int2, view_map, view_map_inverse, renamings)
 
+    //add to controller
+    controller.add(int1)
+    controller.add(int2)
+    //Check for redundancy
+    val redundant1 = optimizer.findRedundantIncludes(int1.path).toSet
+    val redundant2 = optimizer.findRedundantIncludes(int2.path).toSet
+
+    for (decl <- int1.getDeclarations) {
+      decl match {
+        case PlainInclude(from, to) if redundant1.contains(from) => int1.delete(PlainInclude(from, to).name)
+        case default =>
+      }
+    }
+    for (decl <- int2.getDeclarations) {
+      decl match {
+        case PlainInclude(from, to) if redundant2.contains(from) => int2.delete(PlainInclude(from, to).name)
+        case default =>
+      }
+    }
     //check that intersection is not trivial
     if (int1.getDeclarations.nonEmpty) {
       if (int1.getDeclarations.length==1) {
         int1.getDeclarations.head match {
-          case PlainInclude(from, to) => int1 = controller.getTheory(from)
-          case default => controller.add(int1)
+          case PlainInclude(from, to) => {
+            //debugOut("substituting " + controller.getTheory(from) + "\nfor " + int1)
+            int1 = controller.getTheory(from)
+          }
+          case default =>
         }
       }
-      else controller.add(int1)
       if (int2.getDeclarations.length==1) {
-        int1.getDeclarations.head match {
-          case PlainInclude(from, to) => int2 = controller.getTheory(from)
-          case default => controller.add(int2)
+        int2.getDeclarations.head match {
+          case PlainInclude(from, to) => {
+            //debugOut("substituting " + controller.getTheory(from) + "\nfor " + int2)
+            int2 = controller.getTheory(from)
+          }
+          case default =>
         }
       }
-      else controller.add(int2)
       intersections.put((th1.path, th2.path), (int1, int2))
     }
 
   }
 
+  protected def getRecIncludes(theory: Theory) : List[Theory] = {
+    val includes = theory.getIncludesWithoutMeta.map(controller.getTheory(_))
+    includes ++ includes.flatMap(getRecIncludes(_))
+  }
+
+  protected def getFlatDeclarations(theory : Theory) : List[Declaration] = {
+    getRecIncludes(theory).flatMap(_.getDeclarations)
+  }
+
   /** Fill remainder of intersection with constants
     *
     * @param rem remainder theory to be filled
-    * @param targetTheory original theory from which to fill remainder
-    * @param intersectedTheory intersection between targetTheory and largest theory of the other side
-    * @param intersected collection of intersected constants
-    * @param intersection
+    * @param th1 original theory from which to fill remainder
+    * @param th2 other theory
+    * @param intersections map of theory intersections
     * @param renamings
     * @return
     */
-  protected def fillConstantsRemainder(rem : Theory, targetTheory : Theory, intersectedTheory : Theory, intersected: Set[FinalConstant], intersection : Theory, renamings : mutable.HashMap[GlobalName, GlobalName]) : Theory  = {
-    rem.add(PlainInclude(intersection.path, rem.path))
-    targetTheory.getDeclarations.filter(_ match {
-      case c : FinalConstant => !intersected.contains(c)
+  protected def fillConstantsRemainder1(rem : Theory, th1 : Theory, th2 : Theory, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings : mutable.HashMap[GlobalName, GlobalName]) : Theory  = {
+    if (intersections.contains((th1.path, th2.path))) rem.add(PlainInclude(intersections.get(th1.path, th2.path).get._1.path, rem.path))
+    val intersected = intersections.get(th1.path, th2.path) match {
+      case Some((t1, t2)) => getFlatDeclarations(t1).map(d => d.name).toSet
+      case None => mutable.HashSet[LocalName]()
+    }
+    getSubDeclarations(th1).filter(_ match {
+      case c : FinalConstant => !intersected.contains(c.name)
       case PlainInclude(from, to) => false
       case s : Structure => false //TODO
         //TODO all cases???
+      case default => ???
+    }).foreach(addDeclaration(_, rem, renamings))
+
+    rem
+  }
+
+  /** Fill remainder of intersection with constants
+    *
+    * @param rem remainder theory to be filled
+    * @param th1 other theory
+    * @param th2 original theory from which to fill remainder
+    * @param intersections map of theory intersections
+    * @param renamings
+    * @return
+    */
+  protected def fillConstantsRemainder2(rem : Theory, th1 : Theory, th2 : Theory, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings : mutable.HashMap[GlobalName, GlobalName]) : Theory  = {
+    if (intersections.contains((th1.path, th2.path))) rem.add(PlainInclude(intersections.get(th1.path, th2.path).get._1.path, rem.path))
+    val intersected = intersections.get(th1.path, th2.path) match {
+      case Some((t1, t2)) => getFlatDeclarations(t2).map(d => d.name).toSet
+      case None => mutable.HashSet[LocalName]()
+    }
+    getSubDeclarations(th2).filter(_ match {
+      case c : FinalConstant => !intersected.contains(c.name)
+      case PlainInclude(from, to) => false
+      case s : Structure => false //TODO
+      //TODO all cases???
       case default => ???
     }).foreach(addDeclaration(_, rem, renamings))
 
@@ -200,25 +285,26 @@ class Intersecter extends Extension {
     *
     * @param th1 left side theory
     * @param th2 right side theory
-    * @param view_map
-    * @param view_map_inverse
     * @param intersections
     * @param renamings
     */
-  protected def remainder1(th1: Theory, th2: Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
+  protected def remainder1(th1: Theory, th2: Theory, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
     val includes1 = collect_structures(th1)
     val rem = Theory.empty(th1.parent, LocalName(th1.name.toString+"'"), th1.meta) // T'
 
     //Recurse through dependent Theories of th1
     val rem_list = includes1.flatMap(_ match {
-      case Include(_, from, args) =>
-        remainder1(controller.getTheory(from), th2, view_map, view_map_inverse, intersections, renamings)
+      case Include(_, from, args) => {
+        val rem_pre = remainder1(controller.getTheory(from), th2, intersections, renamings)
+        addDeclaration(Include(rem.toTerm, rem_pre.head.path, args), rem, renamings)
+        rem_pre
+      }
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        remainder1(controller.getTheory(from), th2, view_map, view_map_inverse, intersections, renamings)
+        remainder1(controller.getTheory(from), th2, intersections, renamings)
       case default => ???
     })
     //Fill remainder with remaining constants
-    fillConstantsRemainder(rem, th1, th2, view_map.keySet, intersections.get((th1.path, th2.path)).get._1, renamings)
+    fillConstantsRemainder1(rem, th1, th2, intersections, renamings)
     return rem :: rem_list
   }
 
@@ -226,25 +312,26 @@ class Intersecter extends Extension {
     *
     * @param th1 left side theory
     * @param th2 right side theroy
-    * @param view_map
-    * @param view_map_inverse
     * @param intersections
     * @param renamings
     */
-  protected def remainder2(th1: Theory, th2: Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings : mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
+  protected def remainder2(th1: Theory, th2: Theory, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings : mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
     val includes2 = collect_structures(th2)
     val rem = Theory.empty(th2.parent, LocalName(th2.name.toString+"'"), th2.meta) // T'
 
     //Recurse through dependent Theories of th2
     val rem_list = includes2.flatMap(_ match {
-      case Include(_, from, args) =>
-        remainder2(th1, controller.getTheory(from), view_map, view_map_inverse, intersections, renamings)
+      case Include(_, from, args) => {
+        val rem_pre = remainder2(th1, controller.getTheory(from), intersections, renamings)
+        addDeclaration(Include(rem.toTerm, rem_pre.head.path, args), rem, renamings)
+        rem_pre
+      }
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        remainder1(controller.getTheory(from), th2, view_map, view_map_inverse, intersections, renamings)
+        remainder2(th1, controller.getTheory(from), intersections, renamings)
       case default => ???
     })
     //Fill remainder with remaining constants
-    fillConstantsRemainder(rem, th2, th1, view_map_inverse.keySet, intersections.get((th1.path, th2.path)).get._2, renamings)
+    fillConstantsRemainder2(rem, th1, th2, intersections, renamings)
     rem :: rem_list
   }
 
@@ -261,8 +348,11 @@ class Intersecter extends Extension {
     val renamer = Renamer(name => renamings.get(name))
     val translator = TraversingTranslator(renamer)
 
-    val renamed = dec.translate(th.toTerm, LocalName.empty,translator, Context())
-    th.add(renamed)
+    val renamed = dec.translate(th.toTerm, LocalName.empty, translator, Context())
+    try th.add(renamed) catch {
+      case err : AddError =>
+      case default => throw default
+    }
     renamings.put(dec.path, renamed.path)
     renamed
   }
@@ -334,7 +424,6 @@ object ViewSplitter {
     m match {
       case th : Theory => getConst(th, name)
       case st: Structure => {
-        println("namest:"+ComplexStep(st.from.toMPath)/name)
         st.get(ComplexStep(st.from.toMPath)/name) match {case c : FinalConstant => c}
       }
     }
