@@ -11,9 +11,9 @@ particular the file `README_REPOSITORY` section **Quick start in 30min**.
 
 In particular, the following versions from Oct-2019 should fit together:
 
-  * Isabelle/80f3a290b35c from https://isabelle.sketis.net/repos/isabelle
+  * Isabelle/84145953b2a5 from https://isabelle.sketis.net/repos/isabelle
   * AFP/02b9d0561118 from https://isabelle.sketis.net/repos/afp-devel
-  * MMT/9f9b5b1492c7 from https://github.com/UniFormal/MMT/commits/devel
+  * MMT/263c1384e1a1 from https://github.com/UniFormal/MMT/commits/devel
   * MathHub/MMT/urtheories/26100f0b425d from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
@@ -53,8 +53,8 @@ Here are some example invocations of the main command-line tools:
 * importer:
 
       isabelle mmt_import -B ZF
-      isabelle mmt_import -g main
-      isabelle mmt_import -o record_proofs=2 -B HOL-Proofs
+      isabelle mmt_import HOL
+      isabelle mmt_import -b HOL -g main
 
 * HTTP server to browse the results:
 
@@ -80,28 +80,21 @@ Recall that Isabelle consists of two processes:
   1. ML: `poly` for the Poly/ML runtime system
   2. Scala: `java` for the Java Runtime Environment
 
-Big examples require generous heap space for both, typically 30 GB. Note
-that both platforms have a discontinuity when switching from short 32-bit
-pointers to full 64-bit ones: *16 GB* for Poly/ML and *32 GB* for Java. Going
-beyond that doubles the baseline memory requirements.
+Big examples require generous heap space. Note that both platforms have a
+discontinuity when switching from short 32-bit pointers to full 64-bit ones:
+*16 GB* for Poly/ML and *32 GB* for Java. Going beyond that doubles the
+baseline memory requirements.
 
-The subsequent setup works well for hardware with 64 GB of main memory:
+For ML it helps to use a base image, e.g. HOL-Analysis. For Java the default
+settings need to be changed like this in `$ISABELLE_HOME_USER/etc/settings`:
 
-  * `$ISABELLE_HOME_USER/etc/preferences`
-
-        ML_system_64 = true
-
-  * `$ISABELLE_HOME_USER/etc/settings`
-
-        ML_OPTIONS="--minheap 4G --maxheap 30G"
-
-        ISABELLE_TOOL_JAVA_OPTIONS="-Djava.awt.headless=true -Xss16m -Xms4g -Xmx30g"
+      ISABELLE_TOOL_JAVA_OPTIONS="-Djava.awt.headless=true -Xss16m -Xms4g -Xmx30g"
 
 Examples:
 
-      isabelle mmt_import -a -X doc -X no_doc
-      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X slow
-      isabelle mmt_import -d '$AFP' -a -X doc -X no_doc -X very_slow
+      isabelle mmt_import -b HOL-Analysis -a
+      isabelle mmt_import -b HOL-Analysis -a -d '$AFP' -X slow
+      isabelle mmt_import -b HOL-Analysis -a -d '$AFP' -X very_slow
 
 Here `$AFP` refers to the Isabelle settings variable provided by the Archive
 of Formal Proofs as Isabelle component (using a suitable `init_component`
@@ -122,7 +115,7 @@ serves as catch-all pattern.
 Since all sessions in AFP are guaranteed to belong to the chapter `AFP`, the
 following works for Isabelle + AFP as one big import process:
 
-      isabelle mmt_import -d '$AFP' -A content/MathHub -C AFP=AFP -C _=Distribution -a -X doc -X no_doc -X very_slow
+      isabelle mmt_import -b HOL-Analysis -a -d '$AFP' -X very_slow -A content/MathHub -C AFP=AFP -C _=Distribution
 
 Note that other Isabelle applications may have their own chapter naming
 scheme, or re-use official Isabelle chapter names; if nothing is specified,
@@ -171,6 +164,7 @@ directories. Its command-line usage is as follows:
         -R           operate on requirements of selected sessions
         -X NAME      exclude sessions from group NAME and all descendants
         -a           select all sessions
+        -b NAME      base logic image (default "Pure")
         -d DIR       include session directory
         -g NAME      select session group NAME
         -o OPTION    override Isabelle system OPTION (via NAME=VAL or NAME)
@@ -201,6 +195,10 @@ typical example is `-o threads=8` to specify the number of ML threads, or
 `-o skip_proofs` to skip actual proof checking. Note that Isabelle/MMT also
 provides its own options in `src/mmt-isabelle/etc/options` (with short
 descriptions).
+
+Option `-b` specifies an optional base logic image, for improved scalability
+of the PIDE session. Its theories are only processed if it is included in the
+overall session selection.
 
 Option `-v` enables verbose mode, similar to `isabelle build`.
 
