@@ -723,11 +723,11 @@ object Importer
       }
 
       for (segment <- thy_export.segments) {
-        def make_dummy(kind: String, i: Int) : Item =
+        def make_dummy(kind: isabelle.Export_Theory.Kind.Value, i: Int) : Item =
         {
           val name = isabelle.Long_Name.implode(List(thy_name.theory_base_name, i.toString))
           val pos = segment.element.head.span.position
-          Item(thy.path, kind, name, entity_pos = pos)
+          Item(thy.path, kind.toString, name, entity_pos = pos)
         }
 
         // source text
@@ -740,7 +740,7 @@ object Importer
 
         // document headings
         for (i <- segment.heading) {
-          val item = make_dummy(isabelle.Export_Theory.Kind.DOCUMENT_HEADING.toString, i)
+          val item = make_dummy(isabelle.Export_Theory.Kind.DOCUMENT_HEADING, i)
           thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
           thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.section))
         }
@@ -838,7 +838,7 @@ object Importer
 
         // optional proof
         for (proof <- segment.proof) yield {
-          val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT.toString, proof.index)
+          val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT, proof.index)
           val c = item.constant(Some(Bootstrap.Proof()), None)
           for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
