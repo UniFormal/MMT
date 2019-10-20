@@ -607,7 +607,7 @@ object Importer
           case axm: isabelle.Term.PAxm =>
             Bootstrap.Type.app(OMS(get_axiom(axm.name).global), axm.types.map(typ))
           case thm: isabelle.Term.PThm =>
-            Bootstrap.Type.app(OMS(get_thm(thm.approximative_name).global), thm.types.map(typ))
+            Bootstrap.Type.app(OMS(get_thm(thm.name).global), thm.types.map(typ))
           case _ => isabelle.error("Bad proof term encountered:\n" + prf)
         }
 
