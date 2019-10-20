@@ -740,7 +740,7 @@ object Importer
 
         // document headings
         for (i <- segment.heading) {
-          val item = make_dummy("heading", i)
+          val item = make_dummy(isabelle.Export_Theory.Kind.DOCUMENT_HEADING.toString, i)
           thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
           thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.section))
         }
@@ -838,7 +838,7 @@ object Importer
 
         // optional proof
         for (proof <- segment.proof) yield {
-          val item = make_dummy("proof", proof.index)
+          val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT.toString, proof.index)
           val c = item.constant(Some(Bootstrap.Proof()), None)
           for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
