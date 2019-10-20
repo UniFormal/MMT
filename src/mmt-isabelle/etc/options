@@ -21,6 +21,9 @@ option mmt_load_limit : real = 5.0
 option mmt_type_checking : bool = false
   -- "explicit type-checking for imported items"
 
+option mmt_proof_terms : bool = false
+  -- "include full proof terms (not scalable)"
+
 
 section "Meta info for default archive"
 

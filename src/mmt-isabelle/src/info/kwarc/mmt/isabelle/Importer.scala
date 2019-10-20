@@ -191,6 +191,7 @@ object Importer
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
+    axioms: List[isabelle.Export_Theory.Axiom] = Nil,
     thms: List[isabelle.Export_Theory.Thm] = Nil,
     locales: List[isabelle.Export_Theory.Locale] = Nil,
     locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
@@ -478,12 +479,14 @@ object Importer
           isabelle.Export_Theory.Kind.CLASS,
           isabelle.Export_Theory.Kind.TYPE,
           isabelle.Export_Theory.Kind.CONST,
+          isabelle.Export_Theory.Kind.AXIOM,
           isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
 
     def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
     def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
     def get_type(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.TYPE.toString, name))
     def get_const(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CONST.toString, name))
+    def get_axiom(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.AXIOM.toString, name))
     def get_thm(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.THM.toString, name))
     def get_locale(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.LOCALE.toString, name))
     def get_locale_dependency(name: String): Item.Name =
@@ -545,11 +548,11 @@ object Importer
       catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
     }
 
-    def import_term(tm: isabelle.Term.Term, env: Env = Env.empty): Term =
+    def import_term(tm: isabelle.Term.Term, env: Env = Env.empty, bounds: List[String] = Nil): Term =
     {
       def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
 
-      def term(bounds: List[String], t: isabelle.Term.Term): Term =
+      def term(bs: List[String], t: isabelle.Term.Term): Term =
         t match {
           case isabelle.Term.Const(c, typargs) =>
             Bootstrap.Type.app(OMS(get_const(c).global), typargs.map(typ))
@@ -557,17 +560,17 @@ object Importer
           case isabelle.Term.Var(xi, _) =>
             isabelle.error("Illegal schematic variable " + xi.toString)
           case isabelle.Term.Bound(i) =>
-            try { OMV(bounds(i)) }
+            try { OMV(bs(i)) }
             catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable " + i) }
           case isabelle.Term.Abs(x, ty, b) =>
-            lf.Lambda(LocalName(x), typ(ty), term(x :: bounds, b))
+            lf.Lambda(LocalName(x), typ(ty), term(x :: bs, b))
           case isabelle.Term.OFCLASS(ty, c) =>
             lf.Apply(import_class(c), typ(ty))
           case isabelle.Term.App(a, b) =>
-            lf.Apply(term(bounds, a), term(bounds, b))
+            lf.Apply(term(bs, a), term(bs, b))
         }
 
-      try { term(Nil, tm) }
+      try { term(bounds, tm) }
       catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin term " + tm) }
     }
 
@@ -581,6 +584,35 @@ object Importer
       val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
       val t = import_term(prop.term, env)
       Bootstrap.Type.all(types, lf.Arrow(sorts, Bootstrap.Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
+    }
+
+    def import_proof(prf: isabelle.Term.Proof, env: Env = Env.empty): Term =
+    {
+      def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
+      def term(bs: List[String], t: isabelle.Term.Term): Term = import_term(t, env = env, bounds = bs)
+
+      def proof(bs: List[String], ps: List[String], prf: isabelle.Term.Proof): Term =
+        prf match {
+          case isabelle.Term.PBound(i) =>
+            try { OMV(ps(i)) }
+            catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable (proof) " + i) }
+          case isabelle.Term.Abst(x, ty, b) =>
+            lf.Lambda(LocalName(x), typ(ty), proof(x :: bs, ps, b))
+          case isabelle.Term.AbsP(x, hy, b) =>
+            lf.Lambda(LocalName(x), term(bs, hy), proof(bs, x :: ps, b))
+          case isabelle.Term.Appt(p, t) =>
+            lf.Apply(proof(bs, ps, p), term(bs, t))
+          case isabelle.Term.AppP(p, q) =>
+            lf.Apply(proof(bs, ps, p), proof(bs, ps, q))
+          case axm: isabelle.Term.PAxm =>
+            Bootstrap.Type.app(OMS(get_axiom(axm.name).global), axm.types.map(typ))
+          case thm: isabelle.Term.PThm =>
+            Bootstrap.Type.app(OMS(get_thm(thm.approximative_name).global), thm.types.map(typ))
+          case _ => isabelle.error("Bad proof term encountered:\n" + prf)
+        }
+
+      try { proof(Nil, Nil, prf) }
+      catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin proof term " + prf) }
     }
   }
 
@@ -627,6 +659,8 @@ object Importer
 
     object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
     controller.extman.addExtension(MMT_Importer, Nil)
+
+    val proof_terms_enabled = options.bool("mmt_proof_terms")
 
     object Isabelle extends Isabelle(state, session, archives, chapter_archive)
 
@@ -795,6 +829,15 @@ object Importer
           }
         }
 
+        // axioms
+        if (proof_terms_enabled) {
+          for (decl <-segment.axioms) {
+            val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
+            val tp = thy_draft.content.import_prop(decl.prop)
+            add_constant(item, tp, None)
+          }
+        }
+
         // theorems
         val thms: List[Item] =
           segment.thms.flatMap(decl =>
@@ -830,13 +873,16 @@ object Importer
               }
 
               val tp = thy_draft.content.import_prop(decl.prop)
-              add_constant(item, tp, Some(Bootstrap.Unknown.term))
+              val prf =
+                if (proof_terms_enabled) thy_draft.content.import_proof(decl.proof)
+                else Bootstrap.Unknown.term
+              add_constant(item, tp, Some(prf))
 
               item
             }
           })
 
-        // optional proof
+        // optional proof text
         for (proof <- segment.proof) yield {
           val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT, proof.index)
           val c = item.constant(Some(Bootstrap.Proof()), None)
@@ -1043,7 +1089,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             .real.update("headless_check_delay", options.real("mmt_check_delay"))
             .real.update("headless_watchdog_timeout", options.real("mmt_watchdog_timeout"))
             .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
-            .real.update("headless_load_limit", options.real("mmt_load_limit")),
+            .real.update("headless_load_limit", options.real("mmt_load_limit"))
+            .bool.update("export_standard_proofs", options.bool("mmt_proof_terms")),
           aspects = isabelle.Dump.known_aspects,
           progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
@@ -1219,6 +1266,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
                 decl.entity.name != isabelle.Pure_Thy.PROP
             } yield decl,
           consts = pure_theory.consts,
+          axioms = pure_theory.axioms,
           thms = pure_theory.thms,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
@@ -1428,6 +1476,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
+            axioms = for (decl <- theory.axioms if defined(decl.entity)) yield decl,
             thms = for (decl <- theory.thms if defined(decl.entity)) yield decl,
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
             locale_dependencies =
