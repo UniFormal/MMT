@@ -176,8 +176,9 @@ object Importer
     node_timing: isabelle.Document_Status.Overall_Timing = isabelle.Document_Status.Overall_Timing.empty,
     node_meta_data: isabelle.Properties.T = Nil,
     parents: List[String] = Nil,
-    segments: List[Theory_Segment] = Nil,
-    typedefs: List[isabelle.Export_Theory.Typedef] = Nil)
+    segments: List[Theory_Segment],
+    constdefs: List[isabelle.Export_Theory.Constdef],
+    typedefs: List[isabelle.Export_Theory.Typedef])
 
   sealed case class Theory_Segment(
     element: isabelle.Thy_Element.Element_Command = isabelle.Thy_Element.atom(isabelle.Command.empty),
@@ -830,12 +831,10 @@ object Importer
         }
 
         // axioms
-        if (proof_terms_enabled) {
-          for (decl <-segment.axioms) {
-            val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
-            val tp = thy_draft.content.import_prop(decl.prop)
-            add_constant(item, tp, None)
-          }
+        for (decl <-segment.axioms) {
+          val item = thy_draft.declare_entity(decl.entity, segment.document_tags, segment.meta_data)
+          val tp = thy_draft.content.import_prop(decl.prop)
+          add_constant(item, tp, None)
         }
 
         // theorems
@@ -980,7 +979,19 @@ object Importer
         }
       }
 
-        // RDF document
+      // primitive defs: after all axioms have been exported
+      for (constdef <- thy_export.constdefs) {
+        val const_name = thy_draft.content.get_const(constdef.name)
+        val axiom_name = thy_draft.content.get_axiom(constdef.axiom_name)
+        thy_draft.rdf_triple(Ontology.binary(axiom_name.global, Ontology.ULO.defines, const_name.global))
+      }
+      for (typedef <- thy_export.typedefs) {
+        val type_name = thy_draft.content.get_type(typedef.name)
+        val axiom_name = thy_draft.content.get_axiom(typedef.axiom_name)
+        thy_draft.rdf_triple(Ontology.binary(axiom_name.global, Ontology.ULO.defines, type_name.global))
+      }
+
+      // RDF document
       {
         val path = thy_archive.archive_rdf_path.ext("xz")
         isabelle.Isabelle_System.mkdirs(path.dir)
@@ -1270,7 +1281,8 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
           thms = pure_theory.thms,
           locales = pure_theory.locales,
           locale_dependencies = pure_theory.locale_dependencies)
-      Theory_Export(pure_name, segments = List(segment))
+      Theory_Export(pure_name, segments = List(segment),
+        constdefs = pure_theory.constdefs, typedefs = pure_theory.typedefs)
     }
 
     private def pure_entity(entities: List[isabelle.Export_Theory.Entity], name: String): GlobalName =
@@ -1490,6 +1502,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         node_meta_data = isabelle.Library.distinct(theory_session_meta_data ::: theory_meta_data),
         parents = theory.parents,
         segments = segments,
+        constdefs = theory.constdefs,
         typedefs = theory.typedefs)
     }
 
