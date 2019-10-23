@@ -4,35 +4,28 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
-import info.kwarc.mmt.api.refactoring.{Intersecter, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
+import info.kwarc.mmt.api.refactoring.{GraphOptimizationTool, Intersecter, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 import info.kwarc.mmt.api.{ComplexStep, LocalName, NamespaceMap, Path}
-import info.kwarc.mmt.got.GraphOptimizationTool
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
 
 object RunMichael extends MagicTest {
 
   def run : Unit = {
+    //getConst
     intersect
   }
 
   def getConst : Unit = {
-    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?AtoB",NamespaceMap.empty)).asInstanceOf[View]
-    //val (s1, s2, t1, t2) =
-    val d = view.getDeclarations.head
-    val th = controller.getTheory(Path.parseM("http://mydomain.org/testarchive/mmt-example?A",NamespaceMap.empty))
-    val struct = controller.getTheory(view.from.toMPath).getO(LocalName(d.name.tail.head)).get.asInstanceOf[Structure]
-    println(th)
-    println(struct)
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
     println(view)
-    //println(struct.get(ComplexStep(struct.from.toMPath)/d.name.tail.tail))
-    //println(ViewSplitter.getConst(th, d.name.tail))
+
     println(ViewSplitter(view)(controller))
   }
 
   def got : Unit = {
-    controller.handleLine("extension info.kwarc.mmt.got.GraphOptimizationTool")
+    controller.handleLine("extension info.kwarc.mmt.api.refactoring.GraphOptimizationTool")
     val got : GraphOptimizationTool = controller.extman.get(classOf[GraphOptimizationTool]).head
 
     val list = Path.parseM("http://mydomain.org/testarchive/mmt-example?test_other",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_all",NamespaceMap.empty) :: Path.parseM("http://mydomain.org/testarchive/mmt-example?test_future",NamespaceMap.empty) :: Nil
@@ -113,13 +106,16 @@ object RunMichael extends MagicTest {
     controller.extman.addExtension(int, Nil)
     controller.extman.addExtension(presenter, List())
 
-    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?AtoB",NamespaceMap.empty)).asInstanceOf[View]
-    //val (s1, s2, t1, t2) =
-    println(int(view))
-    //println(s1)
-    //println(s2)
-    //println(t1)
-    //println(t2)
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?structure_test",NamespaceMap.empty)).asInstanceOf[View]
+    int(view) match {
+      case (l1, l2, l3) =>
+        l1.map(println(_))
+        l2.map(p => {
+          println(p._1)
+          println(p._2)
+        })
+        l3.map(println(_))
+    }
   }
 
   def exportMMT: Unit = {

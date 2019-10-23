@@ -474,3 +474,48 @@ object ViewSplitter {
   }
 }
 
+abstract class IntersectEvaluator extends  Extension {
+  def eval(v : View) : Int
+}
+
+object YesMan extends IntersectEvaluator {
+  override def eval(v : View ) = 1 // positive number is positive change
+}
+
+class IntersectGraphEvaluator[GE <: GraphEvaluator, I <: Intersecter] extends IntersectEvaluator {
+  val intersecter = new Intersecter
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    controller.extman.addExtension(intersecter)
+  }
+  val graphEvaluator = new GE
+
+  override def eval(v : View) : Int = {
+    val pre = List[Theory]()
+    val res = intersecter.intersect(v)
+    val post = res._1 ++ res._2.flatMap(x => List(x._1, x._2)) ++ res._3
+    return graphEvaluator(post)-graphEvaluator(pre)
+  }
+}
+
+abstract class GraphEvaluator {
+  def apply(graph : List[Theory]) : Int
+}
+
+class CountGraphEvaluator extends GraphEvaluator {
+  override def apply(graph : List[Theory]) : Int = {
+    var count = 0
+    for (theory <- graph) {
+      count += theory.getDeclarations.length
+    }
+    return count
+  }
+}
+
+class InducedKnowledgeOverRepresentationGraphEvaluator extends GraphEvaluator {
+  override def apply(graph : List[Theory]) : Int = ???
+}
+
+class KnowledgeMinusRepresentationGraphEvaluator extends GraphEvaluator {
+  override def apply(graph: List[Theory]): Int = ???
+}
