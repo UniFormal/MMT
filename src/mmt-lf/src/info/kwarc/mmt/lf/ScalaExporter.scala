@@ -13,12 +13,12 @@ import GenericScalaExporter._
 /** for LF terms using Apply and Lambda */
 class LFOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
   private def omid = "OMID(this.path)"
-  def f(as: List[String]) = as.mkString(",")
+  def f(as: List[String]) = as.mkString(":::")
   def mmtTerm(a1: List[String], a2: List[String]): String = {
     if (a1.isEmpty)
-      s"ApplyGeneral($omid, List(${f(a2)}))"
+      s"ApplyGeneral($omid, ${f(a2)})"
     else
-      s"Apply($omid, Lambda(${f(a1)}, ${f(a2)}))"
+      s"Apply($omid, Lambda(${f(a1)}, ${f(a2)}))"  // TODO correctly generate variable bindings in LF
   }
 }
 

@@ -148,8 +148,6 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
 }
 
 /** an argument
-  *
-  * @param n absolute value is the argument position, negative iff it is in the binding scope
   */
 sealed abstract class Arg extends ArgumentMarker {
   override def toString = properties.asStringPrefix + number.toString
@@ -223,7 +221,7 @@ case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerPrope
 
 /**
  * sequence of [[LabelArg]]
- * @param dependent elements in the sequence may refer to previous names
+ * @param sep the separator
  */
 case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
   override def toString = properties.asStringPrefix + "L" + number.toString + info.toString + sep + "…"
@@ -231,8 +229,8 @@ case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: Com
 }
 
 /** a variable binding
-  *
-  * @param n the number of the variable
+ *
+ * @param number the number of the variable
  * @param typed true if the variable carries a type (to be inferred if omitted)
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type
