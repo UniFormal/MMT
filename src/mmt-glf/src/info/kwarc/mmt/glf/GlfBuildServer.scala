@@ -5,7 +5,6 @@ import info.kwarc.mmt.api.checking.Interpreter
 import info.kwarc.mmt.api.{ErrorContainer, MultipleErrorHandler}
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONBoolean, JSONObject, JSONString}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.gf.{GfImportException, GfImporter}
 
 
 class GlfBuildServer extends ServerExtension("glf-build"){

@@ -1,12 +1,12 @@
-package info.kwarc.mmt.gf
+package info.kwarc.mmt.glf
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, modules, symbols}
-import info.kwarc.mmt.api.archives.{BuildEmpty, BuildResult, BuildSuccess, BuildTask, Importer, LogicalDependency, MissingDependency}
+import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.documents.{Document, FileLevel, MRef}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMID, OMS}
-import info.kwarc.mmt.api.symbols.{Constant, PlainInclude, Structure}
+import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{FunType, LF, Typed}
 
 import scala.collection.mutable

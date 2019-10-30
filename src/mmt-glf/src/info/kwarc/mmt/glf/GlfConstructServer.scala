@@ -1,6 +1,6 @@
 package info.kwarc.mmt.glf
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.symbols.{Constant, Structure}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}

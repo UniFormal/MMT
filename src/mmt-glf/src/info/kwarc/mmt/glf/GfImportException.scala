@@ -1,4 +1,4 @@
-package info.kwarc.mmt.gf
+package info.kwarc.mmt.glf
 
 class GfImportException(private val message: String = "",
                         private val cause: Throwable = None.orNull)
