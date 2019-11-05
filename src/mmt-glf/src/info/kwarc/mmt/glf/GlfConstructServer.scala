@@ -1,6 +1,6 @@
 package info.kwarc.mmt.glf
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.symbols.{Constant, Structure}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
@@ -16,40 +16,45 @@ import scala.collection.mutable.ArrayBuffer
 
 class GlfConstructServer extends ServerExtension("glf-construct"){
   def apply(request: ServerRequest): ServerResponse = {
-    val query : GlfConstructQuery = GlfConstructQuery.fromJSON(request.body.asJSON)
+    val query: GlfConstructQuery = GlfConstructQuery.fromJSON(request.body.asJSON)
 
-    val view : Option[View] = query.semanticsView.map(controller.getO(_) match {
-      case Some(v : View) => controller.simplifier.apply(v) ; v
-      case None => throw ServerError("Could not find view " + query.semanticsView)
-      case _ => throw ServerError(query.semanticsView + " does not appear to be a view")
+    val view: Option[View] = query.semanticsView.map(controller.getO(_) match {
+      case Some(v: View) => controller.simplifier.apply(v); v
+      case None => return errorResponse("Could not find view " + query.semanticsView)
+      case _ => return errorResponse(query.semanticsView + " does not appear to be a view")
     })
 
     val langTheo = if (query.languageTheory.isEmpty) {
-      view.getOrElse(throw ServerError("Neither language theory nor semantics view provided")).from.toMPath
+      view.getOrElse(return errorResponse("Neither language theory nor semantics view provided")).from.toMPath
     } else {
       query.languageTheory.get
     }
 
-    val theory : Theory = controller.getO(langTheo) match {
-      case Some(th : Theory) => th
-      case None => throw ServerError("Could not find theory " + langTheo)
-      case _ => throw ServerError(langTheo + " does not appear to be a theory")
+    val theory: Theory = controller.getO(langTheo) match {
+      case Some(th: Theory) => th
+      case None => return errorResponse("Could not find theory " + langTheo)
+      case _ => return errorResponse(langTheo + " does not appear to be a theory")
     }
 
-    val theoryMap : mutable.Map[String, Constant] = mutable.Map()
-    val inclSet : mutable.Set[MPath] = mutable.Set()  // already included theories
-    def fillTheoryMap(mpath : MPath) : Unit = {
+    val theoryMap: mutable.Map[String, Constant] = mutable.Map()
+    val inclSet: mutable.Set[MPath] = mutable.Set() // already included theories
+    def fillTheoryMap(mpath: MPath): Unit = {
       if (inclSet.contains(mpath)) return
       else inclSet.add(mpath)
 
       controller.get(mpath) match {
-        case t : Theory =>
+        case t: Theory =>
           for (incl <- t.getIncludesWithoutMeta) fillTheoryMap(incl)
           for (const <- t.getConstants) theoryMap.put(const.name.toString, const)
-        case _ => throw new Exception(mpath.toString + "doesn't appear to be a theory")
+        case _ => new Exception(mpath.toString + "doesn't appear to be a theory")
       }
     }
-    fillTheoryMap(theory.toTerm.toMPath)
+
+    try {
+      fillTheoryMap(theory.toTerm.toMPath)
+    } catch {
+      case ex: Exception => return errorResponse(ex.getMessage)
+    }
 
     /* val theorymap : Map[String, Constant] = {
       controller.simplifier(theory)
@@ -73,6 +78,12 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
       .distinct
 
     ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))) : _*))
+  }
+
+  private def errorResponse(message : String) : ServerResponse = {
+    ServerResponse.JsonResponse(
+      JSONArray(JSONString(message))
+    )
   }
 }
 
@@ -100,7 +111,7 @@ object GlfConstructQuery {
                   case JSONString(s) => asts += s
                   case _ => ServerError("Invalid JSON: ASTs should be list of strings")
                 }
-            }
+              }
             case (JSONString("languageTheory"), JSONString(value)) => langTheo = Some(value)
             case (JSONString("semanticsView"), JSONString(value)) => semView = Some(value)
             case (JSONString("simplify"), JSONBoolean(value)) => simplify = value

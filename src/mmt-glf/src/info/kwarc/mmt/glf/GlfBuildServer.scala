@@ -5,7 +5,6 @@ import info.kwarc.mmt.api.checking.Interpreter
 import info.kwarc.mmt.api.{ErrorContainer, MultipleErrorHandler}
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONBoolean, JSONObject, JSONString}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.gf.{GfImportException, GfImporter}
 
 
 class GlfBuildServer extends ServerExtension("glf-build"){
@@ -21,15 +20,15 @@ class GlfBuildServer extends ServerExtension("glf-build"){
         val query : GlfBuildQuery = GlfBuildQuery.fromJSON(request.body.asJSON)
 
         val archive = controller.backend.getArchive(query.archive)
-          .getOrElse(throw ServerError("Failed to find archive: " + query.archive))
+          .getOrElse(return errorResponse("Failed to find archive: " + query.archive))
 
         val file = FilePath(query.file)
         var isGf = false
         file.getExtension match {
             case Some("mmt") => isGf = false
             case Some("gf") => isGf = true
-            case Some(x) => throw ServerError("Unexpected file extension: " + x)
-            case None => throw ServerError("File doesn't appear to have an extension")
+            case Some(x) => return errorResponse("Unexpected file extension: " + x)
+            case None => return errorResponse("File doesn't appear to have an extension")
         }
 
         val errorcontainer = new ErrorContainer(None)
@@ -56,6 +55,13 @@ class GlfBuildServer extends ServerExtension("glf-build"){
         ServerResponse.JsonResponse(JSONObject(
             ("isSuccessful", JSONBoolean(result.isInstanceOf[BuildSuccess])),
             ("errors", JSONArray(errorcontainer.getErrors.map(error => JSONString(error.toString)) : _*))
+        ))
+    }
+
+    private def errorResponse(message : String) : ServerResponse = {
+        ServerResponse.JsonResponse(JSONObject(
+            ("isSuccessful", JSONBoolean(false)),
+            ("errors", JSONArray(JSONString(message)))
         ))
     }
 

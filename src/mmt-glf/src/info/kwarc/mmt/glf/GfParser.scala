@@ -1,4 +1,4 @@
-package info.kwarc.mmt.gf
+package info.kwarc.mmt.glf
 
 /**
   * Code for parsing GF (Grammatical Framework) abstract syntax and extracting the relevant data.
