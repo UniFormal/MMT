@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.valuebases
 import info.kwarc.mmt.api._
 import objects._
 import uom._
+import utils._
 
 case object CodecNotApplicable extends java.lang.Throwable
 
@@ -12,9 +13,9 @@ case object CodecNotApplicable extends java.lang.Throwable
  * @param tp the type that is coded
  */
 abstract class Codec[Code](val exp: Term, val tp: Term) {
+   val codeType: ConcreteType
    def encode(t: Term): Code
    def decode(c: Code): Term
-   
    /** data must be validated even if decoding succeeds, e.g., check prime-ness of integer-encoded prime numbers */
    // TODO check if codec operators should override this
    def strictDecode(c: Code): Term = decode(c)
@@ -78,6 +79,7 @@ abstract class LiteralsCodec[Rep,Code](id: GlobalName, rt: RepresentedRealizedTy
 
 /** turns a realized type into the corresponding codec using the toString/fromString functions of the semantic type */ 
 class LiteralsAsStringsCodec[Rep](id: GlobalName, rt: RepresentedRealizedType[Rep]) extends Codec[String](OMS(id), rt.synType) {
+   val codeType = StringType
    def encode(t: Term) = rt.unapply(t) map rt.semType.toString getOrElse(throw CodecNotApplicable)
    def decode(c: String) = try {rt.parse(c)} catch {case p: ParseError => throw CodecNotApplicable}
 }

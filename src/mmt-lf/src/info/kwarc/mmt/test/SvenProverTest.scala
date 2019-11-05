@@ -8,7 +8,7 @@ import proving.imperative._
 
 import info.kwarc.mmt.lf._
 
-object SvenProverTest extends MMTIntegrationTest("MMT/urtheories", "MMT/examples") {
+object SvenProverTest extends MMTIntegrationTest("MMT/urtheories", "MMT/examples")() {
   def main {
      val thyURI = Path.parse("NAMESPACE?THYNAME")
      val thy = controller.globalLookup.getAs(classOf[Theory], thyURI)
