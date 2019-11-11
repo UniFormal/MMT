@@ -584,7 +584,8 @@ object Importer
       val sorts = import_sorts(prop.typargs)
       val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
       val t = import_term(prop.term, env)
-      Bootstrap.Type.all(types, lf.Arrow(sorts, Bootstrap.Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
+      val ded = Bootstrap.Ded(t)
+      Bootstrap.Type.all(types, lf.Arrow(sorts, if (vars.isEmpty) ded else lf.Pi(vars, ded)))
     }
 
     def import_proof(prf: isabelle.Term.Proof, env: Env = Env.empty): Term =
