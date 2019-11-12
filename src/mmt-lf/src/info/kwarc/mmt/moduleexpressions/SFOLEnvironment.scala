@@ -5,10 +5,13 @@
 
 package info.kwarc.mmt.moduleexpressions
 
+import info.kwarc.mmt.api.objects.{OMID, OML, OMS, Term}
 import info.kwarc.mmt.api.uom.TheoryScala
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
-import info.kwarc.mmt.lf.{BinaryLFConstantScala, TernaryLFConstantScala, TypedBinderScala, UnaryLFConstantScala}
+import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, FunType, TernaryLFConstantScala, TypedBinderScala, UnaryLFConstantScala}
+
+import scala.collection.mutable
 
 object TypedTerms extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
@@ -16,6 +19,9 @@ object TypedTerms extends TheoryScala {
 
   // The LF type of sorts in our theory
   val typeOfSorts: GlobalName = _path ? "tp"
+
+  // The LF `tp -> type` function giving us "all terms" of a specific sort
+  val termsOfSort: GlobalName = _path ? "tm"
 }
 
 /** MMT declarations
@@ -61,4 +67,59 @@ object SFOL extends TheoryScala {
   object equal extends TernaryLFConstantScala(_path, "equal")
   object forall extends TypedBinderScala(_path, "forall", term)
   object exists extends TypedBinderScala(_path, "exists", term)
+
+  private def checkConformingAndCollectSorts(args: List[Term]): Option[List[LocalName]] = {
+    var sortNames = new mutable.LinkedHashSet[LocalName]()
+
+    val conforming = args.forall({
+      case ApplySpine(OMID(TypedTerms.termsOfSort), List(OML(sortName, _, _, _, _))) =>
+        sortNames += sortName
+        true
+      case _ => false
+    })
+
+    if (conforming) {
+      Some(sortNames.toList)
+    } else {
+      None
+    }
+  }
+
+  object FunctionType {
+    /**
+      *
+      * @param decl
+      * @return List of unique occurring sort local names in the order they appear in the function type from left to right
+      */
+    def unapply(decl: Term): Option[List[LocalName]] = decl match {
+      case FunType(args, returnType) => {
+        if (!args.forall(_._1.isEmpty)) {
+          None
+        } else {
+          checkConformingAndCollectSorts(returnType :: args.map(_._2))
+        }
+      }
+      case _ => None
+    }
+  }
+
+  object PredicateType {
+    def unapply(decl: Term): Option[List[LocalName]] = decl match {
+      case FunType(args, OMS(PL.prop)) =>
+        if (!args.forall(_._1.isEmpty)) {
+          None
+        } else {
+          checkConformingAndCollectSorts(args.map(_._2))
+        }
+      case _ => None
+    }
+  }
+
+  object FunctionOrPredicateType {
+    def unapply(decl: Term): Option[List[LocalName]] = decl match {
+      case FunctionType(sortNames) => Some(sortNames)
+      case PredicateType(sortNames) => Some(sortNames)
+      case _ => None
+    }
+  }
 }

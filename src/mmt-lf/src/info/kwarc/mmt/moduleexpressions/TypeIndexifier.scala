@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.objects.{Term, _}
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.{SkipThis, URI}
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
-import info.kwarc.mmt.lf.{ApplySpine, FunType}
+import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
 
 import scala.collection.mutable
 
@@ -33,102 +33,29 @@ object ComputeTypeIndexed extends ComputationRule(TypeIndexifier.path) {
     val inputTheory = inputNode.theory
 
     /* Sanity Check */
-    /* TODO: Check that the meta-theory contains SFOL, not that it is SFOL */
-    /*
-        def translateTerm(tm: Term): Term = tm match {
-
-        }*/
-
-    def checkConformingAndCollectSorts(args: List[Term]): Option[List[LocalName]] = {
-      var sortNames = new mutable.LinkedHashSet[LocalName]()
-
-      val conforming = args.forall({
-        case ApplySpine(TypedTerms.typeOfSorts, List(OML(sortName, _, _, _, _))) =>
-          sortNames += sortName
-          true
-        case _ => false
-      })
-
-      if (conforming) {
-        Some(sortNames.toList)
-      } else {
-        None
-      }
-    }
-
-    object SFOLFunction {
-      /**
-        *
-        * @param decl
-        * @return List of unique occurring sort local names in the order they appear in the function type from left to right
-        */
-      def unapply(decl: Term): Option[List[LocalName]] = decl match {
-        case FunType(args, returnType) => {
-          if (!args.forall(_._1.isEmpty)) {
-            None
-          } else {
-            checkConformingAndCollectSorts(returnType :: args.map(_._2))
-          }
-        }
-        case _ => None
-      }
-    }
-
-    object SFOLPredicate {
-      def unapply(decl: Term): Option[List[LocalName]] = decl match {
-        case FunType(args, OMS(PL.prop)) =>
-          if (!args.forall(_._1.isEmpty)) {
-            None
-          } else {
-            checkConformingAndCollectSorts(args.map(_._2))
-          }
-        case _ => None
-      }
-    }
-
-    class TypeIndexerTraverser extends StatelessTraverser {
-      def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-        case ApplySpine(TypedTerms.typeOfSorts, sort) =>
-          ApplySpine(OMID(TypedTerms.typeOfSorts), ApplySpine(OMID(TypeOperator.typeOp), sort: _*))
-        case t => Traverser(this, t)
-      }
-    }
-
-    def typeindexTypeComponent(term: Term, sortNames: List[LocalName]): Term = {
-      // e.g. original declaration was:  `op: tm a -> tm b -> tm c`
-      // then sortNames as passed to this function should be List("a", "b", "c")
-      // and we now construct the new type `{a: tp, b: tp, c: tp} tm (&a) -> tm (&b) -> tm (&c)`
-      val dependentlyBoundVariables = sortNames.map(sortName => (Some(sortName), OMID(TypedTerms.typeOfSorts)))
-      val translatedTerm = (new TypeIndexerTraverser).apply(term, Context())
-
-      FunType(dependentlyBoundVariables, translatedTerm)
-    }
+    /* TODO: Check that the meta-theory contains SFOL (ex. of implicit morphism, I guess) */
 
     // TODO: How to add include to anonymous theory?
-    /*
-    val typeOperatorIncludeDeclaration = Include(home = OMID(newModulePath), from = R.path, args = Nil)
-      outLinkDeclarations += Include(
-        home = OMID(newMorphismPath),
-        from = R.path,
-        args = Nil,
-      df = Some(RToS.toTerm)
-    )
-    */
 
+    // Store which typeindexed sorts the declarations in our inputTheory (transitively) depend on
+    // E.g. if we have `op: tm a`, then we would have `op |-> Set(a)`
+    // E.g. if we have additionally `op2: tm b -> tm a ❘ = op`, then we would have `op |-> Set(a, b)`
+    val sortDependencies = mutable.HashMap[LocalName, List[LocalName]]()
+    val sortDependenciesSeeker = new SortDependenciesSeeker
+
+    // Process every declaration
     val outputDeclarations = inputTheory.getDeclarations.mapOrSkip(inputDecl => {
-      val declType = inputDecl.tp.getOrElse(throw SkipThis)
-      val newType = declType match {
-        case SFOLFunction(sortNames) => typeindexTypeComponent(declType, sortNames)
-        case SFOLPredicate(sortNames) => typeindexTypeComponent(declType, sortNames)
+      inputDecl.tp match {
+        case Some(SFOL.FunctionOrPredicateType(_)) =>
+        // Carry on below
 
-        case TypedTerms.typeOfSorts => throw SkipThis
-        case PL.ded(_) => throw SkipThis
+        // Potentially in future implementations
+        // case PL.ded(_) => throw SkipThis
         case _ => throw SkipThis
       }
 
-      // TODO Care for definiens as well, currently for simplicity just None'd out
-      // Construct the new declaration
-      new OML(inputDecl.name, Some(newType), None, inputDecl.nt, inputDecl.featureOpt)
+      sortDependencies.put(inputDecl.name, sortDependenciesSeeker.getDependenciesForDecl(inputDecl, sortDependencies))
+      TypeIndexer.typeIndex(inputDecl, sortDependencies)
     })
 
     /* Build output diagram */
@@ -143,4 +70,81 @@ object ComputeTypeIndexed extends ComputationRule(TypeIndexifier.path) {
 
     Simplify(outputDiagram.toTerm)
   }
+
+  final private object TypeIndexer {
+    def typeIndex(decl: OML, allDependencies: collection.Map[LocalName, collection.Seq[LocalName]]): OML = {
+      assert(allDependencies.contains(decl.name))
+
+      val adder = new DependenciesAndTypeOperatorAdder
+
+      val midDecl = adder.traverse(decl)(Context.empty, allDependencies).asInstanceOf[OML] // return value is indeed an OML by recursion
+
+      midDecl.copy(
+        tp = midDecl.tp.map(dependentlyTypeTypeComponent(_, allDependencies(decl.name))),
+        df = midDecl.df.map(lambdaBindDefComponent(_, allDependencies(decl.name)))
+      )
+    }
+
+    def dependentlyTypeTypeComponent(typeComponent: Term, dependenciesToAbstract: Seq[LocalName]): Term = {
+      val dependentlyBoundVariables = dependenciesToAbstract.map(sortName =>
+        (Some(sortName), OMID(TypedTerms.typeOfSorts))
+      ).toList
+
+      FunType(dependentlyBoundVariables, typeComponent)
+    }
+
+    def lambdaBindDefComponent(defComponent: Term, dependenciesToBind: Seq[LocalName]): Term = {
+      val variablesToBind = dependenciesToBind.map(sortName =>
+        (sortName, OMID(TypedTerms.typeOfSorts))
+      ).toList
+
+      FunTerm(variablesToBind, defComponent)
+    }
+
+    final private class DependenciesAndTypeOperatorAdder extends Traverser[collection.Map[LocalName, collection.Seq[LocalName]]] {
+      def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        // We reference another decl, which is *not* shadowed by some binder
+        case ApplySpine(referencedDecl@OML(_, _, _, _, _), args) if state.contains(referencedDecl.name) =>
+          val sortDependencies = state.getOrElse(referencedDecl.name, Nil)
+
+          val newArgs = sortDependencies.map(sortName => OML(sortName, None, None, None, None)).toList ::: args
+          ApplySpine(referencedDecl, newArgs: _*)
+
+        case ApplySpine(OMID(TypedTerms.termsOfSort), sort) =>
+          ApplySpine(OMID(TypedTerms.termsOfSort), ApplySpine(OMID(TypeOperator.typeOp), sort: _*))
+
+        case t => Traverser(this, t)
+      }
+    }
+
+  }
+
+  final private class SortDependenciesSeeker extends Traverser[(collection.Map[LocalName, collection.Seq[LocalName]], mutable.HashSet[LocalName])] {
+
+    def getDependenciesForDecl(decl: OML, currentDependencies: collection.Map[LocalName, collection.Seq[LocalName]]): List[LocalName] = {
+      implicit val context: Context = Context.empty
+      implicit val state: State = (currentDependencies, mutable.HashSet[LocalName]())
+
+      // Beware to not call traverse on decl itself
+      // Since it then would confuse the outer OML with an OML reference to another declaration
+      // (The underlying "problem" is that OMLs can function both as declarations as well as references to declarations.)
+      decl.tp.map(traverse)
+      decl.df.map(traverse)
+
+      // TODO: Enforce some arbitrary order, fix alphabetical order sometime
+      state._2.toList
+    }
+
+    def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      // We reference another decl, which is *not* shadowed by some binder
+      case OML(referencedDecl, _, _, _, _) if !con.exists(_.name == referencedDecl) =>
+        state._2 ++= state._1.getOrElse(referencedDecl, Set())
+        null
+      case ApplySpine(OMID(TypedTerms.termsOfSort), List(OML(referencedSort, _, _, _, _))) =>
+        state._2 += referencedSort
+        null
+      case t => Traverser(this, t)
+    }
+  }
+
 }
