@@ -56,6 +56,8 @@ object ComputeTypeIndexed extends ComputationRule(TypeIndexifier.path) {
 
       sortDependencies.put(inputDecl.name, sortDependenciesSeeker.getDependenciesForDecl(inputDecl, sortDependencies))
       TypeIndexer.typeIndex(inputDecl, sortDependencies)
+
+      // TODO: Adjust indices in notation container
     })
 
     /* Build output diagram */
