@@ -4,6 +4,9 @@ import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, M
 import info.kwarc.mmt.api.utils.URI
 
 /**
+  * Playground for Navid's implementation of diagram operators.
+  * For debugging purposes only - might contain dirty code.
+  *
   * @author Navid
   */
 object DiagramOperatorTest extends MagicTest("debug") {
@@ -21,21 +24,29 @@ object DiagramOperatorTest extends MagicTest("debug") {
     controller.extman.addExtension(presenter)
   }
 
-  private def getAndPresent(theory: MPath): Unit = {
-    val generatedTheory = controller.getAs(classOf[Theory], theory)
-    presenter(generatedTheory)(ConsoleWriter)
+  /**
+    * Waits - possibly ad infinitum - for the theory given by the path to appear in the [[controller]] and present
+    * it using [[presenter]].
+    * @param theory A path to a theory.
+    */
+  private def waitAndPresent(theory: MPath): Unit = {
+    var generatedTheory: Option[Theory] = None
+    while (generatedTheory.isEmpty) {
+      generatedTheory = controller.getO(theory).asInstanceOf[Option[Theory]]
+      Thread.sleep(500)
+    }
+    presenter(generatedTheory.get)(ConsoleWriter)
     println("\n")
   }
 
   override def run : Unit = {
-    // According to Dennis, run can also be called before building ran through, which is unfortunate
-    // But well, this is for debugging only anyways!
-
     val diagops = DPath(URI("https://example.com/diagops"))
     val typeindexifier = diagops / "typeindexifier"
 
-    getAndPresent(typeindexifier ? "EndoMagma_pres")
-    getAndPresent(typeindexifier ? "TypeIndexedTestTheory_pres")
+    // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
+    // hence, we apply some dirty waiting mechanism here.
+    waitAndPresent(typeindexifier ? "EndoMagma_pres")
+    waitAndPresent(typeindexifier ? "TypeIndexedTestTheory_pres")
 
     sys.exit(0)
   }
