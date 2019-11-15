@@ -1,4 +1,4 @@
-package info.kwarc.mmt.moduleexpressions
+package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.objects.{Term, _}
