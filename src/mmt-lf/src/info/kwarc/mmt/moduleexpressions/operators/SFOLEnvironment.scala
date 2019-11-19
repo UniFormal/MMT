@@ -52,7 +52,11 @@ object PL extends TheoryScala {
 object SFOL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("SFOL")
-  val sort: GlobalName = _path ? "sort"
+
+  /**
+    * Not sure whether this constant actually exists or where this is used
+    */
+  @deprecated val sort: GlobalName = _path ? "sort"
 
   /*
   object forall{

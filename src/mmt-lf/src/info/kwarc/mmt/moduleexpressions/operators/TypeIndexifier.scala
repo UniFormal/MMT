@@ -23,13 +23,13 @@ object TypeIndexifier extends UnaryConstantScala(Combinators._path, "typeindexif
 // Store which typeindexed sorts the declarations in our inputTheory (transitively) depend on
 // E.g. if we have `op: tm a`, then we would have `op |-> Set(a)`
 // E.g. if we have additionally `op2: tm b -> tm a ❘ = op`, then we would have `op |-> Set(a, b)`
-final class ComputeTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) {
+final class ComputeTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) extends LinearUnaryTheoryOperatorContext {
 }
 
 object ComputeTypeIndexed extends FunctorialDiagramOperatorComputationRule[ComputeTypeIndexedHelperContext](TypeIndexifier) {
   override val unaryConstant: UnaryConstantScala = TypeIndexifier
 
-  override protected def initHelperContext: ComputeTypeIndexedHelperContext
+  override protected def initialTheoryHelperContext: ComputeTypeIndexedHelperContext
     = new ComputeTypeIndexedHelperContext(mutable.HashMap(), new SortDependenciesSeeker)
 
   override def applicableOnTheory(thy: AnonymousTheory): Boolean = {
@@ -37,7 +37,7 @@ object ComputeTypeIndexed extends FunctorialDiagramOperatorComputationRule[Compu
     true
   }
 
-  override def transformSingleDeclaration(decl: OML, context: Context, helperContext: ComputeTypeIndexedHelperContext)
+  override def transformSingleDeclaration(decl: OML, helperContext: ComputeTypeIndexedHelperContext)
   : OperatorResult[(OML, ComputeTypeIndexedHelperContext)] = decl.tp match {
     case Some(SFOL.FunctionOrPredicateType(_)) =>
       helperContext.sortDependencies.put(

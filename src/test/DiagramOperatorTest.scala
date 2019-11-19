@@ -1,7 +1,6 @@
-import info.kwarc.mmt.api.{DPath, MPath}
-import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.{DPath, Path}
 
 /**
   * Playground for Navid's implementation of diagram operators.
@@ -24,19 +23,22 @@ object DiagramOperatorTest extends MagicTest("debug") {
     controller.extman.addExtension(presenter)
   }
 
+
+
   /**
-    * Waits - possibly ad infinitum - for the theory given by the path to appear in the [[controller]] and present
-    * it using [[presenter]].
-    * @param theory A path to a theory.
+    * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
+    * @param path A path to a theory, document etc.
     */
-  private def waitAndPresent(theory: MPath): Unit = {
-    var generatedTheory: Option[Theory] = None
-    while (generatedTheory.isEmpty) {
-      generatedTheory = controller.getO(theory).asInstanceOf[Option[Theory]]
+  private def waitUntilAvailable(path: Path): Unit = {
+    while (controller.getO(path).isEmpty) {
       Thread.sleep(500)
     }
-    presenter(generatedTheory.get)(ConsoleWriter)
-    println("\n")
+  }
+
+  private def waitThenPrint(path: Path): Unit = {
+    waitUntilAvailable(path)
+    presenter(controller.get(path))(ConsoleWriter)
+    print("\n")
   }
 
   override def run : Unit = {
@@ -45,8 +47,8 @@ object DiagramOperatorTest extends MagicTest("debug") {
 
     // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
     // hence, we apply some dirty waiting mechanism here.
-    waitAndPresent(typeindexifier ? "EndoMagma_pres")
-    waitAndPresent(typeindexifier ? "TypeIndexedTestTheory_pres")
+    waitThenPrint(typeindexifier ? "EndoMagma_pres")
+    waitThenPrint(typeindexifier ? "TypeIndexedTestTheory_pres")
 
     sys.exit(0)
   }
