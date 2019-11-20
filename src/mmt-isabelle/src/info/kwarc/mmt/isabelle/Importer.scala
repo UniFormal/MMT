@@ -581,10 +581,12 @@ object Importer
     def import_prop(prop: isabelle.Export_Theory.Prop, env: Env = Env.empty): Term =
     {
       val types = prop.typargs.map(_._1)
-      val sorts = import_sorts(prop.typargs)
       val vars = prop.args.map({ case (x, ty) => OMV(x) % import_type(ty, env) })
+      val sorts = import_sorts(prop.typargs)
+
       val t = import_term(prop.term, env)
-      Bootstrap.Type.all(types, lf.Arrow(sorts, Bootstrap.Ded(if (vars.isEmpty) t else lf.Pi(vars, t))))
+      val p = lf.Arrow(sorts, Bootstrap.Ded(t))
+      Bootstrap.Type.all(types, if (vars.isEmpty) p else lf.Pi(vars, p))
     }
 
     def import_proof(prf: isabelle.Term.Proof, env: Env = Env.empty): Term =
@@ -920,12 +922,6 @@ object Importer
                   env + (a -> c.toTerm)
               }
 
-            // sort constraints
-            for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
-              val name = LocalName(Isabelle.Locale.Sorts(i + 1))
-              loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
-            }
-
             // term parameters
             val term_env =
               (type_env /: locale.args) {
@@ -936,6 +932,12 @@ object Importer
                   loc_decl(c)
                   env + (x -> c.toTerm)
               }
+
+            // sort constraints
+            for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
+              val name = LocalName(Isabelle.Locale.Sorts(i + 1))
+              loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
+            }
 
             // logical axioms
             for { (prop, i) <- locale.axioms.map(content.import_prop(_, term_env)).zipWithIndex } {

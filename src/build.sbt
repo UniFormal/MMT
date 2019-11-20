@@ -41,7 +41,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.8"
+scalaVersion in Global := "2.12.9"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems

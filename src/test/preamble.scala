@@ -1,3 +1,4 @@
+import MagicTest.home
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
@@ -119,11 +120,15 @@ object MagicTest {
       home / "content", // Michael
       home / "Versioned" / "Archives", // Katja
       home / "mmt" / "content",  // Frederik
+
       //File("C:/mmt2/content/Mathhub"), //Max
       File("C:") / "/mmt2" / "/content" / "/MathHub", // Max
       File("C:") / "Users" / "Max" / "Uni" / "MMT-Archives", // Max
       File("C:") / "other" / "oaff",
-      home / "MMT" / "myformalizations"  // Max Mac
+      home / "MMT" / "myformalizations",  // Max Mac
+
+      // Navid
+      home / "Desktop" / "kwarc-project" / "code" / "archives"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
