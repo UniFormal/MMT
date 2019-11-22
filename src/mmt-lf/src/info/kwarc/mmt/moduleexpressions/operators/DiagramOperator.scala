@@ -1,3 +1,13 @@
+/**
+  * An abstract class hierarchy for (functorial) ((sub)linear) (unary) {theory|morphism|diagram} operators abstracting
+  * over many common things.
+  *
+  * E.g. if your envisioned theory operator only operates declaration-by-declaration, subclass from
+  * [[info.kwarc.mmt.moduleexpressions.operators.SublinearUnaryTheoryOperator]]. If it outputs exactly one declaration
+  * for every declaration, subclass from [[info.kwarc.mmt.moduleexpressions.operators.LinearUnaryTheoryOperator]].
+  * And if that extends in a natural way to morphisms, you can use the [[info.kwarc.mmt.moduleexpressions.operators.MorphismOperatorFromLinearTheoryOperatorMixin]].
+  */
+
 package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.{ComplexStep, LocalName}
