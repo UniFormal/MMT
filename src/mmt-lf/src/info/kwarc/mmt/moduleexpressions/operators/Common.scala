@@ -97,7 +97,20 @@ object Common {
     *         - and the list of OMLS the actual anonymized list of declarations
     */
   def anonymizeModuleOrLink(solver: CheckingCallback, namedModuleOrLink: ModuleOrLink, initialReferencesToUnqualify: List[GlobalName] = Nil)(implicit stack: Stack, history: History): (List[GlobalName], List[OML]) = {
+
+    object NamedViewInclusionInView {
+      def unapply(inclusion: IncludeData): Option[MPath] = inclusion match {
+        // An inclusion of another named view in a [[View]]
+        case IncludeData(_, _, Nil, Some(OMMOD(includedLink)), false) => Some(includedLink)
+        // Same, but hidden behind an [[OMIDENT]] for whatever reason
+        case IncludeData(_, _, Nil, Some(OMIDENT(OMMOD(includedLink))), false) => Some(includedLink)
+        case _ => None
+      }
+    }
+
+
     val includedThings = namedModuleOrLink.getAllIncludes.flatMap({
+      // A usual undefined inclusion in a [[Theory]]
       case IncludeData(_, includedModule, Nil, None, false) =>
         solver.lookup.getO(includedModule) match {
           case Some(includedThing: ModuleOrLink) => List(includedThing)
@@ -107,6 +120,19 @@ object Common {
           case None =>
             Nil
         }
+
+      // An inclusion of another named view in a [[View]]
+      case NamedViewInclusionInView(includedLink) if namedModuleOrLink.isInstanceOf[Link] =>
+        solver.lookup.getO(includedLink) match {
+          case Some(includedThing: Link) => List(includedThing)
+          case Some(otherThing) =>
+            solver.error("While anonymizing link, we ignore inclusion of " + otherThing.path + " since it's not a Link")
+            Nil
+          case None =>
+            Nil
+        }
+
+      case _ => ???
     })
 
     // Translate all OMS' into OMLs
