@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.{DPath, Path}
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug", "DiagramDefinition") {
+object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
   private var presenter: MMTSyntaxPresenter = _
 
   override def doFirst: Unit = {
@@ -47,9 +47,13 @@ object DiagramOperatorTest extends MagicTest("debug", "DiagramDefinition") {
 
     // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
     // hence, we apply some dirty waiting mechanism here.
+    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_pres")
-    waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
     waitThenPrint(typeindexifier ? "TypeIndexedTestTheory_pres")
+    waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
+    waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
+    waitThenPrint(typeindexifier ? "EndoGroup_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
+
 
     sys.exit(0)
   }

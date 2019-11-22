@@ -134,4 +134,14 @@ object SFOL extends TheoryScala {
     }
   }
 
+  /**
+    * e.g. `a: tp`, but not `b: tp | = a`
+    */
+  object UndefinedSortDeclaration {
+    def unapply(decl: OML): Boolean = decl match {
+      case OML(_, Some(OMID(TypedTerms.typeOfSorts)), None, _, _) => true
+      case _ => false
+    }
+  }
+
 }

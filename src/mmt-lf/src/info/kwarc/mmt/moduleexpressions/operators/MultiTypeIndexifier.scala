@@ -1,50 +1,39 @@
 package info.kwarc.mmt.moduleexpressions.operators
 
+import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.objects.{AnonymousTheory, Context, OMID, OML, Term, Traverser}
-import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
+import info.kwarc.mmt.api.uom.UnaryConstantScala
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
 
 import scala.collection.mutable
 
-private object TypeOperator extends TheoryScala {
-  val _base = DPath(URI("https://example.com/diagops"))
-  val _name = LocalName("TypeOperator")
-
-  val typeOp: GlobalName = _path ? "typeOp"
-}
-
-object TypeIndexifier extends UnaryConstantScala(Combinators._path, "typeindexifier") {
-  /** the label of the distinguished node of the output diagram */
-  val nodeLabel = LocalName("pres")
-}
+object MultiTypeIndexifier extends UnaryConstantScala(Combinators._path, "multi_typeindexifier")
 
 // Store which typeindexed sorts the declarations in our inputTheory (transitively) depend on
 // E.g. if we have `op: tm a`, then we would have `op |-> Set(a)`
 // E.g. if we have additionally `op2: tm b -> tm a ❘ = op`, then we would have `op |-> Set(a, b)`
-final class ComputeTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) extends LinearUnaryTheoryOperatorContext {
+final class ComputeMultiTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) extends LinearUnaryTheoryOperatorContext {
 }
 
-object ComputeTypeIndexed extends FunctorialDiagramOperatorComputationRule[ComputeTypeIndexedHelperContext](TypeIndexifier) {
-  override val unaryConstant: UnaryConstantScala = TypeIndexifier
+object ComputeMultiTypeIndexed extends FunctorialDiagramOperatorComputationRule[ComputeMultiTypeIndexedHelperContext](MultiTypeIndexifier) {
+  override val unaryConstant: UnaryConstantScala = MultiTypeIndexifier
 
-  override protected def initialTheoryHelperContext: ComputeTypeIndexedHelperContext
-    = new ComputeTypeIndexedHelperContext(mutable.HashMap(), new SortDependenciesSeeker)
+  override protected def initialTheoryHelperContext: ComputeMultiTypeIndexedHelperContext
+  = new ComputeMultiTypeIndexedHelperContext(mutable.HashMap(), new SortDependenciesSeeker)
 
   override def applicableOnTheory(thy: AnonymousTheory): Boolean = {
     // TODO: Check that the meta-theory contains SFOL (ex. of implicit morphism, I guess) */
     true
   }
 
-  override def transformSingleDeclaration(decl: OML, helperContext: ComputeTypeIndexedHelperContext)
-  : OperatorResult[(OML, ComputeTypeIndexedHelperContext)] = decl.tp match {
+  override def transformSingleDeclaration(decl: OML, helperContext: ComputeMultiTypeIndexedHelperContext)
+  : OperatorResult[(OML, ComputeMultiTypeIndexedHelperContext)] = decl.tp match {
     case Some(SFOL.FunctionOrPredicateType(_)) =>
       helperContext.sortDependencies.put(
         decl.name,
         helperContext.sortDependenciesSeeker.getDependenciesForDecl(decl, helperContext.sortDependencies)
       )
-      val newDecl = TypeIndexer.typeIndex(decl, helperContext.sortDependencies)
+      val newDecl = MultiTypeIndexer.typeIndex(decl, helperContext.sortDependencies)
 
       // TODO: Adjust indices in notation container
 
@@ -56,17 +45,17 @@ object ComputeTypeIndexed extends FunctorialDiagramOperatorComputationRule[Compu
   }
 }
 
-private object TypeIndexer {
+private object MultiTypeIndexer {
   def typeIndex(decl: OML, allDependencies: collection.Map[LocalName, collection.Seq[LocalName]]): OML = {
     assert(allDependencies.contains(decl.name))
 
     val adder = new DependenciesAndTypeOperatorAdder
 
-    val midDecl = adder.traverse(decl)(Context.empty, allDependencies).asInstanceOf[OML] // return value is indeed an OML by recursion
+    val tmpDecl = adder.traverse(decl)(Context.empty, allDependencies).asInstanceOf[OML] // return value is indeed an OML by recursion
 
-    midDecl.copy(
-      tp = midDecl.tp.map(dependentlyTypeTypeComponent(_, allDependencies(decl.name))),
-      df = midDecl.df.map(lambdaBindDefComponent(_, allDependencies(decl.name)))
+    tmpDecl.copy(
+      tp = tmpDecl.tp.map(dependentlyTypeTypeComponent(_, allDependencies(decl.name))),
+      df = tmpDecl.df.map(lambdaBindDefComponent(_, allDependencies(decl.name)))
     )
   }
 
