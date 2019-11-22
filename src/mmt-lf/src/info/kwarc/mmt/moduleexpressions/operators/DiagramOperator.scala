@@ -1,6 +1,6 @@
 package info.kwarc.mmt.moduleexpressions.operators
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.{ComplexStep, LocalName}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
@@ -182,43 +182,38 @@ trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearU
 
 trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheoryOperatorContext] extends DiagramOperator with MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType] {
 
-  // Suffix nodes and arrows so that they really get available at the controller
-  // by [[InstanceElaborator]], which namely skips adding elements whose name already
-  // exists in the global namespace
-
-  private def permuteLabel(label: LocalName, isDistNode: Boolean): LocalName = {
-    if (isDistNode) {
-      LocalName("pres")
-    } else {
-      label
-    }
-  }
-
   override def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram] = {
+    def permuteLabel(label: LocalName): LocalName = label match {
+      case _ if diag.distNode.contains(label) => LocalName("pres")
+      case LocalName(List(ComplexStep(mPath))) => LocalName(mPath.toString)
+      case _ => label
+    }
+    assert(!diag.nodes.exists(_.label == LocalName("pres")))
+
     val (newNodes, theoryContexts) = diag.nodes.map(node => transformTheoryAndGetContext(node.theory) match {
       case TransformedResult((newTheory, ctx)) =>
-        (DiagramNode(permuteLabel(node.label, diag.distNode.contains(node.label)), newTheory), (node.label, ctx))
+        (DiagramNode(permuteLabel(node.label), newTheory), (node.label, ctx))
       case _ => ???
     }).unzip match {
       case (newNodes, theoryContextsAsListsOfPairs) => (newNodes, theoryContextsAsListsOfPairs.toMap)
     }
 
     val newArrows = diag.arrows.map(arrow => {
-      val transformedDomain = newNodes.find(_.label == arrow.from).get.theory
-      val transformedCodomain = newNodes.find(_.label == arrow.to).get.theory
+      val transformedDomain   = newNodes.find(_.label == permuteLabel(arrow.from)).get.theory
+      val transformedCodomain = newNodes.find(_.label == permuteLabel(arrow.to)).get.theory
 
       transformMorphism(arrow.morphism, transformedDomain, transformedCodomain, theoryContexts(arrow.to)) match {
         case TransformedResult(newMorphism) => arrow.copy(
-          label = arrow.label,
+          label = permuteLabel(arrow.label),
           morphism = newMorphism,
-          from = permuteLabel(arrow.from, diag.distNode.contains(arrow.from)),
-          to = permuteLabel(arrow.to, diag.distNode.contains(arrow.to))
+          from = permuteLabel(arrow.from),
+          to = permuteLabel(arrow.to)
         )
         case _ => ???
       }
     })
 
-    TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(permuteLabel(_, isDistNode = true))))
+    TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(permuteLabel)))
   }
 }
 // TODO Florian said: maybe put it direectly into DiagramOperator trait?

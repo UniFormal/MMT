@@ -56,7 +56,7 @@ object SFOL extends TheoryScala {
   /**
     * Not sure whether this constant actually exists or where this is used
     */
-  @deprecated val sort: GlobalName = _path ? "sort"
+  @deprecated("MMT mmt-lf/moduleexpressions/operators", "v18") val sort: GlobalName = _path ? "sort"
 
   /*
   object forall{

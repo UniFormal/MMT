@@ -7,10 +7,10 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.moduleexpressions.DiagramDefinition
+import info.kwarc.mmt.moduleexpressions.diagdefinition.DiagramDefinition
 
 object Combinators {
-  val _path = ModExp._base ? "Combinators"
+  val _path: MPath = ModExp._base ? "Combinators"
 }
 
 object Common {
@@ -19,58 +19,128 @@ object Common {
   object ExistingName {
     def apply(p: MPath) = LocalName(p)
 
-    def unapply(l: LocalName) = l.steps match {
+    def unapply(l: LocalName): Option[MPath] = l.steps match {
       case List(ComplexStep(p)) => Some(p)
       case _ => None
     }
   }
 
-  // code for translating OMS's to OML references
-  class OMStoOML(cont: Context) {
-    private var names: List[GlobalName] = Nil
-    val trav = OMSReplacer { p =>
+  /**
+    * A _stateful_ translator to translate [[OMS]]' to [[OML]]s to un-fully-qualify declarations and their
+    * interdependent dependencies, say in a [[Theory]] or [[Link]], but generally in a [[ModuleOrLink]].
+    *
+    * @param ctx                          A [[Context]] object passed to the underlying [[OMSReplacer]], actually unused.
+    * @param initialReferencesToUnqualify As we go through constant declaratiosn using [[apply(Constant)]],
+    *                                     we keep track of the [[GlobalName]]s of these constant. Namely,
+    *                                     to replace subsequent references to them by the un-fully-qualified
+    *                                     references. You may here pass an initial list of such [[GlobalName]]s.
+    *                                     This may be useful when processing a [[View]], namely in that case you
+    *                                     want to pass all [[GlobalName]]s of the codomain.
+    */
+  class OMStoOML(ctx: Context, initialReferencesToUnqualify: List[GlobalName] = Nil) {
+    /**
+      * List of names to which references shall be un-fully-qualified.
+      *
+      * It is continuously expanded by new [[Constant]]s we process in [[apply(Constant)]].
+      */
+    private var names: List[GlobalName] = initialReferencesToUnqualify
+
+    /**
+      * Replacer which only replaces a [[GlobalName]] if it's contained in [[names]].
+      */
+    private val omsReplacer = OMSReplacer { p =>
       if (names contains p) Some(OML(p.name)) else None
     }
 
-    def apply(tm: Term): Term = trav(tm, cont)
+    def getGlobalNamesWhoseReferencesToUnqualify: List[GlobalName] = names
 
+    def apply(tm: Term): Term = omsReplacer(tm, ctx)
+
+    /**
+      * Un-fully-qualifies a [[Constant]] and return an [[OML]] for that together with a boolean
+      * flag determining if the name of the new OML is a duplicate within the previous constants encountered
+      * using this method.
+      *
+      * This might happen if a theory includes two unrelated theories both declaring a symbol with the same
+      * [[LocalName]], but of course with different [[GlobalName]] as they stem from two unrelated theories. In
+      * that case un-fully-qualifiying yields a duplicate as signalled by this method.
+      */
     def apply(c: Constant): (OML, Boolean) = {
-      val cT = OML(c.name, c.tp map apply, c.df map apply, c.not)
-      val dupl = names.exists(p => p.name == c.name)
+      val translatedConstant = OML(c.name, c.tp map apply, c.df map apply, c.not)
+      val isDuplicate = names.exists(p => p.name == c.name)
       names ::= c.path
-      (cT, dupl)
+      (translatedConstant, isDuplicate)
     }
   }
 
-  /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
-  def anonymize(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
-    // collect included theories
-    val includes = namedTheory.getIncludesWithoutMeta.flatMap { i =>
-      solver.lookup.getO(i) match {
-        case Some(dt: Theory) =>
-          List(dt)
-        case Some(se) =>
-          solver.error("ignoring include of " + se.path)
-          Nil
-        case None =>
-          Nil
-      }
-    }
-    val tr = new OMStoOML(stack.context)
-    // turn all constants into OML's
-    val decls = (includes ::: List(namedTheory)).flatMap { th =>
-      th.getDeclarationsElaborated
-    }
+  /**
+    * Anonymize and flatten a [[ModuleOrLink]], most commonly a [[Theory]] or [[View]], to a list of [[OML]] declarations.
+    *
+    * Overall, this method will first flatten the [[ModuleOrLink]] and then try to translate every obtained declaration
+    * to an [[OML]]. For that [[GlobalName]]s in declaration components will be replaced by [[OML]]s referencing
+    * previous [[OML]] declarations. The method basically keeps track of all "previous [[GlobalName]]s which have
+    * been seen and where references to them should be replaced by [[OML]] references".
+    * If you want to anonymize a [[Link]], this list of "previous things" does not suffice since a [[Link]]
+    * is naturally to be interpreted in the context of its codomain. Hence, you can use
+    * `initialReferencesToUnqualify` to provide an initial list of "previous things".
+    * More precisely, in the case of anonymizing a [[Link]], you should first anonymize the codomain, obtain
+    * its list of [[GlobalName]] to unqualify (the first component of the return vaue of this method), and then
+    * pass this onto the anonmyization call of the [[Link]].
+    *
+    * @param solver                       Solver instance used for looking up inclusions (before flattening the [[ModuleOrLink]]).
+    * @param namedModuleOrLink            A [[ModuleOrLink]] to be flattened and anonymized to a list of [[OML]]s.
+    * @param initialReferencesToUnqualify Read the Scala doc above.
+    * @return A tuple of (global names to unqualify, list of OMLs), where
+    *         - the global names to unqualify are as explained above the "list of previous things"
+    *         - and the list of OMLS the actual anonymized list of declarations
+    */
+  def anonymizeModuleOrLink(solver: CheckingCallback, namedModuleOrLink: ModuleOrLink, initialReferencesToUnqualify: List[GlobalName] = Nil)(implicit stack: Stack, history: History): (List[GlobalName], List[OML]) = {
+    val includedThings = namedModuleOrLink.getAllIncludes.flatMap({
+      case IncludeData(_, includedModule, Nil, None, false) =>
+        solver.lookup.getO(includedModule) match {
+          case Some(includedThing: ModuleOrLink) => List(includedThing)
+          case Some(otherThing) =>
+            solver.error("While anonymizing module or link, we ignore inclusion of " + otherThing.path + " since it's not a ModuleOrLink")
+            Nil
+          case None =>
+            Nil
+        }
+    })
+
+    // Translate all OMS' into OMLs
+    val omsTranslator = new OMStoOML(stack.context, initialReferencesToUnqualify)
+
+    val decls = (includedThings :+ namedModuleOrLink).flatMap(_.getDeclarationsElaborated)
     val omls = decls.flatMap {
       case c: Constant =>
-        val (cT, dupl) = tr(c)
-        if (dupl)
-          solver.error("theory has duplicate local name: " + c.name)
-        List(cT)
+        val (translatedConstant, wasDuplicate) = omsTranslator(c)
+        if (wasDuplicate)
+          solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
+        List(translatedConstant)
       case _ => Nil
     }
-    //val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory
-    new AnonymousTheory(namedTheory.meta, omls)
+
+    (initialReferencesToUnqualify ::: omsTranslator.getGlobalNamesWhoseReferencesToUnqualify, omls)
+  }
+
+  /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
+  def anonymizeTheory(solver: CheckingCallback, namedTheory: Theory)(implicit stack: Stack, history: History): AnonymousTheory = {
+    AnonymousTheory(namedTheory.meta, anonymizeModuleOrLink(solver, namedTheory)._2)
+    // TODO Perhaps add val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory?
+  }
+
+  // TODO This does not get rid of List(ComplexStep(domainMPath), SimpeleStep(domainLocalNameDecl)) in morphisms
+  /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
+  def anonymizeView(solver: CheckingCallback, namedView: View)(implicit stack: Stack, history: History): AnonymousMorphism = namedView.to match {
+    // We first need all [[GlobalName]]s of the codomain to replace in definienses of the view's assignments
+    // Hence we first anonymize the codomain, which we here only do (out of naiveity) for a theory as a codomain
+    case OMMOD(theoryPath: MPath) =>
+      // TODO Recomputing the anonymization of the codomain is really unfortunate as we do this anyway
+      //      in [[asAnonymousDiagram]] :( But passing this as method parameter is probably cumbersome in logic
+      val codomainGlobalNames = anonymizeModuleOrLink(solver, solver.lookup.getTheory(theoryPath))._1
+      AnonymousMorphism(anonymizeModuleOrLink(solver, namedView, initialReferencesToUnqualify = codomainGlobalNames)._2)
+
+    case _ => ???
   }
 
   /** provides the base case of the function that elaborates a theory expression (in the form of an [[AnonymousTheory]]) */
@@ -80,7 +150,7 @@ object Common {
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
           case Some(th: Theory) =>
-            lazy val default = anonymize(solver, th)
+            lazy val default = anonymizeTheory(solver, th)
             th.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
             val at = th.dfC.normalized match {
               case Some(df) =>
@@ -117,19 +187,20 @@ object Common {
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
           case Some(m: View) =>
+            lazy val default = anonymizeView(solver, m)
             m.dfC.normalize(d => solver.simplify(d)) // make sure a normalization value is cached
             val at = m.dfC.normalized match {
               case Some(df) =>
                 df match {
                   case AnonymousMorphismCombinator(at) => at
-                  // TODO: handle stuff here !!
+                  case _ => default
                 }
-              case _ => throw ImplementationError("invalid normalization")
+              case None => default
             }
             Some(at)
           case _ => throw ImplementationError("missing view")
         }
-      case AnonymousMorphismCombinator(at) => Some(at) // explicit anonymous theories
+      case AnonymousMorphismCombinator(at) => Some(at) // explicit anonymous morphisms
       case _ => None
     }
   }
@@ -148,11 +219,10 @@ object Common {
             }
           case Some(thy: Theory) =>
             // the theory as a one-node diagram
-            val anonThy = anonymize(solver, thy)
+            val anonThy = anonymizeTheory(solver, thy)
             val label = ExistingName(thy.path)
             val anonThyN = DiagramNode(label, anonThy)
-            val ad = new AnonymousDiagram(List(anonThyN), Nil, Some(label))
-            Some(ad)
+            Some(AnonymousDiagram(List(anonThyN), Nil, Some(label)))
           case Some(vw: View) =>
             // the view as a one-edge diagram
             val from = asAnonymousTheory(solver, vw.from).getOrElse(return None)
@@ -165,9 +235,8 @@ object Common {
             val fromN = DiagramNode(fromL, from)
             val toN = DiagramNode(toL, to)
             val arrow = DiagramArrow(label, fromL, toL, mor, vw.isImplicit)
-            val ad = new AnonymousDiagram(List(fromN, toN), List(arrow), Some(toL))
-            Some(ad)
-          case _ => return None
+            Some(AnonymousDiagram(List(fromN, toN), List(arrow), Some(toL)))
+          case _ => None
         }
       // explicit anonymous diagrams
       case AnonymousDiagramCombinator(ad) => Some(ad)
@@ -175,7 +244,7 @@ object Common {
     }
   }
 
-  def prefixLabels(ad: AnonymousDiagram, prefix: LocalName) = {
+  def prefixLabels(ad: AnonymousDiagram, prefix: LocalName): AnonymousDiagram = {
     def f(l: LocalName) = {
       l match {
         case ExistingName(_) => l
@@ -188,13 +257,12 @@ object Common {
 
   /* Applying a substitution function to an OML */
   def applySubstitution(decls: List[OML], renames: List[(LocalName, Term)]): List[OML] =
-    decls.map(
-      d => d match {
-        case OML(label, tp, df, nt, feature) =>
-          val rens = renames.filter(r => if (r._1.equals(label)) true else false)
-          if (rens.isEmpty) d
-          else (new OML(rens.last._2.asInstanceOf[OML].name, tp, df, nt, feature))
-      })
+    decls.map {
+      case d@OML(label, tp, df, nt, feature) =>
+        val rens = renames.filter(r => if (r._1.equals(label)) true else false)
+        if (rens.isEmpty) d
+        else (new OML(rens.last._2.asInstanceOf[OML].name, tp, df, nt, feature))
+    }
 
   def asSubstitution(r: List[Term]): List[(LocalName, Term)] = r.map {
     case Rename1(OML(old, None, None, _, _), nw) => (old, nw)
