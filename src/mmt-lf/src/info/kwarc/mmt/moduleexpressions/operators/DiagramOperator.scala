@@ -27,6 +27,7 @@ trait UnaryTheoryOperator {
 }
 
 class UnaryTheoryOperatorContext {
+  // TODO Florian said: Perhaps easier as List[OMV] until OMV and OML are unified?
   protected var context: Context = Context.empty
 
   def getContext: Context = {
@@ -46,7 +47,7 @@ trait SublinearUnaryTheoryOperator[HelperContextType <: UnaryTheoryOperatorConte
     //      Rewrite everything to use [[Option]] instead of [[OperatorResult]]?
     transformTheoryAndGetContext(thy) match {
       case TransformedResult((newThy, _)) => TransformedResult(newThy)
-      case x => NotApplicable()
+      case _ => NotApplicable()
     }
   }
 
@@ -85,6 +86,7 @@ trait SublinearUnaryTheoryOperator[HelperContextType <: UnaryTheoryOperatorConte
 }
 
 class LinearUnaryTheoryOperatorContext extends UnaryTheoryOperatorContext {
+  // TODO Florian said: Put this into more general context class above as Map[LN, List[LN]]
   protected var mapping: Map[LocalName, LocalName] = Map.empty
 
   def getTranslationMapping: Map[LocalName, LocalName] = {
@@ -121,6 +123,7 @@ trait LinearUnaryTheoryOperator[HelperContextType <: LinearUnaryTheoryOperatorCo
 
 // Morphism operators
 // ==========================
+// TODO: Florian said: for domain pass also its original version and transformed version
 trait UnaryMorphismOperator[HelperContextType <: UnaryTheoryOperatorContext] {
   def transformMorphism(
                          morphism: AnonymousMorphism,
@@ -218,7 +221,10 @@ trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheor
     TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(permuteLabel(_, isDistNode = true))))
   }
 }
+// TODO Florian said: maybe put it direectly into DiagramOperator trait?
+//       Make DiagramOperator extend ComputationRule
 
+//
 trait UnaryDiagramOperatorComputationRule extends ComputationRule with DiagramOperator {
 
   val unaryConstant: UnaryConstantScala
