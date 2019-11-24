@@ -1084,7 +1084,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "g:" -> (arg => session_groups = session_groups ::: List(arg)),
         "o:" -> (arg => { options += arg }),
         "v" -> (_ => verbose = true),
-        "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
+        "x:" -> (arg =>
+          if (arg == isabelle.Thy_Header.PURE) isabelle.error("Cannot exclude " + isabelle.quote(arg))
+          else exclude_sessions = exclude_sessions ::: List(arg)))
 
         val sessions = getopts(args)
 
@@ -1096,7 +1098,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             exclude_session_groups = exclude_session_groups,
             exclude_sessions = exclude_sessions,
             session_groups = session_groups,
-            sessions = sessions)
+            sessions = isabelle.Thy_Header.PURE :: sessions)
 
         val progress =
           new isabelle.Console_Progress(verbose = verbose) {
@@ -1268,10 +1270,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     /* Pure theory */
 
-    def PURE: String = isabelle.Thy_Header.PURE
-    def pure_name: isabelle.Document.Node.Name = import_name(PURE)
+    def pure_name: isabelle.Document.Node.Name = import_name(isabelle.Thy_Header.PURE)
 
-    lazy val pure_path: MPath = make_theory(PURE).path
+    lazy val pure_path: MPath = make_theory(isabelle.Thy_Header.PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
       isabelle.Export_Theory.read_pure_theory(state.store, cache = Some(state.cache))
