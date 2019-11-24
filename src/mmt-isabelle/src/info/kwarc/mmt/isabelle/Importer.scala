@@ -30,6 +30,24 @@ object Importer
   {
     val controller = new Controller
 
+    for {
+      config <-
+        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+          MMTSystem.userConfigFile)
+      if config.exists
+    } controller.loadConfigFile(config, false)
+
+    def add_archive(archive: Archive)
+    {
+      progress.echo("Adding " + archive)
+      controller.addArchive(archive.root)
+    }
+
+    isabelle.Isabelle_System.getenv("ISABELLE_MMT_URTHEORIES") match {
+      case "" => progress.echo_warning("Missing settings for ISABELLE_MMT_URTHEORIES")
+      case dir => controller.backend.openArchive(isabelle.Path.explode(dir).absolute_file).foreach(add_archive)
+    }
+
     val init_archive_dir =
       (if (init_archive) options.proper_string("mmt_archive_dir") else None).
         map(isabelle.Path.explode)
@@ -55,17 +73,7 @@ object Importer
         case archives => archives
       }
 
-    for (archive <- archives) {
-      progress.echo("Adding " + archive)
-      controller.addArchive(archive.root)
-    }
-
-    for {
-      config <-
-        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
-          MMTSystem.userConfigFile)
-      if config.exists
-    } controller.loadConfigFile(config, false)
+    archives.foreach(add_archive)
 
     (controller, archives)
   }
