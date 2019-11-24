@@ -43,15 +43,15 @@ object Importer
       if config.exists
     } controller.loadConfigFile(config, false)
 
-    def add_archive(archive: Archive)
+    def add_archive(root: File)
     {
-      progress.echo("Adding " + archive)
-      controller.addArchive(archive.root)
+      progress.echo("Adding " + root)
+      controller.addArchive(root)
     }
 
     isabelle.Isabelle_System.getenv("ISABELLE_MMT_URTHEORIES") match {
       case "" => progress.echo_warning("Missing settings for ISABELLE_MMT_URTHEORIES")
-      case dir => controller.backend.openArchive(isabelle.Path.explode(dir).absolute_file).foreach(add_archive)
+      case dir => add_archive(isabelle.Path.explode(dir).absolute_file)
     }
 
     val init_archive_dir =
@@ -79,7 +79,7 @@ object Importer
         case archives => archives
       }
 
-    archives.foreach(add_archive)
+    for (archive <- archives) add_archive(archive.root)
 
     (controller, archives)
   }
