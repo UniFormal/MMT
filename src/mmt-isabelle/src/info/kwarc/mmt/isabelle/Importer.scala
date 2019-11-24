@@ -4,7 +4,7 @@ import scala.collection.SortedMap
 import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import frontend.Controller
+import frontend.{Controller, ReportHandler}
 import archives.{Archive, NonTraversingImporter}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import notations._
@@ -29,6 +29,12 @@ object Importer
     init_archive: Boolean = false): (Controller, List[Archive]) =
   {
     val controller = new Controller
+
+    controller.report.addHandler(
+      new ReportHandler("Isabelle/MMT") {
+        override def apply(ind: Int, caller: => String, group: String, lines: List[String]): Unit =
+          for (line <- lines) progress.echo(" " * ind + group + ": " + line)
+      })
 
     for {
       config <-
