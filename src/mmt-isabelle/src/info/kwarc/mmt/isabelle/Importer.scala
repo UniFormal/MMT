@@ -1248,24 +1248,20 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def import_session(import_theory: Theory_Export => Unit)
     {
-      if (session.used_theories.isEmpty) {
-        progress.echo_warning("Nothing to import")
+      if (session.context.process_theory(pure_name.theory)) {
+        import_theory(pure_theory_export)
       }
-      else {
-        if (session.context.process_theory(pure_name.theory)) {
-          import_theory(pure_theory_export)
-        }
+      if (session.used_theories.isEmpty) {
         session.process(
           unicode_symbols = true,
-          process_theory = (args: isabelle.Dump.Args) =>
-            {
-              val snapshot = args.snapshot
-              val rendering =
-                new isabelle.Rendering(snapshot, options, args.session) {
-                  override def model: isabelle.Document.Model = ???
-                }
-              import_theory(read_theory_export(rendering))
-            })
+          process_theory = (args: isabelle.Dump.Args) => {
+            val snapshot = args.snapshot
+            val rendering =
+              new isabelle.Rendering(snapshot, options, args.session) {
+                override def model: isabelle.Document.Model = ???
+              }
+            import_theory(read_theory_export(rendering))
+          })
       }
     }
 
