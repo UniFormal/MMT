@@ -1253,7 +1253,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       if (session.context.process_theory(pure_name.theory)) {
         import_theory(pure_theory_export)
       }
-      if (session.used_theories.isEmpty) {
+      if (session.used_theories.nonEmpty) {
         session.process(
           unicode_symbols = true,
           process_theory = (args: isabelle.Dump.Args) => {
