@@ -245,7 +245,8 @@ object Importer
     object Unknown
     {
       val path: GlobalName = GlobalName(theory, LocalName("unknown"))
-      val term: Term = OMS(path)
+      def apply(deps: List[GlobalName] = Nil): Term =
+        if (deps.isEmpty) OMS(path) else OMA(OMS(path), deps.map(OMS(_)))
       def detect(t: Term): Boolean = t.head == Some(path)
     }
 
@@ -883,15 +884,15 @@ object Importer
                 thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.experimental))
               }
 
-              for (dep <- decl.deps) {
-                val dep_name = thy_draft.content.get_thm(dep)
-                thy_draft.rdf_triple(Ontology.binary(item.name.global, Ontology.ULO.uses, dep_name.global))
+              val deps = decl.deps.map(dep => thy_draft.content.get_thm(dep).global)
+              for (dep <- deps) {
+                thy_draft.rdf_triple(Ontology.binary(item.name.global, Ontology.ULO.uses, dep))
               }
 
               val tp = thy_draft.content.import_prop(decl.prop)
               val prf =
                 if (proof_terms_enabled) thy_draft.content.import_proof(decl.proof)
-                else Bootstrap.Unknown.term
+                else Bootstrap.Unknown(deps)
               add_constant(item, tp, Some(prf))
 
               item
