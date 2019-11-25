@@ -246,6 +246,7 @@ object Importer
     {
       val path: GlobalName = GlobalName(theory, LocalName("unknown"))
       val term: Term = OMS(path)
+      def detect(t: Term): Boolean = t.head == Some(path)
     }
 
     object Type
@@ -731,10 +732,10 @@ object Importer
       {
         val context = Context(thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- Iterator(tp) ++ df.iterator if t != Bootstrap.Unknown.term) {
+          for (t <- Iterator(tp) ++ df.iterator if !Bootstrap.Unknown.detect(t)) {
             check_term(controller, context, t)
           }
-          if (df.isDefined && df.get != Bootstrap.Unknown.term) {
+          if (df.isDefined && !Bootstrap.Unknown.detect(df.get)) {
             check_term_type(controller, context, df.get, tp)
           }
         }
