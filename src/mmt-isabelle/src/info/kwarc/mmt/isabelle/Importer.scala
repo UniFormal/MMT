@@ -1120,7 +1120,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
             .real.update("headless_load_limit", options.real("mmt_load_limit"))
             .bool.update("export_standard_proofs", options.bool("mmt_proof_terms")),
-          aspects = isabelle.Dump.known_aspects,
+          aspects = isabelle.Dump.known_aspects, pure_base = true,
           progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
         context.build_logic(logic)

@@ -10,7 +10,7 @@ development versions repository -- see also file `README_REPOSITORY` section
 
 The following versions should fit together:
 
-  * Isabelle/6b03ce9b02c7 from https://isabelle.sketis.net/repos/isabelle
+  * Isabelle/ffccc1f346ae from https://isabelle.sketis.net/repos/isabelle
   * AFP/c47ca19eaae3 from https://isabelle.sketis.net/repos/afp-devel
   * MMT/24175cd68813 from https://github.com/UniFormal/MMT/commits/devel
   * MathHub/MMT/urtheories/26100f0b425d from
