@@ -203,6 +203,7 @@ object Importer
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     proof: Option[Proof_Text] = None,
+    messages: List[String] = Nil,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
@@ -751,6 +752,13 @@ object Importer
         }
       }
 
+      def add_text(text: String): Unit =
+      {
+        val string = StringFragment(isabelle.Symbol.decode(text.replace(' ', '\u00a0')))
+        val opaque = new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, string)
+        controller.add(opaque)
+      }
+
       // PIDE theory source
       if (!thy_export.node_source.is_empty) {
         val path = thy_archive.archive_source_path
@@ -783,12 +791,13 @@ object Importer
           Item(thy.path, kind.toString, name, entity_pos = pos)
         }
 
-        // source text
-        if (segment.header_relevant) {
-          val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
-          val opaque =
-            new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text))
-          controller.add(opaque)
+        // input text
+        if (segment.header_relevant) add_text(segment.header)
+
+        // output text
+        if (segment.messages.nonEmpty) {
+          add_text("Output:")
+          for (msg <- segment.messages) add_text(msg)
         }
 
         // document headings
@@ -1397,6 +1406,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def document_command(element: isabelle.Thy_Element.Element_Command): Boolean =
         isabelle.Document_Structure.is_document_command(syntax.keywords, element.head)
 
+      def diag_command(element: isabelle.Thy_Element.Element_Command): Boolean =
+        isabelle.Document_Structure.is_diag_command(syntax.keywords, element.head)
+
       val node_timing =
         isabelle.Document_Status.Overall_Timing.make(
           snapshot.state, snapshot.version, snapshot.node.commands)
@@ -1415,9 +1427,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val segments =
       {
+        val messages_enabled = options.bool("mmt_messages")
+
         val relevant_elements =
           node_elements.filter(element =>
               document_command(element) ||
+              messages_enabled && diag_command(element) ||
               element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
 
         val relevant_ids =
@@ -1460,6 +1475,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               case None => None
             }
 
+          val messages =
+            if (messages_enabled) {
+              isabelle.Rendering.output_messages(snapshot.command_results(element_range))
+                .map(isabelle.Protocol.message_text)
+            }
+            else Nil
+
           def defined(entity: isabelle.Export_Theory.Entity): Boolean =
           {
             def for_entity: String =
@@ -1500,6 +1522,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             meta_data = meta_data,
             heading = heading,
             proof = proof,
+            messages = messages,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
