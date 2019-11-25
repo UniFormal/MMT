@@ -247,7 +247,7 @@ object Importer
       val path: GlobalName = GlobalName(theory, LocalName("unknown"))
       def apply(deps: List[GlobalName] = Nil): Term =
         if (deps.isEmpty) OMS(path) else OMA(OMS(path), deps.map(OMS(_)))
-      def detect(t: Term): Boolean = t.head == Some(path)
+      def detect(t: Term): Boolean = t.head.contains(path)
     }
 
     object Type
