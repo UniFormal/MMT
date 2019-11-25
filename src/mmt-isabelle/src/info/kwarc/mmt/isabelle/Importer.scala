@@ -442,7 +442,7 @@ object Importer
   /* theory content and statistics */
 
   private def print_int(n: Int, len: Int = 8): String =
-    String.format(java.util.Locale.ROOT, "%" + len + "d", new Integer(n))
+    String.format(java.util.Locale.ROOT, "%" + len + "d", Integer.valueOf(n))
 
   object Triples_Stats
   {
