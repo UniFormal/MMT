@@ -119,6 +119,8 @@ object Apply extends LFSym("apply") {
 
 /** provides apply/unapply methods for application of a term to a list of arguments
   * the unapply method transparently handles associativity (currying) of application
+  *
+  * Does *not* handle empty argument lists!
   */
 object ApplySpine {
   def apply(f: Term, a: Term*) = OMA(Apply.term, f :: a.toList)

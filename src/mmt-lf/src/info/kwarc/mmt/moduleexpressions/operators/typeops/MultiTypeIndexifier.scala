@@ -1,9 +1,10 @@
-package info.kwarc.mmt.moduleexpressions.operators
+package info.kwarc.mmt.moduleexpressions.operators.typeops
 
 import info.kwarc.mmt.api.LocalName
-import info.kwarc.mmt.api.objects.{AnonymousTheory, Context, OMID, OML, Term, Traverser}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.UnaryConstantScala
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
+import info.kwarc.mmt.moduleexpressions.operators._
 
 import scala.collection.mutable
 

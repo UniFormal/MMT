@@ -23,8 +23,6 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
     controller.extman.addExtension(presenter)
   }
 
-
-
   /**
     * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
     * @param path A path to a theory, document etc.
@@ -44,16 +42,21 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
   override def run : Unit = {
     val diagops = DPath(URI("https://example.com/diagops"))
     val typeindexifier = diagops / "typeindexifier"
+    val typifier = diagops / "typifier"
 
     // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
     // hence, we apply some dirty waiting mechanism here.
+
+    /*
     waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
     // waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
     // waitThenPrint(typeindexifier ? "EndoGroup_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
     waitThenPrint(typeindexifier ? "MultiTypeIndexedTestTheory_pres")
-    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")
+    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")*/
+
+    waitThenPrint(typifier ? "TypifySFOLTheory_pres")
 
     sys.exit(0)
   }

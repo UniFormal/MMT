@@ -49,6 +49,9 @@ object PL extends TheoryScala {
 
 }
 
+/**
+  * The SFOL theory from the `MMT/examples` archive
+  */
 object SFOL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("SFOL")

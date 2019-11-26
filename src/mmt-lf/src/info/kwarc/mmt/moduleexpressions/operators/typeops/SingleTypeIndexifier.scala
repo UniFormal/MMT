@@ -1,12 +1,13 @@
-package info.kwarc.mmt.moduleexpressions.operators
+package info.kwarc.mmt.moduleexpressions.operators.typeops
 
-import info.kwarc.mmt.api.notations.{Delim, Finite, Mixfix, Precedence, SimpArg, TextNotation}
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, SimpleStep}
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
-import info.kwarc.mmt.moduleexpressions.operators.ComputeSingleTypeIndexed.renameUndefinedSortDeclaration
+import info.kwarc.mmt.moduleexpressions.operators._
+import info.kwarc.mmt.moduleexpressions.operators.typeops.ComputeSingleTypeIndexed.renameUndefinedSortDeclaration
 
 import scala.collection.mutable
 
@@ -85,6 +86,8 @@ object ComputeSingleTypeIndexed extends FunctorialDiagramOperatorComputationRule
 }
 
 private object SingleTypeIndexer {
+  final private val TYPE_INDIRECTION_VARIABLE_NAME = LocalName("U")
+
   def typeIndex(decl: OML, abstractedDeclsSoFar: List[LocalName]): OML = {
     val adder = new DependencyAndTypeOperatorAdder(abstractedDeclsSoFar)
 
@@ -102,14 +105,14 @@ private object SingleTypeIndexer {
   def dependentlyTypeTypeComponent(typeComponent: Term): Term = {
     // Transform every type `t` to `{u: tp} t`
     FunType(List(
-      (Some(LocalName("u")), OMID(TypedTerms.typeOfSorts))
+      (Some(TYPE_INDIRECTION_VARIABLE_NAME), OMID(TypedTerms.typeOfSorts))
     ), typeComponent)
   }
 
   def lambdaBindDefComponent(defComponent: Term): Term = {
     // Transform every definiens `d` to `[u: tp] d`
     FunTerm(List(
-      (LocalName("u"), OMID(TypedTerms.typeOfSorts))
+      (TYPE_INDIRECTION_VARIABLE_NAME, OMID(TypedTerms.typeOfSorts))
     ), defComponent)
   }
 
@@ -141,7 +144,7 @@ private object SingleTypeIndexer {
           OMID(TypedTerms.termsOfSort),
           ApplySpine(
             OML(renameUndefinedSortDeclaration(sort.name)), // this gives us `&a`
-            OMV(LocalName("u"))
+            OMV(TYPE_INDIRECTION_VARIABLE_NAME)
           )
         )
 
