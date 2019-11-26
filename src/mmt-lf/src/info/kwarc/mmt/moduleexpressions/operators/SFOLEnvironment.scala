@@ -3,13 +3,13 @@
   * revolving around SFOL.
   */
 
-package info.kwarc.mmt.moduleexpressions
+package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.objects.{OMID, OML, OMS, Term}
 import info.kwarc.mmt.api.uom.TheoryScala
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
-import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, FunType, TernaryLFConstantScala, TypedBinderScala, UnaryLFConstantScala}
+import info.kwarc.mmt.lf._
 
 import scala.collection.mutable
 
@@ -26,30 +26,38 @@ object TypedTerms extends TheoryScala {
 
 /** MMT declarations
   *
-  *  namespace http://cds.omdoc.org/examples
-  *  fixmeta ?LF
+  * namespace http://cds.omdoc.org/examples
+  * fixmeta ?LF
   *
-  *  theory PL =
-  *    prop : type
-  *    ded : prop -> type
+  * theory PL =
+  * prop : type
+  * ded : prop -> type
   *
-  *  theory SFOL =
-  *    sort : type
-  *    term : sort -> type
+  * theory SFOL =
+  * sort : type
+  * term : sort -> type
   */
 
 object PL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("PL")
   val prop: GlobalName = _path ? "prop"
+
   object ded extends UnaryLFConstantScala(_path, "ded")
+
   object implies extends BinaryLFConstantScala(_path, "impl")
+
 }
 
 object SFOL extends TheoryScala {
   val _base = DPath(URI("http://cds.omdoc.org/examples"))
   val _name = LocalName("SFOL")
-  val sort: GlobalName = _path ? "sort"
+
+  /**
+    * Not sure whether this constant actually exists or where this is used
+    */
+  @deprecated("MMT mmt-lf/moduleexpressions/operators", "v18") val sort: GlobalName = _path ? "sort"
+
   /*
   object forall{
       val _path = SFOL._path ? "forall"
@@ -64,8 +72,11 @@ object SFOL extends TheoryScala {
   }
   */
   object term extends UnaryLFConstantScala(_path, "term")
+
   object equal extends TernaryLFConstantScala(_path, "equal")
+
   object forall extends TypedBinderScala(_path, "forall", term)
+
   object exists extends TypedBinderScala(_path, "exists", term)
 
   private def checkConformingAndCollectSorts(args: List[Term]): Option[List[LocalName]] = {
@@ -122,4 +133,15 @@ object SFOL extends TheoryScala {
       case _ => None
     }
   }
+
+  /**
+    * e.g. `a: tp`, but not `b: tp | = a`
+    */
+  object UndefinedSortDeclaration {
+    def unapply(decl: OML): Boolean = decl match {
+      case OML(_, Some(OMID(TypedTerms.typeOfSorts)), None, _, _) => true
+      case _ => false
+    }
+  }
+
 }

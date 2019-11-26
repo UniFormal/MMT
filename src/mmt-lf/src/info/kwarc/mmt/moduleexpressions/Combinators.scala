@@ -13,6 +13,7 @@ import info.kwarc.mmt.lf._
 import info.kwarc.mmt.moduleexpressions.Combine.path
 import info.kwarc.mmt.moduleexpressions.Common.OMStoOML
 import info.kwarc.mmt.moduleexpressions.PushoutUtils.BranchInfo
+import info.kwarc.mmt.moduleexpressions.diagdefinition.DiagramDefinition
 
 import scala.collection.mutable.HashSet
 

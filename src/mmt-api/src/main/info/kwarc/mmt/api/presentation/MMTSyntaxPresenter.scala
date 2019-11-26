@@ -182,7 +182,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     })
     // TODO print type component
 
-    // A def component of a theory might be an anonymous theory, for example
+    // A def component of a theory might be an anonymous theory expression, for example
     // TODO In case we've got a def component, this presenter presents invalid syntax.
     doDefComponent(theory, rh)
     rh(" =")
@@ -191,6 +191,40 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       if (!d.isGenerated || presentGenerated) {
         present(d, indented(rh))
       }
+    }
+  }
+
+  private def doView(view: View, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
+    rh("view " + view.name + " : ")
+    doURI(view.from, rh)
+    rh(" -> ")
+    doURI(view.to, rh)
+
+    // A def component of a view might be an anonymous morphism expression, for example
+    // TODO In case we've got a def component, this presenter presents invalid syntax.
+    doDefComponent(view, rh)
+    rh(" =")
+    rh(" \n")
+
+    // View assignment are actually [[Constant]]s, but in their presented syntax they do not
+    // feature a type component. Hence, we need this function instead of just delegating
+    // to presentation of, say a theory's constant.
+    def presentViewAssignment(assignment: Constant): Unit = {
+      assignment.df match {
+        case Some(definiens) =>
+          indented(rh)(assignment.name.last.toString)
+          rh(" = ")
+          apply(definiens, Some(assignment.path $ DefComponent))(rh)
+          rh(DECLARATION_DELIMITER + "\n")
+        case _ => ??? // TODO Can view constants have no definiens? If not, rewrite to throw exception here
+      }
+    }
+
+    val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
+    declarations.foreach {
+      case c: Constant => presentViewAssignment(c)
+      // In all other cases, present as usual, this might present invalid syntax, though
+      case d => present(d, indented(rh))
     }
   }
 
@@ -253,27 +287,6 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
   }
 
-  private def doView(view: View, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
-    rh("view " + view.name + " : ")
-    doURI(view.from, rh)
-    rh(" -> ")
-    doURI(view.to, rh)
-    rh(" =\n")
-
-    // TODO doDefComponent does nothing for views?
-    doDefComponent(view, rh)
-    view.getPrimitiveDeclarations.foreach {
-      case c: Constant =>
-        indented(rh)(c.name.last.toString)
-        c.df foreach { t =>
-          rh(" = ")
-          apply(t, Some(c.path $ DefComponent))(rh)
-          rh(DECLARATION_DELIMITER + "\n")
-        }
-      case d => present(d, indented(rh))
-    }
-  }
-
   private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
     val decs = s.getPrimitiveDeclarations
     if (decs.isEmpty) {
@@ -297,6 +310,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh("structure " + s.name + " : " + s.from.toMPath.^^.last + "?" + s.from.toMPath.last)
       //this.present(s.from, Some(s.path $ TypeComponent))
       doDefComponent(s, rh)
+
+      // TODO Why not reuse "presentViewAssignment" from [[doView]]?
       decs.foreach { d => present(d, indented(rh)) }
     }
   }
