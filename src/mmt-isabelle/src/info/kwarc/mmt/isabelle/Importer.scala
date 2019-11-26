@@ -4,7 +4,7 @@ import scala.collection.SortedMap
 import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
-import frontend.Controller
+import frontend.{Controller, ReportHandler}
 import archives.{Archive, NonTraversingImporter}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import notations._
@@ -29,6 +29,30 @@ object Importer
     init_archive: Boolean = false): (Controller, List[Archive]) =
   {
     val controller = new Controller
+
+    controller.report.addHandler(
+      new ReportHandler("Isabelle/MMT") {
+        override def apply(ind: Int, caller: => String, group: String, lines: List[String]): Unit =
+          for (line <- lines) progress.echo(" " * ind + group + ": " + line)
+      })
+
+    for {
+      config <-
+        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
+          MMTSystem.userConfigFile)
+      if config.exists
+    } controller.loadConfigFile(config, false)
+
+    def add_archive(root: File)
+    {
+      progress.echo("Adding " + root)
+      controller.addArchive(root)
+    }
+
+    isabelle.Isabelle_System.getenv("ISABELLE_MMT_URTHEORIES") match {
+      case "" => progress.echo_warning("Missing settings for ISABELLE_MMT_URTHEORIES")
+      case dir => add_archive(isabelle.Path.explode(dir).absolute_file)
+    }
 
     val init_archive_dir =
       (if (init_archive) options.proper_string("mmt_archive_dir") else None).
@@ -55,17 +79,7 @@ object Importer
         case archives => archives
       }
 
-    for (archive <- archives) {
-      progress.echo("Adding " + archive)
-      controller.addArchive(archive.root)
-    }
-
-    for {
-      config <-
-        List(File(isabelle.Path.explode("$ISABELLE_MMT_ROOT/deploy/mmtrc").file),
-          MMTSystem.userConfigFile)
-      if config.exists
-    } controller.loadConfigFile(config, false)
+    for (archive <- archives) add_archive(archive.root)
 
     (controller, archives)
   }
@@ -189,6 +203,7 @@ object Importer
     meta_data: isabelle.Properties.T = Nil,
     heading: Option[Int] = None,
     proof: Option[Proof_Text] = None,
+    messages: List[String] = Nil,
     classes: List[isabelle.Export_Theory.Class] = Nil,
     types: List[isabelle.Export_Theory.Type] = Nil,
     consts: List[isabelle.Export_Theory.Const] = Nil,
@@ -231,7 +246,9 @@ object Importer
     object Unknown
     {
       val path: GlobalName = GlobalName(theory, LocalName("unknown"))
-      val term: Term = OMS(path)
+      def apply(deps: List[GlobalName] = Nil): Term =
+        if (deps.isEmpty) OMS(path) else OMA(OMS(path), deps.map(OMS(_)))
+      def detect(t: Term): Boolean = t.head.contains(path)
     }
 
     object Type
@@ -425,7 +442,7 @@ object Importer
   /* theory content and statistics */
 
   private def print_int(n: Int, len: Int = 8): String =
-    String.format(java.util.Locale.ROOT, "%" + len + "d", new Integer(n))
+    String.format(java.util.Locale.ROOT, "%" + len + "d", Integer.valueOf(n))
 
   object Triples_Stats
   {
@@ -717,10 +734,10 @@ object Importer
       {
         val context = Context(thy.path)
         if (options.bool("mmt_type_checking")) {
-          for (t <- Iterator(tp) ++ df.iterator if t != Bootstrap.Unknown.term) {
+          for (t <- Iterator(tp) ++ df.iterator if !Bootstrap.Unknown.detect(t)) {
             check_term(controller, context, t)
           }
-          if (df.isDefined && df.get != Bootstrap.Unknown.term) {
+          if (df.isDefined && !Bootstrap.Unknown.detect(df.get)) {
             check_term_type(controller, context, df.get, tp)
           }
         }
@@ -733,6 +750,13 @@ object Importer
         } {
           thy_draft.rdf_triple(Ontology.binary(c.path, Ontology.ULO.uses, dep))
         }
+      }
+
+      def add_text(text: String): Unit =
+      {
+        val string = StringFragment(isabelle.Symbol.decode(text.replace(' ', '\u00a0')))
+        val opaque = new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, string)
+        controller.add(opaque)
       }
 
       // PIDE theory source
@@ -767,12 +791,13 @@ object Importer
           Item(thy.path, kind.toString, name, entity_pos = pos)
         }
 
-        // source text
-        if (segment.header_relevant) {
-          val text = isabelle.Symbol.decode(segment.header.replace(' ', '\u00a0'))
-          val opaque =
-            new OpaqueText(thy.asDocument.path, OpaqueText.defaultFormat, StringFragment(text))
-          controller.add(opaque)
+        // input text
+        if (segment.header_relevant) add_text(segment.header)
+
+        // output text
+        if (segment.messages.nonEmpty) {
+          add_text("Output:")
+          for (msg <- segment.messages) add_text(msg)
         }
 
         // document headings
@@ -868,15 +893,15 @@ object Importer
                 thy_draft.rdf_triple(Ontology.unary(item.name.global, Ontology.ULO.experimental))
               }
 
-              for (dep <- decl.deps) {
-                val dep_name = thy_draft.content.get_thm(dep)
-                thy_draft.rdf_triple(Ontology.binary(item.name.global, Ontology.ULO.uses, dep_name.global))
+              val deps = decl.deps.map(dep => thy_draft.content.get_thm(dep).global)
+              for (dep <- deps) {
+                thy_draft.rdf_triple(Ontology.binary(item.name.global, Ontology.ULO.uses, dep))
               }
 
               val tp = thy_draft.content.import_prop(decl.prop)
               val prf =
                 if (proof_terms_enabled) thy_draft.content.import_proof(decl.proof)
-                else Bootstrap.Unknown.term
+                else Bootstrap.Unknown(deps)
               add_constant(item, tp, Some(prf))
 
               item
@@ -1070,7 +1095,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         "g:" -> (arg => session_groups = session_groups ::: List(arg)),
         "o:" -> (arg => { options += arg }),
         "v" -> (_ => verbose = true),
-        "x:" -> (arg => exclude_sessions = exclude_sessions ::: List(arg)))
+        "x:" -> (arg =>
+          if (arg == isabelle.Thy_Header.PURE) isabelle.error("Cannot exclude " + isabelle.quote(arg))
+          else exclude_sessions = exclude_sessions ::: List(arg)))
 
         val sessions = getopts(args)
 
@@ -1082,7 +1109,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             exclude_session_groups = exclude_session_groups,
             exclude_sessions = exclude_sessions,
             session_groups = session_groups,
-            sessions = sessions)
+            sessions = isabelle.Thy_Header.PURE :: sessions)
 
         val progress =
           new isabelle.Console_Progress(verbose = verbose) {
@@ -1104,7 +1131,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             .real.update("headless_commit_cleanup_delay", options.real("mmt_commit_cleanup_delay"))
             .real.update("headless_load_limit", options.real("mmt_load_limit"))
             .bool.update("export_standard_proofs", options.bool("mmt_proof_terms")),
-          aspects = isabelle.Dump.known_aspects,
+          aspects = isabelle.Dump.known_aspects, pure_base = true,
           progress = progress, dirs = dirs, select_dirs = select_dirs, selection = selection)
 
         context.build_logic(logic)
@@ -1234,34 +1261,29 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     def import_session(import_theory: Theory_Export => Unit)
     {
-      if (session.used_theories.isEmpty) {
-        progress.echo_warning("Nothing to import")
+      if (session.context.process_theory(pure_name.theory)) {
+        import_theory(pure_theory_export)
       }
-      else {
-        if (session.context.process_theory(pure_name.theory)) {
-          import_theory(pure_theory_export)
-        }
+      if (session.used_theories.nonEmpty) {
         session.process(
           unicode_symbols = true,
-          process_theory = (args: isabelle.Dump.Args) =>
-            {
-              val snapshot = args.snapshot
-              val rendering =
-                new isabelle.Rendering(snapshot, options, args.session) {
-                  override def model: isabelle.Document.Model = ???
-                }
-              import_theory(read_theory_export(rendering))
-            })
+          process_theory = (args: isabelle.Dump.Args) => {
+            val snapshot = args.snapshot
+            val rendering =
+              new isabelle.Rendering(snapshot, options, args.session) {
+                override def model: isabelle.Document.Model = ???
+              }
+            import_theory(read_theory_export(rendering))
+          })
       }
     }
 
 
     /* Pure theory */
 
-    def PURE: String = isabelle.Thy_Header.PURE
-    def pure_name: isabelle.Document.Node.Name = import_name(PURE)
+    def pure_name: isabelle.Document.Node.Name = import_name(isabelle.Thy_Header.PURE)
 
-    lazy val pure_path: MPath = make_theory(PURE).path
+    lazy val pure_path: MPath = make_theory(isabelle.Thy_Header.PURE).path
 
     lazy val pure_theory: isabelle.Export_Theory.Theory =
       isabelle.Export_Theory.read_pure_theory(state.store, cache = Some(state.cache))
@@ -1384,6 +1406,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def document_command(element: isabelle.Thy_Element.Element_Command): Boolean =
         isabelle.Document_Structure.is_document_command(syntax.keywords, element.head)
 
+      def diag_command(element: isabelle.Thy_Element.Element_Command): Boolean =
+        isabelle.Document_Structure.is_diag_command(syntax.keywords, element.head)
+
       val node_timing =
         isabelle.Document_Status.Overall_Timing.make(
           snapshot.state, snapshot.version, snapshot.node.commands)
@@ -1402,9 +1427,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
       val segments =
       {
+        val messages_enabled = options.bool("mmt_messages")
+
         val relevant_elements =
           node_elements.filter(element =>
               document_command(element) ||
+              messages_enabled && diag_command(element) ||
               element.head.span.is_kind(syntax.keywords, isabelle.Keyword.theory, false))
 
         val relevant_ids =
@@ -1447,6 +1475,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               case None => None
             }
 
+          val messages =
+            if (messages_enabled) {
+              isabelle.Rendering.output_messages(snapshot.command_results(element_range))
+                .map(isabelle.Protocol.message_text)
+            }
+            else Nil
+
           def defined(entity: isabelle.Export_Theory.Entity): Boolean =
           {
             def for_entity: String =
@@ -1487,6 +1522,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             meta_data = meta_data,
             heading = heading,
             proof = proof,
+            messages = messages,
             classes = for (decl <- theory.classes if defined(decl.entity)) yield decl,
             types = for (decl <- theory.types if defined(decl.entity)) yield decl,
             consts = for (decl <- theory.consts if defined(decl.entity)) yield decl,
