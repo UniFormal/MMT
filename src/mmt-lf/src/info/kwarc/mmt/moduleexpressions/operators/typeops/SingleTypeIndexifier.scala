@@ -20,11 +20,9 @@ private object TypeOperator extends TheoryScala {
 
 object SingleTypeIndexifier extends UnaryConstantScala(Combinators._path, "single_typeindexifier")
 
-final class ComputeSingleTypeIndexedHelperContext(val abstractedDeclsSoFar: mutable.ListBuffer[LocalName] = mutable.ListBuffer.empty) extends LinearUnaryTheoryOperatorContext
+final class ComputeSingleTypeIndexedHelperContext(val abstractedDeclsSoFar: mutable.ListBuffer[LocalName] = mutable.ListBuffer.empty) extends LinearTheoryOperatorContext
 
-object ComputeSingleTypeIndexed extends FunctorialDiagramOperatorComputationRule[ComputeSingleTypeIndexedHelperContext](SingleTypeIndexifier) {
-  override val unaryConstant: UnaryConstantScala = SingleTypeIndexifier
-
+object ComputeSingleTypeIndexed extends FunctorialLinearDiagramOperator[ComputeSingleTypeIndexedHelperContext](SingleTypeIndexifier) {
   override protected def initialTheoryHelperContext: ComputeSingleTypeIndexedHelperContext
   = new ComputeSingleTypeIndexedHelperContext()
 

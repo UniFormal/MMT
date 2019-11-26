@@ -144,7 +144,10 @@ object Common {
         val (translatedConstant, wasDuplicate) = omsTranslator(c)
         if (wasDuplicate)
           solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
-        List(translatedConstant)
+
+        // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
+        //      We just overgenerously drop all complex steps for brevity here, might be wrong though
+        List(translatedConstant.copy(name = translatedConstant.name.dropComplex))
       case _ => Nil
     }
 

@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.{DPath, Path}
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
+object DiagramOperatorTest extends MagicTest("debug" /*, "DiagramDefinition"*/) {
   private var presenter: MMTSyntaxPresenter = _
 
   override def doFirst: Unit = {
@@ -26,6 +26,7 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
 
   /**
     * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
+    *
     * @param path A path to a theory, document etc.
     */
   private def waitUntilAvailable(path: Path): Unit = {
@@ -40,22 +41,32 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
     print("\n")
   }
 
-  override def run : Unit = {
-    val diagops = DPath(URI("https://example.com/diagops"))
-    val typeindexifier = diagops / "typeindexifier"
-    val typifier = diagops / "typifier"
+  private val diagops = DPath(URI("https://example.com/diagops"))
+  private val typeindexifier = diagops / "typeindexifier"
+  private val typifier = diagops / "typifier"
 
-    // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
-    // hence, we apply some dirty waiting mechanism here.
+  private def space(): Unit = {
+    print("\n".repeat(5))
+  }
 
-    /*
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
+  // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
+  // hence, we apply some dirty waiting mechanism here.
+  override def run: Unit = {
+    // Demo MultiTypeIndexifier and extension to morphisms
     waitThenPrint(typeindexifier ? "EndoMagma_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    // waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
-    // waitThenPrint(typeindexifier ? "EndoGroup_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
+    waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
     waitThenPrint(typeindexifier ? "MultiTypeIndexedTestTheory_pres")
-    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")*/
+
+    space()
+
+    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
+
+    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
+    waitThenPrint(typeindexifier ? "EndoMagmaSingle_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
+    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")
+
+    space()
 
     waitThenPrint(typifier ? "TypifySFOLTheory_pres")
 

@@ -12,7 +12,7 @@ import info.kwarc.mmt.moduleexpressions.operators._
 
 object FOLTypifier extends UnaryConstantScala(Combinators._path, "fol_typifier")
 
-final class ComputeFOLTypifiedHelperContext() extends LinearUnaryTheoryOperatorContext
+final class ComputeFOLTypifiedHelperContext() extends LinearTheoryOperatorContext
 
 /**
   * Typifier for LATIN2 FOL to LATIN2 SFOL.
@@ -20,9 +20,7 @@ final class ComputeFOLTypifiedHelperContext() extends LinearUnaryTheoryOperatorC
   * @example The diagram operator operates decl-by-decl and e.g.
   *          turns `forall : (term ⟶ prop) ⟶ prop❘# ∀ 1❙` into `forall : {A} (tm A ⟶ prop) ⟶ prop❘# ∀ 2❙`.
   */
-object ComputeFOLTypified extends FunctorialDiagramOperatorComputationRule[ComputeFOLTypifiedHelperContext](FOLTypifier) {
-  override val unaryConstant: UnaryConstantScala = FOLTypifier
-
+object ComputeFOLTypified extends FunctorialLinearDiagramOperator[ComputeFOLTypifiedHelperContext](FOLTypifier) {
   override protected def initialTheoryHelperContext: ComputeFOLTypifiedHelperContext
   = new ComputeFOLTypifiedHelperContext()
 

@@ -13,12 +13,10 @@ object MultiTypeIndexifier extends UnaryConstantScala(Combinators._path, "multi_
 // Store which typeindexed sorts the declarations in our inputTheory (transitively) depend on
 // E.g. if we have `op: tm a`, then we would have `op |-> Set(a)`
 // E.g. if we have additionally `op2: tm b -> tm a ❘ = op`, then we would have `op |-> Set(a, b)`
-final class ComputeMultiTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) extends LinearUnaryTheoryOperatorContext {
+final class ComputeMultiTypeIndexedHelperContext(val sortDependencies: mutable.HashMap[LocalName, List[LocalName]], val sortDependenciesSeeker: SortDependenciesSeeker) extends LinearTheoryOperatorContext {
 }
 
-object ComputeMultiTypeIndexed extends FunctorialDiagramOperatorComputationRule[ComputeMultiTypeIndexedHelperContext](MultiTypeIndexifier) {
-  override val unaryConstant: UnaryConstantScala = MultiTypeIndexifier
-
+object ComputeMultiTypeIndexed extends FunctorialLinearDiagramOperator[ComputeMultiTypeIndexedHelperContext](MultiTypeIndexifier) {
   override protected def initialTheoryHelperContext: ComputeMultiTypeIndexedHelperContext
   = new ComputeMultiTypeIndexedHelperContext(mutable.HashMap(), new SortDependenciesSeeker)
 

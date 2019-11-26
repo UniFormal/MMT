@@ -3,17 +3,17 @@
   * over many common things.
   *
   * E.g. if your envisioned theory operator only operates declaration-by-declaration, subclass from
-  * [[info.kwarc.mmt.moduleexpressions.operators.SublinearUnaryTheoryOperator]]. If it outputs exactly one declaration
-  * for every declaration, subclass from [[info.kwarc.mmt.moduleexpressions.operators.LinearUnaryTheoryOperator]].
+  * [[info.kwarc.mmt.moduleexpressions.operators.SublinearTheoryOperator]]. If it outputs exactly one declaration
+  * for every declaration, subclass from [[info.kwarc.mmt.moduleexpressions.operators.LinearTheoryOperator]].
   * And if that extends in a natural way to morphisms, you can use the [[info.kwarc.mmt.moduleexpressions.operators.MorphismOperatorFromLinearTheoryOperatorMixin]].
   */
 
 package info.kwarc.mmt.moduleexpressions.operators
 
-import info.kwarc.mmt.api.{ComplexStep, LocalName}
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api.{ComplexStep, LocalName}
 
 import scala.collection.mutable
 
@@ -25,8 +25,22 @@ case class NotApplicable[T]() extends OperatorResult[T]
 
 // Diagram operators
 // ==========================
-trait DiagramOperator {
+abstract class DiagramOperator(val unaryConstant: UnaryConstantScala) extends ComputationRule(unaryConstant.path) {
   def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram]
+
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
+    tm match {
+      case unaryConstant(argumentTerm) => Common.asAnonymousDiagram(solver, argumentTerm) match {
+        case Some(inputDiagram) => transformDiagram(inputDiagram) match {
+          case TransformedResult(outputDiagram) =>
+            Simplify(outputDiagram.toTerm)
+          case _ => Recurse
+        }
+        case _ => RecurseOnly(List(1))
+      }
+      case _ => Recurse
+    }
+  }
 }
 
 // Theory operators
@@ -49,7 +63,7 @@ class UnaryTheoryOperatorContext {
   }
 }
 
-trait SublinearUnaryTheoryOperator[HelperContextType <: UnaryTheoryOperatorContext] extends UnaryTheoryOperator {
+trait SublinearTheoryOperator[HelperContextType <: UnaryTheoryOperatorContext] extends UnaryTheoryOperator {
   protected def initialTheoryHelperContext: HelperContextType
 
   override final def transformTheory(thy: AnonymousTheory): OperatorResult[AnonymousTheory] = {
@@ -95,7 +109,7 @@ trait SublinearUnaryTheoryOperator[HelperContextType <: UnaryTheoryOperatorConte
   def transformDeclaration(decl: OML, ctx: HelperContextType): OperatorResult[(List[OML], HelperContextType)]
 }
 
-class LinearUnaryTheoryOperatorContext extends UnaryTheoryOperatorContext {
+class LinearTheoryOperatorContext extends UnaryTheoryOperatorContext {
   // TODO Florian said: Put this into more general context class above as Map[LN, List[LN]]
   protected var mapping: Map[LocalName, LocalName] = Map.empty
 
@@ -112,7 +126,7 @@ class LinearUnaryTheoryOperatorContext extends UnaryTheoryOperatorContext {
   }
 }
 
-trait LinearUnaryTheoryOperator[HelperContextType <: LinearUnaryTheoryOperatorContext] extends SublinearUnaryTheoryOperator[HelperContextType] {
+trait LinearTheoryOperator[HelperContextType <: LinearTheoryOperatorContext] extends SublinearTheoryOperator[HelperContextType] {
 
   override final def transformDeclaration(decl: OML, ctx: HelperContextType): OperatorResult[(List[OML], HelperContextType)] = {
     transformSingleDeclaration(decl, ctx) match {
@@ -138,14 +152,15 @@ trait UnaryMorphismOperator[HelperContextType <: UnaryTheoryOperatorContext] {
   def transformMorphism(
                          morphism: AnonymousMorphism,
                          transformedDomain: AnonymousTheory,
+                         domainContext: HelperContextType,
                          transformedCodomain: AnonymousTheory,
                          codomainContext: HelperContextType
                        ): OperatorResult[AnonymousMorphism]
 }
 
-trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearUnaryTheoryOperatorContext] extends UnaryMorphismOperator[HelperContextType] with LinearUnaryTheoryOperator[HelperContextType] {
+trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearTheoryOperatorContext] extends UnaryMorphismOperator[HelperContextType] with LinearTheoryOperator[HelperContextType] {
 
-  override def transformMorphism(morphism: AnonymousMorphism, transformedDomain: AnonymousTheory, transformedCodomain: AnonymousTheory, codomainContext: HelperContextType): OperatorResult[AnonymousMorphism] = {
+  override def transformMorphism(morphism: AnonymousMorphism, transformedDomain: AnonymousTheory, domainContext: HelperContextType, transformedCodomain: AnonymousTheory, codomainContext: HelperContextType): OperatorResult[AnonymousMorphism] = {
     if (!applicableOnMorphism(morphism)) {
       return NotApplicable()
     }
@@ -158,7 +173,12 @@ trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearU
     val transformedAssignments = mutable.ListBuffer[OML]()
 
     for (currentAssignment <- assignments) {
-      val newRHSOfAssignment: Option[Term] = currentAssignment.df.flatMap {
+      // It might well be the case that the [[LinearTheoryOperator]] just skipped
+      // translating a declaration and hence we must skip it below as well
+      val newLHSOfAssignment: Option[LocalName] = codomainContext.getTranslationMapping.get(currentAssignment.name)
+
+      // Make lazy such that it only gets evaluated if we have a new LHS as well below
+      lazy val newRHSOfAssignment: Option[Term] = currentAssignment.df.flatMap {
         // Old RHS is just a constant declaration of the codomain theory
         case codomainDeclaration: OML =>
           codomainContext.getTranslationMapping.get(codomainDeclaration.name).map(OML(_))
@@ -171,17 +191,17 @@ trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearU
         }
       }
 
-      newRHSOfAssignment match {
-        case Some(newRHS) =>
+      (newLHSOfAssignment, newRHSOfAssignment) match {
+        case (Some(newLHS), Some(newRHS)) =>
           transformedAssignments += currentAssignment.copy(
+            name = newLHS,
             df = Some(newRHS),
             tp = None // Reset type because type may have changed due to application of unary theory operator
           )
 
-        case _ => // Skip assignment if we couldn't translate definiens and/or definiens was skipped as well
-        // E.g. this is the case for [[ComputeTypeIndexified]]
+        case _ => // Skip assignment if we couldn't translate LHS (i.e. theory operator skipped it previously in
+        // domain theory) or definiens
       }
-
     }
 
     TransformedResult(AnonymousMorphism(transformedAssignments.toList))
@@ -190,7 +210,7 @@ trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearU
   def applicableOnMorphism(morphism: AnonymousMorphism): Boolean = true
 }
 
-trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheoryOperatorContext] extends DiagramOperator with MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType] {
+abstract class FunctorialLinearDiagramOperator[HelperContextType <: LinearTheoryOperatorContext](unaryConstant: UnaryConstantScala) extends DiagramOperator(unaryConstant) with MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType] {
 
   override def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram] = {
     def permuteLabel(label: LocalName): LocalName = label match {
@@ -198,6 +218,7 @@ trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheor
       case LocalName(List(ComplexStep(mPath))) => LocalName(mPath.toString)
       case _ => label
     }
+
     assert(!diag.nodes.exists(_.label == LocalName("pres")))
 
     val (newNodes, theoryContexts) = diag.nodes.map(node => transformTheoryAndGetContext(node.theory) match {
@@ -209,10 +230,14 @@ trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheor
     }
 
     val newArrows = diag.arrows.map(arrow => {
-      val transformedDomain   = newNodes.find(_.label == permuteLabel(arrow.from)).get.theory
+      val transformedDomain = newNodes.find(_.label == permuteLabel(arrow.from)).get.theory
       val transformedCodomain = newNodes.find(_.label == permuteLabel(arrow.to)).get.theory
 
-      transformMorphism(arrow.morphism, transformedDomain, transformedCodomain, theoryContexts(arrow.to)) match {
+      transformMorphism(
+        arrow.morphism,
+        transformedDomain, theoryContexts(arrow.from),
+        transformedCodomain, theoryContexts(arrow.to)
+      ) match {
         case TransformedResult(newMorphism) => arrow.copy(
           label = permuteLabel(arrow.label),
           morphism = newMorphism,
@@ -225,30 +250,4 @@ trait FunctorialLinearDiagramOperatorMixin[HelperContextType <: LinearUnaryTheor
 
     TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(permuteLabel)))
   }
-}
-// TODO Florian said: maybe put it direectly into DiagramOperator trait?
-//       Make DiagramOperator extend ComputationRule
-
-//
-trait UnaryDiagramOperatorComputationRule extends ComputationRule with DiagramOperator {
-
-  val unaryConstant: UnaryConstantScala
-
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    tm match {
-      case unaryConstant(argumentTerm) => Common.asAnonymousDiagram(solver, argumentTerm) match {
-        case Some(inputDiagram) => transformDiagram(inputDiagram) match {
-          case TransformedResult(outputDiagram) =>
-            Simplify(outputDiagram.toTerm)
-          case _ => Recurse
-        }
-        case _ => RecurseOnly(List(1))
-      }
-      case _ => Recurse
-    }
-  }
-}
-
-abstract class FunctorialDiagramOperatorComputationRule[HelperContext <: LinearUnaryTheoryOperatorContext](unaryConstant: UnaryConstantScala)
-  extends ComputationRule(unaryConstant.path) with UnaryDiagramOperatorComputationRule with FunctorialLinearDiagramOperatorMixin[HelperContext] {
 }
