@@ -4,7 +4,10 @@
 
 package info.kwarc.mmt.moduleexpressions.operators.typeops
 
+import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.objects.{AnonymousTheory, Context, OML, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.uom.UnaryConstantScala
+import info.kwarc.mmt.lf.{FunTerm, FunType}
 import info.kwarc.mmt.moduleexpressions.operators._
 
 object FOLTypifier extends UnaryConstantScala(Combinators._path, "fol_typifier")

@@ -13,6 +13,7 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
 
   override def doFirst: Unit = {
     // Only uncomment if rebuild is really necessary
+    // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
 
     // Clean first preventing some spurious caching errors

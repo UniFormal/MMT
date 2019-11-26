@@ -86,7 +86,7 @@ object ComputeSingleTypeIndexed extends FunctorialDiagramOperatorComputationRule
 }
 
 private object SingleTypeIndexer {
-  final private val TYPE_INDIRECTION_VARIABLE_NAME = LocalName("U")
+  final private val TYPE_INDIRECTION_VARIABLE_NAME = LocalName("u")
 
   def typeIndex(decl: OML, abstractedDeclsSoFar: List[LocalName]): OML = {
     val adder = new DependencyAndTypeOperatorAdder(abstractedDeclsSoFar)
@@ -136,7 +136,7 @@ private object SingleTypeIndexer {
     def traverse(t: Term)(implicit con: Context, state: Unit): Term = t match {
       // Transform `b: tp ... b` into `... b u`
       case ApplySpine(referencedDecl@OML(name, _, _, _, _), args) if abstractedDeclsSoFar.contains(name) =>
-        ApplySpine(referencedDecl, OMV(LocalName("u")) :: args: _*)
+        ApplySpine(referencedDecl, OMV(TYPE_INDIRECTION_VARIABLE_NAME) :: args: _*)
 
       // Transform `tm a` into `tm (&a u)`
       case ApplySpine(OMID(TypedTerms.termsOfSort), List(sort: OML)) if abstractedDeclsSoFar.contains(sort.name) =>
