@@ -35,8 +35,6 @@ object ComputeMultiTypeIndexed extends FunctorialDiagramOperatorComputationRule[
       )
       val newDecl = MultiTypeIndexer.typeIndex(decl, helperContext.sortDependencies)
 
-      // TODO: Adjust indices in notation container
-
       TransformedResult((newDecl, helperContext))
 
     // vvv Remainder to potentially account for this in the future
@@ -46,16 +44,34 @@ object ComputeMultiTypeIndexed extends FunctorialDiagramOperatorComputationRule[
 }
 
 private object MultiTypeIndexer {
+
+  /**
+    * (Multi-)typeindex declaration
+    *
+    * @param decl The declaration to typeindex
+    * @param allDependencies The (irreflexive and transitively-closed) dependencies of declarations to sorts.
+    *                        Every value in this map shall be a duplicate-free (!) sequence.
+    *                        NB: We use a sequence to force a consistent order of dependencies, which is important
+    *                            because we will convert dependencies to depently type parameters, which naturally
+    *                            have a position, i.e. order. [[SortDependenciesSeeker.getDependenciesForDecl()]]
+    *                            takes care of acquiring a duplicate-free list of them. The caller should use this
+    *                            method to produce the `allDependencies` argument passed to this function.
+    * @return The typeindexed version of the input declaration `decl`.
+    */
   def typeIndex(decl: OML, allDependencies: collection.Map[LocalName, collection.Seq[LocalName]]): OML = {
     assert(allDependencies.contains(decl.name))
 
     val adder = new DependenciesAndTypeOperatorAdder
 
     val tmpDecl = adder.traverse(decl)(Context.empty, allDependencies).asInstanceOf[OML] // return value is indeed an OML by recursion
+    val ownDependenciesToAdd = allDependencies(decl.name)
 
     tmpDecl.copy(
-      tp = tmpDecl.tp.map(dependentlyTypeTypeComponent(_, allDependencies(decl.name))),
-      df = tmpDecl.df.map(lambdaBindDefComponent(_, allDependencies(decl.name)))
+      tp = tmpDecl.tp.map(dependentlyTypeTypeComponent(_, ownDependenciesToAdd)),
+      df = tmpDecl.df.map(lambdaBindDefComponent(_, ownDependenciesToAdd)),
+
+      // Adjust notation for dependent types we added
+      nt = tmpDecl.nt.map(notation => notation.copy(fixity = notation.fixity.addInitialImplicits(ownDependenciesToAdd.size)))
     )
   }
 

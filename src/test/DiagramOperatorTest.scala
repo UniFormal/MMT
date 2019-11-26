@@ -49,11 +49,11 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
     // hence, we apply some dirty waiting mechanism here.
     waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_pres")
-    waitThenPrint(typeindexifier ? "TypeIndexedTestTheory_pres")
     waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
-    waitThenPrint(typeindexifier ? "EndoGroup_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
-
+    // waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
+    // waitThenPrint(typeindexifier ? "EndoGroup_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
+    waitThenPrint(typeindexifier ? "MultiTypeIndexedTestTheory_pres")
+    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")
 
     sys.exit(0)
   }
