@@ -24,6 +24,9 @@ option mmt_type_checking : bool = false
 option mmt_proof_terms : bool = false
   -- "include full proof terms (not scalable)"
 
+option mmt_messages : bool = false
+  -- "include prover messages (warnings, errors, etc.)"
+
 
 section "Meta info for default archive"
 

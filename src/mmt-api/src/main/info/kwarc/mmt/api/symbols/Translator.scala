@@ -100,10 +100,19 @@ object OMLReplacer {
   def apply(replacements: Substitution) = new OMLReplacer(r => replacements(r))
 }
 
-/** fully applies a morphism that is given as a Scala function */
+/**
+  * A traverser to replace references to [[GlobalName]]s by a custom term given
+  * by the abstract method [[OMSReplacer.replace]].
+  **/
 abstract class OMSReplacer extends StatelessTraverser {
+  /**
+    * The replacement function called to replace references to [[GlobalName]]s by the returned
+    * term. If the return value is None, no replacement is preformed in that specific instance.
+    *
+    * @param p The [[GlobalName]] to be replaced.
+    */
   def replace(p: GlobalName): Option[Term]
-  def traverse(t: Term)(implicit con : Context, state : State) = t match {
+  def traverse(t: Term)(implicit con : Context, state : State): Term = t match {
     case OMS(p) =>
       replace(p) match {
         case None => t
@@ -114,9 +123,13 @@ abstract class OMSReplacer extends StatelessTraverser {
 }
 
 object OMSReplacer {
-  def apply(r: GlobalName => Option[Term]) = new OMSReplacer {
-    def replace(p: GlobalName) = r(p)
-  }
+  /**
+    * Gives an [[OMSReplacer]] precisely given by the specified replacer function `r`
+    * @param r The replacement function called to replace references to [[GlobalName]]s by the returned
+    *          term. If the return value is None, no replacement is preformed in that specific instance.
+    * @return
+    */
+  def apply(r: GlobalName => Option[Term]): OMSReplacer = (p: GlobalName) => r(p)
 }
 
 /** a translator that renames local names of a module */

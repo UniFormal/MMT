@@ -14,6 +14,11 @@ object LFConstantScala {
 
 class NullaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
   def filter(args: List[Term]) = args.filterNot {a => a == term}
+  def apply() = OMS(path)
+  def unapply(t: Term): Boolean = t match {
+    case OMS(this.path) => true
+    case _ => false
+  }
 }
 
 class UnaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
