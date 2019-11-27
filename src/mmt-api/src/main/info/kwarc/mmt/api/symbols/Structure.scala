@@ -134,16 +134,20 @@ object Include {
 }
 
 /** auxiliary class that collects information about a structure that acts like an include
- *  @param home the module in which this include is declared (theory, view, etc.)
- *  @param from the domain of the included theory
+ *  @param home the module in which this include is declared (theory T, view V, etc.)
+ *  @param from the domain D of the included theory (into T, or into domain of V)
  *  @param args instantiations of the parameters of from (if any)
- *  @param df definiens (i.e., the included morphism if in a theory)
+ *  @param df definiens (of type D(args) -> T, or D(args) -> codomain of V)
  *  @param total a total include is one that must be implemented by the containing theory
  *   this becomes available as a morphism only at the end of the containing theory (even if there is a definiens,
  *     which can happen, e.g., if the definiens refers to other total includes) 
  *  
  *  invariants: if df contains mor then args.isEmpty && from is domain of df
  *              else OMPMOD(from,args) is included theory
+ *
+ * note that concrete syntax may allow "include df" because D because can be infered;
+ * in a theory, "include D" is the standard for includes without definiens;
+ * in a view, we may also allow "include D" for the case where df is the identity of D
  */
 case class IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], total: Boolean) {
   /** OMIDENT(from) or OMINST(from, args) or OMCOMP(the-former, df); OMStructuralInclude for realizations */

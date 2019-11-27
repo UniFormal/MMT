@@ -46,6 +46,7 @@ case class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends 
 }
 
 /** bridges between [[AnonymousTheory]] and [[Term]] */
+// TODO decide if AnonymousTheory should subclass Term directly
 object AnonymousTheoryCombinator {
   val path = ModExp.anonymoustheory
 
@@ -140,7 +141,6 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param nodes the nodes
   *  @param arrows the arrows
   *  @param distNode the label of a distinguished node to be used if this diagram is used like a theory
-  *  @param distArrow the label of a distinguished arrow to be used if this diagram is used like a morphism
   *  invariant: codomain of distArrow is distNode
   */
 case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {

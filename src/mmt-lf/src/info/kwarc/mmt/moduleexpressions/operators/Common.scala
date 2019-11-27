@@ -67,10 +67,10 @@ object Common {
       * [[LocalName]], but of course with different [[GlobalName]] as they stem from two unrelated theories. In
       * that case un-fully-qualifiying yields a duplicate as signalled by this method.
       */
-    def apply(c: Constant): (OML, Boolean) = {
+    def apply(c: Constant, unqualifyLater: Boolean): (OML, Boolean) = {
       val translatedConstant = OML(c.name, c.tp map apply, c.df map apply, c.not)
       val isDuplicate = names.exists(p => p.name == c.name)
-      names ::= c.path
+      if (unqualifyLater) names ::= c.path
       (translatedConstant, isDuplicate)
     }
   }
@@ -79,9 +79,9 @@ object Common {
     * Anonymize and flatten a [[ModuleOrLink]], most commonly a [[Theory]] or [[View]], to a list of [[OML]] declarations.
     *
     * Overall, this method will first flatten the [[ModuleOrLink]] and then try to translate every obtained declaration
-    * to an [[OML]]. For that [[GlobalName]]s in declaration components will be replaced by [[OML]]s referencing
+    * to an [[OML]]. For that [[OMS]]s in declaration components will be replaced by [[OML]]s referencing
     * previous [[OML]] declarations. The method basically keeps track of all "previous [[GlobalName]]s which have
-    * been seen and where references to them should be replaced by [[OML]] references".
+    * been seen and where references to them should be replaced by [[LocalName]] references".
     * If you want to anonymize a [[Link]], this list of "previous things" does not suffice since a [[Link]]
     * is naturally to be interpreted in the context of its codomain. Hence, you can use
     * `initialReferencesToUnqualify` to provide an initial list of "previous things".
@@ -97,60 +97,30 @@ object Common {
     *         - and the list of OMLS the actual anonymized list of declarations
     */
   def anonymizeModuleOrLink(solver: CheckingCallback, namedModuleOrLink: ModuleOrLink, initialReferencesToUnqualify: List[GlobalName] = Nil)(implicit stack: Stack, history: History): (List[GlobalName], List[OML]) = {
+    val inLink = namedModuleOrLink match {
+      case _: Theory => false
+      case _: Link => true
+    }
+    // Translate all OMS' into OMLs
+    val omsTranslator = new OMStoOML(stack.context,initialReferencesToUnqualify)
 
-    object NamedViewInclusionInView {
-      def unapply(inclusion: IncludeData): Option[MPath] = inclusion match {
-        // An inclusion of another named view in a [[View]]
-        case IncludeData(_, _, Nil, Some(OMMOD(includedLink)), false) => Some(includedLink)
-        // Same, but hidden behind an [[OMIDENT]] for whatever reason
-        case IncludeData(_, _, Nil, Some(OMIDENT(OMMOD(includedLink))), false) => Some(includedLink)
-        case _ => None
+    val omls = namedModuleOrLink.getAllIncludesWithSelf.flatMap {id =>
+      val decls = solver.lookup.getAs(classOf[Theory],id.from).getDeclarationsElaborated
+      decls.flatMap {
+        case c: Constant =>
+          val (translatedConstant,wasDuplicate) = omsTranslator(c,inLink)
+          if (wasDuplicate)
+            solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
+          // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
+          //      We just overgenerously drop all complex steps for brevity here, might be wrong though
+          val dfT = translatedConstant.df orElse (id.df map {df =>
+            val t = solver.lookup.ApplyMorphs(OMS(c.path),df,stack.context)
+            omsTranslator(t)
+          })
+          List(translatedConstant.copy(name = translatedConstant.name.dropComplex,df = dfT))
+        case _ => Nil
       }
     }
-
-
-    val includedThings = namedModuleOrLink.getAllIncludes.flatMap({
-      // A usual undefined inclusion in a [[Theory]]
-      case IncludeData(_, includedModule, Nil, None, false) =>
-        solver.lookup.getO(includedModule) match {
-          case Some(includedThing: ModuleOrLink) => List(includedThing)
-          case Some(otherThing) =>
-            solver.error("While anonymizing module or link, we ignore inclusion of " + otherThing.path + " since it's not a ModuleOrLink")
-            Nil
-          case None =>
-            Nil
-        }
-
-      // An inclusion of another named view in a [[View]]
-      case NamedViewInclusionInView(includedLink) if namedModuleOrLink.isInstanceOf[Link] =>
-        solver.lookup.getO(includedLink) match {
-          case Some(includedThing: Link) => List(includedThing)
-          case Some(otherThing) =>
-            solver.error("While anonymizing link, we ignore inclusion of " + otherThing.path + " since it's not a Link")
-            Nil
-          case None =>
-            Nil
-        }
-
-      case _ => ???
-    })
-
-    // Translate all OMS' into OMLs
-    val omsTranslator = new OMStoOML(stack.context, initialReferencesToUnqualify)
-
-    val decls = (includedThings :+ namedModuleOrLink).flatMap(_.getDeclarationsElaborated)
-    val omls = decls.flatMap {
-      case c: Constant =>
-        val (translatedConstant, wasDuplicate) = omsTranslator(c)
-        if (wasDuplicate)
-          solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
-
-        // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
-        //      We just overgenerously drop all complex steps for brevity here, might be wrong though
-        List(translatedConstant.copy(name = translatedConstant.name.dropComplex))
-      case _ => Nil
-    }
-
     (initialReferencesToUnqualify ::: omsTranslator.getGlobalNamesWhoseReferencesToUnqualify, omls)
   }
 

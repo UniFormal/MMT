@@ -40,6 +40,13 @@ trait Link extends ModuleOrLink {
      case Include(id) => List(id)
      case _ => Nil
    }
+
+   def selfInclude = {
+     from match {
+       case OMPMOD(p, args) => IncludeData(toTerm, p, args, None, false)
+       case f => IncludeData(toTerm, f.toMPath, Nil, None, false)
+     }
+   }
    
    /** the prefix used when translating declarations along this link */
    def namePrefix: LocalName
