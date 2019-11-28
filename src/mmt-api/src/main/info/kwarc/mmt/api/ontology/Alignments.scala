@@ -21,9 +21,9 @@ case class ConceptReference(con: String) extends Reference with CanonicalForm[Co
   def canonical = copy(con = con.toLowerCase)
   override def toString = con
 
-  override def hashCode(): Int = con.hashCode
+  override def hashCode(): Int = con.toLowerCase.hashCode
   override def equals(that: Any): Boolean = that match {
-    case ConceptReference(ocon) => ocon == con
+    case ConceptReference(ocon) => ocon.toLowerCase == con.toLowerCase
     case _ => false
   }
 }
