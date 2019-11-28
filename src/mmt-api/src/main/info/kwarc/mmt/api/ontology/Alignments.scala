@@ -20,6 +20,12 @@ case class PhysicalReference(url: URI) extends URIReference {
 case class ConceptReference(con: String) extends Reference with CanonicalForm[ConceptReference] {
   def canonical = copy(con = con.toLowerCase)
   override def toString = con
+
+  override def hashCode(): Int = con.hashCode
+  override def equals(that: Any): Boolean = that match {
+    case ConceptReference(ocon) => ocon == con
+    case _ => false
+  }
 }
 
 sealed abstract class Alignment {
