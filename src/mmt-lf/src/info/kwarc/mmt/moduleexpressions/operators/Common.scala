@@ -109,49 +109,24 @@ object Common {
     // TODO: Florian says this should become a List[(ModuleOrLink, Option[Link])]
 
     // TODO Lookup.ApplyMorphs OMM
-    val includedThings = namedModuleOrLink.getAllIncludes.flatMap({
-      // A usual undefined inclusion in a [[Theory]]
-      case IncludeData(_, includedModule, Nil, None, false) =>
-        solver.lookup.getO(includedModule) match {
-          case Some(includedThing: ModuleOrLink) => List(includedThing)
-          case Some(otherThing) =>
-            solver.error("While anonymizing module or link, we ignore inclusion of " + otherThing.path + " since it's not a ModuleOrLink")
-            Nil
-          case None =>
-            Nil
-        }
-
-      // An inclusion of another named view in a [[View]]
-      case NamedViewInclusionInView(includedLink) if namedModuleOrLink.isInstanceOf[Link] =>
-        solver.lookup.getO(includedLink) match {
-          case Some(includedThing: Link) => List(includedThing)
-          case Some(otherThing) =>
-            solver.error("While anonymizing link, we ignore inclusion of " + otherThing.path + " since it's not a Link")
-            Nil
-          case None =>
-            Nil
-        }
-
-      case _ => ???
-    })
 
     // Translate all OMS' into OMLs
-    val omsTranslator = new OMStoOML(stack.context,initialReferencesToUnqualify)
+    val omsTranslator = new OMStoOML(stack.context, initialReferencesToUnqualify)
 
-    val omls = namedModuleOrLink.getAllIncludesWithSelf.flatMap {id =>
-      val decls = solver.lookup.getAs(classOf[Theory],id.from).getDeclarationsElaborated
+    val omls = namedModuleOrLink.getAllIncludesWithSelf.flatMap { id =>
+      val decls = solver.lookup.getAs(classOf[Theory], id.from).getDeclarationsElaborated
       decls.flatMap {
         case c: Constant =>
-          val (translatedConstant,wasDuplicate) = omsTranslator(c,inLink)
+          val (translatedConstant, wasDuplicate) = omsTranslator(c, inLink)
           if (wasDuplicate)
             solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
           // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
           //      We just overgenerously drop all complex steps for brevity here, might be wrong though
-          val dfT = translatedConstant.df orElse (id.df map {df =>
-            val t = solver.lookup.ApplyMorphs(OMS(c.path),df,stack.context)
+          val dfT = translatedConstant.df orElse (id.df map { df =>
+            val t = solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)
             omsTranslator(t)
           })
-          List(translatedConstant.copy(name = translatedConstant.name.dropComplex,df = dfT))
+          List(translatedConstant.copy(name = translatedConstant.name.dropComplex, df = dfT))
         case _ => Nil
       }
     }

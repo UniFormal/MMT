@@ -13,7 +13,7 @@ object LFConstantScala {
 }
 
 class NullaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
-  def filter(args: List[Term]) = args.filterNot {a => a == term}
+  def filter(args: List[Term]): Seq[Term] = args.filterNot { a => a == term}
   def apply() = OMS(path)
   def unapply(t: Term): Boolean = t match {
     case OMS(this.path) => true
@@ -23,7 +23,7 @@ class NullaryLFConstantScala(val parent: MPath, val name: String) extends Consta
 
 class UnaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
    def apply(arg: Term) = Apply(OMS(path), arg)
-   def unapply(t: Term) = t match {
+   def unapply(t: Term): Option[Term] = t match {
       case ApplySpine(OMS(this.path), List(a)) => Some(a)
       case _ => None
    }
