@@ -32,6 +32,7 @@ object ComputeSingleTypeIndexed extends FunctorialLinearDiagramOperator[ComputeS
   }
 
   def renameUndefinedSortDeclaration(oldName: LocalName): LocalName = oldName.steps match {
+      // TODO Florian says drop _indirection
     case someSteps :+ SimpleStep(lastName) => LocalName(someSteps :+ SimpleStep(lastName + "_indirection"))
     case _ => ???
   }
