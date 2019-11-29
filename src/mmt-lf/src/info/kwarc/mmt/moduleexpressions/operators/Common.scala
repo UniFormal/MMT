@@ -102,6 +102,11 @@ object Common {
     * @return A tuple of (global names to unqualify, list of OMLs), where
     *         - the global names to unqualify are as explained above the "list of previous things"
     *         - and the list of OMLS the actual anonymized list of declarations
+    *
+    *
+    * @todo Does this work for partial views? I don't think so since we take the view's domain via [[Link.getAllIncludesWithSelf]]
+    *       and translate it via the link. What does `solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)` do
+    *       in case df is not defined on c?
     */
   def anonymizeModuleOrLink(solver: CheckingCallback, namedModuleOrLink: ModuleOrLink, initialReferencesToUnqualify: List[GlobalName] = Nil)(implicit stack: Stack, history: History): (List[GlobalName], List[OML]) = {
     // Translate all OMS' into OMLs
