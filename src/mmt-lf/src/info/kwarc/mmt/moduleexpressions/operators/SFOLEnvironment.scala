@@ -5,7 +5,7 @@
 
 package info.kwarc.mmt.moduleexpressions.operators
 
-import info.kwarc.mmt.api.objects.{OMID, OML, OMS, Term}
+import info.kwarc.mmt.api.objects.{OML, OMS, Term}
 import info.kwarc.mmt.api.uom.TheoryScala
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName}
@@ -18,10 +18,10 @@ object TypedTerms extends TheoryScala {
   val _name = LocalName("TypedTerms")
 
   // The LF type of sorts in our theory
-  val typeOfSorts: GlobalName = _path ? "tp"
+  object tp extends NullaryLFConstantScala(_path, "tp")
 
   // The LF `tp -> type` function giving us "all terms" of a specific sort
-  val termsOfSort: GlobalName = _path ? "tm"
+  object tm extends UnaryLFConstantScala(_path,"tm")
 }
 
 /** MMT declarations
@@ -86,7 +86,7 @@ object SFOL extends TheoryScala {
     var sortNames = new mutable.LinkedHashSet[LocalName]()
 
     val conforming = args.forall({
-      case ApplySpine(OMID(TypedTerms.termsOfSort), List(OML(sortName, _, _, _, _))) =>
+      case TypedTerms.tm(OML(sortName, _, _, _, _)) =>
         sortNames += sortName
         true
       case _ => false
@@ -101,18 +101,16 @@ object SFOL extends TheoryScala {
 
   object FunctionType {
     /**
-      *
-      * @param decl
       * @return List of unique occurring sort local names in the order they appear in the function type from left to right
       */
-    def unapply(decl: Term): Option[List[LocalName]] = decl match {
-      case FunType(args, returnType) => {
+    def unapply(typeComponent: Term): Option[List[LocalName]] = typeComponent match {
+      case FunType(args, returnType) =>
+        // Check that we have no dependent types at all
         if (!args.forall(_._1.isEmpty)) {
           None
         } else {
           checkConformingAndCollectSorts(returnType :: args.map(_._2))
         }
-      }
       case _ => None
     }
   }
@@ -142,7 +140,7 @@ object SFOL extends TheoryScala {
     */
   object UndefinedSortDeclaration {
     def unapply(decl: OML): Boolean = decl match {
-      case OML(_, Some(OMID(TypedTerms.typeOfSorts)), None, _, _) => true
+      case OML(_, Some(TypedTerms.tp()), None, _, _) => true
       case _ => false
     }
   }

@@ -66,11 +66,18 @@ object Common {
       * This might happen if a theory includes two unrelated theories both declaring a symbol with the same
       * [[LocalName]], but of course with different [[GlobalName]] as they stem from two unrelated theories. In
       * that case un-fully-qualifiying yields a duplicate as signalled by this method.
-      */
+      *
+      * @param unqualifyLater Signal whether we should unqualify references to [[Constant.path c.path]] later
+      *                       by replacing them by [[Constant.name c.name]].
+      * @return The new un-fully-qualified [[OML]] and a [[Boolean]] "wasDuplicate" indicate whether we had a
+      *         name clash.
+      **/
     def apply(c: Constant, unqualifyLater: Boolean): (OML, Boolean) = {
-      val translatedConstant = OML(c.name, c.tp map apply, c.df map apply, c.not)
+      val translatedConstant = OML(c.name, c.tp map apply, c.df map apply, c.not, Some(c.feature))
       val isDuplicate = names.exists(p => p.name == c.name)
-      if (unqualifyLater) names ::= c.path
+      if (unqualifyLater) {
+        names ::= c.path
+      }
       (translatedConstant, isDuplicate)
     }
   }
@@ -97,36 +104,54 @@ object Common {
     *         - and the list of OMLS the actual anonymized list of declarations
     */
   def anonymizeModuleOrLink(solver: CheckingCallback, namedModuleOrLink: ModuleOrLink, initialReferencesToUnqualify: List[GlobalName] = Nil)(implicit stack: Stack, history: History): (List[GlobalName], List[OML]) = {
-    val inLink = namedModuleOrLink match {
-      case _: Theory => false
-      case _: Link => true
-    }
-
-    // TODO: Florian said revise this code (it is wrong)
-
-    // TODO Document getAllIncludes already returns all transitive includes
-
-    // TODO: Florian says this should become a List[(ModuleOrLink, Option[Link])]
-
-    // TODO Lookup.ApplyMorphs OMM
-
     // Translate all OMS' into OMLs
     val omsTranslator = new OMStoOML(stack.context, initialReferencesToUnqualify)
 
-    val omls = namedModuleOrLink.getAllIncludesWithSelf.flatMap { id =>
-      val decls = solver.lookup.getAs(classOf[Theory], id.from).getDeclarationsElaborated
+    // Now acquire all declarations of the flatten theory or view
+    // - by flattening all transitive inclusions - and then translating
+    // them to OMLs via `omsTranslator`.
+    val omls = namedModuleOrLink.getAllIncludesWithSelf.flatMap { inclusion =>
+      val decls = solver.lookup.getTheory(inclusion.from).getDeclarationsElaborated
       decls.flatMap {
         case c: Constant =>
-          val (translatedConstant, wasDuplicate) = omsTranslator(c, inLink)
-          if (wasDuplicate)
-            solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
-          // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
-          //      We just overgenerously drop all complex steps for brevity here, might be wrong though
-          val dfT = translatedConstant.df orElse (id.df map { df =>
-            val t = solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)
-            omsTranslator(t)
+          val translatedConstant: OML = namedModuleOrLink match {
+            case _: Theory =>
+              val (translatedConstant, wasDuplicate) = omsTranslator(c, unqualifyLater = true)
+              if (wasDuplicate) {
+                solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
+              }
+
+              translatedConstant
+            case _: Link =>
+              OML(
+                // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
+                //   We just overgenerously drop all complex steps for brevity here, might be wrong though
+                name = c.name.dropComplex,
+                tp = c.tp.map(omsTranslator.apply),
+                df = c.df.map(omsTranslator.apply),
+                nt = c.not,
+                featureOpt = Some(c.feature)
+              )
+
+            case _ => ???
+          }
+
+
+          // [[IncludeData Inclusions]] can also have a (usually morphism) definiens `inclusion.df`
+          // with the invariant that if an included declaration `c: E = e` already had a definiens
+          // that then we have `e = inclusion.df(c)` (in sloppy, but intuitive notation).
+          //
+          // Hence, if we have a definiens, take that one,
+          //        if not, apply the inclusion's definiens morphism on the constant if available.
+          val newDefiniens = translatedConstant.df orElse (inclusion.df map { df =>
+            omsTranslator(
+              solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)
+            )
           })
-          List(translatedConstant.copy(name = translatedConstant.name.dropComplex, df = dfT))
+
+          List(translatedConstant.copy(
+            df = newDefiniens
+          ))
         case _ => Nil
       }
     }

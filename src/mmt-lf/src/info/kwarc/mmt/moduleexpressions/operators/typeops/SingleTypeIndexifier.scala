@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, SimpleStep}
-import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
+import info.kwarc.mmt.api.{DPath, LocalName, SimpleStep}
+import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType, UnaryLFConstantScala}
 import info.kwarc.mmt.moduleexpressions.operators._
 import info.kwarc.mmt.moduleexpressions.operators.typeops.ComputeSingleTypeIndexed.renameUndefinedSortDeclaration
 
@@ -15,7 +15,7 @@ private object TypeOperator extends TheoryScala {
   val _base = DPath(URI("https://example.com/diagops"))
   val _name = LocalName("TypeOperator")
 
-  val typeOp: GlobalName = _path ? "typeOp"
+  object typeOp extends UnaryLFConstantScala(_path, "typeOp")
 }
 
 object SingleTypeIndexifier extends UnaryConstantScala(Combinators._path, "single_typeindexifier")
@@ -62,7 +62,7 @@ object ComputeSingleTypeIndexed extends FunctorialLinearDiagramOperator[ComputeS
         name = renameUndefinedSortDeclaration(decl.name),
 
         // Old type was just `tp`, new type is `tp -> tp`
-        tp = Some(FunType(List((None, OMID(TypedTerms.typeOfSorts))), OMID(TypedTerms.typeOfSorts))),
+        tp = Some(FunType(List((None, TypedTerms.tp())), TypedTerms.tp())),
         df = None,
         Some(newNotation),
         decl.featureOpt,
@@ -104,14 +104,14 @@ private object SingleTypeIndexer {
   def dependentlyTypeTypeComponent(typeComponent: Term): Term = {
     // Transform every type `t` to `{u: tp} t`
     FunType(List(
-      (Some(TYPE_INDIRECTION_VARIABLE_NAME), OMID(TypedTerms.typeOfSorts))
+      (Some(TYPE_INDIRECTION_VARIABLE_NAME), TypedTerms.tp())
     ), typeComponent)
   }
 
   def lambdaBindDefComponent(defComponent: Term): Term = {
     // Transform every definiens `d` to `[u: tp] d`
     FunTerm(List(
-      (TYPE_INDIRECTION_VARIABLE_NAME, OMID(TypedTerms.typeOfSorts))
+      (TYPE_INDIRECTION_VARIABLE_NAME, TypedTerms.tp())
     ), defComponent)
   }
 
@@ -138,9 +138,8 @@ private object SingleTypeIndexer {
         ApplySpine(referencedDecl, OMV(TYPE_INDIRECTION_VARIABLE_NAME) :: args: _*)
 
       // Transform `tm a` into `tm (&a u)`
-      case ApplySpine(OMID(TypedTerms.termsOfSort), List(sort: OML)) if abstractedDeclsSoFar.contains(sort.name) =>
-        ApplySpine(
-          OMID(TypedTerms.termsOfSort),
+      case TypedTerms.tm(sort: OML) if abstractedDeclsSoFar.contains(sort.name) =>
+        TypedTerms.tm(
           ApplySpine(
             OML(renameUndefinedSortDeclaration(sort.name)), // this gives us `&a`
             OMV(TYPE_INDIRECTION_VARIABLE_NAME)

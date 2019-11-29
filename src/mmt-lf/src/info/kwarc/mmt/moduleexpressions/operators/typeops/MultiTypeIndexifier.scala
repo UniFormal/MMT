@@ -76,7 +76,7 @@ private object MultiTypeIndexer {
 
   def dependentlyTypeTypeComponent(typeComponent: Term, dependenciesToAbstract: Seq[LocalName]): Term = {
     val dependentlyBoundVariables = dependenciesToAbstract.map(sortName =>
-      (Some(sortName), OMID(TypedTerms.typeOfSorts))
+      (Some(sortName), TypedTerms.tp())
     ).toList
 
     FunType(dependentlyBoundVariables, typeComponent)
@@ -84,7 +84,7 @@ private object MultiTypeIndexer {
 
   def lambdaBindDefComponent(defComponent: Term, dependenciesToBind: Seq[LocalName]): Term = {
     val variablesToBind = dependenciesToBind.map(sortName =>
-      (sortName, OMID(TypedTerms.typeOfSorts))
+      (sortName, TypedTerms.tp())
     ).toList
 
     FunTerm(variablesToBind, defComponent)
@@ -99,8 +99,8 @@ private object MultiTypeIndexer {
         val newArgs = sortDependencies.map(sortName => OML(sortName, None, None, None, None)).toList ::: args
         ApplySpine(referencedDecl, newArgs: _*)
 
-      case ApplySpine(OMID(TypedTerms.termsOfSort), sort) =>
-        ApplySpine(OMID(TypedTerms.termsOfSort), ApplySpine(OMID(TypeOperator.typeOp), sort: _*))
+      case TypedTerms.tm(sort) =>
+        TypedTerms.tm(TypeOperator.typeOp(sort))
 
       case t => Traverser(this, t)
     }
@@ -129,7 +129,7 @@ final class SortDependenciesSeeker extends Traverser[(collection.Map[LocalName, 
     case OML(referencedDecl, _, _, _, _) if !con.exists(_.name == referencedDecl) =>
       state._2 ++= state._1.getOrElse(referencedDecl, Set())
       null
-    case ApplySpine(OMID(TypedTerms.termsOfSort), List(OML(referencedSort, _, _, _, _))) =>
+    case TypedTerms.tm(OML(referencedSort, _, _, _, _)) =>
       state._2 += referencedSort
       null
     case t => Traverser(this, t)
