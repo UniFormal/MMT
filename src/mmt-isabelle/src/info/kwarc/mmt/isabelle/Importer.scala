@@ -992,15 +992,14 @@ object Importer
         }
 
         // spec rules
-        for { spec_rule <- segment.spec_rules }
-        {
-          val content = thy_draft.content
-
-          val item = thy_draft.make_spec_item(spec_rule)
-          val spec_name = item.name.local
-          val spec_thy = Theory.empty(thy.path.doc, thy.name / spec_name, None)
-
+        for (spec_rule <- segment.spec_rules) {
           try {
+            val content = thy_draft.content
+
+            val item = thy_draft.make_spec_item(spec_rule)
+            val spec_name = item.name.local
+            val spec_thy = Theory.empty(thy.path.doc, thy.name / spec_name, None)
+
             // type variables
             val type_env =
               (Env.empty /: spec_rule.typargs) {
