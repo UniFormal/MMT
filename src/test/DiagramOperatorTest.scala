@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.{DPath, Path}
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug" /*, "DiagramDefinition"*/) {
+object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) {
   private var presenter: MMTSyntaxPresenter = _
 
   override def doFirst: Unit = {
@@ -16,7 +16,10 @@ object DiagramOperatorTest extends MagicTest("debug" /*, "DiagramDefinition"*/) 
     // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
 
-    // Clean first preventing some spurious caching errors
+    // Only uncomment if rebuild is really necessary
+    // hl("build MitM/Foundation mmt-omdoc")
+
+    // Clean first to prevent some spurious caching errors
     hl("build Playground/diagops -mmt-omdoc")
     hl("build Playground/diagops mmt-omdoc")
 
@@ -44,6 +47,7 @@ object DiagramOperatorTest extends MagicTest("debug" /*, "DiagramDefinition"*/) 
   private val diagops = DPath(URI("https://example.com/diagops"))
   private val typeindexifier = diagops / "typeindexifier"
   private val typifier = diagops / "typifier"
+  private val pushout = diagops / "pushout"
 
   private def space(): Unit = {
     print("\n".repeat(5))
@@ -69,6 +73,11 @@ object DiagramOperatorTest extends MagicTest("debug" /*, "DiagramDefinition"*/) 
     space()
 
     waitThenPrint(typifier ? "TypifySFOLTheory_pres")
+
+    space()
+
+    waitThenPrint((pushout / "list") ? "ListNat_pres")
+    waitThenPrint((pushout / "nvs") ? "ThingsInNormedVectorspace_pres")
 
     sys.exit(0)
   }
