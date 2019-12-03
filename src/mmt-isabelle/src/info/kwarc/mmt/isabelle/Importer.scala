@@ -210,7 +210,8 @@ object Importer
     axioms: List[isabelle.Export_Theory.Axiom] = Nil,
     thms: List[isabelle.Export_Theory.Thm] = Nil,
     locales: List[isabelle.Export_Theory.Locale] = Nil,
-    locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil)
+    locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil,
+    spec_rules: List[isabelle.Export_Theory.Spec_Rule] = Nil)
   {
     val header: String =
       element.head.span.content.iterator.takeWhile(tok => !tok.is_begin).map(_.source).mkString
@@ -989,6 +990,65 @@ object Importer
             thy_draft.rdf_triple(Ontology.binary(to.path, Ontology.ULO.instance_of, from.path))
           }
         }
+
+        // spec rules
+        for (spec_rule <- segment.spec_rules) {
+          try {
+            val content = thy_draft.content
+
+            val item = thy_draft.make_spec_item(spec_rule)
+            val spec_name = item.name.local
+            val spec_thy = Theory.empty(thy.path.doc, thy.name / spec_name, None)
+
+            // type variables
+            val type_env =
+              (Env.empty /: spec_rule.typargs) {
+                case (env, (a, _)) =>
+                  val c = Constant(spec_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
+                  spec_thy.add(c)
+                  env + (a -> c.toTerm)
+              }
+
+            // term variables
+            val term_env =
+              (type_env /: spec_rule.args) {
+                case (env, (x, ty)) =>
+                  val tp = content.import_type(ty, type_env)
+                  val c = Constant(spec_thy.toTerm, LocalName(x), Nil, Some(tp), None, None)
+                  spec_thy.add(c)
+                  env + (x -> c.toTerm)
+              }
+
+            // sort constraints
+            for { (prop, i) <- content.import_sorts(spec_rule.typargs).zipWithIndex } {
+              val name = LocalName(Isabelle.Spec_Rules.Sorts(i + 1))
+              spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(prop), None, None))
+            }
+
+            // spec terms
+            val spec_terms =
+              for ((term, typ) <- spec_rule.terms)
+              yield {
+                (content.import_term(term, env = term_env),
+                 content.import_type(typ, env = type_env))
+              }
+            for { ((df, tp), i) <- spec_terms.zipWithIndex } {
+              val name = LocalName(Isabelle.Spec_Rules.Terms(i + 1))
+              spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(tp), Some(df), None))
+            }
+
+            // spec rules
+            for { (rule, i) <- spec_rule.rules.map(content.import_term(_, env = term_env)).zipWithIndex } {
+              val name = LocalName(Isabelle.Spec_Rules.Rules(i + 1))
+              spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(Bootstrap.Ded(rule)), None, None))
+            }
+
+            controller.add(new NestedModule(thy.toTerm, spec_name, spec_thy))
+          }
+          catch {
+            case isabelle.ERROR(msg) => isabelle.error(msg + "\nin spec rule " + isabelle.quote(spec_rule.name))
+          }
+        }
       }
 
       for (segment <- thy_export.segments) {
@@ -1351,6 +1411,13 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       object Axioms extends Indexed_Name("axioms")
     }
 
+    object Spec_Rules
+    {
+      object Sorts extends Indexed_Name("sorts")
+      object Terms extends Indexed_Name("terms")
+      object Rules extends Indexed_Name("rules")
+    }
+
 
     /* user theories */
 
@@ -1482,21 +1549,21 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             }
             else Nil
 
-          def defined(entity: isabelle.Export_Theory.Entity): Boolean =
+          def defined_id(print: String, id: Option[Long]): Boolean =
           {
-            def for_entity: String =
-              " for " + entity + " in theory " + isabelle.quote(theory_name)
+            def for_msg: String =
+              " for " + print + " in theory " + isabelle.quote(theory_name)
 
             val entity_id =
-              entity.id match {
-                case Some(id) => id
-                case None => isabelle.error("Missing command id" + for_entity)
+              id match {
+                case Some(i) => i
+                case None => isabelle.error("Missing command id" + for_msg)
               }
             val entity_command =
               node_command_ids.get(entity_id) match {
                 case Some(cmd) if relevant_ids(cmd.id) => cmd
                 case _ =>
-                  val msg = "No command with suitable id" + for_entity
+                  val msg = "No command with suitable id" + for_msg
                   snapshot.state.lookup_id(entity_id) match {
                     case None => isabelle.error(msg)
                     case Some(st) =>
@@ -1513,6 +1580,9 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
               }
             element.outline_iterator.exists(cmd => cmd.id == entity_command.id)
           }
+          def defined(entity: isabelle.Export_Theory.Entity): Boolean =
+            defined_id(entity.toString, entity.id)
+
           Theory_Segment(
             element = element,
             element_timing = element_timing,
@@ -1530,7 +1600,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             thms = for (decl <- theory.thms if defined(decl.entity)) yield decl,
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
             locale_dependencies =
-              for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl)
+              for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl,
+            spec_rules =
+              for {
+                spec_rule <- theory.spec_rules
+                if spec_rule.name.nonEmpty && defined_id(spec_rule.name, spec_rule.id)
+              } yield spec_rule)
         }
       }
 
@@ -1624,6 +1699,22 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         val item = make_item(entity)
         declare_item(item, tags, props)
         item
+      }
+
+      def make_spec_item(spec_rule: isabelle.Export_Theory.Spec_Rule): Item =
+      {
+        val kind =
+          spec_rule.rough_classification match {
+            case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Unknown_Recursion) => "definition"
+            case isabelle.Export_Theory.Equational(_) => "recursive_definition"
+            case isabelle.Export_Theory.Inductive => "inductive_definition"
+            case isabelle.Export_Theory.Co_Inductive => "co_inductive_definition"
+            case isabelle.Export_Theory.Unknown => "specification"
+          }
+        Item(thy.path, kind, spec_rule.name,
+          entity_pos = spec_rule.pos,
+          theory_source = thy_source,
+          node_source = node_source)
       }
 
       def end_theory(): Unit = state.end_theory(node_name.theory, end_content)
