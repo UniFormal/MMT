@@ -439,6 +439,27 @@ object Importer
     result
   }
 
+  object Locale
+  {
+    object Sorts extends Indexed_Name("sorts")
+    object Axioms extends Indexed_Name("axioms")
+  }
+
+  object Spec_Rules
+  {
+    object Kind extends Enumeration
+    {
+      val DEFINITION = Value("definition")
+      val RECURSIVE_DEFINITION = Value("recursive_definition")
+      val INDUCTIVE_DEFINITION = Value("inductive_definition")
+      val CO_INDUCTIVE_DEFINITION = Value("co_inductive_definition")
+      val SPECIFICATION = Value("specification")
+    }
+    object Sorts extends Indexed_Name("sorts")
+    object Terms extends Indexed_Name("terms")
+    object Rules extends Indexed_Name("rules")
+  }
+
 
   /* theory content and statistics */
 
@@ -491,7 +512,8 @@ object Importer
       print_int(item_names.count({ case (_, name) => name.entity_kind == kind }), len = 12) + " " + kind
 
     def report: String =
-      isabelle.Library.cat_lines(
+    {
+      val kinds =
         List(
           isabelle.Export_Theory.Kind.LOCALE,
           isabelle.Export_Theory.Kind.LOCALE_DEPENDENCY,
@@ -499,7 +521,10 @@ object Importer
           isabelle.Export_Theory.Kind.TYPE,
           isabelle.Export_Theory.Kind.CONST,
           isabelle.Export_Theory.Kind.AXIOM,
-          isabelle.Export_Theory.Kind.THM).map(kind => report_kind(kind.toString)))
+          isabelle.Export_Theory.Kind.THM).map(_.toString) :::
+        Spec_Rules.Kind.values.toList.map(_.toString)
+      isabelle.Library.cat_lines(kinds.map(report_kind))
+    }
 
     def get(key: Item.Key): Item.Name = item_names.getOrElse(key, isabelle.error("Undeclared " + key.toString))
     def get_class(name: String): Item.Name = get(Item.Key(isabelle.Export_Theory.Kind.CLASS.toString, name))
@@ -961,13 +986,13 @@ object Importer
 
             // sort constraints
             for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
-              val name = LocalName(Isabelle.Locale.Sorts(i + 1))
+              val name = LocalName(Locale.Sorts(i + 1))
               loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
             // logical axioms
             for { (prop, i) <- locale.axioms.map(content.import_prop(_, term_env)).zipWithIndex } {
-              val name = LocalName(Isabelle.Locale.Axioms(i + 1))
+              val name = LocalName(Locale.Axioms(i + 1))
               loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
@@ -997,6 +1022,8 @@ object Importer
             val content = thy_draft.content
 
             val item = thy_draft.make_spec_item(spec_rule)
+            thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
+
             val spec_name = item.name.local
             val spec_thy = Theory.empty(thy.path.doc, thy.name / spec_name, None)
 
@@ -1021,7 +1048,7 @@ object Importer
 
             // sort constraints
             for { (prop, i) <- content.import_sorts(spec_rule.typargs).zipWithIndex } {
-              val name = LocalName(Isabelle.Spec_Rules.Sorts(i + 1))
+              val name = LocalName(Spec_Rules.Sorts(i + 1))
               spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(prop), None, None))
             }
 
@@ -1033,13 +1060,13 @@ object Importer
                  content.import_type(typ, env = type_env))
               }
             for { ((df, tp), i) <- spec_terms.zipWithIndex } {
-              val name = LocalName(Isabelle.Spec_Rules.Terms(i + 1))
+              val name = LocalName(Spec_Rules.Terms(i + 1))
               spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(tp), Some(df), None))
             }
 
             // spec rules
             for { (rule, i) <- spec_rule.rules.map(content.import_term(_, env = term_env)).zipWithIndex } {
-              val name = LocalName(Isabelle.Spec_Rules.Rules(i + 1))
+              val name = LocalName(Spec_Rules.Rules(i + 1))
               spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(Bootstrap.Ded(rule)), None, None))
             }
 
@@ -1405,25 +1432,6 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       def apply(tp: Term, t: Term, u: Term): Term = lf.ApplySpine(OMS(path), tp, t, u)
     }
 
-    object Locale
-    {
-      object Sorts extends Indexed_Name("sorts")
-      object Axioms extends Indexed_Name("axioms")
-    }
-
-    object Spec_Rules
-    {
-      val DEFINITION = "definition"
-      val RECURSIVE_DEFINITION = "recursive_definition"
-      val INDUCTIVE_DEFINITION = "inductive_definition"
-      val CO_INDUCTIVE_DEFINITION = "co_inductive_definition"
-      val SPECIFICATION = "specification"
-
-      object Sorts extends Indexed_Name("sorts")
-      object Terms extends Indexed_Name("terms")
-      object Rules extends Indexed_Name("rules")
-    }
-
 
     /* user theories */
 
@@ -1712,17 +1720,17 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         val kind =
           spec_rule.rough_classification match {
             case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Unknown_Recursion) =>
-              Spec_Rules.DEFINITION
+              Spec_Rules.Kind.DEFINITION
             case isabelle.Export_Theory.Equational(_) =>
-              Spec_Rules.RECURSIVE_DEFINITION
+              Spec_Rules.Kind.RECURSIVE_DEFINITION
             case isabelle.Export_Theory.Inductive =>
-              Spec_Rules.INDUCTIVE_DEFINITION
+              Spec_Rules.Kind.INDUCTIVE_DEFINITION
             case isabelle.Export_Theory.Co_Inductive =>
-              Spec_Rules.CO_INDUCTIVE_DEFINITION
+              Spec_Rules.Kind.CO_INDUCTIVE_DEFINITION
             case isabelle.Export_Theory.Unknown =>
-              Spec_Rules.SPECIFICATION
+              Spec_Rules.Kind.SPECIFICATION
           }
-        Item(thy.path, kind, spec_rule.name,
+        Item(thy.path, kind.toString, spec_rule.name,
           entity_pos = spec_rule.pos,
           theory_source = thy_source,
           node_source = node_source)
