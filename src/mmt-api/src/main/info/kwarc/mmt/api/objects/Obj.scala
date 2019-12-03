@@ -1,16 +1,12 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import utils._
-import utils.xml.addAttrOrChild
-import libraries._
-import modules._
-import metadata._
-import presentation._
-import Conversions._
 import info.kwarc.mmt.api.notations.TextNotation
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.utils.xml.addAttrOrChild
 
-import scala.xml.{Node,Elem,Utility}
+import scala.xml.Node
 
 trait ShortURIPrinter {
    /** configurable string representation
@@ -331,9 +327,9 @@ sealed trait OMLITTrait extends Term {
  *   rt.semType.valid(value) and rt.semType.normalform(value) == value
  */
 case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
-   def synType = rt.synType
+   def synType: Term = rt.synType
    override def toStr(implicit shortURIs: Boolean) = valueString
-   def valueString = rt.semType.toString(value)
+   def valueString: String = rt.semType.toString(value)
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal

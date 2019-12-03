@@ -6,9 +6,9 @@ package info.kwarc.mmt.moduleexpressions.operators
 
 import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
-import info.kwarc.mmt.api.objects.{AnonymousDiagram, AnonymousMorphism, AnonymousTheory, AnonymousTheoryCombinator, DiagramArrow, DiagramNode, OMA, OML, OMS, Stack, Sub, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.OMLReplacer
-import info.kwarc.mmt.api.uom.{BinaryConstantScala, ConstantScala, Recurse, RecurseOnly, Simplifiability, Simplify}
+import info.kwarc.mmt.api.uom._
 
 /**
   * apply/unapply methods for terms of the form
@@ -143,6 +143,7 @@ object ComputeMixin extends ComputationRule(Mixin.path) {
   def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
     /** ************** Input pieces *****************/
     val Mixin(d1, r1, d2, r2, over) = tm
+    // TODO @Yasmine: I think it should be RecurseOnly(List(1,2,3))
     val List(ad1, ad2, ad_over) = List(d1, d2, over).map(d => Common.asAnonymousDiagram(solver, d).getOrElse(return RecurseOnly(List(1)))) // TODO: Handle errors here
 
     /** ************** Calculate the views from the source to the two nodes (after renaming) ****************/

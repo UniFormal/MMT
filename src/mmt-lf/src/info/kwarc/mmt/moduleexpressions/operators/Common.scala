@@ -169,7 +169,6 @@ object Common {
     // TODO Perhaps add val real = RealizeOML(namedTheory.path, None) // the theorem that the anonymous theory realizes namedTheory?
   }
 
-  // TODO This does not get rid of List(ComplexStep(domainMPath), SimpeleStep(domainLocalNameDecl)) in morphisms
   /** turns a declared theory into an anonymous one by dropping all global qualifiers (only defined if names are still unique afterwards) */
   def anonymizeView(solver: CheckingCallback, namedView: View)(implicit stack: Stack, history: History): AnonymousMorphism = namedView.to match {
     // We first need all [[GlobalName]]s of the codomain to replace in definienses of the view's assignments
@@ -276,7 +275,9 @@ object Common {
             val toN = DiagramNode(toL, to)
             val arrow = DiagramArrow(label, fromL, toL, mor, vw.isImplicit)
             Some(AnonymousDiagram(List(fromN, toN), List(arrow), Some(toL)))
-          case _ => None
+          case _ =>
+            solver.error("Tried to coerce " + OMMOD(p) + " into an anonymous diagram, but the object it refers to is unknown to the controller")
+            None
         }
       // explicit anonymous diagrams
       case AnonymousDiagramCombinator(ad) => Some(ad)
@@ -300,8 +301,10 @@ object Common {
     decls.map {
       case d@OML(label, tp, df, nt, feature) =>
         val rens = renames.filter(r => if (r._1.equals(label)) true else false)
-        if (rens.isEmpty) d
-        else (new OML(rens.last._2.asInstanceOf[OML].name, tp, df, nt, feature))
+        if (rens.isEmpty)
+          d
+        else
+          OML(rens.last._2.asInstanceOf[OML].name, tp, df, nt, feature)
     }
 
   def asSubstitution(r: List[Term]): List[(LocalName, Term)] = r.map {
@@ -310,10 +313,4 @@ object Common {
   }
 }
 
-/* The rules below compute the results of theory combinators.
- * Each rule is applicable if the arguments have been computed already.
- *
- * The rules also throw typing errors if they encounter any.
- * Open question: Should they be required to find all errors? Maybe only all structural errors?
- */
 

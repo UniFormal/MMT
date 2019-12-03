@@ -1,9 +1,9 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols.OMLReplacer
-import notations._
-import utils._
+import info.kwarc.mmt.api.utils._
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
   *
@@ -143,7 +143,7 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param distNode the label of a distinguished node to be used if this diagram is used like a theory
   *  invariant: codomain of distArrow is distNode
   */
-case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {
+case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName]) {
   def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
   def getArrow(label: LocalName): Option[DiagramArrow] = arrows.find(_.label == label)
   def getArrowWithNodes(label: LocalName): Option[(DiagramNode,DiagramNode,DiagramArrow)] = {
