@@ -991,7 +991,7 @@ object Importer
             }
 
             // logical axioms
-            for { (prop, i) <- locale.axioms.map(content.import_prop(_, term_env)).zipWithIndex } {
+            for { (prop, i) <- locale.axioms.map(content.import_prop(_, env = term_env)).zipWithIndex } {
               val name = LocalName(Locale.Axioms(i + 1))
               loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
             }
