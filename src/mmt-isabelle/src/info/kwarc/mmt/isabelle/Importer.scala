@@ -1413,6 +1413,12 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
 
     object Spec_Rules
     {
+      val DEFINITION = "definition"
+      val RECURSIVE_DEFINITION = "recursive_definition"
+      val INDUCTIVE_DEFINITION = "inductive_definition"
+      val CO_INDUCTIVE_DEFINITION = "co_inductive_definition"
+      val SPECIFICATION = "specification"
+
       object Sorts extends Indexed_Name("sorts")
       object Terms extends Indexed_Name("terms")
       object Rules extends Indexed_Name("rules")
@@ -1705,11 +1711,16 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
       {
         val kind =
           spec_rule.rough_classification match {
-            case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Unknown_Recursion) => "definition"
-            case isabelle.Export_Theory.Equational(_) => "recursive_definition"
-            case isabelle.Export_Theory.Inductive => "inductive_definition"
-            case isabelle.Export_Theory.Co_Inductive => "co_inductive_definition"
-            case isabelle.Export_Theory.Unknown => "specification"
+            case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Unknown_Recursion) =>
+              Spec_Rules.DEFINITION
+            case isabelle.Export_Theory.Equational(_) =>
+              Spec_Rules.RECURSIVE_DEFINITION
+            case isabelle.Export_Theory.Inductive =>
+              Spec_Rules.INDUCTIVE_DEFINITION
+            case isabelle.Export_Theory.Co_Inductive =>
+              Spec_Rules.CO_INDUCTIVE_DEFINITION
+            case isabelle.Export_Theory.Unknown =>
+              Spec_Rules.SPECIFICATION
           }
         Item(thy.path, kind, spec_rule.name,
           entity_pos = spec_rule.pos,
