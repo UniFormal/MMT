@@ -1078,19 +1078,27 @@ object Importer
         }
       }
 
-      for (segment <- thy_export.segments) {
-        // information about recursion (from Spec_Rules): after all types have been exported
-        for (decl <- segment.consts) {
-          val const_name = thy_draft.content.get_const(decl.entity.name)
-          decl.primrec_types match {
-            case List(type_name) =>
-              val predicate = if (decl.corecursive) Ontology.ULO.coinductive_for else Ontology.ULO.inductive_on
-              thy_draft.rdf_triple(
-                Ontology.binary(const_name.global, predicate,
-                  thy_draft.content.get_type(type_name).global))
-            case _ =>
+      // information about recursion: after all types have been exported
+      for {
+        segment <- thy_export.segments
+        spec_rule <- segment.spec_rules
+        (type_name, predicate) <-
+          spec_rule.rough_classification match {
+            case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Primrec(List(t))) =>
+              Some((t, Ontology.ULO.inductive_on))
+            case isabelle.Export_Theory.Equational(isabelle.Export_Theory.Primcorec(List(t))) =>
+              Some((t, Ontology.ULO.coinductive_for))
+            case _ => None
           }
-        }
+        const_name <-
+          spec_rule.terms.map(p => p._1.head) match {
+            case List(isabelle.Term.Const(c, _)) => Some(thy_draft.content.get_const(c))
+            case _ => None
+          }
+      } {
+        thy_draft.rdf_triple(
+          Ontology.binary(const_name.global, predicate,
+            thy_draft.content.get_type(type_name).global))
       }
 
       // primitive defs: after all axioms have been exported
