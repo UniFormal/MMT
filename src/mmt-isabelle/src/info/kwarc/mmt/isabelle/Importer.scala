@@ -283,9 +283,9 @@ object Importer
       def apply(t: Term): Term = lf.Apply(OMS(path), t)
     }
 
-    object Proof
+    object Proof_Text
     {
-      val path: GlobalName = GlobalName(theory, LocalName("proof"))
+      val path: GlobalName = GlobalName(theory, LocalName("proof_text"))
       def apply(): Term = OMS(path)
     }
   }
@@ -971,7 +971,7 @@ object Importer
         // optional proof text
         for (proof <- segment.proof) yield {
           val item = make_dummy(isabelle.Export_Theory.Kind.PROOF_TEXT, proof.index)
-          val c = item.constant(Some(Bootstrap.Proof()), None)
+          val c = item.constant(Some(Bootstrap.Proof_Text()), None)
           for (sref <- item.source_ref_range(proof.range)) SourceRef.update(c, sref)
           controller.add(c)
 
