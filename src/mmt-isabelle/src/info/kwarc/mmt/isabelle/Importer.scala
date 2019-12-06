@@ -211,6 +211,7 @@ object Importer
     thms: List[isabelle.Export_Theory.Thm] = Nil,
     locales: List[isabelle.Export_Theory.Locale] = Nil,
     locale_dependencies: List[isabelle.Export_Theory.Locale_Dependency] = Nil,
+    datatypes: List[isabelle.Export_Theory.Datatype] = Nil,
     spec_rules: List[isabelle.Export_Theory.Spec_Rule] = Nil)
   {
     val header: String =
@@ -445,6 +446,18 @@ object Importer
     object Axioms extends Indexed_Name("axioms")
   }
 
+  object Datatypes
+  {
+    object Kind extends Enumeration
+    {
+      val DATATYPE = Value("datatype")
+      val CODATATYPE = Value("codatatype")
+    }
+    val HEAD = "head"
+    object Sorts extends Indexed_Name("sorts")
+    object Constructors extends Indexed_Name("constructors")
+  }
+
   object Spec_Rules
   {
     object Kind extends Enumeration
@@ -522,6 +535,7 @@ object Importer
           isabelle.Export_Theory.Kind.CONST,
           isabelle.Export_Theory.Kind.AXIOM,
           isabelle.Export_Theory.Kind.THM).map(_.toString) :::
+        Datatypes.Kind.values.toList.map(_.toString) :::
         Spec_Rules.Kind.values.toList.map(_.toString)
       isabelle.Library.cat_lines(kinds.map(report_kind))
     }
@@ -1013,6 +1027,58 @@ object Importer
             controller.add(new NestedModule(thy.toTerm, item.name.local, view))
 
             thy_draft.rdf_triple(Ontology.binary(to.path, Ontology.ULO.instance_of, from.path))
+          }
+        }
+
+        // datatypes
+        for (datatype <- segment.datatypes) {
+          try {
+            val content = thy_draft.content
+
+            val item = thy_draft.make_datatype_item(datatype)
+            thy_draft.declare_item(item, segment.document_tags, segment.meta_data)
+
+            val datatype_name = item.name.local
+            val datatype_thy = Theory.empty(thy.path.doc, thy.name / datatype_name, None)
+
+            // type variables
+            val env =
+              (Env.empty /: datatype.typargs) {
+                case (env, (a, _)) =>
+                  val c = Constant(datatype_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
+                  datatype_thy.add(c)
+                  env + (a -> c.toTerm)
+              }
+
+            // sort constraints
+            for { (prop, i) <- content.import_sorts(datatype.typargs).zipWithIndex } {
+              val name = LocalName(Datatypes.Sorts(i + 1))
+              datatype_thy.add(Constant(datatype_thy.toTerm, name, Nil, Some(prop), None, None))
+            }
+
+            // head
+            {
+              val head = content.import_type(datatype.typ, env = env)
+              val name = LocalName(Datatypes.HEAD)
+              datatype_thy.add(Constant(datatype_thy.toTerm, name, Nil, None, Some(head), None))
+            }
+
+            // constructors
+            val constructors =
+              for ((term, typ) <- datatype.constructors)
+                yield {
+                  (content.import_term(term, env = env),
+                    content.import_type(typ, env = env))
+                }
+            for { ((df, tp), i) <- constructors.zipWithIndex } {
+              val name = LocalName(Datatypes.Constructors(i + 1))
+              datatype_thy.add(Constant(datatype_thy.toTerm, name, Nil, Some(tp), Some(df), None))
+            }
+
+            controller.add(new NestedModule(thy.toTerm, datatype_name, datatype_thy))
+          }
+          catch {
+            case isabelle.ERROR(msg) => isabelle.error(msg + "\nin datatype " + isabelle.quote(datatype.name))
           }
         }
 
@@ -1623,11 +1689,10 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             locales = for (decl <- theory.locales if defined(decl.entity)) yield decl,
             locale_dependencies =
               for (decl <- theory.locale_dependencies if defined(decl.entity)) yield decl,
+            datatypes = theory.datatypes.filter(datatype => defined_id(datatype.name, datatype.id)),
             spec_rules =
-              for {
-                spec_rule <- theory.spec_rules
-                if spec_rule.name.nonEmpty && defined_id(spec_rule.name, spec_rule.id)
-              } yield spec_rule)
+              theory.spec_rules.filter(spec_rule =>
+                spec_rule.name.nonEmpty && defined_id(spec_rule.name, spec_rule.id)))
         }
       }
 
@@ -1723,6 +1788,15 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
         item
       }
 
+      def make_basic_item(name: String, kind: String, pos: isabelle.Position.T): Item =
+        Item(thy.path, kind, name, entity_pos = pos, theory_source = thy_source, node_source = node_source)
+
+      def make_datatype_item(datatype: isabelle.Export_Theory.Datatype): Item =
+      {
+        val kind = if (datatype.co) Datatypes.Kind.CODATATYPE else Datatypes.Kind.DATATYPE
+        make_basic_item(datatype.name, kind.toString, datatype.pos)
+      }
+
       def make_spec_item(spec_rule: isabelle.Export_Theory.Spec_Rule): Item =
       {
         val kind =
@@ -1738,10 +1812,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             case isabelle.Export_Theory.Unknown =>
               Spec_Rules.Kind.SPECIFICATION
           }
-        Item(thy.path, kind.toString, spec_rule.name,
-          entity_pos = spec_rule.pos,
-          theory_source = thy_source,
-          node_source = node_source)
+        make_basic_item(spec_rule.name, kind.toString, spec_rule.pos)
       }
 
       def end_theory(): Unit = state.end_theory(node_name.theory, end_content)
