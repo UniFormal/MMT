@@ -440,9 +440,10 @@ object Importer
     result
   }
 
+  object Sorts extends Indexed_Name("sorts")
+
   object Locale
   {
-    object Sorts extends Indexed_Name("sorts")
     object Axioms extends Indexed_Name("axioms")
   }
 
@@ -454,7 +455,6 @@ object Importer
       val CODATATYPE = Value("codatatype")
     }
     val HEAD = "head"
-    object Sorts extends Indexed_Name("sorts")
     object Constructors extends Indexed_Name("constructors")
   }
 
@@ -468,7 +468,6 @@ object Importer
       val CO_INDUCTIVE_DEFINITION = Value("co_inductive_definition")
       val SPECIFICATION = Value("specification")
     }
-    object Sorts extends Indexed_Name("sorts")
     object Terms extends Indexed_Name("terms")
     object Rules extends Indexed_Name("rules")
   }
@@ -673,6 +672,27 @@ object Importer
 
       try { proof(Nil, Nil, prf) }
       catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin proof term " + prf) }
+    }
+
+
+    /* nested declarations */
+
+    def declare_import_types(thy: Theory, typargs: List[(String, isabelle.Term.Sort)]): Importer.Env =
+    {
+      (Env.empty /: typargs) {
+        case (env, (a, _)) =>
+          val c = Constant(thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
+          thy.add(c)
+          env + (a -> c.toTerm)
+      }
+    }
+
+    def declare_import_sorts(thy: Theory, typargs: List[(String, isabelle.Term.Sort)])
+    {
+      for { (prop, i) <- content.import_sorts(typargs).zipWithIndex } {
+        val name = LocalName(Sorts(i + 1))
+        thy.add(Constant(thy.toTerm, name, Nil, Some(prop), None, None))
+      }
     }
   }
 
@@ -979,13 +999,7 @@ object Importer
             }
 
             // type parameters
-            val type_env =
-              (Env.empty /: locale.typargs) {
-                case (env, (a, _)) =>
-                  val c = Constant(loc_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
-                  loc_decl(c)
-                  env + (a -> c.toTerm)
-              }
+            val type_env = content.declare_import_types(loc_thy, locale.typargs)
 
             // term parameters
             val term_env =
@@ -999,10 +1013,7 @@ object Importer
               }
 
             // sort constraints
-            for { (prop, i) <- content.import_sorts(locale.typargs).zipWithIndex } {
-              val name = LocalName(Locale.Sorts(i + 1))
-              loc_decl(Constant(loc_thy.toTerm, name, Nil, Some(prop), None, None))
-            }
+            content.declare_import_sorts(loc_thy, locale.typargs)
 
             // logical axioms
             for { (prop, i) <- locale.axioms.map(content.import_prop(_, env = term_env)).zipWithIndex } {
@@ -1051,10 +1062,7 @@ object Importer
               }
 
             // sort constraints
-            for { (prop, i) <- content.import_sorts(datatype.typargs).zipWithIndex } {
-              val name = LocalName(Datatypes.Sorts(i + 1))
-              datatype_thy.add(Constant(datatype_thy.toTerm, name, Nil, Some(prop), None, None))
-            }
+            content.declare_import_sorts(datatype_thy, datatype.typargs)
 
             // head
             {
@@ -1094,13 +1102,7 @@ object Importer
             val spec_thy = Theory.empty(thy.path.doc, thy.name / spec_name, None)
 
             // type variables
-            val type_env =
-              (Env.empty /: spec_rule.typargs) {
-                case (env, (a, _)) =>
-                  val c = Constant(spec_thy.toTerm, LocalName(a), Nil, Some(Bootstrap.Type()), None, None)
-                  spec_thy.add(c)
-                  env + (a -> c.toTerm)
-              }
+            val type_env = content.declare_import_types(spec_thy, spec_rule.typargs)
 
             // term variables
             val term_env =
@@ -1113,10 +1115,7 @@ object Importer
               }
 
             // sort constraints
-            for { (prop, i) <- content.import_sorts(spec_rule.typargs).zipWithIndex } {
-              val name = LocalName(Spec_Rules.Sorts(i + 1))
-              spec_thy.add(Constant(spec_thy.toTerm, name, Nil, Some(prop), None, None))
-            }
+            content.declare_import_sorts(spec_thy, spec_rule.typargs)
 
             // spec terms
             val spec_terms =
