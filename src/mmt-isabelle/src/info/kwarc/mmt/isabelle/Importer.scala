@@ -465,7 +465,7 @@ object Importer
       val DEFINITION = Value("definition")
       val RECURSIVE_DEFINITION = Value("recursive_definition")
       val INDUCTIVE_DEFINITION = Value("inductive_definition")
-      val CO_INDUCTIVE_DEFINITION = Value("co_inductive_definition")
+      val COINDUCTIVE_DEFINITION = Value("coinductive_definition")
       val SPECIFICATION = Value("specification")
     }
     object Terms extends Indexed_Name("terms")
@@ -1807,7 +1807,7 @@ Usage: isabelle mmt_import [OPTIONS] [SESSIONS ...]
             case isabelle.Export_Theory.Inductive =>
               Spec_Rules.Kind.INDUCTIVE_DEFINITION
             case isabelle.Export_Theory.Co_Inductive =>
-              Spec_Rules.Kind.CO_INDUCTIVE_DEFINITION
+              Spec_Rules.Kind.COINDUCTIVE_DEFINITION
             case isabelle.Export_Theory.Unknown =>
               Spec_Rules.Kind.SPECIFICATION
           }
