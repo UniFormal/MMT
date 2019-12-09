@@ -148,6 +148,8 @@ class GenericScalaExporter extends Exporter {
   /* top level export methods */
 
   def exportTheory(t: Theory, bf: BuildTask) {
+    rh.writeln(s"// Auto-generated file for theory ${t.path}")
+
     outputHeader(t.parent.doc)
     outputTrait(t)
     outputCompanionObject(t)
@@ -217,8 +219,8 @@ class GenericScalaExporter extends Exporter {
           val lines = List(
             s"",
             s"object ${nameToScala(c.name)} extends ConstantScala {",
-            s"  val parent = _path\n",
-            "  val name = \"" + c.name + "\""
+            s"  val parent: MPath = _path\n",
+             "  val name: String = \"" + c.name + "\""
           ) ::: extraFields.map("  " + _) ::: List(
             s"}"
           )
