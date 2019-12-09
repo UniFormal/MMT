@@ -41,7 +41,11 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
     val ad = diag match {
       case AnonymousDiagramCombinator(ad) => ad
       case df =>
+
         // TODO should use proper error handler
+        log("The derived module had meta theory: " + dm.meta)
+        val rules = RuleSet.collectRules(controller, Context(dm.meta.get)).get(classOf[ComputationRule]).mkString(", ")
+        log("The used rules were " + rules)
         throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(df))
     }
 

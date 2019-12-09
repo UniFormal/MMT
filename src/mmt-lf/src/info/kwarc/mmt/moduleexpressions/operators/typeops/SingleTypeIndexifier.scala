@@ -18,7 +18,7 @@ private object TypeOperator extends TheoryScala {
   object typeOp extends UnaryLFConstantScala(_path, "typeOp")
 }
 
-object SingleTypeIndexifier extends UnaryConstantScala(Combinators._path, "single_typeindexifier")
+object SingleTypeIndexifier extends UnaryConstantScala(DPath(URI("latin:/")) ? "DiagramTypeOperatorsSyntax", "single_typeindexifier")
 
 final class ComputeSingleTypeIndexedHelperContext(val abstractedDeclsSoFar: mutable.ListBuffer[LocalName] = mutable.ListBuffer.empty) extends LinearTheoryOperatorContext
 

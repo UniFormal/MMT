@@ -1,14 +1,15 @@
 package info.kwarc.mmt.moduleexpressions.operators.typeops
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.{DPath, LocalName}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.UnaryConstantScala
+import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
 import info.kwarc.mmt.moduleexpressions.operators._
 
 import scala.collection.mutable
 
-object MultiTypeIndexifier extends UnaryConstantScala(Combinators._path, "multi_typeindexifier")
+object MultiTypeIndexifier extends UnaryConstantScala(DPath(URI("latin:/")) ? "DiagramTypeOperatorsSyntax", "multi_typeindexifier")
 
 // Store which typeindexed sorts the declarations in our inputTheory (transitively) depend on
 // E.g. if we have `op: tm a`, then we would have `op |-> Set(a)`
