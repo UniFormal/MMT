@@ -95,7 +95,9 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   */
 object DiagramOperatorDebug extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
   override def doFirst: Unit = {
+    hl("build MMT/LATIN2 scala-bin")
     hl("build MMT/LATIN2 mmt-omdoc type_theory/operators.mmt")
+    // hl("build MMT/LATIN2 lf-scala")
 
     presenter = new FlatMMTSyntaxPresenter()
     controller.extman.addExtension(presenter)
