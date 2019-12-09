@@ -512,12 +512,13 @@ object Importer
   }
 
   final class Content private(
-    private val item_names: SortedMap[Item.Key, Item.Name],  // imported entities per theory
+    private val item_names: SortedMap[Item.Key, Item.Name],  // imported entities
     private val triples: SortedMap[String, Triples_Stats])  // RDF triples per theory
   {
     content =>
 
     def items_size: Int = item_names.size
+    def all_names: List[Item.Name] = item_names.iterator.map(_._2).toList
     def all_triples: Triples_Stats = Triples_Stats.merge(triples.iterator.map(_._2))
 
     def report_kind(kind: String): String =

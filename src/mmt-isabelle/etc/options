@@ -33,3 +33,8 @@ section "Meta info for default archive"
 option mmt_archive_dir : string = "isabelle_test"
 option mmt_archive_id : string = "Isabelle_Test"
 option mmt_archive_title : string = "Isabelle Test"
+
+
+section "Options for query command"
+
+option mmt_query_narration_base : string = "https://isabelle.in.tum.de"
