@@ -1,0 +1,5 @@
+chapter MMT
+
+session MMT = Pure +
+  description "Setup for Isabelle/MMT query command"
+  theories Query
