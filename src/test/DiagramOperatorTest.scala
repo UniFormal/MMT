@@ -1,36 +1,12 @@
-import DiagramOperatorTest.controller
-import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.DPath
+import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, Path}
 
 trait DiagramOperatorHelper {
-  var presenter: MMTSyntaxPresenter = _
-
-  /**
-    * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
-    *
-    * @param path A path to a theory, document etc.
-    */
-  final protected def waitUntilAvailable(path: Path): Unit = {
-    while (controller.getO(path).isEmpty) {
-      Thread.sleep(500)
-    }
-  }
-
-  final protected def waitThenPrint(path: Path): Unit = {
-    waitUntilAvailable(path)
-    presenter(controller.get(path))(ConsoleWriter)
-    print("\n")
-  }
-
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
   final protected val typeindexifier: DPath = diagops / "typeindexifier"
   final protected val typifier: DPath = diagops / "typifier"
   final protected val pushout: DPath = diagops / "pushout"
-
-  final protected def space(): Unit = {
-    print("\n".repeat(5))
-  }
 }
 
 /**
