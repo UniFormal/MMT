@@ -69,10 +69,16 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   *
   * @author Navid
   */
-object DiagramOperatorDebug extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
+object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
+  private val latin : DPath = DPath(URI("latin:/"))
+
   override def doFirst: Unit = {
+    hl("build MMT/urtheories mmt-omdoc")
     hl("build MMT/LATIN2 scala-bin")
     hl("build MMT/LATIN2 mmt-omdoc type_theory/operators.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
+
     // hl("build MMT/LATIN2 lf-scala")
 
     presenter = new FlatMMTSyntaxPresenter()
@@ -80,8 +86,10 @@ object DiagramOperatorDebug extends MagicTest("debug", "DiagramDefinition") with
   }
 
   override def run: Unit = {
-    waitThenPrint(DPath(URI("latin:/")) ? "TestEndoMagmaSingle_pres")
-    waitThenPrint(DPath(URI("latin:/")) ? "TestEndoMagmaMulti_pres")
+    waitThenPrint(latin ? "TestEndoMagmaSingle_pres")
+    waitThenPrint(latin ? "TestEndoMagmaMulti_pres")
+
+    waitThenPrint(latin ? "TypedUniversalQuantification_by_diagop")
   }
 }
 
