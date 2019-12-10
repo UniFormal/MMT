@@ -168,7 +168,7 @@ trait STeXAnalysis {
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String): String =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s + "%"
 
-  private def mkMhImport(a: Archive, r: String, p: String, s: String): STeXStructure =
+  private def mkMhImport(a: Archive, r: String, p: String, s: String) : STeXStructure =
     STeXStructure(List(mkImport(a, r, p, s, "sms")), mkDep(a, r, entryToPath(p)).map(toKeyDep(_, "sms")))
 
   private def mkGImport(a: Archive, r: String, p: String): STeXStructure =
@@ -190,17 +190,31 @@ trait STeXAnalysis {
 
   private def getArgMap(r: String): Map[String, String] = mkArgMap(splitArgs(r))
 
-  private def createMhImport(a: Archive, r: String, b: String): List[STeXStructure] = {
+  private def createMhImport(a: Archive, r: String, b: String) : List[STeXStructure] = {
     val m = getArgMap(r)
-    m.get("path").toList.map(p => mkMhImport(a, m.getOrElse("repos", archString(a)), p, b))
+    val repos : String = m.getOrElse("mhrepos", m.getOrElse("repos", archString(a)))
+
+    val result : List[STeXStructure] = if (m.isDefinedAt("dir")) {
+      /* \importmhmodule[dir=foo]{bar} is supposed to be the same as \importmhmodule[path=foo/bar]{bar}
+         as per https://github.com/UniFormal/MMT/issues/499. */
+
+      def addb(p : String) : String = {
+        assert(b.startsWith("{") && b.endsWith("}"))
+        p + java.io.File.separator + b.tail.init
+      }
+      m.get("dir").toList.map(p => mkMhImport(a, repos, addb(p), b))
+    } else if (m.isDefinedAt("path")) {
+      m.get("path").toList.map(p => mkMhImport(a, repos, p, b))
+    } else {
+      List.empty
+    }
+    result
   }
 
   private def createGImport(a: Archive, r: String, p: String): STeXStructure = {
-    Option(r) match {
-      case Some(id) =>
-        mkGImport(a, id, p)
-      case None =>
-        mkGImport(a, archString(a), p)
+      Option(r) match {
+        case Some(id) => mkGImport(a, id, p)
+        case None     => mkGImport(a, archString(a), p)
     }
   }
 
@@ -262,10 +276,17 @@ trait STeXAnalysis {
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
 
-      case useMhModule(opt,_) =>
+      case useMhModule(opt,t) =>
         val argmap = getArgMap(opt)
+        val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
+
         if (argmap.contains("path")) {
-          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+          val deps = mkDep(a,repos,entryToPath(argmap("path")))
+          assert(deps.length == 1)
+          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
+        } else if (argmap.contains("dir")) {
+          val entry = argmap("dir") + java.io.File.separator + t
+          val deps = mkDep(a,repos,entryToPath(entry))
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
@@ -275,8 +296,14 @@ trait STeXAnalysis {
 
       case guse(opt,_) =>
         val argmap = getArgMap(opt)
+        val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
+
         if (argmap.contains("path")) {
-          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+          val deps = mkDep(a,repos,entryToPath(argmap("path")))
+          assert(deps.length == 1)
+          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
+        } else if (argmap.contains("dir")) {
+          val deps = mkDep(a,repos,entryToPath(argmap("dir")))
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
