@@ -1,36 +1,12 @@
-import DiagramOperatorTest.controller
-import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.DPath
+import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, Path}
 
 trait DiagramOperatorHelper {
-  var presenter: MMTSyntaxPresenter = _
-
-  /**
-    * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
-    *
-    * @param path A path to a theory, document etc.
-    */
-  final protected def waitUntilAvailable(path: Path): Unit = {
-    while (controller.getO(path).isEmpty) {
-      Thread.sleep(500)
-    }
-  }
-
-  final protected def waitThenPrint(path: Path): Unit = {
-    waitUntilAvailable(path)
-    presenter(controller.get(path))(ConsoleWriter)
-    print("\n")
-  }
-
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
   final protected val typeindexifier: DPath = diagops / "typeindexifier"
   final protected val typifier: DPath = diagops / "typifier"
   final protected val pushout: DPath = diagops / "pushout"
-
-  final protected def space(): Unit = {
-    print("\n".repeat(5))
-  }
 }
 
 /**
@@ -93,10 +69,16 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   *
   * @author Navid
   */
-object DiagramOperatorDebug extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
+object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
+  private val latin : DPath = DPath(URI("latin:/"))
+
   override def doFirst: Unit = {
+    hl("build MMT/urtheories mmt-omdoc")
     hl("build MMT/LATIN2 scala-bin")
     hl("build MMT/LATIN2 mmt-omdoc type_theory/operators.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
+
     // hl("build MMT/LATIN2 lf-scala")
 
     presenter = new FlatMMTSyntaxPresenter()
@@ -104,8 +86,10 @@ object DiagramOperatorDebug extends MagicTest("debug", "DiagramDefinition") with
   }
 
   override def run: Unit = {
-    waitThenPrint(DPath(URI("latin:/")) ? "TestEndoMagmaSingle_pres")
-    waitThenPrint(DPath(URI("latin:/")) ? "TestEndoMagmaMulti_pres")
+    waitThenPrint(latin ? "TestEndoMagmaSingle_pres")
+    waitThenPrint(latin ? "TestEndoMagmaMulti_pres")
+
+    waitThenPrint(latin ? "TypedUniversalQuantification_by_diagop")
   }
 }
 

@@ -43,6 +43,17 @@ abstract class Traverser[A] {
    def toTranslator(newInit: () => A): UniformTranslator = new symbols.UniformTranslator {
      def apply(c: Context, t: Term): Term = traverse(t)(c, newInit())
    }
+
+  /** diagrammatic composition (first this, then that) */
+  def compose(that: Traverser[A]): Traverser[A] = {
+    val self = this
+
+    new Traverser[A] {
+      def traverse(t: Term)(implicit con: Context, state: State): Term = {
+        that.traverse(self.traverse(t)(con, state))(con, state.asInstanceOf[A])
+      }
+    }
+  }
 }
 
 /**
