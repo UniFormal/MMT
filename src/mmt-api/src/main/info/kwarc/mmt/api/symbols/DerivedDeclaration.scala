@@ -144,7 +144,12 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
     */
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
 
-   /** called after checking components and inner declarations for additional feature-specific checks */
+   /** compute the expected type of a constant inside a derived element of this feature
+    *  none by default, override as needed
+    */
+   def expectedType(dd: Level, c: Constant): Option[Term] = None
+
+  /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: Level)(implicit env: ExtendedCheckingEnvironment): Unit
 
    /** override as needed */
@@ -155,11 +160,6 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
   /** additional context relative to which to interpret the body of a derived declaration */
   def getInnerContext(dd: DerivedDeclaration): Context = dd.getInnerContext
 
-  /** compute the expected type of a constant inside a derived declaration of this feature
-   *  none by default, override as needed
-   */
-  def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = None
-  
    /**
     * defines the outer perspective of a derived declaration
     *

@@ -283,11 +283,12 @@ object DerivedOMLFeature {
   }
   /** for mixing into subclasses of the companion class */
   trait Unnamed {self: DerivedOMLFeature =>
-    def apply(p: MPath, df: Option[Term]): OML = apply(LocalName(p), OMMOD(p), df)
-    def unapply(o : OML): Option[(MPath, Option[Term])] = {
+    def apply(p: MPath, args: List[Term], df: Option[Term]): OML = apply(LocalName(p), OMPMOD(p,args), df)
+    def apply(n: LocalName, df: Option[Term]): OML = apply(n, OML(n), df)
+    def unapply(o : OML): Option[(Term, Option[Term])] = {
       if (o.featureOpt contains feature) {
         o match {
-          case OML(LocalName(ComplexStep(p)::Nil), Some(OMMOD(q)), df, _, _) if p == q => Some((p, df))
+          case OML(_, Some(tp), df, _, _) => Some((tp, df))
           case _ => throw ImplementationError("unsupported properties of derived declaration")
         }
       } else
@@ -296,9 +297,7 @@ object DerivedOMLFeature {
   }
 }
 
-object IncludeOML extends DerivedOMLFeature("include") with DerivedOMLFeature.Unnamed {
-  def apply(p: MPath, args: List[Term]): OML = apply(LocalName(p), OMPMOD(p, args))
-}
+object IncludeOML extends DerivedOMLFeature(IncludeVarDecl.feature) with DerivedOMLFeature.Unnamed
 
 object StructureOML extends DerivedOMLFeature("structure") with DerivedOMLFeature.Named
 
