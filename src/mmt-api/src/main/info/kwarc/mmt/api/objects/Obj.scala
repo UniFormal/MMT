@@ -349,7 +349,7 @@ case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OM
  */
 case class OMFOREIGN(node : Node) extends Term {
    def head = None
-   def toStr(implicit shortURIs: Boolean) = toString
+   def toStr(implicit shortURIs: Boolean) = "OMFOREIGN(" + node.toString() + ")"
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
