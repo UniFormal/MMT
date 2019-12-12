@@ -11,14 +11,14 @@ import GenericScalaExporter._
 //TODO translate LF definitions to Scala definitions
 
 /** for LF terms using Apply and Lambda */
-class LFOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
+class LFOperator(p: ContentPath, vars: ArgumentList, args: ArgumentList) extends Operator(vars,args) {
   private def omid = "OMID(this.path)"
-  def f(as: List[String]): String = as.mkString(":::")
+  def mkL(as: List[String]): String = as.mkString("List(", ",", ")")
   def mmtTerm(a1: List[String], a2: List[String]): String = {
     if (a1.isEmpty)
-      s"ApplyGeneral($omid, ${f(a2)})"
+      s"ApplyGeneral($omid, ${mkL(a2)})"
     else
-      s"Apply($omid, Lambda(${f(a1)}, ${f(a2)}))"  // TODO correctly generate variable bindings in LF
+      s"Apply($omid, Lambda(Context(${mkL(a1)}), a2.head))"
   }
 }
 

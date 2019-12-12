@@ -147,6 +147,7 @@ trait STeXAnalysis {
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         val alldeps = getDeps(archive,fp.toFile,Set.empty)
+
         Option(r) match {
           case Some(id) => mkDep(archive, id, fp)   ::: alldeps
           case None => List(mkFileDep(archive, fp)) ::: alldeps
@@ -168,8 +169,9 @@ trait STeXAnalysis {
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String): String =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s + "%"
 
-  private def mkMhImport(a: Archive, r: String, p: String, s: String) : STeXStructure =
+  private def mkMhImport(a: Archive, r: String, p: String, s: String) : STeXStructure = {
     STeXStructure(List(mkImport(a, r, p, s, "sms")), mkDep(a, r, entryToPath(p)).map(toKeyDep(_, "sms")))
+  }
 
   private def mkGImport(a: Archive, r: String, p: String): STeXStructure =
     STeXStructure(List(mkImport(a, r, p, "{" + p + "}", "tex"), "\\mhcurrentrepos{" + r + "}%"),
@@ -224,7 +226,6 @@ trait STeXAnalysis {
   /** Collect sms content and write to outFile. */
   def createSms(a: Archive, inFile: File, outFile: File) : Unit = {
     val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
-
     if (smsContent.isEmpty) {log("no sms content")}
     else { File.write(outFile, smsContent.reverse.mkString("", "\n", "\n")) }
   }
@@ -232,9 +233,10 @@ trait STeXAnalysis {
   /** get dependencies */
   def getDeps(a: Archive, in: File, parents: Set[File], amble: Option[File] = None): List[Dependency] = {
     val f = amble.getOrElse(in)
-    if (f.exists)
-      mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents).deps
-    else Nil
+    if (f.exists) {
+      val struct = mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents)
+      struct.deps
+    } else { Nil }
   }
 
   /** Method for creating STeXStructures, used for generating sms content and finding dependencies.
@@ -278,32 +280,26 @@ trait STeXAnalysis {
 
       case useMhModule(opt,t) =>
         val argmap = getArgMap(opt)
-        val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
 
-        if (argmap.contains("path")) {
-          val deps = mkDep(a,repos,entryToPath(argmap("path")))
+        if (argmap.contains("path") || argmap.contains("dir")) {
+          val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
+          val entry = if (argmap.contains("dir")) { argmap("dir") + java.io.File.separator + t } else { argmap("path") }
+          val deps  = mkDep(a,repos,entryToPath(entry))
           assert(deps.length == 1)
-          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
-        } else if (argmap.contains("dir")) {
-          val entry = argmap("dir") + java.io.File.separator + t
-          val deps = mkDep(a,repos,entryToPath(entry))
-          assert(deps.length == 1)
+
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
 
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
 
-      case guse(opt,_) =>
+      case guse(opt,k) =>
+
         val argmap = getArgMap(opt)
         val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
 
         if (argmap.contains("path")) {
           val deps = mkDep(a,repos,entryToPath(argmap("path")))
-          assert(deps.length == 1)
-          List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
-        } else if (argmap.contains("dir")) {
-          val deps = mkDep(a,repos,entryToPath(argmap("dir")))
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }

@@ -197,7 +197,7 @@ class Matcher(controller: Controller, rules: RuleSet) extends Logger {
           case c: Constant =>
             OML(c.name, c.tp, c.df, c.not)
           case PlainInclude(from, to) =>
-            IncludeOML(from, Nil)
+            IncludeOML(from, Nil, None)
           case _ => ???
         })
         Some(new AnonymousTheory(th.meta, ds))
