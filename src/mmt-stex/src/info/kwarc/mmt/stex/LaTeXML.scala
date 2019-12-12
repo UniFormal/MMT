@@ -182,8 +182,8 @@ class LaTeXML extends LaTeXBuildTarget {
   private val latexmlOpts: OptionDescrs = List(
     OptionDescr("latexmlc", "", StringArg, "executable path for (client) latexmlc"),
     OptionDescr("latexmls", "", StringArg, "executable path for (server) latexmls"),
-    OptionDescr("expire", "", IntArg, "expire argument for (server) latexmls"),
-    OptionDescr("port", "", IntArg, "port for (server) latexmls"),
+    // OptionDescr("expire", "", IntArg, "expire argument for (server) latexmls"),
+    // OptionDescr("port", "", IntArg, "port for (server) latexmls"),
     OptionDescr("profile", "", StringArg, "latexml profile"),
     OptionDescr("preload", "", StringListArg, "preload arguments"),
     OptionDescr("path", "", StringListArg, "path arguments"),
@@ -368,13 +368,14 @@ class LaTeXML extends LaTeXBuildTarget {
 
   /** Compile a .tex file to OMDoc */
   def reallyBuildFile(bt: BuildTask): BuildResult = {
-    val realPort: Int = if (portSet) port
-    else port + Math.abs(bt.archive.id.hashCode % portModulo)
+    //val realPort: Int = if (portSet) port
+    //else port + Math.abs(bt.archive.id.hashCode % portModulo)
     setLatexmlBins(bt)
     val lEnv = extEnv(bt)
     val output = new StringBuffer()
+    /*
     if (reboot) {
-      val pbc = Process(Seq(latexmlc, "--expire=" + expire, "--port=" + realPort,
+      val pbc = Process(Seq(latexmlc, // "--expire=" + expire, "--port=" + realPort,
         "literal:restarting"), bt.archive / inDim, lEnv: _*)
       if (isServerRunning(realPort)) {
         logResult("trying to kill latexml server: " + latexmls + " --port=" + realPort)
@@ -382,7 +383,7 @@ class LaTeXML extends LaTeXBuildTarget {
         Thread.sleep(delaySecs)
       }
       BuildResult.empty
-    } else {
+    } else { */
       val lmhOut = bt.outFile
       val logFile = bt.outFile.setExtension("ltxlog")
       lmhOut.delete()
@@ -396,19 +397,21 @@ class LaTeXML extends LaTeXBuildTarget {
         (if (noAmble(bt.inFile)) Seq("--whatsin=document")
         else Seq("--preamble=" + getAmbleFile("pre", bt),
           "--postamble=" + getAmbleFile("post", bt))) ++
-        Seq("--expire=" + expire, "--port=" + realPort) ++
+       // Seq("--expire=" + expire, "--port=" + realPort) ++
         (if (nopost) Seq("--nopost") else Nil) ++
         preloads.map("--preload=" + _) ++
         paths.map("--path=" + _)
       log(argSeq.mkString(" ").replace(" --", "\n --"))
       var failure = false
       try {
-        val pbs = Process(Seq(latexmls, "--expire=" + expire, "--port=" + realPort,
+        /*
+        val pbs = Process(Seq(latexmls, // "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
         if (!isServerRunning(realPort) && expire > -1) {
           pbs.run(BasicIO.standard(false).daemonized)
           Thread.sleep(delaySecs)
         }
+         */
         val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
         val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
         if (exitCode != 0 || lmhOut.length == 0) {
@@ -438,7 +441,7 @@ class LaTeXML extends LaTeXBuildTarget {
         logSuccess(bt.outPath)
         BuildSuccess(Nil, providedTheories)
       }
-    }
+    // }
   }
 
   override def cleanFile(arch: Archive, curr: Current) {
@@ -468,7 +471,7 @@ class PdfLatex extends LaTeXBuildTarget {
     val (_, nonOpts) = splitOptions(remainingStartArguments)
     val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts
     else nonOpts
-    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "PDFLATEX", pdflatexPath)
+    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "xelatex", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
