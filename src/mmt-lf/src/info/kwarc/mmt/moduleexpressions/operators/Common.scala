@@ -119,14 +119,13 @@ object Common {
       val decls = solver.lookup.getTheory(inclusion.from).getDeclarationsElaborated
       decls.flatMap {
         case c: Constant =>
-          val translatedConstant: OML = namedModuleOrLink match {
+          val translatedConstant = namedModuleOrLink match {
             case _: Theory =>
-              val (translatedConstant, wasDuplicate) = omsTranslator(c, unqualifyLater = true)
+              val (cT, wasDuplicate) = omsTranslator(c, unqualifyLater = true)
               if (wasDuplicate) {
                 solver.error(namedModuleOrLink.path + " has duplicate local name (" + c.name + "), hence anonymization ignored it")
               }
-
-              translatedConstant
+              cT
             case _: Link =>
               OML(
                 // TODO In case of [[Link]]s, the name of the domain declaration contains a complex step involving the domain's theory [[MPath]]
@@ -137,26 +136,19 @@ object Common {
                 nt = c.not,
                 featureOpt = Some(c.feature)
               )
-
-            case _ => ???
           }
-
-
           // [[IncludeData Inclusions]] can also have a (usually morphism) definiens `inclusion.df`
           // with the invariant that if an included declaration `c: E = e` already had a definiens
           // that then we have `e = inclusion.df(c)` (in sloppy, but intuitive notation).
           //
           // Hence, if we have a definiens, take that one,
           //        if not, apply the inclusion's definiens morphism on the constant if available.
-          val newDefiniens = translatedConstant.df orElse (inclusion.df map { df =>
-            omsTranslator(
-              solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)
-            )
+          val newDefiniens = translatedConstant.df orElse (inclusion.df map {df =>
+            val t = solver.lookup.ApplyMorphs(OMS(c.path), df, stack.context)
+            omsTranslator(t)
           })
-
-          List(translatedConstant.copy(
-            df = newDefiniens
-          ))
+          List(translatedConstant.copy(df = newDefiniens))
+        //case Include(IncludeData(_, from, args, dfO, _)) => List(IncludeOML(from, args, dfO))
         case _ => Nil
       }
     }
@@ -173,13 +165,12 @@ object Common {
   def anonymizeView(solver: CheckingCallback, namedView: View)(implicit stack: Stack, history: History): AnonymousMorphism = namedView.to match {
     // We first need all [[GlobalName]]s of the codomain to replace in definienses of the view's assignments
     // Hence we first anonymize the codomain, which we here only do (out of naiveity) for a theory as a codomain
-    case OMMOD(theoryPath: MPath) =>
+    case OMMOD(theoryPath) =>
       // TODO Recomputing the anonymization of the codomain is really unfortunate as we do this anyway
       //      in [[asAnonymousDiagram]] :( But passing this as method parameter is probably cumbersome in logic
       val codomainGlobalNames = anonymizeModuleOrLink(solver, solver.lookup.getTheory(theoryPath))._1
       AnonymousMorphism(anonymizeModuleOrLink(solver, namedView, initialReferencesToUnqualify = codomainGlobalNames)._2)
-
-    case _ => ???
+    case _ => ??? // TODO
   }
 
   /** provides the base case of the function that elaborates a theory expression (in the form of an [[AnonymousTheory]]) */

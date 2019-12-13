@@ -349,7 +349,7 @@ case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OM
  */
 case class OMFOREIGN(node : Node) extends Term {
    def head = None
-   def toStr(implicit shortURIs: Boolean) = toString
+   def toStr(implicit shortURIs: Boolean) = "OMFOREIGN(" + node.toString() + ")"
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
@@ -498,7 +498,7 @@ object Obj {
    }
 
    /** parses a term relative to a base address
-    *  @param Nmd node to parse (may not contain metadata)
+    *  @param N node to parse (may not contain metadata)
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
@@ -530,7 +530,7 @@ object Obj {
          case <OMS/> =>
             parseOMS(N) match {
                case p : ContentPath => OMID(p)
-               case p => throw new ParseError("Not a term: " + p + " " + N.toString)
+               case p => throw new ParseError("Not a t>erm: " + p + " " + N.toString)
             }
          case <OMV/> =>
             OMV(LocalName.parse(xml.attr(N,"name")))

@@ -101,8 +101,8 @@ object GenericScalaExporter {
    *  @param second the arguments
    */
   abstract class Operator(first: ArgumentList, second: ArgumentList) {
-    /** maps a list l of argument names (l.length == args.length) to a term */
-    def mmtTerm(a1: List[String], a2: List[String]): String
+    /** maps a list of variables and a list of arguments to a term */
+    def mmtTerm(vs: List[String], as: List[String]): String
 
     def combined = first+second
     def term = mmtTerm(first.names, second.names)
