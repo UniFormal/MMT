@@ -188,7 +188,7 @@ class Reader(val jr: java.io.BufferedReader) {
          if (l == "") {
             stop = true
             lastDelimiter = -1
-         } else if (! TokenList.canFollow(i.toChar, l(0))) {
+         } else if (! TokenList.canFollow(i.toChar, l(0)) && l(0) != '/') {
             stop = true
             val j = l(0).toInt
             lastDelimiter = 32
@@ -199,8 +199,7 @@ class Reader(val jr: java.io.BufferedReader) {
       val end = sourcePosition
       (s, SourceRegion(start, end))
    }
-   /** reads until EOF
-    */
+   /** reads until EOF */
    def readAll = readUntil()
 
    /** closes the underlying Java reader */

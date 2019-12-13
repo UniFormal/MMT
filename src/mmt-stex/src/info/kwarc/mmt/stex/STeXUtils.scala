@@ -105,7 +105,7 @@ object STeXUtils
   val includeMhProblem    : Regex = (bs + "includemhproblem" + optArg1).r
 
   val beginModnl          : Regex = (bs + begin("(?:mh)?modnl") + optArg1).r
-  val mhinputRef          : Regex = (bs + "n?(?:mh)?inputref" + optArg1).r
+  val mhinputRef          : Regex = (bs + "n?(?:mh)?inputref" + oStar + optArg1).r
   val tikzinput           : Regex = (any + bs + "c?(?:mh)?tikzinput" + optArg1).r
 
   private val smsKeys : List[String] = List("gadopt", "symvariant", "gimport") ++

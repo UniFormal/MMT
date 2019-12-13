@@ -14,7 +14,7 @@ import scala.xml.Node
   * @param name name
   * @param tp   optional type
   * @param df   optional definiens
-  * @param ats  OpenMath-style attributions
+  * @param not  optional notation
   */
 case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], df: Option[Term], not: Option[TextNotation]) extends Obj with NamedElement {
   type ThisType = VarDecl

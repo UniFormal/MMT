@@ -25,7 +25,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
   
@@ -33,7 +33,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * Checks that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
-    val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
+    val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
@@ -52,7 +52,7 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some("inductive"))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
     implicit val parent = indD.path
 
     val intDecls = parseInternalDeclarations(indD, controller, None)

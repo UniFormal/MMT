@@ -31,6 +31,7 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
    def apply(cs: Codec[Code]*) = {
       val codec = cs.head
       new Codec[Code](id(codec.exp), tp(codec.tp)) {
+         val codeType = utils.ListType(codec.codeType)
          def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
          def decode(c: Code) = self.construct(self.separate(c) map codec.decode)
       }

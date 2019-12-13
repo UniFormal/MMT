@@ -40,8 +40,16 @@ abstract class CodecRule(val head: GlobalName, arity: Int) extends Rule {
   def apply(coder: CodecRuleCallback)(tm: Term): Codec[Value]
 }
 
-abstract class IdentCodec[U](h: GlobalName, rt: RepresentedRealizedType[U], dbtype: BaseType[U]) extends CodecRule(h, 0) {
+/*
+abstract class IdentCodec[U](h: GlobalName, rt: RepresentedRealizedType[U], codeType: utils.ConcreteType) extends CodecRule(h, 0) {self =>
+  val dbtype = codeType match {
+    case utils.StringType => StringType
+    case utils.BooleanType => BoolType
+    case utils.IntType => IntType
+    case utils.FloatType => FloatType
+  }
   object codec extends Codec[Value](OMS(head), rt.synType) {
+     val codeType = self.codeType
      def encode(t: Term) = t match {
        case rt(u) => Value(dbtype, u)
        case _ => throw CodecNotApplicable
@@ -57,9 +65,10 @@ abstract class IdentCodec[U](h: GlobalName, rt: RepresentedRealizedType[U], dbty
 }
 
 //object IntIdentCodec extends IdentCodec(Codecs.IntIdent, new RepresentedRealizedType(OMS(MathData.int), StandardInt), SQLSyntax.IntType)
-object BoolIdentCodec extends IdentCodec(Codecs.BoolIdent, new RepresentedRealizedType(OMS(MathData.bool), StandardBool), SQLSyntax.BoolType)
-object StringIdentCodec extends IdentCodec(Codecs.StringIdent, new RepresentedRealizedType(OMS(MathData.string), StandardString), SQLSyntax.StringType)
-object UUIDIdentCodec extends IdentCodec(Codecs.UUIDIdent, new RepresentedRealizedType(OMS(MathData.uuid), UUIDLiteral), SQLSyntax.UUIDType)
+object BoolIdentCodec extends IdentCodec(Codecs.BoolIdent, new RepresentedRealizedType(OMS(MathData.bool), StandardBool), utils.BooleanType)
+object StringIdentCodec extends IdentCodec(Codecs.StringIdent, new RepresentedRealizedType(OMS(MathData.string), StandardString), utils.StringType)
+object UUIDIdentCodec extends IdentCodec(Codecs.UUIDIdent, new RepresentedRealizedType(OMS(MathData.uuid), UUIDLiteral), utils.StringType)
+*/
 
 class GeneralListAsArrayCodec(ls: GlobalName, nil: GlobalName, cons: GlobalName) extends CodecRule(Codecs._path ? "ListsAsArray", 3) {
   def collectElems(t: Term): List[Term] = t match {
@@ -71,6 +80,7 @@ class GeneralListAsArrayCodec(ls: GlobalName, nil: GlobalName, cons: GlobalName)
     val ApplySpine(_, List(elemTpMa,elemTpDb,cod)) = tm
     val elemCodec = coder.buildCodec(cod).asInstanceOf[Codec[Value]]
     new Codec[Value](tm, Apply(OMS(ls), elemTpMa)) {
+      val codeType = utils.ListType(elemCodec.codeType)
       def encode(t: Term) = {
         val elems = collectElems(t)
         val elemsC = elems map elemCodec.encode

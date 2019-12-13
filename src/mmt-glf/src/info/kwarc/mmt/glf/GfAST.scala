@@ -12,7 +12,7 @@ sealed abstract class GfAST {
 
 case class GfFun(fun : String, args : List[GfAST]) extends GfAST {
   override def toString: String =
-    fun + '(' + args.map(x => x.toString()).mkString(", ") + ')'
+    fun + '(' + args.map(x => x.toString).mkString(", ") + ')'
 
   override def toOMDocRec(theorymap : Map[String, Constant]): Term = {
     if (args.isEmpty) {
@@ -40,7 +40,7 @@ object GfAST {
 
     val head = str.take(head_end)
 
-    var args = ListBuffer[GfAST]()
+    val args = ListBuffer[GfAST]()
 
     // parse args
     var i = head_end + 1

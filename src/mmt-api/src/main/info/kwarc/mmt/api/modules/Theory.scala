@@ -74,6 +74,7 @@ trait AbstractTheory extends ModuleOrLink {
    }
    /** like getIncludes but also with includes of parametric theories and defined includes */
    def getAllIncludes: List[IncludeData] = meta.map(m => IncludeData(toTerm,m,Nil,None,false)).toList ::: getAllIncludesWithoutMeta
+   def selfInclude = IncludeData(toTerm, modulePath, Nil, None, false)
    /** like getIncludesWithoutMeta but also with includes of parametric theories and their instantiations */
    def getAllIncludesWithoutMeta: List[IncludeData] = {
      getDeclarations.flatMap {

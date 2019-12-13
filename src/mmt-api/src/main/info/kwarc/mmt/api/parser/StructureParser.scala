@@ -469,7 +469,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
  *
     * @param mod the containing module (added already)
     * @param context the context (including the containing module)
-    * @param patterns the patterns of the meta-theory (precomputed in readInDocument)
+    * @param features the patterns and structural features of the meta-theory (precomputed in readInDocument)
     *
     * this function handles one declaration if possible, then calls itself recursively
     */

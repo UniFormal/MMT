@@ -4,6 +4,11 @@ session Example = Pure +
   sessions HOL
   theories Example
 
-session Example_FOL = FOL +
+session Example_FOL in FOL = FOL +
   theories Example_FOL
 
+session Example_Pure in Pure = Pure +
+  sessions "HOL-Isar_Examples"
+  theories [record_proofs = 2]
+    "HOL-Isar_Examples.First_Order_Logic"
+    "HOL-Isar_Examples.Higher_Order_Logic"

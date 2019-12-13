@@ -137,8 +137,7 @@ object REPLServer {
   object AdminResponse {
     def apply(message: String) = MultiTypedResponse("message" -> message)
   }
-  
-  
+
   abstract class ElementResponse extends REPLResponse {
     def element: StructuralElement
   }
@@ -166,7 +165,7 @@ class REPLServer extends ServerExtension("repl") {
   }
 
   def apply(session: Option[String], command: Command, errorContO: Option[ErrorHandler]): REPLResponse = {
-    applyActual(session, command, errorContO)
+    applyActual(session,command,errorContO)
   }
 
   def getSessionOpt(id: String) = sessions.find(_.id == id)

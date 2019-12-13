@@ -1,12 +1,11 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries._
-import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
 
 import scala.xml.Node
-import documents._
 
 /**
   * this class carries the common properties of complex structural elements, in particular the body and the optional definiens
@@ -52,7 +51,20 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   }
   import narrativeStructure._
 
+  /**
+    * Get all transitive [[IncludeData inclusions]], but not inclusion of itself.
+    */
   def getAllIncludes: List[IncludeData]
+
+  /**
+    * Get self [[IncludeData inclusion]].
+    */
+  def selfInclude: IncludeData
+
+  /**
+    * Get all transitive-reflexive [[IncludeData inclusions]].
+    */
+  def getAllIncludesWithSelf: List[IncludeData] = getAllIncludes :+ selfInclude
 
   /** true iff a declaration for a name is present */
   def declares(name: LocalName) = statements.isDefinedAt(name)
