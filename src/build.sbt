@@ -41,7 +41,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.8"
+scalaVersion in Global := "2.12.9"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
@@ -145,7 +145,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf, gf,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij, argsemcomp
   ).
@@ -160,7 +160,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp, gf).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -291,15 +291,10 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
 
-// Glf server. Maintainer: Frederik
+// GLF (Grammatical Framework etc.). Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
   dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
-
-// plugin for reading GF. Maintainer: Frederik
-lazy val gf = (project in file("mmt-gf")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("mmt-gf"): _*)
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).

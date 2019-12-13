@@ -147,6 +147,7 @@ trait STeXAnalysis {
       case mhinputRef(_, r, b) =>
         val fp = entryToPath(b)
         val alldeps = getDeps(archive,fp.toFile,Set.empty)
+
         Option(r) match {
           case Some(id) => mkDep(archive, id, fp)   ::: alldeps
           case None => List(mkFileDep(archive, fp)) ::: alldeps
@@ -168,8 +169,9 @@ trait STeXAnalysis {
   private def mkImport(a: Archive, r: String, p: String, s: String, ext: String): String =
     "\\importmodule[load=" + a.root.up.up + "/" + r + "/source/" + p + ",ext=" + ext + "]" + s + "%"
 
-  private def mkMhImport(a: Archive, r: String, p: String, s: String): STeXStructure =
+  private def mkMhImport(a: Archive, r: String, p: String, s: String) : STeXStructure = {
     STeXStructure(List(mkImport(a, r, p, s, "sms")), mkDep(a, r, entryToPath(p)).map(toKeyDep(_, "sms")))
+  }
 
   private def mkGImport(a: Archive, r: String, p: String): STeXStructure =
     STeXStructure(List(mkImport(a, r, p, "{" + p + "}", "tex"), "\\mhcurrentrepos{" + r + "}%"),
@@ -190,17 +192,31 @@ trait STeXAnalysis {
 
   private def getArgMap(r: String): Map[String, String] = mkArgMap(splitArgs(r))
 
-  private def createMhImport(a: Archive, r: String, b: String): List[STeXStructure] = {
+  private def createMhImport(a: Archive, r: String, b: String) : List[STeXStructure] = {
     val m = getArgMap(r)
-    m.get("path").toList.map(p => mkMhImport(a, m.getOrElse("repos", archString(a)), p, b))
+    val repos : String = m.getOrElse("mhrepos", m.getOrElse("repos", archString(a)))
+
+    val result : List[STeXStructure] = if (m.isDefinedAt("dir")) {
+      /* \importmhmodule[dir=foo]{bar} is supposed to be the same as \importmhmodule[path=foo/bar]{bar}
+         as per https://github.com/UniFormal/MMT/issues/499. */
+
+      def addb(p : String) : String = {
+        assert(b.startsWith("{") && b.endsWith("}"))
+        p + java.io.File.separator + b.tail.init
+      }
+      m.get("dir").toList.map(p => mkMhImport(a, repos, addb(p), b))
+    } else if (m.isDefinedAt("path")) {
+      m.get("path").toList.map(p => mkMhImport(a, repos, p, b))
+    } else {
+      List.empty
+    }
+    result
   }
 
   private def createGImport(a: Archive, r: String, p: String): STeXStructure = {
-    Option(r) match {
-      case Some(id) =>
-        mkGImport(a, id, p)
-      case None =>
-        mkGImport(a, archString(a), p)
+      Option(r) match {
+        case Some(id) => mkGImport(a, id, p)
+        case None     => mkGImport(a, archString(a), p)
     }
   }
 
@@ -210,7 +226,6 @@ trait STeXAnalysis {
   /** Collect sms content and write to outFile. */
   def createSms(a: Archive, inFile: File, outFile: File) : Unit = {
     val smsContent = mkSTeXStructure(a, inFile, readSourceRebust(inFile).getLines, Set.empty).smslines
-
     if (smsContent.isEmpty) {log("no sms content")}
     else { File.write(outFile, smsContent.reverse.mkString("", "\n", "\n")) }
   }
@@ -218,9 +233,10 @@ trait STeXAnalysis {
   /** get dependencies */
   def getDeps(a: Archive, in: File, parents: Set[File], amble: Option[File] = None): List[Dependency] = {
     val f = amble.getOrElse(in)
-    if (f.exists)
-      mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents).deps
-    else Nil
+    if (f.exists) {
+      val struct = mkSTeXStructure(a, in, readSourceRebust(f).getLines, parents)
+      struct.deps
+    } else { Nil }
   }
 
   /** Method for creating STeXStructures, used for generating sms content and finding dependencies.
@@ -262,21 +278,28 @@ trait STeXAnalysis {
       case importMhModule(r, b) =>
         createMhImport(a, r, b)
 
-      case useMhModule(opt,_) =>
+      case useMhModule(opt,t) =>
         val argmap = getArgMap(opt)
-        if (argmap.contains("path")) {
-          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+
+        if (argmap.contains("path") || argmap.contains("dir")) {
+          val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
+          val entry = if (argmap.contains("dir")) { argmap("dir") + java.io.File.separator + t } else { argmap("path") }
+          val deps  = mkDep(a,repos,entryToPath(entry))
           assert(deps.length == 1)
+
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }
 
       case gimport(_, r, p) =>
         List(createGImport(a, r, p))
 
-      case guse(opt,_) =>
+      case guse(opt,k) =>
+
         val argmap = getArgMap(opt)
+        val repos = argmap.getOrElse("mhrepos", argmap.getOrElse("repos", archString(a)))
+
         if (argmap.contains("path")) {
-          val deps = mkDep(a,argmap.getOrElse("repos",archString(a)),entryToPath(argmap("path")))
+          val deps = mkDep(a,repos,entryToPath(argmap("path")))
           assert(deps.length == 1)
           List(STeXStructure(Nil,List(toKeyDep(deps.head,key = "sms"))))
         } else { Nil }

@@ -15,6 +15,7 @@ import scala.collection.mutable
 import scala.util.matching.Regex.Match
 
 trait BigIntAsJSON {
+  val codeType = IntType
   def encodeRep(i: BigInt): JSON = {
     if (i.isValidInt)
       JSONInt(i.toInt)
@@ -43,6 +44,7 @@ object TMString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.stan
 object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.boolAsString, MitM.BoolLit))
 
 object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
+  val codeType = IntType
   def encodeRep(b: java.lang.Boolean) = if (b) JSONInt(1) else JSONInt(0)
   def decodeRep(j: JSON) = j match {
     case JSONInt(x) if x.toInt == 1 => true
@@ -52,6 +54,7 @@ object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt,
 }
 
 object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standardBool, MitM.BoolLit) {
+  val codeType = BooleanType
   def encodeRep(b: java.lang.Boolean) = JSONBoolean(b)
   def decodeRep(j: JSON) = j match {
     case JSONBoolean(b) => b
@@ -60,6 +63,7 @@ object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standar
 }
 
 object TMList extends ListCodec[JSON](Codecs.standardList, LFList.path, ListNil.path, Append.path) {
+  def resultCodeType(ct: ConcreteType) = utils.ListType(ct)
   def aggregate(cs: List[JSON]): JSON = JSONArray(cs:_*)
   def separate(j: JSON): List[JSON] = j match {
     case JSONArray(js@_*) => js.toList
@@ -90,6 +94,7 @@ object StandardVector extends CodecOperator[JSON,Codec[JSON]](Codecs.standardVec
   def apply(cs: Codec[JSON]*) = {
     val codec = cs.head
     new Codec[JSON](id(codec.exp), tp(codec.tp)) {
+      val codeType = utils.ListType(codec.codeType)
       def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
       def decode(c: JSON) = self.construct(codec.tp, self.separate(c) map codec.decode)
     }
@@ -138,7 +143,7 @@ object StandardMatrix extends CodecOperator[JSON,Codec[JSON]](Codecs.standardMat
 object StandardPolynomial extends Codec[JSON](OMS(Codecs.rationalPolynomial), OMS(MitM.polynomials)) { self =>
   val typeParameterPositions : List[Int] = Nil
 
-
+  val codeType = StringType
   def encode(t: Term): JSON = {
     // destruct the polynomial
     val (varName, ints) = destructPolynomial(t)

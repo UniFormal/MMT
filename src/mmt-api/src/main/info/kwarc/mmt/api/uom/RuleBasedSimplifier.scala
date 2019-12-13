@@ -306,8 +306,8 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          val ds = th.getDeclarationsElaborated.map({
            case c: Constant =>
              OML(c.name, c.tp, c.df, c.not)
-           case PlainInclude(from, to) =>
-             IncludeOML(from, Nil)
+           case PlainInclude(from, _) =>
+             IncludeOML(from, Nil, None)
            case _ => ??? //TODO
          })
          Some(new AnonymousTheory(th.meta, ds))

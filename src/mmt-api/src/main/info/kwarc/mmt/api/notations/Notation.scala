@@ -1,12 +1,6 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import NotationConversions._
-import utils._
-import utils.MyList._
-import modules._
-import symbols._
-import objects._
 
 case class InvalidNotation(msg: String) extends java.lang.Throwable
 
@@ -28,7 +22,7 @@ object NotationScope {
 /**
  * A TextNotation is a Notation that can be used for parsing objects in text syntax
  * @param fixity the mixfix notation
- * @param precendence the precedence, notations with lower precedence are tried first, thus grab larger subterms
+ * @param precedence the precedence, notations with lower precedence are tried first, thus grab larger subterms
  * @param meta the meta-theory of this notation if different from the current meta-theory
  * @param scope
  *

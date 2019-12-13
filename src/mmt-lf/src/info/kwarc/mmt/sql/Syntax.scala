@@ -66,6 +66,7 @@ object SQLSyntax {
   case object IntType extends BaseType[Int]("Int")
   case object BoolType extends BaseType[java.lang.Boolean]("Boolean")
   case object StringType extends BaseType[String]("String")
+  case object FloatType extends BaseType[Double]("Double")
   case object UUIDType extends BaseType[java.util.UUID]("UUID")
   case object JSONType extends BaseType[utils.JSON]("JSON")
   
@@ -87,12 +88,14 @@ object SQLSyntax {
       case IntType => IntVal(u)
       case BoolType => BoolVal(u)
       case StringType => StringVal(u)
+      case FloatType => FloatVal(u)
       case UUIDType => UUIDVal(u)
       case JSONType => JSONVal(u)
       case ArrayType(tp) => ArrayVal(tp, u)
     }
     def typeOf(v: Value) = v match {
       case v: IntVal => IntType
+      case f: FloatVal => FloatType
       case v: BoolVal => BoolType
       case v: StringVal => StringType
       case v: UUIDVal => UUIDType
@@ -102,6 +105,7 @@ object SQLSyntax {
   }
   
   case class IntVal(v: Int) extends Value(v)
+  case class FloatVal(d: Double) extends Value(d)
   case class StringVal(s: String) extends Value(s)
   case class BoolVal(b: Boolean) extends Value(b)
   case class UUIDVal(u: java.util.UUID) extends Value(u)

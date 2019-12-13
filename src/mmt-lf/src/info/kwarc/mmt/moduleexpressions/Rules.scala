@@ -100,7 +100,8 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
 
 object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case AnonymousTheoryCombinator(_) => Some(TheoryType(Nil)) // TODO
+      case AnonymousTheoryCombinator(_) =>
+        Some(TheoryType(Nil)) // TODO
       case _ =>
          solver.error("illegal use of " + ModExp.anonymoustheory)
          None
@@ -235,7 +236,7 @@ object IdentityInfer extends InferenceRule(ModExp.identity, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case OMIDENT(t) =>
-           solver.check(IsTheory(stack, t))
+           if (!covered) solver.check(IsTheory(stack, t))
            Some(MorphType(t,t))
       }
    }
@@ -255,7 +256,7 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
         case hd::tl =>
            (solver.inferType(hd), solver.inferType(OMCOMP(tl))) match {
               case (Some(MorphType(a1,b1)), Some(MorphType(a2,b2))) =>
-                 solver.check(Equality(stack, b1,a2, Some(TheoryType(Nil))))
+                 if (!covered) solver.check(Equality(stack, b1,a2, Some(TheoryType(Nil))))
                  Some(MorphType(a1,b2))
               case _ => None
            }

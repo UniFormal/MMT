@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.utils
 
 import scala.xml._
 
-/** objects that can be serialized as XML */
+/** objects that can be serialized as XML or JSON */
 trait ScalaTo {
   def toXML: Node
   def toJSON: JSON

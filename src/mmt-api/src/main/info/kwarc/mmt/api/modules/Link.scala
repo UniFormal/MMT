@@ -1,8 +1,7 @@
 package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.symbols._
 
 /**
  * atomic MMT morphism, unifies views (which are modules) and structures (which are declarations)
@@ -20,25 +19,36 @@ trait Link extends ModuleOrLink {
    /** the codomain of the link (mutable for views but not structures) */
    def toC: AbstractTermContainer
    /** the domain of this link; pre: must have be given explicitly or have been inferred */
-   def from = fromC.get.getOrElse {
+   def from: Term = fromC.get.getOrElse {
      throw ImplementationError("can only call this method after domain has been inferred")
    }
    /** the codomain of this link; pre: must have been given explicitly or have been inferred */
-   def to = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
+   def to: Term = toC.get.getOrElse(throw ImplementationError("can only call this method after codomain has been inferred"))
    /** the codomain as a context; pre: same as `to` */
-   def codomainAsContext = toC.get match {
+   def codomainAsContext: Context = toC.get match {
     case Some(ComplexTheory(cont)) => cont
     case _ => throw ImplementationError("codomain of link must be theory")
    }
 
    /** true if this link is implicit */
    def isImplicit : Boolean
-   protected def implicitString = if (isImplicit) "implicit " else ""
+   protected def implicitString: String = if (isImplicit) "implicit " else ""
 
    /** like getIncludes but also with includes of parametric theories and their instantiations */
-   def getAllIncludes: List[IncludeData] = getDeclarations.flatMap {
+   override def getAllIncludes: List[IncludeData] = getDeclarations.flatMap {
      case Include(id) => List(id)
      case _ => Nil
+   }
+
+  /**
+    * Get an [[IncludeData]] referencing [[from]] as the domain and this very link
+    * as the definiens (via [[OMMOD OMMOD(modulePath)]]).
+    */
+   override def selfInclude: IncludeData = {
+     from match {
+       case OMPMOD(p, args) => IncludeData(toTerm, p, args, Some(OMMOD(modulePath)), total = false)
+       case f => IncludeData(toTerm, f.toMPath, Nil, Some(OMMOD(modulePath)), total = false)
+     }
    }
    
    /** the prefix used when translating declarations along this link */

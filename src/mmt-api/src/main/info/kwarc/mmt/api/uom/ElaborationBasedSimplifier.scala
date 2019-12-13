@@ -210,8 +210,8 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               def translate(tm: Term) = (OMLReplacer(translations)).apply(tm, Context.empty)
               at.decls foreach {o =>
                 o match {
-                  case IncludeOML(mp, _) =>
-                    val d = PlainInclude(mp,thy.path)
+                  case IncludeOML(OMPMOD(mp,args), _ ) =>
+                    val d = Include(thy.toTerm, mp, args)
                     add(d)
                     // we assume all references to included symbols already use OMS, i.e., do not have to be translated
                   case RealizeOML(mp, _) =>

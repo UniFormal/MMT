@@ -332,4 +332,4 @@ trait MMTNotAsset extends MMTAsset {
 }
 
 /** a dummy asset for structuring the tree */
-trait MMTAuxAsset  // extends enhanced.SourceAsset(label, -1, MyPosition(-1))
+trait MMTAuxAsset // extends enhanced.SourceAsset(label, -1, MyPosition(-1))}

@@ -1,9 +1,9 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols.OMLReplacer
-import notations._
-import utils._
+import info.kwarc.mmt.api.utils._
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
   *
@@ -46,6 +46,7 @@ case class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends 
 }
 
 /** bridges between [[AnonymousTheory]] and [[Term]] */
+// TODO decide if AnonymousTheory should subclass Term directly
 object AnonymousTheoryCombinator {
   val path = ModExp.anonymoustheory
 
@@ -140,10 +141,9 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param nodes the nodes
   *  @param arrows the arrows
   *  @param distNode the label of a distinguished node to be used if this diagram is used like a theory
-  *  @param distArrow the label of a distinguished arrow to be used if this diagram is used like a morphism
   *  invariant: codomain of distArrow is distNode
   */
-case class AnonymousDiagram(val nodes: List[DiagramNode], val arrows: List[DiagramArrow], val distNode: Option[LocalName]) {
+case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName]) {
   def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
   def getArrow(label: LocalName): Option[DiagramArrow] = arrows.find(_.label == label)
   def getArrowWithNodes(label: LocalName): Option[(DiagramNode,DiagramNode,DiagramArrow)] = {
@@ -283,11 +283,12 @@ object DerivedOMLFeature {
   }
   /** for mixing into subclasses of the companion class */
   trait Unnamed {self: DerivedOMLFeature =>
-    def apply(p: MPath, df: Option[Term]): OML = apply(LocalName(p), OMMOD(p), df)
-    def unapply(o : OML): Option[(MPath, Option[Term])] = {
+    def apply(p: MPath, args: List[Term], df: Option[Term]): OML = apply(LocalName(p), OMPMOD(p,args), df)
+    def apply(n: LocalName, df: Option[Term]): OML = apply(n, OML(n), df)
+    def unapply(o : OML): Option[(Term, Option[Term])] = {
       if (o.featureOpt contains feature) {
         o match {
-          case OML(LocalName(ComplexStep(p)::Nil), Some(OMMOD(q)), df, _, _) if p == q => Some((p, df))
+          case OML(_, Some(tp), df, _, _) => Some((tp, df))
           case _ => throw ImplementationError("unsupported properties of derived declaration")
         }
       } else
@@ -296,9 +297,7 @@ object DerivedOMLFeature {
   }
 }
 
-object IncludeOML extends DerivedOMLFeature("include") with DerivedOMLFeature.Unnamed {
-  def apply(p: MPath, args: List[Term]): OML = apply(LocalName(p), OMPMOD(p, args))
-}
+object IncludeOML extends DerivedOMLFeature(IncludeVarDecl.feature) with DerivedOMLFeature.Unnamed
 
 object StructureOML extends DerivedOMLFeature("structure") with DerivedOMLFeature.Named
 

@@ -40,3 +40,7 @@ target
 
 # scala-bin compilation articfacts
 out/
+*/.DS_Store
+
+# Artifact of https://github.com/coursier/coursier when working with IntelliJ
+src/null

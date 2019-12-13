@@ -144,7 +144,12 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
     */
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
 
-   /** called after checking components and inner declarations for additional feature-specific checks */
+   /** compute the expected type of a constant inside a derived element of this feature
+    *  none by default, override as needed
+    */
+   def expectedType(dd: Level, c: Constant): Option[Term] = None
+
+  /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: Level)(implicit env: ExtendedCheckingEnvironment): Unit
 
    /** override as needed */
@@ -155,11 +160,6 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
   /** additional context relative to which to interpret the body of a derived declaration */
   def getInnerContext(dd: DerivedDeclaration): Context = dd.getInnerContext
 
-  /** compute the expected type of a constant inside a derived declaration of this feature
-   *  none by default, override as needed
-   */
-  def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = None
-  
    /**
     * defines the outer perspective of a derived declaration
     *
@@ -404,7 +404,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   def getHeadPath(t: Term) : GlobalName = t match {
     case OMS(p) => p
     case OMMOD(p) => p.toGlobalName
-    case _ => throw InvalidObject(t, "ill-formed header") 
+    case _ => throw InvalidObject(t, "ill-formed header")
   }
   
   def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: Option[String]=None) : (Context, List[Term], DerivedDeclaration, Context) = {
@@ -415,20 +415,21 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
           +" but no derived declaration found at that location.")
     }
+    
     val indCtx = controller.extman.get(classOf[StructuralFeature], indD.feature).getOrElse(throw LocalError("Structural feature "+indD.feature+" not found.")) match {
       case f: ParametricTheoryLike => f.Type.getParameters(indD)
       case _ => Context.empty
     }
-    //check the indParams match the indCtx at least in length
-    if (indCtx .length != indParams.length) {
-      throw LocalError("Incorrect length of parameters for the derived declaration "+indD.name+".\n"+
-          "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
     (context, indParams, indD, indCtx)
   }
   
   def checkParams(indCtx: Context, indParams: List[Term], context: Context, env: ExtendedCheckingEnvironment) : Unit = {
     //A first attempt to check the indParams match the indCtx
-		//TODO: Check this code
+		//check the indParams match the indCtx at least in length
+    if (indCtx .length != indParams.length) {
+      throw LocalError("Incorrect length of parameters for the referenced derived declaration .\n"+
+          "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
+    
     indCtx zip indParams map {case (vd, tm) =>
       vd.tp map {expectedType =>
         val tpJudgement = Typing(Stack.empty, tm, expectedType)

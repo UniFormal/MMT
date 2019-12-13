@@ -101,6 +101,15 @@ object Example {
   }
 }
 
+object Proof {
+  def apply(home : Term, name : LocalName, targets : List[GlobalName], df : Term, localSection : LocalName) : Constant = {
+    val const = Constant(home, name, Nil, None, Some(df), None)
+    const.metadata.add(new MetaDatum((new InformalSym("role")).path, OMA((new InformalSym("proof")).term, targets.map(OMS(_)))))
+    const.setDocumentHome(localSection)
+    const
+  }
+}
+
 object PlainNarration {
   def apply(home : Term, name : LocalName, df : Term, localSection : LocalName) : Constant = {
     val const = Constant(home, name, Nil, None, Some(df), None)

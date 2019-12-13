@@ -1,4 +1,3 @@
-
 package info.kwarc.mmt.api.utils
 
 import info.kwarc.mmt.api.ParseError
@@ -8,8 +7,11 @@ import scala.util.Try
 /**
  * straightforward API for JSON objects
  */
-sealed abstract class JSON {
+sealed abstract class JSON extends ScalaTo {
   override def toString: String = toCompactString
+
+  def toJSON = this
+  def toXML = JSONXML.jsonToXML(this)
 
   /** turns this JSON Object into a compact (no-spaces) string */
   def toCompactString: String = toFormattedString("")
@@ -35,18 +37,15 @@ case object JSONNull extends JSON {
   def toFormattedString(indent: String): String = "null"
 }
 
-sealed abstract class JSONValue extends JSON {
+sealed abstract class JSONValue(val tp: ConcreteBaseType) extends JSON {
    def value: Any
    def toFormattedString(indent: String): String = value.toString
 }
 
-case class JSONInt(value: BigInt) extends JSONValue
-
-case class JSONFloat(value: BigDecimal) extends JSONValue
-
-case class JSONBoolean(value: Boolean) extends JSONValue
-
-case class JSONString(value: String) extends JSONValue {
+case class JSONInt(value: BigInt) extends JSONValue(IntType)
+case class JSONFloat(value: BigDecimal) extends JSONValue(FloatType)
+case class JSONBoolean(value: Boolean) extends JSONValue(BooleanType)
+case class JSONString(value: String) extends JSONValue(StringType) {
   override def toFormattedString(indent: String): String = {
     val escaped = JSON.quoteString(value) //also escapes / to \/ which is allowed but weird
     "\"" + escaped + "\""
@@ -143,7 +142,6 @@ object JSONObject {
    implicit def toList(j: JSONObject): List[(JSONString,JSON)] = j.map
 }
 
-
 object JSONConversions {
    implicit def fromString(s: String) = JSONString(s)
    implicit def fromInt(i: Int) = JSONInt(i)
@@ -163,7 +161,7 @@ object JSON {
 
    case class JSONError(s: String) extends java.lang.Exception(s)
 
-   /** to select a field in an JSONObjcet or a value in a JSONArray */
+   /** to select a field in an JSONObject or a value in a JSONArray */
    type Selector = Union[String,Int]
    
    def parse(s: String) : JSON = {
@@ -385,6 +383,130 @@ object JSONXML {
         Elem(null, l, attsX, TopScope, childX.isEmpty, childX:_*)
       case j: JSONValue => Text(j.value.toString)
       case _ => throw JSON.JSONError(s"array or text expected")
+    }
+  }
+}
+
+abstract class ConcreteType {
+  def lub(that: ConcreteType): ConcreteType = {
+    if (that == this) this
+    else if (that == AnyType) AnyType
+    else if (that == NullType) OptionType(this)
+    else AnyType
+  }
+  def sub(that: ConcreteType) = (this lub that) == that
+}
+
+abstract class ConcreteBaseType extends ConcreteType
+case object IntType extends ConcreteBaseType
+case object FloatType extends ConcreteBaseType
+case object BooleanType extends ConcreteBaseType
+case object StringType extends ConcreteBaseType
+
+case object AnyType extends ConcreteType {
+  override def lub(that: ConcreteType) = AnyType
+}
+case object NullType extends ConcreteType {
+  override def lub(that: ConcreteType) = that match {
+    case NullType | OptionType(_) => that
+    case AnyType => AnyType
+    case _ => OptionType(that)
+  }
+}
+
+case class ListType(entry: ConcreteType) extends ConcreteType {
+  override def lub(that: ConcreteType) = that match {
+    case ListType(thatEntry) => ListType(entry lub thatEntry)
+    case _ => super.lub(that)
+  }
+}
+case class OptionType(entry: ConcreteType) extends ConcreteType {
+  override def lub(that: ConcreteType) = that match {
+    case OptionType(thatEntry) => OptionType(entry lub thatEntry)
+    case NullType => this
+    case _ => super.lub(that)
+  }
+}
+case class VectorType(entry: ConcreteType, length: Int) extends ConcreteType {
+  override def lub(that: ConcreteType) = that match {
+    case that: VectorType =>
+      if (this.length == that.length) VectorType(this.entry lub that.entry, length)
+      else AnyType
+    case _ => super.lub(that)
+  }
+}
+case class TupleType(entries: List[ConcreteType]) extends ConcreteType {
+  def arity = entries.length
+  override def lub(that: ConcreteType) = that match {
+    case TupleType(thatEntries) if entries.length == thatEntries.length =>
+      val lubs = (entries zip thatEntries) map {case (a,b) => a lub b}
+      TupleType(lubs)
+    case _ => super.lub(that)
+  }
+}
+case class RecordType(fields: List[(String,ConcreteType)]) extends ConcreteType {
+  def arity = fields.length
+  def apply(s: String): Option[ConcreteType] = listmap(fields, s)
+  def keys = fields.map(_._1)
+  override def lub(that: ConcreteType) = that match {
+    case that: RecordType =>
+      val lubKeys = inter(this.keys, that.keys)
+      val lubFields = lubKeys map {k => (k, this(k).get lub that(k).get)}
+      RecordType(lubFields.toList)
+    case _ => super.lub(that)
+  }
+}
+
+object ConcreteType {
+  def leastUpperBound(entries: ConcreteType*): ConcreteType = entries.foldLeft(AnyType) {case (a,b) => a lub b}
+}
+
+/** tuple and vector types are inhabited by arrays, but arrays are never infered as such */
+object JSONTyping {
+  def infer(j: JSON): ConcreteType = j match {
+    case j: JSONValue => j.tp
+    case JSONNull => NullType
+    case j: JSONArray =>
+      val tps = j.values map infer
+      val lub = ConcreteType.leastUpperBound(tps:_*)
+      ListType(lub)
+    case j: JSONObject =>
+      val fieldTypes = j.map map {case (k,v) => (k.value, infer(v))}
+      RecordType(fieldTypes)
+  }
+  def check(j: JSON, tp: ConcreteType): Boolean = {
+    tp match {
+      case AnyType => true
+      case NullType | _:ConcreteBaseType =>
+        infer(j) == tp
+      case OptionType(a) =>
+        j == JSONNull || check(j,a)
+      case ListType(a) =>
+        j match {
+          case JSONArray(vs@_*) => vs.forall {v => check(v,a)}
+          case _ => false
+        }
+      case VectorType(a,l) =>
+        j match {
+          case JSONArray(vs@_*) => vs.length == l && vs.forall {v => check(v,a)}
+          case _ => false
+        }
+      case RecordType(fieldTypes) =>
+        j match {
+          case j: JSONObject =>
+            fieldTypes.forall {case (k,a) =>
+               val jk = j(k).getOrElse(return false)
+               check(jk, a)
+            }
+          case _ => false
+        }
+      case TupleType(as) =>
+        j match {
+          case JSONArray(vs@_*) =>
+            if (vs.length != as.length) return false
+            (vs zip as).forall {case (v,a) => check(v,a)}
+          case _ => false
+        }
     }
   }
 }

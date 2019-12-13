@@ -1,6 +1,6 @@
 object GfImporterTest extends MagicTest(){
   override def doFirst: Unit = {
-    hl("extension info.kwarc.mmt.gf.GfImporter") // Register extension
+    hl("extension info.kwarc.mmt.glf.GfImporter") // Register extension
     hl("log+ gf-omdoc-progress")
   }
 

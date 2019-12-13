@@ -502,13 +502,11 @@ object TheoryType {
 /** An OMM represents the application of a morphism to a term */
 object OMM {
   val path = ModExp.morphismapplication
-
   /**
    * @param t the term
    * @param m the morphism
    */
   def apply(t: Term, m: Term): Term = OMA(OMS(this.path), List(t, m))
-
   def unapply(t: Term): Option[(Term, Term)] = t match {
     case OMA(OMS(this.path), List(a, m)) => Some((a, m))
     case _ => None
