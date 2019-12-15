@@ -158,7 +158,12 @@ class GfParser {
   def parseBody(ctx : GfParserContext): Unit = {
     expectToken(LEFT_BRACE, ctx)
     var ignoremode = false
+    var possiblydone = false  // if we are in ignoremode and we've found a '}', we could be done
     while (true) {
+      if (possiblydone) {
+        if (ctx.reachedEOF()) return
+        possiblydone = false
+      }
       ctx.popToken() match {
         case CAT =>
           parseCat(ctx)
@@ -170,6 +175,7 @@ class GfParser {
           ignoremode = true
         case RIGHT_BRACE =>
           if (! ignoremode) return
+          possiblydone = true
         case token =>
           if (!ignoremode) throw GfUnexpectedTokenException("Expected segment type (like cat or fun), found: '" + token.toString + "'")
       }
