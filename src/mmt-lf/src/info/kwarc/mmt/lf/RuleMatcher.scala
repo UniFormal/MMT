@@ -41,10 +41,9 @@ case class RuleParameter(name: LocalName, tp: Term) extends RuleArgument
 case class RuleAssumption(judgment: ComplexJudgement) extends RuleArgument
 
 /**
- *  defines pattern matchers on terms for [[InferenceRule]]s
+ *  defines pattern matchers on LF types for [[DeclarativeRule]]s
  *  @param lup needed to lookup the roles of constants
  *  @param roles the roles that form atomic judgements
- *  @param dedTag role of truth judgements
  */
 class RuleMatcher(lup: Lookup, roles: List[String]) {
    private def checkRole(p: GlobalName, allowedRoles: List[String]): Option[String] = {
@@ -83,7 +82,7 @@ class RuleMatcher(lup: Lookup, roles: List[String]) {
       }
    }
 
-   /** matches an InferenceRule */
+   /** matches a DeclarativeRule */
    object Rule {
       def unapply(t: Term): Option[DeclarativeRule] = t match {
          case FunType(args, Atomic(conc)) =>

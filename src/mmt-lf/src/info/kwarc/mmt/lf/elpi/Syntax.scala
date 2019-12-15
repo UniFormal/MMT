@@ -21,7 +21,12 @@ object ELPI {
   abstract class Decl {
     def toELPI: String
   }
-  
+
+  case class Data(name: LocalName, tp: Expr, isKind: Boolean) extends Decl {
+    def keyword = if (isKind) "kind" else "type"
+    def toELPI = keyword + " " + name + " " + tp.toELPI(false) + "."
+  }
+
   case class Rule(rule: Expr) extends Decl {
     def toELPI = {
       val ruleS = rule match {
@@ -154,6 +159,7 @@ object ELPI {
   object Impl extends BinOp("=>") {
     def apply(left: List[Expr], right: Expr): Expr = if (left.isEmpty) right else Impl(And(left), right)
   }
+  object Arrow extends BinOp("->")
   
   /** built-in binders */
   abstract class Binder(nameS: String) {

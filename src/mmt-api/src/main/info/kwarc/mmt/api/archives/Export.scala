@@ -97,7 +97,7 @@ trait Exporter extends BuildTarget {self =>
   /** returns the output file that this exporter uses for some module */
   protected def getOutFileForModule(p: MPath): Option[File] = {
     controller.backend.findOwningArchive(p).map {arch =>
-      (arch / contentExporter.outDim / archives.Archive.MMTPathToContentPath(p.mainModule)).addExtension(outExt)
+      (arch / contentExporter.outDim / archives.Archive.MMTPathToContentPath(p.mainModule)).setExtension(outExt)
     }
   }
   

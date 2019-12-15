@@ -67,8 +67,13 @@ class ELPIExporter extends Exporter {
                     fail(msg)
                   }
                 case _ =>
-                  val msg = "not a rule: " + controller.presenter.asString(t)
-                  fail(msg)
+                  val tE = translateTerm(t)
+                  val isKind = t match {
+                    case FunType(_, OMS(Typed.ktype)) => true
+                    case _ => false
+                  }
+                  val decl = ELPI.Data(c.name, tE, isKind)
+                  List(comment, ELPI.Comment(decl.toELPI)) // TODO check how to write dependent types in ELPI
               }
             case None =>
               throw ELPIError("cannot translate untyped constant: " + c.path)
@@ -77,7 +82,7 @@ class ELPIExporter extends Exporter {
       case PlainInclude(from,_) =>
         // we generate one elpi file per MMT theory; MMT includes become lambda-Prolog file includes
         getOutFileForModule(from) match {
-          case Some(f) => List(ELPI.Accumulate(f))
+          case Some(f) => List(ELPI.Accumulate(f.stripExtension))
           case None => throw ELPIError("no ELPI file known for theory " + from)
         }
       case _: RuleConstant =>
@@ -129,8 +134,8 @@ class ELPIExporter extends Exporter {
 
   /** translates an atomic judgment to the corresponding lambda-Prolog predicate
    *  @param aj the judgment
-   *  @param hypothetical this is a hypothesis of a complex judgment
-   *  @param hypNames if conclusion of hypothetical judgment: the names of the hypotheses 
+   *  @param hypNames if conclusion of hypothetical judgment: the names of the hypotheses
+   *  @param hypothesis this is a hypothesis of a complex judgment
    */
   private def translateAtomic(aj: AtomicJudgement, hypNames: List[LocalName], hypothesis: Boolean)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     val name = vc.next(!hypothesis)
@@ -200,17 +205,22 @@ class ELPIExporter extends Exporter {
   private def translateTerm(t: Term): ELPI.Expr = {
     t match {
       case OMS(p) =>
+        // also works for "type" because it is called the same in ELPI
         ELPI.Variable(p.name)
       case OMV(n) =>
         ELPI.Variable(n)
       case Lambda(x,_,t) =>
         ELPI.Lambda(x, translateTerm(t))
-      case Pi(x,_,b) =>
-        ELPI.Forall(x, translateTerm(b))
       case ApplySpine(f,args) =>
         val fE = translateTerm(f)
         val argsE = args map translateTerm
         fE(argsE :_*)
+      case Arrow(a,b) =>
+        val aE = translateTerm(a)
+        val bE = translateTerm(b)
+        ELPI.Arrow(aE,bE)
+      case Pi(x,_,b) =>
+        ELPI.Forall(x, translateTerm(b))
       case _ => throw ELPIError("unknown term: " + t)
     }
   }  
