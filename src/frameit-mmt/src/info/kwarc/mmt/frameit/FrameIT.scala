@@ -1,18 +1,17 @@
 package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api._
-import uom._
-import web.{Body, _}
-import frontend._
 import info.kwarc.mmt.api.backend.XMLReader
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.StructureParserContinuations
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
-import objects._
-import symbols._
-import modules._
+import info.kwarc.mmt.api.web._
 
-import scala.collection._
 import scala.collection.immutable._
 
 
