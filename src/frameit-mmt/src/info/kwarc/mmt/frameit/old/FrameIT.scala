@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.backend.XMLReader
@@ -308,70 +308,6 @@ class FrameitPlugin extends ServerExtension("frameit") with Logger with MMTTask 
         case e : Exception => ServerResponse.errorResponse(e.getMessage)
       }
     case _ => ServerResponse.errorResponse("Neither \"add\" nor \"pushout\"")
-  }
-
-  def run(solthS : String, vpathS : String) : String = {
-    /*
-    val cpath = Path.parse(cpathS) match {
-      case c : CPath => c
-      case gn : GlobalName => CPath(gn, DefComponent) //assuming definition
-      case p => throw FrameitError("Expected CPath or Global Name found " + p)
-    }
-    */
-    val sol = Path.parse(solthS) match {
-      case m : MPath => controller.get(m) match {
-        case t : Theory => t
-        case _ => throw FrameitError("Theory expected")
-      }
-      case _ => throw FrameitError("Theory expected")
-    }
-    val vpath = Path.parse(vpathS) match {
-      case vp : MPath => vp
-      case p => throw FrameitError("Expected MPath found " + p)
-    }
-    val view = controller.get(vpath) match {
-      case d : View => d
-      case _ => throw FrameitError("expected view")
-    }
-    val dom = view.from match {
-      case OMMOD(p) => controller.get(p) match {
-        case th : Theory => th
-        case _ => throw FrameitError("Theory expected")
-      }
-      case _ => throw FrameitError("Expected MPath found " + view.from)
-    }
-    val cod = view.to match {
-      case OMMOD(p) => controller.get(p) match {
-        case th : Theory => th
-        case _ => throw FrameitError("Theory expected")
-      }
-      case _ => throw FrameitError("Expected MPath found " + view.from)
-    }
-
-    val checker = new MMTStructureChecker(new RuleBasedChecker)
-    controller.extman.addExtension(checker)
-    implicit val ce : CheckingEnvironment = new CheckingEnvironment(controller.simplifier,ErrorThrower,RelationHandler.ignore, this)
-    controller.simplifier(view)
-    controller.simplifier(sol)
-    controller.simplifier(dom)
-    controller.simplifier(cod)
-    //controller.simplifier.flatten(th)
-    checker.apply(dom)
-    checker.apply(cod)
-    checker.apply(view)
-    checker.apply(sol)
-    val istotal = dom.getConstants.forall(c => {
-      // println("Checking " + c.name)
-      view.getDeclarations.exists(d => d.name == ComplexStep(dom.path) / c.name)
-    })
-    if(!istotal) throw FrameitError("View not total")
-    sol.getConstants.map(c => {
-      val tp = c.tp.map(x => simplify(fv.pushout(c.path $ TypeComponent, vpath), view.to.toMPath))
-      val df = c.df.map(x => simplify(fv.pushout(c.path $ DefComponent, vpath), view.to.toMPath))
-      Constant(c.home,c.name,Nil,tp,df,None)
-    }).map(_.toNode.toString).mkString("\n")
-
-    //simplify(fv.pushout(cpath, vpath), view.to.toMPath)
   }
 
 }

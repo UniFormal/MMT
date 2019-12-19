@@ -19,7 +19,7 @@ import scala.util.Try
  *
  * It will be called on URIs of the form http://server:port/:CONTEXT/PATH?QUERY
  *
- * @param context the CONTEXT
+ * @param pathPrefix the CONTEXT
  */
 abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtension {
   /**

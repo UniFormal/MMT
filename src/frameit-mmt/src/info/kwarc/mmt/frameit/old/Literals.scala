@@ -1,9 +1,7 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
-import info.kwarc.mmt.api.objects.{OMLIT, OMS, Term}
-import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.lf._
+import info.kwarc.mmt.api.uom._
 
 /**
   * Created by raupi on 23.03.16.
@@ -15,11 +13,7 @@ object PlanarGeometry {
   val tm = holpath ? "tm"
 }
 
-import info.kwarc.mmt.frameit.PlanarGeometry._
-
-import SynOpType._
-import SemOpType._
-import SemanticOperator._
+import info.kwarc.mmt.api.uom.SemanticOperator._
 
 //TODO these are [[SemanticOperator]]s now that are independent of specific MMT URIs; the connection between MMT URIs and semantic operators is made in .mmt syntax now
 // the corresponding .mmt files have to be adapted

@@ -2,6 +2,7 @@ import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.frameit.FrameitServerExtension
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 
 /**
@@ -25,6 +26,7 @@ object FrameITTest extends MagicTest("debug") {
 
     presenter = new FlatMMTSyntaxPresenter()
     controller.extman.addExtension(presenter)
+    controller.extman.addExtension(new FrameitServerExtension)
   }
 
   final protected val frameit: DPath = DPath(URI("https://example.com/frameit"))
@@ -47,7 +49,5 @@ object FrameITTest extends MagicTest("debug") {
 
     waitThenPrint(newTheory.path)
     waitThenPrint(newView.path)
-
-    sys.exit(0)
   }
 }

@@ -363,10 +363,17 @@ lazy val owl = (project in file("mmt-owl")).
 lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
+// https://mvnrepository.com/artifact/com.github.finagle/finch-core
+// compile group: 'com.github.finagle', name: 'finch-core_2.12', version: '0.31.0'
 
 lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
-  settings(mmtProjectsSettings("frameit-mmt"): _*)
+  settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
+    libraryDependencies ++= Seq(
+      // https://mvnrepository.com/artifact/com.github.finagle/finch-core
+      "com.github.finagle" %% "finchx-core" % "0.31.0"
+    )
+  )
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
