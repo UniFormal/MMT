@@ -77,8 +77,8 @@ object Visibility {
  * @param home the parent theory
  * @param name the name of the constant
  * @param alias an alternative (usually shorter) name
- * @param tp the optional type
- * @param df the optional definiens
+ * @param tpC the type container optionally containing a type
+ * @param dfC the definiens container optionally containing a definiens
  * @param rl the role of the constant
  */
 class FinalConstant(val home : Term, val name : LocalName, val alias: List[LocalName],

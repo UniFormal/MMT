@@ -370,8 +370,10 @@ lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
     libraryDependencies ++= Seq(
-      // https://mvnrepository.com/artifact/com.github.finagle/finch-core
-      "com.github.finagle" %% "finchx-core" % "0.31.0"
+      "com.github.finagle" %% "finchx-core" % "0.31.0",
+      "com.github.finagle" %% "finchx-circe" % "0.31.0",
+
+      "io.circe" %% "circe-generic" % "0.12.3"
     )
   )
 

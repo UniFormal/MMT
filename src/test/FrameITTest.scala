@@ -22,7 +22,7 @@ object FrameITTest extends MagicTest("debug") {
     // hl("build MitM/Foundation mmt-omdoc")
 
     // Clean first to prevent some spurious caching errors
-    hl("build Playground/frameit mmt-omdoc")
+    // hl("build Playground/frameit mmt-omdoc")
 
     presenter = new FlatMMTSyntaxPresenter()
     controller.extman.addExtension(presenter)
@@ -30,12 +30,16 @@ object FrameITTest extends MagicTest("debug") {
   }
 
   final protected val frameit: DPath = DPath(URI("https://example.com/frameit"))
+  final protected val annotation: DPath = frameit / "annotation"
   final protected val pushout: DPath = frameit / "pushout"
 
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    val (newTheory, newView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
+    val thy = controller.getTheory(annotation ? "MyScrollSolution")
+    val z = 80 / 10
+
+    /*val (newTheory, newView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
       controller.getTheory(pushout ? "Elem"),
       controller.getTheory(pushout ? "Nat"),
       controller.getTheory(pushout ? "ListElem"),
@@ -48,6 +52,6 @@ object FrameITTest extends MagicTest("debug") {
     controller.add(newView)
 
     waitThenPrint(newTheory.path)
-    waitThenPrint(newView.path)
+    waitThenPrint(newView.path)*/
   }
 }
