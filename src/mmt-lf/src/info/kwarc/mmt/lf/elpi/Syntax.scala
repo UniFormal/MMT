@@ -77,6 +77,10 @@ object ELPI {
   case class Variable(name: LocalName) extends Expr {
     def toELPI(bracket: Boolean = true) = name.toString 
   }
+
+  case class Integer(value: Int) extends Expr {
+    def toELPI(bracket: Boolean = true) = value.toString
+  }
   
   case class Lambda(name: LocalName, scope: Expr) extends Expr {
     def toELPI(bracket: Boolean = true) = {
@@ -156,6 +160,8 @@ object ELPI {
   }
   object Or extends BinOp(";")
   object Is extends BinOp("is")
+  object GreaterThan extends BinOp(">")
+  object Minus extends BinOp("-")
   object Impl extends BinOp("=>") {
     def apply(left: List[Expr], right: Expr): Expr = if (left.isEmpty) right else Impl(And(left), right)
   }
