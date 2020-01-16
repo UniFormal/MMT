@@ -131,8 +131,10 @@ object ELPI {
   }
 
   /** built-in unary operators */
-  case class UnOp(name: String, prefix: Boolean)
-  object Not extends BinOp("not")
+  case class UnOp(name: String, prefix: Boolean) {
+    def apply(e : Expr): UnaryApply = UnaryApply(this, e)
+  }
+  object Not extends UnOp("not", true)
   
   /** special case for the application of binary operators */
   case class BinaryApply(operator: BinOp, left: Expr, right: Expr) extends Application(Variable(LocalName(operator.name)), left, right) {

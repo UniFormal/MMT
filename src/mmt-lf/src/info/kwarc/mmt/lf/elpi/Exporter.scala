@@ -9,6 +9,7 @@ import documents._
 import info.kwarc.mmt.lf._
 
 case class ELPIError(msg: String) extends Error(msg)
+case class CantHandleRule(msg: String) extends Error(msg)
 
 object HelpCons {
   def apply(path: GlobalName) = ELPI.Variable(LocalName("help") / path.name)
@@ -173,7 +174,7 @@ class ELPIExporter extends Exporter {
 
   /** back chaining helper (doesn't work yet) */
   private def bcRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
-    val isForward = c.rl.map(_ == "ForwardRule").getOrElse(false)
+    val isForward = c.rl.contains("ForwardRule")
     val parNames = dr.arguments.collect {
       case RuleParameter(n,_) => n
     }
@@ -212,12 +213,13 @@ class ELPIExporter extends Exporter {
     val parNames = dr.arguments.collect {
       case RuleParameter(n,_) => n
     }
-    val assCertName = vc.next(true)
+
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
         val hypNames = cj.hypotheses.map { a => vc.next(false) }
         val names = parNames ::: hypNames
+        val assCertName = vc.next(true)
         val res = ELPI.Lambda(names, PtCertCons(V(assCertName)))
         (assCertName, res)
     }.unzip
