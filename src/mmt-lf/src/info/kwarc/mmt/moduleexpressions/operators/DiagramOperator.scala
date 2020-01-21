@@ -215,7 +215,7 @@ abstract class FunctorialLinearDiagramOperator[HelperContextType <: LinearTheory
   override def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram] = {
     def permuteLabel(label: LocalName): LocalName = label match {
       case _ if diag.distNode.contains(label) => LocalName("pres")
-      case LocalName(List(ComplexStep(mPath))) => LocalName(mPath.toString)
+      case LocalName(List(ComplexStep(mPath))) => LocalName(mPath.name)
       case _ => label
     }
 

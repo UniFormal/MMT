@@ -235,6 +235,25 @@ object Common {
     }
   }
 
+  /**
+    * Convert a set of [[Module]]s into an anonymous diagram.
+    *
+    * @todo Currently does not support [[View views]] since their (co)domain theories will be duplicates in the resulting
+    *       diagram, possibly with name clashes.
+    */
+  def asAnonymousDiagram(solver: CheckingCallback, modules: Set[Module])(implicit stack: Stack, history: History): AnonymousDiagram = {
+    assert(modules.forall(_.isInstanceOf[Theory]), "This method does not yet support modules other than theories. Read API doc of it")
+    val anonDiags = modules.flatMap(module => asAnonymousDiagram(solver, module.toTerm))
+
+    val diag = AnonymousDiagram(
+      anonDiags.flatMap(_.nodes).toList,
+      anonDiags.flatMap(_.arrows).toList,
+      distNode = None
+    )
+
+    diag
+  }
+
   /** provides the base case of the function that elaborates a diagram expression (in the form of an [[AnonymousDiagram]]) */
   def asAnonymousDiagram(solver: CheckingCallback, diag: Term)(implicit stack: Stack, history: History): Option[AnonymousDiagram] = {
     diag match {

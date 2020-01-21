@@ -63,6 +63,33 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   }
 }
 
+object DiagramFromFileTest extends MagicTest("debug", "diagram", "DiagramDefinition") with DiagramOperatorHelper {
+
+  override def doFirst: Unit = {
+    // Only uncomment if rebuild is really necessary
+    // hl("build MMT/urtheories -mmt-omdoc")
+    // hl("build MMT/urtheories mmt-omdoc")
+
+    // Only uncomment if rebuild is really necessary
+    // hl("build MitM/Foundation mmt-omdoc")
+
+    // Clean first to prevent some spurious caching errors
+    // hl("build Playground/diagops -mmt-omdoc")
+    // hl("build Playground/diagops mmt-omdoc from_file/the_file.mmt")
+    // hl("build Playground/diagops mmt-omdoc from_file/from_file.mmt")
+    // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    // hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
+    // hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/sfol.mmt")
+
+    presenter = new FlatMMTSyntaxPresenter()
+    controller.extman.addExtension(presenter)
+  }
+
+  override def run: Unit = {
+  }
+}
+
 /**
   * Debugging playground for Navid's implementation of diagram operators.
   * For debugging-debugging purposes only - might contain dirty code.
