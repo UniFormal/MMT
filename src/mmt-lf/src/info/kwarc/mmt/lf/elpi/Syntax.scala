@@ -81,7 +81,7 @@ object ELPI {
   case class Integer(value: Int) extends Expr {
     def toELPI(bracket: Boolean = true) = value.toString
   }
-  
+
   case class Lambda(name: LocalName, scope: Expr) extends Expr {
     def toELPI(bracket: Boolean = true) = {
       Bracket(bracket)(s"$name \\ ${scope.toELPI(false)}")
@@ -104,7 +104,8 @@ object ELPI {
    def toELPI(bracket: Boolean = true) = {
       val argsI = args.toList.init.map(_.toELPI(true))
       val last = args.last
-      val bracketLast = !args.last.isInstanceOf[Lambda]
+      // val bracketLast = !args.last.isInstanceOf[Lambda]
+      val bracketLast = true     // actually, the above seems to cause problems if penultimate arg is a variable
       val argsL = last.toELPI(bracketLast)
       val argsE = (argsI ::: List(argsL)).mkString(" ")
       
@@ -162,6 +163,7 @@ object ELPI {
   }
   object Or extends BinOp(";")
   object Is extends BinOp("is")
+  object Equal extends BinOp("=")
   object GreaterThan extends BinOp(">")
   object Minus extends BinOp("-")
   object Impl extends BinOp("=>") {

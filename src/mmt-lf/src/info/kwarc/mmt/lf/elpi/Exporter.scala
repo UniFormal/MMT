@@ -134,12 +134,12 @@ class ELPIExporter extends Exporter {
     }.unzip
     val assEs = assOs.flatMap(_.toList)
     // the conclusion and a generated name for it
-    val (concName, concE) = translateAtomic(dr.conclusion, Nil, false)
-    val names = argNames ::: List(concName)
+    val (concNames, concE, concExtra) = translateConclusion(dr.conclusion)
+    val names = concNames ::: argNames
     // helper judgment: c/help applied to all names; providing rules for this judgment allows guiding the prover
     val help = HelpCons(c.path)(names)
     // quantify over all names, assumptions imply conclusion, with helper judgment as side condition
-    val r = ELPI.Forall(names, ELPI.Impl(help::assEs, concE))
+    val r = ELPI.Forall(names, ELPI.Impl(help::(concExtra:::assEs), concE))
     ELPI.Rule(r)
   }
 
@@ -174,12 +174,39 @@ class ELPIExporter extends Exporter {
     (name, e)
   }
 
-  /** back chaining helper */
-  private def bcRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : List[ELPI.Rule] = {
-    val isForward = c.rl.contains("ForwardRule")
+  /* Like translateAtomic without hypotheses etc., but replaces Variable applications.
+  *  example: For forall-elimination we want to have
+  * `ded X (forall P) :- ..., P = F T, ...` instead of `ded X (forall (F T)) :- ...
+  */
+  private def translateConclusion(aj : AtomicJudgement)(implicit vc: VarCounter) : (List[LocalName], ELPI.Expr, List[ELPI.Expr]) = {
+    val cert = vc.next(true)
+    var names : List[LocalName] = List()
+    val (argsE, extra) : (List[ELPI.Expr], List[List[ELPI.Expr]]) = aj.arguments.map {
+      case ApplySpine(OMV(f), a) => {
+        val v = vc.next(true)
+        names = v :: names
+        (V(v), List(ELPI.Equal(V(v), translateTerm(ApplySpine(OMV(f), a :_*)))))
+      }
+      case x => (translateTerm(x), List())
+    }.unzip
+
+    val e = V(aj.operator.name)(V(cert) :: argsE :_*)
+    (cert :: names, e, extra.flatten)
+  }
+
+  private def getParNames(dr: DeclarativeRule)(implicit vc: VarCounter): (List[LocalName], List[ELPI.Expr]) = {
     val parNames = dr.arguments.collect {
       case RuleParameter(n,_) => n
     }
+    // have to add extra ones (for case covered by translateConclusion)
+    val (names, _, extras) = translateConclusion(dr.conclusion)
+    (names.drop(1) ::: parNames, extras)
+  }
+
+  /** back chaining helper */
+  private def bcRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : List[ELPI.Rule] = {
+    val isForward = c.rl.contains("ForwardRule")
+    val (parNames, extras) = getParNames(dr)
 
     val conclVars = getVars(dr.conclusion.arguments.head)
     val needBC = isForward || parNames.exists(n => !conclVars.contains(n))
@@ -202,7 +229,7 @@ class ELPIExporter extends Exporter {
         (assCertName, res)
     }.unzip
     val certName = vc.next(true)
-    val res = HelpCons(c.path)(parNames.map(V) ::: assExprs ::: List(BcCertCons(List(certName))) :_*)
+    val res = HelpCons(c.path)(BcCertCons(List(certName)) :: parNames.map(V) ::: assExprs  :_*)
     val certval = ELPI.Variable(vc.next(true))
     val conds = if (needBC) {
       val cond1 = V(LocalName("bc/val"))(V(certName), certval)
@@ -216,7 +243,7 @@ class ELPIExporter extends Exporter {
       val cond2 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(V(certName), ELPI.Integer(1)))
       List(cond1, cond2)
     }
-    val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(conds,res))
+    val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(conds ::: extras,res))
     if (isForward) {
       val auxres = ELPI.Variable(vc.next(true))
       val concE = translateTerm(dr.conclusion.arguments.head)
@@ -230,9 +257,7 @@ class ELPIExporter extends Exporter {
 
   /** proof term helper */
   private def ptRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
-    val parNames = dr.arguments.collect {
-      case RuleParameter(n,_) => n
-    }
+    val (parNames, _) = getParNames(dr)
 
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
@@ -244,16 +269,15 @@ class ELPIExporter extends Exporter {
         (assCertName, res)
     }.unzip
     val newCert = PtCertCons(V(c.path.name)(parNames.map(V) ::: assNames.map(V) :_*))
-    val res = HelpCons(c.path)(parNames.map(V) ::: assExprs ::: List(newCert) :_*)
+    val res = HelpCons(c.path)(newCert :: parNames.map(V) ::: assExprs :_*)
     val r = ELPI.Forall(parNames ::: assNames, ELPI.Impl(List(),res))
     ELPI.Rule(r)
   }
 
   /** iterative deepening helper */
   private def idRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
-    val parNames = dr.arguments.collect {
-      case RuleParameter(n,_) => n
-    }
+    val (parNames, _) = getParNames(dr)
+
     val assCertName = vc.next(true)
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
@@ -265,7 +289,7 @@ class ELPIExporter extends Exporter {
         (assCertName, res)
     }.unzip
     val certName = vc.next(true)
-    val res = HelpCons(c.path)(parNames.map(V) ::: assExprs ::: List(IdCertCons(List(certName))) :_*)
+    val res = HelpCons(c.path)(IdCertCons(List(certName)) :: parNames.map(V) ::: assExprs :_*)
     val cond1 = ELPI.GreaterThan(ELPI.Variable(certName), ELPI.Integer(0))
     val cond2 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(ELPI.Variable(certName), ELPI.Integer(1)))
     val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(List(cond1, cond2),res))
@@ -276,9 +300,8 @@ class ELPIExporter extends Exporter {
   /** boilerplate rule for taking the Cartesian product of two helper predicates for a rule */
   private def productRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
     // for parameters: just the name; for assumptions: the lambda-Prolog judgment and two generated names
-    val parNames = dr.arguments.collect {
-      case RuleParameter(n,_) => n
-    }
+    val (parNames, _) = getParNames(dr)
+
     val (assNamePairs, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val (namePair, e) = productRuleConc(cj)
@@ -290,13 +313,13 @@ class ELPIExporter extends Exporter {
     // e1: first helper predicate applies to a list of inputs with output certName1
     val certName1 = certName / "1"
     // val e1 = HelpCons(c.path, "1")(parNames ::: assNames1 ::: List(certName1))
-    val e1 = HelpCons(c.path)(parNames ::: assNames1 ::: List(certName1))
+    val e1 = HelpCons(c.path)(certName1 :: parNames ::: assNames1)
     // e2: second helper predicate applies to another list of inputs with output certName2
     val certName2 = certName / "2"
     // val e2 = HelpCons(c.path, "2")(parNames ::: assNames2 ::: List(certName2))
-    val e2 = HelpCons(c.path)(parNames ::: assNames2 ::: List(certName2))
+    val e2 = HelpCons(c.path)(certName2 :: parNames ::: assNames2)
     // e: product helper predicate applies to the pair of certName1 and certName2
-    val e =  HelpCons(c.path)(parNames.map(V) ::: assExprs ::: List(ProdCertCons(List(certName1,certName2))) :_*)
+    val e =  HelpCons(c.path)(ProdCertCons(List(certName1,certName2)) :: parNames.map(V) ::: assExprs :_*)
     val r = ELPI.Forall(parNames ::: assNames1 ::: assNames2 ::: List(certName1,certName2), ELPI.Impl(List(e1,e2),e))
     ELPI.Rule(r)
   }
