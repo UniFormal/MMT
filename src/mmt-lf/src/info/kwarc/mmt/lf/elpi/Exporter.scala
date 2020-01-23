@@ -36,7 +36,6 @@ class ELPIExporter extends Exporter {
 
   private def translateDeclaration(d: Declaration): List[ELPI.Decl] = {
     def fail(msg: String) = {
-      println(msg)
       List(ELPI.Comment("skipping due to error: " + d.path + "\n" + msg))
     }
     d match {
@@ -68,7 +67,10 @@ class ELPIExporter extends Exporter {
               // helper rule for proof terms
               val rightPT = HelpCons(c.path)(argNames:::List(hypName,PtCertCons(V(LocalName("i"))(argNames :_*))) :_*)
               val rulePT = ELPI.Rule(ELPI.Impl(List(), rightPT))
-              List(comment, rule, ruleID, rulePT, ruleProd)
+              // helper rule for back-chaining
+              val rightBC = HelpCons(c.path)(argNames:::List(hypName,BcCertCons(cert)) :_*)
+              val ruleBC = ELPI.Rule(ELPI.Impl(List(), rightBC))
+              List(comment, rule, ruleID, rulePT, ruleProd, ruleBC)
           }
         } else {
           c.tp match {
@@ -83,8 +85,8 @@ class ELPIExporter extends Exporter {
                     // helper for proof terms
                     val ptr = ptRule(c, dr)(new VarCounter)
                     // helper for backchaining
-                    // val bcr = bcRule(c, dr)(new VarCounter)
-                    List(comment, mainRule, pr, idr, ptr)
+                    val bcrs = bcRule(c, dr)(new VarCounter)
+                    List(comment, mainRule, pr, idr, ptr) ::: bcrs
                   } catch {case ELPIError(msg) =>
                     fail(msg)
                   }
@@ -172,21 +174,27 @@ class ELPIExporter extends Exporter {
     (name, e)
   }
 
-  /** back chaining helper (doesn't work yet) */
-  private def bcRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
+  /** back chaining helper */
+  private def bcRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : List[ELPI.Rule] = {
     val isForward = c.rl.contains("ForwardRule")
     val parNames = dr.arguments.collect {
       case RuleParameter(n,_) => n
     }
+
+    val conclVars = getVars(dr.conclusion.arguments.head)
+    val needBC = isForward || parNames.exists(n => !conclVars.contains(n))
+
     val assCertName = vc.next(true)
     var isFirstArg = true
+    var firstExpr : Option[ELPI.Expr] = None
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
         val hypNames = cj.hypotheses.map { a => vc.next(false) }
         val names = parNames ::: hypNames
-        val res = if (isFirstArg && isForward) {
-          ELPI.Lambda(names, BcCertCons(V(LocalName("bc/xx"))(V(assCertName))))
+        val res = if (isFirstArg && needBC) {
+          firstExpr = Some(translateTerm(cj.thesis.arguments.head))
+          ELPI.Lambda(names, BcCertCons(V(LocalName("bc/fwdLocked"))(V(assCertName))))
         } else {
           ELPI.Lambda(names, BcCertCons(V(assCertName)))
         }
@@ -196,16 +204,28 @@ class ELPIExporter extends Exporter {
     val certName = vc.next(true)
     val res = HelpCons(c.path)(parNames.map(V) ::: assExprs ::: List(BcCertCons(List(certName))) :_*)
     val certval = ELPI.Variable(vc.next(true))
-    val cond1 = V(LocalName("bc/val"))(V(certName), certval)
-    val cond2 = ELPI.GreaterThan(certval, ELPI.Integer(0))
-    val cond3 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(certval, ELPI.Integer(1)))
-    val backchainingcond = if (isForward) {
-      List()  // TODO: call backchaining predicate with correct formula
+    val conds = if (needBC) {
+      val cond1 = V(LocalName("bc/val"))(V(certName), certval)
+      val cond2 = ELPI.GreaterThan(certval, ELPI.Integer(0))
+      val cond3 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(certval, ELPI.Integer(1)))
+      val cond4 = V(LocalName("bc/fwdable"))(firstExpr.get)
+      List(cond1, cond2, cond3, cond4)
     } else {
-      List()
+      // val cond1 = ELPI.GreaterThan(V(certName), ELPI.Integer(0))
+      val cond1 = V(LocalName("bc/pos"))(V(certName))
+      val cond2 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(V(certName), ELPI.Integer(1)))
+      List(cond1, cond2)
     }
-    val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(List(cond1, cond2, cond3):::backchainingcond,res))
-    ELPI.Rule(r)
+    val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(conds,res))
+    if (isForward) {
+      val auxres = ELPI.Variable(vc.next(true))
+      val concE = translateTerm(dr.conclusion.arguments.head)
+      val aux = ELPI.Forall(parNames, ELPI.Impl(V(LocalName("bc/aux"))(concE, auxres),
+          V(LocalName("bc/aux"))(firstExpr.get, auxres)))
+      List(ELPI.Rule(r), ELPI.Rule(aux))
+    } else {
+      List(ELPI.Rule(r))
+    }
   }
 
   /** proof term helper */
@@ -306,7 +326,28 @@ class ELPIExporter extends Exporter {
   private val hypSuffix = "hyp"
   
   private def V(n: LocalName) = ELPI.Variable(n)
-  
+
+
+  private def getVars(t: Term): List[LocalName] = {
+    t match {
+      case OMS(_) =>
+        List()
+      case OMV(n) =>
+        List(n)
+      case Lambda(_, _, t) =>
+        getVars(t)
+      case ApplySpine(f, args) =>
+        val fVars = getVars(f)
+        val argsVars = args flatMap getVars
+        fVars ::: argsVars
+      case Arrow(a, b) =>
+        getVars(a) ::: getVars(b)
+      case Pi(x, _, b) =>
+        getVars(b)
+      case _ => throw ELPIError("unknown term: " + t)
+    }
+  }
+
   /** straightforward translation of an LF terms to a lambda-Prolog term */
   private def translateTerm(t: Term): ELPI.Expr = {
     t match {
