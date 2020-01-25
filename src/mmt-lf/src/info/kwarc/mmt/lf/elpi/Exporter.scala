@@ -26,7 +26,7 @@ class ELPIExporter extends Exporter {
   override def outExt = "elpi"
 
   private lazy val lup = controller.globalLookup
-  private lazy val ruleMatcher = new RuleMatcher(lup, List("Judgment","Judgement"))
+  private lazy val ruleMatcher = new RuleMatcher(lup, List("Judgment", "TabMarker", "TabClosed"))
 
   private def translateTheory(thy: Theory): ELPI.Program = {
     val cons = thy.getDeclarations
@@ -84,9 +84,14 @@ class ELPIExporter extends Exporter {
                     val idr = idRule(c, dr)(new VarCounter)
                     // helper for proof terms
                     val ptr = ptRule(c, dr)(new VarCounter)
+                    // helper that tracks how often a term has been used
+                    val ur = uRule(c, dr)(new VarCounter)
+                    // helper that simply hands something down (can be used to e.g. store errors)
+                    val hdr = hdRule(c, dr)(new VarCounter)
                     // helper for backchaining
                     val bcrs = bcRule(c, dr)(new VarCounter)
-                    List(comment, mainRule, pr, idr, ptr) ::: bcrs
+                    // val bcrs = List()
+                    List(comment, mainRule, pr, idr, ptr, ur, hdr) ::: bcrs
                   } catch {case ELPIError(msg) =>
                     fail(msg)
                   }
@@ -208,8 +213,8 @@ class ELPIExporter extends Exporter {
     val isForward = c.rl.contains("ForwardRule")
     val (parNames, extras) = getParNames(dr)
 
-    val conclVars = getVars(dr.conclusion.arguments.head)
-    val needBC = isForward || parNames.exists(n => !conclVars.contains(n))
+    // val conclVars = getVars(dr.conclusion.arguments.head)
+    val needBC = isForward || c.rl.contains("EliminationRule") // parNames.exists(n => !conclVars.contains(n))
 
     val assCertName = vc.next(true)
     var isFirstArg = true
@@ -232,7 +237,7 @@ class ELPIExporter extends Exporter {
     val res = HelpCons(c.path)(BcCertCons(List(certName)) :: parNames.map(V) ::: assExprs  :_*)
     val certval = ELPI.Variable(vc.next(true))
     val conds = if (needBC) {
-      val cond1 = V(LocalName("bc/val"))(V(certName), certval)
+      val cond1 = V(LocalName("bc/val"))(V(certName), certval)   // TODO: bc/pos suffices if not ForwardRule
       val cond2 = ELPI.GreaterThan(certval, ELPI.Integer(0))
       val cond3 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(certval, ELPI.Integer(1)))
       val cond4 = V(LocalName("bc/fwdable"))(firstExpr.get)
@@ -271,6 +276,46 @@ class ELPIExporter extends Exporter {
     val newCert = PtCertCons(V(c.path.name)(parNames.map(V) ::: assNames.map(V) :_*))
     val res = HelpCons(c.path)(newCert :: parNames.map(V) ::: assExprs :_*)
     val r = ELPI.Forall(parNames ::: assNames, ELPI.Impl(List(),res))
+    ELPI.Rule(r)
+  }
+
+  /** new hypotheses helper (required for tableaux) */
+  private def uRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
+    val (parNames, _) = getParNames(dr)
+
+    val certName = vc.next(true)
+    var uExpr : Option[ELPI.Expr] = None
+    val assExprs = dr.arguments.collect {
+      case RuleAssumption(cj) =>
+        val parNames = cj.parameters.map { vd => vd.name }
+        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val names = parNames ::: hypNames
+        if (uExpr.isEmpty) {
+          uExpr = Some(translateComplex(cj)._2)
+        }
+        val ucert = V(LocalName("ucert"))(V(LocalName("prep"))(uExpr.get, V(certName)))
+        ELPI.Lambda(names, ucert)
+    }
+    val res = HelpCons(c.path)(V(LocalName("ucert"))(V(certName)) :: parNames.map(V) ::: assExprs :_*)
+    val cond = V(LocalName("occatmost"))(uExpr.get, ELPI.Integer(1), V(certName))
+    val r = ELPI.Forall(parNames, ELPI.Impl(List(uExpr.get, cond),res))
+    ELPI.Rule(r)
+  }
+
+  /** hand-down helper */
+  private def hdRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
+    val (parNames, _) = getParNames(dr)
+
+    val hdcert = V(LocalName("hdcert"))(V(vc.next(true)))
+    val assExprs = dr.arguments.collect {
+      case RuleAssumption(cj) =>
+        val parNames = cj.parameters.map { vd => vd.name }
+        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val names = parNames ::: hypNames
+        ELPI.Lambda(names, hdcert)
+    }
+    val res = HelpCons(c.path)(hdcert :: parNames.map(V) ::: assExprs :_*)
+    val r = ELPI.Forall(parNames, ELPI.Impl(List(),res))
     ELPI.Rule(r)
   }
 
