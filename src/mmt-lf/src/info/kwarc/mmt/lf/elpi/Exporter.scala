@@ -87,11 +87,12 @@ class ELPIExporter extends Exporter {
                     // helper that tracks how often a term has been used
                     val ur = uRule(c, dr)(new VarCounter)
                     // helper that simply hands something down (can be used to e.g. store errors)
-                    val hdr = hdRule(c, dr)(new VarCounter)
+                    val hdr1 = hdRule(c, dr, "hdcert")(new VarCounter)
+                    val hdr2 = hdRule(c, dr, "hd2cert")(new VarCounter)
                     // helper for backchaining
                     val bcrs = bcRule(c, dr)(new VarCounter)
                     // val bcrs = List()
-                    List(comment, mainRule, pr, idr, ptr, ur, hdr) ::: bcrs
+                    List(comment, mainRule, pr, idr, ptr, ur, hdr1, hdr2) ::: bcrs
                   } catch {case ELPIError(msg) =>
                     fail(msg)
                   }
@@ -280,7 +281,7 @@ class ELPIExporter extends Exporter {
   }
 
   /** new hypotheses helper (required for tableaux) */
-  private def uRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
+  private def uRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Decl = {
     val (parNames, _) = getParNames(dr)
 
     val certName = vc.next(true)
@@ -296,17 +297,20 @@ class ELPIExporter extends Exporter {
         val ucert = V(LocalName("ucert"))(V(LocalName("prep"))(uExpr.get, V(certName)))
         ELPI.Lambda(names, ucert)
     }
+    if (uExpr.isEmpty) {
+      return ELPI.Comment("Can't create helper for ucert: no hypotheses found")
+    }
     val res = HelpCons(c.path)(V(LocalName("ucert"))(V(certName)) :: parNames.map(V) ::: assExprs :_*)
-    val cond = V(LocalName("occatmost"))(uExpr.get, ELPI.Integer(1), V(certName))
+    val cond = V(LocalName("occatmost"))(uExpr.get, ELPI.Integer(if (c.rl.contains("ApplyRepeatedly")) 4 else 1), V(certName))
     val r = ELPI.Forall(parNames, ELPI.Impl(List(uExpr.get, cond),res))
     ELPI.Rule(r)
   }
 
   /** hand-down helper */
-  private def hdRule(c: Constant, dr: DeclarativeRule)(implicit vc: VarCounter) : ELPI.Rule = {
+  private def hdRule(c: Constant, dr: DeclarativeRule, certname : String)(implicit vc: VarCounter) : ELPI.Rule = {
     val (parNames, _) = getParNames(dr)
 
-    val hdcert = V(LocalName("hdcert"))(V(vc.next(true)))
+    val hdcert = V(LocalName(certname))(V(vc.next(true)))
     val assExprs = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
