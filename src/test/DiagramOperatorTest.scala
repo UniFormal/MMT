@@ -69,6 +69,7 @@ object DiagramFromFileTest extends MagicTest("debug", "diagram", "DiagramDefinit
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
+    hl("build MMT/LATIN2 scala-bin")
 
     // Only uncomment if rebuild is really necessary
     // hl("build MitM/Foundation mmt-omdoc")
@@ -78,7 +79,7 @@ object DiagramFromFileTest extends MagicTest("debug", "diagram", "DiagramDefinit
     // hl("build Playground/diagops mmt-omdoc from_file/the_file.mmt")
     // hl("build Playground/diagops mmt-omdoc from_file/from_file.mmt")
     // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    // hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
     // hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
     hl("build MMT/LATIN2 mmt-omdoc logic/sfol.mmt")
 

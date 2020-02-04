@@ -1,8 +1,9 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{Theory, Module, View}
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.symbols.OMLReplacer
+import info.kwarc.mmt.api.symbols.{OMLReplacer, TermContainer}
 import info.kwarc.mmt.api.utils._
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
@@ -141,7 +142,11 @@ case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphi
   *  @param nodes the nodes
   *  @param arrows the arrows
   *  @param distNode the label of a distinguished node to be used if this diagram is used like a theory
-  *  invariant: codomain of distArrow is distNode
+  *
+  * Invariants:
+  *   - invariant: codomain of distArrow is distNode
+  *   - among all [[DiagramNode diagram nodes]] and [[DiagramArrow diagram arrows]] the labels are unique
+  *     in other words: ''getElements.map(_.label)'' is a sequence without duplicates
   */
 case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow], distNode: Option[LocalName]) {
   def getNode(label: LocalName): Option[DiagramNode] = nodes.find(_.label == label)
@@ -193,19 +198,132 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
   }
 
   def getDistArrowWithNodes: Option[(DiagramNode,DiagramNode,DiagramArrow)] = getDistArrow flatMap {a => getArrowWithNodes(a.label)}
-  def getElements = nodes:::arrows
+  def getElements: List[DiagramElement] = nodes ::: arrows
+
+  def getElement(label: LocalName): Option[DiagramElement] = getNode(label) match {
+    case Some(node) =>
+      Some(node)
+    case None => getArrow(label) match {
+      case Some(arrow) =>
+        Some(arrow)
+      case None =>
+        None
+    }
+  }
+
   /** replaces every label l with r(l) */
-  def relabel(r: LocalName => LocalName) = {
+  def relabel(r: LocalName => LocalName) : AnonymousDiagram = {
     val nodesR = nodes.map(n => n.copy(label = r(n.label)))
     val arrowsR = arrows.map(a => a.copy(label = r(a.label), from = r(a.from), to = r(a.to)))
     AnonymousDiagram(nodesR, arrowsR, distNode map r)
   }
-  def union(that: AnonymousDiagram) = {
-    new AnonymousDiagram((this.nodes ::: that.nodes).groupBy(_.label).map(_._2.head).toList, (this.arrows ::: that.arrows).groupBy(_.label).map(_._2.head).toList, None)
+
+  def toTerm: Term = AnonymousDiagramCombinator(nodes, arrows, distNode)
+  override def toString: String = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + distNode.toList.mkString("")
+
+  /**
+    * Transform the anonymous diagram into a list of in-memory [[Module modules]].
+    *
+    * Note that the modules do *not* get registered to the [[info.kwarc.mmt.api.frontend.Controller]] or any other
+    * entity. They are solely in-memory representations.
+    *
+    * @param labeller A function determining the fully qualified path to the generated modules given the "anonymous" names of the diagram elements in the anonymous diagram.
+    * @return List of in-memory modules, not yet registered anywhere.
+    */
+  def toModules(labeller: LocalName => MPath): List[Module] = {
+    getElements.map {
+      case DiagramNode(name, anonymousTheory) =>
+        val newName = labeller(name)
+
+        Theory(
+          newName.doc,
+          newName.name,
+          anonymousTheory.mt,
+          df = TermContainer.asParsed(anonymousTheory.toTerm)
+        )
+
+      case DiagramArrow(name, from, to, anonMor, isImplicit) =>
+        val newName = labeller(name)
+
+        View(
+          newName.doc,
+          newName.name,
+          OMMOD(labeller(from)),
+          OMMOD(labeller(to)),
+          TermContainer.asParsed(anonMor.toTerm),
+          isImplicit
+        )
+    }
   }
 
-  def toTerm = AnonymousDiagramCombinator(nodes, arrows, distNode)
-  override def toString = nodes.mkString(", ") + "; " + arrows.mkString(", ") + "; " + distNode.toList.mkString("")
+  /**
+    * Compute the union with another diagram.
+    *
+    * @return A name clash occurs if there is an element in ''otherDiagram'' with a label l such that in the current diagram there is a non-equal element with the same label.
+    *         If such a name clash occurs, [[None]] is returned.
+    *         Otherwise, the union is returned.
+    *
+    */
+  def ++(otherDiagram: AnonymousDiagram): Option[AnonymousDiagram] = {
+    val otherElements: Map[LocalName, DiagramElement] =
+      otherDiagram.getElements.groupBy(_.label).mapValues(_.head)
+
+    for ((otherName, otherElement) <- otherElements) {
+      getElement(otherName) match {
+        case Some(ourElement) if ourElement != otherElement =>
+          return None // name clash
+
+        case _ => // continue
+      }
+    }
+
+    Some(AnonymousDiagram(
+      // compute the unions of nodes and arrows, respectively
+      (nodes ::: otherDiagram.nodes).groupBy(_.label).map(_._2.head).toList,
+      (arrows ::: otherDiagram.arrows).groupBy(_.label).map(_._2.head).toList,
+      None
+    ))
+  }
+
+  private def getDependenciesFor(element: DiagramElement): (Set[DiagramNode], Set[DiagramArrow]) = {
+    (Set(), Set())
+  }
+
+  /**
+    * Compute the dependencies-aware difference ''this\labels''.
+    */
+  def --(labels: Seq[LocalName]): AnonymousDiagram = {
+    val (nodeDepsLists, arrowDepsLists) = labels.flatMap(getElement).map(getDependenciesFor).unzip
+
+    // flatten the sets to one set, respectively
+    val nodeDeps = nodeDepsLists.reduce((x, y) => x ++ y)
+    val arrowDeps = arrowDepsLists.reduce((x, y) => x ++ y)
+
+    AnonymousDiagram(
+      nodes = nodes.toSet.diff(nodeDeps).toList,
+      arrows = arrows.toSet.diff(arrowDeps).toList,
+      distNode = distNode.filterNot(distNodeLabel => {
+        nodeDeps.exists(_.label == distNodeLabel)
+      })
+    )
+  }
+
+  def -(otherDiagram: AnonymousDiagram): AnonymousDiagram = {
+    val actualLabelsToRemove = otherDiagram.getElements.mapOrSkip(otherElement =>
+      getElement(otherElement.label) match {
+        case Some(ourElement) if ourElement == otherElement =>
+          otherElement.label
+
+        case _ => throw SkipThis
+      }
+    )
+
+    this -- actualLabelsToRemove
+  }
+
+  def -(label: LocalName): AnonymousDiagram = {
+    this -- List(label)
+  }
 }
 
 /** bridges between [[AnonymousDiagram]] and [[Term]] */

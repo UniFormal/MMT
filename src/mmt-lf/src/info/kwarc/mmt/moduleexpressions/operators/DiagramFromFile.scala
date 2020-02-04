@@ -23,11 +23,13 @@ object DiagramFromFile extends UnaryConstantScala(Combinators._path, "diagram_fr
   *       An API addition needs to be discussed.
   */
 object ComputeDiagramFromFile extends ComputationRule(DiagramFromFile.path) {
-  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = {
-    val DiagramFromFile(Strings(file)) = tm
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Simplifiability = tm match {
+    case DiagramFromFile(Strings(file)) =>
+      val modules = getModulesForFile(file, solver.lookup)
+      Simplify(Common.asAnonymousDiagram(solver, modules).toTerm)
 
-    val modules = getModulesForFile(file, solver.lookup)
-    Simplify(Common.asAnonymousDiagram(solver, modules).toTerm)
+    case _ =>
+      RecurseOnly(List(1))
   }
 
   private def getModulesForFile(file: String, lookup: Lookup): Set[Module] = {
