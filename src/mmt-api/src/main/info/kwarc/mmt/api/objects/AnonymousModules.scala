@@ -1,10 +1,12 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{Theory, Module, View}
+import info.kwarc.mmt.api.modules.{Module, Theory, View}
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.symbols.{OMLReplacer, TermContainer}
 import info.kwarc.mmt.api.utils._
+
+import scala.collection.mutable
 
 /** auxiliary class for storing lists of declarations statefully without giving it a global name
   *
@@ -19,7 +21,7 @@ trait AnonymousBody extends ElementContainer[OML] with DefaultLookup[OML] with S
 }
 
 /** a theory given by meta-theory and body */
-case class AnonymousTheory(val mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
+case class AnonymousTheory(mt: Option[MPath], val decls: List[OML]) extends AnonymousBody {
   def rename(oldNew: (LocalName,Term)*) = {
     val sub: Substitution = oldNew.toList map {case (old,nw) => Sub(old, nw)}
     val trav = symbols.OMLReplacer(sub)
@@ -106,15 +108,17 @@ object AnonymousMorphismCombinator {
 sealed abstract class DiagramElement extends ShortURIPrinter {
   def label: LocalName
   def toTerm: Term
+  def getBody: AnonymousBody
 }
 /** a node in an [[AnonymousDiagram]]
   *  @param label the label of this node
   *  @param theory the theory attached to this node (the same theory may be attached to multiple nodes)
   */
 case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends DiagramElement {
-  def toTerm = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
-  def toStr(implicit shortURIs: Boolean) = s"$label:THY=${theory.toStr}"
-  def canEqual(a: Any) = a.isInstanceOf[DiagramNode]
+  override def getBody: AnonymousBody = theory
+  override def toTerm: Term = OML(label, Some(TheoryType(Nil)), Some(theory.toTerm))
+  override def toStr(implicit shortURIs: Boolean) = s"$label:THY=${theory.toStr}"
+  def canEqual(a: Any): Boolean = a.isInstanceOf[DiagramNode]
   override def equals(that: Any): Boolean =
     that match {
       case that: DiagramNode => (that.label == this.label) && (that.theory == this.theory)
@@ -129,11 +133,12 @@ case class DiagramNode(label: LocalName, theory: AnonymousTheory) extends Diagra
   *  @param morphism the morphism attached to this arrow (the same theory may be attached to multiple nodes)
   */
 case class DiagramArrow(label: LocalName, from: LocalName, to: LocalName, morphism: AnonymousMorphism, isImplicit: Boolean) extends DiagramElement {
-  def toTerm = {
+  override def getBody: AnonymousBody = morphism
+  override def toTerm: Term = {
     val f = if (isImplicit) Some("implicit") else None
     OML(label, Some(MorphType(OML(from), OML(to))), Some(morphism.toTerm), None, f)
   }
-  def toStr(implicit shortURIs: Boolean) = {
+  override def toStr(implicit shortURIs: Boolean): String = {
     val a = if (isImplicit) "-i->" else "--->"
     s"$label:$from$a$to=${morphism.toStr}"
   }
@@ -285,8 +290,44 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
     ))
   }
 
+  /**
+    * Get all transitive-reflexive diagram element dependencies for `element` categorizied into
+    * [[DiagramNode]] dependencies and [[DiagramArrow]] dependencies.
+    */
   private def getDependenciesFor(element: DiagramElement): (Set[DiagramNode], Set[DiagramArrow]) = {
-    (Set(), Set())
+    var deps: mutable.Set[DiagramElement] = mutable.HashSet(element)
+    var remainingElements: mutable.Set[DiagramElement] = mutable.HashSet(getElements : _*)
+
+    // The breadth-first-search above will move elements from `remainingElements` to `deps` step-by-step
+    // until no changes occur anymore because no dependencies remain
+    var changeOccurred = true
+
+    while (changeOccurred) {
+      val newDeps: Set[DiagramElement] = {
+        val labelsOfCurDeps = deps.map(_.label).toSet
+
+        // If (T in deps) is included in (S in remainingElements), get T into inclusionDeps
+        // TODO: Dependency tracking for anonymous modules does not account for defined views currently!
+        val inclusionDeps = remainingElements.filter(_.getBody.getDeclarations.exists {
+          case IncludeOML(OML(label, _, _, _, _), _) if labelsOfCurDeps.contains(label) => true
+          case _ => false
+        })
+
+        // If (T in deps) occurs as domain or codomain of an arrow in remainingElements, get T into arrowDeps
+        val arrowDeps = remainingElements.filter {
+          case DiagramArrow(_, from, to, _, _) => labelsOfCurDeps.contains(from) || labelsOfCurDeps.contains(to)
+          case _ => false
+        }
+
+        (inclusionDeps ++ arrowDeps).toSet
+      }
+
+      remainingElements --= newDeps
+      deps ++= newDeps
+      changeOccurred = newDeps.nonEmpty
+    }
+
+    (deps.collect { case x: DiagramNode => x }.toSet, deps.collect { case x: DiagramArrow => x }.toSet)
   }
 
   /**
@@ -326,6 +367,17 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
   }
 }
 
+object AnonymousDiagram {
+  def union(diagrams: AnonymousDiagram*): Option[AnonymousDiagram] = {
+    val firstDiag :: remainingDiags = diagrams.toList
+
+    remainingDiags.foldLeft[Option[AnonymousDiagram]](Some(firstDiag))((optionDiag, diag) => optionDiag match {
+      case None => None
+      case Some(diagPrime) => diagPrime ++ diag
+    })
+  }
+}
+
 /** bridges between [[AnonymousDiagram]] and [[Term]] */
 object AnonymousDiagramCombinator {
   val path = ModExp.anonymousdiagram
@@ -355,7 +407,7 @@ object AnonymousDiagramCombinator {
         }
         case _ => return None
       }
-      val ad = new AnonymousDiagram(nodes.reverse, arrows.reverse, dN)
+      val ad = AnonymousDiagram(nodes.reverse, arrows.reverse, dN)
       Some(ad)
     case _ => None
   }
@@ -415,6 +467,18 @@ object DerivedOMLFeature {
   }
 }
 
+/**
+  * An inclusion of a [[Theory]] or [[AnonymousTheory]] as a [[OML]] to be used as a declaration in an [[AnonymousBody]].
+  *
+  * @example
+  *          '''
+  *          includeOml match {
+  *            case IncludeOML(OMPMOD(theory, args), df) => /* inclusion of a (possibly parametric) theory */
+  *            case IncludeOML(anonTheoryName, df) => /* inclusion of an anonymous theory in the same diagram */
+  *          }
+  *          '''
+  *
+  */
 object IncludeOML extends DerivedOMLFeature(IncludeVarDecl.feature) with DerivedOMLFeature.Unnamed
 
 object StructureOML extends DerivedOMLFeature("structure") with DerivedOMLFeature.Named

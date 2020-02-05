@@ -1,9 +1,10 @@
-package info.kwarc.mmt.moduleexpressions.operators
+package info.kwarc.mmt.moduleexpressions.operators.meta
 
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.{GeneralError, LocalName}
+import info.kwarc.mmt.moduleexpressions.operators.{Combinators, Common}
 
 object DiagramAccessor extends BinaryConstantScala(Combinators._path, "diagram_accessor")
 

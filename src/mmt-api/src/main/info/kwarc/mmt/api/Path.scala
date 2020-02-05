@@ -235,8 +235,9 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")
 
    def prefixOrCreateLastSimpleStep(prefix: String): LocalName = {
-      val newSteps = steps match {
+      val newSteps: List[LNStep] = steps match {
          case beginning :+ SimpleStep(name) => beginning :+ SimpleStep(prefix + name)
+         case List(ComplexStep(mpath)) => List(ComplexStep(mpath.parent ? mpath.name.prefixOrCreateLastSimpleStep(prefix)))
          case _ => steps :+ SimpleStep(prefix)
       }
       LocalName(newSteps)

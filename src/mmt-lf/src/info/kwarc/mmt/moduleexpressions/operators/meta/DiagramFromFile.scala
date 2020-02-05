@@ -2,16 +2,17 @@
   * The "DIAG FROM FILE" operator returning the whole diagram for a given MMT filename.
   */
 
-package info.kwarc.mmt.moduleexpressions.operators
+package info.kwarc.mmt.moduleexpressions.operators.meta
 
-import info.kwarc.mmt.api.{DPath, MPath}
-import info.kwarc.mmt.api.modules.{Module, Theory}
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
 import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.Strings
+import info.kwarc.mmt.moduleexpressions.operators.{Combinators, Common}
 
 import scala.io.Source
 
