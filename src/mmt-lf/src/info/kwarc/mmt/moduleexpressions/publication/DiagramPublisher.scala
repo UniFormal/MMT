@@ -1,4 +1,4 @@
-package info.kwarc.mmt.moduleexpressions.diagdefinition
+package info.kwarc.mmt.moduleexpressions.publication
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
@@ -7,17 +7,18 @@ import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.moduleexpressions.operators.Common
 
 import scala.collection.mutable
 
-object DiagramDefinition {
+object DiagramPublisher {
+  /**
+    * @todo Eventually rename the structural feature for diagrams to "publish diagram"
+    */
   val feature = "diagram"
 }
 
 /**
-  * Structural Feature for Exporting Diagrams into the current namespace
+  * Module-level structural feature for publishing diagrams into the current document namespace.
   *
   * @example
   * '''
@@ -26,9 +27,9 @@ object DiagramDefinition {
   * '''
   *
   * It expects an [[AnonymousDiagramCombinator]] as its (normalized) definiens and then
-  * lifts the produced [[AnonymousDiagram]] to the usual named space of MMT things.
+  * publishes that diagram in the document namespace in which the structural feature itself is used.n
   */
-class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
+class DiagramPublisher extends ModuleLevelFeature(DiagramPublisher.feature) {
   override def getHeaderNotation: List[Marker] = Nil
 
   /** */
@@ -42,7 +43,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
 
       controller.simplifier(df, simplificationUnit) match {
         case AnonymousDiagramCombinator(anonDiag) =>
-          getModulesForAnonymousDiagram(dm.parent, anonDiag)
+          getModulesForAnonymousDiagram(dm, dm.parent, anonDiag)
 
         case anyOtherSimplifiedDf =>
           // TODO should use proper error handler
@@ -50,12 +51,13 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
           val rules = RuleSet.collectRules(controller, Context(dm.meta.get)).get(classOf[ComputationRule]).mkString(", ")
           log("The used rules were " + rules)
           throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(anyOtherSimplifiedDf))
-    }
+      }
   }
 
-  def getModulesForAnonymousDiagram(outerDocumentPath: DPath, anonDiag: AnonymousDiagram): List[Module] = {
+  private def getModulesForAnonymousDiagram(dm: DerivedModule, outerDocumentPath: DPath, anonDiag: AnonymousDiagram): List[Module] = {
     // Export the diagram elements to document namespace surrounding the derived declaration.
     val newNames: mutable.Map[LocalName, MPath] = mutable.HashMap()
+
     def labeller(diagElementName: LocalName): MPath = newNames.getOrElseUpdate(diagElementName, {
       val supposedlyNewName = diagElementName.last match {
         case SimpleStep(name) => outerDocumentPath ? name
@@ -72,7 +74,7 @@ class DiagramDefinition extends ModuleLevelFeature(DiagramDefinition.feature) {
 
     val modules = anonDiag.toModules(labeller)
     // TODO: Ask Florian why this is necessary
-    //      dm.dfC.normalized = Some(anonDiag.relabel(labeller(_).name).toTerm)
+    dm.dfC.normalized = Some(anonDiag.relabel(labeller(_).name).toTerm)
     //  A semantically equivalent line was previously in his source code here before
     //  I refactored.
 

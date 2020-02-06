@@ -2,7 +2,7 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Logger, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
-import info.kwarc.mmt.api.presentation.{ConsoleWriter, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
@@ -46,11 +46,6 @@ abstract class Test(val archivepath: String,
   // add the plugins
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
-  controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
-  // controller.handleLine("extension info.kwarc.mmt.metamath.Plugin")
-
-  controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
-
 
   def doFirst: Unit = {}
 
@@ -64,11 +59,6 @@ abstract class Test(val archivepath: String,
   */
 
   def main(args: Array[String]): Unit = try {
-
-    controller.extman.addExtension(new DependencyGraphExporter)
-    controller.extman.addExtension(new DeclarationTreeExporter)
-    controller.extman.addExtension(new JSONBasedGraphServer)
-    controller.extman.addExtension(new PathGraphExporter)
     doFirst
     if (serverport.isDefined) {
       //controller.handleLine("clear")
@@ -167,23 +157,38 @@ abstract class MagicTest(prefixes: String*) extends Test(
 ) {
   override val gotoshell: Boolean = false
 
-  var presenter: MMTSyntaxPresenter = _
+  final val presenter: MMTSyntaxPresenter = new FlatMMTSyntaxPresenter()
+
+  override def doFirst: Unit = {
+    super.doFirst
+    controller.extman.addExtension(presenter)
+  }
 
   /**
-    * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]].
+    * Waits - possibly ad infinitum - for the object identified by the path to appear in the [[controller]]
+    * and returns it.
     *
     * @param path A path to a theory, document etc.
     */
-  final protected def waitUntilAvailable(path: Path): Unit = {
-    while (controller.getO(path).isEmpty) {
+  final protected def waitUntilAvailable(path: Path): StructuralElement = {
+    var elem: Option[StructuralElement] = None
+    while (true) {
+      elem = controller.getO(path)
+      if (elem.isDefined) {
+        return elem.get
+      }
       Thread.sleep(500)
     }
+
+    throw new RuntimeException("This code must not be reached - bug in Scala compiler?")
   }
 
-  final protected def waitThenPrint(path: Path): Unit = {
-    waitUntilAvailable(path)
+  final protected def waitThenPrint(path: Path): StructuralElement = {
+    val element = waitUntilAvailable(path)
     presenter(controller.get(path))(ConsoleWriter)
     print("\n")
+
+    element
   }
 
   final protected def space(): Unit = {

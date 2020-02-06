@@ -1,4 +1,4 @@
-package info.kwarc.mmt.moduleexpressions
+package info.kwarc.mmt.moduleexpressions.publication
 
 import info.kwarc.mmt.api._
 import objects._

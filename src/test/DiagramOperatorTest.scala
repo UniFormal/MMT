@@ -1,5 +1,5 @@
 import info.kwarc.mmt.api.DPath
-import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
+import info.kwarc.mmt.api.presentation.{FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.utils.URI
 
 trait DiagramOperatorHelper {
@@ -18,6 +18,7 @@ trait DiagramOperatorHelper {
 object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) with DiagramOperatorHelper {
 
   override def doFirst: Unit = {
+    super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
@@ -28,9 +29,6 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
     // Clean first to prevent some spurious caching errors
     hl("build Playground/diagops -mmt-omdoc")
     hl("build Playground/diagops mmt-omdoc")
-
-    presenter = new FlatMMTSyntaxPresenter()
-    controller.extman.addExtension(presenter)
   }
 
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
@@ -63,9 +61,9 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   }
 }
 
-object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramDefinition"/*, "object-simplifier"*/) with DiagramOperatorHelper {
-
+object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
   override def doFirst: Unit = {
+    super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
@@ -83,13 +81,11 @@ object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramDefinition
     // hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
     // hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
     // hl("build MMT/LATIN2 mmt-omdoc logic/sfol.mmt")
-
-    presenter = new FlatMMTSyntaxPresenter()
-    controller.extman.addExtension(presenter)
   }
 
   override def run: Unit = {
-    waitThenPrint((diagops / "union") ? "blub" ? "uniondiag")
+    val elem = waitThenPrint((diagops / "union") ? "myprefixthy1")
+    sys.exit(0)
   }
 }
 
@@ -103,6 +99,8 @@ object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOp
   private val latin : DPath = DPath(URI("latin:/"))
 
   override def doFirst: Unit = {
+    super.doFirst
+
     hl("build MMT/urtheories mmt-omdoc")
     hl("build MMT/LATIN2 scala-bin")
     hl("build MMT/LATIN2 mmt-omdoc type_theory/operators.mmt")
@@ -110,9 +108,6 @@ object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOp
     hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
 
     // hl("build MMT/LATIN2 lf-scala")
-
-    presenter = new FlatMMTSyntaxPresenter()
-    controller.extman.addExtension(presenter)
   }
 
   override def run: Unit = {

@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.moduleexpressions.diagdefinition.DiagramDefinition
+import info.kwarc.mmt.moduleexpressions.publication.DiagramPublisher
 
 object Combinators {
   val _path: MPath = ModExp._base ? "Combinators"
@@ -191,7 +191,7 @@ object Common {
               case None => default
             }
             Some(at)
-          case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
+          case Some(dm: DerivedModule) if dm.feature == DiagramPublisher.feature =>
             dm.dfC.normalized flatMap {
               case AnonymousDiagramCombinator(ad) =>
                 ad.getDistNode map { n => n.theory }
@@ -260,7 +260,7 @@ object Common {
       // named diagrams
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
-          case Some(dm: DerivedModule) if dm.feature == DiagramDefinition.feature =>
+          case Some(dm: DerivedModule) if dm.feature == DiagramPublisher.feature =>
             dm.dfC.normalized flatMap {
               case AnonymousDiagramCombinator(ad) =>
                 Some(ad)
