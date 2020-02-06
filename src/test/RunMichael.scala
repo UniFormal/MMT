@@ -4,16 +4,17 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
-import info.kwarc.mmt.api.refactoring.{GraphOptimizationTool, Intersecter, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
+import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
-import info.kwarc.mmt.api.{ComplexStep, LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
+
+import scala.collection.mutable
 
 object RunMichael extends MagicTest {
 
   def run : Unit = {
-    //getConst
     intersect
   }
 
@@ -22,6 +23,13 @@ object RunMichael extends MagicTest {
     println(view)
 
     println(ViewSplitter(view)(controller))
+    println(view.dfC)
+  }
+
+  def defined : Unit = {
+    val int = new BinaryIntersecter
+    controller.extman.addExtension(int, Nil)
+    println(int.isDefinedIn(controller.getConstant(Path.parseS("http://mydomain.org/testarchive/mmt-example?test_all?final",NamespaceMap.empty)), int.isDefinedInTraverserState(controller.getTheory(Path.parseM("http://mydomain.org/testarchive/mmt-example?test_all",NamespaceMap.empty)),mutable.HashMap[GlobalName, GlobalName](), mutable.HashSet[MPath]())))
   }
 
   def got : Unit = {
@@ -101,20 +109,21 @@ object RunMichael extends MagicTest {
   }
 
   def intersect: Unit = {
-    val int = new Intersecter
+    val int = new BinaryIntersecter
     val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(int, Nil)
     controller.extman.addExtension(presenter, List())
 
-    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?structure_test",NamespaceMap.empty)).asInstanceOf[View]
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
     int(view) match {
-      case (l1, l2, l3) =>
+      case (l1, l2, l3, _) =>
         l1.map(println(_))
         l2.map(p => {
           println(p._1)
           println(p._2)
         })
         l3.map(println(_))
+      case default => ???
     }
   }
 
