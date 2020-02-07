@@ -295,39 +295,28 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
     * [[DiagramNode]] dependencies and [[DiagramArrow]] dependencies.
     */
   private def getDependenciesFor(element: DiagramElement): (Set[DiagramNode], Set[DiagramArrow]) = {
-    var deps: mutable.Set[DiagramElement] = mutable.HashSet(element)
-    var remainingElements: mutable.Set[DiagramElement] = mutable.HashSet(getElements : _*)
-
-    // The breadth-first-search above will move elements from `remainingElements` to `deps` step-by-step
-    // until no changes occur anymore because no dependencies remain
-    var changeOccurred = true
-
-    while (changeOccurred) {
-      val newDeps: Set[DiagramElement] = {
-        val labelsOfCurDeps = deps.map(_.label).toSet
-
+    val deps = BreadthFirstSearch.collectBounded(
+      all = getElements.toSet,
+      initial = Seq(element),
+      explorer = (elem: DiagramElement, _: Set[DiagramElement], remainingElems: Set[DiagramElement]) => {
         // If (T in deps) is included in (S in remainingElements), get T into inclusionDeps
         // TODO: Dependency tracking for anonymous modules does not account for defined views currently!
-        val inclusionDeps = remainingElements.filter(_.getBody.getDeclarations.exists {
-          case IncludeOML(OML(label, _, _, _, _), _) if labelsOfCurDeps.contains(label) => true
+        val inclusionDeps = remainingElems.filter(_.getBody.getDeclarations.exists {
+          case IncludeOML(OML(label, _, _, _, _), _) if label == elem.label => true
           case _ => false
         })
 
         // If (T in deps) occurs as domain or codomain of an arrow in remainingElements, get T into arrowDeps
-        val arrowDeps = remainingElements.filter {
-          case DiagramArrow(_, from, to, _, _) => labelsOfCurDeps.contains(from) || labelsOfCurDeps.contains(to)
+        val arrowDeps = remainingElems.filter {
+          case DiagramArrow(_, from, to, _, _) if from == elem.label || to == elem.label => true
           case _ => false
         }
 
-        (inclusionDeps ++ arrowDeps).toSet
+        inclusionDeps ++ arrowDeps
       }
+    )
 
-      remainingElements --= newDeps
-      deps ++= newDeps
-      changeOccurred = newDeps.nonEmpty
-    }
-
-    (deps.collect { case x: DiagramNode => x }.toSet, deps.collect { case x: DiagramArrow => x }.toSet)
+    (deps.collect { case x: DiagramNode => x }, deps.collect { case x: DiagramArrow => x })
   }
 
   /**
@@ -337,8 +326,8 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
     val (nodeDepsLists, arrowDepsLists) = labels.flatMap(getElement).map(getDependenciesFor).unzip
 
     // flatten the sets to one set, respectively
-    val nodeDeps = nodeDepsLists.reduce((x, y) => x ++ y)
-    val arrowDeps = arrowDepsLists.reduce((x, y) => x ++ y)
+    val nodeDeps = nodeDepsLists.reduceLeftOption((x, y) => x ++ y).getOrElse(Set())
+    val arrowDeps = arrowDepsLists.reduceLeftOption((x, y) => x ++ y).getOrElse(Set())
 
     AnonymousDiagram(
       nodes = nodes.toSet.diff(nodeDeps).toList,

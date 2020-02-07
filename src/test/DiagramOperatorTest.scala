@@ -61,31 +61,31 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   }
 }
 
+object DiagramClosureTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
+  override def doFirst: Unit = {
+    super.doFirst
+    // Only uncomment if rebuild is really necessary
+    // hl("build MMT/urtheories -mmt-omdoc")
+    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    hl("build Playground/diagops mmt-omdoc closure/closure.mmt")
+  }
+
+  override def run: Unit = {
+  }
+}
+
 object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
   override def doFirst: Unit = {
     super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
-    // hl("build MMT/urtheories mmt-omdoc")
-    // hl("build MMT/LATIN2 scala-bin")
-
-    // Only uncomment if rebuild is really necessary
-    // hl("build MitM/Foundation mmt-omdoc")
-
-    // Clean first to prevent some spurious caching errors
-    // hl("build Playground/diagops -mmt-omdoc")
-    // hl("build Playground/diagops -mmt-omdoc union/union.mmt")
+    hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
+    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    hl("build Playground/diagops -mmt-omdoc union/union.mmt")
     hl("build Playground/diagops mmt-omdoc union/union.mmt")
-    // hl("build Playground/diagops mmt-omdoc from_file/from_file.mmt")
-    // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    // hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
-    // hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
-    // hl("build MMT/LATIN2 mmt-omdoc logic/sfol.mmt")
   }
 
   override def run: Unit = {
-    val elem = waitThenPrint((diagops / "union") ? "myprefixthy1")
-    sys.exit(0)
   }
 }
 

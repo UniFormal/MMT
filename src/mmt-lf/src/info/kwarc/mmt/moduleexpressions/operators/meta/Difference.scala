@@ -4,11 +4,11 @@ import info.kwarc.mmt.api.LocalName
 import info.kwarc.mmt.api.checking.{CheckingCallback, ComputationRule, History}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.uom.Simplifiability.NoRecurse
 import info.kwarc.mmt.lf.Strings
 import info.kwarc.mmt.moduleexpressions.operators.{Combinators, Common}
 
 object DiagramDifferenceByDiagram extends BinaryConstantScala(Combinators._path, "diagram_difference_by_diagram")
+
 object DiagramDifferenceByLabel extends BinaryConstantScala(Combinators._path, "diagram_difference_by_label")
 
 object Blah {
