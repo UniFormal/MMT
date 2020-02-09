@@ -24,7 +24,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
   override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     checkParams(indCtx, indParams, Context(dd.parent)++context, env)
   }
   
@@ -37,7 +37,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
       (tpl.externalPath(indDPath), correspondingDecl(dd, tpl.name).get.df.get)
     }
     
-    val intC = intDecls.find(_.name == c.name).get
+    val intC = intDecls.find(_.name == c.name).getOrElse(
+      throw GeneralError("Definien for declaration "+c.name+" is missing. \nOnly the declarations "+intDecls.map(_.name).fold("")((s,t)=>s+", "+t)+" were provided with definiens."))
     val tr = TraversingTranslator(OMSReplacer(p => utils.listmap(tplPathMap, p)))
     val cons = intC match {
       case const : Constructor => 
@@ -53,7 +54,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     Some(expectedType(dd, intDecls, indD.path, c)._1)
@@ -67,7 +68,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     
     //The internal definitions we need to give definiens for
     val intDecls = parseInternalDeclarations(indD, controller, None) filterNot (_.isOutgoing)

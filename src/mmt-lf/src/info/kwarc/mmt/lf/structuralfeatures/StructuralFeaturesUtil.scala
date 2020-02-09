@@ -146,15 +146,6 @@ object StructuralFeatureUtils {
       }
     }
   }
-  
-   /**
-   * Reads the internal declarations (assumed to be constants) of a derivedDeclaration unfolding PlainIncludes
-   * @param dd the derived declaration whoose internal declaration to read
-   * @param con the controller
-   */
-  def parseInternalDeclarationsIntoConstants(dd:DerivedDeclaration, con: Controller) : List[Constant] = {
-    getConstants(dd.getDeclarations, con)
-  }
 
   /**
    * Reads in the given constants and parses them into Internal declarations.
@@ -199,11 +190,14 @@ object StructuralFeatureUtils {
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-    var consts : List[Constant] = parseInternalDeclarationsIntoConstants(dd, con)
+    val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
+    val consts: List[Constant] = sf match {
+      case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
+      case _ => getConstants(dd.getDeclarations, con)
+    }
     readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, isConstructor)(dd.path)
   }
 
-  
   /**
    * Parse the internal declarations of dd
    * @param dd the derived declaration whoose internal declarations to parse
@@ -213,8 +207,39 @@ object StructuralFeatureUtils {
    * Needs to be given for constructors over defined typelevels
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
+  def parseReferenceLikeDerivedDeclaration(dd: DerivedDeclaration, con:Controller, sf: ReferenceLikeTypedParametricTheoryLike) : List[Constant] = {
+    getConstants(sf.getDecls(dd)._2, con)
+  }
+
+  /**
+   * Parse the internal declarations of dd into constants unfolding includes
+   * @param dd the derived declaration whoose internal declarations to parse
+   * @param con the controller
+   * @param ctx (optional) a context to parse the declarations in
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
+   */
+  def parseInternalDeclarationsIntoConstants(dd: DerivedDeclaration, con: Controller): List[Constant] = {
+    val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
+    sf match {
+      case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
+      case _ => getConstants(dd.getDeclarations, con)
+    }
+  }
+
+  /**
+   * Parse the internal declarations of dd into internal declarations
+   * @param dd the derived declaration whoose internal declarations to parse
+   * @param con the controller
+   * @param ctx (optional) a context to parse the declarations in
+   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
+   * Needs to be given for constructors over defined typelevels
+   * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
+   */
   def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-    readInternalDeclarations(parseInternalDeclarationsIntoConstants(dd, con), con, ctx, isConstructor)(dd.path)   
+    val consts: List[Constant] = parseInternalDeclarationsIntoConstants(dd,con)
+    readInternalDeclarations(consts, con, ctx, isConstructor)(dd.path)
   }
   
   def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {

@@ -16,6 +16,10 @@ import StructuralFeatureUtil._
 
 object inductiveUtil {
   /**
+   * name of the noConf declaration corresponding to c and d
+   */
+  def noConfName(a:LocalName, b:LocalName):LocalName = {LocalName("no_conf_"+a.toString+"_"+b.toString)}
+  /**
    * name of the declaration corresponding to n declared in noJunks
    */
   def inductName(n: LocalName) = {LocalName("induct") / n}
@@ -31,7 +35,20 @@ object inductiveUtil {
   def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
   /** name of the applied version of the inductive definition declaration generated for constructors */
   def appliedName(n: LocalName) : LocalName = {n / LocalName("Applied")}
+  def idAdditionalGenerated(c:Constant) = {
+    c.name match {
+      case al / b =>
+        val a = LocalName(al.toString)
+        val generated = List(inductName(b),testerName(a),unapplierName(a),proofPredName(a),proofName(a),appliedName(a)) contains c.name
+      case nm if ((nm.toString contains "injective_") ||  (nm.toString contains "no_conf_")) => true
+      case _ => false
+    }
+  }
+
   def feature = {"inductive"}
+  //features generating inductive types as output, which may be referenced by inductive definitions, inductive proofs, ...
+  def compatibleFeatures = {List(feature, ReflectionsUtil.feature)}
+
 }
 import inductiveUtil._
 
@@ -207,7 +224,7 @@ class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with Param
           val (matches, argMatches) = matchTypeParametersInReturnType(b, a)
           if (matches) {
             // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
-            val newName = LocalName("no_conf_" + a.name.last+ "_" + b.name.last)
+            val newName = noConfName(a.name, b.name)
             val Ltp = () => {
               val (aCtx, aApplied) = a.argContext(None)
               val (bCtx, bApplied) = b.argContext(None)

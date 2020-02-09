@@ -16,9 +16,12 @@ import StructuralFeatureUtil._
 import inductiveUtil._
 import structuralfeatures.InductiveTypes._
 
-/** theories as a set of types of expressions */ 
-class Reflections extends StructuralFeature("reflect") with TypedParametricTheoryLike {
+object ReflectionsUtil {
+  def feature = {"reflect"}
+}
 
+/** theories as a set of types of expressions */ 
+class Reflections extends StructuralFeature(ReflectionsUtil.feature) with ReferenceLikeTypedParametricTheoryLike {
    /**
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
@@ -53,25 +56,8 @@ class Reflections extends StructuralFeature("reflect") with TypedParametricTheor
    *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
    */
   def getContent(dd:DerivedDeclaration): (GlobalName, List[Constant], Context, List[Term], Context) = {
-    val (indDefPathGN, context, indParams) = ParamType.getParams(dd)
-    val (indCtx, consts) = controller.getO(indDefPathGN) match {
-      case Some(str) => str match {
-        case t: Theory => (t.parameters, getConstants(t.getDeclarations, controller))
-        case t: StructuralElement if (t.feature =="theory") =>
-          val decls = t.getDeclarations map {case d: Declaration => d case _ => throw LocalError("unsupported structural element at "+t.path)}
-          //We shouldn't have to do something this ugly, for this match to work out
-          //TODO:There should be a better method provided by the api
-          val params = t.headerInfo match {
-            case HeaderInfo("theory", _, List(_, params: Context)) => params
-            case _ => Context.empty
-          }
-          (params, getConstants(decls, controller))
-        case m : ModuleOrLink => (Context.empty, getConstants(m.getDeclarations, controller))
-        case t => throw GeneralError("reflection over unsupported target (expected a theory)"+t.path+" of feature "+t.feature + ": "+t)
-      }
-      case None => throw GeneralError("target of reflection not found at "+indDefPathGN)
-    }
-    (indDefPathGN, consts, indCtx, indParams, context)
+    val (indDefPathGN, decls, indCtx, indParams, context) = getDecls(dd)
+    (indDefPathGN, getConstants(decls, controller), indCtx, indParams, context)
   }
 }
 
