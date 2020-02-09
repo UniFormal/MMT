@@ -424,12 +424,12 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   }
   
   def checkParams(indCtx: Context, indParams: List[Term], context: Context, env: ExtendedCheckingEnvironment) : Unit = {
-    //A first attempt to check the indParams match the indCtx
 		//check the indParams match the indCtx at least in length
     if (indCtx .length != indParams.length) {
       throw LocalError("Incorrect length of parameters for the referenced derived declaration .\n"+
           "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
-    
+
+    //check whether their types also match
     indCtx zip indParams map {case (vd, tm) =>
       vd.tp map {expectedType =>
         val tpJudgement = Typing(Stack.empty, tm, expectedType)
@@ -457,7 +457,7 @@ object TypedParametricTheoryLike {
      /** retrieves the parameters and arguments */
      def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
        dd.tpC.get.get match {
-         case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
+         case OMBINDC(OMMOD(_), pars, OMS(p)::args) => (p, pars, args)
        }
      }
      /** retrieves the parameters */

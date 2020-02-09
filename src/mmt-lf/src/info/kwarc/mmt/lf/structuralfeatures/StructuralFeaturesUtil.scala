@@ -131,20 +131,20 @@ object StructuralFeatureUtils {
    * @param con the controller
    */
   def getConstants(decls: List[Declaration], con: Controller): List[Constant] = {
-    decls.map({d:Declaration => 
+    decls.flatMap { d: Declaration =>
       d match {
         case c: Constant => List(c)
-        case PlainInclude(from, to) => 
-          val target = con.getO(to)
+        case PlainInclude(from, to) =>
+          val target: Option[StructuralElement] = con.getO(from)
           target match {
             case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
-            case Some(m : ModuleOrLink) => getConstants(m.getDeclarations, con)
-            case Some(t) => throw GeneralError("unsupported include of"+t.path)
+            case Some(m: ModuleOrLink) => getConstants(m.getDeclarations, con)
+            case Some(t) => throw GeneralError("unsupported include of" + t.path)
             case None => throw GeneralError("found empty include")
           }
         case _ => throw GeneralError("unsupported declaration")
       }
-    }).flatten
+    }
   }
   
    /**
