@@ -238,6 +238,8 @@ object TermContainer {
    }
 
    def asParsed(term: Term): TermContainer = asParsed(Some(term))
+
+   def empty(): TermContainer = new TermContainer
 }
 
 /** container for mutable contexts */

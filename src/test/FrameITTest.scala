@@ -14,6 +14,7 @@ import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 object FrameITTest extends MagicTest("debug") {
 
   override def doFirst: Unit = {
+    super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
     // hl("build MMT/urtheories mmt-omdoc")
@@ -23,9 +24,6 @@ object FrameITTest extends MagicTest("debug") {
 
     // Clean first to prevent some spurious caching errors
     // hl("build Playground/frameit mmt-omdoc")
-
-    presenter = new FlatMMTSyntaxPresenter()
-    controller.extman.addExtension(presenter)
     controller.extman.addExtension(new FrameitServerExtension)
   }
 

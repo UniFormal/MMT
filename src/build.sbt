@@ -41,7 +41,7 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.9"
+scalaVersion in Global := "2.12.9"  // <-- If you update this, also update apiJars and redownload updated deps!!
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
@@ -189,9 +189,9 @@ lazy val mmt = (project in file("mmt")).
 // MMT is split into multiple subprojects to that are managed independently.
 
 def apiJars(u: Utils) = Seq(
-  "scala-compiler.jar",
-  "scala-library.jar",
-  "scala-parser-combinators.jar",
+  "scala-compiler-2.12.9.jar",
+  "scala-library-2.12.9.jar",
+  "scala-parser-combinators_2.12-1.1.2.jar",
   "scala-xml.jar",
   "xz.jar",
 ).map(u.lib.toJava / _)

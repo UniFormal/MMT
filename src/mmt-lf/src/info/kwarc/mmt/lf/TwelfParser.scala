@@ -1295,7 +1295,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, Context())
       i = positionAfter
-      view = View(vpath.parent, vpath.name, domain, codomain, Some(morphism), isImplicit)
+      view = View(vpath.parent, vpath.name, domain, codomain, TermContainer.asParsed(morphism), isImplicit)
       add(view)
     }
 
