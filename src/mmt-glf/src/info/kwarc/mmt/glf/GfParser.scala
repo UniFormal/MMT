@@ -53,11 +53,11 @@ class GfLexer extends RegexParsers {
   // def other_operator : Parser[OTHER_OPERATOR] = "=" ^^ (str => OTHER_OPERATOR(str))
 
   // keywords
-  def abstract_ : Parser[ABSTRACT.type] = "abstract" ^^ (_ => ABSTRACT)
-  def of_ : Parser[OF.type] = "of" ^^ (_ => OF)
-  def cat_ : Parser[CAT.type] = "cat" ^^ (_ => CAT)
-  def fun_ : Parser[FUN.type] = "fun" ^^ (_ => FUN)
-  def other_segment : Parser[OTHER_SEGMENT] = "flags" ^^ {str => OTHER_SEGMENT(str)}
+  def abstract_ : Parser[ABSTRACT.type] = "abstract[ \t\r\f\n]".r ^^ (_ => ABSTRACT)
+  def of_ : Parser[OF.type] = "of[ \t\r\f\n]".r ^^ (_ => OF)
+  def cat_ : Parser[CAT.type] = "cat[ \t\r\f\n]".r ^^ (_ => CAT)
+  def fun_ : Parser[FUN.type] = "fun[ \t\r\f\n]".r ^^ (_ => FUN)
+  def other_segment : Parser[OTHER_SEGMENT] = "flags[ \t\r\f\n]".r ^^ {str => OTHER_SEGMENT(str)}
 
   def tokens: Parser[List[GfToken]] = {
     phrase(rep1(abstract_ | of_ | cat_ | fun_ | other_segment |
