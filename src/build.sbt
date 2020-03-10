@@ -189,9 +189,9 @@ lazy val mmt = (project in file("mmt")).
 // MMT is split into multiple subprojects to that are managed independently.
 
 def apiJars(u: Utils) = Seq(
-  "scala-compiler-2.12.9.jar",
-  "scala-library-2.12.9.jar",
-  "scala-parser-combinators_2.12-1.1.2.jar",
+  "scala-compiler.jar",
+  "scala-library.jar",
+  "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
 ).map(u.lib.toJava / _)
