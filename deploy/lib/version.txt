@@ -4,7 +4,8 @@ Instead, track the versions here.
 
 Scala language: 2.12.9
 Scala modules:
- xml: 1.0.6 ?
- parser-combinators: 1.1.2
- reflect: 2.12.8
+ xml: 1.0.6
+ parser-combinators: 1.0.7
+ reflect: 2.12.9
+
 xz: 1.8
