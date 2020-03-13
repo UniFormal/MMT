@@ -1,10 +1,12 @@
 package info.kwarc.mmt.glf
 import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.objects.{OMBIND, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{DPath, MPath}
+import info.kwarc.mmt.api.{DPath, LocalName, MPath}
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.lf.{ApplySpine, Arrow, Lambda, Pi}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -14,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
   This is used to apply the semantics construction (a view) to a GF parse tree (which can be seen as an LF term).
  */
 
-class GlfConstructServer extends ServerExtension("glf-construct"){
+class GlfConstructServer extends ServerExtension("glf-construct") {
   def apply(request: ServerRequest): ServerResponse = {
     val query: GlfConstructQuery = GlfConstructQuery.fromJSON(request.body.asJSON)
 
@@ -56,34 +58,60 @@ class GlfConstructServer extends ServerExtension("glf-construct"){
       case ex: Exception => return errorResponse(ex.getMessage)
     }
 
-    /* val theorymap : Map[String, Constant] = {
-      controller.simplifier(theory)
-      val consts = theory.getConstants ::: theory.getIncludes.map(controller.get).collect {
-        case t : Theory =>
-          controller.simplifier(t)
-          t.getConstants
-      }.flatten
-      HashMap(consts.map(c => (c.name.toString,c)):_*)
-    }
-    */
-
     val trees = query.asts
       .map(GfAST.parseAST)
       .map(_.toOMDocRec(theoryMap.toMap))
       .map(t => view match {
         case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
-        case None => t })
+        case None => t
+      })
       .map(t => if (query.simplify) controller.simplifier(t,
-        SimplificationUnit(theory.getInnerContext,expandDefinitions=query.deltaExpansion,fullRecursion=true)) else t)
+        SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
+      .map(t => removeFakeLambdas(t, Set()))
       .distinct
 
-    ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))) : _*))
+    ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*))
   }
 
-  private def errorResponse(message : String) : ServerResponse = {
+  private def errorResponse(message: String): ServerResponse = {
     ServerResponse.JsonResponse(
       JSONArray(JSONString(message))
     )
+  }
+
+  private def removeFakeLambdas(t: Term, bound : Set[String]): Term = {
+    t match {
+      case OMS(p) =>
+        if (bound.contains(p.toMPath.toGlobalName.toString)) {
+          println("Substituting " + p.name.toStr(true))
+          OMV(p.name.toStr(true))
+        }
+        else {
+          println("Not substituting: " + p.toMPath.toGlobalName.toString + "  <  " + bound.toString)
+          OMS(p)
+        }
+      case OMV(n) =>
+        OMV(n)
+      case OMBIND(b, c, s) =>
+        OMBIND(b, c, removeFakeLambdas(s, bound))
+      case ApplySpine(OMS(p), List(tp1, _, OMS(v), b)) =>
+        if (p.toMPath.toGlobalName.toString.equals("http://mathhub.info/COMMA/GLF?fakeLambda?fake_lambda")) {   // apparently, it's "[logic]/fake_lambda"
+          val name = v.name.toStr(true)
+          Lambda(LocalName(name), tp1, removeFakeLambdas(b, bound + v.toMPath.toGlobalName.toString))
+        } else {
+          t match {
+            case ApplySpine(f, args) =>
+              ApplySpine(removeFakeLambdas(f, bound), args.map(a => removeFakeLambdas(a, bound)): _*)
+          }
+        }
+      case ApplySpine(f, args) =>
+        ApplySpine(removeFakeLambdas(f, bound), args.map(a => removeFakeLambdas(a, bound)): _*)
+      case Arrow(_, _) =>
+        throw new GlfException("Didn't expect arrow in result of semantics construction")
+      case Pi(_, _, _) =>
+        throw new GlfException("Didn't expect pi in result of semantics construction")
+      case _ => throw new GlfException("unknown term: " + t)
+    }
   }
 }
 
