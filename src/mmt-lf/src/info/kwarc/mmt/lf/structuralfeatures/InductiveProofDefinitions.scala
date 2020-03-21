@@ -37,11 +37,11 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
-    val (_, _, indProofDeclMap, ctx) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
+    val (_, _, inductProofCases, _) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
     
-    val intDecl = intDecls.find(_.name == c.name)
+    val intDecl = intDecls.find(_.name == c.name).getOrElse(throw ImplementationError("No declaration to give a definien for is found for "+c.path))
     
-    utils.listmap(indProofDeclMap, intDecl) map (_.tp.get)
+    Some(utils.listmap(inductProofCases, intDecl).map(_.tp.get).get)
   }
 
   /**

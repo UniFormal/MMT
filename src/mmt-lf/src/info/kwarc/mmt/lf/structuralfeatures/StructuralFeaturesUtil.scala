@@ -137,7 +137,7 @@ object StructuralFeatureUtils {
         case PlainInclude(from, to) =>
           val target: Option[StructuralElement] = con.getO(from)
           target match {
-            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
+            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)._1
             case Some(m: ModuleOrLink) => getConstants(m.getDeclarations, con)
             case Some(t) => throw GeneralError("unsupported include of " + t.path)
             case None => throw GeneralError("found empty include")
@@ -153,12 +153,13 @@ object StructuralFeatureUtils {
    * @param con the controller
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
-  def parseInternalDeclarationsIntoConstants(dd: DerivedDeclaration, con: Controller): List[Constant] = {
+  def parseInternalDeclarationsIntoConstants(dd: DerivedDeclaration, con: Controller): (List[Constant]) = {
     val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
-    sf match {
+    val consts = sf match {
       case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
       case _ => getConstants(dd.getDeclarations, con)
     }
+    consts
   }
 
   /**
@@ -178,15 +179,11 @@ object StructuralFeatureUtils {
    * @param dd the derived declaration whoose declarations to parse
    * @param con the controller, needed to parse the delarations
    * @param ctx (optional) the (outer) context of the declarations
-   * @param intDecls (optional) the declarations for which to provide definiens
+   * @param intDeclsO (optional) the declarations for which to provide definiens
    */
-  def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, intDecls: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
-    val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
-    val consts: List[Constant] = sf match {
-      case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
-      case _ => getConstants(dd.getDeclarations, con)
-    }
-    readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, intDecls)(dd.path)
+  def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
+    val consts = parseInternalDeclarationsIntoConstants(dd, con)
+    readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, intDeclsO)(dd.path)
   }
 
   /**
@@ -202,20 +199,7 @@ object StructuralFeatureUtils {
   def readInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
-
-    val isConstr = intDeclsO map {intDecls =>
-        val tpdecls = tpls(intDecls)
-
-        val isConstrs = decls map {c=>
-          val intC = intDecls.find(_.name == c.name).getOrElse(throw GeneralError("Definien for declaration "+c.name+" is missing. "))
-          val isConstrC = intC match {
-            case const : Constructor => (true, Some(decls.find(_.name == const.getTpl.name).get.path))
-            case _ => (false, None)
-          }
-          (c, isConstrC)
-        }
-      utils.listmap(isConstrs, _ : Constant).get
-    }
+    val isConstr = isConstructor(decls, intDeclsO)
 
     decls map {c =>
       val intDecl = fromConstant(c, con, types, ctx, isConstr map (_(c)))
@@ -236,6 +220,25 @@ object StructuralFeatureUtils {
   }
 
   /**
+   * Construct a map computing for each declaration whether it is a constructor and if so its typelevel
+   * @param decls the declarations to check
+   * @param intDeclsO (optional) the derived declarations for which to provide definiens
+   * @param parent (implicit) the parent module of the given declaration
+   */
+  def isConstructor(decls: List[Constant], intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent: GlobalName) : Option[Constant => (Boolean, Option[GlobalName])] = {
+    intDeclsO map {intDecls =>
+      val isConstrO = decls map {c =>
+        val intC = intDecls.find(_.name == c.name).getOrElse(throw GeneralError("Definien for declaration "+c.name+" is missing. "))
+        intC match {
+          case const : Constructor => (c, (true, Some(decls.find(_.name == const.getTpl.name).get.path)))
+          case _ => (c, (false, None))
+        }
+      }
+      utils.listmap(isConstrO, _ : Constant).get
+    }
+  }
+
+  /**
    * Parse the internal declarations of dd into internal declarations
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
@@ -244,24 +247,22 @@ object StructuralFeatureUtils {
    * Needs to be given for constructors over defined typelevels
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
-  def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None): List[InternalDeclaration] = {
-    val consts: List[Constant] = parseInternalDeclarationsIntoConstants(dd,con)
-    readInternalDeclarations(consts, con, ctx, isConstructor)(dd.path)
+  def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
+    val consts = parseInternalDeclarationsIntoConstants(dd,con)
+    readInternalDeclarations(consts, con, ctx, intDeclsO)(dd.path)
   }
   
-  def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, isConstructor: Option[Constant => (Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
+  def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
     
     consts map {c =>
-      val intDecl = fromConstant(c, con, types, ctx, isConstructor map (_(c)))
-      
+      val intDecl = fromConstant(c, con, types, ctx, isConstructor(consts, intDeclsO).map(_(c)))
       intDecl match {case tpl: TypeLevel => types +:= tpl case _ =>}
       intDecl
     }
   }
 }
-
 
 import StructuralFeatureUtils._
 import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment

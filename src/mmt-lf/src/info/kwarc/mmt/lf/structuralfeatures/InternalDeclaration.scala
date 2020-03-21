@@ -177,9 +177,7 @@ object InternalDeclaration {
    * @precondition if isConstructor is given and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def fromConstant(c: Constant, con: Controller, types: List[TypeLevel], ctx: Option[Context], isConstructor: Option[(Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName) : InternalDeclaration = {
-    val tp = c.tp.getOrElse(
-    throw ImplementationError("type excepted for declaration at "+c.path)
-    )
+    val tp = c.tp.getOrElse(throw ImplementationError("type expected for declaration at "+c.path+" but none found."))
     val FunType(args, ret) = tp
     val context = Some(ctx getOrElse Context.empty)
     val p = c.path
