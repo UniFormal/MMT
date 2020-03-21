@@ -35,13 +35,17 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
     val (_, _, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     
-    val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
+    val intDecls = parseInternalDeclarationsSubstitutingDefiniens(indD, controller, Some(indCtx))
     val (constrdecls, tpdecls) = (constrs(intDecls), tpls(intDecls))
-    val (_, _, inductProofCases, _) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
+    val (_, _, indPfCases, _) = inductionHypotheses(tpdecls, constrdecls, indCtx)(indD.path)
     
     val intDecl = intDecls.find(_.name == c.name).getOrElse(throw ImplementationError("No declaration to give a definien for is found for "+c.path))
-    
-    Some(utils.listmap(inductProofCases, intDecl).map(_.tp.get).get)
+    val tp = utils.listmap(indPfCases, intDecl).map(_.tp.get)
+    val externalTp = tp map {tp =>
+      val substs = indPfCases.map({p => Sub(p._2.name, dd.get(p._1.name).toTerm)})
+      tp ^ substs
+    }
+    Some(externalTp.get)
   }
 
   /**
@@ -60,8 +64,6 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val intTplNames = intTpls map (_.name)
     
-    //The constructors amongst the following declarations will most likely be misparsed as outgoing termlevels
-    //However, as the below code doesn't use the distinction this is acceptable
     var decls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context))
      
     val proof_paths = intTpls.map(t=>externalName(indD.path, proofName(t.name)))

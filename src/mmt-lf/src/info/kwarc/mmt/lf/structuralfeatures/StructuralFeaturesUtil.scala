@@ -137,7 +137,7 @@ object StructuralFeatureUtils {
         case PlainInclude(from, to) =>
           val target: Option[StructuralElement] = con.getO(from)
           target match {
-            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)._1
+            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
             case Some(m: ModuleOrLink) => getConstants(m.getDeclarations, con)
             case Some(t) => throw GeneralError("unsupported include of " + t.path)
             case None => throw GeneralError("found empty include")
@@ -153,7 +153,7 @@ object StructuralFeatureUtils {
    * @param con the controller
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
-  def parseInternalDeclarationsIntoConstants(dd: DerivedDeclaration, con: Controller): (List[Constant]) = {
+  def parseInternalDeclarationsIntoConstants(dd: DerivedDeclaration, con: Controller): List[Constant] = {
     val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
     val consts = sf match {
       case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
