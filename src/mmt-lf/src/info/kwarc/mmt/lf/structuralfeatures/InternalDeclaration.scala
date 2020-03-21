@@ -170,12 +170,16 @@ object InternalDeclaration {
    * convert the given constant into the appropriate internal declaration
    * @param c the constant to convert
    * @param con the controller
+   * @param types the list of defined typelevels
+   * @param ctx the outer context of the declaration
    * @param isConstructor (optional) whether the declaration is a constructor and if so its typelevel
    * Needs to be given for constructors over defined typelevels
    * @precondition if isConstructor is given and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def fromConstant(c: Constant, con: Controller, types: List[TypeLevel], ctx: Option[Context], isConstructor: Option[(Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName) : InternalDeclaration = {
-    val tp = c.tp.get
+    val tp = c.tp.getOrElse(
+    throw ImplementationError("type excepted for declaration at "+c.path)
+    )
     val FunType(args, ret) = tp
     val context = Some(ctx getOrElse Context.empty)
     val p = c.path

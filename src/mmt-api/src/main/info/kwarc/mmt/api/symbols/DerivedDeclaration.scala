@@ -411,7 +411,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val indD = controller.library.get(indDefPath) match {
     case indD: DerivedDeclaration if (expectedFeature.isEmpty || expectedFeature.get.contains(indD.feature)) => indD
-    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature "+expectedFeature.get+" but of the feature "+d.feature+".")
+    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not among the features "+expectedFeature.get+" but of the feature "+d.feature+".")
     case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
           +" but no derived declaration found at that location.")
     }
