@@ -88,11 +88,9 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
     t match {
       case OMS(p) =>
         if (bound.contains(p.toMPath.toGlobalName.toString)) {
-          println("Substituting " + p.name.toStr(true))
           OMV(p.name.toStr(true))
         }
         else {
-          println("Not substituting: " + p.toMPath.toGlobalName.toString + "  <  " + bound.toString)
           OMS(p)
         }
       case OMV(n) =>
