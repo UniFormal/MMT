@@ -35,7 +35,7 @@ case class GfFun(fun : String, args : List[GfAST]) extends GfAST {
 case class GfInt(value: String) extends GfAST {
   override def toString: String = value
   override def toOMDocRec(theorymap : Map[String, Constant]): Term = {
-    OMLIT(value, NatLit)
+    OMLIT(StandardNat(value.toInt), NatLit)
   }
 }
 
