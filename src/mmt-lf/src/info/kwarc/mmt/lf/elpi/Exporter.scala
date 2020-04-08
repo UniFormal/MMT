@@ -7,6 +7,7 @@ import modules._
 import objects._
 import documents._
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.sequences.NatRules.NatLit
 
 case class ELPIError(msg: String) extends Error(msg)
 case class CantHandleRule(msg: String) extends Error(msg)
@@ -97,7 +98,7 @@ class ELPIExporter extends Exporter {
                     fail(msg)
                   }
                 case _ =>
-                  val tE = translateTerm(t)
+                  val tE = ELPIExporter.translateTerm(t)
                   val isKind = t match {
                     case FunType(_, OMS(Typed.ktype)) => true
                     case _ => false
@@ -169,7 +170,7 @@ class ELPIExporter extends Exporter {
    */
   private def translateAtomic(aj: AtomicJudgement, hypNames: List[LocalName], hypothesis: Boolean)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     val name = vc.next(!hypothesis)
-    val argsE = aj.arguments map translateTerm
+    val argsE = aj.arguments map ELPIExporter.translateTerm
     val nameExpr = V(name)(hypNames)
     val opName = aj.operator.name
     // for theses/conclusions: judgment symbol name applied to hypothesis names
@@ -191,9 +192,9 @@ class ELPIExporter extends Exporter {
       case ApplySpine(OMV(f), a) => {
         val v = vc.next(true)
         names = v :: names
-        (V(v), List(ELPI.Equal(V(v), translateTerm(ApplySpine(OMV(f), a :_*)))))
+        (V(v), List(ELPI.Equal(V(v), ELPIExporter.translateTerm(ApplySpine(OMV(f), a :_*)))))
       }
-      case x => (translateTerm(x), List())
+      case x => (ELPIExporter.translateTerm(x), List())
     }.unzip
 
     val e = V(aj.operator.name)(V(cert) :: argsE :_*)
@@ -226,7 +227,7 @@ class ELPIExporter extends Exporter {
         val hypNames = cj.hypotheses.map { a => vc.next(false) }
         val names = parNames ::: hypNames
         val res = if (isFirstArg && needBC) {
-          firstExpr = Some(translateTerm(cj.thesis.arguments.head))
+          firstExpr = Some(ELPIExporter.translateTerm(cj.thesis.arguments.head))
           ELPI.Lambda(names, BcCertCons(V(LocalName("bc/fwdLocked"))(V(assCertName))))
         } else {
           ELPI.Lambda(names, BcCertCons(V(assCertName)))
@@ -252,7 +253,7 @@ class ELPIExporter extends Exporter {
     val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(conds ::: extras,res))
     if (isForward) {
       val auxres = ELPI.Variable(vc.next(true))
-      val concE = translateTerm(dr.conclusion.arguments.head)
+      val concE = ELPIExporter.translateTerm(dr.conclusion.arguments.head)
       val aux = ELPI.Forall(parNames, ELPI.Impl(V(LocalName("bc/aux"))(concE, auxres),
           V(LocalName("bc/aux"))(firstExpr.get, auxres)))
       List(ELPI.Rule(r), ELPI.Rule(aux))
@@ -420,30 +421,6 @@ class ELPIExporter extends Exporter {
     }
   }
 
-  /** straightforward translation of an LF terms to a lambda-Prolog term */
-  private def translateTerm(t: Term): ELPI.Expr = {
-    t match {
-      case OMS(p) =>
-        // also works for "type" because it is called the same in ELPI
-        ELPI.Variable(p.name)
-      case OMV(n) =>
-        ELPI.Variable(n)
-      case Lambda(x,_,t) =>
-        ELPI.Lambda(x, translateTerm(t))
-      case ApplySpine(f,args) =>
-        val fE = translateTerm(f)
-        val argsE = args map translateTerm
-        fE(argsE :_*)
-      case Arrow(a,b) =>
-        val aE = translateTerm(a)
-        val bE = translateTerm(b)
-        ELPI.Arrow(aE,bE)
-      case Pi(x,_,b) =>
-        ELPI.Forall(x, translateTerm(b))
-      case _ => throw ELPIError("unknown term: " + t)
-    }
-  }  
-  
   def exportTheory(thy: Theory, bf: BuildTask) {
     val thyE = translateTheory(thy)
     rh << thyE.toELPI
@@ -453,3 +430,32 @@ class ELPIExporter extends Exporter {
   def exportDocument(doc: Document, bf: BuildTask) {}
   def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {}
 }
+
+object ELPIExporter {
+  /** straightforward translation of an LF terms to a lambda-Prolog term */
+  def translateTerm(t: Term): ELPI.Expr = {
+    t match {
+      case OMS(p) =>
+        // also works for "type" because it is called the same in ELPI
+        ELPI.Variable(p.name)
+      case OMV(n) =>
+        ELPI.Variable(n)
+      case Lambda(x, _, t) =>
+        ELPI.Lambda(x, translateTerm(t))
+      case ApplySpine(f, args) =>
+        val fE = translateTerm(f)
+        val argsE = args map translateTerm
+        fE(argsE: _*)
+      case Arrow(a, b) =>
+        val aE = translateTerm(a)
+        val bE = translateTerm(b)
+        ELPI.Arrow(aE, bE)
+      case Pi(x, _, b) =>
+        ELPI.Forall(x, translateTerm(b))
+      case OMLIT(v, NatLit) =>
+        ELPI.Integer(v.toString.toInt)
+      case _ => throw ELPIError("unknown term: " + t)
+    }
+  }
+}
+
