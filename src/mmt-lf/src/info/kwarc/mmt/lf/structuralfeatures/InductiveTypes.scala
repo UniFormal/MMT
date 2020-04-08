@@ -403,7 +403,10 @@ object InductiveTypes {
    *         1) the proof predicate (claim) pred_i for each type tp_i,
    *         2) a list of pairs (tpp_i, f_) for tpp_i the path of tpl_i,
    *         where f maps (tm, tp) |-> pred_i tm if the return type of tp is tp_i, else (tm, tp) |-> tm
-   *         3)
+   *         3) a list of pairs (intdecl, claim) for each tpl or constructor intdecl,
+   *         where claim is a variable for the inductive claim for intdecl
+   *         4) a context with all local names used in the function,
+   *         it is used to prevent name clashes in this recursive function
    */
   def inductionHypotheses(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName) = {
     var ctx = context
@@ -435,13 +438,13 @@ object InductiveTypes {
     }
     
     //The required assumptions for the constructors
-    val inductCases = constrs(tmdecls) map {tml =>
-      val (argCon, dApplied) = tml.argContext()
-      val pred = utils.listmap(predsMap, tml.getTpl).get
-      val claim = ApplyGeneral(pred.toTerm, tml.getTplArgs.+:(dApplied))
+    val inductCases = constrs(tmdecls) map {constr =>
+      val (argCon, dApplied) = constr.argContext()
+      val pred = utils.listmap(predsMap, constr.getTpl).get
+      val claim = ApplyGeneral(pred.toTerm, constr.getTplArgs.+:(dApplied))
       val assumptions = rBar(argCon, tpdecls, indProofDeclMap)
-      val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(assumptions, claim), ctx++argCon)
-      predsMap ::= (tml, inductCase)
+      val inductCase = newVar(proofPredName(constr.name), PiOrEmpty(assumptions, claim), ctx++argCon)
+      predsMap ::= (constr, (inductCase))
       ctx++=inductCase; inductCase
     }
     (preds, indProofDeclMap, predsMap, ctx)

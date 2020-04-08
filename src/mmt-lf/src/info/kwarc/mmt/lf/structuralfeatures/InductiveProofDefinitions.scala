@@ -41,8 +41,10 @@ class InductiveProofDefinitions extends StructuralFeature("ind_proof") with Type
     
     val intDecl = intDecls.find(_.name == c.name).getOrElse(throw ImplementationError("No declaration to give a definien for is found for "+c.path))
     val tp = utils.listmap(indPfCases, intDecl).map(_.tp.get)
+		//Replace references to the inductive claims by their definitions read earlier
     val externalTp = tp map {tp =>
-      val substs = indPfCases.map({p => Sub(p._2.name, dd.get(p._1.name).toTerm)})
+      val substs = indPfCases.filter(_._1.isTypeLevel).map({case (tpl: TypeLevel, claim: VarDecl) =>
+        Sub(claim.name, dd.get(tpl.name).toTerm)})
       tp ^ substs
     }
     Some(externalTp.get)
