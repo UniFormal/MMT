@@ -12,7 +12,7 @@ The following versions should fit together:
 
   * Isabelle/abf3e80bd815 from https://isabelle.sketis.net/repos/isabelle
   * AFP/9449ae539c8a from https://isabelle.sketis.net/repos/afp-devel
-  * MMT/f274ff536b45 from https://github.com/UniFormal/MMT/commits/devel
+  * MMT/42718dc13dcc from https://github.com/UniFormal/MMT/commits/devel
   * MathHub/MMT/urtheories/5c80b26b6cae from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
