@@ -42,7 +42,7 @@ abstract class SemanticType extends SemanticObject {
    /** @return a LexerExtension that is to be used when this type is in scope */
    def lex: Option[parser.LexFunction] = None
    /** @return a fresh iterator over values of this type */
-   def enumerate: Option[Iterator[Any]] = None
+   def enumerate(mode: Int): Option[Iterator[Any]] = None
 
    /** returns a canonical embedding from this type into some other type
     *  only the identity of this type by default, override as needed
