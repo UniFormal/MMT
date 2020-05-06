@@ -6,9 +6,9 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
 
 /**
  * scope where a notation is applicable
- * variant : optionally the name of this notation variant
- * languages : the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
- * priority : the priority of this notation when looking for a default notation
+ * variant: optionally the name of this notation variant
+ * languages: the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
+ * priority: the priority of this notation when looking for a default notation
  */
 case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
   def toNode =  <scope variant={variant.getOrElse(null)}
