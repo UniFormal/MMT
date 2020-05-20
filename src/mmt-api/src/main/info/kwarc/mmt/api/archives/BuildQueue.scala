@@ -500,7 +500,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
           "finished" -> JSONArray(fs: _*))
     }
 
-    def apply(request: ServerRequest): ServerResponse = request.path match {
+    def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
       case List("clear") =>
         clear
         ServerResponse.JsonResponse(JSONNull)
