@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, LocalName, MPath}
 import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.lf.elpi.ELPIExporter
+import info.kwarc.mmt.lf.elpi.{BaseConstantHandler, ELPIExporter}
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, Lambda, Pi}
 
 import scala.collection.mutable
