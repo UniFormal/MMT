@@ -60,7 +60,7 @@ class AllTeX extends LaTeXDirTarget {
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
       val deps = getDepsMap(getFilesRec(a, in))
-      val ds = Relational.flatTopsort(controller, deps)
+      val ds = Relational.topsort(controller, deps).flatten
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
@@ -88,14 +88,14 @@ class AllTeX extends LaTeXDirTarget {
     val ls = langFiles(lang, files)
     val w = new StringBuilder
     def writeln(s: String): Unit = w.append(s + "\n")
-    ambleText("pre", a, lang).foreach(writeln)
+    ambleText(preOrPost = "pre", a, lang).foreach(writeln)
     writeln("")
     ls.foreach { f =>
       writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
       writeln("\\input{" + File(f).stripExtension + "} \\newpage")
       writeln("")
     }
-    ambleText("post", a, lang).foreach(writeln)
+    ambleText(preOrPost = "post", a, lang).foreach(writeln)
     val newContent = w.result
     val outPath = getOutPath(a, all)
     if (force || !all.exists() || File.read(all) != newContent) {
