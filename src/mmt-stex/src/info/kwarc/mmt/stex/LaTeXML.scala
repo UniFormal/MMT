@@ -48,10 +48,47 @@ class AllTeX extends LaTeXDirTarget {
       BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
-        case d@FileBuildDependency(k, _, _) if List("tex-deps", "sms").contains(k) => d
+        case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
       }
       BuildSuccess(used, Nil)
     }
+  }
+
+  def clearMap(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
+    var clean : Map[Dependency, Set[Dependency]] = Map.empty
+    for ((k,v) <- in) {
+      k match {
+        case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) =>
+          var cleanv : Set[Dependency] = Set.empty
+          for (se <- v) {
+            se match {
+              case fbdp @ FileBuildDependency(_,_,_) =>
+                if (List("tex-deps","alltex").contains(fbdp.key)) {
+                  cleanv += fbdp
+                }
+              case pd @ PhysicalDependency(_) => cleanv += pd
+              case _ =>
+            }
+          }
+          clean += (fbd -> cleanv)
+
+        case pd @ PhysicalDependency(_) =>
+          var cleanv : Set[Dependency] = Set.empty
+          for (se <- v) {
+            se match {
+              case fbdp @ FileBuildDependency(_,_,_) =>
+                if (List("tex-deps","alltex").contains(fbdp.key)) {
+                  cleanv += fbdp
+                }
+              case pd @ PhysicalDependency(_) => cleanv += pd
+              case _ =>
+            }
+          }
+          clean += (pd -> cleanv)
+        case _ =>
+      }
+    }
+    clean
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
@@ -59,8 +96,8 @@ class AllTeX extends LaTeXDirTarget {
     var success = false
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val deps = getDepsMap(getFilesRec(a, in))
-      val ds = Relational.topsort(controller, deps).flatten
+      val deps = clearMap(getDepsMap(getFilesRec(a, in)))
+      val ds = Relational.flatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
