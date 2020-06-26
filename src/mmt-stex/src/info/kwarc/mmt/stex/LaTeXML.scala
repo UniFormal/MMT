@@ -54,40 +54,16 @@ class AllTeX extends LaTeXDirTarget {
     }
   }
 
-  def clearMap(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
-    var clean : Map[Dependency, Set[Dependency]] = Map.empty
-    for ((k,v) <- in) {
-      k match {
-        case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) =>
-          var cleanv : Set[Dependency] = Set.empty
-          for (se <- v) {
-            se match {
-              case fbdp @ FileBuildDependency(_,_,_) =>
-                if (List("tex-deps","alltex").contains(fbdp.key)) {
-                  cleanv += fbdp
-                }
-              case pd @ PhysicalDependency(_) => cleanv += pd
-              case _ =>
-            }
-          }
-          clean += (fbd -> cleanv)
-
-        case pd @ PhysicalDependency(_) =>
-          var cleanv : Set[Dependency] = Set.empty
-          for (se <- v) {
-            se match {
-              case fbdp @ FileBuildDependency(_,_,_) =>
-                if (List("tex-deps","alltex").contains(fbdp.key)) {
-                  cleanv += fbdp
-                }
-              case pd @ PhysicalDependency(_) => cleanv += pd
-              case _ =>
-            }
-          }
-          clean += (pd -> cleanv)
-        case _ =>
-      }
+  def forgetSMSDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
+  {
+    def goodDependency(dep : Dependency) : Boolean = dep match {
+      case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
+      case PhysicalDependency(_) => true
+      case _ => false
     }
+
+    var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
+    for ((k,v) <- clean) { clean = clean + (k -> v.filter(goodDependency)) }
     clean
   }
 
@@ -96,8 +72,8 @@ class AllTeX extends LaTeXDirTarget {
     var success = false
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
-      val deps = clearMap(getDepsMap(getFilesRec(a, in)))
-      val ds = Relational.flatTopsort(controller,deps)
+      val deps = forgetSMSDeps(getDepsMap(getFilesRec(a, in)))
+      val ds : List[Dependency] = Relational.topsort(controller,deps).flatten
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
@@ -198,7 +174,8 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  val outDim = RedirectableDimension("latexml")
+  val outDim : ArchiveDimension = RedirectableDimension("latexml")
+
   // the latexml client
   private var latexmlc = "latexmlc"
   private var latexmls = "latexmls"
@@ -261,9 +238,9 @@ class LaTeXML extends LaTeXBuildTarget {
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
     paths = getStringList(optionsMap, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    reboot = optionsMap.get("reboot").isDefined
+    reboot = optionsMap.contains("reboot")
     if (reboot) expire = 1
-    nopost = optionsMap.get("nopost").isDefined
+    nopost = optionsMap.contains("nopost")
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
