@@ -2,9 +2,6 @@ package info.kwarc.mmt.api.archives
 
 import info.kwarc.mmt.api._
 import frontend._
-import parser._
-import utils._
-import documents._
 
 /** an object to extract dependencies from a controller */
 object Relational {
@@ -26,21 +23,56 @@ object Relational {
     m.filter(p => p._2.contains(p._1))
   }
 
+  /* Generates a dot-file for easier viewing of the dependency graph */
+  def generateDot[A](name : String, f : (A => String), m : Map[A,Set[A]]) : Unit = {
+    val w = new StringBuilder
+    def writeln(s: String): Unit = w.append(s + "\n")
+    writeln("digraph " + name + " {")
+
+    var nodes : Set[String] = Set.empty
+
+    def newnode(arg : A) : Unit = {
+      if (!nodes.contains(f(arg))) {
+        writeln("    " + f(arg) + ";")
+        nodes += f(arg)
+      }
+    }
+
+    for ((k,v) <- m) {
+      newnode(k)
+      for (tar <- v) {
+        newnode(tar)
+        writeln("    " + f(k) + " -> " + f(tar) + ";")
+      }
+    }
+
+    writeln("}")
+    reflect.io.File(name + ".dot").writeAll(w.result())
+  }
+
+  def dependencyNodeName[A](d : A) : String = d match {
+    case FileBuildDependency(k,a,i) => "\"" +  i + "\n" + a.hashCode() + "\n(" + k + ")\""
+    case PhysicalDependency(f) => "\"" + f.toString + "\""
+    case l => println("Error: Dependency not dotted: " + l); "other"
+  }
+
   def topsort[A](controller: Controller, m: Map[A, Set[A]]): List[Set[A]] = {
     if (m.isEmpty) Nil
     else {
       val (noDeps, rest) = m.partition(_._2.isEmpty)
       if (noDeps.isEmpty) {
-        controller.report(new Error("cyclic deps: " + close(m)) {})
+        generateDot(name = "cyclic_remainder", dependencyNodeName[A], m)
+        controller.report(new Error(shortMsg = "cyclic deps (see \"cyclic_remainder.dot\"): " + m) {})
         List(Set.empty, m.keySet)
       }
       else {
-        val fst = noDeps.keySet
+        val fst : Set[A] = noDeps.keySet
         fst :: topsort(controller, rest.map(p => (p._1, p._2.diff(fst))))
       }
     }
   }
 
-  def flatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] =
+  def flatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] = {
     topsort(controller, m).flatMap(_.toList.sortBy(_.toString))
+  }
 }
