@@ -167,8 +167,9 @@ class SmsGenerator extends LaTeXBuildTarget {
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
     val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(List(lp), Nil)
+    BuildSuccess(u :+ lp,p)
   }
 
   def reallyBuildFile(bt: BuildTask): BuildResult = {
@@ -498,8 +499,9 @@ class LaTeXML extends LaTeXBuildTarget {
   }
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
     val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(List(lp), Nil)
+    BuildSuccess(u :+ lp,p)
   }
 }
 
@@ -614,8 +616,9 @@ class TikzSvg extends PdfLatex
   override val outDim : ArchiveDimension = content
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
     val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(List(lp), Nil)
+    BuildSuccess(u :+ lp,p)
   }
 
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
