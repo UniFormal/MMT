@@ -47,7 +47,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def start(args: List[String]) {
     anaStartArgs(args)
-    pipeOutput = optionsMap.get(pipeOutputOption).isDefined
+    pipeOutput = optionsMap.contains(pipeOutputOption)
     optionsMap.get(timeoutOption).foreach(v => timeoutVal = v.getIntVal)
     optionsMap.get(key).foreach(v => nameOfExecutable = v.getStringVal)
     optionsMap.get("execute").foreach { v =>
