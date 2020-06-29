@@ -78,7 +78,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.root.up.up.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\libinput{WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )
