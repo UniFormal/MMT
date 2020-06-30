@@ -23,28 +23,16 @@ object Server extends App with EndpointModule[IO] {
 
 
   override def main(args: Array[String]): Unit = {
-    if(args.length < 3 ){
-      println( "use like this:")
-      println("FrameIt-MMT-Server <PathToMathhub> <NameOfFrameItArchive> <PortToServe>")
+    if(args.length < 2 ) {
+      println(s"Usage: ${args.head} <PathToArchiveRoot> <Port>")
+      println("PathToArchiveRoot should point to your working copy of https://github.com/UFrameIT/archives")
       return
     }
-    try{
-      args(2).toInt
-    }catch {
-      case e: Exception =>{
-        println(args(2) + "is no valid port")
-        return
-      }
-    }
-    val mmtArchiveHomeTMP = File("/home/benjamin/IdeaProjects/mathhub")
-    val mmtArchiveHome = File(args(0))
-    val files = mmtArchiveHome / args(1) :: // "UFrameIt_MMT" ::
-      mmtArchiveHome / "MitM" / "Foundation" ::
-      mmtArchiveHome / "MitM" / "core"::
-      mmtArchiveHome / "MMT/urtheories" ::
-      mmtArchiveHome / "MMT/LFX" ::
-      Nil
-    val  gameLogic = FrameItLogic(files)
+
+    val archiveRoot = File(args(0))
+    val port = args(1)
+
+    val gameLogic = FrameItLogic(Archives.getPaths(archiveRoot))
 
     val endpoints =
         getAllScrolls( gameLogic) :+:
@@ -56,7 +44,7 @@ object Server extends App with EndpointModule[IO] {
         addView(gameLogic) :+:
         getPushOut(gameLogic):+:
         getDecl(gameLogic)
-    Await.result( Http.server.serve(":"+args(2), endpoints.toServiceAs[Text.Plain]) )
+    Await.result( Http.server.serve(s":${port}", endpoints.toServiceAs[Text.Plain]) )
   }
 
 

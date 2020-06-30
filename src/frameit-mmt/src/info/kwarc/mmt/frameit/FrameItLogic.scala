@@ -10,19 +10,22 @@ object FrameItLogic{
   def apply(files: List[File]): FrameItLogic={
     val ctrl = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
-    files.foreach( ctrl.addArchive(_))
+    files.foreach(ctrl.addArchive)
     val frameitArchive = {
-      ctrl.handleLine("build FrameIt/Prototype scala-bin")
-      ctrl.handleLine("build FrameIt/Prototype mmt-omdoc")
+      ctrl.handleLine(s"build ${Archives.frameworldIdentifier} scala-bin")
+      ctrl.handleLine(s"build ${Archives.frameworldIdentifier} mmt-omdoc")
       
-      ctrl.backend.getArchive("FrameIt/Prototype").getOrElse {
-        throw info.kwarc.mmt.api.GetError(s"Archive " + "FrameIt/Prototype" + " not found")
+      ctrl.backend.getArchive(Archives.frameworldIdentifier).getOrElse {
+        throw info.kwarc.mmt.api.GetError(s"Archive ${Archives.frameworldIdentifier} could not be found!")
       }
     }
     frameitArchive.allContent
-    frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
-    val situationTheory = Theory.empty(DPath.apply(URI("http://BenniDoes.Stuff")),LocalName.parse("SituationTheory"),Some(Dictionary.factCollection))
+    val situationTheory = Theory.empty(
+      DPath(frameitArchive.narrationBase),
+      LocalName("SituationTheory"),
+      Some(Dictionary.factCollection)
+    )
     ctrl.add(situationTheory)
 
     new FrameItLogic(ctrl,situationTheory)

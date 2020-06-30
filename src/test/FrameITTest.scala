@@ -2,7 +2,7 @@ import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.frameit.old.FrameitServerExtension
+import info.kwarc.mmt.frameit
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 
 /**
@@ -24,13 +24,13 @@ object FrameITTest extends MagicTest("debug") {
 
     // Clean first to prevent some spurious caching errors
     // hl("build Playground/frameit mmt-omdoc")
-    controller.extman.addExtension(new FrameitServerExtension)
+    //controller.extman.addExtension(new FrameitServerExtension)
   }
-
+/*
   final protected val frameit: DPath = DPath(URI("https://example.com/frameit"))
   final protected val annotation: DPath = frameit / "annotation"
   final protected val pushout: DPath = frameit / "pushout"
-
+*/
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
@@ -51,5 +51,5 @@ object FrameITTest extends MagicTest("debug") {
 
     waitThenPrint(newTheory.path)
     waitThenPrint(newView.path)*/
-  }
+  }*/
 }
