@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
 import cats.effect.IO
 import com.twitter.finagle.Http
@@ -7,12 +7,11 @@ import info.kwarc.mmt.api.checking.Solver
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.{Extension, Logger}
 import info.kwarc.mmt.api.modules.{Module, Theory}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMS, OMV, Obj, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, IncludeData, TermContainer}
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, RuleSet}
+import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath}
 import io.circe.generic.auto._
 import io.finch._
 import io.finch.circe._
@@ -27,8 +26,7 @@ class FrameitServerExtension extends Extension with Logger with Endpoint.Module[
   var factTheory: Theory = _
   var presenter: MMTSyntaxPresenter = _
 
-  implicit val factEncoder = FactEnconderWrapper.getFactEncoder(() => presenter)
-  import MPathEncoderWrapper.mpathEncoder  // possibly shown as unused by IntelliJ. Do not remove, it IS used!
+  implicit val factEncoder = FactEnconderWrapper.getFactEncoder(() => presenter)  // possibly shown as unused by IntelliJ. Do not remove, it IS used!
 
   override def start(args: List[String]): Unit = {
     super.start(args)

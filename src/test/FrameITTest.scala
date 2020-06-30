@@ -2,7 +2,7 @@ import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.presentation.FlatMMTSyntaxPresenter
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.frameit.FrameitServerExtension
+import info.kwarc.mmt.frameit.old.FrameitServerExtension
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 
 /**
