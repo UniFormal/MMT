@@ -53,14 +53,26 @@ class LocalPaths extends LaTeXDirTarget {
   }
 
   override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
-    val target = dir / ("localpaths.tex")
-
+    val target  : File    = dir / ("localpaths.tex")
     var success : Boolean = false
-    if (force || !target.exists()) {
+
+    /* Only create file if it has a sibling tex file */
+    val siblings : Boolean = dir.children.exists(s => s.getExtension.contains("tex") && s.name != "localpaths.tex")
+
+    /* forcing recreation of file means deleting the old one. */
+    if (force && target.exists()) { target.delete() }
+
+    if (force || (!target.exists() && siblings)) {
       createLocalPaths(a, dir)
       success = true
     }
-    if (success) BuildResult.empty else BuildEmpty("up-to-date")
+
+    if (success) { BuildSuccess(Nil, List(PhysicalDependency(target))) }
+    else if (!siblings) {
+      log("No sibling .tex-file, localpaths.tex not created")
+      BuildResult.empty
+    }
+    else BuildEmpty("up-to-date")
   }
 
 }
