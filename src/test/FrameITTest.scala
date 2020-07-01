@@ -34,8 +34,8 @@ object FrameITTest extends MagicTest("debug") {
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    val thy = controller.getTheory(annotation ? "MyScrollSolution")
-    val z = 80 / 10
+    //val thy = controller.getTheory(annotation ? "MyScrollSolution")
+    //val z = 80 / 10
 
     /*val (newTheory, newView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
       controller.getTheory(pushout ? "Elem"),
@@ -51,5 +51,5 @@ object FrameITTest extends MagicTest("debug") {
 
     waitThenPrint(newTheory.path)
     waitThenPrint(newView.path)*/
-  }*/
+  }
 }

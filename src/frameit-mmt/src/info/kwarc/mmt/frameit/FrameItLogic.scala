@@ -21,6 +21,10 @@ object FrameItLogic{
     }
     frameitArchive.allContent
 
+    // force-read relational data as e.g. [[ScrolltoJSON]] uses the depstore
+    // to get meta tags on things
+    frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
+
     val situationTheory = Theory.empty(
       DPath(frameitArchive.narrationBase),
       LocalName("SituationTheory"),

@@ -316,13 +316,13 @@ class MathHub(val controller: Controller, var local: File, var remote: URI, var 
     } else {
       // try to clone the repository or fail
       log(s"trying to clone $id")
-      val success = git(local, "clone", rp, id).success
-      if (!success) {
+      val cloneResult = git(local, "clone", rp, id)
+      if (!cloneResult.success) {
+        logError(s"git clone $rp failed")
+        logError(s"Error: `${cloneResult.toString}`")
         if (lp.exists) {
-          logError(s"git clone $rp failed, deleting $lp")
+          logError(s"Target directory $lp already exists, perhaps that was the source of the error, deleting $lp")
           lp.deleteDir
-        } else {
-          logError(s"git clone $rp failed")
         }
         return None
       }
