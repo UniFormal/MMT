@@ -73,7 +73,7 @@ class AllTeX extends LaTeXDirTarget {
     if (dirFiles.nonEmpty) {
       createLocalPaths(a, dir)
       val deps = forgetSMSDeps(getDepsMap(getFilesRec(a, in)))
-      val ds : List[Dependency] = Relational.topsort(controller,deps).flatten
+      val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
