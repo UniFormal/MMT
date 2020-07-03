@@ -96,6 +96,9 @@ object Orders {
     ,"calculus/integration/LebesgueIntegral.mmt"
     ,"categories/categories.mmt"
     ,"categories/functors.mmt"
+    ,"geometry/common.mmt"
+    ,"geometry/planar.mmt"
+    ,"geometry/3D.mmt"
   )
 
   val testgeneral = List(

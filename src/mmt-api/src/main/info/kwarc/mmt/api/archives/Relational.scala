@@ -27,4 +27,18 @@ object Relational {
   def flatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] = {
     topsort(controller, m).flatMap(_.toList.sortBy(_.toString))
   }
+
+  def newFlatTopsort[A](controller: Controller, m: Map[A, Set[A]]): List[A] = {
+    def depclosuresize(start : A) : Int = {
+      if (m.keySet.contains(start)) {
+        var sz = 1
+        for (k <- m(start)) {
+          sz += depclosuresize(k)
+        }
+        sz
+      } else { 0 }
+    }
+
+    topsort(controller, m).flatMap(_.toList.sortBy(d => depclosuresize(d)))
+  }
 }
