@@ -121,7 +121,7 @@ object MagicTest {
       home / "MMT" / "myformalizations", // Max Mac
 
       // Navid
-      home / "Desktop" / "kwarc-project" / "code" / "archives"
+      home / "Desktop" / "FrameIT" / "archives" / "MathHub"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
