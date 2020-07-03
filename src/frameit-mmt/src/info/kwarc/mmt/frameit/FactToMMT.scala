@@ -1,18 +1,13 @@
 package info.kwarc.mmt.frameit
 
 
-import info.kwarc.mmt.frameit.mitm.Foundation.{RealLiterals, StringLiterals}
-import info.kwarc.mmt.api.{ContentPath, GlobalName, LocalName, Path}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMA, OMID, OMLIT, OMS, Term, VarDecl}
-import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
-import info.kwarc.mmt.api.uom.RealizedType
+import info.kwarc.mmt.api.objects.{OMID, OMS, Term}
+import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.{ContentPath, LocalName, Path}
+import info.kwarc.mmt.frameit.mitm.Foundation.{RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
-
-import scala.util.parsing.json.JSON
 
 class FactToMMT(ctrl: Controller)   {
 

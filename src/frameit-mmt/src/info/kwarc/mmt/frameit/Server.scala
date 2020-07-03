@@ -1,26 +1,25 @@
 package info.kwarc.mmt.frameit
 
 import cats.effect.IO
-import info.kwarc.mmt.api.{DPath, LocalName, MPath}
-import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
-import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.utils.{File, FilePath, URI}
-import io.finch._
-import io.finch.circe._
 import com.twitter.finagle.Http
-import com.twitter.util.{Await, Try}
-import info.kwarc.mmt.api.modules.{Theory, View}
-import io.circe.{Decoder, HCursor}
-import io.circe.generic.auto._
-import io.finch.circe._
-import io.circe._
-import io.circe.generic.semiauto._
+import com.twitter.util.Await
+import info.kwarc.mmt.api.utils.File
+import io.finch._
 
 import scala.util.parsing.json.JSON
 
 object Server extends App with EndpointModule[IO] {
 
-
+  def createEndpoints(gameLogic: FrameItLogic) =
+    getAllScrolls( gameLogic) :+:
+    addVector(gameLogic) :+:
+    addLine(gameLogic) :+:
+    addAngle(gameLogic) :+:
+    addDistance(gameLogic) :+:
+    addOnLine(gameLogic) :+:
+    addView(gameLogic) :+:
+    getPushOut(gameLogic):+:
+    getDecl(gameLogic)
 
   override def main(args: Array[String]): Unit = {
     if(args.length < 2 ) {
@@ -34,20 +33,8 @@ object Server extends App with EndpointModule[IO] {
 
     val gameLogic = FrameItLogic(Archives.getPaths(archiveRoot))
 
-    val endpoints =
-        getAllScrolls( gameLogic) :+:
-        addVector(gameLogic) :+:
-        addLine(gameLogic) :+:
-        addAngle(gameLogic) :+:
-        addDistance(gameLogic) :+:
-        addOnLine(gameLogic) :+:
-        addView(gameLogic) :+:
-        getPushOut(gameLogic):+:
-        getDecl(gameLogic)
-    Await.result( Http.server.serve(s":${port}", endpoints.toServiceAs[Text.Plain]) )
+    Await.result( Http.server.serve(s":${port}", createEndpoints(gameLogic).toServiceAs[Text.Plain]) )
   }
-
-
 
   def getAllScrolls( gameLogic :FrameItLogic): Endpoint[IO, String] = get(path("scroll") :: path("list")) {
     val ret = gameLogic.getAllScrolls()
@@ -159,6 +146,25 @@ object Server extends App with EndpointModule[IO] {
       }
     }
   }
+
+  def getHintsForPartialScroll(gameLogic: FrameItLogic): Endpoint[IO,String] = post(path("scroll") :: path("hints") :: stringBody) {data: String => {
+    /**
+      * Example:
+      * {
+      *   domainTheory: http://...?SituationTheory,
+      *   scroll: {
+      *     "problem": http://...?OppositeLen_Problem,
+      *     "solution": // unused
+      *   },
+      *   assignments: {
+      *     "http://...?pA": {x: ..., y: ..., z: ...}
+      *     ...
+      *   }
+      * }
+      */
+    JSON.parseFull(data)
+    Ok("abc")
+  }}
 
   def addView( gameLogic: FrameItLogic) : Endpoint[IO,String] = post(path("view"):: path("add"):: stringBody) {
     v : String => {

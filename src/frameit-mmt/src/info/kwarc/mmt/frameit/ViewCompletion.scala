@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.checking.Solver
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMS, OMV, StatelessTraverser, Term, Traverser}
-import info.kwarc.mmt.api.symbols.{Constant, IncludeData}
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, IncludeData}
 
 import scala.collection.immutable.{List, Nil}
 
@@ -53,14 +53,19 @@ object ViewCompletion {
     * @param metatheory: The meta-theory, whose symbols should be identified.
     * @return Some(tpi) if expected type contains no gaps, otherwise [[None]].
     */
-  def expectedType(assignments : List[(GlobalName, Term)], metatheory : MPath, tp : Term)(implicit controller: Controller) : Option[Term] = {
+  def expectedType(assignments : List[(GlobalName, Term)], metatheory : Option[MPath], tp : Term)(implicit controller: Controller) : Option[Term] = {
     val assMap = scala.collection.mutable.HashMap.empty[GlobalName,Term]
     assignments.foreach {
       case (gn,tm) => assMap(gn) = tm
     }
     val varMap = scala.collection.mutable.HashMap.empty[GlobalName,LocalName]
-    val metaSymbols = getAllSymbols(metatheory)
-    val (ret,gaps) = expectedTypeInner(assMap,varMap,metaSymbols,0,tp)
+    val (ret,gaps) = expectedTypeInner(
+      assMap,
+      varMap,
+      metatheory.map(getAllSymbols).getOrElse(Nil),
+      0,
+      tp
+    )
     if (gaps > 0) None else Some(ret)
   }
 
@@ -105,16 +110,18 @@ object ViewCompletion {
     * Attempts to infer missing assignments uniquely implied by
     * @param assignments Provided assignments of putative view
     * @param metatheory: The meta theory on which all assignments should be the identity.
-    * @return new assignments as List[(GlobalName, Term)].
+    * @return new assignments as List[(GlobalName, Term)]
+    *         It is guaranteed that the returned list contains no tuple with a GlobalName that already appeared
+    *         in the input assignments.
     */
-  def closeGaps(assignments : List[(GlobalName, Term)], metatheory : MPath)(implicit controller: Controller) : List[(GlobalName, Term)] = {
+  def closeGaps(assignments : List[(GlobalName, Term)], metatheory : Option[MPath])(implicit controller: Controller) : List[(GlobalName, Term)] = {
     val assMap = scala.collection.mutable.HashMap.empty[GlobalName,Term]
     assignments.foreach {
       case (gn,tm) => assMap(gn) = tm
     }
 
     val varMap = scala.collection.mutable.HashMap.empty[GlobalName,LocalName]
-    val metaSymbols = getAllSymbols(metatheory)
+    val metaSymbols = metatheory.map(getAllSymbols).getOrElse(Nil)
 
     // Computes expected type and replaces gaps with variables
     var solveVar = 0
@@ -173,4 +180,24 @@ object ViewCompletion {
     val domain = assignments.map(_._1)
     assMap.toList.filterNot(domain contains _._1)
   }
+
+  // comboination of closeGaps and expectType
+  /*def closeGapsAndInfer(domain: Theory, assignments : List[(GlobalName, Term)])(implicit controller: Controller) : List[(GlobalName, Term, Option[Term])]= {
+    val closedAssignments = assignments ::: closeGaps(assignments, domain.meta)
+    val closedAssignmentsWithType : List[(GlobalName, Term, Option[Term])]
+
+    // Paths of domain constants still missing an assignment
+    val stillMissingAssignments = domain.getConstants.map(_.path).toSet.diff(closedAssignments.map(_._1).toSet)
+
+    val remainingFilledAssignments : List[(GlobalName, Term, Option[Term])] =
+      stillMissingAssignments.flatMap(constantPath => controller.getConstant(constantPath).tp match {
+        case Some(constantType) =>
+          expectedType(closedAssignments, domain.meta, constantType).map((constantPath, _, None))
+      }).toList
+
+    // We shall not have introduced duplicate assignments to constants of the same [[GlobalName]] by the logic above
+    assert(closedAssignments.map(_._1).toSet.intersect(remainingFilledAssignments.map(_._1).toSet).isEmpty)
+
+    closedAssignments ::: remainingFilledAssignments
+  }*/
 }

@@ -37,25 +37,34 @@ object FrameITTest extends MagicTest("debug") {
     val domainTheoryP = frameworldArchiveNS ? "OppositeLen_Problem"
     val domainTheory = waitUntilAvailable(domainTheoryP).asInstanceOf[Theory]
 
+    def getConstantDefiniens(thy: Theory, constant: String): Term = {
+      thy.get(LocalName(constant)).asInstanceOf[FinalConstant].df.get
+    }
+
     // test 1
     {
-      val codomainTheory = controller.getTheory((frameworldArchiveNS / "integrationtests") ? "CloseGapTest_Codomain")
-
-      // read off complex expression for assignment from the definiens of an existing constant
-      val angleValue = codomainTheory.get(LocalName("complexAngleFact")).asInstanceOf[FinalConstant].toTerm
+      /*val integrationtestsNS = frameworldArchiveNS / "integrationtests"
+      val codomainTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_Codomain")
+      val notepadTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_TermsNotepad")
 
       val assignments: List[(GlobalName, Term)] = List(
-        (domainTheoryP ? "pangleABC", angleValue)
+        (domainTheoryP ? "pangleABC", OMID(codomainTheory.path ? "complexAngleFact"))
       )
-
-      println(angleValue)
 
       val ret = ViewCompletion.closeGaps(
         assignments,
-        domainTheory.meta.get
+        domainTheory.meta
       )(controller)
 
-      println(ret)
+      val expectedThings = List(
+        (domainTheoryP ? "pA", getConstantDefiniens(notepadTheory, "expected_gap_pA")),
+        (domainTheoryP ? "pB", getConstantDefiniens(notepadTheory, "expected_gap_pB")),
+        (domainTheoryP ? "pC", getConstantDefiniens(notepadTheory, "expected_gap_pC")),
+        (domainTheoryP ? "pdistBC_v", )
+        (domainTheoryP ? "pangleABC_v", getConstantDefiniens(notepadTheory, "expected_gap_pangleABC_v")),
+      )
+
+      println(ViewCompletion.closeGapsAndInfer(domainTheory, assignments)(controller))*/
     }
   }
 }
