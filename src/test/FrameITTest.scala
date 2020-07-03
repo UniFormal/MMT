@@ -13,6 +13,8 @@ import info.kwarc.mmt.lf.ApplySpine
   */
 object FrameITTest extends MagicTest("debug") {
 
+  override val serverport: Option[Int] = None
+
   override def doFirst: Unit = {
     super.doFirst
     // Only uncomment if rebuild is really necessary

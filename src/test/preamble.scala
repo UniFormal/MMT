@@ -147,6 +147,9 @@ object MagicTest {
 
 /**
   * A magic test configuration that automatically figures out the paths to everything
+  *
+  * Use `override val serverport: Option[Int] = None` to make your tests faster if you don't need an MMT server
+  * spawning up.
   */
 abstract class MagicTest(prefixes: String*) extends Test(
   MagicTest.archiveRoot.toString,
