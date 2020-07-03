@@ -42,7 +42,7 @@ object FrameITTest extends MagicTest("debug") {
       val codomainTheory = controller.getTheory((frameworldArchiveNS / "integrationtests") ? "CloseGapTest_Codomain")
 
       // read off complex expression for assignment from the definiens of an existing constant
-      val angleValue = codomainTheory.get(LocalName("complexAngleFact")).asInstanceOf[FinalConstant].df.get
+      val angleValue = codomainTheory.get(LocalName("complexAngleFact")).asInstanceOf[FinalConstant].toTerm
 
       val assignments: List[(GlobalName, Term)] = List(
         (domainTheoryP ? "pangleABC", angleValue)
@@ -50,10 +50,12 @@ object FrameITTest extends MagicTest("debug") {
 
       println(angleValue)
 
-      println(ViewCompletion.closeGaps(
+      val ret = ViewCompletion.closeGaps(
         assignments,
         domainTheory.meta.get
-      )(controller))
+      )(controller)
+
+      println(ret)
     }
   }
 }
