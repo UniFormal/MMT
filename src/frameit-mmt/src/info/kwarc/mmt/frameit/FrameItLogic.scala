@@ -28,7 +28,7 @@ object FrameItLogic{
     val situationTheory = Theory.empty(
       DPath(frameitArchive.narrationBase),
       LocalName("SituationTheory"),
-      Some(Dictionary.factCollection)
+      Some(Archives.Frameworld.FactCollection)
     )
     ctrl.add(situationTheory)
 

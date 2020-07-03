@@ -77,8 +77,8 @@ class FactToMMT(ctrl: Controller)   {
     val aTerm = ctrl.get(aOMID.path).asInstanceOf[Constant].toTerm
     val bTerm = ctrl.get(bOMID.path).asInstanceOf[Constant].toTerm
     val tp2_tmp = ApplySpine(OMID(d.TypeUri.asInstanceOf[ContentPath]), aTerm,bTerm,tmpConst1.toTerm)
-    val sketchtype_tmp = ApplySpine(OMID (Dictionary.jdoteqURI.asInstanceOf[ContentPath]),RealLiterals.synType, ApplySpine( OMID(d.FactFuction.asInstanceOf[ContentPath]), aTerm, bTerm),tmpConst1.toTerm )
-    val df2_tmp = ApplySpine(OMID(Dictionary.sketchURI.asInstanceOf[ContentPath]), sketchtype_tmp ,StringLiterals.parse("measuredDistance " + d.pointA + ", " + d.pointB ))
+    val sketchtype_tmp = ApplySpine(OMID(Archives.MetaSymbols.jdoteq),RealLiterals.synType, ApplySpine( OMID(d.FactFuction.asInstanceOf[ContentPath]), aTerm, bTerm),tmpConst1.toTerm )
+    val df2_tmp = ApplySpine(OMID(Archives.MetaSymbols.proofSketch), sketchtype_tmp ,StringLiterals.parse("measuredDistance " + d.pointA + ", " + d.pointB ))
 
     val tmpconst2 = validator.addFinalConstant(Some(tp2_tmp),Some(df2_tmp))
 
@@ -86,9 +86,9 @@ class FactToMMT(ctrl: Controller)   {
       val finalConstant = Constant(situationTheory.toTerm, LocalName.parse("fact_"+factcounter),List(),Some(tp), Some(df),None)
       factcounter = factcounter +1
       ctrl.add(finalConstant)
-      val sketchtype = ApplySpine(OMID (Dictionary.jdoteqURI.asInstanceOf[ContentPath]), RealLiterals.synType ,ApplySpine( OMID(d.FactFuction.asInstanceOf[ContentPath]), aTerm, bTerm),finalConstant.toTerm )
+      val sketchtype = ApplySpine(OMID(Archives.MetaSymbols.jdoteq), RealLiterals.synType ,ApplySpine( OMID(d.FactFuction.asInstanceOf[ContentPath]), aTerm, bTerm),finalConstant.toTerm )
       val tp2 = ApplySpine(OMID(d.TypeUri.asInstanceOf[ContentPath]), aTerm,bTerm,finalConstant.toTerm)
-      val df2 = ApplySpine(OMID(Dictionary.sketchURI.asInstanceOf[ContentPath]), sketchtype ,StringLiterals.parse("measuredDistance " + d.pointA + ", " + d.pointB ))
+      val df2 = ApplySpine(OMID(Archives.MetaSymbols.proofSketch), sketchtype ,StringLiterals.parse("measuredDistance " + d.pointA + ", " + d.pointB ))
       val finalConstant2 = Constant(situationTheory.toTerm,LocalName.parse("fact_"+factcounter),List(),Some(tp2),Some(df2),None)
       factcounter = factcounter +1
       ctrl.add(finalConstant2)
@@ -117,8 +117,8 @@ class FactToMMT(ctrl: Controller)   {
     val bTerm = ctrl.get(bOMID.path).asInstanceOf[Constant].toTerm
     val cTerm = ctrl.get(cOMID.path).asInstanceOf[Constant].toTerm
     val tp2_tmp = ApplySpine(OMID(a.TypeUri.asInstanceOf[ContentPath]), aTerm,bTerm,cTerm, tmpConst1.toTerm)
-    val sketchtype_tmp = ApplySpine(OMID(Dictionary.jdoteqURI.asInstanceOf[ContentPath]),RealLiterals.synType,ApplySpine(OMID( a.FactFuction.asInstanceOf[ContentPath]),aTerm, bTerm,cTerm ),tmpConst1.toTerm)
-    val df2_tmp = ApplySpine(OMID(Dictionary.sketchURI.asInstanceOf[ContentPath]),sketchtype_tmp,StringLiterals.parse("measuredAngle " + a.left + ", " + a.middle + ", "+ a.right + ""))
+    val sketchtype_tmp = ApplySpine(OMID(Archives.MetaSymbols.jdoteq),RealLiterals.synType,ApplySpine(OMID( a.FactFuction.asInstanceOf[ContentPath]),aTerm, bTerm,cTerm ),tmpConst1.toTerm)
+    val df2_tmp = ApplySpine(OMID(Archives.MetaSymbols.proofSketch),sketchtype_tmp,StringLiterals.parse("measuredAngle " + a.left + ", " + a.middle + ", "+ a.right + ""))
 
     val tmpConst2 = validator.addFinalConstant(Some(tp2_tmp),Some(df2_tmp))
 
@@ -128,8 +128,8 @@ class FactToMMT(ctrl: Controller)   {
       factcounter = factcounter +1
       ctrl.add(finalConstant)
       val tp2 = ApplySpine(OMID(a.TypeUri.asInstanceOf[ContentPath]), aTerm,bTerm,cTerm, finalConstant.toTerm)
-      val sketchtype= ApplySpine(OMID(Dictionary.jdoteqURI.asInstanceOf[ContentPath]),RealLiterals.synType,ApplySpine(OMID( a.FactFuction.asInstanceOf[ContentPath]),aTerm, bTerm,cTerm ),finalConstant.toTerm)
-      val df2 =ApplySpine(OMID(Dictionary.sketchURI.asInstanceOf[ContentPath]),sketchtype,StringLiterals.parse("measuredAngle " + a.left + ", " + a.middle + ", "+ a.right + ""))
+      val sketchtype= ApplySpine(OMID(Archives.MetaSymbols.jdoteq),RealLiterals.synType,ApplySpine(OMID( a.FactFuction.asInstanceOf[ContentPath]),aTerm, bTerm,cTerm ),finalConstant.toTerm)
+      val df2 =ApplySpine(OMID(Archives.MetaSymbols.proofSketch),sketchtype,StringLiterals.parse("measuredAngle " + a.left + ", " + a.middle + ", "+ a.right + ""))
       val finalConstant2 = Constant(situationTheory.toTerm,LocalName.parse("fact_"+factcounter),List(),Some(tp2),Some(df2),None)
       factcounter = factcounter +1
       ctrl.add(finalConstant2)
@@ -149,7 +149,7 @@ class FactToMMT(ctrl: Controller)   {
     val lineTerm = ctrl.get(lineOMID.path).asInstanceOf[Constant].toTerm
 
     val tp = ApplySpine(OMID(lf.TypeUri.asInstanceOf[ContentPath]), vecTerm, lineTerm)
-    val df = ApplySpine(OMID(Dictionary.sketchURI.asInstanceOf[ContentPath]),ApplySpine(OMID( lf.FactFuction.asInstanceOf[ContentPath]),lineTerm,vecTerm),StringLiterals.parse("measured that "+ lf.vector +" is on "+ lf.line))
+    val df = ApplySpine(OMID(Archives.MetaSymbols.proofSketch),ApplySpine(OMID( lf.FactFuction.asInstanceOf[ContentPath]),lineTerm,vecTerm),StringLiterals.parse("measured that "+ lf.vector +" is on "+ lf.line))
     val constant_tmp = validator.addFinalConstant(Some(tp),Some(df))
     val ok = validator.checkScrap()
     if(ok ){
