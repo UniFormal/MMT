@@ -227,6 +227,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
      }
 
      // all the links from/out of the minimal theories that aren't part of the minimal views
+     // TODO make more preactical choices for enriching the graph
      theories.foreach {from =>
        tg.edgesFrom(from) foreach {case (to, etos) =>
           val externalNode = addNodeIfNeeded(to) // true if the partner node is from a different document

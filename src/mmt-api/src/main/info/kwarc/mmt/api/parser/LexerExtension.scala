@@ -412,7 +412,7 @@ case class StringInterpolationToken(text: String, firstPosition: SourcePosition,
             s.ref = eti.outer.source.copy(region = s.reg)
           case m: MMTPart =>
             val e = m.unparsed
-            val boundVars = BoundName.getVars(eti.boundNames)
+            val boundVars = BoundName.getVarNames(eti.boundNames)
             val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
             val ref = eti.outer.source.copy(region = m.reg)
             val pu = ParsingUnit(ref, cont, e, eti.outer.iiContext)

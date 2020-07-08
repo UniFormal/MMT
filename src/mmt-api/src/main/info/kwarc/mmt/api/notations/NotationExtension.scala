@@ -180,7 +180,7 @@ object FixityParser {
    }
 }
 
-case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attribution: Boolean, notation: TextNotation, pos: List[Position]) {
+case class PragmaticTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], notation: TextNotation, pos: List[Position]) {
    require(1 + subs.length + con.length + args.length == pos.length, "Positions don't match number of arguments (op, subs, context and args)")
    def term = ComplexTerm(op, subs, con, args)
 }
@@ -193,7 +193,7 @@ abstract class NotationExtension extends Rule {
    /** true if this can be used to destruct a term */
    def isApplicable(t: Term): Boolean
    /** called to construct a term after a notation produced by this was used for parsing */
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)
             (implicit unknown: () => Term): Term
    def constructTerm(fun: Term, args: List[Term]): Term
    /** called to deconstruct a term before presentation */
@@ -203,14 +203,14 @@ abstract class NotationExtension extends Rule {
 /** the standard mixfix notation for a list of [[Marker]]s */
 object MixfixNotation extends NotationExtension {
    def isApplicable(t: Term) = true
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)
       (implicit unknown: () => Term) = ComplexTerm(op, subs, con, args)
    def constructTerm(fun: Term, args: List[Term]) = OMA(fun, args)
    def destructTerm(t: Term)(implicit getNotations: GlobalName => List[TextNotation]): Option[PragmaticTerm] = t match {
       case ComplexTerm(op, subs, con, args) =>
         getNotations(op).foreach {not =>
-            if (not.canHandle(subs.length, con.length, args.length, false)) {
-              return Some(PragmaticTerm(op, subs, con, args, false, not, Position.positions(t)))
+            if (not.canHandle(subs.length, con.length, args.length)) {
+              return Some(PragmaticTerm(op, subs, con, args, not, Position.positions(t)))
             }
         }
         return None
@@ -241,7 +241,7 @@ class HOASApplySpine(app: GlobalName) {
 }
 
 /** tuple of HOAS symbol names */
-case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName) {
+case class HOAS(apply: GlobalName, bind: GlobalName) {
   val applySpine = new HOASApplySpine(apply)
 }
 
@@ -257,27 +257,18 @@ case class HOAS(apply: GlobalName, bind: GlobalName, typeAtt: GlobalName) {
 class HOASNotation(val hoas: HOAS) extends NotationExtension {
    override def priority = 1
    def isApplicable(t: Term) = t.head match {
-      case Some(h) => List(hoas.apply, hoas.typeAtt) contains h
+      case Some(h) => h == hoas.apply
       case None => false
    }
 
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
-                (implicit unknown: () => Term) : Term = {
-      if (attrib) {
-         val ptp = if (subs.isEmpty && con.isEmpty && args.isEmpty)
-            OMS(op)
-         else
-            constructTerm(op, subs, con, args, false, not)
-         hoas.typeAtt(ptp)
-      } else {
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)(implicit unknown: () => Term) : Term = {
          // for now: strict form treats substitution as extra arguments
          val subargs = subs.map(_.target)
          if (con.isEmpty)
-            hoas.apply(OMS(op) :: subargs ::: args)
-        else {
-          hoas.apply(OMS(op) :: subargs ::: List(hoas.bind(con, args)))
-        }
-      }
+           hoas.apply(OMS(op) :: subargs ::: args)
+         else {
+           hoas.apply(OMS(op) :: subargs ::: List(hoas.bind(con,args)))
+         }
    }
    def constructTerm(fun: Term, args: List[Term]) = hoas.apply(fun::args)
 
@@ -285,9 +276,9 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
       case hoas.applySpine(OMS(op), rest, appPos) =>
          val notations = getNotations(op)
          MyList(notations) mapFind {not =>
-             if (not.canHandle(0,0,rest.length, false)) {
+             if (not.canHandle(0,0,rest.length)) {
                // OMA(apply, op, args)  <-->  OMA(op, args)
-               val appTerm = PragmaticTerm(op, Substitution.empty, Context.empty, rest, false, not, appPos)
+               val appTerm = PragmaticTerm(op, Substitution.empty, Context.empty, rest, not, appPos)
                Some(appTerm)
              } else rest.reverse match {
                case OMBINDC(OMS(hoas.bind), con, args) :: _ =>
@@ -296,21 +287,14 @@ class HOASNotation(val hoas: HOAS) extends NotationExtension {
                   val opSubsPos = (0 until 1+subs.length).toList.map(i => Position(1+i))
                   val conArgsPos = (0 until con.length+args.length).toList.map(i => Position(rest.length+1) / (i+1))
                   val bindPos = opSubsPos ::: conArgsPos
-                  if (not.canHandle(subs.length, con.length, args.length, false)) {
-                     val bindTerm = PragmaticTerm(op, subs, con, args, false, not, bindPos)
+                  if (not.canHandle(subs.length, con.length, args.length)) {
+                     val bindTerm = PragmaticTerm(op, subs, con, args, not, bindPos)
                      Some(bindTerm)
                   } else
                     None
                case _ => None
              }
          }
-      case OMA(OMS(hoas.typeAtt), List(tp)) => tp match {
-         case OMS(op) =>
-            Some(PragmaticTerm(op, Substitution(), Context(), Nil, true, null, List(Position(1))))
-         case OMA(OMS(hoas.apply), OMS(op)::rest) =>
-            Some(PragmaticTerm(op, Substitution(), Context(), rest, true, null, (0 until rest.length+1).toList.map(i => Position(1) / (i+1))))
-         case _ => None
-      }
       case _ => None
    }
 }
@@ -346,15 +330,7 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
    private def binding(con: Context, scope: Term)(implicit unknown: () => Term): Term =
       con.foldRight(scope) {case (next, sofar) => binding(next, sofar)}
 
-   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
-                   )(implicit unknown: () => Term) : Term = {
-      if (attrib) {
-         val ptp = if (subs.isEmpty && con.isEmpty && args.isEmpty)
-            OMS(op)
-         else
-            constructTerm(op, subs, con, args, false, not)
-         meta.apply(OMS(obj.typeAtt), ptp)
-      } else {
+   def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)(implicit unknown: () => Term) : Term = {
          // 2 components are considered to be meta-arguments
          // - the subargs
          // - if there are no variables, the leading implicit args
@@ -371,7 +347,6 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
          } else if (objArgs.length == 1) {
             application(opmeta, binding(con, objArgs.head))
          } else throw InvalidNotation("")
-      }
    }
    def constructTerm(fun: Term, args: List[Term]) = meta.apply(fun::args)
 
@@ -408,19 +383,18 @@ class NestedHOASNotation(obj: HOAS, meta: HOAS) extends NotationExtension {
           val numSubArgs = metaArgs.length - numLeadingImplArgs
           val subargs = metaArgs.take(numSubArgs)
           val args = metaArgs.drop(numSubArgs) ::: objArgs
-          if (not.canHandle(subargs.length,0,args.length, false)) {
+          if (not.canHandle(subargs.length,0,args.length)) {
              // List(), List(4), ..., List(4, ..., 4)
-             val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, false, not, opMetaPos ::: objArgPos)
+             val tP = PragmaticTerm(op, subargs.map(Sub(OMV.anonymous, _)), Nil, args, not, opMetaPos ::: objArgPos)
              Some(tP)
           } else if (objArgs.length == 1) {
              val (con, scope) = unbinding(objArgs.last)
-             if (not.canHandle(metaArgs.length, con.length, 1, false)) {
+             if (not.canHandle(metaArgs.length, con.length, 1)) {
                 // List(), List(4,2), ..., List(4,2,...,4,2)
                 val conPaths = (0 until con.length).toList.map(i => (0 until i).toList.flatMap(_ => List(4,2)))
                 val conPos = conPaths.map(p => Position(5) / p / 4 / 1)
                 val scopePos = Position(5) / conPaths.last / 4 / 2
-                val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), false,
-                                       not, opMetaPos ::: conPos ::: List(scopePos))
+                val tP = PragmaticTerm(op, metaArgs.map(Sub(OMV.anonymous, _)), con, List(scope), not, opMetaPos ::: conPos ::: List(scopePos))
                 Some(tP)
              } else
                 None

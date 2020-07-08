@@ -332,7 +332,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   }
 
   /** scans for some notations and applies matches to tl
-    * @param ns the notations to scan for
+    * @param group the rules to scan with
     */
   private def scan(group: ParsingRuleGroup) {
     log("scanning " + tl + " with notations " + group.rules.mkString(","))
@@ -370,42 +370,27 @@ case class FoundDelim(pos: Int, delim: Delimiter) extends Found {
 
 /** anything but a delimiter */
 sealed abstract class FoundContent extends Found {
+  /** the corresponding [[Marker]] */
+  def marker: ChildMarker
   /** the number of the corresponding [[Marker]] */
-  def number: Int
+  def number = marker.number
 }
 
-/** represents a [[notations.Arg]] that was found
-  * @param slice the TokenSlice where it was found
-  *              (as TokenList's are mutable, slice is not necessarily valid in the future)
-  * @param n the number of the Arg
+/** represents a single child that was found
+  * @param slice the TokenSlice where it was found (as TokenList's are mutable, slice is not necessarily valid in the future)
   */
-sealed abstract class FoundArg extends FoundContent {
-  val slice: TokenSlice
+case class FoundSimp(slice: TokenSlice, marker: ChildMarker) extends FoundContent {
   override def toString: String = slice.toString
-
   def fromTo: Some[(Int, Int)] = Some((slice.start, slice.next))
-
 }
 
-case class FoundSimpArg(slice : TokenSlice, number : Int) extends FoundArg
-
-case class FoundOML(slice : TokenSlice, number: Int, info: LabelInfo) extends FoundArg
-
-/** represents an [[notations.SeqArg]] that was found
-  * @param n the number of the SeqArg
-  * @param args the arguments that were found
-  */
-sealed abstract class FoundSeqArg extends FoundContent {
-  val args: List[FoundArg]
+/** represents a child sequence (SeqArg or Var) that was found */
+case class FoundSeq(marker: ChildMarker, args: List[FoundSimp]) extends FoundContent {
   override def toString: String = number.toString + args.map(_.toString).mkString(":(", " ", ")")
-
   def fromTo: Option[(Int, Int)] = if (args.isEmpty) None else Some((args.head.slice.start, args.last.slice.next))
-
 }
 
-case class FoundSimpSeqArg(number : Int, args : List[FoundSimpArg]) extends FoundSeqArg
-
-case class FoundSeqOML(number: Int, args: List[FoundOML], info: LabelInfo) extends FoundSeqArg
+/*
 
 /** helper class for representing a single found variable
   * @param pos first Token
@@ -473,3 +458,5 @@ object FoundVar {
   /** final state in FoundVar */
   val Done = -1
 }
+
+*/

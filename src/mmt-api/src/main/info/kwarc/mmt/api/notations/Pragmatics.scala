@@ -53,9 +53,8 @@ class Pragmatics extends ChangeListener {
       else
         applicable.maxBy(_.priority)
    }
-   def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation
-         )(implicit newUnkwown: () => Term) : Term = {
-      applicableByLevel(level).constructTerm(op, subs, con, args, attrib, not)
+   def makeStrict(level: Option[MPath], op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)(implicit newUnkwown: () => Term) : Term = {
+      applicableByLevel(level).constructTerm(op, subs, con, args, not)
    }
 
    /**
@@ -120,13 +119,6 @@ class Pragmatics extends ChangeListener {
      def apply(strictApps: List[GlobalName], fun: Term, args: List[Term]) = strictApps match {
         case hd::tl => OMA(OMS(hd), tl.map(OMS(_)) ::: fun :: args)
         case Nil => OMA(fun, args)
-     }
-  }
-
-  object StrictTyping {
-     def unapply(t: Term): Option[Term] = t match {
-        case OMA(OMS(s), List(tp)) if hoass.exists(_.typeAtt == s) => Some(tp)
-        case _ => None
      }
   }
 }
