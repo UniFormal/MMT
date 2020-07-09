@@ -296,7 +296,7 @@ class NotationBasedParser extends ObjectParser {
 
   /** true if n may be a name introduced inside a term */
   private def mayBeName(n: String) = {
-    n != "" && n(0).isLetter && n.forall(c => c.isLetter || c.isDigit)
+    n != "" && TokenList.isLetter(n(0)) && n.forall(c => TokenList.isLetterOrNumber(c) || TokenList.isConnector(c))
   }
 
   /** true if left-over token n may be interpreted as a free variable, see [[ParseResult]]
