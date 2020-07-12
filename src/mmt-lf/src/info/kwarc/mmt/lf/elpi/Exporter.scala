@@ -202,7 +202,9 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
     }
   }
 
-  /** translates a complex judgment to the corresponding lambda-Prolog predicate */
+  /** translates a complex judgment to the corresponding lambda-Prolog predicate
+    * Example: translateComplex(ded A -> ded B) should become pi x1 \ ded/hyp x1 A => ded (X2 x1) B
+    */
   def translateComplex(cj: ComplexJudgement)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     // for parameters: get the name, ignoring the type; for assumptions: translate the judgment and generate a name
     val parNames = cj.parameters.map {vd => vd.name}
@@ -219,6 +221,9 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
     *  @param aj the judgment
     *  @param hypNames if conclusion of hypothetical judgment: the names of the hypotheses
     *  @param hypothesis this is a hypothesis of a complex judgment
+    *
+    * Example: translateAtomic(ded A, [x], false) should become (X1, "ded (X1 x) A")
+    * Example: translateAtomic(ded A, [], true) should become (x1, "ded/hyp x1 A")
     */
   def translateAtomic(aj: AtomicJudgement, hypNames: List[LocalName], hypothesis: Boolean)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     val name = vc.next(!hypothesis)
