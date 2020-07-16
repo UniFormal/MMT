@@ -54,11 +54,10 @@ class AllTeX extends LaTeXDirTarget {
     }
   }
 
-  def forgetSMSDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
+  def forgetIrrelevantDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
   {
     def goodDependency(dep : Dependency) : Boolean = dep match {
       case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
-      case PhysicalDependency(_) => true
       case _ => false
     }
 
@@ -71,8 +70,7 @@ class AllTeX extends LaTeXDirTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
     if (dirFiles.nonEmpty) {
-      createLocalPaths(a, dir)
-      val deps = forgetSMSDeps(getDepsMap(getFilesRec(a, in)))
+      val deps = forgetIrrelevantDeps(getDepsMap(getFilesRec(a, in)))
       val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd

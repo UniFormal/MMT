@@ -18,12 +18,12 @@ sealed abstract class BuildTargetModifier {
 
 /** default modifier: build the target */
 case class Build(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim
+  def toString(dim: String) : String = dim
 }
 
 /** don't run, just delete all output files */
 case object Clean extends BuildTargetModifier {
-  def toString(dim: String) = "-" + dim
+  def toString(dim: String) : String = "-" + dim
 }
 
 /** incremental build: skip this build if it nothing has changed */
@@ -34,7 +34,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
 
-  def toString(dim: String) = dim + key
+  def toString(dim: String) : String = dim + key
 
   // use dependency level for dependencies
   def forDependencies: Update = dependencyLevel match {
@@ -50,7 +50,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
 @MMT_TODO("needs review")
 //TODO this is only needed if called on the shell; check if any user actually calls it (presumably at most stex building, possibly in mathhub)
 case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim + "&"
+  def toString(dim: String) : String = dim + "&"
 }
 
 /** forces building independent of status */
@@ -191,7 +191,7 @@ abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
   def key: String
 
-  override def toString = super.toString + s" with key $key"
+  override def toString : String = super.toString + s" with key $key"
 
   def isApplicable(format: String): Boolean = format == key
 
@@ -254,7 +254,7 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */
-  val base = archive.narrationBase
+  val base : URI = archive.narrationBase
 
   /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
   def contentMPath: MPath = Archive.ContentPathToMMTPath(inPath)
@@ -268,9 +268,8 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
   def narrationDPath: DPath = DPath(base / inPath.segments)
 
-  def isDir = children.isDefined
-
-  def isEmptyDir = children.isDefined && children.get.isEmpty
+  def isDir      : Boolean = children.isDefined
+  def isEmptyDir : Boolean = children.isDefined && children.get.isEmpty
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.toFilePath.dirPath.name

@@ -9,40 +9,33 @@ object Relational {
   def getArchives(controller: Controller): List[Archive] =
     controller.backend.getStores.collect { case a: Archive => a }
 
-  def close[A](inMap: Map[A, Set[A]]): Map[A, Set[A]] = {
-    var changed = true
-    var m = inMap
-    while (changed) {
-      changed = false
-      m = m.map(p => (p._1, {
-        val n: Set[A] = p._2.flatMap(m).union(p._2)
-        if (n.size != p._2.size) changed = true
-        n
-      }))
-    }
-    m.filter(p => p._2.contains(p._1))
-  }
-
   /* Generates a dot-file for easier viewing of the dependency graph */
-  def generateDot[A](name : String, f : (A => String), m : Map[A,Set[A]]) : Unit = {
+  def generateDot[A](name : String, f : (A => String), l : List[Set[A]], m : Map[A,Set[A]]) : Unit = {
     val w = new StringBuilder
     def writeln(s: String): Unit = w.append(s + "\n")
     writeln("digraph " + name + " {")
 
     var nodes : Set[String] = Set.empty
-
-    def newnode(arg : A) : Unit = {
+    def newnode(arg : A, important : Boolean = false) : Unit = {
       if (!nodes.contains(f(arg))) {
-        writeln("    " + f(arg) + ";")
+        val extra = if (important) "[shape=box style=filled fillcolor=red]" else "[shape=oval style=filled fillcolor=white]"
+        writeln("    " + f(arg) + extra + ";")
         nodes += f(arg)
       }
     }
 
-    for ((k,v) <- m) {
-      newnode(k)
-      for (tar <- v) {
-        newnode(tar)
-        writeln("    " + f(k) + " -> " + f(tar) + ";")
+    def isImportant(d : A) : Boolean = d match {
+        case FileBuildDependency(kk,_,_) => kk == "alltex"
+        case _ => false
+    }
+
+    for (s <- l) {
+      for (e <- s) {
+        newnode(e,important = isImportant(e))
+        for (tar <- m(e)) {
+          newnode(tar, important = isImportant(tar))
+          writeln("    " + f(e) + " -> " + f(tar) + ";")
+        }
       }
     }
 
@@ -87,6 +80,8 @@ object Relational {
       } else { 0 }
     }
 
-    topsort(controller, m).flatMap(_.toList.sortBy(d => depclosuresize(d)))
+    val sorted = topsort(controller, m)
+    generateDot("topsorted",dependencyNodeName[A],sorted,m)
+    sorted.flatMap(_.toList.sortBy(d => depclosuresize(d)))
   }
 }
