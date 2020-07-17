@@ -67,7 +67,10 @@ trait RSemanticType[V] extends SemanticType {
    /** this must be the class object of V (which cannot be implemented generically here in Scala) */
    val cls: Class[V]
 
-   /** does nothing but triggers Scala type checking */
+  /** overridden to sharpen return type */
+  override def enumerate(mode: Int): Option[Iterator[V]] = None
+
+  /** does nothing but triggers Scala type checking */
    def apply(v: V): Any = v
 
    /** does nothing but refines the Scala type if possible */
