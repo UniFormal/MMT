@@ -1,5 +1,6 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.NotationContainer
@@ -7,8 +8,7 @@ import info.kwarc.mmt.api.objects.{OMLIT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, TermContainer}
 import info.kwarc.mmt.api.uom.{RealizedType, StandardString, TheoryScala}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, symbols}
-import info.kwarc.mmt.frameit.Urtheories.Strings.string
+import info.kwarc.mmt.frameit.Scroll
 import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, NullaryLFConstantScala}
 
 import scala.collection.immutable.{::, Nil}

@@ -121,7 +121,7 @@ object MagicTest {
       home / "MMT" / "myformalizations", // Max Mac
 
       // Navid
-      home / "Desktop" / "kwarc-project" / "code" / "archives"
+      home / "Desktop" / "FrameIT" / "archives" / "MathHub"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
@@ -147,6 +147,9 @@ object MagicTest {
 
 /**
   * A magic test configuration that automatically figures out the paths to everything
+  *
+  * Use `override val serverport: Option[Int] = None` to make your tests faster if you don't need an MMT server
+  * spawning up.
   */
 abstract class MagicTest(prefixes: String*) extends Test(
   MagicTest.archiveRoot.toString,

@@ -91,7 +91,8 @@ class AllTeX extends LaTeXDirTarget {
       val used = super.estimateResult(bt).used.collect {
         case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
       }
-      BuildSuccess(used, Nil)
+      val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+      BuildSuccess(used :+ lp, Nil)
     }
   }
 
@@ -180,8 +181,13 @@ class SmsGenerator extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
+  }
+
   def reallyBuildFile(bt: BuildTask): BuildResult = {
-    createLocalPaths(bt)
     try {
       createSms(bt.archive, bt.inFile, bt.outFile)
       logSuccess(bt.outPath)
@@ -441,7 +447,6 @@ class LaTeXML extends LaTeXBuildTarget {
       val logFile = bt.outFile.setExtension("ltxlog")
       lmhOut.delete()
       logFile.delete()
-      createLocalPaths(bt)
       val realProfile = if (profileSet) profile
       else getProfile(bt.archive).getOrElse(profile)
       val argSeq = Seq(latexmlc, bt.inFile.toString,
@@ -506,6 +511,12 @@ class LaTeXML extends LaTeXBuildTarget {
     super.cleanDir(a, curr)
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir
+  }
+
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
   }
 }
 
@@ -576,7 +587,6 @@ class PdfLatex extends LaTeXBuildTarget {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
     try {
       val exit = runPdflatex(bt, output)
@@ -622,6 +632,12 @@ class TikzSvg extends PdfLatex
   override val outExt : String = "svg"
   override val outDim : ArchiveDimension = content
 
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
+  }
+
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
   override def reallyBuildFile(bt: BuildTask): BuildResult =
@@ -634,7 +650,6 @@ class TikzSvg extends PdfLatex
     val svgFile : File = bt.outFile
 
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
 
     try {

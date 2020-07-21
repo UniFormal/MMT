@@ -54,8 +54,7 @@ object Relational {
     else {
       val (noDeps, rest) = m.partition(_._2.isEmpty)
       if (noDeps.isEmpty) {
-        generateDot(name = "cyclic_remainder", dependencyNodeName[A], m)
-        controller.report(new Error(shortMsg = "cyclic deps (see \"cyclic_remainder.dot\"): " + m) {})
+        controller.report(new Error(shortMsg = "cyclic dependencies: " + m) {})
         List(Set.empty, m.keySet)
       }
       else {
