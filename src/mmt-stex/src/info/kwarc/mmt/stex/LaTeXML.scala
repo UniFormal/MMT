@@ -23,7 +23,10 @@ class AllPdf extends LaTeXDirTarget {
     if (bt.isDir) {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
-      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath, Nil), Nil)
+      val at = DirBuildDependency("alltex", a, bt.inPath, Nil)
+      val lp = DirBuildDependency("localpaths", a, bt.inPath, Nil)
+      println("MARKER allpdf: " + lp)
+      BuildSuccess(ls :+ at :+ lp, Nil)
     } else BuildResult.empty
   }
 
@@ -40,12 +43,50 @@ class AllPdf extends LaTeXDirTarget {
   }
 }
 
+class LocalPaths extends LaTeXDirTarget {
+  val key : String = "localpaths"
+
+  override def estimateResult(bt: BuildTask) : BuildSuccess = {
+    if (bt.isDir) {
+      val lp : ResourceDependency = PhysicalDependency(File(bt.dirName + "/localpaths.tex"))
+      println("MARKER localpaths provides " + lp)
+      BuildSuccess(Nil,List(lp))
+    } else { BuildResult.empty }
+  }
+
+  override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
+    println("MARKER: CREATING LOCALPATHS")
+    val target  : File    = dir / ("localpaths.tex")
+    var success : Boolean = false
+
+    /* Only create file if it has a sibling tex file */
+    val siblings : Boolean = dir.children.exists(s => s.getExtension.contains("tex") && s.name != "localpaths.tex")
+
+    /* forcing recreation of file means deleting the old one. */
+    if (force && target.exists()) { target.delete() }
+
+    if (force || (!target.exists() && siblings)) {
+      createLocalPaths(a, dir)
+      success = true
+    }
+
+    if (success) { BuildSuccess(Nil, List(PhysicalDependency(target))) }
+    else if (!siblings) {
+      log("No sibling .tex-file, localpaths.tex not created")
+      BuildResult.empty
+    }
+    else BuildEmpty("up-to-date")
+  }
+}
+
 class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
-      BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
+      val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+      println("MARKER alltex: " + lp)
+      BuildSuccess(List(lp), getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
         case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
@@ -483,7 +524,7 @@ class PdfLatex extends LaTeXBuildTarget {
     val (_, nonOpts) = splitOptions(remainingStartArguments)
     val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts
     else nonOpts
-    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "xelatex", pdflatexPath)
+    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, name = "xelatex", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
@@ -491,10 +532,13 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val bs@BuildSuccess(used, provided) = super.estimateResult(bt)
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath.dirPath, Nil)
+    println("MARKER pdflatex: " + lp)
     if (bt.inPath.name.startsWith("all.")) {
-      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil), provided)
-    } else bs
+      val at = DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil)
+      BuildSuccess(u :+ lp :+ at, p)
+    } else BuildSuccess(u :+ lp, p)
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
