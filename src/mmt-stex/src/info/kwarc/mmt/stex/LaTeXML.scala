@@ -110,8 +110,14 @@ class AllTeX extends LaTeXDirTarget {
   }
 
   override def getAnyDeps(dep: FileBuildDependency) : Set[Dependency] = {
-    println("MARKER: MODIFIED getAnyDeps with " + dep.toString)
-    super.getAnyDeps(dep)
+    if (dep.key == key) {
+      // We only need better coverage in the alltex target (for now)
+      println("MARKER: MODIFIED getAnyDeps with " + dep.toString)
+      val inFile = dep.archive / inDim / dep.inPath // Not taking the inDim from the dep seems extremely fishy.
+      readingSource(dep.archive, inFile, None).toSet
+    } else {
+      super.getAnyDeps(dep)
+    }
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
