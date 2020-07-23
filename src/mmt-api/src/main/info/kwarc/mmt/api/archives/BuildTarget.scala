@@ -653,11 +653,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
-  @MMT_TODO("needs review")
-  private def getDeps(bt: BuildTask): Set[Dependency] = {
-    estimateResult(bt).used.toSet
-  }
-
   // TODO called by AllTeX target
   @MMT_TODO("needs review")
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
@@ -670,14 +665,14 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   @MMT_TODO("needs review")
-  private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
+  protected def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
-      getDeps(makeBuildTask(dep.archive, dep.inPath))
+      estimateResult(makeBuildTask(dep.archive, dep.inPath)).used.toSet
     }
     else {
       val bt = dep.getTarget(controller)
-      bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
+      bt.estimateResult(bt.makeBuildTask(dep.archive, dep.inPath)).used.toSet
     }
   }
 

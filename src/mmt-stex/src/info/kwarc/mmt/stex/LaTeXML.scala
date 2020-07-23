@@ -109,24 +109,24 @@ class AllTeX extends LaTeXDirTarget {
     clean
   }
 
+  override def getAnyDeps(dep: FileBuildDependency) : Set[Dependency] = {
+    println("MARKER: MODIFIED getAnyDeps with " + dep.toString)
+    super.getAnyDeps(dep)
+  }
+
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
     if (dirFiles.nonEmpty) {
 
       val the_dependencies : Set[Dependency] = getFilesRec(a, in)
-      /*
-      var the_dependencies : Set[Dependency] = Set.empty
-      for (df <- dirFiles) {
-        val sts = mkSTeXStructure(a,File(df),???,???)
-        the_dependencies = the_dependencies.union(sts.deps.toSet)
-      }*/
-
       val deps = forgetIrrelevantDeps(getDepsMap(the_dependencies))
+
       val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
+
       val files = ts.distinct.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
