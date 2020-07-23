@@ -128,7 +128,7 @@ class AllTeX extends LaTeXDirTarget {
     if (dirFiles.nonEmpty) {
 
       val the_dependencies : Set[Dependency] = getFilesRec(a, in)
-      val deps = forgetIrrelevantDeps(getDepsMap(the_dependencies))
+      val deps = (getDepsMap(the_dependencies))
 
       val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
