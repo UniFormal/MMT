@@ -686,6 +686,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
         case bd: FileBuildDependency => getAnyDeps(bd)
+          // TODO: Handle PhysicalDependencies also?
         case unused => println("MARKER: unused dependency: " + unused) ; Set.empty
       }
       deps += ((p, ds))

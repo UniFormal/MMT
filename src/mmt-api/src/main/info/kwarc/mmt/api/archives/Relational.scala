@@ -44,7 +44,7 @@ object Relational {
   }
 
   def dependencyNodeName[A](d : A) : String = d match {
-    case FileBuildDependency(k,a,i) => "\"" +  i + "\n" + a.hashCode() + "\n(" + k + ")\""
+    case FileBuildDependency(k,a,i) => "\"" + i + "\n(" + k + ")\""
     case PhysicalDependency(f) => "\"" + f.toString + "\""
     case l => println("Error: Dependency not dotted: " + l); "other"
   }

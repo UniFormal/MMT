@@ -101,6 +101,7 @@ class AllTeX extends LaTeXDirTarget {
   {
     def goodDependency(dep : Dependency) : Boolean = dep match {
       case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
+      case PhysicalDependency(_) => true
       case _ => false
     }
 
@@ -112,9 +113,10 @@ class AllTeX extends LaTeXDirTarget {
   override def getAnyDeps(dep: FileBuildDependency) : Set[Dependency] = {
     if (dep.key == key) {
       // We only need better coverage in the alltex target (for now)
-      println("MARKER: MODIFIED getAnyDeps with " + dep.toString)
       val inFile = dep.archive / inDim / dep.inPath // Not taking the inDim from the dep seems extremely fishy.
-      readingSource(dep.archive, inFile, None).toSet
+      val res = readingSource(dep.archive, inFile, None).toSet
+      println("MARKER: MODIFIED getAnyDeps of " + dep.toString + "\nResult: " + res.toString() + "\n\n")
+      res
     } else {
       super.getAnyDeps(dep)
     }
