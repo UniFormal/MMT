@@ -66,7 +66,7 @@ trait STeXAnalysis {
     {
       case Some(m) =>
         // Compare mkDep
-        assert(m.get("mhrepos").isDefined)
+        assert(m.contains("mhrepos"))
         val root = archive.root.up.up / m("mhrepos")
         controller.addArchive(root)
         val thearchive = controller.backend.getArchive(root)

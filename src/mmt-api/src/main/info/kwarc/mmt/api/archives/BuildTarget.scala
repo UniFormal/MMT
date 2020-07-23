@@ -79,7 +79,7 @@ object BuildTargetModifier {
     OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
   )
 
-  private def flagToLevel(flag: OptionValue, default: Level) = flag match {
+  private def flagToLevel(flag: OptionValue, default: Level): Level = flag match {
     case IntVal(i) => i - 1
     case _ => default
   }
@@ -189,17 +189,17 @@ trait BuildTargetArguments {
   */
 abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
-  def key: String
+  def key : String
 
-  override def toString : String = super.toString + s" with key $key"
+  override def toString : String = super.toString + " with key " + key
 
-  def isApplicable(format: String): Boolean = format == key
+  def isApplicable(format: String) : Boolean = format == key
 
   /** defaults to the key */
-  override def logPrefix: String = key
+  override def logPrefix : String = key
 
   /** build or update this target in a given archive */
-  def build(a: Archive, up: Update, in: FilePath): Unit
+  def build(a: Archive, up: Update, in: FilePath) : Unit
 
   /** build estimated dependencies first
     *
@@ -354,21 +354,22 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /// ***************** auxiliary methods for computing paths to output/error files etc.
 
-  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
+  protected def getOutFile(a: Archive, inPath: FilePath): File = (a / outDim / inPath).setExtension(outExt)
 
-  protected def getFolderOutFile(a: Archive, inPath: FilePath) = getOutFile(a, inPath / folderName)
+  protected def getFolderOutFile(a: Archive, inPath: FilePath): File = getOutFile(a, inPath / folderName)
 
   protected def getErrorFile(a: Archive, inPath: FilePath): File =
     FileBuildDependency(key, a, inPath).getErrorFile(controller) //TODO why is this method not like the others?
 
-  //TODO why is this not protected?
-  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+  // TODO why is this not protected?
+  // Because it also gets called from ErrorManager
+  def getFolderErrorFile(a: Archive, inPath: FilePath): File = a / errors / key / inPath / (folderName + ".err")
 
   @MMT_TODO("needs review")
-  protected def getTestOutFile(a: Archive, inPath: FilePath) =
+  protected def getTestOutFile(a: Archive, inPath: FilePath): File =
     (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
+  protected def getOutPath(a: Archive, outFile: File): FilePath = outFile.toFilePath
 
   /** auxiliary method for logging results */
   protected def logResult(s: String) {
@@ -383,7 +384,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** entry point for recursive building */
-  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler]) {
+  def build(a: Archive, up: Update, in: FilePath, errorCont : Option[ErrorHandler] = None) {
     val qts = makeBuildTasks(a, in, errorCont)
     controller.buildManager.addTasks(up, qts)
   }
@@ -690,7 +691,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
         case bd: FileBuildDependency => getAnyDeps(bd)
-        case _ => Set.empty
+        case unused => println("MARKER: unused dependency: " + unused) ; Set.empty
       }
       deps += ((p, ds))
       visited += p

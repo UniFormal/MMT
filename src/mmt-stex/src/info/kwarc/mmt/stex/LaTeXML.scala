@@ -9,6 +9,7 @@ import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.stex.STeXUtils._
+import info.kwarc.mmt.stex.STeXAnalysis
 
 import scala.sys.process._
 
@@ -112,7 +113,16 @@ class AllTeX extends LaTeXDirTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
     if (dirFiles.nonEmpty) {
-      val deps = forgetIrrelevantDeps(getDepsMap(getFilesRec(a, in)))
+
+      val the_dependencies : Set[Dependency] = getFilesRec(a, in)
+      /*
+      var the_dependencies : Set[Dependency] = Set.empty
+      for (df <- dirFiles) {
+        val sts = mkSTeXStructure(a,File(df),???,???)
+        the_dependencies = the_dependencies.union(sts.deps.toSet)
+      }*/
+
+      val deps = forgetIrrelevantDeps(getDepsMap(the_dependencies))
       val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
