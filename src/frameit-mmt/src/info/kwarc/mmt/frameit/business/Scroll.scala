@@ -20,7 +20,7 @@ object Scroll {
     * @param thy solution theory
     * @todo eliminate dependence on controller, needed to look up problem theory
     */
-  def fromTheory(thy: Theory)(implicit lookup: Lookup): Option[Scroll] = {
+  def fromTheory(thy: Theory)(implicit lookup: Lookup): Either[InvalidMetaData, Scroll] = {
     import info.kwarc.mmt.frameit.archives.Archives.FrameWorld.ScrollKeys
 
     try {
@@ -29,9 +29,9 @@ object Scroll {
       val solutionThy = readMPathMetaDatum(thy.metadata, ScrollKeys.solutionTheory)
       val description = readStringMetaDatum(thy.metadata, ScrollKeys.description)
 
-      Some(Scroll(problemThy, solutionThy, name, description, lookup.getTheory(problemThy).getDeclarations))
+      Right(Scroll(problemThy, solutionThy, name, description, lookup.getTheory(problemThy).getDeclarations))
     } catch {
-      case _: InvalidMetaData => None
+      case err: InvalidMetaData => Left(err)
     }
   }
 

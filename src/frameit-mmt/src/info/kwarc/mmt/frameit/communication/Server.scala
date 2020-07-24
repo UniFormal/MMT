@@ -3,8 +3,9 @@ package info.kwarc.mmt.frameit.communication
 import cats.effect.IO
 import com.twitter.finagle.Http
 import com.twitter.util.Await
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.{DPath, LocalName, MPath}
-import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
+import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller, Logger, Report}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.utils.{File, FilePath}
@@ -19,17 +20,26 @@ object ServerEntrypoint extends App {
 }
 
 object Server extends EndpointModule[IO] {
-
-  import io.circe.Json
-  import io.circe.syntax._
+  // IMPORTANT: keep the following three lines. Do not change unless you know what you're doing
+  //
+  //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
-
   implicit val jsonConfig: Configuration = Configuration.default.withDiscriminator("species")
 
-  class State {
-    var situationTheory: Theory = _
-    var controller: Controller = _
+  /**
+    * An object wrapping all mutable state our server endpoints below are able to mutate.
+    *
+    * It serves encapsulating state to be as immutable as possible.
+    */
+  class State(val ctrl: Controller, val situationTheory: Theory) extends Logger {
+    override def logPrefix: String = "frameit-server"
+    override protected def report: Report = ctrl.report
+
+    // make log methods from Logger public by trivially overriding them
+    // TODO logging does not work currently, messages go nowhere
+    override def log(e: api.Error): Unit = super.log(e)
+    override def log(s: => String, subgroup: Option[String] = None): Unit = super.log(s, subgroup)
   }
 
   private def getEndpoints(state: State) =
@@ -48,6 +58,9 @@ object Server extends EndpointModule[IO] {
       println("PathToArchiveRoot should point to your working copy of https://github.com/UFrameIT/archives")
   }
 
+  // Endpoints
+  // =================
+
   private def initState(archivePaths: List[File]): State = {
     val ctrl = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
@@ -57,6 +70,7 @@ object Server extends EndpointModule[IO] {
     }
 
     // TODO hack to read latest scroll meta data, should not be needed
+    //      due to https://github.com/UniFormal/MMT/issues/528
     ctrl.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
 
     frameitArchive.allContent
@@ -72,38 +86,40 @@ object Server extends EndpointModule[IO] {
     )
     ctrl.add(situationTheory)
 
-    val state = new State
-    state.situationTheory = situationTheory
-    state.controller = ctrl
-
-    state
+    new State(ctrl, situationTheory)
   }
 
   private def buildArchiveLight(state: State): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
-    state.controller.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
+    state.ctrl.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
 
     Ok(())
   }
 
   private def buildArchive(state: State): Endpoint[IO, Unit] = post(path("archive") :: path("build")) {
-    state.controller.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc")
+    state.ctrl.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc")
 
     Ok(())
   }
 
   private def addFact(state: State): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SimpleOMDoc.SDeclaration]) {
     (sdecl: SDeclaration) => {
-      state.controller.add(SimpleOMDoc.OMDocBridge.decode(sdecl))
+      state.ctrl.add(SimpleOMDoc.OMDocBridge.decode(sdecl))
       Ok(())
     }
   }
 
   private def listScrolls(state: State): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    val allTheories = state.controller.depstore.getInds(IsTheory).map(_.asInstanceOf[MPath]).map(state.controller.getTheory)
+    val allTheories = state.ctrl.depstore.getInds(IsTheory).map(_.asInstanceOf[MPath]).map(state.ctrl.getTheory)
 
-    Ok(
-      allTheories.flatMap(t => Scroll.fromTheory(t)(state.controller.globalLookup)).map(SScroll.fromScroll).toList
-    )
+    val scrolls = allTheories.flatMap(t => Scroll.fromTheory(t)(state.ctrl.globalLookup) match {
+      case Right(scroll) => Some(scroll)
+      case Left(err) =>
+        state.log(s"Ignoring theory ${t} due to error below. Note that theories that are not scrolls also emit such errors.")
+        state.log(err.toString)
+        None
+    }).map(SScroll.fromScroll).toList
+
+    Ok(scrolls)
   }
 
   private def applyScroll(state: State): Endpoint[IO, List[SDeclaration]] = get(path("scroll") :: jsonBody[SScrollApplication]) {

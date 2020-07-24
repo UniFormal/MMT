@@ -8,11 +8,13 @@ import info.kwarc.mmt.frameit.archives.Foundation.{IntegerLiterals, RealLiterals
 import info.kwarc.mmt.lf.ApplySpine
 
 object SimpleOMDoc {
+  // IMPORTANT: keep the following five lines. Do not change unless you know what you're doing
+  //
+  //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.Json
   import io.circe.syntax._
   import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
-
   implicit val jsonConfig: Configuration = Configuration.default.withDiscriminator("species")
   /*
   to change what gets populated as "species":
