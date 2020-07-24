@@ -18,7 +18,7 @@ object SimpleOMDoc {
   import io.circe.generic.extras.Configuration
 
   object JSONConfig {
-    implicit val jsonConfig: Configuration = Configuration.default
+    implicit val jsonEncodeConfig: Configuration = Configuration.default
       .withDiscriminator("kind")
       .copy(transformConstructorNames = {
         case x if x == SOMA.getClass.getName => "OMA"
