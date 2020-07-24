@@ -11,7 +11,8 @@ import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.frameit.archives.Archives
 import info.kwarc.mmt.frameit.business.Scroll
-import info.kwarc.mmt.frameit.communication.SimpleOMDoc.SDeclaration
+import info.kwarc.mmt.frameit.communication.SimpleOMDoc.{JSONConfig, SDeclaration}
+import io.circe.generic.extras.ConfiguredJsonCodec
 import io.finch.{Application, Endpoint, EndpointModule, Ok, Text}
 import io.finch.circe._
 
@@ -20,12 +21,15 @@ object ServerEntrypoint extends App {
 }
 
 object Server extends EndpointModule[IO] {
-  // IMPORTANT: keep the following three lines. Do not change unless you know what you're doing
+  // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
   //
   //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
-  implicit val jsonConfig: Configuration = Configuration.default.withDiscriminator("species")
+
+  @ConfiguredJsonCodec(encodeOnly = true)
+  implicit val jsonEncodeConfig: Configuration = JSONConfig.jsonEncodeConfig
+  // IMPORTANT: end
 
   /**
     * An object wrapping all mutable state our server endpoints below are able to mutate.

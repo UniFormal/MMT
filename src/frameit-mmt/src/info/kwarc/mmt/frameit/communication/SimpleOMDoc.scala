@@ -6,24 +6,34 @@ import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, TermContainer, Vi
 import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.frameit.archives.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
+import io.circe.generic.extras.ConfiguredJsonCodec
 
 object SimpleOMDoc {
-  // IMPORTANT: keep the following five lines. Do not change unless you know what you're doing
+  // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
   //
   //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.Json
   import io.circe.syntax._
   import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
-  implicit val jsonConfig: Configuration = Configuration.default.withDiscriminator("species")
-  /*
-  to change what gets populated as "species":
-  .copy(
-      transformConstructorNames = str => {
-        print(str)
-        str
-      }
-    )*/
+
+  object JSONConfig {
+    implicit val jsonConfig: Configuration = Configuration.default
+      .withDiscriminator("kind")
+      .copy(transformConstructorNames = {
+        case x if x == SOMA.getClass.getName => "OMA"
+        case x if x == SOMS.getClass.getName => "OMS"
+        case x if x == SFloatingPoint.getClass.getName => "OMF"
+        case x if x == SString.getClass.getName => "OMSTR"
+        case x if x == SInteger.getClass.getName => "OMI"
+
+        case x => x
+      })
+  }
+
+  @ConfiguredJsonCodec(encodeOnly = true)
+  implicit val jsonEncodeConfig: Configuration = JSONConfig.jsonEncodeConfig
+  // IMPORTANT: end
 
   /**
     * The type to represent MMT URIs
@@ -35,13 +45,13 @@ object SimpleOMDoc {
 
   case class SOMS(uri: SURI) extends STerm
 
-  case class SOMA(fun: STerm, arguments: List[STerm]) extends STerm
+  case class SOMA(applicant: STerm, arguments: List[STerm]) extends STerm
 
   case class SInteger(value: Int) extends STerm
 
-  case class SFloatingPoint(value: Double) extends STerm
+  case class SFloatingPoint(float: Double) extends STerm
 
-  case class SString(value: String) extends STerm
+  case class SString(string: String) extends STerm
 
   case class SDeclaration(uri: SURI, tp: STerm, df: Option[STerm])
 
