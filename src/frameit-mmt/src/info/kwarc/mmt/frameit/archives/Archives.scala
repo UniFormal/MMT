@@ -1,11 +1,24 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.archives
 
-import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.utils.{File, URI}
+import info.kwarc.mmt.api._
 
 object Archives {
 
-  val frameworldIdentifier = "FrameIT/frameworld"
+  object FrameWorld {
+    object ScrollKeys {
+      private val _scrollMeta: MPath = FrameWorld.rootDocument ? "ScrollMeta"
+
+      val name: GlobalName = _scrollMeta ? "name"
+      val problemTheory: GlobalName = _scrollMeta ? "problemTheory"
+      val solutionTheory: GlobalName = _scrollMeta ? "solutionTheory"
+      val description: GlobalName = _scrollMeta ? "description"
+    }
+
+    val archiveID: String = "FrameIT/frameworld"
+    val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
+    val FactCollection: MPath = Path.parseM("http://mathhub.info/FrameIT/frameworld?FactCollection", NamespaceMap.empty)
+  }
 
   def getPaths(rootDir: File): List[File] = {
     val mathhubRoot = rootDir / "MathHub"
@@ -24,9 +37,4 @@ object Archives {
     val jdoteq: GlobalName = Path.parseS("http://mathhub.info/MitM/Foundation?Logic?eq", NamespaceMap.empty)
     val proofSketch: GlobalName = Path.parseS("http://mathhub.info/MitM/Foundation?InformalProofs?proofsketch", NamespaceMap.empty)
   }
-
-  object Frameworld {
-    val FactCollection: MPath = Path.parseM("http://mathhub.info/FrameIT/frameworld?FactCollection", NamespaceMap.empty)
-  }
-
 }

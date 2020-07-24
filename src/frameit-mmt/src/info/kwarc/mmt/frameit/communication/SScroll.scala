@@ -1,16 +1,24 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.communication
 
-import info.kwarc.mmt.api.{DeclarationComponent, LocalName, MPath, Path}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{Context, Term}
-import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.symbols.{Declaration, Translator}
+import info.kwarc.mmt.frameit.business.Scroll
+import info.kwarc.mmt.frameit.communication.SimpleOMDoc.SDeclaration
 
-import scala.xml.Node
+case class SScroll(problemTheory: SimpleOMDoc.SURI, solutionTheory: SimpleOMDoc.SURI, label: String, description: String, declarations: List[SDeclaration])
 
-class ScrolltoJSON (ctrl: Controller) {
-  val metaTags = getMetaTags()
+object SScroll {
+  def fromScroll(scroll: Scroll): SScroll = SScroll(
+    scroll.problemTheory.toString,
+    scroll.solutionTheory.toString,
+    scroll.label,
+    scroll.description,
+    scroll.declarations.map(SimpleOMDoc.OMDocBridge.encode)
+  )
+}
+
+case class SScrollApplication(scroll: SScroll, view: String)
+
+/*
+val metaTags = getMetaTags()
   val isScrollKey = metaTags.find( _.name.toString().contains("scrollpart")).get
   val isProofKey = metaTags.find( _.name.toString().contains("parameterType")).get
   val factValKey = metaTags.find(_.name.toString().contains("factValue")).get
@@ -69,4 +77,4 @@ class ScrolltoJSON (ctrl: Controller) {
       "\"declarations\":"+"[" + declarations.foldLeft("")((a,b) => a+","+b).tail+ "]" +
      "}"
   }
-}
+ */

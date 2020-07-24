@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit.mitm.Foundation
+package info.kwarc.mmt.frameit.archives.Foundation
 
 import info.kwarc.mmt.api.{DPath, GlobalName}
 import info.kwarc.mmt.api.objects.{OMS, Term}

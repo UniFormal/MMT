@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
 import info.kwarc.mmt.api.{ComplexStep, ContentPath, DPath, GlobalName, LocalName, MPath, Path, SimpleStep}
 import info.kwarc.mmt.api.frontend.Controller

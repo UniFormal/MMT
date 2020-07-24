@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.old
 
 import info.kwarc.mmt.api.{DPath, ErrorLogger, ErrorThrower, LocalName, MMTTask}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}

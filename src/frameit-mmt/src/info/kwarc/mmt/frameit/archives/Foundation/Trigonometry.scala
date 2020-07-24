@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit.mitm.Foundation
+package info.kwarc.mmt.frameit.archives.Foundation
 
 object Trig {
   val trig = MitM.path ? "Trigonometry"

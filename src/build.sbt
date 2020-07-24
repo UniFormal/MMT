@@ -363,17 +363,21 @@ lazy val owl = (project in file("mmt-owl")).
 lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
-// https://mvnrepository.com/artifact/com.github.finagle/finch-core
-// compile group: 'com.github.finagle', name: 'finch-core_2.12', version: '0.31.0'
+
+// Circe is a JSON library for Scala: (https://circe.github.io/circe/)
+val circeVersion = "0.13.0"
 
 lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
     libraryDependencies ++= Seq(
-      "com.github.finagle" %% "finchx-core" % "0.31.0",
-      "com.github.finagle" %% "finchx-circe" % "0.31.0",
+      "com.github.finagle" %% "finchx-core" % "0.32.1",
+      "com.github.finagle" %% "finchx-circe" % "0.32.1",
+      "com.github.finagle" %% "finchx-generic" % "0.32.1",
 
-      "io.circe" %% "circe-generic" % "0.12.3"
+      "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-generic-extras" % circeVersion,
+      "io.circe" %% "circe-parser"  % circeVersion
     )
   )
 

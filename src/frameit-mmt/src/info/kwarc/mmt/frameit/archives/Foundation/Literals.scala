@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit.mitm.Foundation
+package info.kwarc.mmt.frameit.archives.Foundation
 
 import info.kwarc.mmt.api._
 import parser.{LexFunction, LexParseExtension, ParseFunction}
@@ -6,8 +6,8 @@ import objects._
 import uom._
 import utils._
 
-object BooleanLiterals extends RealizedType(OMS(Math.bool),StandardBool)
-object StringLiterals extends RealizedType(OMS(Math.string),StandardString)
+object BooleanLiterals extends RepresentedRealizedType(OMS(Math.bool),StandardBool)
+object StringLiterals extends RepresentedRealizedType(OMS(Math.string),StandardString)
 /*
 object NumberLiterals extends RealizedType(OMS(Math.real),StandardDouble) {
   override def head: GlobalName = Math.real
@@ -58,13 +58,13 @@ object NumberLiterals extends RealizedType(OMS(Math.real),StandardDouble) {
   override def lexerExtension: Option[LexParseExtension] = Some(new LexParseExtension(lf,pf))
 }
 */
-object RealLiterals extends RealizedType(OMS(Math.real),StandardDouble) {
+object RealLiterals extends RepresentedRealizedType(OMS(Math.real),StandardDouble) {
  override def priority: Int = 2
 }
-object IntegerLiterals extends RealizedType(OMS(Math.int),StandardInt) {
+object IntegerLiterals extends RepresentedRealizedType(OMS(Math.int),StandardInt) {
  override def priority: Int = -1
 }
-object PosLiterals extends RealizedType(OMS(Math.pos),StandardPositive) {
+object PosLiterals extends RepresentedRealizedType(OMS(Math.pos),StandardPositive) {
  override def priority: Int = 1
 }
 

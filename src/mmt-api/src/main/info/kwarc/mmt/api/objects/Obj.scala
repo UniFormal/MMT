@@ -291,7 +291,7 @@ object OMATTRMany {
    }
 }
 
-/** The joint methods of OMLIT and UnknownOMLIT */
+/** The joint methods of [[OMLIT]] and [[UnknownOMLIT]] */
 sealed trait OMLITTrait extends Term {
    def synType: Term
    /** canonical string representation of this literal */
