@@ -31,7 +31,7 @@ object SimpleOMDoc {
       })
   }
 
-  @ConfiguredJsonCodec(encodeOnly = true)
+  // @ConfiguredJsonCodec(encodeOnly = true)
   implicit val jsonEncodeConfig: Configuration = JSONConfig.jsonEncodeConfig
   // IMPORTANT: end
 

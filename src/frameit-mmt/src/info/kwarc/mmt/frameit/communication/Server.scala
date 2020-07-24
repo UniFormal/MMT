@@ -27,7 +27,7 @@ object Server extends EndpointModule[IO] {
   import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
 
-  @ConfiguredJsonCodec(encodeOnly = true)
+  // @ConfiguredJsonCodec(encodeOnly = true)
   implicit val jsonEncodeConfig: Configuration = JSONConfig.jsonEncodeConfig
   // IMPORTANT: end
 
