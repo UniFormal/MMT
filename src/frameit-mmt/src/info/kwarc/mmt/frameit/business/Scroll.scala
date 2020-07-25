@@ -7,8 +7,21 @@ import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
+import info.kwarc.mmt.frameit.communication.{SFact, SScroll, SimpleOMDoc}
 
-case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, declarations: List[Declaration])
+sealed case class Fact(declaration: Declaration, label: String) {
+  def simplified: SFact = SFact(SimpleOMDoc.OMDocBridge.encode(declaration), label)
+}
+
+sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[Fact]) {
+  def simplified: SScroll = SScroll(
+    problemTheory.toString,
+    solutionTheory.toString,
+    label,
+    description,
+    requiredFacts.map(_.simplified)
+  )
+}
 
 final case class InvalidMetaData(private val message: String = "",
                                  private val cause: Throwable = None.orNull)
@@ -21,15 +34,26 @@ object Scroll {
     * @todo eliminate dependence on controller, needed to look up problem theory
     */
   def fromTheory(thy: Theory)(implicit lookup: Lookup): Either[InvalidMetaData, Scroll] = {
-    import info.kwarc.mmt.frameit.archives.Archives.FrameWorld.ScrollKeys
+    import info.kwarc.mmt.frameit.archives.Archives.FrameWorld.MetaKeys
 
     try {
-      val name = readStringMetaDatum(thy.metadata, ScrollKeys.name)
-      val problemThy = readMPathMetaDatum(thy.metadata, ScrollKeys.problemTheory)
-      val solutionThy = readMPathMetaDatum(thy.metadata, ScrollKeys.solutionTheory)
-      val description = readStringMetaDatum(thy.metadata, ScrollKeys.description)
+      val name = readStringMetaDatum(thy.metadata, MetaKeys.scrollName)
+      val problemThy = readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
+      val solutionThy = readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
+      val description = readStringMetaDatum(thy.metadata, MetaKeys.scrollDescription)
 
-      Right(Scroll(problemThy, solutionThy, name, description, lookup.getTheory(problemThy).getDeclarations))
+      val requiredFacts = lookup.getTheory(problemThy)
+        .getDeclarations
+        // enrich with fact labels
+        .map(decl => decl.metadata.get(MetaKeys.factLabel) match {
+          // fall back to declaration name as
+          case Nil => Fact(decl, decl.name.toString)
+
+          case MetaDatum(_, StringLiterals(label)) :: Nil => Fact(decl, label)
+          case _ => throw InvalidMetaData(s"Fact declaration contained an invalid label annotation or multiple label annotations, declaration path was: ${decl.path}")
+        })
+
+      Right(Scroll(problemThy, solutionThy, name, description, requiredFacts))
     } catch {
       case err: InvalidMetaData => Left(err)
     }

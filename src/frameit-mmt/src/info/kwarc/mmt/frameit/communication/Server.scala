@@ -11,9 +11,8 @@ import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.frameit.archives.Archives
 import info.kwarc.mmt.frameit.business.Scroll
-import info.kwarc.mmt.frameit.communication.SimpleOMDoc.{JSONConfig, SDeclaration}
-import io.circe.generic.extras.ConfiguredJsonCodec
-import io.finch.{Application, Endpoint, EndpointModule, Ok, Text}
+import info.kwarc.mmt.frameit.communication.SimpleOMDoc.SDeclaration
+import io.finch.{Application, Endpoint, EndpointModule, Ok}
 import io.finch.circe._
 
 object ServerEntrypoint extends App {
@@ -25,11 +24,13 @@ object Server extends EndpointModule[IO] {
   //
   //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.generic.extras.auto._
-  import io.circe.generic.extras.Configuration
+  // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
+  // vvv
+  import info.kwarc.mmt.frameit.communication.SimpleOMDoc.JsonConfig.jsonConfig
 
-  // @ConfiguredJsonCodec(encodeOnly = true)
-  implicit val jsonEncodeConfig: Configuration = JSONConfig.jsonEncodeConfig
   // IMPORTANT: end
+
+
 
   /**
     * An object wrapping all mutable state our server endpoints below are able to mutate.
@@ -121,7 +122,7 @@ object Server extends EndpointModule[IO] {
         state.log(s"Ignoring theory ${t} due to error below. Note that theories that are not scrolls also emit such errors.")
         state.log(err.toString)
         None
-    }).map(SScroll.fromScroll).toList
+    }).map(_.simplified).toList
 
     Ok(scrolls)
   }

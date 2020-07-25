@@ -6,13 +6,16 @@ import info.kwarc.mmt.api._
 object Archives {
 
   object FrameWorld {
-    object ScrollKeys {
+    object MetaKeys {
       private val _scrollMeta: MPath = FrameWorld.rootDocument ? "ScrollMeta"
 
-      val name: GlobalName = _scrollMeta ? "name"
+      val scrollName: GlobalName = _scrollMeta ? "name"
       val problemTheory: GlobalName = _scrollMeta ? "problemTheory"
       val solutionTheory: GlobalName = _scrollMeta ? "solutionTheory"
-      val description: GlobalName = _scrollMeta ? "description"
+      val scrollDescription: GlobalName = _scrollMeta ? "description"
+
+      // TODO not yet realized in formalization
+      val factLabel: GlobalName = _scrollMeta ? "factLabel"
     }
 
     val archiveID: String = "FrameIT/frameworld"
