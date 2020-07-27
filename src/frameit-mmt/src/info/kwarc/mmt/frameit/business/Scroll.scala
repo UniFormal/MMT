@@ -7,10 +7,10 @@ import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.communication.{SFact, SScroll, SimpleOMDoc}
+import info.kwarc.mmt.frameit.communication.{SFact, SScroll, SOMDoc}
 
 sealed case class Fact(declaration: Declaration, label: String) {
-  def simplified: SFact = SFact(SimpleOMDoc.OMDocBridge.encode(declaration), label)
+  def simplified: SFact = SFact(SOMDoc.OMDocBridge.encode(declaration), label)
 }
 
 sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[Fact]) {

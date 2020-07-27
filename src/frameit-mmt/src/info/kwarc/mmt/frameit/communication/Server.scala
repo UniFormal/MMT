@@ -4,42 +4,45 @@ import cats.effect.IO
 import com.twitter.finagle.Http
 import com.twitter.util.Await
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{DPath, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller, Logger, Report}
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
+import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.api.utils.{File, FilePath}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.frameit.archives.Archives
-import info.kwarc.mmt.frameit.business.Scroll
-import info.kwarc.mmt.frameit.communication.SimpleOMDoc.SDeclaration
-import io.finch.{Application, Endpoint, EndpointModule, Ok}
+import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
+import info.kwarc.mmt.frameit.business.{ContentValidator, Scroll}
+import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.finch.circe._
+import io.finch._
+import io.circe.generic.extras.auto._
+
+import scala.util.Random
+
+sealed abstract class ValidationException(message: String, cause: Throwable = None.orNull)
+  extends Exception(message, cause)
+
+final case class FactValidationException(message: String, cause: Throwable = None.orNull) extends ValidationException(message, cause)
 
 object ServerEntrypoint extends App {
   Server.start(args.toList)
 }
 
 object Server extends EndpointModule[IO] {
-  // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
-  //
-  //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
-  import io.circe.generic.extras.auto._
-  // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
-  // vvv
-  import info.kwarc.mmt.frameit.communication.SimpleOMDoc.JsonConfig.jsonConfig
-
-  // IMPORTANT: end
-
-
-
   /**
     * An object wrapping all mutable state our server endpoints below are able to mutate.
     *
     * It serves encapsulating state to be as immutable as possible.
     */
-  class State(val ctrl: Controller, val situationTheory: Theory) extends Logger {
+  class State(val ctrl: Controller, val situationDocument: DPath, var situationTheory: MPath) extends Logger {
     override def logPrefix: String = "frameit-server"
     override protected def report: Report = ctrl.report
+
+    val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
     // make log methods from Logger public by trivially overriding them
     // TODO logging does not work currently, messages go nowhere
@@ -91,7 +94,17 @@ object Server extends EndpointModule[IO] {
     )
     ctrl.add(situationTheory)
 
-    new State(ctrl, situationTheory)
+    val state = new State(ctrl, situationTheory.path.parent, situationTheory.path)
+
+    state.contentValidator.checkTheory(situationTheory) match {
+      case Nil =>
+        state
+
+      case errors =>
+        sys.error("Created situation theory, but cannot successfully typecheck it. Server will not be started. Errors below:")
+        sys.error(errors.mkString("\n"))
+        throw new Exception("")
+    }
   }
 
   private def buildArchiveLight(state: State): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
@@ -106,10 +119,33 @@ object Server extends EndpointModule[IO] {
     Ok(())
   }
 
-  private def addFact(state: State): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SimpleOMDoc.SDeclaration]) {
-    (sdecl: SDeclaration) => {
-      state.ctrl.add(SimpleOMDoc.OMDocBridge.decode(sdecl))
-      Ok(())
+  private def addFact(state: State): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SNewFact]) {
+    (fact: SNewFact) => {
+      // create MMT declaration out [[SNewFact]]
+      val factConstant = new FinalConstant(
+        home = OMMOD(state.situationTheory),
+        name = LocalName(SimpleStep(fact.label)),
+        alias = Nil,
+        tpC = TermContainer.asParsed(SOMDoc.OMDocBridge.decode(fact.tp)),
+        dfC = TermContainer.asParsed(fact.df.map(SOMDoc.OMDocBridge.decode)),
+        rl = None,
+        notC = new NotationContainer,
+        vs = Visibility.public
+      )
+
+      factConstant.metadata.add(MetaDatum(Archives.FrameWorld.MetaKeys.factLabel, StringLiterals(fact.label)))
+
+      state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+        case Nil =>
+          // success (i.e. no errors)
+          state.ctrl.add(factConstant)
+          Ok(())
+
+        case errors =>
+          NotAcceptable(FactValidationException(
+            "Could not validate fact, errors were:\n\n" + errors.mkString("\n")
+          ))
+      }
     }
   }
 
@@ -127,11 +163,83 @@ object Server extends EndpointModule[IO] {
     Ok(scrolls)
   }
 
-  private def applyScroll(state: State): Endpoint[IO, List[SDeclaration]] = get(path("scroll") :: jsonBody[SScrollApplication]) {
-    (sscrollApp: SScrollApplication) => {
-        Ok(List[SDeclaration]())
-      }
+  private sealed case class ScrollApplicationNames(view: LocalName, pushedOutView: LocalName, situationTheoryExtension: LocalName)
+
+  /**
+    * Generate names for the scroll view and the view generated by pushing over it.
+    */
+  private def generateScrollApplicationNames(state: State): ScrollApplicationNames = {
+    val r = Random.nextInt()
+    ScrollApplicationNames(
+      LocalName(s"frameit_scroll_view_${r}"), // TODO: improve this, let game engine dictate one?
+      LocalName(s"frameit_pushed_scroll_view_${r}"),  // TODO: improve this, let game engine dictate one?
+      LocalName(s"frameit_ext_situation_theory_${r}")
+    )
   }
+
+  private def applyScroll(state: State): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
+
+    val scrollViewDomain = Path.parseM(scrollApp.scroll.problemTheory, NamespaceMap.empty)
+    val scrollViewCodomain = state.situationTheory
+
+    val ScrollApplicationNames(scrollViewName, pushedOutScrollViewName, situationTheoryExtensionName) = generateScrollApplicationNames(state)
+
+    // create view out of [[SScrollApplication]]
+    val scrollView = new View(
+      doc = state.situationDocument,
+      name = scrollViewName,
+      fromC = TermContainer.asParsed(OMMOD(scrollViewDomain)),
+      toC = TermContainer.asParsed(OMMOD(scrollViewCodomain)),
+      dfC = TermContainer.empty(),
+      isImplicit = false
+    )
+
+    val scrollViewAssignments = scrollApp.assignments.map {
+      case (factRef, assignedTerm) =>
+
+        val factUri = Path.parseS(factRef.uri, NamespaceMap.empty)
+
+        // create new assignment
+        new FinalConstant(
+          home = scrollView.toTerm,
+          name = LocalName(ComplexStep(factUri.module) :: factUri.name),
+          alias = Nil,
+          tpC = TermContainer.empty(),
+          dfC = TermContainer.asParsed(SOMDoc.OMDocBridge.decode(assignedTerm)),
+          rl = None,
+          notC = new NotationContainer,
+          vs = Visibility.public,
+        )
+    }
+
+    state.ctrl.add(scrollView)
+    scrollViewAssignments.foreach(state.ctrl.add(_))
+
+    state.contentValidator.checkView(scrollView) match {
+      case Nil =>
+        // TODO: perform pushout, add new facts to situation theory, and return new facts
+
+        val (situationTheoryExtension, _) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
+          state.ctrl.getTheory(scrollViewDomain),
+          state.ctrl.getTheory(scrollViewCodomain),
+          state.ctrl.getTheory(Path.parseM(scrollApp.scroll.solutionTheory, NamespaceMap.empty)),
+          state.situationDocument ? situationTheoryExtensionName,
+          scrollView,
+          w_to_generate = state.situationDocument ? pushedOutScrollViewName
+        )
+
+        state.situationTheory = situationTheoryExtension.path
+
+        Ok(List[SFact]())
+
+      case errors =>
+        state.ctrl.delete(scrollView.path)
+
+        NotAcceptable(FactValidationException(
+          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n")
+        ))
+    }
+  }}
 /*
   def getHintsForPartialScroll(gameLogic: FrameItLogic): Endpoint[IO,String] = post(path("scroll") :: path("hints") :: stringBody) {data: String => {
     /**
@@ -151,27 +259,6 @@ object Server extends EndpointModule[IO] {
     JSON.parseFull(data)
     Ok("abc")
   }}
-
-  def addView( gameLogic: FrameItLogic) : Endpoint[IO,String] = post(path("view"):: path("add"):: stringBody) {
-    v : String => {
-      println(v)
-      JSON.parseFull(v ) match {
-        case Some(map: Map[String,Any]) if map.isDefinedAt("from") && map.isDefinedAt("to") && map.isDefinedAt("mappings") => {
-          val viewCode  = new ViewCode(map("from").asInstanceOf[String], map("to").asInstanceOf[String],map("mappings").asInstanceOf[Map[String,String]])
-          try{
-           val ret = gameLogic.addView(viewCode)
-            if(ret.isDefined) Ok(ret.get) else BadRequest(new IllegalArgumentException())
-          } catch {
-            case e: Exception => BadRequest(new IllegalArgumentException())
-          }
-        }
-        case default =>  {
-          println("Failed to parse" )
-          BadRequest(new IllegalArgumentException() )
-        }
-      }
-    }
-  }
 
   def getPushOut(gameLogic: FrameItLogic): Endpoint[IO,String ] =
     get(

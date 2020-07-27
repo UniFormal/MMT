@@ -2,7 +2,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMID, Term}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.communication.SimpleOMDoc
+import info.kwarc.mmt.frameit.communication.SOMDoc
 import info.kwarc.mmt.frameit.archives.Foundation.RealLiterals
 import info.kwarc.mmt.frameit.business.ViewCompletion
 import info.kwarc.mmt.lf.ApplySpine
@@ -36,13 +36,13 @@ object FrameITTest extends MagicTest("debug") {
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    val str = SimpleOMDoc.JSONBridge.encode(
-      SimpleOMDoc.OMDocBridge.encode(ApplySpine(OMID(frameworldArchiveNS ? "DummyTheory" ? "tuple"), RealLiterals(1.0), RealLiterals(2.0), RealLiterals(3.0)))
+    val str = SOMDoc.JSONBridge.encode(
+      SOMDoc.OMDocBridge.encode(ApplySpine(OMID(frameworldArchiveNS ? "DummyTheory" ? "tuple"), RealLiterals(1.0), RealLiterals(2.0), RealLiterals(3.0)))
     )
 
     print(str.toString())
 
-    val obj = SimpleOMDoc.OMDocBridge.decode(SimpleOMDoc.JSONBridge.decodeTerm(str.toString()))
+    val obj = SOMDoc.OMDocBridge.decode(SOMDoc.JSONBridge.decodeTerm(str.toString()))
     print(obj)
   }
 }

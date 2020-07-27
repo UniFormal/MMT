@@ -6,10 +6,9 @@ import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, TermContainer, Vi
 import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.frameit.archives.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
-import io.circe.Decoder
 import io.circe.generic.extras.ConfiguredJsonCodec
 
-object SimpleOMDoc {
+object SOMDoc {
   // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
   //
   //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
@@ -48,7 +47,10 @@ object SimpleOMDoc {
   // vvv
   import JsonConfig.jsonConfig
 
-  // implicit val stermDecoder: Decoder[STerm] = deriveConfiguredDecoder[STerm]
+  // IMPORTANT: do not naively rename parameter names of the following case classes!
+  //            That would change the derived JSON encoders and decoders, too!
+  //
+  //            Instead rename and add io.circe's annotation to re-rename back to how the JSON should be.
 
   @ConfiguredJsonCodec
   sealed trait STerm
@@ -69,7 +71,7 @@ object SimpleOMDoc {
   case class SString(string: String) extends STerm
 
   @ConfiguredJsonCodec
-  case class SDeclaration(uri: SURI, tp: STerm, df: Option[STerm])
+  case class SFinalConstant(uri: SURI, tp: STerm, df: Option[STerm])
 
   final case class ConversionException(private val message: String = "",
                                    private val cause: Throwable = None.orNull)
@@ -77,15 +79,15 @@ object SimpleOMDoc {
 
 
   object OMDocBridge {
-    def encode(decl: Declaration): SDeclaration = decl match {
+    def encode(decl: Declaration): SFinalConstant = decl match {
       case f: FinalConstant => f.tp match {
-        case Some(tp) => SDeclaration(f.path.toString, encode(tp), f.df.map(encode))
+        case Some(tp) => SFinalConstant(f.path.toString, encode(tp), f.df.map(encode))
         case _ => throw ConversionException("cannot convert Declaration not containing type to SimpleOMDoc")
       }
       case _ => throw ConversionException(s"cannot convert declarations other than FinalConstant to SimpleOMDoc; declaration was ${decl}")
     }
 
-    def decode(sdecl: SDeclaration): Declaration = {
+    def decode(sdecl: SFinalConstant): FinalConstant = {
       val path = Path.parseS(sdecl.uri, NamespaceMap.empty)
 
       new FinalConstant(
@@ -122,7 +124,7 @@ object SimpleOMDoc {
   }
 
   object JSONBridge {
-    def encodeDeclaration(decl: SDeclaration): Json = decl.asJson
+    def encodeDeclaration(decl: SFinalConstant): Json = decl.asJson
 
     def encode(stm: STerm): Json = stm.asJson
     def decodeTerm(str: String): STerm = io.circe.parser.decode[STerm](str).getOrElse(
