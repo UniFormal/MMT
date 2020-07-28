@@ -606,6 +606,18 @@ object Importer
       catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
     }
 
+    object OFCLASS  // FIXME workaround for Isabelle2020 on case-insensitive file-system
+    {
+      import isabelle.Term._
+
+      def unapply(t: Term): Option[(Typ, String)] =
+        t match {
+          case App(Const(Class_Const(c), List(ty)), Const(isabelle.Pure_Thy.TYPE, List(ty1)))
+            if ty == ty1 => Some((ty, c))
+          case _ => None
+        }
+    }
+
     def import_term(tm: isabelle.Term.Term, env: Env = Env.empty, bounds: List[String] = Nil): Term =
     {
       def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
@@ -622,7 +634,7 @@ object Importer
             catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable " + i) }
           case isabelle.Term.Abs(x, ty, b) =>
             lf.Lambda(LocalName(x), typ(ty), term(x :: bs, b))
-          case isabelle.Term.OFCLASS(ty, c) =>
+          case OFCLASS(ty, c) =>
             lf.Apply(import_class(c), typ(ty))
           case isabelle.Term.App(a, b) =>
             lf.Apply(term(bs, a), term(bs, b))

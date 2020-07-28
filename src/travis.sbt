@@ -23,8 +23,8 @@ travisConfig := {
   def dir(name: String): Option[String] = Some("[[ -d \"" + name + "\" ]]")
 
   val LinuxTesting = MatrixSet(
-    Trusty, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
-    OpenJDK8, OpenJDK11
+    Bionic, Language("scala"), Env(Map(("SBT_VERSION_CMD", "\"^validate\""))),
+    OpenJDK14
   )
 
   // in principle we would test OS X as follows
@@ -58,7 +58,7 @@ travisConfig := {
 
 
     TravisStage("SelfCheck", "check that 'sbt genTravisYML' has been run")(
-      TravisJob("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")), MatrixSet(OpenJDK8), expansion = FirstExpansion)
+      TravisJob("Check that `sbt genTravisYML` has been run", sbt("genTravisYML", identical(".travis.yml")), MatrixSet(OpenJDK14), expansion = FirstExpansion)
     ),
 
     TravisStage("CompileAndCheck", "Check that our tests run and the code compiles")(
@@ -73,7 +73,7 @@ travisConfig := {
     ),
 
     TravisStage("deploy", "deploy the api documentation", Some("branch = master"))(
-      TravisJob("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"), MatrixSet(OpenJDK8), expansion = FirstExpansion)
+      TravisJob("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"), MatrixSet(OpenJDK14), expansion = FirstExpansion)
     )
   )
 }
