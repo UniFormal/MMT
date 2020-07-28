@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.{OMMOD, OMPMOD, Term}
+import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMPMOD, Term}
 import info.kwarc.mmt.api.opaque.{OpaqueElement, OpaqueText, OpaqueTextPresenter}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
@@ -261,46 +261,85 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       objectLevel.apply(tm, None)(rh)
   }
 
+  /**
+    * Present a constant
+    */
   private def doConstant(c: Constant, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
-    rh(c.name.last.toString)
+    /*
+       A constant is built of multiple "elements" delimited by [[OBJECT_DELIMITER]].
+       For example, here is a [[Constant]] with many elements:
 
-    val hadAlias = c.alias.nonEmpty
-    c.alias foreach { a =>
-      rh(" @ ")
-      rh(a.toPath)
-    }
+       {{{
+       judgement
+         : {V:vocabulary}{Γ:Ctx V}Expr Γ⟶(Expr Γ⟶prop)
+        ❘ = [V:vocabulary][Γ:Ctx V][e:Expr Γ][E:Expr Γ]foo bar
+        ❘ role simplify
+        ❘ @ jud
+        ❘ @ judgment
+        ❘ # 1 |- 2 ∶ 3 prec 100
+        ❘ meta metakey1 ?DummyTheory2
+        ❘ meta metakey2 (f  x)
+      ❙
+      }}}
 
-    val hadTypeComponent = c.tp.isDefined
-    c.tp foreach { typeTerm =>
-      if (hadAlias) {
-        rh(OBJECT_DELIMITER)
-      }
+      Note that "elements" is a term I made-up for the sake of this comment.
+      It differs from the word "component" (established in MMT circles) insofar that for instance
+      above we have multiple "meta" elements, but MMT treats the set of all metadatums of a constant
+      as a single [[MetaDataComponent]] of that constant.
 
-      rh("\n")
-      indented(rh)("  : ")
+      In the following we aggregate lists of such elements, which we later join by appropriate
+      newlines and [[OBJECT_DELIMITER object delimiters]].
+      Since instead of naive string concatenation, we use the concept of [[RenderingHandler rendering handlers]]
+      overall, these lists of elements are actually lists of callback functions each accepting a rendering handler.
+     */
+
+    // usual type and definiens, each lists of at most one element
+    val typeElements = c.tp.toList.map(typeTerm => (rh: RenderingHandler) => {
+      rh(": ")
       apply(typeTerm, Some(c.path $ TypeComponent))(rh)
-    }
+    })
 
-    val hadDefiniensComponent = c.df.isDefined
-    c.df foreach { definiensTerm =>
-      if (hadTypeComponent || hadAlias) {
-        rh(OBJECT_DELIMITER)
-      }
-
-      rh("\n")
-      indented(rh)("  = ")
+    val definiensElements = c.df.toList.map(definiensTerm => (rh: RenderingHandler) => {
+      rh("= ")
       apply(definiensTerm, Some(c.path $ DefComponent))(rh)
-    }
+    })
 
-    c.notC.parsing foreach { textNotation =>
-      if (hadDefiniensComponent || hadTypeComponent || hadAlias) {
-        rh(OBJECT_DELIMITER)
+    // miscellaneous elements
+    val aliasElements = c.alias.map(a => (rh: RenderingHandler) => {
+      rh(s"@ ${a.toPath}")
+    })
+
+    val roleElements = c.rl.toList.map(roleStr => (rh: RenderingHandler) => {
+      rh(s"role ${roleStr}")
+    })
+
+    val notationElements = c.notC.parsing.toList.map(textNotation => (rh: RenderingHandler) => {
+      rh(s"# ${textNotation.toText}")
+    })
+
+    val metadataElements = c.metadata.getAll.map(datum => (rh: RenderingHandler) => {
+      rh("meta ")
+      doURI(OMID(datum.key), rh)
+      rh(" ")
+      objectPresenter(datum.value, Some(c.path $ MetaDataComponent))(rh)
+    })
+
+    // aggregate all elements in visually pleasing order
+    val elements: List[RenderingHandler => Unit] =
+      typeElements ::: definiensElements ::: roleElements ::: aliasElements ::: notationElements ::: metadataElements
+
+    // present all elements
+    rh(c.name.last.toString)
+    val indentedRh = indented(rh)
+    elements.zipWithIndex.foreach { case (renderFunction, index) => {
+      if (index == 0) {
+        indentedRh("\n" + "   ")
+      } else {
+        indentedRh("\n" + OBJECT_DELIMITER + " ")
       }
-
-      rh("\n")
-      indented(rh)("  # ")
-      rh(textNotation.toText)
-    }
+      renderFunction(indentedRh)
+    }}
+    rh("\n")
   }
 
   private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
