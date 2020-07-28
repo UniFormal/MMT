@@ -66,11 +66,6 @@ object StructuralFeatureUtils {
   /** negate the statement in the type */
   def neg(tp: Term) : Term = Arrow(tp, Contra)
   
-  /** To allow for more user friendly inductive-proof declarations
-   * Takes a predicate pr: ⊦ x ≐ y for x: A, y: A, a (initial) function f: A → B and returns a predicate ⊦ f a ≐ f b
-   * @param pr the predicate : ⊦ x ≐ y
-   * @param f the function f : ⊦ A → B
-   */  
   object CONG {
     val path = theory ? "CONG"
     def apply(A: Term, B: Term, x: Term, y: Term, p_xeqy: Term, f: Term) = ApplyGeneral(OMS(path), List(A,B,f,x,y, p_xeqy))
@@ -91,13 +86,18 @@ object StructuralFeatureUtils {
     }
     CONG(a, b, x, y, prDf, funcDf)
   }
-  
+
+  /** To allow for more user friendly inductive-proof declarations
+   * Takes a predicate pr: ⊦ x ≐ y for x: A, y: A, a (initial) function f: A → B and returns a predicate ⊦ f a ≐ f b
+   * @param pr the predicate : ⊦ x ≐ y
+   * @param func the function func : ⊦ A → B
+   */
   def Cong(pr: VarDecl, func: VarDecl) : Term = {Cong(pr.tp.get, pr.toTerm, func.tp.get, func.toTerm)}
   
   /**
    * Takes a predicate pr: ⊦ x ≐ y for x: C → D, y: C → D and a term tm: C and returns a predicate ⊦ f x ≐ f y, where f x := x tm
-   * @param pr the predicate : ⊦ x ≐ y
-   * @param f the function f : ⊦ f x ≐ f y
+   * @param prTp type of the predicate : ⊦ x ≐ y
+   * @param prDf definien of the predicate : ⊦ x ≐ y
    * @param tm the term tm: C
    * @return the type and and proof of the resulting predicate
    */
@@ -129,11 +129,12 @@ object StructuralFeatureUtils {
    * parse the declarations into constants, flattening PlainIncludes
    * @param decls the declarations to parse
    * @param con the controller
+   * @param parent (implicit) the (new) parent module of all read constants
    */
-  def getConstants(decls: List[Declaration], con: Controller): List[Constant] = {
-    decls.flatMap { d: Declaration =>
+  def getConstants(decls: List[Declaration], con: Controller)(implicit parent: MPath): List[Constant] = {
+    val consts:List[Constant] = decls.flatMap { d: Declaration =>
       d match {
-        case c: Constant => List(c)
+        case c: Constant => List (c)
         case PlainInclude(from, to) =>
           val target: Option[StructuralElement] = con.getO(from)
           target match {
@@ -144,6 +145,19 @@ object StructuralFeatureUtils {
           }
         case _ => throw GeneralError("unsupported declaration")
       }
+    }
+
+//    println("The constant declarations whoose module paths to fix: "+consts)
+//    println("The parent module path to set them to: "+parent)
+
+    val names = consts map(_.name)
+    val repl = OMSReplacer(g => names.find(_ == g.name).map(_=>OMS(g.copy(module = parent))))
+    val tr = TraversingTranslator(repl)
+
+    val tpCf = consts.map(c => c.tpC.map(tr(Context.empty, _)))
+//    println("The fixed types of the constants: "+tpCf)
+    consts map {c =>
+      Constant.apply(OMMOD(parent.module), c.name, c.alias, c.tpC.map(tr(Context.empty, _)), c.dfC.map(tr(Context.empty, _)), c.rl, c.notC)
     }
   }
 
@@ -157,7 +171,7 @@ object StructuralFeatureUtils {
     val sf = con.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
     val consts = sf match {
       case rldd : ReferenceLikeTypedParametricTheoryLike => parseReferenceLikeDerivedDeclaration(dd, con, rldd)
-      case _ => getConstants(dd.getDeclarations, con)
+      case _ => getConstants(dd.getDeclarations, con)(dd.modulePath)
     }
     consts
   }
@@ -169,7 +183,7 @@ object StructuralFeatureUtils {
    * @param sf the structural feature of the derived declaration
    */
   def parseReferenceLikeDerivedDeclaration(dd: DerivedDeclaration, con:Controller, sf: ReferenceLikeTypedParametricTheoryLike) : List[Constant] = {
-    getConstants(sf.getDecls(dd)._2, con)
+    getConstants(sf.getDecls(dd)._2, con)(dd.modulePath)
   }
 
 
@@ -183,7 +197,7 @@ object StructuralFeatureUtils {
    */
   def parseInternalDeclarationsSubstitutingDefiniens(dd:DerivedDeclaration, con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
     val consts = parseInternalDeclarationsIntoConstants(dd, con)
-    readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, intDeclsO)(dd.path)
+    readInternalDeclarationsSubstitutingDefiniens(consts, con, ctx, intDeclsO)
   }
 
   /**
@@ -191,12 +205,11 @@ object StructuralFeatureUtils {
    * It also will expand any references to previous declarations in terms of their definiens, if existent
    * This is useful for e.g. inductive definitions, inductive matches and inductive proofs
    * @param decls the declarations to parse
-   * @param con the controller, needed to parse the delarations
+   * @param con the controller, needed to parse the declarations
    * @param ctx (optional) the (outer) context of the declarations
    * @param intDeclsO (optional) the internal declarations for which to provide definiens
-   * @param parent (implicit) the parent module of the given declarations
    */
-  def readInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
+  def readInternalDeclarationsSubstitutingDefiniens(decls: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
     val isConstr = isConstructor(decls, intDeclsO)
@@ -222,20 +235,37 @@ object StructuralFeatureUtils {
   /**
    * Construct a map computing for each declaration whether it is a constructor and if so its typelevel
    * @param decls the declarations to check
-   * @param intDeclsO (optional) the derived declarations for which to provide definiens
-   * @param parent (implicit) the parent module of the given declaration
+   * @param intDecls the derived declarations for which to provide definiens
+   * @return A function Constant => (Boolean, Option[GlobalName])
+   *         , defined by c |-> (true, Some(p)) if c is constructor of type OMS(p)
+   *                  and c |-> (false, None)   if c is not a constructor
+   *         The function throws an error if there is no corresponding declaration (i.e. of same name) to c in intDecls
    */
-  def isConstructor(decls: List[Constant], intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent: GlobalName) : Option[Constant => (Boolean, Option[GlobalName])] = {
-    intDeclsO map {intDecls =>
-      val isConstrO = decls map {c =>
-        val intC = intDecls.find(_.name == c.name).getOrElse(throw GeneralError("Definien for declaration "+c.name+" is missing. "))
-        intC match {
-          case const : Constructor => (c, (true, Some(decls.find(_.name == const.getTpl.name).get.path)))
-          case _ => (c, (false, None))
-        }
+  def isConstructor(decls: List[Constant], intDecls: List[InternalDeclaration]) : Constant => (Boolean, Option[GlobalName]) = {
+    val isConstrO:List[(Constant, (Boolean, Option[GlobalName]))] = decls map {c =>
+      val intC = intDecls.find(_.name == c.name).getOrElse(
+        throw GeneralError("Definien for declaration "+c.name+" is missing. \nOnly found the declarations:\n"+intDecls.map(_.name)))
+      intC match {
+        case const : Constructor => (c, (true, Some(decls.find(_.name == const.getTpl.name).get.path)))
+        case _ => (c, (false, None))
       }
-      utils.listmap(isConstrO, _ : Constant).get
     }
+    utils.listmap(isConstrO, _ : Constant).get
+  }
+
+
+  /**
+   * Construct a map computing for each declaration whether it is a constructor and if so its typelevel
+   *
+   * @param decls the declarations to check
+   * @param intDeclsO (optional) the derived declarations for which to provide definiens
+   * @return if intDeclsO is given, then return Some function Constant => (Boolean, Option[GlobalName]),
+   *         defined by c |-> (true, Some(p)) if c is constructor of type OMS(p)
+   *         *      and c |-> (false, None) if c is not a constructor
+   *         The function throws an error if there is no corresponding declaration (i.e. of same name) to c in intDecls
+   */
+  def isConstructor(decls: List[Constant], intDeclsO: Option[List[InternalDeclaration]] = None) : Option[Constant => (Boolean, Option[GlobalName])] = {
+    intDeclsO map { intDecls => isConstructor(decls, intDecls) }
   }
 
   /**
@@ -243,16 +273,25 @@ object StructuralFeatureUtils {
    * @param dd the derived declaration whoose internal declarations to parse
    * @param con the controller
    * @param ctx (optional) a context to parse the declarations in
-   * @param isConstructor (optional) computes whether the declaration is a constructor and if so its typelevel
-   * Needs to be given for constructors over defined typelevels
+   * @param intDeclsO (optional) the derived declarations for which to provide definiens
    * @precondition if isConstructor is given for a constant and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
   def parseInternalDeclarations(dd: DerivedDeclaration, con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None): List[InternalDeclaration] = {
     val consts = parseInternalDeclarationsIntoConstants(dd,con)
     readInternalDeclarations(consts, con, ctx, intDeclsO)(dd.path)
   }
-  
-  def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent : GlobalName): List[InternalDeclaration] = {
+
+  /**
+   * parse the given constants into internal declarations
+   * the parent modules of all internal declarations is set to the mpath of the parsed derived declaration
+   * @param consts the constants to parse
+   * @param con the controller
+   * @param ctx (optional) the context of the declarations
+   * @param intDeclsO (optional) the derived declarations for which to provide definiens
+   * @param parent (implicit) the path of the derived declaration that is parsed
+   * @return a list of internal declarations containing the parsed constants
+   */
+  def readInternalDeclarations(consts: List[Constant], con: Controller, ctx: Option[Context] = None, intDeclsO: Option[List[InternalDeclaration]] = None)(implicit parent: GlobalName): List[InternalDeclaration] = {
     val context = ctx.getOrElse(Context.empty)
     var types: List[TypeLevel] = Nil
     

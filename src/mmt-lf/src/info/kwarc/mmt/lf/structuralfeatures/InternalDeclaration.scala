@@ -173,28 +173,29 @@ object InternalDeclaration {
    * @param types the list of defined typelevels
    * @param ctx the outer context of the declaration
    * @param isConstructor (optional) whether the declaration is a constructor and if so its typelevel
+    *                      , overrides the checks on the type done otherwise
    * Needs to be given for constructors over defined typelevels
+    * (as they may not have a type specified initially and matching with inferred types is overcomplicating things)
    * @precondition if isConstructor is given and its first part is true, the second part must be defined and contain the corresponding typelevel
    */
-  def fromConstant(c: Constant, con: Controller, types: List[TypeLevel], ctx: Option[Context], isConstructor: Option[(Boolean, Option[GlobalName])] = None)(implicit parent : GlobalName) : InternalDeclaration = {
+  def fromConstant(c: Constant, con: Controller, types: List[TypeLevel], ctx: Option[Context], isConstructor: Option[(Boolean, Option[GlobalName])] = None) : InternalDeclaration = {
     val tp = c.tp.getOrElse(throw ImplementationError("type expected for declaration at "+c.path+" but none found."))
     val FunType(args, ret) = tp
     val context = Some(ctx getOrElse Context.empty)
-    val p = c.path
     if (JudgmentTypes.isJudgment(ret)(con.globalLookup)) {
-      StatementLevel(p, args, c.df, context, Some(c.notC))
+      StatementLevel(c.path, args, c.df, context, Some(c.notC))
     } else {
       ret match {
-        case Univ(1) => TypeLevel(p, args, c.df, context, Some(c.notC))
+        case Univ(1) => TypeLevel(c.path, args, c.df, context, Some(c.notC))
         case Univ(x) if x != 1 => throw ImplementationError("unsupported universe")
         case r => 
           val isConstructorMapped = isConstructor map ({d => (d._1, types.find(_.path == d._2.get))})
           val isConstr: (Boolean, Option[TypeLevel]) = isConstructorMapped.getOrElse (ret match {
-            case ApplyGeneral(OMS(p), _) if (types map (_.path) contains p)=> (true, types.find(_.path == p))
+            case ApplyGeneral(OMS(p), _) if (types map (_.path) contains p) => (true, types.find(_.path == p))
             case t if (types map (_.df) contains Some(ret)) => (true, types.find(_.df == Some(ret)))
             case _ => (false, None)
           })
-          if (isConstr._1) new Constructor(p, args, ret, isConstr._2.get, c.df, Some(c.notC), ctx) else new OutgoingTermLevel(p, args, ret, c.df, Some(c.notC), ctx)
+          if (isConstr._1) new Constructor(c.path, args, ret, isConstr._2.get, c.df, Some(c.notC), ctx) else new OutgoingTermLevel(c.path, args, ret, c.df, Some(c.notC), ctx)
       }
     }
   }
@@ -346,7 +347,7 @@ sealed abstract class InternalDeclaration {
     }    
   }
 
-  def toString(termPresenter:Option[Term=>String]) = {
+  def toString(termPresenter:Option[Term=>String] = None) = {
     def pre(t: Term):String = {termPresenter.getOrElse({tm:Term => present(tm, true)})(t)}
     val Type = if (isTypeLevel) "Typelevel" else if (isConstructor) "Constructor" else "Outgoing termlevel"
     Type+"("+ name+": "+pre(tp)+(if(df != None) " = "+pre(df.get) else "")+")"

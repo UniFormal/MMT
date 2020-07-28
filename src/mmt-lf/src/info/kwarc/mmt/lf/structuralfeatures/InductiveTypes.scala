@@ -92,6 +92,8 @@ class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with Param
     
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
+
+    //check them
     tmdecls foreach { tmdecl => checkTermLevel(tmdecl, types)}
 
     // the no confusion axioms for the data constructors

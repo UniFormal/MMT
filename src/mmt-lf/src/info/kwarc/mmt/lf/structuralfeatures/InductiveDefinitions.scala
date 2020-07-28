@@ -34,10 +34,6 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
    * @param intDecls the internal declaration to give definiens for
    * @param indDPath the path to the module containing the internal declarations to give definiens for
    * @param c the constant to give a definien for
-   * @return a pair containing the definien and a pair of a boolean and an optional GlobalName,
-   *         specifying whether the constant is a constructor and if so its typelevel
-   * @postcondition if the returned boolean is true, then the last part of the second pair must be defined and specify
-   *               the internal path to the typelevel
    */
   def expectedType(dd: DerivedDeclaration, intDecls: List[InternalDeclaration], indDPath: GlobalName, c: Constant) : Term = {
     val tpdecls = tpls(intDecls)
@@ -53,6 +49,8 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
   
    /**
    * Check that each definien matches the expected type
+   * @param dd the derived declaration whoose declarations provide the required definiens
+   * @param c the constant for which we should compute the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
     val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
@@ -77,7 +75,7 @@ class InductiveDefinitions extends StructuralFeature("inductive_definition") wit
     
     val (tplNames, tmlNames, intDeclNames) = (tpls map (_.name), tmls map (_.name), intDecls map (_.name))
     val tplExtNames = tplNames map (externalName(indD.path, _))
-    
+
     val defDecls = parseInternalDeclarationsWithDefiniens(dd, controller, Some(context), Some(intDecls))
     val (defTpls, defConstrs) = (InternalDeclaration.tpls(defDecls), constrs(defDecls))
     

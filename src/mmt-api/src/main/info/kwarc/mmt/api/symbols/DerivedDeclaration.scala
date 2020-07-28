@@ -472,7 +472,7 @@ trait ReferenceLikeTypedParametricTheoryLike extends StructuralFeature with Type
   /**
    * parse the derived declaration into its components
    * @param dd the derived declaration
-   * @return returns a pair containing the mpath of the derived declaration, the constants defined in the referenced theory,
+   * @return returns a pair containing the mpath of the derived declaration, the declarations defined in the referenced theory,
    *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
    */
   def getDecls(dd: DerivedDeclaration): (GlobalName, List[Declaration], Context, List[Term], Context) = {
