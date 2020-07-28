@@ -27,8 +27,8 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
     assertEqual(1, "❘\\s*@ jud\\s*[❘|❙]".r.findAllIn(str).length, "alias incorrect")
     assertEqual(1, "❘\\s*@ judgment\\s*[❘|❙]".r.findAllIn(str).length, "alias incorrect")
     assertEqual(1, "❘\\s*# 1 \\|- 2 ∶ 3 prec 100\\s*[❘|❙]".r.findAllIn(str).length, "notation incorrect")
-    assertEqual(1, "❘\\s*meta ?metakey1 ?MMTSyntaxPresenterTestBar\\s*[❘|❙]".r.findAllIn(str).length, "meta datum incorrect")
-    assertEqual(1, "❘\\s*meta ?metakey2 (f x)\\s*[❘|❙]".r.findAllIn(str).length, "meta datum incorrect")
+    assertEqual(1, "❘\\s*meta metakey1 \\?MMTSyntaxPresenterTestBar\\s*[❘|❙]".r.findAllIn(str).length, "meta datum incorrect")
+    assertEqual(1, "❘\\s*meta \\?MMTSyntaxPresenterTestBar\\?metakey2 \\(f\\s+x\\)\\s*[❘|❙]".r.findAllIn(str).length, "meta datum incorrect")
   }
 
 
@@ -43,8 +43,8 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
       ❘ @ jud
       ❘ @ judgment
       ❘ # 1 |- 2 ∶ 3 prec 100
-      ❘ meta ?metakey1 ?MMTSyntaxPresenterTestBar
-      ❘ meta ?metakey2 (f x)
+      ❘ meta metakey1 ?MMTSyntaxPresenterTestBar
+      ❘ meta ?MMTSyntaxPresenterTestBar?metakey2 (f x)
       ❙
     }}}
   */
@@ -96,7 +96,7 @@ object MMTSyntaxPresenterTest extends MMTUnitTest {
     )
     c.metadata.add(
       MetaDatum(
-        theoryPath ? "metakey2",
+        otherDummyTheoryPath ? "metakey2",
         OMA(
           OMID(theoryPath ? "f"),
           List(OMID(theoryPath ? "x"))
