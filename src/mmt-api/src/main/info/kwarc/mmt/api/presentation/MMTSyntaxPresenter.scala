@@ -11,9 +11,22 @@ import info.kwarc.mmt.api.utils.URI
 /**
   * Presenter writing out parsable MMT surface syntax.
   *
-  * This class supersedes the now deleted class MMTStructurePresenter.
-  * Previously was just a minimally modified copy of MMTStructurePresenter
-  * now been deleted.
+  * Usage
+  * {{{
+  * import info.kwarc.mmt.api.presentation
+  * import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
+  *
+  * val presenter = state.ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
+  *   throw new Exception // do something
+  * )
+  *
+  * val stringRenderer = new presentation.StringBuilder
+  * val yourTheory : Theory = ???
+  * presenter(yourTheory)
+  *
+  * println(stringRenderer.get)
+  * }}}
+  *
   */
 
 class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends Presenter(objectPresenter) {
@@ -24,6 +37,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     **/
   protected val presentGenerated = false
 
+  /**
+    * The format of [[MMTSyntaxPresenter]] as an extension
+    */
   def key: String = "present-text-notations" + (if (presentGenerated) "-flat" else "")
 
   override def outExt = "mmt"

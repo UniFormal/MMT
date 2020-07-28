@@ -378,7 +378,10 @@ lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
     libraryDependencies ++= Seq(
-      // an HTTP server library
+      //  a server infrastructure library
+      "com.twitter" %% "twitter-server" % "20.7.0",
+
+      // an incarnation of an HTTP server library for the above infrastructure
       "com.github.finagle" %% "finchx-core" % "0.32.1",
       // with ability to automatically encode/decode JSON payloads via the circe library below
       "com.github.finagle" %% "finchx-circe" % "0.32.1",
@@ -389,9 +392,6 @@ lazy val frameit = (project in file("frameit-mmt")).
       // with extras to support encoding/decoding a case class hierarchy
       "io.circe" %% "circe-generic-extras" % circeVersion,
       "io.circe" %% "circe-parser"  % circeVersion,
-
-
-      // "org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full
     ),
 
     scalacOptions in Compile ++= Seq(

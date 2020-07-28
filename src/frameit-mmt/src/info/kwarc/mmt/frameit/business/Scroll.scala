@@ -7,16 +7,11 @@ import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.communication.{SFact, SScroll, SOMDoc}
-
-sealed case class Fact(declaration: Declaration, label: String) {
-  def simplified: SFact = SFact(SOMDoc.OMDocBridge.encode(declaration), label)
-}
+import info.kwarc.mmt.frameit.communication.{SFact, SOMDoc, SScroll, SScrollReference}
 
 sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[Fact]) {
   def simplified: SScroll = SScroll(
-    problemTheory.toString,
-    solutionTheory.toString,
+    SScrollReference(problemTheory, solutionTheory),
     label,
     description,
     requiredFacts.map(_.simplified)
@@ -45,13 +40,7 @@ object Scroll {
       val requiredFacts = lookup.getTheory(problemThy)
         .getDeclarations
         // enrich with fact labels
-        .map(decl => decl.metadata.get(MetaKeys.factLabel) match {
-          // fall back to declaration name as
-          case Nil => Fact(decl, decl.name.toString)
-
-          case MetaDatum(_, StringLiterals(label)) :: Nil => Fact(decl, label)
-          case _ => throw InvalidMetaData(s"Fact declaration contained an invalid label annotation or multiple label annotations, declaration path was: ${decl.path}")
-        })
+        .map(Fact.parseFromDeclaration)
 
       Right(Scroll(problemThy, solutionThy, name, description, requiredFacts))
     } catch {
@@ -69,8 +58,6 @@ object Scroll {
     case OMMOD(mpath) => mpath
     case x => throw InvalidMetaData(s"Expected MPath matching for ${key}, but got ${x}")
   }
-
-  //private def readMPathMetaDatum(metadatums: List[MetaDatum]): URI = Path.parseM(readURIMetaDatum(metadatums), NamespaceMap.empty)
 
   private def readStringMetaDatum(metadata: MetaData, key: GlobalName): String = readSingleMetaDatum(metadata, key).value match {
     case StringLiterals(str) => str

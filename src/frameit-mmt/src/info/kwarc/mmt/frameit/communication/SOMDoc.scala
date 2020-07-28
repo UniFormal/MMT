@@ -1,12 +1,17 @@
 package info.kwarc.mmt.frameit.communication
 
+// IMPORTANT: do NOT run IntelliJ's automatic "import clean-up" utility. It will remove necessary imports in this file.
+
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, TermContainer, Visibility}
-import info.kwarc.mmt.api.{NamespaceMap, Path}
+import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.archives.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
 import io.circe.generic.extras.ConfiguredJsonCodec
+import io.circe.{Decoder, Encoder}
+
+import scala.util.Try
 
 object SOMDoc {
   // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
@@ -19,12 +24,6 @@ object SOMDoc {
   import io.circe.generic.extras.Configuration
   // IMPORTANT: end
 
-  /**
-    * The type to represent MMT URIs
-    * Currently just strings, but retain flexibility to change it in the future
-    */
-  type SURI = String
-
   object JsonConfig {
     implicit val jsonConfig: Configuration = Configuration.default
       .withDiscriminator("kind")
@@ -32,12 +31,12 @@ object SOMDoc {
         // Cannot declare this in the outer object due to some weird
         // errors with circe-generic-extras macro magic
         val rewriteMap = Map(
-          SOMA.getClass -> "OMA",
-          SOMS.getClass -> "OMS",
-          SFloatingPoint.getClass -> "OMF",
-          SString.getClass -> "OMSTR",
-          SInteger.getClass -> "OMI"
-        ).map { case (key, value) => (key.getSimpleName.replace("$", ""), value) }
+          classOf[SOMA] -> "OMA",
+          classOf[SOMS] -> "OMS",
+          classOf[SFloatingPoint] -> "OMF",
+          classOf[SString] -> "OMSTR",
+          classOf[SInteger] -> "OMI"
+        ).map { case (key, value) => (key.getSimpleName, value) }
 
         rewriteMap.getOrElse(oldCtorName, oldCtorName)
       })
@@ -46,6 +45,22 @@ object SOMDoc {
   // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
   // vvv
   import JsonConfig.jsonConfig
+
+  object PathCodecs {
+    implicit val mpathEncoder: Encoder[MPath] = Encoder.encodeString.contramap[MPath](_.toString)
+    implicit val mpathDecoder: Decoder[MPath] = Decoder.decodeString.emapTry { str => {
+      Try(Path.parseM(str, NamespaceMap.empty))
+    }}
+
+    implicit val globalNameEncoder: Encoder[GlobalName] = Encoder.encodeString.contramap[GlobalName](_.toString)
+    implicit val globalNameDecoder: Decoder[GlobalName] = Decoder.decodeString.emapTry { str => {
+      Try(Path.parseS(str, NamespaceMap.empty))
+    }}
+  }
+
+  // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
+  // vvv
+  import PathCodecs._
 
   // IMPORTANT: do not naively rename parameter names of the following case classes!
   //            That would change the derived JSON encoders and decoders, too!
@@ -56,7 +71,7 @@ object SOMDoc {
   sealed trait STerm
 
   @ConfiguredJsonCodec
-  case class SOMS(uri: SURI) extends STerm
+  case class SOMS(uri: GlobalName) extends STerm
 
   @ConfiguredJsonCodec
   case class SOMA(applicant: STerm, arguments: List[STerm]) extends STerm
@@ -71,7 +86,7 @@ object SOMDoc {
   case class SString(string: String) extends STerm
 
   @ConfiguredJsonCodec
-  case class SFinalConstant(uri: SURI, tp: STerm, df: Option[STerm])
+  case class SFinalConstant(uri: GlobalName, tp: STerm, df: Option[STerm])
 
   final case class ConversionException(private val message: String = "",
                                    private val cause: Throwable = None.orNull)
@@ -81,18 +96,16 @@ object SOMDoc {
   object OMDocBridge {
     def encode(decl: Declaration): SFinalConstant = decl match {
       case f: FinalConstant => f.tp match {
-        case Some(tp) => SFinalConstant(f.path.toString, encode(tp), f.df.map(encode))
+        case Some(tp) => SFinalConstant(f.path, encode(tp), f.df.map(encode))
         case _ => throw ConversionException("cannot convert Declaration not containing type to SimpleOMDoc")
       }
       case _ => throw ConversionException(s"cannot convert declarations other than FinalConstant to SimpleOMDoc; declaration was ${decl}")
     }
 
     def decode(sdecl: SFinalConstant): FinalConstant = {
-      val path = Path.parseS(sdecl.uri, NamespaceMap.empty)
-
       new FinalConstant(
-        OMMOD(path.module),
-        path.name,
+        OMMOD(sdecl.uri.module),
+        sdecl.uri.name,
         alias = Nil,
         tpC = TermContainer.asParsed(decode(sdecl.tp)),
         dfC = TermContainer.asParsed(sdecl.df.map(decode)),
@@ -103,7 +116,7 @@ object SOMDoc {
     }
 
     def encode(tm: Term): STerm = tm match {
-      case OMS(path) => SOMS(path.toString)
+      case OMS(path) => SOMS(path)
       // Only support OMA applications in LF style
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
 
@@ -115,7 +128,7 @@ object SOMDoc {
     }
 
     def decode(stm: STerm): Term = stm match {
-      case SOMS(uri) => OMS(Path.parseS(uri, NamespaceMap.empty))
+      case SOMS(uri) => OMS(uri)
       case SOMA(fun, arguments) => ApplySpine(decode(fun), arguments.map(decode): _*)
       case SInteger(value) => IntegerLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
