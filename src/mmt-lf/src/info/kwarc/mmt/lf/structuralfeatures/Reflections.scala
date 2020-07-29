@@ -41,7 +41,7 @@ class Reflections extends StructuralFeature(ReflectionsUtil.feature) with Refere
     val (indDefPathGN, consts, indCtx, indParams, context) = getContent(dd)
     val indDefPath = indDefPathGN.toMPath
 
-    val declsPre = readInternalDeclarations(consts, controller, Some(context))(indDefPathGN)
+    val declsPre = readInternalDeclarations(consts, controller, Some(context))(dd.path)
     val subst = indCtx zip indParams map {case (vd, param) => Sub(vd.name, param)}
     val tr = OMSReplacer({p:GlobalName => if (p.module == indDefPath) Some(OMS(dd.modulePath ? p.name)) else None})
     val decls = declsPre map (_.translate(ApplySubs(subst)).translate(TraversingTranslator(tr)))
@@ -57,7 +57,7 @@ class Reflections extends StructuralFeature(ReflectionsUtil.feature) with Refere
    */
   def getContent(dd:DerivedDeclaration): (GlobalName, List[Constant], Context, List[Term], Context) = {
     val (indDefPathGN, decls, indCtx, indParams, context) = getDecls(dd)
-    (indDefPathGN, getConstants(decls, controller), indCtx, indParams, context)
+    (indDefPathGN, getConstants(decls, controller)(dd.path.toMPath), indCtx, indParams, context)
   }
 }
 
