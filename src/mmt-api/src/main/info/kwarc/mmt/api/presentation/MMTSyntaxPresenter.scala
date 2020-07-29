@@ -52,13 +52,25 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   /**
     * Present an element such as a [[Theory]], a [[View]] or a [[Declaration]].
     *
-    * @param element    The element to present. It must already be added to the [[Controller]] instance this extension is linked to.
+    * @param element    The element to present. It must already be added to the [[info.kwarc.mmt.api.frontend.Controller]] instance this extension is linked to.
     * @param standalone if true, include appropriate header and footer
     * @param rh         output stream
     */
   override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
     controller.simplifier(element) //TODO simplifying here is bad for elements that are not part of the diagram yet
     present(element, rh)(new PersistentNamespaceMap)
+  }
+
+  /**
+    * Present an element such as a [[Theory]], a [[View]] or a [[Declaration]] to a string.
+    *
+    * Behavior equals [[apply()]] with [[presentation.StringBuilder]] as the [[RenderingHandler]].
+    */
+  def presentToString(element: StructuralElement, standalone: Boolean = false): String = {
+    val stringRenderer = new presentation.StringBuilder
+    apply(element, standalone)(stringRenderer)
+
+    stringRenderer.get
   }
 
   /**
@@ -222,23 +234,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" =")
     rh(" \n")
 
-    // View assignment are actually [[Constant]]s, but in their presented syntax they do not
-    // feature a type component. Hence, we need this function instead of just delegating
-    // to presentation of, say a theory's constant.
-    def presentViewAssignment(assignment: Constant): Unit = {
-      assignment.df match {
-        case Some(definiens) =>
-          indented(rh)(assignment.name.last.toString)
-          rh(" = ")
-          apply(definiens, Some(assignment.path $ DefComponent))(rh)
-          rh(DECLARATION_DELIMITER + "\n")
-        case _ => ??? // TODO Can view constants have no definiens? If not, rewrite to throw exception here
-      }
-    }
-
     val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
     declarations.foreach {
-      case c: Constant => presentViewAssignment(c)
+      case c: Constant => doConstant(c, rh, presentType = false)
       // In all other cases, present as usual, this might present invalid syntax, though
       case d => present(d, indented(rh))
     }
@@ -253,7 +251,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       if (args.nonEmpty) {
         rh("(")
         args.foreach(o => {
-          apply(o, None)(rh); rh(" ")
+          apply(o, None)(rh);
+          rh(" ")
         })
         rh(")")
       }
@@ -263,8 +262,10 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
   /**
     * Present a constant
+    *
+    * @param presentType If true, the type component is presented if one exists. If false, the type component is not presented even if it exists.
     */
-  private def doConstant(c: Constant, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
+  private def doConstant(c: Constant, rh: RenderingHandler, presentType: Boolean = true)(implicit nsm: PersistentNamespaceMap): Unit = {
     /*
        A constant is built of multiple "elements" delimited by [[OBJECT_DELIMITER]].
        For example, here is a [[Constant]] with many elements:
@@ -294,10 +295,14 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
      */
 
     // usual type and definiens, each lists of at most one element
-    val typeElements = c.tp.toList.map(typeTerm => (rh: RenderingHandler) => {
-      rh(": ")
-      apply(typeTerm, Some(c.path $ TypeComponent))(rh)
-    })
+    val typeElements = if (presentType) {
+      c.tp.toList.map(typeTerm => (rh: RenderingHandler) => {
+        rh(": ")
+        apply(typeTerm, Some(c.path $ TypeComponent))(rh)
+      })
+    } else {
+      Nil
+    }
 
     val definiensElements = c.df.toList.map(definiensTerm => (rh: RenderingHandler) => {
       rh("= ")
@@ -317,6 +322,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh(s"# ${textNotation.toText}")
     })
 
+    // TODO: (1) generalize this metadata output to theories, views (i.e. modules), and documents
+    //       (2) Do not print special metadata like source references
     val metadataElements = c.metadata.getAll.map(datum => (rh: RenderingHandler) => {
       rh("meta ")
       doURI(OMID(datum.key), rh)
@@ -331,44 +338,39 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // present all elements
     rh(c.name.last.toString)
     val indentedRh = indented(rh)
-    elements.zipWithIndex.foreach { case (renderFunction, index) => {
+    elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {
         indentedRh("\n" + "   ")
       } else {
         indentedRh("\n" + OBJECT_DELIMITER + " ")
       }
       renderFunction(indentedRh)
-    }}
+    }
     rh("\n")
   }
 
-  private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
-    val decs = s.getPrimitiveDeclarations
-    if (decs.isEmpty) {
+  private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = s match {
+    // special case of structures: trivial include
+    case Include(IncludeData(home, from, args, df, total)) =>
       rh("include ")
+      doURI(OMMOD(from), rh)
+      // TODO args ignored
+      df.foreach(definiensTerm => {
+        rh(" " + OBJECT_DELIMITER + " ")
+        objectPresenter(definiensTerm, Some(s.path $ DefComponent))(rh)
+      })
 
-      // In views "include" declarations carry a definiens component.
-      // As an example, consider the view v from a theory T1 to a theory T2.
-      //
-      // (1) Let both theories include a common base theory S, then the view can
-      //     encompass "include ?S" which will be turned into a structure whose
-      //     type component is "?T1" and whose definiens component is `OMIDENT(OMID
-      //     (T2.path))`
-      // (2) Let T1 include S1 and T2 include S2 and phi: S1 -> S2 a morphism.
-      //     Then the view v can encompass "include ?phi", which will be turned
-      //     into a structure whose type component is "?S1" and whose definiens
-      //     component is "?phi".
-      // TODO(Florian|Dennis) Have a look at the description above and confirm/decline.
-      val incl = if (s.df.isDefined) s.df.get else s.from
-      doURI(incl, rh)
-    } else {
-      rh("structure " + s.name + " : " + s.from.toMPath.^^.last + "?" + s.from.toMPath.last)
-      //this.present(s.from, Some(s.path $ TypeComponent))
+    // actual structure, not just trivial include
+    case _ =>
+      rh("structure " + s.name + " : ")
+      doURI(s.from, rh)
       doDefComponent(s, rh)
 
-      // TODO Why not reuse "presentViewAssignment" from [[doView]]?
-      decs.foreach { d => present(d, indented(rh)) }
-    }
+      val indentedRh = indented(rh)
+      s.getDeclarations.foreach {
+        case c: Constant => doConstant(c, indentedRh, presentType = false)
+        case x => present(x, indentedRh)
+      }
   }
 
   /** `= df` if df is present, returns true if there was one */
