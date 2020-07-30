@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{GlobalName, MPath}
-import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
+import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.communication.{SFact, SOMDoc, SScroll, SScrollReference}
 
 sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[Fact]) {
@@ -29,8 +30,6 @@ object Scroll {
     * @todo eliminate dependence on controller, needed to look up problem theory
     */
   def fromTheory(thy: Theory)(implicit lookup: Lookup): Either[InvalidMetaData, Scroll] = {
-    import info.kwarc.mmt.frameit.archives.Archives.FrameWorld.MetaKeys
-
     try {
       val name = readStringMetaDatum(thy.metadata, MetaKeys.scrollName)
       val problemThy = readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)

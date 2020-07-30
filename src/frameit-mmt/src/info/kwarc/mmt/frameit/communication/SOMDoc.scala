@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.archives.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
+import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder}

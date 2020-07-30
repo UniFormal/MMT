@@ -2,8 +2,8 @@ package info.kwarc.mmt.frameit.business
 
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.frameit.archives.Archives.FrameWorld.MetaKeys
-import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
+import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.communication.{SFact, SOMDoc}
 
 sealed case class Fact(declaration: Declaration, label: String) {

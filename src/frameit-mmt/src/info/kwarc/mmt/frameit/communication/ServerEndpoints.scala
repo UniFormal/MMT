@@ -3,24 +3,20 @@ package info.kwarc.mmt.frameit.communication
 import cats.effect.IO
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
-import info.kwarc.mmt.api
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{Module, Theory, View}
+import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.symbols.{FinalConstant, PlainInclude, TermContainer, Visibility}
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, RenderingHandler}
-import info.kwarc.mmt.frameit.archives.Archives
-import info.kwarc.mmt.frameit.archives.Foundation.StringLiterals
+import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
+import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
+import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.{DebugUtils, Fact, Scroll, TheoryUtils}
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.finch._
 import io.finch.circe._
-import io.finch._
-import shapeless._
 
 import scala.util.Random
 
@@ -42,13 +38,13 @@ object ServerEndpoints extends EndpointModule[IO] {
   // ENDPOINTS (all private functions)
   // ======================================
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
-    state.ctrl.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
+    state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
 
     Ok(())
   }
 
   private def buildArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build")) {
-    state.ctrl.handleLine(s"build ${Archives.FrameWorld.archiveID} mmt-omdoc")
+    state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc")
 
     Ok(())
   }
@@ -67,18 +63,20 @@ object ServerEndpoints extends EndpointModule[IO] {
         vs = Visibility.public
       )
 
-      factConstant.metadata.add(MetaDatum(Archives.FrameWorld.MetaKeys.factLabel, StringLiterals(fact.label)))
+      factConstant.metadata.add(MetaDatum(FrameWorld.MetaKeys.factLabel, StringLiterals(fact.label)))
 
-      state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
-        case Nil =>
-          // success (i.e. no errors)
-          state.ctrl.add(factConstant)
-          Ok(())
+      state.synchronized {
+        state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+          case Nil =>
+            // success (i.e. no errors)
+            state.ctrl.add(factConstant)
+            Ok(())
 
-        case errors =>
-          NotAcceptable(FactValidationException(
-            "Could not validate fact, errors were:\n\n" + errors.mkString("\n")
-          ))
+          case errors =>
+            NotAcceptable(FactValidationException(
+              "Could not validate fact, errors were:\n\n" + errors.mkString("\n")
+            ))
+        }
       }
     }
   }
