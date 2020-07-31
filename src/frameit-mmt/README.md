@@ -4,17 +4,21 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
 ## Installation
 
-1. Clone the MMT repository on devel branch: `git clone --branch devel https://github.com/UniFormal/mmt`
+1. Get a set of UFrameIT archives you want the server to use: `git clone --recursive https://github.com/UFrameIT/archives archive-root`
 
-2. Import the source code into a new IntelliJ project: see <https://uniformal.github.io//doc/setup/devel#using-intellij>
+   Remember the path you clone this to!
 
-3. Open the just created IntelliJ project and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle: 
+2. Clone the MMT repository on devel branch: `git clone --branch devel https://github.com/UniFormal/mmt`
+
+3. Import the source code into a new IntelliJ project: see <https://uniformal.github.io//doc/setup/devel#using-intellij>
+
+4. Open the just created IntelliJ project and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle: 
 
   ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
   
   This will probably result in an error &mdash; don't worry, we are just missing some command-line arguments that we will in next.
 
-4. Edit the `Server` run configuration
+5. Edit the `Server` run configuration
 
   - first open all run configurations:
   
@@ -24,7 +28,7 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
   
     ![program arguments](https://i.imgur.com/lZahL6C.png)
 
-5. Rerun the server via the run configuration dropdown (left to green triangle in IntelliJ's menu band)
+6. Rerun the server via the run configuration dropdown (left to green triangle in IntelliJ's menu band)
 
    The server should now be running. The initial console output should be
 
