@@ -3,8 +3,9 @@ package info.kwarc.mmt.frameit.business
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.{Module, Theory}
 import info.kwarc.mmt.api.objects.{Context, Obj, Term}
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
@@ -20,9 +21,7 @@ sealed case class KnownFact(uri: FactReference, label: String, tp: TermPair, df:
 object KnownFact {
   def apply(uri: GlobalName, label: String, tp: TermPair, df: Option[TermPair]): KnownFact =
     KnownFact(FactReference(uri), label, tp, df)
-}
 
-object Fact {
   def fromConstant(c: Constant)(implicit ctrl: Controller): KnownFact = {
     val label = c.metadata.get(MetaKeys.factLabel) match {
       // fall back to declaration name as label
@@ -45,4 +44,9 @@ object Fact {
 
     KnownFact(c.path, label, tp, df)
   }
+
+  def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[KnownFact] = theory.getDeclarations.collect {
+        case c: Constant => List(fromConstant(c))
+        case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
+  }.flatten
 }

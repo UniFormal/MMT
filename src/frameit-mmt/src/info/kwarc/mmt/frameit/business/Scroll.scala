@@ -18,11 +18,11 @@ object Scroll {
   /**
     * Check if the given theory is a solution theory, if so, extract the full scroll information.
     *
-    * We deliberately return an [[Either]] instead of throwing an exception (as [[Fact.fromConstant()]]
+    * We deliberately return an [[Either]] instead of throwing an exception (as [[KnownFact.fromConstant()]]
     * does) since we want to call [[fromTheory()]] also on theories to just test whether they are the solution
     * theory of a scroll.
+ *
     * @todo rework this, we shouldn't try just because we can
-    *
     * @param thy solution theory
     */
   def fromTheory(thy: Theory)(implicit ctrl: Controller): Either[InvalidMetaData, Scroll] = {
@@ -33,7 +33,7 @@ object Scroll {
       val description = readStringMetaDatum(thy.metadata, MetaKeys.scrollDescription)
 
       val requiredFacts = ctrl.getTheory(problemThy).getDeclarations.collect {
-        case c: Constant => Fact.fromConstant(c)
+        case c: Constant => KnownFact.fromConstant(c)
       }
 
       Right(Scroll(problemThy, solutionThy, name, description, requiredFacts))

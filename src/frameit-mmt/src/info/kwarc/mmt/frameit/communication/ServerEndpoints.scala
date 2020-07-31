@@ -5,7 +5,7 @@ import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.View
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
@@ -86,10 +86,7 @@ object ServerEndpoints extends EndpointModule[IO] {
   }
 
   private def listFacts(state: ServerState): Endpoint[IO, List[KnownFact]] = get(path("fact") :: path("list")) {
-    val facts = TheoryUtils.getAllFinalConstantsRecursively(state.situationTheory)(state.ctrl)
-      .map(c => Fact.fromConstant(c)(state.ctrl))
-
-    Ok(facts)
+    Ok(KnownFact.collectFromTheory(state.situationTheory, recurseOnInclusions = true)(state.ctrl))
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
@@ -170,8 +167,6 @@ object ServerEndpoints extends EndpointModule[IO] {
 
     state.contentValidator.checkView(scrollView) match {
       case Nil =>
-        // TODO: perform pushout, add new facts to situation theory, and return new facts
-
         val (situationTheoryExtension, pushedOutView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
           state.ctrl.getTheory(scrollViewDomain),
           state.ctrl.getTheory(scrollViewCodomain),
@@ -185,7 +180,8 @@ object ServerEndpoints extends EndpointModule[IO] {
         state.ctrl.add(pushedOutView)
         state.setSituationTheory(situationTheoryExtension)
 
-        Ok(List[KnownFact]())
+        Ok(KnownFact.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
+
 
       case errors =>
         state.ctrl.delete(scrollView.path)
