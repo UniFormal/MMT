@@ -371,8 +371,11 @@ lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
 
-// Circe is a JSON library for Scala: (https://circe.github.io/circe/)
+// Finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
+val finchVersion = "0.32.1"
+// Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
 val circeVersion = "0.13.0"
+
 
 lazy val frameit = (project in file("frameit-mmt")).
   dependsOn(api, lf).
@@ -382,10 +385,14 @@ lazy val frameit = (project in file("frameit-mmt")).
       "com.twitter" %% "twitter-server" % "20.7.0",
 
       // an incarnation of an HTTP server library for the above infrastructure
-      "com.github.finagle" %% "finchx-core" % "0.32.1",
+      "com.github.finagle" %% "finchx-core" % finchVersion,
       // with ability to automatically encode/decode JSON payloads via the circe library below
-      "com.github.finagle" %% "finchx-circe" % "0.32.1",
-      "com.github.finagle" %% "finchx-generic" % "0.32.1",
+      "com.github.finagle" %% "finchx-circe" % finchVersion,
+      "com.github.finagle" %% "finchx-generic" % finchVersion,
+
+      // and with testing abilities
+      "com.github.finagle" %% "finchx-test" % finchVersion,
+      "com.github.finagle" %% "finchx-json-test" % finchVersion,
 
       // a JSON library
       "io.circe" %% "circe-generic" % circeVersion,
