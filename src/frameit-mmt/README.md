@@ -14,19 +14,19 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
 4. Open the just created IntelliJ project and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle: 
 
-  ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
+   ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
   
-  This will probably result in an error &mdash; don't worry, we are just missing some command-line arguments that we will in next.
+   This will probably result in an error &mdash; don't worry, we are just missing some command-line arguments that we will in next.
 
 5. Edit the `Server` run configuration
 
-  - first open all run configurations:
+   - first open all run configurations:
   
-    ![run configurations](https://i.imgur.com/nFd8ETr.png)
+     ![run configurations](https://i.imgur.com/nFd8ETr.png)
 
-  - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archive root>` to its program arguments:
+   - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archive root>` to its program arguments:
   
-    ![program arguments](https://i.imgur.com/lZahL6C.png)
+     ![program arguments](https://i.imgur.com/lZahL6C.png)
 
 6. Rerun the server via the run configuration dropdown (left to green triangle in IntelliJ's menu band)
 
