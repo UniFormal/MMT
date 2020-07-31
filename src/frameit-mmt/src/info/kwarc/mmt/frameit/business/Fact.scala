@@ -1,6 +1,6 @@
 package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.{GlobalName}
+import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.objects.{Context, Obj, Term}
@@ -12,8 +12,15 @@ import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 // TODO choose better name
 sealed case class TermPair(original: Term, simplified: Term)
 
+sealed case class FactReference(uri: GlobalName)
+
 // TODO choose better name: known in the sense of known to MMT, e.g. problem theories of scrolls also consist of known facts (that are unknown in the sense of game play, of course)
-sealed case class KnownFact(uri: GlobalName, label: String, tp: TermPair, df: Option[TermPair])
+sealed case class KnownFact(uri: FactReference, label: String, tp: TermPair, df: Option[TermPair])
+
+object KnownFact {
+  def apply(uri: GlobalName, label: String, tp: TermPair, df: Option[TermPair]): KnownFact =
+    KnownFact(FactReference(uri), label, tp, df)
+}
 
 object Fact {
   def fromConstant(c: Constant)(implicit ctrl: Controller): KnownFact = {

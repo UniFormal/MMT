@@ -53,7 +53,7 @@ object ServerEndpoints extends EndpointModule[IO] {
     Ok(())
   }
 
-  private def addFact(state: ServerState): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SIncomingFact]) {
+  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SIncomingFact]) {
     (fact: SIncomingFact) => {
       // create MMT declaration out [[SNewFact]]
       val factConstant = new FinalConstant(
@@ -74,7 +74,7 @@ object ServerEndpoints extends EndpointModule[IO] {
           case Nil =>
             // success (i.e. no errors)
             state.ctrl.add(factConstant)
-            Ok(())
+            Ok(FactReference(factConstant.path))
 
           case errors =>
             NotAcceptable(FactValidationException(
@@ -155,7 +155,7 @@ object ServerEndpoints extends EndpointModule[IO] {
         // create new assignment
         new FinalConstant(
           home = scrollView.toTerm,
-          name = LocalName(ComplexStep(factRef.module) :: factRef.name),
+          name = LocalName(ComplexStep(factRef.uri.module) :: factRef.uri.name),
           alias = Nil,
           tpC = TermContainer.empty(),
           dfC = TermContainer.asParsed(assignedTerm),
