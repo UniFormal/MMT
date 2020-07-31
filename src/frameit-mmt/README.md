@@ -44,6 +44,14 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
    
    Don't worry. The first warning is ignorable &mdash; log output is just discarded. The secone one is Twitter's to fix and is under their investigation already (for months, sadly).
 
+**You're done.** The server should now be available at `http://localhost:8085` and respond to the REST API calls detailled below.
+
+As a first test, you can try opening <http://localhost:8085/debug/situationtheory/print>. It should output something like
+
+```
+"\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
+```
+
 ## REST API
 
 ```
