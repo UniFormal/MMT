@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.business.{DebugUtils, Fact, Scroll, TheoryUtils}
+import info.kwarc.mmt.frameit.business._
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.finch._
 import io.finch.circe._
@@ -29,6 +29,10 @@ final case class FactValidationException(message: String, cause: Throwable = Non
   * A collection of REST routes for our [[Server server]]
   */
 object ServerEndpoints extends EndpointModule[IO] {
+  import io.circe.generic.auto._
+  import TermCodecs._
+  import PathCodecs._
+
   private def getEndpointsForState(state: ServerState) =
     buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)
 
@@ -49,15 +53,15 @@ object ServerEndpoints extends EndpointModule[IO] {
     Ok(())
   }
 
-  private def addFact(state: ServerState): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SNewFact]) {
-    (fact: SNewFact) => {
+  private def addFact(state: ServerState): Endpoint[IO, Unit] = post(path("fact") :: path("add") :: jsonBody[SIncomingFact]) {
+    (fact: SIncomingFact) => {
       // create MMT declaration out [[SNewFact]]
       val factConstant = new FinalConstant(
         home = state.situationTheory.toTerm,
         name = LocalName(SimpleStep(fact.label)),
         alias = Nil,
-        tpC = TermContainer.asParsed(SOMDoc.OMDocBridge.decode(fact.tp)),
-        dfC = TermContainer.asParsed(fact.df.map(SOMDoc.OMDocBridge.decode)),
+        tpC = TermContainer.asParsed(fact.tp),
+        dfC = TermContainer.asParsed(fact.df),
         rl = None,
         notC = new NotationContainer,
         vs = Visibility.public
@@ -81,10 +85,9 @@ object ServerEndpoints extends EndpointModule[IO] {
     }
   }
 
-  private def listFacts(state: ServerState): Endpoint[IO, List[SFact]] = get(path("fact") :: path("list")) {
+  private def listFacts(state: ServerState): Endpoint[IO, List[KnownFact]] = get(path("fact") :: path("list")) {
     val facts = TheoryUtils.getAllFinalConstantsRecursively(state.situationTheory)(state.ctrl)
-      .map(Fact.parseFromDeclaration)
-      .map(_.simplified)
+      .map(c => Fact.fromConstant(c)(state.ctrl))
 
     Ok(facts)
   }
@@ -102,16 +105,16 @@ object ServerEndpoints extends EndpointModule[IO] {
     }
   }
 
-  private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
+  private def listScrolls(state: ServerState): Endpoint[IO, List[Scroll]] = get(path("scroll") :: path("list")) {
     val allTheories = state.ctrl.depstore.getInds(IsTheory).map(_.asInstanceOf[MPath]).map(state.ctrl.getTheory)
 
-    val scrolls = allTheories.flatMap(t => Scroll.fromTheory(t)(state.ctrl.globalLookup) match {
+    val scrolls = allTheories.flatMap(t => Scroll.fromTheory(t)(state.ctrl) match {
       case Right(scroll) => Some(scroll)
       case Left(err) =>
         state.log(s"Ignoring theory ${t} due to error below. Note that theories that are not scrolls also emit such errors.")
         state.log(err.toString)
         None
-    }).map(_.simplified).toList
+    }).toList
 
     Ok(scrolls)
   }
@@ -130,7 +133,7 @@ object ServerEndpoints extends EndpointModule[IO] {
     )
   }
 
-  private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
+  private def applyScroll(state: ServerState): Endpoint[IO, List[KnownFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
 
     val scrollViewDomain = scrollApp.scroll.problemTheory
     val scrollViewCodomain = state.situationTheoryPath
@@ -152,10 +155,10 @@ object ServerEndpoints extends EndpointModule[IO] {
         // create new assignment
         new FinalConstant(
           home = scrollView.toTerm,
-          name = LocalName(ComplexStep(factRef.uri.module) :: factRef.uri.name),
+          name = LocalName(ComplexStep(factRef.module) :: factRef.name),
           alias = Nil,
           tpC = TermContainer.empty(),
-          dfC = TermContainer.asParsed(SOMDoc.OMDocBridge.decode(assignedTerm)),
+          dfC = TermContainer.asParsed(assignedTerm),
           rl = None,
           notC = new NotationContainer,
           vs = Visibility.public,
@@ -182,7 +185,7 @@ object ServerEndpoints extends EndpointModule[IO] {
         state.ctrl.add(pushedOutView)
         state.setSituationTheory(situationTheoryExtension)
 
-        Ok(List[SFact]())
+        Ok(List[KnownFact]())
 
       case errors =>
         state.ctrl.delete(scrollView.path)

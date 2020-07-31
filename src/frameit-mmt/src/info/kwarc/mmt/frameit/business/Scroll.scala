@@ -1,45 +1,40 @@
 package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.communication.{SFact, SOMDoc, SScroll, SScrollReference}
 
-sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[Fact]) {
-  def simplified: SScroll = SScroll(
-    SScrollReference(problemTheory, solutionTheory),
-    label,
-    description,
-    requiredFacts.map(_.simplified)
-  )
-}
+import io.circe.generic.extras.auto._
+import info.kwarc.mmt.frameit.communication.PathCodecs._
 
-final case class InvalidMetaData(private val message: String = "",
-                                 private val cause: Throwable = None.orNull)
-  extends Exception(message, cause)
+sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[KnownFact])
 
 object Scroll {
   /**
     * Check if the given theory is a solution theory, if so, extract the full scroll information.
+    *
+    * We deliberately return an [[Either]] instead of throwing an exception (as [[Fact.fromConstant()]]
+    * does) since we want to call [[fromTheory()]] also on theories to just test whether they are the solution
+    * theory of a scroll.
+    * @todo rework this, we shouldn't try just because we can
+    *
     * @param thy solution theory
-    * @todo eliminate dependence on controller, needed to look up problem theory
     */
-  def fromTheory(thy: Theory)(implicit lookup: Lookup): Either[InvalidMetaData, Scroll] = {
+  def fromTheory(thy: Theory)(implicit ctrl: Controller): Either[InvalidMetaData, Scroll] = {
     try {
       val name = readStringMetaDatum(thy.metadata, MetaKeys.scrollName)
       val problemThy = readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
       val solutionThy = readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
       val description = readStringMetaDatum(thy.metadata, MetaKeys.scrollDescription)
 
-      val requiredFacts = lookup.getTheory(problemThy)
-        .getDeclarations
-        // enrich with fact labels
-        .map(Fact.parseFromDeclaration)
+      val requiredFacts = ctrl.getTheory(problemThy).getDeclarations.collect {
+        case c: Constant => Fact.fromConstant(c)
+      }
 
       Right(Scroll(problemThy, solutionThy, name, description, requiredFacts))
     } catch {

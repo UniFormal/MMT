@@ -1,66 +1,65 @@
 package info.kwarc.mmt.frameit.communication
 
 // IMPORTANT: do NOT run IntelliJ's automatic "import clean-up" utility. It will remove necessary imports in this file.
-
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Declaration, FinalConstant, TermContainer, Visibility}
+import info.kwarc.mmt.api.objects.{OMS, Term}
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
+import info.kwarc.mmt.frameit.communication.SOMDoc.{OMDocBridge, STerm}
 import info.kwarc.mmt.lf.ApplySpine
 import io.circe.generic.extras.ConfiguredJsonCodec
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, HCursor}
 
 import scala.util.Try
+
+object PathCodecs {
+  implicit val mpathEncoder: Encoder[MPath] = Encoder.encodeString.contramap[MPath](_.toString)
+  implicit val mpathDecoder: Decoder[MPath] = Decoder.decodeString.emapTry { str => {
+    Try(Path.parseM(str, NamespaceMap.empty))
+  }}
+
+  implicit val globalNameEncoder: Encoder[GlobalName] = Encoder.encodeString.contramap[GlobalName](_.toString)
+  implicit val globalNameDecoder: Decoder[GlobalName] = Decoder.decodeString.emapTry { str => {
+    Try(Path.parseS(str, NamespaceMap.empty))
+  }}
+}
+
+object TermCodecs {
+  implicit def termDecoder(implicit stermDecoder: Decoder[STerm]): Decoder[Term] = (c: HCursor) => {
+    stermDecoder(c).map(OMDocBridge.decode)
+  }
+
+  implicit def termEncoder(implicit stermEncoder: Encoder[STerm]): Encoder[Term] = (tm: Term) => {
+    stermEncoder(OMDocBridge.encode(tm))
+  }
+}
 
 object SOMDoc {
   // IMPORTANT: keep the following lines. Do not change unless you know what you're doing
   //
   //            they control how the JSON en- and decoders treat subclasses of [[SimpleOMDoc.STerm]]
   import io.circe.Json
-  import io.circe.syntax._
-  import io.circe.generic.extras.semiauto._
-  import io.circe.generic.extras.auto._
   import io.circe.generic.extras.Configuration
+  import io.circe.syntax._
   // IMPORTANT: end
 
-  object JsonConfig {
-    implicit val jsonConfig: Configuration = Configuration.default
-      .withDiscriminator("kind")
-      .copy(transformConstructorNames = oldCtorName => {
-        // Cannot declare this in the outer object due to some weird
-        // errors with circe-generic-extras macro magic
-        val rewriteMap = Map(
-          classOf[SOMA] -> "OMA",
-          classOf[SOMS] -> "OMS",
-          classOf[SFloatingPoint] -> "OMF",
-          classOf[SString] -> "OMSTR",
-          classOf[SInteger] -> "OMI"
-        ).map { case (key, value) => (key.getSimpleName, value) }
-
-        rewriteMap.getOrElse(oldCtorName, oldCtorName)
-      })
-  }
-
-  // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
-  // vvv
-  import JsonConfig.jsonConfig
-
-  object PathCodecs {
-    implicit val mpathEncoder: Encoder[MPath] = Encoder.encodeString.contramap[MPath](_.toString)
-    implicit val mpathDecoder: Decoder[MPath] = Decoder.decodeString.emapTry { str => {
-      Try(Path.parseM(str, NamespaceMap.empty))
-    }}
-
-    implicit val globalNameEncoder: Encoder[GlobalName] = Encoder.encodeString.contramap[GlobalName](_.toString)
-    implicit val globalNameDecoder: Decoder[GlobalName] = Decoder.decodeString.emapTry { str => {
-      Try(Path.parseS(str, NamespaceMap.empty))
-    }}
-  }
-
-  // vvv DO NOT REMOVE (even if IntelliJ marks it as unused)
-  // vvv
+  // vvv DO NOT REMOVE even if IntelliJ marks it as unused
   import PathCodecs._
+
+  implicit val jsonConfig: Configuration = Configuration.default
+    .withDiscriminator("kind")
+    .copy(transformConstructorNames = oldCtorName => {
+      // Cannot declare this in the outer object due to some weird
+      // errors with circe-generic-extras macro magic
+      val rewriteMap = Map(
+        classOf[SOMA] -> "OMA",
+        classOf[SOMS] -> "OMS",
+        classOf[SFloatingPoint] -> "OMF",
+        classOf[SString] -> "OMSTR",
+        classOf[SInteger] -> "OMI"
+      ).map { case (key, value) => (key.getSimpleName, value) }
+
+      rewriteMap.getOrElse(oldCtorName, oldCtorName)
+    })
 
   // IMPORTANT: do not naively rename parameter names of the following case classes!
   //            That would change the derived JSON encoders and decoders, too!
@@ -85,8 +84,8 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
 
-  @ConfiguredJsonCodec
-  case class SFinalConstant(uri: GlobalName, tp: STerm, df: Option[STerm])
+  /*@ConfiguredJsonCodec
+  case class SFinalConstant(uri: GlobalName, tp: STerm, df: Option[STerm])*/
 
   final case class ConversionException(private val message: String = "",
                                    private val cause: Throwable = None.orNull)
@@ -94,7 +93,7 @@ object SOMDoc {
 
 
   object OMDocBridge {
-    def encode(decl: Declaration): SFinalConstant = decl match {
+    /*def encode(decl: Declaration): SFinalConstant = decl match {
       case f: FinalConstant => f.tp match {
         case Some(tp) => SFinalConstant(f.path, encode(tp), f.df.map(encode))
         case _ => throw ConversionException("cannot convert Declaration not containing type to SimpleOMDoc")
@@ -113,7 +112,7 @@ object SOMDoc {
         notC = new NotationContainer,
         vs = Visibility.public
       )
-    }
+    }*/
 
     def encode(tm: Term): STerm = tm match {
       case OMS(path) => SOMS(path)
@@ -137,7 +136,7 @@ object SOMDoc {
   }
 
   object JSONBridge {
-    def encodeDeclaration(decl: SFinalConstant): Json = decl.asJson
+    //def encodeDeclaration(decl: SFinalConstant): Json = decl.asJson
 
     def encode(stm: STerm): Json = stm.asJson
     def decodeTerm(str: String): STerm = io.circe.parser.decode[STerm](str).getOrElse(
