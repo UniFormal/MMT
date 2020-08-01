@@ -368,3 +368,7 @@ GET debug/situationtheory/print
     }
 ]
 ``` 
+
+## License
+
+Same as the whole MMT source code with the exception of a snippet copied from "the Internet" into `src/info/kwarc/mmt/frameit/communication/ServerErrorHandler.scala`. The precise source and license is given there.
