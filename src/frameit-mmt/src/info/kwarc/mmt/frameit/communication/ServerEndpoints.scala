@@ -15,6 +15,7 @@ import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business._
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
+import io.circe.{Encoder, Json}
 import io.finch._
 import io.finch.circe._
 
@@ -25,13 +26,18 @@ sealed abstract class ValidationException(message: String, cause: Throwable = No
 
 final case class FactValidationException(message: String, cause: Throwable = None.orNull) extends ValidationException(message, cause)
 
+
+
 /**
   * A collection of REST routes for our [[Server server]]
   */
 object ServerEndpoints extends EndpointModule[IO] {
   import io.circe.generic.auto._
+
+  // import implicits, do NOT remove even if IntelliJ marks those imports as unused
   import TermCodecs._
   import PathCodecs._
+  import ServerErrorHandler._
 
   private def getEndpointsForState(state: ServerState) =
     buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)
