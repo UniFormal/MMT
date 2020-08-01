@@ -16,7 +16,7 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
    ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
   
-   This will probably result in an error &mdash; don't worry, we are just missing some command-line arguments that we will in next.
+   This will invoke compilation and execution of the server in that order. Compilation hopefully works. See below when you get a stack overflow error *at compilation*. Execution is supposed to result in an error since the server expects some command-line arguments upon execution. We will add them next.
 
 5. Edit the `Server` run configuration
 
@@ -55,6 +55,15 @@ As a first test, you can try opening <http://localhost:8085/debug/situationtheor
 ```
 "\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
 ```
+
+## Stack overflow error when compiling
+
+The Scala compiler sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. The Internet does not offer many tips for solving this except increasing the stack size for compilation:
+
+- <https://github.com/scala-js/scala-js/issues/3588>
+- <https://github.com/scala/bug/issues/9696>
+
+Not sure if it helped in my case or the error just randomly disappeared.
 
 ## REST API
 
