@@ -4,29 +4,54 @@ import cats.effect.IO
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business._
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
-import io.circe.{Encoder, Json}
+import io.circe.Json
 import io.finch._
 import io.finch.circe._
 
-import scala.util.Random
+import scala.util.{Random, Try}
 
 sealed abstract class ValidationException(message: String, cause: Throwable = None.orNull)
   extends Exception(message, cause)
 
-final case class FactValidationException(message: String, cause: Throwable = None.orNull) extends ValidationException(message, cause)
+sealed case class ProcessedFactDebugInfo(tpAST: String, dfAST: String, presentedString: String, omdocXml: String) {
+  def asJson: Json = Json.obj(
+    "tpAST" -> Json.fromString(tpAST),
+    "dfAST" -> Json.fromString(dfAST),
+    "presentedString" -> Json.fromString(presentedString),
+    "omdocXml" -> Json.fromString(omdocXml)
+  )
+}
+object ProcessedFactDebugInfo {
+  def fromConstant(c: Constant)(implicit ctrl: Controller, presenter: MMTSyntaxPresenter): ProcessedFactDebugInfo = {
+    ProcessedFactDebugInfo(
+      // avoid bubbling up exceptions to always have at least some debug information instead of none
+      c.tp.map(_.toString).getOrElse("<no type available>"),
+      c.df.map(_.toString).getOrElse("<no definiens available>"),
+      Try(presenter.presentToString(c)).getOrElse("<presentation threw exception>"),
+      Try(c.toNode.toString()).getOrElse("<conversion to XML threw exception>")
+    )
+  }
+}
 
-
+final case class FactValidationException(message: String, processedFacts: List[ProcessedFactDebugInfo], cause: Throwable = None.orNull) extends ValidationException(message, cause) {
+  def asJson: Json = Json.obj(
+    "message" -> Json.fromString(message),
+    "processedFacts" -> Json.arr(processedFacts.map(_.asJson) : _*),
+    "cause" -> Json.fromString(Option(cause).toString)
+  )
+}
 
 /**
   * A collection of REST routes for our [[Server server]]
@@ -37,16 +62,21 @@ object ServerEndpoints extends EndpointModule[IO] {
   // import implicits, do NOT remove even if IntelliJ marks those imports as unused
   import TermCodecs._
   import PathCodecs._
+  import SOMDoc.STermCodecs._
   import ServerErrorHandler._
 
   private def getEndpointsForState(state: ServerState) =
-    buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)
+    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)
 
   def getServiceForState(state: ServerState): Service[Request, Response] =
     getEndpointsForState(state).toServiceAs[Application.Json]
 
   // ENDPOINTS (all private functions)
   // ======================================
+  private def printHelp(state: ServerState): Endpoint[IO, String] = get(path("help")) {
+    Ok(getEndpointsForState(state).toString)
+  }
+
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
 
@@ -84,7 +114,12 @@ object ServerEndpoints extends EndpointModule[IO] {
 
           case errors =>
             NotAcceptable(FactValidationException(
-              "Could not validate fact, errors were:\n\n" + errors.mkString("\n")
+              message = "Could not validate fact, errors were:\n\n" + errors.map {
+                // for [[InvalidUnit]] also elaborate their history for better feedback
+                case err: InvalidUnit => err.toString + "\n" + err.history
+                case err => err
+              }.mkString("\n"),
+              processedFacts = List(ProcessedFactDebugInfo.fromConstant(factConstant)(state.ctrl, state.presenter))
             ))
         }
       }
@@ -96,16 +131,10 @@ object ServerEndpoints extends EndpointModule[IO] {
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
-    state.ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations") match {
-      case None =>
-        InternalServerError(GeneralError("could not get MMTSyntaxPresenter extension required for printing"))
+    val stringRenderer = new presentation.StringBuilder
+    DebugUtils.syntaxPresentRecursively(state.situationTheory)(state.ctrl, state.presenter, stringRenderer)
 
-      case Some(presenter) =>
-        val stringRenderer = new presentation.StringBuilder
-        DebugUtils.syntaxPresentRecursively(state.situationTheory)(state.ctrl, presenter, stringRenderer)
-
-        Ok(stringRenderer.get)
-    }
+    Ok(stringRenderer.get)
   }
 
   private def listScrolls(state: ServerState): Endpoint[IO, List[Scroll]] = get(path("scroll") :: path("list")) {
@@ -193,7 +222,8 @@ object ServerEndpoints extends EndpointModule[IO] {
         state.ctrl.delete(scrollView.path)
 
         NotAcceptable(FactValidationException(
-          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n")
+          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
+          scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
         ))
     }
   }}

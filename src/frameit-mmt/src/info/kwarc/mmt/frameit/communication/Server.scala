@@ -48,7 +48,7 @@ object Server extends TwitterServer {
     val situationTheory = Theory.empty(
       DPath(frameitArchive.narrationBase),
       LocalName("SituationTheory"),
-      Some(FrameWorld.FactCollection)
+      Some(FrameWorld.metaTheoryForSituationTheory)
     )
     ctrl.add(situationTheory)
 

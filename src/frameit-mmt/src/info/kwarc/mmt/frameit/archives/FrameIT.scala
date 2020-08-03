@@ -11,19 +11,19 @@ object FrameIT {
     */
   object FrameWorld {
     object MetaKeys {
-      private val _scrollMeta: MPath = FrameWorld.rootDocument ? "ScrollMeta"
+      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "MetaAnnotations"
 
-      val scrollName: GlobalName = _scrollMeta ? "name"
-      val problemTheory: GlobalName = _scrollMeta ? "problemTheory"
-      val solutionTheory: GlobalName = _scrollMeta ? "solutionTheory"
-      val scrollDescription: GlobalName = _scrollMeta ? "description"
+      val scrollName: GlobalName = _metaAnnotations ? "name"
+      val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
+      val solutionTheory: GlobalName = _metaAnnotations ? "solutionTheory"
+      val scrollDescription: GlobalName = _metaAnnotations ? "description"
 
       // TODO not yet realized in formalization
-      val factLabel: GlobalName = _scrollMeta ? "factLabel"
+      val factLabel: GlobalName = _metaAnnotations ? "factLabel"
     }
 
     val archiveID: String = "FrameIT/frameworld"
     val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
-    val FactCollection: MPath = Path.parseM("http://mathhub.info/FrameIT/frameworld?FactCollection", NamespaceMap.empty)
+    val metaTheoryForSituationTheory: MPath = Path.parseM("http://mathhub.info/FrameIT/frameworld?SituationTheoryMeta", NamespaceMap.empty)
   }
 }

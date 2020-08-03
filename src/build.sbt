@@ -56,7 +56,7 @@ scalacOptions in Global := Seq(
 )
 
 parallelExecution in Global := false
-javaOptions in Global ++= Seq("-Xmx2g")
+javaOptions in Global ++= Seq("-Xmx2g", "-Xss4096m")
 
 publish := {}
 fork in Test := true
@@ -377,9 +377,10 @@ val finchVersion = "0.32.1"
 val circeVersion = "0.13.0"
 
 
-lazy val frameit = (project in file("frameit-mmt")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
+lazy val frameit = (project in file("frameit-mmt"))
+  .dependsOn(api, lf)
+  .settings(mmtProjectsSettings("frameit-mmt"): _*)
+  .settings(
     libraryDependencies ++= Seq(
       //  a server infrastructure library
       "com.twitter" %% "twitter-server" % "20.7.0",
@@ -391,8 +392,10 @@ lazy val frameit = (project in file("frameit-mmt")).
       "com.github.finagle" %% "finchx-generic" % finchVersion,
 
       // and with testing abilities
-      "com.github.finagle" %% "finchx-test" % finchVersion,
-      "com.github.finagle" %% "finchx-json-test" % finchVersion,
+      "com.github.finagle" %% "finchx-test" % finchVersion % "test",
+      "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
+
+      "org.scalatest" %% "scalatest" % "3.2.0" % "test",
 
       // a JSON library
       "io.circe" %% "circe-generic" % circeVersion,

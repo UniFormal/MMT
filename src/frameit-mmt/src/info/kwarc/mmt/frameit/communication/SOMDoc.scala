@@ -84,8 +84,25 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
 
-  /*@ConfiguredJsonCodec
-  case class SFinalConstant(uri: GlobalName, tp: STerm, df: Option[STerm])*/
+  object STermCodecs {
+    implicit val somsEnc = Encoder[SOMS]
+    implicit val somsDec = Decoder[SOMS]
+
+    implicit val somaEnc = Encoder[SOMA]
+    implicit val somaDec = Decoder[SOMA]
+
+    implicit val sintegerEnc = Encoder[SInteger]
+    implicit val sintegerDec = Decoder[SInteger]
+
+    implicit val sfloatEnc = Encoder[SFloatingPoint]
+    implicit val sfloatDec = Decoder[SFloatingPoint]
+
+    implicit val sstringEnc = Encoder[SString]
+    implicit val sstringDec = Decoder[SString]
+
+    implicit val stermEnc = Encoder[STerm]
+    implicit val stermDec = Decoder[STerm]
+  }
 
   final case class ConversionException(private val message: String = "",
                                    private val cause: Throwable = None.orNull)

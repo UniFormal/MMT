@@ -28,8 +28,9 @@ object ServerErrorHandler {
     case e: io.finch.Error =>
       e.getCause match {
         case e: io.circe.Errors => encodeErrorList(e.errors.toList)
-        case err => Json.obj("message" -> Json.fromString(e.getMessage))
+        case _ => Json.obj("message" -> Json.fromString(e.getMessage))
       }
+    case e: FactValidationException => e.asJson
     case e: Exception => Json.obj("message" -> Json.fromString(e.getMessage))
   })
 }
