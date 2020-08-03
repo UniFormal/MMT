@@ -1,8 +1,10 @@
 package info.kwarc.mmt.frameit.communication
 
 // IMPORTANT: do NOT run IntelliJ's automatic "import clean-up" utility. It will remove necessary imports in this file.
-import info.kwarc.mmt.api.objects.{OMS, Term}
+import info.kwarc.mmt.api.objects.{OMA, OMID, OMS, Term}
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.archives.MMT
+import info.kwarc.mmt.frameit.archives.MMT.LFX
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.frameit.communication.SOMDoc.{OMDocBridge, STerm}
 import info.kwarc.mmt.lf.ApplySpine
@@ -133,6 +135,9 @@ object SOMDoc {
 
     def encode(tm: Term): STerm = tm match {
       case OMS(path) => SOMS(path)
+      // special-case LFX' tuples, hacky workaround, TODO: keep?
+      case OMA(OMS(LFX.tupleSymbol), args) => SOMA(SOMS(LFX.tupleSymbol), args.map(encode))
+
       // Only support OMA applications in LF style
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
 
@@ -145,7 +150,13 @@ object SOMDoc {
 
     def decode(stm: STerm): Term = stm match {
       case SOMS(uri) => OMS(uri)
-      case SOMA(fun, arguments) => ApplySpine(decode(fun), arguments.map(decode): _*)
+      case SOMA(fun, arguments) =>
+        // special-case LFX' tuples, hacky workaround, TODO: keep?
+        if (fun == SOMS(LFX.tupleSymbol)) {
+          OMA(decode(fun), arguments.map(decode))
+        } else {
+          ApplySpine(decode(fun), arguments.map(decode): _*)
+        }
       case SInteger(value) => IntegerLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
