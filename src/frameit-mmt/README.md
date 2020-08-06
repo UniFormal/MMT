@@ -100,6 +100,30 @@ GET /scroll/list
       } /* more facts */]
     } /* more scrolls]
 
+POST /scroll/check
+  {
+    "scroll": {
+      "problemTheory": "uri to problem theory",
+      "solutionTheory": "uri to solution theory",
+    },
+    "assignments": [
+      ["uri to fact", OMDoc JSON term]
+    ]
+  }
+  return: ??? yet unspecified
+
+POST /scroll/try-complete
+  {
+    "scroll": {
+      "problemTheory": "uri to problem theory",
+      "solutionTheory": "uri to solution theory",
+    },
+    "assignments": [
+      ["uri to fact", OMDoc JSON term]
+    ]
+  }
+  return: ??? yet unspecified
+
 POST /scroll/apply
   {
     "scroll": {
@@ -110,6 +134,7 @@ POST /scroll/apply
       ["uri to fact", OMDoc JSON term]
     ]
   }
+  return: list of new facts (i.e., those received via scroll application by means of a pushout). See /fact/list for the format.
 
 GET debug/situationtheory/print
   no payload
