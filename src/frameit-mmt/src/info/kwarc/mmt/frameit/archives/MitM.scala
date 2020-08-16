@@ -40,5 +40,9 @@ object MitM {
     object PosLiterals extends RepresentedRealizedType(OMS(Math.pos), StandardPositive) {
       override def priority: Int = 1
     }
+
+    val ded: GlobalName = path ? "Logic" ? "ded"
+    val eq: GlobalName = path ? "Logic" ? "eq"
+    val sketchOperator: GlobalName = path ? "InformalProofs" ? "proofsketch"
   }
 }

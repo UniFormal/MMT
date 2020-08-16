@@ -53,7 +53,7 @@ class ContentValidator(private val ctrl: Controller) {
     ctrl.add(scratchTheory)
     ctrl.add(PlainInclude(theory.path, scratchTheory.path))
 
-    val scrachConstant = new FinalConstant(
+    val scratchConstant = new FinalConstant(
       OMMOD(scratchTheory.path),
       decl.name,
       decl.alias,
@@ -65,7 +65,7 @@ class ContentValidator(private val ctrl: Controller) {
     )
 
     ctrl.add(scratchTheory)
-    ctrl.add(scrachConstant)
+    ctrl.add(scratchConstant)
 
     val errors = checkStructuralElementSynchronously(scratchTheory)
     ctrl.delete(scratchTheory.path)

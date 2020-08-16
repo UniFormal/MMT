@@ -91,19 +91,7 @@ object ServerEndpoints extends EndpointModule[IO] {
 
   private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SIncomingFact]) {
     (fact: SIncomingFact) => {
-      // create MMT declaration out [[SNewFact]]
-      val factConstant = new FinalConstant(
-        home = state.situationTheory.toTerm,
-        name = LocalName(SimpleStep(fact.label)),
-        alias = Nil,
-        tpC = TermContainer.asParsed(fact.tp),
-        dfC = TermContainer.asParsed(fact.df),
-        rl = None,
-        notC = new NotationContainer,
-        vs = Visibility.public
-      )
-
-      factConstant.metadata.add(MetaDatum(FrameWorld.MetaKeys.factLabel, StringLiterals(fact.label)))
+      val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
 
       state.synchronized {
         state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
