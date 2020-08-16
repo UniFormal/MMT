@@ -532,8 +532,18 @@ class UnaryIntersecter extends Intersecter {
     */
   protected def fillConstantsIntersection(th1: Theory, th2: Theory, int : Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], renamings: mutable.HashMap[GlobalName, GlobalName]): (Theory, Theory) = {
     //Add constants from th1
-    intersectionDeclarations(th1, th2, view_map).map(addDeclaration(_, int, renamings))
-    intersectionDefinedDeclarations(th1, int, renamings).map(addDeclaration(_, int, renamings))
+    intersectionDeclarations(th1, th2, view_map).map(_ match {
+      case c: FinalConstant => {
+        addDeclaration(c, int, renamings)
+        renamings.put(view_map.get(c).get.path,renamings.get(c.path).get)
+      }
+    })
+    intersectionDefinedDeclarations(th1, int, renamings).map(_ match {
+      case c: FinalConstant => {
+        addDeclaration(c, int, renamings)
+        renamings.put(view_map.get(c).get.path,renamings.get(c.path).get)
+      }
+    })
 
     (int, int)
   }
