@@ -14,8 +14,8 @@ class GlfBuildServer extends ServerExtension("glf-build"){
     override def start(args: List[String]): Unit = {
         super.start(args)
         controller.extman.addExtension(gfImporter)
-
     }
+
     def apply(request: ServerRequest): ServerResponse = {
         val query : GlfBuildQuery = GlfBuildQuery.fromJSON(request.body.asJSON)
 
