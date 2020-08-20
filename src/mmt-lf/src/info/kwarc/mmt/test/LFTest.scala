@@ -1,5 +1,6 @@
 package info.kwarc.mmt.test
 
+import info.kwarc.mmt.test.LFTest.shouldClearTarget
 import info.kwarc.mmt.test.testers._
 
 object LFTest extends MMTIntegrationTest(
@@ -21,16 +22,20 @@ object LFTest extends MMTIntegrationTest(
   }
 }
 
-/*
-class MitMTest extends MMTTest("MMT/LFX","MitM/Foundation","MitM/smglom")("info.kwarc.mmt.lf.Plugin") {
-  behavior of "MitM"
-  // shouldhl("build MitM/Foundation mmt-omdoc")
+object Latin2Test extends MMTIntegrationTest(
+  "MMT/urtheories","MMT/LATIN2"
+)(
+  ExtensionSpec("info.kwarc.mmt.lf.Plugin")
+) {
+  def main() : Unit = {
 
-  // shouldcheck("MitM/smglom",Orders.mitmsmglom:_*)()
+  }
 }
-*/
 
 object Orders {
+  val latin2 = List(
+    "fundamentals/concepts.mmt"
+  )
   val mitmcore = List(
     "properties/functions.mmt"
     ,"properties/relations.mmt"

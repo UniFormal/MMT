@@ -422,6 +422,14 @@ object StandardBool extends Atomic[scala.Boolean] {
   }
   override def lex = Some(FiniteKeywordsLexer(List("true","false")))
   override def enumerate(m: Int) = Some(List(true,false).iterator)
+
+  // Annoyingly, this seems to be necessary, since at key points, the implicit conversions
+  // java.lang.Boolean <=> scala.Boolean are not applied
+  override def unapply(u: Any): Option[Boolean] = u match {
+    case b : Boolean => Some(b)
+    case b : java.lang.Boolean => Some(b)
+    case _ => None
+  }
 }
 
 import utils.URI

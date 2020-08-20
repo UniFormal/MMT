@@ -73,7 +73,7 @@ class SingularImporter extends Importer {
         case JSONString(s) => s
         case JSONBoolean(false) => return None
       },
-      jo.getAs(classOf[java.lang.Boolean],"is_global"),
+      jo.getAs(classOf[Boolean],"is_global"),
       jo.getAsString("doc_string_plain"),
       jo.apply("guessed_output_type").map(_.asInstanceOf[JSONString].value)
     )
