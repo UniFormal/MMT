@@ -32,7 +32,7 @@ abstract class Intersecter extends Extension {
     * @return
     */
   def apply(view: View) = {
-    intersect(view)
+    intersectGraph(view)
   }
 
   /** Intersect two theories over view
@@ -43,7 +43,7 @@ abstract class Intersecter extends Extension {
     * @param view View over which theories are intersected
     * @return
     */
-  def intersect(view: View): (List[Theory], List[(Theory, Theory)], List[Theory], List[(View,View)]) = {
+  def intersectGraph(view: View): (List[Theory], List[(Theory, Theory)], List[Theory], List[(View,View)]) = {
     val intersections = collection.mutable.HashMap[(MPath, MPath), (Theory, Theory)]()
     val th1 = controller.getTheory(view.from.toMPath)
     val th2 = controller.getTheory(view.to.toMPath)
@@ -427,8 +427,8 @@ class BinaryIntersecter extends Intersecter {
 
   override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) = {
     //Generate intersection of th1 and th2 over view and add them to intersections map
-    var int1 = Theory.empty(th1.parent, LocalName(th1.name.toString+"∩"+th2.name.toString), th1.meta)
-    var int2 = Theory.empty(th2.parent, LocalName(th2.name.toString+"∩"+th1.name.toString), th2.meta)
+    var int1 = Theory.empty(th1.parent, LocalName(th1.name.toString+"Intersects"+th2.name.toString), th1.meta)
+    var int2 = Theory.empty(th2.parent, LocalName(th2.name.toString+"Intersects"+th1.name.toString), th2.meta)
 
     //Generate inclusions of dependent intersections
     includes1.foreach{_ match {
@@ -489,7 +489,7 @@ class UnaryIntersecter extends Intersecter {
 
   override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) = {
     //Generate intersection of th1 and th2 over view and add them to intersections map
-    var int = Theory.empty(th1.parent, LocalName(th1.name.toString+"∩"+th2.name.toString), th1.meta)
+    var int = Theory.empty(th1.parent, LocalName(th1.name.toString+"Intersects"+th2.name.toString), th1.meta)
 
     //Generate inclusions of dependent intersections
     includes1.foreach{_ match {

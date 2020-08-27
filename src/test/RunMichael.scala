@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
-import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Moduleadder, Preprocessor, SimpleParameterPreprocessor, ViewFinder, ViewSplitter, Viewset}
+import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Moduleadder, Preprocessor, SimpleParameterPreprocessor, UnaryIntersecter, ViewFinder, ViewSplitter, Viewset}
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
@@ -109,7 +109,7 @@ object RunMichael extends MagicTest {
   }
 
   def intersect: Unit = {
-    val int = new BinaryIntersecter
+    val int = new UnaryIntersecter
     val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(int, Nil)
     controller.extman.addExtension(presenter, List())
