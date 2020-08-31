@@ -13,19 +13,19 @@ trait Logger {
   def logPrefix: String
 
   /** logs a message with this logger's logprefix */
-  protected def log(s: => String, subgroup: Option[String] = None) =
+  protected def log(s: => String, subgroup: Option[String] = None): Unit =
     report(logPrefix + subgroup.map("-" + _).getOrElse(""), s)
 
   /** temporary logging - always logged */
   // calls to this method are for debugging; if they are committed, they should be removed
-  protected def logTemp(s: => String) =
+  protected def logTemp(s: => String): Unit =
     report("temp", s"($logPrefix) $s")
 
   /** log as an error message */
-  protected def logError(s: => String) = report("error", s"($logPrefix) $s")
+  protected def logError(s: => String): Unit = report("error", s"($logPrefix) $s")
 
   /** logs an error - always logged */
-  protected def log(e: Error) = report(e)
+  protected def log(e: Error): Unit = report(e)
 
   /** wraps around a group to create nested logging */
   protected def logGroup[A](a: => A): A = {

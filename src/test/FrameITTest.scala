@@ -1,9 +1,17 @@
+import cats.effect.IO
+import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{OMID, Term}
-import info.kwarc.mmt.api.symbols.FinalConstant
-import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.ViewCompletion
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.api.notations.{Delim, Mixfix, MixfixNotation, NotationContainer, Precedence, SimpArg, TextNotation}
+import info.kwarc.mmt.api.objects.{OMA, OMID, OML, OMMOD, OMV, Term}
+import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
+import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
+import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path, presentation}
+import info.kwarc.mmt.frameit.business.{KnownFact, TermPair, ViewCompletion}
+import info.kwarc.mmt.frameit.communication.ServerEndpoints.{jsonBody, path, post}
+import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
+import io.circe.Encoder
+import io.circe.generic.auto._
+import io.finch.{Endpoint, Ok}
 
 /**
   * Playground for Navid's backend implementation of UFrameIT.
@@ -34,37 +42,6 @@ object FrameITTest extends MagicTest("debug") {
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    val domainTheoryP = frameworldArchiveNS ? "OppositeLen_Problem"
-    val domainTheory = waitUntilAvailable(domainTheoryP).asInstanceOf[Theory]
-
-    def getConstantDefiniens(thy: Theory, constant: String): Term = {
-      thy.get(LocalName(constant)).asInstanceOf[FinalConstant].df.get
-    }
-
-    // test 1
-    {
-      /*val integrationtestsNS = frameworldArchiveNS / "integrationtests"
-      val codomainTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_Codomain")
-      val notepadTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_TermsNotepad")
-
-      val assignments: List[(GlobalName, Term)] = List(
-        (domainTheoryP ? "pangleABC", OMID(codomainTheory.path ? "complexAngleFact"))
-      )
-
-      val ret = ViewCompletion.closeGaps(
-        assignments,
-        domainTheory.meta
-      )(controller)
-
-      val expectedThings = List(
-        (domainTheoryP ? "pA", getConstantDefiniens(notepadTheory, "expected_gap_pA")),
-        (domainTheoryP ? "pB", getConstantDefiniens(notepadTheory, "expected_gap_pB")),
-        (domainTheoryP ? "pC", getConstantDefiniens(notepadTheory, "expected_gap_pC")),
-        (domainTheoryP ? "pdistBC_v", )
-        (domainTheoryP ? "pangleABC_v", getConstantDefiniens(notepadTheory, "expected_gap_pangleABC_v")),
-      )
-
-      println(ViewCompletion.closeGapsAndInfer(domainTheory, assignments)(controller))*/
-    }
+    println("Test")
   }
 }

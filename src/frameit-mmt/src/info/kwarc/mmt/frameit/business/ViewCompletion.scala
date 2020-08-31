@@ -1,11 +1,11 @@
-package info.kwarc.mmt.frameit
+package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 import info.kwarc.mmt.api.checking.Solver
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMS, OMV, StatelessTraverser, Term, Traverser}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, IncludeData}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.{Constant, IncludeData}
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 
 import scala.collection.immutable.{List, Nil}
 
