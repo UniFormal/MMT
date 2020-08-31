@@ -6,8 +6,8 @@ import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.{AddError, ComplexStep, DPath, GlobalName, LocalName, MPath}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
-import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
-import info.kwarc.mmt.api.presentation.Presenter
+import info.kwarc.mmt.api.objects.{Context, OMID, OMS, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.presentation.{FileWriter, MMTSyntaxPresenter, Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, HasDefiniens, IdentityTranslator, Include, PlainInclude, Renamer, SimpleDeclaredStructure, Structure, TermContainer, TraversingTranslator}
 import info.kwarc.mmt.api.utils.{FilePath, URI}
 
@@ -74,17 +74,17 @@ abstract class Intersecter extends Extension {
 
     //Recurse through dependent Theories of th1 and th2
     //th1:
-    includes1.foreach(_ match {
+    includes1.foreach {
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
         recIntersect(controller.getTheory(from), th2, view, intersections, renamings)
-      case default => ???
-    })
+      case default =>
+    }
     //th2:
-    includes2.foreach(_ match {
+    includes2.foreach {
       case SimpleDeclaredStructure(home, name, from, isImplicit) =>
         recIntersect(th1, controller.getTheory(from), view, intersections, renamings)
-      case default => ???
-    })
+      case default =>
+    }
 
     createIntersection(th1, th2, view, intersections, renamings, includes1, includes2)
   }
@@ -147,7 +147,7 @@ abstract class Intersecter extends Extension {
     val res = getSubDeclarations(th1).filter {
       _ match {
         case c: FinalConstant => {
-          view_map.contains(c) && (view_map.get(c).get.parent == th2.path || th2.getDeclarations.collect{case subModule: ModuleOrLink => subModule}.map(m => m.modulePath).contains(view_map.get(c).get.parent))
+          view_map.contains(c) && (view_map(c).parent == th2.path || th2.getDeclarations.collect{case subModule: ModuleOrLink => subModule}.map(m => m.modulePath).contains(view_map.get(c).get.parent))
         }
         case PlainInclude(from, to) => false
       }
@@ -190,7 +190,7 @@ abstract class Intersecter extends Extension {
 
   protected def getRecIncludes(theory: Theory) : List[Theory] = {
     val includes = theory.getIncludesWithoutMeta.map(controller.getTheory(_))
-    includes ++ includes.flatMap(getRecIncludes(_))
+    includes ++ includes.flatMap(getRecIncludes)
   }
 
   protected def getFlatDeclarations(theory : Theory) : List[Declaration] = {
@@ -214,9 +214,8 @@ abstract class Intersecter extends Extension {
     }
     getSubDeclarations(th1).filter(_ match {
       case c : FinalConstant => !intersected.contains(c.name)
-      case PlainInclude(from, to) => false
-      case s : Structure => false //TODO
-        //TODO all cases???
+      case PlainInclude(from, to) => false //includes are handled separately
+      case s : Structure => false //structures are incompatible with deep intersections
       case default => ???
     }).foreach(addDeclaration(_, rem, renamings))
 
@@ -240,9 +239,8 @@ abstract class Intersecter extends Extension {
     }
     getSubDeclarations(th2).filter(_ match {
       case c : FinalConstant => !intersected.contains(c.name)
-      case PlainInclude(from, to) => false
-      case s : Structure => false //TODO
-      //TODO all cases???
+      case PlainInclude(from, to) => false //includes are handled separately
+      case s : Structure => false //structures are incompatible with deep intersections
       case default => ???
     }).foreach(addDeclaration(_, rem, renamings))
 
@@ -336,13 +334,13 @@ abstract class Intersecter extends Extension {
     decs.map(addDeclaration(_, th, renamings)).toList
   }
 
-  /**
+  /** collect all Includes in theory
     *
-    * @param theory
+    * @param theory theory in which structures are to be collected
     * @return
     */
   protected def collect_structures(theory : Theory) = theory.getDeclarations.filter(_ match {
-    case s : Structure => true
+    case PlainInclude(from, to) => true
     case default => false
   })
 
@@ -368,7 +366,7 @@ abstract class Intersecter extends Extension {
         state match {
           case isDefinedInTraverserState(_,renamings,used) =>
             path match {
-              case gname: GlobalName => used.add(renamings.get(gname).getOrElse(path).module)
+              case gname: GlobalName => used.add(renamings.getOrElse(gname, path).module)
               case default => ??? //TODO?
             }
           case default =>
@@ -431,28 +429,24 @@ class BinaryIntersecter extends Intersecter {
     var int2 = Theory.empty(th2.parent, LocalName(th2.name.toString+"Intersects"+th1.name.toString), th2.meta)
 
     //Generate inclusions of dependent intersections
-    includes1.foreach{_ match {
+    includes1.foreach {
       case PlainInclude(from, to) =>
-        intersections.get((from, th2.path)).foreach (
-          _ match { case (pre_int1, pre_int2) =>
-            addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
-            addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
-          }
-        )
-      case s : Structure => ??? //Ignored due inconsistent semantics
+        intersections.get((from, th2.path)).foreach { case (pre_int1, pre_int2) =>
+          addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
+          addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
+        }
+      case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
-    }}
-    includes2.foreach{_ match {
+    }
+    includes2.foreach {
       case PlainInclude(from, to) =>
-        intersections.get((th1.path, from)).foreach (
-          _ match { case (pre_int1, pre_int2) =>
-            addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
-            addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
-          }
-        )
-      case s : Structure => ??? //Ignored due inconsistent semantics
+        intersections.get((th1.path, from)).foreach { case (pre_int1, pre_int2) =>
+          addDeclaration(PlainInclude(pre_int1.path, int1.path), int1, renamings)
+          addDeclaration(PlainInclude(pre_int2.path, int2.path), int2, renamings)
+        }
+      case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
-    }}
+    }
     val view_map = ViewSplitter.getPairs(partialView, th1, th2).toMap
     val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int1, int2, view_map, view_map_inverse, renamings)
@@ -492,26 +486,22 @@ class UnaryIntersecter extends Intersecter {
     var int = Theory.empty(th1.parent, LocalName(th1.name.toString+"Intersects"+th2.name.toString), th1.meta)
 
     //Generate inclusions of dependent intersections
-    includes1.foreach{_ match {
+    includes1.foreach {
       case PlainInclude(from, to) =>
-        intersections.get((from, th2.path)).foreach (
-          _ match { case (pre_int1, _) =>
-            addDeclaration(PlainInclude(pre_int1.path, int.path), int, renamings)
-          }
-        )
-      case s : Structure => ??? //Ignored due inconsistent semantics
+        intersections.get((from, th2.path)).foreach { case (pre_int1, _) =>
+          addDeclaration(PlainInclude(pre_int1.path, int.path), int, renamings)
+        }
+      case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
-    }}
-    includes2.foreach{_ match {
+    }
+    includes2.foreach {
       case PlainInclude(from, to) =>
-        intersections.get((th1.path, from)).foreach (
-          _ match { case (pre_int1, _) =>
-            addDeclaration(PlainInclude(pre_int1.path, int.path), int, renamings)
-          }
-        )
-      case s : Structure => ??? //Ignored due inconsistent semantics
+        intersections.get((th1.path, from)).foreach { case (pre_int1, _) =>
+          addDeclaration(PlainInclude(pre_int1.path, int.path), int, renamings)
+        }
+      case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
-    }}
+    }
     val view_map = ViewSplitter.getPairs(partialView, th1, th2).toMap
     val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int, view_map, view_map_inverse, renamings)
@@ -532,23 +522,25 @@ class UnaryIntersecter extends Intersecter {
     */
   protected def fillConstantsIntersection(th1: Theory, th2: Theory, int : Theory, view_map: collection.immutable.Map[FinalConstant, FinalConstant], view_map_inverse: collection.immutable.Map[FinalConstant, FinalConstant], renamings: mutable.HashMap[GlobalName, GlobalName]): (Theory, Theory) = {
     //Add constants from th1
-    intersectionDeclarations(th1, th2, view_map).map(_ match {
-      case c: FinalConstant => {
+    intersectionDeclarations(th1, th2, view_map).map {
+      case c: FinalConstant =>
         addDeclaration(c, int, renamings)
-        renamings.put(view_map.get(c).get.path,renamings.get(c.path).get)
-      }
-    })
-    intersectionDefinedDeclarations(th1, int, renamings).map(_ match {
-      case c: FinalConstant => {
+        renamings.put(view_map(c).path, renamings(c.path))
+    }
+    intersectionDefinedDeclarations(th1, int, renamings).map {
+      case c: FinalConstant =>
         addDeclaration(c, int, renamings)
-        renamings.put(view_map.get(c).get.path,renamings.get(c.path).get)
-      }
-    })
+        renamings.put(view_map(c).path, renamings(c.path))
+    }
 
     (int, int)
   }
 }
 
+/** ViewSplitter splits views into lists of pairs
+  * Original code by Dennis Müller
+  * with some modifications
+  */
 object ViewSplitter {
 
   def apply(v : View) ( implicit controller : Controller) : List[(FinalConstant,FinalConstant)] = {
@@ -578,14 +570,11 @@ object ViewSplitter {
   def getConst(th : Theory, name : LocalName): FinalConstant = {
     name.toList match {
       case head::Nil => th.get(LocalName(head)) match {
-        case o : FinalConstant => {
-          o
-        }
+        case o : FinalConstant => o
       }
-      case submoduleName::tail => {
+      case submoduleName::tail =>
         val submodule = th.get(LocalName(submoduleName)).asInstanceOf[ModuleOrLink]
         getConstSub(submodule, tail)
-      }
       case default => ???
     }
   }
@@ -593,9 +582,8 @@ object ViewSplitter {
   def getConstSub(m : ModuleOrLink, name : LocalName): FinalConstant = {
     m match {
       case th : Theory => getConst(th, name)
-      case st: Structure => {
+      case st: Structure =>
         st.get(ComplexStep(st.from.toMPath)/name) match {case c : FinalConstant => c}
-      }
     }
   }
 
@@ -637,57 +625,126 @@ object ViewSplitter {
       case None => List()
     }
     val all = (consts1:::consts2).distinct
-    for(i <- 0 to all.length-2 ; j <- i+1 to all.length-1) if (all(i)._1==all(j)._1 || all(i)._2==all(j)._2) return (Nil,Nil,Nil)
+    for(i <- 0 to all.length-2 ; j <- i + 1 until all.length) if (all(i)._1==all(j)._1 || all(i)._2==all(j)._2) return (Nil,Nil,Nil)
     (all collect {case (c:FinalConstant,d:FinalConstant) => (c,d)},
       all collect {case (c:FinalConstant,t:Term) => (c,t)},
       all collect {case (t:Term, c:FinalConstant) => (t,c)})
   }
 }
 
-abstract class IntersectEvaluator extends  Extension {
-  def eval(v : View) : Int
-}
-
-object YesMan extends IntersectEvaluator {
-  override def eval(v : View ) = 1 // positive number is positive change
-}
-
-/**
+/** Generic BuildTarget for creating intersections
   *
   * @tparam GE type of GraphEvaluator with which to measure quality of the resulting graph, eg counting declarations
   * @tparam I type of the Intersecter to use, eg binary intersections
   */
-class IntersectGraphEvaluator[GE <: GraphEvaluator, I <: Intersecter](intersecter : I, graphEvaluator : GE) extends IntersectEvaluator {
+class FindIntersecter[GE <: GraphEvaluator, I <: Intersecter](intersecter : I, graphEvaluator : GE) extends BuildTarget {
+
+  var syntaxPresenter : MMTSyntaxPresenter = null
+
   override def start(args: List[String]): Unit = {
     super.start(args)
+
     controller.extman.addExtension(intersecter)
+    controller.extman.addExtension(graphEvaluator)
+    try {
+      syntaxPresenter = controller.extman.get(classOf[MMTSyntaxPresenter]).head
+    } catch {
+      case _ =>
+        syntaxPresenter = new MMTSyntaxPresenter()
+        controller.extman.addExtension(syntaxPresenter)
+    }
   }
 
-  override def eval(v : View) : Int = {
-    val pre = List[Theory]()
-    val res = intersecter.intersect(v)
-    val post = res._1 ++ res._2.flatMap(x => List(x._1, x._2)) ++ res._3
-    return graphEvaluator(post)-graphEvaluator(pre)
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
+  override def key: String = "intersections"
+
+  /** clean this target in a given archive */
+  override def clean(a: Archive, in: FilePath): Unit = {
+    val file = new java.io.File(a.root + "/export/intersections/"+a.id+".mmt")
+    file.delete()
+  }
+
+  /** build or update this target in a given archive */
+  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+    println("start")
+    //apply viewfinder
+    val viewFinder = new ViewFinder
+    if (controller.extman.get(classOf[Preprocessor]).exists(p => p.key != "" && a.id.startsWith(p.key))) {
+      val preproc = (SimpleParameterPreprocessor + DefinitionExpander).withKey(a.id)
+      controller.extman.addExtension(preproc)
+    }
+    controller.extman.addExtension(viewFinder, List(a.id))
+    val theories = a.allContent.flatMap({p:MPath => try {controller.get(p) match { case dt : Theory => Some(p) case _ => None}} catch {case _ => None}})
+    while(!viewFinder.isInitialized) {
+      Thread.sleep(500)
+    }
+    var views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
+
+    var intersections = views.map(intersecter.intersectGraph).map(_ match {case (l1,l2,l3, v) =>(l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2))))})
+
+    var res = intersections.map(i => (i, graphEvaluator.eval(i._1, i._2))).sortBy(_._2)
+    implicit val fw = new FileWriter(new java.io.File(a.root + "/export/intersections/"+a.id+".mmt"))
+    var output = res.foreach(r => {
+      r._1._1.foreach(syntaxPresenter.apply(_))
+      r._1._2.foreach(syntaxPresenter.apply(_))
+    })
   }
 }
+
+class GainFindIntersecter extends FindIntersecter(new BinaryIntersecter, new KnowledgeGainGraphEvaluator)
 
 /**
   * Abstract class for GraphEvaluators.
   * eval(g1)>eval(g2) <=> g1 is better than g2
   */
-abstract class GraphEvaluator {
+abstract class GraphEvaluator extends Extension{
   def apply(graph : List[Theory], views : List[View]=List.empty[View]) = eval(graph, views)
-  def eval(graph : List[Theory], views : List[View]=List.empty[View]) : Int
+
+  /** Evalutes a graph given as a list of theories and views according to an evaluation function
+    *
+    * @param theories theories of the graph
+    * @param views views of the graph
+    * @return evaluation as integer value
+    */
+  def eval(theories : List[Theory], views : List[View]=List.empty[View]) : Int
 }
 
 /**
-  * Graph Evaluator that counts the number of declarations
-  * result is negative since declarations are bad or something
+  * Graph Evaluator that counts the number of declarations and structures
   */
-class CountGraphEvaluator extends GraphEvaluator {
-  override def eval(graph : List[Theory], views : List[View]=List.empty[View]) : Int = {
+class KnowledgeGraphEvaluator extends GraphEvaluator {
+  override def eval(theories : List[Theory], views : List[View]=List.empty[View]) : Int = {
+    var ind = 0
+    for (theory <- theories) {
+      for (dec <- theory.getDeclarations) {
+        dec match {
+          case const : Constant =>
+            ind +=1
+          case default =>
+        }
+      }
+    }
+    for (view <- views) {
+      controller.get(view.from.toMPath).getDeclarations.map(
+        {
+          case const : Constant =>
+            if (const.df.nonEmpty) {
+              ind +=1
+            }
+        }
+      )
+    }
+    ind
+  }
+}
+
+/**
+  * Graph Evaluator that counts the number of declarations and structures
+  */
+class RepresentationGraphEvaluator extends GraphEvaluator {
+  override def eval(theories : List[Theory], views : List[View]=List.empty[View]) : Int = {
     var count = 0
-    for (theory <- graph) {
+    for (theory <- theories) {
       count -= theory.getDeclarations.length
     }
     count
@@ -697,22 +754,29 @@ class CountGraphEvaluator extends GraphEvaluator {
 /**
   * GraphEvaluator that calculates #ind/#rep
   */
-class InducedKnowledgeOverRepresentationGraphEvaluator extends GraphEvaluator {
-  override def eval(graph : List[Theory], views : List[View]=List.empty[View]) : Int = {
+class KnowlDivRepGraphEvaluator extends GraphEvaluator {
+  override def eval(theories : List[Theory], views : List[View]=List.empty[View]) : Int = {
     var ind = 0
     var rep = 1
-    for (theory <- graph) {
+    for (theory <- theories) {
       for (dec <- theory.getDeclarations) {
         dec match {
           case const : Constant =>
-            if (const.df.nonEmpty) {
-              ind +=1
-            }
             ind +=1
             rep +=1
           case default => rep +=1
         }
       }
+    }
+    for (view <- views) {
+      controller.get(view.from.toMPath).getDeclarations.map(
+        {
+          case const : Constant =>
+            if (const.df.nonEmpty) {
+              ind +=1
+            }
+        }
+      )
     }
     ind/rep
   }
@@ -722,5 +786,25 @@ class InducedKnowledgeOverRepresentationGraphEvaluator extends GraphEvaluator {
   * GraphEvaluator that calculates Knowledge gain(#ind-#rep)
   */
 class KnowledgeGainGraphEvaluator extends GraphEvaluator {
-  override def eval(graph: List[Theory], views : List[View]=List.empty[View]): Int = ???
+  override def eval(theories: List[Theory], views : List[View]=List.empty[View]): Int = {
+    var count = 0
+    for (theory <- theories) {
+      for (dec <- theory.getDeclarations) {
+        dec match {
+          case s :Structure => count -= 1
+        }
+      }
+    }
+    for (view <- views) {
+      controller.get(view.from.toMPath).getDeclarations.map(
+        {
+          case const : Constant =>
+            if (const.df.nonEmpty) {
+              count +=1
+            }
+        }
+      )
+    }
+    count
+  }
 }

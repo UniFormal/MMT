@@ -18,6 +18,36 @@ object RunMichael extends MagicTest {
     intersect
   }
 
+  def findIntersecter : Unit = {
+    hl("log+ findIntersecter")
+    controller.extman.addExtension(MitM.preproc)
+    val eq = logic ? "eq"
+    object EliminateImplicits extends Preprocessor {
+      val trav = new StatelessTraverser {
+        override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+          case ApplySpine(OMS(`implicitProof`),_) => OMS(implicitProof)
+          case _ => Traverser(this,t)
+        }
+      }
+      override protected def doTerm(tm: Term): Term = super.doTerm(tm)
+    }
+    val preproc = (SimpleParameterPreprocessor + info.kwarc.mmt.api.refactoring.DefinitionExpander + EliminateImplicits +
+      new LFClassicHOLPreprocessor(
+        ded = MitM.ded,
+        and = MitM.and,
+        not = MitM.not,
+        or = Some(MitM.or),
+        implies = Some(MitM.implies),
+        equiv = Some(MitM.equiv),
+        forall = Some(MitM.forall),
+        exists = Some(MitM.exists),
+        equal = Some(eq)
+      )).withKey("testarchive").withKey(logic)
+    controller.extman.addExtension(preproc)
+    hl("extension info.kwarc.mmt.api.refactoring.GainFindIntersecter")
+    hl("build MitM/smglom intersections")
+  }
+
   def getConst : Unit = {
     val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
     println(view)
@@ -51,22 +81,22 @@ object RunMichael extends MagicTest {
   def viewfinder: Unit = {
     // controller.extman.addExtension(HOLLight.preproc)
       // controller.extman.addExtension(PVSTheory.preproc)
-      // controller.extman.addExtension(MitM.preproc)
+      controller.extman.addExtension(MitM.preproc)
       hl("log+ viewfinder")
       val pvsmonoid = Path.parseM("http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/algebra?monoid",NamespaceMap.empty)
       val mitmmonoid = Path.parseM("http://mathhub.info/Tutorials/Mathematicians?Monoid",NamespaceMap.empty)
 
-      // val from = Path.parseM("http://mathhub.info/MitM/Foundation?RealLiterals",NamespaceMap.empty)
+       val from = Path.parseM("http://mathhub.info/MitM/Foundation?RealLiterals",NamespaceMap.empty)
       //val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
       // val from = Path.parseM("http://cds.omdoc.org/testcases?CommTest",NamespaceMap.empty)
       // val from = Path.parseM("http://cds.omdoc.org/testcases?PVSTest",NamespaceMap.empty)
-      val from = Path.parseM("http://mydomain.org/testarchive/mmt-example?addition",NamespaceMap.empty)
+      //val from = Path.parseM("http://mydomain.org/testarchive/mmt-example?addition",NamespaceMap.empty)
 
       // val to = "PVS/NASA"
       // val to = "HOLLight/basic"
-      // val to = "MitM/smglom"
+       val to = "MitM/smglom"
       // val to = "PVS/Prelude"
-      val to = "testarchive"
+      //val to = "testarchive"
 
       val eq = logic ? "eq"
       object EliminateImplicits extends Preprocessor {
@@ -90,11 +120,11 @@ object RunMichael extends MagicTest {
         exists = Some(MitM.exists),
         equal = Some(eq)
       )).withKey("testarchive").withKey(logic)
-      controller.extman.addExtension(preproc)
+      //controller.extman.addExtension(preproc)
       val vf = new ViewFinder
       controller.extman.addExtension(vf,List(
-        "testarchive"
-        , "MitM/smglom"
+        //"testarchive"
+        "MitM/smglom"
         // ,"HOLLight/basic"
         // ,"PVS/Prelude"
         // ,"PVS/NASA"

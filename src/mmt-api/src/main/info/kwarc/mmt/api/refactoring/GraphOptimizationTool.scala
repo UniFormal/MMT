@@ -46,7 +46,7 @@ class GraphOptimizationTool extends BuildTarget {
     var ret = mutable.HashSet[MPath]()
     try controller.getTheory(theoryPath)
     catch {
-      case e : GetError =>
+      case e : Exception =>
         printError("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
         return ret
     }
