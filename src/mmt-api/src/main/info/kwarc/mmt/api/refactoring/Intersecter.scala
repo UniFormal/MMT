@@ -272,7 +272,7 @@ abstract class Intersecter extends Extension {
     })
     //Fill remainder with remaining constants
     fillConstantsRemainder1(rem, th1, th2, intersections, renamings)
-    return rem :: rem_list
+    return rem_list :+ rem
   }
 
   /** Recursively create remainders of the right side theories of the intersection
@@ -300,7 +300,7 @@ abstract class Intersecter extends Extension {
     })
     //Fill remainder with remaining constants
     fillConstantsRemainder2(rem, th1, th2, intersections, renamings)
-    rem :: rem_list
+    rem_list :+ rem
   }
 
   /** Move declaration to another theory
@@ -639,7 +639,7 @@ object ViewSplitter {
   * @tparam GE type of GraphEvaluator with which to measure quality of the resulting graph, eg counting declarations
   * @tparam I type of the Intersecter to use, eg binary intersections
   */
-class FindIntersecter[GE <: GraphEvaluator, I <: Intersecter](intersecter : I, graphEvaluator : GE) extends BuildTarget {
+class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, graphEvaluator : GE) extends BuildTarget {
 
   var syntaxPresenter : MMTSyntaxPresenter = null
 
