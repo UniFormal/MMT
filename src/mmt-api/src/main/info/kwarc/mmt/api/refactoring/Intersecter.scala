@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{FileWriter, MMTSyntaxPresenter, Presenter, RenderingHandler}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, HasDefiniens, IdentityTranslator, Include, PlainInclude, Renamer, SimpleDeclaredStructure, Structure, TermContainer, TraversingTranslator}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, HasDefiniens, IdentityTranslator, Include, IncludeData, PlainInclude, Renamer, SimpleDeclaredStructure, Structure, TermContainer, TraversingTranslator}
 import info.kwarc.mmt.api.utils.{FilePath, URI}
 
 import scala.collection.mutable
@@ -75,13 +75,13 @@ abstract class Intersecter extends Extension {
     //Recurse through dependent Theories of th1 and th2
     //th1:
     includes1.foreach {
-      case SimpleDeclaredStructure(home, name, from, isImplicit) =>
+      case PlainInclude(from, to) =>
         recIntersect(controller.getTheory(from), th2, view, intersections, renamings)
       case default =>
     }
     //th2:
     includes2.foreach {
-      case SimpleDeclaredStructure(home, name, from, isImplicit) =>
+      case PlainInclude(from, to) =>
         recIntersect(th1, controller.getTheory(from), view, intersections, renamings)
       case default =>
     }
@@ -260,13 +260,14 @@ abstract class Intersecter extends Extension {
 
     //Recurse through dependent Theories of th1
     val rem_list = includes1.flatMap(_ match {
-      case Include(_, from, args) => {
+      case Include(IncludeData(home, from, args, df, total)) => {
         val rem_pre = remainder1(controller.getTheory(from), th2, intersections, renamings)
         addDeclaration(Include(rem.toTerm, rem_pre.head.path, args), rem, renamings)
         rem_pre
       }
-      case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        remainder1(controller.getTheory(from), th2, intersections, renamings)
+      case SimpleDeclaredStructure(home, name, from, isImplicit, istotal) =>
+        addDeclaration(SimpleDeclaredStructure(rem.toTerm, name, from, isImplicit, istotal), rem, renamings)
+        List()
       case default => ???
     })
     //Fill remainder with remaining constants
@@ -287,13 +288,14 @@ abstract class Intersecter extends Extension {
 
     //Recurse through dependent Theories of th2
     val rem_list = includes2.flatMap(_ match {
-      case Include(_, from, args) => {
+      case Include(IncludeData(home, from, args, df, total)) => {
         val rem_pre = remainder2(th1, controller.getTheory(from), intersections, renamings)
         addDeclaration(Include(rem.toTerm, rem_pre.head.path, args), rem, renamings)
         rem_pre
       }
-      case SimpleDeclaredStructure(home, name, from, isImplicit) =>
-        remainder2(th1, controller.getTheory(from), intersections, renamings)
+      case SimpleDeclaredStructure(home, name, from, isImplicit, istotal) =>
+        addDeclaration(SimpleDeclaredStructure(rem.toTerm, name, from, isImplicit, istotal), rem, renamings)
+        List()
       case default => ???
     })
     //Fill remainder with remaining constants
@@ -538,7 +540,7 @@ class UnaryIntersecter extends Intersecter {
 }
 
 /** ViewSplitter splits views into lists of pairs
-  * Original code by Dennis Müller
+  * Original code by Dennis Mueller
   * with some modifications
   */
 object ViewSplitter {
@@ -666,7 +668,6 @@ class FindIntersecter[GE <: GraphEvaluator, I <: Intersecter](intersecter : I, g
 
   /** build or update this target in a given archive */
   override def build(a: Archive, up: Update, in: FilePath): Unit = {
-    println("start")
     //apply viewfinder
     val viewFinder = new ViewFinder
     if (controller.extman.get(classOf[Preprocessor]).exists(p => p.key != "" && a.id.startsWith(p.key))) {
