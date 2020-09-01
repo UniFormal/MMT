@@ -29,7 +29,6 @@ scripts/travis/deploy_key
 .idea_modules
 *.iml
 
-
 # Eclipse Files
 bin
 .cache-main
@@ -41,3 +40,7 @@ target
 
 # scala-bin compilation articfacts
 out/
+*/.DS_Store
+
+# Artifact of https://github.com/coursier/coursier when working with IntelliJ
+src/null

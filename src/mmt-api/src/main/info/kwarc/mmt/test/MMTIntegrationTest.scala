@@ -7,7 +7,7 @@ import info.kwarc.mmt.doc.Setup
 
 /**
   * A class used for MMT Integration Tests which require a completly setup MMT environment to work
-  * @param neededArchives List of archives that should be automatically installed
+  * @param archives List of archives that should be automatically installed
   * @param neededExtensions List of extensions that should be needed
   */
 abstract class MMTIntegrationTest(override val archives : String*)(neededExtensions : ExtensionSpec*)
@@ -55,8 +55,8 @@ abstract class MMTIntegrationTest(override val archives : String*)(neededExtensi
     }
 
 
-    if(useArchiveDevel){
-      log("Using devel version of selected archives")
+    if(testBranch.nonEmpty){
+      log(s"Using ${testBranch.get} version of selected archives")
     } else {
       log("Using default version of all archives")
     }

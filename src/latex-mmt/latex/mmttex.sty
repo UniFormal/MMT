@@ -1,6 +1,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  dependencies
 
-\RequirePackage[colorlinks]{hyperref}
+\RequirePackage{hyperref}
 
 % Attaching other objects to pdf object
 % 1) /ActualText
@@ -88,6 +88,9 @@
 \newcommand{\mmtnamespace}[1]{\toMMT{namespace #1 ^^1d}}
 \newcommand{\mmtimport}[2]{\toMMT{import #1 #2^^1d}}
 
+\newcommand{\mmtUnicodeAsAscii}{\toMMT{rule scala://parser.api.mmt.kwarc.info?UnicodeReplacer^^1d}}
+\newcommand{\mmtUnicodeAsLatex}{\toMMT{rule scala://latex.mmt.kwarc.info?Common/LatexToUnicodeConverter^^1d}}
+
 \newenvironment{mmttheory}[2]{\toMMT{theory #1}\toMMT@ifnonempty{#2}{ : #2} \toMMT{ = }}{\toMMT{^^1d}}
 \newcommand{\mmtinclude}[1]{\toMMT{include #1 ^^1e}}
 \newcommand{\mmtconstant}[4]{\toMMT{constant #1}\toMMT@ifnonempty{#2}{ : #2 ^^1f}\toMMT@ifnonempty{#3}{ = #3 ^^1f}\toMMT@ifnonempty{#4}{ \@sharpchar\space #4 ^^1f}\toMMT{^^1e}}
@@ -151,6 +154,9 @@
 \newcommand{\mmt@group}[1]{{#1}}
 % an implicit argument
 \newcommand{\mmt@implicit}[1]{#1}
+
+% an error message in place of an ill-formed subobject
+\newcommand{\mmt@error}[1]{\PackageError{mmttex}{#1}{#1}ERROR}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% package dependencies 
 

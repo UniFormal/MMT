@@ -30,13 +30,13 @@ class MetaData {
    }
    def update(key: GlobalName, values: Obj*) {
       delete(key)
-      values map  {value => add(new MetaDatum(key, value))}
+      values foreach  { value => add(MetaDatum(key, value))}
    }
    def update(key: GlobalName, value: URI) {
       delete(key)
       add(Link(key, value))
    }
-   def keys = data.map(_.key).distinct
+   def keys: List[GlobalName] = data.map(_.key).distinct
    /** get all metadata except tags */
    def getAll : List[MetaDatum] = data.filter(_.value != null)
    /** get metadata for a certain key */
@@ -51,7 +51,7 @@ class MetaData {
       case _ => Nil
    }
    def toNode = if (data.isEmpty) Nil else <metadata>{data.map(_.toNode)}</metadata>
-   override def toString = data.map(_.toString).mkString(", ")
+   override def toString: String = data.map(_.toString).mkString(", ")
 }
 
 /** helper object */
@@ -84,7 +84,7 @@ object MetaData {
    def apply(pairs : MetaDatum*) : MetaData = {
      val metadata = new MetaData
      metadata.add(pairs: _*)
-     return metadata
+     metadata
    }
 }
 
@@ -93,13 +93,13 @@ object MetaData {
  * @param key the key, must be a symbol in the theory of the respective metadata theory
  * @param value the object (may be null, which indicates tags)
  */
-class MetaDatum(val key: GlobalName, val value: Obj) {
-   def toNode = this match {
+case class MetaDatum(key: GlobalName, value: Obj) {
+   def toNode: Elem = this match {
       case Link(key, uri) => <link rel={key.toPath} resource={uri.toString}/>
       case Tag(key) => <tag property={key.toPath}/>
       case _ => <meta property={key.toPath}>{value.toOBJNode}</meta>
    }
-   override def toString = {
+   override def toString: String = {
       if (value == null) key.toString
       else {key.toString + " -> " + value.toString}
    }
@@ -107,7 +107,7 @@ class MetaDatum(val key: GlobalName, val value: Obj) {
 
 /** helper object */
 object MetaDatum {
-   val keyBase = documents.NarrativeMetadata.keyBase
+   val keyBase: MPath = documents.NarrativeMetadata.keyBase
    /** parses a MetaDatum */
    def parse(node: Node, nsMap: NamespaceMap) : MetaDatum = xml.trimOneLevel(node) match {
       case <link/> =>
@@ -116,10 +116,10 @@ object MetaDatum {
       case <tag/> =>
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
          Tag(key)
-      case n: Elem if n.label == "meta" && n.child.length >= 1 =>
+      case n: Elem if n.label == "meta" && n.child.nonEmpty =>
          // some text is split into several child nodes
          val key = Path.parseS(xml.attr(node, "property"), nsMap(keyBase))
-         val literal = n.child(0)
+         val literal = n.child.head
          val value = if (literal.isInstanceOf[Elem] && n.child.length == 1)
             Obj.parseTerm(literal, nsMap)
          else

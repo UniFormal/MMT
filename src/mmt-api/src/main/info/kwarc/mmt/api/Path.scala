@@ -79,10 +79,14 @@ trait QuestionMarkFunctions[A] {
 case class DPath(uri : URI) extends Path with ComponentParent with SlashFunctions[DPath] with QuestionMarkFunctions[MPath] {
    if (uri.query.isDefined || uri.fragment.isDefined) throw ImplementationError("MMT namespace URI may not have query or fragment")
 
-   /** two paths are equal if their URIs are except that the scheme is ignored and AUTH/ == AUTH */
+   /** two paths are equal if their URIs are except that
+     *  the scheme is ignored
+     *  empty AUTH == absent AUTH
+     *  AUTH/ == AUTH
+     */
    override def equals(that: Any) = that match {
      case that: DPath =>
-       this.uri.authority == that.uri.authority &&
+       this.uri.authority.getOrElse("") == that.uri.authority.getOrElse("") &&
        ((this.uri.authority.isDefined && this.uri.path.isEmpty) || this.uri.absolute == that.uri.absolute) &&
        this.uri.pathNoTrailingSlash == that.uri.pathNoTrailingSlash
        // query and fragment must be empty anyway
@@ -222,11 +226,22 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def id = Sub(this, OMV(this))
    /** returns the list of all prefixes of this name, from atomic to this one */
    def prefixes : List[LocalName] = if (this.length <= 1) List(this) else init.prefixes ::: List(this)
+   /** removes all complex steps; possibly ambiguous, but often much nicer for priting/parsing */
+   def dropComplex = LocalName(steps.filterNot(_.isInstanceOf[ComplexStep]))
    /** machine-oriented string representation of this name, parsable and official */
    def toPath : String = steps.map(_.toPath).mkString("", "/", "")
   /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = toStr(false)
-   def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")  
+   def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")
+
+   def prefixOrCreateLastSimpleStep(prefix: String): LocalName = {
+      val newSteps: List[LNStep] = steps match {
+         case beginning :+ SimpleStep(name) => beginning :+ SimpleStep(prefix + name)
+         case List(ComplexStep(mpath)) => List(ComplexStep(mpath.parent ? mpath.name.prefixOrCreateLastSimpleStep(prefix)))
+         case _ => steps :+ SimpleStep(prefix)
+      }
+      LocalName(newSteps)
+   }
 }
 
 /** a step in a LocalName */

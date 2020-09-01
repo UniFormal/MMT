@@ -4,9 +4,26 @@ import info.kwarc.mmt.api._
 import uom._
 import objects._
 
+object LFConstantScala {
+  implicit def toNullary(cs: ConstantScala) = new NullaryLFConstantScala(cs.parent, cs.name)
+  implicit def toUnary(cs: ConstantScala) = new UnaryLFConstantScala(cs.parent, cs.name)
+  implicit def toBinary(cs: ConstantScala) = new BinaryLFConstantScala(cs.parent, cs.name)
+  implicit def toTernary(cs: ConstantScala) = new TernaryLFConstantScala(cs.parent, cs.name)
+  implicit def toFourary(cs: ConstantScala) = new FouraryLFConstantScala(cs.parent, cs.name)
+}
+
+class NullaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
+  def filter(args: List[Term]): Seq[Term] = args.filterNot { a => a == term}
+  def apply() = OMS(path)
+  def unapply(t: Term): Boolean = t match {
+    case OMS(this.path) => true
+    case _ => false
+  }
+}
+
 class UnaryLFConstantScala(val parent: MPath, val name: String) extends ConstantScala {
    def apply(arg: Term) = Apply(OMS(path), arg)
-   def unapply(t: Term) = t match {
+   def unapply(t: Term): Option[Term] = t match {
       case ApplySpine(OMS(this.path), List(a)) => Some(a)
       case _ => None
    }
@@ -18,11 +35,27 @@ class BinaryLFConstantScala(val parent: MPath, val name: String) extends Constan
        case Nil => neutral
        case hd::tl => tl.fold(hd) {case (x,y) => apply(x,y)}
      }
-     
    }
    def unapply(t: Term) = t match {
       case ApplySpine(OMS(this.path), List(a1, a2)) => Some((a1,a2))
       case _ => None
+   }
+
+   /**
+     * collects the list of arguments of an associative operator
+     * @param t the term
+     * @param drop if given, drop this argumet
+     * @param distinct drop repetitions
+     */
+   def associativeArguments(t: Term, drop: Option[Term], distinct: Boolean):List[Term] = {
+     val args = unapply(t) match {
+       case Some((x,y)) => associativeArguments(x, drop, false):::associativeArguments(y,drop,false)
+       case None => if (drop contains t) Nil else List(t)
+     }
+     if (distinct) {
+       args.distinct
+     } else
+       args
    }
 }
 

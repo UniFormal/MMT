@@ -1,33 +1,31 @@
 package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.{ContentPath, GlobalName, MPath}
-import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
-import info.kwarc.mmt.api.utils._
+import objects._
+import utils._
 
-import scala.collection.immutable.List
-
+/** any named object that can be subject to alignment */
 sealed abstract class Reference
-
+/** objects that have URIs */
 sealed abstract class URIReference extends Reference
-
+/** MMT objects */
 case class LogicalReference(mmturi: ContentPath) extends URIReference {
   override def toString = mmturi.toPath
 }
-
+/** external objects */
 case class PhysicalReference(url: URI) extends URIReference {
   override def toString = url.toString
 }
-
-case class ConceptReference(con : String) extends Reference {
+/** general concepts */
+case class ConceptReference(con: String) extends Reference with CanonicalForm[ConceptReference] {
+  def canonical = copy(con = con.toLowerCase)
   override def toString = con
 
-  override def equals(o: scala.Any): Boolean = o match {
-    case cr : ConceptReference if cr.con.toLowerCase == con.toLowerCase => true
+  override def hashCode(): Int = con.toLowerCase.hashCode
+  override def equals(that: Any): Boolean = that match {
+    case ConceptReference(ocon) => ocon.toLowerCase == con.toLowerCase
     case _ => false
   }
-
-  override def hashCode(): Int = con.toLowerCase().hashCode()
 }
 
 sealed abstract class Alignment {
@@ -37,8 +35,6 @@ sealed abstract class Alignment {
 
   /** the composition (diagram-order) of this with that (not necessarily inducing a translation) */
   def ->(that: Alignment): Alignment
-
-  // def toJSON: (JSONString, JSONObject)
 
   var isGenerated = false
 
@@ -51,14 +47,11 @@ sealed abstract class URIAlignment extends Alignment {
   val to: URIReference
 }
 
-object ConceptPair {
-  def apply(from : String, to : String) : ConceptPair = ConceptPair(ConceptReference(from),ConceptReference(to))
-}
-case class ConceptPair(from : ConceptReference, to : ConceptReference) extends Alignment {
-  def ->(that : Alignment): Alignment = {
+case class ConceptPair(from: ConceptReference, to: ConceptReference) extends Alignment {
+  def ->(that: Alignment): Alignment = {
     val ret = that match {
       case ConceptPair(fr, t) => ConceptPair(from, t)
-      case ca : ConceptAlignment => ConceptAlignment(from,ca.ref)
+      case ca: ConceptAlignment => ConceptAlignment(from,ca.ref)
       case _ => throw ImplementationError("not concatenatable")
     }
     ret.isGenerated = true
@@ -72,15 +65,18 @@ case class ConceptPair(from : ConceptReference, to : ConceptReference) extends A
 
   override def toString = "< " + from + " | " + to + " >"
 }
+object ConceptPair {
+  def apply(from: String, to: String): ConceptPair = ConceptPair(ConceptReference(from),ConceptReference(to))
+}
 
 object ConceptAlignment{
-  def apply(ref : Reference, con : String) : ConceptAlignment = ConceptAlignment(ref,ConceptReference(con))
+  def apply(ref: Reference, con: String): ConceptAlignment = ConceptAlignment(ref,ConceptReference(con))
 }
-case class ConceptAlignment private (from: Reference, to : Reference) extends Alignment {
+case class ConceptAlignment private (from: Reference, to: Reference) extends Alignment {
   // FR I made the constructor private because it is undocumented that not all arguments are legal
   require((from,to) match {
-    case (ConceptReference(_),u : URIReference) => true
-    case (u : URIReference,ConceptReference(_)) => true
+    case (ConceptReference(_),u: URIReference) => true
+    case (u: URIReference,ConceptReference(_)) => true
     case _ => false
   })
   val (concept,ref,right) = (from,to) match {
@@ -94,8 +90,8 @@ case class ConceptAlignment private (from: Reference, to : Reference) extends Al
       case ca @ ConceptAlignment(ffr,tto) =>
         if (right) InformalAlignment(ref,tto.asInstanceOf[URIReference]) else ConceptPair(concept,ca.concept)
       case cp @ ConceptPair(ffr,tto) if right => ConceptAlignment(from,tto)
-      case a : FormalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
-      case a : InformalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
+      case a: FormalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
+      case a: InformalAlignment if !right => ConceptAlignment(ConceptReference(concept),a.to)
     }
     ret.isGenerated = true
     ret
@@ -114,7 +110,7 @@ sealed abstract class FormalAlignment extends URIAlignment {
   val to: LogicalReference
   def invertible: Boolean = false
 
-  def toTerm : Term = to match {
+  def toTerm: Term = to match {
     case LogicalReference(t: GlobalName) ⇒ OMS(t)
     case LogicalReference(t: MPath)      ⇒ OMMOD(t)
   }
@@ -202,7 +198,7 @@ case class ArgumentAlignment(from: LogicalReference, to: LogicalReference, overr
     """"""" +
     props.filter(x ⇒ !(List("direction", "arguments") contains x._1)).map(p ⇒ " " + p._1 + "=" + """"""" + p._2 + """"""").mkString("")
 
-  private def combine(args: List[(Int,Int)]) : List[(Int,Int)] = arguments.map(p => {
+  private def combine(args: List[(Int,Int)]): List[(Int,Int)] = arguments.map(p => {
     val p2 = args.find(q => p._2==q._1)
     p2.map(q => (p._1,q._2))
   }) collect {

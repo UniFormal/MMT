@@ -11,6 +11,7 @@ import notations._
 import scala.xml.Elem
 import Theory._
 import info.kwarc.mmt.api.utils.MMT_TODO
+import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 
 /** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
@@ -38,7 +39,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
       {tpNode}
       {dfNode}
       {notNode}
-      {getDeclarations map (_.toNode)}
+      {getDeclarations.filter(d => !d.isGenerated) map (_.toNode)}
     </derived>
   }
   // override def toNodeElab
@@ -47,7 +48,7 @@ trait DerivedContentElement extends AbstractTheory with HasType with HasNotation
     (getMetaDataNode++tpNode++dfNode++notNode) foreach {n =>
       rh(n)
     }
-    getDeclarations foreach(_.toNode(rh))
+    getDeclarations foreach(d => if (!d.isGenerated) d.toNode(rh))
     rh << "</derived>"
   }
 }
@@ -143,7 +144,12 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
     */
    def expectedComponents: List[(String,ObjComponentKey)] = Nil
 
-   /** called after checking components and inner declarations for additional feature-specific checks */
+   /** compute the expected type of a constant inside a derived element of this feature
+    *  none by default, override as needed
+    */
+   def expectedType(dd: Level, c: Constant): Option[Term] = None
+
+  /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: Level)(implicit env: ExtendedCheckingEnvironment): Unit
 
    /** override as needed */
@@ -160,7 +166,7 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
     * @param parent the containing module
     * @param dd the derived declaration
     */
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration): Elaboration
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration
 
    def elaborateInContext(prev: Context, dv: VarDecl): Context = prev
    def checkInContext(prev: Context, dv: VarDecl) {}
@@ -286,7 +292,7 @@ trait Untyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   }
   override def makeHeader(dd: DerivedDeclaration) = OMA(OMMOD(mpath), List(OML(dd.name,None,None)))
-  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -303,7 +309,7 @@ trait UnnamedUntyped {self : StructuralFeature =>
     // Type is completely useless here, but for some reason it nees to return SOME term...
   override def makeHeader(dd: DerivedDeclaration) = OMMOD(mpath)
 
-  def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration = {
+  def elaborate(parent: Module, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None): Elaboration = {
     new Elaboration {
       def domain: List[LocalName] = dd.getDeclarations.map(_.name)
       def getO(nm: LocalName): Option[Declaration] = dd.getDeclarations.find(_.name == nm).map {
@@ -398,7 +404,41 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   def getHeadPath(t: Term) : GlobalName = t match {
     case OMS(p) => p
     case OMMOD(p) => p.toGlobalName
-    case _ => throw InvalidObject(t, "ill-formed header") 
+    case _ => throw InvalidObject(t, "ill-formed header")
+  }
+  
+  def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: Option[List[String]]=None) : (Context, List[Term], DerivedDeclaration, Context) = {
+    val (indDefPath, context, indParams) = ParamType.getParams(dd)
+    val indD = controller.library.get(indDefPath) match {
+    case indD: DerivedDeclaration if (expectedFeature.isEmpty || expectedFeature.get.contains(indD.feature)) => indD
+    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not among the features "+expectedFeature.get+" but of the feature "+d.feature+".")
+    case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
+          +" but no derived declaration found at that location.")
+    }
+    
+    val indCtx = controller.extman.get(classOf[StructuralFeature], indD.feature).getOrElse(throw LocalError("Structural feature "+indD.feature+" not found.")) match {
+      case f: ParametricTheoryLike => f.Type.getParameters(indD)
+      case _ => Context.empty
+    }
+    (context, indParams, indD, indCtx)
+  }
+  
+  def checkParams(indCtx: Context, indParams: List[Term], context: Context, env: ExtendedCheckingEnvironment) : Unit = {
+		//check the indParams match the indCtx at least in length
+    if (indCtx .length != indParams.length) {
+      throw LocalError("Incorrect length of parameters for the referenced derived declaration .\n"+
+          "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
+
+    //check whether their types also match
+    indCtx zip indParams map {case (vd, tm) =>
+      vd.tp map {expectedType =>
+        val tpJudgement = Typing(Stack.empty, tm, expectedType)
+        val typeComponent = tm.governingPath map (CPath(_, DefComponent))
+        val cu = CheckingUnit.apply(typeComponent, context, Context.empty, tpJudgement)
+        val (objChecker, rules) = (env.objectChecker, env.rules)
+        objChecker(cu, rules)(env.ce)
+      }
+    }
   }
 }
 
@@ -417,12 +457,45 @@ object TypedParametricTheoryLike {
      /** retrieves the parameters and arguments */
      def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
        dd.tpC.get.get match {
-         case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
+         case OMBINDC(OMMOD(_), pars, OMS(p)::args) => (p, pars, args)
        }
      }
      /** retrieves the parameters */
      def getParameters(dd: DerivedDeclaration) = {getParams(dd)._2}
    }
+}
+
+trait ReferenceLikeTypedParametricTheoryLike extends StructuralFeature with TypedParametricTheoryLike {
+  // override val ParamType = TypedParametricTheoryLike.ParamType(getClass)
+  // override val Type = ParametricTheoryLike.Type(getClass)
+
+  /**
+   * parse the derived declaration into its components
+   * @param dd the derived declaration
+   * @return returns a pair containing the mpath of the derived declaration, the declarations defined in the referenced theory,
+   *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
+   */
+  def getDecls(dd: DerivedDeclaration): (GlobalName, List[Declaration], Context, List[Term], Context) = {
+    val (indDefPathGN, context, indParams) = ParamType.getParams(dd)
+    val (indCtx, decs) : (Context, List[StructuralElement])= controller.getO(indDefPathGN) match {
+      case Some(str) => str match {
+        case t: Theory => (t.parameters, t.getDeclarations)
+        case t: StructuralElement if (t.feature =="theory") =>
+          val decs = t.getDeclarations
+          //We shouldn't have to do something this ugly, for this match to work out
+          //TODO: There should be a better method provided by the api
+          val params = t.headerInfo match {
+            case HeaderInfo("theory", _, List(_, params: Context)) => params
+            case _ => Context.empty
+          }
+          (params, decs)
+        case m : ModuleOrLink => (Context.empty, m.getDeclarations)
+        case t => throw GeneralError("reflection over unsupported target (expected a theory)"+t.path+" of feature "+t.feature + ": "+t)
+      }
+      case None => throw GeneralError("target of reflection not found at "+indDefPathGN)
+    }
+    (indDefPathGN, decs.map({d => d match {case d: Declaration => d case _ => throw LocalError("unsupported structural element at "+d.path)}}), indCtx, indParams, context)
+  }
 }
 
 /**
@@ -431,7 +504,7 @@ object TypedParametricTheoryLike {
  */
 class GenerativePushout extends StructuralFeature("generative") with IncludeLike {
 
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None) = {
       val parentThy = parent match {
         case thy: Theory => thy
         case _ => throw LocalError("generative pushout must occur in theory")
@@ -450,7 +523,7 @@ class GenerativePushout extends StructuralFeature("generative") with IncludeLike
           ddN
         }
         // translate each declaration and merge the assignment (if any) into it
-        private val translator = new ApplyMorphism(morphism.toTerm)
+        private val translator = ApplyMorphism(controller.globalLookup, morphism.toTerm)
         def getO(name: LocalName): Option[Declaration] =
           if (name.steps.startsWith(dd.name.steps)) {
             val rest = name.drop(dd.name.steps.length)
@@ -539,7 +612,7 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
       }.toList
     case _ => Context.empty
   }
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) : Elaboration = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment] = None) : Elaboration = {
     // println(parent.name + " <- " + dd.name)
     val dom = getDomain(dd)
     val parenth = parent match {
@@ -696,12 +769,14 @@ class BoundTheoryParameters(id : String, pi : GlobalName, lambda : GlobalName, a
 }
 
 object StructuralFeatureUtil {
-  def externalDeclarationsToElaboration(decls: List[Constant]) = {
+  def externalDeclarationsToElaboration(decls: List[Constant], log: Option[Constant => Unit] = None) = {
     new Elaboration {
       val elabDecls = decls
       def domain = elabDecls map {d => d.name}
       def getO(n: LocalName) = {
+        log map (l => elabDecls.find(_.name == n) map (c => l(c)))
         elabDecls.find(_.name == n)
+        
       }
     }
   }

@@ -151,7 +151,7 @@ class TPTPPresenter extends Presenter(TPTPObjectPresenter) {
             }
          }
          rh << ")."
-      case Include(OMMOD(p),q,Nil) =>
+      case PlainInclude(q,p) =>
          val f = p.doc.uri.relativize(q.doc.uri)/(q.name.toPath+"."+outExt)
          rh << Incl(f)
       case _: Structure => //ignored because of flattening

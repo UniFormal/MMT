@@ -59,6 +59,10 @@ trait BaseTester extends Logger {
       case t: Throwable =>
         testError(this.getClass.getName, Some(t))
         false
+    } finally {
+      // cleanup and flush
+      controller.cleanup
+      Console.flush()
     }
   }
 

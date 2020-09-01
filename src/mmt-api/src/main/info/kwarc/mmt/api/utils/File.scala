@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.utils
 
-import info.kwarc.mmt.api._
+import java.awt.Desktop
 
+import info.kwarc.mmt.api._
 import java.io._
 import java.util.zip._
 
@@ -27,6 +28,12 @@ case class File(toJava: java.io.File) {
     val relURI = FileURI(this).relativize(FileURI(f))
     File(relURI.toString()) // java URIs need to be sbolute in Files. Previous variant as well as any other
       //threw java errors
+  }
+
+
+  /** opens this file using the associated (native) application */
+  def openInOS() {
+    Desktop.getDesktop.open(toJava)
   }
 
   def canonical = File(toJava.getCanonicalFile)
@@ -164,18 +171,26 @@ object FilePath {
   private def rec(list : List[File]) : List[File] = list.flatMap(f => if (f.isDirectory) rec(f.children) else List(f))
 }
 
-/** constructs and pattern-matches absolute file:URIs in terms of absolute File's */
+/** Constructs and pattern-matches absolute file:URIs in terms of absolute File's.*/
 object FileURI {
   def apply(f: File): URI = {
     val ss = f.segments
     URI(Some("file"), None, if (ss.headOption.contains("")) ss.tail else ss, f.isAbsolute)
   }
 
-  def unapply(u: URI): Option[File] = {
-    if ((u.scheme.isEmpty || u.scheme.contains("file")) && (u.authority.isEmpty || u.authority.contains("")))
+  def unapply(u: URI): Option[File] =
+  {
+    /* In contrast to RFC 8089 (https://tools.ietf.org/html/rfc8089), we allow for empty schemes for
+       "File URI References" that, like URIs, allow omitting stuff from the left. */
+    val valid_scheme    : Boolean = u.scheme.isEmpty || u.scheme.contains("file")
+
+    // empty authority makes some Java versions throw errors
+    val valid_authority : Boolean = u.authority.isEmpty || u.authority.contains("") || u.authority.contains("localhost")
+
+    // We set authority to None because it's ignored later, anyway. No use to distinguish.
+    if (valid_scheme && valid_authority) {
       Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
-    // empty authority makes some Java versions throw error
-    else None
+    } else None
   }
 }
 

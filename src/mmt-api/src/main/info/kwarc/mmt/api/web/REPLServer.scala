@@ -23,7 +23,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
-    val ps = ParsingStream(path.uri, scope, doc.nsMap, interpreter.format, buffer)
+    val ps = ParsingStream(path.uri, scope, doc.getNamespaceMap, interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)
@@ -60,7 +60,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
 
     // set up the parsing unit
     val sref = SourceRef(path.uri, SourceRegion.ofString(s))
-    val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+    val pu = ParsingUnit(sref, context, s, doc.getIIContext)
 
     // parse the term
     val cr = interpreter(pu)(errorCont)
@@ -86,7 +86,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
 
     // setup the parsing unit
     val sref = SourceRef(path.uri, SourceRegion.ofString(s))
-    val pu = ParsingUnit(sref, context, s, NamespaceMap.empty)
+    val pu = ParsingUnit(sref, context, s, doc.getIIContext)
 
     // and return the term
     interpreter.parser(pu)(errorCont).term
@@ -137,8 +137,7 @@ object REPLServer {
   object AdminResponse {
     def apply(message: String) = MultiTypedResponse("message" -> message)
   }
-  
-  
+
   abstract class ElementResponse extends REPLResponse {
     def element: StructuralElement
   }
@@ -166,7 +165,7 @@ class REPLServer extends ServerExtension("repl") {
   }
 
   def apply(session: Option[String], command: Command, errorContO: Option[ErrorHandler]): REPLResponse = {
-    applyActual(session, command, errorContO)
+    applyActual(session,command,errorContO)
   }
 
   def getSessionOpt(id: String) = sessions.find(_.id == id)
@@ -210,7 +209,7 @@ class REPLServer extends ServerExtension("repl") {
         controller.add(d)
         NewElement(d)
       case "get" =>
-        val p = Path.parse(rest, session.doc.nsMap)
+        val p = Path.parse(rest, session.doc.getNamespaceMap)
         val se = controller.get(p)
         ExistingElement(se)
       case "content" | _ =>
@@ -254,7 +253,7 @@ class REPLServer extends ServerExtension("repl") {
 
   private def createSession(path: DPath, id: String, errorCont: ErrorHandler) : REPLSession = {
     val nsMap = controller.getNamespaceMap(path)
-    val doc = new Document(path, level=FileLevel, nsMap = nsMap)
+    val doc = new Document(path, level=FileLevel, initNsMap = nsMap)
     controller.add(doc)
     val format = "mmt"
     val interpreter = controller.extman.get(classOf[TwoStepInterpreter], format).getOrElse {

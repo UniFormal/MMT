@@ -1,8 +1,11 @@
+import Graphtester.controller
+import MitMTest.controller
 import info.kwarc.mmt.MitM.{MitM, MitMSystems}
 import info.kwarc.mmt.MitM.VRESystem.{MitMComputation, MitMComputationTrace}
 import info.kwarc.mmt.api.{LocalName, utils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.web.JSONBasedGraphServer
 import info.kwarc.mmt.odk.LFX.LFList
 import info.kwarc.mmt.odk.LMFDB.LMFDB
 import info.kwarc.mmt.odk.OpenMath.Coding.{OMMiTMCoding, OMXMLCoding}
@@ -11,6 +14,19 @@ import info.kwarc.mmt.odk.{IntegerLiterals, LFX, StringLiterals}
 // "impl-rule-gen"
 object LMFDBTest extends MagicTest("lmfdb", "mitm", "scscp", "debug") {
   override val gotoshell: Boolean = false
+
+  override def doFirst: Unit = {
+    super.doFirst
+    // Copied here because these lines were removed from MagicTest.
+    // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
+    controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
+    controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
+    controller.extman.addExtension(new DependencyGraphExporter)
+    controller.extman.addExtension(new DeclarationTreeExporter)
+    controller.extman.addExtension(new JSONBasedGraphServer)
+    controller.extman.addExtension(new PathGraphExporter)
+  }
+
   def run : Unit = {
     hl("extension info.kwarc.mmt.odk.LMFDB.Plugin")
 

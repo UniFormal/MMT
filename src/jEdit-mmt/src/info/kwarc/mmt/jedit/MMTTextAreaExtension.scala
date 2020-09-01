@@ -3,6 +3,9 @@ package info.kwarc.mmt.jedit
 import info.kwarc.mmt.api._
 import frontend._
 import objects._
+import symbols._
+import gui._
+
 import org.gjt.sp.jedit._
 import textarea._
 import syntax._
@@ -10,7 +13,6 @@ import javax.swing.text.Segment
 import java.awt.Font
 import java.awt.font.TextAttribute
 
-import info.kwarc.mmt.api.gui.MMTObjAsset
 import javax.swing.ImageIcon
 
 /** A TextAreaExtension that is added to every EditPane
@@ -180,20 +182,43 @@ class MMTToolTips(controller: Controller, editPane: EditPane) extends TextAreaEx
       val (asset,selected) = MMTSideKick.getSelectedAssetAtOffset(view,offset) getOrElse{return null}
       try {
         asset match {
+          case da: MMTElemAsset =>
+            da.elem match {
+              case c: Constant =>
+                c.tp match {
+                  case Some(t) =>
+                    asString(t)
+                  case _ =>
+                    null
+                }
+              case _ =>
+                null
+            }
           case ta: MMTObjAsset =>
+            lazy val tpS = ta.inferType.map(asString).getOrElse(null)
             if (selected) {
-              ta.inferType.map(asString).getOrElse(null)
+              tpS
             } else {
               ta.obj match {
-                case OMV(n) =>
-                  asString(ta.context(n))
-                case vd : VarDecl =>
-                  asString(vd)
+                case _:OMV | _:VarDecl =>
+                  val vd = ta.obj match {
+                    case OMV(n) => ta.context(n)
+                    case vd: VarDecl => vd
+                  }
+                  vd.tp match {
+                    case None => null
+                    case Some(tp) =>
+                      vd.name + ": " + asString(tp)
+                  }
                 case OMA(OMID(p), args) =>
-                  val implicits = args.filter(a => parser.SourceRef.get(a).isEmpty)
-                  if (implicits.isEmpty) null
-                  else implicits.map(asString).mkString("   ")
-                case _ => null
+                  val opWithImplicits = args.takeWhile(a => parser.SourceRef.get(a).isEmpty)
+                  val opWithImplicitsT = OMA(OMID(p), opWithImplicits)
+                  val opS = opWithImplicits.map(asString).mkString("  ")
+                  val opTp = checking.Solver.infer(controller, ta.getFullContext, opWithImplicitsT, None)
+                  val opTpS = opTp.map(t => "  :  " + asString(t)).getOrElse("")
+                  opS + opTpS
+                case _ =>
+                  tpS
               }
             }
           case _ => null

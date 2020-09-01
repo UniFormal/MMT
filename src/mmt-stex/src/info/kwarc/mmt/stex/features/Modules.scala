@@ -47,7 +47,7 @@ object PillarFeature extends StructuralFeature("Pillar") {
      }
    }
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = new Elaboration {
      lazy val domain = {
        dd.getDeclarations.map {d =>
          dd.name / d.name
@@ -147,7 +147,7 @@ object RealmFeature extends StructuralFeature("Realm") {
      views.exists(v => v.from.toMPath == symbol.module && v.isDeclared(symbol.name))
    }
 
-   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = new Elaboration {
+   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = new Elaboration {
 
      lazy val pillars : Map[LocalName, DerivedDeclaration] = dd.getDeclarations.collect {
        case s : DerivedDeclaration if s.feature == "Pillar" => (s.name, s)

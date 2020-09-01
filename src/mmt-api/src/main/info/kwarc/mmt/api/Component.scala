@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api
 
-import info.kwarc.mmt.api.utils.MMT_TODO
+import utils._
 import objects._
+import notations._
 
 /** A component of a declaration, e.g., the type of a [[Constant]] (akin to XML attributes) */
 case class DeclarationComponent(key: ComponentKey, value: ComponentContainer) extends NamedElement {
@@ -18,6 +19,21 @@ trait ComponentContainer {
    def delete: Unit
    /** true if (some dimension of) this component is present */
    def isDefined: Boolean
+
+  /** true if two containers have the same content */
+  def equivalentTo(that: ComponentContainer) = {
+    (this,that) match {
+      case (o: AbstractObjectContainer, p: AbstractObjectContainer) =>
+        o.get == p.get
+      case (n1: NotationContainer, n2: NotationContainer) =>
+        val n1N = n1.getNotations(None,None)
+        val n2N = n2.getNotations(None,None)
+        n1N == n2N
+      case _ =>
+        false
+    }
+  }
+
 }
 
 trait AbstractObjectContainer extends ComponentContainer {
@@ -101,9 +117,10 @@ object NotationComponent {
    }
 }
 
+case object MetaDataComponent extends ComponentKey("metadata")
+
 // the following components are used only by change management
 case object PatternBodyComponent extends ComponentKey("pattern-body")
-case object MetaDataComponent extends ComponentKey("metadata")
 
 object TermComponent {
    private val components = List(TypeComponent,DefComponent,DomComponent,CodComponent)

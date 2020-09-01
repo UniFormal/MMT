@@ -27,7 +27,7 @@ object ConstantAssignment {
  */
 object DefLinkAssignment {
    def apply(home : Term, name : LocalName, from: Term, target : Term) =
-      Structure(home, name, from, Some(target), false)
+      Structure(home, name, from, Some(target), false, false)
    def unapply(se: StructuralElement): Option[(Term,LocalName,Term,Term)] = se match {
      case s: Structure =>
        s.df map {df =>

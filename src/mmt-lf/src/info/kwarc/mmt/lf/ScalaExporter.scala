@@ -11,14 +11,14 @@ import GenericScalaExporter._
 //TODO translate LF definitions to Scala definitions
 
 /** for LF terms using Apply and Lambda */
-class LFOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
+class LFOperator(p: ContentPath, vars: ArgumentList, args: ArgumentList) extends Operator(vars,args) {
   private def omid = "OMID(this.path)"
-  def f(as: List[String]) = as.mkString(",")
+  def mkL(as: List[String]): String = as.mkString("List(", ",", ")")
   def mmtTerm(a1: List[String], a2: List[String]): String = {
     if (a1.isEmpty)
-      s"ApplyGeneral($omid, List(${f(a2)}))"
+      s"ApplyGeneral($omid, ${mkL(a2)})"
     else
-      s"Apply($omid, Lambda(${f(a1)}, ${f(a2)}))"
+      s"Apply($omid, Lambda(Context(${mkL(a1)}), a2.head))"
   }
 }
 
@@ -35,7 +35,7 @@ class ScalaExporter extends GenericScalaExporter {
    private def typeEras(t: Term): (List[GlobalName],GlobalName) = t match {
       case OMS(a) => (Nil, a)
       case ApplySpine(OMS(a),_) => (Nil, a)
-      case FunType(args, ret) if ! args.isEmpty =>
+      case FunType(args, ret) if args.nonEmpty =>
          val argsE = args.map {case (_,t) => typeEras(t)._2}
          val retE = typeEras(ret)._2
          (argsE, retE)
@@ -46,7 +46,7 @@ class ScalaExporter extends GenericScalaExporter {
       case Univ(1) => "SemanticType.AllTypes"
       case OMS(a) => nameToScalaQ(a) + ".univ"
       case ApplySpine(OMS(a), _) => typeToScala(OMS(a))
-      case FunType(args, ret) if ! args.isEmpty =>
+      case FunType(args, ret) if args.nonEmpty =>
          val argsS = args.map(a => typeToScala(a._2))
          val retS = typeToScala(ret)
          argsS.mkString("(", " => ", " => ") + retS + ")"
@@ -153,7 +153,7 @@ class ScalaExporter extends GenericScalaExporter {
      val FunType(lfArgs, _) = tp2
      val numArgs = lfArgs.length
      // x1:Term,...,xn:Term
-     val scalaArgs = Range(0,numArgs).toList map {i => Argument("x" + i.toString, "Term", false)}
+     val scalaArgs = Range(0,numArgs).toList map {i => Argument("x" + i.toString, "Term", sequence = false)}
      val op = new LFOperator(c.path, ArgumentList(Nil), ArgumentList(scalaArgs)) // TODO try to extract context
      op.methods
    }
@@ -164,14 +164,14 @@ import uom._
 
 /** this can be mixed into Scala-models of MMT theories to simplify adding additional rules */
 trait SolutionRules extends LFRealizationInScala {
-   def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]) = {
+   def solve_unary(op:GlobalName, argTypeN: GlobalName, rTypeN: GlobalName)(invert: Any => Option[Any]): Unit = {
       val List(argType, rType) = List(argTypeN, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "invert") {
-         def applicable(tm1: Term) = tm1 match {
+         def applicable(tm1: Term): Option[Int] = tm1 match {
             case ApplySpine(OMS(`op`), List(_)) => Some(1)
             case _ => None
          }
-         def apply(j: Equality) = (j.tm1, j.tm2) match {
+         def apply(j: Equality): Option[(Equality, String)] = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(t)), rType(y)) => invert(y) map {x =>
                   (Equality(j.stack, t, argType of x, None), "inverting " + op.toString)
             }
@@ -181,14 +181,14 @@ trait SolutionRules extends LFRealizationInScala {
       rule(sr)
    }
    def solve_binary_right(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
-            (invert: (Any,Any) => Option[Any]) = {
+            (invert: (Any,Any) => Option[Any]): Unit = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "right-invert") {
-         def applicable(tm1: Term) = tm1 match {
+         def applicable(tm1: Term): Option[Int] = tm1 match {
             case ApplySpine(OMS(`op`), List(_,argType2(_))) => Some(1)
             case _ => None
          }
-         def apply(j: Equality) = (j.tm1, j.tm2) match {
+         def apply(j: Equality): Option[(Equality, String)] = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(t, argType2(x2))), rType(y)) => invert(y,x2) map {x1 =>
                   (Equality(j.stack, t, argType1 of x1, None), "inverting " + op.toString)
             }
@@ -198,14 +198,14 @@ trait SolutionRules extends LFRealizationInScala {
       rule(sr)
    }
    def solve_binary_left(op:GlobalName, argType1N: GlobalName, argType2N: GlobalName, rTypeN: GlobalName)
-            (invert: (Any,Any) => Option[Any]) = {
+            (invert: (Any,Any) => Option[Any]): Unit = {
       val List(argType1, argType2, rType) = List(argType1N, argType2N, rTypeN) map getRealizedType
       val sr = new ValueSolutionRule(op / "left-invert") {
-         def applicable(tm1: Term) = tm1 match {
+         def applicable(tm1: Term): Option[Int] = tm1 match {
             case ApplySpine(OMS(`op`), List(argType1(_),_)) => Some(2)
             case _ => None
          }
-         def apply(j: Equality) = (j.tm1, j.tm2) match {
+         def apply(j: Equality): Option[(Equality, String)] = (j.tm1, j.tm2) match {
             case (ApplySpine(_, List(argType1(x1), t)), rType(y)) => invert(x1,y) map {x2 =>
                   (Equality(j.stack, t, argType2 of x2, None), "inverting " + op.toString)
             }

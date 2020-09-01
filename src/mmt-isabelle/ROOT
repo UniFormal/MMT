@@ -1,0 +1,6 @@
+chapter MMT
+
+session MMT = HOL +
+  description "Setup for Isabelle/MMT query command"
+  theories [condition = ISABELLE_MMT_CONDITION]
+    Query

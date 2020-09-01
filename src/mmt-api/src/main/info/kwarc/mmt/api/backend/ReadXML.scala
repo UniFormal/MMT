@@ -60,7 +60,7 @@ class XMLReader(controller: Controller) extends Logger {
            val level = DocumentLevel.parseO(xml.attr(node, "level")).getOrElse(FileLevel) // defaulting to file level for backwards compatibility
            val nsMapB = nsMap(base)
            log("document with URI " + dpath + " and level " + level + " found")
-           val d = new Document(dpath, level, nsMap = nsMapB)
+           val d = new Document(dpath, level, initNsMap = nsMapB)
            add(d,md)
            modules foreach {m =>
              readIn(nsMapB, d, m)
@@ -108,7 +108,7 @@ class XMLReader(controller: Controller) extends Logger {
             endAdd(innerdoc)
          case <instruction/> =>
            val text = xml.attr(node, "text")
-           val ii = InterpretationInstruction.parse(doc.path, text, nsMap)
+           val ii = InterpretationInstruction.parse(controller, doc.path, text, nsMap)
            add(ii, None)
          case <opaque>{ops @_*}</opaque> =>
             val format = xml.attr(node, "format")
@@ -289,12 +289,13 @@ class XMLReader(controller: Controller) extends Logger {
             }
             log("import " + adjustedName + " found")
             val isImplicit = parseImplicit(symbol)
+            val isTotal = parseTotal(symbol)
             val (dfN,assignmentsN) = rest.child.map(xml.trimOneLevel) match {
                case <definition>{d}</definition> :: as => (Some(d),as)
                case as => (None,as)
             }
             val df = dfN map {n => Obj.parseTerm(n, nsMap)}
-            val s = Structure(homeTerm, adjustedName, from, df, isImplicit)
+            val s = Structure(homeTerm, adjustedName, from, df, isImplicit, isTotal)
             addDeclaration(s)
             assignmentsN foreach {a =>
               readInModule(s.path.toMPath, nsMap, s, a)
@@ -403,7 +404,16 @@ class XMLReader(controller: Controller) extends Logger {
    private def parseImplicit(n: Node): Boolean = {
       xml.attr(n, "implicit") match {
          case "true" => true
-         case "false" | "" => xml.attr(n, "name") == ""
+         case "false" => false
+         case "" => xml.attr(n, "name") == "" // true for includes, false otherwise (needed for backwards compatiblity with pre-realization OMDoc files)
+         case s => throw ParseError("true|false expected in implicit attribute, found " + s)
+      }
+   }
+   private def parseTotal(n: Node): Boolean = {
+      xml.attr(n, "total") match {
+         case "true" => true
+         case "false" => false
+         case "" => false
          case s => throw ParseError("true|false expected in implicit attribute, found " + s)
       }
    }
@@ -414,7 +424,8 @@ object ReadXML {
   def getTermFromAttributeOrChild(n: Node, component: String, nsMap: NamespaceMap) : (Node, Option[Term]) = {
       val (newnode, value) = xml.getAttrOrChild(n, component)
       val thy = value match {
-         case Left(s) => if (s.isEmpty) null else OMMOD(Path.parseM(s, nsMap))
+         case Left(s) =>
+            if (s.isEmpty) null else OMMOD(Path.parseM(s, nsMap))
          case Right(c) =>
              val cT = xml.trimOneLevel(c)
              if (cT.child.length == 1) Obj.parseTerm(cT.child(0), nsMap)

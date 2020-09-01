@@ -50,9 +50,9 @@ To refer to it conveniently, we will import its namespace under the abbreviation
 A group consists of
 \begin{compactitem}
  \item a set $U$,
-\mmtconstant{U}{sort}{}{}
+\mmtconstant{U}{tp}{}{}
 \begin{lstlisting}
-\mmtconstant{U}{sort}{}{}
+\mmtconstant{U}{tp}{}{}
 \end{lstlisting}
 
  \item an operation $U\to U \to U$, written as infix $*$,
@@ -79,6 +79,8 @@ We omit the axioms.
 \begin{lstlisting}
 \end{mmttheory}
 \end{lstlisting}
+
+\toMMT{﹕}
 
 Here the environment !mmttheory! wraps around the theory.
 It takes two arguments: the name and the meta-theory, i.e., the logic in which the theory is written.
@@ -107,7 +109,7 @@ Note that we have not closed the theory yet, i.e., future formal objects will be
 The most important such macro provided by \texttt{mmttex.sty} is one that takes a math formula in \mmt syntax and parses, type-checks, and renders it.
 For this macro, we provide special syntax that allows using quotes instead of dollars to have formulas processed by \mmt:
 if we write !"$F$"! (including the quotes) instead of $\mathdollar F\mathdollar$, then $F$ is considered to be a math formula in \mmt syntax and processed by \mmt.
-For example, the formula !"forall [x] x / x = e"! is parsed by \mmt relative to the current theory, i.e., !Division!; then \mmt type-checks it and substitutes it with \latex commands. In the previous sentence, the \latex source of the quoted formula is additionally wrapped into a verbatim macro to avoid processing by \mmt; if we remove that wrapper, the quoted formula is rendered into pdf as "forall [x] x / x = e".
+For example, the formula !"\forall [x] x / x \doteq e"! is parsed by \mmt relative to the current theory, i.e., !Division!; then \mmt type-checks it and substitutes it with \latex commands. In the previous sentence, the \latex source of the quoted formula is additionally wrapped into a verbatim macro to avoid processing by \mmt; if we remove that wrapper, the quoted formula is rendered into pdf as "\forall [x] x / x =. e".
 
 Type checking the above formula infers the type !tm U! of the bound variable !x!.
 This is shown as a tooltip when hovering over the binding location of !x!.

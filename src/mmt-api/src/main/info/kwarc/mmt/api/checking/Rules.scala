@@ -214,7 +214,7 @@ abstract class InferenceRule(val head: GlobalName, val typOp : GlobalName) exten
 
 /** A variant of InferenceRule that may additionally use the expected type.
  *  Thus it can be used both for type inference and for type checking.
- *  @param head the head of the term whose type this rule infers
+ *  @param h the head of the term whose type this rule infers
  */
 abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends InferenceRule(h,t) {
    /**
@@ -301,7 +301,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
     *  type-based equality reasoning often uses extensionality, which can be inefficient or even lead to cycles.
     *  Therefore, these rules are only applied to tm1 = tm2 : tp if tm1 or tm2 satisfies this predicate.
     */
-   def applicableToTerm(tm: Term): Boolean
+   def applicableToTerm(solver: Solver, tm: Term): Boolean
 }
 
 /**
@@ -310,7 +310,7 @@ abstract class TypeBasedEqualityRule(val under: List[GlobalName], val head: Glob
  */
 abstract class ExtensionalityRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under, head) {
    val introForm: {def unapply(tm: Term): Option[Any]}
-   def applicableToTerm(tm: Term) = !Stability.is(tm) || introForm.unapply(tm).isDefined
+   def applicableToTerm(solver: Solver, tm: Term) = !solver.stability.is(tm) || introForm.unapply(tm).isDefined
 }
 
 /**
@@ -390,7 +390,7 @@ class CongruenceRule(head: GlobalName) extends TermHeadBasedEqualityRule(Nil, he
 /** A ForwardSolutionRule solves for an unknown by inspecting its declarations (as opposed to its use)
  * It can solve a variable directly (e.g., if it has unit type) or apply a variable transformation (e.g., X --> (X1,X2) if X has product type).
  * @param head the head of the type of the unknown to which this rule applies
- * @param priority rules with high priority are applied to a freshly activated constraint is activated;
+ * @param p rules with high priority are applied to a freshly activated constraint is activated;
  *   others when no activatable constraint exists
  */
 abstract class ForwardSolutionRule(val head: GlobalName, p: ForwardSolutionRule.Priority) extends SingleTermBasedCheckingRule {
@@ -483,8 +483,21 @@ abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) 
   }
   
   /** always true as the shape of terms is irrelevant anyway */
-  def applicableToTerm(tm: Term) = true
+  def applicableToTerm(solver: Solver, tm: Term) = true
 }
+
+
+/**
+ * a type coercion rule lifts a non-type A to the type lift(A) if A occurs where a type is expected
+ */
+abstract class TypeCoercionRule(val head: GlobalName, val under: List[GlobalName]) extends CheckingRule with ApplicableUnder {self =>
+  /** the lifting function
+   *  pre:  |- tm: tp   and   applicable(tp)
+   *  post: |- apply(tm): type
+   */
+  def apply(tp: Term, tm: Term): Option[Term]
+}
+
 
 // TODO is this used/needed?
 class AbbreviationRuleGenerator extends ChangeListener {

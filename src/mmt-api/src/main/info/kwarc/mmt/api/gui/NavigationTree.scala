@@ -69,8 +69,13 @@ abstract class NavigationTreeBuilder(controller:Controller) {
 
   protected def moduleLabel(m: Module) = m.feature + " " + m.name.last
   protected def declarationLabel(dec : Declaration) = dec match {
-    case Include(_, from,_) => "include " + from.last
-    case LinkInclude(_,_,OMMOD(incl)) => "include " + incl.last
+    case Include(id) =>
+      val s = id.df match {
+        case Some(OMMOD(incl)) => incl.last
+        case _ => id.from.last
+      }
+      val kw = if (id.isRealization) "realize" else "include"
+      kw + " " + s
     case r: RuleConstant => r.feature
     case d => d.feature + " " + d.name.toStr(true)
   }
@@ -294,9 +299,6 @@ trait MMTElemAsset extends MMTAsset {
 }
 
 /** node for objects
-  * @param term the node in the MMT syntax tree
-  * @param parent the component containing the term
-  * @param subobjectPosition the position in that term
   */
 trait MMTObjAsset extends MMTAsset {
   protected val controller : Controller
@@ -310,12 +312,14 @@ trait MMTObjAsset extends MMTAsset {
     case _ => None
   }
 
+  def getFullContext = getScope.map(Context(_)).getOrElse(Context.empty) ++ context
+
   /** tries to infer the type of this asset (may throw exceptions) */
   def inferType: Option[Term] = {
     obj match {
       case t: Term =>
         val thy = getScope.getOrElse(return None)
-        checking.Solver.infer(controller, Context(thy) ++ context, t, None)
+        checking.Solver.infer(controller, getFullContext, t, None)
       case _ => None
     }
   }
@@ -328,4 +332,4 @@ trait MMTNotAsset extends MMTAsset {
 }
 
 /** a dummy asset for structuring the tree */
-trait MMTAuxAsset  // extends enhanced.SourceAsset(label, -1, MyPosition(-1))
+trait MMTAuxAsset // extends enhanced.SourceAsset(label, -1, MyPosition(-1))}

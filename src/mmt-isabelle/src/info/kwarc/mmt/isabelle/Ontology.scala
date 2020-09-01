@@ -75,8 +75,9 @@ object Ontology
     val specifies = ulo("specifies") // theory/locale declares item
     val specified_in = ulo("specified-in") // inverse of "specifies"
 
-    val uses = ulo("uses") // dependencies of term language (not proofs)
+    val uses = ulo("uses") // dependencies of term and proof constants (identified theorems)
 
+    val defines = ulo("defines") // relation of axiom vs. consts
     val justifies = ulo("justifies") // relation of proof vs. facts
 
     val sourceref = ulo("sourceref") // entity position

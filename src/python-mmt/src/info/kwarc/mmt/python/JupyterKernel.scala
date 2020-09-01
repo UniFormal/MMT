@@ -66,7 +66,7 @@ class JupyterKernel extends Extension {
   private lazy val presenter = new InNotebookHTMLPresenter(new MathMLPresenter)
   private val logFile = utils.File("mmt-jupyter-kernel").addExtension("log")
   logFile.createNewFile()
-  private val errorCont = new ErrorWriter(logFile, None)
+  private val errorCont = new MultipleErrorHandler(List(new ErrorWriter(logFile, None), ErrorThrower))
 
   override def logPrefix: String = "jupyter"
   
@@ -75,7 +75,6 @@ class JupyterKernel extends Extension {
     initOther(presenter)
     val extman = controller.extman
     repl = extman.get(classOf[REPLServer]).headOption getOrElse {
-      errorCont.open
       val r = new REPLServer
       extman.addExtension(r,Nil)
       r
@@ -111,7 +110,7 @@ class JupyterKernel extends Extension {
         val tail = s.substring("present ".length)
 
         // get the object to present
-        val path = Path.parse(tail, session.doc.nsMap)
+        val path = Path.parse(tail, session.doc.getNamespaceMap)
         val obj = controller.get(path)
 
         // and present the returned object
@@ -150,7 +149,6 @@ class JupyterKernel extends Extension {
     }
 
   } catch {
-    case e: info.kwarc.mmt.api.SourceError => List("element" -> presenter.exceptionAsHTML(e))
     case e: Exception => List("element" -> presenter.exceptionAsHTML(e))
   }
 

@@ -1,8 +1,9 @@
 object MBGenTest extends MagicTest() {
   override val serverport = None
   override val gotoshell = true
-  def run: Unit = {
+  override def doFirst: Unit = {
     hl("extension info.kwarc.mmt.sql.codegen.CodeGenerator")
-    // then run: mbgen arguments
+    hl("mbgen /Users/katja/Versioned/MBGen")
   }
+  def run: Unit = {}
 }

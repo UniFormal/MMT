@@ -27,7 +27,7 @@ trait ObjectSimplifier extends Extension {self =>
  *  @param expandDefinitions if true, expand all definitions of constant (we speak of *deep* simplification) 
  *  @param fullRecursion if false, only recurse into subexpressions that contribute to head-normalizations 
  */
-case class SimplificationUnit(context: Context, expandDefinitions: Boolean, fullRecursion: Boolean,solverO :Option[Solver] = None) extends MMTTask {
+case class SimplificationUnit(context: Context, expandDefinitions: Boolean, fullRecursion: Boolean, solverO: Option[Solver] = None) extends MMTTask {
   def ++(c: Context) = copy(context = context ++ c)
 }
 
@@ -51,7 +51,7 @@ trait StructureSimplifier extends Extension {
    /** called in conjunction with applyElementBegin */ 
    def applyElementEnd(ce: ContainerElement[_])(implicit env: SimplificationEnvironment): Unit
 
-   def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): Module
+   def materialize(context: Context, exp: Term, pathOpt: Option[MPath], tcOpt: Option[TermContainer]): AbstractTheory
 
    def getBody(context: Context, moduleExp: Term): ElementContainer[NamedElement]
 
@@ -62,7 +62,26 @@ trait StructureSimplifier extends Extension {
  * the designated super class of all simplifiers
  */
 abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSimplifier with LeveledExtension {
+   /**
+     * Simplify an [[Obj object]] using a set of rules.
+     *
+     * @param obj The object to simplify
+     * @param su Settings of the simplification
+     * @param rules The rules to use, which can possibly be more or less or totally different than the ones
+     *              visible in `su.context`.
+     * @return The simplified object
+     *
+     * @see [[apply(obj: Obj, su: SimplificationUnit)]]
+     */
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType = objectLevel(obj, su, rules)
+
+   /**
+     * Simplify an [[Obj object]] using all rules visible in `su.context`.
+     *
+     * @param obj The object to simplify
+     * @param su Settings of the simplification
+     * @return The simplified object
+     */
    def apply(obj: Obj, su: SimplificationUnit): obj.ThisType = {
       val rules = RuleSet.collectRules(controller, su.context)
       apply(obj, su, rules)
@@ -70,5 +89,9 @@ abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSi
 }
 
 class SimplificationEnvironment(val covered: Boolean, val errorCont: ErrorHandler, val task: MMTTask)
+
+case class ExtendedSimplificationEnvironment(se: SimplificationEnvironment, objectSimplifier: ObjectSimplifier, rules: RuleSet) {
+  
+}
 
 object TrivialSimplificationEnvironment extends SimplificationEnvironment(true, ErrorThrower, MMTTask.generic)

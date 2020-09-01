@@ -143,7 +143,7 @@ abstract class HTMLPresenter(val objectPresenter: ObjectPresenter) extends Prese
       div(basicCss + generatedCss, attributes = List(toggleTarget -> "generated")) {
          div("constant-header") {
            span {text({d match {
-             case Include(_,_,_) => "include"
+             case Include(_) => "include"
              case _ => d.feature
            }} + " ")}
            doName(d)

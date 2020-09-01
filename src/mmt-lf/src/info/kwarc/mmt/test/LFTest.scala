@@ -53,6 +53,7 @@ object Orders {
     ,"sets/finiteSet.mmt"
     ,"sets/setSum.mmt"
     ,"graphs/graphs.mmt"
+    ,"graphs/maniplexes.mmt"
     ,"collections/collections.mmt"
     ,"collections/matroids.mmt"
     ,"topology/topology.mmt"
@@ -78,6 +79,8 @@ object Orders {
     ,"sets/poset.mmt"
     ,"sets/filter.mmt"
     ,"sets/posetPowerset.mmt"
+    ,"numbertheory/intervals.mmt"
+    ,"numbertheory/additiveBases.mmt"
     ,"algebra/bands.mmt"
     ,"algebra/lattice.mmt"
     ,"calculus/FinSequences.mmt"
@@ -91,7 +94,11 @@ object Orders {
     ,"measures/measures.mmt"
     ,"calculus/integration/SimpleFunctions.mmt"
     ,"calculus/integration/LebesgueIntegral.mmt"
-    // "categories/basics.mmt"
+    ,"categories/categories.mmt"
+    ,"categories/functors.mmt"
+    ,"geometry/common.mmt"
+    ,"geometry/planar.mmt"
+    ,"geometry/3D.mmt"
   )
 
   val testgeneral = List(
@@ -123,5 +130,18 @@ object Orders {
     ,"shallow_polymorphism.mmt"
     ,"sigma.mmt"
     // ,"IFIP21_tutorial.mmt" TODO broke the tests
+    ,"lists.mmt"
+    ,"logic/itp.mmt"
+    ,"logic/linear.mmt"
+    ,"logic/sfol.mmt"
+    ,"logic/hol.mmt"
+    ,"magmas.mmt"
+    // ,"mam.mmt"
+    ,"patterns.mmt"
+    ,"program.mmt"
+    ,"real.mmt"
+    ,"quantities.mmt"
+    //,"sedel.mmt"
+    ,"sequences.mmt"
   )
 }

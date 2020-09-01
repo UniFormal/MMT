@@ -274,7 +274,8 @@ object LinkInverter {
 							includeDecl.name,
 							includeDecl.tpC.copy,
 							includeDecl.dfC.copy,
-							isImplicit = includeDecl.isImplicit
+							isImplicit = includeDecl.isImplicit,
+							isTotal = includeDecl.isTotal
 						))
 
 						outLinkDeclarations.append(new Structure(
@@ -282,7 +283,8 @@ object LinkInverter {
 							includeDecl.name,
 							includeDecl.tpC.copy,
 							includeDecl.dfC.copy,
-							isImplicit = includeDecl.isImplicit
+							isImplicit = includeDecl.isImplicit,
+							isTotal = includeDecl.isTotal
 						))
 
 						// Allow OMIDs referencing symbols in the included theory

@@ -485,7 +485,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
     lazy val forced  : Boolean = level <= Level.Force
     lazy val outex   : Boolean = {
       // usually, we build outfiles, that don't exist.
-      // However, for .deps files, we don't need to.
+      // However, for .deps files, we don't need to. // TODO: Why?
       val ext = bt.outFile.getExtension
       !bt.outFile.exists() && (if (ext.isDefined) { ext.get != "deps" } else true)
     }
@@ -654,7 +654,9 @@ abstract class TraversingBuildTarget extends BuildTarget {
   */
 
   @MMT_TODO("needs review")
-  private def getDeps(bt: BuildTask): Set[Dependency] = estimateResult(bt).used.toSet
+  private def getDeps(bt: BuildTask): Set[Dependency] = {
+    estimateResult(bt).used.toSet
+  }
 
   // TODO called by AllTeX target
   @MMT_TODO("needs review")
@@ -714,3 +716,4 @@ abstract class TraversingBuildTarget extends BuildTarget {
     }
   }
 }
+

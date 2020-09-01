@@ -14,7 +14,7 @@ import scala.xml.Node
   * @param name name
   * @param tp   optional type
   * @param df   optional definiens
-  * @param ats  OpenMath-style attributions
+  * @param not  optional notation
   */
 case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], df: Option[Term], not: Option[TextNotation]) extends Obj with NamedElement {
   type ThisType = VarDecl
@@ -100,7 +100,7 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
       case IncludeVarDecl(_, OMPMOD(p, args), _) =>
         Include(home, p, args) //TODO defined include
       case StructureVarDecl(n, from, dfO) =>
-        Structure(home, name, from, dfO, false)
+        Structure(home, name, from, dfO, false, false)
       case DerivedVarDeclFeature(n, f, tp, None) =>
         new DerivedDeclaration(home, n, f, TermContainer(tp), NotationContainer(not), TermContainer(df))
     }

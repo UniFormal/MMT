@@ -33,7 +33,7 @@ object MitMTest extends MMTIntegrationTest(
   "MMT/urtheories",
   "MMT/LFX",
   "MitM/Foundation",
-  "MitM/smglom"
+  "MitM/Core"
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin"),
   ExtensionSpec("info.kwarc.mmt.odk.Plugin")
@@ -50,7 +50,7 @@ object MitMTest extends MMTIntegrationTest(
 
     logGroup {
       shouldHandleLine("log+ structure-checker-simple")
-      shouldCheck("MitM/smglom",Orders.mitmsmglom:_*)(onlyfiles = true)
+      shouldCheck("MitM/Core",Orders.mitmsmglom:_*)(onlyfiles = true)
     }
   }
 }

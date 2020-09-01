@@ -1,0 +1,38 @@
+src/project/project
+src/project/build.properties
+
+# configuration files
+src/mmt-sbt-settings
+
+# mmtrc --created by installed
+deploy/mmtrc
+
+# compiled MMT Jars
+deploy/mmt.jar
+deploy/main/*.jar
+
+# Compiled dependened projects
+deploy/lfcatalog/lfcatalog.jar
+deploy/lib/tiscaf.jar
+
+# Documentation & Deploy
+apidoc
+scripts/travis/deploy_key
+
+# IntelliJ Failes
+**/.idea
+**/.idea_modules
+**/*.iml
+
+
+# Eclipse Files
+**/bin
+**/.cache-main
+**/.cache-tests
+**/.project
+**/.settings
+**/target
+**/.classpath
+
+# scala-bin compilation articfacts
+out/

@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.modules.{Module, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.parser._
+import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.presentation.{HTMLPresenter, Presenter}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 
@@ -81,7 +82,7 @@ class InterviewServer extends ServerExtension("interview") {
   }
 
   private def parseTerm(s : String, mp : MPath, check : Boolean = true)(implicit errorCont : ErrorContainer) = {
-    val t = parser.apply(ParsingUnit(SourceRef.anonymous(""),Context(mp),s,NamespaceMap.empty))
+    val t = parser.apply(ParsingUnit(SourceRef.anonymous(""),Context(mp),s,InterpretationInstructionContext()))
     (t,errorCont.getErrors.filter(_.level > Level.Warning))
   }
 
@@ -97,9 +98,9 @@ class InterviewServer extends ServerExtension("interview") {
         checker.applyElementEnd(se)(ce)
       }
     }
-    implicit val pstate = new ParserState(Reader(s),pstream,cont)
+    val pstate = new ParserState(Reader(s),pstream,cont)
     val context = th.getInnerContext
-    parser.readInModule(th,context,parser.noFeatures)
+    parser.readInModule(th,context,parser.noFeatures)(pstate)
     errorCont.getErrors.filter(_.level > Level.Warning)
   }
 

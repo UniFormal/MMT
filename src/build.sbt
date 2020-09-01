@@ -1,5 +1,5 @@
 import Utils.utils
-import sbt.Keys._
+import sbt.Keys.{scalacOptions, _}
 
 import scala.io.Source
 
@@ -41,7 +41,14 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.8"
+
+// !!!WARNING!!!
+// If you update scalaVersion, also
+//   (1) update apiJars and redownload updated deps
+//   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
+//       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
+//
+scalaVersion in Global := "2.12.9"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
@@ -49,7 +56,7 @@ scalacOptions in Global := Seq(
 )
 
 parallelExecution in Global := false
-javaOptions in Global ++= Seq("-Xmx2g")
+javaOptions in Global ++= Seq("-Xmx2g", "-Xss4096m")
 
 publish := {}
 fork in Test := true
@@ -147,7 +154,7 @@ lazy val src = (project in file(".")).
     mmt, api,
     lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
-    jedit, intellij
+    jedit, intellij, argsemcomp
   ).
   settings(
     unidocProjectFilter in(ScalaUnidoc, unidoc) := excludedProjects.toFilter,
@@ -160,7 +167,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -190,7 +197,7 @@ lazy val mmt = (project in file("mmt")).
 
 def apiJars(u: Utils) = Seq(
   "scala-compiler.jar",
-  "scala-reflect.jar",
+  "scala-library.jar",
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
@@ -254,6 +261,17 @@ lazy val coq = (project in file("mmt-coq")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-coq"): _*)
 
+lazy val lsp = (project in file("mmt-lsp")).
+  dependsOn(api,lf).
+  settings(mmtProjectsSettings("mmt-lsp"): _*).
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
+  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
+
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
   dependsOn(stex).
@@ -280,11 +298,10 @@ lazy val webEdit = (project in file("mmt-webEdit")).
   settings(mmtProjectsSettings("mmt-webEdit"): _*)
 */
 
-// MMT in the interview server. Maintainer: Teresa
+// GLF (Grammatical Framework etc.). Maintainer: Frederik
 lazy val glf = (project in file("mmt-glf")).
-  dependsOn(api, repl).
+  dependsOn(api, lf, repl).
   settings(mmtProjectsSettings("mmt-glf"): _*)
-
 
 // MMT in the interview server. Maintainer: Teresa
 lazy val interviews = (project in file("mmt-interviews")).
@@ -354,9 +371,47 @@ lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
 
-lazy val frameit = (project in file("frameit-mmt")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("frameit-mmt"): _*)
+// Finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
+val finchVersion = "0.32.1"
+// Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
+val circeVersion = "0.13.0"
+
+
+lazy val frameit = (project in file("frameit-mmt"))
+  .dependsOn(api, lf)
+  .settings(mmtProjectsSettings("frameit-mmt"): _*)
+  .settings(
+    libraryDependencies ++= Seq(
+      //  a server infrastructure library
+      "com.twitter" %% "twitter-server" % "20.7.0",
+
+      // an incarnation of an HTTP server library for the above infrastructure
+      "com.github.finagle" %% "finchx-core" % finchVersion,
+      // with ability to automatically encode/decode JSON payloads via the circe library below
+      "com.github.finagle" %% "finchx-circe" % finchVersion,
+      "com.github.finagle" %% "finchx-generic" % finchVersion,
+
+      // and with testing abilities
+      "com.github.finagle" %% "finchx-test" % finchVersion % "test",
+      "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
+
+      "org.scalatest" %% "scalatest" % "3.2.0" % "test",
+
+      // a JSON library
+      "io.circe" %% "circe-generic" % circeVersion,
+      // with extras to support encoding/decoding a case class hierarchy
+      "io.circe" %% "circe-generic-extras" % circeVersion,
+      "io.circe" %% "circe-parser"  % circeVersion,
+    ),
+
+    scalacOptions in Compile ++= Seq(
+      "-Xplugin-require:macroparadise"
+    ),
+
+    // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
+    resolvers += Resolver.sonatypeRepo("releases"),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
+  )
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
@@ -419,8 +474,17 @@ lazy val oeis = (project in file("mmt-oeis")).
     unmanagedJars in Compile += utils.value.lib.toJava / "scala-parser-combinators.jar"
   )
 
+// plugin for computing argumentation semantics
+lazy val argsemcomp = (project in file("mmt-argsemcomp")).
+  dependsOn(api).
+  settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
+  settings(
+    libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
+    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
+  )
+
 // =================================
-// DEPENDENT PROJECTS (projects that do not use mmt-api)
+// DEPENDENT PROJECTS (projects that are used by mmt-api)
 // =================================
 
 // this is a dependency of MMT that is copied into the MMT repository for convenience; it only has to be rebuilt when updated (which rarely happens)

@@ -125,15 +125,13 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         val result = onDir(Current(inFile, in), results.toList)
         if (sendLog) log("leaving  " + inFile)
         Some(result)
-      }
-      else None
-    }
-    else if (filter(inFileName) && filterDir(inFile.up.getName))
-      if (!forClean && !inFile.isFile) {
+      } else None
+    } else if (filter(inFileName) && filterDir(inFile.up.getName))
+      if (!forClean && !inFile.existsCompressed) {
         if (sendLog) log("file does not exist: " + inFile)
         None
-      }
-      else Some(onFile(Current(inFile, in)))
+      } else
+        Some(onFile(Current(inFile, in)))
     else None
   }
 
@@ -149,11 +147,11 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
 
   /**
     * Kinda hacky; can be used to get all Modules residing in this archive somewhat quickly
-    * TODO do properly
     * @return
     */
-  @MMT_TODO("inefficient and brittle; use the relational dimension for this")
+  @deprecated("inefficient and brittle; use getModules for this","")
   lazy val allContent : List[MPath] = {
+    //TODO if it weren't for nested theories, we could simply use controller.getAs(classOf[Document], DPath(narrationBase)).getModules(controller.globalLookup)
     log("Reading Content " + id)
     var ret : List[MPath] = Nil
     if ((this / content).exists) {
@@ -191,6 +189,29 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     ret.distinct
   }
 
+  /** gets the direct dependencies of an archive */
+  def dependencies: List[String] = {
+    stringToList(properties.getOrElse("dependencies", "").replace(",", " "))
+  }
+
+  /** returns the list of loaded transitive dependencies of this archive, including itself */
+  def transitiveDependencies(backend: Backend): List[Archive] = {
+    val handles = scala.collection.mutable.Set[Archive]()
+
+    // keep a q of element to scan for dependencies
+    // and keep picking one of them, until there are none left
+    val q = scala.collection.mutable.Queue[Archive](this)
+    while(q.nonEmpty) {
+      val next = q.dequeue()
+      if (!handles.contains(next)) {
+        handles.add(next)
+        q.enqueue(next.dependencies.flatMap(s => backend.getArchive(s)): _*)
+      }
+    }
+
+    handles.toList
+  }
+
   def readRelational(in: FilePath, controller: Controller, kd: String) {
     log("Reading archive " + id)
     if ((this / relational).exists) {
@@ -199,13 +220,14 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         utils.File.ReadLineWise(inFile) { line =>
           try {
             val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
+            /* this made reading relational very inefficient; anyway a better way to load implicit moprhisms should be found 
             re match {
               case Relation(Includes, to: MPath, from: MPath) =>
                 controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))
               case Relation(HasMeta, thy: MPath, meta: MPath) =>
                 controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
               case _ =>
-            }
+            }*/
             controller.depstore += re
           } catch { //TODO treat this as normal build target and report errors
             case e : Error => log(e.getMessage)
@@ -235,7 +257,12 @@ object Archive {
           case i => tl.last.substring(0, i)
         }
       }
-      DPath(URI(hd.substring(0, p), hd.substring(p + 2)) / tl.init) ? escaper.unapply(fileNameNoExt)
+      val scheme = hd.substring(0, p)
+      val schemeAuthority = hd.substring(p + 2) match {
+        case "NONE" => URI(Some(scheme), None, Nil, true) // for absent authority, path may be relative, but we don't want that
+        case s => URI(scheme, s)
+      }
+      DPath(schemeAuthority / tl.init) ? escaper.unapply(fileNameNoExt)
   }
 
   /** scheme..authority / seg / ments  ----> scheme :// authority / seg / ments

@@ -1,20 +1,14 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import NotationConversions._
-import utils._
-import utils.MyList._
-import modules._
-import symbols._
-import objects._
 
 case class InvalidNotation(msg: String) extends java.lang.Throwable
 
 /**
  * scope where a notation is applicable
- * variant : optionally the name of this notation variant
- * languages : the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
- * priority : the priority of this notation when looking for a default notation
+ * variant: optionally the name of this notation variant
+ * languages: the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
+ * priority: the priority of this notation when looking for a default notation
  */
 case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
   def toNode =  <scope variant={variant.getOrElse(null)}
@@ -28,7 +22,7 @@ object NotationScope {
 /**
  * A TextNotation is a Notation that can be used for parsing objects in text syntax
  * @param fixity the mixfix notation
- * @param precendence the precedence, notations with lower precedence are tried first, thus grab larger subterms
+ * @param precedence the precedence, notations with lower precedence are tried first, thus grab larger subterms
  * @param meta the meta-theory of this notation if different from the current meta-theory
  * @param scope
  *
@@ -111,12 +105,13 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
    }
    lazy val presentationMarkers = PresentationMarker.introducePresentationMarkers(markers)
 
-   def toText = {
+   def toText: String = {
       val (fixityString, argumentString) = fixity.asString
       val metaStr = meta.map("meta " + _.toPath).getOrElse("")
-      val precStr = if (precedence != Precedence.integer(0)) " prec " + precedence.toString else ""
-      val fixStr = if (fixityString == "mixfix") "" else " %%"+fixityString
-      metaStr + fixStr + " " + argumentString + precStr
+      val precStr = if (precedence != Precedence.integer(0)) "prec " + precedence.toString else ""
+      val fixStr = if (fixityString == "mixfix") "" else "%%"+fixityString
+
+      List(metaStr, fixStr, argumentString, precStr).filter(_.nonEmpty).mkString(" ")
    }
    override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")"
    def toNode = {
@@ -142,9 +137,9 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       }
       i
    }
-   /** there are argumetns before the first delimiter */
+   /** there are arguments before the first delimiter */
    def isLeftOpen = openArgs(false) > 0
-   /** there are argumetns after the last delimiter */
+   /** there are arguments after the last delimiter */
    def isRightOpen = openArgs(true) > 0
 
    /** true if there is definitely a delimiter (i.e., not just a sequence separator) */

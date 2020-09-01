@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.web
 import info.kwarc.mmt.api._
 import frontend._
 import backend._
+import documents._
 import info.kwarc.mmt.api.utils.{MMTSystem, MMT_TODO}
 
 import scala.xml._
@@ -163,7 +164,8 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
         }
         val tm = try {
           val str = body.asString
-          val pr = controller.objectParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str, NamespaceMap(scope.doc)))(ErrorThrower)
+          val iiC = InterpretationInstructionContext(NamespaceMap(scope.doc))
+          val pr = controller.objectParser(parser.ParsingUnit(parser.SourceRef.anonymous(str), objects.Context(scope), str, iiC))(ErrorThrower)
           pr.toTerm
         } catch {
           case e: Throwable =>

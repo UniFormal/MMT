@@ -1,8 +1,9 @@
 package info.kwarc.mmt.odk.codecs
 
 import info.kwarc.mmt.api.GlobalName
-import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
-import info.kwarc.mmt.api.valuebases.{CodecNotApplicable, Codec, CodecOperator}
+import info.kwarc.mmt.api.objects.{Term, OMA, OMS}
+import info.kwarc.mmt.api.utils.ConcreteType
+import info.kwarc.mmt.api.valuebases.{CodecOperator, Codec, CodecNotApplicable}
 import info.kwarc.mmt.lf.{ApplySpine, Apply}
 
 /**
@@ -13,6 +14,7 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
 
   val typeParameterPositions = List(1)
 
+  def resultCodeType(ct: ConcreteType): ConcreteType
   def aggregate(cs: List[Code]): Code
   def separate(c: Code): List[Code]
 
@@ -33,6 +35,7 @@ abstract class ListCodec[Code](id: GlobalName, list: GlobalName, nil: GlobalName
   def apply(cs: Codec[Code]*) = {
     val codec = cs.head
     new Codec[Code](id(codec.exp), tp(codec.tp)) {
+      val codeType = resultCodeType(codec.codeType)
       def encode(t: Term) = self.aggregate(self.destruct(t) map codec.encode)
       def decode(c: Code) = self.construct(codec.tp, self.separate(c) map codec.decode)
     }

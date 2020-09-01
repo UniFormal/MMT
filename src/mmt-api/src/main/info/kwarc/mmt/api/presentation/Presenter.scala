@@ -65,7 +65,7 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
   /** relegates to objectPresenter */
   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler): Unit = objectLevel(o, origin)
 
-  override def outDim = Dim("export", "presentation", key)
+  override def outDim: Dim = Dim("export", "presentation", key)
 }
 
 /** helper object */
@@ -113,20 +113,15 @@ object Presenter {
       }
    }
 
-   def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
-      val cached = controller.memory.notations.get(p)
-      cached match {
-        case Some(nO) => nO.toList
-        case None =>
-          val notC = controller.globalLookup.getO(p) flatMap {
-             case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
-             case d: symbols.DerivedDeclaration => None //TODO
-             case _ => None
-          }
-          val dim = if (twoDim) 2 else 1
-          notC.map(n => n.getNotations(Some(dim), None)).getOrElse(Nil)
-      }
-   }
+  def getNotations(controller: frontend.Controller, p: ContentPath, twoDim: Boolean) : List[TextNotation] = {
+    val notC = controller.globalLookup.getO(p) flatMap {
+       case c: symbols.Constant => if (c.notC.isDefined) Some(c.notC) else None
+       case d: symbols.DerivedDeclaration => None //TODO
+       case _ => None
+    }
+    val dim = if (twoDim) 2 else 1
+    notC.map(n => n.getNotations(Some(dim), None)).getOrElse(Nil)
+  }
 }
 
 /**

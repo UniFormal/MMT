@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.notations
 
 import info.kwarc.mmt.api._
-import collection.mutable.HashMap
+import collection.mutable.ListMap
 
 class NotationDimension {
-   private var _notations = new HashMap[Int,List[TextNotation]]
+   private var _notations = new ListMap[Int,List[TextNotation]]
    private var _maxArity = -1 //maximum arity of this notations, smaller ones imply partial applications
 
    def notations = _notations
@@ -100,11 +100,15 @@ class NotationContainer extends ComponentContainer {
     
    /** a copy of this NotationContainer with some other notations merged in */
    def merge(that: NotationContainer) = {
-      val ntC = NotationContainer()
-      ntC.add(this)
-      ntC
+      val ntMerged = copy
+      ntMerged.add(that)
+      ntMerged
    }
-   def copy = NotationContainer() merge this
+   def copy = {
+     val ntCopy = NotationContainer()
+     ntCopy.add(this)
+     ntCopy
+   }
 
    def isDefined = parsing.isDefined || presentation.isDefined || verbalization.isDefined
    def getComponents = parsing.toList.map(_ => ParsingNotationComponent(this)) :::
@@ -172,6 +176,9 @@ class NotationContainer extends ComponentContainer {
 }
 
 object NotationContainer {
+   def empty(): NotationContainer = new NotationContainer
+
+   @deprecated("use NotationContainer.empty()", "v20.0.0")
    def apply(): NotationContainer = new NotationContainer
    def apply(tnOpt: Option[TextNotation]): NotationContainer = {
       val nc = apply()

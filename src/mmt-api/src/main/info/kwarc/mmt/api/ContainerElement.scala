@@ -12,6 +12,7 @@ trait NamedElement {
 trait ElementContainer[+S <: NamedElement] {
    def domain: Iterable[LocalName]
    def getDeclarations: List[S]
+   def getDeclarationsBefore(n: LocalName) = getDeclarations.takeWhile(d => d.name != n)
 
    def getO(name: LocalName): Option[S]
    def getMostSpecific(name: LocalName): Option[(S,LocalName)]
@@ -127,7 +128,7 @@ trait ContainerElement[S <: StructuralElement] extends StructuralElement with Mu
    def getDeclarationsElaborated = getDeclarations.filter {
      case _: Constant => true
      case _: RuleConstant => true
-     case Include(_, _, _) => true
+     case Include(_) => true
      case s => ! ElaboratedElement.isFully(s)
    }
 }

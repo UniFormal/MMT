@@ -7,18 +7,15 @@ import scala.util.Try
 
 /** trait implementing testing for archives */
 trait ArchiveTester extends BaseTester with ActionTester {
-  lazy protected val useArchiveDevel: Boolean = {
-
-    // look into the environment
-    // and use that version if defined
-    val develEnv = Try(sys.env("TEST_USE_DEVEL")).toOption
-    if(develEnv.contains("0")){
-      false
-    } else if(develEnv.contains("1")){
-      true
-    // else use the current git branch
-    } else {
-      MMTSystem.gitVersion.contains("devel")
+  lazy protected val testBranch: Option[String] = {
+    // look into the environment and check if the TEST_USE_BRANCH
+    // environment variable is set
+    // Then use the appropriate version for the tests
+    Try(sys.env("TEST_USE_BRANCH")).toOption match {
+      case Some(b) if b.startsWith("devel-") => Some("devel")
+      case Some(b) => Some(b)
+      // fallback to using the system branch
+      case _ => MMTSystem.gitVersion
     }
   }
 
@@ -38,10 +35,10 @@ trait ArchiveTester extends BaseTester with ActionTester {
 
   /** check that a given archive gets installed properly */
   private def installArchive(archive: String): Unit = {
-    val lmhInstallArchive = archive + (if(useArchiveDevel) "@devel" else "")
+    val lmhInstallArchive = archive + testBranch.map("@" + _).getOrElse("")
 
     test(s"get archive $archive", {
-      // and install the archive (optionally a development version)
+      // and install the archive (optionally a special version)
       handleLine(s"lmh install $lmhInstallArchive")
 
       // and it should not be null

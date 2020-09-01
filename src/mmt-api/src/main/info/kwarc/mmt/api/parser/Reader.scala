@@ -130,30 +130,29 @@ class Reader(val jr: java.io.BufferedReader) {
      Presumably, this is harmless for non-empty objects because more constrained regions are computed anyway by the ObjectParser*/
    private def readUntil(goal: Int*): (String, SourceRegion) = {
        val buffer = new StringBuilder
-       var level = 0
        var continue = true
        var c: Int = readSkipWS
        val start = sourcePosition
        while (continue) {
-          if (c == -1 || (goal.contains(c) && level == 0)) {
+          if (c == -1 || goal.contains(c)) {
              continue = false
           } else {
              buffer.append(c.toChar)
-             if (c == escape)
-                level += 1
-             else if (c == unescape)
-                level -= 1
              c = read
           }
        }
-       if (level != 0)
-          {} //unbalanced escape
        lastDelimiter = c
-       val end = sourcePosition
-       var res = buffer.result
+      var res = buffer.result
+
+       val end = { // there's some weird error here
+          val diff = (sourcePosition.offset-start.offset)- res.length
+          if (diff == 0) sourcePosition else sourcePosition-diff
+       }
+
        // remove trailing whitespace
-       while (res != "" && whitespace(res.last))
-          res = res.substring(0, res.length - 1)
+       while (res != "" && whitespace(res.last)) {
+          res = res.dropRight(1)
+       }
        (res, SourceRegion(start, end))
    }
    /** reads until end of current document, terminated by the ASCII character FS (decimal 28)
@@ -189,7 +188,7 @@ class Reader(val jr: java.io.BufferedReader) {
          if (l == "") {
             stop = true
             lastDelimiter = -1
-         } else if (! TokenList.canFollow(i.toChar, l(0))) {
+         } else if (! TokenList.canFollow(i.toChar, l(0)) && l(0) != '/') {
             stop = true
             val j = l(0).toInt
             lastDelimiter = 32
@@ -200,8 +199,7 @@ class Reader(val jr: java.io.BufferedReader) {
       val end = sourcePosition
       (s, SourceRegion(start, end))
    }
-   /** reads until EOF
-    */
+   /** reads until EOF */
    def readAll = readUntil()
 
    /** closes the underlying Java reader */
@@ -216,7 +214,7 @@ object Reader {
    def apply(file: File) = new Reader(File.Reader(file))
    def apply(s: String) = new Reader(new java.io.BufferedReader(new java.io.StringReader(s)))
    //Note: 28-31 have isWhitespace == true
-   def whitespace(c:Int) = ! (delims ::: List(-1,escape,unescape)).contains(c) && c.toChar.isWhitespace
+   def whitespace(c:Int) = !(-1::delims).contains(c) && c.toChar.isWhitespace
    abstract class MMTDelim {
       def chars : List[Int]
       def is(a : Int) = chars contains a
@@ -245,10 +243,4 @@ object Reader {
    }
    /** the special delimiters */
    def delims: List[Char] = US.andabove.map(_.toChar)
-   /** the ASCII character ESC (decimal 27) begins escaped parts */
-   val escape = 27
-   val escapeChar = '\u001b'
-   /** the ASCII character CAN (decimal 24 ends escaped parts */
-   val unescape = 24
-   val unescapeChar = '\u0018'
 }

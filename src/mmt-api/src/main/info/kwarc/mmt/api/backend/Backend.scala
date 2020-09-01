@@ -88,6 +88,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
      }
      None
   }
+
   /** like load but tries to load a Java class */
   def loadClass(cls: String): Option[Class[_]] = {
      val p = SemanticObject.javaToMMT(cls)
@@ -182,6 +183,14 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
     getArchive(id) foreach { arch =>
       removeStore(arch)
       removeStore(arch.narrationBackend)
+    }
+  }
+
+  /** unregisters all archives */
+  def closeAllArchives {
+    stores foreach {
+      case a: Archive => closeArchive(a.id)
+      case _ =>
     }
   }
 

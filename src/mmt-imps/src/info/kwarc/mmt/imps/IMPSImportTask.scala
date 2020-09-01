@@ -272,7 +272,7 @@ class IMPSImportTask(val controller  : Controller,
 
                 val fix    : Theory = getTheory(ft.value.toLowerCase)
                 val cn     : LocalName = LocalName(ComplexStep(fix.path))
-                val id_fix : Structure = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false) // get it? :D
+                val id_fix : Structure = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false, isTotal = false) // get it? :D
                 controller add id_fix
               }
 
@@ -893,7 +893,7 @@ class IMPSImportTask(val controller  : Controller,
           val fix : Theory    = getTheory(fixed.get.ts(ft).s.toLowerCase)
           val cn  : LocalName = LocalName(ComplexStep(fix.path))
 
-          val id_fix = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false) // get it? :D
+          val id_fix = Structure(nu_view.toTerm,cn,fix.toTerm, Some(OMIDENT(fix.toTerm)), isImplicit = false, isTotal = false) // get it? :D
           controller add id_fix
         }
 
@@ -904,7 +904,7 @@ class IMPSImportTask(val controller  : Controller,
           log("Additionally fixing " + bothinc.name, log_specifics)
 
           val cn  : LocalName = LocalName(ComplexStep(bothinc.path))
-          val add_fix = Structure(nu_view.toTerm,cn,bothinc.toTerm, Some(OMIDENT(bothinc.toTerm)), isImplicit = false)
+          val add_fix = Structure(nu_view.toTerm,cn,bothinc.toTerm, Some(OMIDENT(bothinc.toTerm)), isImplicit = false, isTotal = false)
           controller add add_fix
         }
       }
@@ -1577,7 +1577,7 @@ class IMPSImportTask(val controller  : Controller,
     def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
       Some(true)
     }
-    def applicableToTerm(tm: Term): Boolean = true
+    def applicableToTerm(solver: Solver, tm: Term): Boolean = true
   }
 
   /* Introduces a sort to a theory and also assigns the enclosing sort to it. */

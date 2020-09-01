@@ -98,9 +98,43 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
    }
 }
 
+/**
+  * DIAG : Inhabitable
+  */
+object DiagramTypeInhabitable extends InhabitableRule(ModExp.diagramtype) {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case OMS(this.head) => Some(true)
+    case _ => Some(false)
+  }
+}
+
+object AnonymousDiagramInfer extends InferenceRule(ModExp.anonymousdiagram, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+    case AnonymousDiagramCombinator(_) =>
+      Some(DiagramType())
+    case _ =>
+      None
+  }
+}
+
+object DiagramCheck extends TypingRule(ModExp.anonymousdiagram) {
+  override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val simplificationUnit = SimplificationUnit(stack.context, expandDefinitions = true, fullRecursion = true, solverO = Some(solver))
+
+    solver.controller.simplifier(tm, simplificationUnit) match {
+      case AnonymousDiagramCombinator(_) =>
+        Some(true)
+
+      case _ =>
+        Some(false)
+    }
+  }
+}
+
 object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
-      case AnonymousTheoryCombinator(_) => Some(TheoryType(Nil)) // TODO
+      case AnonymousTheoryCombinator(_) =>
+        Some(TheoryType(Nil)) // TODO
       case _ =>
          solver.error("illegal use of " + ModExp.anonymoustheory)
          None
@@ -235,7 +269,7 @@ object IdentityInfer extends InferenceRule(ModExp.identity, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = {
       tm match {
         case OMIDENT(t) =>
-           solver.check(IsTheory(stack, t))
+           if (!covered) solver.check(IsTheory(stack, t))
            Some(MorphType(t,t))
       }
    }
@@ -255,7 +289,7 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
         case hd::tl =>
            (solver.inferType(hd), solver.inferType(OMCOMP(tl))) match {
               case (Some(MorphType(a1,b1)), Some(MorphType(a2,b2))) =>
-                 solver.check(Equality(stack, b1,a2, Some(TheoryType(Nil))))
+                 if (!covered) solver.check(Equality(stack, b1,a2, Some(TheoryType(Nil))))
                  Some(MorphType(a1,b2))
               case _ => None
            }
@@ -270,28 +304,31 @@ object CompositionInfer extends InferenceRule(ModExp.composition, OfType.path) {
  */
 object MorphismApplicationTerm extends InferenceRule(ModExp.morphismapplication, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History): Option[Term] = {
-      val OMM(t,m) = tm
-      if (t.freeVars.nonEmpty) {
-        solver.error("cannot apply morphism to term with free variables yet")
+      tm match {
+        case OMM(t,m) =>
+          if (t.freeVars.nonEmpty) {
+            solver.error("cannot apply morphism to term with free variables yet")
+          }
+          val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
+          val (mDom,mCod) = mI match {
+            case Some(MorphType(d,c)) => (d,c)
+            case _ => return None
+          }
+          val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
+            solver.error("morphism does not translate into the current theory")
+            return None
+          }
+          val mDomContext = mDom match {
+            case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
+            case _ =>
+              history += "domain of morphism is not an instance of a named theory"
+              return None
+          }
+          // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
+          val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
+          tI map {tp => OMM(tp,OMCOMP(m,impl))}
+        case _ => None
       }
-      val mI = solver.inferType(m, covered)(stack, history + ("inferring type of morphism"))
-      val (mDom,mCod) = mI match {
-        case Some(MorphType(d,c)) => (d,c)
-        case _ => return None
-      }
-      val impl = solver.lookup.getImplicit(mCod, ComplexTheory(solver.constantContext)).getOrElse {
-        solver.error("morphism does not translate into the current theory")
-        return None
-      }
-      val mDomContext = mDom match {
-        case OMPMOD(p,as) => Context(IncludeVarDecl(p,as))
-        case _ =>
-          history += "domain of morphism is not an instance of a named theory"
-          return None
-      }
-      // TODO does not work because local context is ignored when looking up constants; also the wrong rules are applied
-      val tI = solver.inferType(t, covered)(Stack(mDomContext), history + ("inferring term over theory "))
-      tI map {tp => OMM(tp,OMCOMP(m,impl))}
    }
 }
 
@@ -313,11 +350,10 @@ object MorphismApplicationCompute extends ComputationRule(ModExp.morphismapplica
             solver.error("morphism does not translate into the current theory")
             return Recurse
           }
-          val translator = ApplyMorphism(OMCOMP(m,impl))
           if (t.freeVars.nonEmpty) {
             solver.error("cannot apply morphism to term with free variables yet")
           }
-          val tT = translator(Context.empty, t)
+          val tT = solver.lookup.ApplyMorphs(t, OMCOMP(m,impl))
           Simplify(tT)
         case _ => Simplifiability.NoRecurse // may happen if in binder of OMBIND
       }

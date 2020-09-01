@@ -18,19 +18,20 @@ import utils._
   * @param term the term to parse
   * @param top an optional notation that the whole input must match;
   */
-case class ParsingUnit(source: SourceRef, context: Context, term: String, nsMap: NamespaceMap, top: Option[ParsingRule] = None) extends MMTTask {
+case class ParsingUnit(source: SourceRef, context: Context, term: String, iiContext: InterpretationInstructionContext, top: Option[ParsingRule] = None) extends MMTTask {
    /** level determines the notation extension: approximated by the largest known containing theory */
    def getLevel = {
      val levelCandidates = context.getIncludes
      levelCandidates.filter(_.name.length == 1).lastOption.getOrElse(levelCandidates.last)
    }
+   def nsMap = iiContext.namespaces
 }
 // TODO top should be Option[GlobalName]
 
 /** encapsulates the output of an [[ObjectParser]]
  *  @param unknown the unknown variables that must be solved
- *  @param the free variables that must be bound at the outside (may use unknowns)
- *  @param the parsed term (may use unknowns and free variables)
+ *  @param free the free variables that must be bound at the outside (may use unknowns)
+ *  @param term the parsed term (may use unknowns and free variables)
  */
 case class ParseResult(unknown: Context, free: Context, term: Term) {
    def toTerm = {
@@ -41,6 +42,7 @@ case class ParseResult(unknown: Context, free: Context, term: Term) {
       if (unknown.nonEmpty) {
          res = OMBIND(OMS(ParseResult.unknown), unknown, res)
       }
+      SourceRef.get(term).foreach(SourceRef.update(res,_))
       res
   }
    /** true if no unknowns/free variables found */
@@ -89,7 +91,7 @@ sealed abstract class HasParentInfo extends ParentInfo {
    def docParent: DPath
 }
 /** the content is located inside a document
- *  @param parent the parent document
+ *  @param docParent the parent document
  */
 case class IsDoc(docParent: DPath) extends HasParentInfo
 /** the content is located inside a ModuleOrLink
@@ -111,7 +113,7 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   * @param stream the stream to parse
   */
 case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) extends MMTTask {
-  /** @return the whole stream as a string */
+  /** the whole stream as a string */
   def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
 }
 
@@ -200,7 +202,7 @@ object DefaultObjectParser extends ObjectParser {
   def isApplicable(format: String) = true
 
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {
-    val t = OMSemiFormal(objects.Text("unparsed", pu.term))
+    val t = OMSemiFormal(objects.Text("unparsed", "\"" + pu.term + "\""))
     SourceRef.update(t, pu.source)
     ParseResult(Context.empty, Context.empty, t)
   }

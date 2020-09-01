@@ -31,9 +31,7 @@ sealed abstract class MatrixKey[+T <: YAML](val name: String, val value: T, val 
 
 // Linux
 case object Linux extends MatrixKey[YAMLString]("os", "linux")
-
-case object Precise extends MatrixKey[YAMLString]("dist", "precise") // 12.04
-case object Trusty extends MatrixKey[YAMLString]("dist", "trusty") // 14.04
+case object Bionic extends MatrixKey[YAMLString]("dist", "bionic")
 
 case object SudoTrue extends MatrixKey[YAMLBoolean]("sudo", true)
 case object SudoFalse extends MatrixKey[YAMLBoolean]("sudo", false)
@@ -60,11 +58,12 @@ case class Env(env: Map[String, String]) extends MatrixKey[YAMLSequence]("env", 
 // Languages
 /** the versions of the JDK being used */
 sealed abstract class JDK(version: String) extends MatrixKey[YAMLString]("jdk", version)
-case object IBMJava8 extends MatrixKey[YAMLString]("jdk", "ibmjava8")
-case object OpenJDK6 extends MatrixKey[YAMLString]("jdk", "openjdk6")
-case object OpenJDK7 extends MatrixKey[YAMLString]("jdk", "openjdk7")
-case object OpenJDK8 extends MatrixKey[YAMLString]("jdk", "openjdk8")
-case object OpenJDK11 extends MatrixKey[YAMLString]("jdk", "openjdk11")
+// case object IBMJava8 extends MatrixKey[YAMLString]("jdk", "ibmjava8")
+// case object OpenJDK6 extends MatrixKey[YAMLString]("jdk", "openjdk6")
+// case object OpenJDK7 extends MatrixKey[YAMLString]("jdk", "openjdk7")
+// case object OpenJDK8 extends MatrixKey[YAMLString]("jdk", "openjdk8")
+//case object OpenJDK11 extends MatrixKey[YAMLString]("jdk", "openjdk11")
+case object OpenJDK14 extends MatrixKey[YAMLString]("jdk", "openjdk14")
 // case object OracleJDK8 extends MatrixKey[YAMLString]("jdk", "oraclejdk8")
 // case object OracleJDK9 extends MatrixKey[YAMLString]("jdk", "oraclejdk9")
 

@@ -44,7 +44,7 @@ class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : T
 
 object View {
    def apply(doc : DPath, name : LocalName, from : Term, to : Term, isImplicit: Boolean) =
-      new View(doc, name, TermContainer(from), TermContainer(to), new TermContainer(), isImplicit)
-   def apply(doc : DPath, name : LocalName, from : Term, to : Term, df: Option[Term], isImplicit: Boolean) =
-      new View(doc, name, TermContainer(from), TermContainer(to), TermContainer(df), isImplicit)
+      new View(doc, name, TermContainer(from), TermContainer(to), TermContainer.empty(), isImplicit)
+   def apply(doc : DPath, name : LocalName, from : Term, to : Term, df: TermContainer, isImplicit: Boolean) =
+      new View(doc, name, TermContainer(from), TermContainer(to), df, isImplicit)
 }

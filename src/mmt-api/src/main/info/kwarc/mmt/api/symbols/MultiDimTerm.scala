@@ -216,12 +216,11 @@ object TermContainer {
    }
    /** convenience factory */
    def apply(t: Term): TermContainer = apply(Some(t))
+
    /** factory for an optionally given Term
     *  @param tOpt the term; treated as parsed or analyzed depending on AbstractObjectParser.isOnlyParsed
     */
-   //TODO remove this - force users to decide whether a term is analyzed/parsed
-   //currently this is just a workaround
-   def apply(tOpt: Option[Term]): TermContainer = {
+   @deprecated("remove this - force users to decide whether a term is analyzed/parsed", "18.0.0") def apply(tOpt: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tOpt foreach {t => if (parser.ObjectParser.isOnlyParsed(t))
          tc.parsed = t
@@ -230,6 +229,17 @@ object TermContainer {
       }
       tc
    }
+
+   def asParsed(term: Option[Term]): TermContainer = {
+      val tc = new TermContainer
+      tc.parsed = term
+
+      tc
+   }
+
+   def asParsed(term: Term): TermContainer = asParsed(Some(term))
+
+   def empty(): TermContainer = new TermContainer
 }
 
 /** container for mutable contexts */

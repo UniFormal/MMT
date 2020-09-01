@@ -27,7 +27,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   val pipeOutputOption : String = "pipe-worker-output"
 
   /** timout in seconds */
-  private val timeoutDefault        : Int = 300
+  private val timeoutDefault        : Int = 600
   protected var timeoutVal          : Int = timeoutDefault
   protected val timeoutOption    : String = "timeout"
   protected var nameOfExecutable : String = ""
@@ -47,7 +47,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def start(args: List[String]) {
     anaStartArgs(args)
-    pipeOutput = optionsMap.get(pipeOutputOption).isDefined
+    pipeOutput = optionsMap.contains(pipeOutputOption)
     optionsMap.get(timeoutOption).foreach(v => timeoutVal = v.getIntVal)
     optionsMap.get(key).foreach(v => nameOfExecutable = v.getStringVal)
     optionsMap.get("execute").foreach { v =>
@@ -78,7 +78,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.root.up.up.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\libinput{WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )
@@ -113,8 +112,9 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   /** to be implemented */
   def reallyBuildFile(bt: BuildTask): BuildResult
 
-  def buildFile(bt: BuildTask): BuildResult = if (!skip(bt)) reallyBuildFile(bt)
-  else BuildEmpty("file excluded by MANIFEST")
+  def buildFile(bt: BuildTask): BuildResult = {
+    if (!skip(bt)) { reallyBuildFile(bt) } else { BuildEmpty("file excluded by MANIFEST") }
+  }
 
   protected def readingSource(a: Archive, in: File, amble: Option[File] = None): List[Dependency] = {
     val res = getDeps(a, in, Set(in), amble)
@@ -147,9 +147,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
         else {
           val pre = getAmbleFile("pre", bt)
           val post = getAmbleFile("post", bt)
-          List(pre, post).map(PhysicalDependency) ++
-            readingSource(a, in, Some(pre)) ++
-            readingSource(a, in, Some(post))
+          List(pre, post).map(PhysicalDependency) ++ readingSource(a, in, Some(pre)) ++ readingSource(a, in, Some(post))
         })
     } else if (in.isDirectory) Nil
     else {

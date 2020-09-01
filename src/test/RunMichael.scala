@@ -1,12 +1,15 @@
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.MitM.MitM.{eq, implicitProof, logic}
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
-import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Moduleadder, Preprocessor, SimpleParameterPreprocessor, UnaryIntersecter, ViewFinder, ViewSplitter, Viewset}
+import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Preprocessor, SimpleParameterPreprocessor, UnaryIntersecter, ViewFinder, ViewSplitter}
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, NamespaceMap, Path}
+import Graphtester.controller
+import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.web.JSONBasedGraphServer
+import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
 import info.kwarc.mmt.lf.{ApplySpine, LFClassicHOLPreprocessor}
 
@@ -14,11 +17,23 @@ import scala.collection.mutable
 
 object RunMichael extends MagicTest {
 
+  override def doFirst: Unit = {
+    super.doFirst
+    // Copied here because these lines were removed from MagicTest.
+    // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
+    controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
+    controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
+    controller.extman.addExtension(new DependencyGraphExporter)
+    controller.extman.addExtension(new DeclarationTreeExporter)
+    controller.extman.addExtension(new JSONBasedGraphServer)
+    controller.extman.addExtension(new PathGraphExporter)
+  }
+
   def run : Unit = {
     intersect
   }
 
-  def findIntersecter : Unit = {
+  def findIntersecter() : Unit = {
     hl("log+ findIntersecter")
     controller.extman.addExtension(MitM.preproc)
     val eq = logic ? "eq"
@@ -48,7 +63,7 @@ object RunMichael extends MagicTest {
     hl("build MitM/smglom intersections")
   }
 
-  def getConst : Unit = {
+  def getConst() : Unit = {
     val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
     println(view)
 
@@ -56,13 +71,13 @@ object RunMichael extends MagicTest {
     println(view.dfC)
   }
 
-  def defined : Unit = {
+  def defined() : Unit = {
     val int = new BinaryIntersecter
     controller.extman.addExtension(int, Nil)
     println(int.isDefinedIn(controller.getConstant(Path.parseS("http://mydomain.org/testarchive/mmt-example?test_all?final",NamespaceMap.empty)), int.isDefinedInTraverserState(controller.getTheory(Path.parseM("http://mydomain.org/testarchive/mmt-example?test_all",NamespaceMap.empty)),mutable.HashMap[GlobalName, GlobalName](), mutable.HashSet[MPath]())))
   }
 
-  def got : Unit = {
+  def got() : Unit = {
     controller.handleLine("extension info.kwarc.mmt.api.refactoring.GraphOptimizationTool")
     val got : GraphOptimizationTool = controller.extman.get(classOf[GraphOptimizationTool]).head
 
@@ -78,7 +93,7 @@ object RunMichael extends MagicTest {
     //println((System.currentTimeMillis()-starttime)/1000)
   }
 
-  def viewfinder: Unit = {
+  def viewfinder() : Unit = {
     // controller.extman.addExtension(HOLLight.preproc)
       // controller.extman.addExtension(PVSTheory.preproc)
       controller.extman.addExtension(MitM.preproc)
@@ -138,7 +153,7 @@ object RunMichael extends MagicTest {
       // vf.find(pvsmonoid,to).foreach(r => log(r.toString))
   }
 
-  def intersect: Unit = {
+  def intersect() : Unit = {
     val int = new UnaryIntersecter
     val presenter = new MMTSyntaxPresenter
     controller.extman.addExtension(int, Nil)
@@ -147,17 +162,17 @@ object RunMichael extends MagicTest {
     val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
     int(view) match {
       case (l1, l2, l3, _) =>
-        l1.map(println(_))
-        l2.map(p => {
+        l1.foreach(println(_))
+        l2.foreach(p => {
           println(p._1)
           println(p._2)
         })
-        l3.map(println(_))
+        l3.foreach(println(_))
       case default => ???
     }
   }
 
-  def exportMMT: Unit = {
+  def exportMMT() : Unit = {
     //controller.handleLine("extension info.kwarc.mmt.api.presentation.MMTSyntaxPresenter")
     controller.extman.addExtension(new MMTSyntaxPresenter(), List())
     val msp = controller.extman.get(classOf[MMTSyntaxPresenter]).head
@@ -167,7 +182,7 @@ object RunMichael extends MagicTest {
     msp(th)(sb)
     log(sb.get)
   }
-
+/*
   def moduleadder: Unit = {
     controller.extman.addExtension(new MMTSyntaxPresenter(), List())
     val msp = controller.extman.get(classOf[MMTSyntaxPresenter]).head
@@ -184,4 +199,5 @@ object RunMichael extends MagicTest {
     log(sb.get)
     log(th.toString)
   }
+ */
 }

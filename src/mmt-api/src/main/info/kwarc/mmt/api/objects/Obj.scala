@@ -1,21 +1,26 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import utils._
-import utils.xml.addAttrOrChild
-import libraries._
-import modules._
-import metadata._
-import presentation._
-import Conversions._
 import info.kwarc.mmt.api.notations.TextNotation
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.utils._
+import info.kwarc.mmt.api.utils.xml.addAttrOrChild
 
-import scala.xml.{Node,Elem,Utility}
+import scala.xml.Node
+
+trait ShortURIPrinter {
+   /** configurable string representation
+     *  @param shortURIs print OMS without namespace, theory
+     */
+   def toStr(implicit shortURIs: Boolean): String
+   /** defaults to toStr(false) */
+   override def toString = toStr(false)
+}
 
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
  */
-abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj] {
+abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter with HashEquality[Obj] {
    /** the type of this instance
     *
     *  This is needed to provide sharper return types for inductive functions,
@@ -24,12 +29,6 @@ abstract class Obj extends Content with ontology.BaseType with HashEquality[Obj]
    type ThisType >: this.type <: Obj
    protected def mdNode = metadata.toNode
 
-   /** defaults to toStr(false) */
-   override def toString = toStr(false)
-   /** configurable string representation
-    *  @param shortURIs print OMS without namespace, theory
-    */
-   def toStr(implicit shortURIs: Boolean): String
    /** prints to OpenMath */
    def toNode : scala.xml.Node
    /** prints to OpenMath (with OMOBJ wrapper) */
@@ -292,7 +291,7 @@ object OMATTRMany {
    }
 }
 
-/** The joint methods of OMLIT and UnknownOMLIT */
+/** The joint methods of [[OMLIT]] and [[UnknownOMLIT]] */
 sealed trait OMLITTrait extends Term {
    def synType: Term
    /** canonical string representation of this literal */
@@ -328,9 +327,9 @@ sealed trait OMLITTrait extends Term {
  *   rt.semType.valid(value) and rt.semType.normalform(value) == value
  */
 case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait {
-   def synType = rt.synType
+   def synType: Term = rt.synType
    override def toStr(implicit shortURIs: Boolean) = valueString
-   def valueString = rt.semType.toString(value)
+   def valueString: String = rt.semType.toString(value)
 }
 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
@@ -350,7 +349,7 @@ case class UnknownOMLIT(valueString: String, synType: Term) extends Term with OM
  */
 case class OMFOREIGN(node : Node) extends Term {
    def head = None
-   def toStr(implicit shortURIs: Boolean) = toString
+   def toStr(implicit shortURIs: Boolean) = "OMFOREIGN(" + node.toString() + ")"
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
@@ -393,6 +392,10 @@ object OMSemiFormal {
  */
 case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[TextNotation] = None, featureOpt : Option[String] = None) extends Term with NamedElement {
     def toStr(implicit shortURIs: Boolean) = if (tp.isEmpty && df.isEmpty && nt.isEmpty && featureOpt.isEmpty) name.toString else "(" + vd.toStr + ")"
+
+   /**
+     * Get a [[VarDecl]] representation of this OML, e.g. for insertion into a [[Context]].
+     */
     def vd = VarDecl(name, featureOpt, tp, df, nt)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
@@ -495,7 +498,7 @@ object Obj {
    }
 
    /** parses a term relative to a base address
-    *  @param Nmd node to parse (may not contain metadata)
+    *  @param N node to parse (may not contain metadata)
     *  @param nm namespace Map to resolve relative URIs
     *  @return the parsed term
     */
@@ -527,7 +530,7 @@ object Obj {
          case <OMS/> =>
             parseOMS(N) match {
                case p : ContentPath => OMID(p)
-               case p => throw new ParseError("Not a term: " + p + " " + N.toString)
+               case p => throw new ParseError("Not a t>erm: " + p + " " + N.toString)
             }
          case <OMV/> =>
             OMV(LocalName.parse(xml.attr(N,"name")))

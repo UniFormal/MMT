@@ -222,7 +222,7 @@ class TheoryGraphFragment(theories: Iterable[Path], views: Iterable[Path], tg: T
               addNodeIfNeeded(to)
               addEdge(Some(view), from, to, "view", false)
            case _ =>
-              throw GeneralError("domain/codomain of view not known: " + view)
+              throw GeneralError("domain/codomain of view not loaded (did you load the relational data?): " + view)
         }
      }
 

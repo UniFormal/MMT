@@ -15,3 +15,15 @@ trait HashEquality[A] {
    /** this hasheq that is the same as this == that, but fails immediately if false */
    def hashneq(that: HashEquality[A]) : Boolean = this.hash != that.hash || this != that
 }
+
+/** objects that have a canonical form
+  * @tparam A the type of the objects
+  */
+trait CanonicalForm[A] {
+   def canonical: A
+   override def equals(that: Any) = that match {
+      case that: CanonicalForm[_] => this.canonical == that.canonical
+      case _ => false
+   }
+   override def hashCode() = canonical.hashCode()
+}

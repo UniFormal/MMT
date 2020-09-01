@@ -67,13 +67,20 @@ abstract class PlaceholderDelimiter extends Delimiter {
 }
 
 /**
- * expands to the name of the instance
+ * expands by prepending the instance name to a delimiter
  *
- * only legal for notations within patterns
+ * @param base delimiter independent of instance name
  */
-case class InstanceName() extends PlaceholderDelimiter {
-   override def toString = "%i"
-   override def expand(path: ContentPath, alias: List[LocalName]) = Delim(if (path.name.length <= 1) "" else path.name.init.toPath)
+case class InstanceName(base: Delim) extends PlaceholderDelimiter {
+   override def toString = "%i" + base
+   override def expand(path: ContentPath, alias: List[LocalName]) = {
+     val simpleName = path.name.dropComplex
+     val d = if (simpleName.length <= 1)
+       ""
+     else
+       simpleName.init.toPath+"/"
+     base.copy(s = d+base.s)
+   }
 }
 
 /**
@@ -84,7 +91,7 @@ case class InstanceName() extends PlaceholderDelimiter {
 case class SymbolName() extends PlaceholderDelimiter {
    override def toString = "%n"
    override def expand(path: ContentPath, alias: List[LocalName]) = {
-     val shortest = (path.name :: alias).sortBy(_.length).find(_.nonEmpty)
+     val shortest = (path.name.dropComplex :: alias).sortBy(_.length).find(_.nonEmpty)
      Delim(shortest.map(_.toPath).getOrElse(""))
    }
 }
@@ -141,8 +148,6 @@ sealed abstract class ArgumentMarker extends Marker with ArgumentComponent {
 }
 
 /** an argument
-  *
-  * @param n absolute value is the argument position, negative iff it is in the binding scope
   */
 sealed abstract class Arg extends ArgumentMarker {
   override def toString = properties.asStringPrefix + number.toString
@@ -161,11 +166,7 @@ sealed abstract class Arg extends ArgumentMarker {
   }
 }
 
-/** a sequence argument
-  *
-  * @param n absolute value is the argument position, negative iff it is in the binding scope
- * @param sep the delimiter between elements of the sequence
- */
+/** a sequence argument */
 sealed abstract class SeqArg extends ArgumentMarker {
   val sep: Delim
   def makeCorrespondingArg(n: Int, remap: Int => Int): Arg
@@ -220,7 +221,7 @@ case class LabelArg(number : Int, info: LabelInfo, properties: CommonMarkerPrope
 
 /**
  * sequence of [[LabelArg]]
- * @param dependent elements in the sequence may refer to previous names
+ * @param sep the separator
  */
 case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: CommonMarkerProperties) extends SeqArg {
   override def toString = properties.asStringPrefix + "L" + number.toString + info.toString + sep + "…"
@@ -228,8 +229,8 @@ case class LabelSeqArg(number: Int, sep: Delim, info: LabelInfo, properties: Com
 }
 
 /** a variable binding
-  *
-  * @param n the number of the variable
+ *
+ * @param number the number of the variable
  * @param typed true if the variable carries a type (to be inferred if omitted)
  * @param sep if given, this is a variable sequence with this separator;
  *   for typed variables with the same type, only the last one needs a type
@@ -614,6 +615,7 @@ object Marker {
 
    def parse(s: String) : Marker = s match {
          case s : String if s.startsWith("%L") =>
+           // %L`i[d|c][!]_m resulting in LocalNotationInfo(i,[d|c],[!]) added to marker m, i.e., argument i determines notations to use for argument m
            var i = 2
            while (charAtIs(s, i, _.isDigit)) {i+=1}
            val n = s.substring(2,i).toInt
@@ -634,7 +636,12 @@ object Marker {
              case am: ArgumentMarker => am.addLocalNotationInfo(lni)
              case _ => throw ParseError("only argument markers can use local notations" + s)
            }
-         case "%i" => InstanceName()
+         case s if s.startsWith("%i") =>
+           val base = parse(s.substring(2))
+           base match {
+             case d: Delim => InstanceName(d)
+             case _ => throw ParseError("%i must be followed by plain delimiter: " + s)
+           }
          case "%n" => SymbolName()
          case "%a" => AttributedObject
          case s: String if s.startsWith("%D") || s.startsWith("%R") =>

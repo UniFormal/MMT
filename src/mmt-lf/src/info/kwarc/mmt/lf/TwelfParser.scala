@@ -308,7 +308,8 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     // computes the return value. i is assumed to be the position after the end of the term
     def computeReturnValue = {
       val term = getSlice(start, i - 1)
-      val pu = ParsingUnit(getSourceRef(start, i - 1), context, term, prefixes)
+      val iiC = new documents.InterpretationInstructionContext(prefixes)
+      val pu = ParsingUnit(getSourceRef(start, i - 1), context, term, iiC)
       val pr = try {
          objectLevel(pu)(ErrorThrower)
       } catch {case e: Error =>
@@ -821,9 +822,9 @@ class TwelfParser extends Parser(new NotationBasedParser) {
         val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, spath $ DefComponent, Context(parent.path))
         i = positionAfter
         domain match {
-          case Some(dom) => structure = Structure(parent.toTerm, LocalName(name), OMMOD(dom), Some(morphism), isImplicit)
+          case Some(dom) => structure = Structure(parent.toTerm, LocalName(name), OMMOD(dom), Some(morphism), isImplicit, false)
           //TODO: the domain should be obligatory so that this case goes away; but currently the Twelf parser expects it to be omitted
-          case None => structure = Structure(parent.toTerm, LocalName(name), null, Some(morphism), isImplicit)
+          case None => structure = Structure(parent.toTerm, LocalName(name), null, Some(morphism), isImplicit, false)
         }
         add(structure)
       }
@@ -975,11 +976,10 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       return (varDecl, endsAt + 1)
     }
 
-   private def resolveAssignmentName(home: Term, name: LocalName) = {
-      controller.globalLookup.resolve(home, name) match {
-          case Some(ce: Constant) => Some(ComplexStep(ce.parent) / ce.name)
-          case Some(_) => None
-          case None => None
+   private def resolveAssignmentName(parent: Link, name: LocalName) = {
+      controller.globalLookup.resolveRealizedName(parent, name) match {
+          case List(p) => Some(p.toLocalName)
+          case _ => None
       }
    }
 
@@ -1002,7 +1002,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val (cstName, positionAfter) = crawlIdentifier(i)
     val constantName = LocalName.parse(cstName.replaceAll("\\.", "/"))
     i = positionAfter
-    val cstNameRes = resolveAssignmentName(parent.from, constantName).getOrElse(constantName)
+    val cstNameRes = resolveAssignmentName(parent, constantName).getOrElse(constantName)
     val apath = assPath(parent, cstNameRes)
 
     i = expectNext(i, ":=")
@@ -1042,7 +1042,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     val (strName, positionAfter) = crawlIdentifier(i)
     val structureName = LocalName.parse(strName.replaceAll("\\.", "/"))
     i = positionAfter
-    val strNameRes = resolveAssignmentName(parent.from, structureName).getOrElse(structureName)
+    val strNameRes = resolveAssignmentName(parent, structureName).getOrElse(structureName)
     val apath = assPath(parent, strNameRes)
 
     i = expectNext(i, ":=")
@@ -1295,7 +1295,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
       // It's a DefinedView
       val (morphism, positionAfter) = crawlTerm(i, Nil, Nil, vpath $ DefComponent, Context())
       i = positionAfter
-      view = View(vpath.parent, vpath.name, domain, codomain, Some(morphism), isImplicit)
+      view = View(vpath.parent, vpath.name, domain, codomain, TermContainer.asParsed(morphism), isImplicit)
       add(view)
     }
 

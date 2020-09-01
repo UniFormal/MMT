@@ -1,10 +1,12 @@
 package info.kwarc.mmt.api.parser
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
+import modules._
+import notations._
+import objects._
+import symbols._
+import documents._
+import utils._
 
 /** couples an identifier with its notation */
 case class ParsingRule(name: ContentPath, alias: List[LocalName], notation: TextNotation) {
@@ -188,7 +190,7 @@ class NotationBasedParser extends ObjectParser {
     }
     implicit val puI = pu
     //gathering notations and lexer extensions in scope
-    val (parsing, lexing, _) = getRules(pu.context)
+    val (parsing, lexing, _) = getRules(pu.context , Some(pu.iiContext))
     val notations = tableNotations(parsing)
     Variables.reset()
     log("parsing: " + pu.term + " in context " + pu.context)
@@ -215,6 +217,7 @@ class NotationBasedParser extends ObjectParser {
         val tm = logGroup {
           makeTerm(ul, Nil)
         }
+        SourceRef.update(tm,pu.source) // weirdly necessary,apparently
         log("parse result: " + tm.toString)
         val (unk, free) = getVariables
         ParseResult(unk, free, tm)
@@ -231,45 +234,55 @@ class NotationBasedParser extends ObjectParser {
   }
   
   /** auxiliary function to collect all lexing and parsing rules in a given context */
-  private def getRules(context: Context): RuleLists = {
+  private def getRules(context: Context, iiCO: Option[InterpretationInstructionContext]): RuleLists = {
     val support = context.getIncludes
     //TODO we might also collect notations attached to variables
     support.foreach {p =>
       controller.simplifier(p)
     }
+    val iis = iiCO.map(_.getInstructions).getOrElse(Nil)
+    val docRules = iis.mapPartial {
+      case r: DocumentRule => r.rule
+      case _ => None
+    }
     var nots: List[ParsingRule] = Nil
-    var les: List[LexerExtension] = Nil
+    var les: List[LexerExtension] = docRules.collect {
+      case le: LexerExtension => le
+    }
     var notExts: List[NotationExtension] = Nil
-    support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) => d match {
-      // TODO technically, d must be translated along via first; but that never changes the notations that we collect
-      case c: Constant => // Declaration with HasNotation might collect too much here
-        var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
-        if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
-        //the unapplied notations consisting just of the name
-        val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
-        val app = c.not.toList
-        (unapp:::app).foreach {n =>
-          nots ::= ParsingRule(c.path, c.alternativeNames, n)
+    support.foreach {p => lup.forDeclarationsInScope(OMMOD(p)) {case (_,via,d) =>
+      // TODO d must be translated along via first
+      // TODO notations from implicit structures and realizations are already in the theory; collecting them again causes ambiguity
+      d match {
+        case c: Constant => // Declaration with HasNotation might collect too much here
+          var names = (c.name :: c.alternativeNames).map(_.toString) //the names that can refer to this declaration
+          if (c.name.last == SimpleStep("_")) names ::= c.name.init.toString
+          //the unapplied notations consisting just of the name
+          val unapp = names map (n => new TextNotation(Mixfix(List(Delim(n))), Precedence.infinite, None))
+          val app = c.not.toList
+          (unapp:::app).foreach {n =>
+            nots ::= ParsingRule(c.path, c.alternativeNames, n)
+          }
+        case r: RuleConstant => r.df.foreach {
+          case ne: NotationExtension =>
+            notExts ::= ne
+          case le: LexerExtension =>
+            les ::= le
+          case rt: uom.RealizedType =>
+            rt.lexerExtension.foreach {les ::= _}
+          case _ =>
         }
-      case r: RuleConstant => r.df.foreach {
-        case ne: NotationExtension =>
-          notExts ::= ne
-        case le: LexerExtension =>
-          les ::= le
-        case rt: uom.RealizedType =>
-          rt.lexerExtension.foreach {les ::= _}
+        case de: DerivedContentElement =>
+          nots ::= unappNotation(de, Nil, 0)
+        case nm: NestedModule =>
+          val args = nm.module match {
+            case t: Theory => t.parameters.length
+            case v: View => 0
+          }
+          nots ::= unappNotation(nm.module, Nil, args)
         case _ =>
       }
-      case de: DerivedContentElement =>
-        nots ::= unappNotation(de, Nil, 0)
-      case nm: NestedModule =>
-        val args = nm.module match {
-          case t: Theory => t.parameters.length
-          case v: View => 0
-        }
-        nots ::= unappNotation(nm.module, Nil, args)
-      case _ =>
-    }}}
+    }}
     les = les.sortBy(- _.priority)
     (nots.distinct, les.distinct, notExts.distinct)
   }
@@ -278,10 +291,10 @@ class NotationBasedParser extends ObjectParser {
   private def getRules(thy: Term): RuleLists = {
     // this used to simplify thy first, but that may be dangerous and/or inefficient
     thy match {
-      case OMPMOD(mp,_) => getRules(Context(mp))
+      case OMPMOD(mp,_) => getRules(Context(mp), None)
       case AnonymousTheoryCombinator(at) =>
         //we could also collect all notations in decls, but we do not have parsing rules for OML's
-        at.mt.map(m => getRules(Context(m))).getOrElse((Nil,Nil,Nil))
+        at.mt.map(m => getRules(Context(m), None)).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
     }
   }
@@ -299,7 +312,7 @@ class NotationBasedParser extends ObjectParser {
  /**
    * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
    * @param te the element to transform
-   * @param boundVars the variable names bound in this term (excluding the variables of the context of the parsing unit)
+   * @param boundNames the names bound in this term (excluding the variables of the context of the parsing unit)
    * @param pu the original ParsingUnit (constant during recursion)
    * @param attrib the resulting term should be a variable attribution
    */
@@ -319,7 +332,7 @@ class NotationBasedParser extends ObjectParser {
         } else if (word == "_") {
           // unbound _ is a fresh unknown variable
           newUnknown(newExplicitUnknown, boundNames)
-        } else if (word.count(_ == '?') > 0) {
+        } else if (word.count(c => c == '?' || c == '/') > 0) {
           // ... or qualified identifiers
           makeIdentifier(te).map(OMID).getOrElse(unparsed)
         } else if (mayBeFree(word)) {
@@ -369,11 +382,25 @@ class NotationBasedParser extends ObjectParser {
     // but we cannot always prepend ? because the identifier could also be NS?THY
     // Therefore, we turn word into ?word using a heuristic
     segments match {
+      case only :: Nil =>
+        val ln = LocalName.parse(word)
+        val options = lup.resolveName(pu.context.getIncludes, ln)
+        val name = options match {
+          case Nil =>
+            makeError("ill-formed constant reference " + ln, te.region)
+            None
+          case hd :: Nil =>
+            Some(hd)
+          case _ => 
+            makeError("ambiguous constant reference " + ln, te.region)
+            None
+        }
+        return name
       case fst :: _ :: Nil if !fst.contains(':') && fst != "" && Character.isUpperCase(fst.charAt(0)) =>
         word = "?" + word
       case _ =>
     }
-    // recognizing prefix:REST is awkward because : is usually used in notations
+    // recognizing prefix:REST is awkward because : is often used in notations
     // therefore, we turn prefix/REST into prefix:/REST if prefix is a known namespace prefix
     // this introduces the (less awkward problem) that relative paths may not start with a namespace prefix
     val beforeFirstSlash = segments.headOption.getOrElse(word).takeWhile(_ != '/')
@@ -550,7 +577,7 @@ class NotationBasedParser extends ObjectParser {
      val cons = consVar.reverse
 
      // hard-coded special case for a bracketed subterm
-     if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot)) {
+     if (cons == List(utils.mmt.brackets) || cons == List(utils.mmt.andrewsDot) || cons == List(utils.mmt.andrewsDotRight)) {
        //TODO add metadata for keeping track of brackets
        // source ref of the returned term will be overridden with the source ref of the bracketed term
        return args.head._2
@@ -715,7 +742,7 @@ class NotationBasedParser extends ObjectParser {
                       (implicit pu: ParsingUnit, errorCont: ErrorHandler): Term = {
     // TODO evil hack to allow OML names with slashes, must be removed at next opportunity
     val filter : Error => Boolean = {
-      case SourceError(_,_,msg,_,_) if msg startsWith "unbound token:" => false
+      case SourceError(_,_,msg,_,_) if (msg startsWith "unbound token:") || (msg startsWith "ill-formed constant reference") => false
       case _ => true
     }
     val t = makeTerm(te,boundNames)(pu,new FilteringErrorHandler(errorCont,filter))

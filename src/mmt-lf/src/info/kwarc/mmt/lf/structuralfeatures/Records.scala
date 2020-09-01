@@ -12,12 +12,20 @@ import info.kwarc.mmt.lf._
 
 import InternalDeclaration._
 import StructuralFeatureUtils._
+import StructuralFeatureUtil._
 import InternalDeclarationUtil._
 
 object RecordUtil {
     val recHome = DPath(utils.URI("http", "cds.omdoc.org") / "LFX") ? "Records"
     val recTypePath = recHome ? "Rectype"
     val recExpPath = recHome ? "Recexp"
+    val makeName = "Make"
+    val recTypeName = "Type"
+    val reprName = "Repr"
+    val recName = "rec"
+    val equivName = "equiv"
+    def converseEquivName(n: Int) = uniqueLN("conv_equiv"+"_"+n)
+    def inductName(loc:LocalName)={LocalName("induct")/loc}
 }
 import RecordUtil._
 
@@ -37,7 +45,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
    * @param parent The parent module of the declared inductive types
    * @param dd the derived declaration to be elaborated
    */
-  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration) = {
+  def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
     val params = Type.getParameters(dd)
     implicit val parentTerm = dd.path
 
@@ -52,7 +60,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val declCtx = origDecls map(d => OMV(LocalName(d.name)) % d.internalTp)
       val TpDeclCtx = origDecls filter (_.isTypeLevel) map (_.toVarDecl)
          
-      val recordType = makeConst(LocalName("type"), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})
+      val recordType = makeConst(LocalName(recTypeName), () => {PiOrEmpty(TpDeclCtx, structure.tp.get)})
       val decls : List[Constant] = toEliminationDecls(origDecls, declCtx, TpDeclCtx, recordType.path)
       val make : Constant = this.introductionDeclaration(recordType.toTerm, origDecls, None, context)
       
@@ -66,19 +74,11 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       // the no junk axioms
       elabDecls = elabDecls.reverse ++ noJunksDeclarations(params, declCtx, TpDeclCtx, recordType.toTerm, make.path, origDecls)
       
-      elabDecls :+= reprDeclaration(recordType.path, make.path, declCtx, TpDeclCtx, decls map (_.path), Some("rec"), context)
+      elabDecls :+= reprDeclaration(recordType.path, make.path, declCtx, TpDeclCtx, decls map (_.path), Some(reprName), context)
       elabDecls :+= equalityDecl(recordType.path, make.path, declCtx, origDecls, context)
       elabDecls ++= convEqualityDecls(recordType.path, make.path, declCtx, origDecls, context)
       
-      //elabDecls foreach {d => log(defaultPresenter(d)(controller))}
-      new Elaboration {
-        val elabs : List[Declaration] = Nil
-        def domain = elabDecls map {d => d.name}
-        def getO(n: LocalName) = {
-          elabDecls.find(_.name == n).foreach(d => log(defaultPresenter(d)(controller)))
-          elabDecls.find(_.name == n)
-        }
-      }
+      externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
     }
   }
   
@@ -91,7 +91,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val TpTmDecls = decls.filter(_.isTypeLevel).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
       PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
     }
-    makeConst(uniqueLN(nm getOrElse "make"), Ltp)
+    makeConst(uniqueLN(nm getOrElse makeName), Ltp)
   }
   
   def reprDeclaration(recordType: GlobalName, introDecl: GlobalName, declCtx:Context, TpDeclCtx: Context, recordFields:List[GlobalName], name: Option[String], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
@@ -104,7 +104,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val ret : Term = Eq(recType, arg.toTerm, resStr)
       Pi(con++declCtx :+ arg, ret)
     }
-    makeConst(uniqueLN("repr"), Ltp)
+    makeConst(uniqueLN(reprName), Ltp)
   }
   
   /* Design issue: 
@@ -112,6 +112,9 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
   	If not the declarations will be useless for Florian's intended usage.
   	Otherwise, we would break with the idea that theory parameters have no other effect than being copied into the context of each external declaration
   */
+  /**
+   * Equal fields imply equal records
+   */
   def equalityDecl(makeType: GlobalName, make: GlobalName, declCtx:Context, decls:List[InternalDeclaration], ctx: Option[Context])(implicit parent: GlobalName) : Constant = {
     val Ltp = () => {
       val con = (ctx getOrElse Context.empty)
@@ -125,9 +128,12 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
       val ret : Term = Arrow(args.zip(argsP) map {case (a, b) => Eq(a.tp.get, a.toTerm, b.toTerm)}, Eq(recType, res, resP))
       PiOrEmpty(cont ++ args ++ argsP, ret)
     }
-    makeConst(uniqueLN("equiv"), Ltp)
+    makeConst(uniqueLN(equivName), Ltp)
   }
   
+  /**
+   * Equal records imply equal field values
+   */
   def convEqualityDecls(makeType: GlobalName, make: GlobalName, declCtx:Context, decls:List[InternalDeclaration], ctx: Option[Context])(implicit parent: GlobalName) : List[Constant] = {
     decls.zipWithIndex map { case (_, i) =>
       val Ltp = () => {
@@ -143,7 +149,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
         val ret : Term = Arrow(Eq(recType, res, resP), argsEq.toArray.apply(i))
         Pi(cont ++ args ++ argsP, ret)
       }
-      makeConst(uniqueLN("conv_equiv_"+i), Ltp)
+      makeConst(converseEquivName(i), Ltp)
     }
   }
   
@@ -196,7 +202,7 @@ class Records extends StructuralFeature("record") with ParametricTheoryLike {
         
         PiOrEmpty(context++declCtx++args, Eq(x_d._1, ApplyGeneral(dElim, params:+ApplyGeneral(OMS(recMake), params++args.map(_.toTerm))), x_d._2))
       }
-      makeConst(uniqueLN("induct_"+decl.name), Ltp)
+      makeConst(inductName(decl.name), Ltp)
     }
   }
   

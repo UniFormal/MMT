@@ -28,7 +28,7 @@ var interactiveViewing = {
     },
 
     navigateServer: function(uri) {
-        url = '/:admin?navigate ' + uri;
+        url = '/:action?navigate ' + uri;
         $.ajax({ 'url': url });
     },
 
@@ -272,10 +272,11 @@ var interactiveViewing = {
     /* Helper Functions  */
     setVisib: function(prop, val) {
         var root = mmt.focusIsMath ? mmt.focus : mmt.focus.parentNode;
+        var cls = 'mmt-' + prop;
         if (val)
-            $(root).find('.' + prop).removeMClass(prop + '-hidden');
+            $(root).find('.' + cls).removeMClass(cls + '-hidden');
         if (!val)
-            $(root).find('.' + prop).addMClass(prop + '-hidden');
+            $(root).find('.' + cls).addMClass(cls + '-hidden');
     },
 
     visibSubmenu: function(prop) {
@@ -290,7 +291,7 @@ var interactiveViewing = {
     visibMenu: function() {
         return {
             "visibility": {
-                "reconstructed types": this.visibSubmenu('reconstructed'),
+                "reconstructed types": this.visibSubmenu('reconstructed-type'),
                 "implicit arguments": this.visibSubmenu('implicit-arg'),
                 "redundant brackets": this.visibSubmenu('opt-brackets'),
             }

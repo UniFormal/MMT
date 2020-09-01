@@ -14,23 +14,40 @@ class EmbedStringToJSON(c: Codec[String]) extends Embedding[String,JSON](c) {
       case JSONString(s) => Some(s)
       case _ => None
    }
+   val codeType = StringType
 }
+
 
 /** embeds JSON codecs into codecs that use Scala values as codes */
 class EmbedJSONToScala(c: Codec[JSON]) extends Embedding[JSON,Any](c) {
+  import scala.collection.immutable.ListMap
+  val codeType = c.codeType
   def embed(j: JSON): Any = j match {
-    case JSONNull => null
-    case v: JSONValue => v.value
-    case a: JSONArray =>
-      a.values map embed
-    case _: JSONObject => throw GeneralError("unsupported")  
+    case JSONNull => null // Null
+    case v: JSONValue => v.value  // BigInt, BigDecimal, Boolean, String
+    case a: JSONArray => a.values map embed // List[_]
+    case o: JSONObject => // ListMap[String,_]
+      val cases = o.map map {case (k,v) => (k.value, embed(v))}
+      ListMap(cases:_*)
   }
-  def extract(a: Any) = a match {
+  def extract(a: Any): Option[JSON] = a match {
     case null => Some(JSONNull)
     case b: Boolean => Some(JSONBoolean(b))
     case s: String => Some(JSONString(s))
     case x: BigInt => Some(JSONInt(x))
-    case _ => None
+    case d: BigDecimal => Some(JSONFloat(d))
+    case l: List[_] =>
+      val vs = l map {v => extract(v).getOrElse(return None)}
+      Some(JSONArray(vs:_*))
+    case m: ListMap[_,_] =>
+      val cases = m.toList.map {case (k,v) =>
+        extract(k).getOrElse(return None) match {
+          case kS: JSONString =>
+            (kS,extract(v).getOrElse(return None))
+          case _ => return None
+        }
+      }
+      Some(JSONObject(cases))
   }
 }
 
@@ -68,7 +85,7 @@ class BigIntSplitter(base: Int) {
  */ 
 class BigIntCodec(id: GlobalName, synType: Term) extends LiteralsCodec[BigInt,JSON](id, new RepresentedRealizedType(synType, StandardInt)) {
    val splitter = new BigIntSplitter(1 << 31) // 2^31
-
+   val codeType = utils.ListType(IntType)
    def encodeRep(i: BigInt) = {
       val (sgn, abs) = splitter.split(i)
       JSONArray(JSONInt(sgn * abs.length) :: abs.map(JSONInt(_)) :_*)

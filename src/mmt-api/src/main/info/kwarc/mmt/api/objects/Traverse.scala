@@ -2,8 +2,8 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import libraries._
-import Conversions._
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.symbols.UniformTranslator
 
 /**
  * A Traverser is a function on Term defined by context-sensitive induction.
@@ -40,9 +40,20 @@ abstract class Traverser[A] {
    /** this traverser as a translator
     *  @param newInit creates a fresh initial state
     */
-   def toTranslator(newInit: () => A) = new symbols.UniformTranslator {
-     def apply(c: Context, t: Term) = traverse(t)(c, newInit())
+   def toTranslator(newInit: () => A): UniformTranslator = new symbols.UniformTranslator {
+     def apply(c: Context, t: Term): Term = traverse(t)(c, newInit())
    }
+
+  /** diagrammatic composition (first this, then that) */
+  def compose(that: Traverser[A]): Traverser[A] = {
+    val self = this
+
+    new Traverser[A] {
+      def traverse(t: Term)(implicit con: Context, state: State): Term = {
+        that.traverse(self.traverse(t)(con, state))(con, state.asInstanceOf[A])
+      }
+    }
+  }
 }
 
 /**
@@ -51,7 +62,7 @@ abstract class Traverser[A] {
 abstract class StatelessTraverser extends Traverser[Unit] {
    def apply(t: Term, con : Context) : Term = traverse(t)(con, ())
 
-   def toTranslator(): symbols.Translator = toTranslator(() => ())
+   def toTranslator(): UniformTranslator = toTranslator(() => ())
 }
 
 object Traverser {
@@ -91,18 +102,4 @@ object Traverser {
             OMSemiFormal(newtokens).from(t)
        }
    }
-}
-
-/** A Traverser that moves all morphisms to the inside of a term. */
-object PushMorphs extends Traverser[Term] {
-   // morph is the composition of all morphisms encountered so far
-   def traverse(t: Term)(implicit con : Context, morph : Term) : Term = t match {
-      // change state: via is added to the morphisms
-      case OMM(arg, via) => traverse(arg)(con, OMCOMP(via, morph))
-      // apply the morphism to symbols
-      case OMID(path) => OMM(t, morph)
-      // in all other cases, traverse
-      case t => Traverser(this,t)
-   }
-   def apply(t: Term, thy : MPath) : Term = apply(t, OMIDENT(OMMOD(thy)))
 }
