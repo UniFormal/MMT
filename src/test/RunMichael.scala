@@ -30,7 +30,9 @@ object RunMichael extends MagicTest {
   }
 
   def run : Unit = {
-    intersect
+    //viewfinder
+    findIntersecter
+    //intersect
   }
 
   def findIntersecter() : Unit = {
@@ -60,7 +62,7 @@ object RunMichael extends MagicTest {
       )).withKey("testarchive").withKey(logic)
     controller.extman.addExtension(preproc)
     hl("extension info.kwarc.mmt.api.refactoring.GainFindIntersecter")
-    hl("build MitM/smglom intersections")
+    hl("build testarchive intersections")
   }
 
   def getConst() : Unit = {
@@ -101,17 +103,17 @@ object RunMichael extends MagicTest {
       val pvsmonoid = Path.parseM("http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library/algebra?monoid",NamespaceMap.empty)
       val mitmmonoid = Path.parseM("http://mathhub.info/Tutorials/Mathematicians?Monoid",NamespaceMap.empty)
 
-       val from = Path.parseM("http://mathhub.info/MitM/Foundation?RealLiterals",NamespaceMap.empty)
+       //val from = Path.parseM("http://mathhub.info/MitM/Foundation?RealLiterals",NamespaceMap.empty)
       //val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
-      // val from = Path.parseM("http://cds.omdoc.org/testcases?CommTest",NamespaceMap.empty)
-      // val from = Path.parseM("http://cds.omdoc.org/testcases?PVSTest",NamespaceMap.empty)
-      //val from = Path.parseM("http://mydomain.org/testarchive/mmt-example?addition",NamespaceMap.empty)
+      //val from = Path.parseM("http://cds.omdoc.org/testcases?CommTest",NamespaceMap.empty)
+      //val from = Path.parseM("http://cds.omdoc.org/testcases?PVSTest",NamespaceMap.empty)
+      val from = Path.parseM("http://mydomain.org/testarchive/mmt-example?A3",NamespaceMap.empty)
 
-      // val to = "PVS/NASA"
-      // val to = "HOLLight/basic"
-       val to = "MitM/smglom"
-      // val to = "PVS/Prelude"
-      //val to = "testarchive"
+      //val to = "PVS/NASA"
+      //val to = "HOLLight/basic"
+      //val to = "MitM/smglom"
+      //val to = "PVS/Prelude"
+      val to = "testarchive"
 
       val eq = logic ? "eq"
       object EliminateImplicits extends Preprocessor {
@@ -135,11 +137,11 @@ object RunMichael extends MagicTest {
         exists = Some(MitM.exists),
         equal = Some(eq)
       )).withKey("testarchive").withKey(logic)
-      //controller.extman.addExtension(preproc)
+      controller.extman.addExtension(preproc)
       val vf = new ViewFinder
       controller.extman.addExtension(vf,List(
-        //"testarchive"
-        "MitM/smglom"
+        "testarchive"
+        //"MitM/smglom"
         // ,"HOLLight/basic"
         // ,"PVS/Prelude"
         // ,"PVS/NASA"

@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.refactoring
 import java.io.PrintWriter
 
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
-import info.kwarc.mmt.api.{AddError, ComplexStep, DPath, GlobalName, LocalName, MPath}
+import info.kwarc.mmt.api.{AddError, ComplexStep, DPath, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, OMS, StatelessTraverser, Term, Traverser}
@@ -272,6 +272,7 @@ abstract class Intersecter extends Extension {
     })
     //Fill remainder with remaining constants
     fillConstantsRemainder1(rem, th1, th2, intersections, renamings)
+    controller.add(rem)
     return rem_list :+ rem
   }
 
@@ -300,6 +301,7 @@ abstract class Intersecter extends Extension {
     })
     //Fill remainder with remaining constants
     fillConstantsRemainder2(rem, th1, th2, intersections, renamings)
+    controller.add(rem)
     rem_list :+ rem
   }
 
@@ -449,8 +451,8 @@ class BinaryIntersecter extends Intersecter {
       case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
     }
-    val view_map = ViewSplitter.getPairs(partialView, th1, th2).toMap
-    val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2).map(_.swap).toMap
+    val view_map = ViewSplitter.getPairs(partialView, th1, th2)(controller).toMap
+    val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2)(controller).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int1, int2, view_map, view_map_inverse, renamings)
     val view = restrictPartialView(partialView, int1, int2, renamings)
     //add intersections to map
@@ -504,8 +506,8 @@ class UnaryIntersecter extends Intersecter {
       case s: Structure => ??? //Ignored due inconsistent semantics
       case default => ???
     }
-    val view_map = ViewSplitter.getPairs(partialView, th1, th2).toMap
-    val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2).map(_.swap).toMap
+    val view_map = ViewSplitter.getPairs(partialView, th1, th2)(controller).toMap
+    val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2)(controller).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int, view_map, view_map_inverse, renamings)
     //add intersections to map
     addNonTrivialIntersection(th1, th2, int, int, intersections, None)
@@ -558,8 +560,11 @@ object ViewSplitter {
     * @return
     */
 
-  def getPairs(v:View, dom:Theory, cod:Theory) : List[(FinalConstant,FinalConstant)]= {
-    val domconsts = v.getDeclarations.filter(_.name.head match {case ComplexStep(p) => p==dom.path}) collect {
+  def getPairs(v:View, dom:Theory, cod:Theory) ( implicit controller : Controller) : List[(FinalConstant,FinalConstant)]= {
+    val domconsts = v.getDeclarations.flatMap(d => d.name.head match {
+      case ComplexStep(p) if (p==dom.path) => Some(d)
+      case default => None
+    }) collect {
       case c: FinalConstant if c.df.isDefined => c
     }
     (for {o <- domconsts} yield (o.name.tail,o.df.get)).filter(p =>
@@ -657,17 +662,16 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
     }
   }
 
-  /** a string identifying this build target, used for parsing commands, logging, error messages */
-  override def key: String = "intersections"
-
-  /** clean this target in a given archive */
-  override def clean(a: Archive, in: FilePath): Unit = {
-    val file = new java.io.File(a.root + "/export/intersections/"+a.id+".mmt")
-    file.delete()
-  }
-
-  /** build or update this target in a given archive */
-  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+  /** Searches for views over which to intersect and then does so
+    *
+    * views are found via the viewfinder
+    * intersections done via intersecter of parameterized type I
+    * intersection graphs are evaluated using evaluation function of parameterized type GE
+    *
+    * @param a Archive in which intersections are searched for
+    * @return intersected graph as pair of theories and views and a numeric value of their evaluation
+    */
+  def findIntersections(a : Archive) : List[((List[Theory],List[View]), Int)] = {
     //apply viewfinder
     val viewFinder = new ViewFinder
     if (controller.extman.get(classOf[Preprocessor]).exists(p => p.key != "" && a.id.startsWith(p.key))) {
@@ -679,16 +683,35 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
     while(!viewFinder.isInitialized) {
       Thread.sleep(500)
     }
-    var views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
+    var views = theories.flatMap(t => viewFinder.find(t, a.id).map(v =>{log(v.toString);v}).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
 
-    var intersections = views.map(intersecter.intersectGraph).map(_ match {case (l1,l2,l3, v) =>(l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2))))})
+    //phase 2 : intersect
+    var intersections = views.map(intersecter.intersectGraph)
+    log(intersections.toString)
 
-    var res = intersections.map(i => (i, graphEvaluator.eval(i._1, i._2))).sortBy(_._2)
+    //phase 3 : sort
+    val res = intersections.map(_ match {case (l1,l2,l3, v) =>(l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2))))}).map(i => (i, graphEvaluator.eval(i._1, i._2))).sortBy(_._2)
+    res
+  }
+
+  /** a string identifying this build target, used for parsing commands, logging, error messages */
+  override def key: String = "intersections"
+
+  /** clean intersections in a given archive */
+  override def clean(a: Archive, in: FilePath): Unit = {
+    val file = new java.io.File(a.root + "/export/intersections/"+a.id+".mmt")
+    file.delete()
+  }
+
+  /** build or update intersections in a given archive */
+  override def build(a: Archive, up: Update, in: FilePath): Unit = {
+    val res = findIntersections(a)
     implicit val fw = new FileWriter(new java.io.File(a.root + "/export/intersections/"+a.id+".mmt"))
     var output = res.foreach(r => {
       r._1._1.foreach(syntaxPresenter.apply(_))
       r._1._2.foreach(syntaxPresenter.apply(_))
     })
+    fw.done
   }
 }
 
@@ -732,6 +755,7 @@ class KnowledgeGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               ind +=1
             }
+          case default =>
         }
       )
     }
@@ -776,6 +800,7 @@ class KnowlDivRepGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               ind +=1
             }
+          case default =>
         }
       )
     }
@@ -793,6 +818,7 @@ class KnowledgeGainGraphEvaluator extends GraphEvaluator {
       for (dec <- theory.getDeclarations) {
         dec match {
           case s :Structure => count -= 1
+          case default =>
         }
       }
     }
@@ -803,6 +829,7 @@ class KnowledgeGainGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               count +=1
             }
+          case default =>
         }
       )
     }
