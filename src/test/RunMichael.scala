@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool,
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import Graphtester.controller
+import info.kwarc.mmt.api.archives.Importer
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 import info.kwarc.mmt.api.{NamespaceMap, Path}
@@ -36,7 +37,6 @@ object RunMichael extends MagicTest {
   }
 
   def findIntersecter() : Unit = {
-    hl("log+ findIntersecter")
     controller.extman.addExtension(MitM.preproc)
     val eq = logic ? "eq"
     object EliminateImplicits extends Preprocessor {
@@ -61,7 +61,7 @@ object RunMichael extends MagicTest {
         equal = Some(eq)
       )).withKey("testarchive").withKey(logic)
     controller.extman.addExtension(preproc)
-    hl("extension info.kwarc.mmt.api.refactoring.GainFindIntersecter")
+    hl("extension info.kwarc.mmt.api.refactoring.FindBinaryIntersecter")
     hl("build testarchive intersections")
   }
 

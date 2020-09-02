@@ -256,7 +256,7 @@ abstract class Intersecter extends Extension {
     */
   protected def remainder1(th1: Theory, th2: Theory, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
     val includes1 = collect_structures(th1)
-    val rem = Theory.empty(th1.parent, LocalName(th1.name.toString+"'"), th1.meta) // T'
+    val rem = Theory.empty(th1.parent, LocalName(th1.name.toString+"R"), th1.meta) // T'
 
     //Recurse through dependent Theories of th1
     val rem_list = includes1.flatMap(_ match {
@@ -285,7 +285,7 @@ abstract class Intersecter extends Extension {
     */
   protected def remainder2(th1: Theory, th2: Theory, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings : mutable.HashMap[GlobalName, GlobalName]): List[Theory] = {
     val includes2 = collect_structures(th2)
-    val rem = Theory.empty(th2.parent, LocalName(th2.name.toString+"'"), th2.meta) // T'
+    val rem = Theory.empty(th2.parent, LocalName(th2.name.toString+"R"), th2.meta) // T'
 
     //Recurse through dependent Theories of th2
     val rem_list = includes2.flatMap(_ match {
@@ -683,7 +683,7 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
     while(!viewFinder.isInitialized) {
       Thread.sleep(500)
     }
-    var views = theories.flatMap(t => viewFinder.find(t, a.id).map(v =>{log(v.toString);v}).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
+    var views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
 
     //phase 2 : intersect
     var intersections = views.map(intersecter.intersectGraph)
@@ -715,7 +715,7 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
   }
 }
 
-class GainFindIntersecter extends FindIntersecter(new BinaryIntersecter, new KnowledgeGainGraphEvaluator)
+class FindBinaryIntersecter extends FindIntersecter(new BinaryIntersecter, new KnowledgeGainGraphEvaluator)
 
 /**
   * Abstract class for GraphEvaluators.
