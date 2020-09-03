@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.{AddError, ComplexStep, DPath, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMID, OMS, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.presentation.{FileWriter, MMTSyntaxPresenter, Presenter, RenderingHandler}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, HasDefiniens, IdentityTranslator, Include, IncludeData, PlainInclude, Renamer, SimpleDeclaredStructure, Structure, TermContainer, TraversingTranslator}
@@ -48,10 +49,10 @@ abstract class Intersecter extends Extension {
     val th1 = controller.getTheory(view.from.toMPath)
     val th2 = controller.getTheory(view.to.toMPath)
     val renamings = mutable.HashMap[GlobalName, GlobalName]()
-    recIntersect(th1, th2, view, intersections, renamings)
+    val views = recIntersect(th1, th2, view, intersections, renamings)
     val rem1 = remainder1(th1, th2, intersections, renamings)
     val rem2 = remainder2(th1, th2, intersections, renamings)
-    (rem1, intersections.values.toSet.toList, rem2, List.empty[(View, View)])
+    (rem1, intersections.values.toSet.toList, rem2, views)
   }
 
   /** Recursive method to generate intersections
@@ -65,9 +66,10 @@ abstract class Intersecter extends Extension {
     * @param renamings map of renamings of GlobalNames
     * @return
     */
-  protected def recIntersect(th1: Theory, th2: Theory, view : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): Unit = {
+  protected def recIntersect(th1: Theory, th2: Theory, view : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName]): List[(View,View)] = {
+    var views = List[(View,View)]()
     if (intersections.contains((th1.path, th2.path))) { //TODO optimize multiple calls for empty theory
-      return
+      return views
     }
     val includes1 = collect_structures(th1)
     val includes2 = collect_structures(th2)
@@ -76,23 +78,23 @@ abstract class Intersecter extends Extension {
     //th1:
     includes1.foreach {
       case PlainInclude(from, to) =>
-        recIntersect(controller.getTheory(from), th2, view, intersections, renamings)
+        views ++= recIntersect(controller.getTheory(from), th2, view, intersections, renamings)
       case default =>
     }
     //th2:
     includes2.foreach {
       case PlainInclude(from, to) =>
-        recIntersect(th1, controller.getTheory(from), view, intersections, renamings)
+        views ++= recIntersect(th1, controller.getTheory(from), view, intersections, renamings)
       case default =>
     }
-
-    createIntersection(th1, th2, view, intersections, renamings, includes1, includes2)
+    views ++ createIntersection(th1, th2, view, intersections, renamings, includes1, includes2)
   }
 
-  protected def createIntersection(th1: Theory, th2: Theory, view : View, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration])
+  protected def createIntersection(th1: Theory, th2: Theory, view : View, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) : Option[(View,View)]
 
-  protected def addNonTrivialIntersection(th1 : Theory, th2 : Theory, int1 : Theory, int2 : Theory, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], view: Option[View]) = {
+  protected def addNonTrivialIntersection(th1 : Theory, th2 : Theory, int1 : Theory, int2 : Theory, intersections : mutable.HashMap[(MPath, MPath), (Theory, Theory)], view : Option[(View,View)]) : Option[(View,View)] = {
 
+    var retview = view
     //add to controller
     controller.add(int1)
     controller.add(int2)
@@ -122,6 +124,7 @@ abstract class Intersecter extends Extension {
           case PlainInclude(from, to) => {
             res1 = controller.getTheory(from)
             controller.delete(int1.path)
+            retview = None
           }
           case default =>
         }
@@ -131,14 +134,24 @@ abstract class Intersecter extends Extension {
           case PlainInclude(from, to) => {
             res2 = controller.getTheory(from)
             controller.delete(int2.path)
+            retview = None
           }
           case default =>
         }
       }
       intersections.put((th1.path, th2.path), (res1, res2))
+      retview match {
+        case Some((v1,v2)) => {
+          controller.add(v1)
+          controller.add(v2)
+        }
+        case None =>
+      }
+      retview
     } else {
       controller.delete(int1.path)
       controller.delete(int2.path)
+      None
     }
   }
 
@@ -262,7 +275,7 @@ abstract class Intersecter extends Extension {
     val rem_list = includes1.flatMap(_ match {
       case Include(IncludeData(home, from, args, df, total)) => {
         val rem_pre = remainder1(controller.getTheory(from), th2, intersections, renamings)
-        addDeclaration(Include(rem.toTerm, rem_pre.head.path, args), rem, renamings)
+        addDeclaration(Include(rem.toTerm, rem_pre.last.path, args), rem, renamings)
         rem_pre
       }
       case SimpleDeclaredStructure(home, name, from, isImplicit, istotal) =>
@@ -427,7 +440,24 @@ class BinaryIntersecter extends Intersecter {
     res
   }
 
-  override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) = {
+  /**
+    * Creates new (potentially partial) view by restricting it to the domain (and codomain) of the given theories
+    *
+    * renamings are used to translate the partial view into the correct domain.
+    *
+    * @param vm map of partial view that is to be restricted
+    * @param th1 domain theory
+    * @param th2 codomain theory
+    * @param renamings
+    * @return restricted view
+    */
+  def restrictVM(vm: scala.collection.immutable.Map[FinalConstant,FinalConstant], parent : DPath, th1: Theory, th2: Theory, renamings: mutable.HashMap[GlobalName, GlobalName]) : View = {
+    val res = new View(parent, LocalName(th1.name.toString+"to"+th2.name.toString), TermContainer(th1.toTerm), TermContainer(th2.toTerm), new TermContainer, true)
+    for (c1 <- vm.keys) res.add(d = Constant(res.toTerm, ComplexStep(c1.parent)/c1.name, List(), TermContainer.empty, TermContainer(vm(c1).toTerm), None, NotationContainer.empty))
+    res
+  }
+
+  override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]): Option[(View,View)] = {
     //Generate intersection of th1 and th2 over view and add them to intersections map
     var int1 = Theory.empty(th1.parent, LocalName(th1.name.toString+"Intersects"+th2.name.toString), th1.meta)
     var int2 = Theory.empty(th2.parent, LocalName(th2.name.toString+"Intersects"+th1.name.toString), th2.meta)
@@ -454,9 +484,10 @@ class BinaryIntersecter extends Intersecter {
     val view_map = ViewSplitter.getPairs(partialView, th1, th2)(controller).toMap
     val view_map_inverse = ViewSplitter.getPairs(partialView, th1, th2)(controller).map(_.swap).toMap
     fillConstantsIntersection(th1, th2, int1, int2, view_map, view_map_inverse, renamings)
-    val view = restrictPartialView(partialView, int1, int2, renamings)
+    val view = restrictVM(view_map, partialView.parent, int1, int2, renamings)
+    val view_inverse = restrictVM(view_map_inverse, partialView.parent, int2, int1, renamings)
     //add intersections to map
-    addNonTrivialIntersection(th1, th2, int1, int2, intersections, Some(view))
+    addNonTrivialIntersection(th1, th2, int1, int2, intersections, Some((view,view_inverse)))
   }
 
   /** Creates intersection
@@ -485,7 +516,7 @@ class BinaryIntersecter extends Intersecter {
 
 class UnaryIntersecter extends Intersecter {
 
-  override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) = {
+  override def createIntersection(th1: Theory, th2: Theory, partialView : View, intersections: mutable.HashMap[(MPath, MPath), (Theory, Theory)], renamings: mutable.HashMap[GlobalName, GlobalName], includes1 : List[Declaration], includes2 : List[Declaration]) : Option[(View,View)] = {
     //Generate intersection of th1 and th2 over view and add them to intersections map
     var int = Theory.empty(th1.parent, LocalName(th1.name.toString+"Intersects"+th2.name.toString), th1.meta)
 
@@ -686,12 +717,20 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
     var views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
 
     //phase 2 : intersect
-    var intersections = views.map(intersecter.intersectGraph)
-    log(intersections.toString)
+    var intersections = views.map(v => (intersecter.intersectGraph(v), (v.from.toMPath, v.to.toMPath)))
 
     //phase 3 : sort
-    val res = intersections.map(_ match {case (l1,l2,l3, v) =>(l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2))))}).map(i => (i, graphEvaluator.eval(i._1, i._2))).sortBy(_._2)
-    res
+    val res = intersections.map(int => int match {case ((l1,l2,l3, v),(t1,t2)) =>((l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2)))),(t1,t2))}).map(i => (i, graphEvaluator.eval(i._1._1, i._1._2))).sortBy(_._2)
+    val filterSet = mutable.HashSet[Theory]()
+    res.filter(_._2>0 | true).filter(_ match {
+      case (((theories, views), (t1, t2)), int) =>
+        val dependencies = List(controller.getTheory(t1), controller.getTheory(t2))
+        !dependencies.exists(filterSet.contains(_)) && {
+          filterSet ++= dependencies
+          true
+        }
+      case default => false
+    }).map(r => (r._1._1, r._2))
   }
 
   /** a string identifying this build target, used for parsing commands, logging, error messages */
