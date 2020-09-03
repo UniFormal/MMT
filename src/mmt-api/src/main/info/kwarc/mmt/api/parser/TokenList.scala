@@ -253,17 +253,19 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
   * @param text the characters making up the token
   */
 abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) {
-  /** a continuation function called by the parser when parsing this Token
-    *
-    * @param outer the ParsingUnit during which this ExternalToken was encountered
-    * @param BoundName the context
-    * @param parser the parser calling this function
-    */
+  /** a continuation function called by the parser when parsing this Token */
   def parse(input: ExternalTokenParsingInput): Term
 }
 
-/** bundles arguments passed into [[ExternalToken]] */
-case class ExternalTokenParsingInput(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser, errorCont: ErrorHandler)
+/** bundles arguments passed into [[ExternalToken]]
+  * @param outer the ParsingUnit during which this ExternalToken was encountered
+  * @param parser the object parser
+  * @param errorCont error handler
+*/
+abstract class ExternalTokenParsingInput(val outer: ParsingUnit, val parser: ObjectParser, val errorCont: ErrorHandler) {
+  /** callback function to parse terms within the current parser */
+  def callbackParse(reg: SourceRegion, term: String): Term
+}
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
   * @param term the result of parsing
