@@ -420,26 +420,6 @@ abstract class Intersecter extends Extension {
 }
 
 class BinaryIntersecter extends Intersecter {
-
-  /**
-    * Creates new (potentially partial) view by restricting it to the domain (and codomain) of the given theories
-    *
-    * renamings are used to translate the partial view into the correct domain.
-    *
-    * @param partialView partial view that is to be restricted
-    * @param th1 domain theory
-    * @param th2 codomain theory
-    * @param renamings
-    * @return restricted view
-    */
-  def restrictPartialView(partialView: View, th1: Theory, th2: Theory, renamings: mutable.HashMap[GlobalName, GlobalName]) : View = {
-    val res = new View(partialView.parent, LocalName(th1.name.toString+"to"+th2.name.toString), TermContainer(th1.toTerm), TermContainer(th2.toTerm), TermContainer(partialView.df), partialView.isImplicit)
-    partialView.getDeclarations foreach {d =>
-      res.add(d.translate(res.toTerm, LocalName.empty, TraversingTranslator(Renamer(name => renamings.get(name))),Context()))
-    }
-    res
-  }
-
   /**
     * Creates new (potentially partial) view by restricting it to the domain (and codomain) of the given theories
     *
