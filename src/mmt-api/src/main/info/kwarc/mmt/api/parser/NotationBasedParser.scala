@@ -56,7 +56,7 @@ case class ParsingRuleTable(groups: List[ParsingRuleGroup]) {
  * names are locally meaningful: variables bound in the contexts (to be parsed as OMV), fields of dependent OML sequences (to be parsed as OML)
  */
 case class BoundName(name: LocalName, isOML: Boolean) {
-  def toTerm = if (isOML) OML(name) else OMV(name)
+  def toTerm: Term = if (isOML) OML(name) else OMV(name)
 }
 object BoundName {
   def getVarNames(bns: List[BoundName]) = bns collect {
@@ -470,8 +470,8 @@ class NotationBasedParser extends ObjectParser {
     // in abstract syntax order
     // the arguments before the variables
     var subs: List[(Int, Term)] = Nil
-    // the variable declaration list (name + type)
-    var vars: List[(Var, LocalName, Option[Term])] = Nil
+    // the variable declaration list
+    var vars: List[(Var, OML)] = Nil
     // the arguments behind the variables
     var args: List[(Int, Term)] = Nil
     // the bound names that the arguments processed so far have introduced, to be used in later (in abstract syntax order) arguments
@@ -495,12 +495,12 @@ class NotationBasedParser extends ObjectParser {
     def addVar(v: Var, vd: Term) {
       val oml = vd match {
         case o:OML => o
-        case t => OML(OMV.anonymous, Some(t), None)
+        case t => OML(OMV.anonymous, Some(t), None) // TODO this parses a variable x that shadows a constant x as _:x
       }
       val name = oml.name
       val newBound = List(BoundName(name, false))
-      vars = vars ::: List((v, name, oml.tp))
-      // bound variables are always available in later arguments; the declaration is its own block, so  any names introduced in it are dropped
+      vars = vars ::: List((v,oml))
+      // bound variables are always available in later arguments; the declaration is its own block, so any names introduced in it are dropped
       newBoundNamesSoFar = newBoundNamesSoFar ::: newBound
     }
     // will be called below (in abstract syntax order) on every FoundContent
@@ -560,43 +560,55 @@ class NotationBasedParser extends ObjectParser {
       // now toksLeft.empty
     */
     }}
-    // we process all found content in abstract syntax order
-    val tokensOrdered = ml.tokens.sortBy(_._1.number)
-    tokensOrdered.foreach {case (fc,uls) =>
-      // this is essentially just a call to doFoundContent
-      // but first we handle local notations
-      val arg = arity.components.find(_.number == fc.number).getOrElse(throw ImplementationError("found content references non-existing arity component"))
-      arg match {
-        case a: ArgumentMarker =>
-          // local notations
-          a.properties.localNotations.foreach {case lni =>
-            // find the previous argument that lni references, obtain additional notations from it, add them to uls
-            (subs:::args).find(_._1 == lni.argument) foreach {case (_,e) =>
-              val tO = lni.role match {
-                case LocalNotationInfo.Theory =>
-                  Some(e)
-                case LocalNotationInfo.Domain =>
-                  Morph.domain(e)(lup)
-                case LocalNotationInfo.Codomain =>
-                  Morph.codomain(e)(lup)
+    // we process all found content in abstract syntax order, inserting implicit arguments where needed
+    var processed: List[FoundContent] = Nil
+    arity.components.foreach {
+      case ia: ImplicitArg =>
+        val t = variables.newUnknown(variables.newArgument, boundNamesSoFar)
+        addTerm(ia.number, (Nil,t))
+      case arg =>
+        val tokens = ml.tokens.filter(_._1.number == arg.number)
+        // TODO optional tokens could be handled here
+        tokens.foreach {case (fc,uls) =>
+          // this is essentially just a call to doFoundContent
+          // but first we handle local notations
+          arg match {
+            case a: ArgumentMarker =>
+              // local notations
+              a.properties.localNotations.foreach {case lni =>
+                // find the previous argument that lni references, obtain additional notations from it, add them to uls
+                (subs ::: args).find(_._1 == lni.argument) foreach {case (_,e) =>
+                  val tO = lni.role match {
+                    case LocalNotationInfo.Theory =>
+                      Some(e)
+                    case LocalNotationInfo.Domain =>
+                      Morph.domain(e)(lup)
+                    case LocalNotationInfo.Codomain =>
+                      Morph.codomain(e)(lup)
+                  }
+                  //calling this on a non-type-checked t may or may not find all relevant notations
+                  val localNotations = tO match {
+                    case Some(t) =>
+                      tableNotations(getRules(t)._1)
+                    case None =>
+                      makeError("cannot determine theory for local notations",ml.region)
+                      ParsingRuleTable(Nil)
+                  }
+                  uls.foreach {ul =>
+                    ul.addRules(localNotations,lni.replace)
+                  }
+                }
               }
-              //calling this on a non-type-checked t may or may not find all relevant notations
-              val localNotations = tO match {
-                case Some(t) =>
-                  tableNotations(getRules(t)._1)
-                case None =>
-                  makeError("cannot determine theory for local notations", ml.region)
-                  ParsingRuleTable(Nil)
-              }
-              uls.foreach {ul =>
-                ul.addRules(localNotations, lni.replace)
-              }
-            }
+            case _ =>
           }
-        case _ =>
-      }
-      // now the main call
-      doFoundContent(fc, uls)
+          // now the main call
+          processed ::= fc
+          doFoundContent(fc,uls)
+        }
+    }
+    // sanity check: have we processed every token
+    if (processed.length != ml.tokens.length) {
+      throw ImplementationError("unprocessed tokens")
     }
 
     /* DELETE after testing 2020-07-07
@@ -671,6 +683,11 @@ class NotationBasedParser extends ObjectParser {
        return (boundNamesSoFar, args.head._2)
      }
 
+    val finalSub = Substitution(subs.map(a => Sub(OMV.anonymous, a._2)): _*)
+    val finalVars = vars.map {case (vm, oml) => oml.vd}
+    val finalArgs = args.map(_._2)
+
+    /* delete after testing 2020-09-01
     // process subs, vars, and args, which are needed to build the term
      // this includes sorting args and vars according to the abstract syntax
      // add implicit arguments before the variables
@@ -694,23 +711,7 @@ class NotationBasedParser extends ObjectParser {
 
     // compute the variables
     val finalVars = vars.map {
-      case (vm, vname, tp) =>
-        val (finalTp, unknown) = if (!vm.typed)
-          (None, false)
-        else tp match {
-          case Some(_) => (tp, false)
-          case None =>
-            //new unknown for the type
-            //under a binder, apply the meta-variable to all governing bound variables
-            //these are the boundVars and all preceding vars of the current binder
-            val t = variables.newUnknown(variables.newType(vname), boundNamesSoFar)
-            (Some(t), true)
-        }
-        val vd = VarDecl(vname).copy(tp = finalTp)
-        if (unknown) {
-          metadata.TagInferredType.set(vd)
-        }
-        vd
+      case (vm, oml) => oml.vd
     }
 
      // add implicit arguments behind the variables (same as above except for using newBVarNames)
@@ -730,6 +731,7 @@ class NotationBasedParser extends ObjectParser {
           val as = args.filter(_._1 == n)
           as.map(_._2)
      }
+     */
 
      /* construct each possible alternative term
         all alternatives must use the same notation; therefore, they will ask for the same unknown variables
@@ -781,7 +783,7 @@ class NotationBasedParser extends ObjectParser {
         }
         con match {
            case con: MPath =>
-             if (finalSubs.nonEmpty)
+             if (finalSub.nonEmpty)
                makeError("no substitution allowed in module application", ml.region)
              if (finalVars.isEmpty)
                OMPMOD(con, adaptedFinalArgs)
@@ -831,9 +833,25 @@ class NotationBasedParser extends ObjectParser {
     val mt = makeTerm(te,boundNames, false, attrib = true) // OML is its own block, cannot export names other than itself
     mt match {
       case (_, OMLTypeDefNot(name, tpOpt, dfOpt, ntOpt) ) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
-        val tp = tpOpt orElse {if (info.typed) Some(variables.newUnknown(variables.newType(name), boundNames)) else None}
-        val df = dfOpt orElse {if (info.defined) Some(variables.newUnknown(variables.newExplicitUnknown, boundNames)) else None} // ever being able to infer a definiens is unlikely
+        var unknown = false // true if no unknown generated
+        val tp = tpOpt orElse {
+          if (info.typed) {
+            unknown = true
+            Some(variables.newUnknown(variables.newType(name), boundNames))
+          } else
+            None
+        }
+        val df = dfOpt orElse {
+          if (info.defined) {
+            unknown = true
+            Some(variables.newUnknown(variables.newExplicitUnknown, boundNames))
+          } else
+            None
+        } // ever being able to infer a definiens is unlikely
         val l = OML(name,tp,df,ntOpt).from(mt._2)
+        if (unknown) {
+          metadata.TagInferredType.set(l)
+        }
         /* an OML is its own block - type and definiens do not export names into the environment
            so any names introduced inside are dropped, and the single name of the OML is exported
         */
