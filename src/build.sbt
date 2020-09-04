@@ -371,12 +371,13 @@ lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
 
-// Finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
+
+// use of MMT in the frameit system, here for ease of deployment but not part of the main mmt target
+// reponsible: Navid
+// finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
 val finchVersion = "0.32.1"
 // Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
 val circeVersion = "0.13.0"
-
-
 lazy val frameit = (project in file("frameit-mmt"))
   .dependsOn(api, lf)
   .settings(mmtProjectsSettings("frameit-mmt"): _*)

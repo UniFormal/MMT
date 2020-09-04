@@ -304,6 +304,7 @@ class NotationBasedParser extends ObjectParser {
      mayBeName(n) && n(0).isUpper
   }
   private type MadeTerm = (List[BoundName],Term)
+  private type MadeDecl = (List[BoundName],OML)
   /**
    * recursively transforms a TokenListElem (usually obtained from a [[Scanner]]) to an MMT Term
    * @param te the element to transform
@@ -320,7 +321,19 @@ class NotationBasedParser extends ObjectParser {
         lazy val unparsed = OMSemiFormal(objects.Text("unknown", word)) // fallback option
         val name = LocalName.parse(word)
         val isBound = boundNames.reverse.find(_.name == name)
-        val term = if (isBound.isDefined) {
+        val term = if (attrib) {
+          // we need the name in a declaration
+          if (isBound.isDefined) {
+            // TODO can a variable shadow another bound name? for now: generate error but parse it as usual
+            makeError(s"variable $word shadows a bound name", te.region)
+          }
+          if (mayBeName(word)) {
+            OMV(word) // unbound variable, to be turned into VarDecl by caller
+          } else {
+            makeError("fresh variable name expected; found: " + word,te.region)
+            unparsed
+          }
+        } else if (isBound.isDefined) {
           // single Tokens may be bound names ...
           if (isBound.get.isOML) OML(name) else OMV(name)
         } else if (variables.getFreeVars.contains(name) || pu.context.exists(_.name == name)) {
@@ -328,17 +341,15 @@ class NotationBasedParser extends ObjectParser {
           OMV(name)
         } else if (word == "_") {
           // unbound _ is a fresh unknown variable
-          variables.newUnknown(variables.newExplicitUnknown, boundNames)
+          variables.newUnknown(variables.newExplicitUnknown,boundNames)
         } else if (word.count(c => c == '?' || c == '/') > 0) {
           // ... or qualified identifiers
           makeIdentifier(te).map(OMID).getOrElse(unparsed)
-        } else if (attrib && mayBeName(word)) {
-          OMV(word) // the name in a declaration, to be replaced by caller
         } else if (mayBeFree(word)) {
           variables.newFreeVariable(word)
         } else {
           //in all other cases, we don't know
-          makeError("unbound token: " + word, te.region)
+          makeError("unbound token: " + word,te.region)
           unparsed
         }
         (Nil,term)
@@ -492,11 +503,8 @@ class NotationBasedParser extends ObjectParser {
       if (isBlock)
          newBoundNamesSoFar = newBoundNamesSoFar ::: bns
     }
-    def addVar(v: Var, vd: Term) {
-      val oml = vd match {
-        case o:OML => o
-        case t => OML(OMV.anonymous, Some(t), None) // TODO this parses a variable x that shadows a constant x as _:x
-      }
+    def addVar(v: Var, md: MadeDecl) {
+      val oml = md._2
       val name = oml.name
       val newBound = List(BoundName(name, false))
       vars = vars ::: List((v,oml))
@@ -515,10 +523,10 @@ class NotationBasedParser extends ObjectParser {
       // label arguments: as the cases above but with makeOML instead of makeTerm
       case FoundSimp(_, m: LabelArg) =>
         val r = makeOML(toks.head,boundNamesSoFar,m.info)
-        addTerm(m.number,r)
+        addTerm(m.number, r)
       // variable binding: similar to OML
       case FoundSimp(_, m: Var) =>
-        val (_,r) = makeOML(toks.head,boundNamesSoFar,m.info)
+        val r = makeOML(toks.head,boundNamesSoFar,m.info)
         addVar(m,r)
       // sequence arguments: as the cases above, but as many TokenListElement as the sequence has elements
       case FoundSeq(m: SimpSeqArg, _) =>
@@ -531,12 +539,12 @@ class NotationBasedParser extends ObjectParser {
         // names encountered in the sequence are available for later arguments
         toks.foreach {tok =>
           val r = makeOML(tok,boundNamesSoFar,m.info)
-          addTerm(m.number,r)
+          addTerm(m.number, r)
         }
       // sequence variables: as above
       case FoundSeq(m: Var, _) =>
         toks.foreach {tok =>
-          val (_,r) = makeOML(tok,boundNamesSoFar,m.info)
+          val r = makeOML(tok,boundNamesSoFar,m.info)
           addVar(m,r)
         }
       case _ => throw ImplementationError("unexpected found object")
@@ -829,10 +837,10 @@ class NotationBasedParser extends ObjectParser {
 
   /** like makeTerm but interprets OMA(:,OMA(=,v)) as an OML */
   private def makeOML(te: TokenListElem, boundNames: List[BoundName], info: LabelInfo)
-                      (implicit pu: ParsingUnit, variables: Variables, errorCont: ErrorHandler): MadeTerm = {
+                      (implicit pu: ParsingUnit, variables: Variables, errorCont: ErrorHandler): MadeDecl = {
     val mt = makeTerm(te,boundNames, false, attrib = true) // OML is its own block, cannot export names other than itself
     mt match {
-      case (_, OMLTypeDefNot(name, tpOpt, dfOpt, ntOpt) ) /* if !boundVars.contains(name) && getFreeVars.contains(name) */ =>
+      case (_, OMLTypeDefNot(name, tpOpt, dfOpt, ntOpt) ) =>
         var unknown = false // true if no unknown generated
         val tp = tpOpt orElse {
           if (info.typed) {
@@ -859,7 +867,7 @@ class NotationBasedParser extends ObjectParser {
         (newBound, l)
       case _ =>
         makeError("expected declaration, found other term: " + mt._2, te.region)
-        mt
+        (mt._1, OML(OMV.anonymous, None, Some(mt._2)))
     }
   }
 
