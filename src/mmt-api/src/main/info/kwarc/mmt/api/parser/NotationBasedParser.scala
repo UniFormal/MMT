@@ -75,20 +75,6 @@ class NotationBasedParser extends ObjectParser {
   private lazy val prag = controller.pragmatic
   private lazy val lup = controller.globalLookup
 
-  /**
-   * builds parser's notation context based on content in the controller
-   * and the scope (base path) of the parsing unit
-   * returned list is sorted (in increasing order) by priority
-   */
-  protected def tableNotations(nots: List[ParsingRule]): ParsingRuleTable = {
-    val qnotations = nots.groupBy(x => x.notation.precedence).toList.map {
-      case (p, ns) => ParsingRuleGroup(p, ns)
-    }
-    //      log("notations in scope: " + qnotations)
-    val qnotationsOrdered = qnotations.sortWith((p1, p2) => p1.precedence < p2.precedence)
-    ParsingRuleTable(qnotationsOrdered)
-  }
-
   /** constructs a SourceError, all errors go through this method */
   private def makeError(msg: String, reg: SourceRegion)(implicit pu: ParsingUnit, errorCont: ErrorHandler) {
     val ref = SourceRef(pu.source.container, reg)
@@ -96,74 +82,6 @@ class NotationBasedParser extends ObjectParser {
     errorCont(err)
   }
 
-  /*
-   * declarations of the unknown variables (implicit arguments, missing types, etc.
-   *
-   * the variable names are irrelevant as long as they are unique within each call to the parser
-   * Moreover, we make sure the names are chosen the same way every time to support change management.
-   */
-  private class Variables {
-     // due to the recursive processing, variables in children are always found first
-     // so adding to the front yields the right order
-     /** unknowns */
-     private var unknowns: List[VarDecl] = Nil
-     private var counter = 0
-
-     /** free variables (whose types may depend on the unknowns) */
-     private var freevars: List[LocalName] = Nil
-     /** @return the free variables detected so far */
-     def getFreeVars = freevars
-
-     /** @return returns the unknown and free variables at the end, free vars have unknown types */
-     def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
-        val fvDecls = freevars map {n =>
-           val tp = newUnknown(newType(n), Nil) // types of free variables must be closed; alternative: allow any other free variable
-           VarDecl(n,tp)
-        }
-        (unknowns, fvDecls)
-     }
-     private def next = {
-       val s = counter.toString
-       counter += 1
-       s
-     }
-     /** name of an omitted implicit argument */
-     def newArgument = ParseResult.VariablePrefixes.implicitArg / next
-     /** name of the omitted type of a variable */
-     def newType(name: LocalName) = LocalName("") / name / next
-     /** name of an explicitly omitted argument */
-     def newExplicitUnknown = ParseResult.VariablePrefixes.explicitUnknown / next
-
-     /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
-     def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
-       unknowns ::= VarDecl(name)
-       // handling of shadowing: we assume that an unknown cannot depend on a shadowed variable
-       // so we remove shadowed (i.e., earlier) occurrences of bound variables
-       // There are reasonable cases, where the unknown does depend on a shadowed variable, e.g., in [x: type, c: x, x: type] c = c.
-       // The behavior in still unspecified in these cases.
-       val boundNamesD = boundNames.reverse.distinct.reverse
-       //apply meta-variable to all bound variables in whose scope it occurs
-       // this line determines whether implicit arguments may depend on OML names
-       val mayUse = boundNames.map(_.toTerm)
-       checking.Solver.makeUnknown(name, mayUse)
-     }
-
-     /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
-      *  always an integer, thus independent of bound variables
-      */
-     def newAmbiguity = {
-       val name = LocalName("") / "A" / next
-       unknowns ::= VarDecl(name)
-       OMV(name)
-     }
-
-     /** generates a new free variable that is meant to be bound on the outside */
-     def newFreeVariable(n: String) = {
-       val name = LocalName(n)
-       freevars ::= name
-       OMV(name)
-     }
-  }
 
   /**
     * top level parsing function: initializes input state and implicit arguments, calls main parsing method, and builds ParseResult
@@ -215,6 +133,20 @@ class NotationBasedParser extends ObjectParser {
         log("parse result: " + tm.toString)
         tm
     }
+  }
+
+  /**
+    * builds parser's notation context based on content in the controller
+    * and the scope (base path) of the parsing unit
+    * returned list is sorted (in increasing order) by priority
+    */
+  protected def tableNotations(nots: List[ParsingRule]): ParsingRuleTable = {
+    val qnotations = nots.groupBy(x => x.notation.precedence).toList.map {
+      case (p, ns) => ParsingRuleGroup(p, ns)
+    }
+    //      log("notations in scope: " + qnotations)
+    val qnotationsOrdered = qnotations.sortWith((p1, p2) => p1.precedence < p2.precedence)
+    ParsingRuleTable(qnotationsOrdered)
   }
 
   private type RuleLists = (List[ParsingRule], List[LexerExtension], List[NotationExtension])
@@ -288,6 +220,76 @@ class NotationBasedParser extends ObjectParser {
         //we could also collect all notations in decls, but we do not have parsing rules for OML's
         at.mt.map(m => getRules(Context(m), None)).getOrElse((Nil,Nil,Nil))
       case _ => (Nil,Nil,Nil) // TODO only named theories are implemented so far
+    }
+  }
+
+
+  /*
+   * declarations of the unknown variables (implicit arguments, missing types, etc.
+   *
+   * the variable names are irrelevant as long as they are unique within each call to the parser
+   * Moreover, we make sure the names are chosen the same way every time to support change management.
+   */
+  private class Variables {
+    // due to the recursive processing, variables in children are always found first
+    // so adding to the front yields the right order
+    /** unknowns */
+    private var unknowns: List[VarDecl] = Nil
+    private var counter = 0
+
+    /** free variables (whose types may depend on the unknowns) */
+    private var freevars: List[LocalName] = Nil
+    /** @return the free variables detected so far */
+    def getFreeVars = freevars
+
+    /** @return returns the unknown and free variables at the end, free vars have unknown types */
+    def getVariables(implicit pu: ParsingUnit): (Context,Context) = {
+      val fvDecls = freevars map {n =>
+        val tp = newUnknown(newType(n), Nil) // types of free variables must be closed; alternative: allow any other free variable
+        VarDecl(n,tp)
+      }
+      (unknowns, fvDecls)
+    }
+    private def next = {
+      val s = counter.toString
+      counter += 1
+      s
+    }
+    /** name of an omitted implicit argument */
+    def newArgument = ParseResult.VariablePrefixes.implicitArg / next
+    /** name of the omitted type of a variable */
+    def newType(name: LocalName) = LocalName("") / name / next
+    /** name of an explicitly omitted argument */
+    def newExplicitUnknown = ParseResult.VariablePrefixes.explicitUnknown / next
+
+    /** generates a new unknown variable, constructed by applying a fresh name to all bound variables */
+    def newUnknown(name: LocalName, boundNames: List[BoundName])(implicit pu: ParsingUnit) = {
+      unknowns ::= VarDecl(name)
+      // handling of shadowing: we assume that an unknown cannot depend on a shadowed variable
+      // so we remove shadowed (i.e., earlier) occurrences of bound variables
+      // There are reasonable cases, where the unknown does depend on a shadowed variable, e.g., in [x: type, c: x, x: type] c = c.
+      // The behavior in still unspecified in these cases.
+      val boundNamesD = boundNames.reverse.distinct.reverse
+      //apply meta-variable to all bound variables in whose scope it occurs
+      // this line determines whether implicit arguments may depend on OML names
+      val mayUse = boundNames.map(_.toTerm)
+      checking.Solver.makeUnknown(name, mayUse)
+    }
+
+    /** generates a new unknown variable for the index that chooses from a list of options in an ambiguity
+      *  always an integer, thus independent of bound variables
+      */
+    def newAmbiguity = {
+      val name = LocalName("") / "A" / next
+      unknowns ::= VarDecl(name)
+      OMV(name)
+    }
+
+    /** generates a new free variable that is meant to be bound on the outside */
+    def newFreeVariable(n: String) = {
+      val name = LocalName(n)
+      freevars ::= name
+      OMV(name)
     }
   }
 
@@ -919,6 +921,16 @@ class NotationBasedParser extends ObjectParser {
             matchTDN(k)
           }
         case OMV(n) => Some(n)
+        case OMS(p) =>
+          if (p.name.length == 1)
+            /* TODO hacky: if a local name was falsely parsed as an OMS that it shadows, revert it
+               this introduces the relatively harmless bug that qualified identifiers in variable positions are parsed as variable
+               a clean implementation would preclude notations to fire in positions where (fresh) names are expected
+               this could be cleaned up in connection with other notations that require special entiries (literals, names, etc) instead of arbitrary expressions
+             */
+            Some(LocalName(p.name.last))
+          else
+            None
         case _ => None
       }
       matchTDN(t).map {n => (n, tp, df, nt)}
