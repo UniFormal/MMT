@@ -694,12 +694,20 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
     while(!viewFinder.isInitialized) {
       Thread.sleep(500)
     }
-    var views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty).map(v => {println(v);v}))
+    val views = theories.flatMap(t => viewFinder.find(t, a.id).filter(v => v.from!=v.to).filter(v => !v.getDeclarations.isEmpty))
+    /*
+    //export views to file
+    implicit val fw = new FileWriter(new java.io.File(a.root + "/export/intersections/"+a.id+"View.mmt"))
+    views.foreach(v => controller.add(v))
+    views.foreach(syntaxPresenter.apply(_))
+    fw.done
+    */
 
     //phase 2 : intersect
     var intersections = views.map(v => (intersecter.intersectGraph(v), (v.from.toMPath, v.to.toMPath)))
 
     //phase 3 : sort
+    //This may need some cleaning up
     val res = intersections.map(int => int match {case ((l1,l2,l3, v),(t1,t2)) =>((l2.flatMap(p => List(p._1,p._2))++l1++l3, (v.flatMap(p => List(p._1,p._2)))),(t1,t2))}).map(i => (i, graphEvaluator.eval(i._1._1, i._1._2))).sortBy(_._2)
     val filterSet = mutable.HashSet[Theory]()
     res.filter(_._2>0 | true).filter(_ match {
