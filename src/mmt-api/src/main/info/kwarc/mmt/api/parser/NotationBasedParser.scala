@@ -117,15 +117,15 @@ class NotationBasedParser extends ObjectParser {
       makeError("no tokens found: " + pu.term, pu.source.region)
       DefaultObjectParser(pu).toTerm
     } else {
-        //scanning
-        val ul = new UnmatchedList(tl)
+        /* scanning: the scanner initially scans with top rule, then with all notations in increasing order of precedence
+         but we will actually call ul.scan only in makeTerm so that we can add local notations first
+        */
         // TODO does it make sense to sort by meta-theory-level first, then by precedence?
-        // the scanner initially scans with top rule, then with all notations in increasing order of precedence
-        // but we will actually call ul.scanner.scan only in makeTerm so that we can add local notations first
-        ul.scanner = new Scanner(tl, Some(pu), notations, controller.report)
-        // turn the syntax tree into a term
-        // to the outside, this term is its own block, so bound names introduced by the term are dropped
-        // to the inside, we are not in a block yet
+        val ul = new UnmatchedList(tl, Some(pu), notations, controller.report)
+        /* turn the syntax tree into a term
+           to the outside, this term is its own block, so bound names introduced by the term are dropped
+           to the inside, we are not in a block yet
+         */
         val (_,tm) = logGroup {
           makeTerm(ul, Nil, false)
         }
@@ -369,23 +369,34 @@ class NotationBasedParser extends ObjectParser {
       case ml: MatchedList =>
         makeTermFromMatchedList(ml, boundNames, inBlock, attrib)
       case ul: UnmatchedList =>
-        // scanning is delayed until here in order to allow for collecting local notations first
-        ul.scanner.scan()
-        if (ul.tl.length == 1) {
-        // process the single TokenListElement
-          makeTerm(ul.tl(0), boundNames, inBlock, attrib)
+        /* scanning is delayed until here in order to allow for modifying the scanning based on what has been parsed already
+           - makeTermFromMatchedList below may have previously added notations to ul
+           - we will now check for parsing names
+         */
+        if (attrib && ul.tl.isSingleWord.isDefined) {
+          /* if we know we need a name, by-pass the usual methods and return it
+             this slightly hacky case allows handling fresh names or names that cannot be statically resolved
+           */
+          val t = ul.tl.isSingleWord.get
+          (Nil, OMV(LocalName(t.word)))
         } else {
-          /* This case arises if
-          - the Term is ill-formed
-          - the matching TextNotation is missing
-          - a subterm has no delimiters (e.g., as in LF applications)
-          - a semi-formal subterm consists of multiple text Tokens
-          Consequently, it is not obvious how to proceed.
-          By using defaultApplication, the behavior is somewhat configurable.
-          */
-          val (bns,terms) = ul.tl.getTokens.map(makeTerm(_, boundNames, inBlock)).unzip
-          val t = prag.defaultApplication(Some(pu.getLevel), terms.head, terms.tail)
-          (Nil,t)
+          ul.scan()
+          if (ul.tl.length == 1) {
+          // process the single TokenListElement
+            makeTerm(ul.tl(0), boundNames, inBlock, attrib)
+          } else {
+            /* This case arises if
+            - the Term is ill-formed
+            - the matching TextNotation is missing
+            - a subterm has no delimiters (e.g., as in LF applications)
+            - a semi-formal subterm consists of multiple text Tokens
+            Consequently, it is not obvious how to proceed.
+            By using defaultApplication, the behavior is somewhat configurable.
+            */
+            val (bns,terms) = ul.tl.getTokens.map(makeTerm(_,boundNames,inBlock)).unzip
+            val t = prag.defaultApplication(Some(pu.getLevel),terms.head,terms.tail)
+            (Nil,t)
+          }
         }
     }
     SourceRef.update(mt._2, pu.source.copy(region = te.region))
@@ -921,16 +932,6 @@ class NotationBasedParser extends ObjectParser {
             matchTDN(k)
           }
         case OMV(n) => Some(n)
-        case OMS(p) =>
-          if (p.name.length == 1)
-            /* TODO hacky: if a local name was falsely parsed as an OMS that it shadows, revert it
-               this introduces the relatively harmless bug that qualified identifiers in variable positions are parsed as variable
-               a clean implementation would preclude notations to fire in positions where (fresh) names are expected
-               this could be cleaned up in connection with other notations that require special entiries (literals, names, etc) instead of arbitrary expressions
-             */
-            Some(LocalName(p.name.last))
-          else
-            None
         case _ => None
       }
       matchTDN(t).map {n => (n, tp, df, nt)}

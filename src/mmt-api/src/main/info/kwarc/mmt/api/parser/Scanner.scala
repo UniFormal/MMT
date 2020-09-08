@@ -16,8 +16,7 @@ import info.kwarc.mmt.api.parser.ActiveNotation._
   * @param tl the TokenList to scan
   *           matched notations are applied to tl, i.e., tl always holds the current TokenList
   */
-class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable,
-              val report: frontend.Report) extends frontend.Logger {
+class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable, val report: frontend.Report) extends frontend.Logger {
   val logPrefix = "scanner"
 
   private def logState() {

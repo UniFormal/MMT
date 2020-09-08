@@ -153,6 +153,15 @@ class TokenList(private var tokens: List[TokenListElem]) {
   /** returns all tokens */
   def getTokens: List[TokenListElem] = tokens
 
+  /** if this list consists of a single word, return it */
+  def isSingleWord: Option[Token] = {
+    if (tokens.length != 1) None else {
+      tokens.head match {
+        case t: Token => Some(t)
+        case _ => None
+      }
+    }
+  }
   /**
    * applies a notation and transforms this token list accordingly (this is the only place where [[MatchedList]]s are created)
    * @param an the notation to reduce
@@ -165,9 +174,7 @@ class TokenList(private var tokens: List[TokenListElem]) {
       fa match {
         case fa: FoundSimp =>
           // fa.slice might be a single token, but that is harmless
-          val ul = new UnmatchedList(new TokenList(fa.slice.toList))
-          ul.scanner = new Scanner(ul.tl, None, rt, rep)
-          ul
+          new UnmatchedList(new TokenList(fa.slice.toList), None, rt, rep)
       }
     }
     var newTokens: List[(FoundContent, List[UnmatchedList])] = Nil
@@ -305,11 +312,11 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
  *
  * @param tl the TokenList that is to be reduced
  */
-class UnmatchedList(val tl: TokenList) extends TokenListElem {
+// TODO: merge this with the Scanner class
+class UnmatchedList(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], rt: ParsingRuleTable, rep: frontend.Report) extends TokenListElem {
   val firstPosition = tl(0).firstPosition
   val lastPosition = tl(tl.length - 1).lastPosition
-  private[parser] var scanner: Scanner = null
-  private[parser] var localNotations: Option[ParsingRuleTable] = None
+  private val scanner: Scanner = new Scanner(tl, parsingUnitOpt, rt, rep)
   def addRules(rules : ParsingRuleTable, replace: Boolean) {
     scanner.addRules(rules, replace)
     tl.getTokens.foreach {
@@ -318,6 +325,7 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
       case _ =>
     }
   }
+  def scan() {scanner.scan()}
 
   override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
 }
