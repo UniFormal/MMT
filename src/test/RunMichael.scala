@@ -2,13 +2,14 @@ import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.MitM.MitM.{eq, implicitProof, logic}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
-import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
+import info.kwarc.mmt.api.presentation.{FileWriter, MMTSyntaxPresenter, Presenter}
 import info.kwarc.mmt.api.refactoring.{BinaryIntersecter, GraphOptimizationTool, Preprocessor, SimpleParameterPreprocessor, UnaryIntersecter, ViewFinder, ViewSplitter}
 import info.kwarc.mmt.api.symbols.{FinalConstant, Structure}
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import Graphtester.controller
 import info.kwarc.mmt.api.archives.Importer
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.web.JSONBasedGraphServer
 import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.jedit.MMTOptimizationAnnotationReader
@@ -31,6 +32,7 @@ object RunMichael extends MagicTest {
   }
 
   def run : Unit = {
+    //exportMMT
     //viewfinder
     findIntersecter
     //intersect
@@ -161,7 +163,7 @@ object RunMichael extends MagicTest {
     controller.extman.addExtension(int, Nil)
     controller.extman.addExtension(presenter, List())
 
-    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?intersection_test",NamespaceMap.empty)).asInstanceOf[View]
+    val view = controller.get(Path.parseM("http://mydomain.org/testarchive/mmt-example?trivialView",NamespaceMap.empty)).asInstanceOf[View]
     int(view) match {
       case (l1, l2, l3, _) =>
         l1.foreach(println(_))
@@ -178,11 +180,13 @@ object RunMichael extends MagicTest {
     //controller.handleLine("extension info.kwarc.mmt.api.presentation.MMTSyntaxPresenter")
     controller.extman.addExtension(new MMTSyntaxPresenter(), List())
     val msp = controller.extman.get(classOf[MMTSyntaxPresenter]).head
-    val from = Path.parseM("http://cds.omdoc.org/testcases?BeautifulSets",NamespaceMap.empty)
+    val from = Path.parseM("http://mydomain.org/testarchive/mmt-example?trivialView",NamespaceMap.empty)
     val th = controller.get(from)
-    val sb = new info.kwarc.mmt.api.presentation.StringBuilder()
-    msp(th)(sb)
-    log(sb.get)
+    println(th)
+    val decs = th.getDeclarations
+    val fw = new FileWriter(new java.io.File("/home/michael/content/testarchive/source/trivialview.mmt"))
+    msp(th)(fw)
+    fw.done
   }
 /*
   def moduleadder: Unit = {

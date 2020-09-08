@@ -236,7 +236,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
     val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
     declarations.foreach {
-      case c: Constant => doConstant(c, rh, presentType = false)
+      case c: Constant =>
+        doConstant(c, indented(rh), presentType = false)
+        endDecl(c, indented(rh))
       // In all other cases, present as usual, this might present invalid syntax, though
       case d => present(d, indented(rh))
     }
@@ -356,7 +358,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       doURI(OMMOD(from), rh)
       // TODO args ignored
       df.foreach(definiensTerm => {
-        rh(" " + OBJECT_DELIMITER + " ")
+        rh(" " + OBJECT_DELIMITER + " " + "=" + " ")
         objectPresenter(definiensTerm, Some(s.path $ DefComponent))(rh)
       })
 
