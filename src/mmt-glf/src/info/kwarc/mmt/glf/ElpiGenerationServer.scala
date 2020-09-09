@@ -5,8 +5,8 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude, RuleCons
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils.{JSONArray, JSONBoolean, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
-import info.kwarc.mmt.lf.elpi.ELPI
-import info.kwarc.mmt.lf.elpi.{ConstantHandler, ConstantHandlerSequence, ELPIError, TypeHandler}
+import info.kwarc.mmt.lf.RuleMatcher
+import info.kwarc.mmt.lf.elpi._
 
 class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
   override def start(args: List[String]): Unit = {
@@ -46,8 +46,21 @@ class ElpiGenerationServer extends ServerExtension("glif-elpigen") {
 
     if (theory.isEmpty) return errorResponse("No theory specified")
 
+    lazy val lup = controller.globalLookup
+    lazy val ruleMatcher = new RuleMatcher(lup, List("Judgment", "TabMarker", "TabClosed"))
+
     val ctx = mode match {
       case "types" => new ElpiGenCtx(new ConstantHandlerSequence(List(new TypeHandler)), followMeta, followIncludes)
+      case "simpleprover" =>
+        new ElpiGenCtx(new ConstantHandlerSequence(List(
+          new GeneratedFromHandler(controller),
+          new MainJudgmentHandler(ruleMatcher),
+          new ProductRuleHandler(ruleMatcher),
+          new IterativeDeepeningHandler(ruleMatcher),
+          new ProofTermHandler(ruleMatcher),
+          new RuleUseHandler(ruleMatcher),
+          new HandDownHandler(ruleMatcher, ""),
+        )), followMeta, followIncludes)
       case _ => throw ServerError("Unkown mode '" + mode + "'")
     }
     val p = translateTheory(theory.get, ctx)
