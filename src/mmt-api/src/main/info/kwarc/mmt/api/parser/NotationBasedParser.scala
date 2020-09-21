@@ -378,7 +378,7 @@ class NotationBasedParser extends ObjectParser {
              this slightly hacky case allows handling fresh names or names that cannot be statically resolved
            */
           val t = ul.tl.isSingleWord.get
-          (Nil, OMV(LocalName(t.word)))
+          (Nil, OMV(LocalName.parse(t.word)))
         } else {
           ul.scan()
           if (ul.tl.length == 1) {
