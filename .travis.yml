@@ -112,20 +112,7 @@ jobs:
       script:
         - "cd src && (cat /dev/null | sbt ++2.12.9 apidoc) && cd .."
         - '[[ -d "apidoc" ]]'
-    # deploy the api documentation
-    - dist: bionic
-      env:
-        - "INFO='Auto-deploy API documentation'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk14
-      language: scala
-      scala: "2.12.9"
-      script:
-        - "bash scripts/travis/deploy_doc.sh"
-      stage: deploy
 stages:
   - name: SelfCheck
   - name: CompileAndCheck
   - name: DeployCheck
-  - if: "branch = master"
-    name: deploy

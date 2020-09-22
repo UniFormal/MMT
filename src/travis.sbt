@@ -70,11 +70,11 @@ travisConfig := {
     TravisStage("DeployCheck", "check that the 'apidoc' and 'deployLFCatalog' targets work")(
       TravisJob("Check lfcatalog.jar generation using `sbt deployLFCatalog`", sbt("deployLFCatalog", file("deploy/lfcatalog/lfcatalog.jar"))),
       TravisJob("Check that apidoc generation works", sbt("apidoc", dir("apidoc")))
-    ),
-
-    TravisStage("deploy", "deploy the api documentation", Some("branch = master"))(
-      TravisJob("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"), MatrixSet(OpenJDK14), expansion = FirstExpansion)
     )
+
+    // TravisStage("deploy", "deploy the api documentation", Some("branch = master"))(
+    //  TravisJob("Auto-deploy API documentation", List("bash scripts/travis/deploy_doc.sh"), MatrixSet(OpenJDK14), expansion = FirstExpansion)
+    // )
   )
 }
 
