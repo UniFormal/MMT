@@ -1,6 +1,5 @@
 package info.kwarc.mmt.test
 
-import info.kwarc.mmt.test.LFTest.shouldClearTarget
 import info.kwarc.mmt.test.testers._
 
 object LFTest extends MMTIntegrationTest(
