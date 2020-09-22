@@ -77,8 +77,8 @@ object Orders {
     "proving/fundamentals.mmt",
     "numbers/nat.mmt",
     // "numbers/nat-induct.mmt", // TODO doesn't work
-    "algebra/sets.mmt",
-    "algebra/relations.mmt",
+    //"algebra/sets.mmt",
+    //"algebra/relations.mmt",
     "algebra/magmas.mmt",
     // "algebra/additive_magmas.mmt", // TODO doesn't work
   )
