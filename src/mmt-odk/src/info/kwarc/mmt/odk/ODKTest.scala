@@ -50,7 +50,31 @@ object MitMTest extends MMTIntegrationTest(
 
     logGroup {
       shouldHandleLine("log+ structure-checker-simple")
-      shouldCheck("MitM/Core",Orders.mitmsmglom:_*)(onlyfiles = true)
+      shouldCheck("MitM/Core",Orders.mitmcore:_*)(onlyfiles = true)
+    }
+  }
+}
+
+object LATIN2Test extends MMTIntegrationTest(
+  "MMT/urtheories",
+  "MMT/LFX"
+)(
+  ExtensionSpec("info.kwarc.mmt.lf.Plugin"),
+  ExtensionSpec("info.kwarc.mmt.odk.Plugin")
+){
+  def main(): Unit = {
+    shouldClearTarget("MMT/urtheories", "bin")
+    shouldHandleLine("build MMT/urtheories scala-bin")
+
+    shouldClearTarget("MMT/LFX", "bin")
+    shouldHandleLine("build MMT/LFX scala-bin")
+
+    shouldClearTarget("MMT/LATIN2", "bin")
+    shouldHandleLine("build MMT/LATIN2 scala-bin")
+
+    logGroup {
+      shouldHandleLine("log+ structure-checker-simple")
+      shouldCheck("MMT/LATIN2",Orders.latin2:_*)(onlyfiles = true)
     }
   }
 }

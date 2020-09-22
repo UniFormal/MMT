@@ -34,19 +34,55 @@ object Latin2Test extends MMTIntegrationTest(
 
 object Orders {
   val latin2 = List(
-    "fundamentals/concepts.mmt"
+    "fundamentals/concepts.mmt",
+    "fundamentals/relations.mmt",
+    "fundamentals/equality.mmt",
+    "fundamentals/subtyping.mmt",
+    "logic/operators.mmt",
+    "logic/pl.mmt",
+    "logic/sfol.mmt",
+    "logic/booleans.mmt",
+    "logic/pl-sfol.mmt",
+    "logic/fol.mmt",
+    "logic/pl-tableaux.mmt",
+    "logic/metalogic.mmt",
+    "logic/pl-views.mmt",
+    "logic/pl_hilbert.mmt",
+    "logic/fol_hilbert.mmt",
+    "logic/drt.mmt",
+    "type_theory/operators.mmt",
+    "type_theory/function_types.mmt",
+    "type_theory/power_types.mmt",
+    "logic/hol.mmt",
+    "logic/modal.mmt",
+    "logic/multimodal.mmt",
+    "logic/dynamic.mmt",
+    "logic/hol_andrews.mmt",
+    "type_theory/type_equality.mmt",
+    "type_theory/type_erasure.mmt",
+    "type_theory/product_types.mmt",
+    "type_theory/category_theory.mmt",
+    "type_theory/congruence_types.mmt",
+    "type_theory/predicate_subtypes.mmt",
+    "type_theory/undefinedness.mmt",
+    "type_theory/quotation.mmt",
+    "type_theory/endofunctors/endofunctors.mmt",
+    "type_theory/endofunctors/endomagmas.mmt",
+    // "type_theory/endofunctors/monads.mmt", // TODO doesn't work
+    "type_theory/collection_types.mmt",
+    "set_theory/features.mmt",
+    "curry_howard/concepts.mmt",
+    "topology/topology.mmt",
+    "topology/topology_morph.mmt",
+    "proving/fundamentals.mmt",
+    "numbers/nat.mmt",
+    // "numbers/nat-induct.mmt", // TODO doesn't work
+    "algebra/sets.mmt",
+    "algebra/relations.mmt",
+    "algebra/magmas.mmt",
+    // "algebra/additive_magmas.mmt", // TODO doesn't work
   )
   val mitmcore = List(
-    "properties/functions.mmt"
-    ,"properties/relations.mmt"
-    ,"arithmetics/naturals.mmt"
-    ,"arithmetics/integers.mmt"
-    ,"arithmetics/rationals.mmt"
-    ,"arithmetics/reals.mmt"
-    ,"arithmetics/complex.mmt"
-    ,"graphs/graphs.mmt"
-  )
-  val mitmsmglom = List(
     "arithmetics/naturals.mmt"
     ,"arithmetics/integers.mmt"
     ,"arithmetics/rationals.mmt"

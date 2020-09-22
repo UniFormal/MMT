@@ -56,7 +56,7 @@ scalacOptions in Global := Seq(
 )
 
 parallelExecution in Global := false
-javaOptions in Global ++= Seq("-Xmx2g", "-Xss4096m")
+javaOptions in Global ++= Seq("-Xmx2g")
 
 publish := {}
 fork in Test := true
