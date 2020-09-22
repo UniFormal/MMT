@@ -16,6 +16,18 @@ case class MyList[A](l: List[A]) {
   /** like map but with a partial function; removes all results that are <code>None</code> */
   def mapPartial[B](f: A => Option[B]): List[B] = l.map(f).filter(_.isDefined).map(_.get)
 
+  /** like map but with a partial function; returns a result only if no results are <code>None</code> */
+  def mapPartialStrict[B](f: A => Option[B]): Option[List[B]] = {
+    val bs = l map {a =>
+       f(a) match {
+         case Some(b) => b
+         case None => return None
+       }
+    }
+    Some(bs)
+  }
+
+
   /** a map function in which SkipThis() can be called to skip an element */
   def mapOrSkip[B](f: A => B): List[B] = l flatMap {a => 
     try {List(f(a))}

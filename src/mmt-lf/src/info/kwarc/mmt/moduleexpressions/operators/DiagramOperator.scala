@@ -212,26 +212,22 @@ trait MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType <: LinearT
 
 abstract class FunctorialLinearDiagramOperator[HelperContextType <: LinearTheoryOperatorContext](unaryConstant: UnaryConstantScala) extends DiagramOperator(unaryConstant) with MorphismOperatorFromLinearTheoryOperatorMixin[HelperContextType] {
 
-  override def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram] = {
-    def permuteLabel(label: LocalName): LocalName = label match {
-      case _ if diag.distNode.contains(label) => LocalName("pres")
-      case LocalName(List(ComplexStep(mPath))) => LocalName(mPath.toString)
-      case _ => label
-    }
+  def transformLabel(label: LocalName): LocalName = label
 
+  override def transformDiagram(diag: AnonymousDiagram): OperatorResult[AnonymousDiagram] = {
     assert(!diag.nodes.exists(_.label == LocalName("pres")))
 
     val (newNodes, theoryContexts) = diag.nodes.map(node => transformTheoryAndGetContext(node.theory) match {
       case TransformedResult((newTheory, ctx)) =>
-        (DiagramNode(permuteLabel(node.label), newTheory), (node.label, ctx))
+        (DiagramNode(transformLabel(node.label), newTheory), (node.label, ctx))
       case _ => ???
     }).unzip match {
       case (newNodes, theoryContextsAsListsOfPairs) => (newNodes, theoryContextsAsListsOfPairs.toMap)
     }
 
     val newArrows = diag.arrows.map(arrow => {
-      val transformedDomain = newNodes.find(_.label == permuteLabel(arrow.from)).get.theory
-      val transformedCodomain = newNodes.find(_.label == permuteLabel(arrow.to)).get.theory
+      val transformedDomain = newNodes.find(_.label == transformLabel(arrow.from)).get.theory
+      val transformedCodomain = newNodes.find(_.label == transformLabel(arrow.to)).get.theory
 
       transformMorphism(
         arrow.morphism,
@@ -239,15 +235,15 @@ abstract class FunctorialLinearDiagramOperator[HelperContextType <: LinearTheory
         transformedCodomain, theoryContexts(arrow.to)
       ) match {
         case TransformedResult(newMorphism) => arrow.copy(
-          label = permuteLabel(arrow.label),
+          label = transformLabel(arrow.label),
           morphism = newMorphism,
-          from = permuteLabel(arrow.from),
-          to = permuteLabel(arrow.to)
+          from = transformLabel(arrow.from),
+          to = transformLabel(arrow.to)
         )
         case _ => ???
       }
     })
 
-    TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(permuteLabel)))
+    TransformedResult(AnonymousDiagram(newNodes, newArrows, diag.distNode.map(transformLabel)))
   }
 }

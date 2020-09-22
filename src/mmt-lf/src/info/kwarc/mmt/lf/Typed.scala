@@ -11,16 +11,7 @@ object Typed {
    val kind = _base ? "Kinded" ? "kind"
 }
 
-object TypeAttribution extends BinaryConstantScala(Typed.path, "typeAttribution")
-
-object OfType {
-   val path = Typed.path ? "oftype"
-   def apply(t : Term) = OMA(OMID(path),List(t))
-   def unapply(t : Term) : Option[Term] = t match {
-      case OMA(OMID(this.path), List(a)) => Some(a)
-      case _ => None
-   }
-}
+object OfType extends BinaryConstantScala(Typed.path, "oftype")
 
 /** provides apply/unapply methods for the LF equality symbol */
 object LFEquality {

@@ -43,9 +43,7 @@ import scala.collection.mutable.HashSet
  * Unsolvable constraints are delayed and reactivated if later solving of unknowns provides further information.
  *
  * @param controller an MMT controller that is used to look up Rule's and Constant's. No changes are made to the controller.
- * @param context the constant context
- * @param initUnknowns the unknown context
- *   unknown variables may occur in the types of later unknowns.
+ * @param checkingUnit the judgment to check
  *
  * See [[CheckingUnit]] for the semantics of the contexts.
  *
@@ -954,7 +952,7 @@ object Solver {
   }
 
   /** create an unknown whose solution may contain certain variables */
-  def makeUnknown(name: LocalName, args: List[LocalName]) = OMAorAny(OMV(name), args.map(OMV(_)))
+  def makeUnknown(name: LocalName, args: List[Term]) = OMAorAny(OMV(name), args)
   
   /**
     * tests a term for the occurrence of an unknown variables that can be isolated by applying solution rules

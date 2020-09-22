@@ -28,7 +28,7 @@ var interactiveViewing = {
     },
 
     navigateServer: function(uri) {
-        url = '/:admin?navigate ' + uri;
+        url = '/:action?navigate ' + uri;
         $.ajax({ 'url': url });
     },
 

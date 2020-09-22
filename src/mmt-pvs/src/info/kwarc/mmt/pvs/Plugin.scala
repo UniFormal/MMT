@@ -42,7 +42,7 @@ object PVSNotation extends NotationExtension {
     case _ => false
   }
   /** called to construct a term after a notation produced by this was used for parsing */
-  def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], attrib: Boolean, not: TextNotation)
+  def constructTerm(op: GlobalName, subs: Substitution, con: Context, args: List[Term], not: TextNotation)
                    (implicit unknown: () => Term): Term = {
     require(args.length == 2)
     ???
@@ -63,7 +63,7 @@ object PVSNotation extends NotationExtension {
     })
     val fixity = Mixfix(List(SimpArg(1),Delim("%w"),delim,Delim("%w"),SimpArg(2)))
     val notation = TextNotation(fixity,Precedence.integer(0),None)
-    Some(PragmaticTerm(fun,sub,con,List(a,b),false,notation,Position.positions(OMA(OMS(fun),List(a,b)))))
+    Some(PragmaticTerm(fun,sub,con,List(a,b),notation,Position.positions(OMA(OMS(fun),List(a,b)))))
   }
 }
 
@@ -225,7 +225,7 @@ object NatLitSubtype extends SubtypingRule {
 }
 
 
-object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path,expr.path),LF.hoas)
+object PVSHOAS extends NestedHOASNotation(HOAS(pvsapply.path,pvslambda.path),LF.hoas)
 
 import PVSTheory._
 

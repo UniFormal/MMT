@@ -62,7 +62,26 @@ trait StructureSimplifier extends Extension {
  * the designated super class of all simplifiers
  */
 abstract class Simplifier(val objectLevel: ObjectSimplifier) extends StructureSimplifier with LeveledExtension {
+   /**
+     * Simplify an [[Obj object]] using a set of rules.
+     *
+     * @param obj The object to simplify
+     * @param su Settings of the simplification
+     * @param rules The rules to use, which can possibly be more or less or totally different than the ones
+     *              visible in `su.context`.
+     * @return The simplified object
+     *
+     * @see [[apply(obj: Obj, su: SimplificationUnit)]]
+     */
    def apply(obj: Obj, su: SimplificationUnit, rules: RuleSet): obj.ThisType = objectLevel(obj, su, rules)
+
+   /**
+     * Simplify an [[Obj object]] using all rules visible in `su.context`.
+     *
+     * @param obj The object to simplify
+     * @param su Settings of the simplification
+     * @return The simplified object
+     */
    def apply(obj: Obj, su: SimplificationUnit): obj.ThisType = {
       val rules = RuleSet.collectRules(controller, su.context)
       apply(obj, su, rules)

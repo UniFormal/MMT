@@ -30,8 +30,8 @@ case class ParsingUnit(source: SourceRef, context: Context, term: String, iiCont
 
 /** encapsulates the output of an [[ObjectParser]]
  *  @param unknown the unknown variables that must be solved
- *  @param the free variables that must be bound at the outside (may use unknowns)
- *  @param the parsed term (may use unknowns and free variables)
+ *  @param free the free variables that must be bound at the outside (may use unknowns)
+ *  @param term the parsed term (may use unknowns and free variables)
  */
 case class ParseResult(unknown: Context, free: Context, term: Term) {
    def toTerm = {
@@ -91,7 +91,7 @@ sealed abstract class HasParentInfo extends ParentInfo {
    def docParent: DPath
 }
 /** the content is located inside a document
- *  @param parent the parent document
+ *  @param docParent the parent document
  */
 case class IsDoc(docParent: DPath) extends HasParentInfo
 /** the content is located inside a ModuleOrLink

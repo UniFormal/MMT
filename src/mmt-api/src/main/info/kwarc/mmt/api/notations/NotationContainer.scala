@@ -176,6 +176,9 @@ class NotationContainer extends ComponentContainer {
 }
 
 object NotationContainer {
+   def empty(): NotationContainer = new NotationContainer
+
+   @deprecated("use NotationContainer.empty()", "v20.0.0")
    def apply(): NotationContainer = new NotationContainer
    def apply(tnOpt: Option[TextNotation]): NotationContainer = {
       val nc = apply()

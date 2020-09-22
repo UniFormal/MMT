@@ -90,8 +90,21 @@ class GfImporter extends Importer {
       langTheory.add(c)
     }
 
+    var foundint = false
+
     def symbname2OMS(s : String) : OMID = {
-      constMap.get(s) match {
+      if (s == "Int") {
+        if (!foundint) {
+          // MPath(DPath(URI("http://mathhub.info/COMMA/GLF")), LocalName("GLF_Int"))
+          // MPath(DPath(URI("http://mathhub.info/MitM/Foundation")), LocalName("IntLiterals"))
+          controller.add(PlainInclude(MPath(DPath(URI("http://cds.omdoc.org/urtheories")), LocalName("NatLiteralsOnly")),
+            langTheory.toTerm.toMPath))
+        }
+        foundint = true
+        // OMS(GlobalName(MPath(DPath(URI("http://mathhub.info/COMMA/GLF")), LocalName("GLF_Int")), LocalName("Int")))
+        // OMS(GlobalName(MPath(DPath(URI("http://mathhub.info/MitM/Foundation")), LocalName("IntLiterals")), LocalName("int_lit")))
+        OMS(GlobalName(MPath(DPath(URI("http://cds.omdoc.org/urtheories")), LocalName("NatSymbols")), LocalName("NAT")))
+      } else constMap.get(s) match {
         case Some(c : Constant) => OMS(GlobalName(c.home.toMPath, c.name))
         case None => throw new Exception("Failed to find symbol " + s)
       }
@@ -109,7 +122,6 @@ class GfImporter extends Importer {
       FINISHING UP
     */
     index(toplevelDoc)
-
     BuildSuccess(directlyincluded.toList, LogicalDependency(langTheory.toTerm.toMPath)::Nil)
   }
 }

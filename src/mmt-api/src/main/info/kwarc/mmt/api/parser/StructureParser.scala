@@ -348,7 +348,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (nc(c).isDefined)
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
-      val notation = TextNotation.parse(notString, state.namespaces)
+      val notation = try {
+        TextNotation.parse(notString, state.namespaces)
+      } catch {case p: ParseError =>
+        throw makeError(treg, "error in notation", Some(p))
+      }
       SourceRef.update(notation,state.makeSourceRef(SourceRegion(treg.start,state.reader.getLastReadSourcePosition)))
       nc(c) = notation
     }
@@ -804,11 +808,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     readDelimiter("abbrev", "=") match {
       case "abbrev" =>
         val (_, _, df) = readParsedObject(context)
-        val v = View(ns, name, from, to, Some(df.toTerm), isImplicit)
+        val v = View(ns, name, from, to, TermContainer.asParsed(df.toTerm), isImplicit)
         moduleCont(v, parent)
         end(v)
       case "=" =>
-        val v = View(ns, name, from, to, None, isImplicit)
+        val v = View(ns, name, from, to, TermContainer.empty(), isImplicit)
         moduleCont(v, parent)
         logGroup {
           readInModule(v, context ++ v.getInnerContext, noFeatures)(state.copy())

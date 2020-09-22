@@ -43,9 +43,9 @@ object TMString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.stan
 
 object BoolAsString extends EmbedStringToJSON(new LiteralsAsStringsCodec(Codecs.boolAsString, MitM.BoolLit))
 
-object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
+object BoolAsInt extends LiteralsCodec[scala.Boolean,JSON](Codecs.boolAsInt, MitM.BoolLit) {
   val codeType = IntType
-  def encodeRep(b: java.lang.Boolean) = if (b) JSONInt(1) else JSONInt(0)
+  def encodeRep(b: scala.Boolean) = if (b) JSONInt(1) else JSONInt(0)
   def decodeRep(j: JSON) = j match {
     case JSONInt(x) if x.toInt == 1 => true
     case JSONInt(x) if x.toInt == 0 => false
@@ -53,9 +53,9 @@ object BoolAsInt extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.boolAsInt,
   }
 }
 
-object StandardBool extends LiteralsCodec[java.lang.Boolean,JSON](Codecs.standardBool, MitM.BoolLit) {
+object StandardBool extends LiteralsCodec[scala.Boolean,JSON](Codecs.standardBool, MitM.BoolLit) {
   val codeType = BooleanType
-  def encodeRep(b: java.lang.Boolean) = JSONBoolean(b)
+  def encodeRep(b: scala.Boolean) = JSONBoolean(b)
   def decodeRep(j: JSON) = j match {
     case JSONBoolean(b) => b
     case _ => throw CodecNotApplicable

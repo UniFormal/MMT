@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.parser.ParsingStream
 import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 
 /** Shared base class for Actions updating the mathpath */
-sealed abstract class MathPathAction extends Action {}
+sealed abstract class MathPathAction extends Action
 
 case object ShowArchives extends MathPathAction with ResponsiveAction {
   def apply() {
@@ -60,15 +60,6 @@ object AddMathPathFSCompanion extends ActionCompanion("add mathpath entry for a 
   def parserActual(implicit state: ActionState) = uri ~ file ^^ { case u ~ f => AddMathPathFS(u, f) }
 }
 
-case class AddMathPathJava(javapath: File) extends MathPathAction {
-  def apply() {controller.backend.openRealizationArchive(javapath)}
-  def toParseString = "mathpath java " + javapath
-}
-object AddMathPathJavaCompanion extends ActionCompanion("add catalog entry for realizations in Java", "mathpath java") {
-  import Action._
-  def parserActual(implicit state: ActionState) = file ^^ { f => AddMathPathJava(f) }
-}
-
 case class Read(file: File, interpret: Boolean) extends MathPathAction {
   def apply() {
     if (!file.isFile)
@@ -96,15 +87,8 @@ trait MathPathActionHandling {self: Controller =>
   /** add an archive plus its optional classpath and notify listeners, handling [[AddArchive]] */
   def addArchive(root: File): List[Archive] =  {
     val archs = backend.openArchive(root)
-    archs.foreach { a =>
-      report("user", "opened archive " + a.root)
-      a.properties.get("classpath").foreach { cp =>
-        val rF = a.root / cp
-        backend.openRealizationArchive(rF)
-        report("user", "... with realizations in folder " + rF)
-      }
-      notifyListeners.onArchiveOpen(a)
-    }
+    archs.foreach {a => report("user", "opened archive " + a.root)}
+    archs.foreach {a => notifyListeners.onArchiveOpen(a)} // TODO this should happen in backend
     archs
   }
 }

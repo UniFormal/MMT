@@ -98,6 +98,39 @@ object ComplexTheoryInfer extends InferenceRule(ModExp.complextheory, OfType.pat
    }
 }
 
+/**
+  * DIAG : Inhabitable
+  */
+object DiagramTypeInhabitable extends InhabitableRule(ModExp.diagramtype) {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case OMS(this.head) => Some(true)
+    case _ => Some(false)
+  }
+}
+
+object AnonymousDiagramInfer extends InferenceRule(ModExp.anonymousdiagram, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
+    case AnonymousDiagramCombinator(_) =>
+      Some(DiagramType())
+    case _ =>
+      None
+  }
+}
+
+object DiagramCheck extends TypingRule(ModExp.anonymousdiagram) {
+  override def apply(solver: Solver)(tm: Term, tp: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val simplificationUnit = SimplificationUnit(stack.context, expandDefinitions = true, fullRecursion = true, solverO = Some(solver))
+
+    solver.controller.simplifier(tm, simplificationUnit) match {
+      case AnonymousDiagramCombinator(_) =>
+        Some(true)
+
+      case _ =>
+        Some(false)
+    }
+  }
+}
+
 object AnonymousTheoryInfer extends InferenceRule(ModExp.anonymoustheory, OfType.path) {
    def apply(solver: Solver)(tm: Term, covered: Boolean)(implicit stack: Stack, history: History) : Option[Term] = tm match {
       case AnonymousTheoryCombinator(_) =>

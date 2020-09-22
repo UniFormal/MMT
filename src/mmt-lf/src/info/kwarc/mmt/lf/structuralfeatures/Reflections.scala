@@ -16,15 +16,20 @@ import StructuralFeatureUtil._
 import inductiveUtil._
 import structuralfeatures.InductiveTypes._
 
+object ReflectionsUtil {
+  def feature = {"reflect"}
+}
+
 /** theories as a set of types of expressions */ 
-class Reflections extends StructuralFeature("reflect") with TypedParametricTheoryLike {
-  
-  /**
+class Reflections extends StructuralFeature(ReflectionsUtil.feature) with ReferenceLikeTypedParametricTheoryLike {
+   /**
    * Checks the validity of the inductive type(s) to be constructed
    * @param dd the derived declaration from which the inductive type(s) are to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
-
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {
+    val (_, _, indCtx, indParams, context) = getContent(dd)
+    checkParams(indCtx, indParams, Context(dd.parent)++context, env)
+  }
   /**
    * Elaborates an declaration of one or multiple mutual inductive types into their declaration, 
    * as well as the corresponding no confusion and no junk axioms
@@ -33,28 +38,26 @@ class Reflections extends StructuralFeature("reflect") with TypedParametricTheor
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-
-    val (indDefPathGN, context, indParams) = ParamType.getParams(dd)
+    val (indDefPathGN, consts, indCtx, indParams, context) = getContent(dd)
     val indDefPath = indDefPathGN.toMPath
-    // TODO: figure out how to work with theory parameters
-    val (indCtx, consts) = controller.getO(indDefPath) match {
-      case Some(str) => str match {
-        case t: Theory => (Context.empty, getConstants(t.getDeclarations, controller))
-        case t: StructuralElement if (t.feature =="theory") => 
-          val decls = t.getDeclarations map {case d: Declaration => d case _ => throw LocalError("unsupported structural element at "+t.path)}
-          (Context.empty, getConstants(decls, controller))
-        case m : ModuleOrLink => (Context.empty, getConstants(m.getDeclarations, controller))
-        case t => throw GeneralError("reflection over unsupported target (expected module or link)"+t.path+" of feature "+t.feature + ": "+t)
-      }
-      case None => throw GeneralError("target of reflection not found at "+indDefPath)
-    }
-    
-    val declsPre = readInternalDeclarations(consts, controller, Some(context))(indDefPathGN)
+
+    val declsPre = readInternalDeclarations(consts, controller, Some(context))(dd.path)
     val subst = indCtx zip indParams map {case (vd, param) => Sub(vd.name, param)}
-    val tr = OMSReplacer({p:GlobalName => if (p.module == indDefPath.module/indDefPath.name) Some(OMS(dd.modulePath ? p.name)) else None})
+    val tr = OMSReplacer({p:GlobalName => if (p.module == indDefPath) Some(OMS(dd.modulePath ? p.name)) else None})
     val decls = declsPre map (_.translate(ApplySubs(subst)).translate(TraversingTranslator(tr)))
     
     structuralfeatures.InductiveTypes.elaborateDeclarations(context, decls, controller, Some({c => log(defaultPresenter(c)(controller))}))(dd.path)
+  }
+
+  /**
+   * parse the derived declaration into its components
+   * @param dd the derived declaration
+   * @return returns a pair containing the mpath of the derived declaration, the constants defined in the referenced theory,
+   *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
+   */
+  def getContent(dd:DerivedDeclaration): (GlobalName, List[Constant], Context, List[Term], Context) = {
+    val (indDefPathGN, decls, indCtx, indParams, context) = getDecls(dd)
+    (indDefPathGN, getConstants(decls, controller)(dd.path.toMPath), indCtx, indParams, context)
   }
 }
 

@@ -19,7 +19,7 @@ import scala.util.Try
  *
  * It will be called on URIs of the form http://server:port/:CONTEXT/PATH?QUERY
  *
- * @param context the CONTEXT
+ * @param pathPrefix the CONTEXT
  */
 abstract class ServerExtension(val pathPrefix: String) extends FormatBasedExtension {
   /**
@@ -148,7 +148,7 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
   }
 
   /** @return (d,f) such that d/key/f is the path to the svg file for path exported by key */
-  private def svgPath(path: Path): Option[(File, List[String])] = {
+  private def svgPath(path: Path): Option[(File, FilePath)] = {
     val (inNarr, newPath) = path.dropComp match {
       // narrative
       case dp: DPath => (true, dp)
@@ -171,7 +171,8 @@ class SVGServer extends ServerExtension("svg") with ContextMenuProvider {
       val inPathFile = Archive.MMTPathToContentPath(mp)
       (arch, "content" :: inPathFile)
     }
-    Some((arch.root / "export", relPath))
+    val relPathSVG = FilePath(relPath).setExtension("svg")
+    Some((arch.root / "export", relPathSVG))
   }
 }
 
