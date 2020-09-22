@@ -102,16 +102,6 @@ jobs:
         - "cd src && (cat /dev/null | sbt ++2.12.9 deployLFCatalog) && cd .."
         - '[[ -f "deploy/lfcatalog/lfcatalog.jar" ]]'
       stage: DeployCheck
-    - dist: bionic
-      env:
-        - "INFO='Check that apidoc generation works'"
-        - 'SBT_VERSION_CMD="^validate"'
-      jdk: openjdk14
-      language: scala
-      scala: "2.12.9"
-      script:
-        - "cd src && (cat /dev/null | sbt ++2.12.9 apidoc) && cd .."
-        - '[[ -d "apidoc" ]]'
 stages:
   - name: SelfCheck
   - name: CompileAndCheck
