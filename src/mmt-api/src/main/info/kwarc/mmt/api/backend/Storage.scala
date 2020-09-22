@@ -51,76 +51,11 @@ abstract class Storage {
   //TODO: method for querying
   // def query(q: ???): Iterator[Path]
 
-  /** called to release all held resources, override as needed */
+  /** called to reset this class, override to forget all cached information, e.g., files loaded from disk */
+  def clear {}
+
+  /** called to release all held resources before forgetting this class, override as needed */
   def destroy {}
-}
-
-/** a variant of a [[Storage]] that loads Scala objects from the class path */
-trait RealizationStorage {
-  /** the class loaded used to load semantic objects
-   *
-   * By making this a 'def', every load may creates a fresh class loader.
-   * That can be helpful if new class files are produced at run time (e.g., with the [[ScalaCompiler]]).   
-   */
-  def loader: java.lang.ClassLoader
-  /**
-   * @param p the path to use in error messages
-   */
-  def loadObject(p: MPath): SemanticObject = {
-    val cls = SemanticObject.mmtToJava(p)
-    loadSemanticObject(cls, p)
-  }
-
-  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
-  def loadClass(cls: String, p: Path): Class[_] = {
-    try {
-      Class.forName(cls, true, loader)
-    } catch {
-      case e: ClassNotFoundException =>
-        throw NotApplicable("class " + cls + " not found")
-      case e: ExceptionInInitializerError =>
-        throw BackendError(s"class $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
-      case e: LinkageError =>
-        throw BackendError(s"class $cls for $p exists, but an error occurred when linking it", p).setCausedBy(e)
-      case e: Error =>
-        throw BackendError(s"class $cls for $p exists, but: " + e.getMessage, p).setCausedBy(e)
-    }
-  }
-  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
-  protected def loadSemanticObject(cls: String, p: Path): SemanticObject = {
-    val c = loadClass(cls, p)
-    val r = try {
-      c.getField("MODULE$").get(null)
-    } catch {
-      case e: Exception =>
-        throw BackendError(s"class $cls for $p exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
-    }
-    r match {
-      case r: SemanticObject =>
-        try {
-          r.init
-        } catch {
-          case e: Exception =>
-            throw BackendError(s"semantic object $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
-        }
-        r
-      case _ =>
-        throw BackendError(s"object $cls for $p exists, but it is not an instance of SemanticObject", p)
-    }
-  }
-}
-
-
-/** a Storage that retrieves file URIs from the local system */
-case class LocalSystem(base: URI) extends Storage {
-  val localBase = URI(Some("file"), None, Nil, abs = true, None, None)
-
-  def load(path: Path)(implicit controller: Controller) {
-    val uri = base.resolve(path.doc.uri)
-    val _ = getSuffix(localBase, uri)
-    val file = new java.io.File(uri.toJava)
-    loadXML(uri, path.doc, File.Reader(file))
-  }
 }
 
 /** a Storage that retrieves repository URIs from the local working copy */
@@ -187,12 +122,71 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
    }
 }
 
+/** a variant of a [[Storage]] that loads Scala objects from the class path */
+trait RealizationStorage {
+  def getLoader: java.lang.ClassLoader
+  // this must be a val to make sure all classes are loaded by the same class loader (the same class loaded by different class loaders are distinct)
+  private var loader = getLoader
+  /** the only way to unload classes is to let them and the class loader be garbage-collected; so this method creates a fresh copy of the class loader */
+  def resetLoader {
+    loader = getLoader
+  }
+  /**
+    * @param p the path to use in error messages
+    */
+  def loadObject(p: MPath): SemanticObject = {
+    val cls = SemanticObject.mmtToJava(p)
+    loadSemanticObject(cls, p)
+  }
+
+  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
+  def loadClass(cls: String, p: Path): Class[_] = {
+    try {
+      Class.forName(cls, true, loader)
+    } catch {
+      case e: ClassNotFoundException =>
+        throw NotApplicable("class " + cls + " not found")
+      case e: ExceptionInInitializerError =>
+        throw BackendError(s"class $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
+      case e: LinkageError =>
+        throw BackendError(s"class $cls for $p exists, but an error occurred when linking it", p).setCausedBy(e)
+      case e: Error =>
+        throw BackendError(s"class $cls for $p exists, but: " + e.getMessage, p).setCausedBy(e)
+    }
+  }
+  /** gets the object for a java class name (cls must be in Scala's syntax for java .class files) */
+  protected def loadSemanticObject(cls: String, p: Path): SemanticObject = {
+    val c = loadClass(cls, p)
+    val r = try {
+      c.getField("MODULE$").get(null)
+    } catch {
+      case e: Exception =>
+        throw BackendError(s"class $cls for $p exists, but an error occurred when accessing the Scala object", p).setCausedBy(e)
+    }
+    r match {
+      case r: SemanticObject =>
+        try {
+          r.init
+        } catch {
+          case e: Exception =>
+            throw BackendError(s"semantic object $cls for $p exists, but an error occurred when initializing it", p).setCausedBy(e)
+        }
+        r
+      case _ =>
+        throw BackendError(s"object $cls for $p exists, but it is not an instance of SemanticObject", p)
+    }
+  }
+}
+
 /** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
 class RealizationArchive(file: File) extends Storage with RealizationStorage {
-  override def toString = "RealizationArchive for " + file
+  override def toString = "realization archive for " + file
 
-  // this must be a val to make sure all classes are loaded by the same class loader (the same class loaded by different class loaders are distinct)
-  val loader: ClassLoader = try {
+  override def clear {
+    resetLoader
+  }
+
+  def getLoader: ClassLoader = try {
     val optCl = Option(getClass.getClassLoader)
     // the class loader that loaded this class, may be null for bootstrap class loader
     optCl match {
@@ -235,5 +229,18 @@ object DefaultRealizationLoader extends Storage with RealizationStorage {
   def load(path: Path)(implicit controller: Controller) {
     throw NotApplicable("can only load rules")
   }
-  def loader: ClassLoader = this.getClass.getClassLoader
+  def getLoader: ClassLoader = this.getClass.getClassLoader
 }
+
+/** a Storage that retrieves file URIs from the local system */
+case class LocalSystem(base: URI) extends Storage {
+  val localBase = URI(Some("file"), None, Nil, abs = true, None, None)
+
+  def load(path: Path)(implicit controller: Controller) {
+    val uri = base.resolve(path.doc.uri)
+    val _ = getSuffix(localBase, uri)
+    val file = new java.io.File(uri.toJava)
+    loadXML(uri, path.doc, File.Reader(file))
+  }
+}
+

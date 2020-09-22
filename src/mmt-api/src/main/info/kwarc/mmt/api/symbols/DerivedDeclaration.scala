@@ -117,7 +117,7 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
    def getHeaderNotation: List[Marker]
 
    /** the parse rule for the header */
-   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None))
+   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None, false))
 
    /** parses the header term of a derived declaration into its name and type
     *  by default it is interpreted as OMA(mpath, name :: args) where OMA(mpath, args) is the type

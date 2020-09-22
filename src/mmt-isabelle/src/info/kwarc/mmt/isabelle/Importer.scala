@@ -321,7 +321,7 @@ object Importer
     val notation = NotationContainer()
 
     def prefix_notation(delim: String, impl: Int): TextNotation =
-      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None)
+      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None, false)
 
     def xname_notation: List[TextNotation] = xname.toList.map(prefix_notation(_, 0))
 
@@ -341,7 +341,7 @@ object Importer
               }
             val delim = Delim(isabelle.Symbol.decode(infix.delim))
             val fixity = Infix(delim, implicit_args, 2, assoc)
-            new TextNotation(fixity, Precedence.integer(infix.pri), None)
+            new TextNotation(fixity, Precedence.integer(infix.pri), None, false)
           }
           xname_notation ::: List(infix_notation)
       }

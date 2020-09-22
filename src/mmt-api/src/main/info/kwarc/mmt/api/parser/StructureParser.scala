@@ -348,7 +348,11 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     if (nc(c).isDefined)
       errorCont(makeError(treg, "notation of this constant already given, ignored"))
     else {
-      val notation = TextNotation.parse(notString, state.namespaces)
+      val notation = try {
+        TextNotation.parse(notString, state.namespaces)
+      } catch {case p: ParseError =>
+        throw makeError(treg, "error in notation", Some(p))
+      }
       SourceRef.update(notation,state.makeSourceRef(SourceRegion(treg.start,state.reader.getLastReadSourcePosition)))
       nc(c) = notation
     }

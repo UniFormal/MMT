@@ -4,10 +4,9 @@ import info.kwarc.mmt.api._
 import modules._
 import symbols._
 import objects._
-import proving.imperative._
 
 import info.kwarc.mmt.lf._
-
+/*
 object SvenProverTest extends MMTIntegrationTest("MMT/urtheories", "MMT/examples")() {
   def main {
      val thyURI = Path.parse("NAMESPACE?THYNAME")
@@ -24,3 +23,4 @@ object SvenProverTest extends MMTIntegrationTest("MMT/urtheories", "MMT/examples
     }
   }
 }
+*/

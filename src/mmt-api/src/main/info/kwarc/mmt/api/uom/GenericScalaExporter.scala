@@ -86,12 +86,20 @@ object GenericScalaExporter {
   }
   case class ArgumentList(args: List[Argument]) {
     def +(that: ArgumentList) = ArgumentList(this.args ::: that.args)
+    // if at most the last argument is a sequence, this appends ::Nil if needed
+    def finalNil = if (args.lastOption.exists(a => !a.sequence)) " :: Nil" else ""
+    // x1, ..., xn
     def names = args.map(_.name)
+    // T1, ..., Tn
     def types = args.map(_.tp)
     // x1: T1, ..., xn: Tn
     val decls = args.map(_.decl)
+    // x1: T1, ..., xn: Tn
+    val declsConsed = decls.map(d => "(" + d + ")").mkString(" :: ") + finalNil
     // List(x1,...,xn)
-    def nameList = args.map {a => if (a.sequence) a else "List(" + a + ")"}.mkString(":::")
+    def nameList = args.map {a => if (a.sequence) a.name else "List(" + a.name + ")"}.mkString(":::")
+    // x1::x2:: ... :: xn [:: Nil]
+    def namesConsed = names.mkString(" :: ") + finalNil
     // (x1, ..., xn) or x1
     def tuple = if (args.length == 1) names.head else names.mkString("(", ", ", ")")
     def tupleType = if (args.length == 0) "Unit" else if (args.length == 1) types.head else types.mkString("(", ", ", ")")
@@ -101,20 +109,17 @@ object GenericScalaExporter {
    *  @param second the arguments
    */
   abstract class Operator(first: ArgumentList, second: ArgumentList) {
-    /** maps a list of variables and a list of arguments to a term */
-    def mmtTerm(vs: List[String], as: List[String]): String
-
     def combined = first+second
-    def term = mmtTerm(first.names, second.names)
-    def pattern = mmtTerm(first.decls, second.decls)
     def tuple = combined.tuple
     def tupleType = combined.tupleType
     def context = combined.decls.mkString(",")
+    /** maps a list of variables and a list of arguments to a term */
+    def makeTerm(pattern: Boolean): String
     // def apply(x1,...,xn) : Term = term
-    def applyMethod = List(s"def apply($context): Term = $term")
+    def applyMethod = List(s"def apply($context): Term = ${makeTerm(false)}")
     def unapplyMethod = List(
        s"def unapply(t: Term): Option[$tupleType] = t match {",
-       s"  case $pattern => Some($tuple)",
+       s"  case ${makeTerm(true)} => Some($tuple)",
        s"  case _ => None",
        s"}"
     )
@@ -124,14 +129,14 @@ object GenericScalaExporter {
   /** for MMT terms using OMS, OMA, and OMBIND */
   class MMTOperator(p: ContentPath, f: ArgumentList, s: ArgumentList) extends Operator(f,s) {
     private def omid = "OMID(this.path)"
-    def f(as: List[String]) = as.mkString(",")
-    def mmtTerm(a1: List[String], a2: List[String]): String = {
-      if (a1.isEmpty && a2.isEmpty)
+    def makeTerm(pattern: Boolean): String = {
+      val sS = if (pattern) s.declsConsed else s.nameList
+      if (f.args.isEmpty && s.args.isEmpty)
         omid
-      else if (a1.isEmpty)
-        s"OMA($omid, List(${f(a2)}))"
+      else if (f.args.isEmpty)
+        s"OMA($omid, $sS)"
       else
-        s"OMBINDC($omid, ${f(a1)}, ${f(a2)})"
+        s"OMBINDC($omid, ${f.nameList}, $sS)"
     }
   }
 }
@@ -254,7 +259,7 @@ class GenericScalaExporter extends Exporter {
   }
 
   /** 1%w, */
-  private val defaultNotation = TextNotation(Mixfix(List(SimpSeqArg(1, Delim(" "), CommonMarkerProperties.noProps))), Precedence.integer(0), None)
+  private val defaultNotation = TextNotation(Mixfix(List(SimpSeqArg(1, Delim(" "), CommonMarkerProperties.noProps))), Precedence.integer(0), None, false)
   /** additional lines (without indentation) to be added to the companion object, most importantly the apply/unapply methods */
   protected def companionObjectFields(c: Constant): List[String] = {
     val nt = c.not.getOrElse(defaultNotation)

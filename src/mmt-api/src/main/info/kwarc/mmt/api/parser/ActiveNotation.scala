@@ -87,51 +87,34 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
       left = prepicked ::: left
    }
-   /** pick all available Token's as SimpArg(n) or LabelArg(n, typed, defined) */
-   private def PickAll(n: Int, isOML:Option[LabelInfo]) : FoundArg = isOML match {
-      case None => FoundSimpArg(scanner.pick(numCurrentTokens), n)
-      case Some(io) => FoundOML(scanner.pick(numCurrentTokens),n,io)
+   /** pick all available Token's as a FoundSimpArg */
+   private def PickAll(m: ChildMarker) = {
+      val ts = scanner.pick(numCurrentTokens)
+      FoundSimp(ts, m)
    }
-   /** pick exactly ns.length available Tokens as ns.map(Arg(_)) or ns.map(LabelArg(_,...)) */
-   private def PickSingles(ns: List[(Int,Option[LabelInfo])]) = {
-      val fs = ns reverseMap {case (n,isOML) =>
-         isOML match {
-            case None => FoundSimpArg(scanner.pick(1), n)
-            case Some(io) => FoundOML(scanner.pick(1), n, io)
-         }
+   /** pick exactly ms.length available Tokens, each as as FoundSimp */
+   private def PickSingles(ms: List[ChildMarker]) {
+      val fs = ms reverseMap {m =>
+         FoundSimp(scanner.pick(1), m)
       }
       found = fs ::: found
    }
-
-   private def PickAllSeq(n: Int, infoOpt:Option[LabelInfo]) = {
-      val ts = scanner.pick(numCurrentTokens)
-      val a = infoOpt match {
-         case None => FoundSimpArg(ts, n)
-         case Some(info) => FoundOML(ts, n, info)
-      }
-      found.headOption match {
-         case Some(FoundSimpSeqArg(m, args)) if m == n && infoOpt.isEmpty =>
-            found = FoundSimpSeqArg(n, args ::: List(a.asInstanceOf[FoundSimpArg])) :: found.tail
-         case Some(FoundSeqOML(m, args, info)) if m == n && infoOpt.isDefined =>
-            found = FoundSeqOML(n, args ::: List(a.asInstanceOf[FoundOML]), info) :: found.tail
-         case _ =>
-            val f = infoOpt match {
-               case None => FoundSimpSeqArg(n, List(a.asInstanceOf[FoundSimpArg]))
-               case Some(info) => FoundSeqOML(n, List(a.asInstanceOf[FoundOML]), info)
-            }
-            found ::= f
+   /** like pickAll, but appends to a previously started sequence or starts a new sequence */
+   private def PickAllSeq(m: ChildMarker) {
+      val f = PickAll(m)
+      (found.headOption, m) match {
+         case (Some(FoundSeq(s, args)), m) if s.number == m.number =>
+            found = FoundSeq(s, args ::: List(f)) :: found.tail
+         case (_, m) =>
+            found ::= FoundSeq(m, List(f))
       }
    }
-
-   private def SeqDone(n: Int, isOML:Option[LabelInfo]) {
+   /** inserts an empty sequence if a sequence is ended before any elements were found */
+   private def SeqDone(m: ChildMarker) {
       found.headOption match {
-         case Some(FoundSimpSeqArg(m, _)) if m == n =>
-         case Some(FoundSeqOML(m,_,_)) if m == n =>
+         case Some(FoundSeq(s, _)) if s.number == m.number =>
          case _ =>
-            val f = isOML match {
-               case None => FoundSimpSeqArg(n, Nil)
-               case Some(info) => FoundSeqOML(n,Nil,info)
-            }
+            val f = FoundSeq(m, Nil)
             found ::= f
       }
    }
@@ -154,20 +137,18 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       Applicable
    }
 
-   private def inSeqArg(n: Int) = found match {
-      case FoundSimpSeqArg(m, _) :: _ if m == n => true
-      case FoundSeqOML(m,_,_) :: _ if m == n => true
+   private def inSeq(m: ChildMarker) = found match {
+      case (fs: FoundSeq) :: _ if fs.number == m.number => true
       case _ => false
    }
 
-   /** splits a List[Marker] into
-    *  a List[Int] (possibly Nil) that corresponds to a List[Arg]
-    * and the remaining List[Marker]
+   /** splits a List[Marker] into a list of a simple (plain, label, or variable) markers and the remaining markers
     */
-   private def splitOffArgs(ms: List[Marker], ns: List[(Int,Option[LabelInfo])] = Nil) : (List[(Int,Option[LabelInfo])], List[Marker]) = ms match {
-      case (la:LabelArg) :: rest => splitOffArgs(rest, (la.number,Some(la.info)) :: ns)
-      case SimpArg(n, _) :: rest => splitOffArgs(rest, (n,None) :: ns)
-      case Delim("%w") :: rest => splitOffArgs(rest, ns)
+   private def splitOffSimples(ms: List[Marker], ns: List[ChildMarker] = Nil) : (List[ChildMarker], List[Marker]) = ms match {
+      case (la:LabelArg) :: rest => splitOffSimples(rest, la :: ns)
+      case (vm @ Var(n, typed, None, _)) :: rest => splitOffSimples(rest, vm :: ns)
+      case (sa:SimpArg) :: rest => splitOffSimples(rest, sa :: ns)
+      case Delim("%w") :: rest => splitOffSimples(rest, ns)
       case rest => (ns.reverse, rest)
    }
 
@@ -181,6 +162,7 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
   def applicable(currentToken: Token, futureTokens: String): Applicability = {
       //shortcut: true if delimiter s matches at the currentIndex
       def matches(s: String) = ActiveNotation.matches(s, currentToken.word, futureTokens)
+      /* DELETE after testing 2020-07-07
       // now the actual applicability check in 2 cases
       // first: if we are in a bound variable, step through the corresponding state machine
       val result: Applicability = found match {
@@ -237,90 +219,70 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
       }
       if (result != null) return result
       // second: otherwise, try to match the current Token against an upcoming delimiter
-      splitOffArgs(left) match {
-         // the notation expects some arguments followed by the current token: all previously shifted tokens become arguments 
-         case (ns, Delimiter(s) :: _) if matches(s) =>
-          ns match {
-            // no arguments expected: just consume the delimiter
-            case Nil =>
-               onApplyI {currentIndex =>
-                  deleteDelim(currentIndex)
-               }
-            // create a single arg with all available tokens
-            case List((n,isOML)) if numCurrentTokens > 0 =>
-               onApplyI {currentIndex =>
-                  found ::= PickAll(n,isOML)
-                  delete(1)
-                  deleteDelim(currentIndex)
-               }
-            case _ =>
-              if (ns.length == numCurrentTokens) {
-               // create a single arg for each available token
-               onApplyI {currentIndex =>
-                  PickSingles(ns)
-                  delete(numCurrentTokens)
-                  deleteDelim(currentIndex)
-               }
-              } else if (ns.length > numCurrentTokens) {
-               // if more tokens available than needed, merge all remaining tokens into the last argument
-               //TODO use matched tokens as delimiters, merge in between them 
-               onApplyI {currentIndex =>
-                  PickSingles(ns.init)
-                  PickAll(ns.length,ns.last._2)
-                  delete(numCurrentTokens)
-                  deleteDelim(currentIndex)
-               }
-              } else {
-               NotApplicable
-              }
-         }
-         // the notation expects a sequence whose separator is the current token: all previously shifted tokens become the first element, and we start the sequence
-         case (Nil, SimpSeqArg(n, Delimiter(s),_) :: _) if matches(s) =>
-              onApply {
-                 PickAllSeq(n,None)
-                 addPrepickedDelims(Delim(s), currentToken)
-              }
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(s),_,_)) :: _) if matches(s) =>
-            onApply {
-               PickAllSeq(n,Some(lsa.info))
-               addPrepickedDelims(Delim(s),currentToken)
-            }
-         // the notation expects a sequence followed by the current token: end the sequence
-         case (Nil, SimpSeqArg(n, Delimiter(t),_) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
-              if (numCurrentTokens > 0) {
-                 //picks the last element of the sequence (possibly the only one)
+       */
+     splitOffSimples(left) match {
+        // the notation expects some arguments followed by the current token: all previously shifted tokens become arguments
+        case (ns,Delimiter(s) :: _) if matches(s) =>
+           ns match {
+              // no arguments expected: just consume the delimiter
+              case Nil =>
                  onApplyI {currentIndex =>
-                    PickAllSeq(n,None)
+                    deleteDelim(currentIndex)
+                 }
+              // create a single arg with all available tokens
+              case List(n) if numCurrentTokens > 0 =>
+                 onApplyI {currentIndex =>
+                    found ::= PickAll(n)
                     delete(1)
                     deleteDelim(currentIndex)
                  }
-              } else if (numCurrentTokens == 0) {
-                 //picks nothing and finds an empty sequence
-                 onApplyI {currentIndex =>
-                    SeqDone(n,None)
-                    delete(1)
-                    deleteDelim(currentIndex)
+              case _ =>
+                 if (ns.length == numCurrentTokens) {
+                    // create a single arg for each available token
+                    onApplyI {currentIndex =>
+                       PickSingles(ns)
+                       delete(numCurrentTokens)
+                       deleteDelim(currentIndex)
+                    }
+                 } else if (ns.length > numCurrentTokens) {
+                    // if more tokens available than needed, merge all remaining tokens into the last argument
+                    //TODO use matched tokens as delimiters, merge in between them
+                    onApplyI {currentIndex =>
+                       PickSingles(ns.init)
+                       PickAll(ns.last)
+                       delete(numCurrentTokens)
+                       deleteDelim(currentIndex)
+                    }
+                 } else {
+                    NotApplicable
                  }
-              } else
-                 NotApplicable //abort?
-         case (Nil, (lsa @ LabelSeqArg(n,Delimiter(t),_,_)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
-            if (numCurrentTokens > 0) {
-               //picks the last element of the sequence (possibly the only one)
-               onApplyI {currentIndex =>
-                  PickAllSeq(n,Some(lsa.info))
-                  delete(1)
-                  deleteDelim(currentIndex)
-               }
-            } else if (numCurrentTokens == 0) {
-               //picks nothing and finds an empty sequence
-               onApplyI {currentIndex =>
-                  SeqDone(n,Some(lsa.info))
-                  delete(1)
-                  deleteDelim(currentIndex)
-               }
-            } else
-               NotApplicable //abort?
-         // the notation expects a variable sequence followed by the current token: find the empty sequence
+           }
+        // the notation expects a sequence whose separator is the current token: all previously shifted tokens become the first element, and we start the sequence
+        case (Nil, (cm: ChildMarker) :: _) if cm.isSequenceVia.exists(s => matches(s.text)) =>
+           onApply {
+              PickAllSeq(cm)
+              addPrepickedDelims(cm.isSequenceVia.get,currentToken)
+           }
+        // the notation expects a sequence followed by the current token: end the (possibly empty) sequence
+        case (Nil,(cm:ChildMarker) :: Delimiter(s) :: _) if cm.isSequenceVia.exists(t => !matches(t.text)) && matches(s) =>
+           if (numCurrentTokens > 0) {
+              //picks the last element of the sequence (possibly the only one)
+              onApplyI {currentIndex =>
+                 PickAllSeq(cm)
+                 delete(1)
+                 deleteDelim(currentIndex)
+              }
+           } else if (numCurrentTokens == 0) {
+              //picks nothing and finds an empty sequence
+              onApplyI {currentIndex =>
+                 SeqDone(cm)
+                 delete(1)
+                 deleteDelim(currentIndex)
+              }
+           } else
+              NotApplicable //abort?
+/*  DELETE after testing 2020-07-07
+       // the notation expects a variable sequence followed by the current token: find the empty sequence
          case (Nil, (vm @ Var(n, _, Some(Delimiter(t)), _)) :: Delimiter(s) :: _) if ! matches(t) && matches(s) =>
             onApplyI {currentIndex =>
               val fv = new FoundVar(vm)
@@ -337,7 +299,9 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                    fv.newVar(currentIndex, currentToken)
                    fv.state = FoundVar.AfterName
                    found ::= fv
-               } /*
+               }
+*/
+               /*
                // removed because
                //  - there is no way to make sure the shifted Token is a variable name
                //  - it's confusing that it does not also check for the type key or the separator
@@ -361,19 +325,19 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
                           deleteDelim(currentIndex)
                      }
                      case _ => Abort
-                  }*/
+                  }
                case _ => Abort // should be impossible
-            }
+            }*/
          case _ => NotApplicable
       }
    }
    /**
-    * precondition: this.applicable(scanner.currentToken)
-    * terminate the current argument(s) and match the current token to the next expected delimiter
+     * precondition: this.applicable(scanner.currentToken)
+     * terminate the current argument(s) and match the current token to the next expected delimiter
      *
      * @param currentIndex the index of currentToken
-    * @return true iff the notation is fully applied, i.e., no further arguments or delimiters can be matched
-    */
+     * @return true iff the notation is fully applied, i.e., no further arguments or delimiters can be matched
+     */
   //currentIndex must be passed here because it is not known yet when applicable is called (because other notations may be closed in between)
    def apply(currentIndex: Int): Boolean = {
       remember(currentIndex)
@@ -388,20 +352,24 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
     * i.e., the current arguments can be the last arguments of the notation with no further delimiter expected
     */
    def closable : Applicability = {
-      splitOffArgs(left) match {
-         case (Nil, SimpSeqArg(n, Delimiter(s), _) :: Nil) =>
-              if (inSeqArg(n) && numCurrentTokens > 0) {
+      splitOffSimples(left) match {
+         // the notation expects a sequence
+         case (Nil, (m: ChildMarker) :: Nil) if m.isSequence =>
+              if (numCurrentTokens > 0) {
+                 // the available tokens are the last (possibly only) element
                  onApply {
-                    PickAllSeq(n,None)
+                    PickAllSeq(m)
                     delete(1)
                  }
-              } else if (! inSeqArg(n) && numCurrentTokens == 0) {
-                 onApply {
-                    SeqDone(n,None)
+              } else if (!inSeq(m)) {
+                  // no tokens available and the sequence has not been started yet: empty sequence
+                  onApply {
+                    SeqDone(m)
                     delete(1)
-                 }
+                  }
               } else
                  NotApplicable
+           /*
          case (Nil, (vm: Var) :: Nil) => found match {
             case (fv: FoundVar) :: _ =>
                   //the last thing found was a variable, probably fv.marker == vm
@@ -429,19 +397,11 @@ class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtra
             case _ =>
                 // can't close because we've never started vm, still need to parse vm
                 NotApplicable
-         }
-         case (List((n,Some(info))), Nil) if numCurrentTokens > 0 =>
+         }*/
+         case (List(m), Nil) if numCurrentTokens > 0 =>
             // one argument taking all available Token's
             onApply {
-               found ::= PickAll(n,Some(info))
-               delete(1)
-            }
-         // as many arguments as there are Token's
-         // should we abort immediately if the numbers do not match up?
-         case (List((n,None)), Nil) if numCurrentTokens > 0 =>
-            // one argument taking all available Token's
-            onApply {
-               found ::= PickAll(n,None)
+               found ::= PickAll(m)
                delete(1)
             }
             // as many arguments as there are Token's
