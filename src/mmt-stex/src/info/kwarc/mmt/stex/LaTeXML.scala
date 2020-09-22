@@ -26,7 +26,6 @@ class AllPdf extends LaTeXDirTarget {
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
       val at = DirBuildDependency("alltex", a, bt.inPath, Nil)
       val lp = DirBuildDependency("localpaths", a, bt.inPath, Nil)
-      println("MARKER allpdf: " + lp)
       BuildSuccess(ls :+ at :+ lp, Nil)
     } else BuildResult.empty
   }
@@ -50,13 +49,11 @@ class LocalPaths extends LaTeXDirTarget {
   override def estimateResult(bt: BuildTask) : BuildSuccess = {
     if (bt.isDir) {
       val lp : ResourceDependency = PhysicalDependency(File(bt.dirName + "/localpaths.tex"))
-      println("MARKER localpaths provides " + lp)
       BuildSuccess(Nil,List(lp))
     } else { BuildResult.empty }
   }
 
   override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
-    println("MARKER: CREATING LOCALPATHS")
     val target  : File    = dir / ("localpaths.tex")
     var success : Boolean = false
 
@@ -86,7 +83,6 @@ class AllTeX extends LaTeXDirTarget {
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
       val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-      println("MARKER alltex: " + lp)
       BuildSuccess(List(lp), getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
@@ -115,7 +111,6 @@ class AllTeX extends LaTeXDirTarget {
       // We only need better coverage in the alltex target (for now)
       val inFile = dep.archive / inDim / dep.inPath // Not taking the inDim from the dep seems extremely fishy.
       val res = readingSource(dep.archive, inFile, None).toSet
-      println("MARKER: MODIFIED getAnyDeps of " + dep.toString + "\nResult: " + res.toString() + "\n\n")
       res
     } else {
       super.getAnyDeps(dep)
@@ -563,7 +558,6 @@ class PdfLatex extends LaTeXBuildTarget {
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     val BuildSuccess(u, p) = super.estimateResult(bt)
     val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath.dirPath, Nil)
-    println("MARKER pdflatex: " + lp)
     if (bt.inPath.name.startsWith("all.")) {
       val at = DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil)
       BuildSuccess(u :+ lp :+ at, p)
