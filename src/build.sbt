@@ -152,7 +152,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij, argsemcomp
   ).
@@ -425,10 +425,10 @@ lazy val pvs = (project in file("mmt-pvs")).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 // plugin for reading metamath
-lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
+/*lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
-  settings(mmtProjectsSettings("mmt-metamath"): _*)
+  settings(mmtProjectsSettings("mmt-metamath"): _*) */
 
 // plugin for reading isabelle. Author: Makarius Wenzel
 // This only works if an Isabelle environment is present. If not, we use an empty dummy project.
