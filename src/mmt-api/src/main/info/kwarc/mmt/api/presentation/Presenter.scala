@@ -65,7 +65,7 @@ abstract class Presenter(val objectLevel: ObjectPresenter)
   /** relegates to objectPresenter */
   def apply(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler): Unit = objectLevel(o, origin)
 
-  override def outDim = Dim("export", "presentation", key)
+  override def outDim: Dim = Dim("export", "presentation", key)
 }
 
 /** helper object */

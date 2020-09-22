@@ -43,20 +43,14 @@ abstract class MMTUnitTest extends BaseTester {
     controller.extman.get(classOf[BuildQueue]).foreach(controller.extman.removeExtension)
   }
 
-  def assertTermEqual(expected: Term, actual: Term, msg: Option[String] = None): Unit = {
+  def assertEqual[T](expected: T, actual: T, msg: String = ""): Unit = {
     if (expected != actual) {
-      testError(s"Term equality failed${msg.map(" (" + _ + ")").getOrElse("")}:")
-      testError("Expected term: " + expected)
-      testError("Actual term: " + actual)
+      testError("Equality failed" + (if (msg != "") " (" + msg + ")" else ""))
+      testError("Expected value: " + expected)
+      testError("Actual value: " + actual)
     }
   }
 
-  def assertSetEqual[T](expected: Set[T], actual: Set[T], msg: Option[String] = None): Unit = {
-    if (expected != actual) {
-      testError(s"Set equality failed${msg.map(" (" + _ + ")").getOrElse("")}:")
-      testError("Expected set: " + expected)
-      testError("Actual set: " + actual)
-    }
-  }
-
+  def assertTermEqual(expected: Term, actual: Term, msg: String = ""): Unit = assertEqual _
+  def assertSetEqual[T](expected: Set[T], actual: Set[T], msg: String = ""): Unit = assertEqual _
 }

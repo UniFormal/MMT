@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMID, Term}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.business.ViewCompletion
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.test.MMTIntegrationTest
 

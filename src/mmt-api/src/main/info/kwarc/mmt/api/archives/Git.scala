@@ -37,5 +37,5 @@ object UnixGit extends Git {
   * @param sh the path to git's bash (may contain spaces), defaults to "sh"
   */
 class WindowsGit(sh: String = "sh") extends Git {
-  def toArgs(args: String*) = List(sh, "--login", "-c", UnixGit.toArgs(args:_*).mkString("\"", " ", "\""))
+  def toArgs(args: String*) = gitPath :: args.toList
 }

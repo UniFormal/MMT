@@ -72,7 +72,7 @@ object InfInt {
 
 /**
  * binding precedences of operators are represented
- * @param p the precedence, smaller precedence means weaker binding
+ * @param prec the precedence, smaller precedence means weaker binding
  * @param loseTie tie-breaking flag for comparisons
 */
 sealed case class Precedence(prec : InfInt, loseTie : Boolean) extends scala.math.Ordered[Precedence] {

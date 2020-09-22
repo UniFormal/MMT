@@ -8,15 +8,14 @@ import scala.util.Try
 /** trait implementing testing for archives */
 trait ArchiveTester extends BaseTester with ActionTester {
   lazy protected val testBranch: Option[String] = {
-
     // look into the environment and check if the TEST_USE_BRANCH
     // environment variable is set
-    val envBranch = Try(sys.env("TEST_USE_BRANCH")).toOption
-    if(envBranch.nonEmpty) {
-      envBranch
-    // else use the current git branch
-    } else {
-      MMTSystem.gitVersion
+    // Then use the appropriate version for the tests
+    Try(sys.env("TEST_USE_BRANCH")).toOption match {
+      case Some(b) if b.startsWith("devel-") => Some("devel")
+      case Some(b) => Some(b)
+      // fallback to using the system branch
+      case _ => MMTSystem.gitVersion
     }
   }
 

@@ -13,12 +13,14 @@ import GenericScalaExporter._
 /** for LF terms using Apply and Lambda */
 class LFOperator(p: ContentPath, vars: ArgumentList, args: ArgumentList) extends Operator(vars,args) {
   private def omid = "OMID(this.path)"
-  def mkL(as: List[String]): String = as.mkString("List(", ",", ")")
-  def mmtTerm(a1: List[String], a2: List[String]): String = {
-    if (a1.isEmpty)
-      s"ApplyGeneral($omid, ${mkL(a2)})"
+  def makeTerm(pattern: Boolean) = {
+     val argsS = if (pattern) args.namesConsed else args.nameList
+     if (vars.args.isEmpty && args.args.isEmpty)
+        omid
+     else if (vars.args.isEmpty)
+      s"ApplyGeneral($omid, $argsS)"
     else
-      s"Apply($omid, Lambda(Context(${mkL(a1)}), a2.head))"
+      s"Apply($omid, Lambda(Context(${vars.nameList}), ${args.args.head.name}))"
   }
 }
 
@@ -54,7 +56,7 @@ class ScalaExporter extends GenericScalaExporter {
    }
 
    override def outputTrait(t: Theory) {
-     return
+      return // switched off for now - causes more trouble than it's worth
       val includes = t.getIncludesWithoutMeta.filter {i =>
          controller.globalLookup.getO(i) match {
             case Some(r: RealizationInScala) =>

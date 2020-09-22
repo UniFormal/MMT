@@ -13,7 +13,7 @@ object HOLLight {
    val apply = logic ? "Comb"
    val lambda = logic ? "Abs"
    val oftype = logic ? "term"
-   val hoas = notations.HOAS(apply, lambda, oftype)
+   val hoas = notations.HOAS(apply, lambda)
 
    val tp = logic ? "holtype"
    val tm = logic ? "term"

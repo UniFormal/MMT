@@ -64,7 +64,7 @@ object SQLSyntax {
     def apply(u: U) = Value(this, u)
   }
   case object IntType extends BaseType[Int]("Int")
-  case object BoolType extends BaseType[java.lang.Boolean]("Boolean")
+  case object BoolType extends BaseType[Boolean]("Boolean")
   case object StringType extends BaseType[String]("String")
   case object FloatType extends BaseType[Double]("Double")
   case object UUIDType extends BaseType[java.util.UUID]("UUID")

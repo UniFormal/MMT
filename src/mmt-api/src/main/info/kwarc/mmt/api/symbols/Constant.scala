@@ -93,7 +93,7 @@ object Constant {
     * TermContainer factory
     */
    def apply(home : Term, name : LocalName, alias: List[LocalName], tp: Option[Term], df: Option[Term],
-             rl : Option[String], not: NotationContainer = NotationContainer()) =
+             rl : Option[String], not: NotationContainer = NotationContainer.empty()) =
       new FinalConstant(home, name, alias, TermContainer(tp), TermContainer(df), rl, not, Visibility.public)
    def apply(home : Term, name : LocalName, alias: List[LocalName],
              tpC : TermContainer, dfC : TermContainer, rl : Option[String], notC: NotationContainer) =

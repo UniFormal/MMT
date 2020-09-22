@@ -117,7 +117,7 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
    def getHeaderNotation: List[Marker]
 
    /** the parse rule for the header */
-   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None))
+   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None, false))
 
    /** parses the header term of a derived declaration into its name and type
     *  by default it is interpreted as OMA(mpath, name :: args) where OMA(mpath, args) is the type
@@ -411,7 +411,7 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val indD = controller.library.get(indDefPath) match {
     case indD: DerivedDeclaration if (expectedFeature.isEmpty || expectedFeature.get.contains(indD.feature)) => indD
-    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature "+expectedFeature.get+" but of the feature "+d.feature+".")
+    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not among the features "+expectedFeature.get+" but of the feature "+d.feature+".")
     case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
           +" but no derived declaration found at that location.")
     }
@@ -472,7 +472,7 @@ trait ReferenceLikeTypedParametricTheoryLike extends StructuralFeature with Type
   /**
    * parse the derived declaration into its components
    * @param dd the derived declaration
-   * @return returns a pair containing the mpath of the derived declaration, the constants defined in the referenced theory,
+   * @return returns a pair containing the mpath of the derived declaration, the declarations defined in the referenced theory,
    *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
    */
   def getDecls(dd: DerivedDeclaration): (GlobalName, List[Declaration], Context, List[Term], Context) = {

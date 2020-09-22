@@ -242,7 +242,7 @@ trait SolverAlgorithms {self: Solver =>
        case tm =>
          logAndHistoryGroup {
            history += "trying typing rules"
-           //TODO something is weird here: only the first applicable rule is every tried; is tryAllRules redundant?
+           //TODO something is weird here: only the first applicable rule is ever tried; is tryAllRules redundant?
            val tmT = tryAllRules(typingRules,tp) {(rule,tpS,h) =>
              try {
                rule(this)(tm,tpS)(stack,h)
@@ -1195,7 +1195,7 @@ trait SolverAlgorithms {self: Solver =>
   }
 
   /** simplifies two terms until a rule is applicable and then applies that rule
-   *  @param A the type of rules
+   *  @tparam A the type of rules
    *  @param rules the rules to try
    *  @param tm1 the first term
    *  @param tm2 the second term

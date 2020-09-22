@@ -43,7 +43,6 @@ class IDCompletion(view : org.gjt.sp.jedit.View, controller: Controller, constan
               case _:ImplicitArg => ""
               case v: Var => " "
               case p: PresentationMarker => ""
-              case AttributedObject => ""
            }.mkString("")
            val sh = not.parsingMarkers.head match {
               case d: Delimiter => d.text.length + 1

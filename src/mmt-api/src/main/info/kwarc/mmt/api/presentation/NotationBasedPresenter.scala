@@ -594,8 +594,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                case None =>
                   return default
                case Some(objP) =>
-                  val PragmaticTerm(op, subargs, context, args, attrib, not, pos) = objP
-                  if (attrib) return default // TODO specify and implement handling of HOAS type attributions
+                  val PragmaticTerm(op, subargs, context, args, not, pos) = objP
                   val firstVarNumber = subargs.length+1
                   val firstArgNumber = subargs.length+context.length+1
                   /*
@@ -665,9 +664,6 @@ class NotationBasedPresenter extends ObjectPresenter {
                            case c @ Var(n, typed, _,_) => //sequence variables impossible due to flattening
                               doChild(c, context(n-firstVarNumber), currentPosition)
                               if (compFollows) doSpace(1)
-                           case AttributedObject =>
-                              // we know attributee.isDefined due to flattening
-                              //TODO
                            case d: Delimiter =>
                               val dE = d.expand(op, getAlias(op))
                               val unpImps = if (unplacedImplicitsDone) Nil else unplacedImplicits map {
@@ -733,7 +729,7 @@ class NotationBasedPresenter extends ObjectPresenter {
                      }
                   }
                   val br = bracket(not)
-                  val flatMarkers = not.arity.flatten(not.presentationMarkers, subargs.length, context.length, args.length, attrib)
+                  val flatMarkers = not.arity.flatten(not.presentationMarkers, subargs.length, context.length, args.length)
                   br match {
                      case n if n > 0 => doBracketedGroup { doMarkers(flatMarkers) }
                      case 0 =>          doOptionallyBracketedGroup { doMarkers(flatMarkers) }

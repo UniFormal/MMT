@@ -412,11 +412,8 @@ case class StringInterpolationToken(text: String, firstPosition: SourcePosition,
             s.ref = eti.outer.source.copy(region = s.reg)
           case m: MMTPart =>
             val e = m.unparsed
-            val boundVars = BoundName.getVars(eti.boundNames)
-            val cont = eti.outer.context ++ Context(boundVars.map(VarDecl(_,None,None,None,None)) :_*)
-            val ref = eti.outer.source.copy(region = m.reg)
-            val pu = ParsingUnit(ref, cont, e, eti.outer.iiContext)
-            m.term = eti.parser(pu)(eti.errorCont).toTerm
+            val tm = eti.callbackParse(m.reg, e)
+            m.term = tm
        }
        lexer.makeTerm(this, eti)
     }
@@ -540,7 +537,8 @@ class QuotationLexer(quoteType: GlobalName, quoteTerm: GlobalName) extends Strin
     val fullcontext = eti.outer.context ++ context //TODO not obvious which context should be used for the quoted term
     val srcref = eti.outer.source.copy(region = token.region)
     val pu = ParsingUnit(srcref, fullcontext, str, eti.outer.iiContext)
-    val t = eti.parser(pu)(eti.errorCont).toTerm
+    val parser = eti.parser
+    val t = parser(pu)(eti.errorCont).toTerm
     val freeVars = t.freeVars diff names
     if (freeVars.nonEmpty) {
       val e = SourceError("quotation lexer", srcref, "free variables in quoted term: " + names.mkString(", "))

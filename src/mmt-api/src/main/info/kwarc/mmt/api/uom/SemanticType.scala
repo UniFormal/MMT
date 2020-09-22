@@ -67,12 +67,16 @@ trait RSemanticType[V] extends SemanticType {
    /** this must be the class object of V (which cannot be implemented generically here in Scala) */
    val cls: Class[V]
 
-   /** does nothing but triggers Scala type checking */
-   def apply(v: V): Any = v
+  /** overridden to sharpen return type */
+  override def enumerate(mode: Int): Option[Iterator[V]] = None
 
-   /** does nothing but refines the Scala type if possible */
-   def unapply(u: Any): Option[V] = u match {
+  /** does nothing but triggers Scala type checking */
+  def apply(v: V): Any = v
+
+  /** does nothing but refines the Scala type if possible */
+  def unapply(u: Any): Option[V] = u match {
       //TODO not typesafe for complex types, cls == u.getClass works for complex types but does not consider subtyping
+      // maybe use cls.isAssignableFrom(u.getClass) to handle subtyping
       case v: V@unchecked if cls.isInstance(v) =>
          Some(v)
       case v: V@unchecked if cls.isPrimitive && cls == u.getClass =>
