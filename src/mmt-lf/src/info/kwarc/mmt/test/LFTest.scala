@@ -71,7 +71,7 @@ object Orders {
     // "type_theory/endofunctors/monads.mmt", // TODO doesn't work
     "type_theory/collection_types.mmt",
     "set_theory/features.mmt",
-    "curry_howard/concepts.mmt",
+    "curry-howard/concepts.mmt",
     "topology/topology.mmt",
     "topology/topology_morph.mmt",
     "proving/fundamentals.mmt",
