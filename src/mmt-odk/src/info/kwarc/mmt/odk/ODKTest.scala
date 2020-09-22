@@ -57,7 +57,8 @@ object MitMTest extends MMTIntegrationTest(
 
 object LATIN2Test extends MMTIntegrationTest(
   "MMT/urtheories",
-  "MMT/LFX"
+  "MMT/LFX",
+  "MMT/LATIN2"
 )(
   ExtensionSpec("info.kwarc.mmt.lf.Plugin"),
   ExtensionSpec("info.kwarc.mmt.odk.Plugin")
