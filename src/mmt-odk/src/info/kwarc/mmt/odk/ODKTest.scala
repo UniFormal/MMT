@@ -64,11 +64,11 @@ object LATIN2Test extends MMTIntegrationTest(
   ExtensionSpec("info.kwarc.mmt.odk.Plugin")
 ){
   def main(): Unit = {
-    shouldClearTarget("MMT/urtheories", "bin")
-    shouldHandleLine("build MMT/urtheories scala-bin")
+    //shouldClearTarget("MMT/urtheories", "bin")
+    //shouldHandleLine("build MMT/urtheories scala-bin")
 
-    shouldClearTarget("MMT/LFX", "bin")
-    shouldHandleLine("build MMT/LFX scala-bin")
+    //shouldClearTarget("MMT/LFX", "bin")
+    //shouldHandleLine("build MMT/LFX scala-bin")
 
     shouldClearTarget("MMT/LATIN2", "bin")
     shouldHandleLine("build MMT/LATIN2 scala-bin")
