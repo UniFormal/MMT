@@ -21,7 +21,12 @@ object ELPI {
   abstract class Decl {
     def toELPI: String
   }
-  
+
+  case class Data(name: LocalName, tp: Expr, isKind: Boolean) extends Decl {
+    def keyword = if (isKind) "kind" else "type"
+    def toELPI = keyword + " " + name + " " + tp.toELPI(false) + "."
+  }
+
   case class Rule(rule: Expr) extends Decl {
     def toELPI = {
       val ruleS = rule match {
@@ -72,7 +77,11 @@ object ELPI {
   case class Variable(name: LocalName) extends Expr {
     def toELPI(bracket: Boolean = true) = name.toString 
   }
-  
+
+  case class Integer(value: Int) extends Expr {
+    def toELPI(bracket: Boolean = true) = value.toString
+  }
+
   case class Lambda(name: LocalName, scope: Expr) extends Expr {
     def toELPI(bracket: Boolean = true) = {
       Bracket(bracket)(s"$name \\ ${scope.toELPI(false)}")
@@ -95,7 +104,8 @@ object ELPI {
    def toELPI(bracket: Boolean = true) = {
       val argsI = args.toList.init.map(_.toELPI(true))
       val last = args.last
-      val bracketLast = !args.last.isInstanceOf[Lambda]
+      // val bracketLast = !args.last.isInstanceOf[Lambda]
+      val bracketLast = true     // actually, the above seems to cause problems if penultimate arg is a variable
       val argsL = last.toELPI(bracketLast)
       val argsE = (argsI ::: List(argsL)).mkString(" ")
       
@@ -122,13 +132,15 @@ object ELPI {
   }
 
   /** built-in unary operators */
-  case class UnOp(name: String, prefix: Boolean)
-  object Not extends BinOp("not")
+  case class UnOp(name: String, prefix: Boolean) {
+    def apply(e : Expr): UnaryApply = UnaryApply(this, e)
+  }
+  object Not extends UnOp("not", true)
   
   /** special case for the application of binary operators */
   case class BinaryApply(operator: BinOp, left: Expr, right: Expr) extends Application(Variable(LocalName(operator.name)), left, right) {
      override def toELPI(bracket: Boolean = true) = {
-       val leftS = left.toELPI(! left.isAtomic)
+       val leftS = left.toELPI((! left.isAtomic) || (operator.name == "=>" && left.isInstanceOf[BinaryApply]))   // TODO: properly capture case "a, b => c"
        val rightS = right.toELPI(! right.isAtomic)
        Bracket(bracket)(s"$leftS ${operator.name} $rightS")
      }
@@ -151,9 +163,13 @@ object ELPI {
   }
   object Or extends BinOp(";")
   object Is extends BinOp("is")
+  object Equal extends BinOp("=")
+  object GreaterThan extends BinOp(">")
+  object Minus extends BinOp("-")
   object Impl extends BinOp("=>") {
     def apply(left: List[Expr], right: Expr): Expr = if (left.isEmpty) right else Impl(And(left), right)
   }
+  object Arrow extends BinOp("->")
   
   /** built-in binders */
   abstract class Binder(nameS: String) {

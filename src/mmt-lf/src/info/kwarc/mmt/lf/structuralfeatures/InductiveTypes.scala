@@ -16,6 +16,10 @@ import StructuralFeatureUtil._
 
 object inductiveUtil {
   /**
+   * name of the noConf declaration corresponding to c and d
+   */
+  def noConfName(a:LocalName, b:LocalName):LocalName = {LocalName("no_conf_"+a.toString+"_"+b.toString)}
+  /**
    * name of the declaration corresponding to n declared in noJunks
    */
   def inductName(n: LocalName) = {LocalName("induct") / n}
@@ -31,7 +35,20 @@ object inductiveUtil {
   def proofName(n: LocalName): LocalName = {LocalName("ind_proof") / n}
   /** name of the applied version of the inductive definition declaration generated for constructors */
   def appliedName(n: LocalName) : LocalName = {n / LocalName("Applied")}
+  def idAdditionalGenerated(c:Constant) = {
+    c.name match {
+      case al / b =>
+        val a = LocalName(al.toString)
+        val generated = List(inductName(b),testerName(a),unapplierName(a),proofPredName(a),proofName(a),appliedName(a)) contains c.name
+      case nm if ((nm.toString contains "injective_") ||  (nm.toString contains "no_conf_")) => true
+      case _ => false
+    }
+  }
+
   def feature = {"inductive"}
+  //features generating inductive types as output, which may be referenced by inductive definitions, inductive proofs, ...
+  def compatibleFeatures = {List(feature, ReflectionsUtil.feature)}
+
 }
 import inductiveUtil._
 
@@ -75,6 +92,8 @@ class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with Param
     
     // copy all the declarations
     decls foreach {d => elabDecls ::= d.toConstant}
+
+    //check them
     tmdecls foreach { tmdecl => checkTermLevel(tmdecl, types)}
 
     // the no confusion axioms for the data constructors
@@ -207,7 +226,7 @@ class InductiveTypes extends StructuralFeature(inductiveUtil.feature) with Param
           val (matches, argMatches) = matchTypeParametersInReturnType(b, a)
           if (matches) {
             // TODO: Check this doesn't generate ill-typed declarations for dependently-typed constructors
-            val newName = LocalName("no_conf_" + a.name.last+ "_" + b.name.last)
+            val newName = noConfName(a.name, b.name)
             val Ltp = () => {
               val (aCtx, aApplied) = a.argContext(None)
               val (bCtx, bApplied) = b.argContext(None)
@@ -379,21 +398,33 @@ object InductiveTypes {
   
   /**
    * Produces the proof predicate for each Type-Level and the corresponding induction hypothesis for each constructor
+   * @param tpdecls the typelevels tpl_i declaring the mutually inductively defined types (tp_i) over which to apply induction
+   * @param tmdecls the termlevels leading to the inductive cases
+   * @param context the outer context of the declarations
+   * @return A pair consisting of
+   *         1) the proof predicate (claim) pred_i for each type tp_i,
+   *         2) a list of pairs (tpp_i, f_) for tpp_i the path of tpl_i,
+   *         where f maps (tm, tp) |-> pred_i tm if the return type of tp is tp_i, else (tm, tp) |-> tm
+   *         3) a list of pairs (intdecl, claim) for each tpl or constructor intdecl,
+   *         where claim is a variable for the inductive claim for intdecl
+   *         4) a context with all local names used in the function,
+   *         it is used to prevent name clashes in this recursive function
    */
   def inductionHypotheses(tpdecls : List[TypeLevel], tmdecls : List[TermLevel], context: Context)(implicit parent : GlobalName) = {
     var ctx = context
+    //
     var indProofDeclMap : List[(GlobalName, (Term, Term) => Term)] = Nil
     var predsMap : List[(InternalDeclaration, VarDecl)] = Nil
     
     //a context of the predicates for each inductively-defined type
-    //For a tpl: Pi r. type this returns a predicate of type Pi rBar.tpl(x) -> pred, where
-    //rBar:= flatMap (x => x zip applyPred x) 
+    //For a tpl: Pi r. type this returns a predicate of type Pi rBar(x).tpl(x) -> pred, where
+    //rBar(x):= flatMap (x => x zip applyPred x)
     //x=r
     val preds = tpdecls map {tpl =>
       val (argCon, dApplied) = tpl.argContext()
       val tp = PiOrEmpty(rBar(argCon, tpdecls, indProofDeclMap), Arrow(dApplied, Prop))
       val pred = newVar(proofPredName(tpl.name).toString(), tp, Some(ctx++argCon))
-      
+
       val map : (GlobalName, (Term, Term) => Term) = (tpl.externalPath, {
         (tm, tp) => tp match {
           case OMS(p) if p == tpl.externalPath => Apply(pred.toTerm, tm)
@@ -409,13 +440,13 @@ object InductiveTypes {
     }
     
     //The required assumptions for the constructors
-    val inductCases = constrs(tmdecls) map {tml =>
-      val (argCon, dApplied) = tml.argContext()
-      val (tpl, tplArgs) = (tml.getTpl, tml.getTplArgs)
-      val pred = utils.listmap(predsMap, tpl).getOrElse(throw ImplementationError(""))
-      val claim = ApplyGeneral(pred.toTerm, tplArgs.+:(dApplied))
-      val inductCase = newVar(proofPredName(tml.name), PiOrEmpty(rBar(argCon, tpdecls, indProofDeclMap), claim), ctx++argCon)
-      predsMap ::= (tml, inductCase)
+    val inductCases = constrs(tmdecls) map {constr =>
+      val (argCon, dApplied) = constr.argContext()
+      val pred = utils.listmap(predsMap, constr.getTpl).get
+      val claim = ApplyGeneral(pred.toTerm, constr.getTplArgs.+:(dApplied))
+      val assumptions = rBar(argCon, tpdecls, indProofDeclMap)
+      val inductCase = newVar(proofPredName(constr.name), PiOrEmpty(assumptions, claim), ctx++argCon)
+      predsMap ::= (constr, (inductCase))
       ctx++=inductCase; inductCase
     }
     (preds, indProofDeclMap, predsMap, ctx)

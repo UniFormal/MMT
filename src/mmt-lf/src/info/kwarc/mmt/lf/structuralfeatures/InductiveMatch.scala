@@ -45,7 +45,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * Check that each definien matches the expected type
    */
   override def expectedType(dd: DerivedDeclaration, c: Constant): Option[Term] = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))
     Some(expectedType(dd, intDecls, indD.path, c)._1)
@@ -59,7 +59,7 @@ class InductiveMatch extends StructuralFeature("match") with TypedParametricTheo
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None) = {
-    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.feature))
+    val (context, indParams, indD, indCtx) = parseTypedDerivedDeclaration(dd, Some(inductiveUtil.compatibleFeatures))
     implicit val parent = indD.path
     
     val intDecls = parseInternalDeclarations(indD, controller, Some(indCtx))

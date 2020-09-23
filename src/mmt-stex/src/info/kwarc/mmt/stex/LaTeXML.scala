@@ -23,7 +23,9 @@ class AllPdf extends LaTeXDirTarget {
     if (bt.isDir) {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
-      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath, Nil), Nil)
+      val at = DirBuildDependency("alltex", a, bt.inPath, Nil)
+      val lp = DirBuildDependency("localpaths", a, bt.inPath, Nil)
+      BuildSuccess(ls :+ at :+ lp, Nil)
     } else BuildResult.empty
   }
 
@@ -40,6 +42,41 @@ class AllPdf extends LaTeXDirTarget {
   }
 }
 
+class LocalPaths extends LaTeXDirTarget {
+  val key : String = "localpaths"
+
+  override def estimateResult(bt: BuildTask) : BuildSuccess = {
+    if (bt.isDir) {
+      val lp : ResourceDependency = PhysicalDependency(File(bt.dirName + "localpaths.tex"))
+      BuildSuccess(Nil,List(lp))
+    } else { BuildResult.empty }
+  }
+
+  override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
+    val target  : File    = dir / ("localpaths.tex")
+    var success : Boolean = false
+
+    /* Only create file if it has a sibling tex file */
+    val siblings : Boolean = dir.children.exists(s => s.getExtension.contains("tex") && s.name != "localpaths.tex")
+
+    /* forcing recreation of file means deleting the old one. */
+    if (force && target.exists()) { target.delete() }
+
+    if (force || (!target.exists() && siblings)) {
+      createLocalPaths(a, dir)
+      success = true
+    }
+
+    if (success) { BuildSuccess(Nil, List(PhysicalDependency(target))) }
+    else if (!siblings) {
+      log("No sibling .tex-file, localpaths.tex not created")
+      BuildResult.empty
+    }
+    else BuildEmpty("up-to-date")
+  }
+
+}
+
 class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
@@ -48,19 +85,32 @@ class AllTeX extends LaTeXDirTarget {
       BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
-        case d@FileBuildDependency(k, _, _) if List("tex-deps", "sms").contains(k) => d
+        case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
       }
-      BuildSuccess(used, Nil)
+      val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+      BuildSuccess(used :+ lp, Nil)
     }
+  }
+
+  def forgetSMSDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
+  {
+    def goodDependency(dep : Dependency) : Boolean = dep match {
+      case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
+      case PhysicalDependency(_) => true
+      case _ => false
+    }
+
+    var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
+    for ((k,v) <- clean) { clean = clean + (k -> v.filter(goodDependency)) }
+    clean
   }
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult = {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
     if (dirFiles.nonEmpty) {
-      createLocalPaths(a, dir)
-      val deps = getDepsMap(getFilesRec(a, in))
-      val ds = Relational.flatTopsort(controller, deps)
+      val deps = forgetSMSDeps(getDepsMap(getFilesRec(a, in)))
+      val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
@@ -88,14 +138,14 @@ class AllTeX extends LaTeXDirTarget {
     val ls = langFiles(lang, files)
     val w = new StringBuilder
     def writeln(s: String): Unit = w.append(s + "\n")
-    ambleText("pre", a, lang).foreach(writeln)
+    ambleText(preOrPost = "pre", a, lang).foreach(writeln)
     writeln("")
     ls.foreach { f =>
       writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
       writeln("\\input{" + File(f).stripExtension + "} \\newpage")
       writeln("")
     }
-    ambleText("post", a, lang).foreach(writeln)
+    ambleText(preOrPost = "post", a, lang).foreach(writeln)
     val newContent = w.result
     val outPath = getOutPath(a, all)
     if (force || !all.exists() || File.read(all) != newContent) {
@@ -128,8 +178,13 @@ class SmsGenerator extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
+  }
+
   def reallyBuildFile(bt: BuildTask): BuildResult = {
-    createLocalPaths(bt)
     try {
       createSms(bt.archive, bt.inFile, bt.outFile)
       logSuccess(bt.outPath)
@@ -161,7 +216,8 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  val outDim = RedirectableDimension("latexml")
+  val outDim : ArchiveDimension = RedirectableDimension("latexml")
+
   // the latexml client
   private var latexmlc = "latexmlc"
   private var latexmls = "latexmls"
@@ -224,9 +280,9 @@ class LaTeXML extends LaTeXBuildTarget {
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
     paths = getStringList(optionsMap, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    reboot = optionsMap.get("reboot").isDefined
+    reboot = optionsMap.contains("reboot")
     if (reboot) expire = 1
-    nopost = optionsMap.get("nopost").isDefined
+    nopost = optionsMap.contains("nopost")
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
@@ -388,7 +444,6 @@ class LaTeXML extends LaTeXBuildTarget {
       val logFile = bt.outFile.setExtension("ltxlog")
       lmhOut.delete()
       logFile.delete()
-      createLocalPaths(bt)
       val realProfile = if (profileSet) profile
       else getProfile(bt.archive).getOrElse(profile)
       val argSeq = Seq(latexmlc, bt.inFile.toString,
@@ -454,6 +509,12 @@ class LaTeXML extends LaTeXBuildTarget {
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir
   }
+
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
+  }
 }
 
 /** pdf generation */
@@ -479,10 +540,11 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val bs@BuildSuccess(used, provided) = super.estimateResult(bt)
+    val BuildSuccess(used, provided) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
     if (bt.inPath.name.startsWith("all.")) {
-      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil), provided)
-    } else bs
+      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil) :+ lp, provided)
+    } else BuildSuccess(used :+ lp, provided)
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
@@ -520,7 +582,6 @@ class PdfLatex extends LaTeXBuildTarget {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
     try {
       val exit = runPdflatex(bt, output)
@@ -566,6 +627,12 @@ class TikzSvg extends PdfLatex
   override val outExt : String = "svg"
   override val outDim : ArchiveDimension = content
 
+  override def estimateResult(bt: BuildTask): BuildSuccess = {
+    val BuildSuccess(u, p) = super.estimateResult(bt)
+    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
+    BuildSuccess(u :+ lp,p)
+  }
+
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
   override def reallyBuildFile(bt: BuildTask): BuildResult =
@@ -578,7 +645,6 @@ class TikzSvg extends PdfLatex
     val svgFile : File = bt.outFile
 
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
 
     try {

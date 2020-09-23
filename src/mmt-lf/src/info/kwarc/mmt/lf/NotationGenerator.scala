@@ -37,7 +37,7 @@ class NotationGenerator extends ChangeListener {
             val parseMarkers = SymbolName() ::
                 Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList :::
                 Range(numImplicitArgs,numTotalArgs).map {i => SimpArg(i+1)}.toList
-            val nt = new TextNotation(Mixfix(parseMarkers), Precedence.integer(0), Some(LF.theoryPath))
+            val nt = new TextNotation(Mixfix(parseMarkers), Precedence.integer(0), Some(LF.theoryPath), false)
             metadata.Generated.set(nt)
             c.notC.parsingDim.set(nt)
          }
@@ -48,7 +48,7 @@ class NotationGenerator extends ChangeListener {
             }
             val presentationMarkers : List[Marker] = tree ::: SymbolName() ::
                Range(0,numImplicitArgs).map {i => ImplicitArg(i+1)}.toList
-            val nt = new TextNotation(Mixfix(presentationMarkers), Precedence.integer(0), Some(LF.theoryPath))
+            val nt = new TextNotation(Mixfix(presentationMarkers), Precedence.integer(0), Some(LF.theoryPath), false)
             metadata.Generated.set(nt)
             c.notC.presentationDim.set(nt)
          }

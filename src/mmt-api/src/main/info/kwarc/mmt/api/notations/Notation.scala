@@ -6,9 +6,9 @@ case class InvalidNotation(msg: String) extends java.lang.Throwable
 
 /**
  * scope where a notation is applicable
- * variant : optionally the name of this notation variant
- * languages : the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
- * priority : the priority of this notation when looking for a default notation
+ * variant: optionally the name of this notation variant
+ * languages: the languages where this notation is applicable (e.g. tex, mmt, lf, mathml)
+ * priority: the priority of this notation when looking for a default notation
  */
 case class NotationScope(variant : Option[String], languages : List[String], priority : Int) {
   def toNode =  <scope variant={variant.getOrElse(null)}
@@ -24,6 +24,7 @@ object NotationScope {
  * @param fixity the mixfix notation
  * @param precedence the precedence, notations with lower precedence are tried first, thus grab larger subterms
  * @param meta the meta-theory of this notation if different from the current meta-theory
+ * @param block if true, names introduced anywhere in arguments are visible to later arguments
  * @param scope
  *
  * a typed Var must be preceded by a Delim because Var.key does not trigger the notation
@@ -32,7 +33,7 @@ object NotationScope {
  *
  * if the only marker is SeqArg, it must hold that OMA(name, List(x)) = x because sequences of length 1 are parsed as themselves
  */
-case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPath],
+case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPath], block: Boolean = false,
                         scope : NotationScope = NotationScope.default) extends metadata.HasMetaData {
    /** @return the list of markers used for parsing/presenting with this notations */
    lazy val markers: List[Marker] = fixity.markers
@@ -51,7 +52,6 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       var subs: List[ArgumentComponent] = Nil // arguments before firstVar
       var vars: List[VariableComponent] = Nil // variables (must be between firstVar and lastVar)
       var args: List[ArgumentComponent] = Nil // arguments after lastVar
-      var attrib : Int = 0
       markersWithoutPres foreach {
          case a: ArgumentComponent =>
             if (a.number > lastVar) args ::= a
@@ -61,8 +61,6 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
             }
          case v: VariableComponent =>
             vars ::= v
-         case AttributedObject =>
-            attrib += 1
          case _ =>
       }
       // note: now, if varPositions.isEmpty, then subs.isEmpty
@@ -91,32 +89,32 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
       var lastSub = subs.lastOption.map(_.number).getOrElse(0)
       val implsBeforeVar = ((lastSub+1) until firstVar).toList.map {i => ImplicitArg(i)}
       subs = subs ::: implsBeforeVar
-      // the attribution
-      val attribution = attrib > 0
-      Arity(subs.distinct, vars.distinct, args.distinct, attribution)
+      Arity(subs.distinct, vars.distinct, args.distinct)
    }
    /** @return the list of markers that should be used for parsing */
    lazy val parsingMarkers = markers flatMap {
       case _:PresentationMarker => Nil // there should not be any presentation markers in notations used for parsing
       case _:ImplicitArg => Nil // remove the implicit markers
-      case AttributedObject => Nil // attributed variables are handled explicitly by variable parsing
       case v:VerbalizationMarker => v.toParsing
       case m => List(m)
    }
    lazy val presentationMarkers = PresentationMarker.introducePresentationMarkers(markers)
 
-   def toText = {
+   def toText: String = {
       val (fixityString, argumentString) = fixity.asString
       val metaStr = meta.map("meta " + _.toPath).getOrElse("")
-      val precStr = if (precedence != Precedence.integer(0)) " prec " + precedence.toString else ""
-      val fixStr = if (fixityString == "mixfix") "" else " %%"+fixityString
-      metaStr + fixStr + " " + argumentString + precStr
+
+      val precStr = if (precedence != Precedence.integer(0)) "prec " + precedence.toString else ""
+      val fixStr = if (fixityString == "mixfix") "" else "%%"+fixityString
+      val blockStr = if (block) "block" else ""
+
+      List(metaStr, blockStr, fixStr, argumentString, precStr).filter(_.nonEmpty).mkString(" ")
    }
    override def toString = toText + " (markers are: " + markers.map(_.toString).mkString(" ") + ")"
    def toNode = {
      val (fixityString, argumentString) = fixity.asString
      <notation precedence={precedence.toString}
-         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString}
+         meta={meta.map(_.toPath).getOrElse(null)} fixity={fixityString} block={if (block) "true" else null}
          arguments={argumentString}> {scope.toNode} </notation>
    }
 
@@ -129,16 +127,15 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
          case a: ImplicitArg =>
          case _:SeqArg => return i+1
          case _: Var => return i+1
-         case AttributedObject =>
          case d: Delimiter => return i
          case _:PresentationMarker => // impossible
          case _:VerbalizationMarker => //impossible
       }
       i
    }
-   /** there are argumetns before the first delimiter */
+   /** there are arguments before the first delimiter */
    def isLeftOpen = openArgs(false) > 0
-   /** there are argumetns after the last delimiter */
+   /** there are arguments after the last delimiter */
    def isRightOpen = openArgs(true) > 0
 
    /** true if there is definitely a delimiter (i.e., not just a sequence separator) */
@@ -147,25 +144,24 @@ case class TextNotation(fixity: Fixity, precedence: Precedence, meta: Option[MPa
      case _ => false
    }
 
-   /** @return true if this arity can present ComplexTerm(name, subs, vars, args) and has an attribution if necessary */
-   def canHandle(subs: Int, vars: Int, args: Int, att: Boolean) = {
+   /** @return true if this arity can present ComplexTerm(name, subs, vars, args) */
+   def canHandle(subs: Int, vars: Int, args: Int) = {
       (arity.numNormalSubs == subs || (arity.numNormalSubs < subs && arity.numSeqSubs >= 1)) &&
       (arity.numNormalVars == vars || (arity.numNormalVars < vars && arity.numSeqVars >= 1)) &&
       (arity.numNormalArgs == args || (arity.numNormalArgs < args && arity.numSeqArgs >= 1)) &&
-      (hasDelimiter || arity.numSeqArgs == 0 || args > arity.numNormalArgs + arity.numSeqArgs) && // this hacky case precludes confusion when flexary operators would disappear in the presentation
-      (! att || arity.attribution)
+      (hasDelimiter || arity.numSeqArgs == 0 || args > arity.numNormalArgs + arity.numSeqArgs) // this hacky case precludes confusion when flexary operators would disappear in the presentation
    }
 }
 
 object TextNotation {
    /** helpful when constructing notations programmatically */
-   def fromMarkers(prec: Precedence, meta: Option[MPath], scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
+   def fromMarkers(prec: Precedence, meta: Option[MPath], block: Boolean = false, scope : NotationScope = NotationScope.default)(ms: Any*): TextNotation = {
       val markers : List[Marker] = ms.toList map {
          case i: Int => SimpArg(i)
          case m: Marker => m
          case s: String => Marker.parse(s)
       }
-      new TextNotation(Mixfix(markers), prec, meta, scope)
+      new TextNotation(Mixfix(markers), prec, meta, block, scope)
    }
 
    private def parseScope(n : scala.xml.Node) : NotationScope = {
@@ -195,6 +191,11 @@ object TextNotation {
          case "" => None
          case s => Some(Path.parseM(s, nsMap))
       }
+      val block = utils.xml.attr(n, "block") match {
+        case "true" => true
+        case "" | "false" => false
+        case s => throw ImplementationError("illegal boolean: " + s)
+      }
       val scope = n.child.find(_.label == "scope") match {
         case None => NotationScope.default
         case Some(s) => parseScope(s)
@@ -213,7 +214,7 @@ object TextNotation {
          }
       }
       val fixity = FixityParser.parse(fixityString, arguments)
-      new TextNotation(fixity, precedence, meta, scope)
+      new TextNotation(fixity, precedence, meta, block, scope)
     case _ => throw ParseError("invalid notation:\n" + n)
   }
 
@@ -232,6 +233,11 @@ object TextNotation {
              throw ParseError("theory expected")
           case _ => None
        }
+       val block = if (tokens.headOption contains "block") {
+         tokens = tokens.tail
+         true
+       } else
+         false
        val i = tokens.indexOf("prec")
        val prec = if (i != -1) {
           val rest = tokens.drop(i)
@@ -252,7 +258,7 @@ object TextNotation {
           ("mixfix", tokens)
        }
        val fixity = FixityParser.parse(fixityString, arguments)
-       new TextNotation(fixity, prec, meta)
+       new TextNotation(fixity, prec, meta, block)
   }
 
   /** true if both notations expect the exact same markers */

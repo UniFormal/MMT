@@ -321,7 +321,7 @@ object Importer
     val notation = NotationContainer()
 
     def prefix_notation(delim: String, impl: Int): TextNotation =
-      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None)
+      new TextNotation(Prefix(Delim(isabelle.Symbol.decode(delim)), impl, 0), Precedence.infinite, None, false)
 
     def xname_notation: List[TextNotation] = xname.toList.map(prefix_notation(_, 0))
 
@@ -341,7 +341,7 @@ object Importer
               }
             val delim = Delim(isabelle.Symbol.decode(infix.delim))
             val fixity = Infix(delim, implicit_args, 2, assoc)
-            new TextNotation(fixity, Precedence.integer(infix.pri), None)
+            new TextNotation(fixity, Precedence.integer(infix.pri), None, false)
           }
           xname_notation ::: List(infix_notation)
       }
@@ -606,6 +606,18 @@ object Importer
       catch { case isabelle.ERROR(msg) => isabelle.error(msg + "\nin type " + ty) }
     }
 
+    object OFCLASS  // FIXME workaround for Isabelle2020 on case-insensitive file-system
+    {
+      import isabelle.Term._
+
+      def unapply(t: Term): Option[(Typ, String)] =
+        t match {
+          case App(Const(Class_Const(c), List(ty)), Const(isabelle.Pure_Thy.TYPE, List(ty1)))
+            if ty == ty1 => Some((ty, c))
+          case _ => None
+        }
+    }
+
     def import_term(tm: isabelle.Term.Term, env: Env = Env.empty, bounds: List[String] = Nil): Term =
     {
       def typ(t: isabelle.Term.Typ): Term = import_type(t, env)
@@ -622,7 +634,7 @@ object Importer
             catch { case _: IndexOutOfBoundsException => isabelle.error("Loose bound variable " + i) }
           case isabelle.Term.Abs(x, ty, b) =>
             lf.Lambda(LocalName(x), typ(ty), term(x :: bs, b))
-          case isabelle.Term.OFCLASS(ty, c) =>
+          case OFCLASS(ty, c) =>
             lf.Apply(import_class(c), typ(ty))
           case isabelle.Term.App(a, b) =>
             lf.Apply(term(bs, a), term(bs, b))

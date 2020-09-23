@@ -90,7 +90,9 @@ object MMTExtractor extends RelationalExtractor {
                         case f => TheoryExp.simplify(s.from).toMPath
                      }
                      if (s.isInclude) {
-                        f(Includes(t.path, from))
+                        if (!s.isGenerated)
+                          // we do not export transitive includes
+                          f(Includes(t.path, from))
                      } else {
                         f(dec)
                         f(HasDomain(s.path, from))

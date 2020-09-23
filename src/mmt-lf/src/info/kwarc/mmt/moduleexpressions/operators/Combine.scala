@@ -109,7 +109,9 @@ object ComputeCombine extends ComputationRule(Combine.path) {
     val impl_arrow = DiagramArrow(Combine.arrowLabel, ad_over.distNode.get, dist_node.label, new AnonymousMorphism(Nil), true)
 
     /* This is used in case theories are not built in a tiny-theories way. In this case, we need to generate names for the arrows. */
-    val jointDiag: AnonymousDiagram = (Common.prefixLabels(ad1, LocalName("left")) union Common.prefixLabels(ad2, LocalName("right")))
+    val jointDiag: AnonymousDiagram = (Common.prefixLabels(ad1, LocalName("left")) ++ Common.prefixLabels(ad2, LocalName("right"))).get
+    // the [[Option]] above should always be defined due to prefixing which
+    // prevents name clashes
 
     val List(map1, map2) = List(view1, view2).map { v => Common.asSubstitution(v).map { case (o, n) => OML(o, None, Some(n)) } }
 

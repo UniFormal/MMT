@@ -395,8 +395,11 @@ object ModExp extends uom.TheoryScala {
   val anonymoustheory = _path ? "anonymoustheory"
   val anonymousmorphism = _path ? "anonymousmorphism"
   val anonymousdiagram = _path ? "anonymousdiagram"
+
   val theorytype = _path ? "theory"
   val morphtype = _path ? "morphism"
+  val diagramtype = _path ? "diagram"
+
   val identity = _path ? "identity"
   val composition = _path ? "composition"
   val structuralinclude = _path ? "structuralinclude"
@@ -497,6 +500,10 @@ object TheoryType {
     case ComplexTerm(this.path, Substitution(), params, Nil) => Some(params)
     case _ => None
   }
+}
+
+object DiagramType {
+  def apply(): Term = OMS(ModExp.diagramtype)
 }
 
 /** An OMM represents the application of a morphism to a term */

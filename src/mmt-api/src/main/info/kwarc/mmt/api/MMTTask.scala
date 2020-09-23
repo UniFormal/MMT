@@ -12,7 +12,7 @@ trait MMTTask extends Killable {
     listeners.foreach {l => l(a)}
   }
   /** get all reports in reverse chronological order */
-  def getReports = updates
+  def getReports: List[MMTTaskProgress] = updates
 
   /** the listeners to which updates are sent */ 
   private var listeners : List[MMTTaskProgressListener] = Nil
@@ -25,7 +25,7 @@ object MMTTask {
    *
    *  it's preferable to write a new subclass of MMTTask, but sometimes a dummy task is more convenient
    */
-  def generic = new MMTTask {}
+  def generic: MMTTask = new MMTTask {}
 }
 
 /** see [[MMTTask]] */
@@ -38,7 +38,7 @@ trait MMTTaskProgress
 
 trait MMTInterpretationProgress extends MMTTaskProgress {
   def element: StructuralElement
-  def sourceLine = {
+  def sourceLine: Option[Int] = {
     parser.SourceRef.get(element) map {sref =>
       sref.region.start.line
     }

@@ -1,8 +1,10 @@
 package info.kwarc.mmt.glf
 
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.objects.{OMLIT, Term}
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.uom.StandardNat
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.sequences.NatRules.NatLit
 
 import scala.collection.mutable.ListBuffer
 
@@ -30,15 +32,27 @@ case class GfFun(fun : String, args : List[GfAST]) extends GfAST {
   }
 }
 
+case class GfInt(value: String) extends GfAST {
+  override def toString: String = value
+  override def toOMDocRec(theorymap : Map[String, Constant]): Term = {
+    OMLIT(StandardNat(value.toInt), NatLit)
+  }
+}
+
 object GfAST {
   def parseAST(str : String) : GfAST = {
 
     var head_end = 0
+    var isint = true
     while (head_end < str.length && str.charAt(head_end) != ' ') {
+      if (str.charAt(head_end) < '0' || str.charAt(head_end) > '9') isint = false
       head_end += 1
     }
 
     val head = str.take(head_end)
+    if (isint) {
+      return GfInt(head)
+    }
 
     val args = ListBuffer[GfAST]()
 

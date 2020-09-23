@@ -475,7 +475,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
                 val macroMk = Delim("\\" + macro_name)
                 val notArgs = macroMk :: (0 until nrArgs).toList.flatMap(i => Delim("{") :: SimpArg(i + 1) :: Delim("}") :: Nil)
                 val stexScope = NotationScope(None, "stex" :: "tex" :: Nil, 0)
-                val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, stexScope)
+                val texNotation = new TextNotation(Mixfix(notArgs), Precedence.integer(0), None, false, stexScope)
                 c.notC.parsingDim.set(texNotation)
               } catch {
                 case e: Exception =>
@@ -641,7 +641,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
     }
     val languages = "mathml" :: Nil
     val scope = NotationScope(variant, languages, 0)
-    val notation = new TextNotation(Mixfix(markers), precedence, None, scope)
+    val notation = new TextNotation(Mixfix(markers), precedence, None, false, scope)
     notation
   }
 
@@ -716,10 +716,10 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
           }
           val prec = Precedence.integer(0)
           val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
-          val not = TextNotation.fromMarkers(prec, None, verbScope)(markers: _*)
+          val not = TextNotation.fromMarkers(prec, None, false, verbScope)(markers: _*)
           const.notC.verbalizationDim.set(not)
           if (hasArgs) {
-            val notOp = TextNotation.fromMarkers(prec, None, verbScope)(markersOp: _*)
+            val notOp = TextNotation.fromMarkers(prec, None, false, verbScope)(markersOp: _*)
             const.notC.verbalizationDim.set(not)
           }
           val doc = controller.getDocument(const.parent.parent / (const.parent.name + ".omdoc"), d => "cannot find parent doc for reindexing" + d)
@@ -915,7 +915,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
       val argName = (n \ "@name").text
       val argNr = if (argMap.isDefinedAt(argName)) argMap(argName) else if ((argName == "args" || argName == "arg") && argMap.isDefinedAt("arg1")) argMap("arg1") else ???
       val precO = None //Some(getPrecedence(n))
-      val props = CommonMarkerProperties(precO,None)
+      val props = CommonMarkerProperties.noProps.copy(precedence = precO)
       val delim = n.child.find(_.label == "separator") match {
         case None => makeDelim(",")
         case Some(sep) =>

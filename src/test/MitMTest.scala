@@ -3,9 +3,24 @@ import MitM.MitM._
 import odk._
 import Sage._
 import GAP._
+import Graphtester.controller
 import Singular._
+import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
+import info.kwarc.mmt.api.web.JSONBasedGraphServer
 
 object MitMTest extends MagicTest("lmfdb", "mitm", "scscp") {
+  override def doFirst: Unit = {
+    super.doFirst
+    // Copied here because these lines were removed from MagicTest.
+    // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
+    controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
+    controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
+    controller.extman.addExtension(new DependencyGraphExporter)
+    controller.extman.addExtension(new DeclarationTreeExporter)
+    controller.extman.addExtension(new JSONBasedGraphServer)
+    controller.extman.addExtension(new PathGraphExporter)
+  }
+
   def run {
     // FR: systems are loaded ODK plugin, see file Config/Actions.scala, only warmup is needed
     // load the (default) configuration

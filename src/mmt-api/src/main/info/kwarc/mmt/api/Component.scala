@@ -117,9 +117,10 @@ object NotationComponent {
    }
 }
 
+case object MetaDataComponent extends ComponentKey("metadata")
+
 // the following components are used only by change management
 case object PatternBodyComponent extends ComponentKey("pattern-body")
-case object MetaDataComponent extends ComponentKey("metadata")
 
 object TermComponent {
    private val components = List(TypeComponent,DefComponent,DomComponent,CodComponent)

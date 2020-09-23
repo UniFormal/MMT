@@ -177,7 +177,6 @@ class MacroGeneratingPresenter extends Presenter(new MacroUsingPresenter) {
         case d: Delimiter => doDelim(d)
         case Var(n, _, Some(sep), _) => "\\mmt@fold{" + doDelim(sep) + "}{" + "#" + n + "}"
         case Var(n, _, None, _) => "#" + n
-        case AttributedObject => "#1" //probably wrong
         case GroupMarker(elements) => "{" + doMarkers(elements) + "}"
         case ScriptMarker(main, sup, sub, over, under) =>
           var res = doM(main)
@@ -254,7 +253,7 @@ class MacroUsingPresenter extends ObjectPresenter {
                 doComplexDefault(p, subs, con, args)
             }
           case Some(tP) =>
-            val PragmaticTerm(p, subs, con, args, _, not, _) = tP
+            val PragmaticTerm(p, subs, con, args, not, _) = tP
             doComplexWithNotation(t, p, subs, con, args, not)
         }
         "\\mmt@group{" + tS + "}"

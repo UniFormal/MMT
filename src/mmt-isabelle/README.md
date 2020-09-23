@@ -3,17 +3,17 @@ Isabelle/MMT
 
 ## Requirements
 
-Isabelle/MMT requires a version of Isabelle that fits precisely to it. The
-latest stable release is for Isabelle2019 (June 2019), but intermediate
-development versions repository -- see also file `README_REPOSITORY` section
+Isabelle/MMT requires a version of Isabelle that fits precisely to
+it. The latest stable release is for Isabelle2020 (April 2020). For
+intermediate development versions see file `README_REPOSITORY` section
 **Quick start in 30min** in https://isabelle.sketis.net/repos/isabelle
 
 The following versions should fit together:
 
-  * Isabelle/b1f3e86a4745 from https://isabelle.sketis.net/repos/isabelle
-  * AFP/429a712d7c4d from https://isabelle.sketis.net/repos/afp-devel
-  * MMT/32ceb598c5a3 from https://github.com/UniFormal/MMT/commits/devel
-  * MathHub/MMT/urtheories/0636094dce6f from
+  * Isabelle/abf3e80bd815 from https://isabelle.sketis.net/repos/isabelle
+  * AFP/9449ae539c8a from https://isabelle.sketis.net/repos/afp-devel
+  * MMT/42718dc13dcc from https://github.com/UniFormal/MMT/commits/devel
+  * MathHub/MMT/urtheories/5c80b26b6cae from
     https://gl.mathhub.info/MMT/urtheories/commits/devel
 
 The corresponding OMDoc content is available here (commit messages refer to the

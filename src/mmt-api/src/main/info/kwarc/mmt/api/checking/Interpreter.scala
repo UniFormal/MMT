@@ -28,6 +28,14 @@ abstract class Interpreter extends Importer {
   /** object interpretation */
   def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult
 
+  /** convenience method for parsing and checking a term in context */
+  def fromObjectString(context: Context, term: String, errorCont: ErrorHandler = ErrorThrower): CheckingResult = {
+    val iic = new InterpretationInstructionContext(controller.getNamespaceMap)
+    val pu = ParsingUnit(SourceRef.anonymous(term), context, term, iic)
+    val cr = apply(pu)(errorCont)
+    cr
+  }
+
   def simplifier = controller.simplifier
   
   /** converts the interface of [[Importer]] to the one of [[Parser]] */

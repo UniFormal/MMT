@@ -117,7 +117,7 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
    def getHeaderNotation: List[Marker]
 
    /** the parse rule for the header */
-   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None))
+   def getHeaderRule = parser.ParsingRule(mpath, Nil, TextNotation(Mixfix(getHeaderNotation), Precedence.integer(0), None, false))
 
    /** parses the header term of a derived declaration into its name and type
     *  by default it is interpreted as OMA(mpath, name :: args) where OMA(mpath, args) is the type
@@ -407,11 +407,11 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
     case _ => throw InvalidObject(t, "ill-formed header")
   }
   
-  def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: Option[String]=None) : (Context, List[Term], DerivedDeclaration, Context) = {
+  def parseTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: Option[List[String]]=None) : (Context, List[Term], DerivedDeclaration, Context) = {
     val (indDefPath, context, indParams) = ParamType.getParams(dd)
     val indD = controller.library.get(indDefPath) match {
-    case indD: DerivedDeclaration if (expectedFeature.isEmpty || expectedFeature == Some(indD.feature)) => indD
-    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not of the feature "+expectedFeature.get+" but of the feature "+d.feature+".")
+    case indD: DerivedDeclaration if (expectedFeature.isEmpty || expectedFeature.get.contains(indD.feature)) => indD
+    case d: DerivedDeclaration => throw LocalError("the referenced derived declaration is not among the features "+expectedFeature.get+" but of the feature "+d.feature+".")
     case _ => throw LocalError("Expected definition of corresponding inductively-defined types at "+indDefPath.toString()
           +" but no derived declaration found at that location.")
     }
@@ -424,12 +424,12 @@ trait TypedParametricTheoryLike extends StructuralFeature with ParametricTheoryL
   }
   
   def checkParams(indCtx: Context, indParams: List[Term], context: Context, env: ExtendedCheckingEnvironment) : Unit = {
-    //A first attempt to check the indParams match the indCtx
 		//check the indParams match the indCtx at least in length
     if (indCtx .length != indParams.length) {
       throw LocalError("Incorrect length of parameters for the referenced derived declaration .\n"+
           "Expected "+indCtx.length+" parameters but found "+indParams.length+".")}
-    
+
+    //check whether their types also match
     indCtx zip indParams map {case (vd, tm) =>
       vd.tp map {expectedType =>
         val tpJudgement = Typing(Stack.empty, tm, expectedType)
@@ -457,12 +457,45 @@ object TypedParametricTheoryLike {
      /** retrieves the parameters and arguments */
      def getParams(dd: DerivedDeclaration): (GlobalName, Context, List[Term]) = {
        dd.tpC.get.get match {
-         case OMBINDC(OMMOD(mpath), pars, OMS(p)::args) => (p, pars, args)
+         case OMBINDC(OMMOD(_), pars, OMS(p)::args) => (p, pars, args)
        }
      }
      /** retrieves the parameters */
      def getParameters(dd: DerivedDeclaration) = {getParams(dd)._2}
    }
+}
+
+trait ReferenceLikeTypedParametricTheoryLike extends StructuralFeature with TypedParametricTheoryLike {
+  // override val ParamType = TypedParametricTheoryLike.ParamType(getClass)
+  // override val Type = ParametricTheoryLike.Type(getClass)
+
+  /**
+   * parse the derived declaration into its components
+   * @param dd the derived declaration
+   * @return returns a pair containing the mpath of the derived declaration, the declarations defined in the referenced theory,
+   *         the argument context of this derived declaration, the arguments provided to the referenced theory and the outer context
+   */
+  def getDecls(dd: DerivedDeclaration): (GlobalName, List[Declaration], Context, List[Term], Context) = {
+    val (indDefPathGN, context, indParams) = ParamType.getParams(dd)
+    val (indCtx, decs) : (Context, List[StructuralElement])= controller.getO(indDefPathGN) match {
+      case Some(str) => str match {
+        case t: Theory => (t.parameters, t.getDeclarations)
+        case t: StructuralElement if (t.feature =="theory") =>
+          val decs = t.getDeclarations
+          //We shouldn't have to do something this ugly, for this match to work out
+          //TODO: There should be a better method provided by the api
+          val params = t.headerInfo match {
+            case HeaderInfo("theory", _, List(_, params: Context)) => params
+            case _ => Context.empty
+          }
+          (params, decs)
+        case m : ModuleOrLink => (Context.empty, m.getDeclarations)
+        case t => throw GeneralError("reflection over unsupported target (expected a theory)"+t.path+" of feature "+t.feature + ": "+t)
+      }
+      case None => throw GeneralError("target of reflection not found at "+indDefPathGN)
+    }
+    (indDefPathGN, decs.map({d => d match {case d: Declaration => d case _ => throw LocalError("unsupported structural element at "+d.path)}}), indCtx, indParams, context)
+  }
 }
 
 /**

@@ -5,16 +5,31 @@ import info.kwarc.mmt.MitM._
 import info.kwarc.mmt.odk._
 import Sage._
 import GAP._
+import Graphtester.controller
 import Singular._
 import info.kwarc.mmt.MitM.VRESystem._
 import info.kwarc.mmt.api.objects.{OMA, OMS}
+import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.web.JSONBasedGraphServer
 import info.kwarc.mmt.lf.{Apply, ApplySpine}
 import info.kwarc.mmt.odk.OpenMath._
 
 object JanesUseCase extends MagicTest("lmfdb", "mitm", "scscp","checkalign","translator") {
   def newTrace = new VRESystem.MitMComputationTrace(Some(t => MitM.present(t, s => controller.presenter.asString(s))))
-  
+
+  override def doFirst: Unit = {
+    super.doFirst
+    // Copied here because these lines were removed from MagicTest.
+    // Please reevaluate if they are necessary. If in doubt, leave them. They are just slow.)
+    controller.handleLine("extension info.kwarc.mmt.pvs.PVSImporter")
+    controller.handleLine(("extension info.kwarc.mmt.api.ontology.AlignmentsServer " + alignmentspath).trim)
+    controller.extman.addExtension(new DependencyGraphExporter)
+    controller.extman.addExtension(new DeclarationTreeExporter)
+    controller.extman.addExtension(new JSONBasedGraphServer)
+    controller.extman.addExtension(new PathGraphExporter)
+  }
+
   // override val gotoshell = false
   def run {
     // turn on scscp on localhost:26134:

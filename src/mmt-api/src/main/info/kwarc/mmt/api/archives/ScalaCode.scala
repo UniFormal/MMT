@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.archives
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.utils._
-
+// DELETE this along with the Integrator object? FR 2020-07-08
 trait ScalaCode {self: Archive =>
 
   private var loader: java.net.URLClassLoader = null
