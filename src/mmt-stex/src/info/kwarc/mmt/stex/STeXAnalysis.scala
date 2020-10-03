@@ -70,7 +70,8 @@ trait STeXAnalysis {
         val root = archive.root.up.up / m("mhrepos")
         controller.addArchive(root)
         val thearchive = controller.backend.getArchive(root)
-        assert(thearchive.isDefined)
+        assert(thearchive.isDeclear
+          fined)
         thearchive.get
 
       case None => archive // fallback

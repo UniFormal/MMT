@@ -96,13 +96,15 @@ class AllTeX extends LaTeXDirTarget {
   def forgetIrrelevantDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
   {
     def goodDependency(dep : Dependency) : Boolean = dep match {
-      case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
+      case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex","sms").contains(fbd.key)) => true
       case PhysicalDependency(_) => true
-      case _ => false
+      case _ => println("### Dropping unused dependency: " + dep); false
     }
 
     var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
     for ((k,v) <- clean) { clean = clean + (k -> v.filter(goodDependency)) }
+
+    println("### Dropped " + (in.size - clean.size) + " out of " + (in.size) + " dependencies!")
     clean
   }
 
@@ -127,7 +129,7 @@ class AllTeX extends LaTeXDirTarget {
 
       val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
       val ts = ds.collect {
-        case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
+        case bd: FileBuildDependency if List(key, "tex-deps", "sms").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
 
       val files = ts.distinct.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
