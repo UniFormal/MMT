@@ -6,6 +6,7 @@ import info.kwarc.mmt.api._
 import archives._
 import documents._
 import frontend._
+import info.kwarc.mmt.api.Level.Level
 import informal._
 import modules._
 import notations._
@@ -14,21 +15,21 @@ import parser._
 import symbols._
 import utils._
 
+import scala.annotation.tailrec
 import scala.util.Try
 import scala.xml.{Elem, NamespaceBinding, Node}
 
 abstract class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
 
-  override val extraMessage = extraMsg.getOrElse("")
-
-  override def level = severity.getOrElse(super.level)
+  override val extraMessage : String = extraMsg.getOrElse("")
+  override def level : Level = severity.getOrElse(super.level)
 }
 
 class STeXParseError(val msg: String, extraMsg: Option[String], val sref: Option[SourceRef], val severity: Option[Level.Level])
   extends STeXError(msg, extraMsg, severity) {
   private def srefS = sref.fold("")(_.region.toString)
 
-  override def toNode = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}>
+  override def toNode : Elem = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}>
     {if (extraMessage.isEmpty) Nil else extraMessage}{Stacktrace.asNode(this)}
   </error>
 }
@@ -78,7 +79,7 @@ class STeXImporter extends Importer {
         val dpath = bt.narrationDPath
         val src = scala.io.Source.fromFile(bt.inFile.toString)
         val cp = scala.xml.parsing.ConstructingParser.fromSource(src, preserveWS = true)
-        val node: Node = cp.document()(0)
+        val node: Node = cp.document().head
         src.close()
         var used: List[Dependency] = node.child.flatMap(c => estimateModuleDeps(c, bt.narrationDPath)).toList
         //controller.backend.getArchive(id)
@@ -152,8 +153,8 @@ class STeXImporter extends Importer {
     }
   }
 */
-  def logthis(s : String) = log(s)
-  lazy val thiscontroller = controller
+  def logthis(s : String) : Unit = log(s)
+  lazy val thiscontroller : Controller = controller
 }
 
 case class Missing(d: Dependency) extends Throwable
@@ -161,11 +162,11 @@ case class Missing(d: Dependency) extends Throwable
 object DocumentImporter {
   val xmlNS = "http://www.w3.org/XML/1998/namespace"
   val omdocNS = "http://omdoc.org/ns"
-  val mhBase = DPath(URI("http://mathhub.info/"))
+  val mhBase : DPath = DPath(URI("http://mathhub.info/"))
 
   def getNameO(n : Node) : Option[LocalName] = {
     val nameS = (n \ s"@{$xmlNS}id").text
-    if (nameS.isEmpty()) None else Some(LocalName(nameS))
+    if (nameS.isEmpty) None else Some(LocalName(nameS))
   }
 
   def getName(n: Node, container: StructuralElement): LocalName = getNameO(n) match {
@@ -176,9 +177,10 @@ object DocumentImporter {
 
 
   def parseStexPath(s : String, base: DPath): (String, String, List[String]) = {
-    val baseGroup = base.uri.path(0)
+    val baseGroup = base.uri.path.head
     val baseArchive = base.uri.path(1)
     //makes path absolute
+    @tailrec
     def removeRel(frags: List[String], acc: List[String]): List[String] = frags match {
       case Nil => acc.reverse
       case ".." :: tl if acc.isEmpty => removeRel(tl, acc)
@@ -192,7 +194,7 @@ object DocumentImporter {
     val (group, archive) = srcidx match {
       case -1 => throw new STeXParseError("Invalid DPath, cannot produce group/project/'source'/path canonical form", Some("did not find 'source' folder in: " + s), None, None)
       case 0 => (baseGroup, baseArchive)
-      case 1 => (baseGroup, plainFrags(0))
+      case 1 => (baseGroup, plainFrags.head)
       case _ => (plainFrags(srcidx - 2), plainFrags(srcidx - 1))
     }
     val frags =  fragPath match {
@@ -208,7 +210,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
   import DocumentImporter._
 
   private val controller = importer.thiscontroller
-  private def log(s:String) = importer.logthis(s)
+  private def log(s:String): Unit = importer.logthis(s)
 
   def add(s: StructuralElement) {
     log("adding " + s.path.toPath)
@@ -263,7 +265,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
     n.label match {
       case "omdoc" =>
         //creating document and implicit theory
-        implicit val doc = new Document(dpath, FileLevel)
+        implicit val doc : Document = new Document(dpath, FileLevel)
         add(doc)
         //recursing into children
         n.child.foreach(translateModule)
@@ -292,7 +294,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
           val toN = (n\"@to").text
           val from = Path.parseM("?"+fromN,NamespaceMap(dpath)) // parseMPath(fromN,dpath)
           val to = Path.parseM("?"+toN,NamespaceMap(dpath)) // parseMPath(toN,dpath)
-          val view = View(dpath,name,OMID(from),OMID(to),false)
+          val view = View(dpath,name,OMID(from),OMID(to), isImplicit = false)
           val ref = MRef(dpath,view.path)
           add(ref)
           add(view)
@@ -329,8 +331,8 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
     * translate third level, in-module elements (typically declarations)
     */
   private def translateDeclaration(n: Node, localSection : LocalName = LocalName.empty)(implicit doc: Document, thy: ModuleOrLink, errorCont: ErrorHandler) {
-    implicit val dpath = doc.path.^
-    implicit val mpath = thy.path.toMPath
+    implicit val dpath : DPath = doc.path.^
+    implicit val mpath : MPath = thy.path.toMPath
     val sref = parseSourceRef(n, doc.path)
     try {
       n.label match {
@@ -523,7 +525,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
           val name = LocalName((n\"@name").text)
           val fromN = (n\"@from").text
           val from = Path.parseM(fromN,NamespaceMap(dpath)) //(doc.path.^ / (fromN.tail + ".omdoc")) ? fromN.tail
-          val s = Structure(thy.toTerm,name,OMID(from),false,false)
+          val s = Structure(thy.toTerm,name,OMID(from), isImplicit = false, isTotal = false)
           log("Structure " + name + ": " + from)
           add(s)
           // n.child.foreach(translateDeclaration(_)(doc, s, errorCont))
@@ -552,7 +554,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
 
   def parseNarrativeObject(n: scala.xml.Node)(implicit dpath: DPath, thy: ModuleOrLink, errorCont: ErrorHandler): Option[Term] = {
     val sref = parseSourceRef(n, dpath)
-    implicit val mpath = thy.path.toMPath
+    implicit val mpath : MPath = thy.path.toMPath
     n.child.filter(_.label=="uses").foreach(c => rewriteCMP(c)(thy,errorCont))
     n.child.find(_.label == "CMP").map(_.child) match {
       case Some(nodes) =>
@@ -716,10 +718,10 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
           }
           val prec = Precedence.integer(0)
           val verbScope = NotationScope(None, sTeX.getLanguage(thy.path).toList, 0)
-          val not = TextNotation.fromMarkers(prec, None, false, verbScope)(markers: _*)
+          val not = TextNotation.fromMarkers(prec, None, block = false, verbScope)(markers: _*)
           const.notC.verbalizationDim.set(not)
           if (hasArgs) {
-            val notOp = TextNotation.fromMarkers(prec, None, false, verbScope)(markersOp: _*)
+            val notOp = TextNotation.fromMarkers(prec, None, block = false, verbScope)(markersOp: _*)
             const.notC.verbalizationDim.set(not)
           }
           val doc = controller.getDocument(const.parent.parent / (const.parent.name + ".omdoc"), d => "cannot find parent doc for reindexing" + d)
@@ -807,8 +809,8 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
       case "OMATTR" => // FOR MIXING paper, to be updated when latexml bug is fixed
         try {
           val trimmed = scala.xml.Utility.trim(node)
-          val omforeign = trimmed.child(0).child(1) // OMATP -> OMFOREIGN
-          val refNr = (omforeign.child(0) \ "@href").text
+          val omforeign = trimmed.child.head.child(1) // OMATP -> OMFOREIGN
+          val refNr = (omforeign.child.head \ "@href").text
           require(omforeign.label == "FOREIGN", "attr value  should be OMFOREIGN")
           <om:OMV name={"mixref" + refNr}> </om:OMV>
         } catch {
