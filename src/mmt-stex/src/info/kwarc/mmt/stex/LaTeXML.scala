@@ -211,7 +211,7 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  val outDim : ArchiveDimension = RedirectableDimension("latexml")
+  val outDim: ArchiveDimension = RedirectableDimension("latexml")
 
   // the latexml client
   private var latexmlc = "latexmlc"
@@ -310,7 +310,7 @@ class LaTeXML extends LaTeXBuildTarget {
     var optLevel: Option[Level.Level] = None
     var msg: List[String] = Nil
     var newMsg = true
-    var region : SourceRegion = SourceRegion.none
+    var region: SourceRegion = SourceRegion.none
     var phase = 1
 
     def phaseToString(p: Int): String = "latexml-" + (p match {
@@ -413,7 +413,7 @@ class LaTeXML extends LaTeXBuildTarget {
       false
     }
     catch {
-      case _ : BindException =>
+      case _: BindException =>
         true
     }
 
@@ -435,26 +435,26 @@ class LaTeXML extends LaTeXBuildTarget {
       }
       BuildResult.empty
     } else { */
-      val lmhOut = bt.outFile
-      val logFile = bt.outFile.setExtension("ltxlog")
-      lmhOut.delete()
-      logFile.delete()
-      val realProfile = if (profileSet) profile
-      else getProfile(bt.archive).getOrElse(profile)
-      val argSeq = Seq(latexmlc, bt.inFile.toString,
-        "--profile=" + realProfile, "--path=" + styPath(bt),
-        "--destination=" + lmhOut, "--log=" + logFile) ++
-        (if (noAmble(bt.inFile)) Seq("--whatsin=document")
-        else Seq("--preamble=" + getAmbleFile("pre", bt),
-          "--postamble=" + getAmbleFile("post", bt))) ++
-       // Seq("--expire=" + expire, "--port=" + realPort) ++
-        (if (nopost) Seq("--nopost") else Nil) ++
-        preloads.map("--preload=" + _) ++
-        paths.map("--path=" + _)
-      log(argSeq.mkString(" ").replace(" --", "\n --"))
-      var failure = false
-      try {
-        /*
+    val lmhOut = bt.outFile
+    val logFile = bt.outFile.setExtension("ltxlog")
+    lmhOut.delete()
+    logFile.delete()
+    val realProfile = if (profileSet) profile
+    else getProfile(bt.archive).getOrElse(profile)
+    val argSeq = Seq(latexmlc, bt.inFile.toString,
+      "--profile=" + realProfile, "--path=" + styPath(bt),
+      "--destination=" + lmhOut, "--log=" + logFile) ++
+      (if (noAmble(bt.inFile)) Seq("--whatsin=document")
+      else Seq("--preamble=" + getAmbleFile("pre", bt),
+        "--postamble=" + getAmbleFile("post", bt))) ++
+      // Seq("--expire=" + expire, "--port=" + realPort) ++
+      (if (nopost) Seq("--nopost") else Nil) ++
+      preloads.map("--preload=" + _) ++
+      paths.map("--path=" + _)
+    log(argSeq.mkString(" ").replace(" --", "\n --"))
+    var failure = false
+    try {
+      /*
         val pbs = Process(Seq(latexmls, // "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
         if (!isServerRunning(realPort) && expire > -1) {
@@ -462,35 +462,35 @@ class LaTeXML extends LaTeXBuildTarget {
           Thread.sleep(delaySecs)
         }
          */
-        val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
-        val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
-        if (exitCode != 0 || lmhOut.length == 0) {
-          failure = true
-          bt.errorCont(LatexError(if (exitCode == 0) "no omdoc created" else "exit code " + exitCode, output.toString))
-        }
-      } catch {
-        case e: Exception =>
-          failure = true
-          bt.errorCont(LatexError(e.toString, output.toString))
+      val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
+      val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
+      if (exitCode != 0 || lmhOut.length == 0) {
+        failure = true
+        bt.errorCont(LatexError(if (exitCode == 0) "no omdoc created" else "exit code " + exitCode, output.toString))
       }
-      var providedTheories: List[ResourceDependency] = Nil
-      var missingFiles: List[Dependency] = Nil
-      if (logFile.exists()) {
-        val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
-        failure = failure || hasErrs
-        missingFiles = mFs.map(s => PhysicalDependency(File(s)))
-        providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
-        if (pipeOutput) File.ReadLineWise(logFile)(println)
-      }
-      if (pipeOutput) print(output.toString)
-      if (failure) {
-        logFailure(bt.outPath)
-        if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
-        else MissingDependency(missingFiles, providedTheories,missingFiles)
-      } else {
-        logSuccess(bt.outPath)
-        BuildSuccess(Nil, providedTheories)
-      }
+    } catch {
+      case e: Exception =>
+        failure = true
+        bt.errorCont(LatexError(e.toString, output.toString))
+    }
+    var providedTheories: List[ResourceDependency] = Nil
+    var missingFiles: List[Dependency] = Nil
+    if (logFile.exists()) {
+      val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
+      failure = failure || hasErrs
+      missingFiles = mFs.map(s => PhysicalDependency(File(s)))
+      providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
+      if (pipeOutput) File.ReadLineWise(logFile)(println)
+    }
+    if (pipeOutput) print(output.toString)
+    if (failure) {
+      logFailure(bt.outPath)
+      if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
+      else MissingDependency(missingFiles, providedTheories, missingFiles)
+    } else {
+      logSuccess(bt.outPath)
+      BuildSuccess(Nil, providedTheories)
+    }
     // }
   }
 
@@ -504,6 +504,7 @@ class LaTeXML extends LaTeXBuildTarget {
     val outDir = getFolderOutFile(a, curr.path).up
     if (outDir.isDirectory) outDir.deleteDir
   }
+}
 
 /** pdf generation */
 class PdfLatex extends LaTeXBuildTarget {
