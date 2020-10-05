@@ -24,8 +24,7 @@ class AllPdf extends LaTeXDirTarget {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
       val at = DirBuildDependency("alltex", a, bt.inPath, Nil)
-      val lp = DirBuildDependency("localpaths", a, bt.inPath, Nil)
-      BuildSuccess(ls :+ at :+ lp, Nil)
+      BuildSuccess(ls :+ at, Nil)
     } else BuildResult.empty
   }
 
@@ -42,6 +41,9 @@ class AllPdf extends LaTeXDirTarget {
   }
 }
 
+// Deprecated as of October 2020, see:
+// https://github.com/UniFormal/MMT/issues/540
+@deprecated("sTeX no longer relies on localpaths.tex")
 class LocalPaths extends LaTeXDirTarget {
   val key : String = "localpaths"
 
@@ -53,7 +55,7 @@ class LocalPaths extends LaTeXDirTarget {
   }
 
   override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
-    val target  : File    = dir / ("localpaths.tex")
+    val target  : File    = dir / "localpaths.tex"
     var success : Boolean = false
 
     /* Only create file if it has a sibling tex file */
@@ -87,15 +89,14 @@ class AllTeX extends LaTeXDirTarget {
       val used = super.estimateResult(bt).used.collect {
         case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
       }
-      val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-      BuildSuccess(used :+ lp, Nil)
+      BuildSuccess(used, Nil)
     }
   }
 
   def forgetSMSDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
   {
     def goodDependency(dep : Dependency) : Boolean = dep match {
-      case fbd @ FileBuildDependency(_,_,_) if (List("tex-deps","alltex").contains(fbd.key)) => true
+      case fbd @ FileBuildDependency(_,_,_) if List("tex-deps","alltex").contains(fbd.key) => true
       case PhysicalDependency(_) => true
       case _ => false
     }
@@ -178,12 +179,6 @@ class SmsGenerator extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val BuildSuccess(u, p) = super.estimateResult(bt)
-    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(u :+ lp,p)
-  }
-
   def reallyBuildFile(bt: BuildTask): BuildResult = {
     try {
       createSms(bt.archive, bt.inFile, bt.outFile)
@@ -229,7 +224,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private var portSet: Boolean = false
   private var profile = "stex-smglom-module"
   private var profileSet: Boolean = false
-  private var perl5lib = "perl5lib"
+  private val perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
   private var reboot: Boolean = false
@@ -418,7 +413,7 @@ class LaTeXML extends LaTeXBuildTarget {
       false
     }
     catch {
-      case ex: BindException =>
+      case _ : BindException =>
         true
     }
 
@@ -510,13 +505,6 @@ class LaTeXML extends LaTeXBuildTarget {
     if (outDir.isDirectory) outDir.deleteDir
   }
 
-  override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val BuildSuccess(u, p) = super.estimateResult(bt)
-    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(u :+ lp,p)
-  }
-}
-
 /** pdf generation */
 class PdfLatex extends LaTeXBuildTarget {
   val key = "pdflatex"
@@ -541,10 +529,9 @@ class PdfLatex extends LaTeXBuildTarget {
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     val BuildSuccess(used, provided) = super.estimateResult(bt)
-    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
     if (bt.inPath.name.startsWith("all.")) {
-      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil) :+ lp, provided)
-    } else BuildSuccess(used :+ lp, provided)
+      BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil), provided)
+    } else BuildSuccess(used, provided)
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
@@ -627,12 +614,6 @@ class TikzSvg extends PdfLatex
   override val outExt : String = "svg"
   override val outDim : ArchiveDimension = content
 
-  override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val BuildSuccess(u, p) = super.estimateResult(bt)
-    val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-    BuildSuccess(u :+ lp,p)
-  }
-
   override def includeDir(n: String): Boolean = n.endsWith("tikz")
 
   override def reallyBuildFile(bt: BuildTask): BuildResult =
@@ -669,8 +650,7 @@ class TikzSvg extends PdfLatex
           logFailure(bt.outPath)
         }
       }
-    }
-    catch {
+    } catch {
       case e: Exception =>
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))
