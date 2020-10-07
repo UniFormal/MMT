@@ -133,59 +133,6 @@ class AllTeX extends LaTeXDirTarget {
     else BuildEmpty("up-to-date")
   }
 
-  /* If in an archive (always), we don't want to include (non)lang files excluded in .gitignore.
-   * see: https://github.com/UniFormal/MMT/issues/542 */
-  def filterFiles(arch : Archive, dir : File, filenames : List[String]) : List[String] = {
-
-    var ignoreFiles : List[File] = Nil
-    var refDir      : File       = dir
-
-    // Find all relevant .gitignores
-    while (refDir != arch.root.up) {
-      val newIgnore : File = File(refDir.toString + "/.gitignore")
-      if (newIgnore.exists()) {
-        ignoreFiles = newIgnore :: ignoreFiles
-      }
-      refDir = refDir.up
-    }
-
-    // Everything starts off included, then we exclude by .gitignore
-    var included : List[String] = filenames
-    var excluded : List[String] = Nil
-
-    for (ignoreFile <- ignoreFiles) {
-      val bufferedSource = Source.fromFile(ignoreFile.toFilePath.toString)
-      for (line <- bufferedSource.getLines) {
-        breakable {
-          // Skip comments in .gitignore
-          if (line.startsWith("#")) { break }
-          val negated : Boolean = line.startsWith("!")
-
-          // TODO: This is only approximate glob matching, more details here:
-          // https://labs.consol.de/development/git/2017/02/22/gitignore.html
-          // https://git-scm.com/docs/gitignore
-          var pattern : String  = if (negated) { line.tail } else { line }
-          pattern = pattern.replace(".","\\.")
-          pattern = pattern.replace("*",".*")
-
-          if (negated) {
-            // Negated pattern, include some excluded files.
-            included = included ::: excluded.filter(_.matches(pattern))
-            excluded = excluded.filterNot(_.matches(pattern))
-          } else {
-            // Normal pattern, exclude some included files.
-            excluded = excluded ::: included.filter(_.matches(pattern))
-            included = included.filterNot(_.matches(pattern))
-          }
-        }
-      }
-      bufferedSource.close
-    }
-    log("Excluded the following files based on .gitignore: " + excluded.sorted.mkString("; "))
-    assert(excluded.length + included.length == filenames.length)
-    included.sorted
-  }
-
   private def ambleText(preOrPost: String, a: Archive, lang: Option[String]): List[String] =
     readSourceRebust(getAmbleFile(preOrPost, a, lang)).getLines().toList
 
@@ -193,7 +140,11 @@ class AllTeX extends LaTeXDirTarget {
   private def createAllFile(a: Archive, lang: Option[String], dir: File,
                             files: List[String], force: Boolean): Boolean = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
-    val ls : List[String] = filterFiles(a, dir, langFiles(lang, files))
+
+    /* If in an archive (always), we don't want to include (non)lang files excluded in .gitignore.
+     * see: https://github.com/UniFormal/MMT/issues/542 */
+    def gitignored(fn : String) : Boolean = Process("git check-ignore " + fn, dir.toJava).! == 0
+    val ls : List[String] = langFiles(lang, files).filterNot(gitignored)
 
     val w = new StringBuilder
     def writeln(s: String) : Unit = w.append(s + "\n")
