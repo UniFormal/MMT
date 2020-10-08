@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import info.kwarc.mmt.api.{Error, Level}
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.stex.STeXUtils._
@@ -70,9 +71,11 @@ trait STeXAnalysis {
         val root = archive.root.up.up / m("mhrepos")
         controller.addArchive(root)
         val thearchive = controller.backend.getArchive(root)
-        assert(thearchive.isDeclear
-          fined)
-        thearchive.get
+        if (thearchive.isDefined) {
+          thearchive.get
+        } else {
+          throw new STeXLookupError(msg = "missing archive: " + root, None, severity = Some(Level.Error))
+        }
 
       case None => archive // fallback
     }

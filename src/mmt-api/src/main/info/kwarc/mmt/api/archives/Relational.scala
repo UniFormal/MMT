@@ -80,7 +80,7 @@ object Relational {
     }
 
     val sorted = topsort(controller, m)
-    generateDot("topsorted",dependencyNodeName[A],sorted,m)
+    generateDot(name = "topsorted", dependencyNodeName[A], sorted, m)
     sorted.flatMap(_.toList.sortBy(d => depclosuresize(d)))
   }
 }

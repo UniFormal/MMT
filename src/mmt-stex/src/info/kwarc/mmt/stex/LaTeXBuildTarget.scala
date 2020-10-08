@@ -67,6 +67,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
 
+  @deprecated("sTeX no longer relies on localpaths.tex")
+  protected def createLocalPaths(bt: BuildTask) {
+    createLocalPaths(bt.archive, bt.inFile.up)
+  }
+
+  @deprecated("sTeX no longer relies on localpaths.tex")
   protected def createLocalPaths(a: Archive, dir: File) {
     val fileName = dir / localpathsFile
     val groupRepo = archString(a) + "}"
