@@ -687,7 +687,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val ds: Set[Dependency] = p match {
         case bd: FileBuildDependency => getAnyDeps(bd)
           // TODO: Handle PhysicalDependencies also?
-        case unused => println("MARKER: unused dependency: " + unused) ; Set.empty
+        case unused => Set.empty
       }
       deps += ((p, ds))
       visited += p
@@ -701,14 +701,20 @@ abstract class TraversingBuildTarget extends BuildTarget {
   override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))
-    val ts = Relational.flatTopsort(controller, deps)
-    ts.foreach {
-      case bd: FileBuildDependency =>
-        val target = if (bd.key == key) this else bd.getTarget(controller)
-        val bt = target.makeBuildTask(bd.archive, bd.inPath)
-        target.runBuildTaskIfNeeded(deps.getOrElse(bd, Set.empty), bt,
-          if (requestedDeps.contains(bd)) up else up.forDependencies)
-      case _ =>
+
+    // TODO: This needs double review. Should this also forget "irrelevant" dependencies, like the other instance does?
+    val ts = Relational.newFlatTopsort(controller, deps)
+    if (ts.isDefined) {
+      ts.get.foreach {
+        case bd: FileBuildDependency =>
+          val target = if (bd.key == key) this else bd.getTarget(controller)
+          val bt = target.makeBuildTask(bd.archive, bd.inPath)
+          target.runBuildTaskIfNeeded(deps.getOrElse(bd, Set.empty), bt,
+            if (requestedDeps.contains(bd)) up else up.forDependencies)
+        case _ =>
+      }
+    } else {
+      logError("Error! Cyclical dependencies!")
     }
   }
 }

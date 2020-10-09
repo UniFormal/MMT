@@ -88,8 +88,7 @@ class AllTeX extends LaTeXDirTarget {
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
     if (bt.isDir) {
-      val lp = DirBuildDependency("localpaths", bt.archive, bt.inPath, Nil)
-      BuildSuccess(List(lp), getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
+      BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
         case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
@@ -103,13 +102,11 @@ class AllTeX extends LaTeXDirTarget {
     def goodDependency(dep : Dependency) : Boolean = dep match {
       case fbd @ FileBuildDependency(_,_,_) if List("tex-deps","alltex").contains(fbd.key) => true
       case PhysicalDependency(_) => true
-      case _ => println("### Dropping unused dependency: " + dep); false
+      case _ => false
     }
 
     var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
     for ((k,v) <- clean) { clean = clean + (k -> v.filter(goodDependency)) }
-
-    println("### Dropped " + (in.size - clean.size) + " out of " + (in.size) + " dependencies!")
     clean
   }
 
@@ -130,9 +127,14 @@ class AllTeX extends LaTeXDirTarget {
     if (dirFiles.nonEmpty) {
 
       val the_dependencies : Set[Dependency] = getFilesRec(a, in)
-      val deps = (getDepsMap(the_dependencies))
+      val deps = forgetIrrelevantDeps(getDepsMap(the_dependencies))
 
-      val ds : List[Dependency] = Relational.newFlatTopsort(controller,deps)
+      val dso : Option[List[Dependency]] = Relational.newFlatTopsort(controller,deps)
+      if (dso.isEmpty) {
+        logError("writing .dot-graph containing cyclical dependencies")
+        return BuildFailure(Nil,Nil)
+      }
+      val ds : List[Dependency] = dso.get
       val ts = ds.collect {
         case bd: FileBuildDependency if List(key, "tex-deps", "sms").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
