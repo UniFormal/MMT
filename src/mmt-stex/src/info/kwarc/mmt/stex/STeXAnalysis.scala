@@ -248,10 +248,7 @@ trait STeXAnalysis {
   def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure =
   {
     var localStruct = STeXStructure(Nil,Nil)
-
-    def combine(s: STeXStructure) : Unit = {
-      localStruct = localStruct <> s
-    }
+    def combine(s: STeXStructure) : Unit = { localStruct = localStruct <> s }
 
     lines.foreach { line =>
       val l = stripComment(line).trim
@@ -328,8 +325,8 @@ trait STeXAnalysis {
 
       case smsMhView(r, _, f, t) =>
         val m = getArgMap(r)
-        var ofp = m.get("frompath")
-        var otp = m.get("topath")
+        val ofp = m.get("frompath")
+        val otp = m.get("topath")
         val fr = m.getOrElse("fromrepos", archString(a))
         val tr = m.getOrElse("torepos", archString(a))
         (ofp, otp) match {

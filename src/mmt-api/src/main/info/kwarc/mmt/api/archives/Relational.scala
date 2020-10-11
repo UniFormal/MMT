@@ -47,8 +47,8 @@ object Relational {
     val sorted = topsort(controller, m)
     if (sorted.isEmpty) { return None }
 
-    //Dot.generateCondensedDot( name = "topsorted_alltex_graph", Dot.simpleDependencyNodeName[A], sorted.get.flatten.toSet, m)
-    //Dot.generateDot(name = "topsorted", dependencyNodeName[A], sorted, m) */
+    Dot.generateCondensedDot( name = "topsorted_alltex_graph", Dot.simpleDependencyNodeName[A], sorted.get.flatten.toSet, m)
+    Dot.generateDot(name = "topsorted", Dot.dependencyNodeName[A], sorted.get, m)
 
     Some(sorted.get.flatMap(_.toList.sortBy(d => depclosuresize(d))))
   }

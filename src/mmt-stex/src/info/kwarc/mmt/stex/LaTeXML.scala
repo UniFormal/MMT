@@ -7,15 +7,10 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs._
-import info.kwarc.mmt.api.utils.File.read
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.stex.STeXUtils._
-import info.kwarc.mmt.stex.STeXAnalysis
 
-import scala.io.Source
 import scala.sys.process._
-import scala.util.matching.Regex
-import util.control.Breaks._
 
 class AllPdf extends LaTeXDirTarget {
   val key: String = "allpdf"
