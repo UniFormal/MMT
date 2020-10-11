@@ -371,7 +371,6 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     }
   }
 
-  @tailrec
   private def getNextTask() : Option[QueuedTask] = {
     val currentMissingDeps = getTopTask.getOrElse {return None}
     var failedDeps: List[ResourceDependency] = Nil // the dependencies that we could not resolve
