@@ -15,6 +15,7 @@ import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visib
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business._
+import info.kwarc.mmt.frameit.communication.DataStructures.{SIncomingFact, SScrollApplication}
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.circe.Json
 import io.finch._
@@ -94,7 +95,7 @@ object ServerEndpoints extends EndpointModule[IO] {
       val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
 
       state.synchronized {
-        state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+        (if (state.doTypeChecking) state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) else Nil) match {
           case Nil =>
             // success (i.e. no errors)
             state.ctrl.add(factConstant)
@@ -188,7 +189,7 @@ object ServerEndpoints extends EndpointModule[IO] {
     state.ctrl.add(scrollView)
     scrollViewAssignments.foreach(state.ctrl.add(_))
 
-    state.contentValidator.checkView(scrollView) match {
+    (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
       case Nil =>
         val (situationTheoryExtension, pushedOutView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
           state.ctrl.getTheory(scrollViewDomain),

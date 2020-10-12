@@ -379,7 +379,7 @@ val finchVersion = "0.32.1"
 // Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
 val circeVersion = "0.13.0"
 lazy val frameit = (project in file("frameit-mmt"))
-  .dependsOn(api, lf)
+  .dependsOn(api, lf, odk)
   .settings(mmtProjectsSettings("frameit-mmt"): _*)
   .settings(
     libraryDependencies ++= Seq(
