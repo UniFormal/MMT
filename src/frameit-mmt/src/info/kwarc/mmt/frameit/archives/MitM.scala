@@ -14,7 +14,7 @@ object MitM {
   object Foundation {
     val path: DPath = DPath(URI("http", "mathhub.info") / "MitM" / "Foundation")
 
-    private object Math {
+    object Math {
       val bool: GlobalName = path ? "Logic" ? "prop"
 
       val nat: GlobalName = path ? "NatLiterals" ? "nat_lit"

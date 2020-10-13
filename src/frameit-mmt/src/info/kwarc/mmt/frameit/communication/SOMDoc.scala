@@ -1,13 +1,14 @@
 package info.kwarc.mmt.frameit.communication
 
 // IMPORTANT: do NOT run IntelliJ's automatic "import clean-up" utility. It will remove necessary imports in this file.
-import info.kwarc.mmt.api.objects.{OMA, OMID, OMS, Term}
-import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.archives.MMT
+import info.kwarc.mmt.api.objects.{OMA, OMID, OMS, OMV, Term}
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.archives.{MMT, MitM}
 import info.kwarc.mmt.frameit.archives.MMT.LFX
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.frameit.communication.SOMDoc.{OMDocBridge, STerm}
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.{Decoder, Encoder, HCursor}
 
@@ -57,7 +58,8 @@ object SOMDoc {
         classOf[SOMS] -> "OMS",
         classOf[SFloatingPoint] -> "OMF",
         classOf[SString] -> "OMSTR",
-        classOf[SInteger] -> "OMI"
+        classOf[SInteger] -> "OMI",
+        classOf[SValueEqFactType] -> "EQF"
       ).map { case (key, value) => (key.getSimpleName, value) }
 
       rewriteMap.getOrElse(oldCtorName, oldCtorName)
@@ -86,6 +88,9 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
 
+  @ConfiguredJsonCodec
+  case class SValueEqFactType(lhs: STerm, tp: STerm) extends STerm
+
   object STermCodecs {
     implicit val somsEnc = Encoder[SOMS]
     implicit val somsDec = Decoder[SOMS]
@@ -104,6 +109,9 @@ object SOMDoc {
 
     implicit val stermEnc = Encoder[STerm]
     implicit val stermDec = Decoder[STerm]
+
+    implicit val svalueEqEnc = Encoder[SValueEqFact]
+    implicit val svalueEqDec = Decoder[SValueEqFact]
   }
 
   final case class ConversionException(private val message: String = "",
@@ -112,31 +120,17 @@ object SOMDoc {
 
 
   object OMDocBridge {
-    /*def encode(decl: Declaration): SFinalConstant = decl match {
-      case f: FinalConstant => f.tp match {
-        case Some(tp) => SFinalConstant(f.path, encode(tp), f.df.map(encode))
-        case _ => throw ConversionException("cannot convert Declaration not containing type to SimpleOMDoc")
+    private object NestedTuple {
+      def unapply(t: Term): Option[List[Term]] = t match {
+        case Tuple(left, right) => Some(unapply(left).getOrElse(List(left)) ::: unapply(right).getOrElse(List(right)))
+        case _ => None
       }
-      case _ => throw ConversionException(s"cannot convert declarations other than FinalConstant to SimpleOMDoc; declaration was ${decl}")
     }
-
-    def decode(sdecl: SFinalConstant): FinalConstant = {
-      new FinalConstant(
-        OMMOD(sdecl.uri.module),
-        sdecl.uri.name,
-        alias = Nil,
-        tpC = TermContainer.asParsed(decode(sdecl.tp)),
-        dfC = TermContainer.asParsed(sdecl.df.map(decode)),
-        rl = None,
-        notC = new NotationContainer,
-        vs = Visibility.public
-      )
-    }*/
 
     def encode(tm: Term): STerm = tm match {
       case OMS(path) => SOMS(path)
       // special-case LFX' tuples, hacky workaround, TODO: keep?
-      case OMA(OMS(LFX.tupleSymbol), args) => SOMA(SOMS(LFX.tupleSymbol), args.map(encode))
+      case NestedTuple(args) => SOMA(SOMS(Tuple.path), args.map(encode))
 
       // Only support OMA applications in LF style
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
@@ -145,6 +139,12 @@ object SOMDoc {
       case RealLiterals(value) => SFloatingPoint(value)
       case StringLiterals(value) => SString(value)
 
+      case Sigma(
+        x1,
+        tp1,
+        ApplySpine(MitM.Foundation.ded, List(ApplySpine(MitM.Foundation.eq, List(tp2, lhs, OMV(x2)))))
+      ) if x1 == x2 && tp1 == tp2 => SValueEqFactType(encode(lhs), encode(tp1))
+
       case _ => throw ConversionException(s"encountered term for which there is no SimpleOMDoc analogon: ${tm}")
     }
 
@@ -152,14 +152,24 @@ object SOMDoc {
       case SOMS(uri) => OMS(uri)
       case SOMA(fun, arguments) =>
         // special-case LFX' tuples, hacky workaround, TODO: keep?
-        if (fun == SOMS(LFX.tupleSymbol)) {
-          OMA(decode(fun), arguments.map(decode))
+        if (fun == SOMS(Tuple.path)) {
+          Tuple(arguments.map(decode))
         } else {
           ApplySpine(decode(fun), arguments.map(decode): _*)
         }
       case SInteger(value) => IntegerLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
+
+      case SValueEqFactType(lhs, tp) =>
+        Sigma(
+          LocalName("x"),
+          decode(tp),
+          ApplySpine(
+            OMS(MitM.Foundation.ded),
+            ApplySpine(OMS(MitM.Foundation.eq), decode(tp), decode(lhs), OMV(LocalName("x")))
+          )
+        )
     }
   }
 

@@ -53,6 +53,7 @@ object Server extends TwitterServer {
     ctrl.add(situationTheory)
 
     val state = new ServerState(ctrl, situationTheory.path.parent, situationTheory.path)
+    state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix
 
     state.contentValidator.checkTheory(situationTheory) match {
       case Nil =>

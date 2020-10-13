@@ -17,6 +17,8 @@ class ServerState(val ctrl: Controller, val situationDocument: DPath, private va
   override def logPrefix: String = "frameit-server"
   override protected def report: Report = ctrl.report
 
+  var doTypeChecking: Boolean = true
+
   val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
   private var _situationTheory = ctrl.getTheory(situationTheoryPath)
