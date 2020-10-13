@@ -109,9 +109,6 @@ object SOMDoc {
 
     implicit val stermEnc = Encoder[STerm]
     implicit val stermDec = Decoder[STerm]
-
-    implicit val svalueEqEnc = Encoder[SValueEqFact]
-    implicit val svalueEqDec = Decoder[SValueEqFact]
   }
 
   final case class ConversionException(private val message: String = "",
