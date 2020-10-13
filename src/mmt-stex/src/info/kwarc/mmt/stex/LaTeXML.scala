@@ -92,12 +92,12 @@ class AllTeX extends LaTeXDirTarget {
     }
   }
 
-  def forgetIrrelevantDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] =
-  {
+  /* To topologically sort our alltex includes, we don't need to worry about dependencies that don't have any
+  *  alltex files in their dependency closure, which, conveniently, is also where all the "cycles" happen. */
+  def forgetIrrelevantDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
     def goodDependency(dep : Dependency) : Boolean = dep match {
-      case fbd @ FileBuildDependency(_,_,_) if List("tex-deps","alltex").contains(fbd.key) => true
-      case PhysicalDependency(_) => true
-      case _ => false
+      case FileBuildDependency(k, _, _) => k != "sms"
+      case _ => true
     }
 
     var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
@@ -105,11 +105,36 @@ class AllTeX extends LaTeXDirTarget {
     clean
   }
 
+  /* For reasons likely to be irrelevant in the future (because SMS files are being deprecated alltogether),
+   * we have this depsMap with dependencies on the sms-files, not the alltex-files, so we're rewiring that manually. */
+  def rewireDepsMap(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
+    // rewire one FBD fomr oldkey to newkey.
+    def changeOne(oldkey : String, newkey : String, dep : Dependency) : Dependency = dep match {
+      case fbd@FileBuildDependency(key,z,d) => if (key == oldkey) { FileBuildDependency(newkey,z,d) } else { fbd }
+      case other@_ => other
+    }
+
+    // All alltex dependencies there are, but changed to sms sp we can check easily below.
+    val alltexs : Set[Dependency] = in.keySet.union(in.values.flatten.toSet).filter({
+      case FileBuildDependency("alltex", _, _) => true
+      case _ => false
+    }).map(changeOne(oldkey = "alltex", newkey = "sms", _))
+
+    var clean : Map[Dependency, Set[Dependency]] = Map.empty
+    for ((k,v) <- in) {
+      val kc = if (alltexs.contains(k)) { changeOne(oldkey = "sms", newkey = "alltex", k) } else k
+      val vc = v map (d => if (alltexs.contains(d)) { changeOne(oldkey = "sms", newkey = "alltex", d) } else d)
+      clean += (kc -> vc)
+    }
+    clean
+  }
+
   override def getAnyDeps(dep: FileBuildDependency) : Set[Dependency] = {
+    // We only need better coverage in the alltex target (for now)
     if (dep.key == key) {
-      // We only need better coverage in the alltex target (for now)
-      val inFile = dep.archive / inDim / dep.inPath // Not taking the inDim from the dep seems extremely fishy.
-      val res = readingSource(dep.archive, inFile, None).toSet
+      // ToDo: Not taking the inDim from the dep seems extremely fishy. Review.
+      val inFile : File            = dep.archive / inDim / dep.inPath
+      val res    : Set[Dependency] = readingSource(dep.archive, inFile, None).toSet
       res
     } else {
       super.getAnyDeps(dep)
@@ -121,12 +146,13 @@ class AllTeX extends LaTeXDirTarget {
     var success = false
     if (dirFiles.nonEmpty) {
 
+      // One FileBuildDependency with key "alltex" for all files present.
       val the_dependencies : Set[Dependency] = getFilesRec(a, in)
-      val deps = forgetIrrelevantDeps(getDepsMap(the_dependencies))
+      val deps = forgetIrrelevantDeps(rewireDepsMap(getDepsMap(the_dependencies)))
 
-      val dso : Option[List[Dependency]] = Relational.newFlatTopsort(controller,deps)
+      val dso : Option[List[Dependency]] = Relational.flatTopsort(controller, deps)
       if (dso.isEmpty) {
-        logError("writing .dot-graph containing cyclical dependencies")
+        logError("Cyclical dependencies, topological sort is impossible.")
         return BuildFailure(Nil,Nil)
       }
       val ds : List[Dependency] = dso.get
