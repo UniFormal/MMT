@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visib
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business._
-import info.kwarc.mmt.frameit.communication.DataStructures.{SIncomingFact, SScrollApplication}
+import info.kwarc.mmt.frameit.communication.DataStructures.{FactReference, KnownFact, SFact, SScrollApplication}
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.circe.Json
 import io.finch._
@@ -64,6 +64,7 @@ object ServerEndpoints extends EndpointModule[IO] {
   import TermCodecs._
   import PathCodecs._
   import SOMDoc.STermCodecs._
+  import DataStructures.Codecs._
   import ServerErrorHandler._
 
   private def getEndpointsForState(state: ServerState) =
@@ -90,8 +91,8 @@ object ServerEndpoints extends EndpointModule[IO] {
     Ok(())
   }
 
-  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SIncomingFact]) {
-    (fact: SIncomingFact) => {
+  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
+    (fact: SFact) => {
       val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
 
       state.synchronized {
@@ -115,8 +116,8 @@ object ServerEndpoints extends EndpointModule[IO] {
     }
   }
 
-  private def listFacts(state: ServerState): Endpoint[IO, List[KnownFact]] = get(path("fact") :: path("list")) {
-    Ok(KnownFact.collectFromTheory(state.situationTheory, recurseOnInclusions = true)(state.ctrl))
+  private def listFacts(state: ServerState): Endpoint[IO, List[SFact with KnownFact]] = get(path("fact") :: path("list")) {
+    Ok(SFact.collectFromTheory(state.situationTheory, recurseOnInclusions = true)(state.ctrl))
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
@@ -154,7 +155,7 @@ object ServerEndpoints extends EndpointModule[IO] {
     )
   }
 
-  private def applyScroll(state: ServerState): Endpoint[IO, List[KnownFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
+  private def applyScroll(state: ServerState): Endpoint[IO, List[SFact with KnownFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
 
     val scrollViewDomain = scrollApp.scroll.problemTheory
     val scrollViewCodomain = state.situationTheoryPath
@@ -204,7 +205,7 @@ object ServerEndpoints extends EndpointModule[IO] {
         state.ctrl.add(pushedOutView)
         state.setSituationTheory(situationTheoryExtension)
 
-        Ok(KnownFact.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
+        Ok(SFact.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
 
 
       case errors =>

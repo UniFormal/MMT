@@ -37,7 +37,7 @@ object Server extends TwitterServer {
 
     // TODO hack to read latest scroll meta data, should not be needed
     //      due to https://github.com/UniFormal/MMT/issues/528
-    ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/OppositeLen.mmt")
+    ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
 
     frameitArchive.allContent
 

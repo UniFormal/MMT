@@ -142,7 +142,13 @@ object SOMDoc {
         ApplySpine(MitM.Foundation.ded, List(ApplySpine(MitM.Foundation.eq, List(tp2, lhs, OMV(x2)))))
       ) if x1 == x2 && tp1 == tp2 => SValueEqFactType(encode(lhs), encode(tp1))
 
-      case _ => throw ConversionException(s"encountered term for which there is no SimpleOMDoc analogon: ${tm}")
+      case _ =>
+        val errMsg = s"encountered term for which there is no SimpleOMDoc analogon: ${tm}"
+
+        // also output on stderr because exceptions by encoders as instrumented by Finch are sometimes
+        // happily swallowed
+        sys.error(errMsg)
+        throw ConversionException(errMsg)
     }
 
     def decode(stm: STerm): Term = stm match {

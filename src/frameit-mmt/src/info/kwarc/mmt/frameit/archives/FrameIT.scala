@@ -6,12 +6,12 @@ import info.kwarc.mmt.api.utils.URI
 object FrameIT {
 
   /**
-    * Symbols and paths of the FrameIT/FrameWorld archive:
+    * Symbols and paths of the FrameIT/frameworld archive:
     * https://gl.mathhub.info/FrameIT/frameworld
     */
   object FrameWorld {
     object MetaKeys {
-      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "MetaAnnotations"
+      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "ScrollMetaAnnotations"
 
       val scrollName: GlobalName = _metaAnnotations ? "name"
       val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
@@ -24,6 +24,6 @@ object FrameIT {
 
     val archiveID: String = "FrameIT/frameworld"
     val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
-    val metaTheoryForSituationTheory: MPath = Path.parseM("http://mathhub.info/FrameIT/frameworld?SituationTheoryMeta", NamespaceMap.empty)
+    val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
   }
 }
