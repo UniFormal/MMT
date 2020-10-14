@@ -14,7 +14,6 @@ import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.{MMT, MitM}
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.{InvalidFactConstant, InvalidMetaData}
-import info.kwarc.mmt.frameit.communication.SOMDoc.SValueEqFactType
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.{Decoder, Encoder, HCursor, Json}
@@ -97,15 +96,17 @@ object DataStructures {
     // No knownFactDecoder (not needed yet)
   }
 
-  object SFact {
-    def fromConstant(c: Constant)(implicit ctrl: Controller): SFact with KnownFact = {
-      val label = c.metadata.get(MetaKeys.factLabel) match {
+  private object SFactHelpers {
+    final def parseLabelFromConstant(c: Constant): String = {
+      c.metadata.get(MetaKeys.factLabel) match {
         // fall back to declaration name as label
         case Nil => c.name.toString
         case MetaDatum(_, StringLiterals(label)) :: Nil => label
         case _ => throw InvalidFactConstant("could not create fact from constant", InvalidMetaData(s"Fact declaration contained an invalid label annotation or multiple label annotations, declaration path was: ${c.path}"))
       }
+    }
 
+    final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
       def simplify(obj: Obj): obj.ThisType = {
         val ctx = Context(c.path.module)
         val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = false)
@@ -122,25 +123,16 @@ object DataStructures {
 
       val simplifiedDf: Option[Term] = c.df.map(simplify(_))
 
-      simplifiedTp match {
-        case Sigma(
-        x1,
-        tp1,
-        ApplySpine(MitM.Foundation.ded, List(ApplySpine(MitM.Foundation.eq, List(tp2, lhs, OMV(x2)))))
-        ) =>
+      (simplifiedTp, simplifiedDf)
+    }
+  }
 
-          if (x1 == x2 && tp1 == tp2) {
-            new SValueEqFactType(SOMDoc.OMDocBridge.encode(lhs), SOMDoc.OMDocBridge.encode(tp1)) with KnownFact {
-              override def ref: FactReference = FactReference(c.path)
-            }.asInstanceOf[SFact with KnownFact]
-          } else {
-            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
-          }
+  object SFact {
+    final def fromConstant(c: Constant)(implicit ctrl: Controller): SFact with KnownFact = {
+      c match {
+        case SValueEqFact(fact) => fact
 
-        case _ =>
-          new SGeneralFact(label, simplifiedTp, simplifiedDf) with KnownFact {
-            override def ref: FactReference = FactReference(c.path)
-          }
+        case SGeneralFact(fact) => fact // should match almost any constant
       }
     }
 
@@ -155,6 +147,18 @@ object DataStructures {
     override protected def getMMTTypeComponent: Option[Term] = Some(tp)
 
     override protected def getMMTDefComponent: Option[Term] = df
+  }
+
+  object SGeneralFact {
+    def unapply(c: Constant)(implicit ctrl: Controller): Option[SGeneralFact with KnownFact] = {
+      val label = SFactHelpers.parseLabelFromConstant(c)
+
+      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
+
+      Some(new SGeneralFact(label, tp, df) with KnownFact {
+        override def ref: FactReference = FactReference(c.path)
+      })
+    }
   }
 
   @ConfiguredJsonCodec
@@ -192,6 +196,31 @@ object DataStructures {
         )
       )
     )
+  }
+
+  object SValueEqFact {
+    def unapply(c: Constant)(implicit ctrl: Controller): Option[SValueEqFact with KnownFact] = {
+      val label = SFactHelpers.parseLabelFromConstant(c)
+      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
+
+      tp match {
+        case Sigma(
+          x1,
+          tp1,
+          ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
+        ) =>
+
+          if (x1 == x2 && tp1 == tp2) {
+            Some(new SValueEqFact(label, lhs, tp1) with KnownFact {
+              override def ref: FactReference = FactReference(c.path)
+            })
+          } else {
+            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
+          }
+
+        case _ => None
+      }
+    }
   }
 
   sealed case class SScrollReference(problemTheory: MPath, solutionTheory: MPath)

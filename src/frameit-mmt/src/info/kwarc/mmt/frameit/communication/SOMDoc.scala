@@ -58,8 +58,7 @@ object SOMDoc {
         classOf[SOMS] -> "OMS",
         classOf[SFloatingPoint] -> "OMF",
         classOf[SString] -> "OMSTR",
-        classOf[SInteger] -> "OMI",
-        classOf[SValueEqFactType] -> "EQF"
+        classOf[SInteger] -> "OMI"
       ).map { case (key, value) => (key.getSimpleName, value) }
 
       rewriteMap.getOrElse(oldCtorName, oldCtorName)
@@ -87,9 +86,6 @@ object SOMDoc {
 
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
-
-  @ConfiguredJsonCodec
-  case class SValueEqFactType(lhs: STerm, tp: STerm) extends STerm
 
   object STermCodecs {
     implicit val somsEnc = Encoder[SOMS]
@@ -141,7 +137,7 @@ object SOMDoc {
 
         // also output on stderr because exceptions by encoders as instrumented by Finch are sometimes
         // happily swallowed
-        sys.error(errMsg)
+        System.err.println(errMsg)
         throw ConversionException(errMsg)
     }
 
