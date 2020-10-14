@@ -128,6 +128,10 @@ object ServerEndpoints extends EndpointModule[IO] {
   }
 
   private def listScrolls(state: ServerState): Endpoint[IO, List[Scroll]] = get(path("scroll") :: path("list")) {
+    // TODO hack to read latest scroll meta data, should not be needed
+    //      due to https://github.com/UniFormal/MMT/issues/528
+    state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
+
     val allTheories = state.ctrl.depstore.getInds(IsTheory).map(_.asInstanceOf[MPath]).map(state.ctrl.getTheory)
 
     val scrolls = allTheories.flatMap(t => Scroll.fromTheory(t)(state.ctrl) match {

@@ -136,12 +136,6 @@ object SOMDoc {
       case RealLiterals(value) => SFloatingPoint(value)
       case StringLiterals(value) => SString(value)
 
-      case Sigma(
-        x1,
-        tp1,
-        ApplySpine(MitM.Foundation.ded, List(ApplySpine(MitM.Foundation.eq, List(tp2, lhs, OMV(x2)))))
-      ) if x1 == x2 && tp1 == tp2 => SValueEqFactType(encode(lhs), encode(tp1))
-
       case _ =>
         val errMsg = s"encountered term for which there is no SimpleOMDoc analogon: ${tm}"
 
@@ -163,22 +157,10 @@ object SOMDoc {
       case SInteger(value) => IntegerLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
-
-      case SValueEqFactType(lhs, tp) =>
-        Sigma(
-          LocalName("x"),
-          decode(tp),
-          ApplySpine(
-            OMS(MitM.Foundation.ded),
-            ApplySpine(OMS(MitM.Foundation.eq), decode(tp), decode(lhs), OMV(LocalName("x")))
-          )
-        )
     }
   }
 
   object JSONBridge {
-    //def encodeDeclaration(decl: SFinalConstant): Json = decl.asJson
-
     def encode(stm: STerm): Json = stm.asJson
     def decodeTerm(str: String): STerm = io.circe.parser.decode[STerm](str).getOrElse(
       throw ConversionException(s"could not decode string to STerm: ${str}")

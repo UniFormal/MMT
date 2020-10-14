@@ -35,10 +35,6 @@ object Server extends TwitterServer {
       throw GetError(s"Archive ${FrameWorld.archiveID} could not be found!")
     }
 
-    // TODO hack to read latest scroll meta data, should not be needed
-    //      due to https://github.com/UniFormal/MMT/issues/528
-    ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
-
     frameitArchive.allContent
 
     // force-read relational data as somewhere (TODO say where) we use the depstore

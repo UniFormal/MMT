@@ -9,13 +9,12 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, PlainIn
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.api.objects.{Context, OMID, OMS, OMV, Obj, Term}
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.{MMT, MitM}
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.{InvalidFactConstant, InvalidMetaData}
-import info.kwarc.mmt.frameit.communication.SOMDoc.{OMDocBridge, STerm}
+import info.kwarc.mmt.frameit.communication.SOMDoc.SValueEqFactType
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.{Decoder, Encoder, HCursor, Json}
@@ -85,7 +84,7 @@ object DataStructures {
     import PathCodecs._
     import SOMDoc.STermCodecs._
 
-    implicit val factEncoder: Encoder[SFact] = Encoder[SFact]
+    implicit val factEncoder: Encoder[SFact] = io.circe.generic.semiauto.deriveEncoder[SFact]
 
     implicit val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
       // just add `uri: ...` field to encoded fact
@@ -114,15 +113,34 @@ object DataStructures {
         ctrl.simplifier.apply(obj, simplicationUnit)
       }
 
+
       // todo: currently, only the simplified things are returned
       //       do we also need the non-simplified ones?
-      val tp = c.tp
-        .map(tp => simplify(tp)) // TermPair(tp, simplify(tp)))
-        .getOrElse(throw InvalidFactConstant("could not create fact from constant as constant has no type component"))
-      val df = c.df.map(df => simplify(df))// TermPair(df, simplify(df)))
+      val simplifiedTp: Term = c.tp.map(simplify(_)).getOrElse(
+        throw InvalidFactConstant(s"failed parsing fact of ${c.path}: has no type component")
+      )
 
-      new SGeneralFact(label, tp, df) with KnownFact {
-        override def ref: FactReference = FactReference(c.path)
+      val simplifiedDf: Option[Term] = c.df.map(simplify(_))
+
+      simplifiedTp match {
+        case Sigma(
+        x1,
+        tp1,
+        ApplySpine(MitM.Foundation.ded, List(ApplySpine(MitM.Foundation.eq, List(tp2, lhs, OMV(x2)))))
+        ) =>
+
+          if (x1 == x2 && tp1 == tp2) {
+            new SValueEqFactType(SOMDoc.OMDocBridge.encode(lhs), SOMDoc.OMDocBridge.encode(tp1)) with KnownFact {
+              override def ref: FactReference = FactReference(c.path)
+            }.asInstanceOf[SFact with KnownFact]
+          } else {
+            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
+          }
+
+        case _ =>
+          new SGeneralFact(label, simplifiedTp, simplifiedDf) with KnownFact {
+            override def ref: FactReference = FactReference(c.path)
+          }
       }
     }
 
@@ -143,7 +161,7 @@ object DataStructures {
   sealed case class SValueEqFact(override val label: String, lhs: Term, rhs: Term) extends SFact(label) {
     private def getSigmaVariableType: Option[Term] = rhs match {
       case MitM.Foundation.RealLiterals(_) => Some(OMID(MitM.Foundation.Math.real))
-      case _ => return None
+      case _ => None
     }
 
     override protected def getMMTTypeComponent: Option[Term] = getSigmaVariableType.map(tp => {
