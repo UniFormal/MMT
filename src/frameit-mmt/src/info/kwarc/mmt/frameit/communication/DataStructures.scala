@@ -130,8 +130,8 @@ object DataStructures {
   object SFact {
     final def fromConstant(c: Constant)(implicit ctrl: Controller): SFact with KnownFact = {
       c match {
+        // todo: a bit inefficient because the unapplys in both cases do simplification and metadata reads of the constant
         case SValueEqFact(fact) => fact
-
         case SGeneralFact(fact) => fact // should match almost any constant
       }
     }
@@ -162,9 +162,9 @@ object DataStructures {
   }
 
   @ConfiguredJsonCodec
-  sealed case class SValueEqFact(override val label: String, lhs: Term, rhs: Term) extends SFact(label) {
-    private def getSigmaVariableType: Option[Term] = rhs match {
-      case MitM.Foundation.RealLiterals(_) => Some(OMID(MitM.Foundation.Math.real))
+  sealed case class SValueEqFact(override val label: String, lhs: Term, value: Option[Term]) extends SFact(label) {
+    private def getSigmaVariableType: Option[Term] = value match {
+      case Some(MitM.Foundation.RealLiterals(_)) => Some(OMID(MitM.Foundation.Math.real))
       case _ => None
     }
 
@@ -186,16 +186,21 @@ object DataStructures {
       )
     })
 
-    override protected def getMMTDefComponent: Option[Term] = getSigmaVariableType.map(tp =>
-      Tuple(
-        rhs,
-        ApplySpine(
-          OMS(MitM.Foundation.sketchOperator),
-          ApplySpine(OMS(MitM.Foundation.eq), tp, lhs, rhs),
-          StringLiterals("as sent by Unity")
-        )
-      )
-    )
+    override protected def getMMTDefComponent: Option[Term] = (getSigmaVariableType, value) match {
+      // we only have a definiens if we have a value
+
+      case (Some(valueTp), Some(v)) =>
+        Some(Tuple(
+          v,
+          ApplySpine(
+            OMS(MitM.Foundation.sketchOperator),
+            ApplySpine(OMS(MitM.Foundation.eq), valueTp, lhs, v),
+            StringLiterals("as sent by Unity")
+          )
+        ))
+
+      case _ => None
+    }
   }
 
   object SValueEqFact {
@@ -208,15 +213,19 @@ object DataStructures {
           x1,
           tp1,
           ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
-        ) =>
+        ) if x1 == x2 && tp1 == tp2 =>
 
-          if (x1 == x2 && tp1 == tp2) {
-            Some(new SValueEqFact(label, lhs, tp1) with KnownFact {
-              override def ref: FactReference = FactReference(c.path)
-            })
-          } else {
-            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
+          val suppliedValue = df match {
+            case Some(Tuple(v, _)) => Some(v)
+            case _ => None
           }
+
+          Some(new SValueEqFact(label, lhs, suppliedValue) with KnownFact {
+            override def ref: FactReference = FactReference(c.path)
+          })
+
+        case Sigma(_, _, _) =>
+            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
 
         case _ => None
       }
