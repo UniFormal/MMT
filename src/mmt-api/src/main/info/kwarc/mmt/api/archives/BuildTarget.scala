@@ -209,7 +209,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     *
     * For a queue build manager this code is obsolete
     * */
-  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
+  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) : Unit = {}
 
   /** clean this target in a given archive */
   def clean(a: Archive, in: FilePath): Unit
@@ -665,6 +665,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   @MMT_TODO("needs review")
+  // TODO: This generates sms dependencies from alltex targets?
   protected def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
@@ -686,7 +687,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
         case bd: FileBuildDependency => getAnyDeps(bd)
-          // TODO: Handle PhysicalDependencies also?
+          // TODO: Handle PhysicalDependencies also? // Don't think so, there shouldn't be any. (jbetzendahl)
         case unused => Set.empty
       }
       deps += ((p, ds))
@@ -698,12 +699,11 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   @MMT_TODO("needs review")
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) : Unit = {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))
 
-    // TODO: This needs double review. Should this also forget "irrelevant" dependencies, like the other instance does?
-    val ts = Relational.newFlatTopsort(controller, deps)
+    val ts = Relational.flatTopsort(controller, deps)
     if (ts.isDefined) {
       ts.get.foreach {
         case bd: FileBuildDependency =>
