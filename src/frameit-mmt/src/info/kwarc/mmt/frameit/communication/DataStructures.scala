@@ -43,8 +43,7 @@ object DataStructures {
     */
   @ConfiguredJsonCodec
   sealed abstract class SFact(val label: String) {
-    protected def getMMTTypeComponent: Option[Term]
-
+    protected def getMMTTypeComponent: Term
     protected def getMMTDefComponent: Option[Term]
 
     def toFinalConstant(home: api.objects.Term): FinalConstant = {
@@ -144,8 +143,7 @@ object DataStructures {
 
   @ConfiguredJsonCodec
   sealed case class SGeneralFact(override val label: String, tp: Term, df: Option[Term]) extends SFact(label) {
-    override protected def getMMTTypeComponent: Option[Term] = Some(tp)
-
+    override protected def getMMTTypeComponent: Term = tp
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
@@ -162,45 +160,36 @@ object DataStructures {
   }
 
   @ConfiguredJsonCodec
-  sealed case class SValueEqFact(override val label: String, lhs: Term, value: Option[Term]) extends SFact(label) {
-    private def getSigmaVariableType: Option[Term] = value match {
-      case Some(MitM.Foundation.RealLiterals(_)) => Some(OMID(MitM.Foundation.Math.real))
-      case _ => None
-    }
-
-    override protected def getMMTTypeComponent: Option[Term] = getSigmaVariableType.map(tp => {
+  sealed case class SValueEqFact(override val label: String, lhs: Term, valueTp: Term, value: Option[Term]) extends SFact(label) {
+    override protected def getMMTTypeComponent: Term = {
       val sigmaVariableName = LocalName("x")
 
       Sigma(
         sigmaVariableName,
-        tp,
+        valueTp,
         body = ApplySpine(
           OMID(MitM.Foundation.ded),
           ApplySpine(
             OMS(MitM.Foundation.eq),
-            tp,
+            valueTp,
             lhs,
             OMV(sigmaVariableName)
           )
         )
       )
-    })
-
-    override protected def getMMTDefComponent: Option[Term] = (getSigmaVariableType, value) match {
-      // we only have a definiens if we have a value
-
-      case (Some(valueTp), Some(v)) =>
-        Some(Tuple(
-          v,
-          ApplySpine(
-            OMS(MitM.Foundation.sketchOperator),
-            ApplySpine(OMS(MitM.Foundation.eq), valueTp, lhs, v),
-            StringLiterals("as sent by Unity")
-          )
-        ))
-
-      case _ => None
     }
+
+    override protected def getMMTDefComponent: Option[Term] = value.map(v =>
+      // we only have a definiens if we have a value
+      Tuple(
+        v,
+        ApplySpine(
+          OMS(MitM.Foundation.sketchOperator),
+          ApplySpine(OMS(MitM.Foundation.eq), valueTp, lhs, v),
+          StringLiterals("as sent by Unity")
+        )
+      )
+    )
   }
 
   object SValueEqFact {
@@ -220,7 +209,7 @@ object DataStructures {
             case _ => None
           }
 
-          Some(new SValueEqFact(label, lhs, suppliedValue) with KnownFact {
+          Some(new SValueEqFact(label, lhs, tp1, suppliedValue) with KnownFact {
             override def ref: FactReference = FactReference(c.path)
           })
 
