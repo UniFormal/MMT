@@ -1,6 +1,6 @@
 # frameit-mmt: Server component of FrameIT project
 
-This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), maintained by [@ComFreek](https://github.com/ComFreek).
+This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), primarily maintained so far by [@ComFreek](https://github.com/ComFreek).
 
 ## Installation
 
@@ -27,6 +27,8 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
    - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archive root>` to its program arguments:
   
      ![program arguments](https://i.imgur.com/lZahL6C.png)
+     
+   - for debugging, add the `-debug` there, too. Upon server start, instead of an empty situation theory, this will use a pre-filled situation theory within the `FrameIT/frameworld` archive.
 
 6. Rerun the server via the run configuration dropdown (left to green triangle in IntelliJ's menu band)
 
@@ -58,7 +60,7 @@ As a first test, you can try opening <http://localhost:8085/debug/situationtheor
 
 ## Stack overflow error when compiling
 
-The Scala compiler sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. The Internet does not offer many tips for solving this except increasing the stack size for compilation:
+The Scala compiler sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. Try updating to the latest IntelliJ version. Apart from that, the Internet does not offer many tips for solving this except increasing the stack size for compilation:
 
 - <https://github.com/scala-js/scala-js/issues/3588>
 - <https://github.com/scala/bug/issues/9696>
@@ -74,31 +76,58 @@ POST /archive/build
   no payload
 
 POST /fact/add
-  payload: {"label": "some label", "tp": OMDoc JSON term, "df": OMDoc JSON term or null or left out}
+  payload variant a: {"label": "some label", "kind": "general", "tp": OMDoc JSON term, "df": OMDoc JSON term or null or left out}
+
+  payload variant b: {"label": "some label", "kind": "veq", "lhs": OMDoc JSON term, "value": OMF OMDoc JSON term}
+
   return: {"uri": uri to created fact}
+
 GET /fact/list
   no payload
   return: [
-    {"uri": uri to fact, "label": "some label", "tp": {"original": OMDoc JSON term, "simplified": OMDoc JSON term}, df: same as tp or null or left out},
-    // repeat for other facts
+    {
+        "uri": uri to fact,
+        "label": "some label",
+        
+        // EITHER of general kind
+        "kind": "general", 
+        "tp": OMDoc JSON term,
+        "df": OMDoc JSON term,
+
+        // OR of "value eq" kind
+        "kind": "veq",
+        "lhs": OMDoc JSON term,
+        "value": OMDoc JSON term,
+        "proof": OMDoc JSON term
+    },
+    ... // more facts of same structure
   ]
 
 GET /scroll/list
   [{
-      "problemTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem",
-      "solutionTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Solution",
+      "problemTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen/OppositeLen_Problem",
+      "solutionTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen/OppositeLen_Solution",
       "label": "OppositeLen",
       "description": "Given a triangle ABC right angled at C, the distance AB can be computed from the angle at B and the distance BC",
-      "requiredFacts": [{
-        "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-        "label": "pA",
-        "tp": {
-          "original": OMDoc JSON term,
-          "simplified": OMDoc JSON term
-        },
-        "df": same as tp or null or left out
-      } /* more facts */]
-    } /* more scrolls]
+      "requiredFacts": [
+          // same format as returned by /fact/list
+          // with the exception that for "veq" facts the "value" and "proof" fields are not given
+          // (which makes sense given that they need to be filled by scroll application after all)
+      ]
+    }, /* more scrolls */]
+
+POST /scroll/apply
+  {
+    "scroll": {
+      "problemTheory": "uri to problem theory",
+      "solutionTheory": "uri to solution theory",
+    },
+    "assignments": [
+        [{"uri": "<uri to required fact in problem theory>", OMDoc JSON term /* the assignment */],
+        /* more assignments */
+    ]
+  }
+  return: list of new facts (i.e., those received via scroll application by means of a pushout). See /fact/list for the format.
 
 POST /scroll/check
   {
@@ -123,18 +152,6 @@ POST /scroll/try-complete
     ]
   }
   return: ??? yet unspecified
-
-POST /scroll/apply
-  {
-    "scroll": {
-      "problemTheory": "uri to problem theory",
-      "solutionTheory": "uri to solution theory",
-    },
-    "assignments": [
-      ["uri to fact", OMDoc JSON term]
-    ]
-  }
-  return: list of new facts (i.e., those received via scroll application by means of a pushout). See /fact/list for the format.
 
 GET debug/situationtheory/print
   no payload

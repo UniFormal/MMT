@@ -177,6 +177,10 @@ object ServerEndpoints extends EndpointModule[IO] {
       isImplicit = false
     )
 
+    state.ctrl.add(scrollView)
+
+    // collect all assignments such that if typechecking later fails, we can conveniently output
+    // debug information
     val scrollViewAssignments = scrollApp.assignments.map {
       case (factRef, assignedTerm) =>
         // create new assignment
@@ -187,12 +191,10 @@ object ServerEndpoints extends EndpointModule[IO] {
           tpC = TermContainer.empty(),
           dfC = TermContainer.asParsed(assignedTerm),
           rl = None,
-          notC = new NotationContainer,
+          notC = NotationContainer.empty(),
           vs = Visibility.public,
         )
     }
-
-    state.ctrl.add(scrollView)
     scrollViewAssignments.foreach(state.ctrl.add(_))
 
     (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {

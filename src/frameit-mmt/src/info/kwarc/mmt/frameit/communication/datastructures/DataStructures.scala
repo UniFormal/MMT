@@ -26,14 +26,28 @@ object DataStructures {
   // ^^^^^^^ END: DO NOT REMOVE
 
   /**
-    * Facts as sent to and received from the game engine
+    * Facts as sent to and received from the game engine.
+    *
+    * See subclasses for which fact types exist.
     */
   @ConfiguredJsonCodec
   sealed abstract class SFact(val label: String) {
+
+    /**
+      * The type component that is used by [[toFinalConstant()]] to create the constant.
+      */
     protected def getMMTTypeComponent: Term
 
+    /**
+      * The definiens component that is used by [[toFinalConstant()]] to create the constant -- if
+      * some is given here (i.e. not None).
+      */
     protected def getMMTDefComponent: Option[Term]
 
+    /**
+      * Transform the fact into an MMT representation, namely a [[FinalConstant]].
+      * @param home The home theory (as a term) for the final constant.
+      */
     def toFinalConstant(home: api.objects.Term): FinalConstant = {
       val factConstant = new FinalConstant(
         home = home,
@@ -52,6 +66,10 @@ object DataStructures {
     }
   }
 
+  /**
+    * A reference to an already registered fact only -- without accompanying data.
+    * @param uri The URI for the fact.
+    */
   sealed case class FactReference(uri: GlobalName)
 
   /**
@@ -64,6 +82,9 @@ object DataStructures {
     def ref: FactReference
   }
 
+  /**
+    * Some helper methods to be used by [[SFact]] (subclasses) only.
+    */
   private object SFactHelpers {
     final def parseLabelFromConstant(c: Constant): String = {
       c.metadata.get(MetaKeys.label) match {
@@ -84,7 +105,7 @@ object DataStructures {
         } catch {
           case e: GeneralError =>
             e.printStackTrace(System.err)
-            e.getAllCausedBy.foreach(_.printStackTrace(System.err))
+            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))
 
             obj // just return unsimplified
         }
@@ -116,12 +137,27 @@ object DataStructures {
       valueEqFact.getOrElse(SGeneralFact.fromConstant(c.path, label, tp, df))
     }
 
-    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean, simplify: Boolean = false)(implicit ctrl: Controller): List[SFact with KnownFact] = theory.getDeclarations.collect {
-      case c: Constant => List(fromConstant(c))
-      case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
-    }.flatten
+    /**
+      * Collects all [[SFact facts]] from a given [[Theory theory]].
+      */
+    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = {
+      theory.getDeclarations.collect {
+
+        // todo: use a better way to get all constants (transitively), the method below produces duplicates in the result list for diamong inclusions
+        case c: Constant => List(fromConstant(c))
+        case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
+      }.flatten
+    }
   }
 
+  /**
+    * Represents facts of the form ''fact: tp ❘ = df'' where df is optional.
+    * That is, it represents the most general form of facts.
+    *
+    * Overall, facts sent by the game engine or parsed from existing MMT formalizations
+    * should only become [[GeneralFact]]s if other fact types don't match (most
+    * importantly [[SValueEqFact]]).
+    */
   @ConfiguredJsonCodec
   sealed case class SGeneralFact(override val label: String, tp: Term, df: Option[Term]) extends SFact(label) {
     override protected def getMMTTypeComponent: Term = tp
@@ -129,7 +165,7 @@ object DataStructures {
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
-  object SGeneralFact {
+  private object SGeneralFact {
     def fromConstant(path: GlobalName, label: String, tp: Term, df: Option[Term]): SGeneralFact with KnownFact = {
       new SGeneralFact(label, tp, df) with KnownFact {
         override def ref: FactReference = FactReference(path)
@@ -137,19 +173,54 @@ object DataStructures {
     }
   }
 
+  /**
+    * Represents facts of the form
+    *
+    * - ''fact: Σ x: valueTp. ⊦ lhs ≐ x'' and
+    * - ''fact: Σ x: valueTp. ⊦ lhs ≐ x❘ = ⟨value, proof⟩''.
+    *
+    * If no valueTp is given, it is tried to infer it from value -- if that is given.
+    * If inference fails (so far only works for real literals as values) or no value is given,
+    * an exception upon construction of the case class object is immediately raised.
+    *
+    * If no value is given, the definiens is left out.
+    * If a value is given, but not a proof, then a ''sketch "as sent by game engine"'' proof is implicitly
+    * used as the proof.
+    * If no value is given, but a proof is, an exception is raised immediately upon construction of the case
+    * class object.
+    */
   @ConfiguredJsonCodec
-  sealed case class SValueEqFact(override val label: String, lhs: Term, valueTp: Term, value: Option[Term]) extends SFact(label) {
+  sealed case class SValueEqFact(
+                                  override val label: String,
+                                  lhs: Term,
+                                  valueTp: Option[Term],
+                                  value: Option[Term],
+                                  proof: Option[Term]
+                                ) extends SFact(label) {
+
+    if (value.isEmpty && proof.nonEmpty) {
+      throw InvalidFactConstant("SvalueEqFacts cannot have a proof, but no value. That doesn't make sense.")
+    }
+
+    private val inferredValueType = valueTp.getOrElse(value match {
+      case Some(MitM.Foundation.RealLiterals(_)) => OMID(MitM.Foundation.Math.real)
+      case Some(v) =>
+        throw InvalidFactConstant(s"SValueEqFact with value type that is not inferrable from value `${v}`")
+      case None =>
+        throw InvalidFactConstant("SValueEqFact without value and without value type: hence, value type cannot be inferred, but is required.")
+    })
+
     override protected def getMMTTypeComponent: Term = {
       val sigmaVariableName = LocalName("x")
 
       Sigma(
         sigmaVariableName,
-        valueTp,
+        inferredValueType,
         body = ApplySpine(
           OMID(MitM.Foundation.ded),
           ApplySpine(
             OMS(MitM.Foundation.eq),
-            valueTp,
+            inferredValueType,
             lhs,
             OMV(sigmaVariableName)
           )
@@ -159,18 +230,15 @@ object DataStructures {
 
     override protected def getMMTDefComponent: Option[Term] = value.map(v =>
       // we only have a definiens if we have a value
-      Tuple(
-        v,
-        ApplySpine(
-          OMS(MitM.Foundation.sketchOperator),
-          ApplySpine(OMS(MitM.Foundation.eq), valueTp, lhs, v),
-          StringLiterals("as sent by Unity")
-        )
-      )
+      Tuple(v, ApplySpine(
+        OMS(MitM.Foundation.sketchOperator),
+        ApplySpine(OMS(MitM.Foundation.eq), inferredValueType, lhs, v),
+        StringLiterals("as sent by game engine")
+      ))
     )
   }
 
-  object SValueEqFact {
+  private object SValueEqFact {
     def tryParseFrom(path: GlobalName, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact with KnownFact] = {
       simpleTp match {
         case Sigma(
@@ -179,28 +247,29 @@ object DataStructures {
         ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
         ) if x1 == x2 && tp1 == tp2 =>
 
-          val suppliedValue = simpleDf match {
-            case Some(Tuple(v, _)) => Some(v)
-            case _ => None
+          val (value, proof) = simpleDf match {
+            case Some(Tuple(v, pf)) => (Some(v), Some(pf))
+            case Some(_) =>
+              throw InvalidFactConstant("cannot read value and proof of definiens to parse into SValueEqFact")
+            case _ => (None, None)
           }
 
-          Some(new SValueEqFact(label, lhs, tp1, suppliedValue) with KnownFact {
+          Some(new SValueEqFact(label, lhs, valueTp = Some(tp1), value, proof) with KnownFact {
             override def ref: FactReference = FactReference(path)
           })
-
-        case Sigma(_, _, _) =>
-          throw InvalidFactConstant(s"failed parsing fact of ${path}: type has too complex sigma type")
 
         case _ => None
       }
     }
   }
 
+  /**
+    * A reference to a scroll -- without accompanying information.
+    */
   sealed case class SScrollReference(problemTheory: MPath, solutionTheory: MPath)
 
   /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
   sealed case class SScrollApplication(scroll: SScrollReference, assignments: List[(FactReference, Term)])
-
 }

@@ -47,8 +47,8 @@ class ContentValidator(private val ctrl: Controller) {
   def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
     assert(decl.home == theory.toTerm)
 
-    val scracthTheoryPath = theory.path ? theory.path.name.prefixOrCreateLastSimpleStep(s"scratch${Random.nextInt()}")
-    val scratchTheory = Theory.empty(scracthTheoryPath.doc, scracthTheoryPath.name, theory.meta)
+    val scratchTheoryPath = theory.path ? theory.path.name.prefixOrCreateLastSimpleStep(s"scratch${Random.nextInt()}")
+    val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, theory.meta)
 
     ctrl.add(scratchTheory)
     ctrl.add(PlainInclude(theory.path, scratchTheory.path))

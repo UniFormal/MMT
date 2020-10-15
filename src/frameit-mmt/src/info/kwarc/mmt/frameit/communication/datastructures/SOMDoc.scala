@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.objects.{OMS, Term}
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.LFX.Tuple
+import info.kwarc.mmt.odk.LFX.{Product, Tuple}
 import io.circe.Json
 import io.circe.generic.extras.ConfiguredJsonCodec
 import io.circe.syntax.EncoderOps
@@ -62,10 +62,18 @@ object SOMDoc {
       }
     }
 
+    private object NestedProduct {
+      def unapply(t: Term): Option[List[Term]] = t match {
+        case Product(left, right) => Some(unapply(left).getOrElse(List(left)) ::: unapply(right).getOrElse(List(right)))
+        case _ => None
+      }
+    }
+
     def encode(tm: Term): STerm = tm match {
       case OMS(path) => SOMS(path)
-      // special-case LFX' tuples, hacky workaround, TODO: keep?
+      // special-case LFX' tuples & products, hacky workaround, TODO: keep?
       case NestedTuple(args) => SOMA(SOMS(Tuple.path), args.map(encode))
+      case NestedProduct(args) => SOMA(SOMS(Product.path), args.map(encode))
 
       // Only support OMA applications in LF style
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))

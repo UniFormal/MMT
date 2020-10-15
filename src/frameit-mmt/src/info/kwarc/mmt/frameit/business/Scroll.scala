@@ -4,7 +4,6 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals

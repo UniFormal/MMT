@@ -43,4 +43,6 @@ object ServerErrorHandler {
     case e: FactValidationException => e.asJson
     case e: Throwable => Json.obj("message" -> Json.fromString(formatThrowable(e)))
   })
+
+  implicit val encodeException: Encoder[Exception] = Encoder.instance(e => encodeThrowable(e))
 }

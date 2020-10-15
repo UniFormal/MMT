@@ -14,7 +14,7 @@
  * Sometimes, we need a bit of manual Scala code to tweak or give some codec algorithms explicitly.
  * We exclusively do so in [[info.kwarc.mmt.datastructures.Codecs]].
  *
- * @author ComFreek (main one responsible for it)
+ * @author ComFreek (so far at least)
  * @todo I somewhere wrote up a debugging guide for io.circe codecs, I thought I did it as a GitHub gist under the username 'ComFreek'. I cannot find it anymore.
  */
 package info.kwarc.mmt.frameit.communication.datastructures;
