@@ -14,10 +14,15 @@ import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 object Server extends TwitterServer {
   override def failfastOnFlagsNotParsed: Boolean = true
 
+  private val debug = flag("debug", false, "Server in debug mode?")
   private val bindAddress = flag("bind", new InetSocketAddress(8080), "Bind address")
   private val archiveRoot = flag("archive-root", "", "Path to archive root (preferably without spaces), e.g. to a clone of <https://github.com/UFrameIT/archives>")
 
   def main(): Unit = {
+    if (debug()) {
+      println("Server started in debugging mode.")
+    }
+
     val state = initServerState(File(archiveRoot()))
     val server = Http.serve(bindAddress(), ServerEndpoints.getServiceForState(state))
     onExit {
@@ -35,18 +40,22 @@ object Server extends TwitterServer {
       throw GetError(s"Archive ${FrameWorld.archiveID} could not be found!")
     }
 
-    frameitArchive.allContent
-
     // force-read relational data as somewhere (TODO say where) we use the depstore
     // to get meta tags on things
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
-    val situationTheory = Theory.empty(
-      DPath(frameitArchive.narrationBase),
-      LocalName("SituationTheory"),
-      Some(FrameWorld.metaTheoryForSituationTheory)
-    )
-    ctrl.add(situationTheory)
+    val situationTheory: Theory = if (debug()) {
+      ctrl.getTheory(FrameWorld.situationTheoryForDebugging)
+    } else {
+      val situationTheory = Theory.empty(
+        DPath(frameitArchive.narrationBase),
+        LocalName("SituationTheory"),
+        Some(FrameWorld.metaTheoryForSituationTheory)
+      )
+      ctrl.add(situationTheory)
+
+      situationTheory
+    }
 
     val state = new ServerState(ctrl, situationTheory.path.parent, situationTheory.path)
     state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix

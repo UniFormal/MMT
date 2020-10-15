@@ -25,5 +25,7 @@ object FrameIT {
     val archiveID: String = "FrameIT/frameworld"
     val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
     val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
+
+    val situationTheoryForDebugging: MPath = (rootDocument / "integrationtests") ? "SampleSituationTheory"
   }
 }
