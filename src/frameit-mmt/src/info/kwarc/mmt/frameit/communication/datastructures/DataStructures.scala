@@ -1,42 +1,29 @@
-package info.kwarc.mmt.frameit.communication
+package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, PlainInclude, TermContainer, Visibility}
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, SimpleStep}
-import info.kwarc.mmt.api.objects.{Context, OMID, OMS, OMV, Obj, Term}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
-import info.kwarc.mmt.frameit.archives.{MMT, MitM}
+import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.{InvalidFactConstant, InvalidMetaData}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.generic.extras.ConfiguredJsonCodec
 
 object DataStructures {
-
-  // IMPORTANT: do NOT run IntelliJ's automatic "import clean-up" utility. It will remove necessary imports in this file.
-  import io.circe.generic.extras._
-  import TermCodecs._
-  import PathCodecs._
-  // end IMPORTANT
-
-  implicit val factJsonConfig: Configuration = Configuration.default
-    .withDiscriminator("kind")
-    .copy(transformConstructorNames = oldCtorName => {
-      val rewriteMap = Map(
-        classOf[SGeneralFact] -> "general",
-        classOf[SValueEqFact] -> "veq"
-      ).map { case (key, value) => (key.getSimpleName, value) }
-
-      rewriteMap.getOrElse(oldCtorName, oldCtorName)
-    })
-
+  // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
+  import Codecs.PathCodecs._
+  import Codecs.TermCodecs._
+  import Codecs.FactCodecs._
+  // ^^^^^^^ END: DO NOT REMOVE
 
   /**
     * Facts as sent to and received from the game engine
@@ -44,6 +31,7 @@ object DataStructures {
   @ConfiguredJsonCodec
   sealed abstract class SFact(val label: String) {
     protected def getMMTTypeComponent: Term
+
     protected def getMMTDefComponent: Option[Term]
 
     def toFinalConstant(home: api.objects.Term): FinalConstant = {
@@ -74,25 +62,6 @@ object DataStructures {
     */
   trait KnownFact {
     def ref: FactReference
-  }
-
-  object Codecs {
-    // vvvvvvvv do not remove imports!
-    import TermCodecs._
-    import PathCodecs._
-    import SOMDoc.STermCodecs._
-
-    implicit val factEncoder: Encoder[SFact] = io.circe.generic.semiauto.deriveEncoder[SFact]
-
-    implicit val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
-      // just add `uri: ...` field to encoded fact
-      Json.fromJsonObject(
-        // assumption: facts are encoded as objects
-        factEncoder(knownFact).asObject.getOrElse(???).add("uri", globalNameEncoder(knownFact.ref.uri))
-      )
-    }
-
-    // No knownFactDecoder (not needed yet)
   }
 
   private object SFactHelpers {
@@ -144,6 +113,7 @@ object DataStructures {
   @ConfiguredJsonCodec
   sealed case class SGeneralFact(override val label: String, tp: Term, df: Option[Term]) extends SFact(label) {
     override protected def getMMTTypeComponent: Term = tp
+
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
@@ -199,9 +169,9 @@ object DataStructures {
 
       tp match {
         case Sigma(
-          x1,
-          tp1,
-          ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
+        x1,
+        tp1,
+        ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
         ) if x1 == x2 && tp1 == tp2 =>
 
           val suppliedValue = df match {
@@ -214,7 +184,7 @@ object DataStructures {
           })
 
         case Sigma(_, _, _) =>
-            throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
+          throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
 
         case _ => None
       }
@@ -227,4 +197,5 @@ object DataStructures {
     * Tentative scroll applications communicated from the game engine to MMT
     */
   sealed case class SScrollApplication(scroll: SScrollReference, assignments: List[(FactReference, Term)])
+
 }

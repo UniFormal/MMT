@@ -1,4 +1,4 @@
-package info.kwarc.mmt.frameit.communication
+package info.kwarc.mmt.frameit.communication.server
 
 import io.circe.{Encoder, Json}
 

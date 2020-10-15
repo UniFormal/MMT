@@ -1,14 +1,14 @@
-package info.kwarc.mmt.frameit.communication
+package info.kwarc.mmt.frameit.communication.server
 
 import java.net.InetSocketAddress
 
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.utils.{File, FilePath}
+import info.kwarc.mmt.api.{DPath, GetError, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 
 object Server extends TwitterServer {

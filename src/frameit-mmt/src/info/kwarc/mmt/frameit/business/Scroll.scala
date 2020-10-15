@@ -8,9 +8,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.communication.DataStructures.{KnownFact, SFact}
-import io.circe.generic.extras.auto._
-import info.kwarc.mmt.frameit.communication.PathCodecs._
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{KnownFact, SFact}
 
 sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[SFact with KnownFact])
 

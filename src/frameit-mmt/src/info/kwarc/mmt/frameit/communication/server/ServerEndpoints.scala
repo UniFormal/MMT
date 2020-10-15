@@ -1,21 +1,19 @@
-package info.kwarc.mmt.frameit.communication
+package info.kwarc.mmt.frameit.communication.server
 
 import cats.effect.IO
 import com.twitter.finagle.Service
 import com.twitter.finagle.http.{Request, Response}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, Term}
+import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business._
-import info.kwarc.mmt.frameit.communication.DataStructures.{FactReference, KnownFact, SFact, SScrollApplication}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{FactReference, KnownFact, SFact, SScrollApplication}
 import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
 import io.circe.Json
 import io.finch._
@@ -60,12 +58,14 @@ final case class FactValidationException(message: String, processedFacts: List[P
 object ServerEndpoints extends EndpointModule[IO] {
   import io.circe.generic.auto._
 
-  // import implicits, do NOT remove even if IntelliJ marks those imports as unused
-  import TermCodecs._
-  import PathCodecs._
-  import SOMDoc.STermCodecs._
-  import DataStructures.Codecs._
+  // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
+  import info.kwarc.mmt.frameit.communication.datastructures.Codecs
+  import Codecs.PathCodecs._
+  import Codecs.TermCodecs._
+  import Codecs.FactCodecs._
+
   import ServerErrorHandler._
+  // ^^^^^^^ END: DO NOT REMOVE
 
   private def getEndpointsForState(state: ServerState) =
     printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)

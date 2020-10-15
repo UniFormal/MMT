@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{FinalConstant, TermContainer, Visibility}
 import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path, presentation}
 import info.kwarc.mmt.frameit.business.{TermPair, ViewCompletion}
-import info.kwarc.mmt.frameit.communication.ServerEndpoints.{jsonBody, path, post}
+import info.kwarc.mmt.frameit.communication.server.ServerEndpoints.{jsonBody, path, post}
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType}
 import io.circe.Encoder
 import io.circe.generic.auto._
