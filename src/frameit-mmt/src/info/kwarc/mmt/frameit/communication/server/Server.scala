@@ -45,8 +45,12 @@ object Server extends TwitterServer {
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
     val situationTheory: Theory = if (debug()) {
+      println(s"Debug mode: trying to use situation theory `${FrameWorld.situationTheoryForDebugging}`...")
+
       ctrl.getTheory(FrameWorld.situationTheoryForDebugging)
     } else {
+      println("Setting up empty situation theory...")
+
       val situationTheory = Theory.empty(
         DPath(frameitArchive.narrationBase),
         LocalName("SituationTheory"),

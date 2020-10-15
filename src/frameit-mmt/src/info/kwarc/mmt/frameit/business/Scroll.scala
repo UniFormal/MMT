@@ -25,16 +25,14 @@ object Scroll {
     */
   def fromTheory(thy: Theory)(implicit ctrl: Controller): Either[InvalidMetaData, Scroll] = {
     try {
-      val name = readStringMetaDatum(thy.metadata, MetaKeys.scrollName)
+      val label = readStringMetaDatum(thy.metadata, MetaKeys.label)
       val problemThy = readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
       val solutionThy = readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
       val description = readStringMetaDatum(thy.metadata, MetaKeys.scrollDescription)
 
-      val requiredFacts = ctrl.getTheory(problemThy).getDeclarations.collect {
-        case c: Constant => SFact.fromConstant(c)
-      }
+      val requiredFacts = SFact.collectFromTheory(ctrl.getTheory(problemThy), recurseOnInclusions = true)
 
-      Right(Scroll(problemThy, solutionThy, name, description, requiredFacts))
+      Right(Scroll(problemThy, solutionThy, label, description, requiredFacts))
     } catch {
       case err: InvalidMetaData => Left(err)
     }

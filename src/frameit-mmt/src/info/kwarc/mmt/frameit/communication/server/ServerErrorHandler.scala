@@ -1,5 +1,7 @@
 package info.kwarc.mmt.frameit.communication.server
 
+import java.io.{PrintWriter, StringWriter}
+
 import io.circe.{Encoder, Json}
 
 /**
@@ -23,14 +25,22 @@ object ServerErrorHandler {
     Json.obj("errors" -> Json.arr(messages: _*))
   }
 
-  implicit val encodeException: Encoder[Exception] = Encoder.instance({
+  private def formatThrowable(e: Throwable): String = {
+    val sw = new StringWriter
+    val pw = new PrintWriter(sw)
+
+    e.printStackTrace(pw)
+    e.getMessage + "\n\n" + sw.toString
+  }
+
+  implicit val encodeThrowable: Encoder[Throwable] = Encoder.instance({
     case e: io.finch.Errors => encodeErrorList(e.errors.toList)
     case e: io.finch.Error =>
       e.getCause match {
         case e: io.circe.Errors => encodeErrorList(e.errors.toList)
-        case _ => Json.obj("message" -> Json.fromString(e.getMessage))
+        case _ => Json.obj("message" -> Json.fromString(formatThrowable(e)))
       }
     case e: FactValidationException => e.asJson
-    case e: Exception => Json.obj("message" -> Json.fromString(e.getMessage))
+    case e: Throwable => Json.obj("message" -> Json.fromString(formatThrowable(e)))
   })
 }

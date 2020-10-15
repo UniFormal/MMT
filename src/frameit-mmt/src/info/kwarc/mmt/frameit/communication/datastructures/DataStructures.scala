@@ -46,7 +46,7 @@ object DataStructures {
         vs = Visibility.public
       )
 
-      factConstant.metadata.add(MetaDatum(FrameWorld.MetaKeys.factLabel, MitM.Foundation.StringLiterals(label)))
+      factConstant.metadata.add(MetaDatum(FrameWorld.MetaKeys.label, MitM.Foundation.StringLiterals(label)))
 
       factConstant
     }
@@ -66,7 +66,7 @@ object DataStructures {
 
   private object SFactHelpers {
     final def parseLabelFromConstant(c: Constant): String = {
-      c.metadata.get(MetaKeys.factLabel) match {
+      c.metadata.get(MetaKeys.label) match {
         // fall back to declaration name as label
         case Nil => c.name.toString
         case MetaDatum(_, StringLiterals(label)) :: Nil => label
@@ -77,11 +77,10 @@ object DataStructures {
     final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
       def simplify(obj: Obj): obj.ThisType = {
         val ctx = Context(c.path.module)
-        val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = false)
+        val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
 
         ctrl.simplifier.apply(obj, simplicationUnit)
       }
-
 
       // todo: currently, only the simplified things are returned
       //       do we also need the non-simplified ones?
@@ -96,15 +95,20 @@ object DataStructures {
   }
 
   object SFact {
+    /**
+      * Parses a [[Constant]] into an [[SValueEqFact]] (preferred) or [[SGeneralFact]] (otherwise).
+      *
+      * Performs simplification first.
+      */
     final def fromConstant(c: Constant)(implicit ctrl: Controller): SFact with KnownFact = {
-      c match {
-        // todo: a bit inefficient because the unapplys in both cases do simplification and metadata reads of the constant
-        case SValueEqFact(fact) => fact
-        case SGeneralFact(fact) => fact // should match almost any constant
-      }
+      val label = SFactHelpers.parseLabelFromConstant(c)
+      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
+
+      val valueEqFact = SValueEqFact.tryParseFrom(c.path, label, tp, df)
+      valueEqFact.getOrElse(SGeneralFact.fromConstant(c.path, label, tp, df))
     }
 
-    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = theory.getDeclarations.collect {
+    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean, simplify: Boolean = false)(implicit ctrl: Controller): List[SFact with KnownFact] = theory.getDeclarations.collect {
       case c: Constant => List(fromConstant(c))
       case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
     }.flatten
@@ -118,14 +122,10 @@ object DataStructures {
   }
 
   object SGeneralFact {
-    def unapply(c: Constant)(implicit ctrl: Controller): Option[SGeneralFact with KnownFact] = {
-      val label = SFactHelpers.parseLabelFromConstant(c)
-
-      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
-
-      Some(new SGeneralFact(label, tp, df) with KnownFact {
-        override def ref: FactReference = FactReference(c.path)
-      })
+    def fromConstant(path: GlobalName, label: String, tp: Term, df: Option[Term]): SGeneralFact with KnownFact = {
+      new SGeneralFact(label, tp, df) with KnownFact {
+        override def ref: FactReference = FactReference(path)
+      }
     }
   }
 
@@ -163,28 +163,25 @@ object DataStructures {
   }
 
   object SValueEqFact {
-    def unapply(c: Constant)(implicit ctrl: Controller): Option[SValueEqFact with KnownFact] = {
-      val label = SFactHelpers.parseLabelFromConstant(c)
-      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
-
-      tp match {
+    def tryParseFrom(path: GlobalName, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact with KnownFact] = {
+      simpleTp match {
         case Sigma(
         x1,
         tp1,
         ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
         ) if x1 == x2 && tp1 == tp2 =>
 
-          val suppliedValue = df match {
+          val suppliedValue = simpleDf match {
             case Some(Tuple(v, _)) => Some(v)
             case _ => None
           }
 
           Some(new SValueEqFact(label, lhs, tp1, suppliedValue) with KnownFact {
-            override def ref: FactReference = FactReference(c.path)
+            override def ref: FactReference = FactReference(path)
           })
 
         case Sigma(_, _, _) =>
-          throw InvalidFactConstant(s"failed parsing fact of ${c.path}: type has too complex sigma type")
+          throw InvalidFactConstant(s"failed parsing fact of ${path}: type has too complex sigma type")
 
         case _ => None
       }

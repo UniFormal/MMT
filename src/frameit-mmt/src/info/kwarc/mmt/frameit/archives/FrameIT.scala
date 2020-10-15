@@ -11,15 +11,12 @@ object FrameIT {
     */
   object FrameWorld {
     object MetaKeys {
-      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "ScrollMetaAnnotations"
+      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "MetaAnnotations"
 
-      val scrollName: GlobalName = _metaAnnotations ? "name"
+      val label: GlobalName = _metaAnnotations ? "label"
       val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
       val solutionTheory: GlobalName = _metaAnnotations ? "solutionTheory"
       val scrollDescription: GlobalName = _metaAnnotations ? "description"
-
-      // TODO not yet realized in formalization
-      val factLabel: GlobalName = _metaAnnotations ? "factLabel"
     }
 
     val archiveID: String = "FrameIT/frameworld"

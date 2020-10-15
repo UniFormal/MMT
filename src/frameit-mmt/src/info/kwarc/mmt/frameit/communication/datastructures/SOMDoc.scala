@@ -71,7 +71,7 @@ object SOMDoc {
 
         // also output on stderr because exceptions by encoders as instrumented by Finch are sometimes
         // happily swallowed
-        System.err.println(errMsg)
+        System.err.println(s"ERROR: ${errMsg}")
         throw ConversionException(errMsg)
     }
 

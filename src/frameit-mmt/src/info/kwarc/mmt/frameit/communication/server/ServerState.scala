@@ -20,11 +20,11 @@ class ServerState(val ctrl: Controller, val situationDocument: DPath, private va
 
   val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
-  private var _situationTheory = ctrl.getTheory(situationTheoryPath)
-
   val presenter : MMTSyntaxPresenter = ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
     throw GeneralError("could not get MMTSyntaxPresenter extension required for printing")
   )
+
+  private var _situationTheory = ctrl.getTheory(situationTheoryPath)
 
   def situationTheory: Theory = _situationTheory
   def situationTheoryPath: MPath = _situationTheoryPath

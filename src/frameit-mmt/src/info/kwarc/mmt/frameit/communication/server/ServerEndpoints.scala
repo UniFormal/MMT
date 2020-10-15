@@ -7,14 +7,15 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visibility}
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business._
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{FactReference, KnownFact, SFact, SScrollApplication}
-import info.kwarc.mmt.moduleexpressions.operators.NamedPushoutUtils
+import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.circe.Json
 import io.finch._
 import io.finch.circe._
@@ -196,21 +197,18 @@ object ServerEndpoints extends EndpointModule[IO] {
 
     (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
       case Nil =>
-        val (situationTheoryExtension, pushedOutView) = NamedPushoutUtils.computeCanonicalPushoutAlongDirectInclusion(
+        val (situationTheoryExtension, _) = NewPushoutUtils.computeNamedPushoutAlongDirectInclusion(
           state.ctrl.getTheory(scrollViewDomain),
           state.ctrl.getTheory(scrollViewCodomain),
           state.ctrl.getTheory(scrollApp.scroll.solutionTheory),
           state.situationDocument ? situationTheoryExtensionName,
           scrollView,
           w_to_generate = state.situationDocument ? pushedOutScrollViewName
-        )
+        )(state.ctrl)
 
-        state.ctrl.add(situationTheoryExtension)
-        state.ctrl.add(pushedOutView)
         state.setSituationTheory(situationTheoryExtension)
 
         Ok(SFact.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
-
 
       case errors =>
         state.ctrl.delete(scrollView.path)
