@@ -3,7 +3,7 @@ package info.kwarc.mmt.frameit.communication.datastructures
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{KnownFact, SFact, SGeneralFact, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SString, STerm}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
 import io.circe.generic.extras.Configuration
 import io.circe.{Decoder, Encoder, HCursor, Json}
 
@@ -48,7 +48,8 @@ object Codecs {
           classOf[SOMS] -> "OMS",
           classOf[SFloatingPoint] -> "OMF",
           classOf[SString] -> "OMSTR",
-          classOf[SInteger] -> "OMI"
+          classOf[SInteger] -> "OMI",
+          classOf[SRawOMDoc] -> "RAW"
         ).map { case (key, value) => (key.getSimpleName, value) }
 
         rewriteMap.getOrElse(oldCtorName, oldCtorName)

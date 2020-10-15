@@ -40,6 +40,14 @@ object SOMDoc {
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
 
+  /**
+    * OMDoc terms that could not be represented with other SOMDoc case classes.
+    *
+    * @param xml The OMDoc XML representation of the term.
+    */
+  @ConfiguredJsonCodec
+  case class SRawOMDoc(xml: String) extends STerm
+
   final case class ConversionException(private val message: String = "",
                                        private val cause: Throwable = None.orNull)
     extends Exception(message, cause)
@@ -72,7 +80,10 @@ object SOMDoc {
         // also output on stderr because exceptions by encoders as instrumented by Finch are sometimes
         // happily swallowed
         System.err.println(s"ERROR: ${errMsg}")
-        throw ConversionException(errMsg)
+        // todo suppressed in favor of MMT bug https://github.com/UniFormal/MMT/issues/546
+        // throw ConversionException(errMsg):
+
+        SRawOMDoc(tm.toNode.toString())
     }
 
     def decode(stm: STerm): Term = stm match {
@@ -87,6 +98,7 @@ object SOMDoc {
       case SInteger(value) => IntegerLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
+      case SRawOMDoc(rawXml) => ???
     }
   }
 

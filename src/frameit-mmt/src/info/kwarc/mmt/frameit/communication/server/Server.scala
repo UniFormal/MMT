@@ -33,7 +33,7 @@ object Server extends TwitterServer {
     Await.ready(server)
   }
 
-  private def initServerState(archiveRoot: File): ServerState = {
+  def initServerState(archiveRoot: File): ServerState = {
     val ctrl = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
 

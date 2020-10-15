@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM
@@ -79,7 +79,15 @@ object DataStructures {
         val ctx = Context(c.path.module)
         val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
 
-        ctrl.simplifier.apply(obj, simplicationUnit)
+        try {
+          ctrl.simplifier.apply(obj, simplicationUnit)
+        } catch {
+          case e: GeneralError =>
+            e.printStackTrace(System.err)
+            e.getAllCausedBy.foreach(_.printStackTrace(System.err))
+
+            obj // just return unsimplified
+        }
       }
 
       // todo: currently, only the simplified things are returned
