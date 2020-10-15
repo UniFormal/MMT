@@ -1,17 +1,20 @@
 package info.kwarc.mmt.frameit
 
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{OMID, Term}
+import info.kwarc.mmt.api.objects.{OMID, OMV, Term}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.business.ViewCompletion
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX.Sigma
 import info.kwarc.mmt.test.MMTIntegrationTest
 
 object ViewCompletionTest extends MMTIntegrationTest(
   "FrameIT/frameworld"
 )(){
   private val frameworldArchiveNS = Path.parseD("http://mathhub.info/FrameIT/frameworld", NamespaceMap.empty)
+  private val integrationtestsNS = frameworldArchiveNS / "integrationtests"
 
   override def main(): Unit = {
     expectedTypeTests()
@@ -33,39 +36,49 @@ object ViewCompletionTest extends MMTIntegrationTest(
     // mappings for arbitrary domain declarations).
     //
     // These pseudo views are all intended to have this domain:
-    val domainTheoryP = frameworldArchiveNS ? "OppositeLen_Problem"
+    val domainTheoryP = integrationtestsNS ? "ExpectedTypeTest_Domain"
     val domainTheory = controller.getTheory(domainTheoryP)
 
     // and this codomain: (does not really exist and does not even need to do so)
     val codomainTheoryP = (frameworldArchiveNS / "integrationtests") ? "ExpectedTypeTest_Codomain"
 
-    test("ViewCompletion.expectedType can compute easy homomorphic extension with just constants on RHS of assignments", () => {
+    test("ViewCompletion.expectedType can compute easy homomorphic extension with just constants on RHS of assignments", {
       val assignments: List[(GlobalName, Term)] = List(
-        (domainTheoryP ? "pA", OMID(codomainTheoryP ? "pA")),
-        (domainTheoryP ? "pB", OMID(codomainTheoryP ? "pB")),
-        (domainTheoryP ? "pC", OMID(codomainTheoryP ? "pC")),
-        (domainTheoryP ? "pangleABC_v", OMID(codomainTheoryP ? "pangleABC_v"))
+        (domainTheoryP ? "A", OMID(codomainTheoryP ? "A")),
+        (domainTheoryP ? "B", OMID(codomainTheoryP ? "B")),
+        (domainTheoryP ? "C", OMID(codomainTheoryP ? "C")),
       )
 
-      val expectedExpectedType = ApplySpine(
-        OMID(frameworldArchiveNS ? "AngleFact" ? "angleFact"),
-        OMID(codomainTheoryP ? "pA"),
-        OMID(codomainTheoryP ? "pB"),
-        OMID(codomainTheoryP ? "pC"),
-        OMID(codomainTheoryP ? "pangleABC_v")
+      val expectedExpectedType = Sigma(
+        LocalName("a"),
+        OMID(MitM.Foundation.Math.real),
+        ApplySpine(
+          OMID(MitM.Foundation.ded),
+          ApplySpine(
+            OMID(MitM.Foundation.eq),
+            OMID(MitM.Foundation.Math.real),
+            ApplySpine(
+              OMID(Path.parseS("http://mathhub.info/MitM/core/geometry?3DGeometry/Common?angle_between", NamespaceMap.empty)),
+              OMID(codomainTheoryP ? "codA"),
+              OMID(codomainTheoryP ? "codB"),
+              OMID(codomainTheoryP ? "codC")
+            ),
+            OMV(LocalName("a"))
+          )
+        )
       )
 
       val actualExpectedType = ViewCompletion.expectedType(
         assignments,
         domainTheory.meta,
-        domainTheory.get(LocalName("pangleABC")).asInstanceOf[FinalConstant].tp.get
+        domainTheory.get(LocalName("angleABC")).asInstanceOf[FinalConstant].tp.get
       )(controller)
 
       assertTermEqual(expectedExpectedType, actualExpectedType.get)
     })
 
     test("ViewCompletion.expectedType can compute homomorphic extension with more complex expressions", {
-      // read off complex expression for assignment from the definiens of an existing constant
+      /*// read off complex expression for assignment from the definiens of an existing constant
       val angleValue = controller.getAs(classOf[FinalConstant], codomainTheoryP ? "pangleComplexExpression").df.get
 
       val assignments: List[(GlobalName, Term)] = List(
@@ -89,24 +102,20 @@ object ViewCompletionTest extends MMTIntegrationTest(
         domainTheory.get(LocalName("pangleABC")).asInstanceOf[FinalConstant].tp.get
       )(controller)
 
-      println(actualExpectedType.contains(expectedExpectedType))
+      println(actualExpectedType.contains(expectedExpectedType))*/
     })
 
-    test("ViewCompletion.expectedType rightfully fails if gaps remain", () => {
-      // read off complex expression for assignment from the definiens of an existing constant
-      val angleValue = controller.getAs(classOf[FinalConstant], codomainTheoryP ? "pangleComplexExpression").df.get
-
+    test("ViewCompletion.expectedType rightfully fails if gaps remain", {
       val assignments: List[(GlobalName, Term)] = List(
-        (domainTheoryP ? "pA", OMID(codomainTheoryP ? "pA")),
-        // intentionally B left out
-        (domainTheoryP ? "pC", OMID(codomainTheoryP ? "pB")),
-        (domainTheoryP ? "pangleABC_v", angleValue)
+        (domainTheoryP ? "A", OMID(codomainTheoryP ? "A")),
+        // assignment to B intentionally left out
+        (domainTheoryP ? "C", OMID(codomainTheoryP ? "C")),
       )
 
       val expectedType = ViewCompletion.expectedType(
         assignments,
         domainTheory.meta,
-        domainTheory.get(LocalName("pangleABC")).asInstanceOf[FinalConstant].tp.get
+        domainTheory.get(LocalName("angleABC")).asInstanceOf[FinalConstant].tp.get
       )(controller)
 
       if (expectedType.isDefined) {
@@ -116,14 +125,14 @@ object ViewCompletionTest extends MMTIntegrationTest(
   }
 
   private def closeGapsTests(): Unit = {
-    val integrationtestsNS = frameworldArchiveNS / "integrationtests"
+    /*val integrationtestsNS = frameworldArchiveNS / "integrationtests"
     val codomainTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_Codomain")
     val notepadTheory = controller.getTheory(integrationtestsNS ? "CloseGapsTest_TermsNotepad")
 
-    val domainTheoryP = frameworldArchiveNS ? "OppositeLen_Problem"
+    val domainTheoryP = frameworldArchiveNS ? "OppositeLen" / "OppositeLen_Problem"
     val domainTheory = controller.getTheory(domainTheoryP)
 
-    test("ViewCompletion.closeGaps closes simple gaps", () => {
+    test("ViewCompletion.closeGaps closes simple gaps", {
       val assignments: List[(GlobalName, Term)] = List(
         (domainTheoryP ? "pangleABC", OMID(codomainTheory.path ? "complexAngleFact"))
       )
@@ -141,6 +150,6 @@ object ViewCompletionTest extends MMTIntegrationTest(
       )(controller).toSet
 
       assertSetEqual(expectedClosedGaps, actualClosedGaps)
-    })
+    })*/
   }
 }
