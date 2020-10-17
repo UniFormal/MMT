@@ -5,9 +5,8 @@ import utils._
 
 /**
  * implementation of the syntax of the ELPI system by Claudio Sacerdoti Coen and others
- *  
+ *
  * In concrete syntax, clauses are written with inverted implication and implicit quantification of upper case variables.
- * 
  * Upper-case variables are instantiable while lower-case ones are not. (In queries: existential; in assumptions: universal)
  */
 object ELPI {
@@ -24,20 +23,20 @@ object ELPI {
 
   case class Data(name: LocalName, tp: Expr, isKind: Boolean) extends Decl {
     def keyword : String = if (isKind) "kind" else "type"
-    def toELPI  : String = keyword + " " + name + " " + tp.toELPI(false) + "."
+    def toELPI  : String = keyword + " " + name + " " + tp.toELPI(bracket = false) + "."
   }
 
   case class Rule(rule: Expr) extends Decl {
     def toELPI : String = {
       val ruleS = rule match {
-        case Forall(x, scope) =>
+        case Forall(_, scope) =>
           // skip all leading Forall's
           Rule(scope).toELPI
         case Impl(left, right) =>
           // switch to toplevel notation of implication
-          right.toELPI(false) + " :- " + left.toELPI(false) + "."
+          right.toELPI(bracket = false) + " :- " + left.toELPI(bracket = false) + "."
         case _ =>
-          rule.toELPI( bracket = false) + "."
+          rule.toELPI(bracket = false) + "."
       }
       ruleS
     }
@@ -102,7 +101,7 @@ object ELPI {
        f (x \ x) (x \ x)  can be written as f (x \ x) x \ x
    */
    def toELPI(bracket: Boolean = true) : String = {
-      val argsI = args.toList.init.map(_.toELPI(bracket = true))
+      val argsI = args.toList.init.map(_.toELPI())
       val last = args.last
       // val bracketLast = !args.last.isInstanceOf[Lambda]
       val bracketLast = true     // actually, the above seems to cause problems if penultimate arg is a variable
@@ -116,18 +115,14 @@ object ELPI {
   
   /** built-in constants */
   abstract class Constant(name: String) extends Variable(LocalName(name))
-  object True extends Constant("true")
-  object False extends Constant("false")
+  object True  extends Constant(name = "true")
+  object False extends Constant(name = "false")
 
   /** special case for the application of unary operators */
   case class UnaryApply(operator: UnOp, arg: Expr) extends Application(Variable(LocalName(operator.name)), arg) {
     override def toELPI(bracket: Boolean = true) : String = {
       val o = operator.name
-      // TODO: Ew.
-      val unbracketed = if (operator.prefix)
-        s"$o $arg"
-      else
-        s"$arg $o"
+      val unbracketed = if (operator.prefix) { s"$o $arg" } else { s"$arg $o" }
       Bracket(bracket)(unbracketed)
     }
   }
@@ -150,8 +145,15 @@ object ELPI {
   /** built-in binary operators */
   case class BinOp(name: String) {
     def apply(left: Expr, right: Expr) : BinaryApply = BinaryApply(this, left, right)
-    def unapply(e: Expr) = e match {
-      case e: Application if e.fun == Variable(LocalName(name)) && e.args.length == 2 => Some((e.args(0),e.args(1)))
+    def unapply(e: Expr) : Option[(Expr, Expr)] = e match {
+      case ee : Application =>
+        if (ee.fun == Variable(LocalName(name)) && ee.args.length == 2) {
+          val el = ee.args.toList
+          Some((el.head, el.tail.head)) // Elements 0 and 1
+        } else {
+          // No Binary operations with more than two arguments.
+          None
+        }
       case _ => None
     }
   }
