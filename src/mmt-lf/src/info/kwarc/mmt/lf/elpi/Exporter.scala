@@ -12,8 +12,8 @@ import info.kwarc.mmt.sequences.NatRules.NatLit
 import ELPIExporter.translateTerm
 
 object HelpCons {
-  def apply(path: GlobalName) = ELPI.Variable(LocalName("help") / path.name)
-  def apply(path: GlobalName, suffix: String) = ELPI.Variable(LocalName("help") / path.name / suffix)
+  def apply(path: GlobalName)                 : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name)
+  def apply(path: GlobalName, suffix: String) : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name / suffix)
 }
 
 case class ELPIError(msg: String) extends Error(msg)
@@ -63,8 +63,8 @@ class ELPIExporter extends Exporter {
     new IterativeDeepeningHandler(ruleMatcher),
     new ProofTermHandler(ruleMatcher),
     new RuleUseHandler(ruleMatcher),
-    new HandDownHandler(ruleMatcher, ""),
-    new HandDownHandler(ruleMatcher, "2"),
+    new HandDownHandler(ruleMatcher, name = ""),
+    new HandDownHandler(ruleMatcher, name = "2"),
     new BackChainingHandler(ruleMatcher)
   ))
 
@@ -106,7 +106,7 @@ class ELPIExporter extends Exporter {
 
 private class VarCounter {
   private var i = 0
-  def next(upper: Boolean) = {
+  def next(upper: Boolean) : LocalName = {
     i += 1
     val base = if (upper) "X" else "x"
     LocalName(base + i.toString)
@@ -126,8 +126,8 @@ trait ConstantHandler {
 
 class ConstantHandlerSequence(handlers : List[ConstantHandler]) extends ConstantHandler {
   def handle(c : Constant) : List[ELPI.Decl] = handlers.flatMap(_.handle(c))
-  override def setup() : List[ELPI.Decl] = handlers.flatMap(_.setup())
-  override def finish() : List[ELPI.Decl] = handlers.flatMap(_.finish())
+  override def setup()     : List[ELPI.Decl] = handlers.flatMap(_.setup())
+  override def finish()    : List[ELPI.Decl] = handlers.flatMap(_.finish())
 }
 
 class GeneratedFromHandler(controller : Controller) extends ConstantHandler {
@@ -140,7 +140,6 @@ abstract class BaseConstantHandler(handlerName : String) extends ConstantHandler
     ELPI.Comment(c.path + ": " + handlerName + ": skipping due to error: " + msg)
   }
 }
-
 
 class IfElseHandler(a : ConstantHandler, b : ConstantHandler, useA : Constant => Boolean) extends ConstantHandler() {
   override def setup(): List[ELPI.Decl] = a.setup() ++ b.setup()
@@ -175,7 +174,7 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
     * e.g. on "andI : {A,B} ded A -> ded B -> ded (and A B)" */
   def onRule(c : Constant, dr : DeclarativeRule, vc : VarCounter) : List[ELPI.Decl]
 
-  def handle(c: Constant) = {
+  def handle(c: Constant) : List[ELPI.Decl] = {
     val vc = new VarCounter
     if (c.rl contains "Judgment") {
       onIntro(c, vc)
@@ -198,7 +197,7 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   def getArgVars(c : Constant, vc : VarCounter) : List[ELPI.Variable] = {
     c.tp match {
       case Some(FunType(args, _)) =>
-        (1 to args.length).toList.map(_ => ELPI.Variable(vc.next(true)))
+        (1 to args.length).toList.map(_ => ELPI.Variable(vc.next(upper = true)))
     }
   }
 
@@ -208,10 +207,10 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   def translateComplex(cj: ComplexJudgement)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     // for parameters: get the name, ignoring the type; for assumptions: translate the judgment and generate a name
     val parNames = cj.parameters.map {vd => vd.name}
-    val (hypNames, hypEs) = cj.hypotheses.map {a => translateAtomic(a, Nil, true)}.unzip
+    val (hypNames, hypEs) = cj.hypotheses.map {a => translateAtomic(a, Nil, hypothesis = true)}.unzip
     val names = parNames ::: hypNames
     // translate the conclusion, return the generated name as the name for the entire complex judgment
-    val (thesisName, thesisE) = translateAtomic(cj.thesis, names, false)
+    val (thesisName, thesisE) = translateAtomic(cj.thesis, names, hypothesis = false)
     // quantify over all names, hypothesis implies conclusion
     val cjE = ELPI.Forall(names, ELPI.Impl(hypEs, thesisE))
     (thesisName, cjE)
