@@ -60,7 +60,7 @@ object Codecs {
     // vvv DO NOT REMOVE even if IntelliJ marks it as unused
 
     import PathCodecs._
-    import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
+    import io.circe.generic.extras.semiauto._
 
     implicit val factJsonConfig: Configuration = Configuration.default
       .withDiscriminator("kind")
@@ -75,7 +75,7 @@ object Codecs {
 
     // use the encoder as given by the _above_ configuration
     // (e.g. by contrast using deriveEncoder[SFact] would be wrong [but would compile!] as it would neglect the above configuration)
-    implicit val factEncoder: Encoder[SFact] = deriveConfiguredEncoder[SFact]
+    implicit val factEncoder: Encoder[SFact] = ???
 
     implicit val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
       // just add `uri: ...` field to encoded fact
