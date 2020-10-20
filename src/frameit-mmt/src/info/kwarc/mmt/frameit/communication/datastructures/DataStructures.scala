@@ -21,8 +21,8 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 object DataStructures {
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import Codecs.PathCodecs._
-  import Codecs.TermCodecs._
-  import Codecs.FactCodecs._
+  import Codecs.SOMDocCodecs._
+  import Codecs.FactCodecs.config._
   // ^^^^^^^ END: DO NOT REMOVE
 
   /**
@@ -85,8 +85,8 @@ object DataStructures {
   /**
     * Some helper methods to be used by [[SFact]] (subclasses) only.
     */
-  private object SFactHelpers {
-    final def parseLabelFromConstant(c: Constant): String = {
+  object SFactHelpers {
+    private def parseLabelFromConstant(c: Constant): String = {
       c.metadata.get(MetaKeys.label) match {
         // fall back to declaration name as label
         case Nil => c.name.toString
@@ -95,7 +95,7 @@ object DataStructures {
       }
     }
 
-    final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
+    private final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
       def simplify(obj: Obj): obj.ThisType = {
         val ctx = Context(c.path.module)
         val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
@@ -104,8 +104,11 @@ object DataStructures {
           ctrl.simplifier.apply(obj, simplicationUnit)
         } catch {
           case e: GeneralError =>
-            e.printStackTrace(System.err)
-            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))
+            System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
+
+            // reenable these outputs vvv if the bug above is solved
+            /*e.printStackTrace(System.err)
+            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))*/
 
             obj // just return unsimplified
         }
@@ -121,9 +124,7 @@ object DataStructures {
 
       (simplifiedTp, simplifiedDf)
     }
-  }
 
-  object SFact {
     /**
       * Parses a [[Constant]] into an [[SValueEqFact]] (preferred) or [[SGeneralFact]] (otherwise).
       *
@@ -133,8 +134,8 @@ object DataStructures {
       val label = SFactHelpers.parseLabelFromConstant(c)
       val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
 
-      val valueEqFact = SValueEqFact.tryParseFrom(c.path, label, tp, df)
-      valueEqFact.getOrElse(SGeneralFact.fromConstant(c.path, label, tp, df))
+      val valueEqFact = SValueEqFactHelpers.tryParseFrom(c.path, label, tp, df)
+      valueEqFact.getOrElse(SGeneralFactHelpers.fromConstant(c.path, label, tp, df))
     }
 
     /**
@@ -165,7 +166,7 @@ object DataStructures {
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
-  private object SGeneralFact {
+  private object SGeneralFactHelpers {
     def fromConstant(path: GlobalName, label: String, tp: Term, df: Option[Term]): SGeneralFact with KnownFact = {
       new SGeneralFact(label, tp, df) with KnownFact {
         override def ref: FactReference = FactReference(path)
@@ -238,7 +239,7 @@ object DataStructures {
     )
   }
 
-  private object SValueEqFact {
+  private object SValueEqFactHelpers {
     def tryParseFrom(path: GlobalName, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact with KnownFact] = {
       simpleTp match {
         case Sigma(

@@ -13,8 +13,8 @@ object SOMDoc {
 
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import Codecs.PathCodecs._
-  import Codecs.TermCodecs._
   import Codecs.SOMDocCodecs._
+  import Codecs.SOMDocCodecs.config._
   // ^^^^^^^ END: DO NOT REMOVE
 
   // IMPORTANT: do not naively rename parameter names of the following case classes!
