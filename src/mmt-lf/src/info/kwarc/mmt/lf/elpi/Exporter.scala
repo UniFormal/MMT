@@ -190,7 +190,7 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   }
 
   /* HELPER METHODS */
-  def V(n: LocalName) = ELPI.Variable(n)
+  def V(n: LocalName) : ELPI.Variable = ELPI.Variable(n)
   val hypSuffix = "hyp"
 
   def getArgVars(c : Constant, vc : VarCounter) : List[ELPI.Variable] = {
@@ -307,7 +307,7 @@ class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(han
 
 
 class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "prod", ruleMatcher) {
-  private object ProdCertCons extends ELPI.Constant(name =? "prodcert")
+  private object ProdCertCons extends ELPI.Constant(name = "prodcert")
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
     val certName = vc.next(upper = true)
