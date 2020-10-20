@@ -57,15 +57,11 @@ final case class FactValidationException(message: String, processedFacts: List[P
   * A collection of REST routes for our [[Server server]]
   */
 object ServerEndpoints extends EndpointModule[IO] {
-  import io.circe.generic.auto._
-
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import info.kwarc.mmt.frameit.communication.datastructures.Codecs
   import Codecs.PathCodecs._
   import Codecs.SOMDocCodecs._
-  import Codecs.FactCodecs._
-  import io.circe.generic.auto._
-  import io.circe.generic.extras.auto._
+  import Codecs.DataStructureCodecs._
 
   import ServerErrorHandler._
   // ^^^^^^^ END: DO NOT REMOVE

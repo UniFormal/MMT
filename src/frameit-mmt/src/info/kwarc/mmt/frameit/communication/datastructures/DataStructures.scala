@@ -18,11 +18,13 @@ import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.generic.extras.ConfiguredJsonCodec
 
+import scala.collection.SortedSet
+
 object DataStructures {
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import Codecs.PathCodecs._
   import Codecs.SOMDocCodecs._
-  import Codecs.FactCodecs.config._
+  import Codecs.DataStructureCodecs.FactCodecs.config._
   // ^^^^^^^ END: DO NOT REMOVE
 
   /**
@@ -138,17 +140,17 @@ object DataStructures {
       valueEqFact.getOrElse(SGeneralFactHelpers.fromConstant(c.path, label, tp, df))
     }
 
+    // in narrative order
+    private def collectConstantsFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Constant] = theory.getDeclarations.collect {
+      case c: Constant => List(c)
+      case PlainInclude(from, to) if recurseOnInclusions && to == theory.path =>
+        collectConstantsFromTheory(ctrl.getTheory(from), recurseOnInclusions)
+    }.flatten.distinct
+
     /**
       * Collects all [[SFact facts]] from a given [[Theory theory]].
       */
-    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = {
-      theory.getDeclarations.collect {
-
-        // todo: use a better way to get all constants (transitively), the method below produces duplicates in the result list for diamong inclusions
-        case c: Constant => List(fromConstant(c))
-        case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
-      }.flatten
-    }
+    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant).toList
   }
 
   /**

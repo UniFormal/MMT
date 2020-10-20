@@ -12,6 +12,16 @@ import scala.util.Try
 
 /**
   * All the JSON codecs for [[DataStructures]] and [[SOMDoc]]
+  *
+  *
+  * WARNINGS
+  *
+  * be cautious in using companion objects for abstract class/case classes for which you would like to derive
+  * io.circe codecs!! See [[https://gitter.im/circe/circe?at=5f8ea822270d004bcfdb28e9]]
+  *
+  * Also, invariant of frameit scala code: io.circe.generic.{auto,semiauto} and io.circe.generic.extras.{auto,semiauto} includes should only occur in this file (Codecs.scala)
+  *
+  * Note: you cannot use deriveConfigured{Encoder,Decoder} for things that don't have a @ConfiguredJsonCodec annotation. Use derive{Encoder,Decoder} from plain io.circe.generic.semiauto (not from extras!).
   */
 object Codecs {
   object PathCodecs {
@@ -63,51 +73,61 @@ object Codecs {
     }
   }
 
-  object FactCodecs {
+  object DataStructureCodecs {
+    private[communication] object FactCodecs {
+      // vvv DO NOT REMOVE even if IntelliJ marks it as unused
+      import PathCodecs._
+      import SOMDocCodecs._
+
+      import io.circe.generic.extras.semiauto._
+      // ^^^^^^^ END: DO NOT REMOVE
+
+      object config {
+        implicit val factJsonConfig: Configuration = Configuration.default
+          .withDiscriminator("kind")
+          .copy(transformConstructorNames = oldCtorName => {
+            val rewriteMap = Map(
+              classOf[SGeneralFact] -> "general",
+              classOf[SValueEqFact] -> "veq"
+            ).map { case (key, value) => (key.getSimpleName, value) }
+
+            rewriteMap.getOrElse(oldCtorName, oldCtorName)
+          })
+      }
+
+      // vvv DO NOT REMOVE even if IntelliJ marks it as unused
+      import config._
+      // ^^^^^^^ END: DO NOT REMOVE
+
+      val sfactEncoder: Encoder[SFact] = deriveConfiguredEncoder
+      val sfactDecoder: Decoder[SFact] = deriveConfiguredDecoder
+
+      val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
+        // just add `uri: ...` field to encoded fact
+        Json.fromJsonObject(
+          // assumption: facts are encoded as objects
+          sfactEncoder(knownFact).asObject.getOrElse(???).add("uri", globalNameEncoder(knownFact.ref.uri))
+        )
+      }
+
+      // No knownFactDecoder (not needed yet)
+    }
+
+    // re-export implicits (implicitness isn't transitive in Scala)
+    implicit val sfactEncoder: Encoder[SFact] = FactCodecs.sfactEncoder
+    implicit val sfactDecoder: Decoder[SFact] = FactCodecs.sfactDecoder
+    implicit val knownFactEncoder: Encoder[SFact with KnownFact] = FactCodecs.knownFactEncoder
+
     // vvv DO NOT REMOVE even if IntelliJ marks it as unused
     import PathCodecs._
     import SOMDocCodecs._
 
-    import io.circe.generic.extras.semiauto._
+    import io.circe.generic.auto._
+    import io.circe.generic.semiauto._
     // ^^^^^^^ END: DO NOT REMOVE
 
-    object config {
-      implicit val factJsonConfig: Configuration = Configuration.default
-        .withDiscriminator("kind")
-        .copy(transformConstructorNames = oldCtorName => {
-          val rewriteMap = Map(
-            classOf[SGeneralFact] -> "general",
-            classOf[SValueEqFact] -> "veq"
-          ).map { case (key, value) => (key.getSimpleName, value) }
-
-          rewriteMap.getOrElse(oldCtorName, oldCtorName)
-        })
-    }
-
-    // vvv DO NOT REMOVE even if IntelliJ marks it as unused
-    import config._
-    // ^^^^^^^ END: DO NOT REMOVE
-
-    implicit val sfactEncoder: Encoder[SFact] = deriveConfiguredEncoder
-    implicit val sfactDecoder: Decoder[SFact] = deriveConfiguredDecoder
-
-    implicit val d: Decoder[SScrollApplication] = ???
-
-    implicit val ee: Encoder[FactReference] = ???
-    implicit val e: Encoder[Scroll] = ???
-
-    implicit val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
-      // just add `uri: ...` field to encoded fact
-      Json.fromJsonObject(
-        // assumption: facts are encoded as objects
-        sfactEncoder(knownFact).asObject.getOrElse(???).add("uri", globalNameEncoder(knownFact.ref.uri))
-      )
-    }
-
-    // No knownFactDecoder (not needed yet)
-  }
-
-  object DataStructureCodecs {
-
+    implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
+    implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
+    implicit val scrollEncoder: Encoder[Scroll] = deriveEncoder
   }
 }
