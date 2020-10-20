@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, TermContainer, Visib
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business._
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{FactReference, KnownFact, SFact, SScrollApplication}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{FactReference, KnownFact, SFact, SFactHelpers, SScrollApplication}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.circe.Json
 import io.finch._
@@ -57,13 +57,11 @@ final case class FactValidationException(message: String, processedFacts: List[P
   * A collection of REST routes for our [[Server server]]
   */
 object ServerEndpoints extends EndpointModule[IO] {
-  import io.circe.generic.auto._
-
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import info.kwarc.mmt.frameit.communication.datastructures.Codecs
   import Codecs.PathCodecs._
-  import Codecs.TermCodecs._
-  import Codecs.FactCodecs._
+  import Codecs.SOMDocCodecs._
+  import Codecs.DataStructureCodecs._
 
   import ServerErrorHandler._
   // ^^^^^^^ END: DO NOT REMOVE
@@ -118,7 +116,7 @@ object ServerEndpoints extends EndpointModule[IO] {
   }
 
   private def listFacts(state: ServerState): Endpoint[IO, List[SFact with KnownFact]] = get(path("fact") :: path("list")) {
-    Ok(SFact.collectFromTheory(state.situationTheory, recurseOnInclusions = true)(state.ctrl))
+    Ok(SFactHelpers.collectFromTheory(state.situationTheory, recurseOnInclusions = true)(state.ctrl))
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
@@ -210,7 +208,7 @@ object ServerEndpoints extends EndpointModule[IO] {
 
         state.setSituationTheory(situationTheoryExtension)
 
-        Ok(SFact.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
+        Ok(SFactHelpers.collectFromTheory(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl))
 
       case errors =>
         state.ctrl.delete(scrollView.path)

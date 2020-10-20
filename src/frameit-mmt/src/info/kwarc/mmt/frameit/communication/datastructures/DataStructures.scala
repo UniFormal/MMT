@@ -18,11 +18,13 @@ import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.generic.extras.ConfiguredJsonCodec
 
+import scala.collection.SortedSet
+
 object DataStructures {
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import Codecs.PathCodecs._
-  import Codecs.TermCodecs._
-  import Codecs.FactCodecs._
+  import Codecs.SOMDocCodecs._
+  import Codecs.DataStructureCodecs.FactCodecs.config._
   // ^^^^^^^ END: DO NOT REMOVE
 
   /**
@@ -85,8 +87,8 @@ object DataStructures {
   /**
     * Some helper methods to be used by [[SFact]] (subclasses) only.
     */
-  private object SFactHelpers {
-    final def parseLabelFromConstant(c: Constant): String = {
+  object SFactHelpers {
+    private def parseLabelFromConstant(c: Constant): String = {
       c.metadata.get(MetaKeys.label) match {
         // fall back to declaration name as label
         case Nil => c.name.toString
@@ -95,7 +97,7 @@ object DataStructures {
       }
     }
 
-    final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
+    private final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
       def simplify(obj: Obj): obj.ThisType = {
         val ctx = Context(c.path.module)
         val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
@@ -104,8 +106,11 @@ object DataStructures {
           ctrl.simplifier.apply(obj, simplicationUnit)
         } catch {
           case e: GeneralError =>
-            e.printStackTrace(System.err)
-            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))
+            System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
+
+            // reenable these outputs vvv if the bug above is solved
+            /*e.printStackTrace(System.err)
+            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))*/
 
             obj // just return unsimplified
         }
@@ -121,9 +126,7 @@ object DataStructures {
 
       (simplifiedTp, simplifiedDf)
     }
-  }
 
-  object SFact {
     /**
       * Parses a [[Constant]] into an [[SValueEqFact]] (preferred) or [[SGeneralFact]] (otherwise).
       *
@@ -133,21 +136,21 @@ object DataStructures {
       val label = SFactHelpers.parseLabelFromConstant(c)
       val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
 
-      val valueEqFact = SValueEqFact.tryParseFrom(c.path, label, tp, df)
-      valueEqFact.getOrElse(SGeneralFact.fromConstant(c.path, label, tp, df))
+      val valueEqFact = SValueEqFactHelpers.tryParseFrom(c.path, label, tp, df)
+      valueEqFact.getOrElse(SGeneralFactHelpers.fromConstant(c.path, label, tp, df))
     }
+
+    // in narrative order
+    private def collectConstantsFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Constant] = theory.getDeclarations.collect {
+      case c: Constant => List(c)
+      case PlainInclude(from, to) if recurseOnInclusions && to == theory.path =>
+        collectConstantsFromTheory(ctrl.getTheory(from), recurseOnInclusions)
+    }.flatten.distinct
 
     /**
       * Collects all [[SFact facts]] from a given [[Theory theory]].
       */
-    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = {
-      theory.getDeclarations.collect {
-
-        // todo: use a better way to get all constants (transitively), the method below produces duplicates in the result list for diamong inclusions
-        case c: Constant => List(fromConstant(c))
-        case PlainInclude(from, to) if recurseOnInclusions && to == theory.path => collectFromTheory(ctrl.getTheory(from), recurseOnInclusions)
-      }.flatten
-    }
+    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant).toList
   }
 
   /**
@@ -165,7 +168,7 @@ object DataStructures {
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
-  private object SGeneralFact {
+  private object SGeneralFactHelpers {
     def fromConstant(path: GlobalName, label: String, tp: Term, df: Option[Term]): SGeneralFact with KnownFact = {
       new SGeneralFact(label, tp, df) with KnownFact {
         override def ref: FactReference = FactReference(path)
@@ -238,7 +241,7 @@ object DataStructures {
     )
   }
 
-  private object SValueEqFact {
+  private object SValueEqFactHelpers {
     def tryParseFrom(path: GlobalName, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact with KnownFact] = {
       simpleTp match {
         case Sigma(

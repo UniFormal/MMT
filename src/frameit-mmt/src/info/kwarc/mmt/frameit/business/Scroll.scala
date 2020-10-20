@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.{GlobalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{KnownFact, SFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{KnownFact, SFact, SFactHelpers}
 
 sealed case class Scroll(problemTheory: MPath, solutionTheory: MPath, label: String, description: String, requiredFacts: List[SFact with KnownFact])
 
@@ -29,7 +29,7 @@ object Scroll {
       val solutionThy = readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
       val description = readStringMetaDatum(thy.metadata, MetaKeys.scrollDescription)
 
-      val requiredFacts = SFact.collectFromTheory(ctrl.getTheory(problemThy), recurseOnInclusions = true)
+      val requiredFacts = SFactHelpers.collectFromTheory(ctrl.getTheory(problemThy), recurseOnInclusions = true)
 
       Right(Scroll(problemThy, solutionThy, label, description, requiredFacts))
     } catch {
