@@ -1,7 +1,6 @@
-package mmt-mizar.src.info.kwarc.mmt.mizar.mizarobjects
+package info.kwarc.mmt.mizar.mizarobjects
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.mizar.mizarobjects.MizarType
 
 sealed abstract class ArgumentInfixity {}
 case class LeftSideArgument() extends ArgumentInfixity {}
@@ -31,6 +30,6 @@ case class MizarPartialDefiningFormula(cases: List[MizarCase], defaultResult:Def
 }
 
 
- case class MizarStatement(claim:DefiningFormula) {}
+case class MizarStatement(claim:DefiningFormula) {}
 /** Will be formalized as Ded (claim) */
 case class MizarProof(claim:DefiningFormula) {}

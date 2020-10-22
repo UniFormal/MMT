@@ -1,6 +1,4 @@
-package mmt-mizar.src.info.kwarc.mmt.mizar.mizarobjects
-
-import info.kwarc.mmt.mizar.mizarobjects._
+package info.kwarc.mmt.mizar.mizarobjects
 
 /** abstract class for the various kinds of definitions in Mizar */
 sealed abstract class Definition {
