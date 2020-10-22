@@ -147,7 +147,7 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           val arch = new Archive(root, properties, report)
           getArchive(arch.id) match {
             case Some(a) =>
-               logError(s"an archive with id ${arch.id} already exists at location ${arch.root}")
+               logError(s"an archive with id ${arch.id} already exists at location ${a.root}")
             case None =>
           }
           addStore(arch)
