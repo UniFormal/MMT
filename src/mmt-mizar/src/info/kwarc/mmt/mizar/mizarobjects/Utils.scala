@@ -6,9 +6,11 @@ sealed abstract class ArgumentInfixity {}
 case class LeftSideArgument() extends ArgumentInfixity {}
 case class RightSideArgument() extends ArgumentInfixity {}
 
+/** translate to VarDecls in MMT */
 case class MizarLocalVariable(name: LocalName, tp: MizarType, infixity:Option[ArgumentInfixity] = RightSideArgument()) {
 }
 
+/** translate to GlobalName in MMT */
 case class MizarGlobalName(name:GlobalName) {
 }
 
@@ -33,3 +35,7 @@ case class MizarPartialDefiningFormula(cases: List[MizarCase], defaultResult:Def
 case class MizarStatement(claim:DefiningFormula) {}
 /** Will be formalized as Ded (claim) */
 case class MizarProof(claim:DefiningFormula) {}
+
+abstract class MizarDeclaration() {
+  def name:MizarGlobalName
+}

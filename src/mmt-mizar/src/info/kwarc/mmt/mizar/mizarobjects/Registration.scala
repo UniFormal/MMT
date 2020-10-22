@@ -1,7 +1,7 @@
 package info.kwarc.mmt.mizar.mizarobjects
 
-case class Cluster(attributes:List[MizarGlobalName], inhabitationProof:MizarProof)
+case class Cluster(name: MizarGlobalName, attributes:List[MizarGlobalName], inhabitationProof:MizarProof) extends MizarDeclaration {}
 
-class Registration {
+case class Registration(name: MizarGlobalName, clusters:Cluster) extends MizarDeclaration {
 
 }

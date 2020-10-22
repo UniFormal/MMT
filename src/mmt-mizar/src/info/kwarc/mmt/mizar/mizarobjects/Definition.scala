@@ -1,7 +1,7 @@
 package info.kwarc.mmt.mizar.mizarobjects
 
 /** abstract class for the various kinds of definitions in Mizar */
-sealed abstract class Definition {
+sealed abstract class Definition extends MizarDeclaration {
   def name:MizarGlobalName
   def arguments:List[MizarLocalVariable]
   def kind: String
