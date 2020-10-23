@@ -7,8 +7,6 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{Context, Obj}
-import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.api.{DPath, GetError, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld

@@ -180,6 +180,12 @@ object NewPushoutUtils {
 
           // inherit v in the link w to generate
           ctrl.add(Include(OMMOD(w_to_generate), A.path, Nil, Some(v.toTerm)))
+
+        case SimpleStructure(_, fromPath) if ctrl.globalLookup.hasImplicit(OMMOD(fromPath), A.toTerm) =>
+          // in this case, we face an inclusion in C of a theory that was already included in A
+          // we can safely skip this as we assume that C already includes A directly, and hence
+          // the case above applies
+
         case _ => ???
       }
     }
