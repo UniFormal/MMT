@@ -1,11 +1,13 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GlobalName, LocalName, SimpleStep}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
@@ -170,5 +172,40 @@ object DataStructures {
   /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
-  sealed case class SScrollApplication(scroll: ScrollReference, assignments: List[(FactReference, Term)])
+  sealed case class SScrollApplication(scroll: ScrollReference, assignments: List[(FactReference, Term)]) {
+    def toView(target: MPath, codomain: Term)(implicit ctrl: Controller): View = {
+      val domain = scroll.problemTheory
+
+      val view = new View(
+        doc = target.doc,
+        name = target.name,
+        fromC = TermContainer.asParsed(OMMOD(domain)),
+        toC = TermContainer.asParsed(codomain),
+        dfC = TermContainer.empty(),
+        isImplicit = false
+      )
+
+      ctrl.add(view)
+
+      // collect all assignments such that if typechecking later fails, we can conveniently output
+      // debug information
+      val scrollViewAssignments = assignments.map {
+        case (factRef, assignedTerm) =>
+          // create new assignment
+          new FinalConstant(
+            home = view.toTerm,
+            name = LocalName(ComplexStep(factRef.uri.module) :: factRef.uri.name),
+            alias = Nil,
+            tpC = TermContainer.empty(),
+            dfC = TermContainer.asParsed(assignedTerm),
+            rl = None,
+            notC = NotationContainer.empty(),
+            vs = Visibility.public,
+          )
+      }
+      scrollViewAssignments.foreach(ctrl.add(_))
+
+      view
+    }
+  }
 }

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
@@ -25,7 +25,7 @@ sealed case class Fact(
                         df: Option[Term]
                       ) {
 
-  def render()(implicit ctrl: Controller): SFact = {
+  def renderStatic()(implicit ctrl: Controller): SFact = {
     val (tp, df) = Fact.getSimplifiedTypeAndDefFromConstant(ctrl.getConstant(ref.uri))
 
     val label = meta.label.toStr(true) // replace with real rendering
@@ -34,6 +34,14 @@ sealed case class Fact(
       case Some(valueEqFact) => valueEqFact
       case _ => SGeneralFact(Some(ref), label, tp, df)
     }
+  }
+
+  private[datastructures] def renderDynamicFact(viewRenderer: ScrollViewRenderer): Fact = {
+    this.copy(
+      meta = meta.render(viewRenderer),
+      tp = viewRenderer(tp),
+      df = df.map(viewRenderer.apply)
+    )
   }
 }
 

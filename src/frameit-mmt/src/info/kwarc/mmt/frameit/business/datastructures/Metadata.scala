@@ -1,7 +1,9 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.{ContentElement, GlobalName, MPath}
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
+import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
@@ -9,7 +11,14 @@ import info.kwarc.mmt.frameit.business.InvalidMetaData
 
 import scala.util.Try
 
-sealed case class UserMetadata(label: Term, description: Term)
+sealed case class UserMetadata(label: Term, description: Term) {
+  private[datastructures] def render(viewRenderer: ScrollViewRenderer): UserMetadata = {
+    this.copy(
+      label = viewRenderer(label),
+      description = viewRenderer(description)
+    )
+  }
+}
 
 object UserMetadata {
   def parse(element: ContentElement): UserMetadata = {

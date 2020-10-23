@@ -49,7 +49,7 @@ object Server extends TwitterServer {
 
       ctrl.getTheory(FrameWorld.situationTheoryForDebugging)
     } else {
-      println("Setting up empty situation theory...")
+      println("Release mode: setting up empty situation theory...")
 
       val situationTheory = Theory.empty(
         DPath(frameitArchive.narrationBase),
@@ -64,8 +64,9 @@ object Server extends TwitterServer {
     val state = new ServerState(ctrl, situationTheory.path.parent, situationTheory.path)
     state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix
 
-    state.contentValidator.checkTheory(situationTheory) match {
+    (if (state.doTypeChecking) state.contentValidator.checkTheory(situationTheory) else Nil) match {
       case Nil =>
+        println("Situation theory successfully set-up and typechecked (the latter only in release mode).")
         state
 
       case errors =>

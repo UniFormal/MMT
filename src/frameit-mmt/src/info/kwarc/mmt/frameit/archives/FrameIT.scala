@@ -10,9 +10,15 @@ object FrameIT {
     * https://gl.mathhub.info/FrameIT/frameworld
     */
   object FrameWorld {
-    object MetaKeys {
-      private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "MetaAnnotations"
+    val archiveID: String = "FrameIT/frameworld"
+    val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
+    val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
 
+    val situationTheoryForDebugging: MPath = (rootDocument / "integrationtests") ? "SampleSituationTheory"
+
+    private val _metaAnnotations: MPath = rootDocument ? "MetaAnnotations"
+
+    object MetaKeys {
       val label: GlobalName = _metaAnnotations ? "label"
       val description: GlobalName = _metaAnnotations ? "description"
       val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
@@ -20,10 +26,8 @@ object FrameIT {
       val scrollDescription: GlobalName = _metaAnnotations ? "description"
     }
 
-    val archiveID: String = "FrameIT/frameworld"
-    val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
-    val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
-
-    val situationTheoryForDebugging: MPath = (rootDocument / "integrationtests") ? "SampleSituationTheory"
+    object MetaFunctions {
+      val labelVerbOf: GlobalName = _metaAnnotations ? "label_verbalization_of"
+    }
   }
 }

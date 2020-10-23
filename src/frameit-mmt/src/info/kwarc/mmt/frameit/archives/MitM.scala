@@ -22,7 +22,11 @@ object MitM {
       val pos: GlobalName = path ? "IntLiterals" ? "pos_lit"
       val real: GlobalName = path ? "RealLiterals" ? "real_lit"
 
-      val string: GlobalName = path ? "Strings" ? "string"
+      // old from MitM/Foundation@devel branch:
+      // val string: GlobalName = path ? "Strings" ? "string"
+
+      // now with MitM/Foundation@urtheories-strings branch (not yet tested and approved by Dennis)
+      val string: GlobalName = DPath(URI("http", "cds.omdoc.org") / "urtheories") ? "Strings" ? "string"
     }
 
     object BooleanLiterals extends RepresentedRealizedType(OMS(Math.bool), StandardBool)

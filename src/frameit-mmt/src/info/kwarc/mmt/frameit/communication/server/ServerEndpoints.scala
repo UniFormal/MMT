@@ -64,7 +64,7 @@ object ServerEndpoints extends EndpointModule[IO] {
   // ^^^^^^^ END: DO NOT REMOVE
 
   private def getEndpointsForState(state: ServerState) =
-    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: printSituationTheory(state)
+    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: printSituationTheory(state)
 
   def getServiceForState(state: ServerState): Service[Request, Response] =
     getEndpointsForState(state).toServiceAs[Application.Json]
@@ -121,7 +121,7 @@ object ServerEndpoints extends EndpointModule[IO] {
     Ok(
       Fact
         .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
-        .map(_.render()(state.ctrl))
+        .map(_.renderStatic()(state.ctrl))
     )
   }
 
@@ -141,7 +141,7 @@ object ServerEndpoints extends EndpointModule[IO] {
       state.readScrollData = true
     }
 
-    Ok(Scroll.findAll()(state.ctrl).map(_.renderNaive()(state.ctrl)))
+    Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
   }
 
   private sealed case class ScrollApplicationNames(view: LocalName, pushedOutView: LocalName, situationTheoryExtension: LocalName)
@@ -166,34 +166,16 @@ object ServerEndpoints extends EndpointModule[IO] {
     val ScrollApplicationNames(scrollViewName, pushedOutScrollViewName, situationTheoryExtensionName) = generateScrollApplicationNames(state)
 
     // create view out of [[SScrollApplication]]
-    val scrollView = new View(
-      doc = state.situationDocument,
-      name = scrollViewName,
-      fromC = TermContainer.asParsed(OMMOD(scrollViewDomain)),
-      toC = TermContainer.asParsed(OMMOD(scrollViewCodomain)),
-      dfC = TermContainer.empty(),
-      isImplicit = false
-    )
-
-    state.ctrl.add(scrollView)
+    val scrollView = scrollApp.toView(
+      state.situationDocument ? scrollViewName,
+      OMMOD(scrollViewCodomain)
+    )(state.ctrl)
 
     // collect all assignments such that if typechecking later fails, we can conveniently output
     // debug information
-    val scrollViewAssignments = scrollApp.assignments.map {
-      case (factRef, assignedTerm) =>
-        // create new assignment
-        new FinalConstant(
-          home = scrollView.toTerm,
-          name = LocalName(ComplexStep(factRef.uri.module) :: factRef.uri.name),
-          alias = Nil,
-          tpC = TermContainer.empty(),
-          dfC = TermContainer.asParsed(assignedTerm),
-          rl = None,
-          notC = NotationContainer.empty(),
-          vs = Visibility.public,
-        )
+    val scrollViewAssignments = scrollView.getDeclarations.collect {
+      case c: FinalConstant => c
     }
-    scrollViewAssignments.foreach(state.ctrl.add(_))
 
     (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
       case Nil =>
@@ -211,7 +193,7 @@ object ServerEndpoints extends EndpointModule[IO] {
         Ok(
           Fact
             .findAllIn(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl)
-            .map(_.render()(state.ctrl))
+            .map(_.renderStatic()(state.ctrl))
         )
 
       case errors =>
@@ -224,13 +206,18 @@ object ServerEndpoints extends EndpointModule[IO] {
     }
   }}
 
-  /*private def dynamicScroll(state: ServerState): Endpoint[IO, Scroll] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
+  private def dynamicScroll(state: ServerState): Endpoint[IO, SScroll] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+    Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
+      case Some(scroll) =>
 
-    val scroll = Scroll.fromReference(scrollApp.scroll)(state.ctrl)
+        val scrollView = scrollApp.toView(
+          target = state.situationDocument ? "blah",
+          codomain = state.situationTheory.toTerm
+        )(state.ctrl)
 
-    ApplyMorphism(state.ctrl.globalLookup, ???)(???, ???)
+        Ok(scroll.render(Some(scrollView))(state.ctrl))
 
-    Ok(Scroll(???, ???, ???, ???))
-
-  }}*/
+      case _ =>
+        NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
+  }}
 }

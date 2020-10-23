@@ -1,11 +1,13 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
-import info.kwarc.mmt.api.MPath
+import info.kwarc.mmt.api.{GetError, MPath, Path, StructuralElement}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.objects.{Context, Term}
 import info.kwarc.mmt.api.ontology.IsTheory
+import info.kwarc.mmt.api.symbols.ApplyMorphism
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
-import info.kwarc.mmt.frameit.business.InvalidMetaData
+import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
 /**
@@ -18,17 +20,32 @@ sealed case class Scroll(
                           meta: UserMetadata,
                           requiredFacts: List[Fact]
                         ) {
-  def renderNaive()(implicit ctrl: Controller): SScroll = {
+  def renderDynamicScroll(viewRenderer: ScrollViewRenderer)(implicit ctrl: Controller): Scroll = this.copy(
+    meta = meta.render(viewRenderer),
+    requiredFacts = requiredFacts.map(_.renderDynamicFact(viewRenderer))
+  )
+
+  def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
+    val scroll = view match {
+      case Some(view) =>
+        renderDynamicScroll(new StandardViewRenderer(view)(ctrl))
+      case _ => this
+    }
+
     SScroll(
-      ref,
-      meta.label.toStr(true),
-      meta.description.toStr(true),
-      requiredFacts.map(_.render())
+      scroll.ref,
+      scroll.meta.label.toStr(true),
+      scroll.meta.description.toStr(true),
+      scroll.requiredFacts.map(_.renderStatic())
     )
   }
 }
 
 object Scroll {
+  def fromReference(ref: ScrollReference)(implicit ctrl: Controller): Option[Scroll] = {
+    Utils.getAsO(classOf[Theory], ref.solutionTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
+  }
+
   def findAll()(implicit ctrl: Controller): List[Scroll] = {
     val allTheories: Seq[Theory] = ctrl.depstore
       .getInds(IsTheory)
