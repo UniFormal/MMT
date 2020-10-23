@@ -1,12 +1,13 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api.objects.Term
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, NamespaceMap, Path, SimpleStep}
-import info.kwarc.mmt.frameit.business.Scroll
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{FactReference, KnownFact, SFact, SGeneralFact, SScrollApplication, SValueEqFact}
+import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.business.datastructures.FactReference
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SScroll, SScrollApplication, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
 import io.circe.generic.extras.Configuration
-import io.circe.{Decoder, Encoder, HCursor, Json}
+import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
+import io.circe.{Decoder, Encoder, HCursor}
 
 import scala.util.Try
 
@@ -23,7 +24,7 @@ import scala.util.Try
   *
   * Note: you cannot use deriveConfigured{Encoder,Decoder} for things that don't have a @ConfiguredJsonCodec annotation. Use derive{Encoder,Decoder} from plain io.circe.generic.semiauto (not from extras!).
   */
-object Codecs {
+private[communication] object Codecs {
   object PathCodecs {
     implicit val mpathEncoder: Encoder[MPath] = Encoder.encodeString.contramap[MPath](_.toString)
     implicit val mpathDecoder: Decoder[MPath] = Decoder.decodeString.emapTry { str => {
@@ -41,7 +42,7 @@ object Codecs {
   object SOMDocCodecs {
     import io.circe.generic.extras.semiauto._
 
-    object config {
+    private[datastructures] object config {
       implicit val jsonConfig: Configuration = Configuration.default
         .withDiscriminator("kind")
         .copy(transformConstructorNames = oldCtorName => {
@@ -74,15 +75,13 @@ object Codecs {
   }
 
   object DataStructureCodecs {
-    private[communication] object FactCodecs {
+    object FactCodecs {
       // vvv DO NOT REMOVE even if IntelliJ marks it as unused
       import PathCodecs._
       import SOMDocCodecs._
-
-      import io.circe.generic.extras.semiauto._
       // ^^^^^^^ END: DO NOT REMOVE
 
-      object config {
+      private[datastructures] object config {
         implicit val factJsonConfig: Configuration = Configuration.default
           .withDiscriminator("kind")
           .copy(transformConstructorNames = oldCtorName => {
@@ -99,16 +98,20 @@ object Codecs {
       import config._
       // ^^^^^^^ END: DO NOT REMOVE
 
-      val sfactEncoder: Encoder[SFact] = deriveConfiguredEncoder
-      val sfactDecoder: Decoder[SFact] = deriveConfiguredDecoder
+      implicit val sfactEncoder: Encoder[SFact] = deriveConfiguredEncoder
+      implicit val sfactDecoder: Decoder[SFact] = deriveConfiguredDecoder
 
-      val knownFactEncoder: Encoder[SFact with KnownFact] = (knownFact: SFact with KnownFact) => {
+      // deliberately use generic.semiauto.derive{Encoder,Decoder}, not the ones from extras.generic.semiauto!
+      implicit val factReferenceEncoder: Encoder[FactReference] = io.circe.generic.semiauto.deriveEncoder
+      implicit val factReferenceDecoder: Decoder[FactReference] = io.circe.generic.semiauto.deriveDecoder
+
+      /*val knownFactEncoder: Encoder[SFact with SKnownFact] = (knownFact: SFact with SKnownFact) => {
         // just add `uri: ...` field to encoded fact
         Json.fromJsonObject(
           // assumption: facts are encoded as objects
           sfactEncoder(knownFact).asObject.getOrElse(???).add("uri", globalNameEncoder(knownFact.ref.uri))
         )
-      }
+      }*/
 
       // No knownFactDecoder (not needed yet)
     }
@@ -116,7 +119,7 @@ object Codecs {
     // re-export implicits (implicitness isn't transitive in Scala)
     implicit val sfactEncoder: Encoder[SFact] = FactCodecs.sfactEncoder
     implicit val sfactDecoder: Decoder[SFact] = FactCodecs.sfactDecoder
-    implicit val knownFactEncoder: Encoder[SFact with KnownFact] = FactCodecs.knownFactEncoder
+    // implicit val knownFactEncoder: Encoder[SFact with SKnownFact] = FactCodecs.knownFactEncoder
 
     // vvv DO NOT REMOVE even if IntelliJ marks it as unused
     import PathCodecs._
@@ -127,7 +130,8 @@ object Codecs {
     // ^^^^^^^ END: DO NOT REMOVE
 
     implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
+    implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
     implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
-    implicit val scrollEncoder: Encoder[Scroll] = deriveEncoder
+    implicit val scrollEncoder: Encoder[SScroll] = deriveEncoder
   }
 }

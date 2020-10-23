@@ -17,6 +17,7 @@ class ServerState(val ctrl: Controller, val situationDocument: DPath, private va
   override protected def report: Report = ctrl.report
 
   var doTypeChecking: Boolean = true
+  var readScrollData: Boolean = false
 
   val contentValidator : ContentValidator = new ContentValidator(ctrl)
 

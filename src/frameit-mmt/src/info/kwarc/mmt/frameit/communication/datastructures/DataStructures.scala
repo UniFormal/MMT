@@ -1,24 +1,19 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{GlobalName, LocalName, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.business.{InvalidFactConstant, InvalidMetaData}
+import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
+import info.kwarc.mmt.frameit.business.InvalidFactConstant
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 import io.circe.generic.extras.ConfiguredJsonCodec
-
-import scala.collection.SortedSet
 
 object DataStructures {
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
@@ -32,8 +27,8 @@ object DataStructures {
     *
     * See subclasses for which fact types exist.
     */
-  @ConfiguredJsonCodec
-  sealed abstract class SFact(val label: String) {
+  /*@ConfiguredJsonCodec*/
+  sealed abstract class SFact(val ref: Option[FactReference], val label: String) {
 
     /**
       * The type component that is used by [[toFinalConstant()]] to create the constant.
@@ -69,88 +64,13 @@ object DataStructures {
   }
 
   /**
-    * A reference to an already registered fact only -- without accompanying data.
-    * @param uri The URI for the fact.
-    */
-  sealed case class FactReference(uri: GlobalName)
-
-  /**
     * Mixin for known facts
     *
-    * e.g. all facts returned by the server have type ''[[SFact]] with [[KnownFact]]'', while the facts
+    * e.g. all facts returned by the server have type ''[[SFact]] with [[SKnownFact]]'', while the facts
     * received by the game engine generally only have type [[SFact]].
     */
-  trait KnownFact {
+  trait SKnownFact {
     def ref: FactReference
-  }
-
-  /**
-    * Some helper methods to be used by [[SFact]] (subclasses) only.
-    */
-  object SFactHelpers {
-    private def parseLabelFromConstant(c: Constant): String = {
-      c.metadata.get(MetaKeys.label) match {
-        // fall back to declaration name as label
-        case Nil => c.name.toString
-        case MetaDatum(_, StringLiterals(label)) :: Nil => label
-        case _ => throw InvalidFactConstant("could not create fact from constant", InvalidMetaData(s"Fact declaration contained an invalid label annotation or multiple label annotations, declaration path was: ${c.path}"))
-      }
-    }
-
-    private final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
-      def simplify(obj: Obj): obj.ThisType = {
-        val ctx = Context(c.path.module)
-        val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
-
-        try {
-          ctrl.simplifier.apply(obj, simplicationUnit)
-        } catch {
-          case e: GeneralError =>
-            System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
-
-            // reenable these outputs vvv if the bug above is solved
-            /*e.printStackTrace(System.err)
-            e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))*/
-
-            obj // just return unsimplified
-        }
-      }
-
-      // todo: currently, only the simplified things are returned
-      //       do we also need the non-simplified ones?
-      val simplifiedTp: Term = c.tp.map(simplify(_)).getOrElse(
-        throw InvalidFactConstant(s"failed parsing fact of ${c.path}: has no type component")
-      )
-
-      val simplifiedDf: Option[Term] = c.df.map(simplify(_))
-
-      (simplifiedTp, simplifiedDf)
-    }
-
-    /**
-      * Parses a [[Constant]] into an [[SValueEqFact]] (preferred) or [[SGeneralFact]] (otherwise).
-      *
-      * Performs simplification first.
-      */
-    final def fromConstant(c: Constant)(implicit ctrl: Controller): SFact with KnownFact = {
-      val label = SFactHelpers.parseLabelFromConstant(c)
-      val (tp, df) = SFactHelpers.getSimplifiedTypeAndDefFromConstant(c)
-
-      val valueEqFact = SValueEqFactHelpers.tryParseFrom(c.path, label, tp, df)
-      valueEqFact.getOrElse(SGeneralFactHelpers.fromConstant(c.path, label, tp, df))
-    }
-
-    // in narrative order
-    private def collectConstantsFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Constant] = theory.getDeclarations.collect {
-      case c: Constant => List(c)
-      case PlainInclude(from, to) if recurseOnInclusions && to == theory.path =>
-        collectConstantsFromTheory(ctrl.getTheory(from), recurseOnInclusions)
-    }.flatten.distinct
-
-    /**
-      * Collects all [[SFact facts]] from a given [[Theory theory]].
-      */
-    def collectFromTheory(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[SFact with KnownFact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant).toList
   }
 
   /**
@@ -158,22 +78,19 @@ object DataStructures {
     * That is, it represents the most general form of facts.
     *
     * Overall, facts sent by the game engine or parsed from existing MMT formalizations
-    * should only become [[GeneralFact]]s if other fact types don't match (most
+    * should only become [[SGeneralFact]]s if other fact types don't match (most
     * importantly [[SValueEqFact]]).
     */
-  @ConfiguredJsonCodec
-  sealed case class SGeneralFact(override val label: String, tp: Term, df: Option[Term]) extends SFact(label) {
+  /*@ConfiguredJsonCodec*/
+  sealed case class SGeneralFact(
+                                  override val ref: Option[FactReference],
+                                  override val label: String,
+                                  tp: Term,
+                                  df: Option[Term]
+                                ) extends SFact(ref, label) {
     override protected def getMMTTypeComponent: Term = tp
 
     override protected def getMMTDefComponent: Option[Term] = df
-  }
-
-  private object SGeneralFactHelpers {
-    def fromConstant(path: GlobalName, label: String, tp: Term, df: Option[Term]): SGeneralFact with KnownFact = {
-      new SGeneralFact(label, tp, df) with KnownFact {
-        override def ref: FactReference = FactReference(path)
-      }
-    }
   }
 
   /**
@@ -192,14 +109,15 @@ object DataStructures {
     * If no value is given, but a proof is, an exception is raised immediately upon construction of the case
     * class object.
     */
-  @ConfiguredJsonCodec
+  /*@ConfiguredJsonCodec*/
   sealed case class SValueEqFact(
+                                  override val ref: Option[FactReference],
                                   override val label: String,
                                   lhs: Term,
                                   valueTp: Option[Term],
                                   value: Option[Term],
                                   proof: Option[Term]
-                                ) extends SFact(label) {
+                                ) extends SFact(ref, label) {
 
     if (value.isEmpty && proof.nonEmpty) {
       throw InvalidFactConstant("SvalueEqFacts cannot have a proof, but no value. That doesn't make sense.")
@@ -241,38 +159,16 @@ object DataStructures {
     )
   }
 
-  private object SValueEqFactHelpers {
-    def tryParseFrom(path: GlobalName, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact with KnownFact] = {
-      simpleTp match {
-        case Sigma(
-        x1,
-        tp1,
-        ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
-        ) if x1 == x2 && tp1 == tp2 =>
-
-          val (value, proof) = simpleDf match {
-            case Some(Tuple(v, pf)) => (Some(v), Some(pf))
-            case Some(_) =>
-              throw InvalidFactConstant("cannot read value and proof of definiens to parse into SValueEqFact")
-            case _ => (None, None)
-          }
-
-          Some(new SValueEqFact(label, lhs, valueTp = Some(tp1), value, proof) with KnownFact {
-            override def ref: FactReference = FactReference(path)
-          })
-
-        case _ => None
-      }
-    }
-  }
-
-  /**
-    * A reference to a scroll -- without accompanying information.
-    */
-  sealed case class SScrollReference(problemTheory: MPath, solutionTheory: MPath)
+  /* Scrolls */
+  sealed case class SScroll(
+                            ref: ScrollReference,
+                            label: String,
+                            description: String,
+                            requiredFacts: List[SFact]
+                          )
 
   /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
-  sealed case class SScrollApplication(scroll: SScrollReference, assignments: List[(FactReference, Term)])
+  sealed case class SScrollApplication(scroll: ScrollReference, assignments: List[(FactReference, Term)])
 }

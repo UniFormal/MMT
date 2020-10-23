@@ -14,6 +14,8 @@ import scala.collection.mutable
   * Utility functions to compute pushouts of both [[AnonymousTheory anonymous theories]] and [[Theory named theories]]
   *
   * @todo Rename to sensible name, beware that [[PushoutUtils]] is already taken by Common.scala in the same directory.
+  *
+  * @todo meta keys/values are *not* subject to pushing out, this should be added yet!
   */
 object NewPushoutUtils {
   /**

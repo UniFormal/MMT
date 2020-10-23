@@ -14,6 +14,7 @@ object FrameIT {
       private val _metaAnnotations: MPath = FrameWorld.rootDocument ? "MetaAnnotations"
 
       val label: GlobalName = _metaAnnotations ? "label"
+      val description: GlobalName = _metaAnnotations ? "description"
       val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
       val solutionTheory: GlobalName = _metaAnnotations ? "solutionTheory"
       val scrollDescription: GlobalName = _metaAnnotations ? "description"
