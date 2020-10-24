@@ -8,7 +8,43 @@ See [./installation.md](./installation.md).
 
 ## REST API
 
-- <details><summary>Fact reference JSON format (shared by endpoints below)</summary>
+We use JSON for both payload and return values.
+
+### Endpoints
+
+- <details><summary><code>POST /fact/add</code>: make a new fact known to the server</summary>
+
+  - payload: a fact JSON object as detailled above without the "ref" field
+  - return value: a fact reference JSON object
+
+  </details>
+
+- <details><summary><code>GET /fact/list</code>: retrieve all facts known to the server</summary>
+
+  - payload: none
+  - return value: a JSON array containing fact JSON objects
+
+  </details>
+
+- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
+
+  - payload: none
+  - return value: a JSON array containing scroll JSON objects
+
+  </details>
+
+- <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
+
+  - payload: none
+  - return value: a JSON array containing scroll JSON objects
+
+  </details>
+
+### Formats
+
+Formats shared by multiple endpoints above.
+
+- <details><summary>Fact reference format</summary>
 
     ```javascript
     {"uri": /* some uri */}
@@ -19,7 +55,7 @@ See [./installation.md](./installation.md).
 
   </details>
 
-- <details><summary>Fact JSON format (shared by endpoints below)</summary>
+- <details><summary>Fact JSON format</summary>
 
     - variant a: general facts:
     
@@ -47,7 +83,7 @@ See [./installation.md](./installation.md).
 
   </details>
 
-- <details><summary>Scroll reference JSON format (shared by endpoints below)</summary>
+- <details><summary>Scroll reference format</summary>
 
     ```javascript
     {
@@ -61,7 +97,7 @@ See [./installation.md](./installation.md).
 
   </details>
 
-- <details><summary>Scroll JSON format (shared by endpoints below)</summary>
+- <details><summary>Scroll format</summary>
 
     ```javascript
     {
@@ -74,7 +110,7 @@ See [./installation.md](./installation.md).
 
   </details>
 
-- <details><summary>Scroll Application format (shared by endpoints below)</summary>
+- <details><summary>Scroll application format</summary>
 
     ```javascript
     {
@@ -87,34 +123,6 @@ See [./installation.md](./installation.md).
     ```
 
   </details>
-
-- <details><summary><code>POST /fact/add</code>: make a new fact known to the server</summary>
-
-  - payload: a fact JSON object as detailled above without the "ref" field
-  - return value: a fact reference JSON object
-
-  </details>
-
-- <details><summary><code>GET /fact/list</code>: retrieve all facts known to the server</summary>
-
-  - payload: none
-  - return value: a JSON array containing fact JSON objects
-
-  </details>
-
-- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
-
-  - payload: none
-  - return value: a JSON array containing scroll JSON objects
-
-  </details>
-
-- <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
-
-  - payload: none
-  - return value: a JSON array containing scroll JSON objects
-  </details>
-
 
 ## Internal REST API
 
