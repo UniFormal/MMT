@@ -7,21 +7,22 @@ import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, SimpleStep}
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
+import info.kwarc.mmt.api.{ComplexStep, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
-import io.circe.generic.extras.ConfiguredJsonCodec
 
 object DataStructures {
   // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
   import Codecs.PathCodecs._
   import Codecs.SOMDocCodecs._
   import Codecs.DataStructureCodecs.FactCodecs.config._
+
+  import io.circe.generic.extras.ConfiguredJsonCodec
   // ^^^^^^^ END: DO NOT REMOVE
 
   /**
@@ -59,7 +60,7 @@ object DataStructures {
         vs = Visibility.public
       )
 
-      factConstant.metadata.add(MetaDatum(FrameWorld.MetaKeys.label, MitM.Foundation.StringLiterals(label)))
+      factConstant.metadata.add(MetaDatum(MetaKeys.label, StringLiterals(label)))
 
       factConstant
     }

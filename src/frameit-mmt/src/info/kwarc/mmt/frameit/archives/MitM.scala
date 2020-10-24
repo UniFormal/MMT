@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.{DPath, GlobalName}
 import info.kwarc.mmt.api.objects.OMS
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardBool, StandardDouble, StandardInt, StandardPositive, StandardString}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.lf.BinaryLFConstantScala
 
 object MitM {
   /**
@@ -26,8 +27,10 @@ object MitM {
       // val string: GlobalName = path ? "Strings" ? "string"
 
       // now with MitM/Foundation@urtheories-strings branch (not yet tested and approved by Dennis)
-      val string: GlobalName = DPath(URI("http", "cds.omdoc.org") / "urtheories") ? "Strings" ? "string"
+      private[Foundation] val string: GlobalName = MMT.urtheories.path ? "Strings" ? "string"
     }
+
+    object StringConcat extends BinaryLFConstantScala(MMT.urtheories.path ? "Strings", "concat")
 
     object BooleanLiterals extends RepresentedRealizedType(OMS(Math.bool), StandardBool)
 

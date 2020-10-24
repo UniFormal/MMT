@@ -7,4 +7,8 @@ object MMT {
   object LFX {
     private val _path = DPath(URI("http://gl.mathhub.info/MMT/LFX"))
   }
+
+  object urtheories {
+    val path: DPath = DPath(URI("http", "cds.omdoc.org") / "urtheories")
+  }
 }

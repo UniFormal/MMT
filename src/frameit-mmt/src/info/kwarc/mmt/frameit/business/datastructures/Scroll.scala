@@ -6,7 +6,8 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, Term}
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.symbols.ApplyMorphism
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaKeys
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 

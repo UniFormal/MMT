@@ -6,6 +6,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{GeneralError, GlobalName}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SValueEqFact}
@@ -36,9 +38,43 @@ sealed case class Fact(
     }
   }
 
+  /**
+    * Renders a dynamic fact given by a [[ScrollViewRenderer]].
+    *
+    * Facts as in facts required from a scroll are dynamic in the sense that:
+    *
+    * 1. concerning their type and definiens, homomorphic extension
+    *
+    * 2. concerning their [[UserMetadata metadata]] (labels and descriptions),
+    *
+    *  - if the fact is assigned to a new fact (as hackily deduced from viewRenderer),
+    *    then the "dynamic fact" (i.e. return value) should use the metadata from the assigned
+    *    fact (possibly, a fact expression).
+    *
+    *  - if the fact is not yet assigned by the putative view (i.e. a partial view),
+    *    then the original metadata is rendered.
+    *    (We need rendering here as the original metadata might reference labels of other required facts
+    *     that *have been assigned* and need to get their labels right.)
+    *
+    * @return A new fact representing the "dynamic version" of the current fact. That can then be rendered
+    *         to a mere [[SFact]] (for sending it to the game engine) via [[renderStatic()]].
+    */
   private[datastructures] def renderDynamicFact(viewRenderer: ScrollViewRenderer): Fact = {
+    //
+    val newMeta = (if (viewRenderer(OMS(ref.uri)) == OMS(ref.uri)) {
+      // view is partial on our fact constant
+      // => retain old meta data
+      meta
+    } else {
+      // otherwise, use meta data of assigned fact (possibly, a complex expression)
+      UserMetadata(
+        label = MetaAnnotations.LabelVerbalization(OMS(ref.uri)),
+        description = MetaAnnotations.DescriptionVerbalization(OMS(ref.uri))
+      )
+    }).render(viewRenderer)
+
     this.copy(
-      meta = meta.render(viewRenderer),
+      meta = newMeta,
       tp = viewRenderer(tp),
       df = df.map(viewRenderer.apply)
     )

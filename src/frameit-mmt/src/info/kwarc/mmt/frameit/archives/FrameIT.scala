@@ -1,7 +1,10 @@
 package info.kwarc.mmt.frameit.archives
 
+import info.kwarc.mmt.api.objects.{OMID, OMS, Term}
+import info.kwarc.mmt.api.uom.ConstantScala
 import info.kwarc.mmt.api.{DPath, GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, UnaryLFConstantScala}
 
 object FrameIT {
 
@@ -18,16 +21,29 @@ object FrameIT {
 
     private val _metaAnnotations: MPath = rootDocument ? "MetaAnnotations"
 
-    object MetaKeys {
-      val label: GlobalName = _metaAnnotations ? "label"
-      val description: GlobalName = _metaAnnotations ? "description"
-      val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
-      val solutionTheory: GlobalName = _metaAnnotations ? "solutionTheory"
-      val scrollDescription: GlobalName = _metaAnnotations ? "description"
-    }
+    object MetaAnnotations {
+      object MetaKeys {
+        val label: GlobalName = _metaAnnotations ? "label"
+        val description: GlobalName = _metaAnnotations ? "description"
+        val problemTheory: GlobalName = _metaAnnotations ? "problemTheory"
+        val solutionTheory: GlobalName = _metaAnnotations ? "solutionTheory"
+        val scrollDescription: GlobalName = _metaAnnotations ? "description"
+      }
 
-    object MetaFunctions {
-      val labelVerbOf: GlobalName = _metaAnnotations ? "label_verbalization_of"
+      // a flexary LF constant
+      object LabelVerbalization {
+        private val path = _metaAnnotations ? "label_verbalization_of"
+
+        def apply(args: Term*): Term = ApplySpine(OMS(path), args : _*)
+
+        def unapply(t: Term): Option[List[Term]] = t match {
+          case ApplySpine(OMS(`path`), args) if args.nonEmpty => Some(args)
+          case _ => None
+        }
+      }
+
+      // todo: not formalized in FrameIT/frameworld yet!
+      object DescriptionVerbalization extends UnaryLFConstantScala(_metaAnnotations, "description_verbalization_of")
     }
   }
 }

@@ -64,7 +64,8 @@ object ServerEndpoints extends EndpointModule[IO] {
   // ^^^^^^^ END: DO NOT REMOVE
 
   private def getEndpointsForState(state: ServerState) =
-    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: printSituationTheory(state)
+    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
+      addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: printSituationTheory(state)
 
   def getServiceForState(state: ServerState): Service[Request, Response] =
     getEndpointsForState(state).toServiceAs[Application.Json]
@@ -85,6 +86,17 @@ object ServerEndpoints extends EndpointModule[IO] {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc")
 
     Ok(())
+  }
+
+  private def reloadArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("reload")) {
+    state.ctrl.backend.getArchive(FrameWorld.archiveID).map(frameWorldArchive => {
+      val root = frameWorldArchive.root
+
+      state.ctrl.backend.removeStore(frameWorldArchive)
+      state.ctrl.addArchive(root)
+
+      Ok(())
+    }).getOrElse(NotFound(new Exception("MMT backend did not know FrameWorld archive by ID, but upon server start it did apparently (otherwise we would have aborted there). Something is inconsistent.")))
   }
 
   private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
