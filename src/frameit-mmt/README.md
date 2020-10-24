@@ -6,7 +6,7 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
 See [./installation.md](./installation.md).
 
-## Public REST API
+## REST API
 
 - <details><summary>Fact reference JSON format (shared by endpoints below)</summary>
 
@@ -19,7 +19,7 @@ See [./installation.md](./installation.md).
 
   </details>
 
--<details><summary>Fact JSON format (shared by endpoints below)</summary>
+- <details><summary>Fact JSON format (shared by endpoints below)</summary>
 
     - variant a: general facts:
     
