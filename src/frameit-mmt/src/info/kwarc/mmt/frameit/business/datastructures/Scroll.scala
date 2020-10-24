@@ -1,12 +1,9 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
-import info.kwarc.mmt.api.{GetError, MPath, Path, StructuralElement}
+import info.kwarc.mmt.api.MPath
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{Context, Term}
 import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.symbols.ApplyMorphism
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
@@ -19,11 +16,13 @@ sealed case class ScrollReference(problemTheory: MPath, solutionTheory: MPath)
 sealed case class Scroll(
                           ref: ScrollReference,
                           meta: UserMetadata,
-                          requiredFacts: List[Fact]
+                          requiredFacts: List[Fact],
+                          acquiredFacts: List[Fact]
                         ) {
   def renderDynamicScroll(viewRenderer: ScrollViewRenderer)(implicit ctrl: Controller): Scroll = this.copy(
     meta = meta.render(viewRenderer),
-    requiredFacts = requiredFacts.map(_.renderDynamicFact(viewRenderer))
+    requiredFacts = requiredFacts.map(_.renderDynamicFact(viewRenderer)),
+    acquiredFacts = acquiredFacts.map(_.renderDynamicFact(viewRenderer))
   )
 
   def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
@@ -37,7 +36,8 @@ sealed case class Scroll(
       scroll.ref,
       scroll.meta.label.toStr(true),
       scroll.meta.description.toStr(true),
-      scroll.requiredFacts.map(_.renderStatic())
+      scroll.requiredFacts.map(_.renderStatic()),
+      scroll.acquiredFacts.map(_.renderStatic())
     )
   }
 }
@@ -79,7 +79,11 @@ object Scroll {
       Some(Scroll(
         scrollRef,
         UserMetadata.parse(thy),
-        Fact.findAllIn(ctrl.getTheory(problemThy), recurseOnInclusions = true)
+        Fact.findAllIn(ctrl.getTheory(problemThy), recurseOnInclusions = true),
+
+        // todo: this will not pick up acquired facts that have been included
+        //       we need to disallow recursion, though, as to not recurse into the problem theory!
+        Fact.findAllIn(ctrl.getTheory(solutionThy), recurseOnInclusions = false)
       ))
     } catch {
       case _: InvalidMetaData => None

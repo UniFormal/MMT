@@ -61,16 +61,16 @@ sealed case class Fact(
     */
   private[datastructures] def renderDynamicFact(viewRenderer: ScrollViewRenderer): Fact = {
     //
-    val newMeta = (if (viewRenderer(OMS(ref.uri)) == OMS(ref.uri)) {
-      // view is partial on our fact constant
-      // => retain old meta data
-      meta
-    } else {
-      // otherwise, use meta data of assigned fact (possibly, a complex expression)
+    val newMeta = (if (viewRenderer.hasAssignmentFor(ref.uri)) {
+      // use meta data of assigned fact (possibly, a complex expression)
       UserMetadata(
         label = MetaAnnotations.LabelVerbalization(OMS(ref.uri)),
         description = MetaAnnotations.DescriptionVerbalization(OMS(ref.uri))
       )
+    } else {
+      // view is partial on our fact constant
+      // => retain old meta data
+      meta
     }).render(viewRenderer)
 
     this.copy(

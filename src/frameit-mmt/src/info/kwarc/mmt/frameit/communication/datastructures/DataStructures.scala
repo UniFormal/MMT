@@ -167,7 +167,8 @@ object DataStructures {
                             ref: ScrollReference,
                             label: String,
                             description: String,
-                            requiredFacts: List[SFact]
+                            requiredFacts: List[SFact],
+                            acquiredFacts: List[SFact]
                           )
 
   /**

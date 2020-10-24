@@ -20,7 +20,8 @@ import scala.util.Try
   * be cautious in using companion objects for abstract class/case classes for which you would like to derive
   * io.circe codecs!! See [[https://gitter.im/circe/circe?at=5f8ea822270d004bcfdb28e9]]
   *
-  * Also, invariant of frameit scala code: io.circe.generic.{auto,semiauto} and io.circe.generic.extras.{auto,semiauto} includes should only occur in this file (Codecs.scala)
+  * Also, invariant of frameit scala code: io.circe.generic.{auto,semiauto} and io.circe.generic.extras.{auto,semiauto} includes should only occur in this file (Codecs.scala).
+  * Reasoning: performance when compiling increases much more if io.circe implicits are not touched by the (iterative, caching) compiler! Also, abstract over io.circe which is brittle to use as a human being.
   *
   * Note: you cannot use deriveConfigured{Encoder,Decoder} for things that don't have a @ConfiguredJsonCodec annotation. Use derive{Encoder,Decoder} from plain io.circe.generic.semiauto (not from extras!).
   */

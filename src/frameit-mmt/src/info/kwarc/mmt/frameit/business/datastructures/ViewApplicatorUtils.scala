@@ -1,6 +1,6 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
-import info.kwarc.mmt.api.{??, GeneralError, GetError, LocalName}
+import info.kwarc.mmt.api.{??, GeneralError, GetError, GlobalName, LocalName}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.View
@@ -17,6 +17,7 @@ import scala.util.Try
 
 sealed trait ScrollViewRenderer {
   def apply(term: Term): Term
+  def hasAssignmentFor(symbol: GlobalName): Boolean
 }
 
 // @todo make it simplifying, too!
@@ -48,6 +49,13 @@ class StandardViewRenderer(private val view: View)(implicit ctrl: Controller) ex
         System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
         verbSimplified
     }
+  }
+
+  override def hasAssignmentFor(symbol: GlobalName): Boolean = symbol match {
+    case theo ?? ln =>
+      view.getO(LocalName(theo) / ln).nonEmpty
+
+    case _ => false
   }
 }
 
