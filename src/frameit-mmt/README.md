@@ -57,9 +57,9 @@ We use JSON for both payload and return values.
 
 ### Formats
 
-Formats shared by multiple endpoints above.
+JSON (sub)formats shared by multiple endpoints above.
 
-- <details><summary>Fact reference format</summary>
+- <details><summary>fact reference</summary>
 
     ```javascript
     {"uri": /* some uri */}
@@ -70,7 +70,7 @@ Formats shared by multiple endpoints above.
 
   </details>
 
-- <details><summary>Fact JSON format</summary>
+- <details><summary>fact</summary>
 
     - variant a: general facts:
     
@@ -98,7 +98,7 @@ Formats shared by multiple endpoints above.
 
   </details>
 
-- <details><summary>Scroll reference format</summary>
+- <details><summary>scroll reference</summary>
 
     ```javascript
     {
@@ -112,7 +112,7 @@ Formats shared by multiple endpoints above.
 
   </details>
 
-- <details><summary>Scroll format</summary>
+- <details><summary>scroll</summary>
 
     ```javascript
     {
@@ -126,7 +126,7 @@ Formats shared by multiple endpoints above.
 
   </details>
 
-- <details><summary>Scroll application format</summary>
+- <details><summary>scroll application</summary>
 
     ```javascript
     {
