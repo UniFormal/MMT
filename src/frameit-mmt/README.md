@@ -35,8 +35,22 @@ We use JSON for both payload and return values.
 
 - <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
 
-  - payload: none
-  - return value: a JSON array containing scroll JSON objects
+  - payload: scroll application JSON object
+  - return value: a JSON array of fact JSON objects
+
+  </details>
+
+- <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
+
+  - payload: scroll application JSON object
+  - return value: a scroll JSON object
+  
+  Note that the return value differs from the scroll as output by `/scroll/list` making this endpoint useful after all.
+  Namely, all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly) partial scroll application.
+  E.g., if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
+  and the scroll application maps `A` to `P`  (where `P: point ❘ meta ?MetaAnnotations?label "P"` comes from the situation theory and has label "P"),
+  then the dynamic scroll output by this endpoint will state `A: point ❘ meta ?MetaAnnotations?label "P" ❙`.
+  The same holds for more complex labels built out of multiple labels of facts. 
 
   </details>
 
@@ -104,7 +118,8 @@ Formats shared by multiple endpoints above.
       "ref": /* scroll reference */,
       "label": "some label",
       "description": "some description",
-      "requiredFacts": /* array of facts */
+      "requiredFacts": /* array of facts; facts that the scroll required you to give for scroll application */
+      "acquiredFacts": /* array of facts; facts that the scroll gives you upon successful scroll application */
     }
     ```
 
