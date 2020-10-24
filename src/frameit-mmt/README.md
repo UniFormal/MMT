@@ -47,7 +47,8 @@ We use JSON for both payload and return values.
   
   Note that the return value differs from the scroll as output by `/scroll/list` making this endpoint useful after all.
   Namely, all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly) partial scroll application.
-  E.g., if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
+  
+  For example, if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
   and the scroll application maps `A` to `P`  (where `P: point ❘ meta ?MetaAnnotations?label "P"` comes from the situation theory and has label "P"),
   then the dynamic scroll output by this endpoint will state `A: point ❘ meta ?MetaAnnotations?label "P" ❙`.
   The same holds for more complex labels built out of multiple labels of facts. 
