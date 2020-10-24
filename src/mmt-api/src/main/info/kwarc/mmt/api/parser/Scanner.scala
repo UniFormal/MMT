@@ -6,19 +6,27 @@ import utils._
 
 import scala.annotation.tailrec
 
-case class Ambiguous(notations: List[ParsingRule]) extends {
+case class Ambiguous(notations: List[NotationRule]) extends {
   val message = "multiple notations apply: " + notations.map(_.toString).mkString(",")
 } with Error(message)
 
 import info.kwarc.mmt.api.parser.ActiveNotation._
 
-/** scans a TokenList against some notations
-  * @param tl the TokenList to scan
-  *           matched notations are applied to tl, i.e., tl always holds the current TokenList
-  */
-class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable, val report: frontend.Report) extends frontend.Logger {
-  val logPrefix = "scanner"
+/**
+  * An UnmatchedList represents a subterm that has not been matched against a rule (in particular: notations) yet
+  * It is defined by a token list and holds parsing rules that can be used to scan that list against those rules.
+  * It arises in particular when notations matched against the parent term and determine that a certain list of tokens must eventually produce a single subterm.
 
+  * @param tl the TokenList to scan, its content will change during the scanning as this term is graudally parsed
+  * @param ruleTableInit the rules to use
+  * @param parsingUnitOpt the parsing unit that gave rise to this
+  */
+class UnmatchedList(val tl: TokenList, ruleTableInit: NotationRuleTable, parsingUnitOpt: Option[ParsingUnit], val report: frontend.Report)
+      extends TokenListElem with frontend.Logger {
+
+  // logging
+
+  val logPrefix = "scanner"
   private def logState() {
     log("token list: " + tl)
     log("shifted " + numCurrentTokens)
@@ -27,16 +35,33 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
     }
   }
 
-  /** the rules with which we still have to scan
-   */
+  override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
+
+  // TokenListElem interface
+
+  val firstPosition = tl(0).firstPosition
+  val lastPosition = tl(tl.length - 1).lastPosition
+
+  // rule management
+
+  /** the rules with which we still have to scan */
   private var ruleTable = ruleTableInit
-  def addRules(that: ParsingRuleTable, replace: Boolean) {
+
+  /** add/change the rules */
+  private[parser] def addRules(that: NotationRuleTable, replace: Boolean) {
     val newRuleTable = if (replace) that else ruleTable.add(that) 
     ruleTable = newRuleTable
+    tl.getTokens.foreach {
+      case ul : UnmatchedList => ul.addRules(that, replace)
+      case ml : MatchedList => ml.addRules(that, replace)
+      case _ =>
+    }
   }
 
+  // state and low-level state manipulation functions, mostly pertaining to the shift-reduce parsing, and the stack of currently open notations
+
   /** the notations to scan for in the current call to scan */
-  private def currentGroup: ParsingRuleGroup = ruleTable.groups.head // ruleTable.groups is nonempty during scanning
+  private def currentGroup: NotationRuleGroup = ruleTable.groups.head // ruleTable.groups is nonempty during scanning
   /** the number of Token's currently in tl */
   private var numTokens = tl.length
 
@@ -123,6 +148,8 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
       }
   }
 
+  // mid-level state mutation functions: applying notations while scanning
+
   /** applies the first active notation (precondition: must be applicable)
     * @param leftOpen notation may be left-open, i.e., it has not been applied before
     */
@@ -193,6 +220,8 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
           false
     }
   }
+
+  // top-level scanning of the token list
 
   private def advance() {
     log("shifting 1 Token: " + tl(currentIndex))
@@ -333,7 +362,7 @@ class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableI
   /** scans for some notations and applies matches to tl
     * @param group the rules to scan with
     */
-  private def scan(group: ParsingRuleGroup) {
+  private def scan(group: NotationRuleGroup) {
     log("scanning " + tl + " with notations " + group.rules.mkString(","))
     currentIndex = 0
     numCurrentTokens = 0

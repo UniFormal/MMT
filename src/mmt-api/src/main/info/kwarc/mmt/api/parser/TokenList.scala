@@ -3,7 +3,9 @@ package info.kwarc.mmt.api.parser
 import java.lang.Character._
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.Term
+import objects.Term
+import notations._
+import utils.MyList
 
 /** helper object */
 object TokenList {
@@ -42,11 +44,12 @@ object TokenList {
     * (The '\n' counts when counting the offset.)
     *
     * @param s string to tokenize
-    * @param em the escape manager containing lexing rules
+    * @param rules the rules in scope
     * @param first the position of the first character (defaults to 0)
     * @return the resulting TokenList
     */
-  def apply(s: String, em: EscapeManager, first: SourcePosition = SourcePosition(0, 0, 0)): TokenList = {
+  def apply(s: String, rules: RuleSet, first: SourcePosition = SourcePosition(0, 0, 0)): TokenList = {
+    val lexingRules = rules.getOrdered(classOf[LexingRule]).toList
     val l = first.offset + s.length
     // lexing state
     var i = first // position of next Char in s
@@ -71,53 +74,58 @@ object TokenList {
       val tp = c.getType // current Char's type
       if (skipEscaped > 0) {
         skipEscaped -= 1
-      } else em(s, i.offset - first.offset, i) match {
-        case Some(escaped) =>
-          endToken()
-          tokens ::= escaped
-          skipEscaped = escaped.length - 1
-        case None => if (isWhitespace(c)) {
-          // whitespace always starts a new Token,
-          endToken()
-          whitespace = true
-        } else {
-          // we are in a Token
-          tp match {
-            // after a connector, everything continues the Token
-            case _ if connect =>
-              current += c
-              connect = false
-            // letters, marks, and numbers continue the Token
-            case _ if isLetter(c) || isNumber(c) =>
-              current += c
-            // lexing URIs ?name, if name starts with a letter
-            case _ if c == '?' && current == "" && i.offset < l - 1 && isLetter(nextChar) =>
-              current += c
-            // ? and / continue a multi-character Token if other characters follow
-            case _ if "?/".contains(c) && current != "" && i.offset < l - 1 && !isWhitespace(nextChar) =>
-              current += c
-            // connectors are remembered
-            case _ if isConnector(c) =>
-              current += c
-              connect = true
-            // Java stores Unicode code points above FFFF as 2 characters, the first of which is in a certain range
-            // consequently, source references also count them as 2 characters
-            case _ if '\uD800' < c && c < '\uDBFF' =>
-              current += c
-              connect = true
-            // everything else:
-            case _ =>
-              // end previous Token, if any
-              endToken()
-              // look ahead: if a connector follows, start a multi-character Token
-              // otherwise, create a single-character Token
-              if (i.offset < l - 1 && isConnector(nextChar)) {
+      } else {
+        val lexedByRule = MyList(lexingRules).mapFind {lr =>
+          lr(s, i.offset - first.offset, i)
+        }
+        lexedByRule match {
+          case Some(lexed) =>
+            endToken()
+            tokens ::= lexed
+            skipEscaped = lexed.length - 1
+          case None => if (isWhitespace(c)) {
+            // whitespace always starts a new Token,
+            endToken()
+            whitespace = true
+          } else {
+            // we are in a Token
+            tp match {
+              // after a connector, everything continues the Token
+              case _ if connect =>
                 current += c
-              } else {
-                tokens ::= Token(c.toString, i, whitespace)
-              }
+                connect = false
+              // letters, marks, and numbers continue the Token
+              case _ if isLetter(c) || isNumber(c) =>
+                current += c
+              // lexing URIs ?name, if name starts with a letter
+              case _ if c == '?' && current == "" && i.offset < l - 1 && isLetter(nextChar) =>
+                current += c
+              // ? and / continue a multi-character Token if other characters follow
+              case _ if "?/".contains(c) && current != "" && i.offset < l - 1 && !isWhitespace(nextChar) =>
+                current += c
+              // connectors are remembered
+              case _ if isConnector(c) =>
+                current += c
+                connect = true
+              // Java stores Unicode code points above FFFF as 2 characters, the first of which is in a certain range
+              // consequently, source references also count them as 2 characters
+              case _ if '\uD800' < c && c < '\uDBFF' =>
+                current += c
+                connect = true
+              // everything else:
+              case _ =>
+                // end previous Token, if any
+                endToken()
+                // look ahead: if a connector follows, start a multi-character Token
+                // otherwise, create a single-character Token
+                if (i.offset < l - 1 && isConnector(nextChar)) {
+                  current += c
+                } else {
+                  tokens ::= Token(c.toString, i, whitespace)
+                }
+            }
+            whitespace = false
           }
-          whitespace = false
         }
       }
       if (c == '\n') i = i.nl else i += 1
@@ -168,13 +176,13 @@ class TokenList(private var tokens: List[TokenListElem]) {
    * @param rt current parsing rule table
    * @return the slice reduced into 1 Token
    */
-  def reduce(an: ActiveNotation, rt: ParsingRuleTable, rep: frontend.Report): (Int, Int) = {
+  def reduce(an: ActiveNotation, rt: NotationRuleTable, rep: frontend.Report): (Int, Int) = {
     val found = an.getFound
     def doFoundSimp(fa: FoundSimp): UnmatchedList = {
       fa match {
         case fa: FoundSimp =>
           // fa.slice might be a single token, but that is harmless
-          new UnmatchedList(new TokenList(fa.slice.toList), None, rt, rep)
+          new UnmatchedList(new TokenList(fa.slice.toList), rt, None, rep)
       }
     }
     var newTokens: List[(FoundContent, List[UnmatchedList])] = Nil
@@ -224,7 +232,7 @@ case class TokenSlice(tokens: TokenList, start: Int, next: Int) {
   def length: Int = next - start
 }
 
-/** the type of objects that may occur in a [[info.kwarc.mmt.api.parser.TokenList]] */
+/** the type of objects that may occur in a [[TokenList]] */
 trait TokenListElem {
   /** the first position included in this token */
   def firstPosition: SourcePosition
@@ -264,6 +272,8 @@ abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) 
   def parse(input: ExternalTokenParsingInput): Term
 }
 
+// TODO replace ExternalToken with CFExternalToken; throw away StringInterpolationToken, which is the only non-trivial external token
+
 /** bundles arguments passed into [[ExternalToken]]
   * @param outer the ParsingUnit during which this ExternalToken was encountered
   * @param parser the object parser
@@ -299,33 +309,8 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
   else
     tokens.map(_._2.toString).mkString("{" + an.toShortString + " ", " ", " " + an.toShortString + "}")
 
-  private[parser] def addRules(rules : ParsingRuleTable, replace: Boolean) {tokens foreach {
+  private[parser] def addRules(rules : NotationRuleTable, replace: Boolean) {tokens foreach {
     case (_,ul) => ul.foreach(_.addRules(rules, replace))
   }}
 }
 
-/**
- * An UnmatchedList is a SubTermToken resulting by reducing a sublist without using a notation
- *
- * Other notations have determined that this sublist must be parsed into a subtree, but it is
- * not known (yet) which notation should be used.
- *
- * @param tl the TokenList that is to be reduced
- */
-// TODO: merge this with the Scanner class
-class UnmatchedList(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], rt: ParsingRuleTable, rep: frontend.Report) extends TokenListElem {
-  val firstPosition = tl(0).firstPosition
-  val lastPosition = tl(tl.length - 1).lastPosition
-  private val scanner: Scanner = new Scanner(tl, parsingUnitOpt, rt, rep)
-  def addRules(rules : ParsingRuleTable, replace: Boolean) {
-    scanner.addRules(rules, replace)
-    tl.getTokens.foreach {
-      case ul : UnmatchedList => ul.addRules(rules, replace)
-      case ml : MatchedList => ml.addRules(rules, replace)
-      case _ =>
-    }
-  }
-  def scan() {scanner.scan()}
-
-  override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
-}

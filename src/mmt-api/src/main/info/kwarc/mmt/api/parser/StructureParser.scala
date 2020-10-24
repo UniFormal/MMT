@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import documents._
 import libraries._
-import archives.{BuildResult, BuildSuccess, BuildTask, LogicalDependency}
+import archives.{LogicalDependency, BuildSuccess, BuildTask, BuildResult}
 import checking.Interpreter
 import frontend.Controller
 import modules._
@@ -294,7 +294,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
  *
    * @return the raw string, the region, and the parsed term
    */
-  def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, ParseResult) = {
+  def readParsedObject(context: Context, topRule: Option[NotationRule] = None)(implicit state: ParserState): (String, SourceRegion, ParseResult) = {
     val (obj, reg) = state.reader.readObject
     val pu = ParsingUnit(state.makeSourceRef(reg), context, obj, state.iiContext, topRule)
     val pr = puCont(pu)
@@ -1161,7 +1161,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
   private def readInstance(instFeatPattern: (StructuralFeature,DerivedDeclaration), tpath: MPath)(implicit state: ParserState): DerivedDeclaration = {
     val (instFeat, pattern) = instFeatPattern
     val context = Context(tpath)
-    val patNot = pattern.notC.parsing map {n => ParsingRule(pattern.modulePath, Nil, n)}
+    val patNot = pattern.notC.parsing map {n => NotationRule(pattern.modulePath, Nil, n)}
     val (_, reg, pr) = readParsedObject(context, patNot)
     val (name,tp) = instFeat.processHeader(pr.term)
     SourceRef.update(tp, state.makeSourceRef(reg))

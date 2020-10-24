@@ -45,8 +45,8 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.Simpli
    /** @return the lexer extension to be used by the lexer, defined in terms of the LexFunction lex */
    def lexerExtension = semType.lex map {l =>
      val p = new LiteralParser(self)
-     new LexParseExtension(l, p) {
-        override def toString = "rule LexParseExtension " + semType.toString
+     new LexParseRule(l, p) {
+        override def toString = "rule LexParseRule " + semType.toString
         override val priority = self.priority // reusing priority of this rule for the associated lexing rule
      }
    }

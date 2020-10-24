@@ -2,7 +2,6 @@ package info.kwarc.mmt.api.parser
 import info.kwarc.mmt.api._
 import notations._
 import utils._
-
 import ActiveNotation._
 
 /** remembers the relevant Scanner state at the time when an [[ActiveNotation]] was created */
@@ -15,7 +14,7 @@ case object ScannerNoBacktrack extends ScannerBacktrackInfo
  *  That would computational notations.
  */
 abstract class ActiveParsingRule {
-  val rules: List[ParsingRule]
+  val rules: List[NotationRule]
   val backtrackInfo: ScannerBacktrackInfo  
   
   def applicable(currentToken: Token, futureTokens: String): Applicability
@@ -36,7 +35,7 @@ abstract class ActiveParsingRule {
  *    if not a singleton, all [[TextNotation]]s must TextNotation.agree
  *  @param backtrackInfo information for restoring the state before activating this notation
  */
-class ActiveNotation(scanner: Scanner, val rules: List[ParsingRule], val backtrackInfo: ScannerBacktrackInfo) extends ActiveParsingRule {
+class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val backtrackInfo: ScannerBacktrackInfo) extends ActiveParsingRule {
    // invariant: found.reverse (qua List[Marker]) ::: left == markers of each rule
 
    override def toString = toShortString + " " + found.reverse.mkString("", " ", "")

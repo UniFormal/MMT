@@ -109,7 +109,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** runs build tasks */
   def buildManager = extman.get(classOf[BuildManager]).head
 
-  /** converts between strict and pragmatic syntax using [[notations.NotationExtension]]s */
+  /** converts between strict and pragmatic syntax */
   def pragmatic = extman.get(classOf[Pragmatics]).head
   /** the http server */
   var server: Option[Server] = None

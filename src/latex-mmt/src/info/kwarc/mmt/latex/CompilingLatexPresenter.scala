@@ -5,7 +5,6 @@ import utils._
 import frontend._
 import symbols._
 import modules._
-import documents._
 import objects._
 import presentation._
 import notations._
@@ -44,7 +43,7 @@ object Common {
   private def macroUnicodeMap(c: Char): Option[String] = rawUnicodeMap.get(c).map(x => "\\" + x + " ")
   private val inverseUnicodeMap = new scala.collection.mutable.HashMap[String,String]
   /** this is not used by default; users can add it as a rule if they have difficulties typing Unicode characters in LaTeX */
-  object LatexToUnicodeConverter extends LexerExtension {
+  object LatexToUnicodeConverter extends LexingRule {
     def apply(s: String, i: Int, firstPosition: SourcePosition): Option[Token] = {
       if (s(i) != '\\') return None
       var j = i+1

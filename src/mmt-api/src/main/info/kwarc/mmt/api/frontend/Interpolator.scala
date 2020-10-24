@@ -35,7 +35,7 @@ class MMTInterpolator(controller: frontend.Controller) {
            case dp: DPath => mmt.mmtcd
         }
      }
-   def parse(ss: Iterable[String], ts: Iterable[Term], top: Option[ParsingRule], check: Boolean) = {
+   def parse(ss: Iterable[String],ts: Iterable[Term],top: Option[NotationRule],check: Boolean) = {
          val strings = ss.iterator
          val args = ts.iterator
          val buf = new StringBuffer(strings.next)

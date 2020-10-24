@@ -8,6 +8,7 @@ import documents._
 import frontend._
 import objects._
 import utils._
+import notations._
 
 /** ParsingUnit encapsulates the input of an [[ObjectParser]]
   *
@@ -18,7 +19,7 @@ import utils._
   * @param term the term to parse
   * @param top an optional notation that the whole input must match;
   */
-case class ParsingUnit(source: SourceRef, context: Context, term: String, iiContext: InterpretationInstructionContext, top: Option[ParsingRule] = None) extends MMTTask {
+case class ParsingUnit(source: SourceRef, context: Context, term: String, iiContext: InterpretationInstructionContext, top: Option[NotationRule] = None) extends MMTTask {
    /** level determines the notation extension: approximated by the largest known containing theory */
    def getLevel = {
      val levelCandidates = context.getIncludes

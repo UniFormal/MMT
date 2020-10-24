@@ -13,12 +13,12 @@ class Pragmatics extends ChangeListener {
    private lazy val lup = controller.globalLookup // must be lazy due to order of class initialization
 
    /** caches (via change-listening) all known NotationExtensions */
-   private var notExts: List[(MPath, NotationExtension)] = Nil
+   private var notExts: List[(MPath, PragmaticTermRule)] = Nil
 
    override def onAdd(se: StructuralElement) {
      se match {
        case rc: RuleConstant => rc.df.foreach {
-         case ne: NotationExtension =>
+         case ne: PragmaticTermRule =>
            notExts ::= (rc.home.toMPath, ne)
          case _ =>
        }
@@ -28,7 +28,7 @@ class Pragmatics extends ChangeListener {
    override def onDelete(se: StructuralElement) {
      se match {
        case rc: RuleConstant => rc.df.foreach {
-         case ne: NotationExtension =>
+         case ne: PragmaticTermRule =>
            notExts = notExts.filterNot {case (_,neC) => ne == neC}
          case _ =>
        }
@@ -40,7 +40,7 @@ class Pragmatics extends ChangeListener {
    }
 
    /** a NotationExtension is applicable at level mp if it is visible to mp */
-   private def applicableByLevel(levelOpt: Option[MPath]): NotationExtension = {
+   private def applicableByLevel(levelOpt: Option[MPath]): PragmaticTermRule = {
       val level = levelOpt getOrElse {return MixfixNotation}
       val applicable = notExts.flatMap {case (thy, ne) =>
         if (controller.globalLookup.hasImplicit(OMMOD(thy), OMMOD(level)))

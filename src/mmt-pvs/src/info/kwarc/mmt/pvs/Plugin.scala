@@ -30,7 +30,7 @@ import PVSTheory._
 
 // Notation Extension
 
-object PVSNotation extends NotationExtension {
+object PVSNotation extends PragmaticTermRule {
   override val priority = 3
   def isApplicable(t: Term): Boolean = t match {
     case ComplexTerm(Apply.path,sub,con,List(pvsapply.term,_,_,OMS(fun),tuple_expr(List(a,b)))) =>

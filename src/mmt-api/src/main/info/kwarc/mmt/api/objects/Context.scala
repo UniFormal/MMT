@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.objects
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.objects.Conversions._
-import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils._
+import notations._
+import Conversions._
+import symbols._
+import utils._
 
 import scala.xml.Node
 
@@ -549,9 +549,9 @@ object Context {
 
   private val sym = utils.mmt.context
   /** a typical notation for context: ,-separated bindings */
-  val parsingRule = parser.ParsingRule(sym, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
+  val parsingRule = NotationRule(sym, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(Var(1, true, Some(Delim(",")))))
   val instanceParsingRule =
-    parser.ParsingRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(
+    NotationRule(utils.mmt.context, Nil, TextNotation.fromMarkers(Precedence.integer(0), None)(
       Delim("("), SimpSeqArg(1, Delim(","), CommonMarkerProperties.noProps), Delim(")")))
 
   /** helper functions to temporarily turn a context into a term, e.g., for checking contexts */
