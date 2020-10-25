@@ -16,25 +16,53 @@ import info.kwarc.mmt.lf._
 
 
 object Mizar {
-   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
+  val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
   val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
-   private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
-   val MizarTh = mizarBase ? "Mizar"
-   val MizarPatternsTh = mizarBase ? "MizarPatterns"
+  // private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
+  val MizarPatternsTh = latinBase ? "MizarPatterns"
 
-   val HiddenTh = mizarBase ? "HIDDEN"
+
+  private val latinBase =  DPath(utils.URI("latin:/"))
+  val MizarTh = latinBase ? "Mizar"
+  val TermsTh = latinBase ? "Terms"
+  val PropositionsTh = latinBase ? "Propositions"
+  val TypesTh = latinBase ? "Types"
+  val ProofsTh = latinBase ? "Proofs"
+  val softTypedTermsTh = latinBase ? "SoftTypedTerms"
+  val ConjunctionTh = latinBase ? "Conjunction"
+  val DisjunctionTh = latinBase ? "Disjunction"
+  val EqualityTh = latinBase ? "Equality"
+  val TruthTh = latinBase ? "Truth"
+  val FalsityTh = latinBase ? "Falsity"
+  val NegationTh = latinBase ? "Negation"
+  val ImplicationTh = latinBase ? "Implication"
+  val EquivalenceTh = latinBase ? "Equivalence"
+
+
+
+  val HiddenTh = latinBase ? "HIDDEN"
   //TODO
-   val MizarInformal = mizarBase ? "mizar-informal"
+   val MizarInformal = latinBase ? "mizar-informal"
 
   def by : Term = OMID(MizarInformal ? "by")
   def from : Term = OMID(MizarInformal ? "from")
 
    def constantName(name : String) : GlobalName = {
       name match {
-        case "set" => HiddenTh ? name
-        case "eq" => MizarTh ? name //officially in Hidden but in our case its in the Mizar base theory
-         case "in" => HiddenTh ? name
-         case _ => MizarTh ? name
+        case "set" => TermsTh ? name
+        case "prop"=> PropositionsTh ? name
+        case "mode" => TypesTh ? "tp"
+        case "proof" => ProofsTh ? "ded"
+        case "is" => softTypedTermsTh ? "of"
+        case "and" => ConjunctionTh ? name
+        case "or" => DisjunctionTh ? name
+        case "eq" => EqualityTh ? "equal" //officially in Hidden but in our case its in the Mizar base theory
+        case "true" => TruthTh ? name
+        case "false" => TruthTh ? name
+        case "not" => TruthTh ? name
+        case "implies" => TruthTh ? "impl"
+        case "iff" => TruthTh ? "equiv"
+        case _ => MizarTh ? name
       }
    }
    def constant(name : String) : Term = OMID(constantName(name))
@@ -46,18 +74,30 @@ object Mizar {
    def apply(f : Term, args : Term*) = ApplyGeneral(f, args.toList)
 
    def prop : Term = constant("prop")
-   val any : Term = constant("any")
+   //val any : Term = constant("any")
    def tp : Term = constant("tp")
    def set = constant("set")
+  // TODO: make sure this really gives us what we want
+   def any =constant("set")
 
    def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
    def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
 
    def andCon = constantName("and")
-   def and(tms : List[Term]) : Term = apply(OMS(andCon), OMI(tms.length) :: tms :_*)
+
+   def and(tms : List[Term]) : Term = tms match {
+     case Nil =>trueCon
+     case List(tm) => tm
+     case hd::tl => andCon(hd, and(tl))
+   }
+  //apply(OMS(andCon), OMI(tms.length) :: tms :_*)
      //apply(constant("and"), OMI(tms.length), apply(Sequence, tms :_*))
    def orCon = constantName("or")
-   def or(tms : List[Term]) : Term = apply(OMS(orCon), OMI(tms.length) :: tms :_*)
+   def or(tms : List[Term]) : Term = tms match {
+     case Nil =>trueCon
+     case List(tm) => tm
+     case hd::tl => orCon(hd, and(tl))
+   } //apply(OMS(orCon), OMI(tms.length) :: tms :_*)
 
    // Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
    def seqConn(connective : String, length : Term, seq : Term) : Term =
@@ -76,7 +116,7 @@ object Mizar {
    class Quantifier(n: String) {
      def apply(v : String, a : Term, prop : Term) = ApplySpine(OMS(constantName(n)), a, Lambda(LocalName(v), Mizar.any, prop))
      def unapply(t: Term): Option[(String,Term,Term)] = t match {
-       case ApplySpine(OMS(q), List(a, Lambda(x, Mizar.any, prop))) if q == constantName(n) => Some((x.toString, a, prop))
+       case ApplySpine(OMS(q), List(a, Lambda(x, any, prop))) if q == constantName(n) => Some((x.toString, a, prop))
        case _ => None
      }
    }
