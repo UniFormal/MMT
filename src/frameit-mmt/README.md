@@ -8,42 +8,44 @@ See [./installation.md](./installation.md).
 
 ## REST API
 
-We use UTF-8-encoded JSON for both HTTP request and response bodies.
+We use UTF-8-encoded JSON payloads for both HTTP request and response bodies.
+
+All endpoints indicate success by a 2xx response status code and failure by any other status code.
 
 ### Endpoints
 
 - <details><summary><code>POST /fact/add</code>: make a new fact known to the server</summary>
 
-  - request: a fact JSON object as detailed above without the "ref" field
-  - response a fact reference JSON object
+  - request: a fact JSON object (without the "ref" field)
+  - response: a fact reference
 
   </details>
 
 - <details><summary><code>GET /fact/list</code>: retrieve all facts known to the server</summary>
 
-  - request: none
-  - response a JSON array containing fact JSON objects
+  - request: empty
+  - response: a JSON array of facts
 
   </details>
 
 - <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
 
-  - request: none
-  - response a JSON array containing scroll JSON objects
+  - request: empty
+  - response: a JSON array of scrolls
 
   </details>
 
 - <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
 
-  - request: scroll application JSON object
-  - response a JSON array of fact JSON objects
+  - request: a scroll application
+  - response: a JSON array of facts
 
   </details>
 
 - <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
 
-  - request: scroll application JSON object
-  - response a scroll JSON object
+  - request: a scroll application
+  - response: a scroll
   
   Note that the return value differs from the scroll as output by `/scroll/list` making this endpoint useful after all.
   Namely, all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly) partial scroll application.
@@ -146,11 +148,11 @@ JSON (sub)formats shared by multiple endpoints above.
     For quick reference, here is a representative sample of SOMDoc:
     
     - `{"kind": "OMS", "uri": "..."}`
-    - `{"kind": "OMA", "applicant": /* SOMDoc JSON object */, "arguments": /* array of SOMDoc JSON objects */}`
+    - `{"kind": "OMA", "applicant": /* SOMDoc */, "arguments": /* array of SOMDoc */}`
     - `{"kind": "OMI", "value": 42}`
     - `{"kind": "OMF", "float": 0.1234}`
-    - `{"kind": "OMSTR", "string": "string in UTF-8 encoding"}`
-    - `{"kind": "RAW", "xml": "OMDoc XML"}` (our addition to the (insert link here to omdoc json standard))
+    - `{"kind": "OMSTR", "string": "string in UTF-8"}`
+    - `{"kind": "RAW", "xml": "OMDoc XML as string in UTF-8"}` (our addition to the (insert link here to omdoc json standard))
 
   </details>
 
@@ -164,7 +166,7 @@ JSON (sub)formats shared by multiple endpoints above.
 
 - <details><summary><code>GET /debug/situationtheory/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
-  - request: none
+  - request: empty
   - response a JSON string containing MMT surface syntax (probably unparsable by MMT; for human consumption only)
 
   </details>
