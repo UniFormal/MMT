@@ -4,6 +4,10 @@ on: [push, pull_request]
 
 jobs:
   ci:
+    # prevent GH actions from running when "[skip ci]" is given in commit message
+    # copied from https://dev.to/epassaro/use-skip-ci-in-github-actions-1mnf
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+
     name: Continuous Integration
     runs-on: ubuntu-latest
     steps:
