@@ -37,16 +37,34 @@ sealed case class Scroll(
     * @param view An optional view with its domain being the scroll's problem theory (i.e. [[ref.problemTheory]]).
     *             The view does *not* need to be total, not even partial (implying some "respect" to dependency
     *             relations). In other words, it may lack assignments for arbitrary declarations of the problem
-    *             theory.
+    *             theory. Let's call it "utterly partial".
     *
     *             In fact, if [[None]] is given, an empty view from [[ref.problemTheory]] to itself will be constructed
     *             and used instead.
     *
-    *             The returned [[SScroll]] is computed from ''this'' scroll by applying the view homomorphically
+    *             The returned [[SScroll]] is computed from ''this'' scroll by applying the view
     *
-    *             - on the scroll's [[UserMetadata metadata]] (such as labels, descriptions)
-    *             - on the type, definiens, and [[UserMetadata metadata]] (again: labels, descriptions) of every
-    *               required and acquired fact.
+    *             - homomorphically on the scroll's [[UserMetadata metadata]] (such as labels, descriptions)
+    *             - homomorphically on the type, definiens of every required and acquired fact.
+    *             - and as follows on the [[UserMetadata metadata]] of every required and acquired fact:
+    *               if the view contains an assignment for a fact, the metadata of the new fact (i.e.
+    *               the one appearing in the return value of this function) is the one of the assigned
+    *               expression. (todo this fails for complex assignments, no?)
+    *               Otherwise, if the view did *not* contain an assignment, then the view is applied
+    *               homomorphically on the metadata.
+    *               Doing so instead of naive copying is useful for unassigned-to facts whose labels
+    *               interpolate labels of already-assigned-to facts.
+    *
+    *
+    *             Since the view may be utterly partial, we have to be precise what it means to apply it
+    *             homomorphically: the action on complex terms is as usual (homomorphic). The result on
+    *             ''OMID(path)'' is ''t'' if the view contained the assignment ''path := t''. Otherwise,
+    *             if the symbol referred to by path was defined, then the homomorphic action on its definiens
+    *             is chosen. Finally, if it not even had a definiens, it is left as-is.
+    *             It is the last case where we deviate from the usual definitions.
+    *
+    *             Note that MMT probably assumed at several places that views are at least partial.
+    *             Moreover, this makes the whole implementation a bit hacky.
     *
     * @param ctrl A controller instance used for applying the view homomorphically and doing simplification.
     */
