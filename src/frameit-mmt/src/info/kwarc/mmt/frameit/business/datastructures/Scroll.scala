@@ -1,12 +1,15 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
-import info.kwarc.mmt.api.MPath
+import info.kwarc.mmt.api.{LocalName, MPath}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD}
 import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
+
+import scala.util.Random
 
 /**
   * A reference to a scroll -- without accompanying information.
@@ -26,18 +29,30 @@ sealed case class Scroll(
   )
 
   def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
-    val scroll = view match {
-      case Some(view) =>
-        renderDynamicScroll(new StandardViewRenderer(view)(ctrl))
-      case _ => this
+    val renderedScroll = view match {
+      case Some(v) => renderDynamicScroll(new StandardViewRenderer(v)(ctrl))
+      case None =>
+        val emptyView = View(
+          doc = ref.problemTheory.doc,
+          name = LocalName.random("empty_view_for_scroll_rendering"),
+          from = OMMOD(ref.problemTheory),
+          to = OMMOD(ref.problemTheory),
+          isImplicit = false
+        )
+
+        ctrl.add(emptyView)
+        val renderedScroll = renderDynamicScroll(new StandardViewRenderer(emptyView)(ctrl))
+        ctrl.delete(emptyView.path)
+
+        renderedScroll
     }
 
     SScroll(
-      scroll.ref,
-      scroll.meta.label.toStr(true),
-      scroll.meta.description.toStr(true),
-      scroll.requiredFacts.map(_.renderStatic()),
-      scroll.acquiredFacts.map(_.renderStatic())
+      renderedScroll.ref,
+      renderedScroll.meta.label.toStr(true),
+      renderedScroll.meta.description.toStr(true),
+      renderedScroll.requiredFacts.map(_.renderStatic()),
+      renderedScroll.acquiredFacts.map(_.renderStatic())
     )
   }
 }
