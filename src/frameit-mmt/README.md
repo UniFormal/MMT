@@ -8,42 +8,42 @@ See [./installation.md](./installation.md).
 
 ## REST API
 
-We use JSON for both payload and return values.
+We use UTF-8-encoded JSON for both HTTP request and response bodies.
 
 ### Endpoints
 
 - <details><summary><code>POST /fact/add</code>: make a new fact known to the server</summary>
 
-  - payload: a fact JSON object as detailled above without the "ref" field
-  - return value: a fact reference JSON object
+  - request: a fact JSON object as detailed above without the "ref" field
+  - response a fact reference JSON object
 
   </details>
 
 - <details><summary><code>GET /fact/list</code>: retrieve all facts known to the server</summary>
 
-  - payload: none
-  - return value: a JSON array containing fact JSON objects
+  - request: none
+  - response a JSON array containing fact JSON objects
 
   </details>
 
 - <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
 
-  - payload: none
-  - return value: a JSON array containing scroll JSON objects
+  - request: none
+  - response a JSON array containing scroll JSON objects
 
   </details>
 
 - <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
 
-  - payload: scroll application JSON object
-  - return value: a JSON array of fact JSON objects
+  - request: scroll application JSON object
+  - response a JSON array of fact JSON objects
 
   </details>
 
 - <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
 
-  - payload: scroll application JSON object
-  - return value: a scroll JSON object
+  - request: scroll application JSON object
+  - response a scroll JSON object
   
   Note that the return value differs from the scroll as output by `/scroll/list` making this endpoint useful after all.
   Namely, all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly) partial scroll application.
@@ -62,7 +62,7 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary>fact reference</summary>
 
     ```javascript
-    {"uri": /* some uri */}
+    {"uri": /* MMT URI */}
     ```
     
     Format only given for informational purposes, the game engine should treat fact reference objects opaquely.
@@ -79,8 +79,8 @@ JSON (sub)formats shared by multiple endpoints above.
         "ref": /* fact reference */
         "label": "some label",
         "kind": "general",
-        "tp": /* OMDoc JSON term */,
-        "df": /* OMDoc JSON term or null or left out */
+        "tp": /* SOMDoc */,
+        "df": /* SOMDoc or null or left out */
       }
       ```
 
@@ -91,8 +91,8 @@ JSON (sub)formats shared by multiple endpoints above.
         "ref": /* fact reference */
         "label": "some label",
         "kind": "veq",
-        "lhs":   /* OMDoc JSON term */,
-        "value": /* OMF OmDoc JSON term */
+        "lhs":   /* SOMDoc */,
+        "value": /* SOMDoc (must be an OMF) */
       }
       ```
 
@@ -102,8 +102,8 @@ JSON (sub)formats shared by multiple endpoints above.
 
     ```javascript
     {
-      "problemTheory": /* MMT URI as JSON string */,
-      "solutionTheory": /* MMT URI as JSON string */
+      "problemTheory": /* MMT URI */,
+      "solutionTheory": /* MMT URI */
     }
     ```
   
@@ -132,7 +132,7 @@ JSON (sub)formats shared by multiple endpoints above.
     {
       "scroll": /* scroll reference */,
       "assignments": [
-        ["ref": /* fact reference */, /* OMDoc JSON term (the assignment) */],
+        ["ref": /* fact reference */, /* SOMDoc (the assigned term to the fact slot) */],
         /* ... more elements (same syntax) */
       ]
     }
@@ -140,12 +140,32 @@ JSON (sub)formats shared by multiple endpoints above.
 
   </details>
 
+- <details><summary>SOMDoc ("simplified OMDoc")</summary>
+
+    We follow the (insert link here to omdoc json standard) with one addition elaborated on below.
+    For quick reference, here is a representative sample of SOMDoc:
+    
+    - `{"kind": "OMS", "uri": "..."}`
+    - `{"kind": "OMA", "applicant": /* SOMDoc JSON object */, "arguments": /* array of SOMDoc JSON objects */}`
+    - `{"kind": "OMI", "value": 42}`
+    - `{"kind": "OMF", "float": 0.1234}`
+    - `{"kind": "OMSTR", "string": "string in UTF-8 encoding"}`
+    - `{"kind": "RAW", "xml": "OMDoc XML"}` (our addition to the (insert link here to omdoc json standard))
+
+  </details>
+
+- <details><summary>MMT URI</summary>
+
+    A JSON string representing an MMT URI. We follow the string representation of MMT URIs as implemented in MMT itself.
+
+  </details>
+
 ## Internal REST API
 
 - <details><summary><code>GET /debug/situationtheory/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
-  - payload: none
-  - return value: a JSON string containing MMT surface syntax (probably unparsable by MMT; for human consumption only)
+  - request: none
+  - response a JSON string containing MMT surface syntax (probably unparsable by MMT; for human consumption only)
 
   </details>
 
