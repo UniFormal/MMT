@@ -9,6 +9,8 @@ import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKe
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
+import scala.util.Random
+
 /**
   * A reference to a scroll -- without accompanying information.
   */
