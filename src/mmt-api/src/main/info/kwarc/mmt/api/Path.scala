@@ -5,6 +5,7 @@ import objects._
 import utils._
 
 import scala.collection.mutable.Map
+import scala.util.Random
 
 /**
  * A Path represents an MMT path.
@@ -192,7 +193,20 @@ object LocalName {
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
    def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
-   val empty = LocalName(Nil)
+   val empty: LocalName = LocalName(Nil)
+
+   /**
+     * Generates a random LocalName of the form ''LocalName(prefix<random alphanumeric string>)''.
+     *
+     * Of course, the generated name might still clash with some other name pre-existing, but this
+     * scenario is highly improbable.
+     *
+     * @param prefix Some string prefix
+     * @param length The length of the random alphanumeric string suffix
+     */
+   def random(prefix: String = "", length: Int = 15): LocalName = {
+      LocalName(s"${prefix}${Random.alphanumeric.dropWhile(_.isDigit).take(length)}")
+   }
 }
 
 /**

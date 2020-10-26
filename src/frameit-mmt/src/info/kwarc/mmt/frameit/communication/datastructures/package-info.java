@@ -1,6 +1,12 @@
 /**
  * All datastructures sent from and received by the FrameIT MMT Server.
  *
+ * By convention, almost all these datastructures are prefixed with an "S" standing for simplified of their
+ * respective counterpart. E.g., {@link info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.SOMA SOMA}
+ * is the simplified variant of {@link info.kwarc.mmt.api.objects.OMA}. And for example,
+ * {@link info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll} is the simplified variant
+ * of {@link info.kwarc.mmt.frameit.business.datastructures.Scroll}.
+ *
  * On the datastructure side, we use the [[https://circe.github.io/circe/ io.circe]] library to conveniently create
  * (or auto-derive with Scala magic) JSON codecs for these datastructures.
  * And on the server side, we use the [[https://github.com/finagle/finch Finch]] library to conveniently specify

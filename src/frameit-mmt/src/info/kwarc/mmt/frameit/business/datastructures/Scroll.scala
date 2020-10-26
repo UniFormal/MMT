@@ -1,9 +1,10 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
-import info.kwarc.mmt.api.MPath
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
+import info.kwarc.mmt.api.{LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
@@ -13,6 +14,9 @@ import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScrol
   */
 sealed case class ScrollReference(problemTheory: MPath, solutionTheory: MPath)
 
+/**
+  * Scrolls
+  */
 sealed case class Scroll(
                           ref: ScrollReference,
                           meta: UserMetadata,
@@ -25,19 +29,50 @@ sealed case class Scroll(
     acquiredFacts = acquiredFacts.map(_.renderDynamicFact(viewRenderer))
   )
 
+  /**
+    * Render dynamic scroll to a simplified [[SScroll]] for transmission to the game engine.
+    *
+    * @param view An optional view with its domain being the scroll's problem theory (i.e. [[ref.problemTheory]]).
+    *             The view does *not* need to be total, not even partial (implying some "respect" to dependency
+    *             relations). In other words, it may lack assignments for arbitrary declarations of the problem
+    *             theory.
+    *
+    *             In fact, if [[None]] is given, an empty view from [[ref.problemTheory]] to itself will be constructed
+    *             and used instead.
+    *
+    *             The returned [[SScroll]] is computed from ''this'' scroll by applying the view homomorphically
+    *
+    *             - on the scroll's [[UserMetadata metadata]] (such as labels, descriptions)
+    *             - on the type, definiens, and [[UserMetadata metadata]] (again: labels, descriptions) of every
+    *               required and acquired fact.
+    *
+    * @param ctrl A controller instance used for applying the view homomorphically and doing simplification.
+    */
   def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
-    val scroll = view match {
-      case Some(view) =>
-        renderDynamicScroll(new StandardViewRenderer(view)(ctrl))
-      case _ => this
+    val renderedScroll = view match {
+      case Some(v) => renderDynamicScroll(new StandardViewRenderer(v)(ctrl))
+      case None =>
+        val emptyView = View(
+          doc = ref.problemTheory.doc,
+          name = LocalName.random("empty_view_for_scroll_rendering"),
+          from = OMMOD(ref.problemTheory),
+          to = OMMOD(ref.problemTheory),
+          isImplicit = false
+        )
+
+        ctrl.add(emptyView)
+        val renderedScroll = renderDynamicScroll(new StandardViewRenderer(emptyView)(ctrl))
+        ctrl.delete(emptyView.path)
+
+        renderedScroll
     }
 
     SScroll(
-      scroll.ref,
-      scroll.meta.label.toStr(true),
-      scroll.meta.description.toStr(true),
-      scroll.requiredFacts.map(_.renderStatic()),
-      scroll.acquiredFacts.map(_.renderStatic())
+      renderedScroll.ref,
+      renderedScroll.meta.label.toStr(true),
+      renderedScroll.meta.description.toStr(true),
+      renderedScroll.requiredFacts.map(_.renderStatic()),
+      renderedScroll.acquiredFacts.map(_.renderStatic())
     )
   }
 }

@@ -22,7 +22,7 @@ sealed trait ScrollViewRenderer {
 
 // @todo make it simplifying, too!
 class StandardViewRenderer(private val view: View)(implicit ctrl: Controller) extends ScrollViewRenderer {
-  private val viewApplicator = new ApplyPartialMorphism(ctrl.globalLookup, view.toTerm)
+  private val viewApplicator = ApplyPartialMorphism(ctrl.globalLookup, view.toTerm)
 
   // for partial views, no explicit separation actually possible, hence the names might be misleading
   private val domainCtx = Context(view.from.toMPath)
@@ -83,11 +83,13 @@ class VerbalizationSimplifier(implicit lookup: Lookup) extends StatelessTraverse
   }
 }
 
+// copied and modified from [[info.kwarc.mmt.api.symbols.ApplyMorphism]]
 case class ApplyPartialMorphism(lup: Lookup, morph: Term) extends UniformTranslator {
   private val traverser = new ApplyPartialMorphs()(lup)
   def apply(context: Context, tm: Term): Term = traverser.traverse(tm)(context, morph)
 }
 
+// copied and modified from [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs]]
 private class ApplyPartialMorphs(implicit lookup: Lookup) extends Traverser[Term] {
   def traverse(t: Term)(implicit con: Context, morph: Term) : Term = {
     t match {
