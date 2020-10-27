@@ -1,26 +1,17 @@
 package info.kwarc.mmt.frameit.communication.server
 
+import java.io.{PrintWriter, StringWriter}
+
 import cats.effect.IO
 import com.twitter.finagle.Service
-import com.twitter.finagle.http.{Request, Response}
-import info.kwarc.mmt.api._
+import com.twitter.finagle.http.{Request, Response, Status}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.View
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.ontology.IsTheory
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.symbols.{ApplyMorphism, Constant, FinalConstant, TermContainer, Visibility}
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business._
-import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures._
-import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
-import io.circe.Json
+import info.kwarc.mmt.api.symbols.Constant
+import io.circe.{Encoder, Json}
 import io.finch._
-import io.finch.circe._
 
-import scala.util.{Random, Try}
+import scala.util.Try
 
 sealed abstract class ValidationException(message: String, cause: Throwable = None.orNull)
   extends Exception(message, cause)
@@ -54,166 +45,129 @@ final case class FactValidationException(message: String, processedFacts: List[P
 }
 
 /**
-  * A collection of REST routes for our [[Server server]]
+  * Some general-purpose boilerplate for Finch servers whose endpoints are encapsulated in an object.
+  *
+  * - succeeded and failed requests are logged to stdout
+  * - failed requests (due to exceptions) are served with an HTTP-500 response with a body detailing
+  *   the exception and its stracktrace
+  *
+  * The latter greatly enhances the debugging experience.
+  *
+  * How to use:
+  *
+  * '''
+  * object MyConcreteEndpoints extends ServerEndpoints {
+  *   override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = {
+  *     // ...
+  *   }
+  * '''
+  *
+  * See [[ConcreteServerEndpoints]] for an example.
   */
-object ServerEndpoints extends EndpointModule[IO] {
-  // vvvvvvv DO NOT REMOVE IMPORTS (even if IntelliJ marks it as unused)
-  import info.kwarc.mmt.frameit.communication.datastructures.Codecs
-  import Codecs.DataStructureCodecs._
-  import ServerErrorHandler._
-  // ^^^^^^^ END: DO NOT REMOVE
+trait ServerEndpoints extends Endpoint.Module[IO] {
 
-  private def getEndpointsForState(state: ServerState) =
-    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
-      addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: printSituationTheory(state)
+  import cats.Applicative.ops.toAllApplicativeOps
 
-  def getServiceForState(state: ServerState): Service[Request, Response] =
-    getEndpointsForState(state).toServiceAs[Application.Json]
+  protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
 
-  // ENDPOINTS (all private functions)
-  // ======================================
-  private def printHelp(state: ServerState): Endpoint[IO, String] = get(path("help")) {
-    Ok(getEndpointsForState(state).toString)
+  def getServiceForState(state: ServerState): Service[Request, Response] = {
+    Endpoint.toService(filters(getCompiledOverallEndpoint(state)))
   }
 
-  private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
-    state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")
+  private def filters = Function.chain(Seq(exceptionLogging, logging))
 
-    Ok(())
+  private def logging: Endpoint.Compiled[IO] => Endpoint.Compiled[IO] = compiled => {
+    compiled.tapWithF { (req, res) =>
+      IO(println(s"[${res._2.map(_.statusCode).getOrElse("BAD")}] $req")) *> IO.pure(res)
+    }
   }
 
-  private def buildArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build")) {
-    state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc")
+  private def exceptionLogging: Endpoint.Compiled[IO] => Endpoint.Compiled[IO] = compiled => {
+    compiled.tapWithF { (_, res) => res match {
+        case (trace, Left(throwable)) =>
+          IO(throwable.printStackTrace()) *> IO({
+            val newResponse = Response(Status.InternalServerError)
+            newResponse.write(ThrowableUtils.formatThrowableToJson(throwable).toString())
 
-    Ok(())
-  }
-
-  private def reloadArchive(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("reload")) {
-    state.ctrl.backend.getArchive(FrameWorld.archiveID).map(frameWorldArchive => {
-      val root = frameWorldArchive.root
-
-      state.ctrl.backend.removeStore(frameWorldArchive)
-      state.ctrl.addArchive(root)
-
-      Ok(())
-    }).getOrElse(NotFound(new Exception("MMT backend did not know FrameWorld archive by ID, but upon server start it did apparently (otherwise we would have aborted there). Something is inconsistent.")))
-  }
-
-  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
-    (fact: SFact) => {
-      val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
-
-      state.synchronized {
-        (if (state.doTypeChecking) state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) else Nil) match {
-          case Nil =>
-            // success (i.e. no errors)
-            try {
-              state.ctrl.add(factConstant)
-              Ok(FactReference(factConstant.path))
-            } catch {
-              case err: AddError =>
-                NotAcceptable(err)
-            }
-
-          case errors =>
-            NotAcceptable(FactValidationException(
-              message = "Could not validate fact, errors were:\n\n" + errors.map {
-                // for [[InvalidUnit]] also elaborate their history for better feedback
-                case err: InvalidUnit => err.toString + "\n" + err.history
-                case err => err
-              }.mkString("\n"),
-              processedFacts = List(ProcessedFactDebugInfo.fromConstant(factConstant)(state.ctrl, state.presenter))
-            ))
-        }
+            (trace, Right(newResponse))
+          })
+        case _ => IO.pure(res)
       }
     }
   }
 
-  private def listFacts(state: ServerState): Endpoint[IO, List[SFact]] = get(path("fact") :: path("list")) {
-    Ok(
-      Fact
-        .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
-        .map(_.renderStatic()(state.ctrl))
-    )
-  }
+  private object ThrowableUtils {
+    private def formatStackTraceToString(throwable: Throwable): String = {
+      val sw = new StringWriter
+      val pw = new PrintWriter(sw)
 
-  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
-    val stringRenderer = new presentation.StringBuilder
-    DebugUtils.syntaxPresentRecursively(state.situationTheory)(state.ctrl, state.presenter, stringRenderer)
-
-    Ok(stringRenderer.get)
-  }
-
-  private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    if (!state.readScrollData) {
-      // TODO hack to read latest scroll meta data, should not be needed
-      //      due to https://github.com/UniFormal/MMT/issues/528
-      state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
-
-      state.readScrollData = true
+      try {
+        throwable.printStackTrace(pw)
+        sw.toString
+      } finally {
+        sw.close()
+        pw.close()
+      }
     }
 
-    Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
-  }
-
-  private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
-
-    val scrollViewDomain = scrollApp.scroll.problemTheory
-    val scrollViewCodomain = state.situationTheoryPath
-
-    // create view out of [[SScrollApplication]]
-    val scrollView = scrollApp.toView(
-      state.situationDocument ? LocalName.random("frameit_scroll_view"),
-      OMMOD(scrollViewCodomain)
-    )(state.ctrl)
-
-    // collect all assignments such that if typechecking later fails, we can conveniently output
-    // debug information
-    val scrollViewAssignments = scrollView.getDeclarations.collect {
-      case c: FinalConstant => c
-    }
-
-    (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
-      case Nil =>
-        val (situationTheoryExtension, _) = NewPushoutUtils.computeNamedPushoutAlongDirectInclusion(
-          state.ctrl.getTheory(scrollViewDomain),
-          state.ctrl.getTheory(scrollViewCodomain),
-          state.ctrl.getTheory(scrollApp.scroll.solutionTheory),
-          state.situationDocument ? LocalName.random("situation_theory_extension"),
-          scrollView,
-          w_to_generate = state.situationDocument ? LocalName.random("pushed_out_scroll_view")
-        )(state.ctrl)
-
-        state.setSituationTheory(situationTheoryExtension)
-
-        Ok(
-          Fact
-            .findAllIn(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl)
-            .map(_.renderStatic()(state.ctrl))
+    def formatThrowableToJson(throwable: Throwable): Json = {
+      try {
+        Json.obj(
+          "message" -> Json.fromString(throwable.getMessage),
+          "stacktrace" -> Json.fromString(formatStackTraceToString(throwable))
         )
-
-      case errors =>
-        state.ctrl.delete(scrollView.path)
-
-        NotAcceptable(FactValidationException(
-          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
-          scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
-        ))
+      } catch {
+        case _: Throwable =>
+          Json.obj(
+            "message" -> Json.fromString(
+              "Exception occurred during formatting a previous exception\nTo prevent further recursion down the rabbit hole, no exception information is formatted or even output this time."
+            )
+          )
+      }
     }
-  }}
+  }
+}
 
-  private def dynamicScroll(state: ServerState): Endpoint[IO, SScroll] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
-    Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
-      case Some(scroll) =>
 
-        val scrollView = scrollApp.toView(
-          target = state.situationDocument ? "blah",
-          codomain = state.situationTheory.toTerm
-        )(state.ctrl)
+/**
+  * Provides an implicit [[io.circe.Encoder JSON encoder]] for [[Exception exceptions]].
+  *
+  * Import this implicit value before you declare [[io.finch.Endpoint endpoints]] in order
+  * for exceptions occurring in those endpoints (say, when the JSON payload sent by the HTTP
+  * client was ill-formed) to be sent back to the client in an informative way.
+  *
+  * This helps to deviate from the unhelpful (at least for devs) behavior of Finch to swallow
+  * all exceptions and to just send "BadRequest" to the client without any further information.
+  *
+  * Code copied from Finch's official documentation [1], under Apache License 2.0 [2].
+  *
+  * [1]: https://finagle.github.io/finch/user-guide.html#errors (
+  * [2]: https://github.com/finagle/finch/blob/be0e7647b2fd8ac617d668313164e9a8c1c39af7/LICENSE
+  */
+private object ServerErrorHandler {
+  private def encodeErrorList(es: List[Exception]): Json = {
+    val messages = es.map(x => Json.fromString(x.getMessage))
+    Json.obj("errors" -> Json.arr(messages: _*))
+  }
 
-        Ok(scroll.render(Some(scrollView))(state.ctrl))
+  private def formatThrowable(e: Throwable): String = {
+    val sw = new StringWriter
+    val pw = new PrintWriter(sw)
 
-      case _ =>
-        NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
-  }}
+    e.printStackTrace(pw)
+    e.getMessage + "\n\n" + sw.toString
+  }
+
+  implicit val encodeThrowable: Encoder[Throwable] = Encoder.instance({
+    case e: io.finch.Errors => encodeErrorList(e.errors.toList)
+    case e: io.finch.Error =>
+      e.getCause match {
+        case e: io.circe.Errors => encodeErrorList(e.errors.toList)
+        case _ => Json.obj("message" -> Json.fromString(formatThrowable(e)))
+      }
+    case e: FactValidationException => e.asJson
+    case e: Throwable => Json.obj("message" -> Json.fromString(formatThrowable(e)))
+  })
+
+  implicit val encodeException: Encoder[Exception] = Encoder.instance(e => encodeThrowable(e))
 }

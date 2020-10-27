@@ -24,7 +24,7 @@ object Server extends TwitterServer {
     }
 
     val state = initServerState(File(archiveRoot()))
-    val server = Http.serve(bindAddress(), ServerEndpoints.getServiceForState(state))
+    val server = Http.serve(bindAddress(), ConcreteServerEndpoints.getServiceForState(state))
     onExit {
       server.close()
     }

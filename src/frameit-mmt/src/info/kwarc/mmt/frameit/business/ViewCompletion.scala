@@ -180,24 +180,4 @@ object ViewCompletion {
     val domain = assignments.map(_._1)
     assMap.toList.filterNot(domain contains _._1)
   }
-
-  // comboination of closeGaps and expectType
-  /*def closeGapsAndInfer(domain: Theory, assignments : List[(GlobalName, Term)])(implicit controller: Controller) : List[(GlobalName, Term, Option[Term])]= {
-    val closedAssignments = assignments ::: closeGaps(assignments, domain.meta)
-    val closedAssignmentsWithType : List[(GlobalName, Term, Option[Term])]
-
-    // Paths of domain constants still missing an assignment
-    val stillMissingAssignments = domain.getConstants.map(_.path).toSet.diff(closedAssignments.map(_._1).toSet)
-
-    val remainingFilledAssignments : List[(GlobalName, Term, Option[Term])] =
-      stillMissingAssignments.flatMap(constantPath => controller.getConstant(constantPath).tp match {
-        case Some(constantType) =>
-          expectedType(closedAssignments, domain.meta, constantType).map((constantPath, _, None))
-      }).toList
-
-    // We shall not have introduced duplicate assignments to constants of the same [[GlobalName]] by the logic above
-    assert(closedAssignments.map(_._1).toSet.intersect(remainingFilledAssignments.map(_._1).toSet).isEmpty)
-
-    closedAssignments ::: remainingFilledAssignments
-  }*/
 }
