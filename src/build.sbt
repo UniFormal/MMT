@@ -1,5 +1,5 @@
 import Utils.utils
-import sbt.Keys._
+import sbt.Keys.{scalacOptions, _}
 
 import scala.io.Source
 
@@ -41,7 +41,14 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 // =================================
 // GLOBAL SETTINGS
 // =================================
-scalaVersion in Global := "2.12.9"  // <-- If you update this, also update apiJars and redownload updated deps!!
+
+// !!!WARNING!!!
+// If you update scalaVersion, also
+//   (1) update apiJars and redownload updated deps
+//   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
+//       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
+//
+scalaVersion in Global := "2.12.9"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
   "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
@@ -145,7 +152,7 @@ lazy val src = (project in file(".")).
   exclusions(excludedProjects).
   aggregatesAndDepends(
     mmt, api,
-    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, metamath, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
+    lf, concepts, tptp, owl, mizar, frameit, mathscheme, pvs, tps, imps, isabelle, odk, specware, stex, mathhub, planetary, interviews, latex, openmath, oeis, repl, got, coq, glf,
     tiscaf, lfcatalog,
     jedit, intellij, argsemcomp
   ).
@@ -363,18 +370,48 @@ lazy val owl = (project in file("mmt-owl")).
 lazy val mizar = (project in file("mmt-mizar")).
   dependsOn(api, lf).
   settings(mmtProjectsSettings("mmt-mizar"): _*)
-// https://mvnrepository.com/artifact/com.github.finagle/finch-core
-// compile group: 'com.github.finagle', name: 'finch-core_2.12', version: '0.31.0'
 
-lazy val frameit = (project in file("frameit-mmt")).
-  dependsOn(api, lf).
-  settings(mmtProjectsSettings("frameit-mmt"): _*).settings(
+
+// use of MMT in the frameit system, here for ease of deployment but not part of the main mmt target
+// reponsible: Navid
+// finch is an HTTP server library (https://github.com/finagle/finch), a FrameIT dependency
+val finchVersion = "0.32.1"
+// Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
+val circeVersion = "0.13.0"
+lazy val frameit = (project in file("frameit-mmt"))
+  .dependsOn(api, lf, odk)
+  .settings(mmtProjectsSettings("frameit-mmt"): _*)
+  .settings(
     libraryDependencies ++= Seq(
-      "com.github.finagle" %% "finchx-core" % "0.31.0",
-      "com.github.finagle" %% "finchx-circe" % "0.31.0",
+      //  a server infrastructure library
+      "com.twitter" %% "twitter-server" % "20.7.0",
 
-      "io.circe" %% "circe-generic" % "0.12.3"
-    )
+      // an incarnation of an HTTP server library for the above infrastructure
+      "com.github.finagle" %% "finchx-core" % finchVersion,
+      // with ability to automatically encode/decode JSON payloads via the circe library below
+      "com.github.finagle" %% "finchx-circe" % finchVersion,
+      "com.github.finagle" %% "finchx-generic" % finchVersion,
+
+      // and with testing abilities
+      "com.github.finagle" %% "finchx-test" % finchVersion % "test",
+      "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
+
+      "org.scalatest" %% "scalatest" % "3.2.0" % "test",
+
+      // a JSON library
+      "io.circe" %% "circe-generic" % circeVersion,
+      // with extras to support encoding/decoding a case class hierarchy
+      "io.circe" %% "circe-generic-extras" % circeVersion,
+      "io.circe" %% "circe-parser"  % circeVersion,
+    ),
+
+    scalacOptions in Compile ++= Seq(
+      "-Xplugin-require:macroparadise"
+    ),
+
+    // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
+    resolvers += Resolver.sonatypeRepo("releases"),
+    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
   )
 
 // plugin for mathscheme-related functionality. Obsolete
@@ -388,10 +425,10 @@ lazy val pvs = (project in file("mmt-pvs")).
   settings(mmtProjectsSettings("mmt-pvs"): _*)
 
 // plugin for reading metamath
-lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
+/*lazy val mmscala = RootProject(uri("https://github.com/UniFormal/mm-scala#master"))
 lazy val metamath = (project in file("mmt-metamath")).
   dependsOn(api, lf, mmscala).
-  settings(mmtProjectsSettings("mmt-metamath"): _*)
+  settings(mmtProjectsSettings("mmt-metamath"): _*) */
 
 // plugin for reading isabelle. Author: Makarius Wenzel
 // This only works if an Isabelle environment is present. If not, we use an empty dummy project.

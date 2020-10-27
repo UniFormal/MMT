@@ -29,8 +29,7 @@ sealed abstract class BuildDependency extends Dependency {
   */
 case class FileBuildDependency(key: String, archive: Archive, inPath: FilePath) extends BuildDependency {
   def toJString: String = inPath.toString + " (" + key + ")"
-  // ToDo: The controller isn't actually used here, I think it can go. -- jbetzend
-  def getErrorFile(controller: Controller): File = (archive / errors / key / inPath).addExtension("err")
+  def getErrorFile(controller: Controller): File = (archive / errors / key / inPath).addExtension(ext ="err")
 }
 
 /** like [[FileBuildDependency]] but for a directory

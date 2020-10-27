@@ -220,9 +220,10 @@ abstract class InferenceAndTypingRule(h: GlobalName, t: GlobalName) extends Infe
    /**
     *  @param tp the expected type
     *    pre: if provided, tp is covered
-    *  @param covered whether tm is covered (if true and tp provided, typing is covered too)
+    *  @param covered whether tm is covered
     *  @return the inferred type and the result of type-checking
-    *    post: if the latter is Some(true), typing is covered wrt to the provided and the returned type  
+    *    post: if the former is Some(tpI), typing tm:tpI is covered
+     *         if tp provided and the latter is Some(true), tm:tp is covered
     */
    def apply(solver: Solver, tm: Term, tp: Option[Term], covered: Boolean)(implicit stack: Stack, history: History): (Option[Term], Option[Boolean])
 

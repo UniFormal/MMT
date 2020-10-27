@@ -664,6 +664,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** clears the state */
   def clear {
     memory.clear
+    backend.clear
     notifyListeners.onClear
   }
 

@@ -103,7 +103,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     val rules = RuleSet.collectRules(controller,Context.empty)
     implicit val env = new ExtendedCheckingEnvironment(ce, objectChecker, rules, th.path)
     implicit val task = ce.task
-    checkContext(Context.empty, controller.getExtraInnerContext(th))
+    val c = controller.getExtraInnerContext(th)
+    checkContextTop(Context.empty, c)
   }
 
   private def prepareCheck(e: StructuralElement)(implicit ce: CheckingEnvironment): (Context, ExtendedCheckingEnvironment) = {
@@ -143,7 +144,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           UncheckedElement.set(d)
         }
         // check children
-        val additionalContext = checkContext(context, controller.getExtraInnerContext(c))
+        val additionalContext = checkContextTop(context, controller.getExtraInnerContext(c))
         val (contextI, envI) = prepareCheckExtendContext(context, env, additionalContext)
         logGroup {
           tDecls foreach {d =>
@@ -382,7 +383,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           checkTheory(Some(CPath(t.path, TypeComponent)), context, OMMOD(mt))
           contextMeta = contextMeta ++ mt
         }
-        checkContext(contextMeta, t.parameters)
+        checkContextTop(contextMeta, t.parameters)
         t.df map {d => checkTheory(Some(CPath(t.path, DefComponent)), contextMeta++t.parameters, d)}
         // this is redundant on a clean check because e is empty then;
       case v: View =>
@@ -669,7 +670,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       cpath foreach {cp => setAnalyzed(cp, tR)} 
       tR
     case ComplexTheory(body) =>
-      val bodyR = checkContext(context, body)
+      val bodyR = checkContextTop(context, body)
       val tR = ComplexTheory(bodyR)
       cpath foreach {cp => setAnalyzed(cp, tR)}
       tR
@@ -780,7 +781,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     */
   private def checkTermTop(context: Context, t: Term)(implicit env: ExtendedCheckingEnvironment): (Term, Boolean) = {
     env.ce.errorCont.mark
-    val tR = checkTerm(context, t)
+    val tR = checkTerm(context, t)(env,t)
     (tR, env.ce.errorCont.noErrorsAdded)
   }
 
@@ -789,10 +790,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     *
     * @param context the context
     * @param s       the term
+    * @param rootObj the root term on which the method was called
     * @return the reconstructed term
     */
   //TODO make more reusable (maybe by moving to RuleBasedChecker?)
-  private def checkTerm(context: Context, s: Term)(implicit env: ExtendedCheckingEnvironment): Term = {
+  private def checkTerm(context: Context, s: Term)(implicit env: ExtendedCheckingEnvironment, rootObj: Obj): Term = {
     s match {
       case OMMOD(p) =>
         if (p.doc.uri.scheme contains "scala") {
@@ -846,11 +848,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case OML(name, tp, df,_,_) => OML(name, tp.map(checkTerm(context, _)), df.map(checkTerm(context, _)))
       case OMV(name) =>
         if (!context.isDeclared(name))
-          env.errorCont(InvalidObject(s, "variable is not declared"))
+          env.errorCont(InvalidObject(rootObj, s"variable $name is not declared"))
         s
       case ComplexTerm(c, subs, bound, args) =>
         val subsR = subs map { case Sub(v, t) => Sub(v, checkTerm(context, t)) }
-        val boundR = checkContext(context, bound)
+        val boundR = checkContextTop(context, bound)
         val argsR = args map { a => checkTerm(context ++ bound, a) }
         env.pCont(c)
         ComplexTerm(c, subsR, boundR, argsR).from(s)
@@ -860,7 +862,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         OMA(fR, argsR).from(s)
       case OMBINDC(bin, con, args) =>
         val binR = checkTerm(context, bin)
-        val conR = checkContext(context, con)
+        val conR = checkContextTop(context, con)
         val contextCon = context ++ conR
         val argsR = args map {a => checkTerm(contextCon, a)}
         OMBINDC(binR, conR, argsR).from(s)
@@ -893,6 +895,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     }
   }
 
+  private def checkContextTop(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
+    checkContext(context, con)(env, con)
+  }
   /** Checks structural well-formedness of a context relative to a context.
     *
     * @param context the context of con
@@ -900,7 +905,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     * @return the reconstructed context
     *         if context is valid, then this succeeds iff context ++ con is valid
     */
-  private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment): Context = {
+  private def checkContext(context: Context, con: Context)(implicit env: ExtendedCheckingEnvironment, rootObj: Obj): Context = {
     var ret = Context.empty
     con.foreach {vd =>
       val currentContext = context ++ ret
@@ -1007,7 +1012,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
     // finally, check the individual maps in subs
     subs.map {
       case Sub(n, t) =>
-        val tR = checkTerm(context ++ to, t)
+        val tR = checkTerm(context ++ to, t)(env, subs)
         Sub(n, tR)
     }
   }

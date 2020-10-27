@@ -19,7 +19,7 @@ case class RealizedType(synType: Term, semType: SemanticType) extends uom.Simpli
     */
    def of(u: Any) = {
       if (!semType.valid(u)) {
-         semType.valid(u)
+         // semType.valid(u) // only needed for debugging, useful to have a breakpoint here to debug the validity check
          throw ParseError("invalid literal value for type " + synType + " realized as " + semType.asString + ": " + u)
       }
       val vN = semType.normalform(u)

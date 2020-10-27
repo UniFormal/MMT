@@ -23,7 +23,8 @@ class AllPdf extends LaTeXDirTarget {
     if (bt.isDir) {
       val a = bt.archive
       val ls = getAllFiles(bt).map(f => FileBuildDependency("pdflatex", a, bt.inPath / f))
-      BuildSuccess(ls :+ DirBuildDependency("alltex", a, bt.inPath, Nil), Nil)
+      val at = DirBuildDependency("alltex", a, bt.inPath, Nil)
+      BuildSuccess(ls :+ at, Nil)
     } else BuildResult.empty
   }
 
@@ -40,6 +41,43 @@ class AllPdf extends LaTeXDirTarget {
   }
 }
 
+// Deprecated as of October 2020, see:
+// https://github.com/UniFormal/MMT/issues/540
+@deprecated("sTeX no longer relies on localpaths.tex")
+class LocalPaths extends LaTeXDirTarget {
+  val key : String = "localpaths"
+
+  override def estimateResult(bt: BuildTask) : BuildSuccess = {
+    if (bt.isDir) {
+      val lp : ResourceDependency = PhysicalDependency(File(bt.dirName + "/localpaths.tex"))
+      BuildSuccess(Nil,List(lp))
+    } else { BuildResult.empty }
+  }
+
+  override def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean) : BuildResult = {
+    val target  : File    = dir / "localpaths.tex"
+    var success : Boolean = false
+
+    /* Only create file if it has a sibling tex file */
+    val siblings : Boolean = dir.children.exists(s => s.getExtension.contains("tex") && s.name != "localpaths.tex")
+
+    /* forcing recreation of file means deleting the old one. */
+    if (force && target.exists()) { target.delete() }
+
+    if (force || (!target.exists() && siblings)) {
+      createLocalPaths(a, dir)
+      success = true
+    }
+
+    if (success) { BuildSuccess(Nil, List(PhysicalDependency(target))) }
+    else if (!siblings) {
+      log("No sibling .tex-file, localpaths.tex not created")
+      BuildResult.empty
+    }
+    else BuildEmpty("up-to-date")
+  }
+}
+
 class AllTeX extends LaTeXDirTarget {
   val key: String = "alltex"
 
@@ -48,9 +86,58 @@ class AllTeX extends LaTeXDirTarget {
       BuildSuccess(Nil, getAllFiles(bt).map(f => PhysicalDependency(bt.inFile / f)))
     } else {
       val used = super.estimateResult(bt).used.collect {
-        case d@FileBuildDependency(k, _, _) if List("tex-deps", "sms").contains(k) => d
+        case d@FileBuildDependency(k, _, _) if List("tex-deps").contains(k) => d
       }
       BuildSuccess(used, Nil)
+    }
+  }
+
+  /* To topologically sort our alltex includes, we don't need to worry about dependencies that don't have any
+  *  alltex files in their dependency closure, which, conveniently, is also where all the "cycles" happen. */
+  def forgetIrrelevantDeps(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
+    def goodDependency(dep : Dependency) : Boolean = dep match {
+      case FileBuildDependency(k, _, _) => k != "sms"
+      case _ => true
+    }
+
+    var clean : Map[Dependency, Set[Dependency]] = in.filter(kv => goodDependency(kv._1))
+    for ((k,v) <- clean) { clean = clean + (k -> v.filter(goodDependency)) }
+    clean
+  }
+
+  /* For reasons likely to be irrelevant in the future (because SMS files are being deprecated alltogether),
+   * we have this depsMap with dependencies on the sms-files, not the alltex-files, so we're rewiring that manually. */
+  def rewireDepsMap(in : Map[Dependency, Set[Dependency]]) : Map[Dependency, Set[Dependency]] = {
+    // rewire one FBD fomr oldkey to newkey.
+    def changeOne(oldkey : String, newkey : String, dep : Dependency) : Dependency = dep match {
+      case fbd@FileBuildDependency(key,z,d) => if (key == oldkey) { FileBuildDependency(newkey,z,d) } else { fbd }
+      case other@_ => other
+    }
+
+    // All alltex dependencies there are, but changed to sms sp we can check easily below.
+    val alltexs : Set[Dependency] = in.keySet.union(in.values.flatten.toSet).filter({
+      case FileBuildDependency("alltex", _, _) => true
+      case _ => false
+    }).map(changeOne(oldkey = "alltex", newkey = "sms", _))
+
+    var clean : Map[Dependency, Set[Dependency]] = Map.empty
+    for ((k,v) <- in) {
+      val kc = if (alltexs.contains(k)) { changeOne(oldkey = "sms", newkey = "alltex", k) } else k
+      val vc = v map (d => if (alltexs.contains(d)) { changeOne(oldkey = "sms", newkey = "alltex", d) } else d)
+      clean += (kc -> vc)
+    }
+    clean
+  }
+
+  override def getAnyDeps(dep: FileBuildDependency) : Set[Dependency] = {
+    // We only need better coverage in the alltex target (for now)
+    if (dep.key == key) {
+      // ToDo: Not taking the inDim from the dep seems extremely fishy. Review.
+      val inFile : File            = dep.archive / inDim / dep.inPath
+      val res    : Set[Dependency] = readingSource(dep.archive, inFile, None).toSet
+      res
+    } else {
+      super.getAnyDeps(dep)
     }
   }
 
@@ -58,12 +145,21 @@ class AllTeX extends LaTeXDirTarget {
     val dirFiles = getDirFiles(a, dir, includeFile)
     var success = false
     if (dirFiles.nonEmpty) {
-      createLocalPaths(a, dir)
-      val deps = getDepsMap(getFilesRec(a, in))
-      val ds = Relational.flatTopsort(controller, deps)
+
+      // One FileBuildDependency with key "alltex" for all files present.
+      val the_dependencies : Set[Dependency] = getFilesRec(a, in)
+      val deps = forgetIrrelevantDeps(rewireDepsMap(getDepsMap(the_dependencies)))
+
+      val dso : Option[List[Dependency]] = Relational.flatTopsort(controller, deps)
+      if (dso.isEmpty) {
+        logError("Cyclical dependencies, topological sort is impossible.")
+        return BuildFailure(Nil,Nil)
+      }
+      val ds : List[Dependency] = dso.get
       val ts = ds.collect {
-        case bd: FileBuildDependency if List(key, "tex-deps").contains(bd.key) => bd
+        case bd: FileBuildDependency if List(key, "tex-deps", "sms").contains(bd.key) => bd
       }.map(d => d.archive / inDim / d.inPath)
+
       val files = ts.distinct.filter(dirFiles.map(f => dir / f).contains(_)).map(_.getName)
       assert(files.length == dirFiles.length)
       val langs = files.flatMap(f => getLang(File(f))).toSet
@@ -85,17 +181,25 @@ class AllTeX extends LaTeXDirTarget {
   private def createAllFile(a: Archive, lang: Option[String], dir: File,
                             files: List[String], force: Boolean): Boolean = {
     val all = dir / ("all" + lang.map("." + _).getOrElse("") + ".tex")
-    val ls = langFiles(lang, files)
+
+    /* If in an archive (always), we don't want to include (non)lang files excluded in .gitignore.
+     * see: https://github.com/UniFormal/MMT/issues/542 */
+    def gitignored(fn : String) : Boolean = Process("git check-ignore " + fn, dir.toJava).! == 0
+    val ls : List[String] = langFiles(lang, files).filterNot(gitignored)
+
     val w = new StringBuilder
-    def writeln(s: String): Unit = w.append(s + "\n")
-    ambleText("pre", a, lang).foreach(writeln)
+    def writeln(s: String) : Unit = w.append(s + "\n")
+
+    ambleText(preOrPost = "pre", a, lang).foreach(writeln)
     writeln("")
+
     ls.foreach { f =>
       writeln("\\begin{center} \\LARGE File: \\url{" + f + "} \\end{center}")
       writeln("\\input{" + File(f).stripExtension + "} \\newpage")
       writeln("")
     }
-    ambleText("post", a, lang).foreach(writeln)
+
+    ambleText(preOrPost = "post", a, lang).foreach(writeln)
     val newContent = w.result
     val outPath = getOutPath(a, all)
     if (force || !all.exists() || File.read(all) != newContent) {
@@ -129,7 +233,6 @@ class SmsGenerator extends LaTeXBuildTarget {
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
   def reallyBuildFile(bt: BuildTask): BuildResult = {
-    createLocalPaths(bt)
     try {
       createSms(bt.archive, bt.inFile, bt.outFile)
       logSuccess(bt.outPath)
@@ -161,7 +264,8 @@ class LaTeXML extends LaTeXBuildTarget {
 
   override def includeDir(n: String): Boolean = !n.endsWith("tikz")
 
-  val outDim = RedirectableDimension("latexml")
+  val outDim: ArchiveDimension = RedirectableDimension("latexml")
+
   // the latexml client
   private var latexmlc = "latexmlc"
   private var latexmls = "latexmls"
@@ -173,7 +277,7 @@ class LaTeXML extends LaTeXBuildTarget {
   private var portSet: Boolean = false
   private var profile = "stex-smglom-module"
   private var profileSet: Boolean = false
-  private var perl5lib = "perl5lib"
+  private val perl5lib = "perl5lib"
   private var preloads: Seq[String] = Nil
   private var paths: Seq[String] = Nil
   private var reboot: Boolean = false
@@ -224,9 +328,9 @@ class LaTeXML extends LaTeXBuildTarget {
       controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
     paths = getStringList(optionsMap, "path") ++
       controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
-    reboot = optionsMap.get("reboot").isDefined
+    reboot = optionsMap.contains("reboot")
     if (reboot) expire = 1
-    nopost = optionsMap.get("nopost").isDefined
+    nopost = optionsMap.contains("nopost")
   }
 
   private def str2Level(lev: String): Level.Level = lev match {
@@ -259,7 +363,7 @@ class LaTeXML extends LaTeXBuildTarget {
     var optLevel: Option[Level.Level] = None
     var msg: List[String] = Nil
     var newMsg = true
-    var region : SourceRegion = SourceRegion.none
+    var region: SourceRegion = SourceRegion.none
     var phase = 1
 
     def phaseToString(p: Int): String = "latexml-" + (p match {
@@ -362,7 +466,7 @@ class LaTeXML extends LaTeXBuildTarget {
       false
     }
     catch {
-      case ex: BindException =>
+      case _: BindException =>
         true
     }
 
@@ -384,27 +488,26 @@ class LaTeXML extends LaTeXBuildTarget {
       }
       BuildResult.empty
     } else { */
-      val lmhOut = bt.outFile
-      val logFile = bt.outFile.setExtension("ltxlog")
-      lmhOut.delete()
-      logFile.delete()
-      createLocalPaths(bt)
-      val realProfile = if (profileSet) profile
-      else getProfile(bt.archive).getOrElse(profile)
-      val argSeq = Seq(latexmlc, bt.inFile.toString,
-        "--profile=" + realProfile, "--path=" + styPath(bt),
-        "--destination=" + lmhOut, "--log=" + logFile) ++
-        (if (noAmble(bt.inFile)) Seq("--whatsin=document")
-        else Seq("--preamble=" + getAmbleFile("pre", bt),
-          "--postamble=" + getAmbleFile("post", bt))) ++
-       // Seq("--expire=" + expire, "--port=" + realPort) ++
-        (if (nopost) Seq("--nopost") else Nil) ++
-        preloads.map("--preload=" + _) ++
-        paths.map("--path=" + _)
-      log(argSeq.mkString(" ").replace(" --", "\n --"))
-      var failure = false
-      try {
-        /*
+    val lmhOut = bt.outFile
+    val logFile = bt.outFile.setExtension("ltxlog")
+    lmhOut.delete()
+    logFile.delete()
+    val realProfile = if (profileSet) profile
+    else getProfile(bt.archive).getOrElse(profile)
+    val argSeq = Seq(latexmlc, bt.inFile.toString,
+      "--profile=" + realProfile, "--path=" + styPath(bt),
+      "--destination=" + lmhOut, "--log=" + logFile) ++
+      (if (noAmble(bt.inFile)) Seq("--whatsin=document")
+      else Seq("--preamble=" + getAmbleFile("pre", bt),
+        "--postamble=" + getAmbleFile("post", bt))) ++
+      // Seq("--expire=" + expire, "--port=" + realPort) ++
+      (if (nopost) Seq("--nopost") else Nil) ++
+      preloads.map("--preload=" + _) ++
+      paths.map("--path=" + _)
+    log(argSeq.mkString(" ").replace(" --", "\n --"))
+    var failure = false
+    try {
+      /*
         val pbs = Process(Seq(latexmls, // "--expire=" + expire, "--port=" + realPort,
           "--autoflush=100"), bt.archive / inDim, lEnv: _*)
         if (!isServerRunning(realPort) && expire > -1) {
@@ -412,35 +515,35 @@ class LaTeXML extends LaTeXBuildTarget {
           Thread.sleep(delaySecs)
         }
          */
-        val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
-        val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
-        if (exitCode != 0 || lmhOut.length == 0) {
-          failure = true
-          bt.errorCont(LatexError(if (exitCode == 0) "no omdoc created" else "exit code " + exitCode, output.toString))
-        }
-      } catch {
-        case e: Exception =>
-          failure = true
-          bt.errorCont(LatexError(e.toString, output.toString))
+      val pb = Process(argSeq, bt.archive / inDim, lEnv: _*)
+      val exitCode = timeout(pb, procLogger(output, pipeOutput = false))
+      if (exitCode != 0 || lmhOut.length == 0) {
+        failure = true
+        bt.errorCont(LatexError(if (exitCode == 0) "no omdoc created" else "exit code " + exitCode, output.toString))
       }
-      var providedTheories: List[ResourceDependency] = Nil
-      var missingFiles: List[Dependency] = Nil
-      if (logFile.exists()) {
-        val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
-        failure = failure || hasErrs
-        missingFiles = mFs.map(s => PhysicalDependency(File(s)))
-        providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
-        if (pipeOutput) File.ReadLineWise(logFile)(println)
-      }
-      if (pipeOutput) print(output.toString)
-      if (failure) {
-        logFailure(bt.outPath)
-        if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
-        else MissingDependency(missingFiles, providedTheories,missingFiles)
-      } else {
-        logSuccess(bt.outPath)
-        BuildSuccess(Nil, providedTheories)
-      }
+    } catch {
+      case e: Exception =>
+        failure = true
+        bt.errorCont(LatexError(e.toString, output.toString))
+    }
+    var providedTheories: List[ResourceDependency] = Nil
+    var missingFiles: List[Dependency] = Nil
+    if (logFile.exists()) {
+      val (mFs, pTs, hasErrs) = readLogFile(bt, logFile)
+      failure = failure || hasErrs
+      missingFiles = mFs.map(s => PhysicalDependency(File(s)))
+      providedTheories = pTs.map(s => LogicalDependency(Path.parseM("https://mathhub.info/" + s, NamespaceMap.empty)))
+      if (pipeOutput) File.ReadLineWise(logFile)(println)
+    }
+    if (pipeOutput) print(output.toString)
+    if (failure) {
+      logFailure(bt.outPath)
+      if (missingFiles.isEmpty) BuildFailure(Nil, providedTheories)
+      else MissingDependency(missingFiles, providedTheories, missingFiles)
+    } else {
+      logSuccess(bt.outPath)
+      BuildSuccess(Nil, providedTheories)
+    }
     // }
   }
 
@@ -471,7 +574,7 @@ class PdfLatex extends LaTeXBuildTarget {
     val (_, nonOpts) = splitOptions(remainingStartArguments)
     val nonOptArgs = if (nameOfExecutable.nonEmpty) nameOfExecutable :: nonOpts
     else nonOpts
-    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, "xelatex", pdflatexPath)
+    val newPath = getFromFirstArgOrEnvvar(nonOptArgs, name = "xelatex", pdflatexPath)
     if (newPath != pdflatexPath) {
       pdflatexPath = newPath
       log("using executable \"" + pdflatexPath + "\"")
@@ -479,10 +582,10 @@ class PdfLatex extends LaTeXBuildTarget {
   }
 
   override def estimateResult(bt: BuildTask): BuildSuccess = {
-    val bs@BuildSuccess(used, provided) = super.estimateResult(bt)
+    val BuildSuccess(used, provided) = super.estimateResult(bt)
     if (bt.inPath.name.startsWith("all.")) {
       BuildSuccess(used :+ DirBuildDependency("alltex", bt.archive, bt.inPath.dirPath, Nil), provided)
-    } else bs
+    } else BuildSuccess(used, provided)
   }
 
   protected def runPdflatex(bt: BuildTask, output: StringBuffer): Int = {
@@ -520,7 +623,6 @@ class PdfLatex extends LaTeXBuildTarget {
     val pdfFile = bt.inFile.setExtension("pdf")
     pdfFile.delete()
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
     try {
       val exit = runPdflatex(bt, output)
@@ -578,7 +680,6 @@ class TikzSvg extends PdfLatex
     val svgFile : File = bt.outFile
 
     bt.outFile.delete()
-    createLocalPaths(bt)
     val output = new StringBuffer()
 
     try {
@@ -603,8 +704,7 @@ class TikzSvg extends PdfLatex
           logFailure(bt.outPath)
         }
       }
-    }
-    catch {
+    } catch {
       case e: Exception =>
         bt.outFile.delete()
         bt.errorCont(LatexError(e.toString, output.toString))

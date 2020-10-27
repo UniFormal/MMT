@@ -5,16 +5,15 @@ import utils._
 
 /**
  * implementation of the syntax of the ELPI system by Claudio Sacerdoti Coen and others
- *  
+ *
  * In concrete syntax, clauses are written with inverted implication and implicit quantification of upper case variables.
- * 
  * Upper-case variables are instantiable while lower-case ones are not. (In queries: existential; in assumptions: universal)
  */
 object ELPI {
 
   /** programs */
   case class Program(decls: Decl*) {
-    def toELPI = decls.map(_.toELPI + "\n\n").mkString
+    def toELPI : String = decls.map(_.toELPI + "\n\n").mkString
   }
 
   /** toplevel declarations */
@@ -23,21 +22,21 @@ object ELPI {
   }
 
   case class Data(name: LocalName, tp: Expr, isKind: Boolean) extends Decl {
-    def keyword = if (isKind) "kind" else "type"
-    def toELPI = keyword + " " + name + " " + tp.toELPI(false) + "."
+    def keyword : String = if (isKind) "kind" else "type"
+    def toELPI  : String = keyword + " " + name + " " + tp.toELPI(bracket = false) + "."
   }
 
   case class Rule(rule: Expr) extends Decl {
-    def toELPI = {
+    def toELPI : String = {
       val ruleS = rule match {
-        case Forall(x, scope) =>
+        case Forall(_, scope) =>
           // skip all leading Forall's
           Rule(scope).toELPI
         case Impl(left, right) =>
           // switch to toplevel notation of implication
-          right.toELPI(false) + " :- " + left.toELPI(false) + "."
+          right.toELPI(bracket = false) + " :- " + left.toELPI(bracket = false) + "."
         case _ =>
-          rule.toELPI(false) + "." 
+          rule.toELPI(bracket = false) + "."
       }
       ruleS
     }
@@ -48,18 +47,18 @@ object ELPI {
   }
   
   case class Comment(s: String) extends Decl {
-    def toELPI = "/* " + s + " */"
+    def toELPI : String = "/* " + s + " */"
   }
   
   /** expressions (including rules as a special case) */
   abstract class Expr {
-    def apply(args: Expr*) = if (args.isEmpty) this else Apply(this, args:_*)
-    def apply(args: List[LocalName]) = if (args.isEmpty) this else Apply(this, args.map(ELPI.Variable(_)):_*)
+    def apply(args: Expr*)           : Expr = if (args.isEmpty) this else Apply(this, args:_*)
+    def apply(args: List[LocalName]) : Expr = if (args.isEmpty) this else Apply(this, args.map(ELPI.Variable):_*)
     
     def toELPI(bracket: Boolean = true): String
-    override def toString = toELPI()
+    override def toString  : String = toELPI()
     
-    def isAtomic = this match {
+    def isAtomic : Boolean = this match {
       case a: Application => a.fun.isInstanceOf[Variable] && !a.args.last.isInstanceOf[Lambda]
       case _: Variable => true
       case _ => false
@@ -68,23 +67,23 @@ object ELPI {
   
   /** helper class to optionally wrap brackets around a string */
   case class Bracket(bracket: Boolean) {
-    def apply(s: String) = {
+    def apply(s: String) : String = {
       val (opB, clB) = if (bracket) ("(", ")") else ("","")
       opB + s + clB
     }
   }
 
   case class Variable(name: LocalName) extends Expr {
-    def toELPI(bracket: Boolean = true) = name.toString 
+    def toELPI(bracket: Boolean = true) : String = name.toString
   }
 
   case class Integer(value: Int) extends Expr {
-    def toELPI(bracket: Boolean = true) = value.toString
+    def toELPI(bracket: Boolean = true) : String = value.toString
   }
 
   case class Lambda(name: LocalName, scope: Expr) extends Expr {
-    def toELPI(bracket: Boolean = true) = {
-      Bracket(bracket)(s"$name \\ ${scope.toELPI(false)}")
+    def toELPI(bracket: Boolean = true) : String = {
+      Bracket(bracket)(s"$name \\ ${scope.toELPI(bracket = false)}")
     }
   }
   object Lambda {
@@ -101,8 +100,8 @@ object ELPI {
    /* precedence rules: applications binds more strongly than lambda, except for last argument
        f (x \ x) (x \ x)  can be written as f (x \ x) x \ x
    */
-   def toELPI(bracket: Boolean = true) = {
-      val argsI = args.toList.init.map(_.toELPI(true))
+   def toELPI(bracket: Boolean = true) : String = {
+      val argsI = args.toList.init.map(_.toELPI())
       val last = args.last
       // val bracketLast = !args.last.isInstanceOf[Lambda]
       val bracketLast = true     // actually, the above seems to cause problems if penultimate arg is a variable
@@ -116,17 +115,14 @@ object ELPI {
   
   /** built-in constants */
   abstract class Constant(name: String) extends Variable(LocalName(name))
-  object True extends Constant("true")
-  object False extends Constant("false")
+  object True  extends Constant(name = "true")
+  object False extends Constant(name = "false")
 
   /** special case for the application of unary operators */
   case class UnaryApply(operator: UnOp, arg: Expr) extends Application(Variable(LocalName(operator.name)), arg) {
-    override def toELPI(bracket: Boolean = true) = {
-      val o = operator.name 
-      val unbracketed = if (operator.prefix)
-        s"$o $arg"
-      else
-        s"$arg $o"
+    override def toELPI(bracket: Boolean = true) : String = {
+      val o = operator.name
+      val unbracketed = if (operator.prefix) { s"$o $arg" } else { s"$arg $o" }
       Bracket(bracket)(unbracketed)
     }
   }
@@ -135,11 +131,11 @@ object ELPI {
   case class UnOp(name: String, prefix: Boolean) {
     def apply(e : Expr): UnaryApply = UnaryApply(this, e)
   }
-  object Not extends UnOp("not", true)
+  object Not extends UnOp(name = "not", prefix =  true)
   
   /** special case for the application of binary operators */
   case class BinaryApply(operator: BinOp, left: Expr, right: Expr) extends Application(Variable(LocalName(operator.name)), left, right) {
-     override def toELPI(bracket: Boolean = true) = {
+     override def toELPI(bracket: Boolean = true) : String = {
        val leftS = left.toELPI((! left.isAtomic) || (operator.name == "=>" && left.isInstanceOf[BinaryApply]))   // TODO: properly capture case "a, b => c"
        val rightS = right.toELPI(! right.isAtomic)
        Bracket(bracket)(s"$leftS ${operator.name} $rightS")
@@ -148,45 +144,52 @@ object ELPI {
   
   /** built-in binary operators */
   case class BinOp(name: String) {
-    def apply(left: Expr, right: Expr) = BinaryApply(this, left, right)
-    def unapply(e: Expr) = e match {
-      case e: Application if e.fun == Variable(LocalName(name)) && e.args.length == 2 => Some((e.args(0),e.args(1)))
+    def apply(left: Expr, right: Expr) : BinaryApply = BinaryApply(this, left, right)
+    def unapply(e: Expr) : Option[(Expr, Expr)] = e match {
+      case ee : Application =>
+        if (ee.fun == Variable(LocalName(name)) && ee.args.length == 2) {
+          val el = ee.args.toList
+          Some((el.head, el.tail.head)) // Elements 0 and 1
+        } else {
+          // No Binary operations with more than two arguments.
+          None
+        }
       case _ => None
     }
   }
-  object And extends BinOp(","){
+  object And extends BinOp(name = ","){
     def apply(args: List[Expr]): Expr = args match {
       case Nil => True
       case hd::Nil => hd
       case hd::tl => And(hd, And(tl))
     }
   }
-  object Or extends BinOp(";")
-  object Is extends BinOp("is")
-  object Equal extends BinOp("=")
-  object GreaterThan extends BinOp(">")
-  object Minus extends BinOp("-")
-  object Impl extends BinOp("=>") {
+  object Or          extends BinOp(name = ";")
+  object Is          extends BinOp(name = "is")
+  object Equal       extends BinOp(name = "=")
+  object GreaterThan extends BinOp(name = ">")
+  object Minus       extends BinOp(name = "-")
+  object Impl        extends BinOp(name = "=>") {
     def apply(left: List[Expr], right: Expr): Expr = if (left.isEmpty) right else Impl(And(left), right)
   }
-  object Arrow extends BinOp("->")
+  object Arrow extends BinOp(name = "->")
   
   /** built-in binders */
   abstract class Binder(nameS: String) {
-    val name = LocalName(nameS)
-    def apply(varname: LocalName, scope: Expr) = Apply(Variable(name), Lambda(varname, scope))
-    def apply(context: List[LocalName], scope: Expr): Expr = context match {
+    val name : LocalName = LocalName(nameS)
+    def apply(varname: LocalName, scope: Expr) : Apply = Apply(Variable(name), Lambda(varname, scope))
+    def apply(context: List[LocalName], scope: Expr) : Expr = context match {
       case Nil => scope
       case hd::tl => apply(hd, apply(tl, scope))
     }
     
-    def unapply(e: Expr) = e match {
+    def unapply(e: Expr) : Option[(LocalName, Expr)] = e match {
       case Apply(Variable(this.name), Lambda(varname, scope)) => Some((varname,scope))
       case _ => None
     }
     
   }
   
-  object Forall extends Binder("pi")
-  object Exists extends Binder("sigma")
+  object Forall extends Binder(nameS = "pi")
+  object Exists extends Binder(nameS = "sigma")
 }

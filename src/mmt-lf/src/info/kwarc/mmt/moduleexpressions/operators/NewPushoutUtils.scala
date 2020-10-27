@@ -5,18 +5,21 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.SkipThis
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
 
 import scala.collection.mutable
 
 /**
-  * Helper functions for computing pushouts of [[AnonymousTheory anonymous theories]].
+  * Utility functions to compute pushouts of both [[AnonymousTheory anonymous theories]] and [[Theory named theories]]
   *
   * @todo Rename to sensible name, beware that [[PushoutUtils]] is already taken by Common.scala in the same directory.
+  *
+  * @todo meta keys/values are *not* subject to pushing out, this should be added yet!
   */
 object NewPushoutUtils {
   /**
-    * Compute the pushout of the diagram below:
+    * Computes the pushout of the diagram below:
     *
     * '''
     * A ---> B
@@ -25,14 +28,14 @@ object NewPushoutUtils {
     * C
     * '''
     *
-    * where the morphism from A to C is an inclusion.
+    * where all theories are [[AnonymousTheory anonymous theories]] and where the morphism from A to C is an inclusion.
     *
     * @param thyB       Theory B in the above diagram.
     * @param thyAToThyB The morphism from A to B in the above diagram.
     * @param thyC       Theory C in the above diagram.
     * @return A tuple containing the generated morphism `C ---> pushoutTheory` and the `pushoutTheory` itself.
     */
-  def computePushoutAlongInclusion(thyB: AnonymousTheory, thyAToThyB: AnonymousMorphism, thyC: AnonymousTheory): (AnonymousMorphism, AnonymousTheory) = {
+  def computeAnonymousPushoutAlongInclusion(thyB: AnonymousTheory, thyAToThyB: AnonymousMorphism, thyC: AnonymousTheory): (AnonymousMorphism, AnonymousTheory) = {
     // Computing the pushout along an inclusion is rather straightforward:
     //
     // For every declaration in C, we effectively homomorphically apply the morphism thyAToThyB to the type and
@@ -75,32 +78,9 @@ object NewPushoutUtils {
 
     (morphismIntoPushout, pushoutTheory)
   }
-}
-
-object NamedPushoutUtils {
-  /*def computeCanonicalPushout(C: Theory, v: Link)(implicit lookup: Lookup) = {
-    lookup.getImplicit(v.from, C.toTerm) match {
-      case Some(implicitPath) =>
-        // println(implicitPath)
-      case None => ???
-    }
-  }*/
 
   /**
-    * Create a [[Traverser]] applying a [[Link]]
-    * @todo Does this work for links with inclusions of other links?
-    */
-  private def linkToTraverser(link: Link): Traverser[Unit] = {
-    val assignments = link.getDeclarationsElaborated
-    OMSReplacer(globalName =>
-      assignments.find(decl =>
-        decl.isInstanceOf[FinalConstant] && decl.name == LocalName(ComplexStep(globalName.module) :: globalName.name)
-      ).flatMap(_.asInstanceOf[FinalConstant].df)
-    )
-  }
-
-  /**
-    * Compute the canonical pushout along a direct inclusion if possible.
+    * Computes the canonical pushout along a direct inclusion.
     *
     * Pictorially, we compute the pushout
     *
@@ -113,14 +93,14 @@ object NamedPushoutUtils {
     *    w
     * '''
     *
-    * where C must directly include A.
+    * where all theories are usual [[Theory theories]] (i.e. named, not anonymous) and where C must directly include A.
     *
     * @param D_to_generate The module path to use for the newly generated theory D.
     * @param v The [[Link]] from A to B.
     * @param w_to_generate The module path to use for the newly generated view from C to D.
-    * @return
+    * @return The computed pushout theory D and the morphism w in the picture above. Both are already added to the [[Controller]].
     */
-  def computeCanonicalPushoutAlongDirectInclusion(A: Theory, B: Theory, C: Theory, D_to_generate: MPath, v: Link, w_to_generate: MPath): (Theory, View) = {
+  def computeNamedPushoutAlongDirectInclusion(A: Theory, B: Theory, C: Theory, D_to_generate: MPath, v: Link, w_to_generate: MPath)(implicit ctrl: Controller): (Theory, View) = {
     // Assert C including A directly
     assert(
       C.getAllIncludes.contains(IncludeData(OMMOD(C.path), A.path, Nil, None, total = false)),
@@ -130,12 +110,6 @@ object NamedPushoutUtils {
       v.from == OMMOD(A.path) && v.to == OMMOD(B.path),
       "Link v does not go from A to B as required by this function"
     )
-
-    // The decls of the to-be-generated pushout theory
-    val newDecls: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
-
-    // The decls of the to-be-generated view into the pushout theory
-    val newViewDecls: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
 
     val pushedOutDecls: mutable.Map[GlobalName, GlobalName] = mutable.HashMap()
 
@@ -149,6 +123,20 @@ object NamedPushoutUtils {
     // We do the latter by means of a traverser to silently ignore unapplyable terms (e.g.
     // the ones we just renamed!)
     val traverser = Renamer(pushedOutDecls.get(_)).compose(linkToTraverser(v))
+
+    // Adopt meta theory from B
+    val generated_theory = Theory.empty(D_to_generate.parent, D_to_generate.name, B.meta)
+    val generated_view = new View(
+      w_to_generate.doc,
+      w_to_generate.name,
+      TermContainer.asParsed(C.toTerm),
+      TermContainer.asParsed(OMMOD(D_to_generate)),
+      TermContainer.empty(),
+      isImplicit = false
+    )
+
+    ctrl.add(generated_theory)
+    ctrl.add(generated_view)
 
     for (decl <- C.getDeclarations) {
       decl match {
@@ -171,10 +159,13 @@ object NamedPushoutUtils {
             notC = c.notC,
             vs = c.vs
           )
-          newDecls += newDecl
+
+          // add assignment to pushout theory
+          ctrl.add(newDecl)
           pushedOutDecls += (decl.path -> newDecl.path)
 
-          newViewDecls += new FinalConstant(
+          // add assignment to generated view
+          ctrl.add(new FinalConstant(
             home = OMMOD(w_to_generate),
             name = LocalName(ComplexStep(decl.parent) :: decl.name),
             alias = Nil,
@@ -183,31 +174,38 @@ object NamedPushoutUtils {
             rl = None,
             notC = new NotationContainer,
             vs = Visibility.public
-          )
+          ))
 
         case SimpleStructure(_, fromPath) if fromPath == A.path =>
-          newDecls += Include(OMMOD(D_to_generate), B.path, Nil, None)
+          // add inclusion to pushout theory
+          ctrl.add(Include(OMMOD(D_to_generate), B.path, Nil, None))
 
-          // Inherit v in the link w to generate
-          newViewDecls += Include(OMMOD(w_to_generate), A.path, Nil, Some(v.toTerm))
+          // inherit v in the link w to generate
+          ctrl.add(Include(OMMOD(w_to_generate), A.path, Nil, Some(v.toTerm)))
+
+        case SimpleStructure(_, fromPath) if ctrl.globalLookup.hasImplicit(OMMOD(fromPath), A.toTerm) =>
+          // in this case, we face an inclusion in C of a theory that was already included in A
+          // we can safely skip this as we assume that C already includes A directly, and hence
+          // the case above applies
+
         case _ => ???
       }
     }
 
-    // Adopt meta theory from B
-    val generated_theory = Theory.empty(D_to_generate.parent, D_to_generate.name, B.meta)
-    newDecls.foreach(generated_theory.add(_))
-
-    val generated_view = new View(
-      w_to_generate.doc,
-      w_to_generate.name,
-      TermContainer.asParsed(C.toTerm),
-      TermContainer.asParsed(OMMOD(D_to_generate)),
-      new TermContainer(),
-      isImplicit = false
-    )
-    newViewDecls.foreach(generated_view.add(_))
-
     (generated_theory, generated_view)
+  }
+
+
+  /**
+    * Create a [[Traverser]] applying a [[Link]]
+    * @todo Does this work for links with inclusions of other links?
+    */
+  private def linkToTraverser(link: Link): Traverser[Unit] = {
+    val assignments = link.getDeclarationsElaborated
+    OMSReplacer(globalName =>
+      assignments.find(decl =>
+        decl.isInstanceOf[FinalConstant] && decl.name == LocalName(ComplexStep(globalName.module) :: globalName.name)
+      ).flatMap(_.asInstanceOf[FinalConstant].df)
+    )
   }
 }

@@ -9,7 +9,6 @@ import objects._
  * @param subargs arguments before the context
  * @param variables the variable positions in order
  * @param arguments arguments after the context
- * @param attribution true if it can attribute an object
  *
  * special cases and analogs in the OpenMath role system for a symbol s:
  *  no arguments, variables: constant, s
@@ -19,12 +18,12 @@ import objects._
  */
 case class Arity(subargs: List[ArgumentComponent],
                  variables: List[VariableComponent],
-                 arguments: List[ArgumentComponent], attribution: Boolean) {
+                 arguments: List[ArgumentComponent]) {
    def components = subargs ::: variables ::: arguments
    def length = components.length
-   def isConstant    = (! attribution) && subargs.isEmpty && arguments.isEmpty && variables.isEmpty
-   def isApplication = (! attribution) && subargs.isEmpty && variables.isEmpty && (! arguments.isEmpty)
-   def isPlainBinder = (! attribution) && subargs.isEmpty && (! variables.isEmpty) && arguments.length == 1
+   def isConstant    = subargs.isEmpty && arguments.isEmpty && variables.isEmpty
+   def isApplication = subargs.isEmpty && variables.isEmpty && (! arguments.isEmpty)
+   def isPlainBinder = subargs.isEmpty && (! variables.isEmpty) && arguments.length == 1
    def numSeqSubs = subargs.count(_.isInstanceOf[SeqArg])
    def numSeqArgs = arguments.count(_.isInstanceOf[SeqArg])
    def numSeqVars = variables.count {
@@ -172,7 +171,7 @@ case class Arity(subargs: List[ArgumentComponent],
     *
     * pre: canHandle(vars, args) == true
     */
-   def flatten(markers: List[Marker], subs: Int, vars: Int, args: Int, attrib: Boolean) : List[Marker] = {
+   def flatten(markers: List[Marker], subs: Int, vars: Int, args: Int) : List[Marker] = {
       val (perSeqSub, seqSubCutOff) = distributeArgs(subargs, args)
       val (perSeqVar, seqVarCutOff) = distributeVars(vars)
       val (perSeqArg, seqArgCutOff) = distributeArgs(arguments, args)
@@ -193,7 +192,6 @@ case class Arity(subargs: List[ArgumentComponent],
              val first = remap(v.number)
              utils.insertSep((0 until length).toList.map(i => v.makeCorrespondingSingleVar(first+i,remap)), sep)
          }
-         case AttributedObject => if (attrib) List(AttributedObject) else Nil
          case d: Delimiter =>
             List(d)
          case p: PresentationMarker => List(p flatMap flattenOne)
@@ -220,9 +218,8 @@ case class Arity(subargs: List[ArgumentComponent],
 
 object Arity {
    import CommonMarkerProperties.noProps
-   def constant = Arity(Nil,Nil, Nil,false)
-   def plainApplication = Arity(Nil, Nil, List(SimpSeqArg(1,Delim(""), noProps)), false)
-   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")), noProps)), List(SimpArg(2, noProps)), false)
-   def attribution = Arity(Nil, Nil, List(SimpArg(1, noProps)),true)
+   def constant = Arity(Nil,Nil, Nil)
+   def plainApplication = Arity(Nil, Nil, List(SimpSeqArg(1,Delim(""), noProps)))
+   def plainBinder = Arity(Nil, List(Var(1,false,Some(Delim("")), noProps)), List(SimpArg(2, noProps)))
 }
 

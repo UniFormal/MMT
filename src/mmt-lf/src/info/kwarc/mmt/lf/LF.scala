@@ -30,7 +30,7 @@ object LF {
 
   def constant(name: String) = OMS(_path ? name)
 
-  lazy val hoas = notations.HOAS(Apply.path, Lambda.path, OfType.path)
+  lazy val hoas = notations.HOAS(Apply.path, Lambda.path)
 }
 
 class LFSym(name: String) {

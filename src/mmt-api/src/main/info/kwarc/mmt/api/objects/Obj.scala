@@ -89,6 +89,14 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
    def copyFrom(o: Obj) {
       metadata = o.metadata
    }
+   /** applies copyFrom and returns this
+     *
+     * @return this object but with the metadata from o
+     */
+   def from(o: Obj): this.type = {
+      copyFrom(o)
+      this
+   }
 }
 
 trait ThisTypeTrait
@@ -109,14 +117,6 @@ sealed abstract class Term extends Obj with ThisTypeTrait {
         p // TODO maybe?
      case OMS(p) => p.module / p.name
      case _ => mmt.mmtbase ? Obj.toPathEncoding(this)
-   }
-   /** applies copyFrom and returns this
-    *
-    * @return this object but with the metadata from o
-    */
-   def from(o: Term): this.type = {
-      copyFrom(o)
-      this
    }
 }
 
@@ -291,7 +291,7 @@ object OMATTRMany {
    }
 }
 
-/** The joint methods of OMLIT and UnknownOMLIT */
+/** The joint methods of [[OMLIT]] and [[UnknownOMLIT]] */
 sealed trait OMLITTrait extends Term {
    def synType: Term
    /** canonical string representation of this literal */
@@ -396,7 +396,7 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
    /**
      * Get a [[VarDecl]] representation of this OML, e.g. for insertion into a [[Context]].
      */
-    def vd = VarDecl(name, featureOpt, tp, df, nt)
+    def vd = VarDecl(name, featureOpt, tp, df, nt).from(this)
     private[objects] def freeVars_ = vd.freeVars
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)

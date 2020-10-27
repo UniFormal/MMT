@@ -316,7 +316,7 @@ object StandardPositive extends RSubtype(StandardNat) {
 class IntModulo(modulus: Int) extends RQuotient(StandardInt) {
   def by(u: Any) = StandardInt.unapply(u).get mod modulus
   /** overridden for efficiency and to ensure termination */
-  override def enumerate(m: Int) = Some((0 until modulus).iterator)
+  override def enumerate(m: Int) = Some((0 until modulus).iterator.map(BigInt(_)))
 }
 
 /** standard rational numbers */
@@ -369,7 +369,7 @@ object StandardString extends Atomic[String] {
   val cls = classOf[String]
   def fromString(s: String) = s
   override def lex = Some(new SymmetricEscapeLexer('\"', '\\'))
-  override def enumerate(m: Int): Option[Iterator[Any]] = {
+  override def enumerate(m: Int) = {
     val st = new Iterator[String] {
       var c = scala.util.Random.alphanumeric
       private val rand = scala.util.Random
@@ -413,15 +413,23 @@ object StringOperations {
   }
 }
 
-object StandardBool extends Atomic[java.lang.Boolean] {
+object StandardBool extends Atomic[scala.Boolean] {
   def asString = "bool"
-  val cls = classOf[java.lang.Boolean]
+  val cls = classOf[scala.Boolean]
   def fromString(s: String) = s match {
     case "true" => true
     case "false" => false
   }
   override def lex = Some(FiniteKeywordsLexer(List("true","false")))
   override def enumerate(m: Int) = Some(List(true,false).iterator)
+
+  // Annoyingly, this seems to be necessary, since at key points, the implicit conversions
+  // java.lang.Boolean <=> scala.Boolean are not applied
+  override def unapply(u: Any): Option[Boolean] = u match {
+    case b : Boolean => Some(b)
+    case b : java.lang.Boolean => Some(b)
+    case _ => None
+  }
 }
 
 import utils.URI

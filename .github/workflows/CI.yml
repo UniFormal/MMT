@@ -1,0 +1,47 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  ci:
+    # prevent GH actions from running when "[skip ci]" is given in commit message
+    # copied from https://dev.to/epassaro/use-skip-ci-in-github-actions-1mnf
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+
+    name: Continuous Integration
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Install OpenJDK 14 and sbt
+        uses: olafurpg/setup-scala@v10
+        with:
+          java-version: openjdk@1.14
+
+      - name: Install Dependencies
+        run: |
+          cd src
+          sbt ++2.12.9 update
+
+      - name: Build 'mmt.jar'
+        run: |
+          cd src
+          sbt ++2.12.9 deploy
+
+      - name: Store 'mmt.jar' artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: mmt.jar
+          path: deploy/mmt.jar
+
+      - name: Unit Tests
+        run: |
+          cd src
+          sbt ++2.12.9 test
+
+      - name: Integration Tests
+        shell: bash
+        run: |
+          export TEST_USE_BRANCH=${GITHUB_REF#refs/heads/}
+          java -cp deploy/mmt.jar info.kwarc.mmt.test.TestRunner

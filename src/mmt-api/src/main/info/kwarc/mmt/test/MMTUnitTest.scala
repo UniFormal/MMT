@@ -2,8 +2,8 @@ package info.kwarc.mmt.test
 
 import info.kwarc.mmt.api.archives.BuildQueue
 import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.utils
-
 import info.kwarc.mmt.test.testers.BaseTester
 
 /**
@@ -43,4 +43,14 @@ abstract class MMTUnitTest extends BaseTester {
     controller.extman.get(classOf[BuildQueue]).foreach(controller.extman.removeExtension)
   }
 
+  def assertEqual[T](expected: T, actual: T, msg: String = ""): Unit = {
+    if (expected != actual) {
+      testError("Equality failed" + (if (msg != "") " (" + msg + ")" else ""))
+      testError("Expected value: " + expected)
+      testError("Actual value: " + actual)
+    }
+  }
+
+  def assertTermEqual(expected: Term, actual: Term, msg: String = ""): Unit = assertEqual _
+  def assertSetEqual[T](expected: Set[T], actual: Set[T], msg: String = ""): Unit = assertEqual _
 }

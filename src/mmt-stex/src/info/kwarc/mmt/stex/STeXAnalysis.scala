@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import info.kwarc.mmt.api.{Error, Level}
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.stex.STeXUtils._
@@ -66,12 +67,15 @@ trait STeXAnalysis {
     {
       case Some(m) =>
         // Compare mkDep
-        assert(m.get("mhrepos").isDefined)
+        assert(m.contains("mhrepos"))
         val root = archive.root.up.up / m("mhrepos")
         controller.addArchive(root)
         val thearchive = controller.backend.getArchive(root)
-        assert(thearchive.isDefined)
-        thearchive.get
+        if (thearchive.isDefined) {
+          thearchive.get
+        } else {
+          throw new STeXLookupError(msg = "missing archive: " + root, None, severity = Some(Level.Error))
+        }
 
       case None => archive // fallback
     }
@@ -244,10 +248,7 @@ trait STeXAnalysis {
   def mkSTeXStructure(a: Archive, in: File, lines: Iterator[String], parents: Set[File]): STeXStructure =
   {
     var localStruct = STeXStructure(Nil,Nil)
-
-    def combine(s: STeXStructure) : Unit = {
-      localStruct = localStruct <> s
-    }
+    def combine(s: STeXStructure) : Unit = { localStruct = localStruct <> s }
 
     lines.foreach { line =>
       val l = stripComment(line).trim
@@ -324,8 +325,8 @@ trait STeXAnalysis {
 
       case smsMhView(r, _, f, t) =>
         val m = getArgMap(r)
-        var ofp = m.get("frompath")
-        var otp = m.get("topath")
+        val ofp = m.get("frompath")
+        val otp = m.get("topath")
         val fr = m.getOrElse("fromrepos", archString(a))
         val tr = m.getOrElse("torepos", archString(a))
         (ofp, otp) match {

@@ -47,7 +47,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
 
   override def start(args: List[String]) {
     anaStartArgs(args)
-    pipeOutput = optionsMap.get(pipeOutputOption).isDefined
+    pipeOutput = optionsMap.contains(pipeOutputOption)
     optionsMap.get(timeoutOption).foreach(v => timeoutVal = v.getIntVal)
     optionsMap.get(key).foreach(v => nameOfExecutable = v.getStringVal)
     optionsMap.get("execute").foreach { v =>
@@ -67,10 +67,12 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
   def includeFile(n: String): Boolean =
     n.endsWith(".tex") && !n.endsWith(localpathsFile) && !n.startsWith("all.")
 
+  @deprecated("sTeX no longer relies on localpaths.tex")
   protected def createLocalPaths(bt: BuildTask) {
     createLocalPaths(bt.archive, bt.inFile.up)
   }
 
+  @deprecated("sTeX no longer relies on localpaths.tex")
   protected def createLocalPaths(a: Archive, dir: File) {
     val fileName = dir / localpathsFile
     val groupRepo = archString(a) + "}"
@@ -78,7 +80,6 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
       "% this file defines root path local repository",
       "\\defpath{MathHub}{" + a.root.up.up.getPath + "}",
       "\\mhcurrentrepos{" + groupRepo,
-      "\\libinput{WApersons}",
       "% we also set the base URI for the LaTeXML transformation",
       "\\baseURI[\\MathHub{}]{https://mathhub.info/" + groupRepo
     )

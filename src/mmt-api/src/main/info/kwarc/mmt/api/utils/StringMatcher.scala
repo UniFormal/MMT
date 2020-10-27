@@ -8,6 +8,17 @@ object StringMatcher {
       (before+"(.*)"+middle1+"(.*)"+middle2+"(.*)"+after)r
 }
 
+class StringSplit(at: Int) {
+  def unapply(s: String) = {
+    if (s.length >= at) Some((s.substring(0,2), s.substring(2)))
+    else None
+  }
+}
+object StringSplit {
+  val At1 = new StringSplit(1)
+  val At2 = new StringSplit(2)
+}
+
 /**
  * matches S1 in "before S1 after"
  */

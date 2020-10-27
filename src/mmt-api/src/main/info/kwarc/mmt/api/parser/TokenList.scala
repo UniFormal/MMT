@@ -153,6 +153,15 @@ class TokenList(private var tokens: List[TokenListElem]) {
   /** returns all tokens */
   def getTokens: List[TokenListElem] = tokens
 
+  /** if this list consists of a single word, return it */
+  def isSingleWord: Option[Token] = {
+    if (tokens.length != 1) None else {
+      tokens.head match {
+        case t: Token => Some(t)
+        case _ => None
+      }
+    }
+  }
   /**
    * applies a notation and transforms this token list accordingly (this is the only place where [[MatchedList]]s are created)
    * @param an the notation to reduce
@@ -161,31 +170,30 @@ class TokenList(private var tokens: List[TokenListElem]) {
    */
   def reduce(an: ActiveNotation, rt: ParsingRuleTable, rep: frontend.Report): (Int, Int) = {
     val found = an.getFound
-    def doFoundArg(fa: FoundArg): UnmatchedList = {
+    def doFoundSimp(fa: FoundSimp): UnmatchedList = {
       fa match {
-        case fa: FoundArg =>
+        case fa: FoundSimp =>
           // fa.slice might be a single token, but that is harmless
-          val ul = new UnmatchedList(new TokenList(fa.slice.toList))
-          ul.scanner = new Scanner(ul.tl, None, rt, rep)
-          ul
+          new UnmatchedList(new TokenList(fa.slice.toList), None, rt, rep)
       }
     }
     var newTokens: List[(FoundContent, List[UnmatchedList])] = Nil
     found foreach {
       case _: FoundDelim =>
-      case fa: FoundArg =>
-        newTokens ::= (fa, List(doFoundArg(fa)))
-      case fsa : FoundSeqArg =>
-        newTokens ::= (fsa, fsa.args map doFoundArg)
-      case fv: FoundVar =>
+      case fa: FoundSimp =>
+        newTokens ::= (fa, List(doFoundSimp(fa)))
+      case fsa : FoundSeq =>
+        newTokens ::= (fsa, fsa.args map doFoundSimp)
+/*      case fv: FoundVar =>  DELETE after testing 2020-07-07
         val toks = fv.getVars flatMap {
           case SingleFoundVar(_, _, tpOpt) =>
             tpOpt match {
-              case Some(fa) => List(doFoundArg(fa))
+              case Some(fa) => List(doFoundSimp(fa))
               case None => Nil
             }
         }
         newTokens ::= (fv, toks)
+ */
     }
     val (from, to) = an.fromTo
     checkIndex(from, "active notation is " + an.toString)
@@ -252,17 +260,19 @@ case class Token(word: String, firstPosition: SourcePosition, whitespaceBefore: 
   * @param text the characters making up the token
   */
 abstract class ExternalToken(text: String) extends PrimitiveTokenListElem(text) {
-  /** a continuation function called by the parser when parsing this Token
-    *
-    * @param outer the ParsingUnit during which this ExternalToken was encountered
-    * @param BoundName the context
-    * @param parser the parser calling this function
-    */
+  /** a continuation function called by the parser when parsing this Token */
   def parse(input: ExternalTokenParsingInput): Term
 }
 
-/** bundles arguments passed into [[ExternalToken]] */
-case class ExternalTokenParsingInput(outer: ParsingUnit, boundNames: List[BoundName], parser: ObjectParser, errorCont: ErrorHandler)
+/** bundles arguments passed into [[ExternalToken]]
+  * @param outer the ParsingUnit during which this ExternalToken was encountered
+  * @param parser the object parser
+  * @param errorCont error handler
+*/
+abstract class ExternalTokenParsingInput(val outer: ParsingUnit, val parser: ObjectParser, val errorCont: ErrorHandler) {
+  /** callback function to parse terms within the current parser */
+  def callbackParse(reg: SourceRegion, term: String): Term
+}
 
 /** A convenience class for an ExternalToken whose parsing is context-free so that it can be parsed immediately
   * @param term the result of parsing
@@ -301,13 +311,12 @@ class MatchedList(val tokens: List[(FoundContent,List[UnmatchedList])], val an: 
  * not known (yet) which notation should be used.
  *
  * @param tl the TokenList that is to be reduced
- * @param localNotations notations that should additionally be used for this subterm
  */
-class UnmatchedList(val tl: TokenList) extends TokenListElem {
+// TODO: merge this with the Scanner class
+class UnmatchedList(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], rt: ParsingRuleTable, rep: frontend.Report) extends TokenListElem {
   val firstPosition = tl(0).firstPosition
   val lastPosition = tl(tl.length - 1).lastPosition
-  private[parser] var scanner: Scanner = null
-  private[parser] var localNotations: Option[ParsingRuleTable] = None
+  private val scanner: Scanner = new Scanner(tl, parsingUnitOpt, rt, rep)
   def addRules(rules : ParsingRuleTable, replace: Boolean) {
     scanner.addRules(rules, replace)
     tl.getTokens.foreach {
@@ -316,6 +325,7 @@ class UnmatchedList(val tl: TokenList) extends TokenListElem {
       case _ =>
     }
   }
+  def scan() {scanner.scan()}
 
   override def toString: String = if (tl.length == 1) tl(0).toString else "{unmatched " + tl.toString + " unmatched}"
 }

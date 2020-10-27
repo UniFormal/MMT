@@ -36,6 +36,10 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
   /** retrieves all Stores */
   def getStores: List[Storage] = stores
 
+  def clear {
+    stores.foreach(_.clear)
+  }
+
   /** releases all resources held by storages */
   def cleanup {
     stores.foreach(_.destroy)
@@ -141,7 +145,18 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
             properties += (("id", generatedId))
           }
           val arch = new Archive(root, properties, report)
+          getArchive(arch.id) match {
+            case Some(a) =>
+               logError(s"an archive with id ${arch.id} already exists at location ${a.root}")
+            case None =>
+          }
           addStore(arch)
+          arch.properties.get("classpath").foreach {cp =>
+            val rF = root / cp
+            log("loading realization archive" + rF)
+            val ra = new RealizationArchive(rF)
+            addStore(ra)
+          }
           List(arch)
         case None =>
           log(root + " is not an archive - recursing")
@@ -188,11 +203,16 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
 
   /** unregisters all archives */
   def closeAllArchives {
-    stores foreach {
-      case a: Archive => closeArchive(a.id)
-      case _ =>
-    }
+    getArchives foreach {a => closeArchive(a.id)}
   }
+
+  /** closes all archives, then opens them again */
+  def reopenArchives {
+    val paths = getArchives.map(_.root)
+    closeAllArchives
+    paths foreach {p => openArchive(p)}
+  }
+
 
   /** retrieve an [[Archive]] by its id */
   def getArchive(id: String): Option[Archive] = stores collectFirst {
@@ -254,13 +274,6 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
         openArchive(root)
         getArchive(root) map {a => (a, rel.tail)}
     }
-  }
-
-  /** creates and registers a RealizationArchive */
-  def openRealizationArchive(file: File) {
-    log("loading realization archive" + file)
-    val ra = new RealizationArchive(file)
-    addStore(ra)
   }
 
   /** auxiliary function of openArchive */

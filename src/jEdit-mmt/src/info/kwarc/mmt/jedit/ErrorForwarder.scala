@@ -80,7 +80,7 @@ class MMTErrorSource extends DefaultErrorSource("MMT") {
 
 /**
  * sends MMT errors directly to jEdit ErrorList
- * @param file the source file, in which the errors are found
+ * @param mainFile the source file, in which the errors are found
  */
 class ErrorListForwarder(errorSource: MMTErrorSource, controller: Controller, mainFile: File) extends ErrorHandler {
    /**
