@@ -3,7 +3,7 @@ package info.kwarc.mmt.frameit.communication.datastructures
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.FactReference
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SScroll, SScrollApplication, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SGeneralFact, SScroll, SScrollApplication, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -134,5 +134,8 @@ private[communication] object Codecs {
     implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
     implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
     implicit val scrollEncoder: Encoder[SScroll] = deriveEncoder
+
+    implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollApplicationInfo] = deriveEncoder
+    implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollApplicationInfo] = deriveDecoder
   }
 }

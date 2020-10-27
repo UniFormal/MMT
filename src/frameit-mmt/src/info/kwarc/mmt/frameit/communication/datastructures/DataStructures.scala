@@ -171,10 +171,12 @@ object DataStructures {
                             acquiredFacts: List[SFact]
                           )
 
+  type SScrollAssignments = List[(FactReference, Term)]
+
   /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
-  sealed case class SScrollApplication(scroll: ScrollReference, assignments: List[(FactReference, Term)]) {
+  sealed case class SScrollApplication(scroll: ScrollReference, assignments: SScrollAssignments) {
     def toView(target: MPath, codomain: Term)(implicit ctrl: Controller): View = {
       val domain = scroll.problemTheory
 
@@ -210,4 +212,10 @@ object DataStructures {
       view
     }
   }
+
+  sealed case class SDynamicScrollApplicationInfo(
+                                                  original: SScroll,
+                                                  rendered: SScroll,
+                                                  completions: List[SScrollAssignments]
+                                                )
 }

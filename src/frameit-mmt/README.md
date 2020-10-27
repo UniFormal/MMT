@@ -45,15 +45,30 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 - <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
 
   - request: a scroll application
-  - response: a scroll
+  - <details><summary>response: scroll dynamic info</summary>
   
-  Note that the return value differs from the scroll as output by `/scroll/list` making this endpoint useful after all.
-  Namely, all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly) partial scroll application.
+    ```javascript
+    {
+        "original": /* a scroll */
+        "rendered": /* a scroll */
+        "completions": /* an array of "scroll assignments lists" */
+    }
+    ```
+  
+    </details>
+  
+  The scroll under *original* contains the original scroll.
+  By contrast, in *rendered* all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly utterly partial) scroll application.
   
   For example, if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
   and the scroll application maps `A` to `P`  (where `P: point ❘ meta ?MetaAnnotations?label "P"` comes from the situation theory and has label "P"),
   then the dynamic scroll output by this endpoint will state `A: point ❘ meta ?MetaAnnotations?label "P" ❙`.
-  The same holds for more complex labels built out of multiple labels of facts. 
+  The same holds for more complex labels built out of multiple labels of facts.
+  
+  Furthermore, *completions* is an array of scroll view completion suggestions for the yet missing assignments.
+  For instance, the first element of *completions* might be a list of some (possibly not all) of the yet missing assignments of the
+  request's scroll view. Analogously for the other elements of *completions*, if they exist.
+  It might happen that multiple mutually exclusive *completions* exist, hence the response contains an array of them.
 
   </details>
 
@@ -128,15 +143,24 @@ JSON (sub)formats shared by multiple endpoints above.
 
   </details>
 
+
+- <details><summary>scroll assignments list</summary>
+
+    ```javascript
+    [
+      [/* a fact reference */, /* SOMDoc (the assigned term) */],
+      /* more entries */
+    ]
+    ```
+
+  </details>
+
 - <details><summary>scroll application</summary>
 
     ```javascript
     {
       "scroll": /* scroll reference */,
-      "assignments": [
-        ["ref": /* fact reference */, /* SOMDoc (the assigned term to the fact slot) */],
-        /* ... more elements (same syntax) */
-      ]
+      "assignments": /* a scroll assignments list */
     }
     ```
 

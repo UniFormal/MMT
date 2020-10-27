@@ -7,8 +7,8 @@ import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
-import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SScroll, SScrollApplication}
+import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, ViewCompletion}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
@@ -172,16 +172,29 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     }
   }}
 
-  private def dynamicScroll(state: ServerState): Endpoint[IO, SScroll] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollApplicationInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
+
+        val completions = List(
+            ViewCompletion.closeGaps(
+               scrollApp.assignments.map(asgn => (asgn._1.uri, asgn._2)),
+               state.situationTheory.meta
+            )(state.ctrl).map(asgn => (FactReference(asgn._1), asgn._2))
+        )
 
         val scrollView = scrollApp.toView(
           target = state.situationDocument ? "blah",
           codomain = state.situationTheory.toTerm
         )(state.ctrl)
 
-        Ok(scroll.render(Some(scrollView))(state.ctrl))
+        val scrollAppInfo = SDynamicScrollApplicationInfo(
+          original = scroll.render(None)(state.ctrl),
+          rendered = scroll.render(Some(scrollView))(state.ctrl),
+          completions = completions
+        )
+
+        Ok(scrollAppInfo)
 
       case _ =>
         NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
