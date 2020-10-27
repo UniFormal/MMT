@@ -30,7 +30,7 @@ object EnumerateTest {
     //Any randomization and quick count should use a mode selection (numbers only)
     //StandardBool only has 2 values, mode selection should have no influence
     //modes for numbers: 0 = random, else the number determines increment
-    enumerateSemanticType(StandardNat, 5)
+    enumerateSemanticType(StandardNat, 1)
 
   }
 }
