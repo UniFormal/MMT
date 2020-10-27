@@ -2,34 +2,52 @@ package info.kwarc.mmt.frameit.business
 
 import info.kwarc.mmt.api.checking.Solver
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.modules.{Module, Theory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, IncludeData}
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath}
 
 import scala.collection.immutable.{List, Nil}
+import scala.collection.mutable
 
 /**
   * Utility methods for view completion, i.e. given arbitrary lists
   * of assignments (not necessarily constituting even a partial view),
   * infer gaps and types of gaps.
   *
-  * @author first version by Dennis Müller
+  * @author First version by Dennis Müller, minor modifications by @ComFreek
   */
 object ViewCompletion {
-  private def getAllSymbols(top : MPath)(implicit controller: Controller) = {
-    var dones : List[MPath] = Nil
-    def recurse(mp : MPath) : List[GlobalName] = if (dones contains mp) Nil else {
-      dones ::= mp
-      val th = controller.getAs(classOf[Theory],mp)
-      th.getAllIncludes.flatMap {
-        case IncludeData(_, from, Nil, _, _) =>
-          recurse(from)
-        case _ =>
-          Nil
-      } ::: th.getConstants.map(_.path)
+
+  /**
+    * Get all symbols declared in leafModule and transitively in included theories.
+    *
+    * Non-include implicit morphisms are not considered at all.
+    *
+    * @return A list of all declared symbols in a non-specified order.
+    */
+  private def getAllSymbols(leafModule : MPath)(implicit controller: Controller): Set[GlobalName] = {
+    var processedModules = mutable.HashSet[MPath]()
+
+    def recurse(mp : MPath) : List[GlobalName] = {
+      if (processedModules contains mp) {
+        Nil
+      } else {
+        processedModules += mp
+
+        val module = controller.getAs(classOf[Module], mp)
+        module.getAllIncludes.flatMap {
+          case IncludeData(_, from, _, _, _) =>
+            recurse(from)
+          case _ =>
+            Nil
+        } ::: module.getDeclarations.collect {
+          case c: Constant => c.path
+        }
+      }
     }
-    recurse(top)
+
+    recurse(leafModule).toSet
   }
 
   private def allSymbols(tm : Term) = {
@@ -54,15 +72,15 @@ object ViewCompletion {
     * @return Some(tpi) if expected type contains no gaps, otherwise [[None]].
     */
   def expectedType(assignments : List[(GlobalName, Term)], metatheory : Option[MPath], tp : Term)(implicit controller: Controller) : Option[Term] = {
-    val assMap = scala.collection.mutable.HashMap.empty[GlobalName,Term]
+    val assMap = mutable.HashMap.empty[GlobalName,Term]
     assignments.foreach {
       case (gn,tm) => assMap(gn) = tm
     }
-    val varMap = scala.collection.mutable.HashMap.empty[GlobalName,LocalName]
+    val varMap = mutable.HashMap.empty[GlobalName,LocalName]
     val (ret,gaps) = expectedTypeInner(
       assMap,
       varMap,
-      metatheory.map(getAllSymbols).getOrElse(Nil),
+      metatheory.map(getAllSymbols).getOrElse(Set()),
       0,
       tp
     )
@@ -81,14 +99,14 @@ object ViewCompletion {
     */
   private def expectedTypeInner(assMap : scala.collection.mutable.HashMap[GlobalName,Term],
                                 varMap : scala.collection.mutable.HashMap[GlobalName,LocalName],
-                                metaSymbols : List[GlobalName],
+                                metaSymbols : Set[GlobalName],
                                 solveVarOrig : Int,
                                 tm : Term
                                ) = {
     var solveVar = solveVarOrig
     val traverser = new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-        case OMS(s) if metaSymbols contains s =>
+        case OMS(s) if metaSymbols.contains(s) =>
           t
         case OMS(s) if assMap.isDefinedAt(s) =>
           assMap(s)
@@ -115,13 +133,13 @@ object ViewCompletion {
     *         in the input assignments.
     */
   def closeGaps(assignments : List[(GlobalName, Term)], metatheory : Option[MPath])(implicit controller: Controller) : List[(GlobalName, Term)] = {
-    val assMap = scala.collection.mutable.HashMap.empty[GlobalName,Term]
+    val assMap = mutable.HashMap.empty[GlobalName,Term]
     assignments.foreach {
       case (gn,tm) => assMap(gn) = tm
     }
 
-    val varMap = scala.collection.mutable.HashMap.empty[GlobalName,LocalName]
-    val metaSymbols = metatheory.map(getAllSymbols).getOrElse(Nil)
+    val varMap = mutable.HashMap.empty[GlobalName,LocalName]
+    val metaSymbols = metatheory.map(getAllSymbols).getOrElse(Set())
 
     // Computes expected type and replaces gaps with variables
     var solveVar = 0
