@@ -32,7 +32,7 @@ object SOMDoc {
   case class SOMA(applicant: STerm, arguments: List[STerm]) extends STerm
 
   @ConfiguredJsonCodec
-  case class SInteger(value: Int) extends STerm
+  case class SInteger(decimal: Int) extends STerm
 
   @ConfiguredJsonCodec
   case class SFloatingPoint(float: Double) extends STerm

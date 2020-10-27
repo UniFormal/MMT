@@ -168,15 +168,18 @@ JSON (sub)formats shared by multiple endpoints above.
 
 - <details><summary>SOMDoc ("simplified OMDoc")</summary>
 
-    We follow the (insert link here to omdoc json standard) with one addition elaborated on below.
-    For quick reference, here is a representative sample of SOMDoc:
+    SOMDoc is a JSON representation of a subset of [OMDoc](https://www.omdoc.org/). It is simpler than the [OpenMath-JSON standard](https://omjson.kwarc.info/) and *almost* implements a subset of it.
+    Below is a representative list of all possible SOMDoc terms as JSON:
     
-    - `{"kind": "OMS", "uri": "..."}`
+    - `{"kind": "OMS", "uri": /* MMT  URI */}`
     - `{"kind": "OMA", "applicant": /* SOMDoc */, "arguments": /* array of SOMDoc */}`
-    - `{"kind": "OMI", "value": 42}`
+    - `{"kind": "OMI", "decimal": 42}`
     - `{"kind": "OMF", "float": 0.1234}`
     - `{"kind": "OMSTR", "string": "string in UTF-8"}`
     - `{"kind": "RAW", "xml": "OMDoc XML as string in UTF-8"}` (our addition to the (insert link here to omdoc json standard))
+    
+    In contrast to OpenMath-JSON, OMS terms simply encode the full MMT URI as a string instead of specifying its components separately. (E.g., OpenMath-JSON would provide fields `cd`, `cdbase`, and `name`.)
+    Moreover, as all but the last bullet point above only represent a subset of OMDoc, we need a way to encode unrepresented terms: we do so by `{kind: "RAW", "xml": "..."}`.
 
   </details>
 
