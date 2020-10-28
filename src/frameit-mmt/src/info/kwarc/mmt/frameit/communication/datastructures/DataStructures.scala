@@ -4,7 +4,7 @@ import info.kwarc.mmt.api
 import info.kwarc.mmt.api.LocalName.toList
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
-import info.kwarc.mmt.api.modules.View
+import info.kwarc.mmt.api.modules.{Module, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
@@ -179,6 +179,29 @@ object DataStructures {
   }
 
   /**
+    * Adds a module to the controller, taking additional care if it is a nested module.
+    *
+    * In case of a nested module (as determined by ''module.path.name'' comprised of multiple
+    * steps), a [[NestedModule]] declaration is added to the containing module (via ctrl).
+    *
+    * In any case, the module is added (via ctrl).
+    */
+  private def addModuleToController(module: Module)(implicit ctrl: Controller): Unit = {
+    module.path.name.steps match {
+      case prefix :+ containingModuleName :+ viewName =>
+        ctrl.add(new NestedModule(
+          home = OMMOD(module.path.doc ? LocalName(prefix :+ containingModuleName)),
+          name = LocalName(viewName),
+          mod = module
+        ))
+
+      case _ => // no additional action required
+    }
+
+    ctrl.add(module)
+  }
+
+  /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
   sealed case class SScrollApplication(scroll: ScrollReference, assignments: SScrollAssignments) {
@@ -194,18 +217,7 @@ object DataStructures {
         isImplicit = false
       )
 
-      target.name.steps match {
-        case prefix :+ containingModuleName :+ viewName =>
-          ctrl.add(new NestedModule(
-            home = OMMOD(target.doc ? LocalName(prefix :+ containingModuleName)),
-            name = LocalName(viewName),
-            mod = view
-          ))
-
-        case _ => // no additional action required
-      }
-
-      ctrl.add(view)
+      addModuleToController(view)
 
       // collect all assignments such that if typechecking later fails, we can conveniently output
       // debug information
