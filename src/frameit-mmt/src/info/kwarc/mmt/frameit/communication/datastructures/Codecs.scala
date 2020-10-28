@@ -15,15 +15,38 @@ import scala.util.Try
   * All the JSON codecs for [[DataStructures]] and [[SOMDoc]]
   *
   *
-  * WARNINGS
+  * ## WARNINGS
   *
-  * be cautious in using companion objects for abstract class/case classes for which you would like to derive
+  * - Be cautious in using companion objects for abstract class/case classes for which you would like to derive
   * io.circe codecs!! See [[https://gitter.im/circe/circe?at=5f8ea822270d004bcfdb28e9]]
   *
-  * Also, invariant of frameit scala code: io.circe.generic.{auto,semiauto} and io.circe.generic.extras.{auto,semiauto} includes should only occur in this file (Codecs.scala).
-  * Reasoning: performance when compiling increases much more if io.circe implicits are not touched by the (iterative, caching) compiler! Also, abstract over io.circe which is brittle to use as a human being.
+  * - Invariant of whole frameit-mmt code: io.circe.generic.{auto,semiauto} and io.circe.generic.extras.{auto,semiauto}
+  *   imports should only occur in this file (Codecs.scala).
   *
-  * Note: you cannot use deriveConfigured{Encoder,Decoder} for things that don't have a @ConfiguredJsonCodec annotation. Use derive{Encoder,Decoder} from plain io.circe.generic.semiauto (not from extras!).
+  *   Reasons:
+  *     - compilation is much faster when editing server endpoints (say in [[ConcreteServerEndpoints]]) if the
+  *       implicit-heavy codec derivation is encapsulated (and thus cached by the compiler from previous runs)
+  *       in another file (Codecs.scala)
+  *     - Abstract over io.circe which is brittle to use as a human being.
+  *
+  * ## Things I wish I knew about io.circe myself
+  *
+  * - io.circe.generic.semiauto.derive{Encoder, Decoder} is something completely unrelated to
+  *   io.circe.generic.extras.semiauto.derive{Encoder, Decoder}.
+  *   Precisely because of this confusion arising from the name clash, the latter is deprecated.
+  *
+  * - You can derive "configure" codecs by having an implicit configuration in scope and using
+  *   io.circe.generic.extras.semiauto.deriveConfigured{Encoder,Decoder}.
+  *   You do *not* need a @ConfiguredJsonCodec annotation for this on the case classes for which you want to derive
+  *   the codecs. See [[https://gitter.im/circe/circe?at=5f9934f1f2fd4f60fc3b4539]].
+  *
+  * - [[io.circe.generic.extras.semiauto.deriveConfiguredEncoder deriveConfiguredEncoder]] and
+  *   [[io.circe.generic.extras.semiauto.deriveConfiguredDecoder deriveConfiguredDecoder]] will fail
+  *   if there is no *or* more than one implicit [[Configuration]] in scope. In both cases, you will get the
+  *   *same* error message (due to Scala 2 being limited in that regard, no fault of io.circe).
+  *   Hence, if we want to use different configurations for different case classes, then we need to encapsulate
+  *   the [[Configuration]] objects. This is what this file does via the use of ''object config'', see the code
+  *   to learn more about that pattern.
   */
 private[communication] object Codecs {
   object PathCodecs {

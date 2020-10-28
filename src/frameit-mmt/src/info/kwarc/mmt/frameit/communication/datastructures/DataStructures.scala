@@ -30,7 +30,6 @@ object DataStructures {
     *
     * See subclasses for which fact types exist.
     */
-  /*@ConfiguredJsonCodec*/
   sealed abstract class SFact(val ref: Option[FactReference], val label: String) {
 
     /**
@@ -84,7 +83,6 @@ object DataStructures {
     * should only become [[SGeneralFact]]s if other fact types don't match (most
     * importantly [[SValueEqFact]]).
     */
-  /*@ConfiguredJsonCodec*/
   sealed case class SGeneralFact(
                                   override val ref: Option[FactReference],
                                   override val label: String,
@@ -112,7 +110,6 @@ object DataStructures {
     * If no value is given, but a proof is, an exception is raised immediately upon construction of the case
     * class object.
     */
-  /*@ConfiguredJsonCodec*/
   sealed case class SValueEqFact(
                                   override val ref: Option[FactReference],
                                   override val label: String,
