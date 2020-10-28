@@ -135,6 +135,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case _ => None
     })//+ " using the following rules: " + env.rules.toString)
     UncheckedElement.set(e)
+
+    // Global switch-case on what to check
+    // ==================================
     e match {
       case c: ContainerElement[_] =>
         checkElementBegin(context, c)
@@ -191,10 +194,45 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
           }
         }
+
       case c: Constant =>
+        /**
+          * Tries to apply a morphism homomorphically on a term.
+          * We use [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] and forward caught [[GetError]]
+          * exceptions to the error continuation in [[env]].
+          *
+          * Use case: in checking of constants below (e.g. of the form ''c: tp = df''), it might happen
+          * that a particular morphism ''mor'' is defined on ''c'' and for further checking needs to be
+          * applied homomorphically on ''tp'' and/or ''df''.
+          * Even though ''mor'' is defined on ''c'', it might not be defined on all constants referenced in
+          * either ''tp'' or ''df''.
+          * In such a scenario, [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] throws a
+          * [[GetError]].
+          *
+          * Ideally, all morphisms are dependency-closed wrt. domain symbols such that this scenario cannot happen.
+          * These morphisms are called partial. But still, end users might want to typecheck "less than partial"
+          * morphisms without the type checking aborting unexpectedly with a [[GetError]], which would preclude
+          * end users from getting *other* useful type errors.
+          *
+          * @return Upon success, the resulting term is returned. Upon failure, the error is put into [[env]]
+          *         and [[None]] is returned.
+          */
+        def tryApplyMorphism(mor: Term)(t: Term): Option[Term] = {
+          try {
+            Some(content.ApplyMorphs(t, mor))
+          } catch {
+            case err: GetError =>
+              env.errorCont(err)
+              None
+          }
+        }
+
         // determine the expected type and definiens (if any) based on the parent element
         val parent = content.getParent(c)
         lazy val defaultExp = Expectation(None, None)
+
+        // Step 1: compute typing expectation from constant based on parent
+        // ----------------------------------------------------------------
         val expectation = parent match {
           case thy: Theory =>
             c.name.steps.head match {
@@ -207,21 +245,27 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   case Some(real) =>
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
-                        def tr(t: Term) = content.ApplyMorphs(t, real.asMorphism)
-                        Expectation(cOrg.tp map tr, cOrg.df map tr)
+                        val mor = real.asMorphism
+                        Expectation(cOrg.tp flatMap tryApplyMorphism(mor), cOrg.df flatMap tryApplyMorphism(mor))
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
-                        defaultExp                      
+                        defaultExp
                     }
                 }
               case _ =>
                 defaultExp
             }
+
+          // Constants living in a link
+          //
+          // Here, the constant c really encodes an assignment `domainSymbol of type c.tp := c.df`.
+          // Hence, generate the expectation `|- v(c.tp) : v(c.df)` where `v` is the homomorphic extension
+          // of the link
           case link: Link =>
-            content.get(link.from, c.name, msg => throw GetError("cannot find realized constant")) match {
+            content.get(link.from, c.name, msg => throw GetError(s"cannot find realized constant. ${msg}")) match {
               case cOrg: Constant =>
-                def tr(t: Term) = content.ApplyMorphs(t, link.toTerm) 
-                Expectation(cOrg.tp map tr, cOrg.df map tr)
+                val mor = link.toTerm
+                Expectation(cOrg.tp flatMap tryApplyMorphism(mor), cOrg.df flatMap tryApplyMorphism(mor))
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
                 Expectation(None, None)
@@ -245,7 +289,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case _ =>
             defaultExp
         }
-        // now the actual checking
+
+        // Step 2: do actual checking
+        // -------------------------------------------------------
+
         /* auxiliary function for structural checking of a term:
          * @return unknown variables, structural reconstruction, boolean result of latter
          */
@@ -263,15 +310,22 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             objectChecker(cu, env.rules)
           
         }
-        // = checking the type =
-        // check that the type of c (if given) is inhabitable
+
+        // Step 2.1: checking if type of c is inhabited (if given)
+        // ----------------------------------------------------------
         getTermToCheck(c.tpC, "type") foreach {t =>
           val (pr, valid) = prepareTerm(t)
           if (valid) {
             checkInhabitable(pr)
           }
         }
-        // additional treatment if there is an expected type
+
+        // Step 2.2: checking the typing
+        //           (both from given type/definiens and from expectation)
+        // ----------------------------------------------------------------
+
+        // Step 2.2a: check expected type
+        // ------------------------------------
         expectation.tp foreach {expTp =>
           c.tp match {
             case Some(tp) =>
@@ -285,7 +339,10 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
               c.tpC.analyzed = expTpS
           }
         }
-        // check that the definiens of c (if given) type-checks against the type of c (if given or expected)
+
+        // Step 2.2b: check that definiens of c (if given) type-checks
+        //            against the type of c (if given or expected)
+        // -------------------------------------------------------------
         val tpVar = CheckingUnit.unknownType
         getTermToCheck(c.dfC, "definiens") foreach {d =>
           val (pr, valid) = prepareTerm(d)
@@ -321,7 +378,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
             }
           }
         }
-        // additional treatment if there is an expected definiens
+
+        // Step 2.2c: additional treatment if there is an expected definiens
+        // ------------------------------------------------------------------
         expectation.df foreach {expDef =>
           c.df match {
             case Some(df) =>
@@ -343,7 +402,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case _ =>
         elementChecked(e)
     }
-  }  
+  }
 
   /** determines which dimension of a term (parsed, analyzed, or neither) is checked */
   private def getTermToCheck(tc: TermContainer, dim: String) = {
