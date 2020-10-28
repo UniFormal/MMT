@@ -205,7 +205,7 @@ object LocalName {
      * @param length The length of the random alphanumeric string suffix
      */
    def random(prefix: String = "", length: Int = 15): LocalName = {
-      LocalName(s"${prefix}${Random.alphanumeric.dropWhile(_.isDigit).take(length)}")
+      LocalName(s"${prefix}_${Random.alphanumeric.dropWhile(_.isDigit).take(length).mkString}")
    }
 }
 
