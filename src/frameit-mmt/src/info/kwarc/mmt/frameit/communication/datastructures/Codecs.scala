@@ -3,11 +3,11 @@ package info.kwarc.mmt.frameit.communication.datastructures
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.FactReference
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SGeneralFact, SScroll, SScrollApplication, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SGeneralFact, SScroll, SScrollApplication, SScrollAssignments, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{Decoder, Encoder, HCursor}
+import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
 
 import scala.util.Try
 
@@ -77,10 +77,10 @@ private[communication] object Codecs {
 
   object DataStructureCodecs {
     object FactCodecs {
-      // vvv DO NOT REMOVE even if IntelliJ marks it as unused
+      // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
       import PathCodecs._
       import SOMDocCodecs._
-      // ^^^^^^^ END: DO NOT REMOVE
+      // ^^^^^^^ END
 
       private[datastructures] object config {
         implicit val factJsonConfig: Configuration = Configuration.default
@@ -95,9 +95,9 @@ private[communication] object Codecs {
           })
       }
 
-      // vvv DO NOT REMOVE even if IntelliJ marks it as unused
+      // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
       import config._
-      // ^^^^^^^ END: DO NOT REMOVE
+      // ^^^^^^^ END
 
       implicit val sfactEncoder: Encoder[SFact] = deriveConfiguredEncoder
       implicit val sfactDecoder: Decoder[SFact] = deriveConfiguredDecoder
@@ -122,18 +122,36 @@ private[communication] object Codecs {
     implicit val sfactDecoder: Decoder[SFact] = FactCodecs.sfactDecoder
     // implicit val knownFactEncoder: Encoder[SFact with SKnownFact] = FactCodecs.knownFactEncoder
 
-    // vvv DO NOT REMOVE even if IntelliJ marks it as unused
+    // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
     import PathCodecs._
     import SOMDocCodecs._
 
     import io.circe.generic.auto._
     import io.circe.generic.semiauto._
-    // ^^^^^^^ END: DO NOT REMOVE
+    // ^^^^^^^ END
 
     implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
     implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
     implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
     implicit val scrollEncoder: Encoder[SScroll] = deriveEncoder
+
+    // [[SScrollAssignments]] codecs
+    //
+    private val originalScrollAssignmentsEncoder = deriveEncoder[SScrollAssignments]
+    private val originalScrollAssignmentsDecoder = deriveDecoder[SScrollAssignments]
+
+    implicit val scrollAssignmentsEncoder: Encoder[SScrollAssignments] = assignments => {
+      originalScrollAssignmentsEncoder(assignments).hcursor
+        .downField("assignments")
+        .values
+        .map(values => Json.arr(values.toSeq : _*))
+        .getOrElse(throw new Exception("This should not occur, did you change the signature/field names of SScrollAssignments?"))
+    }
+    implicit val scrollAssignmentsDecoder: Decoder[SScrollAssignments] = (c: HCursor) => {
+      originalScrollAssignmentsDecoder(
+        Json.fromJsonObject(JsonObject.singleton("assignments", c.value)).hcursor
+      )
+    }
 
     implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollApplicationInfo] = deriveEncoder
     implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollApplicationInfo] = deriveDecoder

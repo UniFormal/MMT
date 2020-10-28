@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
@@ -171,7 +171,14 @@ object DataStructures {
                             acquiredFacts: List[SFact]
                           )
 
-  type SScrollAssignments = List[(FactReference, Term)]
+  sealed case class SScrollAssignments(assignments: List[(FactReference, Term)]) {
+    def toMMTList: List[(GlobalName, Term)] = assignments.map(asgn => (asgn._1.uri, asgn._2))
+  }
+
+  object SScrollAssignments {
+    def fromMMTList(mmtList: List[(GlobalName, Term)]): SScrollAssignments =
+      SScrollAssignments(mmtList.map(asgn => (FactReference(asgn._1), asgn._2)))
+  }
 
   /**
     * Tentative scroll applications communicated from the game engine to MMT
@@ -193,7 +200,7 @@ object DataStructures {
 
       // collect all assignments such that if typechecking later fails, we can conveniently output
       // debug information
-      val scrollViewAssignments = assignments.map {
+      val scrollViewAssignments = assignments.assignments.map {
         case (factRef, assignedTerm) =>
           // create new assignment
           new FinalConstant(

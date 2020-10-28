@@ -67,6 +67,9 @@ final case class FactValidationException(message: String, processedFacts: List[P
 trait ServerEndpoints extends Endpoint.Module[IO] {
 
   import cats.Applicative.ops.toAllApplicativeOps
+  // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
+  import ServerErrorHandler._
+  // ^^^^^^^ END
 
   protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO]
 

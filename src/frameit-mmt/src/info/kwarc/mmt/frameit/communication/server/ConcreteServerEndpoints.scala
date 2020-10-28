@@ -2,13 +2,14 @@ package info.kwarc.mmt.frameit.communication.server
 
 // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
 import cats.effect.IO
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
 import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, ViewCompletion}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication, SScrollAssignments}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
@@ -176,25 +177,31 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
 
-        val completions = List(
-            ViewCompletion.closeGaps(
-               scrollApp.assignments.map(asgn => (asgn._1.uri, asgn._2)),
-               state.situationTheory.meta
-            )(state.ctrl).map(asgn => (FactReference(asgn._1), asgn._2))
+        implicit val ctrl: Controller = state.ctrl
+
+        val canonicalCompletion = ViewCompletion.closeGaps(
+          scrollApp.assignments.toMMTList,
+          state.situationTheory.meta
         )
+
+        val completions = if (canonicalCompletion.isEmpty) Nil else
+          List(SScrollAssignments.fromMMTList(canonicalCompletion))
 
         val scrollView = scrollApp.toView(
-          target = state.situationDocument ? "blah",
+          target = state.situationDocument ? LocalName.random("dummy_scroll_view_for_dynamic_scroll_info"),
           codomain = state.situationTheory.toTerm
-        )(state.ctrl)
-
-        val scrollAppInfo = SDynamicScrollApplicationInfo(
-          original = scroll.render(None)(state.ctrl),
-          rendered = scroll.render(Some(scrollView))(state.ctrl),
-          completions = completions
         )
 
-        Ok(scrollAppInfo)
+        try {
+          val scrollAppInfo = SDynamicScrollApplicationInfo(
+            original = scroll.render(None),
+            rendered = scroll.render(Some(scrollView)),
+            completions = completions
+          )
+          Ok(scrollAppInfo)
+        } finally {
+          ctrl.delete(scrollView.path)
+        }
 
       case _ =>
         NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
