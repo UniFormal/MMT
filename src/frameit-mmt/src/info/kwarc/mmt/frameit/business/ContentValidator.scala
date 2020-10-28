@@ -1,16 +1,16 @@
 package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, RuleBasedChecker}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, PlainInclude}
-import info.kwarc.mmt.api.{Error, ErrorContainer, MMTTask, MPath, StructuralElement}
+import info.kwarc.mmt.api.{Error, ErrorContainer, GeneralError, GetError, LookupError, MMTTask, MPath, StructuralElement}
 
 import scala.util.Random
 
 class ContentValidator(private val ctrl: Controller) {
-  private val checker = ctrl.extman.get(classOf[MMTStructureChecker]).headOption.getOrElse({
+  private val checker: StructureChecker = ctrl.extman.get(classOf[MMTStructureChecker]).headOption.getOrElse({
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     ctrl.extman.addExtension(checker)
       
@@ -19,14 +19,21 @@ class ContentValidator(private val ctrl: Controller) {
 
   private def createFreshCheckingEnv() = {
     val errorContainer = new ErrorContainer(None)
-    val checkingEnv: CheckingEnvironment = new CheckingEnvironment (ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
+    val checkingEnv: CheckingEnvironment = new CheckingEnvironment(ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
 
     (checkingEnv, errorContainer)
   }
   
   private def checkStructuralElementSynchronously(element: StructuralElement): List[Error] = {
     val (checkingEnv, errorContainer) = createFreshCheckingEnv()
-    checker(element)(checkingEnv) // TODO is this synchronous?
+
+    try {
+      // TODO use checker.applyWithTimeout lest the server get stuck
+      checker(element)(checkingEnv) // TODO is this synchronous?
+    } catch {
+      case err @ (_: LookupError | _: GetError) =>
+        errorContainer(err.asInstanceOf[Error]) // Scala requires this unnecessary casting for some reason
+    }
 
     errorContainer.getErrors
   }

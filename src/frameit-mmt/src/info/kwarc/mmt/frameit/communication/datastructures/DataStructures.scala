@@ -1,6 +1,7 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api
+import info.kwarc.mmt.api.LocalName.toList
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.View
@@ -192,6 +193,17 @@ object DataStructures {
         dfC = TermContainer.empty(),
         isImplicit = false
       )
+
+      target.name.steps match {
+        case prefix :+ containingModuleName :+ viewName =>
+          ctrl.add(new NestedModule(
+            home = OMMOD(target.doc ? LocalName(prefix :+ containingModuleName)),
+            name = LocalName(viewName),
+            mod = view
+          ))
+
+        case _ => // no additional action required
+      }
 
       ctrl.add(view)
 

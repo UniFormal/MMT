@@ -4,7 +4,7 @@ package info.kwarc.mmt.frameit.communication.server
 import cats.effect.IO
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.symbols.FinalConstant
+import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
@@ -187,10 +187,17 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         val completions = if (canonicalCompletion.isEmpty) Nil else
           List(SScrollAssignments.fromMMTList(canonicalCompletion))
 
+        val scrollViewName = LocalName.random("scroll_view_for_dynamic_scroll_info")
+
         val scrollView = scrollApp.toView(
-          target = state.situationDocument ? LocalName.random("dummy_scroll_view_for_dynamic_scroll_info"),
+          target = state.situationTheory.path / scrollViewName,
           codomain = state.situationTheory.toTerm
         )
+
+        val scrollViewPaths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
+
+        val errors = state.contentValidator.checkView(scrollView)
+        println(errors)
 
         try {
           val scrollAppInfo = SDynamicScrollApplicationInfo(
@@ -200,7 +207,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
           )
           Ok(scrollAppInfo)
         } finally {
-          ctrl.delete(scrollView.path)
+          scrollViewPaths.foreach(ctrl.delete)
         }
 
       case _ =>
