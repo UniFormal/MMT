@@ -4,11 +4,13 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.ontology.IsTheory
+import info.kwarc.mmt.api.ontology.QMTProp.And
 import info.kwarc.mmt.api.{LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
+import scala.collection.mutable
 import scala.util.Random
 
 /**
@@ -113,6 +115,21 @@ object Scroll {
 
     allTheories.flatMap(tryParseAsScroll(_)).toList
   }
+  /*
+  def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
+    ctrl.depstore.getInds(And(IsTheory, IsTheory))
+    def getAllIncludes(mpath: MPath): Set[MPath] = {
+      val seen = mutable.HashSet[MPath]()
+      val queue = mutable.Queue[MPath]()
+      while (queue.nonEmpty) {
+        val path = queue.dequeue()
+
+        ctrl.getTheory(path).getIncludesWithoutMeta
+      }
+      val s: Set[MPath] = (ctrl.getTheory(mpath).getIncludesWithoutMeta.toSet - visited)
+      s
+    }
+  }*/
 
   /**
     * Check if the given theory is a solution theory, if so, extract the full scroll information.

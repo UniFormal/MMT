@@ -218,9 +218,18 @@ object DataStructures {
     }
   }
 
+  sealed abstract class SCheckingError(val msg: String)
+  sealed case class SInvalidScrollAssignment(override val msg: String, fact: FactReference) extends SCheckingError(msg)
+  sealed case class SNonTotalScrollApplication(override val msg : String = "Scroll application not total") extends SCheckingError(msg)
+  sealed case class SMiscellaneousError(override val msg: String) extends SCheckingError(msg)
+
   sealed case class SDynamicScrollApplicationInfo(
                                                   original: SScroll,
                                                   rendered: SScroll,
+
+                                                  valid: Boolean,
+                                                  errors: List[SCheckingError],
+
                                                   completions: List[SScrollAssignments]
                                                 )
 }

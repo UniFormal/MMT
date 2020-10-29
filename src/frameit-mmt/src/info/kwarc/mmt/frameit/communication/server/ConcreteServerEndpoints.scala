@@ -205,34 +205,41 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollApplicationInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
-
         implicit val ctrl: Controller = state.ctrl
 
-        val canonicalCompletion = ViewCompletion.closeGaps(
-          scrollApp.assignments.toMMTList,
-          state.situationTheory.meta
-        )
+        // the scroll view and all paths (for later deletion from [[Controller]])
+        val (scrollView, scrollViewPaths) = {
+          val scrollViewName = LocalName.random("scroll_view_for_dynamic_scroll_info")
+          val view = scrollApp.toView(
+            target = state.situationTheory.path / scrollViewName,
+            codomain = state.situationTheory.toTerm
+          )
+          val paths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
 
-        val completions = if (canonicalCompletion.isEmpty) Nil else
-          List(SScrollAssignments.fromMMTList(canonicalCompletion))
+          (view, paths)
+        }
+        val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
 
-        val scrollViewName = LocalName.random("scroll_view_for_dynamic_scroll_info")
+        val completions: List[SScrollAssignments] = {
+          val canonicalCompletion = ViewCompletion.closeGaps(
+            scrollApp.assignments.toMMTList,
+            state.situationTheory.meta
+          )
 
-        val scrollView = scrollApp.toView(
-          target = state.situationTheory.path / scrollViewName,
-          codomain = state.situationTheory.toTerm
-        )
-
-        val scrollViewPaths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
-
-        val errors = state.contentValidator.checkView(scrollView)
-        println(errors)
+          if (canonicalCompletion.isEmpty) {
+            Nil
+          } else {
+            List(SScrollAssignments.fromMMTList(canonicalCompletion))
+          }
+        }
 
         try {
           val scrollAppInfo = SDynamicScrollApplicationInfo(
             original = scroll.render(None),
             rendered = scroll.render(Some(scrollView)),
-            completions = completions
+            completions = completions,
+            valid = errors.isEmpty,
+            errors = errors
           )
           Ok(scrollAppInfo)
         } finally {
