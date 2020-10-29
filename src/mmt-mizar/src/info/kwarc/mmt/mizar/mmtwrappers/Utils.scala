@@ -30,13 +30,13 @@ object Mizar {
   val ProofsTh = latinBase ? "Proofs"
   val softTypedTermsTh = latinBase ? "SoftTypedTerms"
   val ConjunctionTh = latinBase ? "Conjunction"
-  val DisjunctionTh = latinBase ? "Disjunction"
+  val DisjunctionTh = latinBase ? "SoftTypedDefinedFOL"
   val EqualityTh = latinBase ? "Equality"
   val TruthTh = latinBase ? "Truth"
   val FalsityTh = latinBase ? "Falsity"
   val NegationTh = latinBase ? "Negation"
-  val ImplicationTh = latinBase ? "Implication"
-  val EquivalenceTh = latinBase ? "Equivalence"
+  val ImplicationTh = latinBase ? "SoftTypedDefinedFOL"
+  val EquivalenceTh = latinBase ? "SoftTypedDefinedFOL"
 
 
 
@@ -49,19 +49,21 @@ object Mizar {
 
    def constantName(name : String) : GlobalName = {
       name match {
-        case "set" => TermsTh ? name
+        case "any" => TermsTh ? "term"
+        case "set" => HiddenTh ? name
         case "prop"=> PropositionsTh ? name
         case "mode" => TypesTh ? "tp"
         case "proof" => ProofsTh ? "ded"
         case "is" => softTypedTermsTh ? "of"
         case "and" => ConjunctionTh ? name
         case "or" => DisjunctionTh ? name
-        case "eq" => EqualityTh ? "equal" //officially in Hidden but in our case its in the Mizar base theory
+        case "eq" => EqualityTh ? "equal"
+        case "ineq" => HiddenTh ? "inequal"
         case "true" => TruthTh ? name
-        case "false" => TruthTh ? name
-        case "not" => TruthTh ? name
-        case "implies" => TruthTh ? "impl"
-        case "iff" => TruthTh ? "equiv"
+        case "false" => FalsityTh ? name
+        case "not" => NegationTh ? name
+        case "implies" => ImplicationTh ? "impl"
+        case "iff" => EquivalenceTh ? "equiv"
         case _ => MizarTh ? name
       }
    }
@@ -78,26 +80,18 @@ object Mizar {
    def tp : Term = constant("tp")
    def set = constant("set")
   // TODO: make sure this really gives us what we want
-   def any =constant("set")
+   def any =constant("any")
 
    def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
    def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
 
    def andCon = constantName("and")
+   def naryAndCon = constantName("nary_and")
 
-   def and(tms : List[Term]) : Term = tms match {
-     case Nil =>trueCon
-     case List(tm) => tm
-     case hd::tl => andCon(hd, and(tl))
-   }
-  //apply(OMS(andCon), OMI(tms.length) :: tms :_*)
-     //apply(constant("and"), OMI(tms.length), apply(Sequence, tms :_*))
+   def and(tms : List[Term]) : Term = apply(OMS(naryAndCon), OMI(tms.length) :: tms :_*)
    def orCon = constantName("or")
-   def or(tms : List[Term]) : Term = tms match {
-     case Nil =>trueCon
-     case List(tm) => tm
-     case hd::tl => orCon(hd, and(tl))
-   } //apply(OMS(orCon), OMI(tms.length) :: tms :_*)
+  def naryOrCon = constantName("nary_or")
+   def or(tms : List[Term]) : Term = apply(OMS(naryOrCon), OMI(tms.length) :: tms :_*)
 
    // Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
    def seqConn(connective : String, length : Term, seq : Term) : Term =
