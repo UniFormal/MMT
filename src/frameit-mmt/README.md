@@ -194,7 +194,7 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary><code>GET /debug/situationtheory/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
   - request: empty
-  - response: a JSON string containing MMT surface syntax (probably unparsable by MMT; for human consumption only)
+  - response: an HTTP response with content type `text/plain` (not JSON!) and with body a dump in MMT surface syntax of the situation theory. The dump is probably unparsable by MMT; meant for human consumption only.
 
   </details>
 

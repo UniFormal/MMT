@@ -29,18 +29,33 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   import Codecs.DataStructureCodecs._
   // ^^^^^^^ END
 
-  private def getEndpointsForState(state: ServerState) =
-    printHelp(state) :+: buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
-      addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: printSituationTheory(state) :+: forceError
+  /**
+    * Aggregates all endpoints whose output should be encoded to HTTP responses with [[Application.Json]] bodies.
+    *
+    * Since JSON is the default encoding in the frameit-mmt project, almost all endpoints should be aggregated by
+    * this function. Only some debugging endpoints might go to [[getPlaintextEndpointsForState()]].
+    */
+  private def getJSONEndpointsForState(state: ServerState) =
+    buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
+      addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: forceError
 
-  override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = Bootstrap.serve[Application.Json](getEndpointsForState(state)).compile
+  /**
+    * Aggregates endpoints whose output should be encoded to HTTP responses with [[Text.Plain]] bodies.
+    *
+    * Since JSON is the default encoding in the frameit-mmt project, only some debugging endpoints should be
+    * aggregated here.
+    */
+  private def getPlaintextEndpointsForState(state: ServerState) = printSituationTheory(state)
+
+  override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = {
+    Bootstrap
+      .serve[Application.Json](getJSONEndpointsForState(state))
+      .serve[Text.Plain](getPlaintextEndpointsForState(state))
+      .compile
+  }
 
   // ENDPOINTS (all private functions)
   // ======================================
-  private def printHelp(state: ServerState): Endpoint[IO, String] = get(path("help")) {
-    Ok(getEndpointsForState(state).toString)
-  }
-
   private def forceError: Endpoint[IO, Unit] = get(path("debug") :: path("forceerror")) {
     throw new Exception("A deliberate error produced by /debug/forceerror.")
 
