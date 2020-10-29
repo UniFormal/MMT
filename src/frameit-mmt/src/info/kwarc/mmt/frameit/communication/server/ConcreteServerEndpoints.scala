@@ -3,12 +3,13 @@ package info.kwarc.mmt.frameit.communication.server
 // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
 import cats.effect.IO
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
-import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, ViewCompletion}
+import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Utils, ViewCompletion}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication, SScrollAssignments}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
@@ -125,7 +126,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
     val stringRenderer = new presentation.StringBuilder
-    DebugUtils.syntaxPresentRecursively(state.situationTheory)(state.ctrl, state.presenter, stringRenderer)
+    state.presenter(state.situationSpace)(stringRenderer)
 
     Ok(stringRenderer.get)
   }
@@ -144,14 +145,10 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
 
-    val scrollViewDomain = scrollApp.scroll.problemTheory
-    val scrollViewCodomain = state.situationTheoryPath
+    implicit val ctrl: Controller = state.ctrl
 
-    // create view out of [[SScrollApplication]]
-    val scrollView = scrollApp.toView(
-      state.situationDocument ? LocalName.random("frameit_scroll_view"),
-      OMMOD(scrollViewCodomain)
-    )(state.ctrl)
+    val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
+    val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
 
     // collect all assignments such that if typechecking later fails, we can conveniently output
     // debug information
@@ -161,20 +158,37 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
     (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
       case Nil =>
-        val (situationTheoryExtension, _) = NewPushoutUtils.computeNamedPushoutAlongDirectInclusion(
-          state.ctrl.getTheory(scrollViewDomain),
-          state.ctrl.getTheory(scrollViewCodomain),
-          state.ctrl.getTheory(scrollApp.scroll.solutionTheory),
-          state.situationDocument ? LocalName.random("situation_theory_extension"),
-          scrollView,
-          w_to_generate = state.situationDocument ? LocalName.random("pushed_out_scroll_view")
-        )(state.ctrl)
+        state.descendSituationTheory(LocalName.random("after_scroll_application"))
 
-        state.setSituationTheory(situationTheoryExtension)
+        val viewToGenerate: View = {
+          val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
+
+          val view = View(
+            path.doc,
+            path.name,
+            from = OMMOD(scrollApp.scroll.solutionTheory),
+            to = state.situationTheory.toTerm,
+            isImplicit = false
+          )
+          Utils.addModuleToController(view)
+
+          view
+        }
+
+        state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
+
+        NewPushoutUtils.injectPushoutAlongDirectInclusion(
+          state.ctrl.getTheory(scrollView.from.toMPath),
+          state.ctrl.getTheory(scrollView.to.toMPath),
+          state.ctrl.getTheory(scrollApp.scroll.solutionTheory),
+          state.situationTheory,
+          scrollView,
+          viewToGenerate
+        )(state.ctrl)
 
         Ok(
           Fact
-            .findAllIn(situationTheoryExtension, recurseOnInclusions = false)(state.ctrl)
+            .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
             .map(_.renderStatic()(state.ctrl))
         )
 

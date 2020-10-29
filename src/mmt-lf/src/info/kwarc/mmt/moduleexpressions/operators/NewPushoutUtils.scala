@@ -101,6 +101,26 @@ object NewPushoutUtils {
     * @return The computed pushout theory D and the morphism w in the picture above. Both are already added to the [[Controller]].
     */
   def computeNamedPushoutAlongDirectInclusion(A: Theory, B: Theory, C: Theory, D_to_generate: MPath, v: Link, w_to_generate: MPath)(implicit ctrl: Controller): (Theory, View) = {
+    // Adopt meta theory from B
+    val generated_theory = Theory.empty(D_to_generate.parent, D_to_generate.name, B.meta)
+    val generated_view = new View(
+      w_to_generate.doc,
+      w_to_generate.name,
+      TermContainer.asParsed(C.toTerm),
+      TermContainer.asParsed(OMMOD(D_to_generate)),
+      TermContainer.empty(),
+      isImplicit = false
+    )
+
+    ctrl.add(generated_theory)
+    ctrl.add(generated_view)
+
+    injectPushoutAlongDirectInclusion(A, B, C, generated_theory, v, generated_view)
+
+    (generated_theory, generated_view)
+  }
+
+  def injectPushoutAlongDirectInclusion(A: Theory, B: Theory, C: Theory, D: Theory, v: Link, w: Link)(implicit ctrl: Controller): Unit = {
     // Assert C including A directly
     assert(
       C.getAllIncludes.contains(IncludeData(OMMOD(C.path), A.path, Nil, None, total = false)),
@@ -124,20 +144,6 @@ object NewPushoutUtils {
     // the ones we just renamed!)
     val traverser = Renamer(pushedOutDecls.get(_)).compose(linkToTraverser(v))
 
-    // Adopt meta theory from B
-    val generated_theory = Theory.empty(D_to_generate.parent, D_to_generate.name, B.meta)
-    val generated_view = new View(
-      w_to_generate.doc,
-      w_to_generate.name,
-      TermContainer.asParsed(C.toTerm),
-      TermContainer.asParsed(OMMOD(D_to_generate)),
-      TermContainer.empty(),
-      isImplicit = false
-    )
-
-    ctrl.add(generated_theory)
-    ctrl.add(generated_view)
-
     for (decl <- C.getDeclarations) {
       decl match {
         case c: FinalConstant =>
@@ -150,7 +156,7 @@ object NewPushoutUtils {
           val newDefiniens = TermContainer.asParsed(c.df.map(traverser.apply(_, Unit)))
 
           val newDecl = new FinalConstant(
-            home = OMMOD(D_to_generate),
+            home = D.toTerm,
             name = c.name,
             alias = c.alias,
             tpC = newType,
@@ -166,7 +172,7 @@ object NewPushoutUtils {
 
           // add assignment to generated view
           ctrl.add(new FinalConstant(
-            home = OMMOD(w_to_generate),
+            home = w.toTerm,
             name = LocalName(ComplexStep(decl.parent) :: decl.name),
             alias = Nil,
             tpC = new TermContainer(),
@@ -178,10 +184,10 @@ object NewPushoutUtils {
 
         case SimpleStructure(_, fromPath) if fromPath == A.path =>
           // add inclusion to pushout theory
-          ctrl.add(Include(OMMOD(D_to_generate), B.path, Nil, None))
+          ctrl.add(Include(D.toTerm, B.path, Nil, None))
 
           // inherit v in the link w to generate
-          ctrl.add(Include(OMMOD(w_to_generate), A.path, Nil, Some(v.toTerm)))
+          ctrl.add(Include(w.toTerm, A.path, Nil, Some(v.toTerm)))
 
         case SimpleStructure(_, fromPath) if ctrl.globalLookup.hasImplicit(OMMOD(fromPath), A.toTerm) =>
           // in this case, we face an inclusion in C of a theory that was already included in A
@@ -191,8 +197,6 @@ object NewPushoutUtils {
         case _ => ???
       }
     }
-
-    (generated_theory, generated_view)
   }
 
 

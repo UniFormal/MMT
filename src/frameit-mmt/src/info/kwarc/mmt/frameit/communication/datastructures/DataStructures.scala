@@ -13,7 +13,7 @@ import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKe
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
-import info.kwarc.mmt.frameit.business.InvalidFactConstant
+import info.kwarc.mmt.frameit.business.{InvalidFactConstant, Utils}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 
@@ -179,29 +179,6 @@ object DataStructures {
   }
 
   /**
-    * Adds a module to the controller, taking additional care if it is a nested module.
-    *
-    * In case of a nested module (as determined by ''module.path.name'' comprised of multiple
-    * steps), a [[NestedModule]] declaration is added to the containing module (via ctrl).
-    *
-    * In any case, the module is added (via ctrl).
-    */
-  private def addModuleToController(module: Module)(implicit ctrl: Controller): Unit = {
-    module.path.name.steps match {
-      case prefix :+ containingModuleName :+ viewName =>
-        ctrl.add(new NestedModule(
-          home = OMMOD(module.path.doc ? LocalName(prefix :+ containingModuleName)),
-          name = LocalName(viewName),
-          mod = module
-        ))
-
-      case _ => // no additional action required
-    }
-
-    ctrl.add(module)
-  }
-
-  /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
   sealed case class SScrollApplication(scroll: ScrollReference, assignments: SScrollAssignments) {
@@ -217,7 +194,7 @@ object DataStructures {
         isImplicit = false
       )
 
-      addModuleToController(view)
+      Utils.addModuleToController(view)
 
       // collect all assignments such that if typechecking later fails, we can conveniently output
       // debug information
