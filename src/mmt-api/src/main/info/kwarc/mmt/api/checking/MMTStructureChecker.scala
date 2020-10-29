@@ -223,6 +223,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           } catch {
             case err: GetError =>
               env.errorCont(err)
+              env.errorCont(InvalidObject(mor, "morphism is not total"))
               None
           }
         }
