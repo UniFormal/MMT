@@ -145,7 +145,8 @@ object Scroll {
         Fact.findAllIn(solutionTheory, recurseOnInclusions = false)
       ))
     } catch {
-      case err @ (_: InvalidMetaData | _: GetError) =>
+      case _: InvalidMetaData => None
+      case err: GetError =>
         err.printStackTrace()
         None
     }
