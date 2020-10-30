@@ -56,9 +56,11 @@ All endpoints indicate success by a 2xx response status code and failure by any 
   
     ```javascript
     {
-        "original": /* a scroll */
-        "rendered": /* a scroll */
-        "completions": /* an array of "scroll assignments lists" */
+        "original": /* a scroll */,
+        "rendered": /* a scroll */,
+        "completions": /* an array of "scroll assignments lists" */,
+        "valid": true/false,
+        "errors": /* an array of "scroll application checking error"s */
     }
     ```
   
@@ -164,6 +166,20 @@ JSON (sub)formats shared by multiple endpoints above.
     {
       "scroll": /* scroll reference */,
       "assignments": /* a scroll assignments list */
+    }
+    ```
+
+  </details>
+
+- <details><summary>scroll application checking error</summary>
+
+    ```javascript
+    {
+      "kind": "invalidAssignment" | "unknown",
+      "msg": /* some human-readable message */,
+  
+      /* in case of kind being "invalidAssignment": */
+      "fact": /* a fact reference to the fact whose assignment was erroneous */
     }
     ```
 
