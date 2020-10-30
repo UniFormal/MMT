@@ -2,25 +2,29 @@ package info.kwarc.mmt.frameit.business.datastructures
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.ontology.IsTheory
-import info.kwarc.mmt.api.{LocalName, MPath}
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
+import info.kwarc.mmt.api.ontology.RelationExp.Imports
+import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
+import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
-import scala.util.Random
-
 /**
   * A reference to a scroll -- without accompanying information.
   */
-sealed case class ScrollReference(problemTheory: MPath, solutionTheory: MPath)
+sealed case class ScrollReference(declaringTheory: MPath)
+private[business] sealed case class ElaboratedScrollReference(declaringTheory: MPath, problemTheory: MPath, solutionTheory: MPath) {
+  def toSimpleRef: ScrollReference = ScrollReference(declaringTheory)
+}
+
+sealed case class ScrollApplication(ref: ElaboratedScrollReference, situationTheory: MPath, assignments: Map[GlobalName, Term])
 
 /**
   * Scrolls
   */
 sealed case class Scroll(
-                          ref: ScrollReference,
+                          ref: ElaboratedScrollReference,
                           meta: UserMetadata,
                           requiredFacts: List[Fact],
                           acquiredFacts: List[Fact]
@@ -68,27 +72,19 @@ sealed case class Scroll(
     *
     * @param ctrl A controller instance used for applying the view homomorphically and doing simplification.
     */
-  def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
-    val renderedScroll = view match {
-      case Some(v) => renderDynamicScroll(new StandardViewRenderer(v)(ctrl))
+  def render(scrollApp: Option[ScrollApplication] = None)(implicit ctrl: Controller): SScroll = {
+    val renderedScroll = scrollApp match {
+      case Some(app) =>
+        assert(app.ref == ref) // sanity check
+
+        renderDynamicScroll(new ScrollApplicationRenderer(app))
+
       case None =>
-        val emptyView = View(
-          doc = ref.problemTheory.doc,
-          name = LocalName.random("empty_view_for_scroll_rendering"),
-          from = OMMOD(ref.problemTheory),
-          to = OMMOD(ref.problemTheory),
-          isImplicit = false
-        )
-
-        ctrl.add(emptyView)
-        val renderedScroll = renderDynamicScroll(new StandardViewRenderer(emptyView)(ctrl))
-        ctrl.delete(emptyView.path)
-
-        renderedScroll
+        renderDynamicScroll(new StaticRenderer(ref))
     }
 
     SScroll(
-      renderedScroll.ref,
+      renderedScroll.ref.toSimpleRef,
       renderedScroll.meta.label.toStr(true),
       renderedScroll.meta.description.toStr(true),
       renderedScroll.requiredFacts.map(_.renderStatic()),
@@ -99,52 +95,60 @@ sealed case class Scroll(
 
 object Scroll {
   def fromReference(ref: ScrollReference)(implicit ctrl: Controller): Option[Scroll] = {
-    Utils.getAsO(classOf[Theory], ref.solutionTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
+    Utils.getAsO(classOf[Theory], ref.declaringTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
   }
 
   def findAll()(implicit ctrl: Controller): List[Scroll] = {
-    val allTheories: Seq[Theory] = ctrl.depstore
+    ctrl.depstore
       .getInds(IsTheory)
-      .map(_.asInstanceOf[MPath])
-      .flatMap(path => ctrl.getO(path) match {
-        case Some(t) if t.isInstanceOf[Theory] => Some(t.asInstanceOf[Theory])
-        case _ => None
-      }).toSeq
+      .collect {
+        case mpath: MPath => ctrl.getTheory(mpath)
+      }
+      .flatMap(tryParseAsScroll(_))
+      .toList
+  }
 
-    allTheories.flatMap(tryParseAsScroll(_)).toList
+  def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
+    ctrl.depstore
+      .querySet(theory.path, (Imports^*) * HasType(IsTheory))
+      .collect {
+        case mpath: MPath => ctrl.getTheory(mpath)
+      }
+      .flatMap(tryParseAsScroll(_))
+      .toList
   }
 
   /**
-    * Check if the given theory is a solution theory, if so, extract the full scroll information.
+    * Tries to parse a theory as a "scroll theory".
     *
-    * We deliberately return an [[Either]] instead of throwing an exception since we want to call
-    * [[fromTheory()]] also on theories to just test whether they are the solution theory of a scroll.
+    * A scroll theory is a [[Theory]] with two special metadatums: [[MetaKeys.problemTheory]] and [[MetaKeys.solutionTheory]] referencing the problem and the solution theories via their [[MPath MPaths]].
     *
-    * @todo rework this, we shouldn't try just because we can
-    * @todo actually we don't require thy to be the solution theory, reread my own code, please :-)
-    * @param thy solution theory
+    * The scroll theory may be completely independent of the problem and solution theories, act as its own problem theory, or act as its own solution theory. Important is just that it has those meta datums.
     */
   private def tryParseAsScroll(thy: Theory)(implicit ctrl: Controller): Option[Scroll] = {
     try {
-      val problemThy = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
-      val solutionThy = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
+      val problemPath = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
+      val solutionPath = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
 
-      var scrollRef = ScrollReference(problemThy, solutionThy)
+      val problemTheory = ctrl.getTheory(problemPath)
+      val solutionTheory = ctrl.getTheory(solutionPath)
+
+      val scrollRef = ElaboratedScrollReference(thy.path, problemPath, solutionPath)
 
       Some(Scroll(
         scrollRef,
-        UserMetadata.parse(thy),
-        Fact.findAllIn(ctrl.getTheory(problemThy), recurseOnInclusions = true),
+        UserMetadata.parse(solutionTheory),
+        Fact.findAllIn(problemTheory, recurseOnInclusions = true),
 
-        // todo: this will not pick up acquired facts that have been included
+        // todo: here `recurseOnInclusions = false` will prevent modular solution theories
         //       we need to disallow recursion, though, as to not recurse into the problem theory!
-        Fact.findAllIn(ctrl.getTheory(solutionThy), recurseOnInclusions = false)
+        Fact.findAllIn(solutionTheory, recurseOnInclusions = false)
       ))
     } catch {
       case _: InvalidMetaData => None
-
-        // really catch all [[Throwable]]s for the best debug experience
-      case err : Throwable => throw err
+      case err: GetError =>
+        err.printStackTrace()
+        None
     }
   }
 }

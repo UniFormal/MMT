@@ -1,11 +1,12 @@
 package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingUnit, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, PlainInclude}
-import info.kwarc.mmt.api.{Error, ErrorContainer, GeneralError, GetError, LookupError, MMTTask, MPath, StructuralElement}
+import info.kwarc.mmt.api.{CPath, ComplexStep, DefComponent, Error, ErrorContainer, GeneralError, GetError, GlobalName, InvalidElement, InvalidUnit, LocalName, LookupError, MMTTask, MPath, StructuralElement}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScrollAssignments}
 
 import scala.util.Random
 
@@ -44,6 +45,33 @@ class ContentValidator(private val ctrl: Controller) {
     checkDeclarationAgainstTheory(ctrl.getTheory(theory), decl)
 
   def checkView(view: View): List[Error] = checkStructuralElementSynchronously(view)
+
+  def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = {
+    val viewPath = view.path
+
+    checkView(view).map {
+      // typechecking errors of view assignments
+      case err @ InvalidUnit(CheckingUnit(
+      // due to MMT's generality, these are reported to happen in the view's assignments-as-constants'
+      // definition components
+      Some(CPath(GlobalName(`viewPath`, LocalName(ComplexStep(thy) :: symbol)), DefComponent)),
+      _, _, _
+      ), _, _) =>
+        // double-check that the assignment originated from us
+        originalAssignments.assignments.find(_._1.uri == thy ? symbol) match {
+          case Some((factRef, _)) => SInvalidScrollAssignment(err.msg, factRef)
+
+          case None => SMiscellaneousError(err.msg)
+        }
+
+      case GetError(msg) if msg.contains("no assignment for") =>
+        SNonTotalScrollApplication()
+
+      case InvalidElement(`view`, msg) if msg.contains("not total") =>
+        SNonTotalScrollApplication()
+      case err => SMiscellaneousError(err.getMessage)
+    }.distinct
+  } // clear possibly duplicate [[SNonTotalScrollApplication()]] objects
 
   /**
     * Check a single declaration (that has not yet been added to `theory`) against `theory`

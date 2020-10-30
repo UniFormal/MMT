@@ -10,6 +10,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.api.{DPath, GetError, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
+import info.kwarc.mmt.frameit.business.{SituationTheory, SituationTheoryPath}
 
 object Server extends TwitterServer {
   override def failfastOnFlagsNotParsed: Boolean = true
@@ -32,7 +33,7 @@ object Server extends TwitterServer {
   }
 
   def initServerState(archiveRoot: File): ServerState = {
-    val ctrl = new Controller()
+    implicit val ctrl: Controller = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
 
     ctrl.handleLine(s"mathpath archive ${archiveRoot}")
@@ -44,33 +45,32 @@ object Server extends TwitterServer {
     // to get meta tags on things
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
-    val situationTheory: Theory = if (debug()) {
-      println(s"Debug mode: trying to use situation theory `${FrameWorld.situationTheoryForDebugging}`...")
+    val situationTheory: SituationTheory = if (debug()) {
+      println(s"Debug mode: trying to use situation space `${FrameWorld.situationTheoryForDebugging}`...")
 
-      ctrl.getTheory(FrameWorld.situationTheoryForDebugging)
+      new SituationTheory(FrameWorld.situationTheoryForDebugging)
     } else {
-      println("Release mode: setting up empty situation theory...")
+      println("Release mode: setting up empty situation space with default scrolls...")
 
-      val situationTheory = Theory.empty(
-        DPath(frameitArchive.narrationBase),
-        LocalName("SituationTheory"),
-        Some(FrameWorld.metaTheoryForSituationTheory)
+      SituationTheory.empty(
+        doc = FrameWorld.rootDocument,
+        spaceName = LocalName.random("SituationTheory"),
+        meta = Some(FrameWorld.metaTheoryForSituationTheory),
+        initialIncludes = FrameWorld.defaultScrolls
       )
-      ctrl.add(situationTheory)
-
-      situationTheory
     }
 
-    val state = new ServerState(ctrl, situationTheory.path.parent, situationTheory.path)
+    val state = new ServerState(situationTheory)
     state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix
+    state.readScrollData()
 
-    (if (state.doTypeChecking) state.contentValidator.checkTheory(situationTheory) else Nil) match {
+    (if (state.doTypeChecking) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
       case Nil =>
-        println("Situation theory successfully set-up and typechecked (the latter only in release mode).")
+        println("Situation space successfully set-up and typechecked (the latter only in release mode).")
         state
 
       case errors =>
-        sys.error("Created situation theory, but cannot successfully typecheck it. Server will not be started. Errors below:")
+        sys.error("Created situation space, but cannot successfully typecheck it. Server will not be started. Errors below:")
         sys.error(errors.mkString("\n"))
         throw new Exception("")
     }

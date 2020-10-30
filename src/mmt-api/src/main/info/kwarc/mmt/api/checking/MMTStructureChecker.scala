@@ -217,12 +217,13 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           * @return Upon success, the resulting term is returned. Upon failure, the error is put into [[env]]
           *         and [[None]] is returned.
           */
-        def tryApplyMorphism(mor: Term)(t: Term): Option[Term] = {
+        def tryApplyMorphism(mor: Term, specificError: Option[Error]): Term => Option[Term] = t => {
           try {
             Some(content.ApplyMorphs(t, mor))
           } catch {
-            case err: GetError =>
+            case err: GetError if err.getMessage.contains("no assignment") => // string containment checking a bit brittle
               env.errorCont(err)
+              specificError foreach env.errorCont
               None
           }
         }
@@ -246,7 +247,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                     content.getO(r ? c.name.tail) match {
                       case Some(cOrg: Constant) =>
                         val mor = real.asMorphism
-                        Expectation(cOrg.tp flatMap tryApplyMorphism(mor), cOrg.df flatMap tryApplyMorphism(mor))
+                        def tr = tryApplyMorphism(mor, Some(InvalidObject(mor, "not total")))
+                        Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
                       case _ =>
                         env.errorCont(InvalidElement(c, "cannot find realized constant"))
                         defaultExp
@@ -264,8 +266,8 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           case link: Link =>
             content.get(link.from, c.name, msg => throw GetError(s"cannot find realized constant. ${msg}")) match {
               case cOrg: Constant =>
-                val mor = link.toTerm
-                Expectation(cOrg.tp flatMap tryApplyMorphism(mor), cOrg.df flatMap tryApplyMorphism(mor))
+                def tr = tryApplyMorphism(link.toTerm, Some(InvalidElement(link, "link not total")))
+                Expectation(cOrg.tp flatMap tr, cOrg.df flatMap tr)
               case _ =>
                 env.errorCont(InvalidElement(c, "cannot find realized constant"))
                 Expectation(None, None)

@@ -2,8 +2,9 @@ package info.kwarc.mmt.frameit.archives
 
 import info.kwarc.mmt.api.objects.{OMID, OMS, Term}
 import info.kwarc.mmt.api.uom.ConstantScala
-import info.kwarc.mmt.api.{DPath, GlobalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheoryPath}
 import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, UnaryLFConstantScala}
 
 object FrameIT {
@@ -17,7 +18,14 @@ object FrameIT {
     val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
     val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
 
-    val situationTheoryForDebugging: MPath = (rootDocument / "integrationtests") ? "SampleSituationTheory"
+    val situationTheoryForDebugging: SituationTheoryPath = SituationTheoryPath(
+      SituationSpace((rootDocument / "integrationtests") ? "SampleSituationSpace"),
+      LocalName("Root"),
+    )
+    val defaultScrolls: List[MPath] = List(
+      rootDocument ? "OppositeLen",
+      rootDocument ? "AngleSum"
+    )
 
     private val _metaAnnotations: MPath = rootDocument ? "MetaAnnotations"
 
