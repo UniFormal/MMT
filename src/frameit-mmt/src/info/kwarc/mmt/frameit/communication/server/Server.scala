@@ -62,7 +62,6 @@ object Server extends TwitterServer {
 
     val state = new ServerState(situationTheory)
     state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix
-    state.readScrollData()
 
     (if (state.doTypeChecking) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
       case Nil =>

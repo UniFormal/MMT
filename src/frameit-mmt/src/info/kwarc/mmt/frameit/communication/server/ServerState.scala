@@ -28,21 +28,6 @@ class ServerState(private var curSituationTheory: SituationTheory)(implicit val 
     throw GeneralError("could not get MMTSyntaxPresenter extension required for printing")
   )
 
-  /**
-    * Reread scroll meta data to have it accessible in all [[Theory theory objects]].
-    *
-    * Endpoints should call this method before listing/inspecting scrolls, e.g. via [[Scroll.findAll]].
-    *
-    * @todo this method should not be needed, see https://github.com/UniFormal/MMT/issues/528
-    */
-  def readScrollData(): Unit = {
-    if (!hasReadScrollData) {
-      ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
-
-      hasReadScrollData = true
-    }
-  }
-
   def situationSpace: Theory = curSituationTheory.spaceTheory
   def situationTheory: Theory = curSituationTheory.theory
 

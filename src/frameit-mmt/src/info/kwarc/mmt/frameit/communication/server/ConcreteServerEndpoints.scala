@@ -134,14 +134,10 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
-    state.readScrollData()
-
     Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
   }
 
   private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    state.readScrollData()
-
     Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.render()(state.ctrl)))
   }
 
