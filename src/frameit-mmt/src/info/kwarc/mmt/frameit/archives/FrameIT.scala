@@ -40,7 +40,7 @@ object FrameIT {
 
       // a flexary LF constant
       object LabelVerbalization {
-        private val path = _metaAnnotations ? "label_verbalization_of"
+        val path = _metaAnnotations ? "label_verbalization_of"
 
         def apply(args: Term*): Term = ApplySpine(OMS(path), args : _*)
 
