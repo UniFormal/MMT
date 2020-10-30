@@ -2,9 +2,10 @@ package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.business.datastructures.FactReference
+import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollApplicationInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollAssignments, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
+import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
@@ -158,6 +159,10 @@ private[communication] object Codecs {
 
     implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
     implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
+
+    implicit val scrollReferenceEncoder: Encoder[ScrollReference] = (ref: ScrollReference) => mpathEncoder(ref.declaringTheory)
+    implicit val scrollReferenceDecoder: Decoder[ScrollReference] = (c: HCursor) => mpathDecoder(c).map(ScrollReference)
+
     implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
     implicit val scrollEncoder: Encoder[SScroll] = deriveEncoder
 

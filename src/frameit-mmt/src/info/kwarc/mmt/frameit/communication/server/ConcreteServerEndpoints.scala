@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll}
+import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll, ScrollApplication}
 import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Utils, ViewCompletion}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication, SScrollAssignments}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
@@ -28,6 +28,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
   import info.kwarc.mmt.frameit.communication.datastructures.Codecs
   import Codecs.DataStructureCodecs._
+  import ServerErrorHandler._
   // ^^^^^^^ END
 
   /**
@@ -148,6 +149,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
     implicit val ctrl: Controller = state.ctrl
 
+    val scroll = Scroll.fromReference(scrollApp.scroll).get
+
     val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
     val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
 
@@ -167,7 +170,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
           val view = View(
             path.doc,
             path.name,
-            from = OMMOD(scrollApp.scroll.solutionTheory),
+            from = OMMOD(scroll.ref.solutionTheory),
             to = state.situationTheory.toTerm,
             isImplicit = false
           )
@@ -181,7 +184,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         NewPushoutUtils.injectPushoutAlongDirectInclusion(
           state.ctrl.getTheory(scrollView.from.toMPath),
           state.ctrl.getTheory(scrollView.to.toMPath),
-          state.ctrl.getTheory(scrollApp.scroll.solutionTheory),
+          state.ctrl.getTheory(scroll.ref.solutionTheory),
           state.situationTheory,
           scrollView,
           viewToGenerate
@@ -237,7 +240,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         try {
           val scrollAppInfo = SDynamicScrollApplicationInfo(
             original = scroll.render(None),
-            rendered = scroll.render(Some(scrollView)),
+            rendered = scroll.render(Some(ScrollApplication(
+              scroll.ref,
+              state.situationTheory.path,
+              scrollApp.assignments.toMMTMap
+            ))),
             completions = completions,
             valid = errors.isEmpty,
             errors = errors

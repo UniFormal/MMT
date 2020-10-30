@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, SimpleStep
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
+import info.kwarc.mmt.frameit.business.datastructures.{FactReference, Scroll, ScrollReference}
 import info.kwarc.mmt.frameit.business.{InvalidFactConstant, Utils}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
@@ -171,6 +171,7 @@ object DataStructures {
 
   sealed case class SScrollAssignments(assignments: List[(FactReference, Term)]) {
     def toMMTList: List[(GlobalName, Term)] = assignments.map(asgn => (asgn._1.uri, asgn._2))
+    def toMMTMap: Map[GlobalName, Term] = assignments.map(asgn => (asgn._1.uri, asgn._2)).toMap
   }
 
   object SScrollAssignments {
@@ -183,7 +184,8 @@ object DataStructures {
     */
   sealed case class SScrollApplication(scroll: ScrollReference, assignments: SScrollAssignments) {
     def toView(target: MPath, codomain: Term)(implicit ctrl: Controller): View = {
-      val domain = scroll.problemTheory
+      val fullScrollRef = Scroll.fromReference(scroll).get
+      val domain = fullScrollRef.ref.problemTheory
 
       val view = new View(
         doc = target.doc,

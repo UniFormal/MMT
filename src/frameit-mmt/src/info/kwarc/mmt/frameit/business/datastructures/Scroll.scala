@@ -2,28 +2,29 @@ package info.kwarc.mmt.frameit.business.datastructures
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
-import info.kwarc.mmt.api.ontology.QMTProp.And
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.ontology.RelationExp.Imports
-import info.kwarc.mmt.api.{LocalName, MPath}
+import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
+import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
-import scala.collection.mutable
-import scala.util.Random
-
 /**
   * A reference to a scroll -- without accompanying information.
   */
-sealed case class ScrollReference(problemTheory: MPath, solutionTheory: MPath)
+sealed case class ScrollReference(declaringTheory: MPath)
+private[business] sealed case class ElaboratedScrollReference(declaringTheory: MPath, problemTheory: MPath, solutionTheory: MPath) {
+  def toSimpleRef: ScrollReference = ScrollReference(declaringTheory)
+}
+
+sealed case class ScrollApplication(ref: ElaboratedScrollReference, situationTheory: MPath, assignments: Map[GlobalName, Term])
 
 /**
   * Scrolls
   */
 sealed case class Scroll(
-                          ref: ScrollReference,
+                          ref: ElaboratedScrollReference,
                           meta: UserMetadata,
                           requiredFacts: List[Fact],
                           acquiredFacts: List[Fact]
@@ -71,27 +72,19 @@ sealed case class Scroll(
     *
     * @param ctrl A controller instance used for applying the view homomorphically and doing simplification.
     */
-  def render(view: Option[View] = None)(implicit ctrl: Controller): SScroll = {
-    val renderedScroll = view match {
-      case Some(v) => renderDynamicScroll(new StandardViewRenderer(v)(ctrl))
+  def render(scrollApp: Option[ScrollApplication] = None)(implicit ctrl: Controller): SScroll = {
+    val renderedScroll = scrollApp match {
+      case Some(app) =>
+        assert(app.ref == ref) // sanity check
+
+        renderDynamicScroll(new ScrollApplicationRenderer(app))
+
       case None =>
-        val emptyView = View(
-          doc = ref.problemTheory.doc,
-          name = LocalName.random("empty_view_for_scroll_rendering"),
-          from = OMMOD(ref.problemTheory),
-          to = OMMOD(ref.problemTheory),
-          isImplicit = false
-        )
-
-        ctrl.add(emptyView)
-        val renderedScroll = renderDynamicScroll(new StandardViewRenderer(emptyView)(ctrl))
-        ctrl.delete(emptyView.path)
-
-        renderedScroll
+        renderDynamicScroll(new StaticRenderer(ref))
     }
 
     SScroll(
-      renderedScroll.ref,
+      renderedScroll.ref.toSimpleRef,
       renderedScroll.meta.label.toStr(true),
       renderedScroll.meta.description.toStr(true),
       renderedScroll.requiredFacts.map(_.renderStatic()),
@@ -102,7 +95,7 @@ sealed case class Scroll(
 
 object Scroll {
   def fromReference(ref: ScrollReference)(implicit ctrl: Controller): Option[Scroll] = {
-    Utils.getAsO(classOf[Theory], ref.solutionTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
+    Utils.getAsO(classOf[Theory], ref.declaringTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
   }
 
   def findAll()(implicit ctrl: Controller): List[Scroll] = {
@@ -134,22 +127,27 @@ object Scroll {
     */
   private def tryParseAsScroll(thy: Theory)(implicit ctrl: Controller): Option[Scroll] = {
     try {
-      val problemThy = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
-      val solutionThy = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
+      val problemPath = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.problemTheory)
+      val solutionPath = MetadataUtils.readMPathMetaDatum(thy.metadata, MetaKeys.solutionTheory)
 
-      var scrollRef = ScrollReference(problemThy, solutionThy)
+      val problemTheory = ctrl.getTheory(problemPath)
+      val solutionTheory = ctrl.getTheory(solutionPath)
+
+      val scrollRef = ElaboratedScrollReference(thy.path, problemPath, solutionPath)
 
       Some(Scroll(
         scrollRef,
-        UserMetadata.parse(thy),
-        Fact.findAllIn(ctrl.getTheory(problemThy), recurseOnInclusions = true),
+        UserMetadata.parse(solutionTheory),
+        Fact.findAllIn(problemTheory, recurseOnInclusions = true),
 
         // todo: here `recurseOnInclusions = false` will prevent modular solution theories
         //       we need to disallow recursion, though, as to not recurse into the problem theory!
-        Fact.findAllIn(ctrl.getTheory(solutionThy), recurseOnInclusions = false)
+        Fact.findAllIn(solutionTheory, recurseOnInclusions = false)
       ))
     } catch {
-      case _: InvalidMetaData => None
+      case err @ (_: InvalidMetaData | _: GetError) =>
+        err.printStackTrace()
+        None
     }
   }
 }
