@@ -4,13 +4,12 @@ import java.net.InetSocketAddress
 
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
-import com.twitter.util.{Await, Future, JavaTimer, Time}
+import com.twitter.util.{Await, Future}
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
-import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.utils.{File, FilePath}
-import info.kwarc.mmt.api.{DPath, GetError, LocalName}
+import info.kwarc.mmt.api.{GetError, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business.{SituationTheory, SituationTheoryPath}
+import info.kwarc.mmt.frameit.business.SituationTheory
 import io.finch.Input
 
 object Server extends TwitterServer {
@@ -36,15 +35,16 @@ object Server extends TwitterServer {
     //
     // This reduces the time for a subsequent (user-initiated) request of /scroll/listall
     // by up to 9 seconds.
+    //
+    // todo: warm-up blocks requests, see also https://finagle.github.io/finch/best-practices.html#do-not-block-an-endpoint.
     new Thread {
       // remember to not throw exceptions in run(), but to print stack traces and [[System.exit]]
       // otherwise, the exceptions could get swallowed in this thread and never touch the surface
       override def run(): Unit = {
+        // perform one listAllRequests as warm-up
         val listAllRequest = Input.get("/scroll/listall").request
 
-        // perform two listAllRequests as warm-up
         restService.apply(listAllRequest)
-          .transform(_.map(_ => restService.apply(listAllRequest)).getOrElse(Future.???))
           .onFailure(throwable => {
             throwable.printStackTrace()
             System.exit(1)
