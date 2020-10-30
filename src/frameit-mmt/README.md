@@ -89,8 +89,7 @@ JSON (sub)formats shared by multiple endpoints above.
     {"uri": /* MMT URI */}
     ```
     
-    Format only given for informational purposes, the game engine should treat fact reference objects opaquely.
-    Do not depend on their internal structure.
+    The game engine may depend on this format (in contrast to, e.g., the format of scroll references).
 
   </details>
 
@@ -125,13 +124,10 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary>scroll reference</summary>
 
     ```javascript
-    {
-      "problemTheory": /* MMT URI */,
-      "solutionTheory": /* MMT URI */
-    }
+    /* MMT URI to theory declaring the scroll */
     ```
   
-    Format only given for informational purposes, the game engine should treat scroll reference objects opaquely.
+    Format only given for informational purposes, the game engine should treat JSON blobs of scroll references opaquely.
     Do not depend on their internal structure. 
 
   </details>
