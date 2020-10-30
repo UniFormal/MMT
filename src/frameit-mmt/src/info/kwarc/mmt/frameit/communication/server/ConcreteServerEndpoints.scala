@@ -122,7 +122,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(
       Fact
         .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
-        .map(_.renderStatic()(state.ctrl))
+        .map(_.toSimple(state.ctrl))
     )
   }
 
@@ -134,11 +134,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
-    Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
+    Ok(Scroll.findAll()(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
   private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.render()(state.ctrl)))
+    Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
   private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
@@ -189,7 +189,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         Ok(
           Fact
             .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
-            .map(_.renderStatic()(state.ctrl))
+            .map(_.toSimple(state.ctrl))
         )
 
       case errors =>
@@ -235,8 +235,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
         try {
           val scrollAppInfo = SDynamicScrollApplicationInfo(
-            original = scroll.render(None),
-            rendered = scroll.render(Some(ScrollApplication(
+            original = scroll.renderSimple(),
+            rendered = scroll.renderSimple(Some(ScrollApplication(
               scroll.ref,
               state.situationTheory.path,
               scrollApp.assignments.toMMTMap

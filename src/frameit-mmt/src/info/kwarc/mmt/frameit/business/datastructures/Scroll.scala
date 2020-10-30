@@ -2,11 +2,15 @@ package info.kwarc.mmt.frameit.business.datastructures
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{OMMOD, Term}
+import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.ontology.RelationExp.Imports
 import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
-import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath}
+import info.kwarc.mmt.api.symbols.OMSReplacer
+import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath, RuleSet}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
+import info.kwarc.mmt.frameit.archives.LabelVerbalizationRule
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScroll
 
@@ -15,9 +19,18 @@ import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.SScrol
   */
 sealed case class ScrollReference(declaringTheory: MPath)
 private[business] sealed case class ElaboratedScrollReference(declaringTheory: MPath, problemTheory: MPath, solutionTheory: MPath) {
-  def toSimpleRef: ScrollReference = ScrollReference(declaringTheory)
+  def toSimple: ScrollReference = ScrollReference(declaringTheory)
 }
 
+/**
+  * A possibly non-total scroll application from a scroll to a situation theory.
+  *
+  * @param ref the scroll
+  * @param situationTheory the situation theory
+  * @param assignments The assignments for the scroll application. This may represent an [[View MMT view]]
+  *                    (i.e. a total one) from [[ref.problemTheory]] to [[situationTheory]], but does not
+  *                    need to. In the extreme case, it can also be [[Map.empty]].
+  */
 sealed case class ScrollApplication(ref: ElaboratedScrollReference, situationTheory: MPath, assignments: Map[GlobalName, Term])
 
 /**
@@ -29,66 +42,138 @@ sealed case class Scroll(
                           requiredFacts: List[Fact],
                           acquiredFacts: List[Fact]
                         ) {
-  def renderDynamicScroll(viewRenderer: ScrollViewRenderer)(implicit ctrl: Controller): Scroll = this.copy(
-    meta = meta.render(viewRenderer),
-    requiredFacts = requiredFacts.map(_.renderDynamicFact(viewRenderer)),
-    acquiredFacts = acquiredFacts.map(_.renderDynamicFact(viewRenderer))
+  def toSimple(implicit ctrl: Controller): SScroll = SScroll(
+    ref.toSimple,
+    meta.label.toStr(true),
+    meta.description.toStr(true),
+    requiredFacts.map(_.toSimple),
+    acquiredFacts.map(_.toSimple)
   )
 
   /**
-    * Render dynamic scroll to a simplified [[SScroll]] for transmission to the game engine.
-    *
-    * @param view An optional view with its domain being the scroll's problem theory (i.e. [[ref.problemTheory]]).
-    *             The view does *not* need to be total, not even partial (implying some "respect" to dependency
-    *             relations). In other words, it may lack assignments for arbitrary declarations of the problem
-    *             theory. Let's call it "utterly partial".
-    *
-    *             In fact, if [[None]] is given, an empty view from [[ref.problemTheory]] to itself will be constructed
-    *             and used instead.
-    *
-    *             The returned [[SScroll]] is computed from ''this'' scroll by applying the view
-    *
-    *             - homomorphically on the scroll's [[UserMetadata metadata]] (such as labels, descriptions)
-    *             - homomorphically on the type, definiens of every required and acquired fact.
-    *             - and as follows on the [[UserMetadata metadata]] of every required and acquired fact:
-    *               if the view contains an assignment for a fact, the metadata of the new fact (i.e.
-    *               the one appearing in the return value of this function) is the one of the assigned
-    *               expression. (todo this fails for complex assignments, no?)
-    *               Otherwise, if the view did *not* contain an assignment, then the view is applied
-    *               homomorphically on the metadata.
-    *               Doing so instead of naive copying is useful for unassigned-to facts whose labels
-    *               interpolate labels of already-assigned-to facts.
-    *
-    *
-    *             Since the view may be utterly partial, we have to be precise what it means to apply it
-    *             homomorphically: the action on complex terms is as usual (homomorphic). The result on
-    *             ''OMID(path)'' is ''t'' if the view contained the assignment ''path := t''. Otherwise,
-    *             if the symbol referred to by path was defined, then the homomorphic action on its definiens
-    *             is chosen. Finally, if it not even had a definiens, it is left as-is.
-    *             It is the last case where we deviate from the usual definitions.
-    *
-    *             Note that MMT probably assumed at several places that views are at least partial.
-    *             Moreover, this makes the whole implementation a bit hacky.
-    *
-    * @param ctrl A controller instance used for applying the view homomorphically and doing simplification.
+    * Utility method to first [[render()]] and then convert [[toSimple]].
     */
-  def render(scrollApp: Option[ScrollApplication] = None)(implicit ctrl: Controller): SScroll = {
-    val renderedScroll = scrollApp match {
-      case Some(app) =>
-        assert(app.ref == ref) // sanity check
+  def renderSimple(scrollApp: Option[ScrollApplication] = None)(implicit ctrl: Controller): SScroll = render(scrollApp).toSimple
 
-        renderDynamicScroll(new ScrollApplicationRenderer(app))
+  /**
+    * Render a dynamic scroll, possibly along a [[ScrollApplication]].
+    *
+    * Rendering entails verbalization of labels and descriptions of the scroll itself, and all required, and
+    * acquired facts.
+    *
+    * Moreover, if a (possibly non-total) [[ScrollApplication]] is given, its assignments are first used
+    * to translate the current scroll *before* verbalization.
+    * This has the effect that the returned scroll contains labels and descriptions interpolated with
+    * those from the target of the scroll application (the situation theory).
+    *
+    * @param scrollApp An optional scroll application to take into account for translation performed
+    *                  prior to verbalization.
+    */
+  def render(scrollApp: Option[ScrollApplication] = None)(implicit ctrl: Controller): Scroll = {
+    val translatedScroll = scrollApp.map(translateScroll).getOrElse(this)
 
-      case None =>
-        renderDynamicScroll(new StaticRenderer(ref))
+    val verbalizationContext = scrollApp match {
+      // In any case, we need the solution theory in context in order
+      // to be able to simplify acquiredFacts, too.
+      //
+      // In case of a provided scroll application, facts in requiredFacts and
+      // acquiredFacts may (actually, are encouraged to) reference symbols in
+      // the situationTheory.
+      //
+      // Note: including the solutionTheory in the context also covers the (allowed)
+      //       case of non-total scroll applications where even the requiredFacts in
+      //       translatedScroll may reference symbols in both the solutionTheory and
+      //       the situationTheory.
+      case Some(app) => Context(ref.solutionTheory) ++ app.situationTheory
+      case None => Context(ref.solutionTheory)
     }
 
-    SScroll(
-      renderedScroll.ref.toSimpleRef,
-      renderedScroll.meta.label.toStr(true),
-      renderedScroll.meta.description.toStr(true),
-      renderedScroll.requiredFacts.map(_.renderStatic()),
-      renderedScroll.acquiredFacts.map(_.renderStatic())
+    translatedScroll.verbalizeScroll(verbalizationContext)
+  }
+
+  /**
+    * Translates a scroll along a (possibly non-total) [[ScrollApplication]].
+    *
+    * - Meta data (labels, descriptions) of the scroll itself, and types and definitions of all
+    *   facts are homomorphically translated.
+    * - Meta data of facts are treated specially:
+    *
+    *   If the scroll application assigns something to a fact ''f'', then the new meta data
+    *   of ''f'' becomes the verbalization of the assigned expression.
+    *   You have to still call [[verbalizeScroll()]] on the returned scroll to actually turn
+    *   the modified verbalization into strings.
+    *
+    *   Otherwise, if ''f'' is unassigned, then its original meta data is kept.
+    */
+  private def translateScroll(scrollApp: ScrollApplication)(implicit ctrl: Controller): Scroll = {
+    val replacer = new OMSReplacer {
+      override def replace(p: GlobalName): Option[Term] = scrollApp.assignments.get(p)
+    }
+
+    // the context needs to be the solution theory as we also translate acquiredFacts below
+    def termTranslator(term: Term): Term = replacer(term, Context(scrollApp.ref.solutionTheory))
+
+    def factTranslator(fact: Fact): Fact = {
+      val newMetaData = (if (scrollApp.assignments.contains(fact.ref.uri)) {
+        // set up meta data such that, after verbalization (not handled in this method),
+        // the meta data will be the one of assigned fact (possibly, a complex expression)
+        UserMetadata(
+          label = MetaAnnotations.LabelVerbalization(termTranslator(OMS(fact.ref.uri))),
+          description = MetaAnnotations.DescriptionVerbalization(termTranslator(OMS(fact.ref.uri))),
+        )
+      } else {
+        // retain old meta data
+        meta
+      })
+
+      fact.copy(
+        meta = newMetaData,
+        tp = termTranslator(fact.tp),
+        df = fact.df.map(termTranslator)
+      )
+    }
+
+    this.copy(
+      meta = meta.map(termTranslator),
+      requiredFacts = requiredFacts.map(factTranslator),
+      acquiredFacts = acquiredFacts.map(factTranslator),
+    )
+  }
+
+  /**
+    * Verbalizes the scroll, by simplifying using the [[LabelVerbalizationRule]].
+    *
+    * In the ideal case, the labels and descriptions of the returned scroll and all of its facts
+    * are simple terms representing strings (i.e. [[StringLiterals]]). That is, concatenation
+    * or [[LabelVerbalization]]s do not occur anymore in those terms.
+    *
+    * @param context The context in which the facts live. Needs to include at least [[ref.solutionTheory]].
+    */
+  private def verbalizeScroll(context: Context)(implicit ctrl: Controller): Scroll = {
+    val simplificationUnit = SimplificationUnit(context, expandDefinitions = false, fullRecursion = true)
+
+    val ruleSet: RuleSet = {
+      val foundRules = RuleSet.collectRules(ctrl, simplificationUnit.context)
+      foundRules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
+
+      foundRules
+    }
+
+    def verbalize(t: Term): Term = {
+      ctrl.simplifier(t, simplificationUnit, ruleSet)
+    }
+
+    def verbalizeFact(fact: Fact): Fact = fact.copy(
+      meta = UserMetadata(
+        label = verbalize(fact.meta.label),
+        description = verbalize(fact.meta.description)
+      )
+    )
+
+    this.copy(
+      meta = meta.map(verbalize),
+      requiredFacts = requiredFacts.map(verbalizeFact),
+      acquiredFacts = acquiredFacts.map(verbalizeFact)
     )
   }
 }

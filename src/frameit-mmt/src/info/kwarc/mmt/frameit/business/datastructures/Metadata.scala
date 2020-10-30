@@ -13,12 +13,10 @@ import info.kwarc.mmt.frameit.business.InvalidMetaData
 import scala.util.Try
 
 sealed case class UserMetadata(label: Term, description: Term) {
-  private[datastructures] def render(viewRenderer: ScrollViewRenderer): UserMetadata = {
-    this.copy(
-      label = viewRenderer(label),
-      description = viewRenderer(description)
-    )
-  }
+  private[datastructures] def map(f: Term => Term): UserMetadata = UserMetadata(
+    label = f(label),
+    description = f(description)
+  )
 }
 
 object UserMetadata {
