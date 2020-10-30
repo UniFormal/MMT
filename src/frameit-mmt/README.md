@@ -59,7 +59,7 @@ All endpoints indicate success by a 2xx response status code and failure by any 
         "original": /* a scroll */,
         "rendered": /* a scroll */,
         "completions": /* an array of "scroll assignments lists" */,
-        "valid": true/false,
+        "valid": true|false,
         "errors": /* an array of "scroll application checking error"s */
     }
     ```
