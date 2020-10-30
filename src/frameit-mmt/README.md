@@ -28,7 +28,14 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 
   </details>
 
-- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
+- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls accessible from the current situation theory</summary>
+
+  - request: empty
+  - response: a JSON array of scrolls
+
+  </details>
+
+- <details><summary><code>GET /scroll/listall</code>: retrieve all scrolls known to the server</summary>
 
   - request: empty
   - response: a JSON array of scrolls

@@ -38,7 +38,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     */
   private def getJSONEndpointsForState(state: ServerState) =
     buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
-      addFact(state) :+: listFacts(state) :+: listScrolls(state) :+: applyScroll(state) :+: dynamicScroll(state) :+: forceError
+      addFact(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
+      applyScroll(state) :+: dynamicScroll(state) :+: forceError
 
   /**
     * Aggregates endpoints whose output should be encoded to HTTP responses with [[Text.Plain]] bodies.
@@ -131,16 +132,16 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(stringRenderer.get)
   }
 
-  private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    if (!state.readScrollData) {
-      // TODO hack to read latest scroll meta data, should not be needed
-      //      due to https://github.com/UniFormal/MMT/issues/528
-      state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
-
-      state.readScrollData = true
-    }
+  private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
+    state.readScrollData()
 
     Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
+  }
+
+  private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
+    state.readScrollData()
+
+    Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.render()(state.ctrl)))
   }
 
   private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {

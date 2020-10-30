@@ -3,8 +3,9 @@ package info.kwarc.mmt.frameit.business.datastructures
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
-import info.kwarc.mmt.api.ontology.IsTheory
+import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
 import info.kwarc.mmt.api.ontology.QMTProp.And
+import info.kwarc.mmt.api.ontology.RelationExp.Imports
 import info.kwarc.mmt.api.{LocalName, MPath}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
 import info.kwarc.mmt.frameit.business.{InvalidMetaData, Utils}
@@ -105,41 +106,31 @@ object Scroll {
   }
 
   def findAll()(implicit ctrl: Controller): List[Scroll] = {
-    val allTheories: Seq[Theory] = ctrl.depstore
+    ctrl.depstore
       .getInds(IsTheory)
-      .map(_.asInstanceOf[MPath])
-      .flatMap(path => ctrl.getO(path) match {
-        case Some(t) if t.isInstanceOf[Theory] => Some(t.asInstanceOf[Theory])
-        case _ => None
-      }).toSeq
-
-    allTheories.flatMap(tryParseAsScroll(_)).toList
-  }
-  /*
-  def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
-    ctrl.depstore.getInds(And(IsTheory, IsTheory))
-    def getAllIncludes(mpath: MPath): Set[MPath] = {
-      val seen = mutable.HashSet[MPath]()
-      val queue = mutable.Queue[MPath]()
-      while (queue.nonEmpty) {
-        val path = queue.dequeue()
-
-        ctrl.getTheory(path).getIncludesWithoutMeta
+      .collect {
+        case mpath: MPath => ctrl.getTheory(mpath)
       }
-      val s: Set[MPath] = (ctrl.getTheory(mpath).getIncludesWithoutMeta.toSet - visited)
-      s
-    }
-  }*/
+      .flatMap(tryParseAsScroll(_))
+      .toList
+  }
+
+  def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
+    ctrl.depstore
+      .querySet(theory.path, (Imports^*) * HasType(IsTheory))
+      .collect {
+        case mpath: MPath => ctrl.getTheory(mpath)
+      }
+      .flatMap(tryParseAsScroll(_))
+      .toList
+  }
 
   /**
-    * Check if the given theory is a solution theory, if so, extract the full scroll information.
+    * Tries to parse a theory as a "scroll theory".
     *
-    * We deliberately return an [[Either]] instead of throwing an exception since we want to call
-    * [[fromTheory()]] also on theories to just test whether they are the solution theory of a scroll.
+    * A scroll theory is a [[Theory]] with two special metadatums: [[MetaKeys.problemTheory]] and [[MetaKeys.solutionTheory]] referencing the problem and the solution theories via their [[MPath MPaths]].
     *
-    * @todo rework this, we shouldn't try just because we can
-    * @todo actually we don't require thy to be the solution theory, reread my own code, please :-)
-    * @param thy solution theory
+    * The scroll theory may be completely independent of the problem and solution theories, act as its own problem theory, or act as its own solution theory. Important is just that it has those meta datums.
     */
   private def tryParseAsScroll(thy: Theory)(implicit ctrl: Controller): Option[Scroll] = {
     try {
@@ -153,15 +144,12 @@ object Scroll {
         UserMetadata.parse(thy),
         Fact.findAllIn(ctrl.getTheory(problemThy), recurseOnInclusions = true),
 
-        // todo: this will not pick up acquired facts that have been included
+        // todo: here `recurseOnInclusions = false` will prevent modular solution theories
         //       we need to disallow recursion, though, as to not recurse into the problem theory!
         Fact.findAllIn(ctrl.getTheory(solutionThy), recurseOnInclusions = false)
       ))
     } catch {
       case _: InvalidMetaData => None
-
-        // really catch all [[Throwable]]s for the best debug experience
-      case err : Throwable => throw err
     }
   }
 }

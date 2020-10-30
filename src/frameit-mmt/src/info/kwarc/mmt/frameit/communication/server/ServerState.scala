@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
 import info.kwarc.mmt.api.{DPath, GeneralError, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.ScrollReference
 import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory, Utils}
 
@@ -19,13 +20,28 @@ class ServerState(private var curSituationTheory: SituationTheory)(implicit val 
   override protected def report: Report = ctrl.report
 
   var doTypeChecking: Boolean = true
-  var readScrollData: Boolean = false
+  private var hasReadScrollData: Boolean = false
 
   val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
   val presenter : MMTSyntaxPresenter = ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
     throw GeneralError("could not get MMTSyntaxPresenter extension required for printing")
   )
+
+  /**
+    * Reread scroll meta data to have it accessible in all [[Theory theory objects]].
+    *
+    * Endpoints should call this method before listing/inspecting scrolls, e.g. via [[Scroll.findAll]].
+    *
+    * @todo this method should not be needed, see https://github.com/UniFormal/MMT/issues/528
+    */
+  def readScrollData(): Unit = {
+    if (!hasReadScrollData) {
+      ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
+
+      hasReadScrollData = true
+    }
+  }
 
   def situationSpace: Theory = curSituationTheory.spaceTheory
   def situationTheory: Theory = curSituationTheory.theory
