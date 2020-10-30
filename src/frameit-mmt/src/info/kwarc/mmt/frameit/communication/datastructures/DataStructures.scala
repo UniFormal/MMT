@@ -46,12 +46,13 @@ object DataStructures {
 
     /**
       * Transform the fact into an MMT representation, namely a [[FinalConstant]].
-      * @param home The home theory (as a term) for the final constant.
+      * @param target The full path to give to the constant.
+      *               It'll live in the module [[target.module]] with name [[target.name]].
       */
-    def toFinalConstant(home: api.objects.Term): FinalConstant = {
+    def toFinalConstant(target: GlobalName): FinalConstant = {
       val factConstant = new FinalConstant(
-        home = home,
-        name = LocalName(SimpleStep(label)),
+        home = OMMOD(target.module),
+        name = target.name,
         alias = Nil,
         tpC = TermContainer.asParsed(getMMTTypeComponent),
         dfC = TermContainer.asParsed(getMMTDefComponent),

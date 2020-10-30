@@ -4,7 +4,7 @@ package info.kwarc.mmt.frameit.communication.server
 import cats.effect.IO
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
 import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
@@ -90,7 +90,9 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
     (fact: SFact) => {
-      val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
+      // todo: better use Context.pickFresh?
+      val constantPath = state.situationTheory.path ? LocalName.random("fact")
+      val factConstant = fact.toFinalConstant(constantPath)
 
       state.synchronized {
         (if (state.doTypeChecking) state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) else Nil) match {
