@@ -278,6 +278,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                 case ComplexStep(q) =>
                   // if name is visible to p, delegate to lookup in p
                   getImplicit(q, p).foreach {m =>
+                    // we only need the existence of m to know in which direction to continue; translation along m will happen anyway
                     return get(OMPMOD(p,args), name, error)
                   }
                 case _ =>
@@ -362,7 +363,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
              val d = getDeclarationInTerm(df, name, error)
              instantiate(d, t.parameters, args)
            case _ =>
-             getInTheory(t, args, name, error)
+             val d = getInTheory(t, args, name, error)
+             d
          }
       case l: Link if l.df.isDefined =>
          // defined view or structure
@@ -413,7 +415,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
            error("local name " + ln + " left after resolving to " + e.path)
        }
        case None => name.steps match {
-         // initial complex steps are possible even if no prefix of name is declared in t
+         // initial complex steps are possible even if no prefix of name is declared in t if t is not flattened
          case ComplexStep(mpath) :: ln =>
            getO(mpath) match {
              case Some(included: Theory) =>
@@ -435,7 +437,8 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
                  }
                } else {
                  val sym = getDeclarationInElement(included, Nil, ln, sourceError)
-                 translate(sym, imp, error) // translate the result along the implicit morphism
+                 val symT = translate(sym, imp, error) // translate the result along the implicit morphism
+                 symT
                }
              case Some(l: Link) =>
                // continue lookup in domain of l
@@ -576,6 +579,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
         case _ => throw ImplementationError("cannot instantiate declaration of complex theory")
       }
     val dT = decl.translate(newHome, LocalName.empty, ApplySubs(subs), params)
+    dT.setOrigin(CreatedForLookup)
     dT
   }
 
@@ -697,6 +701,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
             val newTp = a.tp orElse rc.tp.map(mapTerm)
             RuleConstant(to, newName, newTp, None)
         }
+        newDecl.setOrigin(CreatedForLookup)
         newDecl
     }
 
@@ -993,7 +998,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
 
   // shared code for adding an include
   private def addIncludeToImplicit(id: IncludeData) {
-    val mor = if (!id.isRealization && !id.df.isDefined) None else Some(id.asMorphism)
+    val mor = if (!id.isRealization && id.args.isEmpty && !id.df.isDefined) None else Some(id.asMorphism)
     implicitGraph.add(id.from, id.home.toMPath, mor)
   }
 

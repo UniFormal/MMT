@@ -193,6 +193,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
       case c: Constant =>
         // determine the expected type and definiens (if any) based on the parent element
+        /* TODO if computation of the expected type fails due to a missing assignments, we could generate a fresh unknown and try to infer
+           the assignment during the later checks
+         */
         val parent = content.getParent(c)
         lazy val defaultExp = Expectation(None, None)
         val expectation = parent match {
