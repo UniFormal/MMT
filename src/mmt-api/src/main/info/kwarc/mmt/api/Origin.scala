@@ -1,7 +1,9 @@
 package info.kwarc.mmt.api
 
 /** describes the origin of a generated knowledge item */
-abstract class Origin
+abstract class Origin {
+  val transient: Boolean = false
+}
 /** an original declaration */
 case object Original extends Origin
 /** obtained by elaborating a declaration */
@@ -12,6 +14,11 @@ case object ElaborationOfDefinition extends Origin
 case class GeneratedBy(by: AnyRef) extends Origin
 /** materialized module */
 case class Materialized(from: objects.Term) extends Origin
+trait TransientOrigin extends Origin {
+  override val transient = true
+}
+/** transient, created during lookup */
+case object CreatedForLookup extends TransientOrigin
 
 /** MRef left when taking a theory out of a document */
 case object GeneratedMRef extends Origin

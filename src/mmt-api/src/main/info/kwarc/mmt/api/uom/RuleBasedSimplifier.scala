@@ -203,9 +203,14 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           if (state.unit.expandDefinitions) {
             val pCons = controller.globalLookup.getO(ComplexTheory(context), p.toLocalName)
             val pDf = pCons.flatMap {
-              case c: Constant =>
-                normalizeConstant(c, state.unit.fullRecursion)
-                c.dfC.normalized
+              case c: Constant if c.df.isDefined =>
+                if (c.getOrigin.transient) {
+                  c.df
+                } else {
+                  // if this declaration could come up again, we normalize it at its origin and cache the normalization
+                  normalizeConstant(c, state.unit.fullRecursion)
+                  c.dfC.normalized
+                }
               case _ =>
                 None
             }
