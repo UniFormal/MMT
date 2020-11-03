@@ -227,13 +227,26 @@ object DataStructures {
   sealed case class SNonTotalScrollApplication(override val msg : String = "Scroll application not total") extends SCheckingError(msg)
   sealed case class SMiscellaneousError(override val msg: String) extends SCheckingError(msg)
 
-  sealed case class SDynamicScrollApplicationInfo(
-                                                  original: SScroll,
-                                                  rendered: SScroll,
+  sealed case class SScrollApplicationResult(
+                                          valid: Boolean,
+                                          errors: List[SCheckingError],
+                                          acquiredFacts: List[SFact]
+                                          )
+  object SScrollApplicationResult {
+    def success(acquiredFacts: List[SFact]): SScrollApplicationResult =
+      SScrollApplicationResult(valid = true, Nil, acquiredFacts)
 
-                                                  valid: Boolean,
-                                                  errors: List[SCheckingError],
+    def failure(errors: List[SCheckingError]): SScrollApplicationResult =
+      SScrollApplicationResult(valid = false, errors, Nil)
+  }
 
-                                                  completions: List[SScrollAssignments]
-                                                )
+  sealed case class SDynamicScrollInfo(
+                                        original: SScroll,
+                                        rendered: SScroll,
+
+                                        valid: Boolean,
+                                        errors: List[SCheckingError],
+
+                                        completions: List[SScrollAssignments]
+                                      )
 }

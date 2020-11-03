@@ -30,6 +30,7 @@ private[archives] object MitM {
     object RealLiterals extends RepresentedRealizedType(OMS(Math.real), StandardDouble)
 
     val eq: GlobalName = path ? "Logic" ? "eq"
+    val ded: GlobalName = path ? "Logic" ? "ded"
     val sketchOperator: GlobalName = path ? "InformalProofs" ? "proofsketch"
   }
 }

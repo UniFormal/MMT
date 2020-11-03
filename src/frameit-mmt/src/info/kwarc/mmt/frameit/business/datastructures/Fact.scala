@@ -28,7 +28,7 @@ sealed case class Fact(
                       ) {
 
   def toSimple(implicit ctrl: Controller): SFact = {
-    val (tp, df) = Fact.getSimplifiedTypeAndDefFromConstant(ctrl.getConstant(ref.uri))
+    // TODO: val (tp, df) = Fact.getSimplifiedTypeAndDefFromConstant(ctrl.getConstant(ref.uri))
 
     val label = meta.label.toStr(true) // replace with real rendering
 

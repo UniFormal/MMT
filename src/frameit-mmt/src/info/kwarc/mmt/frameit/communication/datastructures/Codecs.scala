@@ -3,7 +3,7 @@ package info.kwarc.mmt.frameit.communication.datastructures
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollApplicationInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollAssignments, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
@@ -202,7 +202,10 @@ private[communication] object Codecs {
 
     implicit val checkingErrorEncoder: Encoder[SCheckingError] = CheckingError.checkingErrorEncoder
 
-    implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollApplicationInfo] = deriveEncoder
-    implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollApplicationInfo] = deriveDecoder
+    implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollInfo] = deriveEncoder
+    implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollInfo] = deriveDecoder
+
+    implicit val scrollApplicationResultEncoder: Encoder[SScrollApplicationResult] = deriveEncoder
+    implicit val scrollApplicationResultDecoder: Decoder[SScrollApplicationResult] = deriveDecoder
   }
 }

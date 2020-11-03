@@ -10,6 +10,7 @@ private object Playground {
     ctrl.report.addHandler(ConsoleHandler)
 
     ctrl.handleLine(s"mathpath archive ${args(0)}")
-    ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
+    //ctrl.handleLine(s"build ${FrameWorld.archiveID} -mmt-omdoc")
+    ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc")
   }
 }

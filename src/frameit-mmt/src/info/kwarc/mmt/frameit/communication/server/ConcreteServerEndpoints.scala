@@ -6,11 +6,11 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
-import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
+import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, Path, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll, ScrollApplication}
 import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Utils, ViewCompletion}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication, SScrollAssignments}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
@@ -143,102 +143,162 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
-  private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
-
-    implicit val ctrl: Controller = state.ctrl
-
-    val scroll = Scroll.fromReference(scrollApp.scroll).get
-
-    val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
-    val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
-
-    // collect all assignments such that if typechecking later fails, we can conveniently output
-    // debug information
-    val scrollViewAssignments = scrollView.getDeclarations.collect {
-      case c: FinalConstant => c
-    }
-
-    state.synchronized {
-      state.contentValidator.checkView(scrollView) match {
-        case Nil =>
-          state.descendSituationTheory(LocalName.random("after_scroll_application"))
-
-          val viewToGenerate: View = {
-            val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
-
-            val view = View(
-              path.doc,
-              path.name,
-              from = OMMOD(scroll.ref.solutionTheory),
-              to = state.situationTheory.toTerm,
-              isImplicit = false
-            )
-            Utils.addModuleToController(view)
-
-            view
-          }
-
-          state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
-
-          NewPushoutUtils.injectPushoutAlongDirectInclusion(
-            state.ctrl.getTheory(scrollView.from.toMPath),
-            state.ctrl.getTheory(scrollView.to.toMPath),
-            state.ctrl.getTheory(scroll.ref.solutionTheory),
-            state.situationTheory,
-            scrollView,
-            viewToGenerate
-          )(state.ctrl)
-
-          Ok(
-            Fact
-              .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
-              .map(_.toSimple(state.ctrl))
-          )
-
-        case errors =>
-          state.ctrl.delete(scrollView.path)
-
-          NotAcceptable(FactValidationException(
-            "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
-            scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
-          ))
-      }
-    }
-  }}
-
-  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollApplicationInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+  private def applyScroll(state: ServerState): Endpoint[IO, SScrollApplicationResult] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
         implicit val ctrl: Controller = state.ctrl
+        implicit val _state: ServerState = state
 
-        // the scroll view and all paths (for later deletion from [[Controller]])
-        val (scrollView, scrollViewPaths) = {
-          val scrollViewName = LocalName.random("scroll_view_for_dynamic_scroll_info")
-          val view = scrollApp.toView(
-            target = state.situationTheory.path / scrollViewName,
-            codomain = state.situationTheory.toTerm
-          )
-          val paths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
-
-          (view, paths)
-        }
-        val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
-
-        val completions: List[SScrollAssignments] = {
-          val canonicalCompletion = ViewCompletion.closeGaps(
-            scrollApp.assignments.toMMTList,
-            state.situationTheory.meta
-          )
-
-          if (canonicalCompletion.isEmpty) {
-            Nil
-          } else {
-            List(SScrollAssignments.fromMMTList(canonicalCompletion))
-          }
-        }
+        val (scrollView, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
 
         try {
-          val scrollAppInfo = SDynamicScrollApplicationInfo(
+          if (errors.isEmpty) {
+            state.descendSituationTheory(LocalName.random("after_scroll_application"))
+
+            val viewToGenerate: View = {
+              val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
+
+              val view = View(
+                path.doc,
+                path.name,
+                from = OMMOD(scroll.ref.solutionTheory),
+                to = state.situationTheory.toTerm,
+                isImplicit = false
+              )
+              Utils.addModuleToController(view)
+
+              view
+            }
+
+            NewPushoutUtils.injectPushoutAlongDirectInclusion(
+              state.ctrl.getTheory(scrollView.from.toMPath),
+              state.ctrl.getTheory(scrollView.to.toMPath),
+              state.ctrl.getTheory(scroll.ref.solutionTheory),
+              state.situationTheory,
+              scrollView,
+              viewToGenerate
+            )(state.ctrl)
+
+            Ok(SScrollApplicationResult.success(Fact
+                .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
+                .map(_.toSimple(state.ctrl))
+            ))
+          } else {
+            Ok(SScrollApplicationResult.failure(errors))
+          }
+        } finally {
+          scrollViewPaths.foreach(ctrl.delete)
+        }
+
+      case _ =>
+        NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
+    }}
+
+
+    /*(scrollApp: SScrollApplication) => {
+
+        implicit val ctrl: Controller = state.ctrl
+
+        val scroll = Scroll.fromReference(scrollApp.scroll).get
+
+        val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
+        val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
+
+        // collect all assignments such that if typechecking later fails, we can conveniently output
+        // debug information
+        val scrollViewAssignments = scrollView.getDeclarations.collect {
+          case c: FinalConstant => c
+        }
+
+        state.synchronized {
+          state.contentValidator.checkView(scrollView) match {
+            case Nil =>
+              state.descendSituationTheory(LocalName.random("after_scroll_application"))
+
+              val viewToGenerate: View = {
+                val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
+
+                val view = View(
+                  path.doc,
+                  path.name,
+                  from = OMMOD(scroll.ref.solutionTheory),
+                  to = state.situationTheory.toTerm,
+                  isImplicit = false
+                )
+                Utils.addModuleToController(view)
+
+                view
+              }
+
+              state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
+
+              NewPushoutUtils.injectPushoutAlongDirectInclusion(
+                state.ctrl.getTheory(scrollView.from.toMPath),
+                state.ctrl.getTheory(scrollView.to.toMPath),
+                state.ctrl.getTheory(scroll.ref.solutionTheory),
+                state.situationTheory,
+                scrollView,
+                viewToGenerate
+              )(state.ctrl)
+
+              Ok(
+                Fact
+                  .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
+                  .map(_.toSimple(state.ctrl))
+              )
+
+            case errors =>
+              state.ctrl.delete(scrollView.path)
+
+              NotAcceptable(FactValidationException(
+                "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
+                scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
+              ))
+          }
+        }
+      }}*/
+
+  private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: ServerState): (View, List[Path], List[SCheckingError]) = {
+    // the scroll view and all paths (for later deletion from [[Controller]])
+    val (scrollView, scrollViewPaths) = {
+      val scrollViewName = LocalName.random("scroll_view")
+      val view = scrollApp.toView(
+        target = state.situationTheory.path / scrollViewName,
+        codomain = state.situationTheory.toTerm
+      )(state.ctrl)
+      val paths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
+
+      (view, paths)
+    }
+    val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
+
+    (scrollView, scrollViewPaths, errors)
+  }
+
+  private def getCompletions(scrollApp: SScrollApplication)(implicit state: ServerState): List[SScrollAssignments] = {
+    val canonicalCompletion = ViewCompletion.closeGaps(
+      scrollApp.assignments.toMMTList,
+      state.situationTheory.meta
+    )(state.ctrl)
+
+    if (canonicalCompletion.isEmpty) {
+      Nil
+    } else {
+      List(SScrollAssignments.fromMMTList(canonicalCompletion))
+    }
+  }
+
+  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+    Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
+      case Some(scroll) =>
+        implicit val ctrl: Controller = state.ctrl
+        implicit val _state: ServerState = state
+
+        val (_, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
+        val completions = getCompletions(scrollApp)
+
+        try {
+          val scrollAppInfo = SDynamicScrollInfo(
             original = scroll.renderSimple(),
             rendered = scroll.renderSimple(Some(ScrollApplication(
               scroll.ref,
