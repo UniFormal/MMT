@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{GeneralError, GlobalName}
+import info.kwarc.mmt.api.uom.{Recurse, Simplifiability, SimplificationRule, SimplificationUnit, Simplify}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, NamespaceMap, Path, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.MitM
@@ -29,10 +29,28 @@ sealed case class Fact(
 
   def toSimple(implicit ctrl: Controller): SFact = {
     val simplify: Term => Term = {
+      val simplificationRules: RuleSet = {
+        val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
+
+        rules.add({
+          val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
+
+          new SimplificationRule(realTimes) {
+            override def apply(context: Context, t: Term): Simplifiability = t match {
+              case ApplySpine(`realTimes`, List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
+                Simplify(FrameWorld.RealLiterals(x * y))
+              case _ =>
+                Recurse
+            }
+          }
+        })
+        rules
+      }
+
       val ctx = Context(ref.uri.module)
       val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
 
-      t => ctrl.simplifier(t, simplicationUnit)
+      ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
     lazy val simpleTp = simplify(tp)
@@ -40,7 +58,7 @@ sealed case class Fact(
 
     val label = meta.label.toStr(true) // replace with real rendering
 
-    Fact.tryRenderSValueEqFact(ref, label, tp, simpleTp, df, simpleDf) match {
+    Fact.tryRenderSValueEqFact(ref, label, tp = tp, simpleTp = simpleTp, simpleDf = simpleDf) match {
       case Some(valueEqFact) => valueEqFact
       case _ => SGeneralFact(Some(ref), label, tp, df)
     }
@@ -67,6 +85,8 @@ object Fact {
     */
   def findAllIn(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Fact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant)
 
+  // todo: document this function: used to spare duplicating match expressions when
+  //   first matching against unsimplified term and then (upon failure) against simplified term
   private def m[S, T](s1: S, s2: S, f: S => Option[T]): Option[T] = {
     f(s1) match {
       case Some(t) => Some(t)
@@ -74,7 +94,7 @@ object Fact {
     }
   }
 
-  private def tryRenderSValueEqFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, df: Option[Term], simpleDf: Option[Term]): Option[SValueEqFact] = {
+  private def tryRenderSValueEqFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact] = {
     m[Term, SValueEqFact](tp, simpleTp, {
       case Sigma(
       x1,
