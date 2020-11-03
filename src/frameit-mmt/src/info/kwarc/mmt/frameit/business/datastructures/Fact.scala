@@ -28,11 +28,19 @@ sealed case class Fact(
                       ) {
 
   def toSimple(implicit ctrl: Controller): SFact = {
-    // TODO: val (tp, df) = Fact.getSimplifiedTypeAndDefFromConstant(ctrl.getConstant(ref.uri))
+    val simplify: Term => Term = {
+      val ctx = Context(ref.uri.module)
+      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
+
+      t => ctrl.simplifier(t, simplicationUnit)
+    }
+
+    lazy val simpleTp = simplify(tp)
+    lazy val simpleDf = df.map(simplify)
 
     val label = meta.label.toStr(true) // replace with real rendering
 
-    Fact.tryRenderSValueEqFact(ref, label, tp, df) match {
+    Fact.tryRenderSValueEqFact(ref, label, tp, simpleTp, df, simpleDf) match {
       case Some(valueEqFact) => valueEqFact
       case _ => SGeneralFact(Some(ref), label, tp, df)
     }
@@ -59,38 +67,15 @@ object Fact {
     */
   def findAllIn(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Fact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant)
 
-  private final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
-    def simplify(obj: Obj): obj.ThisType = {
-      val ctx = Context(c.path.module)
-      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
-
-      try {
-        ctrl.simplifier.apply(obj, simplicationUnit)
-      } catch {
-        case e: GeneralError =>
-          System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
-
-          // reenable these outputs vvv if the bug above is solved
-          /*e.printStackTrace(System.err)
-          e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))*/
-
-          obj // just return unsimplified
-      }
+  private def m[S, T](s1: S, s2: S, f: S => Option[T]): Option[T] = {
+    f(s1) match {
+      case Some(t) => Some(t)
+      case None => f(s2)
     }
-
-    // todo: currently, only the simplified things are returned
-    //       do we also need the non-simplified ones?
-    val simplifiedTp: Term = c.tp.map(simplify(_)).getOrElse(
-      throw InvalidFactConstant(s"failed parsing fact of ${c.path}: has no type component")
-    )
-
-    val simplifiedDf: Option[Term] = c.df.map(simplify(_))
-
-    (simplifiedTp, simplifiedDf)
   }
 
-  private def tryRenderSValueEqFact(ref: FactReference, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact] = {
-    simpleTp match {
+  private def tryRenderSValueEqFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, df: Option[Term], simpleDf: Option[Term]): Option[SValueEqFact] = {
+    m[Term, SValueEqFact](tp, simpleTp, {
       case Sigma(
       x1,
       tp1,
@@ -104,10 +89,9 @@ object Fact {
           case _ => (None, None)
         }
 
-        // todo: replace toStr
         Some(SValueEqFact(Some(ref), label, lhs, valueTp = Some(tp1), value, proof))
 
       case _ => None
-    }
+    })
   }
 }
