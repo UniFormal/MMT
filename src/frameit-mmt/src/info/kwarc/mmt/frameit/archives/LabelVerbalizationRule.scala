@@ -5,9 +5,8 @@ import info.kwarc.mmt.api.objects.{Context, OMID, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.Simplifiability.NoRecurse
 import info.kwarc.mmt.api.uom.{Simplifiability, SimplificationRule, Simplify}
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{MetaAnnotations, StringLiterals}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.Utils
 import info.kwarc.mmt.frameit.business.datastructures.MetadataUtils
 
@@ -32,7 +31,7 @@ class LabelVerbalizationRule()(implicit lookup: Lookup) extends SimplificationRu
       }
 
       Simplify(
-        verbalizedArgs.reduceLeft(MitM.Foundation.StringConcat.apply)
+        verbalizedArgs.reduceLeft(MMT.urtheories.StringConcat.apply)
       )
 
     case _ =>

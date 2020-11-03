@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.api.{GetError, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business.SituationTheory
+import info.kwarc.mmt.frameit.business.{SituationTheory, StandardContentValidator}
 import io.finch.Input
 
 object Server extends TwitterServer {
@@ -60,7 +60,7 @@ object Server extends TwitterServer {
             }
           })
       }
-    }.run()
+    }// .run() // no warm-up currently
 
     Await.ready(server)
   }
@@ -93,10 +93,9 @@ object Server extends TwitterServer {
       )
     }
 
-    val state = new ServerState(situationTheory)
-    state.doTypeChecking = false // TODO, due to persisting MMT errors Florian is currently about to fix
+    val state = new ServerState(situationTheory, new StandardContentValidator)
 
-    (if (state.doTypeChecking) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
+    state.contentValidator.checkTheory(situationTheory.spaceTheory) match {
       case Nil =>
         println("Situation space successfully set-up and typechecked (the latter only in release mode).")
         state

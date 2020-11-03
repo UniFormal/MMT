@@ -5,9 +5,8 @@ import info.kwarc.mmt.api.{ContentElement, GlobalName, MPath}
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{MetaAnnotations, StringLiterals}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.InvalidMetaData
 
 import scala.util.Try

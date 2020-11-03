@@ -10,7 +10,27 @@ import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SChec
 
 import scala.util.Random
 
-class ContentValidator(private val ctrl: Controller) {
+trait ContentValidator {
+  def checkTheory(theory: Theory): List[Error]
+
+  def checkView(view: View): List[Error]
+
+  def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError]
+
+  def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error]
+}
+
+class NopContentValidator extends ContentValidator {
+  override def checkTheory(theory: Theory): List[Error] = Nil
+
+  override def checkView(view: View): List[Error] = Nil
+
+  override def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = Nil
+
+  override def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = Nil
+}
+
+class StandardContentValidator(implicit ctrl: Controller) extends ContentValidator {
   private val checker: StructureChecker = ctrl.extman.get(classOf[MMTStructureChecker]).headOption.getOrElse({
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     ctrl.extman.addExtension(checker)
@@ -39,14 +59,11 @@ class ContentValidator(private val ctrl: Controller) {
     errorContainer.getErrors
   }
 
-  def checkTheory(theory: Theory): List[Error] = checkStructuralElementSynchronously(theory)
+  override def checkTheory(theory: Theory): List[Error] = checkStructuralElementSynchronously(theory)
 
-  def checkDeclarationAgainstTheory(theory: MPath, decl: FinalConstant): List[Error] =
-    checkDeclarationAgainstTheory(ctrl.getTheory(theory), decl)
+  override def checkView(view: View): List[Error] = checkStructuralElementSynchronously(view)
 
-  def checkView(view: View): List[Error] = checkStructuralElementSynchronously(view)
-
-  def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = {
+  override def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = {
     val viewPath = view.path
 
     checkView(view).map {
@@ -79,7 +96,7 @@ class ContentValidator(private val ctrl: Controller) {
     * @param decl A "dangling" declaration, i.e. one that has not yet been added to the controller or any theory at all
     * @return A list of errors, an empty list upon success of checking
     */
-  def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
+  override def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
     assert(decl.home == theory.toTerm)
 
     val scratchTheoryPath = theory.path ? theory.path.name.prefixOrCreateLastSimpleStep(s"scratch${Random.nextInt()}")

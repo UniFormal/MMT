@@ -95,7 +95,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
       val factConstant = fact.toFinalConstant(constantPath)
 
       state.synchronized {
-        (if (state.doTypeChecking) state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) else Nil) match {
+        state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
           case Nil =>
             // success (i.e. no errors)
             try {
@@ -158,49 +158,51 @@ object ConcreteServerEndpoints extends ServerEndpoints {
       case c: FinalConstant => c
     }
 
-    (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
-      case Nil =>
-        state.descendSituationTheory(LocalName.random("after_scroll_application"))
+    state.synchronized {
+      state.contentValidator.checkView(scrollView) match {
+        case Nil =>
+          state.descendSituationTheory(LocalName.random("after_scroll_application"))
 
-        val viewToGenerate: View = {
-          val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
+          val viewToGenerate: View = {
+            val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
 
-          val view = View(
-            path.doc,
-            path.name,
-            from = OMMOD(scroll.ref.solutionTheory),
-            to = state.situationTheory.toTerm,
-            isImplicit = false
+            val view = View(
+              path.doc,
+              path.name,
+              from = OMMOD(scroll.ref.solutionTheory),
+              to = state.situationTheory.toTerm,
+              isImplicit = false
+            )
+            Utils.addModuleToController(view)
+
+            view
+          }
+
+          state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
+
+          NewPushoutUtils.injectPushoutAlongDirectInclusion(
+            state.ctrl.getTheory(scrollView.from.toMPath),
+            state.ctrl.getTheory(scrollView.to.toMPath),
+            state.ctrl.getTheory(scroll.ref.solutionTheory),
+            state.situationTheory,
+            scrollView,
+            viewToGenerate
+          )(state.ctrl)
+
+          Ok(
+            Fact
+              .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
+              .map(_.toSimple(state.ctrl))
           )
-          Utils.addModuleToController(view)
 
-          view
-        }
+        case errors =>
+          state.ctrl.delete(scrollView.path)
 
-        state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
-
-        NewPushoutUtils.injectPushoutAlongDirectInclusion(
-          state.ctrl.getTheory(scrollView.from.toMPath),
-          state.ctrl.getTheory(scrollView.to.toMPath),
-          state.ctrl.getTheory(scroll.ref.solutionTheory),
-          state.situationTheory,
-          scrollView,
-          viewToGenerate
-        )(state.ctrl)
-
-        Ok(
-          Fact
-            .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
-            .map(_.toSimple(state.ctrl))
-        )
-
-      case errors =>
-        state.ctrl.delete(scrollView.path)
-
-        NotAcceptable(FactValidationException(
-          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
-          scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
-        ))
+          NotAcceptable(FactValidationException(
+            "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
+            scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
+          ))
+      }
     }
   }}
 

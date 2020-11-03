@@ -15,14 +15,9 @@ import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory, Utils
   *
   * It serves encapsulating state to be as immutable as possible.
   */
-class ServerState(private var curSituationTheory: SituationTheory)(implicit val ctrl: Controller) extends Logger {
+class ServerState(private var curSituationTheory: SituationTheory, val contentValidator: ContentValidator)(implicit val ctrl: Controller) extends Logger {
   override def logPrefix: String = "frameit-server"
   override protected def report: Report = ctrl.report
-
-  var doTypeChecking: Boolean = true
-  private var hasReadScrollData: Boolean = false
-
-  val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
   val presenter : MMTSyntaxPresenter = ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
     throw GeneralError("could not get MMTSyntaxPresenter extension required for printing")

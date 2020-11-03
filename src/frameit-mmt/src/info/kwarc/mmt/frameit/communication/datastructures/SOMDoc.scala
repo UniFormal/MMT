@@ -1,8 +1,8 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{PosOrIntLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.objects.{OMS, Term}
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.{IntegerLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Product, Tuple}
 import io.circe.Json
@@ -78,19 +78,18 @@ object SOMDoc {
       // Only support OMA applications in LF style
       case ApplySpine(fun, args) => SOMA(encode(fun), args.map(encode))
 
-      case IntegerLiterals(value) => SInteger(value.intValue()) // TODO: overflow possible
+      case PosOrIntLiterals(value) =>
+        if (value.isValidInt) {
+          SInteger(value.intValue())
+        } else {
+          System.err.println(s"encountered term for positive or int literals that would overflow Scala's Int: ${tm}")
+          SRawOMDoc(tm.toNode.toString())
+        }
       case RealLiterals(value) => SFloatingPoint(value)
       case StringLiterals(value) => SString(value)
 
       case _ =>
-        val errMsg = s"encountered term for which there is no SimpleOMDoc analogon: ${tm}"
-
-        // also output on stderr because exceptions by encoders as instrumented by Finch are sometimes
-        // happily swallowed
-        System.err.println(s"ERROR: ${errMsg}")
-        // todo suppressed in favor of MMT bug https://github.com/UniFormal/MMT/issues/546
-        // throw ConversionException(errMsg):
-
+        System.err.println(s"encountered term for which there is no SimpleOMDoc analogon: ${tm}")
         SRawOMDoc(tm.toNode.toString())
     }
 
@@ -103,7 +102,7 @@ object SOMDoc {
         } else {
           ApplySpine(decode(fun), arguments.map(decode): _*)
         }
-      case SInteger(value) => IntegerLiterals(value)
+      case SInteger(value) => PosOrIntLiterals(value)
       case SFloatingPoint(value) => RealLiterals(value)
       case SString(value) => StringLiterals(value)
       case SRawOMDoc(rawXml) => ???

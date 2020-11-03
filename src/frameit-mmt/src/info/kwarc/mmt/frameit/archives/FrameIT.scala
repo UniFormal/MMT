@@ -1,9 +1,12 @@
 package info.kwarc.mmt.frameit.archives
 
 import info.kwarc.mmt.api.objects.{OMID, OMS, Term}
-import info.kwarc.mmt.api.uom.ConstantScala
+import info.kwarc.mmt.api.uom.{ConstantScala, RepresentedRealizedType, StandardString}
 import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.frameit.archives.MMT.urtheories
+import info.kwarc.mmt.frameit.archives.MMT.urtheories.string
+import info.kwarc.mmt.frameit.archives.MitM.Foundation
 import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheoryPath}
 import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, UnaryLFConstantScala}
 
@@ -28,6 +31,31 @@ object FrameIT {
     )
 
     private val _metaAnnotations: MPath = rootDocument ? "MetaAnnotations"
+
+    val sketchOperator: GlobalName = MitM.Foundation.sketchOperator
+    val eq: GlobalName = MitM.Foundation.eq
+    val ded: GlobalName = MMT.urtheories.ded
+    val string: GlobalName = MMT.urtheories.string
+    val real: GlobalName = MitM.Foundation.Math.real
+    val StringLiterals: urtheories.StringLiterals.type = MMT.urtheories.StringLiterals
+    val RealLiterals: Foundation.RealLiterals.type = MitM.Foundation.RealLiterals
+
+    object PosOrIntLiterals {
+      def apply(i: BigInt): Term = {
+        if (i >= 0) {
+          Foundation.NatLiterals(i)
+        } else {
+          Foundation.IntegerLiterals(i)
+        }
+      }
+
+      def unapply(tm: Term): Option[BigInt] = tm match {
+        case Foundation.NatLiterals(i) => Some(i)
+        case Foundation.PosLiterals(i) => Some(i)
+        case Foundation.IntegerLiterals(i) => Some(i)
+        case _ => None
+      }
+    }
 
     object MetaAnnotations {
       object MetaKeys {

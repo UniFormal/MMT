@@ -94,7 +94,7 @@ object Fact {
       case Sigma(
       x1,
       tp1,
-      ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
+      ApplySpine(OMS(FrameWorld.ded), List(ApplySpine(OMS(FrameWorld.eq), List(tp2, lhs, OMV(x2)))))
       ) if x1 == x2 && tp1 == tp2 =>
 
         val (value, proof) = simpleDf match {
