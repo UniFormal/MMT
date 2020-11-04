@@ -280,7 +280,7 @@ abstract class IntegerLiteral extends Atomic[BigInt] with IntegerRepresented {
           precomputed = rand.nextInt()
         }
         else{
-          precomputed = if (i > 0) -i else -i+m
+          precomputed = if (i > 0) -i else -i + m
         }
         i
       }
@@ -305,6 +305,27 @@ object StandardInt extends IntegerLiteral {
 object StandardNat extends RSubtype(StandardInt) {
   override def asString = "nat"
   def by(u: Any) = StandardInt.unapply(u).get >= 0
+  //TODO something is going wrong with the RSubtype(StandardInt), and it won't access the enumerate there. For now,
+  // I have this.
+  override def enumerate(m: Int) = {
+    val it = new Iterator[BigInt] {
+      private val rand = scala.util.Random
+      private var precomputed = 0
+      def hasNext = true
+      def next = {
+        val i = precomputed
+        if(m == 0){
+          precomputed = rand.nextInt()
+          if(precomputed < 0) precomputed *= -1
+        }
+        else{
+          precomputed = if (i < 0) 0 else i + m
+        }
+        i
+      }
+    }
+    Some(it)
+  }
 }
 
 /** standard positive natural numbers */
