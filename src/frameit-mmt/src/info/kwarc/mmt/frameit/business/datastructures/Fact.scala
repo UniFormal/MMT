@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.api.{GeneralError, GlobalName}
+import info.kwarc.mmt.api.uom.{Recurse, Simplifiability, SimplificationRule, SimplificationUnit, Simplify}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, NamespaceMap, Path, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
 import info.kwarc.mmt.frameit.archives.MitM
@@ -27,57 +27,41 @@ sealed case class Fact(
                         df: Option[Term]
                       ) {
 
-  def renderStatic()(implicit ctrl: Controller): SFact = {
-    val (tp, df) = Fact.getSimplifiedTypeAndDefFromConstant(ctrl.getConstant(ref.uri))
+  def toSimple(implicit ctrl: Controller): SFact = {
+    val simplify: Term => Term = {
+      val simplificationRules: RuleSet = {
+        val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
+
+        rules.add({
+          val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
+
+          new SimplificationRule(realTimes) {
+            override def apply(context: Context, t: Term): Simplifiability = t match {
+              case ApplySpine(`realTimes`, List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
+                Simplify(FrameWorld.RealLiterals(x * y))
+              case _ =>
+                Recurse
+            }
+          }
+        })
+        rules
+      }
+
+      val ctx = Context(ref.uri.module)
+      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
+
+      ctrl.simplifier(_, simplicationUnit, simplificationRules)
+    }
+
+    lazy val simpleTp = simplify(tp)
+    lazy val simpleDf = df.map(simplify)
 
     val label = meta.label.toStr(true) // replace with real rendering
 
-    Fact.tryRenderSValueEqFact(ref, label, tp, df) match {
+    Fact.tryRenderSValueEqFact(ref, label, tp = tp, simpleTp = simpleTp, simpleDf = simpleDf) match {
       case Some(valueEqFact) => valueEqFact
       case _ => SGeneralFact(Some(ref), label, tp, df)
     }
-  }
-
-  /**
-    * Renders a dynamic fact given by a [[ScrollViewRenderer]].
-    *
-    * Facts as in facts required from a scroll are dynamic in the sense that:
-    *
-    * 1. concerning their type and definiens, homomorphic extension
-    *
-    * 2. concerning their [[UserMetadata metadata]] (labels and descriptions),
-    *
-    *  - if the fact is assigned to a new fact (as hackily deduced from viewRenderer),
-    *    then the "dynamic fact" (i.e. return value) should use the metadata from the assigned
-    *    fact (possibly, a fact expression).
-    *
-    *  - if the fact is not yet assigned by the putative view (i.e. a partial view),
-    *    then the original metadata is rendered.
-    *    (We need rendering here as the original metadata might reference labels of other required facts
-    *     that *have been assigned* and need to get their labels right.)
-    *
-    * @return A new fact representing the "dynamic version" of the current fact. That can then be rendered
-    *         to a mere [[SFact]] (for sending it to the game engine) via [[renderStatic()]].
-    */
-  private[datastructures] def renderDynamicFact(viewRenderer: ScrollViewRenderer): Fact = {
-    //
-    val newMeta = (if (viewRenderer.hasAssignmentFor(ref.uri)) {
-      // use meta data of assigned fact (possibly, a complex expression)
-      UserMetadata(
-        label = MetaAnnotations.LabelVerbalization(OMS(ref.uri)),
-        description = MetaAnnotations.DescriptionVerbalization(OMS(ref.uri))
-      )
-    } else {
-      // view is partial on our fact constant
-      // => retain old meta data
-      meta
-    }).render(viewRenderer)
-
-    this.copy(
-      meta = newMeta,
-      tp = viewRenderer(tp),
-      df = df.map(viewRenderer.apply)
-    )
   }
 }
 
@@ -101,42 +85,21 @@ object Fact {
     */
   def findAllIn(theory: Theory, recurseOnInclusions: Boolean)(implicit ctrl: Controller): List[Fact] = collectConstantsFromTheory(theory, recurseOnInclusions).map(fromConstant)
 
-  private final def getSimplifiedTypeAndDefFromConstant(c: Constant)(implicit ctrl: Controller): (Term, Option[Term]) = {
-    def simplify(obj: Obj): obj.ThisType = {
-      val ctx = Context(c.path.module)
-      val simplicationUnit = SimplificationUnit(ctx, expandDefinitions = true, fullRecursion = true)
-
-      try {
-        ctrl.simplifier.apply(obj, simplicationUnit)
-      } catch {
-        case e: GeneralError =>
-          System.err.println("error while simplifying, possibly known MMT bug (UniFormal/MMT#546)")
-
-          // reenable these outputs vvv if the bug above is solved
-          /*e.printStackTrace(System.err)
-          e.getAllCausedBy.take(3).foreach(_.printStackTrace(System.err))*/
-
-          obj // just return unsimplified
-      }
+  // todo: document this function: used to spare duplicating match expressions when
+  //   first matching against unsimplified term and then (upon failure) against simplified term
+  private def m[S, T](s1: S, s2: S, f: S => Option[T]): Option[T] = {
+    f(s1) match {
+      case Some(t) => Some(t)
+      case None => f(s2)
     }
-
-    // todo: currently, only the simplified things are returned
-    //       do we also need the non-simplified ones?
-    val simplifiedTp: Term = c.tp.map(simplify(_)).getOrElse(
-      throw InvalidFactConstant(s"failed parsing fact of ${c.path}: has no type component")
-    )
-
-    val simplifiedDf: Option[Term] = c.df.map(simplify(_))
-
-    (simplifiedTp, simplifiedDf)
   }
 
-  private def tryRenderSValueEqFact(ref: FactReference, label: String, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact] = {
-    simpleTp match {
+  private def tryRenderSValueEqFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, simpleDf: Option[Term]): Option[SValueEqFact] = {
+    m[Term, SValueEqFact](tp, simpleTp, {
       case Sigma(
       x1,
       tp1,
-      ApplySpine(OMID(MitM.Foundation.ded), List(ApplySpine(OMID(MitM.Foundation.eq), List(tp2, lhs, OMV(x2)))))
+      ApplySpine(OMS(FrameWorld.ded), List(ApplySpine(OMS(FrameWorld.eq), List(tp2, lhs, OMV(x2)))))
       ) if x1 == x2 && tp1 == tp2 =>
 
         val (value, proof) = simpleDf match {
@@ -146,10 +109,9 @@ object Fact {
           case _ => (None, None)
         }
 
-        // todo: replace toStr
         Some(SValueEqFact(Some(ref), label, lhs, valueTp = Some(tp1), value, proof))
 
       case _ => None
-    }
+    })
   }
 }

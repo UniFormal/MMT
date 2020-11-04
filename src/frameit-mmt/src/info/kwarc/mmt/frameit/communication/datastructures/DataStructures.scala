@@ -9,11 +9,12 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.StringLiterals
 import info.kwarc.mmt.frameit.archives.MitM
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
-import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
-import info.kwarc.mmt.frameit.business.InvalidFactConstant
+import info.kwarc.mmt.frameit.business.datastructures.{FactReference, Scroll, ScrollReference}
+import info.kwarc.mmt.frameit.business.{InvalidFactConstant, Utils}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
 
@@ -46,12 +47,13 @@ object DataStructures {
 
     /**
       * Transform the fact into an MMT representation, namely a [[FinalConstant]].
-      * @param home The home theory (as a term) for the final constant.
+      * @param target The full path to give to the constant.
+      *               It'll live in the module [[target.module]] with name [[target.name]].
       */
-    def toFinalConstant(home: api.objects.Term): FinalConstant = {
+    def toFinalConstant(target: GlobalName): FinalConstant = {
       val factConstant = new FinalConstant(
-        home = home,
-        name = LocalName(SimpleStep(label)),
+        home = OMMOD(target.module),
+        name = target.name,
         alias = Nil,
         tpC = TermContainer.asParsed(getMMTTypeComponent),
         dfC = TermContainer.asParsed(getMMTDefComponent),
@@ -125,7 +127,7 @@ object DataStructures {
     }
 
     private val inferredValueType = valueTp.getOrElse(value match {
-      case Some(MitM.Foundation.RealLiterals(_)) => OMID(MitM.Foundation.Math.real)
+      case Some(FrameWorld.RealLiterals(_)) => OMS(FrameWorld.real)
       case Some(v) =>
         throw InvalidFactConstant(s"SValueEqFact with value type that is not inferrable from value `${v}`")
       case None =>
@@ -139,9 +141,9 @@ object DataStructures {
         sigmaVariableName,
         inferredValueType,
         body = ApplySpine(
-          OMID(MitM.Foundation.ded),
+          OMID(FrameWorld.ded),
           ApplySpine(
-            OMS(MitM.Foundation.eq),
+            OMS(FrameWorld.eq),
             inferredValueType,
             lhs,
             OMV(sigmaVariableName)
@@ -153,8 +155,8 @@ object DataStructures {
     override protected def getMMTDefComponent: Option[Term] = value.map(v =>
       // we only have a definiens if we have a value
       Tuple(v, ApplySpine(
-        OMS(MitM.Foundation.sketchOperator),
-        ApplySpine(OMS(MitM.Foundation.eq), inferredValueType, lhs, v),
+        OMS(FrameWorld.sketchOperator),
+        ApplySpine(OMS(FrameWorld.eq), inferredValueType, lhs, v),
         StringLiterals("as sent by game engine")
       ))
     )
@@ -171,6 +173,7 @@ object DataStructures {
 
   sealed case class SScrollAssignments(assignments: List[(FactReference, Term)]) {
     def toMMTList: List[(GlobalName, Term)] = assignments.map(asgn => (asgn._1.uri, asgn._2))
+    def toMMTMap: Map[GlobalName, Term] = assignments.map(asgn => (asgn._1.uri, asgn._2)).toMap
   }
 
   object SScrollAssignments {
@@ -179,34 +182,12 @@ object DataStructures {
   }
 
   /**
-    * Adds a module to the controller, taking additional care if it is a nested module.
-    *
-    * In case of a nested module (as determined by ''module.path.name'' comprised of multiple
-    * steps), a [[NestedModule]] declaration is added to the containing module (via ctrl).
-    *
-    * In any case, the module is added (via ctrl).
-    */
-  private def addModuleToController(module: Module)(implicit ctrl: Controller): Unit = {
-    module.path.name.steps match {
-      case prefix :+ containingModuleName :+ viewName =>
-        ctrl.add(new NestedModule(
-          home = OMMOD(module.path.doc ? LocalName(prefix :+ containingModuleName)),
-          name = LocalName(viewName),
-          mod = module
-        ))
-
-      case _ => // no additional action required
-    }
-
-    ctrl.add(module)
-  }
-
-  /**
     * Tentative scroll applications communicated from the game engine to MMT
     */
   sealed case class SScrollApplication(scroll: ScrollReference, assignments: SScrollAssignments) {
     def toView(target: MPath, codomain: Term)(implicit ctrl: Controller): View = {
-      val domain = scroll.problemTheory
+      val fullScrollRef = Scroll.fromReference(scroll).get
+      val domain = fullScrollRef.ref.problemTheory
 
       val view = new View(
         doc = target.doc,
@@ -217,7 +198,7 @@ object DataStructures {
         isImplicit = false
       )
 
-      addModuleToController(view)
+      Utils.addModuleToController(view)
 
       // collect all assignments such that if typechecking later fails, we can conveniently output
       // debug information
@@ -241,9 +222,31 @@ object DataStructures {
     }
   }
 
-  sealed case class SDynamicScrollApplicationInfo(
-                                                  original: SScroll,
-                                                  rendered: SScroll,
-                                                  completions: List[SScrollAssignments]
-                                                )
+  sealed abstract class SCheckingError(val msg: String)
+  sealed case class SInvalidScrollAssignment(override val msg: String, fact: FactReference) extends SCheckingError(msg)
+  sealed case class SNonTotalScrollApplication(override val msg : String = "Scroll application not total") extends SCheckingError(msg)
+  sealed case class SMiscellaneousError(override val msg: String) extends SCheckingError(msg)
+
+  sealed case class SScrollApplicationResult(
+                                          valid: Boolean,
+                                          errors: List[SCheckingError],
+                                          acquiredFacts: List[SFact]
+                                          )
+  object SScrollApplicationResult {
+    def success(acquiredFacts: List[SFact]): SScrollApplicationResult =
+      SScrollApplicationResult(valid = true, Nil, acquiredFacts)
+
+    def failure(errors: List[SCheckingError]): SScrollApplicationResult =
+      SScrollApplicationResult(valid = false, errors, Nil)
+  }
+
+  sealed case class SDynamicScrollInfo(
+                                        original: SScroll,
+                                        rendered: SScroll,
+
+                                        valid: Boolean,
+                                        errors: List[SCheckingError],
+
+                                        completions: List[SScrollAssignments]
+                                      )
 }

@@ -2,9 +2,10 @@ package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
-import info.kwarc.mmt.frameit.business.datastructures.FactReference
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SGeneralFact, SScroll, SScrollApplication, SScrollAssignments, SValueEqFact}
+import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
 import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
+import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
@@ -49,6 +50,21 @@ import scala.util.Try
   *   to learn more about that pattern.
   */
 private[communication] object Codecs {
+  /**
+    * Create a Circe [[Configuration]] encoding case classes as objects with their name (subject to rewriteMap)
+    * in a "kind" discriminator field.
+    * @param rewriteMap With this map, you can control how specific case classes should be referred to in the
+    *                   "kind" field.
+    *
+    * @see [[SOMDocCodecs.config]] for an example
+    */
+  private def kindedJsonConfig(rewriteMap: Map[Class[_], String]): Configuration = {
+    val map = rewriteMap.map { case (key, value) => (key.getSimpleName, value) }
+    Configuration.default.withDiscriminator("kind").copy(transformConstructorNames = oldCtorName => {
+      map.getOrElse(oldCtorName, oldCtorName)
+    })
+  }
+
   object PathCodecs {
     implicit val mpathEncoder: Encoder[MPath] = Encoder.encodeString.contramap[MPath](_.toString)
     implicit val mpathDecoder: Decoder[MPath] = Decoder.decodeString.emapTry { str => {
@@ -67,25 +83,19 @@ private[communication] object Codecs {
     import io.circe.generic.extras.semiauto._
 
     private[datastructures] object config {
-      implicit val jsonConfig: Configuration = Configuration.default
-        .withDiscriminator("kind")
-        .copy(transformConstructorNames = oldCtorName => {
-          // Cannot declare this in the outer object due to some weird
-          // errors with circe-generic-extras macro magic
-          val rewriteMap = Map(
-            classOf[SOMA] -> "OMA",
-            classOf[SOMS] -> "OMS",
-            classOf[SFloatingPoint] -> "OMF",
-            classOf[SString] -> "OMSTR",
-            classOf[SInteger] -> "OMI",
-            classOf[SRawOMDoc] -> "RAW"
-          ).map { case (key, value) => (key.getSimpleName, value) }
-
-          rewriteMap.getOrElse(oldCtorName, oldCtorName)
-        })
+      implicit val somdocConfig: Configuration = kindedJsonConfig(Map(
+        classOf[SOMA] -> "OMA",
+        classOf[SOMS] -> "OMS",
+        classOf[SFloatingPoint] -> "OMF",
+        classOf[SString] -> "OMSTR",
+        classOf[SInteger] -> "OMI",
+        classOf[SRawOMDoc] -> "RAW"
+      ))
     }
 
+    // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
     import config._
+    // ^^^^^^^ END
     implicit val stermEncoder: Encoder[STerm] = deriveConfiguredEncoder
     implicit val stermDecoder: Decoder[STerm] = deriveConfiguredDecoder
 
@@ -106,16 +116,10 @@ private[communication] object Codecs {
       // ^^^^^^^ END
 
       private[datastructures] object config {
-        implicit val factJsonConfig: Configuration = Configuration.default
-          .withDiscriminator("kind")
-          .copy(transformConstructorNames = oldCtorName => {
-            val rewriteMap = Map(
-              classOf[SGeneralFact] -> "general",
-              classOf[SValueEqFact] -> "veq"
-            ).map { case (key, value) => (key.getSimpleName, value) }
-
-            rewriteMap.getOrElse(oldCtorName, oldCtorName)
-          })
+        implicit val factConfig: Configuration = kindedJsonConfig(Map(
+          classOf[SGeneralFact] -> "general",
+          classOf[SValueEqFact] -> "veq"
+        ))
       }
 
       // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
@@ -155,6 +159,10 @@ private[communication] object Codecs {
 
     implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
     implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
+
+    implicit val scrollReferenceEncoder: Encoder[ScrollReference] = (ref: ScrollReference) => mpathEncoder(ref.declaringTheory)
+    implicit val scrollReferenceDecoder: Decoder[ScrollReference] = (c: HCursor) => mpathDecoder(c).map(ScrollReference)
+
     implicit val scrollApplicationDecoder: Decoder[SScrollApplication] = deriveDecoder
     implicit val scrollEncoder: Encoder[SScroll] = deriveEncoder
 
@@ -176,7 +184,28 @@ private[communication] object Codecs {
       )
     }
 
-    implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollApplicationInfo] = deriveEncoder
-    implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollApplicationInfo] = deriveDecoder
+    private object CheckingError {
+      private[datastructures] object config {
+        implicit val errorConfig: Configuration = kindedJsonConfig(Map(
+          classOf[SInvalidScrollAssignment] -> "invalidAssignment",
+          classOf[SNonTotalScrollApplication] -> "nonTotal",
+          classOf[SMiscellaneousError] -> "unknown"
+        ))
+      }
+      // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
+      import config._
+      // ^^^^^^^ END
+
+      val checkingErrorEncoder: Encoder[SCheckingError] = deriveConfiguredEncoder
+      // no decoder for [[SCheckingError]] needed at the moment
+    }
+
+    implicit val checkingErrorEncoder: Encoder[SCheckingError] = CheckingError.checkingErrorEncoder
+
+    implicit val dynamicScrollInfoEncoder: Encoder[SDynamicScrollInfo] = deriveEncoder
+    implicit val dynamicScrollInfoDecoder: Decoder[SDynamicScrollInfo] = deriveDecoder
+
+    implicit val scrollApplicationResultEncoder: Encoder[SScrollApplicationResult] = deriveEncoder
+    implicit val scrollApplicationResultDecoder: Decoder[SScrollApplicationResult] = deriveDecoder
   }
 }

@@ -269,7 +269,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   }
   def streamInnerNodes(rh: presentation.RenderingHandler) {
     def streamNodes(doc: Document) {
-      headerNodes.foreach(n => rh(n))
+      headerNodes.foreach(rh(_))
+      doc.getMetaDataNode.foreach(rh(_))
       doc.getDeclarations.foreach {
         case r: SRef =>
           val s = statements(r.target.name)

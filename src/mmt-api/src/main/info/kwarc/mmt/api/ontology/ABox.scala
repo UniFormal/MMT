@@ -2,15 +2,44 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects._
-import scala.collection.mutable.{HashSet,HashMap}
+
+import scala.collection.mutable
+import scala.collection.mutable.{HashMap, HashSet}
 
 /**
- * An ABoxStore stores the abox of the loaded elements with respect to the MMT ontology.
- *
- * Triples (subject, binary, object) are hashed three ways so that for any two components
- * the set of third components can be retrieved efficiently.
- *
- * Use [[TheoryGraph]] for theory graph-level querying
+  * Stores the abox (i.e. concrete instances) of the loaded elements with respect to the MMT ontology.
+  *
+  * Main functionalities are exposed via:
+  *
+  * - (NB: use [[TheoryGraph]] for theory graph-level querying)
+  * - [[getInds()]]
+  *
+  *   Example: retrieve all known theories (pretty slow if many archives have been opened)
+  *   {{{
+  *   getInds(IsTheory)
+  *   }}}
+  *
+  * - [[queryList()]] and [[querySet()]]: query items using a calculus of relations (see also [[RelationExp]])
+  *
+  *   Example:
+  *   {{{
+  *   val doc: DPath
+  *   relstore.querySet(doc, +Declares * HasType(IsTheory) * (Imports | Reflexive) * -Declares)
+  *   }}}
+  *
+  *   Starting with ''doc'' this finds
+  *   - all elements that this ''doc'' declares,
+  *   - of type ''IsTheory'',
+  *   - all elements that *those* theories import (and themselves via [[Reflexive]]),
+  *   - and finally all elements that have the previous elements declared.
+  *
+  *   More concisely, for a given DPath ''doc'' this finds all other depended-upon documents needed for the theories
+  *   in ''doc'' to be valid.
+  *
+  *   See also documentation of [[RelationExp]] for more info.
+  *
+  * Triples (subject, binary, object) are hashed three ways so that for any two components
+  * the set of third components can be retrieved efficiently.
  */
 class RelStore(report : frontend.Report) extends RelStoreStatistics {
    private val individuals = new HashMapToSet[Unary, Path]
@@ -78,10 +107,10 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
       query(start, q) {p => ps ::= p}
       ps
    }
-   def querySet(start : Path, q : RelationExp) : HashSet[Path] = {
-      var ps = new HashSet[Path]()
+   def querySet(start : Path, q : RelationExp) : Set[Path] = {
+      var ps = new mutable.HashSet[Path]()
       query(start, q) {p => ps += p}
-      ps
+      ps.toSet
    }
    /**
     * Executes a relational query from a fixed start path.

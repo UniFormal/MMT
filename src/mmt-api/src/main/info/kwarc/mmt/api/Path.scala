@@ -196,7 +196,7 @@ object LocalName {
    val empty: LocalName = LocalName(Nil)
 
    /**
-     * Generates a random LocalName of the form ''LocalName(prefix<random alphanumeric string>)''.
+     * Generates a random LocalName of the form ''LocalName(prefix_<random alphanumeric string>)''.
      *
      * Of course, the generated name might still clash with some other name pre-existing, but this
      * scenario is highly improbable.

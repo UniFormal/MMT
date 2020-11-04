@@ -4,9 +4,9 @@ on: [push, pull_request]
 
 jobs:
   ci:
-    # prevent GH actions from running when "[skip ci]" is given in commit message
-    # copied from https://dev.to/epassaro/use-skip-ci-in-github-actions-1mnf
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+    # Skip CI if the commit message of the head commit of a push
+    # contains "skip ci" or "ci skip"
+    if: "!contains(github.event.head_commit.message, 'skip ci') && !contains(github.event.head_commit.message, 'ci skip')"
 
     name: Continuous Integration
     runs-on: ubuntu-latest

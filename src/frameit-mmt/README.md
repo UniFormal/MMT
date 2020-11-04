@@ -28,7 +28,14 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 
   </details>
 
-- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls known to the server</summary>
+- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls accessible from the current situation theory</summary>
+
+  - request: empty
+  - response: a JSON array of scrolls
+
+  </details>
+
+- <details><summary><code>GET /scroll/listall</code>: retrieve all scrolls known to the server</summary>
 
   - request: empty
   - response: a JSON array of scrolls
@@ -49,9 +56,11 @@ All endpoints indicate success by a 2xx response status code and failure by any 
   
     ```javascript
     {
-        "original": /* a scroll */
-        "rendered": /* a scroll */
-        "completions": /* an array of "scroll assignments lists" */
+        "original": /* a scroll */,
+        "rendered": /* a scroll */,
+        "completions": /* an array of "scroll assignments lists" */,
+        "valid": true|false,
+        "errors": /* an array of "scroll application checking error"s */
     }
     ```
   
@@ -82,8 +91,7 @@ JSON (sub)formats shared by multiple endpoints above.
     {"uri": /* MMT URI */}
     ```
     
-    Format only given for informational purposes, the game engine should treat fact reference objects opaquely.
-    Do not depend on their internal structure.
+    The game engine may depend on this format (in contrast to, e.g., the format of scroll references).
 
   </details>
 
@@ -118,13 +126,10 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary>scroll reference</summary>
 
     ```javascript
-    {
-      "problemTheory": /* MMT URI */,
-      "solutionTheory": /* MMT URI */
-    }
+    /* MMT URI to theory declaring the scroll */
     ```
   
-    Format only given for informational purposes, the game engine should treat scroll reference objects opaquely.
+    Format only given for informational purposes, the game engine should treat JSON blobs of scroll references opaquely.
     Do not depend on their internal structure. 
 
   </details>
@@ -166,6 +171,20 @@ JSON (sub)formats shared by multiple endpoints above.
 
   </details>
 
+- <details><summary>scroll application checking error</summary>
+
+    ```javascript
+    {
+      "kind": "invalidAssignment" | "unknown",
+      "msg": /* some human-readable message */,
+  
+      /* in case of kind being "invalidAssignment": */
+      "fact": /* a fact reference to the fact whose assignment was erroneous */
+    }
+    ```
+
+  </details>
+
 - <details><summary>SOMDoc ("simplified OMDoc")</summary>
 
     SOMDoc is a JSON representation of a subset of [OMDoc](https://www.omdoc.org/). It is simpler than the [OpenMath-JSON standard](https://omjson.kwarc.info/) and *almost* implements a subset of it.
@@ -194,7 +213,7 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary><code>GET /debug/situationtheory/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
   - request: empty
-  - response: a JSON string containing MMT surface syntax (probably unparsable by MMT; for human consumption only)
+  - response: an HTTP response with content type `text/plain` (not JSON!) and with body a dump in MMT surface syntax of the situation theory. The dump is probably unparsable by MMT; meant for human consumption only.
 
   </details>
 
