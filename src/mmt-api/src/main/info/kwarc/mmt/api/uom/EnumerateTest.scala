@@ -2,8 +2,9 @@ import info.kwarc.mmt.api.uom._
 
 object EnumerateTest {
   def enumerateSemanticType(st: SemanticType, m: Int) {
-
+    println(st)
     val it = st.enumerate(m).getOrElse {return}
+    println(it)
 
     while (it.hasNext) {
       println(st.toString(it.next))
