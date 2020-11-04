@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.uom.{Recurse, Simplifiability, SimplificationRule, Sim
 import info.kwarc.mmt.api.{GeneralError, GlobalName, NamespaceMap, Path, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
-import info.kwarc.mmt.frameit.archives.MitM
+import info.kwarc.mmt.frameit.archives.{LabelVerbalizationRule, MitM}
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SValueEqFact}
 import info.kwarc.mmt.lf.ApplySpine
@@ -32,12 +32,13 @@ sealed case class Fact(
       val simplificationRules: RuleSet = {
         val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
 
+        rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
         rules.add({
           val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
 
           new SimplificationRule(realTimes) {
             override def apply(context: Context, t: Term): Simplifiability = t match {
-              case ApplySpine(`realTimes`, List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
+              case ApplySpine(OMS(`realTimes`), List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
                 Simplify(FrameWorld.RealLiterals(x * y))
               case _ =>
                 Recurse
@@ -56,7 +57,7 @@ sealed case class Fact(
     lazy val simpleTp = simplify(tp)
     lazy val simpleDf = df.map(simplify)
 
-    val label = meta.label.toStr(true) // replace with real rendering
+    val label = simplify(meta.label).toStr(shortURIs = true)
 
     Fact.tryRenderSValueEqFact(ref, label, tp = tp, simpleTp = simpleTp, simpleDf = simpleDf) match {
       case Some(valueEqFact) => valueEqFact
