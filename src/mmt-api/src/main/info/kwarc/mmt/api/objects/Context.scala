@@ -534,7 +534,7 @@ object Context {
   /** a context consisting of a single theory */
   def apply(p: MPath): Context = Context((IncludeVarDecl(p, Nil)))
 
-  val empty = Context()
+  val empty: Context = Context()
 
   /** parses an OMBVAR into a context */
   def parse(Nmd: scala.xml.Node, nsMap: NamespaceMap): Context = {
