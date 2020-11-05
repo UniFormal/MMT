@@ -153,8 +153,11 @@ JSON (sub)formats shared by multiple endpoints above.
 
     ```javascript
     [
-      [/* a fact reference */, /* SOMDoc (the assigned term) */],
-      /* more entries */
+      {
+         "fact": /* a fact reference */,
+         "assignment": /* SOMDoc */
+      },
+      /* more entries like the above
     ]
     ```
 
