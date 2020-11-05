@@ -31,10 +31,10 @@ object Utils {
     */
   def addModuleToController(module: Module)(implicit ctrl: Controller): List[Path] = {
     module.path.name.steps match {
-      case prefix :+ containingModuleName :+ moduleName =>
+      case prefix :+ targetModuleName =>
         val nestedModuleDecl = new NestedModule(
-          home = OMMOD(module.path.doc ? LocalName(prefix :+ containingModuleName)),
-          name = LocalName(moduleName),
+          home = OMMOD(module.path.doc ? LocalName(prefix)),
+          name = LocalName(targetModuleName),
           mod = module
         )
         ctrl.add(nestedModuleDecl)

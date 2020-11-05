@@ -77,14 +77,12 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     * Get a wrapping rendering handler indenting every line it is passed to.
     *
     * @param rh          The original rendering handler to delegate to.
-    * @param indentation The number of indentation levels. E.g. 1 corresponds to two
-    *                    spaces, 2 to four spaces and so on.
+    * @param indentation The number of indentation levels (i.e. tabs)
     * @return A rendering handler which will indent the first string you pass it to
     *         with the given indentation and replace every \n by the same indentation.
     */
   private def indented(rh: RenderingHandler, indentation: Int = 1): RenderingHandler = {
-    // TODO Prefer tabs?
-    val indentationString = "  " * indentation
+    val indentationString = "\t" * indentation
 
     var isAtStartOfLine = true
 
@@ -187,11 +185,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     //  with definiens component, see tod*o note in [[Include.unapply]]
     case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
     case _: ModuleOrLink => rh(MODULE_DELIMITER)
-    case _: NestedModule => rh(DECLARATION_DELIMITER)
+    case _: NestedModule => /* nothing, the module delimiter of the presented module already accounts for this */
 
     // some declarations are handled before by ModuleOrLink already
     case _: Declaration => rh(DECLARATION_DELIMITER + "\n")
-    case ns: InterpretationInstruction =>
+    case _: InterpretationInstruction =>
       rh(MODULE_DELIMITER + "\n")
     case t: OpaqueText =>
       val del = if (t.parent.toString.endsWith("omdoc")) MODULE_DELIMITER else DECLARATION_DELIMITER
@@ -220,6 +218,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
         present(d, indented(rh))
       }
     }
+    rh("\n")
   }
 
   private def doView(view: View, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
@@ -240,6 +239,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       // In all other cases, present as usual, this might present invalid syntax, though
       case d => present(d, indented(rh))
     }
+    rh("\n")
   }
 
   /**

@@ -156,7 +156,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
             state.descendSituationTheory(LocalName.random("after_scroll_application"))
 
             val viewToGenerate: View = {
-              val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
+              val path = state.situationTheory.path / LocalName.random("pushed_out_scroll_view")
 
               val view = View(
                 path.doc,
@@ -187,76 +187,14 @@ object ConcreteServerEndpoints extends ServerEndpoints {
             Ok(SScrollApplicationResult.failure(errors))
           }
         } finally {
-          scrollViewPaths.foreach(ctrl.delete)
+          if (errors.nonEmpty) {
+            scrollViewPaths.foreach(ctrl.delete)
+          }
         }
 
       case _ =>
         NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
     }}
-
-
-    /*(scrollApp: SScrollApplication) => {
-
-        implicit val ctrl: Controller = state.ctrl
-
-        val scroll = Scroll.fromReference(scrollApp.scroll).get
-
-        val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
-        val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
-
-        // collect all assignments such that if typechecking later fails, we can conveniently output
-        // debug information
-        val scrollViewAssignments = scrollView.getDeclarations.collect {
-          case c: FinalConstant => c
-        }
-
-        state.synchronized {
-          state.contentValidator.checkView(scrollView) match {
-            case Nil =>
-              state.descendSituationTheory(LocalName.random("after_scroll_application"))
-
-              val viewToGenerate: View = {
-                val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
-
-                val view = View(
-                  path.doc,
-                  path.name,
-                  from = OMMOD(scroll.ref.solutionTheory),
-                  to = state.situationTheory.toTerm,
-                  isImplicit = false
-                )
-                Utils.addModuleToController(view)
-
-                view
-              }
-
-              state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
-
-              NewPushoutUtils.injectPushoutAlongDirectInclusion(
-                state.ctrl.getTheory(scrollView.from.toMPath),
-                state.ctrl.getTheory(scrollView.to.toMPath),
-                state.ctrl.getTheory(scroll.ref.solutionTheory),
-                state.situationTheory,
-                scrollView,
-                viewToGenerate
-              )(state.ctrl)
-
-              Ok(
-                Fact
-                  .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
-                  .map(_.toSimple(state.ctrl))
-              )
-
-            case errors =>
-              state.ctrl.delete(scrollView.path)
-
-              NotAcceptable(FactValidationException(
-                "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
-                scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
-              ))
-          }
-        }
-      }}*/
 
   private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: ServerState): (View, List[Path], List[SCheckingError]) = {
     // the scroll view and all paths (for later deletion from [[Controller]])
