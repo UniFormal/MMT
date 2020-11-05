@@ -8,7 +8,7 @@ import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, 
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
-import io.circe.{CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
+import io.circe.{Codec, CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, JsonObject}
 
 import scala.util.Try
 
@@ -145,6 +145,8 @@ private[communication] object Codecs {
     }
 
     // re-export implicits (implicitness isn't transitive in Scala)
+    implicit val factReferenceEncoder: Encoder[FactReference] = FactCodecs.factReferenceEncoder
+    implicit val factReferenceDecoder: Decoder[FactReference] = FactCodecs.factReferenceDecoder
     implicit val sfactEncoder: Encoder[SFact] = FactCodecs.sfactEncoder
     implicit val sfactDecoder: Decoder[SFact] = FactCodecs.sfactDecoder
     // implicit val knownFactEncoder: Encoder[SFact with SKnownFact] = FactCodecs.knownFactEncoder
@@ -157,9 +159,6 @@ private[communication] object Codecs {
     import io.circe.generic.semiauto._
     // ^^^^^^^ END
 
-    implicit val factReferenceEncoder: Encoder[FactReference] = deriveEncoder
-    implicit val factReferenceDecoder: Decoder[FactReference] = deriveDecoder
-
     implicit val scrollReferenceEncoder: Encoder[ScrollReference] = (ref: ScrollReference) => mpathEncoder(ref.declaringTheory)
     implicit val scrollReferenceDecoder: Decoder[ScrollReference] = (c: HCursor) => mpathDecoder(c).map(ScrollReference)
 
@@ -168,21 +167,21 @@ private[communication] object Codecs {
 
     // [[SScrollAssignments]] codecs
     //
-    private val originalScrollAssignmentsEncoder = deriveEncoder[SScrollAssignments]
-    private val originalScrollAssignmentsDecoder = deriveDecoder[SScrollAssignments]
+    private val assignmentCodec: Codec[(FactReference, Term)] = Codec.forProduct2("fact", "assignment")((a: FactReference, b: Term) => (a,b))(identity)
 
-    implicit val scrollAssignmentsEncoder: Encoder[SScrollAssignments] = assignments => {
-      originalScrollAssignmentsEncoder(assignments).hcursor
-        .downField("assignments")
-        .values
-        .map(values => Json.arr(values.toSeq : _*))
-        .getOrElse(throw new Exception("This should not occur, did you change the signature/field names of SScrollAssignments?"))
+    implicit val scrollAssignmentsEncoder: Encoder[SScrollAssignments] = scrollAssignments => {
+      Json.arr(scrollAssignments.assignments.map(assignmentCodec.apply): _*)
     }
-    implicit val scrollAssignmentsDecoder: Decoder[SScrollAssignments] = (c: HCursor) => {
-      originalScrollAssignmentsDecoder(
-        Json.fromJsonObject(JsonObject.singleton("assignments", c.value)).hcursor
-      )
+    // a helper function which can make use of early returns
+    private def scrollAssignmentsDecode(c: HCursor): Decoder.Result[SScrollAssignments] = {
+      // todo: the [[DecodingFailure decoding failures]] specify [[Nil]] as ops, this might lead to bad debugging messages
+      val assignments = c.values
+        .getOrElse(return Left(DecodingFailure("scroll assignments not array", Nil)))
+        .map(asg => assignmentCodec(asg.hcursor).getOrElse(return Left(DecodingFailure("individual scroll assignment not decodable", Nil))))
+
+      Right(SScrollAssignments(assignments.toList))
     }
+    implicit val scrollAssignmentsDecoder: Decoder[SScrollAssignments] = scrollAssignmentsDecode
 
     private object CheckingError {
       private[datastructures] object config {
