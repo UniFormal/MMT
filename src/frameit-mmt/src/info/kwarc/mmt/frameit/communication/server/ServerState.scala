@@ -15,33 +15,13 @@ import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory, Utils
   *
   * It serves encapsulating state to be as immutable as possible.
   */
-class ServerState(private var curSituationTheory: SituationTheory)(implicit val ctrl: Controller) extends Logger {
+class ServerState(private var curSituationTheory: SituationTheory, val contentValidator: ContentValidator)(implicit val ctrl: Controller) extends Logger {
   override def logPrefix: String = "frameit-server"
   override protected def report: Report = ctrl.report
-
-  var doTypeChecking: Boolean = true
-  private var hasReadScrollData: Boolean = false
-
-  val contentValidator : ContentValidator = new ContentValidator(ctrl)
 
   val presenter : MMTSyntaxPresenter = ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
     throw GeneralError("could not get MMTSyntaxPresenter extension required for printing")
   )
-
-  /**
-    * Reread scroll meta data to have it accessible in all [[Theory theory objects]].
-    *
-    * Endpoints should call this method before listing/inspecting scrolls, e.g. via [[Scroll.findAll]].
-    *
-    * @todo this method should not be needed, see https://github.com/UniFormal/MMT/issues/528
-    */
-  def readScrollData(): Unit = {
-    if (!hasReadScrollData) {
-      ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls/")
-
-      hasReadScrollData = true
-    }
-  }
 
   def situationSpace: Theory = curSituationTheory.spaceTheory
   def situationTheory: Theory = curSituationTheory.theory

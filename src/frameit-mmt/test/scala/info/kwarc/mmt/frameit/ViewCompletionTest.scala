@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.{OMID, OMV, Term}
 import info.kwarc.mmt.api.symbols.FinalConstant
 import info.kwarc.mmt.api.{GlobalName, LocalName, NamespaceMap, Path}
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.MitM
 import info.kwarc.mmt.frameit.business.ViewCompletion
 import info.kwarc.mmt.lf.ApplySpine
@@ -51,12 +52,12 @@ object ViewCompletionTest extends MMTIntegrationTest(
 
       val expectedExpectedType = Sigma(
         LocalName("a"),
-        OMID(MitM.Foundation.Math.real),
+        OMID(FrameWorld.real),
         ApplySpine(
-          OMID(MitM.Foundation.ded),
+          OMID(FrameWorld.ded),
           ApplySpine(
-            OMID(MitM.Foundation.eq),
-            OMID(MitM.Foundation.Math.real),
+            OMID(FrameWorld.eq),
+            OMID(FrameWorld.real),
             ApplySpine(
               OMID(Path.parseS("http://mathhub.info/MitM/core/geometry?3DGeometry/Common?angle_between", NamespaceMap.empty)),
               OMID(codomainTheoryP ? "codA"),

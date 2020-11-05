@@ -199,7 +199,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         /**
           * Tries to apply a morphism homomorphically on a term.
           * We use [[info.kwarc.mmt.api.libraries.Lookup.ApplyMorphs ApplyMorphs]] and forward caught [[GetError]]
-          * exceptions to the error continuation in [[env]].
+          * exceptions (plus ''specificError'', if given) to the error continuation in [[env]].
           *
           * Use case: in checking of constants below (e.g. of the form ''c: tp = df''), it might happen
           * that a particular morphism ''mor'' is defined on ''c'' and for further checking needs to be
@@ -214,8 +214,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
           * morphisms without the type checking aborting unexpectedly with a [[GetError]], which would preclude
           * end users from getting *other* useful type errors.
           *
-          * @return Upon success, the resulting term is returned. Upon failure, the error is put into [[env]]
-          *         and [[None]] is returned.
+          * @return Upon success, the resulting term is returned. Upon failure with a [[GetError]],
+          *         both the error and ''specificError'' (if given) are messaged to [[env]] and
+          *         [[None]] is returned.
           */
         def tryApplyMorphism(mor: Term, specificError: Option[Error]): Term => Option[Term] = t => {
           try {
@@ -229,6 +230,9 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
         }
 
         // determine the expected type and definiens (if any) based on the parent element
+        /* TODO if computation of the expected type fails due to a missing assignments, we could generate a fresh unknown and try to infer
+           the assignment during the later checks
+         */
         val parent = content.getParent(c)
         lazy val defaultExp = Expectation(None, None)
 

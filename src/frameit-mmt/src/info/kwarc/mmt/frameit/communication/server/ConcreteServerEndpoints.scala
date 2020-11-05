@@ -2,15 +2,16 @@ package info.kwarc.mmt.frameit.communication.server
 
 // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
 import cats.effect.IO
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
-import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, presentation}
+import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, Path, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll, ScrollApplication}
 import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Utils, ViewCompletion}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SDynamicScrollApplicationInfo, SFact, SScroll, SScrollApplication, SScrollAssignments}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments}
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
@@ -28,6 +29,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
   import info.kwarc.mmt.frameit.communication.datastructures.Codecs
   import Codecs.DataStructureCodecs._
+  import Codecs.MiscCodecs._
   import ServerErrorHandler._
   // ^^^^^^^ END
 
@@ -38,9 +40,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     * this function. Only some debugging endpoints might go to [[getPlaintextEndpointsForState()]].
     */
   private def getJSONEndpointsForState(state: ServerState) =
-    buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
       addFact(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
-      applyScroll(state) :+: dynamicScroll(state) :+: forceError
+      applyScroll(state) :+: dynamicScroll(state) :+:
+      // meta endpoints:
+      buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+: forceError :+:
+    checkSituationSpace(state)
 
   /**
     * Aggregates endpoints whose output should be encoded to HTTP responses with [[Text.Plain]] bodies.
@@ -64,6 +68,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
     Ok(()) // unreachable anyway, but needed for typechecking
   }
+
+  private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("checkspace")) {
+    Ok(state.contentValidator.checkTheory(state.situationSpace))
+  }
+
 
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")
@@ -90,10 +99,12 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
     (fact: SFact) => {
-      val factConstant = fact.toFinalConstant(state.situationTheory.toTerm)
+      // todo: better use Context.pickFresh?
+      val constantPath = state.situationTheory.path ? LocalName.random("fact")
+      val factConstant = fact.toFinalConstant(constantPath)
 
       state.synchronized {
-        (if (state.doTypeChecking) state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) else Nil) match {
+        state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
           case Nil =>
             // success (i.e. no errors)
             try {
@@ -122,7 +133,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(
       Fact
         .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
-        .map(_.renderStatic()(state.ctrl))
+        .map(_.toSimple(state.ctrl))
     )
   }
 
@@ -134,113 +145,109 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {
-    state.readScrollData()
-
-    Ok(Scroll.findAll()(state.ctrl).map(_.render()(state.ctrl)))
+    Ok(Scroll.findAll()(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
   private def listScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("list")) {
-    state.readScrollData()
-
-    Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.render()(state.ctrl)))
+    Ok(Scroll.findIncludedIn(state.situationTheory)(state.ctrl).map(_.renderSimple()(state.ctrl)))
   }
 
-  private def applyScroll(state: ServerState): Endpoint[IO, List[SFact]] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) => {
-
-    implicit val ctrl: Controller = state.ctrl
-
-    val scroll = Scroll.fromReference(scrollApp.scroll).get
-
-    val scrollViewPath = state.getPathForView(LocalName.random("frameit_scroll_view"))
-    val scrollView = scrollApp.toView(scrollViewPath, OMMOD(state.situationTheory.path))
-
-    // collect all assignments such that if typechecking later fails, we can conveniently output
-    // debug information
-    val scrollViewAssignments = scrollView.getDeclarations.collect {
-      case c: FinalConstant => c
-    }
-
-    (if (state.doTypeChecking) state.contentValidator.checkView(scrollView) else Nil) match {
-      case Nil =>
-        state.descendSituationTheory(LocalName.random("after_scroll_application"))
-
-        val viewToGenerate: View = {
-          val path = state.getPathForView(LocalName.random("pushed_out_scroll_view"))
-
-          val view = View(
-            path.doc,
-            path.name,
-            from = OMMOD(scroll.ref.solutionTheory),
-            to = state.situationTheory.toTerm,
-            isImplicit = false
-          )
-          Utils.addModuleToController(view)
-
-          view
-        }
-
-        state.getPathForDescendedSituationTheory(LocalName.random("situation_theory_extension"))
-
-        NewPushoutUtils.injectPushoutAlongDirectInclusion(
-          state.ctrl.getTheory(scrollView.from.toMPath),
-          state.ctrl.getTheory(scrollView.to.toMPath),
-          state.ctrl.getTheory(scroll.ref.solutionTheory),
-          state.situationTheory,
-          scrollView,
-          viewToGenerate
-        )(state.ctrl)
-
-        Ok(
-          Fact
-            .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
-            .map(_.renderStatic()(state.ctrl))
-        )
-
-      case errors =>
-        state.ctrl.delete(scrollView.path)
-
-        NotAcceptable(FactValidationException(
-          "View for scroll application does not validate, errors were:\n\n" + errors.mkString("\n"),
-          scrollViewAssignments.map(d => ProcessedFactDebugInfo.fromConstant(d)(state.ctrl, state.presenter))
-        ))
-    }
-  }}
-
-  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollApplicationInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+  private def applyScroll(state: ServerState): Endpoint[IO, SScrollApplicationResult] = post(path("scroll") :: path("apply") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
     Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
       case Some(scroll) =>
         implicit val ctrl: Controller = state.ctrl
+        implicit val _state: ServerState = state
 
-        // the scroll view and all paths (for later deletion from [[Controller]])
-        val (scrollView, scrollViewPaths) = {
-          val scrollViewName = LocalName.random("scroll_view_for_dynamic_scroll_info")
-          val view = scrollApp.toView(
-            target = state.situationTheory.path / scrollViewName,
-            codomain = state.situationTheory.toTerm
-          )
-          val paths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
+        val (scrollView, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
 
-          (view, paths)
-        }
-        val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
+        try {
+          if (errors.isEmpty) {
+            state.descendSituationTheory(LocalName.random("after_scroll_application"))
 
-        val completions: List[SScrollAssignments] = {
-          val canonicalCompletion = ViewCompletion.closeGaps(
-            scrollApp.assignments.toMMTList,
-            state.situationTheory.meta
-          )
+            val viewToGenerate: View = {
+              val path = state.situationTheory.path / LocalName.random("pushed_out_scroll_view")
 
-          if (canonicalCompletion.isEmpty) {
-            Nil
+              val view = View(
+                path.doc,
+                path.name,
+                from = OMMOD(scroll.ref.solutionTheory),
+                to = state.situationTheory.toTerm,
+                isImplicit = false
+              )
+              Utils.addModuleToController(view)
+
+              view
+            }
+
+            NewPushoutUtils.injectPushoutAlongDirectInclusion(
+              state.ctrl.getTheory(scrollView.from.toMPath),
+              state.ctrl.getTheory(scrollView.to.toMPath),
+              state.ctrl.getTheory(scroll.ref.solutionTheory),
+              state.situationTheory,
+              scrollView,
+              viewToGenerate
+            )(state.ctrl)
+
+            Ok(SScrollApplicationResult.success(Fact
+                .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
+                .map(_.toSimple(state.ctrl))
+            ))
           } else {
-            List(SScrollAssignments.fromMMTList(canonicalCompletion))
+            Ok(SScrollApplicationResult.failure(errors))
+          }
+        } finally {
+          if (errors.nonEmpty) {
+            scrollViewPaths.foreach(ctrl.delete)
           }
         }
 
+      case _ =>
+        NotFound(InvalidScroll("Scroll not found or (meta)data invalid"))
+    }}
+
+  private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: ServerState): (View, List[Path], List[SCheckingError]) = {
+    // the scroll view and all paths (for later deletion from [[Controller]])
+    val (scrollView, scrollViewPaths) = {
+      val scrollViewName = LocalName.random("scroll_view")
+      val view = scrollApp.toView(
+        target = state.situationTheory.path / scrollViewName,
+        codomain = state.situationTheory.toTerm
+      )(state.ctrl)
+      val paths = List(state.situationTheory.path ? scrollViewName, state.situationTheory.path / scrollViewName)
+
+      (view, paths)
+    }
+    val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
+
+    (scrollView, scrollViewPaths, errors)
+  }
+
+  private def getCompletions(scrollApp: SScrollApplication)(implicit state: ServerState): List[SScrollAssignments] = {
+    val canonicalCompletion = ViewCompletion.closeGaps(
+      scrollApp.assignments.toMMTList,
+      state.situationTheory.meta
+    )(state.ctrl)
+
+    if (canonicalCompletion.isEmpty) {
+      Nil
+    } else {
+      List(SScrollAssignments.fromMMTList(canonicalCompletion))
+    }
+  }
+
+  private def dynamicScroll(state: ServerState): Endpoint[IO, SDynamicScrollInfo] = post(path("scroll") :: path("dynamic") :: jsonBody[SScrollApplication]) { (scrollApp: SScrollApplication) =>
+    Scroll.fromReference(scrollApp.scroll)(state.ctrl) match {
+      case Some(scroll) =>
+        implicit val ctrl: Controller = state.ctrl
+        implicit val _state: ServerState = state
+
+        val (_, scrollViewPaths, errors) = prepScrollApplication(scrollApp)
+        val completions = getCompletions(scrollApp)
+
         try {
-          val scrollAppInfo = SDynamicScrollApplicationInfo(
-            original = scroll.render(None),
-            rendered = scroll.render(Some(ScrollApplication(
+          val scrollAppInfo = SDynamicScrollInfo(
+            original = scroll.renderSimple(),
+            rendered = scroll.renderSimple(Some(ScrollApplication(
               scroll.ref,
               state.situationTheory.path,
               scrollApp.assignments.toMMTMap

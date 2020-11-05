@@ -3,9 +3,10 @@ package info.kwarc.mmt.moduleexpressions.operators
 import info.kwarc.mmt.api.modules.{Link, Theory, View}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.utils.SkipThis
+import info.kwarc.mmt.api.utils.{SkipThis, URI}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.notations.NotationContainer
 
 import scala.collection.mutable
@@ -165,6 +166,11 @@ object NewPushoutUtils {
             notC = c.notC,
             vs = c.vs
           )
+          val newMetadata = decl.metadata.getAll.map {
+            case MetaDatum(key, value: Term) => MetaDatum(key, traverser(value, Unit))
+            case x  => x
+          }
+          newDecl.metadata.add(newMetadata : _*)
 
           // add assignment to pushout theory
           ctrl.add(newDecl)

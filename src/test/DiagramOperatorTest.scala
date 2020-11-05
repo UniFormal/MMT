@@ -1,5 +1,4 @@
-import info.kwarc.mmt.api.DPath
-import info.kwarc.mmt.api.presentation.{FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
 
 trait DiagramOperatorHelper {
@@ -21,42 +20,19 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
     super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
-    // hl("build MMT/urtheories mmt-omdoc")
+    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
 
     // Only uncomment if rebuild is really necessary
     // hl("build MitM/Foundation mmt-omdoc")
-
-    // Clean first to prevent some spurious caching errors
-    hl("build Playground/diagops -mmt-omdoc")
-    hl("build Playground/diagops mmt-omdoc")
   }
 
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    // Demo MultiTypeIndexifier and extension to morphisms
-    waitThenPrint(typeindexifier ? "EndoMagma_pres")
-    waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
-    waitThenPrint(typeindexifier ? "MultiTypeIndexedTestTheory_pres")
-
-    space()
-
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
-
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")
-
-    space()
-
-    waitThenPrint(typifier ? "TypifySFOLTheory_pres")
-
-    space()
-
-    waitThenPrint((pushout / "list") ? "ListNat_pres")
-    waitThenPrint((pushout / "nvs") ? "ThingsInNormedVectorspace_pres")
-
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
     sys.exit(0)
   }
 }

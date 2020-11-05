@@ -2,6 +2,7 @@ package info.kwarc.mmt.moduleexpressions.publication
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
@@ -35,23 +36,49 @@ class DiagramPublisher extends ModuleLevelFeature(DiagramPublisher.feature) {
   /** */
   def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
-  override def modules(dm: DerivedModule): List[Module] = dm.dfC.normalized match {
-    case None =>
-      throw LocalError("no definiens found for " + dm.path)
-    case Some(df) =>
+  override def modules(dm: DerivedModule): List[Module] = {
+    // the simplified definiens
+    val df = {
+      val unsimplifiedDf = dm.dfC.normalized.getOrElse(throw LocalError(s"no definiens found for ${dm.path}"))
+
       val simplificationUnit = SimplificationUnit(dm.getInnerContext, expandDefinitions = true, fullRecursion = true, solverO = None)
+      controller.simplifier(unsimplifiedDf, simplificationUnit)
+    }
 
-      controller.simplifier(df, simplificationUnit) match {
-        case AnonymousDiagramCombinator(anonDiag) =>
-          getModulesForAnonymousDiagram(dm, dm.parent, anonDiag)
+    val operators = RuleSet.collectRules(controller, dm.getInnerContext).filter(_.isInstanceOf[DiagramOperator])
 
-        case anyOtherSimplifiedDf =>
-          // TODO should use proper error handler
-          log("The derived module had meta theory: " + dm.meta)
-          val rules = RuleSet.collectRules(controller, Context(dm.meta.get)).get(classOf[ComputationRule]).mkString(", ")
-          log("The used rules were " + rules)
-          throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(anyOtherSimplifiedDf))
-      }
+    df match {
+      case OMA(OMS(ruleConstant), _) =>
+        operators.get(classOf[DiagramOperator]).filter(_.head == ruleConstant).toList match {
+          case List(applicableOperator) =>
+            applicableOperator(df)(controller) match {
+              case Some(SimpleDiagram(_, outputModulePaths)) =>
+                val outputModules = outputModulePaths.map(controller.getAs(classOf[Module], _))
+                outputModules
+
+              case Some(t) =>
+                throw LocalError(s"operator ${applicableOperator} output a diagram of unknown type: ${t}")
+
+              case None =>
+                throw LocalError(s"operator ${applicableOperator} was partial on the input diagram")
+            }
+          case list if list.nonEmpty =>
+            throw LocalError(s"multiple diagram operators applicable to head ${ruleConstant}: ${list}")
+
+          case Nil =>
+            throw LocalError(s"no diagram operator applicable to head ${ruleConstant}, overall these ones were in scope: ${operators}")
+        }
+        /*
+      case AnonymousDiagramCombinator(anonDiag) =>
+        getModulesForAnonymousDiagram(dm, dm.parent, anonDiag)*/
+
+      case anyOtherSimplifiedDf =>
+        // TODO should use proper error handler
+        log("The derived module had meta theory: " + dm.meta)
+        val rules = RuleSet.collectRules(controller, Context(dm.meta.get)).get(classOf[ComputationRule]).mkString(", ")
+        log("The used rules were " + rules)
+        throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(anyOtherSimplifiedDf))
+    }
   }
 
   private def getModulesForAnonymousDiagram(dm: DerivedModule, outerDocumentPath: DPath, anonDiag: AnonymousDiagram): List[Module] = {

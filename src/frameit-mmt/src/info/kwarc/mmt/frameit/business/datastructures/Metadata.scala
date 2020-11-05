@@ -5,20 +5,17 @@ import info.kwarc.mmt.api.{ContentElement, GlobalName, MPath}
 import info.kwarc.mmt.api.metadata.{MetaData, MetaDatum}
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
+import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{MetaAnnotations, StringLiterals}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations.MetaKeys
-import info.kwarc.mmt.frameit.archives.MitM.Foundation.StringLiterals
 import info.kwarc.mmt.frameit.business.InvalidMetaData
 
 import scala.util.Try
 
 sealed case class UserMetadata(label: Term, description: Term) {
-  private[datastructures] def render(viewRenderer: ScrollViewRenderer): UserMetadata = {
-    this.copy(
-      label = viewRenderer(label),
-      description = viewRenderer(description)
-    )
-  }
+  private[datastructures] def map(f: Term => Term): UserMetadata = UserMetadata(
+    label = f(label),
+    description = f(description)
+  )
 }
 
 object UserMetadata {

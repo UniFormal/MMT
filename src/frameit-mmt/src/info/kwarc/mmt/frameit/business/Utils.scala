@@ -25,19 +25,26 @@ object Utils {
     * steps), a [[NestedModule]] declaration is added to the containing module (via ctrl).
     *
     * In any case, the module is added (via ctrl).
+    *
+    * @return List of all paths that need to be deleted from the [[Controller]] if you want to delete
+    *         everything this method added
     */
-  def addModuleToController(module: Module)(implicit ctrl: Controller): Unit = {
+  def addModuleToController(module: Module)(implicit ctrl: Controller): List[Path] = {
     module.path.name.steps match {
-      case prefix :+ containingModuleName :+ viewName =>
-        ctrl.add(new NestedModule(
-          home = OMMOD(module.path.doc ? LocalName(prefix :+ containingModuleName)),
-          name = LocalName(viewName),
+      case prefix :+ targetModuleName =>
+        val nestedModuleDecl = new NestedModule(
+          home = OMMOD(module.path.doc ? LocalName(prefix)),
+          name = LocalName(targetModuleName),
           mod = module
-        ))
+        )
+        ctrl.add(nestedModuleDecl)
+        ctrl.add(module)
 
-      case _ => // no additional action required
+        List(module.path, nestedModuleDecl.path)
+
+      case _ =>
+        ctrl.add(module)
+        List(module.path)
     }
-
-    ctrl.add(module)
   }
 }
