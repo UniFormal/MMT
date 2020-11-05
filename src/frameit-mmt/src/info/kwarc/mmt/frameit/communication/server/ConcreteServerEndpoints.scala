@@ -2,6 +2,7 @@ package info.kwarc.mmt.frameit.communication.server
 
 // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
 import cats.effect.IO
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
@@ -28,6 +29,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   // vvvvvvv CAREFUL WHEN REMOVING IMPORTS (IntelliJ might wrongly mark them as unused)
   import info.kwarc.mmt.frameit.communication.datastructures.Codecs
   import Codecs.DataStructureCodecs._
+  import Codecs.MiscCodecs._
   import ServerErrorHandler._
   // ^^^^^^^ END
 
@@ -38,9 +40,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     * this function. Only some debugging endpoints might go to [[getPlaintextEndpointsForState()]].
     */
   private def getJSONEndpointsForState(state: ServerState) =
-    buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+:
       addFact(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
-      applyScroll(state) :+: dynamicScroll(state) :+: forceError
+      applyScroll(state) :+: dynamicScroll(state) :+:
+      // meta endpoints:
+      buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+: forceError :+:
+    checkSituationSpace(state)
 
   /**
     * Aggregates endpoints whose output should be encoded to HTTP responses with [[Text.Plain]] bodies.
@@ -64,6 +68,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
     Ok(()) // unreachable anyway, but needed for typechecking
   }
+
+  private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("checkspace")) {
+    Ok(state.contentValidator.checkTheory(state.situationSpace))
+  }
+
 
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")

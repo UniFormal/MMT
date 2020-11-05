@@ -234,6 +234,13 @@ JSON (sub)formats shared by multiple endpoints above.
 
   </details>
 
+- <details><summary><code>GET /debug/checkspace</code>: typecheck situation space</summary>
+
+  - request: empty
+  - response: a Json response with list of errors
+
+  </details>
+
 ## License
 
 Same as the whole MMT source code with the exception of a snippet copied from "the Internet" into `src/info/kwarc/mmt/frameit/communication/ServerErrorHandler.scala`. The precise source and license is given there.

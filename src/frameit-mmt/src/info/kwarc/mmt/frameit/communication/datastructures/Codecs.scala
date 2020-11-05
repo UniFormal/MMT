@@ -1,6 +1,8 @@
 package info.kwarc.mmt.frameit.communication.datastructures
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
@@ -206,5 +208,12 @@ private[communication] object Codecs {
 
     implicit val scrollApplicationResultEncoder: Encoder[SScrollApplicationResult] = deriveEncoder
     implicit val scrollApplicationResultDecoder: Decoder[SScrollApplicationResult] = deriveDecoder
+  }
+
+  object MiscCodecs {
+    implicit val mmtErrorEncoder: Encoder[api.Error] = (a: api.Error) => Json.obj(
+      "msg" -> Json.fromString(a.shortMsg),
+      "details" -> Json.fromString(a.toStringLong)
+    )
   }
 }
