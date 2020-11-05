@@ -45,14 +45,26 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 - <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
 
   - request: a scroll application
-  - response: a JSON array of facts
-
+  - <details><summary>response: scroll application info</summary>
+  
+    ```javascript
+    {
+        "valid": true|false,
+        "errors": /* an array of "scroll application checking error"s */,
+        "acquiredFacts": /* an array of facts */
+    }
+    ```
+    
+    Invariant: valid = false => errors.nonEmpty
+    
+    </details>
+    
   </details>
 
 - <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
 
   - request: a scroll application
-  - <details><summary>response: scroll dynamic info</summary>
+  - <details><summary>response: dynamic scroll info</summary>
   
     ```javascript
     {
@@ -63,22 +75,24 @@ All endpoints indicate success by a 2xx response status code and failure by any 
         "errors": /* an array of "scroll application checking error"s */
     }
     ```
+    
+    Invariant: valid = false => errors.nonEmpty
   
-    </details>
+    The scroll under *original* contains the original scroll.
+    By contrast, in *rendered* all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly utterly partial) scroll application.
   
-  The scroll under *original* contains the original scroll.
-  By contrast, in *rendered* all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly utterly partial) scroll application.
-  
-  For example, if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
+    For example, if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
   and the scroll application maps `A` to `P`  (where `P: point ❘ meta ?MetaAnnotations?label "P"` comes from the situation theory and has label "P"),
   then the dynamic scroll output by this endpoint will state `A: point ❘ meta ?MetaAnnotations?label "P" ❙`.
-  The same holds for more complex labels built out of multiple labels of facts.
+    The same holds for more complex labels built out of multiple labels of facts.
   
-  Furthermore, *completions* is an array of scroll view completion suggestions for the yet missing assignments.
-  For instance, the first element of *completions* might be a list of some (possibly not all) of the yet missing assignments of the
-  request's scroll view. Analogously for the other elements of *completions*, if they exist.
+     Furthermore, *completions* is an array of scroll view completion suggestions for the yet missing assignments.
+    For instance, the first element of *completions* might be a list of some (possibly not all) of the yet missing assignments of the
+    request's scroll view. Analogously for the other elements of *completions*, if they exist.
   It might happen that multiple mutually exclusive *completions* exist, hence the response contains an array of them.
 
+    </details>
+    
   </details>
 
 ### Formats

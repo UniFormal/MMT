@@ -99,30 +99,32 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
   override def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
     assert(decl.home == theory.toTerm)
 
-    val scratchTheoryPath = theory.path ? theory.path.name.prefixOrCreateLastSimpleStep(s"scratch${Random.nextInt()}")
+    val scratchTheoryPath = theory.path.doc ? (theory.path.name.init / LocalName.random(s"scratch_for_checking_decl_against_theory"))
     val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, theory.meta)
 
-    ctrl.add(scratchTheory)
-    ctrl.add(PlainInclude(theory.path, scratchTheory.path))
+    val scratchPaths = Utils.addModuleToController(scratchTheory)
 
-    val scratchConstant = new FinalConstant(
-      OMMOD(scratchTheory.path),
-      decl.name,
-      decl.alias,
-      decl.tpC.copy,
-      decl.dfC.copy,
-      decl.rl,
-      decl.notC.copy,
-      decl.vs
-    )
+    try {
+      ctrl.add(PlainInclude(theory.path, scratchTheory.path))
 
-    ctrl.add(scratchTheory)
-    ctrl.add(scratchConstant)
+      val scratchConstant = new FinalConstant(
+        OMMOD(scratchTheory.path),
+        decl.name,
+        decl.alias,
+        decl.tpC.copy,
+        decl.dfC.copy,
+        decl.rl,
+        decl.notC.copy,
+        decl.vs
+      )
 
-    val errors = checkStructuralElementSynchronously(scratchTheory)
-    ctrl.delete(scratchTheory.path)
+      ctrl.add(scratchConstant)
 
-    errors
+      checkStructuralElementSynchronously(scratchTheory)
+    } finally {
+      // scratchPaths.foreach(ctrl.delete)
+      // todo: MMT throws a NoFound error here (a bug?)
+    }
   }
 }
 
