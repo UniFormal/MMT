@@ -193,7 +193,7 @@ object NewPushoutUtils {
           ctrl.add(Include(D.toTerm, B.path, Nil, None))
 
           // inherit v in the link w to generate
-          ctrl.add(Include(w.toTerm, A.path, Nil, Some(v.toTerm)))
+          ctrl.add(Include.assignment(w.toTerm, A.path, v.toTerm))
 
         case SimpleStructure(_, fromPath) if ctrl.globalLookup.hasImplicit(OMMOD(fromPath), A.toTerm) =>
           // in this case, we face an inclusion in C of a theory that was already included in A

@@ -42,7 +42,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   private def getJSONEndpointsForState(state: ServerState) =
       addFact(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
       applyScroll(state) :+: dynamicScroll(state) :+:
-      // meta endpoints:
+      // meta/debug endpoints:
       buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+: forceError :+:
     checkSituationSpace(state)
 
@@ -63,17 +63,29 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   // ENDPOINTS (all private functions)
   // ======================================
+
+  // META/DEBUG ENDPOINTS
+  // ---------------------------------------
   private def forceError: Endpoint[IO, Unit] = get(path("debug") :: path("forceerror")) {
     throw new Exception("A deliberate error produced by /debug/forceerror.")
 
     Ok(()) // unreachable anyway, but needed for typechecking
   }
 
-  private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("checkspace")) {
+  private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("space") :: path("check")) {
     Ok(state.contentValidator.checkTheory(state.situationSpace))
   }
 
+  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("debug") :: path("space") :: path("print")) {
+    val stringRenderer = new presentation.StringBuilder
+    state.presenter(state.situationSpace)(stringRenderer)
 
+    Ok(stringRenderer.get)
+  }
+  // ---------------------------------------
+
+  // REAL ENDPOINTS FOR USE BY GAME ENGINE
+  // --------------------------------------- (up to the end of the file)
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")
 
@@ -135,13 +147,6 @@ object ConcreteServerEndpoints extends ServerEndpoints {
         .findAllIn(state.situationTheory, recurseOnInclusions = true)(state.ctrl)
         .map(_.toSimple(state.ctrl))
     )
-  }
-
-  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("situationtheory") :: path("print")) {
-    val stringRenderer = new presentation.StringBuilder
-    state.presenter(state.situationSpace)(stringRenderer)
-
-    Ok(stringRenderer.get)
   }
 
   private def listAllScrolls(state: ServerState): Endpoint[IO, List[SScroll]] = get(path("scroll") :: path("listall")) {

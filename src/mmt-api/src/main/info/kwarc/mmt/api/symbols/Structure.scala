@@ -125,13 +125,37 @@ object SimpleStructure {
  * The two concepts coincide if there is a definiens.
  */
 object Include {
-  // if definiens is given, any args are shifted into the definiens as OMINST
+  //
+  /**
+    * Creates an inclusion of a theory.
+    *
+    * The created inclusion is marked as implicit. Hence, if you want to create an inclusion of a view,
+    * use [[Include.assignment()]]
+    *
+    * @param home home where the inclusion will be placed (usually an [[OMMOD]] referencing a theory)
+    * @param from the theory to include
+    * @param args the arguments if the theory to be included is a parametric theory
+    * @param df a definiens of the include, see [[IncludeData]] for more info
+    *           If given, any args are shifted into the definiens as [[OMINST]].
+    * @param total whether the inclusion should be total, see [[IncludeData]] for more info
+    */
   def apply(home: Term, from: MPath, args: List[Term], df: Option[Term] = None, total: Boolean = false): Structure = {
     val (argsN, dfN) = if (df.isEmpty)
       (args, df)
     else
       (Nil, Some(OMCOMP(OMINST(from, home.toMPath, args) :: df.toList)))
     Structure(home, LocalName(from), OMPMOD(from, argsN), dfN, isImplicit = true, isTotal = total)
+  }
+
+  /**
+    * Creates an assigned inclusion, usually an inclusion of a view within a view.
+    *
+    * @param home home where the inclusion will be placed (usually an [[OMMOD]] referencing a view)
+    * @param from the theory on which the included view acts
+    * @param df the definiens of the inclusion (usually an [[OMMOD]] referencing a view that acts on the theory 'from')
+    */
+  def assignment(home: Term, from: MPath, df: Term): Structure = {
+    Structure(home, LocalName(from), OMPMOD(from, Nil), Some(df), isImplicit = false, isTotal = false)
   }
 
   def unapply(t: ContentElement): Option[IncludeData] = t match {

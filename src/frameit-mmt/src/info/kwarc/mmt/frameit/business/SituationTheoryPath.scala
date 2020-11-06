@@ -49,7 +49,7 @@ sealed class SituationTheory(val path: SituationTheoryPath)(implicit ctrl: Contr
 object SituationTheory {
   def empty(doc: DPath, spaceName: LocalName, meta: Option[MPath], initialIncludes: List[MPath])(implicit ctrl: Controller): SituationTheory = {
     val spaceTheory = Theory.empty(doc, spaceName, meta)
-    ctrl.add(spaceTheory)
+    Utils.addModuleToController(spaceTheory)
 
     val rootSituationTheoryName = LocalName("Root")
     val rootSituationTheory = Theory.empty(doc, spaceTheory.name / rootSituationTheoryName, meta)
