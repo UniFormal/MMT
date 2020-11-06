@@ -168,12 +168,7 @@ abstract class LinearOperator extends FunctorialOperator {
   final abstract case class OutToInMorphismConnection() extends Connection()
 
   // todo: how should this method signal *unapplicability*/partiality (i.e. error)?
-  // todo: florian said: give whole module as argument
-  // todo:               all methods receive DiagramInterpreter object with lookup method
-  //       DiagInterpreter has list of modules that have been created during diagram transformation
-  //
-  // def transformDeclaration(decl: Declaration, context: Context): List[Declaration]
-  def transformConstant(c: Constant, context: Context): List[Declaration]
+  def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback): List[Declaration]
 
   final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
     case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
@@ -265,8 +260,6 @@ abstract class LinearOperator extends FunctorialOperator {
 
     newModule
   }
-
-  def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback): List[Declaration]
 }
 
 abstract class ElaborationBasedLinearOperator extends LinearOperator {
