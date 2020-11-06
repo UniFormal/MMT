@@ -8,7 +8,7 @@ object Main {
   def main(args: Array[String]) {
     val parser = makeParser
     val f = File(args(0))
-    val a = parser(f).asInstanceOf[syntax.Article]
+    val a = parser(f).asInstanceOf[syntax.Text_Proper]
     println(a.toString)
   }
 }
