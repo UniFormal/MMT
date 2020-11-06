@@ -39,10 +39,17 @@ class DiagramPublisher extends ModuleLevelFeature(DiagramPublisher.feature) {
     val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
 
     val rules = RuleSet.collectRules(controller, dm.getInnerContext)
-    val diagInterp = new DiagramInterpreter(controller, ???, rules)
+    // todo: ask Florian how to get solver from controller
+    val diagInterp = new DiagramInterpreter(dm.getInnerContext, controller, null, rules)
 
-    diagInterp(df)
-    diagInterp.commit()
-    diagInterp.committedModules
+    diagInterp(df) match {
+      case Some(outputDiagram) =>
+        dm.dfC.set(outputDiagram)
+        diagInterp.committedModules
+
+      case None =>
+        throw GeneralError("Found diagram operator was partial on input diagram")
+    }
+
   }
 }

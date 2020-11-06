@@ -154,8 +154,8 @@ object Include {
     * @param from the theory on which the included view acts
     * @param df the definiens of the inclusion (usually an [[OMMOD]] referencing a view that acts on the theory 'from')
     */
-  def assignment(home: Term, from: MPath, df: Term): Structure = {
-    Structure(home, LocalName(from), OMPMOD(from, Nil), Some(df), isImplicit = false, isTotal = false)
+  def assignment(home: Term, from: MPath, df: Option[Term]): Structure = {
+    Structure(home, LocalName(from), OMPMOD(from, Nil), df, isImplicit = false, isTotal = false)
   }
 
   def unapply(t: ContentElement): Option[IncludeData] = t match {
