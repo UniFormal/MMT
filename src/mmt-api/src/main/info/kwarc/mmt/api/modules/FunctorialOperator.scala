@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api.{ComplexStep, GeneralError, GlobalName, LocalName, MPath, ParametricRule, ParseError, Rule}
 import info.kwarc.mmt.api.checking.CheckingCallback
 import info.kwarc.mmt.api.frontend.Controller
@@ -10,11 +11,8 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include
 import scala.collection.mutable
 
 abstract class FunctorialOperator extends DiagramOperator {
-  protected type State = DefaultState
-  protected def initState(diagram: Term, modulePaths: List[MPath], interp: DiagramInterpreter): State = {
-    val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
-    new DefaultState(modules)
-  }
+  protected type DiagramState <: DefaultState
+  protected def initState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): this.DiagramState
 
   protected def applyModuleName(name: LocalName): LocalName
   /**
@@ -31,7 +29,7 @@ abstract class FunctorialOperator extends DiagramOperator {
     * take care not not needlessly compute, check state.processedModules first:
     * state.processedModules.get(m.path).foreach(return _)
     */
-  protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: State): Module
+  protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: this.DiagramState): Module
 
   protected class DefaultState(var inputModules: Map[MPath, Module]) {
     var processedModules: mutable.Map[MPath, Module] = mutable.Map()
@@ -49,7 +47,9 @@ abstract class FunctorialOperator extends DiagramOperator {
     case OMA(OMS(`head`), List(inputDiagram)) =>
       interp(inputDiagram).flatMap(acceptDiagram) match {
         case Some(modulePaths) =>
-          val state = initState(diagram, modulePaths, interp)
+          val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
+          val state = initState(diagram, modules, interp)
+
           val newModulePaths = modulePaths.map(modulePath => {
             val newModule = applyModule(interp.get(modulePath))(interp, state)
 
@@ -78,10 +78,25 @@ abstract class FunctorialOperator extends DiagramOperator {
 }
 
 abstract class LinearOperator extends FunctorialOperator {
+  // to be overridden in subclasses:
   protected val operatorDomain: MPath
   protected val operatorCodomain: MPath
 
   protected val connectionTypes : List[ConnectionType] = Nil
+
+  // todo: how should this method signal *unapplicability*/partiality (i.e. error)?
+  /**
+    * post-condition: adds [[decl]] to [[state.processedDeclarations]]
+    *
+    * @param module
+    * @param decl
+    * @param solver
+    * @param state
+    * @return
+    */
+  protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback, state: this.DiagramState): List[List[Declaration]]
+
+  // internal things
 
   abstract class ConnectionType {
     def applyModuleName(name: LocalName): LocalName
@@ -90,8 +105,32 @@ abstract class LinearOperator extends FunctorialOperator {
   abstract case class InToOutMorphismConnectionType() extends ConnectionType()
   abstract case class OutToInMorphismConnectionType() extends ConnectionType()
 
-  // todo: how should this method signal *unapplicability*/partiality (i.e. error)?
-  protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback): List[List[Declaration]]
+  object InToOutMorphismConnectionType {
+    def suffixed(suffix: String): InToOutMorphismConnectionType = new InToOutMorphismConnectionType {
+      override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(suffix)
+    }
+  }
+
+  object OutToInMorphismConnectionType {
+    def suffixed(suffix: String): OutToInMorphismConnectionType = new OutToInMorphismConnectionType {
+      override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(suffix)
+    }
+  }
+
+  protected class LinearState {
+    private val _processedDeclarations = mutable.ListBuffer[Declaration]()
+
+    def processedDeclarations: List[Declaration] = _processedDeclarations.toList
+    def registerDeclaration(decl: Declaration*): Unit = _processedDeclarations ++= decl
+    def registerDeclarations(decls: Iterable[Declaration]): Unit = _processedDeclarations ++= decls
+  }
+
+  override type DiagramState <: DeclarationTrackingState
+  protected class DeclarationTrackingState(inputModules: Map[MPath, Module]) extends DefaultState(inputModules) {
+    var linearStates: mutable.Map[MPath, LinearState] = mutable.Map()
+
+    def getLinearState(modulePath: MPath): LinearState = linearStates.getOrElseUpdate(modulePath, new LinearState)
+  }
 
   final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
     case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
@@ -104,7 +143,7 @@ abstract class LinearOperator extends FunctorialOperator {
 
   // inModule: the module from the input diagram
   // outModule: the module to which the inModule is being transformed
-  final override protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: State): Module = {
+  final override protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: this.DiagramState): Module = {
     state.processedModules.get(inModule.path).foreach(return _)
 
     val outModule: Module = {
@@ -114,6 +153,14 @@ abstract class LinearOperator extends FunctorialOperator {
           Theory.empty(newModulePath.doc, newModulePath.name, thy.meta)
 
         case view: View =>
+          applyModule(state.inputModules(view.from.toMPath))
+          applyModule(state.inputModules(view.to.toMPath))
+
+          // inherit the linear state from the codomain for this view's linear state
+          // todo: with modular views and includes, this will lead to duplicates
+          val linearState = state.getLinearState(inModule.path)
+          linearState.registerDeclarations(state.getLinearState(view.to.toMPath).processedDeclarations)
+
           View(
             newModulePath.doc, newModulePath.name,
             OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
@@ -143,9 +190,10 @@ abstract class LinearOperator extends FunctorialOperator {
     connectionModules.foreach(interp.addConnection)
 
     inModule.getDeclarations.foreach(decl => {
+      state.getLinearState(inModule.path).registerDeclaration(decl)
       val newDeclarations = decl match {
         case Include(includeData) => applyInclude(inModule, includeData)
-        case decl: Declaration => applyDeclaration(inModule, decl)(interp.solver)
+        case decl: Declaration => applyDeclaration(inModule, decl)(interp.solver, state)
       }
 
       if (inModule.isInstanceOf[Theory] && newDeclarations.size != 1 + connectionTypes.size) {
@@ -162,7 +210,15 @@ abstract class LinearOperator extends FunctorialOperator {
     outModule
   }
 
-  final private def applyInclude(module: Module, include: IncludeData)(implicit interp: DiagramInterpreter, state: State): List[List[Declaration]] = {
+  /**
+    * modifies [[state.processedDeclarations]] accordingly
+    * @param module
+    * @param include
+    * @param interp
+    * @param state
+    * @return
+    */
+  final private def applyInclude(module: Module, include: IncludeData)(implicit interp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]] = {
     val ctrl = interp.ctrl
 
     if (include.args.nonEmpty) {
@@ -176,6 +232,11 @@ abstract class LinearOperator extends FunctorialOperator {
 
       case from if state.inputModules.contains(from) =>
         applyModule(state.inputModules(from))
+
+        if (module.isInstanceOf[Theory]) {
+          state.getLinearState(module.path).registerDeclarations(state.getLinearState(from).processedDeclarations)
+        }
+
         applyModulePath(from) :: connectionTypes.map {
           case InToOutMorphismConnectionType() =>
             from
@@ -217,11 +278,14 @@ abstract class LinearOperator extends FunctorialOperator {
         }
         List(OMIDENT(thy))
 
-      case OMMOD(dfPath) =>
+      case OMMOD(dfPath) if state.inputModules.contains(dfPath) =>
         // ???: error: morphism provided as definiens to include wasn't contained in diagram
-        applyModule(state.inputModules.getOrElse(dfPath, throw GeneralError(
-          "morphism that was mentioned in include definiens in diagram isn't itself contained in diagram"
-        )))
+        applyModule(state.inputModules(dfPath))
+
+        if (module.isInstanceOf[View]) {
+          state.getLinearState(module.path).registerDeclarations(state.getLinearState(dfPath).processedDeclarations)
+        }
+
         OMMOD(applyModulePath(dfPath)) :: connectionTypes.map(conn => OMMOD(conn.applyModulePath(dfPath)))
 
       case _ =>
@@ -259,20 +323,28 @@ abstract class LinearOperator extends FunctorialOperator {
 }
 
 abstract class ElaborationBasedLinearOperator extends LinearOperator {
-  protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback): List[List[Declaration]]
+  protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback, state: this.LinearState): List[List[Declaration]]
 
-  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback): List[List[Declaration]] = decl match {
-    case c: Constant => applyConstant(module, c)
-    case _ =>
-      // do elaboration, then call applyConstant
-      ???
+  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback, state: this.DiagramState): List[List[Declaration]] = {
+    decl match {
+      case c: Constant => applyConstant(module, c)(solver, state.getLinearState(module.path))
+      case _ =>
+        // do elaboration, then call applyConstant
+        ???
+    }
+  }
+
+  override type DiagramState = DeclarationTrackingState
+
+  final override protected def initState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): this.DiagramState = {
+     new DeclarationTrackingState(modules)
   }
 }
 
 abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
-  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback): List[List[(LocalName, Term, Option[Term])]]
+  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: this.LinearState): List[List[(LocalName, Term, Option[Term])]]
 
-  final override protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback): List[List[Declaration]] = {
+  final override protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback, state: this.LinearState): List[List[Declaration]] = {
     val simplifiedName: LocalName = module match {
       case _: Theory => c.name
       case v: View => c.name match {
@@ -302,23 +374,22 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
         )
     }
 
-    val connectionConstants: List[List[Constant]] = connectionTypes.zipWithIndex.map {
-      case (conn, idx) =>
-        ret(idx).map {
-          case (name, tp, df) =>
+    val connectionConstants: List[List[Constant]] = connectionTypes.zip(ret.tail).map {
+      case (conn, connectionConstants) => connectionConstants.map {
+        case (name, tp, df) =>
 
-            val assignmentName = conn match {
-              case InToOutMorphismConnectionType() => LocalName(module.path) / name
-              case OutToInMorphismConnectionType() => LocalName(applyModulePath(module.path)) / name
-            }
+          val assignmentName = conn match {
+            case InToOutMorphismConnectionType() => LocalName(module.path) / name
+            case OutToInMorphismConnectionType() => LocalName(applyModulePath(module.path)) / name
+          }
 
-            new FinalConstant(
-              home = OMMOD(conn.applyModulePath(module.path)),
-              name = assignmentName, alias = Nil,
-              tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
-              rl = None, notC = NotationContainer.empty(), vs = c.vs
-            )
-        }
+          new FinalConstant(
+            home = OMMOD(conn.applyModulePath(module.path)),
+            name = assignmentName, alias = Nil,
+            tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
+            rl = None, notC = NotationContainer.empty(), vs = c.vs
+          )
+      }
     }
 
     outConstants :: connectionConstants
@@ -326,50 +397,61 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
 }
 
 
-trait SystematicRenaming extends FunctorialOperator {
-  protected def rename(tag: String, name: LocalName): LocalName = name.suffixLastSimple("_" +tag)
-  protected final def rename(tag: String, path: GlobalName): GlobalName =
-    applyModulePath(path.module) ? rename(tag, path.name)
+trait SystematicRenamingUtils extends LinearOperator {
+  trait Renamer {
+    def apply(name: LocalName): LocalName
+    def apply(path: GlobalName)(implicit state: LinearState): GlobalName
+    def apply(term: Term)(implicit state: LinearState): Term
+  }
 
-  protected def rename(tag: String, ctx: Context, term: Term): Term = {
-    new OMSReplacer {
-      override def replace(p: GlobalName): Option[Term] = ctx.collectFirst {
-        case vd if vd.name == LocalName(ComplexStep(p.module) :: p.name) =>
-          OMS(rename(tag, p))
+  protected def getRenamerFor(tag: String, home: Term): Renamer = new Renamer {
+    override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
+
+    override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
+      if (state.processedDeclarations.exists(_.path == path)) {
+        applyModulePath(path.module) ? apply(path.name)
+      } else {
+        path
       }
-    }.apply(term, ctx)
+    }
+
+    override def apply(term: Term)(implicit state: LinearState): Term = {
+      val self: Renamer = this // to disambiguate this in anonymous subclassing expression below
+      new OMSReplacer {
+        override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
+      }.apply(term, Context(home.toMPath))
+    }
   }
 }
 
 object CopyOperator extends ParametricRule {
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
     case List(OMS(opSymbol), OMMOD(dom), OMMOD(cod)) =>
-      new SimpleLinearOperator /*with SystematicRenaming */{
+      new SimpleLinearOperator with SystematicRenamingUtils {
 
         override val head: GlobalName = opSymbol
         override protected val operatorDomain: MPath = dom
         override protected val operatorCodomain: MPath = cod
 
-        override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy")
+        override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
 
-        private val firstCopyConn = new InToOutMorphismConnectionType {
-          override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy1")
-        }
-        private val secondCopyConn = new InToOutMorphismConnectionType {
-          override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy2")
-        }
+        override val connectionTypes: List[ConnectionType] = List(
+          InToOutMorphismConnectionType.suffixed("_CopyProjection1"),
+          InToOutMorphismConnectionType.suffixed("_CopyProjection2")
+        )
 
-        override val connectionTypes: List[ConnectionType] = List(firstCopyConn, secondCopyConn)
+        override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
 
-        override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback): List[List[(LocalName, Term, Option[Term])]] = {
+          val copy1 = getRenamerFor("1", module.toTerm)
+          val copy2 = getRenamerFor("2", module.toTerm)
 
           List(
             List(
-              (name.suffixLastSimple("1"), tp, df),
-              (name.suffixLastSimple("2"), tp, df)
+              (copy1(name), copy1(tp), df.map(copy1.apply(_))),
+              (copy2(name), copy2(tp), df.map(copy2.apply(_)))
             ),
-            List((name, tp, Some(OMID(firstCopyConn.applyModulePath(module.path) ? name.suffixLastSimple("1"))))),
-            List((name, tp, Some(OMID(firstCopyConn.applyModulePath(module.path) ? name.suffixLastSimple("2")))))
+            List((name, tp, Some(OMID(copy1(c.path))))),
+            List((name, tp, Some(OMID(copy2(c.path)))))
           )
         }
       }
