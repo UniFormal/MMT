@@ -7,8 +7,11 @@ object Main {
 
   def main(args: Array[String]) {
     val parser = makeParser
-    val f = File(args(0))
-    val a = parser(f).asInstanceOf[syntax.Text_Proper]
-    println(a.toString)
+    val files= args.map(arg=>File(arg))
+    val parsedFiles=files.map(f => parser(f).asInstanceOf[syntax.Text_Proper])
+    parsedFiles.foreach {parsedArt => println(parsedArt.toString)}
+    //val f = File(args(0))
+    //val a = parser(f).asInstanceOf[syntax.Text_Proper]
+    //println(a.toString)
   }
 }
