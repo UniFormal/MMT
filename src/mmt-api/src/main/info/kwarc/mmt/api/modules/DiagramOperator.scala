@@ -1,250 +1,114 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.checking.CheckingCallback
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable
 
-trait DiagramOperator extends SyntaxDrivenRule {
-  // need access to Controller for generative operators (i.e. most operators)
-  def apply(diagram: Term)(implicit ctrl: Controller): Option[Term]
-}
+class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Controller, val solver: CheckingCallback, rules: RuleSet) {
+  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
+  private var transientResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
+  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
+  private var transientConnections : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
 
-trait NameInferrableDiagramOperator extends DiagramOperator {
-  def transformModuleName(name: LocalName): LocalName
+  private var _committedModules = mutable.ListBuffer[Module]()
 
-  final def apply(mpath: MPath): MPath = mpath.doc ? transformModuleName(mpath.name)
-}
+  private var operators: Map[GlobalName, DiagramOperator] = rules.get(classOf[DiagramOperator]).map(op =>
+    (op.head, op)
+  ).toMap
 
-trait LinearOperator extends NameInferrableDiagramOperator {
-  protected val operatorSymbol: GlobalName
-  protected val operatorDomain: MPath
-  protected val operatorCodomain: MPath
-
-  final override def head: GlobalName = operatorSymbol
-
-  private def transformModule(modulePath: MPath, elementPaths: List[MPath], elements: Map[MPath, Module], processedContexts: mutable.Map[MPath, (Context, List[Declaration])])(implicit ctrl: Controller): Unit = {
-    processedContexts.get(modulePath) match {
-      // already processed
-      case Some(x) => return
-      case _ => // nop: keep on processing
+  private def addToMapWithoutClash[K,V](map: mutable.Map[K, V], key: K, value: V): Unit = {
+    if (map.getOrElseUpdate(key, value) != value) {
+      throw new Exception("...")
     }
+  }
 
-    assert(elementPaths.contains(modulePath))
-    assert(elements.contains(modulePath))
-    val module = ctrl.getAs(classOf[Module], modulePath)
 
-    val newDeclarations = mutable.ListBuffer[Declaration]()
-
-    // For theories, the initial context is just the meta theory -- if it exists
-    // For views, it is the context of the codomain
-    val initialCtx = Context(operatorDomain.toMPath) ++ (module match {
-      case thy: Theory if thy.meta.isDefined => Context(thy.meta.get)
-      case link: Link => link.to match {
-        case OMMOD(codomainOfLink) =>
-          transformModule(codomainOfLink, elementPaths, elements, processedContexts)
-          processedContexts.getOrElse(codomainOfLink, ???)._1
-
-        case _ =>
-          ???
+  private def addTransaction(ctrl: Controller, elements: Iterable[StructuralElement]): Unit = {
+    val addedSofar = mutable.ListBuffer[Path]()
+    try {
+      for (element <- elements) {
+        ctrl.add(element)
+        addedSofar += element.path
       }
-      case _ => Context.empty
-    })
+    } catch {
+      case err: api.Error =>
+        addedSofar.reverse.foreach(ctrl.delete)
+        throw err
+    }
+  }
 
-    var ctx = initialCtx
+  def commit(): Unit = {
+    val transientModules = (transientResults.values ++ transientConnections.values).toList
+    addTransaction(ctrl, transientModules)
 
-    module.getDeclarations.foreach {
-      // IncludeData(home: Term, from: MPath, args: List[Term], df: Option[Term], total: Boolean)
-      case Include(IncludeData(_, from, Nil, df, total)) =>
-        val newFrom: MPath = from match {
-          case `operatorDomain` =>
-            operatorCodomain.toMPath
+    _committedModules ++= transientModules
+    transientResults.clear()
+    transientConnections.clear()
+  }
 
-          case from if elementPaths.contains(from) =>
-            transformModule(from, elementPaths, elements, processedContexts)
-            ctx ++= processedContexts.getOrElse(from, ???)._1
+  def committedModules: List[Module] = _committedModules.toList
 
-            apply(from)
+  def addResult(m: Module): Unit = {
+    addToMapWithoutClash(transientResults, m.path, m)
+  }
 
-          case from if ctrl.globalLookup.hasImplicit(OMMOD(from), OMMOD(operatorDomain)) =>
-            // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
-            //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
-            //      but in general it might be something else
-            //
-            // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-            from
+  def hasResult(p: MPath): Boolean = transientResults.contains(p)
 
-          case _ =>
-            // theory included wasn't contained in diagram actually
-            ???
-        }
+  def addConnection(m: Module): Unit = {
+    addToMapWithoutClash(transientConnections, m.path, m)
+  }
 
-        val newDf: Option[Term] = df.map {
-          case OMIDENT(`operatorDomain`) =>
-            OMIDENT(OMMOD(operatorCodomain))
+  def get(p: MPath): Module = {
+    transientResults.getOrElse(p,
+      transientConnections.getOrElse(p,
+        ctrl.getAs(classOf[Module], p)
+      )
+    )
+  }
 
-          case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
-            // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
-            //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
-            //      but in general it might be something else
-            //
-            // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-            OMIDENT(thy)
-
-          case OMMOD(dfPath) =>
-            if (elementPaths.contains(dfPath)) {
-              transformModule(dfPath, elementPaths, elements, processedContexts)
-              ctx ++= processedContexts.getOrElse(dfPath, ???)._1
-              OMMOD(apply(dfPath))
-            } else {
-              // error: morphism provided as definiens to include wasn't contained in diagram
-              ???
-            }
-
-          case _ =>
-            ???
-        }
-
-        newDeclarations += IncludeData(
-          home = OMMOD(apply(module.path)),
-          from = newFrom,
-          args = Nil,
-          df = newDf,
-          total = total
-        ).toStructure
-
-      case c: Constant =>
-        newDeclarations ++= transformConstant(c, ctx)
-
-        // embed full path information into name of VarDecl (hack because Contexts cannot contain
-        // constants otherwise)
-        ctx ++= OML(LocalName(ComplexStep(c.path.module) :: c.name), c.tp, c.df, c.not).vd
-
+  def apply(diag: Term): Option[Term] = {
+    val simplifiedDiag = diag match {
+      case OMA(OMS(head), _) if operators.contains(head) && false => // todo: for now always simplify for debugging
+        // no simplification needed at this point
+        // the called operator may still simplify arguments on its own later on
+        diag
       case _ =>
-        // problem: all declaration types other than FinalConstant cannot be put into ctx
-        //          so not sure how to handle them
-        ???
-    }
-
-    assert(!processedContexts.contains(module.path))
-    processedContexts.put(module.path, (ctx, newDeclarations.toList))
-  }
-
-  override def apply(diagram: Term)(implicit ctrl: Controller): Option[Term] = diagram match {
-    case OMA(OMS(`operatorSymbol`), List(SimpleDiagram(dom, _))) if dom != operatorDomain =>
-      // todo check for implicit morphism from `domain` to actual domain
-      ???
-
-    // circumvent some MMT parsing bug
-    case OMA(OMS(`operatorSymbol`), List(OMBINDC(_, _, t))) =>
-      apply(OMA(OMS(operatorSymbol), t))
-    case OMA(OMS(`operatorSymbol`), List(SimpleDiagram(`operatorDomain`, elementPaths))) =>
-      val processedContexts = mutable.Map[MPath, (Context, List[Declaration])]()
-
-      val elements = elementPaths.map(path => (path, ctrl.getAs(classOf[Module], path))).toMap
-
-      // transform all elements and store results in processedContexts
-      elementPaths.foreach(transformModule(_, elementPaths, elements, processedContexts))
-
-      // construct diagram
-      val newPaths: List[MPath] = processedContexts.map {
-        case (oldPath, (_, newDeclarations)) =>
-          val oldModule = elements.getOrElse(oldPath, ???)
-          val newPath = apply(oldModule.path)
-
-          val newModule: Module = oldModule match {
-            case thy: Theory =>
-              Theory.empty(newPath.doc, newPath.name, thy.meta)
-
-            case view: View =>
-              View(
-                newPath.doc,
-                newPath.name,
-                OMMOD(apply(view.from.toMPath)),
-                OMMOD(apply(view.to.toMPath)),
-                isImplicit = view.isImplicit
-              )
-
-            case _ => ???
-          }
-
-          ctrl.add(newModule)
-          newDeclarations.foreach(ctrl.add(_))
-
-          newPath
-      }.toList
-
-      Some(SimpleDiagram(operatorCodomain, newPaths))
-
-    case _ =>
-      // complex case
-      ???
-  }
-
-  // todo: how should this method signal *unapplicability*/partiality (i.e. error)?
-  // def transformDeclaration(decl: Declaration, context: Context): List[Declaration]
-  def transformConstant(c: Constant, context: Context): List[Declaration]
-}
-
-abstract class SimpleLinearOperator extends LinearOperator {
-  def transformSimpleConstant(name: LocalName, tp: Term, df: Option[Term], context: Context): List[(LocalName, Term, Option[Term])]
-
-  final override def transformConstant(c: Constant, context: Context): List[Declaration] = {
-    transformSimpleConstant(c.name, c.tp.getOrElse(return Nil), c.df, context).map {
-      case (newName, tp, df) =>
-        new FinalConstant(
-          home = OMMOD(apply(c.path.module)),
-          name = newName,
-          alias = Nil,
-          tpC = TermContainer.asParsed(tp),
-          dfC = TermContainer.asParsed(df),
-          rl = None,
-          notC = NotationContainer.empty(),
-          vs = c.vs
+        val su = SimplificationUnit(
+          context = interpreterContext,
+          expandDefinitions = true,
+          fullRecursion = true
         )
+        ctrl.simplifier(diag, su)
+    }
+
+    simplifiedDiag match {
+      case t @ OMA(OMS(head), _) if operators.contains(head) =>
+        val matchingOp = operators(head)
+
+        val result = matchingOp(t, this)(ctrl)
+        commit()
+        result
+
+      case t @ SimpleDiagram(_, _) =>
+        Some(t)
+
+      case _ => None
     }
   }
 }
 
-trait SystematicRenaming extends NameInferrableDiagramOperator {
-  protected def rename(tag: String, name: LocalName): LocalName = name.suffixLastSimple("_" +tag)
-  protected final def rename(tag: String, path: GlobalName): GlobalName = apply(path.module) ? rename(tag, path.name)
+abstract class DiagramOperator extends SyntaxDrivenRule {
+  // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
+  val head: GlobalName
 
-  protected def rename(tag: String, ctx: Context, term: Term): Term = {
-    new OMSReplacer {
-      override def replace(p: GlobalName): Option[Term] = ctx.collectFirst {
-        case vd if vd.name == LocalName(ComplexStep(p.module) :: p.name) =>
-          OMS(rename(tag, p))
-      }
-    }.apply(term, ctx)
-  }
-}
-
-object CopyOperator extends ParametricRule {
-  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(OMS(opSymbol), OMMOD(dom), OMMOD(cod)) =>
-      new SimpleLinearOperator with SystematicRenaming {
-
-        override protected val operatorSymbol: GlobalName = opSymbol
-        override protected val operatorDomain: MPath = dom
-        override protected val operatorCodomain: MPath = cod
-
-        override def transformModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy")
-
-        override def transformSimpleConstant(name: LocalName, tp: Term, df: Option[Term], ctx: Context): List[(LocalName, Term, Option[Term])] = {
-
-          List(
-            (rename("1", name), rename("1", ctx, tp), df.map(rename("1", ctx, _))),
-            (rename("2", name), rename("2", ctx, tp), df.map(rename("2", ctx, _))),
-          )
-        }
-      }
-
-    case _ => throw ParseError("invalid usage. correct usage: rule ...?CopyOperator <operator symbol to tie with> <domain theory OMMOD> <codomain theory OMMOD>")
-  }
+  // need access to Controller for generative operators (i.e. most operators)
+  // todo: upon error, are modules inconsistently added to controller? avoid that.
+  def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term]
 }
 
 object SimpleDiagram {

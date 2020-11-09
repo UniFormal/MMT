@@ -30,9 +30,12 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_copy1"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_copy2"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
     sys.exit(0)
   }
 }

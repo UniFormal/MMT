@@ -227,14 +227,14 @@ JSON (sub)formats shared by multiple endpoints above.
 
 ## Internal REST API
 
-- <details><summary><code>GET /debug/situationtheory/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
+- <details><summary><code>GET /debug/space/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
   - request: empty
   - response: an HTTP response with content type `text/plain` (not JSON!) and with body a dump in MMT surface syntax of the situation theory. The dump is probably unparsable by MMT; meant for human consumption only.
 
   </details>
 
-- <details><summary><code>GET /debug/checkspace</code>: typecheck situation space</summary>
+- <details><summary><code>GET /debug/space/check</code>: typecheck situation space</summary>
 
   - request: empty
   - response: a Json response with list of errors

@@ -32,79 +32,24 @@ object DiagramPublisher {
   */
 class DiagramPublisher extends ModuleLevelFeature(DiagramPublisher.feature) {
   override def getHeaderNotation: List[Marker] = Nil
-
   /** */
   def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
   override def modules(dm: DerivedModule): List[Module] = {
-    // the simplified definiens
-    val df = {
-      val unsimplifiedDf = dm.dfC.normalized.getOrElse(throw LocalError(s"no definiens found for ${dm.path}"))
+    val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
 
-      val simplificationUnit = SimplificationUnit(dm.getInnerContext, expandDefinitions = true, fullRecursion = true, solverO = None)
-      controller.simplifier(unsimplifiedDf, simplificationUnit)
+    val rules = RuleSet.collectRules(controller, dm.getInnerContext)
+    // todo: ask Florian how to get solver from controller
+    val diagInterp = new DiagramInterpreter(dm.getInnerContext, controller, null, rules)
+
+    diagInterp(df) match {
+      case Some(outputDiagram) =>
+        dm.dfC.set(outputDiagram)
+        diagInterp.committedModules
+
+      case None =>
+        throw GeneralError("Found diagram operator was partial on input diagram")
     }
 
-    val operators = RuleSet.collectRules(controller, dm.getInnerContext).filter(_.isInstanceOf[DiagramOperator])
-
-    df match {
-      case OMA(OMS(ruleConstant), _) =>
-        operators.get(classOf[DiagramOperator]).filter(_.head == ruleConstant).toList match {
-          case List(applicableOperator) =>
-            applicableOperator(df)(controller) match {
-              case Some(SimpleDiagram(_, outputModulePaths)) =>
-                val outputModules = outputModulePaths.map(controller.getAs(classOf[Module], _))
-                outputModules
-
-              case Some(t) =>
-                throw LocalError(s"operator ${applicableOperator} output a diagram of unknown type: ${t}")
-
-              case None =>
-                throw LocalError(s"operator ${applicableOperator} was partial on the input diagram")
-            }
-          case list if list.nonEmpty =>
-            throw LocalError(s"multiple diagram operators applicable to head ${ruleConstant}: ${list}")
-
-          case Nil =>
-            throw LocalError(s"no diagram operator applicable to head ${ruleConstant}, overall these ones were in scope: ${operators}")
-        }
-        /*
-      case AnonymousDiagramCombinator(anonDiag) =>
-        getModulesForAnonymousDiagram(dm, dm.parent, anonDiag)*/
-
-      case anyOtherSimplifiedDf =>
-        // TODO should use proper error handler
-        log("The derived module had meta theory: " + dm.meta)
-        val rules = RuleSet.collectRules(controller, Context(dm.meta.get)).get(classOf[ComputationRule]).mkString(", ")
-        log("The used rules were " + rules)
-        throw LocalError("definiens did not normalize into a flat diagram: " + controller.presenter.asString(anyOtherSimplifiedDf))
-    }
-  }
-
-  private def getModulesForAnonymousDiagram(dm: DerivedModule, outerDocumentPath: DPath, anonDiag: AnonymousDiagram): List[Module] = {
-    // Export the diagram elements to document namespace surrounding the derived declaration.
-    val newNames: mutable.Map[LocalName, MPath] = mutable.HashMap()
-
-    def labeller(diagElementName: LocalName): MPath = newNames.getOrElseUpdate(diagElementName, {
-      val supposedlyNewName = diagElementName.last match {
-        case SimpleStep(name) => outerDocumentPath ? name
-        case ComplexStep(path) => labeller(path.name)
-      }
-
-      controller.getO(supposedlyNewName) match {
-        case None =>
-          supposedlyNewName
-        case Some(_) =>
-          throw LocalError(s"DiagramDefinition structural feature: cannot export diagram element with name ${diagElementName} to outer namespace due to name clash with pre-existing module therein")
-      }
-    })
-
-    val modules = anonDiag.toModules(labeller)
-    // TODO: Ask Florian why this is necessary
-    dm.dfC.normalized = Some(anonDiag.relabel(labeller(_).name).toTerm)
-    //  A semantically equivalent line was previously in his source code here before
-    //  I refactored.
-
-    modules
   }
 }
