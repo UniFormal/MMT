@@ -71,20 +71,36 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
     )
   }
 
+  /**
+    * Hack to remove unbound constants that MMT introduces for some reason in diagram expressions
+    *
+    * TODO: resolve this bug together with Florian
+    */
+  private val removeOmbindc: Term => Term = {
+    val traverser = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case OMBINDC(_, _, List(scope)) => Traverser(this, scope)
+        case t => Traverser(this, t)
+      }
+    }
+
+    traverser.apply(_, Context.empty)
+  }
+
   def apply(diag: Term): Option[Term] = {
-    val simplifiedDiag = diag match {
+    val simplifiedDiag = removeOmbindc(removeOmbindc(diag) match {
       case OMA(OMS(head), _) if operators.contains(head) && false => // todo: for now always simplify for debugging
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         diag
-      case _ =>
+      case t =>
         val su = SimplificationUnit(
           context = interpreterContext,
           expandDefinitions = true,
           fullRecursion = true
         )
-        ctrl.simplifier(diag, su)
-    }
+        ctrl.simplifier(t, su)
+    })
 
     simplifiedDiag match {
       case t @ OMA(OMS(head), _) if operators.contains(head) =>
@@ -97,7 +113,9 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
       case t @ SimpleDiagram(_, _) =>
         Some(t)
 
-      case _ => None
+      case _ =>
+        throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches" +
+          s"nor is it a SimpleDiagram: ${simplifiedDiag}")
     }
   }
 }
@@ -112,7 +130,7 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
 }
 
 object SimpleDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_diagram", NamespaceMap.empty)
+  private val constant = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?simple_diagram", NamespaceMap.empty)
 
   def apply(baseTheory: MPath, paths: List[MPath]): Term = {
     OMA(OMS(constant), OMMOD(baseTheory) :: paths.map(OMMOD(_)))

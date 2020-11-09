@@ -20,7 +20,8 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
     super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    // hl("build MMT/urtheories -mmt-omdoc module-expressions-test.mmt")
+    hl("build MMT/urtheories mmt-omdoc module-expressions-test.mmt")
 
     // Only uncomment if rebuild is really necessary
     // hl("build MitM/Foundation mmt-omdoc")
@@ -29,11 +30,13 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
+    /*
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
     // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
     // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
     // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
