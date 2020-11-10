@@ -261,7 +261,9 @@ abstract class LinearOperator extends FunctorialOperator {
 
       case _ =>
         // theory included wasn't contained in diagram actually
-        throw GeneralError("diagram possessed theory that included another theory that wasn't in the diagram to begin with")
+        throw GeneralError(s"Unbound module in diagram: ${module.path} contains include of ${include.from} " +
+          s"which is a module that is neither contained in the diagram nor included in the diagram's " +
+          s"base theory (${operatorDomain}), not even by an implicit morphism instead of an inclusion.")
     }
 
     val newDfsRaw: Option[List[Term]] = include.df.map {

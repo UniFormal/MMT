@@ -114,8 +114,9 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
         Some(t)
 
       case _ =>
-        throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches" +
-          s"nor is it a SimpleDiagram: ${simplifiedDiag}")
+        throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
+          s"nor is it a SimpleDiagram: ${simplifiedDiag}. Is the operator you are trying to apply in-scope in " +
+          s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
     }
   }
 }

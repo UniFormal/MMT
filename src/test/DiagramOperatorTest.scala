@@ -45,6 +45,31 @@ object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) w
   }
 }
 
+object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
+
+  override def doFirst: Unit = {
+    super.doFirst
+    hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
+  }
+
+  // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
+  // hence, we apply some dirty waiting mechanism here.
+  override def run: Unit = {
+    /*
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    sys.exit(0)
+  }
+}
+
 object DiagramClosureTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
   override def doFirst: Unit = {
     super.doFirst
