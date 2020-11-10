@@ -1,12 +1,12 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
-import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.api.checking.CheckingCallback
 import info.kwarc.mmt.api.modules.{DefaultStateOperator, Module, SimpleLinearOperator, SystematicRenamingUtils}
-import info.kwarc.mmt.api.objects.Context.context2list
-import info.kwarc.mmt.api.objects.{Context, OMS, OMV, Term, VarDecl}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.lf.{ApplySpine, BinaryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, TernaryLFConstantScala, UnaryLFConstantScala}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
+import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
 object HomOperator extends SimpleLinearOperator with DefaultStateOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
@@ -27,26 +27,22 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
       (cod(name), cod(tp), df.map(cod(_)))
     )
 
-    def quantify(argTypes: List[GlobalName]): (Context, Term, Term) = {
-      val vars: List[OMV] = Range(1, argTypes.size + 1).map(idx => OMV(s"x_${idx}")).toList
+    def quantify(t: Term, argTypes: List[GlobalName]): (Context, Term, Term) = {
+      val binding = OpUtils.bindFresh(t, argTypes.map(argTp => SFOL.tm(OMS(dom(argTp)))))
 
+      // construct `c^{dom} x_1 ... x_n`
       val domExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
         OMS(dom(c.path)),
-        vars : _*
+        binding.map(vd => OMV(vd.name)) : _*
       )
 
+      // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
       val codExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
         OMS(cod(c.path)),
-        argTypes.zip(vars).map {
-          case (arg, boundVar) => ApplySpine(OMS(hom(arg)), boundVar)
-        } : _*
+        binding.map(vd => ApplySpine(hom(vd.tp.get), OMV(vd.name))) : _*
       )
 
-      val forallContext = Context(vars.zip(argTypes).map {
-        case (boundVar, arg) => VarDecl(boundVar.name, OMS(dom(arg)))
-      } : _*)
-
-      (forallContext, domExpr, codExpr)
+      (binding, domExpr, codExpr)
     }
 
     tp match {
@@ -54,18 +50,18 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
         // input:  t: tp
         // output: t^d: tp, t^c: tp, t^h: tm t^d -> t^c
         val thType = FunType(
-          List((None, SFOL.tm(OMS(applyModulePath(module.path) ? dom(name))))),
+          List((None, SFOL.tm(OMS(dom(c.path))))),
           SFOL.tm(OMS(applyModulePath(module.path) ? cod(name)))
         )
 
         List(List(
           (dom(name), dom(tp), df.map(dom(_))),
           (cod(name), cod(tp), df.map(cod(_))),
-          (hom(name), thType, None)
+          (hom(name), thType, df.map(hom(_))),
         ))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
-        val (forallContext, domExpr, codExpr) = quantify(argTypes)
+        val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
 
         val homomorphismCondition = SFOL.ded(SFOL.forallMany(
           forallContext,
@@ -76,97 +72,91 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
           )
         ))
 
+        val homomorphismConstant = (
+          hom(name),
+          homomorphismCondition,
+          df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+        )
+
         List(
-          domCodCopies :+ (hom(name), homomorphismCondition, None)
+          domCodCopies :+ homomorphismConstant
         )
 
       case SFOL.PredicateSymbolType(argTypes) =>
-        val (forallContext, domExpr, codExpr) = quantify(argTypes)
+        if (!df.forall(isMonotone)) {
+          throw GeneralError(s"Hom operator cannot process SFOL predicate symbol (assignment) ${c.path} " +
+            s"that is not monotone. See 'Structure-Preserving Diagram Operators' paper for reasons.")
+        }
+
+        val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
 
         val homomorphismCondition = SFOL.ded(SFOL.forallMany(
           forallContext,
           SFOL.impl(domExpr, codExpr)
         ))
+        val homomorphismConstant = (
+          name,
+          homomorphismCondition,
+          df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+        )
 
         List(
-          domCodCopies :+ (hom(name), homomorphismCondition, None)
+          domCodCopies :+ homomorphismConstant
         )
 
       case SFOL.AxiomSymbolType() => List(domCodCopies)
 
       case _ =>
-        throw GeneralError(s"Hom operator cannot process SFOL constant ${c.path} of unknown form (neither type, function, " +
-          "predicate, nor axiom symbol.")
+        throw GeneralError(s"Hom operator cannot process SFOL constant ${c.path} of unknown form (neither type, " +
+          s"function, predicate, nor axiom symbol.")
     }
+  }
+
+  private def isMonotone(t: Term)(implicit operatorState: LinearState): Boolean = {
+    // allowed operations apart from all the symbols from operatorState.processedDeclarations.
+    val allowedOps: List[GlobalName] = List(
+      Lambda.path,
+      SFOL.and.path, SFOL.or.path, SFOL.eq.path, SFOL.exists.path
+    )
+    sealed class MonotonicityStatus(var isMonotone: Boolean)
+
+    val monotonicityTraverser = new Traverser[MonotonicityStatus] {
+      override def traverse(t: Term)(implicit con : Context, state : MonotonicityStatus) : Term = {
+        if (!state.isMonotone) {
+          // no need to recurse further
+          t
+        } else t match {
+          case OMS(p) if operatorState.processedDeclarations.exists(_.path == p) => t
+          case OMS(p) if allowedOps.contains(p) => t
+          case OMS(_) =>
+            // todo: log the path to the non-monotone op that occurred here
+            state.isMonotone = false
+            t
+
+          case _ => Traverser(this, t)
+        }
+      }
+    }
+
+    val monotonicity = new MonotonicityStatus(true)
+    monotonicityTraverser(t, monotonicity, operatorState.outerContext)
+
+    monotonicity.isMonotone
+  }
+}
+
+private[newoperators] object OpUtils {
+  def bindFresh(t: Term, argTypes: List[Term]): Context = {
+    val vars: List[OMV] = Range(1, argTypes.size + 1).map(idx => OMV(s"x_${idx}")).toList
+
+    Context(vars.zip(argTypes).map {
+      case (boundVar, arg) => VarDecl(boundVar.name, arg)
+    } : _*)
   }
 
   /**
     * Like [[ApplySpine]] but doesn't generate an [[OMA]] upon application with 0 arguments.
     * Instead it just returns 'f' in that case.
     */
-  private def GeneralApplySpine(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
-
-  private object SFOL {
-    object tp extends NullaryLFConstantScala(Path.parseM("latin:/?Types"), "tp")
-    object prop extends TernaryLFConstantScala(Path.parseM("latin:/?Propositions"), "prop")
-
-    object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
-    object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
-    object forallMany {
-      def apply(ctx: Context, body: Term): Term = {
-        var term = body
-        for (vd <- ctx.reverse) {
-          term = forall(vd.tp.get, Lambda(vd.name, vd.tp.get, term))
-        }
-        term
-      }
-    }
-
-    object impl extends BinaryLFConstantScala(Path.parseM("latin:/?Implication"), "impl")
-
-    object ded extends UnaryLFConstantScala(Path.parseM("latin:/?Proofs"), "ded")
-    object eq extends TernaryLFConstantScala(Path.parseM("latin:/?TypedEquality"), "equal")
-
-    object TypeSymbolType {
-      def unapply(t: Term): Boolean = t match {
-        case OMS(p) if p == tp.path => true
-        case _ => false
-      }
-    }
-
-    object FunctionSymbolType {
-      def unapply(t: Term): Option[(List[GlobalName], GlobalName)] = t match {
-        case FunctionLikeSymbolType(args, tm(OMS(retPath))) => Some((args, retPath))
-        case _ => None
-      }
-    }
-
-    object PredicateSymbolType {
-      def unapply(t: Term): Option[List[GlobalName]] = t match {
-        case FunctionLikeSymbolType(args, OMS(p)) if p == prop.path => Some(args)
-        case _ => None
-      }
-    }
-
-    object AxiomSymbolType {
-      def unapply(t: Term): Boolean = t match {
-        case ded(_) => true
-        case _ => false
-      }
-    }
-
-    private object FunctionLikeSymbolType {
-      // this only matches with hard-coded tm
-      def unapply(t: Term): Option[(List[GlobalName], Term)] = t match {
-        case FunType(args, retType) =>
-          val argTypes = args.map {
-            case (None, tm(OMS(p))) => p
-            case _ => return None
-          }
-          Some((argTypes, retType))
-
-        case _ => None
-      }
-    }
-  }
+  def GeneralApplySpine(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
 }

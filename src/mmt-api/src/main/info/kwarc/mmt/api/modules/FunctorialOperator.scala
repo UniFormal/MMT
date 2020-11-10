@@ -368,6 +368,10 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
 
     val outConstants: List[Constant] = ret.head.map {
       case (name, tp, df) =>
+        if (module.isInstanceOf[View] && df.isEmpty) {
+          throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
+        }
+
         val newName = module match {
           case _: Theory => name
           case v: View => LocalName(v.from.toMPath) / name
