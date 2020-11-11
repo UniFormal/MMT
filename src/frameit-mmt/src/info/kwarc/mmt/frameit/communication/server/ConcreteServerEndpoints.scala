@@ -114,9 +114,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
       val factConstant = fact.toFinalConstant(state.newFactPath())
 
       state.synchronized {
-        // todo: bug in checkDeclarationAgainstTheory
-        // state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
-        List[Error]() match {
+        //state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+        List[Error]() match { // todo: mmt bug
           case Nil =>
             // success (i.e. no errors)
             try {

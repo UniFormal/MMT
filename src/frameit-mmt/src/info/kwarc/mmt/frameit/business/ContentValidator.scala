@@ -100,12 +100,12 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
     assert(decl.home == theory.toTerm)
 
     val scratchTheoryPath = theory.path.doc ? (theory.path.name.init / LocalName.random(s"scratch_for_checking_decl_against_theory"))
-    val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, theory.meta)
+    val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, Some(theory.path))
 
     val scratchPaths = Utils.addModuleToController(scratchTheory)
 
     try {
-      ctrl.add(PlainInclude(theory.path, scratchTheory.path))
+      // ctrl.add(PlainInclude(theory.path, scratchTheory.path))
 
       val scratchConstant = new FinalConstant(
         OMMOD(scratchTheory.path),
