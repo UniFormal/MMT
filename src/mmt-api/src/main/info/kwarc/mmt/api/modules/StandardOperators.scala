@@ -38,37 +38,37 @@ trait SystematicRenamingUtils extends LinearOperator {
 
 object CopyOperator extends ParametricRule {
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
-    case List(OMS(opSymbol), OMMOD(dom), OMMOD(cod)) =>
-      new SimpleLinearOperator with SystematicRenamingUtils with DefaultStateOperator {
+    case List(OMS(opSymbol), OMMOD(dom), OMMOD(cod)) => new CopyOperator(opSymbol, dom, cod)
+    case _ => throw ParseError("invalid usage. correct usage: rule ...?CopyOperator <operator symbol " +
+      "to tie with> <domain theory OMMOD> <codomain theory OMMOD>")
+  }
+}
 
-        override val head: GlobalName = opSymbol
-        override protected val operatorDomain: MPath = dom
-        override protected val operatorCodomain: MPath = cod
+class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultStateOperator {
 
-        override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
+  override protected val operatorDomain: MPath = dom
+  override protected val operatorCodomain: MPath = cod
 
-        override val connectionTypes: List[ConnectionType] = List(
-          InToOutMorphismConnectionType.suffixed("_CopyProjection1"),
-          InToOutMorphismConnectionType.suffixed("_CopyProjection2")
-        )
+  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
 
-        override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
+  override protected val connectionTypes = List(
+    InToOutMorphismConnectionType.suffixed("_CopyProjection1"),
+    InToOutMorphismConnectionType.suffixed("_CopyProjection2")
+  )
 
-          val copy1 = getRenamerFor("1")
-          val copy2 = getRenamerFor("2")
+  override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
 
-          List(
-            List(
-              (copy1(name), copy1(tp), df.map(copy1.apply(_))),
-              (copy2(name), copy2(tp), df.map(copy2.apply(_)))
-            ),
-            List((name, tp, Some(OMID(copy1(c.path))))),
-            List((name, tp, Some(OMID(copy2(c.path)))))
-          )
-        }
-      }
+    val copy1 = getRenamerFor("1")
+    val copy2 = getRenamerFor("2")
 
-    case _ => throw ParseError("invalid usage. correct usage: rule ...?CopyOperator <operator symbol to tie with> <domain theory OMMOD> <codomain theory OMMOD>")
+    MainResults(
+      (copy1(name), copy1(tp), df.map(copy1.apply(_))),
+      (copy2(name), copy2(tp), df.map(copy2.apply(_)))
+    ) ::: ConnResults(
+      (name, tp, copy1(c))
+    ) ::: ConnResults(
+      (name, tp, copy2(c))
+    )
   }
 }
 

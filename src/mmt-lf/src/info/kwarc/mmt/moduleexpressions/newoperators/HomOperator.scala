@@ -6,7 +6,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
-import info.kwarc.mmt.moduleexpressions.newoperators.HomOperator.ConnResults
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
 object HomOperator extends SimpleLinearOperator with DefaultStateOperator with SystematicRenamingUtils {
@@ -21,6 +20,29 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
     InToOutMorphismConnectionType.suffixed("_dom"),
     InToOutMorphismConnectionType.suffixed("_cod"),
   )
+
+  /* todo: also generate connecting morphism `img: Sub(Magma) -> Hom(Magma)` (for image of homomorphism)
+         then: Magma -- sub --> Sub(Magma) -- img --> Hom(Magma) would give us the image of the homomorphism
+               as a Magma model
+
+   Previous idea: linear operators may only produce connecting morphisms from input to output module or vv.
+   Now: they also need to be able to produce morphisms connecting to OtherOperator(input module)
+
+   Unclear if either Sub or Hom should generate img.
+
+   U: tp
+        |-> U^p := U^c, U^s := [y: U^c] exists [x: U^d] U^h x = y   (i.e. U^s = U^h(U^d) in math notation)
+
+   f: tm t_1 -> ... -> tm t_n -> tm t
+        |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
+
+   c: tm t_1 -> ... -> tm t_n -> tm t
+        |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
+
+   a: |- F
+        |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
+
+   */
 
   override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
 
