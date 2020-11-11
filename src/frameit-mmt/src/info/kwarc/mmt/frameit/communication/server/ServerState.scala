@@ -3,9 +3,9 @@ package info.kwarc.mmt.frameit.communication.server
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.{Controller, Logger, Report}
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-import info.kwarc.mmt.api.{DPath, GeneralError, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{DPath, GeneralError, GlobalName, LocalName, MPath, SimpleStep}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.ScrollReference
 import info.kwarc.mmt.frameit.business.{ContentValidator, SituationTheory, Utils}
@@ -25,6 +25,15 @@ class ServerState(private var curSituationTheory: SituationTheory, val contentVa
 
   def situationSpace: Theory = curSituationTheory.spaceTheory
   def situationTheory: Theory = curSituationTheory.theory
+
+  private var factCounter = 1
+  def newFactPath(): GlobalName = {
+    this.synchronized {
+      val (factName, _) = Context.pickFresh(situationTheory.getInnerContext, LocalName(s"fact${factCounter.toString}"))
+      factCounter += 1
+      situationTheory.path ? factName
+    }
+  }
 
   def descendSituationTheory(name: LocalName): Theory = {
     curSituationTheory = curSituationTheory.descend(name)

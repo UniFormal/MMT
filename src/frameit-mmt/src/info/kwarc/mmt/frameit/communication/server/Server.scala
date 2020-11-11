@@ -4,12 +4,12 @@ import java.net.InetSocketAddress
 
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
-import com.twitter.util.{Await, Future}
+import com.twitter.util.Await
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
-import info.kwarc.mmt.api.{GetError, LocalName}
+import info.kwarc.mmt.api.{GeneralError, GetError, InvalidElement, LocalName}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.business.{SituationTheory, StandardContentValidator}
+import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheory, StandardContentValidator}
 import io.finch.Input
 
 object Server extends TwitterServer {
@@ -37,7 +37,9 @@ object Server extends TwitterServer {
     // by up to 9 seconds.
     //
     // todo: warm-up blocks requests, see also https://finagle.github.io/finch/best-practices.html#do-not-block-an-endpoint.
-    new Thread {
+
+    // no warm-up currently
+    /*new Thread {
       // remember to not throw exceptions in run(), but to print stack traces and [[System.exit]]
       // otherwise, the exceptions could get swallowed in this thread and never touch the surface
       override def run(): Unit = {
@@ -60,7 +62,7 @@ object Server extends TwitterServer {
             }
           })
       }
-    }// .run() // no warm-up currently
+    }.run() */
 
     Await.ready(server)
   }
@@ -85,9 +87,9 @@ object Server extends TwitterServer {
     } else {
       println("Release mode: setting up empty situation space with default scrolls...")
 
-      SituationTheory.empty(
+      SituationSpace.empty(
         doc = FrameWorld.rootDocument,
-        spaceName = LocalName.random("SituationTheory"),
+        name = LocalName("FreshSituationSpace"),
         meta = Some(FrameWorld.metaTheoryForSituationTheory),
         initialIncludes = FrameWorld.defaultScrolls
       )
@@ -95,16 +97,14 @@ object Server extends TwitterServer {
 
     val state = new ServerState(situationTheory, new StandardContentValidator)
 
-    //state.contentValidator.checkTheory(situationTheory.spaceTheory) // TODO faster!
-    Nil match {
+    (if (debug()) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
       case Nil =>
         println("Situation space successfully set-up and typechecked (the latter only in release mode).")
         state
 
       case errors =>
-        sys.error("Created situation space, but cannot successfully typecheck it. Server will not be started. Errors below:")
-        sys.error(errors.mkString("\n"))
-        throw new Exception("")
+        errors.foreach(System.err.println)
+        throw InvalidElement(situationTheory.spaceTheory, "Situation space does not typecheck, see stderr output for errors.")
     }
   }
 }

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.frameit.business
 
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingUnit, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, PlainInclude}
@@ -122,8 +122,14 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
 
       checkStructuralElementSynchronously(scratchTheory)
     } finally {
-      // scratchPaths.foreach(ctrl.delete)
-      // todo: MMT throws a NoFound error here (a bug?)
+      try {
+        scratchPaths.foreach(ctrl.delete)
+      } catch {
+        case _: NotFound =>
+          // todo: dirty fix to handle a bug of MMT: do nothing here
+          //       namely [[Library.notifyUpdated]] calls getO, getO calls get and catches some errors and
+          //       converts them into an Option value, but get throws NotFound here, which isn't caught
+      }
     }
   }
 }
