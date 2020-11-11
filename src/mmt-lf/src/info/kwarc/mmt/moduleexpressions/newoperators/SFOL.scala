@@ -1,13 +1,31 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.{GlobalName, Path}
-import info.kwarc.mmt.api.objects.{Context, OMS, Term}
-import info.kwarc.mmt.lf.{BinaryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMS, Term}
+import info.kwarc.mmt.lf.{BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
 private[newoperators] object SFOL {
   object tp extends NullaryLFConstantScala(Path.parseM("latin:/?Types"), "tp")
   object prop extends TernaryLFConstantScala(Path.parseM("latin:/?Propositions"), "prop")
+
+  object predicateSubTp extends BinaryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "predsub")
+  object predicateSubTpIn extends FouraryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "in")
+
+  object predicateSubTpIsSubtype extends BinaryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "predsub_sub")
+  object subtypeInject extends FouraryLFConstantScala(Path.parseM("latin:/?SubtypeInjections"), "inject")
+
+  def injectSubtypeElementIntoParent(parentTp: Term, selectionFun: Term, subElem: Term): Term = {
+    subtypeInject(
+      predicateSubTp(parentTp, selectionFun),
+      parentTp,
+      predicateSubTpIsSubtype(parentTp, selectionFun),
+      subElem
+    )
+  }
+
+  def downcastParentElementToSubtype(parentTp: Term, selectionFun: Term, parentElem: Term, containmentProof: Term): OMA =
+    predicateSubTpIn(parentTp, selectionFun, parentElem, containmentProof)
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")

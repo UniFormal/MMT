@@ -3,9 +3,10 @@ package info.kwarc.mmt.moduleexpressions.newoperators
 import info.kwarc.mmt.api.checking.CheckingCallback
 import info.kwarc.mmt.api.modules.{DefaultStateOperator, Module, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
+import info.kwarc.mmt.moduleexpressions.newoperators.HomOperator.ConnResults
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
 object HomOperator extends SimpleLinearOperator with DefaultStateOperator with SystematicRenamingUtils {
@@ -16,16 +17,26 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
-  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: HomOperator.LinearState): List[List[(LocalName, Term, Option[Term])]] = {
+  override protected val connectionTypes = List(
+    InToOutMorphismConnectionType.suffixed("_dom"),
+    InToOutMorphismConnectionType.suffixed("_cod"),
+  )
 
-    val dom = getRenamerFor("d", module.toTerm)
-    val cod = getRenamerFor("c", module.toTerm)
-    val hom = getRenamerFor("h", module.toTerm)
+  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
 
-    val domCodCopies = List(
-      (dom(name), dom(tp), df.map(dom(_))),
-      (cod(name), cod(tp), df.map(cod(_)))
-    )
+    // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
+    val dom = getRenamerFor("d")
+    val cod = getRenamerFor("c")
+
+    // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
+    val hom = getRenamerFor("h")
+
+    // Some abbreviations for things we return that are common to all forms of input constants that we treat below
+    //
+    // Below, we then either return `MainResults(mainConstantCopies) ::: connResults` or
+    //                              `MainResults(mainConstantCopies, homomorphismConstant) ::: connResults`
+    val mainConstantCopies = (dom(name), dom(tp), df.map(dom(_))) :: (cod(name), cod(tp), df.map(cod(_))) :: Nil
+    val connResults = ConnResults((name, tp, dom(c))) ::: ConnResults((name, tp, cod(c)))
 
     def quantify(t: Term, argTypes: List[GlobalName]): (Context, Term, Term) = {
       val binding = OpUtils.bindFresh(t, argTypes.map(argTp => SFOL.tm(OMS(dom(argTp)))))
@@ -33,13 +44,13 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
       // construct `c^{dom} x_1 ... x_n`
       val domExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
         OMS(dom(c.path)),
-        binding.map(vd => OMV(vd.name)) : _*
+        binding.map(vd => OMV(vd.name)): _*
       )
 
       // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
       val codExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
         OMS(cod(c.path)),
-        binding.map(vd => ApplySpine(hom(vd.tp.get), OMV(vd.name))) : _*
+        binding.map(vd => ApplySpine(hom(vd.tp.get), OMV(vd.name))): _*
       )
 
       (binding, domExpr, codExpr)
@@ -54,11 +65,7 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
           SFOL.tm(OMS(applyModulePath(module.path) ? cod(name)))
         )
 
-        List(List(
-          (dom(name), dom(tp), df.map(dom(_))),
-          (cod(name), cod(tp), df.map(cod(_))),
-          (hom(name), thType, df.map(hom(_))),
-        ))
+        MainResults(mainConstantCopies, (hom(name), thType, df.map(hom(_)))) ::: connResults
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
@@ -78,9 +85,7 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
           df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
         )
 
-        List(
-          domCodCopies :+ homomorphismConstant
-        )
+        MainResults(mainConstantCopies, homomorphismConstant) ::: connResults
 
       case SFOL.PredicateSymbolType(argTypes) =>
         if (!df.forall(isMonotone)) {
@@ -100,11 +105,9 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
           df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
         )
 
-        List(
-          domCodCopies :+ homomorphismConstant
-        )
+        MainResults(mainConstantCopies, homomorphismConstant) ::: connResults
 
-      case SFOL.AxiomSymbolType() => List(domCodCopies)
+      case SFOL.AxiomSymbolType() => MainResults(mainConstantCopies) ::: connResults
 
       case _ =>
         throw GeneralError(s"Hom operator cannot process SFOL constant ${c.path} of unknown form (neither type, " +
@@ -121,7 +124,7 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
     sealed class MonotonicityStatus(var isMonotone: Boolean)
 
     val monotonicityTraverser = new Traverser[MonotonicityStatus] {
-      override def traverse(t: Term)(implicit con : Context, state : MonotonicityStatus) : Term = {
+      override def traverse(t: Term)(implicit con: Context, state: MonotonicityStatus): Term = {
         if (!state.isMonotone) {
           // no need to recurse further
           t
@@ -159,4 +162,10 @@ private[newoperators] object OpUtils {
     * Instead it just returns 'f' in that case.
     */
   def GeneralApplySpine(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
+
+  /**
+    * Like [[Lambda.apply()]] but doesn't generate an empty [[OMBINDC]] upon application with
+    * an empty context. Instead it just returns 'body' in that case.
+    */
+  def GeneralLambda(ctx: Context, body: Term): Term = if (ctx.isEmpty) body else Lambda(ctx, body)
 }

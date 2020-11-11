@@ -21,9 +21,9 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
     (op.head, op)
   ).toMap
 
-  private def addToMapWithoutClash[K,V](map: mutable.Map[K, V], key: K, value: V): Unit = {
+  private def addToMapWithoutClash[K,V](map: mutable.Map[K, V], key: K, value: V, err: => Throwable): Unit = {
     if (map.getOrElseUpdate(key, value) != value) {
-      throw new Exception("...")
+      throw err
     }
   }
 
@@ -54,13 +54,27 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
   def committedModules: List[Module] = _committedModules.toList
 
   def addResult(m: Module): Unit = {
-    addToMapWithoutClash(transientResults, m.path, m)
+    if (transientConnections.contains(m.path)) {
+      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a module " +
+        s"with the same path had already been added as a connection result.")
+    }
+    addToMapWithoutClash(transientResults, m.path, m, err = GeneralError(
+      s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a *different* module with the +" +
+        s"same path had already been added"
+    ))
   }
 
   def hasResult(p: MPath): Boolean = transientResults.contains(p)
 
   def addConnection(m: Module): Unit = {
-    addToMapWithoutClash(transientConnections, m.path, m)
+    if (transientResults.contains(m.path)) {
+      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a module " +
+        s"with the same path had already been added as a main result.")
+    }
+    addToMapWithoutClash(transientConnections, m.path, m, err = GeneralError(
+      s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a *different* module with " +
+        s"the same path had already been added"
+    ))
   }
 
   def get(p: MPath): Module = {

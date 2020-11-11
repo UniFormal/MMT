@@ -349,7 +349,17 @@ trait DefaultStateOperator extends LinearOperator {
 }
 
 abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
-  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: this.LinearState): List[List[(LocalName, Term, Option[Term])]]
+  type SimpleConstant = (LocalName, Term, Option[Term])
+
+  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: this.LinearState): List[List[SimpleConstant]]
+
+  // helper functions to make up a nice DSL
+  final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
+  final protected def MainResults(initDecls: Seq[SimpleConstant], decls: SimpleConstant*): List[List[SimpleConstant]] = MainResults((initDecls.toList ::: decls.toList) : _*)
+
+  // Conn results are almost always morphisms, hence definiens must always be given (no Option[Term])
+  final protected def ConnResults(decls: (LocalName, Term, Term)*): List[List[SimpleConstant]] =
+    List(decls.map(d => (d._1, d._2, Some(d._3))).toList)
 
   final override protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback, state: this.LinearState): List[List[Declaration]] = {
     val simplifiedName: LocalName = module match {

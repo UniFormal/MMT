@@ -11,9 +11,10 @@ trait SystematicRenamingUtils extends LinearOperator {
     def apply(name: LocalName): LocalName
     def apply(path: GlobalName)(implicit state: LinearState): GlobalName
     def apply(term: Term)(implicit state: LinearState): Term
+    def apply(c: Constant)(implicit state: LinearState): OMID
   }
 
-  protected def getRenamerFor(tag: String, home: Term): Renamer = new Renamer {
+  protected def getRenamerFor(tag: String): Renamer = new Renamer {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
 
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
@@ -28,8 +29,10 @@ trait SystematicRenamingUtils extends LinearOperator {
       val self: Renamer = this // to disambiguate this in anonymous subclassing expression below
       new OMSReplacer {
         override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
-      }.apply(term, Context(home.toMPath))
+      }.apply(term, state.outerContext)
     }
+
+    override def apply(c: Constant)(implicit state: LinearState): OMID = OMS(apply(c.path))
   }
 }
 
@@ -51,8 +54,8 @@ object CopyOperator extends ParametricRule {
 
         override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
 
-          val copy1 = getRenamerFor("1", module.toTerm)
-          val copy2 = getRenamerFor("2", module.toTerm)
+          val copy1 = getRenamerFor("1")
+          val copy2 = getRenamerFor("2")
 
           List(
             List(
