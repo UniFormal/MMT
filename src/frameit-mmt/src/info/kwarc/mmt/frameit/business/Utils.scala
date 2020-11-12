@@ -31,7 +31,7 @@ object Utils {
     */
   def addModuleToController(module: Module)(implicit ctrl: Controller): List[Path] = {
     module.path.name.steps match {
-      case prefix :+ targetModuleName =>
+      case prefix :+ targetModuleName if prefix.nonEmpty =>
         val nestedModuleDecl = new NestedModule(
           home = OMMOD(module.path.doc ? LocalName(prefix)),
           name = LocalName(targetModuleName),

@@ -76,7 +76,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     Ok(state.contentValidator.checkTheory(state.situationSpace))
   }
 
-  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("debug") :: path("space") :: path("print")) {
+  private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("space") :: path("print")) {
     val stringRenderer = new presentation.StringBuilder
     state.presenter(state.situationSpace)(stringRenderer)
 
@@ -111,12 +111,11 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
   private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
     (fact: SFact) => {
-      // todo: better use Context.pickFresh?
-      val constantPath = state.situationTheory.path ? LocalName.random("fact")
-      val factConstant = fact.toFinalConstant(constantPath)
+      val factConstant = fact.toFinalConstant(state.newFactPath())
 
       state.synchronized {
-        state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+        //state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+        List[Error]() match { // todo: mmt bug
           case Nil =>
             // success (i.e. no errors)
             try {

@@ -10,6 +10,32 @@ sealed case class SituationSpace(path: MPath) {
   def name: LocalName = path.name
 }
 
+object SituationSpace {
+  /**
+    * Creates a new situation space with an initial situation theory called 'name / Root'.
+    * @param doc Document where to place the situation space into.
+    * @param name Name of the situation space.
+    * @param meta Meta theory for situation space and initial situation theory (usually containing 3D geometry)
+    * @param initialIncludes Some default includes to put into the initial situation theory, e.g. inclusion
+    *                        of some scroll theories.
+    * @return The initial situation theory contained in the newly created situation space.
+    */
+  def empty(doc: DPath, name: LocalName, meta: Option[MPath], initialIncludes: List[MPath])(implicit ctrl: Controller): SituationTheory = {
+    val spaceTheory = Theory.empty(doc, name, meta)
+    Utils.addModuleToController(spaceTheory)
+
+    val rootSituationTheoryName = LocalName("Root")
+    val rootSituationTheory = Theory.empty(doc, spaceTheory.name / rootSituationTheoryName, meta)
+    Utils.addModuleToController(rootSituationTheory)
+
+    initialIncludes
+      .map(PlainInclude(_, rootSituationTheory.path))
+      .foreach(ctrl.add(_))
+
+    new SituationTheory(SituationTheoryPath(SituationSpace(spaceTheory.path), rootSituationTheoryName))
+  }
+}
+
 sealed case class SituationTheoryPath(space: SituationSpace, name: LocalName) {
   name.steps match {
     case List(SimpleStep(_)) => // ok
@@ -43,22 +69,5 @@ sealed class SituationTheory(val path: SituationTheoryPath)(implicit ctrl: Contr
     ctrl.add(PlainInclude(path.module, newPath.module))
 
     new SituationTheory(newPath)
-  }
-}
-
-object SituationTheory {
-  def empty(doc: DPath, spaceName: LocalName, meta: Option[MPath], initialIncludes: List[MPath])(implicit ctrl: Controller): SituationTheory = {
-    val spaceTheory = Theory.empty(doc, spaceName, meta)
-    Utils.addModuleToController(spaceTheory)
-
-    val rootSituationTheoryName = LocalName("Root")
-    val rootSituationTheory = Theory.empty(doc, spaceTheory.name / rootSituationTheoryName, meta)
-    Utils.addModuleToController(rootSituationTheory)
-
-    initialIncludes
-      .map(PlainInclude(_, rootSituationTheory.path))
-      .foreach(ctrl.add(_))
-
-    new SituationTheory(SituationTheoryPath(SituationSpace(spaceTheory.path), rootSituationTheoryName))
   }
 }

@@ -21,9 +21,9 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
     (op.head, op)
   ).toMap
 
-  private def addToMapWithoutClash[K,V](map: mutable.Map[K, V], key: K, value: V): Unit = {
+  private def addToMapWithoutClash[K,V](map: mutable.Map[K, V], key: K, value: V, err: => Throwable): Unit = {
     if (map.getOrElseUpdate(key, value) != value) {
-      throw new Exception("...")
+      throw err
     }
   }
 
@@ -54,13 +54,27 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
   def committedModules: List[Module] = _committedModules.toList
 
   def addResult(m: Module): Unit = {
-    addToMapWithoutClash(transientResults, m.path, m)
+    if (transientConnections.contains(m.path)) {
+      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a module " +
+        s"with the same path had already been added as a connection result.")
+    }
+    addToMapWithoutClash(transientResults, m.path, m, err = GeneralError(
+      s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a *different* module with the +" +
+        s"same path had already been added"
+    ))
   }
 
   def hasResult(p: MPath): Boolean = transientResults.contains(p)
 
   def addConnection(m: Module): Unit = {
-    addToMapWithoutClash(transientConnections, m.path, m)
+    if (transientResults.contains(m.path)) {
+      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a module " +
+        s"with the same path had already been added as a main result.")
+    }
+    addToMapWithoutClash(transientConnections, m.path, m, err = GeneralError(
+      s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a *different* module with " +
+        s"the same path had already been added"
+    ))
   }
 
   def get(p: MPath): Module = {
@@ -71,20 +85,36 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
     )
   }
 
+  /**
+    * Hack to remove unbound constants that MMT introduces for some reason in diagram expressions
+    *
+    * TODO: resolve this bug together with Florian
+    */
+  private val removeOmbindc: Term => Term = {
+    val traverser = new StatelessTraverser {
+      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+        case OMBINDC(_, _, List(scope)) => Traverser(this, scope)
+        case t => Traverser(this, t)
+      }
+    }
+
+    traverser.apply(_, Context.empty)
+  }
+
   def apply(diag: Term): Option[Term] = {
-    val simplifiedDiag = diag match {
+    val simplifiedDiag = removeOmbindc(removeOmbindc(diag) match {
       case OMA(OMS(head), _) if operators.contains(head) && false => // todo: for now always simplify for debugging
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         diag
-      case _ =>
+      case t =>
         val su = SimplificationUnit(
           context = interpreterContext,
           expandDefinitions = true,
           fullRecursion = true
         )
-        ctrl.simplifier(diag, su)
-    }
+        ctrl.simplifier(t, su)
+    })
 
     simplifiedDiag match {
       case t @ OMA(OMS(head), _) if operators.contains(head) =>
@@ -97,7 +127,10 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
       case t @ SimpleDiagram(_, _) =>
         Some(t)
 
-      case _ => None
+      case _ =>
+        throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
+          s"nor is it a SimpleDiagram: ${simplifiedDiag}. Is the operator you are trying to apply in-scope in " +
+          s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
     }
   }
 }
@@ -112,7 +145,7 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
 }
 
 object SimpleDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_diagram", NamespaceMap.empty)
+  private val constant = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?simple_diagram", NamespaceMap.empty)
 
   def apply(baseTheory: MPath, paths: List[MPath]): Term = {
     OMA(OMS(constant), OMMOD(baseTheory) :: paths.map(OMMOD(_)))

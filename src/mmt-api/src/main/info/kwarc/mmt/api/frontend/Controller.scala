@@ -650,7 +650,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     */
   def delete(p: Path) {
     p match {
-      case cp: CPath =>
+      case _: CPath =>
          throw DeleteError("deletion of component paths not implemented")
       case p =>
         val seOpt = localLookup.getO(p)
