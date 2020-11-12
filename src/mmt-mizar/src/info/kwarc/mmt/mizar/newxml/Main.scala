@@ -1,7 +1,9 @@
 package info.kwarc.mmt.mizar.newxml
 
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.mizar.newxml.syntax.Text_Proper
+import info.kwarc.mmt.mizar.newxml.translator.MizarImporter
 
 object Main {
   def makeParser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.mizar.newxml.syntax")
@@ -42,6 +44,6 @@ object Main {
       println("We encountered the following issues during parsing: " + prettyPrintList("\n", troubles))
       println("There were issues while parsing the following files: " + prettyPrintList(" ", troublemakers))
     }
-    val translatedArticles = parsedFiles map {text_proper:Text_Proper => translator.articleTranslator.translateArticle(text_proper)}
+    parsedFiles map {txtp:Text_Proper => translator.articleTranslator.translateArticle(txtp, DPath(URI(txtp.articleid)))}
   }
 }
