@@ -28,13 +28,14 @@ object FrameIT {
     val rootDocument: DPath = DPath(URI("http://mathhub.info/FrameIT/frameworld"))
     val metaTheoryForSituationTheory: MPath = rootDocument ? "FrameworldMeta"
 
-    val situationTheoryForDebugging: SituationTheoryPath = SituationTheoryPath(
+    val debugSituationTheory: SituationTheoryPath = SituationTheoryPath(
       SituationSpace((rootDocument / "integrationtests") ? "SampleSituationSpace"),
       LocalName("Root"),
     )
-    val defaultScrolls: List[MPath] = List(
-      rootDocument ? "OppositeLen",
-      rootDocument ? "AngleSum"
+
+    val defaultSituationTheory: SituationTheoryPath = SituationTheoryPath(
+      SituationSpace(rootDocument ? "DefaultSituationSpace"),
+      LocalName("Root")
     )
 
     object MetaAnnotations {

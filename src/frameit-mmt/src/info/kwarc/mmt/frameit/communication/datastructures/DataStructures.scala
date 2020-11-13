@@ -55,8 +55,8 @@ object DataStructures {
         home = OMMOD(target.module),
         name = target.name,
         alias = Nil,
-        tpC = TermContainer.asParsed(getMMTTypeComponent),
-        dfC = TermContainer.asParsed(getMMTDefComponent),
+        tpC = TermContainer.asAnalyzed(getMMTTypeComponent),
+        dfC = TermContainer.asAnalyzed(getMMTDefComponent),
         rl = None,
         notC = new NotationContainer,
         vs = Visibility.public

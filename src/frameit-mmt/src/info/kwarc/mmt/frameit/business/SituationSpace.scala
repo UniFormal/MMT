@@ -8,6 +8,8 @@ import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, SimpleStep}
 sealed case class SituationSpace(path: MPath) {
   def doc: DPath = path.doc
   def name: LocalName = path.name
+
+  override def toString: String = path.toString
 }
 
 object SituationSpace {
@@ -52,6 +54,8 @@ sealed case class SituationTheoryPath(space: SituationSpace, name: LocalName) {
   def module: MPath = space.path / name
   def symbol: GlobalName = space.path ? name
 
+  override def toString: String = s"situation theory `${name}` in space ${space}"
+
   def descend(name: LocalName): SituationTheoryPath = {
     SituationTheoryPath(space, name)
   }
@@ -62,6 +66,8 @@ sealed class SituationTheory(val path: SituationTheoryPath)(implicit ctrl: Contr
   val theory: Theory = ctrl.getTheory(path.module)
 
   def space: SituationSpace = path.space
+
+  override def toString: String = path.toString
 
   def descend(name: LocalName): SituationTheory = {
     val newPath = path.descend(name)

@@ -80,19 +80,11 @@ object Server extends TwitterServer {
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
     val situationTheory: SituationTheory = if (debug()) {
-      println(s"Debug mode: trying to use situation theory `${FrameWorld.situationTheoryForDebugging}`...")
-
-      new SituationTheory(FrameWorld.situationTheoryForDebugging)
+      new SituationTheory(FrameWorld.debugSituationTheory)
     } else {
-      println("Release mode: setting up empty situation space with default scrolls...")
-
-      SituationSpace.empty(
-        doc = FrameWorld.rootDocument,
-        name = LocalName("FreshSituationSpace"),
-        meta = Some(FrameWorld.metaTheoryForSituationTheory),
-        initialIncludes = FrameWorld.defaultScrolls
-      )
+      new SituationTheory(FrameWorld.defaultSituationTheory)
     }
+    println(s"Using situation space+theory: ${situationTheory}")
 
     val state = new ServerState(situationTheory, new StandardContentValidator)
 
