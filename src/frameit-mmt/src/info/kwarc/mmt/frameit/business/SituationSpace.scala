@@ -28,9 +28,15 @@ object SituationSpace {
     val rootSituationTheory = Theory.empty(doc, spaceTheory.name / rootSituationTheoryName, meta)
     Utils.addModuleToController(rootSituationTheory)
 
-    initialIncludes
+    /*initialIncludes
       .map(PlainInclude(_, rootSituationTheory.path))
-      .foreach(ctrl.add(_))
+      .foreach(ctrl.add(_))*/
+
+    for (inclPath <- initialIncludes) {
+      val incl = PlainInclude(inclPath, rootSituationTheory.path)
+      ctrl.add(incl)
+      println(ctrl.globalLookup.getImplicit(inclPath, rootSituationTheory.path))
+    }
 
     new SituationTheory(SituationTheoryPath(SituationSpace(spaceTheory.path), rootSituationTheoryName))
   }

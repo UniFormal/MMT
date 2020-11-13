@@ -7,10 +7,9 @@ import com.twitter.server.TwitterServer
 import com.twitter.util.Await
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
-import info.kwarc.mmt.api.{GeneralError, GetError, InvalidElement, LocalName}
+import info.kwarc.mmt.api.{GetError, InvalidElement, LocalName, Path}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.{SituationSpace, SituationTheory, StandardContentValidator}
-import io.finch.Input
 
 object Server extends TwitterServer {
   override def failfastOnFlagsNotParsed: Boolean = true
@@ -96,6 +95,9 @@ object Server extends TwitterServer {
     }
 
     val state = new ServerState(situationTheory, new StandardContentValidator)
+
+    //println(state.contentValidator.checkTheory(ctrl.getTheory(Path.parseM("http://mathhub.info/FrameIT/frameworld/integrationtests?SituationSpace"))))
+    //sys.exit(0)
 
     (if (debug()) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
       case Nil =>

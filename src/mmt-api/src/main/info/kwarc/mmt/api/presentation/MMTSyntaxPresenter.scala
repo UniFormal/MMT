@@ -184,7 +184,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // TODO Fix for [[Structure.isInclude]] not accounting for inclusions
     //  with definiens component, see tod*o note in [[Include.unapply]]
     case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
-    case _: ModuleOrLink => rh(MODULE_DELIMITER)
+    case _: ModuleOrLink => rh(MODULE_DELIMITER + "\n")
     case _: NestedModule => /* nothing, the module delimiter of the presented module already accounts for this */
 
     // some declarations are handled before by ModuleOrLink already

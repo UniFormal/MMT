@@ -9,15 +9,27 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable
 
+/**
+  *
+  * todo: added results/connections are buffered until commit() has been called. If operators invoke certain
+  *       controller functions on buffered modules, this can lead to errors or inconsistent results.
+  *       As long as operators don't query the controller/simplifier/... for buffered modules, it's okay.
+  *       Long-term: either drop this buffering or implement staged controllers (an idea FR once had)
+  *
+  * @param interpreterContext
+  * @param ctrl
+  * @param solver
+  * @param rules
+  */
 class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Controller, val solver: CheckingCallback, rules: RuleSet) {
   // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
-  private var transientResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
+  private val transientResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
   // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
-  private var transientConnections : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
+  private val transientConnections : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
 
-  private var _committedModules = mutable.ListBuffer[Module]()
+  private val _committedModules = mutable.ListBuffer[Module]()
 
-  private var operators: Map[GlobalName, DiagramOperator] = rules.get(classOf[DiagramOperator]).map(op =>
+  private val operators: Map[GlobalName, DiagramOperator] = rules.get(classOf[DiagramOperator]).map(op =>
     (op.head, op)
   ).toMap
 
@@ -145,7 +157,7 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
 }
 
 object SimpleDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?simple_diagram", NamespaceMap.empty)
+  private val constant = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?simple_diagram")
 
   def apply(baseTheory: MPath, paths: List[MPath]): Term = {
     OMA(OMS(constant), OMMOD(baseTheory) :: paths.map(OMMOD(_)))
