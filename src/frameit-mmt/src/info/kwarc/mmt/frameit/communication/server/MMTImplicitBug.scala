@@ -24,7 +24,8 @@ private object MMTImplicitBug {
     val includedTheoryPath = Path.parseM("http://cds.omdoc.org/urtheories?LF")
     ctrl.add(PlainInclude(includedTheoryPath, innerTheory.path))
 
+    // Actual value being printed: None
+    // Expected value: Some(...)
     println(ctrl.globalLookup.getImplicit(includedTheoryPath, innerTheory.path))
-    println(ctrl.localLookup.getImplicit(includedTheoryPath, innerTheory.path))
   }
 }
