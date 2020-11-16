@@ -169,7 +169,11 @@ sealed trait Subitem {
   }
 }
 case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
-case class Definition_Item(_block:Block) extends Subitem
+case class Definition_Item(_block:Block) extends Subitem {
+  def check() = {
+    assert(checkUtils.fullClassName(_block.kind) == this.getClass.getName)
+  }
+}
 case class Section_Pragma() extends Subitem
 case class Pragma(_notionName: Option[Pragmas]) extends Subitem
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
@@ -264,7 +268,7 @@ sealed trait Registrations
 case class Functorial_Registration(pos:Position, _aggrTerm:Term, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 case class Conditional_Registration(pos:Position, _adjClusts:List[Adjective_Cluster], _tp:Type) extends Registrations
-case class Property_Registration(_props:Properties, _blck:Block) extends Registrations with Subitem
+case class Property_Registration(_props:Properties, _block:Block) extends Registrations with Subitem
 
 sealed trait CorrectnessConditions
 case class coherence() extends CorrectnessConditions
