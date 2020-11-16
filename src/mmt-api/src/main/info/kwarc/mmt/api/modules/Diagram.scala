@@ -2,12 +2,91 @@ package info.kwarc.mmt.api.modules
 
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking.CheckingCallback
+import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.presentation.ConsoleWriter
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable
+
+object Diagram {
+  val feature: String = "diagram"
+}
+
+/**
+  * Module-level structural feature for installing diagrams into the ambient theory graph.
+  *
+  * @todo Navid: add example
+  */
+class Diagram extends ModuleLevelFeature(Diagram.feature) {
+  override def getHeaderNotation: List[Marker] = Nil
+  /** */
+  def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+
+  override def modules(dm: DerivedModule): List[Module] = {
+    val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
+
+    val rules = RuleSet.collectRules(controller, dm.getInnerContext)
+
+    // TODO: @Florian, the construction of this is probably wrong and doesn't make sense with the Inhabitable judgement
+    val solver = new Solver(
+      controller,
+      CheckingUnit(Some(dm.path $ DefComponent),dm.getInnerContext, Context.empty, Inhabitable(Stack.empty, df)),
+      rules
+    )
+    // todo: ask Florian how to get solver from controller
+    val diagInterp = new DiagramInterpreter(dm.getInnerContext, controller, solver, rules)
+
+    diagInterp(df) match {
+      case Some(outputDiagram) =>
+        diagInterp.committedModules.foreach(controller.presenter(_)(ConsoleWriter))
+        println(s"\nAbove MMT surface syntax was printed by Scala class 'DiagramPublisher' for debugging reasons. Input diagram was: ${df}")
+
+        dm.dfC.set(outputDiagram)
+        diagInterp.committedModules
+
+      case None =>
+        throw GeneralError("Found diagram operator was partial on input diagram")
+    }
+  }
+}
+
+/**
+  * A diagram operator whose main functionality is given by [[apply()]].
+  *
+  * The method [[apply()]] receives a diagram and a [[DiagramInterpreter]] instance and
+  * may then inspect the input elements in the diagram and freely add new (output)
+  * elements via calls to the [[DiagramInterpreter]].
+  *
+  * All diagram operators extend [[SyntaxDrivenRule]], i.e. are [[Rule MMT rules]] that can
+  * be loaded into MMT theories -- thus suitable for a modular approach to making diagram
+  * operators available to end users -- and they carry a [[head]] symbol identifying them.
+  *
+  * To implement a new operator:
+  *
+  *   1. create an untyped constant in some MMT theory (in surface syntax), e.g.
+  *      ''my_diag_op # MY_DIAG_OP'',
+  *
+  *   2. subclass [[DiagramOperator]] (or rather one of the many subclasses that suits you,
+  *      most likely [[LinearOperator]]) and make [[head]] point to the URI of the just created symbol,
+  *
+  *   3. and load the diagram operator via ''rule <juri>scala://...'' (e.g. directly after the symbol from
+  *      point 1).
+  *
+  * @see [[LinearOperator]]
+  */
+abstract class DiagramOperator extends SyntaxDrivenRule {
+  // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
+  override val head: GlobalName
+
+  // need access to Controller for generative operators (i.e. most operators)
+  // todo: upon error, are modules inconsistently added to controller? avoid that.
+  def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term]
+}
 
 /**
   *
@@ -145,15 +224,6 @@ class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Cont
           s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
     }
   }
-}
-
-abstract class DiagramOperator extends SyntaxDrivenRule {
-  // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
-  val head: GlobalName
-
-  // need access to Controller for generative operators (i.e. most operators)
-  // todo: upon error, are modules inconsistently added to controller? avoid that.
-  def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term]
 }
 
 object SimpleDiagram {

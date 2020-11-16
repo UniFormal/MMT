@@ -70,34 +70,6 @@ object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
   }
 }
 
-object DiagramClosureTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
-  override def doFirst: Unit = {
-    super.doFirst
-    // Only uncomment if rebuild is really necessary
-    // hl("build MMT/urtheories -mmt-omdoc")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    hl("build Playground/diagops mmt-omdoc closure/closure.mmt")
-  }
-
-  override def run: Unit = {
-  }
-}
-
-object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
-  override def doFirst: Unit = {
-    super.doFirst
-    // Only uncomment if rebuild is really necessary
-    // hl("build MMT/urtheories -mmt-omdoc")
-    hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    hl("build Playground/diagops -mmt-omdoc union/union.mmt")
-    hl("build Playground/diagops mmt-omdoc union/union.mmt")
-  }
-
-  override def run: Unit = {
-  }
-}
-
 /**
   * Debugging playground for Navid's implementation of diagram operators.
   * For debugging-debugging purposes only - might contain dirty code.
