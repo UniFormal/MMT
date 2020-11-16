@@ -153,7 +153,7 @@ sealed abstract class ArgumentMarker extends ChildMarker with ArgumentComponent 
   def addLocalNotationInfo(lni: LocalNotationInfo): ArgumentMarker = changeProperty(_.copy(localNotations = Some(lni)))
 }
 
-/** an argument
+/** a single argument that has an associated sequence argument
   */
 sealed abstract class Arg extends ArgumentMarker {
   override def toString = properties.asStringPrefix + number.toString
@@ -172,7 +172,7 @@ sealed abstract class Arg extends ArgumentMarker {
   }
 }
 
-/** a sequence argument */
+/** a sequence argument correspondng to an Arg */
 sealed abstract class SeqArg extends ArgumentMarker {
   val sep: Delim
   def makeCorrespondingArg(n: Int, remap: Int => Int): Arg
@@ -193,6 +193,14 @@ case class SimpArg(number : Int, properties: CommonMarkerProperties = noProps) e
 case class ImplicitArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
    override def toString = properties.asStringPrefix + "%I" + number
    def *(remap: Int => Int): ImplicitArg = copy(number = remap(number), properties = properties * remap)
+}
+
+/**
+  * an external argument takes all input and is processed into a term by an external rule
+  */
+case class ExternalArg(number: Int, properties: CommonMarkerProperties = noProps) extends ArgumentMarker {
+  override def toString = properties.asStringPrefix + "%E" + number
+  def *(remap: Int => Int): ExternalArg = copy(number = remap(number), properties = properties * remap)
 }
 
 /**

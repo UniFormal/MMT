@@ -9,8 +9,8 @@ import symbols._
 /**
  * arguments passed to a [[ParserExtension]]
  *
- * @param sp the StructureParser that is calling this extension
- * @param s the current parsing state
+ * @param parser the StructureParser that is calling this extension
+ * @param state the current parsing state
  * @param se the current structural element (Document, DeclaredModule, or Constant)
  * @param keyword the keyword that was read
  */

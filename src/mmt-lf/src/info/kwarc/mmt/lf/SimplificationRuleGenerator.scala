@@ -54,6 +54,7 @@ object SimplificationRuleGenerator {
 }
 import SimplificationRuleGenerator._
 
+// TODO refactor this so that the code for building a Rule can be reused without creating and adding a RuleConstant
 class SimplificationRuleGenerator extends ChangeListener {
   override val logPrefix = "simp-rule-gen"
   private def getGeneratedRule(p: Path): Option[GeneratedDepthRule] = {
