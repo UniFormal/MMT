@@ -1,33 +1,89 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
+/**
+ * The following classes are used by an XML parser utility part of the MMT API to parse Mizar content already exported to esx files
+ * scala case classes
+ *
+ * Any case class (which doesn't extend Group) represents an XML tag of the same name (but with - replaces by _)
+ * arguments starting with _ represent children of the tag and arguments without correspond to XML attributes
+ * arguments which are instances of case classes extending Group are used to group up several attributes or children
+ * that commonly occur together in XML tags, otherwise they correspond to XML attributes of the same name
+ * arguments of type List[A] or Option[A] correspond to Lists or optional attributes or children respectively
+ *
+ * This parsing is further documented in the class mmt.api.utils.XMLtoScala.
+ *
+ * The file is roughly structures as follows:
+ * First we define some classes to represent attributes or children we want to group up, or for which we want to implement
+ * additional methods usually for further parsing or checking
+ *
+ * Traits are used to group up classes representing XML tags defining similar objects, for instance terms Patterns, ...
+ *
+ * Afterwards the case classes corresponding to the XML tags are defined, roughly from Top-Level downwards and grouped by
+ * the traits they extend (if any)
+ */
+
 import info.kwarc.mmt.api.utils._
 import scala.xml.Attribute
 
-case class Position(position:String) extends Group
+case class Position(position:String) extends Group  {
+  def parsePosition() : (Int, Int) = {
+    val poss = position.split('\\')
+    assert(poss.length == 2 )
+    val List(line, col) = poss.toList.map(_.toInt)
+    (line, col)
+  }
+}
 case class FormatNr(formatnr:Int) extends Group
 case class PatternNr(patternnr:Int) extends Group
 case class Spelling(spelling:String) extends Group
 case class Sort(sort:String) extends Group
-case class VarKind(varkind:String) extends Group
 case class MMLId(MMLId:String) extends Group
 case class IdNr(idnr:Int) extends Group
 case class Nr(nr:Int) extends Group
-case class FreeVarNr(freevarnr:Int) extends Group
 case class VarNr(varnr:Int) extends Group
-case class NoOcc(noocc:Option[Boolean]) extends Group
 case class ConstrNr(constrnr:Int) extends Group
 case class OriginalNr(constrNr:ConstrNr, originalnr:Int) extends Group
 case class Origin(origin:String) extends Group
-case class LeftArgsCount(leftargscount:Int) extends Group
 case class SerialNr(idnr: IdNr, serialnr:Int) extends Group
-case class LabelNr(labelnr:Int) extends Group
-case class Number(number:Int) extends Group
-case class Amount(amount:Int) extends Group
-case class Inscription(inscription:String) extends Group
-case class Occurs(occurs:Boolean) extends Group
-case class PropertyAt(property:String) extends Group
-case class Positions(position:Position, endposition:String) extends Group
-case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group
+
+case class InfixedArgs(leftargscount:Int, _args:Arguments) extends Group
+/**
+ * Contains the start and end position for an item or a block in Mizar
+ * @param position the start position
+ * @param endposition the end position
+ */
+case class Positions(position:Position, endposition:String) extends Group {
+  def startPosition() : (Int, Int) = {
+    position.parsePosition()
+  }
+  def endPosition() : (Int, Int) = {
+    Position(endposition).parsePosition()
+  }
+}
+/**
+ * Two children consisting of a claim with its justification as commonly given as arguments to Statements
+ * the justification can be ommitted iff the claim is an Iterative-Equality (which contains its own justification)
+ * the check method verifies that the justification is only omitted for Iterative-Equalities
+ * @param _claim the claim
+ * @param _just (optional) the justification for the claim
+ */
+case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group {
+  /**
+   * An empty justification is only allowed if the claim is an iterative equality
+   */
+  def check(): Unit = {
+    if (_just.isEmpty) {
+      assert(_claim.getClass.getName == checkUtils.fullClassName("Iterative-Equality"))
+    }
+  }
+}
+/**
+ * Several common attributes for Object (terms and types) definitions
+ * @param formatNr
+ * @param patNr
+ * @param spell
+ * @param srt
+ */
 case class ObjectAttrs(formatNr: FormatNr, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group
 case class RedObjectSubAttrs(spell:Spelling, srt:Sort) extends Group
 case class PosNr(pos:Position, nr:Nr) extends Group
@@ -44,7 +100,20 @@ case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
 case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
 case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNr, varnr:VarNr) extends Group
 case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group
+
+/**
+ * A single case definien consisting of a single expression
+ * The expression is optional, since in any instance a single case expression may be left out in favor of a case-by-case definition
+ * @param _expr (optional) the expression
+ */
 case class SingleCaseExpr(_expr:Option[Expression]) extends Group
+
+/**
+ * A case-by-case definition consisting of a partial definiens list and a default definien
+ * Both are optional since, in any instance they can also be left out in favor of a single definien
+ * @param _partDefs (optional) the partial-definiens-list
+ * @param _otherwise (optional) the default definien
+ */
 case class PartialDef(_partDefs:Option[Partial_Definiens_List], _otherwise:Option[Otherwise]) extends Group {
   def check() = {
     if (_partDefs.isDefined && _otherwise.isEmpty) {
@@ -56,6 +125,11 @@ case class PartialDef(_partDefs:Option[Partial_Definiens_List], _otherwise:Optio
   }
 }
 
+/**
+ * Contains either a single definien or a case-by-case definition
+ * @param singleCasedExpr (optional) if present the single definie
+ * @param partialCasedExpr (optional) if present the case-by-case definition
+ */
 case class CaseBasedExpr(singleCasedExpr:SingleCaseExpr, partialCasedExpr:PartialDef) extends Group{
   def check() = {
     partialCasedExpr.check()
@@ -85,7 +159,7 @@ case class Text_Proper(articleid: String, articleext: String, pos: Position, _it
 }
 case class Item(kind: String, pos:Positions, _subitem:Subitem) {
   def checkKind() = {
-    assert(_subitem.kind == "info.kwarc.mmt.mizar.newxml.syntax."+kind.replace("-", "_"))
+    assert(_subitem.kind == checkUtils.fullClassName(kind))
   }
 }
 
@@ -152,7 +226,7 @@ case class Qualified_Segments(_children:List[VariableSegments])
 sealed trait Type extends Expression
 case class ReservedDscr_Type(idnr: IdNr, nr: Nr, srt: Sort, _subs:Substitutions, _tp:Type) extends Type
 case class Clustered_Type(srt:Sort, pos: Position, _adjClust:Adjective_Cluster, _tp:Type) extends Type
-case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: NoOcc, origNr: OriginalNr, _args:List[Arguments]) extends Type
+case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNr, _args:List[Arguments]) extends Type
 case class Struct_Type(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Type
 
 sealed trait Expression
@@ -164,7 +238,7 @@ case class Circumfix_Term(tpAttrs:OrgnlExtObjAttrs, _symbol:Right_Circumflex_Sym
 case class Numeral_Term(posNr:PosNr, srt:Sort, varnr:VarNr) extends Term
 case class it_Term(pos:Position, srt:Sort) extends Term
 case class Internal_Selector_Term(redObjAttr: RedObjAttr, varnr:VarNr) extends Term
-case class Infix_Term(tpAttrs:OrgnlExtObjAttrs, leftargscount:LeftArgsCount, _args:Arguments) extends Term
+case class Infix_Term(tpAttrs:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends Term
 case class Global_Choice_Term(srt:Sort, pos:Position, _tp:Type) extends Term
 case class Placeholder_Term(redObjAttr: RedObjAttr, varnr:Int) extends Term
 case class Private_Functor_Term(redObjAttr: RedObjAttr, serialnr:SerialNr, _args:Arguments) extends Term
@@ -208,13 +282,13 @@ case class Scheme_Justification(posNr:PosNr, idnr:IdNr, schnr:Int, spell:Spellin
 sealed trait Claim
 case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim
 case class Thesis(pos:Position, srt:Sort) extends Claim
-case class Diffuse_Statement(spell:Spelling, serialnr:SerialNr, labelnr:LabelNr, _label:Label) extends Claim
+case class Diffuse_Statement(spell:Spelling, serialnr:SerialNr, labelnr:Int, _label:Label) extends Claim
 case class Conditions(_props:List[Proposition]) extends Claim
 case class Iterative_Equality(_label:Label, _formula:Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
 
 sealed trait Formula extends Claim with Expression
 case class Existential_Quantifier_Formula(srt:Sort, pos:Position, _vars:Variable_Segments, _expression:Claim) extends Formula
-case class Relation_Formula(objectAttrs: OrgnlExtObjAttrs, leftargscount:LeftArgsCount, _args:Arguments) extends Formula
+case class Relation_Formula(objectAttrs: OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends Formula
 case class Universal_Quantifier_Formula(srt:Sort, pos:Position, _vars:Variable_Segments, _restrict:Option[Restriction], _expression:Claim) extends Formula
 case class Multi_Attributive_Formula(srt:Sort, pos:Position, _tm:Term, _clusters:List[Adjective_Cluster]) extends Formula
 case class Conditional_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
@@ -229,7 +303,7 @@ case class FlexaryDisjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Cla
 case class FlexaryConjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
 case class Multi_Relation_Formula(srt:Sort, pos:Position, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
-case class RightSideOf_Relation_Formula(objAttr:ConstrOrgnlExtObjAttrs, leftargscount:LeftArgsCount, _args:Arguments)
+case class RightSideOf_Relation_Formula(objAttr:ConstrOrgnlExtObjAttrs, infixedArgs: InfixedArgs)
 
 sealed trait Assumptions
 case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
@@ -243,10 +317,10 @@ case class ExemplifyingVariable(_var:Variable, _simplTm:Simple_Term) extends Exe
 case class Example(_var:Variable, _tm:Term) extends Exemplifications
 
 sealed trait Reference
-case class Local_Reference(pos:Position, spell:Spelling, serialnumber:SerialNr, labelnr:LabelNr) extends Reference
-case class Definition_Reference(posNr:PosNr, spell:Spelling, num:Number) extends Reference
-case class Link(pos:Position, labelnr:LabelNr) extends Reference
-case class Theorem_Reference(posNr:PosNr, spell:Spelling, num:Number) extends Reference
+case class Local_Reference(pos:Position, spell:Spelling, serialnumber:SerialNr, labelnr:Int) extends Reference
+case class Definition_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
+case class Link(pos:Position, labelnr:Int) extends Reference
+case class Theorem_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
 
 sealed trait Modes
 case class Expandable_Mode(_tp:Type) extends Modes
@@ -261,9 +335,9 @@ case class Equality(_var:Variable, _tm:Term) extends EqualityTr
 case class Equality_To_Itself(_var:Variable, _tm:Term) extends EqualityTr
 
 sealed trait Pragmas
-case class Unknown(pos:Position, ins:Inscription) extends Pragmas
-case class Notion_Name(pos:Position, insc:Inscription) extends Pragmas
-case class Canceled(MmlId:MMLId, amount:Amount, kind:String, position:Position) extends Pragmas
+case class Unknown(pos:Position, inscription:String) extends Pragmas
+case class Notion_Name(pos:Position, inscription:String) extends Pragmas
+case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
 
 case class Scheme(idNr: IdNr, spell:Spelling, nr:Nr)
 case class Schematic_Variables(_segms:List[Segments])
@@ -272,13 +346,13 @@ case class Variables(_vars:List[Variable])
 case class Variable_Segments(_vars:List[VariableSegments])
 case class Variable(varAttr:VarAttrs)
 case class Substitutions(_childs:List[Substitution])
-case class Substitution(freevarnr:FreeVarNr, kind:String, varnr:VarNr)
+case class Substitution(freevarnr:Int, kind:String, varnr:VarNr)
 case class Adjective_Cluster(_attrs: List[Attribute])
-case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: NoOcc, _args:List[Arguments])
+case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:List[Arguments])
 case class Arguments(_children:List[Term])
 case class Ancestors(_structTypes:List[Struct_Type])
 case class Loci(_loci:List[Locus])
-case class Locus(varidkind:VarKind, varAttr:VarAttrs)
+case class Locus(varkind:String, varAttr:VarAttrs)
 case class Field_Segments(_fieldSegments:List[Field_Segment])
 case class Field_Segment(pos:Position, _selectors:Selectors, _tp:Type)
 case class Selectors(posNr:PosNr, spell:Spelling, _loci:List[Selector])
@@ -286,11 +360,11 @@ case class Selector(posNr:PosNr, spell:Spelling, _loci:List[Locus])
 case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List)
 case class Selectors_List(_children:List[Patterns])
 case class Correctness_Conditions(_cond:List[CorrectnessConditions])
-case class Properties(prop:Option[PropertyAt], _cond:List[Properties], _tp:Option[Type])
-case class Redefine(occ:Occurs)
+case class Properties(property:Option[String], _cond:List[Properties], _tp:Option[Type])
+case class Redefine(occurs:Boolean)
 case class Type_Specification(_types:List[Type])
 case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr)
-case class Label(spell:Spelling, pos:Position, serialnr:SerialNr, labelnr:LabelNr)
+case class Label(spell:Spelling, pos:Position, serialnr:SerialNr, labelnr:Int)
 case class Restriction(_formula:Formula)
 case class Right_Circumflex_Symbol(posNr:PosNr, formatnr:FormatNr, spell:Spelling)
 case class Equating(_var:Variable, _tm:Term)
@@ -303,3 +377,9 @@ case class Provisional_Formulas(_props:List[Proposition])
 case class Partial_Definiens_List(_partDef:List[Partial_Definiens])
 case class Partial_Definiens(_expr:Expression, _form:Formula)
 case class Otherwise(_expr:Option[Expression])
+
+object checkUtils {
+  def fullClassName(s: String) = {
+    "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
+  }
+}

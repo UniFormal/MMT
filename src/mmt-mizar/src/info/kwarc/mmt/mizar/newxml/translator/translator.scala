@@ -1,16 +1,12 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.archives.BuildResult
-import info.kwarc.mmt.api.documents.{Document, DocumentLevel}
+import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.symbols.ContextContainer
-import info.kwarc.mmt.api.{DPath, LocalName, NamespaceMap, archives, documents}
+import info.kwarc.mmt.api.{DPath, archives, documents}
 import info.kwarc.mmt.mizar.mmtwrappers.Mizar
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax.{Item, Reservation, Text_Proper}
-import info.kwarc.mmt.mizar.mmtwrappers.Mizar._
 import info.kwarc.mmt.mizar.translator.TranslationController
 
 object articleTranslator {
@@ -38,14 +34,21 @@ class MizarImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
   def inExts = List("esx")
 
-  def importDocument(bf: archives.BuildTask, seCont: documents.Document => Unit): BuildResult = {
-    val file = bf.inFile
+  def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
     val parser = makeParser
-    val parsedArticle = parser.apply(file).asInstanceOf[Text_Proper]
-    val aid = parsedArticle.articleid
+    val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
+    val doc = translate(text_Proper, bf)
+
+    index(doc)
+    archives.BuildResult.empty
+  }
+
+  def translate(text_Proper: Text_Proper, bf:archives.BuildTask) : Document = {
+    val aid = text_Proper.articleid
     val dpath = bf.narrationDPath.^! / (aid.toLowerCase() + ".omdoc")
 
-    TranslationController.currentBase = getBase(file)
+
+    TranslationController.currentBase = getBase(bf.inFile)
     TranslationController.currentAid = aid
 
     val doc = new Document(dpath, documents.ModuleLevel, None)
@@ -54,10 +57,9 @@ class MizarImporter extends archives.Importer {
     val th = new Theory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh), Theory.noParams, Theory.noBase)
     TranslationController.add(th)
 
-    articleTranslator.translateArticle(parsedArticle, dpath)
+    articleTranslator.translateArticle(text_Proper, dpath)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
-    seCont(doc)
-    BuildResult.empty
+    doc
   }
 
   def getBase(f: File): String = {
