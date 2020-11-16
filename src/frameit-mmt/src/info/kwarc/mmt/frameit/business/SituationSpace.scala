@@ -8,6 +8,8 @@ import info.kwarc.mmt.api.{DPath, GlobalName, LocalName, MPath, SimpleStep}
 sealed case class SituationSpace(path: MPath) {
   def doc: DPath = path.doc
   def name: LocalName = path.name
+
+  override def toString: String = path.toString
 }
 
 object SituationSpace {
@@ -28,9 +30,15 @@ object SituationSpace {
     val rootSituationTheory = Theory.empty(doc, spaceTheory.name / rootSituationTheoryName, meta)
     Utils.addModuleToController(rootSituationTheory)
 
-    initialIncludes
+    /*initialIncludes
       .map(PlainInclude(_, rootSituationTheory.path))
-      .foreach(ctrl.add(_))
+      .foreach(ctrl.add(_))*/
+
+    for (inclPath <- initialIncludes) {
+      val incl = PlainInclude(inclPath, rootSituationTheory.path)
+      ctrl.add(incl)
+      println(ctrl.globalLookup.getImplicit(inclPath, rootSituationTheory.path))
+    }
 
     new SituationTheory(SituationTheoryPath(SituationSpace(spaceTheory.path), rootSituationTheoryName))
   }
@@ -46,6 +54,8 @@ sealed case class SituationTheoryPath(space: SituationSpace, name: LocalName) {
   def module: MPath = space.path / name
   def symbol: GlobalName = space.path ? name
 
+  override def toString: String = s"situation theory `${name}` in space ${space}"
+
   def descend(name: LocalName): SituationTheoryPath = {
     SituationTheoryPath(space, name)
   }
@@ -56,6 +66,8 @@ sealed class SituationTheory(val path: SituationTheoryPath)(implicit ctrl: Contr
   val theory: Theory = ctrl.getTheory(path.module)
 
   def space: SituationSpace = path.space
+
+  override def toString: String = path.toString
 
   def descend(name: LocalName): SituationTheory = {
     val newPath = path.descend(name)

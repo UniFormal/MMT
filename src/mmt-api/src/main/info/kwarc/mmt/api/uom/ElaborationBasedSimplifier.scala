@@ -260,7 +260,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
      controller.extman.get(classOf[ModuleLevelFeature], dm.feature) match {
        case None => Nil
        case Some(sf) =>
-          val elab = sf.modules(dm)
+          val elab = sf.modules(dm) // todo for Navid: pass rulesO and env to modules method
           val docO = dm.parentDoc
           elab.foreach {e =>
             e.setOrigin(ElaborationOf(dm.path))

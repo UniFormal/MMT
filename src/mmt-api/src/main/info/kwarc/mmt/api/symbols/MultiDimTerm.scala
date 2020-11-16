@@ -233,11 +233,17 @@ object TermContainer {
    def asParsed(term: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tc.parsed = term
-
       tc
    }
-
    def asParsed(term: Term): TermContainer = asParsed(Some(term))
+
+
+   def asAnalyzed(term: Option[Term]): TermContainer = {
+      val tc = new TermContainer
+      tc.analyzed = term
+      tc
+   }
+   def asAnalyzed(term: Term): TermContainer = asAnalyzed(Some(term))
 
    def empty(): TermContainer = new TermContainer
 }
