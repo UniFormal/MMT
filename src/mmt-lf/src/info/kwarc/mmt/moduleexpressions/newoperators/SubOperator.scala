@@ -2,7 +2,7 @@ package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking.CheckingCallback
-import info.kwarc.mmt.api.modules.{DefaultStateOperator, Module, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DefaultStateOperator, DiagramInterpreter, Module, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
@@ -52,7 +52,7 @@ object SubOperator extends SimpleLinearOperator with DefaultStateOperator with S
     InToOutMorphismConnectionType.suffixed("_submodel")
   )
 
-  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: SubOperator.LinearState): List[List[SimpleConstant]] = {
+  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[List[SimpleConstant]] = {
 
     val par = getRenamerFor("p") // parent symbol copy
     val sub = getRenamerFor("s") // substructure symbol/condition

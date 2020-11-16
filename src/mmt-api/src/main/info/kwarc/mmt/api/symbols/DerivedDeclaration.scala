@@ -4,14 +4,13 @@ import info.kwarc.mmt.api._
 import modules._
 import frontend._
 import checking._
-import uom.ElaboratedElement
+import uom.{ElaboratedElement, ExtendedSimplificationEnvironment, SimplificationEnvironment}
 import objects._
 import notations._
 
 import scala.xml.Elem
 import Theory._
 import info.kwarc.mmt.api.utils.MMT_TODO
-import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 
 
 /** A [[DerivedContentElement]] unifies feature of [[Constant]] and [[Theory]] but without a commitment to the semantics.
@@ -107,7 +106,7 @@ case class StructuralFeatureRule(cls: Class[_ <: StructuralFeature], feature: St
  * - dd.getComponents has the same components as this.expectedComponents and in the same order
  */
 abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feature: String) extends FormatBasedExtension {
-   def isApplicable(s: String) = s == feature
+   final def isApplicable(s: String) = s == feature
 
    val bodyDelim = "="
 
@@ -152,11 +151,23 @@ abstract class GeneralStructuralFeature[Level <: DerivedContentElement](val feat
   /** called after checking components and inner declarations for additional feature-specific checks */
    def check(dd: Level)(implicit env: ExtendedCheckingEnvironment): Unit
 
-   /** override as needed */
-   def modules(dd: Level): List[Module] = Nil
+  /**
+    * Computes the modules into which the feature elaborates.
+    *
+    * Override as needed.
+    *
+    * @param dd The derived content element, e.g. for [[ModuleLevelFeature module-level structural features]] a [[DerivedModule]].
+    */
+   def modules(dd: Level, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = Nil
 }
 
-abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[DerivedDeclaration](f) {
+/**
+  * A declaration-level structural feature: a structural feature that can occur within modules (often theories)
+  * and elaborotes into multiple so-called derived ("generated") declarations.
+  *
+  * @param feature The feature string uniquely identifying the structural feature at hand
+  */
+abstract class StructuralFeature(feature: String) extends GeneralStructuralFeature[DerivedDeclaration](feature) {
   /** additional context relative to which to interpret the body of a derived declaration */
   def getInnerContext(dd: DerivedDeclaration): Context = dd.getInnerContext
 
@@ -175,9 +186,25 @@ abstract class StructuralFeature(f: String) extends GeneralStructuralFeature[Der
    object VarDeclFeature extends DerivedVarDeclFeature(feature)
    /** returns the rule constant for using this feature in a theory */
    def getRule = StructuralFeatureRule(getClass, feature)
+
+  /**
+    * Computes no modules: declaration-level structural features do not elaborate into modules.
+    *
+    * @see [[elaborate()]]
+    */
+   final override def modules(dd: DerivedDeclaration, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = Nil
 }
 
-abstract class ModuleLevelFeature(f: String) extends GeneralStructuralFeature[DerivedModule](f)
+/**
+  * A module-level structural feature: a structural feature that can occur in documents and elaborates
+  * into modules.
+  *
+  * A classic example is the [[Diagram]] structural feature installing the result of diagram operators
+  * applied on diagrams.
+  *
+  * @param feature A feature string, see docs of [[GeneralStructuralFeature]].
+  */
+abstract class ModuleLevelFeature(feature: String) extends GeneralStructuralFeature[DerivedModule](feature)
 
 /**
  * the return type of elaborating a [[DerivedDeclaration]] by a [[StructuralFeature]]

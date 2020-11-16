@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api.checking.CheckingCallback
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
@@ -90,7 +89,7 @@ abstract class LinearOperator extends FunctorialOperator {
     * @param state
     * @return
     */
-  protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback, state: this.DiagramState): List[List[Declaration]]
+  protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]]
 
   // internal things
 
@@ -196,7 +195,7 @@ abstract class LinearOperator extends FunctorialOperator {
       state.getLinearState(inModule.path).registerDeclaration(decl)
       val newDeclarations = decl match {
         case Include(includeData) => applyInclude(inModule, includeData)
-        case decl: Declaration => applyDeclaration(inModule, decl)(interp.solver, state)
+        case decl: Declaration => applyDeclaration(inModule, decl)(interp, state)
       }
 
       if (inModule.isInstanceOf[Theory] && newDeclarations.size != 1 + connectionTypes.size) {
@@ -328,11 +327,11 @@ abstract class LinearOperator extends FunctorialOperator {
 }
 
 abstract class ElaborationBasedLinearOperator extends LinearOperator {
-  protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback, state: this.LinearState): List[List[Declaration]]
+  protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[Declaration]]
 
-  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit solver: CheckingCallback, state: this.DiagramState): List[List[Declaration]] = {
+  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]] = {
     decl match {
-      case c: Constant => applyConstant(module, c)(solver, state.getLinearState(module.path))
+      case c: Constant => applyConstant(module, c)(diagInterp, state.getLinearState(module.path))
       case _ =>
         // do elaboration, then call applyConstant
         ???
@@ -351,7 +350,7 @@ trait DefaultStateOperator extends LinearOperator {
 abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
   type SimpleConstant = (LocalName, Term, Option[Term])
 
-  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: this.LinearState): List[List[SimpleConstant]]
+  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[SimpleConstant]]
 
   // helper functions to make up a nice DSL
   final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
@@ -361,7 +360,7 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
   final protected def ConnResults(decls: (LocalName, Term, Term)*): List[List[SimpleConstant]] =
     List(decls.map(d => (d._1, d._2, Some(d._3))).toList)
 
-  final override protected def applyConstant(module: Module, c: Constant)(implicit solver: CheckingCallback, state: this.LinearState): List[List[Declaration]] = {
+  final override protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[Declaration]] = {
     val simplifiedName: LocalName = module match {
       case _: Theory => c.name
       case v: View => c.name match {

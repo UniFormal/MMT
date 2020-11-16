@@ -1,7 +1,7 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.checking.CheckingCallback
-import info.kwarc.mmt.api.modules.{DefaultStateOperator, Module, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DefaultStateOperator, DiagramInterpreter, Module, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api._
@@ -44,7 +44,7 @@ object HomOperator extends SimpleLinearOperator with DefaultStateOperator with S
 
    */
 
-  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
+  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
 
     // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
     val dom = getRenamerFor("d")

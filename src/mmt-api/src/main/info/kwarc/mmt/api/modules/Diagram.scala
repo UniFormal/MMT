@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.api.uom.{SimplificationEnvironment, SimplificationUnit}
 
 import scala.collection.mutable
 
@@ -27,19 +27,12 @@ class Diagram extends ModuleLevelFeature(Diagram.feature) {
   /** */
   def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
-  override def modules(dm: DerivedModule): List[Module] = {
+  override def modules(dm: DerivedModule, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = {
     val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
 
+    // shadow rule parameter as [[ElaborationBasedSimplifier.applyElementEnd()]] always passes None so far
     val rules = RuleSet.collectRules(controller, dm.getInnerContext)
-
-    // TODO: @Florian, the construction of this is probably wrong and doesn't make sense with the Inhabitable judgement
-    val solver = new Solver(
-      controller,
-      CheckingUnit(Some(dm.path $ DefComponent),dm.getInnerContext, Context.empty, Inhabitable(Stack.empty, df)),
-      rules
-    )
-    // todo: ask Florian how to get solver from controller
-    val diagInterp = new DiagramInterpreter(dm.getInnerContext, controller, solver, rules)
+    val diagInterp = new DiagramInterpreter(dm.getInnerContext, rules, controller, env.errorCont)
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
@@ -100,7 +93,7 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
   * @param solver
   * @param rules
   */
-class DiagramInterpreter(private val interpreterContext: Context, val ctrl: Controller, val solver: CheckingCallback, rules: RuleSet) {
+class DiagramInterpreter(private val interpreterContext: Context, private val rules: RuleSet, val ctrl: Controller, val errorCont: ErrorHandler) {
   // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
   private val transientResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
   // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())

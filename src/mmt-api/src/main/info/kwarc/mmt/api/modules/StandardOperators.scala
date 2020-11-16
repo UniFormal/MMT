@@ -56,7 +56,7 @@ class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extend
     InToOutMorphismConnectionType.suffixed("_CopyProjection2")
   )
 
-  override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
+  override def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
 
     val copy1 = getRenamerFor("1")
     val copy2 = getRenamerFor("2")
@@ -94,7 +94,7 @@ object PushoutOperator extends DiagramOperator {
         // suffixing complex step doesn't work: / ComplexStep(translationViewPath)
         override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout")
 
-        override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit solver: CheckingCallback, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
+        override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
 
           // cannot use [[ApplyMorphs]] here as the View we're constructing in parallel does not even exist yet
           // todo: isn't creation of a new OMSReplacer every time inefficient? How about creating a parametrized OMSReplacers?
