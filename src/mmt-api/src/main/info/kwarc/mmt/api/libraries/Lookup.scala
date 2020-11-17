@@ -193,11 +193,32 @@ abstract class Lookup {self =>
   }
 
   /**
-    * A Traverser that recursively expands definitions of Constants.
-    * It carries along a test function that is used to determine when a constant should be expanded.
+    * A Traverser that recursively definition-expands [[OMID]]s.
+    *
+    * See [[ExpandDefinitions.apply()]].
     */
    object ExpandDefinitions extends Traverser[ContentPath => Boolean] {
-      def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean) = t match {
+    /**
+      * Recursively definition-expands all [[OMID]]s in ''t'' as deemed required by ''expand(omid.path)''.
+      *
+      * It leaves all other [[OMID]]s untouched and also those that reference a constant without definiens.
+      *
+      * @param t The term
+      * @param expand A predicate on [[ContentPath]]s signalling when to expand an [[OMID]].
+      * @param con A useless context to agree with the contract of [[Traverser]], you can safely ignore this argument.
+      * @return The definition-expanded term.
+      */
+      override def apply(t: Term, expand: ContentPath => Boolean, con : Context = Context()) : Term = super.apply(t, expand, con)
+
+    /**
+      * Convenience method for the case of the other [[apply()]] when the predicate is defined by a sequence.
+      * @param t The term
+      * @param expand All [[OMID]]s referencing a defined constant in this list will be definition-expanded.
+      * @return The definition-expanded term.
+      */
+      def apply(t: Term, expand: Seq[ContentPath]): Term = super.apply(t, expand.contains)
+
+      def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean): Term = t match {
          case OMID(p: GlobalName) if expand(p) => getAs(classOf[Constant],p).df match {
             case Some(tm) => traverse(tm)
             case None => OMID(p)

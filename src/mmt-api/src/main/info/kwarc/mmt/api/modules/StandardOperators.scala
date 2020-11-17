@@ -44,7 +44,7 @@ object CopyOperator extends ParametricRule {
   }
 }
 
-class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultStateOperator {
+class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
 
   override protected val operatorDomain: MPath = dom
   override protected val operatorCodomain: MPath = cod
@@ -79,7 +79,7 @@ object PushoutOperator extends DiagramOperator {
     case OMA(OMS(`head`), List(OMMOD(translationViewPath), diagram)) =>
       val translationView = ctrl.getAs(classOf[View], translationViewPath)
 
-      new SimpleLinearOperator with DefaultStateOperator {
+      new SimpleLinearOperator with DefaultLinearStateOperator {
         override val head: GlobalName = PushoutOperator.head
         override protected val operatorDomain: MPath = translationView.from.toMPath
         override protected val operatorCodomain: MPath = translationView.to.toMPath

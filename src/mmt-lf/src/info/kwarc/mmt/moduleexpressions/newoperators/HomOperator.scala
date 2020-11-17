@@ -1,14 +1,13 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
-import info.kwarc.mmt.api.checking.CheckingCallback
-import info.kwarc.mmt.api.modules.{DefaultStateOperator, DiagramInterpreter, Module, SimpleLinearOperator, SystematicRenamingUtils}
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{DefaultLinearStateOperator, DiagramInterpreter, Module, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
-object HomOperator extends SimpleLinearOperator with DefaultStateOperator with SystematicRenamingUtils {
+object HomOperator extends SimpleLinearOperator with DefaultLinearStateOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
 
   override protected val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")

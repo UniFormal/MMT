@@ -6,12 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{ComplexStep, GeneralError, LocalName, MPath}
 
-import scala.collection.mutable
-
-abstract class FunctorialOperator extends DiagramOperator {
-  protected type DiagramState <: DefaultState
-  protected def initState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): this.DiagramState
-
+abstract class FunctorialOperator extends DiagramOperator with FunctorialOperatorState {
   protected def applyModuleName(name: LocalName): LocalName
   /**
     * Applies a module.
@@ -27,11 +22,7 @@ abstract class FunctorialOperator extends DiagramOperator {
     * take care not not needlessly compute, check state.processedModules first:
     * state.processedModules.get(m.path).foreach(return _)
     */
-  protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: this.DiagramState): Module
-
-  protected class DefaultState(var inputModules: Map[MPath, Module]) {
-    var processedModules: mutable.Map[MPath, Module] = mutable.Map()
-  }
+  protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Module
 
   protected def applyModulePath(mpath: MPath): MPath = mpath.doc ? applyModuleName(mpath.name)
 
@@ -43,7 +34,7 @@ abstract class FunctorialOperator extends DiagramOperator {
       interp(inputDiagram).flatMap(acceptDiagram) match {
         case Some(modulePaths) =>
           val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
-          val state = initState(diagram, modules, interp)
+          val state = initDiagramState(diagram, modules, interp)
 
           val newModulePaths = modulePaths.map(modulePath => {
             val newModule = applyModule(interp.get(modulePath))(interp, state)
@@ -72,24 +63,18 @@ abstract class FunctorialOperator extends DiagramOperator {
   }
 }
 
-abstract class LinearOperator extends FunctorialOperator {
+abstract class LinearOperator extends FunctorialOperator with LinearOperatorState {
   // to be overridden in subclasses:
   protected val operatorDomain: MPath
   protected val operatorCodomain: MPath
-
   protected val connectionTypes : List[ConnectionType] = Nil
 
-  // todo: how should this method signal *unapplicability*/partiality (i.e. error)?
   /**
     * post-condition: adds [[decl]] to [[state.processedDeclarations]]
-    *
-    * @param module
-    * @param decl
-    * @param solver
-    * @param state
-    * @return
+    * @return Either Nil or a list with (1 + connectionTypes.size) elements, each of them being a list containing
+    *         declarations (possibly none).
     */
-  protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]]
+  protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]]
 
   // internal things
 
@@ -118,22 +103,6 @@ abstract class LinearOperator extends FunctorialOperator {
     }
   }
 
-  protected class LinearState(val outerContext: Context) {
-    private val _processedDeclarations = mutable.ListBuffer[Declaration]()
-
-    def processedDeclarations: List[Declaration] = _processedDeclarations.toList
-    def registerDeclaration(decl: Declaration*): Unit = _processedDeclarations ++= decl
-    def registerDeclarations(decls: Iterable[Declaration]): Unit = _processedDeclarations ++= decls
-  }
-
-  override type DiagramState <: DeclarationTrackingState
-  protected class DeclarationTrackingState(inputModules: Map[MPath, Module]) extends DefaultState(inputModules) {
-    var linearStates: mutable.Map[MPath, LinearState] = mutable.Map()
-
-    def getLinearState(modulePath: MPath): LinearState =
-      linearStates.getOrElseUpdate(modulePath, new LinearState(Context(modulePath)))
-  }
-
   final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
     case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
     case SimpleDiagram(dom, _) if dom != operatorDomain =>
@@ -145,8 +114,10 @@ abstract class LinearOperator extends FunctorialOperator {
 
   // inModule: the module from the input diagram
   // outModule: the module to which the inModule is being transformed
-  final override protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: this.DiagramState): Module = {
+  final override protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Module = {
     state.processedModules.get(inModule.path).foreach(return _)
+
+    val inLinearState = state.initAndRegisterNewLinearSate(inModule)
 
     val outModule: Module = {
       val newModulePath = applyModulePath(inModule.path)
@@ -158,10 +129,7 @@ abstract class LinearOperator extends FunctorialOperator {
           applyModule(state.inputModules(view.from.toMPath))
           applyModule(state.inputModules(view.to.toMPath))
 
-          // inherit the linear state from the codomain for this view's linear state
-          // todo: with modular views and includes, this will lead to duplicates
-          val linearState = state.getLinearState(inModule.path)
-          linearState.registerDeclarations(state.getLinearState(view.to.toMPath).processedDeclarations)
+          inLinearState.inherit(state.getLinearState(view.to.toMPath))
 
           View(
             newModulePath.doc, newModulePath.name,
@@ -192,19 +160,19 @@ abstract class LinearOperator extends FunctorialOperator {
     connectionModules.foreach(interp.addConnection)
 
     inModule.getDeclarations.foreach(decl => {
-      state.getLinearState(inModule.path).registerDeclaration(decl)
+      inLinearState.registerDeclaration(decl)
       val newDeclarations = decl match {
         case Include(includeData) => applyInclude(inModule, includeData)
         case decl: Declaration => applyDeclaration(inModule, decl)(interp, state)
       }
 
-      if (inModule.isInstanceOf[Theory] && newDeclarations.size != 1 + connectionTypes.size) {
+      if (inModule.isInstanceOf[Theory] && newDeclarations.nonEmpty && newDeclarations.size != 1 + connectionTypes.size) {
         throw GeneralError("Linear operator returned incompatible number of output declaration lists")
       }
 
-      newDeclarations.head.foreach(outModule.add(_))
-
-      newDeclarations.tail.zip(connectionModules).map {
+      // below, be cautious about using newDeclarations.{head,tail} as newDeclarations may be empty
+      newDeclarations.headOption.foreach(_.foreach(outModule.add(_)))
+      newDeclarations.drop(1).zip(connectionModules).map {
         case (newDecls, conn) => newDecls.foreach(conn.add(_))
       }
     })
@@ -220,7 +188,7 @@ abstract class LinearOperator extends FunctorialOperator {
     * @param state
     * @return
     */
-  final private def applyInclude(module: Module, include: IncludeData)(implicit interp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]] = {
+  final private def applyInclude(module: Module, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
     val ctrl = interp.ctrl
 
     if (include.args.nonEmpty) {
@@ -236,7 +204,7 @@ abstract class LinearOperator extends FunctorialOperator {
         applyModule(state.inputModules(from))
 
         if (module.isInstanceOf[Theory]) {
-          state.getLinearState(module.path).registerDeclarations(state.getLinearState(from).processedDeclarations)
+          state.getLinearState(module.path).inherit(state.getLinearState(from))
         }
 
         applyModulePath(from) :: connectionTypes.map {
@@ -287,7 +255,7 @@ abstract class LinearOperator extends FunctorialOperator {
         applyModule(state.inputModules(dfPath))
 
         if (module.isInstanceOf[View]) {
-          state.getLinearState(module.path).registerDeclarations(state.getLinearState(dfPath).processedDeclarations)
+          state.getLinearState(module.path).inherit(state.getLinearState(dfPath))
         }
 
         OMMOD(applyModulePath(dfPath)) :: connectionTypes.map(conn => OMMOD(conn.applyModulePath(dfPath)))
@@ -326,10 +294,14 @@ abstract class LinearOperator extends FunctorialOperator {
   }
 }
 
+/**
+  * A [[LinearOperator]] that works constant-by-constant: declarations that are not [[Constant]]s (e.g.
+  * [[Structure]]s) are treated appropriately.
+  */
 abstract class ElaborationBasedLinearOperator extends LinearOperator {
-  protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[Declaration]]
+  protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]]
 
-  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: this.DiagramState): List[List[Declaration]] = {
+  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
     decl match {
       case c: Constant => applyConstant(module, c)(diagInterp, state.getLinearState(module.path))
       case _ =>
@@ -339,18 +311,24 @@ abstract class ElaborationBasedLinearOperator extends LinearOperator {
   }
 }
 
-trait DefaultStateOperator extends LinearOperator {
-  override type DiagramState = DeclarationTrackingState
-
-  final override protected def initState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): this.DiagramState = {
-    new DeclarationTrackingState(modules)
-  }
-}
-
-abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
+/**
+  * A [[LinearOperator]] that works (type, definiens)-by-(type, definiens): all declarations that are
+  * not [[FinalConstant]]s (with a type) are treated appropriately and subclasses only need to implement a method
+  * receiving a [[Term]] for the type component and an ''Option[Term]'' for an optional definiens.
+  *
+  * Moreover, for convenience the linear state is fixed to be the one from [[DefaultLinearStateOperator]].
+  */
+abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with DefaultLinearStateOperator {
   type SimpleConstant = (LocalName, Term, Option[Term])
 
-  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[SimpleConstant]]
+  /**
+    *
+    * @return Either Nil or a list consisting of (1 + connectionTypes.size) lists, each of them containing
+    *         declarations (possibly none).
+    *         In case the operator is not applicable on c, emit an error via diagInterp.errorHandler and
+    *         return Nil.
+    */
+  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[SimpleConstant]]
 
   // helper functions to make up a nice DSL
   final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
@@ -360,7 +338,9 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
   final protected def ConnResults(decls: (LocalName, Term, Term)*): List[List[SimpleConstant]] =
     List(decls.map(d => (d._1, d._2, Some(d._3))).toList)
 
-  final override protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: this.LinearState): List[List[Declaration]] = {
+  final protected val NoResults: List[List[SimpleConstant]] = Nil
+
+  final override protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]] = {
     val simplifiedName: LocalName = module match {
       case _: Theory => c.name
       case v: View => c.name match {
@@ -370,8 +350,19 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator {
       }
     }
 
-    val ret = applyConstantSimple(module, c, simplifiedName, c.tp.get, c.df)
-    if (ret.size != 1 + connectionTypes.size) {
+    val rawTp = c.tp.getOrElse({
+      diagInterp.errorCont(GeneralError(s"Operator ${getClass} not applicable on constants without type component"))
+      return Nil
+    })
+    val rawDf = c.df
+
+    val tp = diagInterp.ctrl.globalLookup.ExpandDefinitions(rawTp, state.skippedDeclarationPaths)
+    val df = rawDf.map(diagInterp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
+
+    val ret = applyConstantSimple(module, c, simplifiedName, tp, df)
+    if (ret.isEmpty) {
+      return Nil
+    } else if (ret.size != 1 + connectionTypes.size) {
       throw GeneralError("invalid return value of applyConstantSimple")
     }
 
