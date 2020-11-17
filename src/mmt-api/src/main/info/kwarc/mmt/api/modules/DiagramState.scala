@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api.{ContentPath, GeneralError, MPath}
+import info.kwarc.mmt.api.{ContainerElement, ContentElement, ContentPath, GeneralError, GlobalName, MPath, Path}
 import info.kwarc.mmt.api.objects.{Context, Term}
 import info.kwarc.mmt.api.symbols.Declaration
 
@@ -29,18 +29,20 @@ trait FunctorialOperatorState {
     * Factory method to initialize a [[DiagramState]].
     *
     * @param diagram The full input diagram expression.
-    * @param modules The extracted modules in the input diagram
+    * @param toplevelModules The extracted modules in the input diagram
     */
-  def initDiagramState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
+  def initDiagramState(diagram: Term, toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
 
   protected trait MinimalFunctorialOpState {
-    val inputModules: Map[MPath, Module]
+    val inputToplevelModules: Map[MPath, Module]
 
     /**
       * All the processed modules so far: a map from the [[MPath]] of the input [[Module]] to the
       * generated output [[Module]].
       */
-    val processedModules: mutable.Map[MPath, Module] = mutable.Map()
+    val processedElements: mutable.Map[Path, ContentElement] = mutable.Map()
+
+    val seenModules: mutable.Set[MPath] = mutable.Set(inputToplevelModules.keys.toSeq : _*)
   }
 }
 
@@ -60,14 +62,15 @@ trait LinearOperatorState extends FunctorialOperatorState {
     * Side effect-free (!) factory method to initialize a [[LinearState]].
     *
     * If you want to initialize a new linear state *and* register it to some [[DiagramState]], then
-    * call [[LinearDiagramState.initAndRegisterNewLinearSate()]].
+    * call [[LinearDiagramState.initAndRegisterNewLinearState()]].
     *
     * @param diagramState The current diagram state
-    * @param module The module for which the linear state ought to be created
+    * @param container The container for which the linear state ought to be created
     */
-  protected def initLinearState(diagramState: DiagramState, module: Module): LinearState
+  protected def initLinearState(diagramState: DiagramState, container: ContainerElement[Declaration]): LinearState
 
   protected trait MinimalLinearState {
+    def diagramState: DiagramState
     def outerContext: Context
     def processedDeclarations: List[Declaration]
     def registerDeclaration(decl: Declaration): Unit
@@ -82,19 +85,26 @@ trait LinearOperatorState extends FunctorialOperatorState {
   }
 
   final override type DiagramState = LinearDiagramState
-  final override def initDiagramState(diagram: Term, modules: Map[MPath, Module], interp: DiagramInterpreter): LinearDiagramState = new LinearDiagramState(modules)
+  final override def initDiagramState(diagram: Term, toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)
 
-  final protected class LinearDiagramState(val inputModules: Map[MPath, Module]) extends MinimalFunctorialOpState {
-    val linearStates: mutable.Map[MPath, LinearState] = mutable.Map()
+  final protected class LinearDiagramState(val inputToplevelModules: Map[MPath, Module]) extends MinimalFunctorialOpState {
+    val linearStates: mutable.Map[Path, LinearState] = mutable.Map()
 
-    def initAndRegisterNewLinearSate(module: Module): LinearState = {
-      linearStates.getOrElseUpdate(module.path, LinearOperatorState.this.initLinearState(this, module))
+    def initAndRegisterNewLinearState(container: ContainerElement[Declaration]): LinearState = {
+      if (linearStates.contains(container.path)) {
+        throw GeneralError("Tried to initialize linear state twice, this must be a bug in the diag ops framework.")
+      }
+
+      val linearState = LinearOperatorState.this.initLinearState(this, container)
+      linearStates.put(container.path, linearState)
+
+      linearState
     }
 
-    def getLinearState(modulePath: MPath): LinearState = {
-      linearStates.getOrElseUpdate(modulePath, throw GeneralError(
-        s"No linear state known for $modulePath yet. Did the diag op framework ignore inclusion order and processed " +
-          s" a module too early before another one?"
+    def getLinearState(path: Path): LinearState = {
+      linearStates.getOrElseUpdate(path, throw GeneralError(
+        s"No linear state known for $path yet. Did the diag op framework ignore inclusion order and processed, " +
+          s" say a module, too early before another one?"
       ))
     }
   }
@@ -116,7 +126,7 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     *                     (This being a thing is a bit of a leaking abstraction since linear operators
     *                     should see everything as being flat.)
     */
-  class SkippedDeclsExtendedLinearState(override val outerContext: Context) extends MinimalLinearState {
+  class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override val outerContext: Context) extends MinimalLinearState {
     final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
     final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
@@ -125,7 +135,7 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     final def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
     final def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
 
-    final def skippedDeclarationPaths: List[ContentPath] = skippedDeclarations.map(_.path)
+    final def skippedDeclarationPaths: List[GlobalName] = skippedDeclarations.map(_.path)
 
     final override def inherit(other: SkippedDeclsExtendedLinearState): Unit = {
       _processedDeclarations ++= other.processedDeclarations
@@ -133,7 +143,8 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     }
   }
 
-  final override protected def initLinearState(diagramState: DiagramState, module: Module): LinearState = {
-    new SkippedDeclsExtendedLinearState(Context(module.path))
+  final override protected def initLinearState(diagramState: DiagramState, container: ContainerElement[Declaration]): LinearState = container.path match {
+    case p: ContentPath => new SkippedDeclsExtendedLinearState(diagramState, Context(p.toMPath))
+    case _ => throw GeneralError("Diag Op framework: Can only initialize linear state for containers who have an MPath")
   }
 }

@@ -43,7 +43,7 @@ object HomOperator extends SimpleLinearOperator with DefaultLinearStateOperator 
 
    */
 
-  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: HomOperator.LinearState): List[List[SimpleConstant]] = {
 
     // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
     val dom = getRenamerFor("d")
@@ -82,8 +82,8 @@ object HomOperator extends SimpleLinearOperator with DefaultLinearStateOperator 
         // input:  t: tp
         // output: t^d: tp, t^c: tp, t^h: tm t^d -> t^c
         val thType = FunType(
-          List((None, SFOL.tm(OMS(dom(c.path))))),
-          SFOL.tm(OMS(applyModulePath(module.path) ? cod(name)))
+          List((None, SFOL.tm(dom(c)))),
+          SFOL.tm(cod(c))
         )
 
         MainResults(mainConstantCopies, (hom(name), thType, df.map(hom(_)))) ::: connResults

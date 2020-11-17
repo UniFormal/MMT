@@ -81,7 +81,9 @@ abstract class Lookup {self =>
    def visible(to: Term): Iterable[MPath]
    def getImplicit(from: Term, to: Term) : Option[Term]
    def getImplicit(from: MPath, to: MPath) : Option[Term] = getImplicit(OMMOD(from), OMMOD(to))
+
    def hasImplicit(from: Term, to: Term): Boolean = getImplicit(from, to).isDefined
+   def hasImplicit(from: MPath, to: MPath): Boolean = getImplicit(from, to).isDefined
 
    /**
     * apply a function to all declarations that are visible (based on what is currently loaded) to a theory

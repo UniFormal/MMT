@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GeneralError, LocalName, MPath}
+import info.kwarc.mmt.api.{ComplexStep, ContainerElement, ContentElement, ContentPath, GeneralError, InvalidElement, LocalName, MPath, Path}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialOperatorState {
   protected def applyModuleName(name: LocalName): LocalName
@@ -24,7 +24,14 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialOperato
     */
   protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Module
 
-  protected def applyModulePath(mpath: MPath): MPath = mpath.doc ? applyModuleName(mpath.name)
+  protected def applyModulePath(mpath: MPath): MPath = {
+    if (mpath == mpath.mainModule) {
+      mpath.doc ? applyModuleName(mpath.name)
+    } else {
+      val newMPath = applyModulePath(mpath.mainModule)
+      newMPath.doc ? LocalName(newMPath.name.steps ::: mpath.name.drop(1))
+    }
+  }
 
   protected def acceptDiagram(diagram: Term): Option[List[MPath]]
   protected def submitDiagram(newModules: List[MPath]): Term
@@ -39,7 +46,7 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialOperato
           val newModulePaths = modulePaths.map(modulePath => {
             val newModule = applyModule(interp.get(modulePath))(interp, state)
 
-            state.processedModules.get(modulePath) match {
+            state.processedElements.get(modulePath) match {
               case Some(`newModule`) => // ok
               case Some(m) if m != newModule =>
                 throw new Exception("...")
@@ -47,7 +54,7 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialOperato
               case None =>
                 throw new Exception("...")
             }
-            if (!interp.hasResult(newModule.path)) {
+            if (!interp.hasToplevelResult(newModule.path)) {
               throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
             }
 
@@ -74,7 +81,7 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
     * @return Either Nil or a list with (1 + connectionTypes.size) elements, each of them being a list containing
     *         declarations (possibly none).
     */
-  protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]]
+  protected def applyDeclaration(container: Container, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]]
 
   // internal things
 
@@ -112,72 +119,140 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
   }
   final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 
-  // inModule: the module from the input diagram
-  // outModule: the module to which the inModule is being transformed
+  final private def applyContainerPath(path: ContentPath): ContentPath = {
+    ???
+  }
+
   final override protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Module = {
-    state.processedModules.get(inModule.path).foreach(return _)
+    applyContainer(inModule)
+    state.processedElements(inModule.path) match {
+      case m: Module => m
+      case _ => throw new GeneralError("LinearOperator transformed module into an element of other type")
+    }
+  }
 
-    val inLinearState = state.initAndRegisterNewLinearSate(inModule)
+  // beware of the ordering of the "with" (not commutative)
+  // ContainerElement[Declaration] declares getDeclarations: List[Declaration] and we want that
+  // (ContentElement.getDeclarations: List[ContentElement] is too weak)
+  // type Container = ContentElement with ContainerElement[Declaration]
 
-    val outModule: Module = {
-      val newModulePath = applyModulePath(inModule.path)
-      inModule match {
-        case thy: Theory =>
-          Theory.empty(newModulePath.doc, newModulePath.name, thy.meta)
+  type Container = ModuleOrLink
 
-        case view: View =>
-          applyModule(state.inputModules(view.from.toMPath))
-          applyModule(state.inputModules(view.to.toMPath))
+  final protected def applyContainer(inContainer: Container)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
+    // variable naming conventions:
+    //
+    // inModule: the module from the input diagram
+    // outContainer: the module to which the inModule is being transformed
 
-          inLinearState.inherit(state.getLinearState(view.to.toMPath))
+    if (state.processedElements.contains(inContainer.path)) {
+      return
+    }
 
-          View(
-            newModulePath.doc, newModulePath.name,
-            OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
-            view.isImplicit
-          )
+    val inLinearState = state.initAndRegisterNewLinearState(inContainer)
+
+    val outContainer: Container = {
+
+      inContainer match {
+        case inModule: Module =>
+          val outPath = applyModulePath(inContainer.path.toMPath)
+          val outModule = inModule match {
+            case thy: Theory =>
+              Theory.empty(outPath.doc, outPath.name, thy.meta)
+
+            case view: View =>
+              applyModule(state.inputToplevelModules(view.from.toMPath))
+              applyModule(state.inputToplevelModules(view.to.toMPath))
+
+              inLinearState.inherit(state.getLinearState(view.to.toMPath))
+
+              View(
+                outPath.doc, outPath.name,
+                OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
+                view.isImplicit
+              )
+          }
+
+          state.seenModules += inModule.path
+
+          if (state.inputToplevelModules.contains(inModule.path)) {
+            interp.addToplevelResult(outModule)
+          }
+
+          outModule
+
+        case s: Structure => s.tp match {
+          case Some(OMMOD(structureDomain)) =>
+            applyContainer(interp.ctrl.getAs(classOf[Module], structureDomain))
+
+            // inherit linear state from module where structure is declared
+            inLinearState.inherit(state.getLinearState(s.home.toMPath))
+
+            new Structure(
+              home = OMMOD(applyModulePath(s.path.module)),
+              name = s.name,
+              s.tpC, s.dfC,
+              s.isImplicit, s.isTotal
+            )
+          case _ => ???
+        }
       }
     }
 
-    interp.addResult(outModule)
-    state.processedModules.put(inModule.path, outModule)
+    state.processedElements.put(inContainer.path, outContainer)
+    interp.add(outContainer)
 
-    val connectionModules: List[Module] = inModule match {
-      case _: View => Nil // connection modules get only created between in theory <-> out theory
-      case _: Theory => connectionTypes.map(conn => {
-        val path = conn.applyModulePath(inModule.path)
+    val connectionModules: List[Module] = inContainer match {
+      // connection modules are currently only created for theories
+      case thy: Theory => connectionTypes.map(conn => {
+        val path = conn.applyModulePath(thy.path)
 
         val (from, to) = conn match {
           case InToOutMorphismConnectionType() =>
-            (inModule.path, outModule.path)
+            (inContainer.path, outContainer.path)
           case OutToInMorphismConnectionType() =>
-            (outModule.path, inModule.path)
+            (outContainer.path, inContainer.path)
         }
-        View(path.doc, path.name, OMMOD(from), OMMOD(to), isImplicit = false)
+        View(path.doc, path.name, OMMOD(from.toMPath), OMMOD(to.toMPath), isImplicit = false)
       })
+
+      case _ => Nil // connection modules get only created between in theory <-> out theory
+    }
+    connectionModules.foreach(interp.add)
+    if (state.inputToplevelModules.contains(inContainer.modulePath)) {
+      connectionModules.foreach(interp.addToplevelResult)
     }
 
-    connectionModules.foreach(interp.addConnection)
-
-    inModule.getDeclarations.foreach(decl => {
+    inContainer.getDeclarations.foreach(decl => {
       inLinearState.registerDeclaration(decl)
-      val newDeclarations = decl match {
-        case Include(includeData) => applyInclude(inModule, includeData)
-        case decl: Declaration => applyDeclaration(inModule, decl)(interp, state)
+      val newDeclarations: List[List[Declaration]] = decl match {
+        case Include(includeData) => applyIncludeData(inContainer, includeData)
+        case s: Structure => applyStructure(inContainer, s)
+        case decl: Declaration => applyDeclaration(inContainer, decl)(interp, state)
       }
 
-      if (inModule.isInstanceOf[Theory] && newDeclarations.nonEmpty && newDeclarations.size != 1 + connectionTypes.size) {
-        throw GeneralError("Linear operator returned incompatible number of output declaration lists")
+      if (inContainer.isInstanceOf[Theory] && newDeclarations.nonEmpty && newDeclarations.size != 1 + connectionTypes.size) {
+        // todo: reactivate later
+        // throw GeneralError("Linear operator returned incompatible number of output declaration lists")
       }
 
       // below, be cautious about using newDeclarations.{head,tail} as newDeclarations may be empty
-      newDeclarations.headOption.foreach(_.foreach(outModule.add(_)))
-      newDeclarations.drop(1).zip(connectionModules).map {
+      //newDeclarations.headOption.foreach(_.foreach(outContainer.add(_)))
+      //newDeclarations.headOption.foreach(_.foreach(interp.add))
+
+      newDeclarations.flatten.foreach(interp.add)
+      /*newDeclarations.drop(1).zip(connectionModules).map {
         case (newDecls, conn) => newDecls.foreach(conn.add(_))
-      }
+      }*/
     })
 
-    outModule
+    state.processedElements.put(inContainer.path.asInstanceOf[Path], outContainer)
+  }
+
+  final private def applyStructure(container: Container, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
+    applyContainer(s)
+    
+    connectionTypes.foreach()
+    List(List(state.processedElements(s.path).asInstanceOf[Structure]))
   }
 
   /**
@@ -188,7 +263,7 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
     * @param state
     * @return
     */
-  final private def applyInclude(module: Module, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
+  final private def applyIncludeData(container: Container, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
     val ctrl = interp.ctrl
 
     if (include.args.nonEmpty) {
@@ -200,11 +275,11 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
         // TODO this is wrong on connections
         operatorCodomain.toMPath :: connectionTypes.map(_ => operatorCodomain.toMPath)
 
-      case from if state.inputModules.contains(from) =>
-        applyModule(state.inputModules(from))
+      case from if state.seenModules.contains(from) =>
+        applyModule(interp.ctrl.getAs(classOf[Module], from))
 
-        if (module.isInstanceOf[Theory]) {
-          state.getLinearState(module.path).inherit(state.getLinearState(from))
+        if (container.isInstanceOf[Theory]) {
+          state.getLinearState(container.path).inherit(state.getLinearState(from))
         }
 
         applyModulePath(from) :: connectionTypes.map {
@@ -220,7 +295,7 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
         //      but in general it might be something else
         //
         // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-        if (!module.isInstanceOf[View]) {
+        if (!container.isInstanceOf[View]) {
           // what to do with connections?
           ???
         }
@@ -228,7 +303,7 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
 
       case _ =>
         // theory included wasn't contained in diagram actually
-        throw GeneralError(s"Unbound module in diagram: ${module.path} contains include of ${include.from} " +
+        throw GeneralError(s"Unbound module in diagram: ${container.path} contains include of ${include.from} " +
           s"which is a module that is neither contained in the diagram nor included in the diagram's " +
           s"base theory (${operatorDomain}), not even by an implicit morphism instead of an inclusion.")
     }
@@ -238,24 +313,27 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
         // todo probably wrong on connections
         OMIDENT(OMMOD(operatorCodomain)) :: connectionTypes.map(_ => OMIDENT(OMMOD(operatorCodomain)))
 
+      case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) =>
+        List(OMIDENT(OMMOD(applyModulePath(thy))))
+
       case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
         // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
         //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
         //      but in general it might be something else
         //
         // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-        if (!module.isInstanceOf[View]) {
+        if (!container.isInstanceOf[View]) {
           // what to do with connections?
           ???
         }
         List(OMIDENT(thy))
 
-      case OMMOD(dfPath) if state.inputModules.contains(dfPath) =>
+      case OMMOD(dfPath) if state.seenModules.contains(dfPath) =>
         // ???: error: morphism provided as definiens to include wasn't contained in diagram
-        applyModule(state.inputModules(dfPath))
+        applyModule(state.inputToplevelModules(dfPath))
 
-        if (module.isInstanceOf[View]) {
-          state.getLinearState(module.path).inherit(state.getLinearState(dfPath))
+        if (container.isInstanceOf[View]) {
+          state.getLinearState(container.path).inherit(state.getLinearState(dfPath))
         }
 
         OMMOD(applyModulePath(dfPath)) :: connectionTypes.map(conn => OMMOD(conn.applyModulePath(dfPath)))
@@ -269,27 +347,28 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
     )
 
     val outInclude = Include(
-      home = OMMOD(applyModulePath(module.path)),
+      home = OMMOD(applyModulePath(container.modulePath)),
       from = newFroms.head,
       args = Nil,
       df = newDfs.head,
       total = include.total
     )
 
-    module match {
-      case _: View =>
-        List(List(outInclude))
-
+    container match {
+      // only theories feature connections so far
       case _: Theory =>
         val connectionIncludes = connectionTypes.zipWithIndex.map {
           case (conn, idx) => Include.assignment(
-            home = OMMOD(conn.applyModulePath(module.path)),
+            home = OMMOD(conn.applyModulePath(container.modulePath)),
             from = newFroms(idx),
             df = newDfs(idx)
           )
         }
 
         List(outInclude) :: connectionIncludes.map(List(_))
+
+      case _ =>
+        List(List(outInclude))
     }
   }
 }
@@ -299,13 +378,18 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
   * [[Structure]]s) are treated appropriately.
   */
 abstract class ElaborationBasedLinearOperator extends LinearOperator {
-  protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]]
+  protected def applyConstant(container: Container, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]]
 
-  final override protected def applyDeclaration(module: Module, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
+  final override protected def applyDeclaration(container: Container, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
     decl match {
-      case c: Constant => applyConstant(module, c)(diagInterp, state.getLinearState(module.path))
+      case c: Constant => applyConstant(container, c)(diagInterp, state.getLinearState(container.path))
+      case s: Structure =>
+        //s.
+        ???
       case _ =>
         // do elaboration, then call applyConstant
+        // diagInterp.errorCont(InvalidElement(decl, s"Linear operator ${getClass} cannot process this element " +
+          //s"of u"))
         ???
     }
   }
@@ -328,7 +412,7 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
     *         In case the operator is not applicable on c, emit an error via diagInterp.errorHandler and
     *         return Nil.
     */
-  protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[SimpleConstant]]
+  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[SimpleConstant]]
 
   // helper functions to make up a nice DSL
   final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
@@ -340,8 +424,8 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
 
   final protected val NoResults: List[List[SimpleConstant]] = Nil
 
-  final override protected def applyConstant(module: Module, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]] = {
-    val simplifiedName: LocalName = module match {
+  final override protected def applyConstant(container: Container, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]] = {
+    val simplifiedName: LocalName = container match {
       case _: Theory => c.name
       case v: View => c.name match {
         case LocalName(ComplexStep(mpath) :: domainSymbolName) if mpath == v.from.toMPath =>
@@ -359,7 +443,7 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
     val tp = diagInterp.ctrl.globalLookup.ExpandDefinitions(rawTp, state.skippedDeclarationPaths)
     val df = rawDf.map(diagInterp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
 
-    val ret = applyConstantSimple(module, c, simplifiedName, tp, df)
+    val ret = applyConstantSimple(container, c, simplifiedName, tp, df)
     if (ret.isEmpty) {
       return Nil
     } else if (ret.size != 1 + connectionTypes.size) {
@@ -368,17 +452,17 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
 
     val outConstants: List[Constant] = ret.head.map {
       case (name, tp, df) =>
-        if (module.isInstanceOf[View] && df.isEmpty) {
+        if (container.isInstanceOf[View] && df.isEmpty) {
           throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
         }
 
-        val newName = module match {
+        val newName = container match {
           case _: Theory => name
           case v: View => LocalName(v.from.toMPath) / name
         }
 
         new FinalConstant(
-          home = OMMOD(applyModulePath(module.path)),
+          home = OMMOD(applyModulePath(container.modulePath)),
           name = newName, alias = Nil,
           tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
           rl = None, notC = NotationContainer.empty(), vs = c.vs
@@ -390,12 +474,12 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
         case (name, tp, df) =>
 
           val assignmentName = conn match {
-            case InToOutMorphismConnectionType() => LocalName(module.path) / name
-            case OutToInMorphismConnectionType() => LocalName(applyModulePath(module.path)) / name
+            case InToOutMorphismConnectionType() => LocalName(container.modulePath) / name
+            case OutToInMorphismConnectionType() => LocalName(applyModulePath(container.modulePath)) / name
           }
 
           new FinalConstant(
-            home = OMMOD(conn.applyModulePath(module.path)),
+            home = OMMOD(conn.applyModulePath(container.modulePath)),
             name = assignmentName, alias = Nil,
             tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
             rl = None, notC = NotationContainer.empty(), vs = c.vs

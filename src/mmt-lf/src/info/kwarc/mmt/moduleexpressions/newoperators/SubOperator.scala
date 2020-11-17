@@ -51,7 +51,7 @@ object SubOperator extends SimpleLinearOperator with DefaultLinearStateOperator 
     InToOutMorphismConnectionType.suffixed("_submodel")
   )
 
-  override protected def applyConstantSimple(module: Module, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[List[SimpleConstant]] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[List[SimpleConstant]] = {
     val par = getRenamerFor("p") // parent symbol copy
     val sub = getRenamerFor("s") // substructure symbol/condition
 

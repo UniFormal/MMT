@@ -36,14 +36,15 @@ class Diagram extends ModuleLevelFeature(Diagram.feature) {
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
-        diagInterp.committedModules.foreach(controller.presenter(_)(ConsoleWriter))
+        diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
         println(s"\nAbove MMT surface syntax was printed by Scala class 'DiagramPublisher' for debugging reasons. Input diagram was: ${df}")
 
         dm.dfC.set(outputDiagram)
-        diagInterp.committedModules
+        diagInterp.toplevelResults
 
       case None =>
-        throw GeneralError("Found diagram operator was partial on input diagram")
+        env.errorCont(InvalidElement(dm, "Diagram operator returned None"))
+        Nil
     }
   }
 }
@@ -94,12 +95,13 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
   * @param rules
   */
 class DiagramInterpreter(private val interpreterContext: Context, private val rules: RuleSet, val ctrl: Controller, val errorCont: ErrorHandler) {
-  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
-  private val transientResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
-  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
-  private val transientConnections : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
 
-  private val _committedModules = mutable.ListBuffer[Module]()
+  private val transientPaths: mutable.ListBuffer[Path] = mutable.ListBuffer()
+
+  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
+  private val transientToplevelResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
+
+  def toplevelResults: List[Module] = transientToplevelResults.values.toList
 
   private val operators: Map[GlobalName, DiagramOperator] = rules.get(classOf[DiagramOperator]).map(op =>
     (op.head, op)
@@ -111,63 +113,19 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     }
   }
 
-
-  private def addTransaction(ctrl: Controller, elements: Iterable[StructuralElement]): Unit = {
-    val addedSofar = mutable.ListBuffer[Path]()
-    try {
-      for (element <- elements) {
-        ctrl.add(element)
-        addedSofar += element.path
-      }
-    } catch {
-      case err: api.Error =>
-        addedSofar.reverse.foreach(ctrl.delete)
-        throw err
-    }
+  def add(elem: StructuralElement): Unit = {
+    ctrl.add(elem)
+    transientPaths += elem.path
   }
 
-  def commit(): Unit = {
-    val transientModules = (transientResults.values ++ transientConnections.values).toList
-    addTransaction(ctrl, transientModules)
-
-    _committedModules ++= transientModules
-    transientResults.clear()
-    transientConnections.clear()
+  def addToplevelResult(m: Module): Unit = {
+    add(m)
+    transientToplevelResults.put(m.path, m)
   }
 
-  def committedModules: List[Module] = _committedModules.toList
+  def hasToplevelResult(m: MPath): Boolean = transientToplevelResults.contains(m)
 
-  def addResult(m: Module): Unit = {
-    if (transientConnections.contains(m.path)) {
-      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a module " +
-        s"with the same path had already been added as a connection result.")
-    }
-    addToMapWithoutClash(transientResults, m.path, m, err = GeneralError(
-      s"Attempted to add module ${m.path} to DiagramInterpreter as a result, but a *different* module with the +" +
-        s"same path had already been added"
-    ))
-  }
-
-  def hasResult(p: MPath): Boolean = transientResults.contains(p)
-
-  def addConnection(m: Module): Unit = {
-    if (transientResults.contains(m.path)) {
-      throw GeneralError(s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a module " +
-        s"with the same path had already been added as a main result.")
-    }
-    addToMapWithoutClash(transientConnections, m.path, m, err = GeneralError(
-      s"Attempted to add module ${m.path} to DiagramInterpreter as a connection result, but a *different* module with " +
-        s"the same path had already been added"
-    ))
-  }
-
-  def get(p: MPath): Module = {
-    transientResults.getOrElse(p,
-      transientConnections.getOrElse(p,
-        ctrl.getAs(classOf[Module], p)
-      )
-    )
-  }
+  def get(p: MPath): Module = ctrl.getAs(classOf[Module], p)
 
   /**
     * Hack to remove unbound constants that MMT introduces for some reason in diagram expressions
@@ -204,9 +162,7 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
       case t @ OMA(OMS(head), _) if operators.contains(head) =>
         val matchingOp = operators(head)
 
-        val result = matchingOp(t, this)(ctrl)
-        commit()
-        result
+        matchingOp(t, this)(ctrl)
 
       case t @ SimpleDiagram(_, _) =>
         Some(t)
