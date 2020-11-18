@@ -123,7 +123,7 @@ sealed case class Scroll(
         )
       } else {
         // retain old meta data
-        meta
+        fact.meta
       })
 
       fact.copy(

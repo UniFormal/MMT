@@ -24,7 +24,7 @@ private[newoperators] object SFOL {
     )
   }
 
-  def downcastParentElementToSubtype(parentTp: Term, selectionFun: Term, parentElem: Term, containmentProof: Term): OMA =
+  def downcastParentElementToSubtype(parentTp: Term, selectionFun: Term, parentElem: Term, containmentProof: Term): Term =
     predicateSubTpIn(parentTp, selectionFun, parentElem, containmentProof)
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")

@@ -84,7 +84,7 @@ object Server extends TwitterServer {
     } else {
       new SituationTheory(FrameWorld.defaultSituationTheory)
     }
-    println(s"Using situation space+theory: ${situationTheory}")
+    println(s"Using situation space+theory: $situationTheory")
 
     val state = new ServerState(situationTheory, new StandardContentValidator)
 
