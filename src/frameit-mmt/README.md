@@ -227,6 +227,13 @@ JSON (sub)formats shared by multiple endpoints above.
 
 ## Internal REST API
 
+- <details><summary><code>POST /fact/bulkadd</code>: adds multiple facts at once</summary>
+
+  - request: a JSON array of fact JSON objects (each without the "ref" field)
+  - response: a JSON array with elements of the form of either `[/* fact reference */, ""]` or `["error string..."]`
+
+  </details>
+
 - <details><summary><code>GET /debug/space/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
 
   - request: empty
