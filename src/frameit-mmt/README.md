@@ -230,6 +230,7 @@ JSON (sub)formats shared by multiple endpoints above.
 - <details><summary><code>POST /fact/bulkadd</code>: adds multiple facts at once</summary>
 
   - request: a JSON array of fact JSON objects (each without the "ref" field)
+
   - response: a JSON array with elements of the form of either `[/* fact reference */, ""]` or `["error string..."]`
 
   </details>
