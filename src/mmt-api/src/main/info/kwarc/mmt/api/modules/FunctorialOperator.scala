@@ -251,7 +251,7 @@ abstract class LinearOperator extends FunctorialOperator with LinearOperatorStat
   final private def applyStructure(container: Container, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
     applyContainer(s)
     
-    connectionTypes.foreach()
+    // connectionTypes.foreach()
     List(List(state.processedElements(s.path).asInstanceOf[Structure]))
   }
 
