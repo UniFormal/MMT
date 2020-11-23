@@ -17,22 +17,23 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
           val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
           val state = initDiagramState(diagram, modules, interp)
 
-          val newModulePaths = modulePaths.map(modulePath => {
-            val newModule = applyModule(interp.get(modulePath))(interp, state)
+          val newModulePaths = modulePaths.flatMap(modulePath => {
+            applyModule(interp.get(modulePath))(interp, state).map(newModule => {
 
-            state.processedElements.get(modulePath) match {
-              case Some(`newModule`) => // ok
-              case Some(m) if m != newModule =>
-                throw new Exception("...")
+              state.processedElements.get(modulePath) match {
+                case Some(`newModule`) => // ok
+                case Some(m) if m != newModule =>
+                  throw new Exception("...")
 
-              case None =>
-                throw new Exception("...")
-            }
-            if (!interp.hasToplevelResult(newModule.path)) {
-              throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
-            }
+                case None =>
+                  throw new Exception("...")
+              }
+              if (!interp.hasToplevelResult(newModule.path)) {
+                throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
+              }
 
-            newModule.path
+              newModule.path
+            })
           })
           // todo: instead get new module paths from interp?
           Some(submitDiagram(newModulePaths))

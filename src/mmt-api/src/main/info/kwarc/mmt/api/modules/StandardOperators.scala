@@ -1,12 +1,11 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api.checking.CheckingCallback
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
-import info.kwarc.mmt.api._
 
-trait SystematicRenamingUtils extends LinearOperator {
+trait SystematicRenamingUtils extends LinearTransformer {
   trait Renamer {
     def apply(name: LocalName): LocalName
     def apply(path: GlobalName)(implicit state: LinearState): GlobalName

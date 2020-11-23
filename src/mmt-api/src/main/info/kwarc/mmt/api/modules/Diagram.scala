@@ -118,6 +118,14 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     transientPaths += elem.path
   }
 
+  def endAdd(elem: ContainerElement[_]): Unit = {
+    ctrl.endAdd(elem)
+  }
+
+  /**
+    * [[add()]] plus registering as a toplevel result
+    * @param m
+    */
   def addToplevelResult(m: Module): Unit = {
     add(m)
     transientToplevelResults.put(m.path, m)
