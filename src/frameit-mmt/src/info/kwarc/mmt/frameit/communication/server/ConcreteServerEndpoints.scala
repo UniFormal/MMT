@@ -40,7 +40,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     * this function. Only some debugging endpoints might go to [[getPlaintextEndpointsForState()]].
     */
   private def getJSONEndpointsForState(state: ServerState) =
-      addFact(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
+      addFact(state) :+: bulkaddFacts(state) :+: listFacts(state) :+: listAllScrolls(state) :+: listScrolls(state) :+:
       applyScroll(state) :+: dynamicScroll(state) :+:
       // meta/debug endpoints:
       buildArchiveLight(state) :+: buildArchive(state) :+: reloadArchive(state) :+: forceError :+:
@@ -109,36 +109,50 @@ object ConcreteServerEndpoints extends ServerEndpoints {
     }).getOrElse(NotFound(new Exception("MMT backend did not know FrameWorld archive by ID, but upon server start it did apparently (otherwise we would have aborted there). Something is inconsistent.")))
   }
 
-  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) {
-    (fact: SFact) => {
-      val factConstant = fact.toFinalConstant(state.newFactPath())
+  private def addFact_(state: ServerState, fact: SFact): Either[FactValidationException, FactReference] = {
+    val factConstant = fact.toFinalConstant(state.newFactPath())
 
-      state.synchronized {
-        //state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
-        List[Error]() match { // todo: mmt bug
-          case Nil =>
-            // success (i.e. no errors)
-            try {
-              state.ctrl.add(factConstant)
-              Ok(FactReference(factConstant.path))
-            } catch {
-              case err: AddError =>
-                NotAcceptable(err)
-            }
+    def makeException(errors: List[api.Error]): FactValidationException = {
+      FactValidationException(
+        message = "Could not validate fact, errors were:\n\n" + errors.map {
+          // for [[InvalidUnit]] also elaborate their history for better feedback
+          case err: InvalidUnit => err.toString + "\n" + err.history
+          case err => err
+        }.mkString("\n"),
+        processedFacts = List(ProcessedFactDebugInfo.fromConstant(factConstant)(state.ctrl, state.presenter))
+      )
+    }
 
-          case errors =>
-            NotAcceptable(FactValidationException(
-              message = "Could not validate fact, errors were:\n\n" + errors.map {
-                // for [[InvalidUnit]] also elaborate their history for better feedback
-                case err: InvalidUnit => err.toString + "\n" + err.history
-                case err => err
-              }.mkString("\n"),
-              processedFacts = List(ProcessedFactDebugInfo.fromConstant(factConstant)(state.ctrl, state.presenter))
-            ))
-        }
+    state.synchronized {
+      //state.contentValidator.checkDeclarationAgainstTheory(state.situationTheory, factConstant) match {
+      List[info.kwarc.mmt.api.Error]() match { // todo: mmt bug
+        case Nil =>
+          // success (i.e. no errors)
+          try {
+            state.ctrl.add(factConstant)
+            Right(FactReference(factConstant.path))
+          } catch {
+            case err: AddError => Left(makeException(List(err)))
+          }
+
+        case errors => Left(makeException(errors))
       }
     }
   }
+
+  private def addFact(state: ServerState): Endpoint[IO, FactReference] = post(path("fact") :: path("add") :: jsonBody[SFact]) { (fact: SFact) => {
+    addFact_(state, fact) match {
+      case Left(exception) => NotAcceptable(exception)
+      case Right(factRef) => Ok(factRef)
+    }
+  }}
+
+  private def bulkaddFacts(state: ServerState): Endpoint[IO, List[(Option[FactReference], String)]] = post(path("fact") :: path("bulkadd") :: jsonBody[List[SFact]]) { (facts: List[SFact]) => {
+    Ok(facts.map(addFact_(state, _)).map {
+      case Left(exception) => (None, exception.toString)
+      case Right(factRef) => (Some(factRef), "")
+    })
+  }}
 
   private def listFacts(state: ServerState): Endpoint[IO, List[SFact]] = get(path("fact") :: path("list")) {
     Ok(

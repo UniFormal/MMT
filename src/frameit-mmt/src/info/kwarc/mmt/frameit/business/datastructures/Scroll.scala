@@ -115,15 +115,26 @@ sealed case class Scroll(
 
     def factTranslator(fact: Fact): Fact = {
       val newMetaData = (if (scrollApp.assignments.contains(fact.ref.uri)) {
-        // set up meta data such that, after verbalization (not handled in this method),
-        // the meta data will be the one of assigned fact (possibly, a complex expression)
+        // If the scroll application contained an assignment, the rendered fact should have the metadata
+        // of the assigned fact (possibly a fact expression even).
+        //
+        // Hence, we set up the new meta data such that after verbalization it will render
+        // precisely as desired in the last sentence.
+        val assignedFact = termTranslator(OMS(fact.ref.uri))
         UserMetadata(
-          label = MetaAnnotations.LabelVerbalization(termTranslator(OMS(fact.ref.uri))),
-          description = MetaAnnotations.DescriptionVerbalization(termTranslator(OMS(fact.ref.uri))),
+          label = MetaAnnotations.LabelVerbalization(assignedFact),
+          description = MetaAnnotations.DescriptionVerbalization(assignedFact)
         )
       } else {
-        // retain old meta data
-        meta
+        // Otherwise, if the scroll application did *not* map our fact, we should still
+        // translate its metadata. For instance, our fact's description might be the MMT term
+        //
+        //  s"Angle between ${labelVerbalization A B C}".
+        //
+        // If the scroll now *did* map A, B, C, the new metadata for our fact should render the
+        // individual metadata for A, B, C within the term above, too.
+
+        fact.meta.map(termTranslator)
       })
 
       fact.copy(
