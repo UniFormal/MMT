@@ -6,19 +6,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{ComplexStep, GeneralError, LocalName, MPath}
 
-trait ModulePathTransformer {
-  protected def applyModuleName(name: LocalName): LocalName
-
-  final protected def applyModulePath(mpath: MPath): MPath = {
-    if (mpath == mpath.mainModule) {
-      mpath.doc ? applyModuleName(mpath.name)
-    } else {
-      val newMPath = applyModulePath(mpath.mainModule)
-      newMPath.doc ? LocalName(newMPath.name.steps ::: mpath.name.drop(1))
-    }
-  }
-}
-
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term): Option[List[MPath]]
   protected def submitDiagram(newModules: List[MPath]): Term
@@ -68,26 +55,15 @@ abstract class LinearOperator extends FunctorialOperator with LinearModuleTransf
   final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 }
 
-/**
-  * A [[LinearOperator]] that works constant-by-constant: declarations that are not [[Constant]]s (e.g.
-  * [[Structure]]s) are treated appropriately.
-  */
-abstract class ElaborationBasedLinearOperator extends LinearOperator {
-  protected def applyConstant(container: Container, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]]
-
-  final override protected def applyDeclaration(container: Container, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): List[List[Declaration]] = {
-    decl match {
-      case c: Constant => applyConstant(container, c)(diagInterp, state.getLinearState(container.path))
-      case s: Structure =>
-        //s.
-        ???
-      case _ =>
-        // do elaboration, then call applyConstant
-        // diagInterp.errorCont(InvalidElement(decl, s"Linear operator ${getClass} cannot process this element " +
-          //s"of u"))
-        ???
-    }
+abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer {
+  final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
+    case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
+    case SimpleDiagram(dom, _) if dom != operatorDomain =>
+      // todo check for implicit morphism from `domain` to actual domain
+      None
+    case _ => None
   }
+  final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 }
 
 /**
@@ -97,17 +73,13 @@ abstract class ElaborationBasedLinearOperator extends LinearOperator {
   *
   * Moreover, for convenience the linear state is fixed to be the one from [[DefaultLinearStateOperator]].
   */
-abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with DefaultLinearStateOperator {
-  type SimpleConstant = (LocalName, Term, Option[Term])
+abstract class SimpleLinearOperator extends LinearOperator with SimpleLinearModuleTransformer
 
-  /**
-    *
-    * @return Either Nil or a list consisting of (1 + connectionTypes.size) lists, each of them containing
-    *         declarations (possibly none).
-    *         In case the operator is not applicable on c, emit an error via diagInterp.errorHandler and
-    *         return Nil.
-    */
-  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[SimpleConstant]]
+abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
+
+/*
+
+a nice DSL for specifying operators together with connectors:
 
   // helper functions to make up a nice DSL
   final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
@@ -117,71 +89,5 @@ abstract class SimpleLinearOperator extends ElaborationBasedLinearOperator with 
   final protected def ConnResults(decls: (LocalName, Term, Term)*): List[List[SimpleConstant]] =
     List(decls.map(d => (d._1, d._2, Some(d._3))).toList)
 
-  final protected val NoResults: List[List[SimpleConstant]] = Nil
-
-  final override protected def applyConstant(container: Container, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[Declaration]] = {
-    val simplifiedName: LocalName = container match {
-      case _: Theory => c.name
-      case v: View => c.name match {
-        case LocalName(ComplexStep(mpath) :: domainSymbolName) if mpath == v.from.toMPath =>
-          LocalName(domainSymbolName)
-        case _ => c.name // fallback
-      }
-    }
-
-    val rawTp = c.tp.getOrElse({
-      diagInterp.errorCont(GeneralError(s"Operator ${getClass} not applicable on constants without type component"))
-      return Nil
-    })
-    val rawDf = c.df
-
-    val tp = diagInterp.ctrl.globalLookup.ExpandDefinitions(rawTp, state.skippedDeclarationPaths)
-    val df = rawDf.map(diagInterp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
-
-    val ret = applyConstantSimple(container, c, simplifiedName, tp, df)
-    if (ret.isEmpty) {
-      return Nil
-    } else if (ret.size != 1 + connectionTypes.size) {
-      throw GeneralError("invalid return value of applyConstantSimple")
-    }
-
-    val outConstants: List[Constant] = ret.head.map {
-      case (name, tp, df) =>
-        if (container.isInstanceOf[View] && df.isEmpty) {
-          throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
-        }
-
-        val newName = container match {
-          case _: Theory => name
-          case v: View => LocalName(v.from.toMPath) / name
-        }
-
-        new FinalConstant(
-          home = OMMOD(applyModulePath(container.modulePath)),
-          name = newName, alias = Nil,
-          tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
-          rl = None, notC = NotationContainer.empty(), vs = c.vs
-        )
-    }
-
-    val connectionConstants: List[List[Constant]] = connectionTypes.zip(ret.tail).map {
-      case (conn, connectionConstants) => connectionConstants.map {
-        case (name, tp, df) =>
-
-          val assignmentName = conn match {
-            case InToOutMorphismConnectionType() => LocalName(container.modulePath) / name
-            case OutToInMorphismConnectionType() => LocalName(applyModulePath(container.modulePath)) / name
-          }
-
-          new FinalConstant(
-            home = OMMOD(conn.applyModulePath(container.modulePath)),
-            name = assignmentName, alias = Nil,
-            tpC = TermContainer.asParsed(tp), dfC = TermContainer.asParsed(df),
-            rl = None, notC = NotationContainer.empty(), vs = c.vs
-          )
-      }
-    }
-
-    outConstants :: connectionConstants
-  }
-}
+    final protected val NoResults: List[List[SimpleConstant]] = Nil
+*/

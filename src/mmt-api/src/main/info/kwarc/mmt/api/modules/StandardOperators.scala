@@ -44,7 +44,27 @@ object CopyOperator extends ParametricRule {
   }
 }
 
+
 class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
+
+  override val operatorDomain: MPath = dom
+  override val operatorCodomain: MPath = cod
+
+  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
+
+  override def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[SimpleConstant] = {
+
+    val copy1 = getRenamerFor("1")
+    val copy2 = getRenamerFor("2")
+
+    List(
+      (copy1(name), copy1(tp), df.map(copy1.apply(_))),
+      (copy2(name), copy2(tp), df.map(copy2.apply(_)))
+    )
+  }
+}
+
+/*class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
 
   override protected val operatorDomain: MPath = dom
   override protected val operatorCodomain: MPath = cod
@@ -133,3 +153,4 @@ object PushoutOperator extends DiagramOperator {
   }
 }
 
+*/
