@@ -157,9 +157,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
       case SFOL.AxiomSymbolType() => Nil
       case _ =>
-        interp.errorCont(GeneralError(s"Hom operator cannot process SFOL constant ${c.path} of unknown form " +
-          "(neither type, function, predicate, nor axiom symbol."))
-        Nil
+        NotApplicable(c)
     })
   }
 }

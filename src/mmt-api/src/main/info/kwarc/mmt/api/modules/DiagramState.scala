@@ -75,6 +75,11 @@ trait LinearOperatorState extends FunctorialOperatorState {
     def processedDeclarations: List[Declaration]
     def registerDeclaration(decl: Declaration): Unit
 
+    def skippedDeclarations: List[Declaration]
+    def registerSkippedDeclaration(decl: Declaration)
+
+    final def skippedDeclarationPaths: List[GlobalName] = skippedDeclarations.map(_.path)
+
     /**
       * Inherits another linear state into this.
       *
@@ -132,10 +137,8 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
 
     final val _skippedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
-    final def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
-    final def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
-
-    final def skippedDeclarationPaths: List[GlobalName] = skippedDeclarations.map(_.path)
+    final override def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
+    final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
 
     final override def inherit(other: SkippedDeclsExtendedLinearState): Unit = {
       _processedDeclarations ++= other.processedDeclarations

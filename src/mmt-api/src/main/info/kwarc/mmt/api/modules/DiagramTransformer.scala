@@ -2,8 +2,8 @@ package info.kwarc.mmt.api.modules
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, Structure, TermContainer}
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, GeneralError, ImplementationError, LocalName, MPath}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, RuleConstant, Structure, TermContainer}
+import info.kwarc.mmt.api.{ComplexStep, ContainerElement, GeneralError, ImplementationError, InvalidElement, LocalName, MPath}
 
 trait ModulePathTransformer {
   protected def applyModuleName(name: LocalName): LocalName
@@ -82,12 +82,6 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     * Post-condition: all added declaration added to ''interp''
     * (i.e. called [[DiagramInterpreter.add()]] *and* [[DiagramInterpreter.endAdd()]]).
     */
-  protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): Unit
-
-  /**
-    * Post-condition: all added declaration added to ''interp''
-    * (i.e. called [[DiagramInterpreter.add()]] *and* [[DiagramInterpreter.endAdd()]]).
-    */
   protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): Unit
 
   final protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module] = {
@@ -98,7 +92,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
           None
 
         case Some(m: Module) => Some(m)
-        case Some(x) => throw GeneralError(s"Diagram operator ${getClass} transformed toplevel module ${inModule} to something else, namely $x")
+        case Some(x) => throw ImplementationError(s"Diagram operator ${getClass} transformed toplevel module ${inModule} to something else, namely $x")
       }
     } else {
       None
@@ -131,6 +125,51 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     applyContainerEnd(inContainer, inLinearState)
     true
   }
+
+  /**
+    * Post-condition: all added declaration added to ''interp''
+    * (i.e. called [[DiagramInterpreter.add()]] *and* [[DiagramInterpreter.endAdd()]]).
+    */
+  protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
+    if (applyContainer(s)) {
+      // todo: should actually register all (also unmapped) declarations from
+      //   structure's domain theory, no?
+
+      val inducedDeclarationPaths = s.getDeclarations.map(_.path).flatMap(p => {
+        if (p.name.tail.nonEmpty) {
+          Some(s.path / p.name.tail)
+        } else {
+          None
+        }
+      })
+      val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
+      inducedDeclarations.foreach(containerState.registerDeclaration)
+    }
+  }
+
+  // DSL
+  object NotApplicable {
+    def apply[T](c: Declaration, msg: String = "")(implicit interp: DiagramInterpreter, state: LinearState): List[T] = {
+      state.registerSkippedDeclaration(c)
+      interp.errorCont(InvalidElement(
+        c,
+        s"${LinearTransformer.this.getClass.getSimpleName} not applicable" +
+          (if (msg.nonEmpty) ": " + msg else "")
+      ))
+
+      Nil
+    }
+
+    object Module {
+      def apply(m: Module, msg: String)(implicit interp: DiagramInterpreter): Unit = {
+        interp.errorCont(InvalidElement(
+          m,
+          s"${LinearTransformer.this.getClass.getSimpleName} not applicable" +
+            (if (msg.nonEmpty) ": " + msg else "")
+        ))
+      }
+    }
+  }
 }
 
 /**
@@ -146,14 +185,23 @@ trait LinearModuleTransformer extends LinearTransformer {
   final override protected def applyContainerBegin(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Boolean = {
     val outContainer = inContainer match {
       case inModule: Module =>
+        if (!diagState.seenModules.contains(inModule.path)) {
+          NotApplicable.Module(inModule, "unbound module not in input diagram")
+          return false
+        }
+
         val outPath = applyModulePath(inContainer.path.toMPath)
         val outModule = inModule match {
           case thy: Theory =>
             Theory.empty(outPath.doc, outPath.name, thy.meta)
 
           case view: View =>
-            applyModule(interp.ctrl.getModule(view.from.toMPath))
-            applyModule(interp.ctrl.getModule(view.to.toMPath))
+            if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
+              return false
+            }
+            if (applyModule(interp.ctrl.getModule(view.to.toMPath)).isEmpty) {
+              return false
+            }
 
             containerState.inherit(diagState.getLinearState(view.to.toMPath))
 
@@ -174,7 +222,9 @@ trait LinearModuleTransformer extends LinearTransformer {
 
       case s: Structure => s.tp match {
         case Some(OMMOD(structureDomain)) =>
-          applyContainer(interp.ctrl.getModule(structureDomain))
+          if (!applyContainer(interp.ctrl.getModule(structureDomain))) {
+            return false
+          }
 
           // inherit linear state from module where structure is declared
           containerState.inherit(diagState.getLinearState(s.home.toMPath))
@@ -200,8 +250,6 @@ trait LinearModuleTransformer extends LinearTransformer {
     val outContainer = diagState.processedElements(inContainer.path).asInstanceOf[ContainerElement[_]]
     interp.endAdd(outContainer)
   }
-
-  final override protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = applyContainer(s)
 
   /**
     *
@@ -246,10 +294,9 @@ trait LinearModuleTransformer extends LinearTransformer {
         from
 
       case _ =>
-        // theory included wasn't contained in diagram actually
-        throw GeneralError(s"Unbound module in diagram: ${container.path} contains include of ${include.from} " +
-          s"which is a module that is neither contained in the diagram nor included in the diagram's " +
-          s"base theory (${operatorDomain}), not even by an implicit morphism instead of an inclusion.")
+        interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
+          s"`${include.from}`: unbound in input diagram"))
+        return
     }
 
     val newDf: Option[Term] = include.df.map {
@@ -306,12 +353,17 @@ trait LinearConnectorTransformer extends LinearTransformer {
   lazy val operatorCodomain: MPath = in.operatorCodomain
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
+  private var hasRunSanityCheck = false
   private def runSanityCheck(): Unit = {
+    if (hasRunSanityCheck) {
+      return
+    }
+    hasRunSanityCheck = true
     if (in.operatorDomain != out.operatorDomain) {
-      throw GeneralError(s"Can only connect between two LinearModuleTransformers with same domain, got ${in.operatorDomain} and ${out.operatorDomain} for in and out, respectively.")
+      throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same domain, got ${in.operatorDomain} and ${out.operatorDomain} for in and out, respectively.")
     }
     if (in.operatorCodomain != out.operatorCodomain) {
-      throw GeneralError(s"Can only connect between two LinearModuleTransformers with same codomain, got ${in.operatorCodomain} and ${out.operatorCodomain} for in and out, respectively.")
+      throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same codomain, got ${in.operatorCodomain} and ${out.operatorCodomain} for in and out, respectively.")
     }
   }
 
@@ -401,10 +453,9 @@ trait LinearConnectorTransformer extends LinearTransformer {
         in.applyModulePath(from) //, OMMOD(applyModulePath(include.from)))
 
       case _ =>
-        // theory included wasn't contained in diagram actually
-        throw GeneralError(s"Unbound module in diagram: ${container.path} contains include of ${include.from} " +
-          s"which is a module that is neither contained in the diagram nor included in the diagram's " +
-          s"base theory (${in.operatorDomain}), not even by an implicit morphism instead of an inclusion.")
+        interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
+          s"`${include.from}`: unbound in input diagram"))
+        return
     }
 
     val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
@@ -436,42 +487,66 @@ trait LinearConnectorTransformer extends LinearTransformer {
   * the to-be-implemented method ''applyConstant''.
   */
 trait ElaboratingLinearTransformer extends LinearTransformer {
-  protected def applyConstant(container: Container, c: Constant)(implicit diagInterp: DiagramInterpreter, state: LinearState): Unit
+  protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit
 
-  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit diagInterp: DiagramInterpreter, state: DiagramState): Unit = {
+  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
     decl match {
-      case c: Constant => applyConstant(container, c)(diagInterp, containerState)
+      case c: Constant => applyConstant(container, c)(interp, containerState)
+      case _: RuleConstant =>
+        NotApplicable(decl, "RuleConstants cannot be processed")(interp, containerState)
       case _ =>
         // do elaboration, then call applyConstant
-        // diagInterp.errorCont(InvalidElement(decl, s"Linear operator ${getClass} cannot process this element " +
+        // interp.errorCont(InvalidElement(decl, s"Linear operator ${getClass} cannot process this element " +
         //s"of u"))
         ???
     }
   }
 }
 
-trait SimpleLinearModuleTransformer extends LinearModuleTransformer with ElaboratingLinearTransformer with DefaultLinearStateOperator {
+/**
+  * Linearly transforms theories to theories and views to views,
+  * while hiding much of the complexity of their contents.
+  *
+  * Implementors only need to give a ''applyConstantSimple'' method.
+  */
+trait SimpleLinearModuleTransformer extends LinearModuleTransformer
+  with ElaboratingLinearTransformer with DefaultLinearStateOperator {
   type SimpleConstant = (LocalName, Term, Option[Term])
 
   /**
     *
-    * @return In case the operator is not applicable on c, emit an error via diagInterp.errorHandler and
+    * @param c The constant
+    * @param name A simplified version of ''c.name''. E.g. if c is an assignment in a view,
+    *             ''c.name'' is something like ''LocalName(domainTheory) / actualConstantName'',
+    *             which is uncomfortable to deal with in most cases.
+    *             Hence in such cases, ''name'' will be simply be ''actualConstantName''.
+    *
+    * @return In case the operator is not applicable on c, emit an error via interp.errorHandler and
     *         return Nil.
     */
-  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[SimpleConstant]
+  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[SimpleConstant]
 
   final override protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit = {
-    val simplifiedName: LocalName = container match {
-      case _: Theory => c.name
-      case v: View => c.name match {
-        case LocalName(ComplexStep(mpath) :: domainSymbolName) if mpath == v.from.toMPath =>
+    // Since [[applyConstantSimple()]] takes a simplified name and outputs a simplified name again
+    // we need to functions for simplifying and complexifying again:
+    def simplifyName(name: LocalName) = container match {
+      case _: Theory => name
+
+      // view or structure
+      case link: Link => name match {
+        case LocalName(ComplexStep(mpath) :: domainSymbolName) if mpath == link.from.toMPath =>
           LocalName(domainSymbolName)
-        case _ => c.name // fallback
+        case _ => name // fallback
       }
     }
 
+    def complexifyName(name: LocalName) = container match {
+      case _: Theory => name
+      case link: Link => LocalName(link.from.toMPath) / name
+    }
+
     val rawTp = c.tp.getOrElse({
-      interp.errorCont(GeneralError(s"Operator ${getClass} not applicable on constants without type component"))
+      interp.errorCont(InvalidElement(c, s"Operator ${getClass} not applicable on constants without type component"))
       return
     })
     val rawDf = c.df
@@ -479,20 +554,15 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer with Elabora
     val tp = interp.ctrl.globalLookup.ExpandDefinitions(rawTp, state.skippedDeclarationPaths)
     val df = rawDf.map(interp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
 
-    applyConstantSimple(container, c, simplifiedName, tp, df).foreach {
+    applyConstantSimple(container, c, simplifyName(c.name), tp, df).foreach {
       case (name, tp, df) =>
         if (container.isInstanceOf[View] && df.isEmpty) {
           throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
         }
 
-        val newName = container match {
-          case _: Theory => name
-          case v: View => LocalName(v.from.toMPath) / name
-        }
-
         interp.add(new FinalConstant(
           home = OMMOD(applyModulePath(container.modulePath)),
-          name = newName, alias = Nil,
+          name = complexifyName(name), alias = Nil,
           tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
           rl = None, notC = NotationContainer.empty(), vs = c.vs
         ))
@@ -501,7 +571,7 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer with Elabora
 }
 
 trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with ElaboratingLinearTransformer with DefaultLinearStateOperator {
-  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)]
+  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)]
 
   final override protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit = {
     val rawTp = c.tp.getOrElse({
@@ -522,9 +592,5 @@ trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with E
           rl = None, notC = NotationContainer.empty(), vs = c.vs
         ))
     }
-  }
-
-  final override protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: LinearDiagramState): Unit = {
-    applyContainer(s)
   }
 }

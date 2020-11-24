@@ -127,12 +127,12 @@ object SubParentConnector extends SimpleInwardsConnector(
 }
 
 object SubSubmodelConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector"),
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?submodel_conector"),
   SubOperator
 ) with SystematicRenamingUtils {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_submodel")
 
-  override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term, Term)] = {
+  override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term, Term)] = {
     val par = getRenamerFor("p") // parent symbol copy
     val sub = getRenamerFor("s") // substructure symbol/condition
 
@@ -185,6 +185,9 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
 
       case SFOL.AxiomSymbolType() =>
         List((name, tp, SFOL.sketch(OMV("<todo: implicit arg>"), "provable")))
+
+      case _ =>
+        NotApplicable(c)
     }
   }
 }

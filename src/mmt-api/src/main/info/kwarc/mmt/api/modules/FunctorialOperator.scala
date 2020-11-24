@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, InvalidElement, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term): Option[List[MPath]]

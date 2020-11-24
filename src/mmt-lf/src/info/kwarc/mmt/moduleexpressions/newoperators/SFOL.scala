@@ -2,7 +2,7 @@ package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.{GlobalName, Path}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMS, Term, Traverser}
-import info.kwarc.mmt.lf.{BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
+import info.kwarc.mmt.lf.{Apply, BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
 private[newoperators] object SFOL {
@@ -97,7 +97,9 @@ private[newoperators] object SFOL {
     // allowed operations apart from all the symbols from operatorState.processedDeclarations.
     val allowedOps: List[GlobalName] = List(
       Lambda.path,
-      SFOL.and.path, SFOL.or.path, SFOL.eq.path, SFOL.exists.path
+      Apply.path,
+      SFOL.and.path, SFOL.or.path, SFOL.eq.path, SFOL.exists.path,
+      SFOL.tm.path
     )
     sealed class MonotonicityStatus(var isMonotone: Boolean)
 
