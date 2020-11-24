@@ -84,11 +84,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         List(parCopy, relativizedAxiom)
 
       case _ =>
-        state.registerSkippedDeclaration(c)
-
-        diagInterp.errorCont(InvalidElement(c, "Sub operator cannot process element: " +
-          "its type is not well-patterned (i.e. has one of the forms Sub is applicable on), skipping element."))
-        Nil
+        NotApplicable(c)
     }
   }
 
