@@ -1,7 +1,7 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.{GlobalName, Path}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMS, Term}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMS, Term, Traverser}
 import info.kwarc.mmt.lf.{BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
@@ -91,5 +91,37 @@ private[newoperators] object SFOL {
 
       case _ => None
     }
+  }
+
+  def isMonotone(t: Term, context: Context, allowedReferences: Set[GlobalName]): Boolean = {
+    // allowed operations apart from all the symbols from operatorState.processedDeclarations.
+    val allowedOps: List[GlobalName] = List(
+      Lambda.path,
+      SFOL.and.path, SFOL.or.path, SFOL.eq.path, SFOL.exists.path
+    )
+    sealed class MonotonicityStatus(var isMonotone: Boolean)
+
+    val monotonicityTraverser = new Traverser[MonotonicityStatus] {
+      override def traverse(t: Term)(implicit con: Context, state: MonotonicityStatus): Term = {
+        if (!state.isMonotone) {
+          // no need to recurse further
+          t
+        } else t match {
+          case OMS(p) if allowedReferences.contains(p) => t
+          case OMS(p) if allowedOps.contains(p) => t
+          case OMS(_) =>
+            // todo: log the path to the non-monotone op that occurred here
+            state.isMonotone = false
+            t
+
+          case _ => Traverser(this, t)
+        }
+      }
+    }
+
+    val monotonicity = new MonotonicityStatus(true)
+    monotonicityTraverser(t, monotonicity, context)
+
+    monotonicity.isMonotone
   }
 }

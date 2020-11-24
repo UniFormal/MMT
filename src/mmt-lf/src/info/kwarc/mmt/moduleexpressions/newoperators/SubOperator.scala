@@ -1,9 +1,9 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DefaultLinearStateOperator, DiagramInterpreter, IdentityLinearOperator, LinearModuleTransformer, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.{GeneralApplySpine, GeneralLambda}
 
@@ -17,7 +17,6 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override protected def applyConstantSimple(container: SubOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[(LocalName, Term, Option[Term])] = {
     val par = getRenamerFor("p") // parent symbol copy
     val sub = getRenamerFor("s") // substructure symbol/condition
-
     val parCopy = (par(name), par(tp), df.map(par(_)))
 
     tp match {
@@ -114,12 +113,23 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
-object SubSubmodelConnector extends SimpleLinearConnector with SystematicRenamingUtils {
-  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector")
+object SubParentConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector"),
+  SubOperator
+) with SystematicRenamingUtils {
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_parmodel")
 
-  override val in: LinearModuleTransformer = new IdentityLinearOperator(SubOperator.operatorDomain)
-  override val out: LinearModuleTransformer = SubOperator
+  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
+    // todo: SubOperator already declares par, we shouldn't need to redeclare this here!
+    val par = getRenamerFor("p")
+    List((name, tp, par(c)))
+  }
+}
 
+object SubSubmodelConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector"),
+  SubOperator
+) with SystematicRenamingUtils {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_submodel")
 
   override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term, Term)] = {

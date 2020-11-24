@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GeneralError, LocalName, MPath}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term): Option[List[MPath]]
@@ -84,6 +84,12 @@ class IdentityLinearOperator(private val domain: MPath) extends LinearModuleTran
   override protected def applyModuleName(name: LocalName): LocalName = name
 
   final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
+}
+
+abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
+  extends SimpleLinearConnector {
+  final override val in: LinearModuleTransformer = new IdentityLinearOperator(operator.operatorDomain)
+  final override val out: operator.type = operator
 }
 
 /*
