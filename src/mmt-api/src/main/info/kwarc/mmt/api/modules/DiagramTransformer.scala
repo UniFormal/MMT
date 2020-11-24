@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.modules
 
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, Structure, TermContainer}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, GeneralError, ImplementationError, LocalName, MPath}
 
@@ -21,8 +21,14 @@ trait ModulePathTransformer {
 /**
   * Transforms modules to modules in a diagram.
   *
-  * An abstraction over [[FunctorialOperator]] leaving out details for parsing the input
-  * diagram expression and constructing the output diagram expression.
+  * Base class of whole trait hierarchy of [[LinearModuleTransformer]]s and [[LinearConnectorTransformer]]s.
+  *
+  * In contrast to the somewhat parallel class hierarchy of [[FunctorialOperator]]s, [[LinearOperator]]s, and
+  * [[LinearConnector]]s, this trait hierarchy only concerns itself with the functional behavior of
+  * operators/connectors and *not* with parsing input diagram expressions (which are [[Term]]s) and constructing
+  * output diagram expressions.
+  * Especially, all traits in this hierarchy are *not* associated with any MMT symbol.
+  * In contrast, [[FunctorialOperator]] implements [[SyntaxDrivenRule]].
   */
 trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTransformer {
   /**
@@ -52,20 +58,16 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
   * views and transforms views not at all.
   */
 trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
-  // beware of the ordering of the "with" (not commutative)
-  // ContainerElement[Declaration] declares getDeclarations: List[Declaration] and we want that
-  // (ContentElement.getDeclarations: List[ContentElement] is too weak)
-  // type Container = ContentElement with ContainerElement[Declaration]
-
   type Container = ModuleOrLink
 
   protected def applyContainerBegin(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Boolean
 
   /**
-    * pre-condition: only called if applyContainerBegin returned true before
-    * post-condition:
-    *   - state.processedElements contains an entry (inContainer.path, outContainer)
-    *   - for inContainer fulfilling [[DiagramInterpreter.hasToplevelResult()]]
+    *  - pre-condition: only called if applyContainerBegin returned true before
+    *  - post-condition:
+    *    - if inContainer was a top-level module in the diagram, then state.processedElements must
+    *      contain an entry (inContainer.path, outContainer)
+    *    - for inContainer fulfilling [[DiagramInterpreter.hasToplevelResult()]]
     *     outContainer must be a [[Module]] and be added via [[DiagramInterpreter.addToplevelResult()]].
     */
   protected def applyContainerEnd(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Unit
@@ -150,8 +152,8 @@ trait LinearModuleTransformer extends LinearTransformer {
             Theory.empty(outPath.doc, outPath.name, thy.meta)
 
           case view: View =>
-            applyModule(interp.ctrl.getAs(classOf[Module], view.from.toMPath))
-            applyModule(interp.ctrl.getAs(classOf[Module], view.to.toMPath))
+            applyModule(interp.ctrl.getModule(view.from.toMPath))
+            applyModule(interp.ctrl.getModule(view.to.toMPath))
 
             containerState.inherit(diagState.getLinearState(view.to.toMPath))
 
@@ -172,7 +174,7 @@ trait LinearModuleTransformer extends LinearTransformer {
 
       case s: Structure => s.tp match {
         case Some(OMMOD(structureDomain)) =>
-          applyContainer(interp.ctrl.getAs(classOf[Module], structureDomain))
+          applyContainer(interp.ctrl.getModule(structureDomain))
 
           // inherit linear state from module where structure is declared
           containerState.inherit(diagState.getLinearState(s.home.toMPath))
@@ -201,6 +203,22 @@ trait LinearModuleTransformer extends LinearTransformer {
 
   final override protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = applyContainer(s)
 
+  /**
+    *
+    * {{{
+    *   include ?opDom [= E]  |-> include ?opCod [= E']
+    *   include ?S [= E]      |-> include ?S [= E']         if there is an implicit morphism ?S -> ?opDom (case probably wrong)
+    *   include ?S [= E]      |-> include ?op(S) [= E']     if ?S is in input diagram
+    * }}}
+    *
+    * and E via
+    * {{{
+    *   OMIDENT(?opDom)       |-> OMIDENT(?opCod)
+    *   OMIDENT(?S)           |-> OMIDENT(?S)              if there is an implicit morphisim ?S -> ?opDom (case probably wrong)
+    *   OMIDENT(?S)           |-> OMIDENT(?op(S))          if ?T is in input diagram
+    *   ?v                    |-> ?op(v)                   if ?v is in input diagram
+    * }}}
+    */
   final override protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
     val ctrl = interp.ctrl
 
@@ -211,7 +229,7 @@ trait LinearModuleTransformer extends LinearTransformer {
 
       // classic case for include preserving behavior of linear operators
       case from if state.seenModules.contains(from) =>
-        applyModule(ctrl.getAs(classOf[Module], from))
+        applyModule(ctrl.getModule(from))
 
         if (container.isInstanceOf[Theory]) {
           state.getLinearState(container.path).inherit(state.getLinearState(from))
@@ -247,7 +265,7 @@ trait LinearModuleTransformer extends LinearTransformer {
 
       case OMMOD(dfPath) if state.seenModules.contains(dfPath) =>
         // ???: error: morphism provided as definiens to include wasn't contained in diagram
-        applyModule(ctrl.getAs(classOf[Module], dfPath))
+        applyModule(ctrl.getModule(dfPath))
 
         if (container.isInstanceOf[View]) {
           state.getLinearState(container.path).inherit(state.getLinearState(dfPath))
@@ -323,46 +341,83 @@ trait LinearConnectorTransformer extends LinearTransformer {
   }
 
   final override protected def applyContainerEnd(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: LinearDiagramState): Unit = {
-    interp.endAdd(diagState.processedElements(inContainer.path).asInstanceOf[ContainerElement[_]])
+    // be careful with accessing in processedElements
+    // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
+    diagState.processedElements.get(inContainer.path)
+      .map(_.asInstanceOf[ContainerElement[_]])
+      .foreach(interp.endAdd)
   }
 
+  /**
+    *
+    * {{{
+    *   include ?opDom   |-> include ?opCod = OMIDENT(?opDom)
+    *   include ?S       |-> <nothing>                            if there is an implicit morphism ?S -> ?opDom
+    *   include ?S       |-> include in(?S) = conn(?S)            if ?S is in input diagram
+    *   include ?S = ?v  |-> include in(?S) = out(?v) . conn(?S)  if ?S, ?v are both in input diagram
+    * }}}
+    *
+    * (In the last line, one path from the square of the commutativity of the natural transformation conn(-)
+    *  is chosen. The other path could have been chosen as well.)
+    *
+    * We can handle the last two cases in a unified way as follows:
+    * read ''include ?T'' as ''incldue ?T = OMIDENT(?T)'' and have cases
+    *
+    * {{{
+    *   include ?S = ?v           |-> include in(?S) = out(?v) . conn(?S)
+    *   include ?S = OMIDENT(?S)  |-> include in(?S) = OMIDENT(out(?S)) . conn(?S)
+    * }}}
+    *
+    * Example:
+    * Suppose, S, T are theories, v: S -> T a view and that T contains an ''include ?S = ?v''. Then,
+    * {{{
+    *   S       in(S) -----conn(S)----> out(S)
+    *   | v      | in(v)                  | out(v)
+    *   v        v                        v
+    *   T       in(T) -----conn(T)----> out(T)
+    * }}}
+    *
+    * Here, in(T) contains an ''include in(S) = in(v)'' and out(T) contains analogously ''include out(S) = out(v)''.
+    * Now, conn(T) must contain ''include in(S) = out(v) . conn(S)'' (or, alternatively,
+    * ''include in(S) = conn(T) . in(v)'', but the latter but be somewhat self-referential in conn(T), so unsure
+    * whether it works.)
+    */
   final override protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: LinearDiagramState): Unit = {
     val ctrl = interp.ctrl // shorthand
 
-    if (include.df.nonEmpty) {
-      // unsure what to do: case: input theory has defined include
-      // probably, connecting view does not need to map the included declarations (?)
-      ???
-    }
     if (include.args.nonEmpty) {
       // unsure what to do
       ???
     }
 
-    val (newFrom, newDf): (MPath, Term) = include.from match {
+    val newFrom: MPath = include.from match {
       case p if p == in.operatorDomain =>
-        (in.operatorCodomain, OMIDENT(OMMOD(in.operatorCodomain)))
+        in.operatorCodomain //, OMIDENT(OMMOD(in.operatorCodomain)))
 
-      // classic case for include preserving behavior of linear operators
       case from if state.seenModules.contains(from) =>
-        applyModule(ctrl.getAs(classOf[Module], from))
+        applyModule(ctrl.getModule(from))
         state.getLinearState(container.path).inherit(state.getLinearState(from))
 
-        (in.applyModulePath(from), OMMOD(applyModulePath(include.from)))
-
-      case from if ctrl.globalLookup.hasImplicit(OMMOD(from), OMMOD(in.operatorDomain)) =>
-        // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
-        //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
-        //      but in general it might be something else
-        //
-        // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-        (from, OMIDENT(OMMOD(from)))
+        in.applyModulePath(from) //, OMMOD(applyModulePath(include.from)))
 
       case _ =>
         // theory included wasn't contained in diagram actually
         throw GeneralError(s"Unbound module in diagram: ${container.path} contains include of ${include.from} " +
           s"which is a module that is neither contained in the diagram nor included in the diagram's " +
           s"base theory (${in.operatorDomain}), not even by an implicit morphism instead of an inclusion.")
+    }
+
+    val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
+      case OMMOD(v) if state.seenModules.contains(v) =>
+        // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
+        applyModule(ctrl.getModule(v))
+        // todo: order in OMCMP, document
+        OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
+
+      case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) =>
+        OMMOD(applyModulePath(include.from))
+
+      case _ => ???
     }
 
     val outputInclude = Include.assignment(
@@ -460,19 +515,16 @@ trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with E
 
     applyConstantSimple(container, c, c.name, tp, df).foreach {
       case (name, tp, df) =>
-        // todo: sanity check whether name == c.name?
-
         interp.add(new FinalConstant(
           home = OMMOD(applyModulePath(container.modulePath)),
-          name = c.name, alias = Nil,
+          name = name, alias = Nil,
           tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
           rl = None, notC = NotationContainer.empty(), vs = c.vs
         ))
     }
   }
 
-  final override protected def applyStructure(container: Container, containerState: SkippedDeclsExtendedLinearState, s: Structure)(implicit interp: DiagramInterpreter, state: LinearDiagramState): Unit = {
-    // todo
-    ???
+  final override protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: LinearDiagramState): Unit = {
+    applyContainer(s)
   }
 }

@@ -82,6 +82,27 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
   def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term]
 }
 
+object SequencedDiagramOperators extends DiagramOperator {
+  final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
+
+  final override def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = diagram match {
+    case OMA(OMA(OMS(`head`), diagOps), diagram) =>
+      val results = diagOps.flatMap(op => {
+        val result = interp(OMA(op, diagram))
+        if (result.isEmpty) {
+          interp.errorCont(GeneralError("Failed to evaluate some diagram expression in expression of sequenced " +
+            s"diagram operators. The specific expression was `$op`, the overall sequenced expression was " +
+            s"`$diagram`. If subsequent diagram operators in the latter depend on the failed one, they may " +
+            "fail, too."))
+        }
+        result
+      })
+      Some(OMA(OMS(head), results))
+
+    case _ => None
+  }
+}
+
 /**
   *
   * todo: added results/connections are buffered until commit() has been called. If operators invoke certain
@@ -151,40 +172,61 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     traverser.apply(_, Context.empty)
   }
 
+  /**
+    * Tries to evaluate a diagram expression and to delegate to [[DiagramOperator]]s found
+    * in [[interpreterContext]].
+    *
+    * At most one step is performed.
+    *
+    * @param diag The input diagram
+    * @return If diag is a [[SimpleDiagram]], it is returned as-is. Otherwise, if an operator
+    *         in [[interpreterContext]] matches, that opreator is applied on diag.
+    *         Yet otherwise, diag is simplified, and upon changes due to simplification in the term,
+    *         [[apply()]] is tried again. If diag was alraedy stable, an [[Error]] is thrown.
+    */
   def apply(diag: Term): Option[Term] = {
-    val simplifiedDiag = removeOmbindc(removeOmbindc(diag) match {
-      case OMA(OMS(head), _) if operators.contains(head) && false => // todo: for now always simplify for debugging
+    val diag_ = removeOmbindc(diag)
+    val head = diag_.head
+
+    head.foreach {
+      case p: GlobalName if operators.contains(p) =>
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
-        diag
-      case t =>
-        val su = SimplificationUnit(
-          context = interpreterContext,
-          expandDefinitions = true,
-          fullRecursion = true
-        )
-        ctrl.simplifier(t, su)
-    })
+        val matchingOp = operators(p)
+        return matchingOp(diag_, this)(ctrl)
 
-    simplifiedDiag match {
-      case t @ OMA(OMS(head), _) if operators.contains(head) =>
-        val matchingOp = operators(head)
-
-        matchingOp(t, this)(ctrl)
-
-      case t @ SimpleDiagram(_, _) =>
-        Some(t)
-
-      case _ =>
-        throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
-          s"nor is it a SimpleDiagram: ${simplifiedDiag}. Is the operator you are trying to apply in-scope in " +
-          s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
+      case _ => // carry on
     }
+
+    diag_ match {
+      case SimpleDiagram(_, _) => return Some(diag_)
+      case _ => // carry on
+    }
+
+    val simplifiedDiag = {
+      val su = SimplificationUnit(
+        context = interpreterContext,
+        expandDefinitions = true,
+        fullRecursion = true
+      )
+
+      // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
+      // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
+      removeOmbindc(ctrl.simplifier(ctrl.globalLookup.ExpandDefinitions(diag_, _ => true), su))
+    }
+
+    if (simplifiedDiag == diag_) {
+      throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
+        s"nor is it a SimpleDiagram: $simplifiedDiag. Is the operator you are trying to apply in-scope in " +
+        s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
+    }
+
+    apply(simplifiedDiag)
   }
 }
 
 object SimpleDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?simple_diagram")
+  private val constant = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_diagram")
 
   def apply(baseTheory: MPath, paths: List[MPath]): Term = {
     OMA(OMS(constant), OMMOD(baseTheory) :: paths.map(OMMOD(_)))

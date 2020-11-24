@@ -1,10 +1,9 @@
 package info.kwarc.mmt.api.modules
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GeneralError, LocalName, MPath}
+import info.kwarc.mmt.api.{GeneralError, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term): Option[List[MPath]]
@@ -77,6 +76,15 @@ abstract class LinearConnector extends FunctorialOperator with LinearConnectorTr
 abstract class SimpleLinearOperator extends LinearOperator with SimpleLinearModuleTransformer
 
 abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
+
+class IdentityLinearOperator(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
+  override val operatorDomain: MPath = domain
+  override val operatorCodomain: MPath = domain
+
+  override protected def applyModuleName(name: LocalName): LocalName = name
+
+  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
+}
 
 /*
 

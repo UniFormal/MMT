@@ -353,8 +353,9 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     case None => throw GetError("Element doesn't exist: " + path)
   }
 
-  def getConstant(path: GlobalName) = getAs(classOf[Constant],path)
-  def getTheory(path: MPath) = getAs(classOf[Theory],path)
+  def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)
+  def getTheory(path: MPath): Theory = getAs(classOf[Theory], path)
+  def getModule(path: MPath): Module = getAs(classOf[Module], path)
 
 
   // ******************* determine context of elements

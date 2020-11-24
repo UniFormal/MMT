@@ -1,7 +1,7 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DefaultLinearStateOperator, DiagramInterpreter, LinearModuleTransformer, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DefaultLinearStateOperator, DiagramInterpreter, IdentityLinearOperator, LinearModuleTransformer, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, Structure}
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
@@ -114,19 +114,10 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
-object IdentityLinearOperator extends LinearModuleTransformer with DefaultLinearStateOperator {
-  override val operatorDomain: MPath = SubOperator.operatorDomain
-  override val operatorCodomain: MPath = SubOperator.operatorCodomain
-
-  override protected def applyModuleName(name: LocalName): LocalName = name
-
-  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
-}
-
 object SubSubmodelConnector extends SimpleLinearConnector with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector")
 
-  override val in: LinearModuleTransformer = IdentityLinearOperator
+  override val in: LinearModuleTransformer = new IdentityLinearOperator(SubOperator.operatorDomain)
   override val out: LinearModuleTransformer = SubOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_submodel")

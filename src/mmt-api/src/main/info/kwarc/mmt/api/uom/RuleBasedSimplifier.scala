@@ -160,7 +160,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           val stabilityCriticalPos = recPosComp.getPositions(top)
           var changed = false
           var stable = true
-          // we go through all arguments and try to simplify one of them
+          // we go through all arguments and try to simplify each one of them
           val subobjsNew = t.subobjects.zipWithIndex.tail.map {case ((c,o),i) =>
             if (!recursePositions.contains(i)) {
               o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
