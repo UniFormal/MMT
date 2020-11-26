@@ -101,7 +101,6 @@ case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group 
  * @param srt
  */
 case class ObjectAttrs(formatNr: FormatNr, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group
-
 /**
  * A minimal list of common attributes for objects containing only spelling and sort
  * @param spell Spelling
@@ -116,7 +115,6 @@ case class PosNr(pos:Position, nr:Nr) extends Group
  * @param srt
  */
 case class RedObjAttr(posNr:PosNr, spell:Spelling, srt:Sort) extends Group
-
 /**
  * An extended list of common attributes for Object (terms and types) definitions
  * @param posNr
@@ -131,7 +129,6 @@ case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patNr:PatternNr, spell:S
     ???
   }
 }
-
 /**
  *
  * @param posNr
@@ -142,7 +139,6 @@ case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patNr:PatternNr, spell:S
  * @param constrNr
  */
 case class ConstrExtObjAttrs(extAttrs:ExtObjAttrs, constrNr:ConstrNr) extends Group
-
 /**
  *
  * @param posNr
@@ -154,7 +150,6 @@ case class ConstrExtObjAttrs(extAttrs:ExtObjAttrs, constrNr:ConstrNr) extends Gr
  * @param constrNr
  */
 case class OrgnlExtObjAttrs(extAttrs:ExtObjAttrs, orgnNrConstrNr:OriginalNrConstrNr) extends Group
-
 /**
  *
  * @param formatdes
@@ -164,7 +159,6 @@ case class OrgnlExtObjAttrs(extAttrs:ExtObjAttrs, orgnNrConstrNr:OriginalNrConst
  * @param patternnr
  */
 case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos:Position, patternnr:PatternNr) extends Group
-
 /**
  *
  * @param formatdes
@@ -175,7 +169,6 @@ case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos
  * @param constr
  */
 case class ExtPatAttrs(patAttrs:PatternAttrs, constr:String) extends Group
-
 /**
  *
  * @param formatdes
@@ -187,7 +180,6 @@ case class ExtPatAttrs(patAttrs:PatternAttrs, constr:String) extends Group
  * @param orgconstrnr
  */
 case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends Group
-
 /**
  *
  * @param formatdes
@@ -198,7 +190,6 @@ case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends Group
  * @param _loci
  */
 case class PatDef(patAttr:PatternAttrs, _loci:List[Loci]) extends Group
-
 /**
  *
  * @param formatdes
@@ -210,7 +201,6 @@ case class PatDef(patAttr:PatternAttrs, _loci:List[Loci]) extends Group
  * @param _loci
  */
 case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
-
 /**
  *
  * @param formatdes
@@ -224,7 +214,6 @@ case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
  * @param _locis
  */
 case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
-
 /**
  *
  * @param pos
@@ -233,7 +222,6 @@ case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci
  * @param varnr
  */
 case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNrIdNr, varnr:VarNr) extends Group
-
 /**
  *
  * @param spell
@@ -241,14 +229,12 @@ case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNrIdNr, varnr:VarN
  * @param redVarAttr
  */
 case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group
-
 /**
  * A single case definien consisting of a single expression
  * The expression is optional, since in any instance a single case expression may be left out in favor of a case-by-case definition
  * @param _expr (optional) the expression
  */
 case class SingleCaseExpr(_expr:Option[Expression]) extends Group
-
 /**
  * A case-by-case definition consisting of a partial definiens list and a default definien
  * Both are optional since, in any instance they can also be left out in favor of a single definien
@@ -265,7 +251,6 @@ case class PartialDef(_partDefs:Option[Partial_Definiens_List], _otherwise:Optio
     }
   }
 }
-
 /**
  * Contains either a single definien or a case-by-case definition
  * @param singleCasedExpr (optional) if present the single definie
@@ -334,7 +319,24 @@ case class Identify(_pats:List[Patterns], _lociEqns:Loci_Equalities) extends Sub
 case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
 case class Reduction(_tm:Term, _tm2:Term) extends Subitem
 case class Scheme_Block_Item(MmlId: MMLId, _blocks:List[Block]) extends MMLIdSubitem
-case class Property(_props:Properties, _just:Option[Justification]) extends Subitem
+//telling Mizar to remember these properties for proofs later
+case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
+  def matchProperty(pr:property) : property = {
+    val prop = _props.property.get
+    prop match {
+      case "commutativity" => commutativity(_just)
+      case "idempotence" => idempotence(_just)
+      case "involutiveness" => involutiveness(_just)
+      case "projectivity" => projectivity(_just)
+      case "reflexivity" => reflexivity(_just)
+      case "irreflexivity" => irreflexivity(_just)
+      case "symmetry" => symmetry(_just)
+      case "assymmetry" => assymmetry(_just)
+      case "connectiveness" => connectiveness(_just)
+      case "sethood" => sethood(_just)
+    }
+  }
+}
 case class Per_Cases(_just:Justification) extends Subitem
 case class Case_Block(_block:Block) extends Subitem
 
@@ -354,6 +356,10 @@ case class Mode_Synonym(_predPats:List[Mode_Pattern]) extends Nyms
 
 sealed trait Statement extends Subitem
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
+/**
+ * corresponsds to a recosider
+ * followed by a list of assignments
+  */
 case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement
 case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
 case class Theorem_Item(MmlId:MMLId, prfClaim:ProvedClaim) extends Statement with MMLIdSubitem
@@ -363,9 +369,30 @@ sealed trait Definition extends Subitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
+
+/**
+ * definition of a structure, takes ancestors (a list of structures it inherits from),
+ * structure-Pattern contains several loci, corresponds to the universes the structure is over,
+ * a list of field segments, which first needs to repeat the fieldsSegments of the inherited structures
+ * then the new ones
+ * a field segment is a list of selectors of the same type
+ * a selector is a field of the structure (or an inherited one)
+ * finally there is a Structure_Patterns_Rendering defining the new notations (namely introducing the selectors)
+ * @param _ancestors
+ * @param _strPat
+ * @param _fieldSegms
+ * @param _rendering
+ */
 case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:List[Field_Segments], _rendering:Structure_Patterns_Rendering) extends Definition
 case class Constant_Definition(_children:List[Equating]) extends Definition
 case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) extends Definition
+/**
+ * 1-1 corresponds to a deffunc definition, its uses are private_functor_terms
+ * used as shortcut and visible within its block
+ * @param _var
+ * @param _tpList
+ * @param _tm
+ */
 case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:Term) extends Definition
 case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends Definition
 
@@ -377,42 +404,265 @@ case class Qualified_Segments(_children:List[VariableSegments])
 
 sealed trait Expression
 sealed trait Type extends Expression
+/*
+  Non expandable types are mode with implicit definition (using means), cannot expand
+  Expandable types are modes with explicit definitions introduced by is
+ */
+/**
+ * refers to the type of a term whoose type is declared earlier
+ * @param idnr
+ * @param nr
+ * @param srt
+ * @param _subs
+ * @param _tp
+ */
 case class ReservedDscr_Type(idnr: IdNr, nr: Nr, srt: Sort, _subs:Substitutions, _tp:Type) extends Type
+/**
+ * predicate subtypes
+ * @param srt
+ * @param pos
+ * @param _adjClust
+ * @param _tp
+ */
 case class Clustered_Type(srt:Sort, pos: Position, _adjClust:Adjective_Cluster, _tp:Type) extends Type
+/**
+ * Any noun
+ * @param tpAttrs
+ * @param noocc
+ * @param origNr
+ * @param _args
+ */
 case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNrConstrNr, _args:List[Arguments]) extends Type
+/**
+ * the type of a structure
+ * @param tpAttrs
+ * @param _args
+ */
 case class Struct_Type(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Type
 
+/**
+ * In Mizar Terminology a complex term is any Expression
+ */
 sealed trait Term extends Expression
+/*
+Single variable using constant
+in exemplification use
+take tm
+need to show tm has correct type
+
+use reconsider t
+reconsider x = 1 ->
+
+Denotes a constant
+ */
+/**
+ * A constant term
+ * @param varAttr
+ * @param srt
+ */
 case class Simple_Term(varAttr:RedVarAttrs, srt:Sort) extends Term
+/**
+ * introduction form of a structure
+ * the arguments (arguments and field values of the selectors) to the structure are specified
+ * in the _args child
+ * @param tpAttrs
+ * @param _args
+ */
 case class Aggregate_Term(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Term
-case class Selector_Term(tpAttrs:ConstrExtObjAttrs, _args:List[Term]) extends Term
+/**
+ * result of applying a selector (specified as attributes) to a term (as child),
+ * whoose tp is a structure including this selector
+ * @param tpAttrs
+ * @param _args
+ */
+case class Selector_Term(tpAttrs:ConstrExtObjAttrs, _args:Term) extends Term
+
+/**
+ * an expression containing an circumfix operator -> an OMA
+ * spelling contains the left delimiter, right circumflex symbol the right delimiter
+ * @param tpAttrs
+ * @param _symbol
+ * @param _args
+ */
 case class Circumfix_Term(tpAttrs:OrgnlExtObjAttrs, _symbol:Right_Circumflex_Symbol, _args:Arguments) extends Term
+/**
+ * An integer value, the value is stored in the attribute number
+ * @param posNr
+ * @param srt
+ * @param varnr
+ */
 case class Numeral_Term(posNr:PosNr, srt:Sort, varnr:VarNr) extends Term
+/**
+ * Corresponds to the it in an implicit definition for functors and modes
+ * @param pos
+ * @param sort
+ */
 case class it_Term(pos:Position, sort:Sort) extends Term
 case class Internal_Selector_Term(redObjAttr: RedObjAttr, varnr:VarNr) extends Term
+/**
+ * an expression containing an infix operator -> an OMA
+ * @param tpAttrs
+ * @param infixedArgs
+ */
 case class Infix_Term(tpAttrs:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends Term
+/**
+ * generated by
+ * the tp
+ * it gives us a globally unique (always the same) non-fixed element of tp
+ *
+ * @param srt
+ * @param pos
+ * @param _tp
+ */
 case class Global_Choice_Term(srt:Sort, pos:Position, _tp:Type) extends Term
+// corresponds to a $num in a (local) definition, refering to the nums argument to the functor
 case class Placeholder_Term(redObjAttr: RedObjAttr, varnr:Int) extends Term
+// deffunc
 case class Private_Functor_Term(redObjAttr: RedObjAttr, serialnr:SerialNrIdNr, _args:Arguments) extends Term
+/**
+ * invoking specification axiom for sets
+ * generated by
+ * {formula where a, b,... is Element of bigger_universe : formula2 }
+ * if we have no contradition for formula2, we can also write equivalently
+ * the set of all formula where a, b, ... is Element of bigger_universe
+ * which generates a simple fraenkel term
+ *
+ * @param pos
+ * @param srt
+ * @param _varSegms
+ * @param _tm
+ * @param _form
+ */
 case class Fraenkel_Term(pos:Position, srt:Sort, _varSegms:Variable_Segments, _tm:Term, _form:Formula) extends Term
+/**
+ * invoking specification axiom for sets
+ * generated by
+ * the set of all formula where a, b, ... is Element of bigger_universe
+ * @param pos
+ * @param srt
+ * @param _varSegms
+ * @param _tm
+ */
 case class Simple_Fraenkel_Term(pos:Position, srt:Sort, _varSegms:Variable_Segments, _tm:Term) extends Term
+/**
+ * generated by
+ * term qua tp
+ * checks whether term has type tp, otherwise gives 116 error
+ * if it does it returns the term as an element of the tp
+ *
+ * if mizar can't proof it itself, one can use reconsider x = tm as tp by prf instead
+ * and provide a proof (but no proof block allowed here)
+ * @param pos
+ * @param srt
+ * @param _tm
+ * @param _tp
+ */
 case class Qualification_Term(pos:Position, srt:Sort, _tm:Term, _tp:Type) extends Term
+/**
+ * given structure T inheriting from structure S, t instance of structure T
+ * writing in Mizar
+ * the S of t
+ * returns an instance of S with same selectors and arguments of the corresponding arguments and selectors of t
+ * @param constrExtObjAttrs
+ * @param _tm
+ */
 case class Forgetful_Functor_Term(constrExtObjAttrs: ConstrExtObjAttrs, _tm:Term) extends Term
 
 sealed trait Formula extends Claim with Expression
+/*
+primitive FOL formuli and relational formula, Multi_Attributive_Formula and Qualifying_Formula
+ */
 case class Existential_Quantifier_Formula(srt:Sort, pos:Position, _vars:Variable_Segments, _expression:Claim) extends Formula
+/**
+ * An assignment to a variable
+ * @param objectAttrs
+ * @param infixedArgs
+ */
 case class Relation_Formula(objectAttrs: OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends Formula
+/**
+ * forall
+ * @param srt
+ * @param pos
+ * @param _vars
+ * @param _restrict
+ * @param _expression
+ */
 case class Universal_Quantifier_Formula(srt:Sort, pos:Position, _vars:Variable_Segments, _restrict:Option[Restriction], _expression:Claim) extends Formula
+/*
+  generated by
+  is adjective1, adjective2
+ */
 case class Multi_Attributive_Formula(srt:Sort, pos:Position, _tm:Term, _clusters:List[Adjective_Cluster]) extends Formula
+/**
+ * implication
+ * @param srt
+ * @param pos
+ * @param _formulae
+ */
 case class Conditional_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
+/**
+ * Multinary and
+ * @param srt
+ * @param pos
+ * @param _formulae
+ */
 case class Conjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
+/**
+ * Binary implication
+ * @param srt
+ * @param pos
+ * @param _frstFormula
+ * @param _sndFormula
+ */
 case class Biconditional_Formula(srt:Sort, pos:Position, _frstFormula:Claim, _sndFormula:Claim) extends Formula
+/**
+ * Multinary or
+ * @param srt
+ * @param pos
+ * @param _formulae
+ */
 case class Disjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
+/**
+ * negation
+ * @param srt
+ * @param pos
+ * @param _formula
+ */
 case class Negated_Formula(srt:Sort, pos:Position, _formula:Claim) extends Formula
+/**
+  an contradiction object
+ */
 case class Contradiction(srt:Sort, pos:Position) extends Formula
+/**
+  generated by
+  is tp
+ */
 case class Qualifying_Formula(srt:Sort, pos:Position, _tm:Term, _tp:Type) extends Formula
 case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrIdNr, constrNr: ConstrNr, _args:Arguments) extends Formula
+/**
+ * A disjunctive formula form1 or ... or formn
+ * it gets elaborated by mizar to either a (expanded) disjunctive formula or
+ * an existential quantification formula stating that for some arguments of such shape (in below case in the integer range)
+ * the corresponding disjunct holds
+ *
+ * example:
+ * 1=1 or ... or 5=5 -> 1=1 or 2=2 or 3=3 or 4=4 or 5=5
+ * 1=1 or ... or 100 = 100 -> ex i being natural number st 0 <= i <= 100 & i=i
+ *
+ * @param srt
+ * @param pos
+ * @param _formulae
+ */
 case class FlexaryDisjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
+/**
+ * A conjunctive formula form1 & ... & formn
+ * it gets elaborated by mizar to either a (expanded) conjunctive formula or
+ * a universal quantification formula stating that for some arguments of such shape (in below case in the integer range)
+ * the corresponding disjunct holds
+ * @param srt
+ * @param pos
+ * @param _formulae
+ */
 case class FlexaryConjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
 case class Multi_Relation_Formula(srt:Sort, pos:Position, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
@@ -420,7 +670,26 @@ case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: I
 
 sealed trait Claim
 case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim
+/**
+  whatever still remains to be proven in a proof
+  thesis is changed by
+  let cuts a univ quantifier
+  take cut ex quantifier
+  assume cuts an assumption
+  thus cuts a conjunct
+  hence works as thus followed by then, uses previous statement to kill a conjunct of thesis
+  given cuts an assumption that certain object exists
+
+  conjunct need to be proven in order of claim, so
+  now ... end or thus ... proof ... end
+  proofs the next conjunct, so thesis is changed to respective conjunct or claim
+  hereby is abbreviation for thus + now
+ */
 case class Thesis(pos:Position, srt:Sort) extends Claim
+/** corresponds to a  now ... end block
+* makes the statements inside known to mizar, even if unproven or even false
+* this is never needed, but often convenient
+*/
 case class Diffuse_Statement(spell:Spelling, serialnr:SerialNrIdNr, labelnr:Int, _label:Label) extends Claim
 case class Conditions(_props:List[Proposition]) extends Claim
 case class Iterative_Equality(_label:Label, _formula:Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
@@ -435,6 +704,7 @@ case class Straightforward_Justification(pos:Position, _refs:List[Reference]) ex
 case class Block(kind: String, pos:Positions, _items:List[Item]) extends Justification
 case class Scheme_Justification(posNr:PosNr, idnr:IdNr, schnr:Int, spell:Spelling, _refs:List[Reference]) extends Justification
 
+/** Notations */
 sealed trait Patterns
 case class Structure_Pattern(extPatDef: ExtPatDef)
 case class Attribute_Pattern(orgPatDef: OrgPatDef) extends Patterns
@@ -449,18 +719,33 @@ case class CircumfixFunctor_Pattern(orgPat: OrgPatAttrs, _right_Circumflex_Symbo
 case class SelectorFunctor_Pattern(extPatDef:ExtPatDef) extends FunctorPatterns
 
 sealed trait Registrations
+// saying that a term tm has some properties
 case class Functorial_Registration(pos:Position, _aggrTerm:Term, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
+// showing that some attributes implies other attributes
 case class Conditional_Registration(pos:Position, _adjClusts:List[Adjective_Cluster], _tp:Type) extends Registrations
+// registering properties for a mode
 case class Property_Registration(_props:Properties, _block:Block) extends Registrations with Subitem
 
 sealed trait CorrectnessConditions
-case class coherence() extends CorrectnessConditions
+// non-emptyness of non-expandable typed (modes) or clustered_types in registrations of attributes
 case class existence() extends CorrectnessConditions
+// uniqueness for functors
 case class uniqueness() extends CorrectnessConditions
+// can define functor using means or equals
+// if defined using equals need coherence to correct type
+case class coherence() extends CorrectnessConditions
+// showing the property that
+/*
+  reduce x * 1.L to x
+  reducibility by Def6
+ */
 case class reducibility() extends CorrectnessConditions
 case class compatibility() extends CorrectnessConditions
+// for overlap of case-by-case (complex) defns of modes, adjectives,
 case class consistency() extends CorrectnessConditions
+// conjunction of all necessary correctness conditions, doesn't appear in esx files
+case class correctness() extends CorrectnessConditions
 
 sealed trait Exemplifications
 case class ImplicitExemplification(_term:Term) extends Exemplifications
@@ -529,6 +814,8 @@ case class Partial_Definiens_List(_partDef:List[Partial_Definiens])
 case class Partial_Definiens(_expr:Expression, _form:Formula)
 case class Otherwise(_expr:Option[Expression])
 
+case class According_Expansion(_attrs:List[Attribute])
+
 object Utils {
   def fullClassName(s: String) = {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
@@ -537,4 +824,26 @@ object Utils {
     def makeGlobalName(kind:String) : MizarGlobalName = {MizarGlobalName(aid, kind, nr)}
   }
   case class MizarGlobalName(aid:String, kind: String, nr:Int)
+
+  sealed abstract class property(_just:Option[Justification])
+  //for functors
+  // for bin op
+  case class commutativity(_just:Option[Justification]) extends property(_just:Option[Justification])
+  //for bin op
+  case class idempotence(_just:Option[Justification]) extends property(_just:Option[Justification])
+  // for un op
+  case class involutiveness(_just:Option[Justification]) extends property(_just:Option[Justification])
+  // being a proj op, for un op
+  case class projectivity(_just:Option[Justification]) extends property(_just:Option[Justification])
+
+  //for predicate
+  case class reflexivity(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class irreflexivity(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class symmetry(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class assymmetry(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class connectiveness(_just:Option[Justification]) extends property(_just:Option[Justification])
+
+  //for modes and existential_registrations
+  //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
+  case class sethood(_just:Option[Justification]) extends property(_just:Option[Justification])
 }
