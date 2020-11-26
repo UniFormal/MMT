@@ -366,6 +366,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       doURI(s.from, rh)
       doDefComponent(s, rh)
 
+      rh("= \n")
+
       val indentedRh = indented(rh)
       s.getDeclarations.foreach {
         case c: Constant => doConstant(c, indentedRh, presentType = false)

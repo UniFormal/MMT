@@ -120,10 +120,27 @@ object Apply extends LFSym("apply") {
 /** provides apply/unapply methods for application of a term to a list of arguments
   * the unapply method transparently handles associativity (currying) of application
   *
-  * Does *not* handle empty argument lists!
+  * Deliberately does *not* handle empty argument lists!
+  * (Otherwise we would have ApplySpine.unapply(ApplySpine(f))) == None, a breach
+  *  of the apply/unapply idioms, I guess.)
   */
 object ApplySpine {
-  def apply(f: Term, a: Term*) = OMA(Apply.term, f :: a.toList)
+  /**
+    * Like [[apply]] but forces a fully curried representation.
+    * If in doubt, rather use [[apply]].
+    */
+  def applyFullyCurried(f: Term, a: List[Term]): Term = a match {
+    case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
+    case arg :: Nil => OMA(Apply.term, List(f, arg))
+    case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
+  }
+
+  /**
+    * Applies an LF function 'f' to *non-empty* list arguments 'a'.
+    *
+    * Does not curry, e.g. 'apply(f, a, b)' is represented as 'OMA(?LFApply, f, a, b)'
+    */
+  def apply(f: Term, a: Term*): Term = OMA(Apply.term, f :: a.toList)
 
   def unapply(t: Term): Option[(Term, List[Term])] = t match {
     case OMA(Apply.term, f :: args) =>
