@@ -7,6 +7,12 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
+/**
+  * Linearly transforms SFOL theories T to Hom(T), the theory of homomorphisms
+  * of T.
+  *
+  * @see [[HomDomConnector]], [[HomCodConnector]], [[HomImgConnector]]
+  */
 object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
@@ -68,7 +74,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         val homomorphismConstant = (
           hom(name),
           homomorphismCondition,
-          df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+          df.map(_ => SFOL.sketchLazy("provable"))
         )
 
         List(homomorphismConstant)
@@ -88,7 +94,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         })
 
         if (!monotonicityOkay) {
-          Nil
+          NotApplicable(c, "Axiom not monotone")
         } else {
           val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
 
@@ -99,7 +105,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
           val homomorphismConstant = (
             name,
             homomorphismCondition,
-            df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+            df.map(_ => SFOL.sketchLazy("provable"))
           )
 
           List(homomorphismConstant)
@@ -112,6 +118,10 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
+/**
+  * Linearly transforms an SFOL theory T to morphism ''dom: T -> Hom(T)'' "projecting
+  * the homomorphism's domain out."
+  */
 object HomDomConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_dom_connector"),
   HomOperator
@@ -125,12 +135,16 @@ object HomDomConnector extends SimpleInwardsConnector(
   }
 }
 
+/**
+  * Linearly transforms an SFOL theory T to morphism ''cod: T -> Hom(T)'' "projecting
+  * the homomorphism's codomain out."
+  */
 object HomCodConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_cod_connector"),
   HomOperator
 ) with SystematicRenamingUtils {
 
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cod")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val dom = HomOperator.dom.coercedTo(state)
@@ -138,23 +152,27 @@ object HomCodConnector extends SimpleInwardsConnector(
   }
 }
 
-/* todo: also generate connecting morphism `img: Sub(Magma) -> Hom(Magma)` (for image of homomorphism)
-         then: Magma -- sub --> Sub(Magma) -- img --> Hom(Magma) would give us the image of the homomorphism
-               as a Magma model
-
-   U: tp
-        |-> U^p := U^c, U^s := [y: tm U^c] ∃ [x: tm U^d] U^h x ≐ y
-
-   f: tm t_1 -> … -> tm t_n -> tm t
-        |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
-
-   c: tm t_1 -> … -> tm t_n -> tm t
-        |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
-
-   a: |- F
-        |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
-
-   */
+/**
+  * Linearly transforms an SFOL theory T to morphism ''img: Sub(T) -> Hom(T)''.
+  *
+  * Assumes Sub and Hom have already been applied before.
+  *
+  * Maps as follows:
+  *
+  * {{{
+  *   U: tp
+  *     |-> U^p := U^c, U^s := [y: tm U^c] ∃ [x: tm U^d] U^h x ≐ y
+  *
+  *   f: tm t_1 -> … -> tm t_n -> tm t
+  *     |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
+  *
+  *   c: tm t_1 -> … -> tm t_n -> tm t
+  *     |-> c^p := c^c
+  *
+  *   a: |- F
+  *     |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
+  * }}}
+  */
 object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_img_connector")
 
@@ -170,7 +188,7 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
     val cod = HomOperator.cod.coercedTo(state)
     val hom = HomOperator.hom.coercedTo(state)
 
-    val codCopy = (par(name), par(c))
+    val codCopy = (par(name), cod(c))
 
     tp match {
       case SFOL.TypeSymbolType() =>
@@ -198,19 +216,62 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
         )
         List(codCopy, (sub(name), inImagePredicate))
 
-      case SFOL.FunctionSymbolType(_, _) =>
+      case SFOL.FunctionSymbolType(argTypes, retType) =>
         // f: tm t_1 -> … -> tm t_n -> tm t
         //
         //   |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
-        List(codCopy, (sub(name), SFOL.sketch(OMV("<todo: insert type>"), "image is closed")))
+
+        val proofSketch = {
+          val vars = argTypes.zipWithIndex.map {
+            case (argTp, idx) => ("y" + StringUtils.subscriptInteger(idx), argTp)
+          }
+          val varPreimages = argTypes.zipWithIndex.map {
+            case (argTp, idx) => ("x" + StringUtils.subscriptInteger(idx), argTp)
+          }
+
+
+          val varIntros = vars.map(v => v._1 + ": " + par(v._2).name).mkString(", ")
+          val preimagesIntros = varPreimages.map(v => v._1 + ": " + dom(v._2).name).mkString(", ")
+          val varsInSubset = vars.map(v => sub(v._2).name + " " + v._1).mkString(", ")
+
+          s"Goal is to show our homomorphism's image in ${cod(name)} is closed under multiplication in its parent structure.\n" +
+            s"Hence let $varIntros be variables with $varsInSubset (*). " +
+            s"We need to show: ${sub(retType).name} (${cod(name)} ${vars.map(_._1).mkString(" ")}), i.e. the existence of a preimage for the parenthesized term.\n" +
+            s"Due to (*), there are preimages $preimagesIntros. " +
+            s"Claim: ${dom(name)} ${varPreimages.map(_._1).mkString(" ")} is the preimage we are looking for.\n" +
+            s"Namely: ${hom(retType).name} (${cod(name)} ${varPreimages.map(_._1).mkString(" ")}) ≐ ${cod(name)} ${varPreimages.map(v => "(" + hom(v._2).name + " " + v._1 + ")").mkString(" ")} ≐ ${cod(name)} ${vars.map(_._1).mkString(" ")}. qed."
+        }
+
+        List(codCopy, (sub(name), SFOL.sketchLazy(proofSketch)))
 
       case SFOL.PredicateSymbolType(_) =>
         // c: tm t_1 -> … -> tm t_n -> tm t
         //
-        //   |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
-        NotApplicable(c)
+        //   |-> c^p := c^c
+        List(codCopy)
+
+      case SFOL.AxiomSymbolType() =>
+        val allowedReferences = state.processedDeclarations.map(_.path).toSet
+        if (!SFOL.isMonotone(tp, state.outerContext, allowedReferences)) {
+          NotApplicable(c, "Axiom not monotone, skipping")
+        } else {
+          List(codCopy, (sub(name), SFOL.sketchLazy("probably provable")))
+        }
+
       case _ =>
         NotApplicable(c)
+    }
+  }
+}
+
+private object StringUtils {
+  private val digitSubscripts = List("₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉")
+  def subscriptInteger(i: Int): String = {
+    if (i < 0) {
+      "₋" + subscriptInteger(-1 * i)
+    } else {
+      val prefix = if (i >= 10) subscriptInteger(i / 10) else ""
+      prefix + digitSubscripts(i % 10)
     }
   }
 }

@@ -63,7 +63,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
           (
             sub(name),
             closureCondition,
-            df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+            df.map(_ => SFOL.sketchLazy("provable"))
           )
         }
 
@@ -79,7 +79,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         val relativizedAxiom = (
           sub(name),
           relativizeQuantifiers(tp, state.outerContext, par.apply(_), sub.apply(_)),
-          df.map(_ => SFOL.sketch(OMV("<todo:implicit arg>"), "provable"))
+          df.map(_ => SFOL.sketchLazy("provable"))
         )
 
         List(parCopy, relativizedAxiom)
@@ -157,7 +157,7 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
               subElem = OMV(vd.name)
             )
           }: _*),
-          containmentProof = SFOL.sketch(OMV("<todo:implicit arg>"), s"provable via ${sub(name)}")
+          containmentProof = SFOL.sketchLazy(s"provable via ${sub(name)}")
         )
 
         val assignment = GeneralLambda(bindingCtx, body)
@@ -183,7 +183,7 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
         List((name, assignment))
 
       case SFOL.AxiomSymbolType() =>
-        List((name, SFOL.sketch(OMV("<todo: implicit arg>"), "provable")))
+        List((name, SFOL.sketchLazy("provable")))
 
       case _ =>
         NotApplicable(c)
