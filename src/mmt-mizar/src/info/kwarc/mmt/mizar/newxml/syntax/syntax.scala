@@ -53,10 +53,12 @@ case class IdNr(idnr:Int) extends Group
 case class Nr(nr:Int) extends Group
 case class VarNr(varnr:Int) extends Group
 case class ConstrNr(constrnr:Int) extends Group
-case class OriginalNr(constrNr:ConstrNr, originalnr:Int) extends Group
+case class OriginalNrConstrNr(constrNr:ConstrNr, originalnr:Int) extends Group
 case class Origin(origin:String) extends Group
-case class SerialNr(idnr: IdNr, serialnr:Int) extends Group
-
+case class SerialNrIdNr(idnr: IdNr, serialnr:Int) extends Group
+/**
+ * Contains the attribute leftargscount and the child Arguments
+ */
 case class InfixedArgs(leftargscount:Int, _args:Arguments) extends Group
 /**
  * Contains the start and end position for an item or a block in Mizar
@@ -99,25 +101,145 @@ case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group 
  * @param srt
  */
 case class ObjectAttrs(formatNr: FormatNr, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group
-case class RedObjectSubAttrs(spell:Spelling, srt:Sort) extends Group
+
+/**
+ * A minimal list of common attributes for objects containing only spelling and sort
+ * @param spell Spelling
+ * @param sort Sort
+ */
+case class RedObjectSubAttrs(spell:Spelling, sort:Sort) extends Group
 case class PosNr(pos:Position, nr:Nr) extends Group
-case class RedObjAttr(posNr:PosNr, objAt:RedObjectSubAttrs) extends Group
-case class ExtObjAttrs(posNr:PosNr, objAt:ObjectAttrs) extends Group {
+/**
+ * A minimal list of common attributes (extended by the further attributes position and number) for objects containing only spelling and sort
+ * @param posNr
+ * @param spell
+ * @param srt
+ */
+case class RedObjAttr(posNr:PosNr, spell:Spelling, srt:Sort) extends Group
+
+/**
+ * An extended list of common attributes for Object (terms and types) definitions
+ * @param posNr
+ * @param formatNr
+ * @param patNr
+ * @param spell
+ * @param srt
+ */
+case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group {
   def globalName(): MizarGlobalName = {
     // requires global id to be added to the esx files by Artur
     ???
   }
 }
+
+/**
+ *
+ * @param posNr
+ * @param formatNr
+ * @param patNr
+ * @param spell
+ * @param srt
+ * @param constrNr
+ */
 case class ConstrExtObjAttrs(extAttrs:ExtObjAttrs, constrNr:ConstrNr) extends Group
-case class OrgnlExtObjAttrs(extAttrs:ExtObjAttrs, orgnNr:OriginalNr) extends Group
-case class ConstrOrgnlExtObjAttrs(extAttrs:ExtObjAttrs, constrNr:ConstrNr, orgnNr:OriginalNr) extends Group
+
+/**
+ *
+ * @param posNr
+ * @param formatNr
+ * @param patNr
+ * @param spell
+ * @param srt
+ * @param orgnNr
+ * @param constrNr
+ */
+case class OrgnlExtObjAttrs(extAttrs:ExtObjAttrs, orgnNrConstrNr:OriginalNrConstrNr) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ */
 case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos:Position, patternnr:PatternNr) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ */
 case class ExtPatAttrs(patAttrs:PatternAttrs, constr:String) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ * @param orgconstrnr
+ */
 case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param _loci
+ */
 case class PatDef(patAttr:PatternAttrs, _loci:List[Loci]) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ * @param _loci
+ */
 case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
+
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ * @param orgconstrnr
+ * @param _loci
+ * @param _locis
+ */
 case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
-case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNr, varnr:VarNr) extends Group
+
+/**
+ *
+ * @param pos
+ * @param orgn
+ * @param serNr
+ * @param varnr
+ */
+case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNrIdNr, varnr:VarNr) extends Group
+
+/**
+ *
+ * @param spell
+ * @param kind
+ * @param redVarAttr
+ */
 case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group
 
 /**
@@ -257,7 +379,7 @@ sealed trait Expression
 sealed trait Type extends Expression
 case class ReservedDscr_Type(idnr: IdNr, nr: Nr, srt: Sort, _subs:Substitutions, _tp:Type) extends Type
 case class Clustered_Type(srt:Sort, pos: Position, _adjClust:Adjective_Cluster, _tp:Type) extends Type
-case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNr, _args:List[Arguments]) extends Type
+case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNrConstrNr, _args:List[Arguments]) extends Type
 case class Struct_Type(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Type
 
 sealed trait Term extends Expression
@@ -271,7 +393,7 @@ case class Internal_Selector_Term(redObjAttr: RedObjAttr, varnr:VarNr) extends T
 case class Infix_Term(tpAttrs:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends Term
 case class Global_Choice_Term(srt:Sort, pos:Position, _tp:Type) extends Term
 case class Placeholder_Term(redObjAttr: RedObjAttr, varnr:Int) extends Term
-case class Private_Functor_Term(redObjAttr: RedObjAttr, serialnr:SerialNr, _args:Arguments) extends Term
+case class Private_Functor_Term(redObjAttr: RedObjAttr, serialnr:SerialNrIdNr, _args:Arguments) extends Term
 case class Fraenkel_Term(pos:Position, srt:Sort, _varSegms:Variable_Segments, _tm:Term, _form:Formula) extends Term
 case class Simple_Fraenkel_Term(pos:Position, srt:Sort, _varSegms:Variable_Segments, _tm:Term) extends Term
 case class Qualification_Term(pos:Position, srt:Sort, _tm:Term, _tp:Type) extends Term
@@ -289,17 +411,17 @@ case class Disjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) ex
 case class Negated_Formula(srt:Sort, pos:Position, _formula:Claim) extends Formula
 case class Contradiction(srt:Sort, pos:Position) extends Formula
 case class Qualifying_Formula(srt:Sort, pos:Position, _tm:Term, _tp:Type) extends Formula
-case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNr, constrNr: ConstrNr, _args:Arguments) extends Formula
+case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrIdNr, constrNr: ConstrNr, _args:Arguments) extends Formula
 case class FlexaryDisjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
 case class FlexaryConjunctive_Formula(srt:Sort, pos:Position, _formulae:List[Claim]) extends Formula
 case class Multi_Relation_Formula(srt:Sort, pos:Position, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
-case class RightSideOf_Relation_Formula(objAttr:ConstrOrgnlExtObjAttrs, infixedArgs: InfixedArgs)
+case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs)
 
 sealed trait Claim
 case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim
 case class Thesis(pos:Position, srt:Sort) extends Claim
-case class Diffuse_Statement(spell:Spelling, serialnr:SerialNr, labelnr:Int, _label:Label) extends Claim
+case class Diffuse_Statement(spell:Spelling, serialnr:SerialNrIdNr, labelnr:Int, _label:Label) extends Claim
 case class Conditions(_props:List[Proposition]) extends Claim
 case class Iterative_Equality(_label:Label, _formula:Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
 
@@ -346,7 +468,7 @@ case class ExemplifyingVariable(_var:Variable, _simplTm:Simple_Term) extends Exe
 case class Example(_var:Variable, _tm:Term) extends Exemplifications
 
 sealed trait Reference
-case class Local_Reference(pos:Position, spell:Spelling, serialnumber:SerialNr, labelnr:Int) extends Reference
+case class Local_Reference(pos:Position, spell:Spelling, serialnumber:SerialNrIdNr, labelnr:Int) extends Reference
 case class Definition_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
 case class Link(pos:Position, labelnr:Int) extends Reference
 case class Theorem_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
@@ -393,7 +515,7 @@ case class Properties(property:Option[String], _cond:List[Properties], _tp:Optio
 case class Redefine(occurs:Boolean)
 case class Type_Specification(_types:List[Type])
 case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr)
-case class Label(spell:Spelling, pos:Position, serialnr:SerialNr, labelnr:Int)
+case class Label(spell:Spelling, pos:Position, serialnr:SerialNrIdNr, labelnr:Int)
 case class Restriction(_formula:Formula)
 case class Right_Circumflex_Symbol(posNr:PosNr, formatnr:FormatNr, spell:Spelling)
 case class Equating(_var:Variable, _tm:Term)

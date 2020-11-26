@@ -231,8 +231,8 @@ object typeTranslator {
       val tp : objects.Term = objects.OMS(gn).asInstanceOf[objects.Term]
       tp
     case Struct_Type(tpAttrs, _args) => ???
-      val formatNr = tpAttrs.extAttrs.objAt.formatNr
-      val patternNr = tpAttrs.extAttrs.objAt.patNr
+      val formatNr = tpAttrs.extAttrs.formatNr
+      val patternNr = tpAttrs.extAttrs.patNr
       val position = tpAttrs.extAttrs.posNr.pos.parsePosition()
       val nr = tpAttrs.extAttrs.posNr.nr
       val constrnr = tpAttrs.constrNr
