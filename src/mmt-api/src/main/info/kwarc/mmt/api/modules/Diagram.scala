@@ -90,9 +90,9 @@ object SequencedDiagramOperators extends DiagramOperator {
       val results = diagOps.flatMap(op => {
         val result = interp(OMA(op, diagram))
         if (result.isEmpty) {
-          interp.errorCont(GeneralError("Failed to evaluate some diagram expression in expression of sequenced " +
-            s"diagram operators. The specific expression was `$op`, the overall sequenced expression was " +
-            s"`$diagram`. If subsequent diagram operators in the latter depend on the failed one, they may " +
+          interp.errorCont(GeneralError(s"Failed to apply operator `$op` in operator " +
+            s" sequence `$diagOps`. The overall diagram expression was `$diagram`. If " +
+            "subsequent diagram operators in the latter depend on the failed one, they may " +
             "fail, too."))
         }
         result
@@ -193,7 +193,8 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         val matchingOp = operators(p)
-        return matchingOp(diag_, this)(ctrl)
+        val opResult = matchingOp(diag_, this)(ctrl)
+        return opResult
 
       case _ => // carry on
     }

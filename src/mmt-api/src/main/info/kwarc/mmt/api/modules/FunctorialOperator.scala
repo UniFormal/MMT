@@ -3,15 +3,15 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GeneralError, GlobalName, InvalidElement, LocalName, MPath}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, InvalidElement, InvalidObject, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
-  protected def acceptDiagram(diagram: Term): Option[List[MPath]]
+  protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
   protected def submitDiagram(newModules: List[MPath]): Term
 
   final override def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = diagram match {
     case OMA(OMS(`head`), List(inputDiagram)) =>
-      interp(inputDiagram).flatMap(acceptDiagram) match {
+      interp(inputDiagram).flatMap(acceptDiagram(_)(interp)) match {
         case Some(modulePaths) =>
           val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
           val state = initDiagramState(diagram, modules, interp)
@@ -44,25 +44,26 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
   }
 }
 
-abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer {
-  final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
+trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
+  final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
     case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
     case SimpleDiagram(dom, _) if dom != operatorDomain =>
       // todo check for implicit morphism from `domain` to actual domain
+      interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
+        s"on diagrams over $operatorDomain. Given diagram was over $dom."))
       None
-    case _ => None
+    case _ =>
+      interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
+        "on simple diagrams. Did simplification not kick in?"))
+      None
   }
+}
+
+abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator {
   final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 }
 
-abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer {
-  final override def acceptDiagram(diagram: Term): Option[List[MPath]] = diagram match {
-    case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
-    case SimpleDiagram(dom, _) if dom != operatorDomain =>
-      // todo check for implicit morphism from `domain` to actual domain
-      None
-    case _ => None
-  }
+abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer with RelativeBaseOperator {
   final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 }
 

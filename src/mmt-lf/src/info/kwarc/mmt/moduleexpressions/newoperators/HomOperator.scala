@@ -1,60 +1,11 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleInwardsConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, LinearModuleTransformer, Renamer, SimpleInwardsConnector, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.lf.{ApplySpine, FunType}
+import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
 import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
-
-/* todo: also generate connecting morphism `img: Sub(Magma) -> Hom(Magma)` (for image of homomorphism)
-         then: Magma -- sub --> Sub(Magma) -- img --> Hom(Magma) would give us the image of the homomorphism
-               as a Magma model
-
-   Previous idea: linear operators may only produce connecting morphisms from input to output module or vv.
-   Now: they also need to be able to produce morphisms connecting to OtherOperator(input module)
-
-   Unclear if either Sub or Hom should generate img.
-
-   U: tp
-        |-> U^p := U^c, U^s := [y: U^c] exists [x: U^d] U^h x = y   (i.e. U^s = U^h(U^d) in math notation)
-
-   f: tm t_1 -> ... -> tm t_n -> tm t
-        |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
-
-   c: tm t_1 -> ... -> tm t_n -> tm t
-        |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
-
-   a: |- F
-        |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
-
-   */
-
-object HomDomConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_dom_connector"),
-  HomOperator
-) with SystematicRenamingUtils {
-
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
-
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
-    val dom = HomOperator.dom.coercedTo(state)
-    List((name, tp, dom(c)))
-  }
-}
-
-object HomCodConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_cod_connector"),
-  HomOperator
-) with SystematicRenamingUtils {
-
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
-
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
-    val dom = HomOperator.dom.coercedTo(state)
-    List((name, tp, dom(c)))
-  }
-}
 
 object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
@@ -88,8 +39,6 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
       (binding, domExpr, codExpr)
     }
-
-    // todo: tp in connectors!!!
 
     val mainConstantCopies = List((dom(name), dom(tp), df.map(dom(_))), (cod(name), cod(tp), df.map(cod(_))))
 
@@ -160,5 +109,108 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
       case _ =>
         NotApplicable(c)
     })
+  }
+}
+
+object HomDomConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_dom_connector"),
+  HomOperator
+) with SystematicRenamingUtils {
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val dom = HomOperator.dom.coercedTo(state)
+    List((name, dom(c)))
+  }
+}
+
+object HomCodConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_cod_connector"),
+  HomOperator
+) with SystematicRenamingUtils {
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val dom = HomOperator.dom.coercedTo(state)
+    List((name, dom(c)))
+  }
+}
+
+/* todo: also generate connecting morphism `img: Sub(Magma) -> Hom(Magma)` (for image of homomorphism)
+         then: Magma -- sub --> Sub(Magma) -- img --> Hom(Magma) would give us the image of the homomorphism
+               as a Magma model
+
+   U: tp
+        |-> U^p := U^c, U^s := [y: tm U^c] ∃ [x: tm U^d] U^h x ≐ y
+
+   f: tm t_1 -> … -> tm t_n -> tm t
+        |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
+
+   c: tm t_1 -> … -> tm t_n -> tm t
+        |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
+
+   a: |- F
+        |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
+
+   */
+object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_img_connector")
+
+  override val in: LinearModuleTransformer = SubOperator
+  override val out: LinearModuleTransformer = HomOperator
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_img")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val par = SubOperator.par.coercedTo(state)
+    val sub = SubOperator.sub.coercedTo(state)
+    val dom = HomOperator.dom.coercedTo(state)
+    val cod = HomOperator.cod.coercedTo(state)
+    val hom = HomOperator.hom.coercedTo(state)
+
+    val codCopy = (par(name), par(c))
+
+    tp match {
+      case SFOL.TypeSymbolType() =>
+        // input: U: tp
+        // output:
+        //   U^p := U^c
+        //   U^s := [y: tm U^c] ∃ [x: tm U^d] U^h x ≐ y
+        //
+        //   (i.e. in math notation: choose subset U^h[U^d] of U^c)
+        val inImagePredicate = Lambda(
+          LocalName("y"),
+          SFOL.tm(cod(c)),
+          SFOL.exists(
+            SFOL.tm(dom(c)),
+            Lambda(
+              LocalName("x"),
+              SFOL.tm(dom(c)),
+              SFOL.eq(
+                SFOL.tm(cod(c)),
+                ApplySpine(hom(c), OMV("x")),
+                OMV("y")
+              )
+            )
+          )
+        )
+        List(codCopy, (sub(name), inImagePredicate))
+
+      case SFOL.FunctionSymbolType(_, _) =>
+        // f: tm t_1 -> … -> tm t_n -> tm t
+        //
+        //   |-> f^p := f^c, f^s := proof of image under homomorphism being closed wrt. f
+        List(codCopy, (sub(name), SFOL.sketch(OMV("<todo: insert type>"), "image is closed")))
+
+      case SFOL.PredicateSymbolType(_) =>
+        // c: tm t_1 -> … -> tm t_n -> tm t
+        //
+        //   |-> c^p := c^c, c^s := proof of image under homomorphism being closed wrt. p
+        NotApplicable(c)
+      case _ =>
+        NotApplicable(c)
+    }
   }
 }

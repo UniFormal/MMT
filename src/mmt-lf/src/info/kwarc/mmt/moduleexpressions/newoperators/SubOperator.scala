@@ -116,9 +116,9 @@ object SubParentConnector extends SimpleInwardsConnector(
 ) with SystematicRenamingUtils {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_parmodel")
 
-  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
+  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)
-    List((name, tp, par(c)))
+    List((name, par(c)))
   }
 }
 
@@ -128,13 +128,13 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
 ) with SystematicRenamingUtils {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_submodel")
 
-  override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term, Term)] = {
+  override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
 
     tp match {
       case SFOL.TypeSymbolType() =>
-        List((name, tp, SFOL.predicateSubTp(par(c), sub(c))))
+        List((name, SFOL.predicateSubTp(par(c), sub(c))))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // input:
@@ -161,7 +161,7 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
         )
 
         val assignment = GeneralLambda(bindingCtx, body)
-        List((name, tp, assignment))
+        List((name, assignment))
 
       case SFOL.PredicateSymbolType(argTypes) =>
         // input:  c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
@@ -180,10 +180,10 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
         }: _*)
 
         val assignment = GeneralLambda(bindingCtx, body)
-        List((name, tp, assignment))
+        List((name, assignment))
 
       case SFOL.AxiomSymbolType() =>
-        List((name, tp, SFOL.sketch(OMV("<todo: implicit arg>"), "provable")))
+        List((name, SFOL.sketch(OMV("<todo: implicit arg>"), "provable")))
 
       case _ =>
         NotApplicable(c)

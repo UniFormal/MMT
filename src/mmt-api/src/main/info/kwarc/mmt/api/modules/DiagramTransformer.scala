@@ -172,16 +172,18 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
   }
 }
 
+trait RelativeBaseTransformer {
+  val operatorDomain: MPath
+  val operatorCodomain: MPath
+}
+
 /**
   * Linearly transforms theories to theories and views to views.
   *
   * A small abstraction over [[LinearOperator]]s that on top perform some parsing of the input diagram
   * expression and construction of the output diagram expression.
   */
-trait LinearModuleTransformer extends LinearTransformer {
-  val operatorDomain: MPath
-  val operatorCodomain: MPath
-
+trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransformer {
   final override protected def applyContainerBegin(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Boolean = {
     val outContainer = inContainer match {
       case inModule: Module =>
@@ -343,14 +345,14 @@ trait LinearModuleTransformer extends LinearTransformer {
   * - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
   *   have a definiens)
   */
-trait LinearConnectorTransformer extends LinearTransformer {
+trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTransformer {
   val in: LinearModuleTransformer
   val out: LinearModuleTransformer
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  lazy val operatorDomain: MPath = in.operatorDomain
-  lazy val operatorCodomain: MPath = in.operatorCodomain
+  final override lazy val operatorDomain: MPath = in.operatorDomain
+  final override lazy val operatorCodomain: MPath = in.operatorCodomain
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
@@ -571,7 +573,15 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
 }
 
 trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with ElaboratingLinearTransformer with DefaultLinearStateOperator {
-  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)]
+
+  /**
+    * Maps a constant to a list of assignments in the connecting morphism.
+    *
+    * @return A list of assignments (simpleName, assignmentTerm), which is used by [[applyConstant]]
+    *         to build a [[FinalConstant]] with the right name, empty type container, and a definiens container
+    *         containing assignmentTerm.
+    */
+  protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)]
 
   final override protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit = {
     val rawTp = c.tp.getOrElse({
@@ -584,11 +594,11 @@ trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with E
     val df = rawDf.map(interp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
 
     applyConstantSimple(container, c, c.name, tp, df).foreach {
-      case (name, tp, df) =>
+      case (name, df) =>
         interp.add(new FinalConstant(
           home = OMMOD(applyModulePath(container.modulePath)),
           name = name, alias = Nil,
-          tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
+          tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(df),
           rl = None, notC = NotationContainer.empty(), vs = c.vs
         ))
     }
