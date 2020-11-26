@@ -5,15 +5,36 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 
+// todo: rename this class as mmt API already features a "Renamer" class?
+trait Renamer[T] {
+  def apply(name: LocalName): LocalName
+  def apply(path: GlobalName)(implicit state: T): GlobalName
+  def apply(term: Term)(implicit state: T): Term
+  def apply(c: Constant)(implicit state: T): OMID
+
+  def coercedTo[S](implicit state: S): Renamer[S] = {
+    implicit val TState: T = state.asInstanceOf[T]
+    new Renamer[S] {
+      override def apply(name: LocalName): LocalName = Renamer.this(name)
+      override def apply(path: GlobalName)(implicit state: S): GlobalName = Renamer.this(path)
+      override def apply(term: Term)(implicit state: S): Term = Renamer.this(term)
+      override def apply(c: Constant)(implicit state: S): OMID = Renamer.this(c)
+    }
+  }
+}
+
 trait SystematicRenamingUtils extends LinearTransformer {
-  trait Renamer {
-    def apply(name: LocalName): LocalName
-    def apply(path: GlobalName)(implicit state: LinearState): GlobalName
-    def apply(term: Term)(implicit state: LinearState): Term
-    def apply(c: Constant)(implicit state: LinearState): OMID
+  protected def coerceRenamer[T](renamer: Renamer[T])(implicit state: LinearState): Renamer[LinearState] = {
+    implicit val coercedState: T = state.asInstanceOf[T]
+    new Renamer[LinearState] {
+      override def apply(name: LocalName): LocalName = renamer(name)
+      override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = renamer(path)
+      override def apply(term: Term)(implicit state: LinearState): Term = renamer(term)
+      override def apply(c: Constant)(implicit state: LinearState): OMID = renamer(c)
+    }
   }
 
-  protected def getRenamerFor(tag: String): Renamer = new Renamer {
+  protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
 
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
@@ -25,7 +46,7 @@ trait SystematicRenamingUtils extends LinearTransformer {
     }
 
     override def apply(term: Term)(implicit state: LinearState): Term = {
-      val self: Renamer = this // to disambiguate this in anonymous subclassing expression below
+      val self = this // to disambiguate this in anonymous subclassing expression below
       new OMSReplacer {
         override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
       }.apply(term, state.outerContext)

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, SimpleInwardsConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleInwardsConnector, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType}
@@ -38,7 +38,7 @@ object HomDomConnector extends SimpleInwardsConnector(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
-    val dom = getRenamerFor("d")
+    val dom = HomOperator.dom.coercedTo(state)
     List((name, tp, dom(c)))
   }
 }
@@ -51,7 +51,7 @@ object HomCodConnector extends SimpleInwardsConnector(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Term)] = {
-    val dom = getRenamerFor("d")
+    val dom = HomOperator.dom.coercedTo(state)
     List((name, tp, dom(c)))
   }
 }
@@ -61,15 +61,16 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
+  // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
+  val dom: Renamer[LinearState] = getRenamerFor("d")
+  val cod: Renamer[LinearState] = getRenamerFor("c")
+
+  // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
+  val hom: Renamer[LinearState] = getRenamerFor("h")
+
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
   override protected def applyConstantSimple(container: HomOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
-    val dom = getRenamerFor("d")
-    val cod = getRenamerFor("c")
-    // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
-    val hom = getRenamerFor("h")
-
     def quantify(t: Term, argTypes: List[GlobalName]): (Context, Term, Term) = {
       val binding = OpUtils.bindFresh(t, argTypes.map(argTp => SFOL.tm(OMS(dom(argTp)))))
 
