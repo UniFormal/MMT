@@ -1,6 +1,9 @@
 import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
 
+// LINK FOR TGVIEW2D
+// http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest
+
 trait DiagramOperatorHelper {
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
   final protected val typeindexifier: DPath = diagops / "typeindexifier"
@@ -68,7 +71,7 @@ object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
     // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
     // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
     //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
-    sys.exit(0)
+    // sys.exit(0)
   }
 }
 

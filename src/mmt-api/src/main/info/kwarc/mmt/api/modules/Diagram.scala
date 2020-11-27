@@ -39,7 +39,7 @@ class Diagram extends ModuleLevelFeature(Diagram.feature) {
         diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
         println(s"\nAbove MMT surface syntax was printed by Scala class 'DiagramPublisher' for debugging reasons. Input diagram was: ${df}")
 
-        dm.dfC.set(outputDiagram)
+        dm.dfC.normalized = Some(outputDiagram)
         diagInterp.toplevelResults
 
       case None =>
@@ -85,7 +85,7 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
 object SequencedDiagramOperators extends DiagramOperator {
   final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
 
-  final override def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = diagram match {
+  final override def apply(rawDiagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = rawDiagram match {
     case OMA(OMA(OMS(`head`), diagOps), diagram) =>
       val results = diagOps.flatMap(op => {
         val result = interp(OMA(op, diagram))
@@ -97,7 +97,25 @@ object SequencedDiagramOperators extends DiagramOperator {
         }
         result
       })
-      Some(OMA(OMS(head), results))
+
+      // todo: what happens if a diagram operator returns something else than a [[SimpleDiagram]]?
+
+      results.foldLeft[Option[Term]](None)((diagSoFar, result) => result match {
+        case SimpleDiagram(newBase, newPaths) => diagSoFar match {
+          case Some(SimpleDiagram(baseSoFar, pathsSoFar)) =>
+            if (newBase != baseSoFar) {
+              interp.errorCont(InvalidObject(rawDiagram, "Diagram operator invocations resulted in list of SimpleDiagrams " +
+                "hetereogenous in their bases."))
+              return None
+            }
+            Some(SimpleDiagram(baseSoFar, pathsSoFar ::: newPaths))
+
+          case _ => Some(SimpleDiagram(newBase, newPaths))
+        }
+        case _ =>
+          interp.errorCont(InvalidObject(rawDiagram, "Diagram operator invocations resulted in at least non-SimpleDiagram"))
+          return None
+      })
 
     case _ => None
   }
@@ -219,7 +237,8 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     if (simplifiedDiag == diag_) {
       throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
         s"nor is it a SimpleDiagram: $simplifiedDiag. Is the operator you are trying to apply in-scope in " +
-        s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)?")
+        s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)? " +
+        "Does the operator implementing Scala object have a correct `head` field?")
     }
 
     apply(simplifiedDiag)

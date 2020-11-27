@@ -522,9 +522,34 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
     *             ''c.name'' is something like ''LocalName(domainTheory) / actualConstantName'',
     *             which is uncomfortable to deal with in most cases.
     *             Hence in such cases, ''name'' will be simply be ''actualConstantName''.
+    * @return In case the operator is not applicable on c, use the helper [[NotApplicable]] function:
+    *         return ''NotApplicable(c, "optional error msg")''. Internally, this emits an error
+    *         via interp.errorHandler and returns Nil.
+    * @example Most operator implementations start like this:
+    * {{{
+    *   tp match {
+    *     // more cases
+    *     case _ =>
+    *       NotApplicable(c)
+    *   }
+    * }}}
     *
-    * @return In case the operator is not applicable on c, emit an error via interp.errorHandler and
-    *         return Nil.
+    * The general convention is that operators produce as much output as possible.
+    * For instance, consider an operator that copies every constant ''c'' to ''c^p'' and furthermore creates some ''c^x
+    * in some fashion. Now the derivation of ''c^x'' might not be possible for some constants c. But even in these cases,
+    * the opreator should output c (and signal inapplicability as explained above).
+    *
+    * @example Operators producing copies usually follow this pattern:
+    * {{{
+    *   val par : Renamer[LinearState] = getRenamerFor("p") // as a field on the operator object
+    *   val parCopy = (par(name), par(tp), df.map(par(_)))
+    *
+    *   parCopy :: (tp match {
+    *     // more cases
+    *     case _ =>
+    *       NotApplicable(c)
+    *   })
+    * }}}
     */
   protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[SimpleConstant]
 
