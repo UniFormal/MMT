@@ -12,6 +12,13 @@ trait Renamer[T] {
   def apply(term: Term)(implicit state: T): Term
   def apply(c: Constant)(implicit state: T): OMID
 
+  /**
+    * @todo would like to have signature
+    * {{{
+    * def coercedTo[S <: SystematicRenamingUtils](implicit state: S#LinearState): Renamer[S] = {
+    * }}}
+    * but can't because LinearState is a protected type in LinerOperatorState. Change that to public?
+    **/
   def coercedTo[S](implicit state: S): Renamer[S] = {
     implicit val TState: T = state.asInstanceOf[T]
     new Renamer[S] {
