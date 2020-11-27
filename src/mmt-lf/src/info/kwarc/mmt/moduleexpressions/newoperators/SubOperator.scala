@@ -40,17 +40,17 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         //   f^s: |- ∀ [x_1 … x_n] (t_1^s x_1) ∧ … ∧ (t_n^s x_n) ⇒ t^s (f^p x_1 … x_n)
 
         val closureConstant = {
-          val forallCtx = OpUtils.bindFresh(tp, argTypes.map(argTp => SFOL.tm(OMS(par(argTp)))))
+          val forallCtx = OpUtils.bindFresh(Context.empty, argTypes.map(tp => SFOL.tm(OMS(par(tp))))) // replace Context.empty
 
           // construct `(t_1^s x_1) ∧ … ∧ (t_n^s x_n)` if n >= 1
-          val antecedent: Option[Term] = if (argTypes.isEmpty) None else Some(argTypes.zip(forallCtx).map {
-            case (argTp, vd) => ApplySpine(OMS(sub(argTp)), OMV(vd.name))
-          }.reduceLeft(SFOL.and(_, _)))
+          val antecedent: Option[Term] = argTypes.zip(forallCtx).map {
+            case (tp, vd) => ApplySpine(OMS(sub(tp)), vd.toTerm)
+          }.reduceLeftOption(SFOL.and(_, _))
 
           // construct `t^s (f^p x_1 … x_n)`
           val consequence = ApplySpine(
             OMS(sub(retType)),
-            GeneralApplySpine(OMS(par(c.path)), forallCtx.map(vd => OMV(vd.name)): _*)
+            GeneralApplySpine(OMS(par(c.path)), forallCtx.map(_.toTerm): _*)
           )
 
           val closureCondition = SFOL.ded(antecedent match {
@@ -136,6 +136,7 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
       case SFOL.TypeSymbolType() =>
         List((name, SFOL.predicateSubTp(par(c), sub(c))))
 
+      // todo: unify function symbol and predicate symbol case nicely (see QuotOperator where this was done)
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // input:
         //   f: tm t_1 ⟶ ... ⟶ tm t_n ⟶ tm t
@@ -143,17 +144,17 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
         // output:
         //   f := [x_1: ⦃t_1^s⦄, ..., x_n: ⦃t_n^s⦄] downcast of (f^p (x_1 ↑ …) … (x_n ↑ …)) via closure property f^s
 
-        val bindingCtx = OpUtils.bindFresh(tp, argTypes.map(argTp => {
-          SFOL.tm(SFOL.predicateSubTp(OMS(par(argTp)), OMS(sub(argTp))))
+        val bindingCtx = OpUtils.bindFresh(Context.empty, argTypes.map(tp => { // todo: replace Context.empty
+          SFOL.tm(SFOL.predicateSubTp(OMS(par(tp)), OMS(sub(tp))))
         }))
 
         val body = SFOL.downcastParentElementToSubtype(
           parentTp = OMS(par(retType)),
           selectionFun = OMS(sub(retType)),
           parentElem = GeneralApplySpine(par(c), argTypes.zip(bindingCtx).map {
-            case (argTp, vd) => SFOL.injectSubtypeElementIntoParent(
-              parentTp = OMS(par(argTp)),
-              selectionFun = OMS(sub(argTp)),
+            case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
+              parentTp = OMS(par(tp)),
+              selectionFun = OMS(sub(tp)),
               subElem = OMV(vd.name)
             )
           }: _*),
@@ -167,15 +168,15 @@ object SubSubmodelConnector extends SimpleInwardsConnector(
         // input:  c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
         // output: p := [x_1: ⦃t_1^s⦄, ..., x_n: ⦃t_n^s⦄] f^p (x_1 ↑ …) … (x_n ↑ …)
 
-        val bindingCtx = OpUtils.bindFresh(tp, argTypes.map(argTp => {
-          SFOL.tm(SFOL.predicateSubTp(OMS(par(argTp)), OMS(sub(argTp))))
+        val bindingCtx = OpUtils.bindFresh(Context.empty, argTypes.map(tp => { // todo: replace Context.empty
+          SFOL.tm(SFOL.predicateSubTp(OMS(par(tp)), OMS(sub(tp))))
         }))
 
         val body = GeneralApplySpine(par(c), argTypes.zip(bindingCtx).map {
-          case (argTp, vd) => SFOL.injectSubtypeElementIntoParent(
-            parentTp = OMS(par(argTp)),
-            selectionFun = OMS(sub(argTp)),
-            subElem = OMV(vd.name)
+          case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
+            parentTp = OMS(par(tp)),
+            selectionFun = OMS(sub(tp)),
+            subElem = vd.toTerm
           )
         }: _*)
 

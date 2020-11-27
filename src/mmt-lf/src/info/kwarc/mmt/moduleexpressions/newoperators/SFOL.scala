@@ -27,6 +27,10 @@ private[newoperators] object SFOL {
   def downcastParentElementToSubtype(parentTp: Term, selectionFun: Term, parentElem: Term, containmentProof: Term): Term =
     predicateSubTpIn(parentTp, selectionFun, parentElem, containmentProof)
 
+  object QuotientTypes {
+    object quotientTp extends BinaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+  }
+
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
   object exists extends BinaryLFConstantScala(Path.parseM("latin:/?TypedExistentialQuantification"), "exists")
@@ -41,6 +45,7 @@ private[newoperators] object SFOL {
   }
 
   object impl extends BinaryLFConstantScala(Path.parseM("latin:/?Implication"), "impl")
+  object equiv extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
   object or extends BinaryLFConstantScala(Path.parseM("latin:/?Disjunction"), "or")
   object and extends BinaryLFConstantScala(Path.parseM("latin:/?Conjunction"), "and")
 
@@ -71,6 +76,15 @@ private[newoperators] object SFOL {
   object PredicateSymbolType {
     def unapply(t: Term): Option[List[GlobalName]] = t match {
       case FunctionLikeSymbolType(args, OMS(p)) if p == prop.path => Some(args)
+      case _ => None
+    }
+  }
+
+  // Some operators do very similar things for function and predicate symbol types
+  object FunctionOrPredicateSymbolType {
+    def unapply(t: Term): Option[List[GlobalName]] = t match {
+      case FunctionSymbolType(args, _) => Some(args)
+      case PredicateSymbolType(args) => Some(args)
       case _ => None
     }
   }

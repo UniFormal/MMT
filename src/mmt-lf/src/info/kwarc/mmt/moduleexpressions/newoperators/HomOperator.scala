@@ -29,7 +29,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
   override protected def applyConstantSimple(container: HomOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
     def quantify(t: Term, argTypes: List[GlobalName]): (Context, Term, Term) = {
-      val binding = OpUtils.bindFresh(t, argTypes.map(argTp => SFOL.tm(OMS(dom(argTp)))))
+      val binding = OpUtils.bindFresh(Context.empty, argTypes.map(tp => SFOL.tm(OMS(dom(tp))))) // todo: replace context.empty
 
       // construct `c^{dom} x_1 ... x_n`
       val domExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
@@ -223,10 +223,10 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 
         val proofSketch = {
           val vars = argTypes.zipWithIndex.map {
-            case (argTp, idx) => ("y" + StringUtils.subscriptInteger(idx), argTp)
+            case (tp, i) => ("y" + StringUtils.subscriptInteger(i), tp)
           }
           val varPreimages = argTypes.zipWithIndex.map {
-            case (argTp, idx) => ("x" + StringUtils.subscriptInteger(idx), argTp)
+            case (tp, i) => ("x" + StringUtils.subscriptInteger(i), tp)
           }
 
 

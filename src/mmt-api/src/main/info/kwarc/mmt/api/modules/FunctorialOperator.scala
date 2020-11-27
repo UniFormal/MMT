@@ -87,6 +87,9 @@ class IdentityLinearOperator(private val domain: MPath) extends LinearModuleTran
   final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
 }
 
+/**
+  * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
+  */
 abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
   final override val in: LinearModuleTransformer = new IdentityLinearOperator(operator.operatorDomain)
