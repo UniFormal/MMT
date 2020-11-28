@@ -130,6 +130,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
           // success (i.e. no errors)
           try {
             state.ctrl.add(factConstant)
+            Utils.endAddModule(state.situationTheory)(state.ctrl)
             Right(FactReference(factConstant.path))
           } catch {
             case err: AddError => Left(makeException(List(err)))
@@ -192,7 +193,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
                 to = state.situationTheory.toTerm,
                 isImplicit = false
               )
-              Utils.addModuleToController(view)
+              Utils.addModule(view)
 
               view
             }
@@ -205,6 +206,8 @@ object ConcreteServerEndpoints extends ServerEndpoints {
               scrollView,
               viewToGenerate
             )(state.ctrl)
+            Utils.endAddModule(viewToGenerate)
+            Utils.endAddModule(state.situationTheory)
 
             Ok(SScrollApplicationResult.success(Fact
                 .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)

@@ -198,7 +198,7 @@ object DataStructures {
         isImplicit = false
       )
 
-      Utils.addModuleToController(view)
+      Utils.addModule(view)
 
       // collect all assignments such that if typechecking later fails, we can conveniently output
       // debug information
@@ -217,6 +217,8 @@ object DataStructures {
           )
       }
       scrollViewAssignments.foreach(ctrl.add(_))
+
+      Utils.endAddModule(view)
 
       view
     }

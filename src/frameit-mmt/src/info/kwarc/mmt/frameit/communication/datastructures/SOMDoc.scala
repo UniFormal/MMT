@@ -82,15 +82,16 @@ object SOMDoc {
         if (value.isValidInt) {
           SInteger(value.intValue())
         } else {
-          System.err.println(s"encountered term for positive or int literals that would overflow Scala's Int: ${tm}")
+          System.err.println(s"encountered term for positive or int literals that would overflow Scala's Int: $tm")
           SRawOMDoc(tm.toNode.toString())
         }
       case RealLiterals(value) => SFloatingPoint(value)
       case StringLiterals(value) => SString(value)
 
       case _ =>
-        System.err.println(s"encountered term for which there is no SimpleOMDoc analogon: ${tm}")
-        SRawOMDoc(tm.toNode.toString())
+        System.err.println(s"encountered term for which there is no SimpleOMDoc analogon: $tm")
+        SRawOMDoc("no raw OMDoc XML here for performance reasons")
+        // raw XML could be returned via: SRawOMDoc(tm.toNode.toString())
     }
 
     def decode(stm: STerm): Term = stm match {

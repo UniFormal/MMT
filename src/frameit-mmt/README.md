@@ -249,6 +249,10 @@ JSON (sub)formats shared by multiple endpoints above.
 
   </details>
 
+## Development
+
+Currently, the primary maintainer and author of most of the code is [@ComFreek](https://github.com/ComFreek). See <./DEV.md> for particularly important developer's notes.
+
 ## License
 
 Same as the whole MMT source code with the exception of a snippet copied from "the Internet" into `src/info/kwarc/mmt/frameit/communication/ServerErrorHandler.scala`. The precise source and license is given there.
