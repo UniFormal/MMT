@@ -42,12 +42,43 @@ jobs:
         run: |
           cd src
           sbt ++2.12.9 deploy
+      
+      - name: Get version (Git commit/ref/tag)
+        id: get_version
+        run: |
+          echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
 
-      - name: Store 'mmt.jar' artifact
-        uses: actions/upload-artifact@v2
+      #- name: Store 'mmt.jar' artifact
+      #  uses: actions/upload-artifact@v2
+      #  with:
+      #    name: mmt.jar
+      #    path: ./deploy/mmt.jar
+          
+      - name: Create/update Nightly Release
+        id: update_release
+        uses: tubone24/update_release@v1.0
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
-          name: mmt.jar
-          path: deploy/mmt.jar
+          release_name: Nightly Prerelease 
+          body: |
+            This is a nightly prerelease of the `mmt.jar` automatically built, uploaded, and updated by
+            GitHub actions from the latest commit on the `devel` branch.
+            Please see <https://github.com/UniFormal/MMT/actions> for more information.
+            
+            In particular, this nightly build does not need to pass integration or unit tests for it to be
+            uploaded. Use with caution.
+          prerelease: true
+          
+      - name: Upload 'mmt.jar' to Nightly Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
+        with:
+          upload_url: ${{ steps.update_release.outputs.upload_url }}
+          asset_path: ./deploy/mmt.jar
+          asset_name: mmt_${{ steps.get_version.outputs.VERSION }}$.jar
+          asset_content_type: application/java-archive
 
       - name: Unit Tests
         run: |
