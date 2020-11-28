@@ -25,6 +25,22 @@ jobs:
     name: Continuous Integration
     runs-on: ubuntu-latest
     steps:
+      - name: Create Nigthly Prerelease
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Nightly Prerelease (${{ github.ref }})
+          body: |
+            Changes in this Release
+            - First Change
+            - Second Change
+          draft: true
+          prerelease: true
+      - name: cancelling
+        uses: andymckay/cancel-action@0.2
       - name: Checkout Repository
         uses: actions/checkout@v2
 
