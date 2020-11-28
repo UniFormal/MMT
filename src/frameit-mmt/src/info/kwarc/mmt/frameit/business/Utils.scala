@@ -29,11 +29,13 @@ object Utils {
     * @return List of all paths that need to be deleted from the [[Controller]] if you want to delete
     *         everything this method added
     */
-  def addModuleToController(module: Module)(implicit ctrl: Controller): List[Path] = {
+  def addModule(module: Module)(implicit ctrl: Controller): List[Path] = {
+    // todo: support nested modules with nesting level >= 3
     module.path.name.steps match {
       case prefix :+ targetModuleName if prefix.nonEmpty =>
+        val parentModule = ctrl.getModule(module.path.doc ? LocalName(prefix))
         val nestedModuleDecl = new NestedModule(
-          home = OMMOD(module.path.doc ? LocalName(prefix)),
+          home = parentModule.toTerm,
           name = LocalName(targetModuleName),
           mod = module
         )
@@ -44,7 +46,22 @@ object Utils {
 
       case _ =>
         ctrl.add(module)
+        ctrl.endAdd(module)
         List(module.path)
+    }
+  }
+
+  // todo: support nested modules with nesting level >= 3
+  // todo: call endAdd recursively on module and all upper modules
+  def endAddModule(module: Module)(implicit ctrl: Controller): Unit = {
+    module.path.name.steps match {
+      case prefix :+ _ if prefix.nonEmpty =>
+        val parentModule = ctrl.getModule(module.path.doc ? LocalName(prefix))
+        ctrl.endAdd(module)
+        ctrl.endAdd(parentModule)
+
+      case _ =>
+        ctrl.endAdd(module)
     }
   }
 }

@@ -15,18 +15,18 @@ private object MMTImplicitBug {
 
     val doc = Path.parseD("http://cds.omdoc.org/urtheories", NamespaceMap.empty)
     val outerTheory = Theory.empty(doc, LocalName("Outer"), None)
-    Utils.addModuleToController(outerTheory)
+    Utils.addModule(outerTheory)
 
     val innerTheory = Theory.empty(doc, LocalName("Outer") / LocalName("Inner"), None)
-    Utils.addModuleToController(innerTheory)
+    Utils.addModule(innerTheory)
 
     // any other theory, doesn't matter which exactly
     val includedTheoryPath = Path.parseM("http://cds.omdoc.org/urtheories?LF")
     ctrl.add(PlainInclude(includedTheoryPath, innerTheory.path))
     ctrl.endAdd(PlainInclude(includedTheoryPath, innerTheory.path))
 
-    ctrl.endAdd(innerTheory)
-    ctrl.endAdd(outerTheory)
+    Utils.endAddModule(innerTheory)
+    Utils.endAddModule(outerTheory)
 
     // Actual value being printed: None
     // Expected value: Some(...)
