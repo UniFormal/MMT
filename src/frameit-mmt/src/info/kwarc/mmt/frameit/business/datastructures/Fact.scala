@@ -63,6 +63,11 @@ sealed case class Fact(
     Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
   }
 
+  /**
+    * Renders to an [[SFact]] for passing on to the game engine -- without cache.
+    *
+    * Should only be used [[toSimple]] upon a cache miss.
+    */
   private def _toSimple(implicit ctrl: Controller): SFact = {
     val simplify: Term => Term = {
       val simplificationRules: RuleSet = {
@@ -109,6 +114,9 @@ sealed case class Fact(
 }
 
 object Fact {
+  /**
+    * A cache to speed up [[Fact.toSimple]].
+    */
   private val sfactCache: ConcurrentHashMap[Fact, SFact] = new ConcurrentHashMap
 
   def fromConstant(c: Constant)(implicit ctrl: Controller): Fact = Fact(
