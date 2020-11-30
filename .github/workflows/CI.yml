@@ -25,19 +25,6 @@ jobs:
     name: Continuous Integration
     runs-on: ubuntu-latest
     steps:
-      #- name: Create Nigthly Prerelease
-      #  id: create_release
-      #  uses: actions/create-release@v1
-      #  env:
-      #    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #  with:
-      #    tag_name: ${{ github.ref }}
-      #    release_name: Nightly Prerelease (${{ github.ref }})
-      #    body: will be overwritten later anyway
-      #    draft: true
-      #    prerelease: true
-      #- name: cancelling
-      #  uses: andymckay/cancel-action@0.2
       - name: Checkout Repository
         uses: actions/checkout@v2
 
@@ -61,43 +48,7 @@ jobs:
         with:
           name: mmt.jar
           path: ./deploy/mmt.jar
-          
-      #- name: "Nightly release: set 'nightly' tag to current commit"
-      #  # https://github.community/t/nightly-builds-latest-branch-releases/725/5
-      #  run: |
-      #    git config --local user.name "UniFormal/MMT GitHub Action"
-      #    git config --local user.email "action@mmt.uniformal.github.com"
-      #    git tag -f nightly
-      #- name: "Nightly release: force-push new 'nightly' tag" DANGEROUS, FORCE PUSHING
-      #  uses: ad-m/github-push-action@master
-      #  with:
-      #    github_token: ${{ secrets.GITHUB_TOKEN }}
-      #    branch: ${{ github.ref }}
-      #    force: true
-      #    tags: true
-      #- name: "Nightly release: delete old 'nightly' release assets" DANGEROUS, has access to all releases
-      #  uses: mknejp/delete-release-assets@v1
-      #  with:
-      #    token: ${{ github.token }}
-      #    tag: nightly
-      #    assets: '*'
-      #- name: "Nightly release: upload new 'mmt.jar'"
-      #  uses: meeDamian/github-release@2.0
-      #  with:
-      #    token: ${{ secrets.GITHUB_TOKEN }}
-      #    tag: nightly
-      #    files: mmt-${{ GITHUB_SHA }}.jar:./deploy/mmt.jar
-      #    name: Nightly Prerelease 
-      #    body: |
-      #      This is a nightly prerelease of the `mmt.jar` automatically built, uploaded, and updated by
-      #      GitHub actions from the latest commit on the `devel` branch.
-      #      Please see <https://github.com/UniFormal/MMT/actions> for more information.
-      #      
-      #      In particular, this nightly build does not need to pass integration or unit tests for it to be
-      #      uploaded. Use with caution.
-      #    prerelease: true
-      #    allow_override: true
-      #
+
       - name: Unit Tests
         run: |
           cd src
