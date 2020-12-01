@@ -1,12 +1,12 @@
-package info.kwarc.mmt.frameit.communication.server
+package info.kwarc.mmt.frameit.communication.server.playground
 
+import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.symbols.PlainInclude
-import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.Utils
 
-/** Reproducing an MMT bug about implicit morphisms not getting added when nested modules are involved. **/
+/** Reproducing an MMT bug about implicit morphisms not getting added when nested modules are involved. * */
 private object MMTImplicitBug {
   def main(args: Array[String]): Unit = {
     implicit val ctrl: Controller = new Controller()

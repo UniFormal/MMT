@@ -79,7 +79,7 @@ class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extend
 
   override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
 
-  override def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[SimpleConstant] = {
+  override def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[SimpleConstant] = {
 
     val copy1 = getRenamerFor("1")
     val copy2 = getRenamerFor("2")

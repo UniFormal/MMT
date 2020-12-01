@@ -1,14 +1,14 @@
-package info.kwarc.mmt.frameit.communication.server
+package info.kwarc.mmt.frameit.communication.server.playground
 
-import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.objects.{Context, OMS, Term}
 import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.lf.ApplySpine
 
-/** For testing things without touching the server code **/
-private object Playground {
+/** For testing things without touching the server code * */
+private object RealTimesSimplifierBug {
   def main(args: Array[String]): Unit = {
     implicit val ctrl: Controller = new Controller()
     ctrl.report.addHandler(ConsoleHandler)

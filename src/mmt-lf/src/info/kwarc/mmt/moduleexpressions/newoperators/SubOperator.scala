@@ -33,7 +33,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // input:
-        //   f: tm t_1 -> ... -> tm t_n -> tm t  (here: argTypes = List(t_1, ..., t_n), retType = t)
+        //   f: tm t_1 ⟶ … ⟶ tm t_n ⟶ tm t  (here: argTypes = List(t_1, ..., t_n), retType = t)
         //
         // output:
         //   f^p: tm t_1^p ⟶ … ⟶ tm t_n^p ⟶ tm t^p
