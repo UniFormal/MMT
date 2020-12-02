@@ -1,7 +1,5 @@
+import info.kwarc.mmt.api.frontend.REPLExtension
 import info.kwarc.mmt.api.frontend.actions.ActionResultError
-import info.kwarc.mmt.api.frontend.{REPLExtension, StandardREPL}
-import info.kwarc.mmt.api.{DPath, Path}
-import info.kwarc.mmt.api.utils.URI
 
 import scala.io.StdIn
 import scala.util.Try
