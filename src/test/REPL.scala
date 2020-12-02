@@ -5,17 +5,17 @@ import scala.io.StdIn
 import scala.util.Try
 
 /**
-  * A usable MMT REPL you can start from within IntelliJ.
+  * A usable MMT REPL you can start and use from within IntelliJ.
   *
-  * Other means to access the MMT REPL are
+  * Other means to access the MMT REPL inferior:
   *
   *  - "java -jar mmt.jar": requires the time-consuming building of a jar
   *  - "sbt runMain info.kwarc.mmt.api.frontend.Run" (SBT is slow anyway + SBT requires rebuilding even if IntelliJ
   *    has an up-to-date code cache.)
   *
-  * Hence, Navid recommends to exclusively use this REPL.
+  * Hence, I (Navid) exclusively use FastREPL from now on.
   */
-object REPL extends MagicTest("debug") {
+object FastREPL extends MagicTest("debug") {
   private val shortcuts = List(
     "build MMT/urtheories mmt-omdoc",
     "build MitM/Foundation mmt-omdoc",
@@ -26,7 +26,7 @@ object REPL extends MagicTest("debug") {
     "build FrameIT/frameworld -mmt-omdoc",
   )
 
-  private val repl = new FastREPL(shortcuts)
+  private val repl = new FastREPLExtension(shortcuts)
 
   override def doFirst: Unit = {
     super.doFirst
@@ -39,7 +39,7 @@ object REPL extends MagicTest("debug") {
   }
 }
 
-private class FastREPL(shortcuts: List[String]) extends REPLExtension {
+private class FastREPLExtension(shortcuts: List[String]) extends REPLExtension {
   override def run {
     var line: String = null
 
