@@ -17,7 +17,7 @@ trait DiagramOperatorHelper {
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) with DiagramOperatorHelper {
+object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
 
   override def doFirst: Unit = {
     super.doFirst

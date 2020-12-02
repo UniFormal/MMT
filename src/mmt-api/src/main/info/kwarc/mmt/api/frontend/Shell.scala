@@ -240,10 +240,8 @@ class StandardREPL extends REPLExtension {
   def run {
     var command = Option(input.readLine)
     while (command.isDefined) {
-      var res = controller.tryHandleLine(command.get, showLog = true)
-      res match {
-        case a: ActionResultError =>
-          log(a.error)
+      controller.tryHandleLine(command.get) match {
+        case a: ActionResultError => log(a.error)
         case _ =>
       }
       command = Option(input.readLine)
