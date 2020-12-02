@@ -28,17 +28,17 @@ object REPL extends MagicTest("debug") {
     "build FrameIT/frameworld -mmt-omdoc",
   )
 
+  private val repl = new FastREPL(shortcuts)
+
   override def doFirst: Unit = {
     super.doFirst
-    val repl = new FastREPL(shortcuts)
     controller.extman.addExtension(repl)
-
-    repl.run
-
-    log("REPL started. You may want to run:")
   }
 
-  override def run(): Unit = {}
+  override def run(): Unit = {
+    repl.run
+    sys.exit(0)
+  }
 }
 
 private class FastREPL(shortcuts: List[String]) extends REPLExtension {
@@ -59,6 +59,7 @@ private class FastREPL(shortcuts: List[String]) extends REPLExtension {
       case (shortcut, idx) => s"${idx + 1}\t$shortcut"
     }.mkString("\n")
 
+    println()
     println(str)
     println("…or enter custom command")
     print(">")
