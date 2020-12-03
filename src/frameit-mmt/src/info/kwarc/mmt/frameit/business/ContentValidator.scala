@@ -102,7 +102,7 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
     val scratchTheoryPath = theory.path.doc ? (theory.path.name.init / LocalName.random(s"scratch_for_checking_decl_against_theory"))
     val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, mt = Some(theory.path))
 
-    val scratchPaths = Utils.addModuleToController(scratchTheory)
+    val scratchPaths = Utils.addModule(scratchTheory)
 
     try {
       val scratchConstant = new FinalConstant(
@@ -117,6 +117,7 @@ class StandardContentValidator(implicit ctrl: Controller) extends ContentValidat
       )
 
       ctrl.add(scratchConstant)
+      Utils.endAddModule(scratchTheory)
 
       checkStructuralElementSynchronously(scratchTheory)
     } finally {

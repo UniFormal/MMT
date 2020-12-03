@@ -1,14 +1,15 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
+import java.util.concurrent.ConcurrentHashMap
+
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
-import info.kwarc.mmt.api.uom.{Recurse, Simplifiability, SimplificationRule, SimplificationUnit, Simplify}
-import info.kwarc.mmt.api.{GeneralError, GlobalName, NamespaceMap, Path, RuleSet}
+import info.kwarc.mmt.api.uom._
+import info.kwarc.mmt.api.{GlobalName, NamespaceMap, Path, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
-import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
-import info.kwarc.mmt.frameit.archives.{LabelVerbalizationRule, MitM}
+import info.kwarc.mmt.frameit.archives.LabelVerbalizationRule
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SValueEqFact}
 import info.kwarc.mmt.lf.ApplySpine
@@ -20,6 +21,30 @@ import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
   */
 sealed case class FactReference(uri: GlobalName)
 
+/**
+  * A general immutable representation of FrameIT facts known to MMT -- from the POV of MMT.
+  *
+  * A fact is more or less an MMT [[Constant]] with a type [[tp]], an optional definiens [[df]],
+  * and some meta data terms encapsulated in [[meta]].
+  *
+  * By contrast, [[SFact]] is a "dumbed down" representation tailored for passing on to and receiving from the game
+  * engine.
+  *
+  * [[Fact]] objects usually stem from being mentioned in a scroll (in an existing formalization), from
+  * the situation theory, or from being received from the game engine.
+  *
+  *  - If inside a scroll, fact objects are automatically created and stored in a [[Scroll]] object when one of the many
+  * helper methods, such as [[Scroll.fromReference()]] and [[Scroll.findAll()]], is called.
+  * Internally, these methods call ''Fact.fromConstant()''.
+  *  - If inside the situation theory, [[Fact]] objects are collected via ''Fact.findAllIn''.
+  *  - If sent from the game engine, the receiving endpoint in [[info.kwarc.mmt.frameit.communication.server]] parses
+  *    the sent fact first as an [[SFact]], then persists it via [[SFact.toFinalConstant()]] in the situation theory,
+  *    after which the previous item applies.
+  *
+  * @param ref The reference to the fact
+  * @param meta Meta data such as label and description associated to this fact in forms of [[Term]]s.
+  *             These only get verbalized upon calling [[toSimple]].
+  */
 sealed case class Fact(
                         ref: FactReference,
                         meta: UserMetadata,
@@ -27,12 +52,34 @@ sealed case class Fact(
                         df: Option[Term]
                       ) {
 
+  /**
+    * Renders to an [[SFact]] for passing on to the game engine.
+    *
+    * The result is cached in a field on the [[Fact]] companion object.
+    *
+    * @param ctrl A controller to perform simplifications.
+    */
   def toSimple(implicit ctrl: Controller): SFact = {
+    Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
+  }
+
+  /**
+    * Renders to an [[SFact]] for passing on to the game engine -- without cache.
+    *
+    * Should only be used [[toSimple]] upon a cache miss.
+    */
+  private def _toSimple(implicit ctrl: Controller): SFact = {
     val simplify: Term => Term = {
       val simplificationRules: RuleSet = {
         val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
 
         rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
+
+        // Manually add the rule to compute multiplication of two reals
+        // as somehow the actually pre-existing rule in the MitM/Foundation formalization isn't picked up
+        //
+        // (I verified by means of debugging that pre-existing rule to be available in ''rules'', but somehow
+        // it still isn't picked up by the call to the simplifier below.)
         rules.add({
           val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
 
@@ -67,6 +114,11 @@ sealed case class Fact(
 }
 
 object Fact {
+  /**
+    * A cache to speed up [[Fact.toSimple]].
+    */
+  private val sfactCache: ConcurrentHashMap[Fact, SFact] = new ConcurrentHashMap
+
   def fromConstant(c: Constant)(implicit ctrl: Controller): Fact = Fact(
     FactReference(c.path),
     UserMetadata.parse(c),

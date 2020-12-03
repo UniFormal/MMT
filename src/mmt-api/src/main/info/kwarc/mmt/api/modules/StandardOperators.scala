@@ -1,20 +1,47 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api.checking.CheckingCallback
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
-import info.kwarc.mmt.api._
 
-trait SystematicRenamingUtils extends LinearOperator {
-  trait Renamer {
-    def apply(name: LocalName): LocalName
-    def apply(path: GlobalName)(implicit state: LinearState): GlobalName
-    def apply(term: Term)(implicit state: LinearState): Term
-    def apply(c: Constant)(implicit state: LinearState): OMID
+// todo: rename this class as mmt API already features a "Renamer" class?
+trait Renamer[T] {
+  def apply(name: LocalName): LocalName
+  def apply(path: GlobalName)(implicit state: T): GlobalName
+  def apply(term: Term)(implicit state: T): Term
+  def apply(c: Constant)(implicit state: T): OMID
+
+  /**
+    * @todo would like to have signature
+    * {{{
+    * def coercedTo[S <: SystematicRenamingUtils](implicit state: S#LinearState): Renamer[S] = {
+    * }}}
+    * but can't because LinearState is a protected type in LinerOperatorState. Change that to public?
+    **/
+  def coercedTo[S](implicit state: S): Renamer[S] = {
+    implicit val TState: T = state.asInstanceOf[T]
+    new Renamer[S] {
+      override def apply(name: LocalName): LocalName = Renamer.this(name)
+      override def apply(path: GlobalName)(implicit state: S): GlobalName = Renamer.this(path)
+      override def apply(term: Term)(implicit state: S): Term = Renamer.this(term)
+      override def apply(c: Constant)(implicit state: S): OMID = Renamer.this(c)
+    }
+  }
+}
+
+trait SystematicRenamingUtils extends LinearTransformer {
+  protected def coerceRenamer[T](renamer: Renamer[T])(implicit state: LinearState): Renamer[LinearState] = {
+    implicit val coercedState: T = state.asInstanceOf[T]
+    new Renamer[LinearState] {
+      override def apply(name: LocalName): LocalName = renamer(name)
+      override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = renamer(path)
+      override def apply(term: Term)(implicit state: LinearState): Term = renamer(term)
+      override def apply(c: Constant)(implicit state: LinearState): OMID = renamer(c)
+    }
   }
 
-  protected def getRenamerFor(tag: String): Renamer = new Renamer {
+  protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
 
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
@@ -26,7 +53,7 @@ trait SystematicRenamingUtils extends LinearOperator {
     }
 
     override def apply(term: Term)(implicit state: LinearState): Term = {
-      val self: Renamer = this // to disambiguate this in anonymous subclassing expression below
+      val self = this // to disambiguate this in anonymous subclassing expression below
       new OMSReplacer {
         override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
       }.apply(term, state.outerContext)
@@ -44,7 +71,27 @@ object CopyOperator extends ParametricRule {
   }
 }
 
+
 class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
+
+  override val operatorDomain: MPath = dom
+  override val operatorCodomain: MPath = cod
+
+  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
+
+  override def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[SimpleConstant] = {
+
+    val copy1 = getRenamerFor("1")
+    val copy2 = getRenamerFor("2")
+
+    List(
+      (copy1(name), copy1(tp), df.map(copy1.apply(_))),
+      (copy2(name), copy2(tp), df.map(copy2.apply(_)))
+    )
+  }
+}
+
+/*class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
 
   override protected val operatorDomain: MPath = dom
   override protected val operatorCodomain: MPath = cod
@@ -133,3 +180,4 @@ object PushoutOperator extends DiagramOperator {
   }
 }
 
+*/

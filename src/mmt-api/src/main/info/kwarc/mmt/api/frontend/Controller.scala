@@ -353,8 +353,9 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     case None => throw GetError("Element doesn't exist: " + path)
   }
 
-  def getConstant(path: GlobalName) = getAs(classOf[Constant],path)
-  def getTheory(path: MPath) = getAs(classOf[Theory],path)
+  def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)
+  def getTheory(path: MPath): Theory = getAs(classOf[Theory], path)
+  def getModule(path: MPath): Module = getAs(classOf[Module], path)
 
 
   // ******************* determine context of elements
@@ -500,8 +501,18 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   // ******************************* adding elements and in-memory change management
 
-  /** adds a knowledge item
-   *  @param at the position where it should be added (only inside modules, documents)
+  /**
+    * Adds a knowledge item (a [[StructuralElement]]).
+    *
+    * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
+    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * Otherwise, you risk an inconsistent state of MMT.
+    *
+    * If the element is a [[Module]] (e.g. a [[Theory]] or [[View]]) whose name indicates
+    * that it is nested within another module, then you *must* have called [[add()]]
+    * *before* with a [[NestedModule]] declaration. Otherwise, an exception is thrown.
+    *
+    * @param at the position where it should be added (only inside modules, documents)
    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
     iterate {

@@ -1,8 +1,8 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.{GlobalName, Path}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMS, Term}
-import info.kwarc.mmt.lf.{BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMS, OMV, Term, Traverser}
+import info.kwarc.mmt.lf.{Apply, BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
 private[newoperators] object SFOL {
@@ -27,6 +27,10 @@ private[newoperators] object SFOL {
   def downcastParentElementToSubtype(parentTp: Term, selectionFun: Term, parentElem: Term, containmentProof: Term): Term =
     predicateSubTpIn(parentTp, selectionFun, parentElem, containmentProof)
 
+  object QuotientTypes {
+    object quotientTp extends BinaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+  }
+
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
   object exists extends BinaryLFConstantScala(Path.parseM("latin:/?TypedExistentialQuantification"), "exists")
@@ -41,8 +45,12 @@ private[newoperators] object SFOL {
   }
 
   object impl extends BinaryLFConstantScala(Path.parseM("latin:/?Implication"), "impl")
+  object equiv extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
   object or extends BinaryLFConstantScala(Path.parseM("latin:/?Disjunction"), "or")
   object and extends BinaryLFConstantScala(Path.parseM("latin:/?Conjunction"), "and")
+
+  // invocations of this method to be later replaced by real sketch
+  def sketchLazy(str: String): Term = sketch(OMV("<todo:type>"), str)
 
   object sketch extends BinaryLFConstantScala(Path.parseM("latin:/?SKETCH_DOESNT_EXIST_YET"), "sketch") {
     def apply(tp: Term, str: String): Term = apply(tp, Strings(str))
@@ -72,6 +80,15 @@ private[newoperators] object SFOL {
     }
   }
 
+  // Some operators do very similar things for function and predicate symbol types
+  object FunctionOrPredicateSymbolType {
+    def unapply(t: Term): Option[List[GlobalName]] = t match {
+      case FunctionSymbolType(args, _) => Some(args)
+      case PredicateSymbolType(args) => Some(args)
+      case _ => None
+    }
+  }
+
   object AxiomSymbolType {
     def unapply(t: Term): Boolean = t match {
       case ded(_) => true
@@ -91,5 +108,39 @@ private[newoperators] object SFOL {
 
       case _ => None
     }
+  }
+
+  def isMonotone(t: Term, context: Context, allowedReferences: Set[GlobalName]): Boolean = {
+    // allowed operations apart from all the symbols from operatorState.processedDeclarations.
+    val allowedOps: List[GlobalName] = List(
+      Lambda.path,
+      Apply.path,
+      SFOL.and.path, SFOL.or.path, SFOL.eq.path, SFOL.exists.path,
+      SFOL.tm.path
+    )
+    sealed class MonotonicityStatus(var isMonotone: Boolean)
+
+    val monotonicityTraverser = new Traverser[MonotonicityStatus] {
+      override def traverse(t: Term)(implicit con: Context, state: MonotonicityStatus): Term = {
+        if (!state.isMonotone) {
+          // no need to recurse further
+          t
+        } else t match {
+          case OMS(p) if allowedReferences.contains(p) => t
+          case OMS(p) if allowedOps.contains(p) => t
+          case OMS(_) =>
+            // todo: log the path to the non-monotone op that occurred here
+            state.isMonotone = false
+            t
+
+          case _ => Traverser(this, t)
+        }
+      }
+    }
+
+    val monotonicity = new MonotonicityStatus(true)
+    monotonicityTraverser(t, monotonicity, context)
+
+    monotonicity.isMonotone
   }
 }

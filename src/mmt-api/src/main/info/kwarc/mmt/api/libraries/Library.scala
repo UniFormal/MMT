@@ -837,9 +837,12 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
   // workaround: remove or reorder the include
 
   /**
-   * adds a declaration
-   * @param e the added declaration
-   */
+    * Adds a [[StructuralElement]].
+    *
+    * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
+    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * Otherwise, you risk an inconsistent state of MMT.
+    */
   def add(e: StructuralElement, at: AddPosition = AtEnd) {
     log("adding " + e.path + " (which is a " + e.feature + ")")
     val adder = new Adder(e, at)
