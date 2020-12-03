@@ -14,8 +14,11 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.presentation._
+
 import scala.collection.mutable.ArrayStack
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper
+
 import scala.collection._
 
 object TranslationController {
@@ -33,14 +36,34 @@ object TranslationController {
   //new frontend.Controller(libraries.NullChecker, new FileReport(new java.io.File("mizar.log")))
 
   //set during translation
-  var currentBase : String = null
   var currentAid : String = null
   var currentDoc : Document = null
+  var currentThy : Theory = null
+  var currentOutputBase : DPath = null
 
-  def localPath = LocalName(currentAid)
-  def currentThyBase : DPath = DPath(Mizar.mmlBase)
-  def currentTheory : MPath = currentThyBase ? localPath
-  def currentSource = Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
+  def currentBaseThy = Some(mmtwrapper.Mizar.MizarPatternsTh)
+  def localPath = LocalName(currentAid.toLowerCase())
+  def currentThyBase = TranslationController.currentOutputBase / localPath
+  def currentTheoryPath : MPath = currentThyBase ? localPath
+  def currentSource = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
+
+  def makeDocument() = {
+    val doc = new Document(currentThyBase, documents.ModuleLevel, None)
+    controller.add(doc)
+    currentDoc = doc
+    doc
+  }
+  def makeTheory() = {
+    val ln = LocalName(currentAid.toString() + ".omdoc")
+    val thy = Theory.empty(currentThyBase, ln, currentBaseThy)
+    add(thy)
+    currentThy = thy
+    thy
+  }
+  def endMake() = {
+    controller.endAdd(currentThy)
+    controller.endAdd(currentDoc)
+  }
 
   var anonConstNr = 0
   var defs = 0
@@ -71,13 +94,6 @@ object TranslationController {
       "AnonLm" + anonConstNr
   }
 
-  def addSourceRef(mmtEl : metadata.HasMetaData, sregion : info.kwarc.mmt.mizar.objects.SourceRegion) = {
-    val start = parser.SourcePosition(-1, sregion.start.line, sregion.start.col)
-    val end = parser.SourcePosition(-1, sregion.end.line, sregion.end.col)
-    val ref = parser.SourceRef(URI(currentSource), parser.SourceRegion(start, end))
-    parser.SourceRef.update(mmtEl, ref)
-  }
-
   def add(e: NarrativeElement) {
     controller.add(e)
   }
@@ -89,7 +105,7 @@ object TranslationController {
     controller.add(eC)
   }
   private def complify(d: Declaration) = {
-    val rules = RuleSet.collectRules(controller, Context(Mizar.MizarPatternsTh))
+    val rules = RuleSet.collectRules(controller, Context(mmtwrapper.Mizar.MizarPatternsTh))
     org.omdoc.latin.foundations.mizar.IntroductionRule.allRules.foreach {rules.declares(_)}
     val complifier = controller.complifier(rules).toTranslator
     try {
@@ -121,7 +137,7 @@ object TranslationController {
   def addGlobalProp(nrO : Option[Int], sName : String) = nrO match {
     case Some(nr) =>
       val name = LocalName(sName)
-      propContext(nr) = OMID(MMTUtils.getPath(TranslationController.currentAid, name))
+      propContext(nr) = OMID(mmtwrapper.MMTUtils.getPath(TranslationController.currentAid, name))
     case _ => None
   }
 
@@ -135,7 +151,7 @@ object TranslationController {
 
   def addGlobalConst(nr : Int, kind : String) : LocalName = {
     val name = LocalName(kind + nr)
-    constContext(nr) = OMID(MMTUtils.getPath(TranslationController.currentAid, name))
+    constContext(nr) = OMID(mmtwrapper.MMTUtils.getPath(TranslationController.currentAid, name))
     name
   }
 
@@ -147,7 +163,7 @@ object TranslationController {
 
   def resolveConst(nr : Int) : Term = {
     if (query) {
-      Mizar.apply(OMID(MMTUtils.getPath("qvar","const")), OMV("c" + nr.toString))
+      mmtwrapper.Mizar.apply(OMID(mmtwrapper.MMTUtils.getPath("qvar","const")), OMV("c" + nr.toString))
     } else {
       constContext(nr)
     }
@@ -155,7 +171,7 @@ object TranslationController {
 
   def addQVarBinder() = {
     val name = "x" + varContext.length
-    varContext.push(Mizar.apply(OMID(DPath(Mizar.mmlBase) ? "qvar" ? "qvar"), OMV(name)))
+    varContext.push(mmtwrapper.Mizar.apply(OMID(DPath(mmtwrapper.Mizar.mmlBase) ? "qvar" ? "qvar"), OMV(name)))
   }
 
   def addVarBinder(n : Option[String]) : String = n match {
@@ -193,7 +209,7 @@ object TranslationController {
   def addRetTerm(path: GlobalName) = {
     locusVarContext.length match {
       case 0 => locusVarContext.push(OMID(path))
-      case _ => locusVarContext.push(Mizar.apply(OMID(path), locusVarContext : _*))
+      case _ => locusVarContext.push(mmtwrapper.Mizar.apply(OMID(path), locusVarContext : _*))
     }
   }
 
@@ -215,16 +231,15 @@ object TranslationController {
   }
 
   def makeConstant(n: LocalName, t: Term) : Constant =
-    Constant(OMMOD(currentTheory), n, Nil, Some(t), None, None)
+    Constant(OMMOD(currentTheoryPath), n, Nil, Some(t), None, None)
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) : Constant =
-    Constant(OMMOD(currentTheory), n, Nil, tO, dO, None)
+    Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
   def makeConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) : Constant =
     Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
 
-
   def getNotation(kind : String, absnr : Int) : NotationContainer = {
     val lname = LocalName(kind + absnr.toString)
-    val name = currentTheory ? lname
+    val name = currentTheoryPath ? lname
     ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
       case Some(format) if format.symbol != null => //found a format so will add notation
         val argnr = format.argnr

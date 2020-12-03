@@ -2,20 +2,19 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.api.modules.{ModuleOrLink, ModuleWrapper, Theory}
+import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMID, OMMOD}
+import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.api.symbols.Declaration
 import info.kwarc.mmt.api.{DPath, LocalName, NarrativeElement, archives, documents, objects}
-import info.kwarc.mmt.mizar.mmtwrappers
-import info.kwarc.mmt.mizar.mmtwrappers.Mizar
+import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
+import info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object articleTranslator {
-  def translateArticle(text_Proper: Text_Proper, dpath:DPath) = {
+  def translateArticle(text_Proper: Text_Proper) = {
     val items = text_Proper._items map itemTranslator.translateItem
   }
 }
@@ -54,7 +53,7 @@ object itemTranslator {
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
     }
-    TranslationController.addSourceRef(translatedSubitem, sourceReg)
+    //TranslationController.addSourceRef(translatedSubitem, sourceReg)
   }
 }
 
@@ -157,7 +156,7 @@ object blockTranslator {
       case defn:Definition =>
         val sourceReg = defn.pos.sourceRegion()
         val translDef = definitionTranslator.translate_Definition(defn)
-        TranslationController.addSourceRef(translDef, sourceReg)
+        //TranslationController.addSourceRef(translDef, sourceReg)
         translDef
     }
   }
@@ -168,7 +167,7 @@ object blockTranslator {
       case just:Justification =>
         val sourceReg = just.pos.sourceRegion()
         val translJust = justificationTranslator.translate_Justification(just)
-        TranslationController.addSourceRef(translJust, sourceReg)
+        //TranslationController.addSourceRef(translJust, sourceReg)
         translJust
     }
   }
@@ -205,17 +204,46 @@ object termTranslator {
     case Simple_Term(varAttr, srt) => ???
     case Aggregate_Term(tpAttrs, _args) => ???
     case Selector_Term(tpAttrs, _args) => ???
-    case Circumfix_Term(tpAttrs, _symbol, _args) => ???
-    case Numeral_Term(posNr, srt, varnr) => ???
-    case it_Term(pos, sort) => throw new java.lang.Error("Unresolved implicit reference in term.")
+    case Circumfix_Term(tpAttrs, _symbol, _args) =>
+      assert(tpAttrs.sort == "Functor-Term")
+      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val args = Utils.translateArguments(_args)
+      ApplyGeneral(objects.OMS(gn), args)
+    case Numeral_Term(redObjAttr, nr, varnr) => mmtwrapper.Mizar.num(nr)
+    case it_Term(redObjSubAttrs) => throw new java.lang.Error("Unresolved implicit reference in term.")
     case Internal_Selector_Term(redObjAttr, varnr) => ???
-    case Infix_Term(tpAttrs, infixedArgs) => ???
-    case Global_Choice_Term(srt, pos, _tp) => ???
-    case Placeholder_Term(redObjAttr, varnr) => ???
+    case Infix_Term(tpAttrs, infixedArgs) =>
+      assert(tpAttrs.sort == "Functor-Term")
+      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val args = Utils.translateArguments(infixedArgs._args)
+      ApplyGeneral(objects.OMS(gn), args)
+    case Global_Choice_Term(redObjSubAttrs, _tp) => ???
+    case Placeholder_Term(redObjAttr, varnr) => throw new java.lang.Error("Unresolved argument reference in term.")
     case Private_Functor_Term(redObjAttr, serialnr, _args) => ???
-    case Fraenkel_Term(pos, srt, _varSegms, _tm, _form) => ???
-    case Simple_Fraenkel_Term(pos, srt, _varSegms, _tm) => ???
-    case Qualification_Term(pos, srt, _tm, _tp) => ???
+    case Fraenkel_Term(redObjSubAttrs, _varSegms, _tm, _form) =>
+      val tp : Type = Utils.firstVariableUniverse(_varSegms)
+      val universe = translate_Term(Utils.getUniverse(tp))
+      val args : List[objects.OMV] = _varSegms._vars map {
+        case explSegm: Explicitly_Qualified_Segment =>
+          assert(Utils.conforms(explSegm._tp, tp))
+          explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
+        case segm => segm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
+      }
+      val cond = formulaTranslator.translate_Formula(_form)
+      val expr = translate_Term(_tm)
+      mmtwrapper.Mizar.fraenkelTerm(expr, args, universe, cond)
+    case Simple_Fraenkel_Term(redObjSubAttrs, _varSegms, _tm) =>
+      val tp : Type = Utils.firstVariableUniverse(_varSegms)
+      val universe = translate_Term(Utils.getUniverse(tp))
+      val args : List[objects.OMV] = _varSegms._vars map {
+        case explSegm: Explicitly_Qualified_Segment =>
+          assert(Utils.conforms(explSegm._tp, tp))
+          explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
+        case segm => segm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
+      }
+      val expr = translate_Term(_tm)
+      mmtwrapper.Mizar.simpleFraenkelTerm(expr, args, universe)
+    case Qualification_Term(redObjSubAttrs, _tm, _tp) => ???
     case Forgetful_Functor_Term(constrExtObjAttrs, _tm) => ???
   }
 }
@@ -223,18 +251,19 @@ object termTranslator {
 object typeTranslator {
   def translate_Type(tp:Type) : objects.Term = tp match {
     case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => ???
-    case Clustered_Type(srt, pos, _adjClust, _tp) => ???
+    case Clustered_Type(redObjSubAttrs, _adjClust, _tp) => ???
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
-      // Seems to roughly correspond to an OMS referencing a type
+      // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
       // TODO: Check this the correct semantics and take care of the noocc attribute
       val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
-      val tp : objects.Term = objects.OMS(gn).asInstanceOf[objects.Term]
-      tp
+      val tp : objects.Term = objects.OMS(gn)
+      val args = Utils.translateArguments(_args)
+      ApplyGeneral(tp,args)
     case Struct_Type(tpAttrs, _args) => ???
-      val formatNr = tpAttrs.extAttrs.formatNr
-      val patternNr = tpAttrs.extAttrs.patNr
-      val position = tpAttrs.extAttrs.posNr.pos.parsePosition()
-      val nr = tpAttrs.extAttrs.posNr.nr
+      val formatNr = tpAttrs.formatNr
+      val patternNr = tpAttrs.patternNr
+      val position = tpAttrs.posNr.pos.parsePosition()
+      val nr = tpAttrs.posNr.nr
       val constrnr = tpAttrs.constrNr
       ???
   }
@@ -242,22 +271,67 @@ object typeTranslator {
 
 object formulaTranslator {
   def translate_Formula(formula:Formula) : objects.Term = formula match {
-    case Existential_Quantifier_Formula(srt, pos, _vars, _expression) => ???
-    case Relation_Formula(objectAttrs, infixedArgs) => ???
-    case Universal_Quantifier_Formula(srt, pos, _vars, _restrict, _expression) => ???
-    case Multi_Attributive_Formula(srt, pos, _tm, _clusters) => ???
-    case Conditional_Formula(srt, pos, _formulae) => ???
-    case Conjunctive_Formula(srt, pos, _formulae) => ???
-    case Biconditional_Formula(srt, pos, _frstFormula, _sndFormula) => ???
-    case Disjunctive_Formula(srt, pos, _formulae) => ???
-    case Negated_Formula(srt, pos, _formula) => ???
-    case Contradiction(srt, pos) => ???
-    case Qualifying_Formula(srt, pos, _tm, _tp) => ???
+    case Existential_Quantifier_Formula(redObjSubAttrs, _vars, _expression) =>
+      val tp : Type = Utils.firstVariableUniverse(_vars)
+      val univ = termTranslator.translate_Term(Utils.getUniverse(tp))
+      val vars = Utils.translateVariables(_vars)
+      translate_Existential_Quantifier_Formula(vars,univ,_expression)
+    case Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
+      if (antonymic.isDefined && antonymic.get) {
+        translate_Formula(Utils.negatedFormula(Relation_Formula(objectAttrs, None, infixedArgs)))
+      } else {
+        val rel = Utils.translateObjRef(objectAttrs)
+        val args = Utils.translateArguments(infixedArgs._args)
+        ApplyGeneral(rel, args)
+      }
+    case Universal_Quantifier_Formula(redObjSubAttrs, _vars, _restrict, _expression) =>
+      val tp : Type = Utils.firstVariableUniverse(_vars)
+      val univ = termTranslator.translate_Term(Utils.getUniverse(tp))
+      val vars = Utils.translateVariables(_vars)
+      translate_Universal_Quantifier_Formula(vars,univ,_expression)
+    case Multi_Attributive_Formula(redObjSubAttrs, _tm, _clusters) => ???
+    case Conditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
+      val assumption = claimTranslator.translate_Claim(_frstFormula)
+      val conclusion = claimTranslator.translate_Claim(_sndFormula)
+      mmtwrapper.Mizar.implies(assumption, conclusion)
+    case Conjunctive_Formula(redObjSubAttrs, _frstConjunct, _sndConjunct) =>
+      val frstConjunct = claimTranslator.translate_Claim(_frstConjunct)
+      val sndConjunct = claimTranslator.translate_Claim(_sndConjunct)
+      mmtwrapper.Mizar.binaryAnd(frstConjunct, sndConjunct)
+    case Biconditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) => ???
+    case Disjunctive_Formula(redObjSubAttrs, _frstDisjunct, _sndDisjunct) =>
+      val frstDisjunct = claimTranslator.translate_Claim(_frstDisjunct)
+      val sndDisjunct = claimTranslator.translate_Claim(_sndDisjunct)
+      mmtwrapper.Mizar.binaryOr(frstDisjunct, sndDisjunct)
+    case Negated_Formula(redObjSubAttrs, _formula) =>
+      Apply(mmtwrapper.Mizar.constant("not"),claimTranslator.translate_Claim(_formula))
+    case Contradiction(redObjSubAttrs) => mmtwrapper.Mizar.constant("contradiction")
+    case Qualifying_Formula(redObjSubAttrs, _tm, _tp) => ???
     case Private_Predicate_Formula(redObjAttr, serialNr, constrNr, _args) => ???
-    case FlexaryDisjunctive_Formula(srt, pos, _formulae) => ???
-    case FlexaryConjunctive_Formula(srt, pos, _formulae) => ???
-    case Multi_Relation_Formula(srt, pos, _relForm, _rhsOfRFs) => ???
+    case FlexaryDisjunctive_Formula(redObjSubAttrs, _formulae) =>
+      val formulae = _formulae map claimTranslator.translate_Claim
+      mmtwrapper.Mizar.or(formulae)
+    case FlexaryConjunctive_Formula(redObjSubAttrs, _formulae) =>
+      val formulae = _formulae map claimTranslator.translate_Claim
+      mmtwrapper.Mizar.and(formulae)
+    case Multi_Relation_Formula(redObjSubAttrs, _relForm, _rhsOfRFs) => ???
   }
+  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim) = vars match {
+    case Nil => claimTranslator.translate_Claim(expression)
+    case v::vs =>
+      val expr = claimTranslator.translate_Claim(expression)
+      mmtwrapper.Mizar.exists(v,univ,expr)
+  }
+  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim) = vars match {
+    case Nil => claimTranslator.translate_Claim(expression)
+    case v::vs =>
+      val expr = claimTranslator.translate_Claim(expression)
+      mmtwrapper.Mizar.forall(v,univ,expr)
+  }
+}
+
+object variableTranslator {
+  def translate_Variable(variable:Variable) : objects.OMV = { ??? }
 }
 
 object redefinitionTranslator {
@@ -268,7 +342,19 @@ object justificationTranslator {
   def translate_Justification(just:Justification) = { ??? }
 }
 
-class MizarImporter extends archives.Importer {
+object claimTranslator {
+  def translate_Claim(claim:Claim) : objects.Term = claim match {
+    case Assumption(_ass) => ???
+    case formula: Formula => formulaTranslator.translate_Formula(formula)
+    case Proposition(pos, _label, _thesis) => ???
+    case Thesis(redObjSubAttrs) => ???
+    case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
+    case Conditions(_props) => ???
+    case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
+  }
+}
+
+class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
   def inExts = List("esx")
 
@@ -278,33 +364,22 @@ class MizarImporter extends archives.Importer {
     val doc = translate(text_Proper, bf)
 
     index(doc)
-    archives.BuildResult.empty
+    //archives.BuildResult.empty
+    archives.BuildResult.fromImportedDocument(doc)
   }
 
   def translate(text_Proper: Text_Proper, bf:archives.BuildTask) : Document = {
     val aid = text_Proper.articleid
-    val dpath = bf.narrationDPath.^! / (aid.toString().toLowerCase() + ".omdoc")
-
-    TranslationController.currentBase = getBase(bf.inFile)
     TranslationController.currentAid = aid
+    TranslationController.currentOutputBase = bf.narrationDPath.^!
 
-    val doc = new Document(dpath, documents.ModuleLevel, None)
-    TranslationController.add(doc)
+    val doc = TranslationController.makeDocument()
+    val th = TranslationController.makeTheory()
 
-    val th = new Theory(TranslationController.currentThyBase, TranslationController.localPath, Some(Mizar.MizarPatternsTh), Theory.noParams, Theory.noBase)
-    TranslationController.add(th)
-
-    articleTranslator.translateArticle(text_Proper, dpath)
+    articleTranslator.translateArticle(text_Proper)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
-    controller.endAdd(th)
+    TranslationController.endMake()
     doc
-  }
-
-  def getBase(f: File): String = {
-    f.toJava.getParentFile.getParent match {
-      case null => "./"
-      case s => s + "/"
-    }
   }
 }
 
@@ -319,4 +394,26 @@ object Utils {
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
+  def conforms(A:Type, B:Type) : Boolean = {A == B}
+  def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),Sort("Negated-Formula")),form)
+  def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),Sort("Contradiction"))))
+  def emptyPosition() = Position("translation internal")
+  def getUniverse(tp:Type) : Term = tp match {
+    case Standard_Type(ExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode")), _, _, args) =>
+      args match { case List(Arguments(List(u))) => u }
+  }
+  def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
+    case segm: VariableSegments => segm._vars()
+  }
+  def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(variableTranslator.translate_Variable)}
+  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(variableTranslator.translate_Variable)}
+  def firstVariableUniverse(varSegms: VariableSegments) : Type = {
+    assert(! varSegms._vars().isEmpty)
+    varSegms._tp()
+  }
+  def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
+    varSegm._vars.head._tp()
+  }
+  def translateArguments(args: Arguments) : List[objects.Term] = {args._children map termTranslator.translate_Term }
+  def translateObjRef(refObjAttrs:referencingObjAttrs)  = objects.OMS(MMLIdtoGlobalName(refObjAttrs.globalName()))
 }
