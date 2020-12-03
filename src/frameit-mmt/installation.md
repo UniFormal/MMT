@@ -48,9 +48,10 @@
 
 **You're done.** The server should now be available at `http://localhost:8085` and respond to the REST API calls detailled below.
 
-As a first test, you can try opening <http://localhost:8085/debug/situationtheory/print>. It should output something like
+As a first test, you can try opening <http://localhost:8085/debug/space/print>. It should output something like
 
 ```
+//TODO: actually it now prints more :)
 "\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
 ```
 
