@@ -4,12 +4,7 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
 ## Installation
 
-1. Set up MMT
-
-   As described at [MMT's installation page](https://uniformal.github.io//doc/setup/), set up a development environment for MMT (under "Option 1b" at time of writing).
-   You do not need to run `java -jar mmt.jar` or anything like that (as described under "Step 3").
-
-2. [Install UFrameIT/archives](https://github.com/UFrameIT/archives).
+See [./installation.md](installation.md).
 
 ## Usage
 
