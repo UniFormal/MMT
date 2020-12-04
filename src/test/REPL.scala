@@ -42,13 +42,11 @@ object FastREPL extends MagicTest("debug") {
 
 private class FastREPLExtension(shortcuts: List[String]) extends REPLExtension {
   override def run {
-    var line: String = null
-
     printQuery()
-    while ({ line = StdIn.readLine(); line != null }) {
+    Iterator.continually(StdIn.readLine()).takeWhile(_ != null).foreach(line => {
       handleLine(line)
       printQuery()
-    }
+    })
   }
   override def exit {}
 
