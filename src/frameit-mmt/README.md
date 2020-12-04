@@ -2,9 +2,16 @@
 
 This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), primarily maintained so far by [@ComFreek](https://github.com/ComFreek).
 
-## Installation & Compilation
+## Installation
 
-See [./installation.md](./installation.md).
+1. Set up MMT
+
+   As described at [MMT's installation page](https://uniformal.github.io//doc/setup/), set up a development environment for MMT (under "Option 1b" at time of writing).
+   You do not need to run `java -jar mmt.jar` or anything like that (as described under "Step 3").
+
+2. [Install UFrameIT/archives](https://github.com/UFrameIT/archives).
+
+## Usage
 
 ## REST API
 
