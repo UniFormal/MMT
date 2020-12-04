@@ -37,21 +37,26 @@
    SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
 
    WARNING: An illegal reflective access operation has occurred
-   WARNING: Illegal reflective access by com.twitter.jvm.Hotspot (file:/C:/Users/nroux/Desktop/mmt/src/null/Coursier/cache/v1/https/repo1.maven.org/maven2/com/twitter/util-jvm_2.12/20.7.0/util-jvm_2.12-20.7.0.jar) to field sun.management.ManagementFactoryHelper.jvm
+   WARNING: Illegal reflective access by com.twitter.jvm.Hotspot (.../com/twitter/util-jvm_2.12/20.7.0/util-jvm_2.12-20.7.0.jar) to field sun.management.ManagementFactoryHelper.jvm
    WARNING: Please consider reporting this to the maintainers of com.twitter.jvm.Hotspot
    WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
    WARNING: All illegal access operations will be denied in a future release
    ```
 
-   Don't worry. The first warning is ignorable &mdash; log output is just discarded. The secone one is Twitter's to fix and is under their investigation already (for months, sadly).
+   Don't worry. The first warning is ignorable &mdash; log output is just discarded. The second one is [Twitter's to fix and is under their investigation already](https://github.com/twitter/util/issues/266) (for months, sadly).
 
 **You're done.** The server should now be available at `http://localhost:8085` and respond to the [documented REST API calls](./README.md).
 
-As a first test, you can try opening <http://localhost:8085/debug/space/print>. It should output something like
+As a first test, you can try opening <http://localhost:8085/debug/space/print>. After a few seconds (on cold start), it should output something like
 
-```
-//TODO: actually it now prints more :)
-"\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
+```mmt
+theory DefaultSituationSpace : http://mathhub.info/FrameIT/frameworld?FrameworldMeta  = 
+  theory DefaultSituationSpace/Root : http://mathhub.info/FrameIT/frameworld?FrameworldMeta  = 
+    include http://mathhub.info/FrameIT/frameworld?OppositeLen ❙
+    include http://mathhub.info/FrameIT/frameworld?AngleSum ❙
+    include http://mathhub.info/FrameIT/frameworld?Midpoint ❙
+  ❚
+❚
 ```
 
 ## Stack overflow error when compiling
