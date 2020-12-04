@@ -6,8 +6,6 @@ This is the server component of the [FrameIT project](https://kwarc.info/systems
 
 See [./installation.md](installation.md).
 
-## Usage
-
 ## REST API
 
 We use UTF-8-encoded JSON payloads for both HTTP request and response bodies.
