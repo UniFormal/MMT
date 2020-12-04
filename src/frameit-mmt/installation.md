@@ -1,8 +1,10 @@
 ## Installation
 
-1. Get a set of UFrameIT archives you want the server to use: `git clone --recursive https://github.com/UFrameIT/archives archive-root`
+1. Get a set of UFrameIT archives you want the server to use: `git clone --recursive https://github.com/UFrameIT/archives archive-root && git submodule foreach git checkout devel`
 
    Remember the path you clone this to!
+   
+   If you want to update the archives in the future use: `git pull --recurse-submodules && git submodule foreach git checkout devel`
 
 2. Clone the MMT repository on devel branch: `git clone --branch devel https://github.com/UniFormal/mmt`
 
