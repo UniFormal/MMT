@@ -41,11 +41,12 @@ object TranslationController {
   var currentThy : Theory = null
   var currentOutputBase : DPath = null
 
-  def currentBaseThy = Some(mmtwrapper.Mizar.MizarPatternsTh)
-  def localPath = LocalName(currentAid.toLowerCase())
-  def currentThyBase = TranslationController.currentOutputBase / localPath
+  def currentBaseThy : Option[MPath] = Some(mmtwrapper.Mizar.MizarPatternsTh)
+  def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+mmtwrapper.Mizar.MizarPatternsTh.name.toString+".mmt")
+  def localPath : LocalName = LocalName(currentAid.toLowerCase())
+  def currentThyBase : DPath = TranslationController.currentOutputBase / localPath
   def currentTheoryPath : MPath = currentThyBase ? localPath
-  def currentSource = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
+  def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
     val doc = new Document(currentThyBase, documents.ModuleLevel, None)
@@ -54,9 +55,8 @@ object TranslationController {
     doc
   }
   def makeTheory() = {
-    val ln = LocalName(currentAid.toString() + ".omdoc")
-    val thy = Theory.empty(currentThyBase, ln, currentBaseThy)
-    add(thy)
+    val thy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
+    controller.add(thy)
     currentThy = thy
     thy
   }

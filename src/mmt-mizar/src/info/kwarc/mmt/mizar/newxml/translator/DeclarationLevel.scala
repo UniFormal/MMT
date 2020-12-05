@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects
-import info.kwarc.mmt.mizar.newxml.syntax.{Assumption, Attr_Antonym, Attr_Synonym, Attribute_Definition, Attribute_Pattern, Block, CaseBasedExpr, Case_Block, Case_Head, Choice_Statement, Cluster, Conclusion, Constant_Definition, Correctness, Correctness_Condition, Definiens, Definition, Definition_Item, Exemplification, Func_Antonym, Func_Synonym, Functor_Definition, Generalization, Heads, Identify, Justification, Loci_Declaration, Mode_Definition, Mode_Synonym, Nyms, PartialDef, Per_Cases, Pragma, Pred_Antonym, Pred_Synonym, Predicate_Definition, Private_Functor_Definition, Private_Predicate_Definition, Property, Redefine, Reduction, Reservation, Scheme_Block_Item, Scheme_Head, Section_Pragma, Statement, Structure_Definition, Suppose_Head, Theorem_Item, Type_Changing_Statement}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.mizar.newxml.syntax.{Assumption, Assumptions, Attr_Antonym, Attr_Synonym, Attribute_Definition, Attribute_Pattern, Block, CaseBasedExpr, Case_Block, Case_Head, Choice_Statement, Cluster, Conclusion, Constant_Definition, Correctness, Correctness_Condition, Definiens, Definition, Definition_Item, Exemplification, Func_Antonym, Func_Synonym, Functor_Definition, Generalization, Heads, Identify, Justification, Loci_Declaration, Mode_Definition, Mode_Synonym, Nyms, PartialDef, Per_Cases, Pragma, Pred_Antonym, Pred_Synonym, Predicate_Definition, Private_Functor_Definition, Private_Predicate_Definition, Property, Redefine, Reduction, Registrations, Regular_Statement, Reservation, Scheme_Block_Item, Scheme_Head, Section_Pragma, Statement, Structure_Definition, Suppose_Head, Theorem_Item, Type_Changing_Statement}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, Utils, expressionTranslator, justificationTranslator}
 
 object subitemTranslator {
@@ -53,11 +53,13 @@ object statementTranslator {
     case type_Changing_Statement: Type_Changing_Statement => translate_Type_Changing_Statement(type_Changing_Statement)
     case theorem_Item: Theorem_Item => translate_Theorem_Item(theorem_Item)
     case choice_Statement: Choice_Statement => translate_Choice_Statement(choice_Statement)
+    case regular_Statement: Regular_Statement => translate_Regular_Statement(regular_Statement)
   }
   def translate_Conclusion(conclusion: Conclusion) = { ??? }
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement) = { ??? }
   def translate_Theorem_Item(reservation: Theorem_Item) = { ??? }
   def translate_Choice_Statement(reservation: Choice_Statement) = { ??? }
+  def translate_Regular_Statement(regular_Statement: Regular_Statement) = { ??? }
 }
 
 object definitionTranslator {
@@ -112,6 +114,7 @@ object blockTranslator {
         val translDef = definitionTranslator.translate_Definition(defn)
         //TranslationController.addSourceRef(translDef, sourceReg)
         translDef
+      case _ => throw new java.lang.Error("definition expected inside definition-item.")
     }
   }
   def translate_Justification_Block(block:Block) : Unit = {
@@ -123,6 +126,7 @@ object blockTranslator {
         val translJust = justificationTranslator.translate_Justification(just)
         //TranslationController.addSourceRef(translJust, sourceReg)
         translJust
+      case _ => throw new java.lang.Error("justification expected inside justification-item.")
     }
   }
 }
@@ -143,4 +147,13 @@ object definiensTranslator {
     assert(partDef._partDefs.isDefined)
     ???
   }
+
+  object assumptionTranslator {
+    def translateAssumption(ass:Assumption) = translateAssumptions(ass._ass)
+      def translateAssumptions(ass:Assumptions) = { ??? }
+  }
+}
+
+object registrationTranslator {
+  def translateRegistration(reg:Registrations) = { ??? }
 }
