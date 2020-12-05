@@ -18,6 +18,7 @@ import scala.util.Try
 object FastREPL extends MagicTest("debug") {
   private val shortcuts = List(
     "build MMT/urtheories mmt-omdoc",
+    "build MMT/urtheories scala-bin",
     "build MitM/Foundation mmt-omdoc",
     "build MitM/core mmt-omdoc",
     "build FrameIT/frameworld mmt-omdoc",
@@ -41,13 +42,11 @@ object FastREPL extends MagicTest("debug") {
 
 private class FastREPLExtension(shortcuts: List[String]) extends REPLExtension {
   override def run {
-    var line: String = null
-
     printQuery()
-    while ({ line = StdIn.readLine(); line != null }) {
+    Iterator.continually(StdIn.readLine()).takeWhile(_ != null).foreach(line => {
       handleLine(line)
       printQuery()
-    }
+    })
   }
   override def exit {}
 

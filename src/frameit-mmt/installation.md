@@ -1,26 +1,25 @@
 ## Installation
 
-1. Get a set of UFrameIT archives you want the server to use: `git clone --recursive https://github.com/UFrameIT/archives archive-root`
+1. Set up MMT
 
-   Remember the path you clone this to!
+   As described at [MMT's installation page](https://uniformal.github.io//doc/setup/), set up a development environment for MMT with IntelliJ (under "Option 1b" at time of writing).
+   You do not need to run `java -jar mmt.jar` or anything like that (as described under "Step 3").
 
-2. Clone the MMT repository on devel branch: `git clone --branch devel https://github.com/UniFormal/mmt`
+2. [Install UFrameIT/archives](https://github.com/UFrameIT/archives).
 
-3. Import the source code into a new IntelliJ project: see <https://uniformal.github.io//doc/setup/devel#using-intellij>
-
-4. Open the just created IntelliJ project and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle:
+3. Open the IntelliJ created in step 1 and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle:
 
    ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
 
    This will invoke compilation and execution of the server in that order. Compilation hopefully works. See below when you get a stack overflow error *at compilation*. Execution is supposed to result in an error since the server expects some command-line arguments upon execution. We will add them next.
 
-5. Edit the `Server` run configuration
+4. Edit the `Server` run configuration
 
    - first open all run configurations:
 
      ![run configurations](https://i.imgur.com/nFd8ETr.png)
 
-   - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archive root>` to its program arguments:
+   - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archives root from step 2>` to its program arguments:
 
      ![program arguments](https://i.imgur.com/lZahL6C.png)
 
@@ -38,26 +37,31 @@
    SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
 
    WARNING: An illegal reflective access operation has occurred
-   WARNING: Illegal reflective access by com.twitter.jvm.Hotspot (file:/C:/Users/nroux/Desktop/mmt/src/null/Coursier/cache/v1/https/repo1.maven.org/maven2/com/twitter/util-jvm_2.12/20.7.0/util-jvm_2.12-20.7.0.jar) to field sun.management.ManagementFactoryHelper.jvm
+   WARNING: Illegal reflective access by com.twitter.jvm.Hotspot (.../com/twitter/util-jvm_2.12/20.7.0/util-jvm_2.12-20.7.0.jar) to field sun.management.ManagementFactoryHelper.jvm
    WARNING: Please consider reporting this to the maintainers of com.twitter.jvm.Hotspot
    WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
    WARNING: All illegal access operations will be denied in a future release
    ```
 
-   Don't worry. The first warning is ignorable &mdash; log output is just discarded. The secone one is Twitter's to fix and is under their investigation already (for months, sadly).
+   Don't worry. The first warning is ignorable &mdash; log output is just discarded. The second one is [Twitter's to fix and is under their investigation already](https://github.com/twitter/util/issues/266) (for months, sadly).
 
-**You're done.** The server should now be available at `http://localhost:8085` and respond to the REST API calls detailled below.
+**You're done.** The server should now be available at `http://localhost:8085` and respond to the [documented REST API calls](./README.md).
 
-As a first test, you can try opening <http://localhost:8085/debug/space/print>. It should output something like
+As a first test, you can try opening <http://localhost:8085/debug/space/print>. After a few seconds (on cold start), it should output something like
 
-```
-//TODO: actually it now prints more :)
-"\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
+```mmt
+theory DefaultSituationSpace : http://mathhub.info/FrameIT/frameworld?FrameworldMeta  = 
+  theory DefaultSituationSpace/Root : http://mathhub.info/FrameIT/frameworld?FrameworldMeta  = 
+    include http://mathhub.info/FrameIT/frameworld?OppositeLen ❙
+    include http://mathhub.info/FrameIT/frameworld?AngleSum ❙
+    include http://mathhub.info/FrameIT/frameworld?Midpoint ❙
+  ❚
+❚
 ```
 
 ## Stack overflow error when compiling
 
-The Scala compiler sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. Try updating to the latest IntelliJ version. Apart from that, the Internet does not offer many tips for solving this except increasing the stack size for compilation:
+The Scala compiler of older IntelliJ versions sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. Try updating to the latest IntelliJ version. Apart from that, the Internet does not offer many tips for solving this except increasing the stack size for compilation:
 
 - <https://github.com/scala-js/scala-js/issues/3588>
 - <https://github.com/scala/bug/issues/9696>

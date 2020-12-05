@@ -2,9 +2,9 @@
 
 This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), primarily maintained so far by [@ComFreek](https://github.com/ComFreek).
 
-## Installation & Compilation
+## Installation
 
-See [./installation.md](./installation.md).
+See [./installation.md](installation.md).
 
 ## REST API
 
