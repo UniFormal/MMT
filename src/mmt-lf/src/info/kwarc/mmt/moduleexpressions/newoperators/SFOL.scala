@@ -29,6 +29,8 @@ private[newoperators] object SFOL {
 
   object QuotientTypes {
     object quotientTp extends BinaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+    object quot_project extends TernaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+    object quot_inj extends TernaryLFConstantScala(Path.parseM("latin:/?QuotientIndefiniteAccess"), "quot_inj")
   }
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")

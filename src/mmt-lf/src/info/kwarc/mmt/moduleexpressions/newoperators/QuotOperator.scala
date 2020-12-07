@@ -1,10 +1,11 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.{OMA, OMPMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMPMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
 
 /**
@@ -109,9 +110,38 @@ object QuotModConnector extends SimpleInwardsConnector(
 
     tp match {
       case SFOL.TypeSymbolType() =>
-        List(
-          (name, SFOL.QuotientTypes.quotientTp(par(c), quot(c)))
+        List((name, SFOL.QuotientTypes.quotientTp(par(c), quot(c))))
+
+      case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
+        val lambdaCtx = OpUtils.bindFresh(
+          Context.empty,
+          argTypes.map(tp => SFOL.QuotientTypes.quotientTp(par(c), OMS(quot(tp)))),
+          None
         )
+
+        // todo: replace OMV("rel") by access to relation within structure:
+        //   "quot(...) / rel" <-- something like that
+        // for function symbols this is a term of the function's return type (some SFOL type)
+        //    => still needs to be put into the respective equivalence class (cf. below)
+        // for predicate symbols this is a term of type prop
+        //    => can be returned as-is (cf. below)
+        val rawReturnValue = GeneralApplySpine(
+          par(c),
+          lambdaCtx.map(v => SFOL.QuotientTypes.quot_inj(par(v.tp.get), OMV("rel"), v.toTerm)) : _*
+        )
+
+        tp match {
+          case SFOL.FunctionSymbolType(_, retType) =>
+            val functionEqvClassValue = SFOL.QuotientTypes.quot_project(OMS(par(retType)), OMV("rel"), rawReturnValue)
+            List((name, functionEqvClassValue))
+
+          case SFOL.PredicateSymbolType(_) =>
+            List((name, rawReturnValue))
+        }
+
+      case SFOL.AxiomSymbolType() =>
+        // todo: what to do?
+        NotApplicable(c, "Action on axioms not yet implemented")
 
       case _ => NotApplicable(c)
     }

@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
 
+// todo generate definienses (i.e. proofs) too here
 private[newoperators] trait NRelClosureCreator[T] {
   /**
     * The number of models the relation relates.
