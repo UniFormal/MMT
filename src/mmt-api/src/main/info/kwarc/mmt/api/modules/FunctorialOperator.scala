@@ -3,44 +3,18 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GeneralError, GlobalName, InvalidElement, InvalidObject, LocalName, MPath}
+import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
   protected def submitDiagram(newModules: List[MPath]): Term
 
-  final override def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = diagram match {
+  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
     case OMA(OMS(`head`), List(inputDiagram)) =>
-      interp(inputDiagram).flatMap(acceptDiagram(_)(interp)) match {
-        case Some(modulePaths) =>
-          val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getAs(classOf[Module], p))).toMap
-          val state = initDiagramState(diagram, modules, interp)
-
-          val newModulePaths = modulePaths.flatMap(modulePath => {
-            applyModule(interp.get(modulePath))(interp, state).map(newModule => {
-
-              state.processedElements.get(modulePath) match {
-                case Some(`newModule`) => // ok
-                case Some(m) if m != newModule =>
-                  throw new Exception("...")
-
-                case None =>
-                  throw new Exception("...")
-              }
-              if (!interp.hasToplevelResult(newModule.path)) {
-                throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
-              }
-
-              newModule.path
-            })
-          })
-          // todo: instead get new module paths from interp?
-          Some(submitDiagram(newModulePaths))
-
-        case None => None
-      }
-
-    case _ => None
+      interp(inputDiagram)
+        .flatMap(acceptDiagram(_)(interp))
+        .flatMap(applyDiagram)
+        .map(submitDiagram)
   }
 }
 
@@ -57,15 +31,31 @@ trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransform
         "on simple diagrams. Did simplification not kick in?"))
       None
   }
-}
 
-abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator {
   final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
 }
 
-abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer with RelativeBaseOperator {
-  final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
+abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator
+
+abstract class ParametricLinearOperator extends DiagramOperator {
+  def applyDiagram(diagram: Term): Option[(SimpleLinearModuleTransformer, Term)]
+
+  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
+    applyDiagram(diagram).flatMap {
+      case (op, diag) => diag match {
+        // TODO: ideally reuse code from RelativeBaseOperator
+        case SimpleDiagram(dom, modulePaths) if dom == op.operatorDomain =>
+          op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
+
+        case _ =>
+          interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
+          None
+      }
+    }
+  }
 }
+
+abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer with RelativeBaseOperator
 
 /**
   * A [[LinearOperator]] that works (type, definiens)-by-(type, definiens): all declarations that are

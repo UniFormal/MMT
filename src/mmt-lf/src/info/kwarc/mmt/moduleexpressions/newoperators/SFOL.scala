@@ -45,7 +45,35 @@ private[newoperators] object SFOL {
   }
 
   object impl extends BinaryLFConstantScala(Path.parseM("latin:/?Implication"), "impl")
+
+  /**
+    * Constructs implication with possibly empty antecedence.
+    *
+    * If antecedence is empty, consequence is returned.
+    */
+  def implOption(antecedence: Option[Term], consequence: Term): Term = {
+    antecedence.map(impl(_, consequence)).getOrElse(consequence)
+  }
   object equiv extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
+  // alias for [[equiv]]
+  object biimpl extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
+
+  /**
+    * Bulids a chain of biimplication-chained propositions.
+    *
+    * @example ''biimplChain(a, b) = a ⇔ b''
+    * @example ''biimplChain(a, b, c) = (a ⇔ b) ∧ (b ⇔ c)''
+    *
+    * @param propositions Sequence of propositions of size >= 2
+    */
+  def biimplChain(propositions: Term*): Term = {
+    require(propositions.size >= 2)
+    propositions.zip(propositions.tail).map {
+      case (biimplLeftArgument, biimplRightArgument) =>
+        SFOL.biimpl(biimplLeftArgument, biimplRightArgument)
+    }.reduceLeft(SFOL.and(_, _))
+  }
+
   object or extends BinaryLFConstantScala(Path.parseM("latin:/?Disjunction"), "or")
   object and extends BinaryLFConstantScala(Path.parseM("latin:/?Conjunction"), "and")
 

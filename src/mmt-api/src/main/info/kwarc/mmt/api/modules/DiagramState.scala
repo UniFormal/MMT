@@ -31,7 +31,7 @@ trait FunctorialOperatorState {
     * @param diagram The full input diagram expression.
     * @param toplevelModules The extracted modules in the input diagram
     */
-  def initDiagramState(diagram: Term, toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
+  def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
 
   protected trait MinimalFunctorialOpState {
     val inputToplevelModules: Map[MPath, Module]
@@ -90,7 +90,7 @@ trait LinearOperatorState extends FunctorialOperatorState {
   }
 
   final override type DiagramState = LinearDiagramState
-  final override def initDiagramState(diagram: Term, toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)
+  final override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)
 
   final protected class LinearDiagramState(val inputToplevelModules: Map[MPath, Module]) extends MinimalFunctorialOpState {
     val linearStates: mutable.Map[Path, LinearState] = mutable.Map()

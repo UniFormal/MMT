@@ -1,13 +1,11 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleInwardsConnector, SimpleLinearOperator, SystematicRenamingUtils}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMPMOD, OMS, Term}
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.objects.{OMA, OMPMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
 
-// Not yet created, but useful comments/spec in this file
 
 /**
   {{{
@@ -40,15 +38,25 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   val par : Renamer[LinearState] = getRenamerFor("p")
   val quot : Renamer[LinearState] = getRenamerFor("q")
 
+  object ClosureCreator extends NRelClosureCreator[LinearState] {
+    // Although the QuotOperator only works on one model (the "parent model"),
+    // it employs a *binary* (equivalence) relation on universes of the parent model.
+    // Hence, define relationArity to be 2 and identify the models in the other overrided functions below
+    override val relationArity: Int = 2
+
+    override protected def applyTypeSymbolRef(structureIdx: Int, s: GlobalName)(implicit state: LinearState): Term =
+      OMS(par(s))
+
+    override protected def inRelation(tp: GlobalName, arguments: List[Term])(implicit state: LinearState): Term =
+      ApplySpine(OMS(quot(tp)), arguments : _*)
+  }
+
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
     val parCopy = (par(name), par(tp), df.map(par(_)))
 
     parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
-        // t: tp
-        // ↓
-        // t^q: Mod ?EqvRel (tm t^p)
-
+        // create t^q: Mod ?EqvRel (tm t^p)
         val eqvRelType = OMA(
           OMS(Path.parseS("http://gl.mathhub.info/MMT/LFX/Records?Symbols?ModelsOf")),
           List(OMPMOD(
@@ -59,68 +67,13 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
         List((quot(name), eqvRelType, None))
 
-      case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
-        // Uniformly handle function symbols and predicate symbols as follows:
-        //
-        // function symbols
-        //
-        //   f: tm t_1 ⟶ … ⟶ tm t_n ⟶ tm t
-        //   ↓
-        //   f^q: ⊦ ∀ [x_1: tm t_1^p, …, x_n: tm t_n^p
-        //             x_1': tm t_1^p, …, x_n': tm t_n^p]
-        //               t_1^q x_1 x_1' ∧ … ∧ t_n^q x_n x_n' ⇒ t^q (f^p x_1 … x_n) (f^p x_1' … x_n')
-        //
-        //     f^q can be read as "t^q is congruence wrt. f"
-        //
-        // predicate symbols
-        //
-        //   c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
-        //   ↓
-        //   c^q: ⊦ ∀ [x_1: tm t_1^p, …, x_n: tm t_n^p
-        //            x_1': tm t_1^p, …, x_n': tm t_n^p]
-        //              t_1^q x_1 x_1' ∧ … ∧ t_n^q x_n x_n' ⇒ (c^p x_1 … x_n) ⇔ (c^p x_1' … x_n')
+      case SFOL.FunctionSymbolType(argTypes, retType) =>
+        // todo: work on definiens
+        List((quot(name), ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
 
-        def repeatList[T](times: Int, list: List[T]): List[T] = List.fill(times)(list).flatten
-
-        // create context of size `2 * argTypes.size`
-        // [x_1: tm t_1^p, …, x_n: tm t_n^p,    x_1': tm t_1^p, …, x_n': tm t_n^p]
-        val forallContext = OpUtils.bindFresh(
-          Context.empty, // todo replace Context.empty
-          repeatList(2, argTypes.map(tp => OMS(par(tp)))),
-          hint = Some(i => if (i < argTypes.size) s"x_$i" else s"x__${i - argTypes.size}p") // MMT surface syntax doesn't support '
-        )
-
-        // build term `t_1^q x_1 x_1' ∧ … ∧ t_n^q x_n x_n'`
-        val allArgumentsRelate = argTypes.zipWithIndex.map {
-          case (tp, i) =>
-            ApplySpine(OMS(quot(tp)), forallContext(i).toTerm, forallContext(argTypes.size + i).toTerm)
-        }.reduceLeftOption(SFOL.and(_, _))
-
-        val resultRelates = tp match {
-          case SFOL.FunctionSymbolType(_, retType) =>
-            // build term `t^q (f^p x_1 … x_n) (f^p x_1' … x_n')`
-            ApplySpine(
-              OMS(quot(retType)),
-              GeneralApplySpine(par(c), forallContext.map(_.toTerm).take(argTypes.size): _*),
-              GeneralApplySpine(par(c), forallContext.map(_.toTerm).drop(argTypes.size): _*),
-            )
-
-          case SFOL.PredicateSymbolType(_) =>
-            // (c^p x_1 … x_n) ⇔ (c^p x_1' … x_n')
-            SFOL.equiv(
-              ApplySpine(par(c), forallContext.map(_.toTerm).take(argTypes.size): _*),
-              ApplySpine(par(c), forallContext.map(_.toTerm).drop(argTypes.size): _*)
-            )
-        }
-
-        val congruenceCondition = SFOL.ded(SFOL.forallMany(forallContext, allArgumentsRelate match {
-          case Some(antecedent) => SFOL.impl(antecedent, resultRelates)
-          case None =>
-            assert(forallContext.isEmpty)
-            resultRelates
-        }))
-
-        List((quot(name), congruenceCondition, None))
+      case SFOL.PredicateSymbolType(argTypes) =>
+        // todo: work on definiens
+        List((quot(name), ClosureCreator.applyPredicateSymbol(c.path, argTypes), None))
 
       case _ =>
         NotApplicable(c)
