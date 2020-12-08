@@ -82,6 +82,18 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
+object QuotParentConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_par_connector"),
+  QuotOperator
+) with SystematicRenamingUtils {
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_par")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val par = QuotOperator.par.coercedTo(state)
+    List((name, par(c)))
+  }
+}
+
 /**
   *
   * not implemented yet
