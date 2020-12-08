@@ -17,7 +17,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub")
 
-  object ClosureCreator extends NRelClosureCreator[LinearState] {
+  object ClosureCreator extends ModRelClosureCreator[LinearState] {
     override val relationArity: Int = 1
 
     override protected def applyTypeSymbolRef(structureIdx: Int, s: GlobalName)(implicit state: LinearState): Term = {

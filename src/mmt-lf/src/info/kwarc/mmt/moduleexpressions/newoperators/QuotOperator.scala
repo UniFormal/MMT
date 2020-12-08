@@ -39,7 +39,7 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   val par : Renamer[LinearState] = getRenamerFor("p")
   val quot : Renamer[LinearState] = getRenamerFor("q")
 
-  object ClosureCreator extends NRelClosureCreator[LinearState] {
+  object ClosureCreator extends ModRelClosureCreator[LinearState] {
     // Although the QuotOperator only works on one model (the "parent model"),
     // it employs a *binary* (equivalence) relation on universes of the parent model.
     // Hence, define relationArity to be 2 and identify the models in the other overrided functions below

@@ -38,19 +38,22 @@ trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransform
 abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator
 
 abstract class ParametricLinearOperator extends DiagramOperator {
-  def applyDiagram(diagram: Term): Option[(SimpleLinearModuleTransformer, Term)]
+  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer]
 
   final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
-    applyDiagram(diagram).flatMap {
-      case (op, diag) => diag match {
-        // TODO: ideally reuse code from RelativeBaseOperator
-        case SimpleDiagram(dom, modulePaths) if dom == op.operatorDomain =>
-          op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
+    diagram match {
+      case OMA(`head`, parameters :+ actualDiagram) =>
+        instantiate(parameters).flatMap(op => actualDiagram match {
+          // TODO: ideally reuse code from RelativeBaseOperator
+          case SimpleDiagram(dom, modulePaths) if dom == op.operatorDomain =>
+            op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
 
-        case _ =>
-          interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
-          None
-      }
+          case _ =>
+            interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
+            None
+        })
+
+      case _ => None
     }
   }
 }

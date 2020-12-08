@@ -1,13 +1,13 @@
 package info.kwarc.mmt.moduleexpressions.newoperators
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
+import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
 
 // todo generate definienses (i.e. proofs) too here
-private[newoperators] trait NRelClosureCreator[T] {
+private[newoperators] trait ModRelClosureCreator[T] {
   /**
     * The number of models the relation relates.
     *
@@ -218,7 +218,7 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   }).toList
   private val relRenamer = getRenamerFor("r")
 
-  object ClosureCreator extends NRelClosureCreator[LinearState] {
+  object ClosureCreator extends ModRelClosureCreator[LinearState] {
     override def relationArity: Int = NRelOperator.this.relationArity
 
     override protected def applyTypeSymbolRef(structureIdx: Int, s: GlobalName)(implicit state: LinearState): Term =
@@ -258,10 +258,47 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   }
 }
 
-/*class GenericNRelOperator extends ParametricLinearOperator {
+class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer {
+  override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
+  override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(s"_mod_rel${relationArity}${relationTheory.name}")
+
+  private val closureCreator = new ModRelClosureCreator[LinearState] {
+    override def relationArity: Int = ModRelTransformer.this.relationArity
+
+    override protected def applyTypeSymbolRef(structureIdx: Int, tp: GlobalName)(implicit state: SkippedDeclsExtendedLinearState): Term = {
+      ???
+    }
+
+    override protected def inRelation(tp: GlobalName, arguments: List[Term])(implicit state: SkippedDeclsExtendedLinearState): Term = {
+      ???
+    }
+  }
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
+    val copies: List[(LocalName, Term, Option[Term])] = List()
+    copies ::: (tp match {
+      case SFOL.TypeSymbolType() =>
+        Nil // + structures
+
+      case SFOL.FunctionSymbolType(argTypes, retType) =>
+        List((???, closureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
+
+        // ...
+    })
+  }
+}
+
+class ModRelOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector")
 
-  override def applyDiagram(diagram: Term): Option[(SimpleLinearModuleTransformer, Term)] = diagram match {
-    new NRelOperator(...)
+  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer] = parameters match {
+    case List(relationArity, OMMOD(relationTheory)) =>
+      // TODO: parse relationArity (requires mmt-odk dependency)
+      Some(new ModRelTransformer(2, relationTheory))
+    case _ =>
+      interp.errorCont(InvalidObject(OMA(OMS(head), parameters), "cannot parse parameters. Expected integer literal and MPath"))
+      None
   }
-}*/
+}
