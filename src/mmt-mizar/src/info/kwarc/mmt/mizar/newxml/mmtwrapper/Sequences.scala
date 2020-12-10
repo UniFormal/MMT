@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.newxml.mmtwrapper
 
 import info.kwarc.mmt._
 import api._
@@ -14,4 +14,5 @@ object MizSeq {
   //def SeqMap(body: Term, index: LocalName, to: Term) = Sequences.ellipsis(to,index,body)
 
   def OMI(i: Int) = NatRules.NatLit(i)
+  def nTerms(n:Int) = Rep(Mizar.any, OMI(n))
 }
