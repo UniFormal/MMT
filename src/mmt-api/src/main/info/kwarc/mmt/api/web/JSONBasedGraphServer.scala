@@ -14,21 +14,24 @@ import info.kwarc.mmt.api.utils._
 import scala.util.Try
 
 /**
-  * Theory graphs-as-JSON web interface.
+  * Provides JSON representations of theory graphs (as known to MMT) at [[http://<mmt server>/:jgraph/json?key=<key>&uri=<datum>]].
+  * Most prominently, this JSON endpoint is used by TGView2D at [[http://<mmt server>/graphs/tgview.html?type=<key>&graphdata=<datum>]].
   *
-  * The [[JSONBasedGraphServer]] server extension hooks up with MMT's web server and replies at URIs like:
-  *
-  * [[http://localhost:8080/:jgraph/json?key=<key>&uri=<datum>]]
+  * The [[JSONBasedGraphServer]] server extension hooks up with MMT's web server and replies at URIs like
+  * [[http://<mmt server>/:jgraph/json?key=<key>&uri=<datum>]].
   *
   * Here, ''<key>'' selects one of the theory graphs providers declared in this file. And ''<datum>'' is some input
   * to that provider.
-  *
   * For example, the [[JArchiveGraph]] provider listens at ''<key> = archivegraph'' and expects ''<datum>'' to be an
-  * archive ID. Sample URI:
+  * archive ID.
   *
-  * [[http://localhost:8080/:jgraph/json?key=archivegraph&uri=MMT/LATIN2]]
+  * @example Say you wanted to query and display the whole theory graph of MMT/LATIN2.
+  *          MMT/LATIN2 is a whole archive, hence you want to use the [[JArchiveGraph]] provider with datum ''MMT/LATIN2''.
+  *          
+  *          You can download the theory graph JSON at [[http://localhost:8080/:jgraph/json?key=archivegraph&uri=MMT/LATIN2]].
+  *          You can access the theory graph visually with TGView2D by browsing at [[http://localhost:8080/graphs/tgview.html?type=archivegraph&graphdata=MMT/LATIN2]].
   *
-  * @author Jazzpirate
+  * @author Jazzpirate (+ docs by ComFreek)
   */
 
 class DirectGraphBuilder extends FormatBasedExtension {
