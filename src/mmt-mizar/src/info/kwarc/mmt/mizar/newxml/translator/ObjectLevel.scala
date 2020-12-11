@@ -4,10 +4,8 @@ import info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api.objects.OMV
 import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.{PatternUtils, StructureInstance}
 import info.kwarc.mmt.mizar.newxml.syntax.{Aggregate_Term, Assumption, Biconditional_Formula, Circumfix_Term, Claim, Clustered_Type, Conditional_Formula, Conditions, Conjunctive_Formula, Contradiction, Definition, Diffuse_Statement, Disjunctive_Formula, Existential_Quantifier_Formula, Explicitly_Qualified_Segment, Expression, FlexaryConjunctive_Formula, FlexaryDisjunctive_Formula, Forgetful_Functor_Term, Formula, Fraenkel_Term, Global_Choice_Term, Infix_Term, Internal_Selector_Term, Iterative_Equality, Multi_Attributive_Formula, Multi_Relation_Formula, Negated_Formula, Numeral_Term, Placeholder_Term, Private_Functor_Term, Private_Predicate_Formula, Proposition, Qualification_Term, Qualifying_Formula, Redefine, Relation_Formula, ReservedDscr_Type, Selector_Term, Simple_Fraenkel_Term, Simple_Term, Standard_Type, Struct_Type, Term, Thesis, Type, Universal_Quantifier_Formula, Variable, it_Term}
 import info.kwarc.mmt.mizar.newxml.translator.Utils
-import org.omdoc.latin.foundations.mizar.MizarPatterns
 
 object expressionTranslator {
   def translate_Expression(expr:Expression): objects.Term = expr match {
@@ -20,18 +18,8 @@ object expressionTranslator {
 object termTranslator {
   def translate_Term(tm:Term) : objects.Term = tm match {
     case Simple_Term(varAttr, srt) => ???
-    case Aggregate_Term(tpAttrs, _args) =>
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
-      val aggrDecl = PatternUtils.referenceExtDecl(gn,"aggr")
-      val args = Utils.translateArguments(_args)
-      ApplyGeneral(aggrDecl, args)
-    case Selector_Term(tpAttrs, _args) =>
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
-      val struct = translate_Term(_args)
-      val structTm = TranslationController.simplifyTerm(struct)
-      val ApplyGeneral(structAggrDecl, aggrArgs) = structTm
-      val args::argsTyped::_ = aggrArgs
-      ApplyGeneral(objects.OMS(gn), List(args, argsTyped, struct))
+    case Aggregate_Term(tpAttrs, _args) => ???
+    case Selector_Term(tpAttrs, _args) => ???
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
       val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
@@ -72,16 +60,7 @@ object termTranslator {
       val expr = translate_Term(_tm)
       mmtwrapper.Mizar.simpleFraenkelTerm(expr, args, universe)
     case Qualification_Term(redObjSubAttrs, _tm, _tp) => ???
-    case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
-      val gn = Utils.MMLIdtoGlobalName(constrExtObjAttrs.globalName())
-      val substr = objects.OMS(gn)
-      val struct = translate_Term(_tm)
-      val structTm = TranslationController.simplifyTerm(struct)
-      val ApplyGeneral(objects.OMS(strAggrPath), aggrArgs) = structTm
-      val strPath = strAggrPath.module ? strAggrPath.name.steps.init
-      val restr = PatternUtils.referenceExtDecl(strPath,PatternUtils.structureDefRestrName(gn.name.toString).toString)
-      val args::argsTyped::_ = aggrArgs
-      ApplyGeneral(restr, List(args, argsTyped, struct))
+    case Forgetful_Functor_Term(constrExtObjAttrs, _tm) => ???
   }
 }
 

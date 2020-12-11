@@ -14,7 +14,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.presentation._
-import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable.ArrayStack
 import info.kwarc.mmt.lf._
@@ -267,11 +266,5 @@ object TranslationController {
       case x =>
         NotationContainer()
     }
-  }
-
-  def simplifyTerm(tm:objects.Term): objects.Term = {
-    val su = SimplificationUnit(Context.empty,true,false)
-    val rules = RuleSet.collectRules(controller, su.context)
-    controller.simplifier.objectLevel(tm,su, rules)
   }
 }

@@ -18,11 +18,7 @@ object Utils {
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
-  def conforms(A:Type, B:Type) : Boolean = {
-    val List(a,b) = List(A,B) map typeTranslator.translate_Type
-    val List(as, bs) = List(a,b) map TranslationController.simplifyTerm
-    as == bs
-  }
+  def conforms(A:Type, B:Type) : Boolean = {A == B}
   def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),Sort("Negated-Formula")),form)
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),Sort("Contradiction"))))
   def emptyPosition() = Position("translation internal")
