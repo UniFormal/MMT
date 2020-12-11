@@ -1,5 +1,14 @@
 package info.kwarc.mmt.api.modules
 
+/**
+  * Classes for named functorial operators, i.e., operators bound to an MMT symbol.
+  *
+  * All of these classes are minor; almost all of the logic lies in the mixed in traits
+  * from DiagramTransformer.scala for anonymous functorial operators.
+  *
+  * @see DiagramTransformer.scala for anonymous functorial operators
+  */
+
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
@@ -75,21 +84,12 @@ abstract class SimpleLinearOperator extends LinearOperator with SimpleLinearModu
 
 abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
 
-class IdentityLinearOperator(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
-  override val operatorDomain: MPath = domain
-  override val operatorCodomain: MPath = domain
-
-  override protected def applyModuleName(name: LocalName): LocalName = name
-
-  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
-}
-
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
 abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
-  final override val in: LinearModuleTransformer = new IdentityLinearOperator(operator.operatorDomain)
+  final override val in: LinearModuleTransformer = new IdentityLinearTransformer(operator.operatorDomain)
   final override val out: operator.type = operator
 }
 

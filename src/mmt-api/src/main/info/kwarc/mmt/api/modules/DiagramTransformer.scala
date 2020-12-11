@@ -1,5 +1,15 @@
 package info.kwarc.mmt.api.modules
 
+/**
+  * Traits for "anonymous" functorial operators, i.e., operators that are not bound
+  * to an MMT symbol.
+  * Anonymous operators are useful, e.g., for [[ParametricLinearOperator]]s that create them
+  * on-the-fly at runtime based on the parameters they receive.
+  * The main trait for linear operators is [[LinearModuleTransformer]].
+  *
+  * @see FunctorialOperator.scala for named diagram operators.
+  */
+
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMA, OMCOMP, OMIDENT, OMMOD, OMS, Term}
@@ -362,6 +372,15 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     interp.add(s)
     interp.endAdd(s)
   }
+}
+
+class IdentityLinearTransformer(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
+  override val operatorDomain: MPath = domain
+  override val operatorCodomain: MPath = domain
+
+  override protected def applyModuleName(name: LocalName): LocalName = name
+
+  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
 }
 
 /**
