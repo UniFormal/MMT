@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 
@@ -31,8 +32,8 @@ import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
  */
 object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_operator")
-  override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
-  override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
+  override val operatorDomain: MPath = SFOL.Strengthened
+  override val operatorCodomain: MPath = SFOL.Strengthened
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
 
@@ -58,15 +59,7 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
     parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // create t^q: Mod ?EqvRel (tm t^p)
-        val eqvRelType = OMA(
-          OMS(Path.parseS("http://gl.mathhub.info/MMT/LFX/Records?Symbols?ModelsOf")),
-          List(OMPMOD(
-            Path.parseM("latin:/?DummyEqvRel"),
-            List(SFOL.tm(par(c)))
-          ))
-        )
-
-        List((quot(name), eqvRelType, None))
+        List((quot(name), ModelsOf(Path.parseM("latin:/?DummyEqvRel"), SFOL.tm(par(c))), None))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // todo: work on definiens
@@ -117,6 +110,8 @@ object QuotModConnector extends SimpleInwardsConnector(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_mod")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
+
     val par = QuotOperator.par.coercedTo(state)
     val quot = QuotOperator.quot.coercedTo(state)
 
@@ -127,24 +122,29 @@ object QuotModConnector extends SimpleInwardsConnector(
       case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
         val lambdaCtx = OpUtils.bindFresh(
           Context.empty,
-          argTypes.map(tp => SFOL.QuotientTypes.quotientTp(par(c), OMS(quot(tp)))),
+          argTypes.map(argTp => SFOL.QuotientTypes.quotientTp(par(c), OMS(quot(argTp)))),
           None
         )
 
-        // todo: replace OMV("rel") by access to relation within structure:
-        //   "quot(...) / rel" <-- something like that
         // for function symbols this is a term of the function's return type (some SFOL type)
         //    => still needs to be put into the respective equivalence class (cf. below)
         // for predicate symbols this is a term of type prop
         //    => can be returned as-is (cf. below)
         val rawReturnValue = GeneralApplySpine(
           par(c),
-          lambdaCtx.map(v => SFOL.QuotientTypes.quot_inj(par(v.tp.get), OMV("rel"), v.toTerm)) : _*
+          argTypes.zip(lambdaCtx).map {
+            case (argTp, v) =>
+              SFOL.QuotientTypes.quot_inj(OMS(par(argTp)), Getfield(OMS(quot(argTp)), REL_ACCESSOR), v.toTerm)
+          } : _*
         )
 
         tp match {
           case SFOL.FunctionSymbolType(_, retType) =>
-            val functionEqvClassValue = SFOL.QuotientTypes.quot_project(OMS(par(retType)), OMV("rel"), rawReturnValue)
+            val functionEqvClassValue = SFOL.QuotientTypes.quot_project(
+              OMS(par(retType)),
+              Getfield(OMS(quot(retType)), REL_ACCESSOR),
+              rawReturnValue
+            )
             List((name, functionEqvClassValue))
 
           case SFOL.PredicateSymbolType(_) =>

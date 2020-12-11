@@ -12,7 +12,7 @@ package info.kwarc.mmt.api.modules
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath}
+import info.kwarc.mmt.api.{GlobalName, ImplementationError, InvalidObject, LocalName, MPath}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
@@ -29,11 +29,13 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
 
 trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case SimpleDiagram(`operatorDomain`, modulePaths) => Some(modulePaths)
-    case SimpleDiagram(dom, _) if dom != operatorDomain =>
+    case SimpleDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(dom, operatorDomain) =>
+      Some(modulePaths)
+    case SimpleDiagram(dom, _) =>
       // todo check for implicit morphism from `domain` to actual domain
       interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
-        s"on diagrams over $operatorDomain. Given diagram was over $dom."))
+        s"on diagrams over $operatorDomain. Given diagram was over $dom (and no implicits from $dom " +
+        "to $operatorDomain available."))
       None
     case _ =>
       interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
@@ -54,7 +56,7 @@ abstract class ParametricLinearOperator extends DiagramOperator {
       case OMA(OMS(`head`), parameters :+ actualDiagram) =>
         instantiate(parameters).flatMap(op => interp(actualDiagram) match {
           // TODO: ideally reuse code from RelativeBaseOperator
-          case Some(SimpleDiagram(dom, modulePaths)) if dom == op.operatorDomain =>
+          case Some(SimpleDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
             op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
 
           case Some(unsupportedDiag) =>
@@ -82,7 +84,15 @@ abstract class LinearConnector extends FunctorialOperator with LinearConnectorTr
   */
 abstract class SimpleLinearOperator extends LinearOperator with SimpleLinearModuleTransformer
 
-abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
+abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer {
+  final override def sanityCheck()(implicit interp: DiagramInterpreter): Unit = {
+    super.sanityCheck()
+
+    if (!interp.ctrl.globalLookup.hasImplicit(in.operatorCodomain, out.operatorCodomain)) {
+      throw ImplementationError(s"Connector ${this.getClass.getSimpleName} tried to connect operators in an incompatible way: there is no implicit morphism from ${in.operatorCodomain} to ${out.operatorCodomain}. This case does not make sense.")
+    }
+  }
+}
 
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?

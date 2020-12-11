@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.IntegerLiterals
 import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
+import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 // todo generate definienses (i.e. proofs) too here
 private[diagop] trait ModRelClosureCreator[T] {
@@ -199,7 +200,7 @@ private[diagop] trait ModRelClosureCreator[T] {
     }.reduceLeftOption(SFOL.and(_, _))
 
     val consequenceArguments = Range(0, relationArity).map(structureIdx => {
-      ApplySpine(
+      GeneralApplySpine(
         applyTypeSymbolRef(structureIdx, symbol),
         variables.map(_(structureIdx)) : _*
       )
