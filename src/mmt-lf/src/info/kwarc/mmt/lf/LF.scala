@@ -258,6 +258,11 @@ object FunTerm {
       Some((name, tp) :: remainingArgs, ultimateScope)
     case t => Some(Nil, t)
   }
+
+  /**
+    * Creates the identity function ''[x: tp] x''.
+    */
+  def identity(tp: Term): Term = Lambda.apply(LocalName("x"), tp, OMV("x"))
 }
 
 /**

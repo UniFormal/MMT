@@ -43,7 +43,9 @@ private[diagop] object SFOL {
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
 
+  object true_ extends NullaryLFConstantScala(Path.parseM("latin:/?Truth"), "true")
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
+  object forallI extends TernaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantificationND"), "forallI")
 
   object exists extends BinaryLFConstantScala(Path.parseM("latin:/?TypedExistentialQuantification"), "exists")
 

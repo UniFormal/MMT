@@ -461,7 +461,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     *  is chosen. The other path could have been chosen as well.)
     *
     * We can handle the last two cases in a unified way as follows:
-    * read ''include ?T'' as ''incldue ?T = OMIDENT(?T)'' and have cases
+    * read ''include ?T'' as ''include ?T = OMIDENT(?T)'' and have cases
     *
     * {{{
     *   include ?S = ?v           |-> include in(?S) = out(?v) . conn(?S)
@@ -469,7 +469,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     * }}}
     *
     * Example:
-    * Suppose, S, T are theories, v: S -> T a view and that T contains an ''include ?S = ?v''. Then,
+    * Let S, T be theories, v: S -> T a view and suppose T contains an ''include ?S = ?v''. Then,
     * {{{
     *   S       in(S) -----conn(S)----> out(S)
     *   | v      | in(v)                  | out(v)
@@ -510,11 +510,14 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
       case OMMOD(v) if state.seenModules.contains(v) =>
         // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
         applyModule(ctrl.getModule(v))
-        // todo: order in OMCMP, document
+        // todo: in which order does OMCOMP take its arguments? (Document this, too!)
         OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
 
       case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) =>
         OMMOD(applyModulePath(include.from))
+
+      case OMIDENT(OMMOD(p)) if p == in.operatorDomain =>
+        OMMOD(in.operatorCodomain)
 
       case _ => ???
     }

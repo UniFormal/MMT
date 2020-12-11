@@ -59,7 +59,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
           df.map(_ => SFOL.sketchLazy("provable"))
         ))
 
-      case SFOL.PredicateSymbolType(argTypes) =>
+      case SFOL.PredicateSymbolType(_) =>
         Nil
 
       case SFOL.AxiomSymbolType() =>
@@ -98,11 +98,53 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
-object SubParentConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector"),
+/**
+  * Linear connector ''X_sub_full: Sub(X) -> X'' representing the full submodel of a model.
+  */
+object SubFullConnector extends SimpleOutwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_full_connector"),
   SubOperator
 ) with SystematicRenamingUtils {
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_parmodel")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_full")
+
+  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val par = SubOperator.par.coercedTo(state)
+    val sub = SubOperator.sub.coercedTo(state)
+
+    val parStructureCopy = (par(name), c.toTerm)
+
+    parStructureCopy :: (tp match {
+      case SFOL.TypeSymbolType() =>
+        List(
+          // construct assignment `U^s = [x] true`
+          (sub(name), Lambda(LocalName("x"), SFOL.tm(c.toTerm), SFOL.true_))
+        )
+
+      case SFOL.FunctionSymbolType(_, _) =>
+        List(
+          (sub(name), SFOL.sketchLazy("effectively by trueI"))
+        )
+
+      case SFOL.PredicateSymbolType(_) =>
+        // nothing to do
+        Nil
+
+      case SFOL.AxiomSymbolType() =>
+        List(
+          (sub(name), SFOL.sketchLazy(s"effectively by axiom `${name}` and trueI"))
+        )
+
+      case _ =>
+        NotApplicable(c)
+    })
+  }
+}
+
+object SubParentConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_par_connector"),
+  SubOperator
+) with SystematicRenamingUtils {
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_par")
 
   override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)
@@ -111,10 +153,10 @@ object SubParentConnector extends SimpleInwardsConnector(
 }
 
 object SubSubmodelConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?submodel_conector"),
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_sub_connector"),
   SubOperator
 ) with SystematicRenamingUtils {
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_submodel")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_sub")
 
   override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)

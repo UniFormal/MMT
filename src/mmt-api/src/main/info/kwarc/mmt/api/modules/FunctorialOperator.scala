@@ -93,6 +93,16 @@ abstract class SimpleInwardsConnector(final override val head: GlobalName, val o
   final override val out: operator.type = operator
 }
 
+
+/**
+  * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
+  */
+abstract class SimpleOutwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
+  extends SimpleLinearConnector {
+  final override val in: operator.type = operator
+  final override val out: LinearModuleTransformer = new IdentityLinearTransformer(operator.operatorDomain)
+}
+
 /*
 
 a nice DSL for specifying operators together with connectors:
