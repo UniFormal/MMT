@@ -5,6 +5,8 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.IntegerLiterals
+import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
 
 // todo generate definienses (i.e. proofs) too here
 private[diagop] trait ModRelClosureCreator[T] {
@@ -277,8 +279,10 @@ class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends Simpl
       OMS(modelRenamers(structureIdx)(tp))
 
     override protected def inRelation(tp: GlobalName, arguments: List[Term])(implicit state: SkippedDeclsExtendedLinearState): Term = {
-      // todo: correct this, constant referenced by relationRenamer(tp) is of Mod type...
-      ApplySpine(OMS(relationRenamer(tp)), arguments : _*)
+      ApplySpine(
+        Getfield(OMS(relationRenamer(tp)), LocalName("rel")),
+        arguments : _*
+      )
     }
   }
 
@@ -289,8 +293,10 @@ class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends Simpl
 
     modelCopies ::: (tp match {
       case SFOL.TypeSymbolType() =>
-        // (relationRenamer(name))
-        Nil
+        val tps: List[Term] = modelRenamers.map(r => SFOL.tm(OMS(r(c.path)))).toList
+        List(
+          (relationRenamer(name), ModelsOf(relationTheory, tps : _*), None)
+        )
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         List(
@@ -315,9 +321,14 @@ object ModRelOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?modrel_operator")
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer] = parameters match {
-    case List(relationArity, OMMOD(relationTheory)) =>
-      // TODO: parse relationArity (requires mmt-odk dependency)
-      Some(new ModRelTransformer(2, relationTheory))
+    case List(IntegerLiterals(relationArity), OMMOD(relationTheory)) =>
+
+      if (!relationArity.isValidInt) {
+        interp.errorCont(InvalidObject(OMA(OMS(head), parameters), s"Given relation arity `$relationArity` is too big to fit into a Scala Int"))
+        return None
+      }
+
+      Some(new ModRelTransformer(relationArity.toInt, relationTheory))
     case _ =>
       interp.errorCont(InvalidObject(OMA(OMS(head), parameters), "cannot parse parameters. Expected integer literal and MPath"))
       None
