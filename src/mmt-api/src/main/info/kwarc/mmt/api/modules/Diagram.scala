@@ -79,13 +79,13 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
 
   // need access to Controller for generative operators (i.e. most operators)
   // todo: upon error, are modules inconsistently added to controller? avoid that.
-  def apply(diagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term]
+  def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term]
 }
 
 object SequencedDiagramOperators extends DiagramOperator {
   final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
 
-  final override def apply(rawDiagram: Term, interp: DiagramInterpreter)(implicit ctrl: Controller): Option[Term] = rawDiagram match {
+  final override def apply(rawDiagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = rawDiagram match {
     case OMA(OMA(OMS(`head`), diagOps), diagram) =>
       val results = diagOps.flatMap(op => {
         val result = interp(OMA(op, diagram))
@@ -211,7 +211,7 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         val matchingOp = operators(p)
-        val opResult = matchingOp(diag_, this)(ctrl)
+        val opResult = matchingOp(diag)(this, ctrl)
         return opResult
 
       case _ => // carry on
@@ -238,7 +238,7 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
       throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
         s"nor is it a SimpleDiagram: $simplifiedDiag. Is the operator you are trying to apply in-scope in " +
         s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)? " +
-        "Does the operator implementing Scala object have a correct `head` field?")
+        "Does the operator (a Scala object, not class!) have the correct `head` field?")
     }
 
     apply(simplifiedDiag)

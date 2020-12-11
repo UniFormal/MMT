@@ -1,11 +1,11 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
-import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.{GeneralApplySpine, GeneralLambda}
+import info.kwarc.mmt.odk.diagop.OpUtils.{GeneralApplySpine, GeneralLambda}
 
 object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_operator")
@@ -17,19 +17,33 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub")
 
+  object ClosureCreator extends ModRelClosureCreator[LinearState] {
+    override val relationArity: Int = 1
+
+    override protected def applyTypeSymbolRef(structureIdx: Int, s: GlobalName)(implicit state: LinearState): Term = {
+      assert(structureIdx == 0)
+      OMS(par(s))
+    }
+
+    override protected def inRelation(tp: GlobalName, arguments: List[Term])(implicit state: LinearState): Term = {
+      assert(arguments.size == 1)
+      ApplySpine(OMS(sub(tp)), arguments.head)
+    }
+  }
+
   override protected def applyConstantSimple(container: SubOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[(LocalName, Term, Option[Term])] = {
     val parCopy = (par(name), par(tp), df.map(par(_)))
 
-    tp match {
+    parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // input:  t^p: tp
         // output: t^s: tp, t^s: tm t^p -> prop
         val tsType = FunType(
-          List((None, SFOL.tm(OMS(par(c.path))))),
+          List((None, SFOL.tm(par(c)))),
           SFOL.prop.term
         )
 
-        List(parCopy, (sub(name), tsType, df.map(sub(_))))
+        List((sub(name), tsType, df.map(sub(_))))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // input:
@@ -39,40 +53,14 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         //   f^p: tm t_1^p ⟶ … ⟶ tm t_n^p ⟶ tm t^p
         //   f^s: |- ∀ [x_1 … x_n] (t_1^s x_1) ∧ … ∧ (t_n^s x_n) ⇒ t^s (f^p x_1 … x_n)
 
-        val closureConstant = {
-          val forallCtx = OpUtils.bindFresh(Context.empty, argTypes.map(tp => SFOL.tm(OMS(par(tp))))) // replace Context.empty
+        List((
+          sub(name),
+          ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType),
+          df.map(_ => SFOL.sketchLazy("provable"))
+        ))
 
-          // construct `(t_1^s x_1) ∧ … ∧ (t_n^s x_n)` if n >= 1
-          val antecedent: Option[Term] = argTypes.zip(forallCtx).map {
-            case (tp, vd) => ApplySpine(OMS(sub(tp)), vd.toTerm)
-          }.reduceLeftOption(SFOL.and(_, _))
-
-          // construct `t^s (f^p x_1 … x_n)`
-          val consequence = ApplySpine(
-            OMS(sub(retType)),
-            GeneralApplySpine(OMS(par(c.path)), forallCtx.map(_.toTerm): _*)
-          )
-
-          val closureCondition = SFOL.ded(antecedent match {
-            case Some(antecedent) => SFOL.forallMany(forallCtx, SFOL.impl(antecedent, consequence))
-            case None =>
-              assert(forallCtx.isEmpty)
-              consequence
-          })
-
-          (
-            sub(name),
-            closureCondition,
-            df.map(_ => SFOL.sketchLazy("provable"))
-          )
-        }
-
-        List(parCopy, closureConstant)
-
-      case SFOL.PredicateSymbolType(_) =>
-        // input: c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
-        // output: c^p: tm t_1^p ⟶ ... ⟶ tm t_n^p ⟶ prop
-        List(parCopy)
+      case SFOL.PredicateSymbolType(argTypes) =>
+        Nil
 
       case SFOL.AxiomSymbolType() =>
         // todo: alternative: use predicate subtypes instead of relativation
@@ -86,7 +74,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
       case _ =>
         NotApplicable(c)
-    }
+    })
   }
 
   private def relativizeQuantifiers(t: Term, context: Context, par: Term => Term, sub: Term => Term): Term = {

@@ -1,11 +1,11 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, LinearModuleTransformer, Renamer, SimpleInwardsConnector, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
-import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
+import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
   * Linearly transforms SFOL theories T to Hom(T), the theory of homomorphisms
@@ -260,18 +260,6 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 
       case _ =>
         NotApplicable(c)
-    }
-  }
-}
-
-private object StringUtils {
-  private val digitSubscripts = List("₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉")
-  def subscriptInteger(i: Int): String = {
-    if (i < 0) {
-      "₋" + subscriptInteger(-1 * i)
-    } else {
-      val prefix = if (i >= 10) subscriptInteger(i / 10) else ""
-      prefix + digitSubscripts(i % 10)
     }
   }
 }

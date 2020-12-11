@@ -54,6 +54,7 @@ object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
     super.doFirst
     // hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
     // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
     hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
   }
 

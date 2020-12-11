@@ -1,7 +1,18 @@
 package info.kwarc.mmt.api.modules
 
+/**
+  * Traits for "anonymous" functorial operators, i.e., operators that are not bound
+  * to an MMT symbol.
+  * Anonymous operators are useful, e.g., for [[ParametricLinearOperator]]s that create them
+  * on-the-fly at runtime based on the parameters they receive.
+  * The main trait for linear operators is [[LinearModuleTransformer]].
+  *
+  * @see FunctorialOperator.scala for named diagram operators.
+  */
+
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.objects.{OMA, OMCOMP, OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, RuleConstant, Structure, TermContainer}
 import info.kwarc.mmt.api.{ComplexStep, ContainerElement, GeneralError, ImplementationError, InvalidElement, LocalName, MPath}
 
@@ -45,7 +56,33 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
     * take care not not needlessly compute, check state.processedModules first:
     * state.processedModules.get(m.path).foreach(return _)
     */
-  protected def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module]
+  def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module]
+
+  final def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): Option[List[MPath]] = {
+    val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
+    val state = initDiagramState(modules, interp)
+
+    val newModulePaths = modulePaths.flatMap(modulePath => {
+      applyModule(interp.get(modulePath))(interp, state).map(newModule => {
+
+        state.processedElements.get(modulePath) match {
+          case Some(`newModule`) => // ok
+          case Some(m) if m != newModule =>
+            throw new Exception("...")
+
+          case None =>
+            throw new Exception("...")
+        }
+        if (!interp.hasToplevelResult(newModule.path)) {
+          throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
+        }
+
+        newModule.path
+      })
+    })
+    // todo: instead get new module paths from interp?
+    Some(newModulePaths)
+  }
 }
 
 /**
@@ -84,15 +121,15 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     */
   protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): Unit
 
-  final protected def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module] = {
+  final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module] = {
     if (applyContainer(inModule)) {
       state.processedElements.get(inModule.path) match {
         case None =>
-          interp.errorCont(ImplementationError(s"Diagram operator ${getClass} did signal it did processing on ${inModule.path}, but actually did not register anything there."))
+          interp.errorCont(ImplementationError(s"Diagram operator $getClass did signal it did processing on ${inModule.path}, but actually did not register anything there."))
           None
 
         case Some(m: Module) => Some(m)
-        case Some(x) => throw ImplementationError(s"Diagram operator ${getClass} transformed toplevel module ${inModule} to something else, namely $x")
+        case Some(x) => throw ImplementationError(s"Diagram operator $getClass transformed toplevel module $inModule to something else, namely $x")
       }
     } else {
       None
@@ -337,6 +374,15 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   }
 }
 
+class IdentityLinearTransformer(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
+  override val operatorDomain: MPath = domain
+  override val operatorCodomain: MPath = domain
+
+  override protected def applyModuleName(name: LocalName): LocalName = name
+
+  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
+}
+
 /**
   *
   * invariants so far:
@@ -573,7 +619,7 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
     }
 
     val rawTp = c.tp.getOrElse({
-      interp.errorCont(InvalidElement(c, s"Operator ${getClass} not applicable on constants without type component"))
+      interp.errorCont(InvalidElement(c, s"Operator $getClass not applicable on constants without type component"))
       return
     })
     val rawDf = c.df
@@ -582,15 +628,15 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
     val df = rawDf.map(interp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
 
     applyConstantSimple(container, c, simplifyName(c.name), tp, df).foreach {
-      case (name, tp, df) =>
-        if (container.isInstanceOf[View] && df.isEmpty) {
+      case (name, newTp, newDf) =>
+        if (container.isInstanceOf[View] && newDf.isEmpty) {
           throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
         }
 
         interp.add(new FinalConstant(
           home = OMMOD(applyModulePath(container.modulePath)),
           name = complexifyName(name), alias = Nil,
-          tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
+          tpC = TermContainer.asAnalyzed(newTp), dfC = TermContainer.asAnalyzed(newDf),
           rl = None, notC = NotationContainer.empty(), vs = c.vs
         ))
     }
@@ -610,7 +656,7 @@ trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with E
 
   final override protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit = {
     val rawTp = c.tp.getOrElse({
-      interp.errorCont(GeneralError(s"Operator ${getClass} not applicable on constants without type component"))
+      interp.errorCont(GeneralError(s"Operator $getClass not applicable on constants without type component"))
       return
     })
     val rawDf = c.df
