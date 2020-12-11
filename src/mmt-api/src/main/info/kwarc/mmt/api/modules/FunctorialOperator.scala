@@ -42,11 +42,15 @@ abstract class ParametricLinearOperator extends DiagramOperator {
 
   final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
     diagram match {
-      case OMA(`head`, parameters :+ actualDiagram) =>
-        instantiate(parameters).flatMap(op => actualDiagram match {
+      case OMA(OMS(`head`), parameters :+ actualDiagram) =>
+        instantiate(parameters).flatMap(op => interp(actualDiagram) match {
           // TODO: ideally reuse code from RelativeBaseOperator
-          case SimpleDiagram(dom, modulePaths) if dom == op.operatorDomain =>
+          case Some(SimpleDiagram(dom, modulePaths)) if dom == op.operatorDomain =>
             op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
+
+          case Some(unsupportedDiag) =>
+            interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
+            None
 
           case _ =>
             interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))

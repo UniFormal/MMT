@@ -258,40 +258,61 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   }
 }
 
-class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer {
+class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer with SystematicRenamingUtils {
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(s"_mod_rel${relationArity}${relationTheory.name}")
 
+  val modelRenamers : Array[Renamer[LinearState]] = Range(0, relationArity).map(structureIdx => {
+    getRenamerFor(StringUtils.subscriptInteger(structureIdx))
+  }).toArray
+
+  val relationRenamer : Renamer[LinearState] = getRenamerFor("h")
+
   private val closureCreator = new ModRelClosureCreator[LinearState] {
     override def relationArity: Int = ModRelTransformer.this.relationArity
 
-    override protected def applyTypeSymbolRef(structureIdx: Int, tp: GlobalName)(implicit state: SkippedDeclsExtendedLinearState): Term = {
-      ???
-    }
+    override protected def applyTypeSymbolRef(structureIdx: Int, tp: GlobalName)(implicit state: SkippedDeclsExtendedLinearState): Term =
+      OMS(modelRenamers(structureIdx)(tp))
 
     override protected def inRelation(tp: GlobalName, arguments: List[Term])(implicit state: SkippedDeclsExtendedLinearState): Term = {
-      ???
+      // todo: correct this, constant referenced by relationRenamer(tp) is of Mod type...
+      ApplySpine(OMS(relationRenamer(tp)), arguments : _*)
     }
   }
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    val copies: List[(LocalName, Term, Option[Term])] = List()
-    copies ::: (tp match {
+    val modelCopies: List[(LocalName, Term, Option[Term])] = modelRenamers.map(r => {
+      (r(name), r(tp), df.map(r(_)))
+    }).toList
+
+    modelCopies ::: (tp match {
       case SFOL.TypeSymbolType() =>
-        Nil // + structures
+        // (relationRenamer(name))
+        Nil
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
-        List((???, closureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
+        List(
+          (relationRenamer(name), closureCreator.applyFunctionSymbol(c.path, argTypes, retType), None)
+        )
 
-        // ...
+      case SFOL.PredicateSymbolType(argTypes) =>
+        List(
+          (relationRenamer(name), closureCreator.applyPredicateSymbol(c.path, argTypes), None)
+        )
+
+      case SFOL.AxiomSymbolType() =>
+        NotApplicable(c, "ModRel operator doesn't support axioms yet")
+
+      case _ =>
+        NotApplicable(c, "ModRel operator doesn't support this constant type")
     })
   }
 }
 
-class ModRelOperator extends ParametricLinearOperator {
-  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_submodel_conector")
+object ModRelOperator extends ParametricLinearOperator {
+  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?modrel_operator")
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer] = parameters match {
     case List(relationArity, OMMOD(relationTheory)) =>
