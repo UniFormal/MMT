@@ -1,19 +1,20 @@
 package info.kwarc.mmt.moduleexpressions.publication
 
 import info.kwarc.mmt.api._
-import objects._
-import objects.Conversions._
-import symbols._
-import notations._
-import frontend._
-
+import info.kwarc.mmt.api.frontend._
+import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.lf._
 
 /**
- * elaborates each instance that is added
- *
- * instances are constant whose type is THEORY
- */
+  * elaborates each instance that is added
+  *
+  * instances are constant whose type is THEORY
+  *
+  * @deprecated Do we still need this class? TODO for Florian, I think this class was used in the old
+  *             anonymous diagrams approach. It is nowhere referenced.
+  **/
 class InstanceElaborator extends ChangeListener {
   /** if th:THEORY and this returns Some((cont, List(subs1,...,subsn))), then th = cont ^ subs1 ^ ... ^ subsn */
   private def expandTheory(th: Term): Option[(Context, List[Substitution])] = th match {
@@ -70,13 +71,16 @@ class InstanceElaborator extends ChangeListener {
 }
 
 /**
- * produced and added by [[InstanceElaborator]]
- *
- * @param instance the elaborated instance
- * @param vd the variable declaration giving rise to this Constant
- * @param subss the substitutions that have to be applied to the type/definiens of vd
- *    These are applied lazily, i.e., when they are first accessed.
- */
+  * produced and added by [[InstanceElaborator]]
+  *
+  * @deprecated Do we still need this class? TODO for Florian, I think this class was used in the old
+  *             anonymous diagrams approach.
+  *
+  * @param instance the elaborated instance
+  * @param vd the variable declaration giving rise to this Constant
+  * @param subss the substitutions that have to be applied to the type/definiens of vd
+  *    These are applied lazily, i.e., when they are first accessed.
+  **/
 class ElaboratedConstant(instance: Constant, vd: VarDecl, subss: List[Substitution]) extends
        LazyConstant(instance.home, instance.name / vd.name) {
    _not = vd.not

@@ -5,6 +5,7 @@ import objects._
 import utils._
 
 import scala.collection.mutable.Map
+import scala.util.Random
 
 /**
  * A Path represents an MMT path.
@@ -181,6 +182,8 @@ case class GlobalName(module: MPath, name: LocalName) extends ContentPath with S
    def toMPath = module / name
    /** turns module into [[ComplexStep]] */
    def toLocalName = ComplexStep(module) / name
+
+   def mapName(op: LocalName => LocalName): GlobalName = this.copy(name = op(name))
 }
 
 object LocalName {
@@ -192,7 +195,20 @@ object LocalName {
    /** parses a LocalName, complex segments are parsed relative to base */
    def parse(s: String, nsMap : NamespaceMap): LocalName = LocalRef.parse(s).toLocalName(nsMap)
    def parse(s:String): LocalName = parse(s, NamespaceMap.empty)
-   val empty = LocalName(Nil)
+   val empty: LocalName = LocalName(Nil)
+
+   /**
+     * Generates a random LocalName of the form ''LocalName(prefix_<random alphanumeric string>)''.
+     *
+     * Of course, the generated name might still clash with some other name pre-existing, but this
+     * scenario is highly improbable.
+     *
+     * @param prefix Some string prefix
+     * @param length The length of the random alphanumeric string suffix
+     */
+   def random(prefix: String = "", length: Int = 15): LocalName = {
+      LocalName(s"${prefix}_${Random.alphanumeric.dropWhile(_.isDigit).take(length).mkString}")
+   }
 }
 
 /**
@@ -201,7 +217,7 @@ object LocalName {
  */
 case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
    def /(n: LocalName) : LocalName = LocalName(steps ::: n.steps)
-   def init = LocalName(steps.init)
+   def init: LocalName = LocalName(steps.init)
    /**
     * @return if this == p / l, then Some(l), else None
     */
@@ -233,6 +249,18 @@ case class LocalName(steps: List[LNStep]) extends SlashFunctions[LocalName] {
   /** human-oriented string representation of this name, no encoding, possibly shortened */
    override def toString : String = toStr(false)
    def toStr(implicit shortURIs: Boolean) = steps.map(_.toStr).mkString("", "/", "")
+
+   def mapLast(f: SimpleStep => SimpleStep): LocalName = {
+      val newSteps: List[LNStep] = steps match {
+         case beginning :+ (step @ (_: SimpleStep)) => beginning :+ f(step)
+         case _ => steps
+      }
+      LocalName(newSteps)
+   }
+
+   def suffixLastSimple(suffix: String): LocalName = mapLast(
+      step => SimpleStep(step.name + suffix)
+   )
 
    def prefixOrCreateLastSimpleStep(prefix: String): LocalName = {
       val newSteps: List[LNStep] = steps match {
@@ -441,12 +469,12 @@ object Path {
       case p => throw ParseError("component path expected: " + p)
    }
    /** as parse but fails if the result is not a symbol level URI */
-   def parseS(s : String, nsMap : NamespaceMap) : GlobalName = parse(s,nsMap) match {
+   def parseS(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : GlobalName = parse(s,nsMap) match {
       case p : GlobalName => p
       case p => throw ParseError("symbol path expected: " + p)
    }
    /** as parse but fails if the result is not a module level URI */
-   def parseM(s : String, nsMap : NamespaceMap) : MPath = parse(s,nsMap) match {
+   def parseM(s : String, nsMap : NamespaceMap = NamespaceMap.empty) : MPath = parse(s,nsMap) match {
       case p : MPath => p
       case p => throw ParseError("module path expected: " + p)
    }

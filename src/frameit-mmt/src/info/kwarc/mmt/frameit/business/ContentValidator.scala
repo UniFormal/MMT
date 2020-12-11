@@ -1,16 +1,37 @@
 package info.kwarc.mmt.frameit.business
 
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler, RuleBasedChecker}
-import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingUnit, MMTStructureChecker, RelationHandler, RuleBasedChecker, StructureChecker}
+import info.kwarc.mmt.api.frontend.{Controller, NotFound}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.OMMOD
 import info.kwarc.mmt.api.symbols.{FinalConstant, PlainInclude}
-import info.kwarc.mmt.api.{Error, ErrorContainer, MMTTask, MPath, StructuralElement}
+import info.kwarc.mmt.api.{CPath, ComplexStep, DefComponent, Error, ErrorContainer, GeneralError, GetError, GlobalName, InvalidElement, InvalidUnit, LocalName, LookupError, MMTTask, MPath, StructuralElement}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScrollAssignments}
 
 import scala.util.Random
 
-class ContentValidator(private val ctrl: Controller) {
-  private val checker = ctrl.extman.get(classOf[MMTStructureChecker]).headOption.getOrElse({
+trait ContentValidator {
+  def checkTheory(theory: Theory): List[Error]
+
+  def checkView(view: View): List[Error]
+
+  def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError]
+
+  def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error]
+}
+
+class NopContentValidator extends ContentValidator {
+  override def checkTheory(theory: Theory): List[Error] = Nil
+
+  override def checkView(view: View): List[Error] = Nil
+
+  override def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = Nil
+
+  override def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = Nil
+}
+
+class StandardContentValidator(implicit ctrl: Controller) extends ContentValidator {
+  private val checker: StructureChecker = ctrl.extman.get(classOf[MMTStructureChecker]).headOption.getOrElse({
     val checker = new MMTStructureChecker(new RuleBasedChecker)
     ctrl.extman.addExtension(checker)
       
@@ -19,24 +40,55 @@ class ContentValidator(private val ctrl: Controller) {
 
   private def createFreshCheckingEnv() = {
     val errorContainer = new ErrorContainer(None)
-    val checkingEnv: CheckingEnvironment = new CheckingEnvironment (ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
+    val checkingEnv: CheckingEnvironment = new CheckingEnvironment(ctrl.simplifier, errorContainer, RelationHandler.ignore, MMTTask.generic)
 
     (checkingEnv, errorContainer)
   }
   
   private def checkStructuralElementSynchronously(element: StructuralElement): List[Error] = {
     val (checkingEnv, errorContainer) = createFreshCheckingEnv()
-    checker(element)(checkingEnv) // TODO is this synchronous?
+
+    try {
+      // TODO use checker.applyWithTimeout lest the server get stuck
+      checker(element)(checkingEnv) // TODO is this synchronous?
+    } catch {
+      case err @ (_: LookupError | _: GetError) =>
+        errorContainer(err.asInstanceOf[Error]) // Scala requires this unnecessary casting for some reason
+    }
 
     errorContainer.getErrors
   }
 
-  def checkTheory(theory: Theory): List[Error] = checkStructuralElementSynchronously(theory)
+  override def checkTheory(theory: Theory): List[Error] = checkStructuralElementSynchronously(theory)
 
-  def checkDeclarationAgainstTheory(theory: MPath, decl: FinalConstant): List[Error] =
-    checkDeclarationAgainstTheory(ctrl.getTheory(theory), decl)
+  override def checkView(view: View): List[Error] = checkStructuralElementSynchronously(view)
 
-  def checkView(view: View): List[Error] = checkStructuralElementSynchronously(view)
+  override def checkScrollView(view: View, originalAssignments: SScrollAssignments): List[SCheckingError] = {
+    val viewPath = view.path
+
+    checkView(view).map {
+      // typechecking errors of view assignments
+      case err @ InvalidUnit(CheckingUnit(
+      // due to MMT's generality, these are reported to happen in the view's assignments-as-constants'
+      // definition components
+      Some(CPath(GlobalName(`viewPath`, LocalName(ComplexStep(thy) :: symbol)), DefComponent)),
+      _, _, _
+      ), _, _) =>
+        // double-check that the assignment originated from us
+        originalAssignments.assignments.find(_._1.uri == thy ? symbol) match {
+          case Some((factRef, _)) => SInvalidScrollAssignment(err.msg, factRef)
+
+          case None => SMiscellaneousError(err.msg)
+        }
+
+      case GetError(msg) if msg.contains("no assignment for") =>
+        SNonTotalScrollApplication()
+
+      case InvalidElement(`view`, msg) if msg.contains("not total") =>
+        SNonTotalScrollApplication()
+      case err => SMiscellaneousError(err.getMessage)
+    }.distinct
+  } // clear possibly duplicate [[SNonTotalScrollApplication()]] objects
 
   /**
     * Check a single declaration (that has not yet been added to `theory`) against `theory`
@@ -44,33 +96,40 @@ class ContentValidator(private val ctrl: Controller) {
     * @param decl A "dangling" declaration, i.e. one that has not yet been added to the controller or any theory at all
     * @return A list of errors, an empty list upon success of checking
     */
-  def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
+  override def checkDeclarationAgainstTheory(theory: Theory, decl: FinalConstant): List[Error] = {
     assert(decl.home == theory.toTerm)
 
-    val scracthTheoryPath = theory.path ? theory.path.name.prefixOrCreateLastSimpleStep(s"scratch${Random.nextInt()}")
-    val scratchTheory = Theory.empty(scracthTheoryPath.doc, scracthTheoryPath.name, theory.meta)
+    val scratchTheoryPath = theory.path.doc ? (theory.path.name.init / LocalName.random(s"scratch_for_checking_decl_against_theory"))
+    val scratchTheory = Theory.empty(scratchTheoryPath.doc, scratchTheoryPath.name, mt = Some(theory.path))
 
-    ctrl.add(scratchTheory)
-    ctrl.add(PlainInclude(theory.path, scratchTheory.path))
+    val scratchPaths = Utils.addModule(scratchTheory)
 
-    val scratchConstant = new FinalConstant(
-      OMMOD(scratchTheory.path),
-      decl.name,
-      decl.alias,
-      decl.tpC.copy,
-      decl.dfC.copy,
-      decl.rl,
-      decl.notC.copy,
-      decl.vs
-    )
+    try {
+      val scratchConstant = new FinalConstant(
+        OMMOD(scratchTheory.path),
+        decl.name,
+        decl.alias,
+        decl.tpC.copy,
+        decl.dfC.copy,
+        decl.rl,
+        decl.notC.copy,
+        decl.vs
+      )
 
-    ctrl.add(scratchTheory)
-    ctrl.add(scratchConstant)
+      ctrl.add(scratchConstant)
+      Utils.endAddModule(scratchTheory)
 
-    val errors = checkStructuralElementSynchronously(scratchTheory)
-    ctrl.delete(scratchTheory.path)
-
-    errors
+      checkStructuralElementSynchronously(scratchTheory)
+    } finally {
+      try {
+        scratchPaths.foreach(ctrl.delete)
+      } catch {
+        case _: NotFound =>
+          // todo: dirty fix to handle a bug of MMT: do nothing here
+          //       namely [[Library.notifyUpdated]] calls getO, getO calls get and catches some errors and
+          //       converts them into an Option value, but get throws NotFound here, which isn't caught
+      }
+    }
   }
 }
 

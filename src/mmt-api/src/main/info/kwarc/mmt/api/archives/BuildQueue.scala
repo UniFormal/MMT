@@ -7,6 +7,7 @@ import frontend._
 import utils._
 import web._
 
+import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 import scala.collection.immutable.Queue
 import scala.collection.mutable
@@ -15,10 +16,10 @@ import scala.collection.mutable
 class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val task: BuildTask) {
   /** task should be queued at end */
   // TODO make this part of constructor to avoid having a var?
-  var lowPriority: Boolean = true
+  var lowPriority : Boolean = true
 
   /** task should be queued at beginning */
-  def highPriority = !lowPriority
+  def highPriority : Boolean = !lowPriority
 
   /** task was not requested directly but added as dependency of some other task */
   // TODO make this part of constructor to avoid having a var?
@@ -36,7 +37,7 @@ class QueuedTask(val target: TraversingBuildTarget, estRes: BuildResult, val tas
   /** resources that will be provided once successfully built */
   var willProvide: List[ResourceDependency] = estRes.provided
   /** update policy */
-  var updatePolicy = Update(Level.Force)
+  var updatePolicy : Update = Update(Level.Force)
 
   def toJString: String = {
     val str = task.inPath.toString
@@ -75,7 +76,7 @@ sealed abstract class BuildResult {
 object BuildResult {
   def empty: BuildSuccess = BuildSuccess(Nil, Nil)
   /** convenience method to create the result of successfully importing a (typically) externally checked document */
-  def fromImportedDocument(doc: documents.Document) = {
+  def fromImportedDocument(doc: documents.Document) : BuildSuccess = {
     val provs = doc.getDeclarations collect {
       case r: documents.MRef => LogicalDependency(r.target)
     }
@@ -117,7 +118,7 @@ trait BuildManager extends Extension {
 
 /** builds tasks immediately (no queueing, no dependency management, no parallel processing) */
 class TrivialBuildManager extends BuildManager {
-  def addTasks(up: Update, qts: Iterable[QueuedTask]) =
+  def addTasks(up: Update, qts: Iterable[QueuedTask]): Unit =
     qts.foreach { qt =>
       qt.target.runBuildTaskIfNeeded(Set(), qt.task, up)
     }
@@ -163,10 +164,10 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
   private var stopOnEmpty: Boolean = false
 
   // clears the queue
-  private def clear {
-    queued.clear
-    alreadyBuilt.clear
-    alreadyQueued.clear
+  private def clear() {
+    queued.clear()
+    alreadyBuilt.clear()
+    alreadyQueued.clear()
     recentlyBuilt = Nil
     blocked = Nil
     currentQueueTask = None
@@ -178,7 +179,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
   /** adds the ServerExtension :queue and starts a separate thread for building */
   override def start(args: List[String]) {
     //controller.extman.addExtension(serve)
-    buildThread.start
+    buildThread.start()
   }
 
   /** removes the ServerExtension and signals the build thread to terminate after the current task */
@@ -251,10 +252,10 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
 
   /** the thread for building */
   private lazy val buildThread = new Thread {
-    override def run {
+    override def run() {
       while (continue) {
         if (pauseQueue) Thread.sleep(pauseTime) else {
-          getNextTask match {
+          getNextTask() match {
             case Some(qt) =>
               log("Doing " + qt.task.inFile)
               // TODO run this in a Future and track dependencies
@@ -292,7 +293,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     }
   }
 
-  private def doBuildResult(res1 : BuildResult,qt : QueuedTask) = {
+  private def doBuildResult(res1 : BuildResult,qt : QueuedTask): Unit = {
     val res = res1 match {
       // let's assume for now that the estimation is better than the actual result
       case BuildSuccess(u, Nil) =>
@@ -370,7 +371,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     }
   }
 
-  private def getNextTask: Option[QueuedTask] = {
+  private def getNextTask() : Option[QueuedTask] = {
     val currentMissingDeps = getTopTask.getOrElse {return None}
     var failedDeps: List[ResourceDependency] = Nil // the dependencies that we could not resolve
     // resolve all dependencies into build dependencies
@@ -403,9 +404,9 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
         // queue this task again along with its dependencies, then try again
         queued.addFirst(qt)
         cycleCheck += qt.task.asDependency
-        buildDeps.foreach(t => buildDependency(qt.updatePolicy.forDependencies, t))
+        buildDeps.foreach(t => addBuildDependency(qt.updatePolicy.forDependencies, t))
       }
-      getNextTask
+      getNextTask()
     } else currentQueueTask
   }
 
@@ -457,7 +458,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
     * @param up the update level for the dependency
     * @param bd build dependency to be added
     */
-  private def buildDependency(up: Update, bd: BuildDependency) = if (!cycleCheck.contains(bd)) {
+  private def addBuildDependency(up: Update, bd: BuildDependency) : Unit = if (!cycleCheck.contains(bd)) {
     val tar = bd.getTarget(controller)
     val inFile = bd.archive / tar.inDim / bd.inPath
     val bt = bd match {
@@ -502,7 +503,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
 
     def apply(request: ServerRequest): ServerResponse = request.pathForExtension match {
       case List("clear") =>
-        clear
+        clear()
         ServerResponse.JsonResponse(JSONNull)
       case List("pause") =>
         // toggles pausing

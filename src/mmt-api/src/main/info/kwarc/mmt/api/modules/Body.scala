@@ -8,13 +8,14 @@ import info.kwarc.mmt.api.utils._
 import scala.xml.Node
 
 /**
-  * this class carries the common properties of complex structural elements, in particular the body and the optional definiens
+  * This class carries the common properties of complex structural elements, in particular the body and the optional definiens
   * Instances are of two type: [[Theory]] and [[View]]s are [[Module]]s; [[View]]s and [[Structure]]s are [[Link]]s
   *
   * It stores both the logical [[Declaration]]s as well as their narrative structure.
-  * The former uses a hash from [[LocalName]] to [[Declaration]], which completely ignores narrative structure.
+  * For the former, a mutable map from [[LocalName]] to [[Declaration]] is used. It deliberately ignores any
+  * narrative structure.
   * In particular, declaration names must be unique independent of the narrative grouping.
-  * The latter is stored as a [[Document]], which holds [[SRef]] to the logical declarations.
+  * For the latter, a [[Document]] holding [[SRef]]s to the logical declarations is used.
   */
 trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] with HasDefiniens {self =>
   /** this element as a module expression */
@@ -269,7 +270,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
   }
   def streamInnerNodes(rh: presentation.RenderingHandler) {
     def streamNodes(doc: Document) {
-      headerNodes.foreach(n => rh(n))
+      headerNodes.foreach(rh(_))
+      doc.getMetaDataNode.foreach(rh(_))
       doc.getDeclarations.foreach {
         case r: SRef =>
           val s = statements(r.target.name)

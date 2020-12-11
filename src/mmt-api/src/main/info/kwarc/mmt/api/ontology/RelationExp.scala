@@ -7,16 +7,21 @@ import info.kwarc.mmt.api.utils.xml
 import scala.xml.Node
 
 /**
-  * binary relations between paths, i.e., relation in the MMT ontology
+  * Represents a syntactic expression for binary relations between paths. (Relations as in the MMT ontology).
   *
   * The semantics of a [[RelationExp]] is a binary relation on [[Path]]s with the usual operations for the calculus of binary endorelations.
-  * For example,
-  * {{{
-  * val relstore:RelStore
-  * val doc: DPath
-  * val deps = relstore.querySet(doc, +Declares * HasType(IsTheory) * (Imports | Reflexive) * -Declares)
-  * }}}
-  * could be used as a dependency relation between documents.
+  *
+  * Examples:
+  *
+  * - [[Reflexive]] represents the diagonal relation (p, p) for all paths p
+  * - ''HasType(IsTheory)'' represents the (subdiagonal) relation (p, p) where p is the path to a theory
+  * - [[Imports]] represents the relation (p, q) where the module with path p (e.g. a [[Theory]]) imports a
+  *   module q (e.g. via an inclusion).
+  * - [[Declares]] represents the relation (p, q) where the element p (e.g. a [[Document]], but may also just be a [[Theory]]) declares the element q.
+  * - ''-Declares'' represents the inverse relation of [[Declares]]: (p, q) where p is declared by q.
+  *
+  * A more complex example: ''+Declares * HasType(IsTheory) * (Imports | Reflexive) * -Declares)'' represents
+  * the relation (p, q) where p declared a theory that itself or an included module thereof is declared in q.
   */
 sealed abstract class RelationExp {
   /** union with another relation */

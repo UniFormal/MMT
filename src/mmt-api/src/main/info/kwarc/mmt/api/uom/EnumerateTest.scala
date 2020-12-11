@@ -2,8 +2,9 @@ import info.kwarc.mmt.api.uom._
 
 object EnumerateTest {
   def enumerateSemanticType(st: SemanticType, m: Int) {
-
+    println(st)
     val it = st.enumerate(m).getOrElse {return}
+    println(it)
 
     while (it.hasNext) {
       println(st.toString(it.next))
@@ -30,7 +31,7 @@ object EnumerateTest {
     //Any randomization and quick count should use a mode selection (numbers only)
     //StandardBool only has 2 values, mode selection should have no influence
     //modes for numbers: 0 = random, else the number determines increment
-    enumerateSemanticType(StandardString, 5)
+    enumerateSemanticType(StandardNat, 1)
 
   }
 }

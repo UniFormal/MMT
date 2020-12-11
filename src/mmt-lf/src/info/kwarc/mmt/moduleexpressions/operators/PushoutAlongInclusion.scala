@@ -17,7 +17,7 @@ object ComputePushoutAlongInclusion extends ComputationRule(PushoutAlongInclusio
     val morphismArrow = morphismDiagram.arrows.head
     val morphismCodomainNode = morphismDiagram.getNode(morphismDiagram.arrows.head.to).get
 
-    val (morphismIntoPushout, pushoutTheory) = NewPushoutUtils.computePushoutAlongInclusion(
+    val (morphismIntoPushout, pushoutTheory) = NewPushoutUtils.computeAnonymousPushoutAlongInclusion(
       thyB = morphismCodomainNode.theory,
       thyAToThyB = morphismArrow.morphism,
       thyC = extensionNode.theory

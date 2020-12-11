@@ -18,12 +18,12 @@ sealed abstract class BuildTargetModifier {
 
 /** default modifier: build the target */
 case class Build(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim
+  def toString(dim: String) : String = dim
 }
 
 /** don't run, just delete all output files */
 case object Clean extends BuildTargetModifier {
-  def toString(dim: String) = "-" + dim
+  def toString(dim: String) : String = "-" + dim
 }
 
 /** incremental build: skip this build if it nothing has changed */
@@ -34,7 +34,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
     if (errorLevel <= Level.Force) ""
     else if (errorLevel < Level.Ignore) "!" else "*"
 
-  def toString(dim: String) = dim + key
+  def toString(dim: String) : String = dim + key
 
   // use dependency level for dependencies
   def forDependencies: Update = dependencyLevel match {
@@ -50,7 +50,7 @@ case class Update(errorLevel: Level, dryRun: Boolean = false, testOpts: TestModi
 @MMT_TODO("needs review")
 //TODO this is only needed if called on the shell; check if any user actually calls it (presumably at most stex building, possibly in mathhub)
 case class BuildDepsFirst(update: Update) extends BuildTargetModifier {
-  def toString(dim: String) = dim + "&"
+  def toString(dim: String) : String = dim + "&"
 }
 
 /** forces building independent of status */
@@ -79,7 +79,7 @@ object BuildTargetModifier {
     OptionDescr("test-update", "", NoArg, "update changed output files in test dimension")
   )
 
-  private def flagToLevel(flag: OptionValue, default: Level) = flag match {
+  private def flagToLevel(flag: OptionValue, default: Level): Level = flag match {
     case IntVal(i) => i - 1
     case _ => default
   }
@@ -189,17 +189,17 @@ trait BuildTargetArguments {
   */
 abstract class BuildTarget extends FormatBasedExtension {
   /** a string identifying this build target, used for parsing commands, logging, error messages */
-  def key: String
+  def key : String
 
-  override def toString = super.toString + s" with key $key"
+  override def toString : String = super.toString + " with key " + key
 
-  def isApplicable(format: String): Boolean = format == key
+  def isApplicable(format: String) : Boolean = format == key
 
   /** defaults to the key */
-  override def logPrefix: String = key
+  override def logPrefix : String = key
 
   /** build or update this target in a given archive */
-  def build(a: Archive, up: Update, in: FilePath): Unit
+  def build(a: Archive, up: Update, in: FilePath) : Unit
 
   /** build estimated dependencies first
     *
@@ -209,7 +209,7 @@ abstract class BuildTarget extends FormatBasedExtension {
     *
     * For a queue build manager this code is obsolete
     * */
-  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {}
+  def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) : Unit = {}
 
   /** clean this target in a given archive */
   def clean(a: Archive, in: FilePath): Unit
@@ -254,7 +254,7 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** build targets should set this to true if they skipped the file so that it is not passed on to the parent directory */
   var skipped = false
   /** the narration-base of the containing archive */
-  val base = archive.narrationBase
+  val base : URI = archive.narrationBase
 
   /** the MPath corresponding to the inFile if inFile is a file in a content-structured dimension */
   def contentMPath: MPath = Archive.ContentPathToMMTPath(inPath)
@@ -268,9 +268,8 @@ class BuildTask(val key: String, val archive: Archive, val inFile: File, val chi
   /** the DPath corresponding to the inFile if inFile is in a narration-structured dimension */
   def narrationDPath: DPath = DPath(base / inPath.segments)
 
-  def isDir = children.isDefined
-
-  def isEmptyDir = children.isDefined && children.get.isEmpty
+  def isDir      : Boolean = children.isDefined
+  def isEmptyDir : Boolean = children.isDefined && children.get.isEmpty
 
   /** the name of the folder if inFile is a folder */
   def dirName: String = outFile.toFilePath.dirPath.name
@@ -355,21 +354,22 @@ abstract class TraversingBuildTarget extends BuildTarget {
 
   /// ***************** auxiliary methods for computing paths to output/error files etc.
 
-  protected def getOutFile(a: Archive, inPath: FilePath) = (a / outDim / inPath).setExtension(outExt)
+  protected def getOutFile(a: Archive, inPath: FilePath): File = (a / outDim / inPath).setExtension(outExt)
 
-  protected def getFolderOutFile(a: Archive, inPath: FilePath) = getOutFile(a, inPath / folderName)
+  protected def getFolderOutFile(a: Archive, inPath: FilePath): File = getOutFile(a, inPath / folderName)
 
   protected def getErrorFile(a: Archive, inPath: FilePath): File =
     FileBuildDependency(key, a, inPath).getErrorFile(controller) //TODO why is this method not like the others?
 
-  //TODO why is this not protected?
-  def getFolderErrorFile(a: Archive, inPath: FilePath) = a / errors / key / inPath / (folderName + ".err")
+  // TODO why is this not protected?
+  // Because it also gets called from ErrorManager
+  def getFolderErrorFile(a: Archive, inPath: FilePath): File = a / errors / key / inPath / (folderName + ".err")
 
   @MMT_TODO("needs review")
-  protected def getTestOutFile(a: Archive, inPath: FilePath) =
+  protected def getTestOutFile(a: Archive, inPath: FilePath): File =
     (a / Dim("test", outDim.toString) / inPath).setExtension(outExt)
 
-  protected def getOutPath(a: Archive, outFile: File) = outFile.toFilePath
+  protected def getOutPath(a: Archive, outFile: File): FilePath = outFile.toFilePath
 
   /** auxiliary method for logging results */
   protected def logResult(s: String) {
@@ -384,7 +384,7 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   /** entry point for recursive building */
-  def build(a: Archive, up: Update, in: FilePath, errorCont: Option[ErrorHandler]) {
+  def build(a: Archive, up: Update, in: FilePath, errorCont : Option[ErrorHandler] = None) {
     val qts = makeBuildTasks(a, in, errorCont)
     controller.buildManager.addTasks(up, qts)
   }
@@ -653,11 +653,6 @@ abstract class TraversingBuildTarget extends BuildTarget {
     "depFirst" is currently only kept for comparison and testing purposes and may eventually be disposed off
   */
 
-  @MMT_TODO("needs review")
-  private def getDeps(bt: BuildTask): Set[Dependency] = {
-    estimateResult(bt).used.toSet
-  }
-
   // TODO called by AllTeX target
   @MMT_TODO("needs review")
   protected def getFilesRec(a: Archive, in: FilePath): Set[Dependency] = {
@@ -670,14 +665,15 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   @MMT_TODO("needs review")
-  private def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
+  // TODO: This generates sms dependencies from alltex targets?
+  protected def getAnyDeps(dep: FileBuildDependency): Set[Dependency] = {
     if (dep.key == key) {
       // we are within the current target
-      getDeps(makeBuildTask(dep.archive, dep.inPath))
+      estimateResult(makeBuildTask(dep.archive, dep.inPath)).used.toSet
     }
     else {
       val bt = dep.getTarget(controller)
-      bt.getDeps(bt.makeBuildTask(dep.archive, dep.inPath))
+      bt.estimateResult(bt.makeBuildTask(dep.archive, dep.inPath)).used.toSet
     }
   }
 
@@ -691,7 +687,8 @@ abstract class TraversingBuildTarget extends BuildTarget {
       val p = unknown.head
       val ds: Set[Dependency] = p match {
         case bd: FileBuildDependency => getAnyDeps(bd)
-        case _ => Set.empty
+          // TODO: Handle PhysicalDependencies also? // Don't think so, there shouldn't be any. (jbetzendahl)
+        case unused => Set.empty
       }
       deps += ((p, ds))
       visited += p
@@ -702,17 +699,22 @@ abstract class TraversingBuildTarget extends BuildTarget {
   }
 
   @MMT_TODO("needs review")
-  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) {
+  override def buildDepsFirst(a: Archive, up: Update, in: FilePath = EmptyPath) : Unit = {
     val requestedDeps = getFilesRec(a, in)
     val deps = getDepsMap(getFilesRec(a, in))
+
     val ts = Relational.flatTopsort(controller, deps)
-    ts.foreach {
-      case bd: FileBuildDependency =>
-        val target = if (bd.key == key) this else bd.getTarget(controller)
-        val bt = target.makeBuildTask(bd.archive, bd.inPath)
-        target.runBuildTaskIfNeeded(deps.getOrElse(bd, Set.empty), bt,
-          if (requestedDeps.contains(bd)) up else up.forDependencies)
-      case _ =>
+    if (ts.isDefined) {
+      ts.get.foreach {
+        case bd: FileBuildDependency =>
+          val target = if (bd.key == key) this else bd.getTarget(controller)
+          val bt = target.makeBuildTask(bd.archive, bd.inPath)
+          target.runBuildTaskIfNeeded(deps.getOrElse(bd, Set.empty), bt,
+            if (requestedDeps.contains(bd)) up else up.forDependencies)
+        case _ =>
+      }
+    } else {
+      logError("Error! Cyclical dependencies!")
     }
   }
 }

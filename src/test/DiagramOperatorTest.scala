@@ -1,6 +1,8 @@
-import info.kwarc.mmt.api.DPath
-import info.kwarc.mmt.api.presentation.{FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
+import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
+
+// LINK FOR TGVIEW2D
+// http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest
 
 trait DiagramOperatorHelper {
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
@@ -15,77 +17,61 @@ trait DiagramOperatorHelper {
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug"/*, "DiagramDefinition"*/) with DiagramOperatorHelper {
+object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
 
   override def doFirst: Unit = {
     super.doFirst
     // Only uncomment if rebuild is really necessary
     // hl("build MMT/urtheories -mmt-omdoc")
-    // hl("build MMT/urtheories mmt-omdoc")
+    // hl("build MMT/urtheories -mmt-omdoc module-expressions-test.mmt")
+    hl("build MMT/urtheories mmt-omdoc module-expressions-test.mmt")
 
     // Only uncomment if rebuild is really necessary
     // hl("build MitM/Foundation mmt-omdoc")
-
-    // Clean first to prevent some spurious caching errors
-    hl("build Playground/diagops -mmt-omdoc")
-    hl("build Playground/diagops mmt-omdoc")
   }
 
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-    // Demo MultiTypeIndexifier and extension to morphisms
-    waitThenPrint(typeindexifier ? "EndoMagma_pres")
-    waitThenPrint(typeindexifier ? "EndoMagma_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    waitThenPrint(typeindexifier ? "EndoMonoid_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMonoid")
-    waitThenPrint(typeindexifier ? "MultiTypeIndexedTestTheory_pres")
-
-    space()
-
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
-
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_pres")
-    waitThenPrint(typeindexifier ? "EndoMagmaSingle_https:%2F%2Fexample.com%2Fdiagops%2Ftypeindexifier%3FOppositeMagma")
-    waitThenPrint(typeindexifier ? "SingleTypeIndexedTestTheory_pres")
-
-    space()
-
-    waitThenPrint(typifier ? "TypifySFOLTheory_pres")
-
-    space()
-
-    waitThenPrint((pushout / "list") ? "ListNat_pres")
-    waitThenPrint((pushout / "nvs") ? "ThingsInNormedVectorspace_pres")
-
+    /*
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
     sys.exit(0)
   }
 }
 
-object DiagramClosureTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
+object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
+
   override def doFirst: Unit = {
     super.doFirst
-    // Only uncomment if rebuild is really necessary
-    // hl("build MMT/urtheories -mmt-omdoc")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    hl("build Playground/diagops mmt-omdoc closure/closure.mmt")
+    // hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
+    // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
   }
 
+  // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
+  // hence, we apply some dirty waiting mechanism here.
   override def run: Unit = {
-  }
-}
-
-object DiagramUnionTest extends MagicTest("debug", "diagram", "DiagramPublisher"/*, "object-simplifier"*/) with DiagramOperatorHelper {
-  override def doFirst: Unit = {
-    super.doFirst
-    // Only uncomment if rebuild is really necessary
-    // hl("build MMT/urtheories -mmt-omdoc")
-    hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    hl("build Playground/diagops -mmt-omdoc union/union.mmt")
-    hl("build Playground/diagops mmt-omdoc union/union.mmt")
-  }
-
-  override def run: Unit = {
+    /*
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
+    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
+    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
+    // sys.exit(0)
   }
 }
 
