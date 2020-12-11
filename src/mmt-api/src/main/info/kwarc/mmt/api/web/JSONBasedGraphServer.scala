@@ -357,7 +357,7 @@ private class JDiagramGraph extends SimpleJGraphExporter("diaggraph") {
             log(InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Did you build the archive?"))
             (Nil, Nil)
 
-          case Some(SimpleDiagram(_, paths)) =>
+          case Some(BasedDiagram(_, paths)) =>
             val (theories, views) = {
               val modules = paths.map(controller.get)
               (modules.collect { case x: Theory => x }, modules.collect { case x: View => x })

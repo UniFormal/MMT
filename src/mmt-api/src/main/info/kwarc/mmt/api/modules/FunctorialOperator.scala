@@ -29,9 +29,9 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
 
 trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case SimpleDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(dom, operatorDomain) =>
+    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(dom, operatorDomain) =>
       Some(modulePaths)
-    case SimpleDiagram(dom, _) =>
+    case BasedDiagram(dom, _) =>
       // todo check for implicit morphism from `domain` to actual domain
       interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
         s"on diagrams over $operatorDomain. Given diagram was over $dom (and no implicits from $dom " +
@@ -43,7 +43,7 @@ trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransform
       None
   }
 
-  final override def submitDiagram(newModules: List[MPath]): Term = SimpleDiagram(operatorCodomain, newModules)
+  final override def submitDiagram(newModules: List[MPath]): Term = BasedDiagram(operatorCodomain, newModules)
 }
 
 abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator
@@ -56,8 +56,8 @@ abstract class ParametricLinearOperator extends DiagramOperator {
       case OMA(OMS(`head`), parameters :+ actualDiagram) =>
         instantiate(parameters).flatMap(op => interp(actualDiagram) match {
           // TODO: ideally reuse code from RelativeBaseOperator
-          case Some(SimpleDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
-            op.applyDiagram(modulePaths).map(SimpleDiagram(op.operatorCodomain, _))
+          case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
+            op.applyDiagram(modulePaths).map(BasedDiagram(op.operatorCodomain, _))
 
           case Some(unsupportedDiag) =>
             interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
@@ -89,7 +89,8 @@ abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearCo
     super.sanityCheck()
 
     if (!interp.ctrl.globalLookup.hasImplicit(in.operatorCodomain, out.operatorCodomain)) {
-      throw ImplementationError(s"Connector ${this.getClass.getSimpleName} tried to connect operators in an incompatible way: there is no implicit morphism from ${in.operatorCodomain} to ${out.operatorCodomain}. This case does not make sense.")
+      // todo:
+      // throw ImplementationError(s"Connector ${this.getClass.getSimpleName} tried to connect operators in an incompatible way: there is no implicit morphism from ${in.operatorCodomain} to ${out.operatorCodomain}. This case does not make sense.")
     }
   }
 }

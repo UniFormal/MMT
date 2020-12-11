@@ -1,8 +1,16 @@
 import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
 
-// LINK FOR TGVIEW2D
-// http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest
+/**
+  * - LINK FOR TGVIEW2D
+  *   [[http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest]]
+  *
+  * - LINK TO JSON
+  *   [[http://localhost:8080/:jgraph/json?key=diaggraph&uri=latin:/algebraic/diagop-test?PlayTest]]
+  *
+  * - LINK TO TGView3D
+  *   [[https://tgview3d.mathhub.info/]]
+  */
 
 trait DiagramOperatorHelper {
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
@@ -53,7 +61,7 @@ object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
   override def doFirst: Unit = {
     super.doFirst
     //hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    //hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
     //hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
     hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
   }

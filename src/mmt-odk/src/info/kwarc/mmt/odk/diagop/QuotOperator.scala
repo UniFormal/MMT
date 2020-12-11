@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
-import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
+import info.kwarc.mmt.lf.{ApplySpine, Lambda}
+import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf, RecExp}
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 
@@ -157,5 +157,63 @@ object QuotModConnector extends SimpleInwardsConnector(
 
       case _ => NotApplicable(c)
     }
+  }
+}
+
+object QuotHomConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+  final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_hom_connector")
+  final override val in: LinearModuleTransformer = QuotOperator
+  final override val out: LinearModuleTransformer = HomOperator
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_hom")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
+
+    val par = QuotOperator.par.coercedTo(state)
+    val quot = QuotOperator.quot.coercedTo(state)
+
+    val dom = HomOperator.dom.coercedTo(state)
+    val cod = HomOperator.cod.coercedTo(state)
+    val hom = HomOperator.hom.coercedTo(state)
+
+    val parentStructureCopies = List(
+      (par(name), dom(c))
+    )
+
+    parentStructureCopies ::: (tp match {
+      case SFOL.TypeSymbolType() =>
+        // construct assignment `U^q = [| rel = [x y: tm Uᵈ] Uʰ x ≐ Uʰ y |]`
+        val r = RecExp(
+          OML(REL_ACCESSOR, tp = None, df = Some(
+            Lambda(LocalName("x"), SFOL.tm(dom(c)),
+              Lambda(LocalName("y"), SFOL.tm(dom(c)),
+                SFOL.eq(
+                  SFOL.tm(cod(c)),
+                  ApplySpine(hom(c), OMV("x")),
+                  ApplySpine(hom(c), OMV("y"))
+                )
+              )
+            )
+          ))
+        )
+
+        List(
+          (quot(name), r)
+        )
+
+      case SFOL.FunctionSymbolType(_, _) =>
+        List(
+          (quot(name), SFOL.sketchLazy(s"provable by applying the homomorphism condition `${hom(name)}`"))
+        )
+
+      case SFOL.PredicateSymbolType(_) =>
+        List(
+          (quot(name), SFOL.sketchLazy(s"probably provable? I haven't checked this."))
+        )
+
+      case _ =>
+        NotApplicable(c)
+    })
   }
 }
