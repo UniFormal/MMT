@@ -30,7 +30,7 @@ object StructureDefinition {
     def mkInd(tm:Term,str:String):Term = MizSeq.Index(tm,OMV(LocalName(str)))
     def proj(tm:Term,ind:Int):Term = MizSeq.Index(tm, OMI(ind))
     def subInd(tm:List[Term], str:String) = MizSeq.Index(MMTUtils.flatten(tm:_*),OMV(LocalName(str)))
-    def ellipses(body:Term, str:String, max:Int) = Ellipsis(body,LocalName("str"),OMI(max))
+    def ellipses(body:Term, str:String, max:Int) = Ellipsis(OMI(max),LocalName("str"),body)
 
     val argsTyped =ellipses(Mizar.is(mkInd(OMV(LocalName("x")),"i"), subInd(argTps,"i")),"i",l)
     def typedArgsCont(nm:Option[String]= None) : (Term => Term) = { tm: Term => Pi(LocalName("x"), nTerms(l), nm match {
