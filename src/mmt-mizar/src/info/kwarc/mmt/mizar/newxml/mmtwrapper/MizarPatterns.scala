@@ -25,8 +25,10 @@ object StructureDefinition {
   def apply(l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): Unit = {
     val params = MMTUtils.freeVars(argTps)
     val fieldTps = fieldDecls map (_.tp.get)
+    val fieldNames = fieldDecls map (_.name.toString)
     val depType = info.kwarc.mmt.lf.Arrow(Rep(Mizar.any, OMI(l)), Mizar.constant("mode"))
-    def mkInd(tm:Term,str:String) = MizSeq.Index(tm,OMV(LocalName(str)))
+    def mkInd(tm:Term,str:String):Term = MizSeq.Index(tm,OMV(LocalName(str)))
+    def proj(tm:Term,ind:Int):Term = MizSeq.Index(tm, OMI(ind))
     def subInd(tm:List[Term], str:String) = MizSeq.Index(MMTUtils.flatten(tm:_*),OMV(LocalName(str)))
     def ellipses(body:Term, str:String, max:Int) = Ellipsis(OMI(max),LocalName("str"),body)
 
@@ -39,19 +41,26 @@ object StructureDefinition {
     val ps = MMTUtils.flatten(MMTUtils.freeAlternatingVars(argTps, List("p")):_*)
     val frs = MMTUtils.freeAlternatingVars(argTps, List("f", "r"))
     val structx = Apply(OMV("struct"), xs)
-    def viIsTi(i:Int) = Mizar.is(mkInd(OMV(fieldDecls(i).name),i.toString()), fieldTps(i))
+    def viAppl(i:Int):Term = ApplyGeneral(OMV(fieldDecls(i).name), List(xs, ps, OMV("s")))
+    def viIsTi(i:Int):Term = Mizar.is(viAppl(i), fieldTps(i))
 
     val aggrTp = typedArgsCont()(fieldTps.zipWithIndex.foldRight(Mizar.any)({
       case ((tm, j), body) => MMTUtils.Lam("f"+j,fieldTps(j),
         Arrow(ellipses(Mizar.is(OMV("f"+j), OMV("t"+j)), "j", m),body))
     }))
-    val aggrPropTpClaim = Mizar.is(ApplyGeneral(OMV("aggr"), xs::ps::frs), OMV("struct"))
-    val aggrPropTp = typedArgsCont(Some("p"))(fieldTps.zipWithIndex.foldRight(aggrPropTpClaim)({
+    val aggrAppl = ApplyGeneral(OMV("aggr"), xs::ps::frs)
+    val aggrPropTpClaim = Mizar.is(aggrAppl, OMV("struct"))
+    def aggrApplContext(body:Term) = typedArgsCont(Some("p"))(fieldTps.zipWithIndex.foldRight(body)({
       case ((tm, j), body) => MMTUtils.Lam("f"+j,fieldTps(j),
         MMTUtils.Lam("r"+j,ellipses(Mizar.is(OMV("f"+j),OMV("t"+j)), "j", m), body))
     }))
+    val aggrPropTp = aggrApplContext(aggrPropTpClaim)
     def viTp = typedArgsCont(Some("p"))(Arrow(structx,Mizar.any))
     def viPropTp(i:Int) = typedArgsCont(Some("p"))(Pi(LocalName("s"),structx,viIsTi(i)))
+    def viProjProp(i:Int) = aggrApplContext(Pi(LocalName("s"),aggrAppl,Mizar.eq(viAppl(i),proj(flatten(frs),i))))
+    def viPropProj = typedArgsCont(Some("p"))(Pi(LocalName("s"),structx,Mizar.eq(OMV("s"), ApplyGeneral(OMV("aggr"),OMV("x")::OMV("p")::fieldNames.zipWithIndex.flatMap { case (nm: String, ind: Int) =>
+      List(viAppl(ind), ApplyGeneral(OMV(structureDefPropName(nm)), List(OMV("x"), OMV("p"), OMV("s"))))
+    }))))
 
     def mkVD(str:String, tp:Term) = VarDecl(LocalName(str),tp)
     val struct = mkVD("struct",depType)
@@ -66,7 +75,7 @@ object StructureDefinition {
         case subStruct @ StructureInstance(substrName, sl, sargTps, _, _, sm, sfieldDefs) => (subStruct, substrName, sl, sargTps, sm, sfieldDefs)
       }
       val restrName = structureDefRestrName(substrName)
-      val restr = VarDecl(restrName,referenceExtDecl(substrPath,"struct"))
+      val restr = VarDecl(restrName,typedArgsCont(Some("p"))(Pi(LocalName("s"),structx,referenceExtDecl(substrPath,"struct"))))
       val restrSelProps = sfieldDefs map {vd =>
         VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),referenceExtDecl(substrPath,restrName.toString)))
       }
@@ -92,11 +101,11 @@ object StructureInstance {
         val NatRules.NatLit(n)::argssss = argsss
         val (substr, argsssss) = argssss.splitAt(n.asInstanceOf[Int])
         val NatRules.NatLit(m)::fieldTpss = argsssss
-        val fieldTps:List[VarDecl] = fieldTpss.sliding(2,2).toList.map {case List(v:OMV, tp:Term) => v % tp}
-        (l.asInstanceOf[Int], argTps, n.asInstanceOf[Int], substr, m.asInstanceOf[Int], fieldTps)
+        val fieldDecls:List[VarDecl] = fieldTpss.sliding(2,2).toList.map {case List(v:OMV, tp:Term) => v % tp}
+        (l.asInstanceOf[Int], argTps, n.asInstanceOf[Int], substr, m.asInstanceOf[Int], fieldDecls)
       }
-      val (l, argTps, n, substr, m, fieldTps) = match_args(args)
-      Some((name, l,argTps,n,substr,m,fieldTps))
+      val (l, argTps, n, substr, m, fieldDecls) = match_args(args)
+      Some((name, l,argTps,n,substr,m,fieldDecls))
     case _ => None
   }
 }
