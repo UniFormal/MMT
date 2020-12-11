@@ -804,10 +804,10 @@ case class compatibility() extends CorrectnessConditions
  * for overlap of case-by-case (complex) defns
  */
 case class consistency() extends CorrectnessConditions
-/**
+/*/**
  * conjunction of all necessary correctness conditions, doesn't appear in esx files
  */
-case class correctness() extends CorrectnessConditions
+case class correctness() extends CorrectnessConditions*/
 
 sealed trait Exemplifications
 case class ImplicitExemplification(_term:Term) extends Exemplifications
