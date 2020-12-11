@@ -68,6 +68,7 @@ object itemTranslator {
   }
 }
 
+import TranslationController._
 class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
   def inExts = List("esx")
@@ -90,9 +91,9 @@ class MizarXMLImporter extends archives.Importer {
     val doc = TranslationController.makeDocument()
     //TranslationController.controller.build(TranslationController.currentBaseThyFile)(bf.errorCont)
 
-    val thy = new Theory(TranslationController.currentThyBase, TranslationController.localPath, TranslationController.currentBaseThy, Theory.noParams, Theory.noBase)
+    val thy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
     controller.add(thy)
-    TranslationController.currentThy = thy
+    currentThy = thy
     //val th = TranslationController.makeTheory()
 
     articleTranslator.translateArticle(text_Proper)

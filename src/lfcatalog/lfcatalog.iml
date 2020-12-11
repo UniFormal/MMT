@@ -7,5 +7,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" exported="" name="inc_compile_2.12" level="project" />
+    <orderEntry type="library" exported="" name="scala-compiler" level="project" />
+    <orderEntry type="library" exported="" name="scala-sdk-2.12.9" level="application" />
+    <orderEntry type="module" module-name="mmt-api" exported="" />
+    <orderEntry type="library" exported="" name="tiscaf_2.12-20.0.0" level="project" />
   </component>
 </module>

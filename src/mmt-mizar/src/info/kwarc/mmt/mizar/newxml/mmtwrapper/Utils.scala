@@ -3,7 +3,7 @@ package info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.mizar.newxml.translator.MizSeq._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 
@@ -77,11 +77,11 @@ object Mizar {
   def andCon = constantName("and")
   def naryAndCon = constantName("nary_and")
 
-  def and(tms : List[Term]) : Term = apply(OMS(naryAndCon), OMI(tms.length) :: tms :_*)
+  def and(tms : List[Term]) : Term = apply(OMS(naryAndCon), (OMI(tms.length)::tms):_*)
   def binaryAnd(a:Term, b:Term) : Term = apply(OMS(andCon),List(a,b):_*)
   def orCon = constantName("or")
   def naryOrCon = constantName("nary_or")
-  def or(tms : List[Term]) : Term = apply(OMS(naryOrCon), OMI(tms.length) :: tms :_*)
+  def or(tms : List[Term]) : Term = apply(OMS(naryOrCon), (OMI(tms.length)::tms):_*)
   def binaryOr(a:Term, b:Term) : Term = apply(OMS(orCon),List(a,b):_*)
 
   // Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
@@ -176,4 +176,13 @@ object MMTUtils {
   def Lam(name: String, tp: Term, body: Term): Term = {
     Lambda(LocalName(name), tp, body)
   }
+
+  def freeVarContext(varTps:List[Term]): Context =
+    varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName("x_"+i)) % tp }
+  def freeVars(varTps:List[Term], nm:Option[String]=None): Context =
+  varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % Mizar.any }
+  def freeAlternatingVars(varTps:List[Term], nm:List[String]): List[OMV] =
+    varTps.zipWithIndex.flatMap {case (tp:Term,i:Int) => nm map {s => OMV(LocalName(s+i))} }
+  def flatten(tm:Term*) : Term = MizSeq.Sequence(tm.asInstanceOf[MizSeq.Sequence.type])
+  def flatten(tms:List[Term]) : Term = flatten(tms:_*)
 }
