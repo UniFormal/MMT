@@ -1,13 +1,13 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
 
 // todo generate definienses (i.e. proofs) too here
-private[newoperators] trait ModRelClosureCreator[T] {
+private[diagop] trait ModRelClosureCreator[T] {
   /**
     * The number of models the relation relates.
     *

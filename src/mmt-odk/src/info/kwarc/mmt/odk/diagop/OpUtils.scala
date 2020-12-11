@@ -1,9 +1,9 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api.objects.{Context, OMV, Term, VarDecl}
 import info.kwarc.mmt.lf.{ApplySpine, Lambda}
 
-private[newoperators] object StringUtils {
+private[diagop] object StringUtils {
   private val digitSubscripts   = List("₀", "₁", "₂", "₃", "₄", "₅", "₆", "₇", "₈", "₉")
   private val digitSuperscripts = List("⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹")
 
@@ -24,7 +24,7 @@ private[newoperators] object StringUtils {
   def superscriptInteger(i: Int): String = translateInteger(digitSuperscripts)(i)
 }
 
-private[newoperators] object OpUtils {
+private[diagop] object OpUtils {
   /**
     * Binds variables of given types freshly in [[ctx]].
     *

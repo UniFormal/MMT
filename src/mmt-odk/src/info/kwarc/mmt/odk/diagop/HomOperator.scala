@@ -1,12 +1,11 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, LinearModuleTransformer, Renamer, SimpleInwardsConnector, SimpleLinearConnector, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
-import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
-import info.kwarc.mmt.moduleexpressions.newoperators.SubOperator.{LinearState, par, sub}
+import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
   * Linearly transforms SFOL theories T to Hom(T), the theory of homomorphisms

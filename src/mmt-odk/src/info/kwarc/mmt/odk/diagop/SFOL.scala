@@ -1,18 +1,22 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{GlobalName, Path}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMS, OMV, Term, Traverser}
-import info.kwarc.mmt.lf.{Apply, BinaryLFConstantScala, FouraryLFConstantScala, FunType, Lambda, NullaryLFConstantScala, Strings, TernaryLFConstantScala, UnaryLFConstantScala}
+import info.kwarc.mmt.lf._
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
-private[newoperators] object SFOL {
+private[diagop] object SFOL {
+
   object tp extends NullaryLFConstantScala(Path.parseM("latin:/?Types"), "tp")
+
   object prop extends TernaryLFConstantScala(Path.parseM("latin:/?Propositions"), "prop")
 
   object predicateSubTp extends BinaryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "predsub")
+
   object predicateSubTpIn extends FouraryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "in")
 
   object predicateSubTpIsSubtype extends BinaryLFConstantScala(Path.parseM("latin:/?PredicateSubtypes"), "predsub_sub")
+
   object subtypeInject extends FouraryLFConstantScala(Path.parseM("latin:/?SubtypeInjections"), "inject")
 
   def injectSubtypeElementIntoParent(parentTp: Term, selectionFun: Term, subElem: Term): Term = {
@@ -28,14 +32,21 @@ private[newoperators] object SFOL {
     predicateSubTpIn(parentTp, selectionFun, parentElem, containmentProof)
 
   object QuotientTypes {
+
     object quotientTp extends BinaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+
     object quot_project extends TernaryLFConstantScala(Path.parseM("latin:/?QuotientTypesBase"), "quot")
+
     object quot_inj extends TernaryLFConstantScala(Path.parseM("latin:/?QuotientIndefiniteAccess"), "quot_inj")
+
   }
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
+
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
+
   object exists extends BinaryLFConstantScala(Path.parseM("latin:/?TypedExistentialQuantification"), "exists")
+
   object forallMany {
     def apply(ctx: Context, body: Term): Term = {
       var term = body
@@ -56,7 +67,9 @@ private[newoperators] object SFOL {
   def implOption(antecedence: Option[Term], consequence: Term): Term = {
     antecedence.map(impl(_, consequence)).getOrElse(consequence)
   }
+
   object equiv extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
+
   // alias for [[equiv]]
   object biimpl extends BinaryLFConstantScala(Path.parseM("latin:/?Equivalence"), "equiv")
 
@@ -65,7 +78,6 @@ private[newoperators] object SFOL {
     *
     * @example ''biimplChain(a, b) = a ⇔ b''
     * @example ''biimplChain(a, b, c) = (a ⇔ b) ∧ (b ⇔ c)''
-    *
     * @param propositions Sequence of propositions of size >= 2
     */
   def biimplChain(propositions: Term*): Term = {
@@ -77,6 +89,7 @@ private[newoperators] object SFOL {
   }
 
   object or extends BinaryLFConstantScala(Path.parseM("latin:/?Disjunction"), "or")
+
   object and extends BinaryLFConstantScala(Path.parseM("latin:/?Conjunction"), "and")
 
   // invocations of this method to be later replaced by real sketch
@@ -87,6 +100,7 @@ private[newoperators] object SFOL {
   }
 
   object ded extends UnaryLFConstantScala(Path.parseM("latin:/?Proofs"), "ded")
+
   object eq extends TernaryLFConstantScala(Path.parseM("latin:/?TypedEquality"), "equal")
 
   object TypeSymbolType {

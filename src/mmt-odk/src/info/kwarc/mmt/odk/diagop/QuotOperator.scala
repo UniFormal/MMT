@@ -1,11 +1,11 @@
-package info.kwarc.mmt.moduleexpressions.newoperators
+package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.{Context, OMA, OMPMOD, OMS, OMV, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.moduleexpressions.newoperators.OpUtils.GeneralApplySpine
+import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 
 /**
