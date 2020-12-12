@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.web.SyntaxPresenterServer
 /**
   * Debugging links for diagram output:
   *
-  * - with MMT online editor: [[http://localhost:8080/:diagramOutput?diag=latin:/algebraic/diagop-test?PlayTest]]
+  * - with MMT online editor: [[http://localhost:8080/:syntax?element=latin:/algebraic/diagop-test?PlayTest]]
   *
   * - TGView2D: [[http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest]]
   * - TGView3D: [[https://tgview3d.mathhub.info/]]
@@ -33,7 +33,7 @@ object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
     // hl("extension info.kwarc.mmt.api.modules.DiagramOutputServer")
 
     //hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    //hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
     //hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
     hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
   }
