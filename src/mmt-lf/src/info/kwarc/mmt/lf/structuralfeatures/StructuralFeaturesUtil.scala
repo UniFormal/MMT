@@ -301,6 +301,9 @@ object StructuralFeatureUtils {
       intDecl
     }
   }
+
+  def externalName(parent: GlobalName, name: LocalName): GlobalName = //(parent.module / parent.name, name)
+    parent.module ? parent.name / name
 }
 
 import StructuralFeatureUtils._

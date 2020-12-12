@@ -75,9 +75,6 @@ private object InternalDeclarationUtil {
     iterPre(e)
   }
   
-  def externalName(parent: GlobalName, name: LocalName): GlobalName = //(parent.module / parent.name, name)
-    parent.module ? parent.name / name
- 
   def externalizeNamesAndTypes(parent: GlobalName, params: Context):Term=>Term = { x=>
     externalizeNames(parent)(externalizeTypes(parent, params)(x, params), params)
   }
@@ -88,10 +85,10 @@ private object InternalDeclarationUtil {
   }
   
   def externalizeNames(parent: GlobalName) = {
-    def r(p: GlobalName) = if (p.module == parent.toMPath) Some(OMS(externalName(parent, p.name))) else None
+    def r(p: GlobalName) = if (p.module == parent.toMPath) Some(OMS(StructuralFeatureUtils.externalName(parent, p.name))) else None
     OMSReplacer(r _)
   }
-  
+
   /** produces a Constant derived declaration 
    *  @param name the local name of the constant
    *  @param tp the type of the constant
@@ -100,7 +97,7 @@ private object InternalDeclarationUtil {
    *  @param parent (implicit) the inductive definition to elaborate
    */
   def makeConst(name: LocalName, Ltp: () => Term, simplifyTag: Boolean = false, Ldf: () => Option[Term] = () => None, Lnot: () => Option[TextNotation] = () => None)(implicit parent:  GlobalName): Constant = {
-    val p = externalName(parent, name)
+    val p = StructuralFeatureUtils.externalName(parent, name)
     new SimpleLazyConstant(OMMOD(p.module), p.name) {
       otherDefined = true
       def onAccess {
@@ -437,6 +434,17 @@ object OutgoingTermLevel {
     case _ => None
   }
 }
+
+/**
+ * A constructor of an inductive type
+ * @param path
+ * @param args
+ * @param ret
+ * @param tpl
+ * @param df
+ * @param notC
+ * @param ctx
+ */
 class Constructor(path: GlobalName, args: List[(Option[LocalName], Term)], ret: Term, tpl: TypeLevel, df: Option[Term]=None, notC: Option[NotationContainer]=None, ctx: Option[Context]=None) extends TermLevel(path, args, ret: Term, df, notC, ctx) {
   override def isConstructor = {true}
   def getTpl: TypeLevel = {tpl}
@@ -444,7 +452,6 @@ class Constructor(path: GlobalName, args: List[(Option[LocalName], Term)], ret: 
     case ApplyGeneral(_, args) => args
   }
 }
-
 object Constructor {
   def unapply(d: InternalDeclaration): Option[Constructor] = d match {
     case tml: Constructor => Some(tml)
