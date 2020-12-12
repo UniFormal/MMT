@@ -1,6 +1,6 @@
 import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.web.DiagramOutputServer
+import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 /**
   * Debugging links for diagram output:
@@ -27,9 +27,9 @@ trait DiagramOperatorHelper {
   */
 object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
 
-  override def doFirst: Unit = {
-    super.doFirst
-    controller.extman.addExtension(new DiagramOutputServer(), Nil)
+  override def doFirst(): Unit = {
+    super.doFirst()
+    controller.extman.addExtension(new SyntaxPresenterServer(), Nil)
     // hl("extension info.kwarc.mmt.api.modules.DiagramOutputServer")
 
     //hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")

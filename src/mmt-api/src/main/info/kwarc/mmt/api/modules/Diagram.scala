@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.{SimplificationEnvironment, SimplificationUnit}
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.web.DiagramOutputServer
+import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 import scala.collection.mutable
 
@@ -77,7 +77,7 @@ ${this.getClass.getSimpleName} debug
 input: $df
 operators in scope: ${rules.get(classOf[DiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
 
-output: see above or ${DiagramOutputServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}
+output: see above or ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}
 -------------------------------------
 
 """)
