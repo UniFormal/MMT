@@ -9,6 +9,8 @@ import scala.collection.mutable
 
 /**
   * Mutable class that represents a response sent from the Server to the Client
+  *
+  * Defaults to UTF-8 content type for text responses.
   */
 class ServerResponse {
 
@@ -68,17 +70,19 @@ class ServerResponse {
 }
 
 /**
- *  factory methods for typical responses
- */
+  * Factory methods for typical responses
+  * As is the case with the companion class [[ServerResponse]], all text responses default to UTF-8
+  * (via the Content-Type header).
+  */
 object ServerResponse {
 
   // typical responses
   def TextResponse(text: String, tp: String = "plain"): ServerResponse = apply(text, "text/" + tp)
-  def HTMLResponse(text: String) = TextResponse(text, "html")
-  def XmlResponse(text: String) = TextResponse(text, "xml")
+  def HTMLResponse(text: String): ServerResponse = TextResponse(text, "html")
+  def XmlResponse(text: String): ServerResponse = TextResponse(text, "xml")
   def XmlResponse(node: scala.xml.Node): ServerResponse = fromXML(node)
   def JsonResponse(content: JSON): ServerResponse = fromJSON(content)
-  def FileResponse(file: utils.File) = {
+  def FileResponse(file: utils.File): ServerResponse = {
     val in = new java.io.FileInputStream(file)
     anyDataResponse(in, file.getExtension)
   }

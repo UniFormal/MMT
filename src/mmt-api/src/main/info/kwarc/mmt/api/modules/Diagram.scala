@@ -1,21 +1,50 @@
 package info.kwarc.mmt.api.modules
 
-import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
-import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom.{SimplificationEnvironment, SimplificationUnit}
+import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.web.DiagramOutputServer
 
 import scala.collection.mutable
 
 object Diagram {
   val feature: String = "diagram"
+
+  def saveOutput(diagPath: MPath, output: Term)(implicit lookup: Lookup): Unit = {
+    lookup.getModule(diagPath).dfC.normalized = Some(output)
+  }
+
+  /**
+    * Parses the output of a previously elaborated [[Diagram]] structural feature.
+    *
+    * @throws GetError if the module referenced by diagramModulePath cannot be found
+    * @throws InvalidElement if the module doesn't correspond to a usage of the Diagram structural feature
+    * @throws InvalidElement if the module hasn't been elaborated before
+    * @return All module entries of the output diagram (as were the result of elaboration before).
+    */
+  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): List[MPath] = {
+    val diagModule = lookup.get(diagPath) match {
+      case diagModule: DerivedModule if diagModule.feature == Diagram.feature =>
+        diagModule
+
+      case s => throw InvalidElement(s, s"referenced diagram DerivedModule `$s` not a derived module or doesn't have diagram feature")
+    }
+
+    diagModule.dfC.normalized match {
+      case Some(RawDiagram(paths)) => paths
+      case Some(BasedDiagram(_, paths)) => paths
+
+      case None =>
+        throw InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Have you run the Elaborator on it? In case the diagram is given in a file, have you built the file? (note that diagrams aren't written to OMDoc yet, so you always need to rebuild upon runtime.")
+    }
+  }
 }
 
 /**
@@ -37,10 +66,22 @@ class Diagram extends ModuleLevelFeature(Diagram.feature) {
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
-        diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
-        println(s"\nAbove MMT surface syntax was printed by Scala class 'DiagramPublisher' for debugging reasons. Input diagram was: ${df}")
+        Diagram.saveOutput(dm.path, outputDiagram)(controller.globalLookup)
 
-        dm.dfC.normalized = Some(outputDiagram)
+        // syntax-present output diagram for quick debugging
+        diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
+        println(s"""
+
+${this.getClass.getSimpleName} debug
+-------------------------------------
+input: $df
+operators in scope: ${rules.get(classOf[DiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
+
+output: see above or ${DiagramOutputServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}
+-------------------------------------
+
+""")
+
         diagInterp.toplevelResults
 
       case None =>
@@ -250,29 +291,40 @@ object BasedDiagram {
   // this function tremendously
 
   /**
-    * Merges two diagrams.
+    * Merges two diagrams, keeps only distinct diagram elements.
     *
     * If they are both compatible [[BasedDiagram]]s, the result is a [[BasedDiagram]] again.
     * Otherwise, they will both be merged into a [[RawDiagram]].
     *
     * ''BasedDiagram(b1, paths1)'' and ''BasedDiagram(b2, paths2)'' are compatible if there is either
     * an implicit morphism b1 -> b2 or b2 -> b1. IN both cases, they will be merged into a [[BasedDiagram]]
-    * with paths ''paths1 ::: paths2'' over the codomain of the implicit morphism (i.e., the stronger base theory).
+    * with paths ''(paths1 ::: paths2).distinct'' over the codomain of the implicit morphism (i.e., the
+    * stronger base theory).
     */
-  def unionWithOther(diag1: Term, diag2: Term)(implicit lookup: Lookup): Term = diag1 match {
-    case RawDiagram(paths1) => diag2 match {
-      case RawDiagram(paths2) => RawDiagram(paths1 ::: paths2)
-      case BasedDiagram(_, paths2) => RawDiagram(paths1 ::: paths2)
+  def unionWithOther(diag1: Term, diag2: Term)(implicit lookup: Lookup): Term = {
+    val paths1 = diag1 match {
+      case BasedDiagram(_, paths) => paths
+      case RawDiagram(paths) => paths
     }
-    case BasedDiagram(base1, paths1) => diag2 match {
-      case RawDiagram(paths2) => RawDiagram(paths1 ::: paths2)
-      case BasedDiagram(base2, paths2) if lookup.hasImplicit(base1, base2) =>
+    val paths2 = diag2 match {
+      case BasedDiagram(_, paths) => paths
+      case RawDiagram(paths) => paths
+    }
+    val paths = (paths1 ::: paths2).distinct
+
+    diag1 match {
+      case RawDiagram(paths1) => diag2 match {
+        case RawDiagram(_) => RawDiagram(paths)
+        case BasedDiagram(_, paths2) => RawDiagram(paths)
+      }
+      case BasedDiagram(base1, paths1) => diag2 match {
+        case RawDiagram(paths2) => RawDiagram(paths)
         // base 2 is stronger
-        BasedDiagram(base2, paths1 ::: paths2)
-      case BasedDiagram(base2, paths2) if lookup.hasImplicit(base2, base1) =>
+        case BasedDiagram(base2, paths2) if lookup.hasImplicit(base1, base2) => BasedDiagram(base2, paths)
         // base 1 is stronger
-        BasedDiagram(base1, paths1 ::: paths2)
-      case BasedDiagram(_, paths2) => RawDiagram(paths1 ::: paths2)
+        case BasedDiagram(base2, paths2) if lookup.hasImplicit(base2, base1) => BasedDiagram(base1, paths)
+        case BasedDiagram(_, paths2) => RawDiagram(paths)
+      }
     }
   }
 }

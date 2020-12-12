@@ -135,9 +135,9 @@ class FileWriter(val filename : File, compress: Boolean = false) extends Renderi
 
 /** writes text output to a StringBuilder */
 class StringBuilder extends RenderingHandler with RenderingResult[String] {
-   private var sb = new scala.collection.mutable.StringBuilder(5000)
+  private val sb = new scala.collection.mutable.StringBuilder(5000)
    def write(s: String) {sb.append(s)}
-   def get = sb.result
+   def get: String = sb.result
 }
 
 class HTMLRenderingHandler(hb: HTML) extends RenderingHandler {
