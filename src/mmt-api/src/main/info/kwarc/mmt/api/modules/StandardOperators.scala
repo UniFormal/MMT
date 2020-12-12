@@ -42,7 +42,7 @@ trait SystematicRenamingUtils extends LinearTransformer {
   }
 
   protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
-    override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
+    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
 
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
       if (state.processedDeclarations.exists(_.path == path)) {
@@ -91,33 +91,7 @@ class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extend
   }
 }
 
-/*class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with SystematicRenamingUtils with DefaultLinearStateOperator {
-
-  override protected val operatorDomain: MPath = dom
-  override protected val operatorCodomain: MPath = cod
-
-  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_Copy")
-
-  override protected val connectionTypes = List(
-    InToOutMorphismConnectionType.suffixed("_CopyProjection1"),
-    InToOutMorphismConnectionType.suffixed("_CopyProjection2")
-  )
-
-  override def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[List[(LocalName, Term, Option[Term])]] = {
-
-    val copy1 = getRenamerFor("1")
-    val copy2 = getRenamerFor("2")
-
-    MainResults(
-      (copy1(name), copy1(tp), df.map(copy1.apply(_))),
-      (copy2(name), copy2(tp), df.map(copy2.apply(_)))
-    ) ::: ConnResults(
-      (name, tp, copy1(c))
-    ) ::: ConnResults(
-      (name, tp, copy2(c))
-    )
-  }
-}
+/* to be reinstantiated by Navid (this comment is from 2020-12-11):
 
 object PushoutOperator extends DiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories/modexp-test?DiagramOperators?pushout_operator")

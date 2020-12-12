@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
 
 /**
-  * Presenter writing out parsable MMT surface syntax.
+  * Presents (hopefully) parsable MMT surface syntax from in-memory MMT knowledge items.
   *
   * Usage
   * {{{
@@ -27,6 +27,9 @@ import info.kwarc.mmt.api.utils.URI
   * println(stringRenderer.get)
   * }}}
   *
+  * @see The server ''info.kwarc.mmt.api.web.SyntaxPresenterServer'' exposes this syntax presenter to the web.
+  *
+  * @author Among others, ComFreek knows the code somewhat well, esp. on the generated indentations.
   */
 
 class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends Presenter(objectPresenter) {
@@ -74,12 +77,18 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   }
 
   /**
-    * Get a wrapping rendering handler indenting every line it is passed to.
+    * Creates an indented version of a rendering handler.
+    *
+    * Every line rendered with the indented handler is indented. This is even true if
+    * you pass to it multiline strings at once. (They will be inspected.)
+    *
+    * In your code, you can freely mix the original handler ''rh'' and the indented one.
+    * The indented has *no* internal buffer or cache.
     *
     * @param rh          The original rendering handler to delegate to.
     * @param indentation The number of indentation levels (i.e. tabs)
-    * @return A rendering handler which will indent the first string you pass it to
-    *         with the given indentation and replace every \n by the same indentation.
+    *
+    * @author ComFreek
     */
   private def indented(rh: RenderingHandler, indentation: Int = 1): RenderingHandler = {
     val indentationString = "\t" * indentation
@@ -92,10 +101,13 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
         isAtStartOfLine = false
       }
 
-      // Replace inner EOLs by EOL+indentationString
+      // Replace *inner* EOLs by EOL+indentationString
       val indentedStr = {
         if (str.endsWith(EOL)) {
-          // TODO Probably bad for Unicode EOL (which we don't have anyway, though)
+          isAtStartOfLine = true
+
+          // TODO Probably bad for when EOL == Unicode EOL (but we have EOL == "\n" anyway, which has normal
+          //      ASCII length characteristics)
           str.dropRight(EOL.length).replace(EOL, EOL + indentationString) + EOL
         }
         else {
@@ -114,11 +126,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   class PersistentNamespaceMap {
     private var nsm = controller.getNamespaceMap
 
-    def base(s: String) = nsm = nsm.base(s)
+    def base(s: String): Unit = nsm = nsm.base(s)
 
-    def add(s: String, uri: URI) = nsm = nsm.add(s, uri)
+    def add(s: String, uri: URI): Unit = nsm = nsm.add(s, uri)
 
-    def compact(s: String) = nsm.compact(s)
+    def compact(s: String): String = nsm.compact(s)
   }
 
   private def present(element: StructuralElement, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
@@ -150,7 +162,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       case t: Theory =>
         rh("\n")
         doTheory(t, rh)
-      case v: View => doView(v, rh)
+      case v: View =>
+        rh("\n")
+        doView(v, rh)
       case dd: DerivedDeclaration =>
         rh << dd.feature + " "
         controller.extman.get(classOf[StructuralFeature], dd.feature) match {
@@ -169,7 +183,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       case r: RuleConstant =>
         if (r.df.isEmpty) rh("unknown ")
         rh("rule ")
-        r.tp.foreach(doURI(_, rh))
+        r.tp.foreach(doURI(_, rh, needsHand = true))
       // r.tp foreach { t => apply(t, Some(r.path $ TypeComponent))(rh) }
     }
     endDecl(element, rh)
@@ -182,7 +196,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
 
     // TODO Fix for [[Structure.isInclude]] not accounting for inclusions
-    //  with definiens component, see tod*o note in [[Include.unapply]]
+    //  with definiens component, see todo note in [[Include.unapply]]
     case s: Structure if s.getPrimitiveDeclarations.isEmpty => rh(DECLARATION_DELIMITER + "\n")
     case _: ModuleOrLink => rh(MODULE_DELIMITER + "\n")
     case _: NestedModule => /* nothing, the module delimiter of the presented module already accounts for this */
@@ -204,7 +218,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
     theory.meta.foreach(metaTheoryPath => {
       rh(" : ")
-      doURI(OMMOD(metaTheoryPath), rh)
+      doURI(OMMOD(metaTheoryPath), rh, needsHand = false)
     })
     // TODO print type component
 
@@ -213,9 +227,10 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     doDefComponent(theory, rh)
     rh(" =")
     rh(" \n")
+    val indentedRh = indented(rh)
     theory.getDeclarations.foreach { d =>
       if (!d.isGenerated || presentGenerated) {
-        present(d, indented(rh))
+        present(d, indentedRh)
       }
     }
     rh("\n")
@@ -223,9 +238,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
   private def doView(view: View, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = {
     rh("view " + view.name + " : ")
-    doURI(view.from, rh)
+    doURI(view.from, rh, needsHand = false)
     rh(" -> ")
-    doURI(view.to, rh)
+    doURI(view.to, rh, needsHand = false)
 
     // A def component of a view might be an anonymous morphism expression, for example
     // TODO In case we've got a def component, this presenter presents invalid syntax.
@@ -233,20 +248,34 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" =")
     rh(" \n")
 
+    val indentedRh = indented(rh)
     val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
     declarations.foreach {
-      case c: Constant => doConstant(c, rh, presentType = false)
+      case c: Constant =>
+        // We want to avoid presenting types here, hence manually call doConstant and endDecl
+        // instead of present.
+        // doStructure does something similar.
+        doConstant(c, indentedRh, presentType = false)
+        endDecl(c, indentedRh)
+
       // In all other cases, present as usual, this might present invalid syntax, though
-      case d => present(d, indented(rh))
+      case d => present(d, indentedRh)
     }
     rh("\n")
   }
 
   /**
-    * Present a URI, possibly relative with the given namespace map.
+    * Presents a URI, possibly relative with the given namespace map.
+    * @param needsHand If the hand symbol (☞) should be prepended. As a rule of thumb, if you are rendering in a context
+    *                  where a Term is genreally expected, the hand is needed.
+    *
+    *                  See also [[https://stackoverflow.com/questions/64789876/how-to-give-an-absolute-uri-in-mmt-getting-unbound-token-http-and-ill-forme]].
     */
-  private def doURI(tm: Term, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = tm match {
+  private def doURI(tm: Term, rh: RenderingHandler, needsHand: Boolean)(implicit nsm: PersistentNamespaceMap): Unit = tm match {
     case OMPMOD(p, args) =>
+      if (needsHand) {
+        rh("☞")
+      }
       rh(nsm.compact(p.toString) + " ")
       if (args.nonEmpty) {
         rh("(")
@@ -315,7 +344,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     })
 
     val roleElements = c.rl.toList.map(roleStr => (rh: RenderingHandler) => {
-      rh(s"role ${roleStr}")
+      rh(s"role $roleStr")
     })
 
     val notationElements = c.notC.parsing.toList.map(textNotation => (rh: RenderingHandler) => {
@@ -326,7 +355,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     //       (2) Do not print special metadata like source references
     val metadataElements = c.metadata.getAll.map(datum => (rh: RenderingHandler) => {
       rh("meta ")
-      doURI(OMID(datum.key), rh)
+      doURI(OMID(datum.key), rh, needsHand = false)
       rh(" ")
       objectPresenter(datum.value, Some(c.path $ MetaDataComponent))(rh)
     })
@@ -340,7 +369,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {
-        indentedRh("\n" + "   ")
+        indentedRh("\n")
       } else {
         indentedRh("\n" + OBJECT_DELIMITER + " ")
       }
@@ -353,7 +382,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // special case of structures: trivial include
     case Include(IncludeData(home, from, args, df, total)) =>
       rh("include ")
-      doURI(OMMOD(from), rh)
+      doURI(OMMOD(from), rh, needsHand = true)
       // TODO args ignored
       df.foreach(definiensTerm => {
         rh(" " + OBJECT_DELIMITER + " ")
@@ -363,16 +392,22 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // actual structure, not just trivial include
     case _ =>
       rh("structure " + s.name + " : ")
-      doURI(s.from, rh)
+      doURI(s.from, rh, needsHand = false)
       doDefComponent(s, rh)
 
       rh("= \n")
 
       val indentedRh = indented(rh)
       s.getDeclarations.foreach {
-        case c: Constant => doConstant(c, indentedRh, presentType = false)
+        case c: Constant =>
+          // We want to avoid presenting types here, hence manually call doConstant and endDecl
+          // instead of present.
+          // doView does something similar.
+          doConstant(c, indentedRh, presentType = false)
+          endDecl(c, indentedRh)
         case x => present(x, indentedRh)
       }
+      rh("\n")
   }
 
   /** `= df` if df is present, returns true if there was one */
@@ -389,6 +424,6 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 }
 
 /** flattened */
-class FlatMMTSyntaxPresenter(oP: ObjectPresenter = new NotationBasedPresenter) extends MMTSyntaxPresenter {
+class FlatMMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends MMTSyntaxPresenter(objectPresenter) {
   override val presentGenerated = true
 }

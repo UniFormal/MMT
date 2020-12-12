@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
+import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType, Lambda}
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
@@ -19,36 +19,22 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
   // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
-  val dom: Renamer[LinearState] = getRenamerFor("d")
-  val cod: Renamer[LinearState] = getRenamerFor("c")
+  val dom: Renamer[LinearState] = getRenamerFor("ᵈ")
+  val cod: Renamer[LinearState] = getRenamerFor("ᶜ")
 
   // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
-  val hom: Renamer[LinearState] = getRenamerFor("h")
+  val hom: Renamer[LinearState] = getRenamerFor("ʰ")
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
-  override protected def applyConstantSimple(container: HomOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    def quantify(t: Term, argTypes: List[GlobalName]): (Context, Term, Term) = {
-      val binding = OpUtils.bindFresh(Context.empty, argTypes.map(tp => SFOL.tm(OMS(dom(tp))))) // todo: replace context.empty
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
 
-      // construct `c^{dom} x_1 ... x_n`
-      val domExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
-        OMS(dom(c.path)),
-        binding.map(vd => OMV(vd.name)): _*
-      )
+    val structureCopies = List(
+      (dom(name), dom(tp), df.map(dom(_))),
+      (cod(name), cod(tp), df.map(cod(_)))
+    )
 
-      // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
-      val codExpr = GeneralApplySpine( // use GeneralApplySpine: the function symbol might be nullary
-        OMS(cod(c.path)),
-        binding.map(vd => ApplySpine(hom(vd.tp.get), OMV(vd.name))): _*
-      )
-
-      (binding, domExpr, codExpr)
-    }
-
-    val mainConstantCopies = List((dom(name), dom(tp), df.map(dom(_))), (cod(name), cod(tp), df.map(cod(_))))
-
-    mainConstantCopies ::: (tp match {
+    structureCopies ::: (tp match {
       case SFOL.TypeSymbolType() =>
         // input:  t: tp
         // output: t^d: tp, t^c: tp, t^h: tm t^d -> t^c
@@ -59,57 +45,65 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
         List((hom(name), thType, df.map(hom(_))))
 
-      case SFOL.FunctionSymbolType(argTypes, retType) =>
-        val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
-
-        val homomorphismCondition = SFOL.ded(SFOL.forallMany(
-          forallContext,
-          SFOL.eq(
-            SFOL.tm(OMS(cod(retType))),
-            ApplySpine(OMS(hom(retType)), domExpr),
-            codExpr
-          )
-        ))
-
-        val homomorphismConstant = (
-          hom(name),
-          homomorphismCondition,
-          df.map(_ => SFOL.sketchLazy("provable"))
+      case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
+        val forallContext = OpUtils.bindFresh(
+          Context.empty,// todo: replace context.empty
+          argTypes.map(tp => SFOL.tm(OMS(dom(tp))))
         )
 
-        List(homomorphismConstant)
+        // construct `c^{dom} x_1 ... x_n`
+        val lhs = GeneralApplySpine(
+          OMS(dom(c.path)),
+          forallContext.map(_.toTerm) : _*
+        )
 
-      case SFOL.PredicateSymbolType(argTypes) =>
-        val monotonicityOkay = df.forall(dfTerm => {
-          val allowedReferences = state.processedDeclarations.map(_.path).toSet
-          if (SFOL.isMonotone(dfTerm, state.outerContext, allowedReferences)) {
-            true
-          } else {
-            interp.errorCont(InvalidElement(c, "Hom operator cannot process SFOL predicate symbol " +
-              "definiens/assignment since it is not monotone. " +
-              "See 'Structure-Preserving Diagram Operators' paper for reasons."
+        // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
+        val rhs = GeneralApplySpine(
+          OMS(cod(c.path)),
+          forallContext.map(_.toTerm).zipWithIndex.map {
+            case (t, idx) => ApplySpine(OMS(hom(argTypes(idx))), t)
+          } : _*
+        )
+
+        val closureConstantType: Term = tp match {
+          case SFOL.FunctionSymbolType(_, retType) =>
+            SFOL.ded(SFOL.forallMany(
+              forallContext,
+              SFOL.eq(
+                SFOL.tm(OMS(cod(retType))),
+                ApplySpine(OMS(hom(retType)), lhs),
+                rhs
+              )
             ))
-            false
-          }
+
+          case SFOL.PredicateSymbolType(_) =>
+            SFOL.ded(SFOL.forallMany(
+              forallContext,
+              SFOL.impl(lhs, rhs)
+            ))
+        }
+
+        val closureConstantDef: Option[Term] = df.flatMap(dfTerm => tp match {
+          case SFOL.PredicateSymbolType(_) =>
+            // check monotonicity
+            val allowedReferences = state.processedDeclarations.map(_.path).toSet
+            if (SFOL.isMonotone(dfTerm, state.outerContext, allowedReferences)) {
+              Some(SFOL.sketchLazy("provable"))
+            } else {
+              interp.errorCont(InvalidElement(c, "Hom operator cannot process definiens of SFOL predicate symbol " +
+                "that is *not* monotone. Definiens is skipped. " +
+                "See 'Structure-Preserving Diagram Operators' paper for reasons."
+              ))
+
+              None
+            }
+
+          // function symbol
+          case _ => Some(SFOL.sketchLazy("provable"))
         })
 
-        if (!monotonicityOkay) {
-          NotApplicable(c, "Axiom not monotone")
-        } else {
-          val (forallContext, domExpr, codExpr) = quantify(tp, argTypes)
-
-          val homomorphismCondition = SFOL.ded(SFOL.forallMany(
-            forallContext,
-            SFOL.impl(domExpr, codExpr)
-          ))
-          val homomorphismConstant = (
-            name,
-            homomorphismCondition,
-            df.map(_ => SFOL.sketchLazy("provable"))
-          )
-
-          List(homomorphismConstant)
-        }
+        val closureConstant = (hom(name), closureConstantType, closureConstantDef)
+        List(closureConstant)
 
       case SFOL.AxiomSymbolType() => Nil
       case _ =>
@@ -127,7 +121,7 @@ object HomDomConnector extends SimpleInwardsConnector(
   HomOperator
 ) with SystematicRenamingUtils {
 
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_dom")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_dom")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val dom = HomOperator.dom.coercedTo(state)
@@ -144,11 +138,64 @@ object HomCodConnector extends SimpleInwardsConnector(
   HomOperator
 ) with SystematicRenamingUtils {
 
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cod")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_cod")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val dom = HomOperator.dom.coercedTo(state)
     List((name, dom(c)))
+  }
+}
+
+/**
+  * Linear connector ''X_hom_id: Hom(X) -> X'' representing the identity homomorphism on X.
+  */
+object HomIdConnector extends SimpleOutwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_id_connector"),
+  HomOperator
+) with SystematicRenamingUtils {
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_id")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val dom = HomOperator.dom.coercedTo(state)
+    val cod = HomOperator.cod.coercedTo(state)
+    val hom = HomOperator.hom.coercedTo(state)
+
+    val structureCopiesAssignments = List(
+      (dom(name), c.toTerm),
+      (cod(name), c.toTerm)
+    )
+
+    structureCopiesAssignments ::: (tp match {
+      case SFOL.TypeSymbolType() =>
+        List(
+          (hom(name), FunTerm.identity(SFOL.tm(c.toTerm)))
+        )
+
+      case SFOL.FunctionSymbolType(argTypes, retType) =>
+        // e.g. we are in Magma and c is `op: tm U -> tm U -> tm U`
+        // Then Hom(Magma) contains: `op_h: ⊦∀[x_0:tm U_d]∀[x_1:tm U_d](U_h (op_d x_0 x_1))≐(op_c (U_h x_0) (U_h x_1))`.
+        //
+        // Ideally we would generate the assignment `op_h = forallI ([x] forallI ([y] refl))`
+        // But constructing the types in the forallIs (that are implicit in the surface syntax) is tedious.
+        List(
+          (hom(name), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] refl`"))
+        )
+
+      case SFOL.PredicateSymbolType(_) =>
+        // As for function symbol types above, constructing the actual proof is easy in surface syntax,
+        // but tedious when constructing actual [[Term]]s.
+        List(
+          (hom(name), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] implI [y] y`"))
+        )
+
+      case SFOL.AxiomSymbolType() =>
+        // nothing to do
+        Nil
+
+      case _ =>
+        NotApplicable(c)
+    })
   }
 }
 

@@ -1,6 +1,6 @@
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Logger, Run}
+import info.kwarc.mmt.api.frontend.{Controller, Logger, Report, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.utils.File
@@ -28,11 +28,11 @@ abstract class Test(val archivepath: String,
                     val serverport: Option[Int] = None,
                     val logfile: Option[String] = None) extends Logger {
   val gotoshell: Boolean = true
-  val controller = Run.controller
+  val controller: Controller = Run.controller
 
   def logPrefix = "user"
 
-  def report = controller.report
+  def report: Report = controller.report
 
   // setup logging
   controller.handleLine("log console")
@@ -143,8 +143,8 @@ abstract class MagicTest(prefixes: String*) extends Test(
 
   final val presenter: MMTSyntaxPresenter = new FlatMMTSyntaxPresenter()
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     controller.extman.addExtension(presenter)
   }
 

@@ -68,10 +68,10 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
         state.processedElements.get(modulePath) match {
           case Some(`newModule`) => // ok
           case Some(m) if m != newModule =>
-            throw new Exception("...")
+            throw new Exception("...") // todo: reasonable error message
 
           case None =>
-            throw new Exception("...")
+            throw new Exception("...") // todo: reasonable error message
         }
         if (!interp.hasToplevelResult(newModule.path)) {
           throw GeneralError("diagram operators' applyModule should insert resulting module to DiagramInterpreter")
@@ -232,7 +232,19 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
         val outPath = applyModulePath(inContainer.path.toMPath)
         val outModule = inModule match {
           case thy: Theory =>
-            Theory.empty(outPath.doc, outPath.name, thy.meta)
+            val newMeta = thy.meta.map {
+              case mt if interp.ctrl.globalLookup.hasImplicit(mt, operatorDomain) =>
+                operatorCodomain
+              case mt =>
+                if (applyModule(interp.ctrl.getModule(mt)).isEmpty) {
+                  interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
+                    s"was no implicit morphism into `$operatorDomain`. Recursing into meta theory as usual " +
+                    s"failed, too; reasons are probably logged above."))
+                  return false
+                }
+                applyModulePath(mt)
+            }
+            Theory.empty(outPath.doc, outPath.name, newMeta)
 
           case view: View =>
             if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
@@ -402,21 +414,30 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
-  private def runSanityCheck(): Unit = {
+  private def sanityCheckOnce()(implicit interp: DiagramInterpreter): Unit = {
     if (hasRunSanityCheck) {
       return
     }
     hasRunSanityCheck = true
+    sanityCheck()
+  }
+
+  /**
+    * Runs a sanity check for whether [[in]] and [[out]] are actually "connectible" operators.
+    *
+    * The sanity check is only run once in the entire lifetime of ''this''.
+    *
+    * Subclasses may override and extend this method. Call ''super.sanityCheck()'' in those cases.
+    */
+  protected def sanityCheck()(implicit interp: DiagramInterpreter): Unit = {
     if (in.operatorDomain != out.operatorDomain) {
-      throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same domain, got ${in.operatorDomain} and ${out.operatorDomain} for in and out, respectively.")
-    }
-    if (in.operatorCodomain != out.operatorCodomain) {
-      throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same codomain, got ${in.operatorCodomain} and ${out.operatorCodomain} for in and out, respectively.")
+      // todo:
+      // throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same domain, got ${in.operatorDomain} and ${out.operatorDomain} for in and out, respectively.")
     }
   }
 
   final override protected def applyContainerBegin(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: LinearDiagramState): Boolean = {
-    runSanityCheck()
+    sanityCheckOnce()
     inContainer match {
       // only applicable on theories and their contents
       case _: View => false
@@ -461,7 +482,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     *  is chosen. The other path could have been chosen as well.)
     *
     * We can handle the last two cases in a unified way as follows:
-    * read ''include ?T'' as ''incldue ?T = OMIDENT(?T)'' and have cases
+    * read ''include ?T'' as ''include ?T = OMIDENT(?T)'' and have cases
     *
     * {{{
     *   include ?S = ?v           |-> include in(?S) = out(?v) . conn(?S)
@@ -469,7 +490,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     * }}}
     *
     * Example:
-    * Suppose, S, T are theories, v: S -> T a view and that T contains an ''include ?S = ?v''. Then,
+    * Let S, T be theories, v: S -> T a view and suppose T contains an ''include ?S = ?v''. Then,
     * {{{
     *   S       in(S) -----conn(S)----> out(S)
     *   | v      | in(v)                  | out(v)
@@ -510,11 +531,14 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
       case OMMOD(v) if state.seenModules.contains(v) =>
         // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
         applyModule(ctrl.getModule(v))
-        // todo: order in OMCMP, document
+        // todo: in which order does OMCOMP take its arguments? (Document this, too!)
         OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
 
       case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) =>
         OMMOD(applyModulePath(include.from))
+
+      case OMIDENT(OMMOD(p)) if p == in.operatorDomain =>
+        OMMOD(in.operatorCodomain)
 
       case _ => ???
     }

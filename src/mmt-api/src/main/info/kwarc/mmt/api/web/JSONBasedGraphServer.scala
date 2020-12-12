@@ -339,31 +339,13 @@ private class JDiagramGraph extends SimpleJGraphExporter("diaggraph") {
   final override protected val selector: JGraphSelector = new JGraphSelector {
     override def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       try {
-        val diagModule = controller.getO(Path.parseM(s)) match {
-          case Some(diagModule: DerivedModule) if diagModule.feature == Diagram.feature =>
-            diagModule
+        val paths = Diagram.parseOutput(Path.parseM(s))(controller.globalLookup)
 
-          case None =>
-            log(GetError(s"referenced diagram DerivedModule `$s` not found"))
-            return (Nil, Nil)
-
-          case Some(m) =>
-            log(InvalidElement(m, "referenced diagram DerivedModule `$s` not a derived module or doesn't have diagram feature"))
-            return (Nil, Nil)
+        val (theories, views) = {
+          val modules = paths.map(controller.get)
+          (modules.collect { case x: Theory => x }, modules.collect { case x: View => x })
         }
-
-        diagModule.dfC.normalized match {
-          case None =>
-            log(InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Did you build the archive?"))
-            (Nil, Nil)
-
-          case Some(SimpleDiagram(_, paths)) =>
-            val (theories, views) = {
-              val modules = paths.map(controller.get)
-              (modules.collect { case x: Theory => x }, modules.collect { case x: View => x })
-            }
-            (theories, views)
-        }
+        (theories, views)
       } catch {
         case err@(_: ParseError | _: GetError) =>
           err.printStackTrace()

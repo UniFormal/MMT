@@ -1,11 +1,13 @@
 package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.{GlobalName, Path}
+import info.kwarc.mmt.api.{GlobalName, MPath, Path}
 import info.kwarc.mmt.lf._
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
 private[diagop] object SFOL {
+
+  val Strengthened : MPath = Path.parseM("latin:/algebraic/diagop-test?StrengthenedSFOL")
 
   object tp extends NullaryLFConstantScala(Path.parseM("latin:/?Types"), "tp")
 
@@ -43,7 +45,9 @@ private[diagop] object SFOL {
 
   object tm extends UnaryLFConstantScala(Path.parseM("latin:/?TypedTerms"), "tm")
 
+  object true_ extends NullaryLFConstantScala(Path.parseM("latin:/?Truth"), "true")
   object forall extends BinaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantification"), "forall")
+  object forallI extends TernaryLFConstantScala(Path.parseM("latin:/?TypedUniversalQuantificationND"), "forallI")
 
   object exists extends BinaryLFConstantScala(Path.parseM("latin:/?TypedExistentialQuantification"), "exists")
 

@@ -1,9 +1,17 @@
 import info.kwarc.mmt.api.{DPath, Path}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
-// LINK FOR TGVIEW2D
-// http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest
-
+/**
+  * Debugging links for diagram output:
+  *
+  * - with MMT online editor: [[http://localhost:8080/:syntax?element=latin:/algebraic/diagop-test?PlayTest]]
+  *
+  * - TGView2D: [[http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest]]
+  * - TGView3D: [[https://tgview3d.mathhub.info/]]
+  * - JSON: [[http://localhost:8080/:jgraph/json?key=diaggraph&uri=latin:/algebraic/diagop-test?PlayTest]]
+  *
+  */
 trait DiagramOperatorHelper {
   final protected val diagops: DPath = DPath(URI("https://example.com/diagops"))
   final protected val typeindexifier: DPath = diagops / "typeindexifier"
@@ -17,50 +25,22 @@ trait DiagramOperatorHelper {
   *
   * @author Navid
   */
-object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
-
-  override def doFirst: Unit = {
-    super.doFirst
-    // Only uncomment if rebuild is really necessary
-    // hl("build MMT/urtheories -mmt-omdoc")
-    // hl("build MMT/urtheories -mmt-omdoc module-expressions-test.mmt")
-    hl("build MMT/urtheories mmt-omdoc module-expressions-test.mmt")
-
-    // Only uncomment if rebuild is really necessary
-    // hl("build MitM/Foundation mmt-omdoc")
-  }
-
-  // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
-  // hence, we apply some dirty waiting mechanism here.
-  override def run: Unit = {
-    /*
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
-    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
-    sys.exit(0)
-  }
-}
-
 object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
 
-  override def doFirst: Unit = {
-    super.doFirst
-    // hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    // hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
+  override def doFirst(): Unit = {
+    super.doFirst()
+    controller.extman.addExtension(new SyntaxPresenterServer(), Nil)
+    // hl("extension info.kwarc.mmt.api.modules.DiagramOutputServer")
+
+    //hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
+    //hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
+    //hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
     hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
   }
 
   // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
   // hence, we apply some dirty waiting mechanism here.
-  override def run: Unit = {
+  override def run(): Unit = {
     /*
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
     waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
@@ -97,7 +77,7 @@ object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOp
     // hl("build MMT/LATIN2 lf-scala")
   }
 
-  override def run: Unit = {
+  override def run(): Unit = {
     waitThenPrint(latin ? "TestEndoMagmaSingle_pres")
     waitThenPrint(latin ? "TestEndoMagmaMulti_pres")
 

@@ -4,7 +4,8 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
-import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.lf.{ApplySpine, Lambda}
+import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf, RecExp}
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 
@@ -31,13 +32,13 @@ import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
  */
 object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_operator")
-  override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
-  override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
+  override val operatorDomain: MPath = SFOL.Strengthened
+  override val operatorCodomain: MPath = SFOL.Strengthened
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
 
-  val par : Renamer[LinearState] = getRenamerFor("p")
-  val quot : Renamer[LinearState] = getRenamerFor("q")
+  val par : Renamer[LinearState] = getRenamerFor("ᵖ")
+  val quot : Renamer[LinearState] = getRenamerFor("_q")
 
   object ClosureCreator extends ModRelClosureCreator[LinearState] {
     // Although the QuotOperator only works on one model (the "parent model"),
@@ -58,15 +59,7 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
     parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // create t^q: Mod ?EqvRel (tm t^p)
-        val eqvRelType = OMA(
-          OMS(Path.parseS("http://gl.mathhub.info/MMT/LFX/Records?Symbols?ModelsOf")),
-          List(OMPMOD(
-            Path.parseM("latin:/?DummyEqvRel"),
-            List(SFOL.tm(par(c)))
-          ))
-        )
-
-        List((quot(name), eqvRelType, None))
+        List((quot(name), ModelsOf(Path.parseM("latin:/?DummyEqvRel"), SFOL.tm(par(c))), None))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // todo: work on definiens
@@ -117,6 +110,8 @@ object QuotModConnector extends SimpleInwardsConnector(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_mod")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
+
     val par = QuotOperator.par.coercedTo(state)
     val quot = QuotOperator.quot.coercedTo(state)
 
@@ -127,24 +122,29 @@ object QuotModConnector extends SimpleInwardsConnector(
       case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
         val lambdaCtx = OpUtils.bindFresh(
           Context.empty,
-          argTypes.map(tp => SFOL.QuotientTypes.quotientTp(par(c), OMS(quot(tp)))),
+          argTypes.map(argTp => SFOL.QuotientTypes.quotientTp(par(c), OMS(quot(argTp)))),
           None
         )
 
-        // todo: replace OMV("rel") by access to relation within structure:
-        //   "quot(...) / rel" <-- something like that
         // for function symbols this is a term of the function's return type (some SFOL type)
         //    => still needs to be put into the respective equivalence class (cf. below)
         // for predicate symbols this is a term of type prop
         //    => can be returned as-is (cf. below)
         val rawReturnValue = GeneralApplySpine(
           par(c),
-          lambdaCtx.map(v => SFOL.QuotientTypes.quot_inj(par(v.tp.get), OMV("rel"), v.toTerm)) : _*
+          argTypes.zip(lambdaCtx).map {
+            case (argTp, v) =>
+              SFOL.QuotientTypes.quot_inj(OMS(par(argTp)), Getfield(OMS(quot(argTp)), REL_ACCESSOR), v.toTerm)
+          } : _*
         )
 
         tp match {
           case SFOL.FunctionSymbolType(_, retType) =>
-            val functionEqvClassValue = SFOL.QuotientTypes.quot_project(OMS(par(retType)), OMV("rel"), rawReturnValue)
+            val functionEqvClassValue = SFOL.QuotientTypes.quot_project(
+              OMS(par(retType)),
+              Getfield(OMS(quot(retType)), REL_ACCESSOR),
+              rawReturnValue
+            )
             List((name, functionEqvClassValue))
 
           case SFOL.PredicateSymbolType(_) =>
@@ -157,5 +157,63 @@ object QuotModConnector extends SimpleInwardsConnector(
 
       case _ => NotApplicable(c)
     }
+  }
+}
+
+object QuotHomConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+  final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_hom_connector")
+  final override val in: LinearModuleTransformer = QuotOperator
+  final override val out: LinearModuleTransformer = HomOperator
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_hom")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
+
+    val par = QuotOperator.par.coercedTo(state)
+    val quot = QuotOperator.quot.coercedTo(state)
+
+    val dom = HomOperator.dom.coercedTo(state)
+    val cod = HomOperator.cod.coercedTo(state)
+    val hom = HomOperator.hom.coercedTo(state)
+
+    val parentStructureCopies = List(
+      (par(name), dom(c))
+    )
+
+    parentStructureCopies ::: (tp match {
+      case SFOL.TypeSymbolType() =>
+        // construct assignment `U^q = [| rel = [x y: tm Uᵈ] Uʰ x ≐ Uʰ y |]`
+        val r = RecExp(
+          OML(REL_ACCESSOR, tp = None, df = Some(
+            Lambda(LocalName("x"), SFOL.tm(dom(c)),
+              Lambda(LocalName("y"), SFOL.tm(dom(c)),
+                SFOL.eq(
+                  SFOL.tm(cod(c)),
+                  ApplySpine(hom(c), OMV("x")),
+                  ApplySpine(hom(c), OMV("y"))
+                )
+              )
+            )
+          ))
+        )
+
+        List(
+          (quot(name), r)
+        )
+
+      case SFOL.FunctionSymbolType(_, _) =>
+        List(
+          (quot(name), SFOL.sketchLazy(s"provable by applying the homomorphism condition `${hom(name)}`"))
+        )
+
+      case SFOL.PredicateSymbolType(_) =>
+        List(
+          (quot(name), SFOL.sketchLazy(s"probably provable? I haven't checked this."))
+        )
+
+      case _ =>
+        NotApplicable(c)
+    })
   }
 }
