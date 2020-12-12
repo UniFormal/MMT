@@ -1,11 +1,12 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api.objects
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.OMV
+import info.kwarc.mmt.lf.structuralfeatures.{StructuralFeatureUtils, RecordUtil}
 import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.{PatternUtils, StructureInstance}
-import info.kwarc.mmt.mizar.newxml.syntax.{Aggregate_Term, Assumption, Biconditional_Formula, Circumfix_Term, Claim, Clustered_Type, Conditional_Formula, Conditions, Conjunctive_Formula, Contradiction, Definition, Diffuse_Statement, Disjunctive_Formula, Existential_Quantifier_Formula, Explicitly_Qualified_Segment, Expression, FlexaryConjunctive_Formula, FlexaryDisjunctive_Formula, Forgetful_Functor_Term, Formula, Fraenkel_Term, Global_Choice_Term, Infix_Term, Internal_Selector_Term, Iterative_Equality, Multi_Attributive_Formula, Multi_Relation_Formula, Negated_Formula, Numeral_Term, Placeholder_Term, Private_Functor_Term, Private_Predicate_Formula, Proposition, Qualification_Term, Qualifying_Formula, Redefine, Relation_Formula, ReservedDscr_Type, Selector_Term, Simple_Fraenkel_Term, Simple_Term, Standard_Type, Struct_Type, Term, Thesis, Type, Universal_Quantifier_Formula, Variable, it_Term}
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.{Mizar, MMTUtils, PatternUtils, StructureInstance}
+import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.Utils
 import org.omdoc.latin.foundations.mizar.MizarPatterns
 
@@ -22,7 +23,7 @@ object termTranslator {
     case Simple_Term(varAttr, srt) => ???
     case Aggregate_Term(tpAttrs, _args) =>
       val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
-      val aggrDecl = PatternUtils.referenceExtDecl(gn,"aggr")
+      val aggrDecl = PatternUtils.referenceExtDecl(gn,RecordUtil.makeName)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _args) =>
@@ -45,7 +46,9 @@ object termTranslator {
       val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
       val args = Utils.translateArguments(infixedArgs._args)
       ApplyGeneral(objects.OMS(gn), args)
-    case Global_Choice_Term(redObjSubAttrs, _tp) => ???
+    case Global_Choice_Term(redObjSubAttrs, _tp) =>
+      val tp = typeTranslator.translate_Type(_tp)
+      Apply(Mizar.constant("choice"), tp)
     case Placeholder_Term(redObjAttr, varnr) => throw new java.lang.Error("Unresolved argument reference in term.")
     case Private_Functor_Term(redObjAttr, serialnr, _args) => ???
     case Fraenkel_Term(redObjSubAttrs, _varSegms, _tm, _form) =>
@@ -88,7 +91,10 @@ object termTranslator {
 object typeTranslator {
   def translate_Type(tp:Type) : objects.Term = tp match {
     case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => ???
-    case Clustered_Type(redObjSubAttrs, _adjClust, _tp) => ???
+    case Clustered_Type(redObjSubAttrs, _adjClust, _tp) =>
+      val tp = translate_Type(_tp)
+      val adjectives = _adjClust._attrs map attributeTranslator.translate_Attribute
+      Mizar.simpleTypedAttrAppl(tp, adjectives)
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
       // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
       // TODO: Check this the correct semantics and take care of the noocc attribute
@@ -96,13 +102,11 @@ object typeTranslator {
       val tp : objects.Term = objects.OMS(gn)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(tp,args)
-    case Struct_Type(tpAttrs, _args) => ???
-      val formatNr = tpAttrs.formatNr
-      val patternNr = tpAttrs.patternNr
-      val position = tpAttrs.posNr.pos.parsePosition()
-      val nr = tpAttrs.posNr.nr
-      val constrnr = tpAttrs.constrNr
-      ???
+    case Struct_Type(tpAttrs, _args) =>
+      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val typeDecl = PatternUtils.referenceExtDecl(gn,RecordUtil.recTypeName)
+      val args = Utils.translateArguments(_args)
+      ApplyGeneral(typeDecl, args)
   }
 }
 
@@ -180,5 +184,11 @@ object claimTranslator {
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
     case Conditions(_props) => ???
     case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
+  }
+}
+
+object attributeTranslator {
+  def translate_Attribute(attr: Attribute): objects.Term = {
+    ???
   }
 }
