@@ -217,9 +217,9 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(suffix)
 
   private val structureRenamers: List[Renamer[LinearState]] = Range(0, relationArity).map(structureIdx => {
-    getRenamerFor("d" + StringUtils.superscriptInteger(structureIdx))
+    getRenamerFor("ᵈ" + StringUtils.superscriptInteger(structureIdx))
   }).toList
-  private val relRenamer = getRenamerFor("r")
+  private val relRenamer = getRenamerFor("ʳ")
 
   object ClosureCreator extends ModRelClosureCreator[LinearState] {
     override def relationArity: Int = NRelOperator.this.relationArity

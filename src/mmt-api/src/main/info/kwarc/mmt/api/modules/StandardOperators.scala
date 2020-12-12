@@ -42,7 +42,7 @@ trait SystematicRenamingUtils extends LinearTransformer {
   }
 
   protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
-    override def apply(name: LocalName): LocalName = name.suffixLastSimple("_" + tag)
+    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
 
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
       if (state.processedDeclarations.exists(_.path == path)) {

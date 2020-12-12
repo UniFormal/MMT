@@ -19,15 +19,15 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
   // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
-  val dom: Renamer[LinearState] = getRenamerFor("d")
-  val cod: Renamer[LinearState] = getRenamerFor("c")
+  val dom: Renamer[LinearState] = getRenamerFor("ᵈ")
+  val cod: Renamer[LinearState] = getRenamerFor("ᶜ")
 
   // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
-  val hom: Renamer[LinearState] = getRenamerFor("h")
+  val hom: Renamer[LinearState] = getRenamerFor("ʰ")
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
-  override protected def applyConstantSimple(container: HomOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
 
     val structureCopies = List(
       (dom(name), dom(tp), df.map(dom(_))),

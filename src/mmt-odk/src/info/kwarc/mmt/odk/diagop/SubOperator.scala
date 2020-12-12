@@ -12,8 +12,8 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
-  val par: Renamer[LinearState] = getRenamerFor("p") // parent symbol copy
-  val sub: Renamer[LinearState] = getRenamerFor("s") // substructure symbol/condition
+  val par: Renamer[LinearState] = getRenamerFor("ᵖ") // parent symbol copy
+  val sub: Renamer[LinearState] = getRenamerFor("ˢ") // substructure symbol/condition
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub")
 
@@ -31,7 +31,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
     }
   }
 
-  override protected def applyConstantSimple(container: SubOperator.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: SubOperator.LinearState): List[(LocalName, Term, Option[Term])] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
     val parCopy = (par(name), par(tp), df.map(par(_)))
 
     parCopy :: (tp match {

@@ -37,8 +37,8 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
 
-  val par : Renamer[LinearState] = getRenamerFor("p")
-  val quot : Renamer[LinearState] = getRenamerFor("q")
+  val par : Renamer[LinearState] = getRenamerFor("ᵖ")
+  val quot : Renamer[LinearState] = getRenamerFor("_q")
 
   object ClosureCreator extends ModRelClosureCreator[LinearState] {
     // Although the QuotOperator only works on one model (the "parent model"),
