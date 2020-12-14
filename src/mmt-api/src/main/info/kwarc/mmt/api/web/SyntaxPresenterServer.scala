@@ -107,7 +107,7 @@ class SyntaxPresenterServer extends ServerExtension(SyntaxPresenterServer.pathPr
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Diagram Output</title>
+    <title>MMT SyntaxPresenterServer</title>
   </head>
   <style>
     *             { box-sizing: border-box; margin: 0; padding: 0; }
