@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.patterns.PatternFeature
 import info.kwarc.mmt.api.uom.FlexaryConstantScala
 import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lf.structuralfeatures.StructuralFeatureUtils
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Ellipsis, OMI, Rep, nTerms}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils._
@@ -17,7 +18,7 @@ object PatternUtils {
   def structureDefPropName(decl:String) = LocalName(decl) / "prop"
   def structureDefRestrName(substrName:String) = LocalName("restr") / substrName
   def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName) = LocalName(restrName) / "selProp" / sel
-  def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(substrPath.module ? substrPath.name / nm)
+  def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))
 }
 
 import PatternUtils._
@@ -30,7 +31,7 @@ object StructureDefinition {
     def mkInd(tm:Term,str:String):Term = MizSeq.Index(tm,OMV(LocalName(str)))
     def proj(tm:Term,ind:Int):Term = MizSeq.Index(tm, OMI(ind))
     def subInd(tm:List[Term], str:String) = MizSeq.Index(MMTUtils.flatten(tm:_*),OMV(LocalName(str)))
-    def ellipses(body:Term, str:String, max:Int) = Ellipsis(OMI(max),LocalName("str"),body)
+    def ellipses(body:Term, str:String, max:Int) = Ellipsis(OMI(max),LocalName(str),body)
 
     val argsTyped =ellipses(Mizar.is(mkInd(OMV(LocalName("x")),"i"), subInd(argTps,"i")),"i",l)
     def typedArgsCont(nm:Option[String]= None) : (Term => Term) = { tm: Term => Pi(LocalName("x"), nTerms(l), nm match {
@@ -89,8 +90,11 @@ object StructureDefinition {
 
 object StructureInstance {
   def apply(name:String, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): Unit = {
-    val fieldDeclss = fieldDecls.flatMap(vd => List(vd.toTerm,vd.tp.get))
-    MizarPatternInstance(name, "StructureInstance", OMI(l)::argTps++(OMI(n)::substr)++(OMI(m)::fieldDeclss))
+    val args : List[(Option[LocalName], Term)] = argTps map (tp => (None, tp))
+    val declarationPath = Mizar.MizarPatternsTh ? name
+    MizarStructure.elaborateAsMizarStructure(declarationPath,args,fieldDecls,substr,TranslationController.controller)(declarationPath)
+    /*val fieldDeclss = fieldDecls.flatMap(vd => List(vd.toTerm,vd.tp.get))
+    MizarPatternInstance(name, "StructureInstance", OMI(l)::argTps++(OMI(n)::substr)++(OMI(m)::fieldDeclss))*/
   }
 
   def unapply(mizPattern: DerivedDeclaration) : Option[(String, Int, List[Term],Int,List[Term],Int,List[VarDecl])] = mizPattern match {

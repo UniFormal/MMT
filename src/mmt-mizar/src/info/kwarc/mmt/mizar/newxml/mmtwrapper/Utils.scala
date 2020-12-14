@@ -145,6 +145,18 @@ object Mizar {
 
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
   def num(i: Int) = numRT(i)
+
+  def simpleTypedAttrAppl(baseTp: Term, attrs: List[Term]) = {
+    val attrApplSym = constant("adjective")
+    attrs.foldRight[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+  }
+  def depTypedAttrAppl(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
+    val m = attrs.length
+    val attributes = MMTUtils.flatten(attrs:_*)
+    val attrApplSym = constant("attr_appl")
+    val (nTm, mTm) = (OMI(n), OMI(m))
+    ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
+  }
 }
 
 object MMTUtils {

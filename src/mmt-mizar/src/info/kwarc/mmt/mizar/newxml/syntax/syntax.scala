@@ -469,11 +469,6 @@ sealed trait Term extends Expression {
   def sort() : Sort
   def pos() : Position
 }
-sealed trait ComplexTerm extends Term {
-  def objAttr() : RedObjectSubAttrs
-  override def sort() : Sort = objAttr().sort
-  override def pos(): Position = objAttr().pos
-}
 /*
 Single variable using constant
 in exemplification use
@@ -487,11 +482,18 @@ Denotes a constant
  */
 /**
  * A constant term
+ *
+ * usually local within some block (e.g. an argument to a definition)
  * @param varAttr
  * @param sort
  */
 case class Simple_Term(varAttr:RedVarAttrs, sort:Sort) extends Term {
   override def pos(): Position = varAttr.pos
+}
+sealed trait ComplexTerm extends Term {
+  def objAttr() : RedObjectSubAttrs
+  override def sort() : Sort = objAttr().sort
+  override def pos(): Position = objAttr().pos
 }
 /**
  * introduction form of a structure
