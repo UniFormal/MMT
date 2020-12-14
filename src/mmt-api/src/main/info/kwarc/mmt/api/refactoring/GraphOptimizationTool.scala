@@ -1,16 +1,16 @@
-package info.kwarc.mmt.got
+package info.kwarc.mmt.api.refactoring
 
 import java.awt.event.{ActionEvent, ActionListener}
 import java.awt.{BorderLayout, ComponentOrientation, Container, Dimension, FlowLayout}
 import java.io.PrintWriter
 
-import javax.swing._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude}
 import info.kwarc.mmt.api.utils.FilePath
+import javax.swing._
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -46,7 +46,7 @@ class GraphOptimizationTool extends BuildTarget {
     var ret = mutable.HashSet[MPath]()
     try controller.getTheory(theoryPath)
     catch {
-      case e : GetError =>
+      case e : Exception =>
         printError("Error:" + e.toString + ", while looking up includes of " + theoryPath + "(skipped)")
         return ret
     }

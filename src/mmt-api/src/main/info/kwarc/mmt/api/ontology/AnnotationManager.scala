@@ -18,7 +18,9 @@ abstract class Annotation {
 
   override def toString: String = getTooltip
 
-  val dialogueContent : java.awt.Component = new JLabel("<html>"+toString+"</html>")
+  protected def tohtml(s : String): String = s.replaceAll("\n","<br>")
+
+  val dialogueContent : java.awt.Component = new JLabel("<html>"+tohtml(toString)+"</html>")
 
 }
 
