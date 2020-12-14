@@ -1,15 +1,14 @@
 package info.kwarc.mmt.api.refactoring
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{ModuleOrLink, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMID, Term, Traverser}
-import info.kwarc.mmt.api.presentation
 import info.kwarc.mmt.api.presentation.{FileWriter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.FilePath
-import info.kwarc.mmt.api._
 
 import scala.collection.mutable
 import scala.util.{Success, Try}
@@ -769,9 +768,9 @@ class KnowledgeGraphEvaluator extends GraphEvaluator {
     for (theory <- theories) {
       for (dec <- theory.getDeclarations) {
         dec match {
-          case const : Constant =>
+          case _ : Constant =>
             ind +=1
-          case default =>
+          case _ =>
         }
       }
     }
@@ -782,7 +781,7 @@ class KnowledgeGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               ind +=1
             }
-          case default =>
+          case _ =>
         }
       )
     }
@@ -813,10 +812,10 @@ class KnowlDivRepGraphEvaluator extends GraphEvaluator {
     for (theory <- theories) {
       for (dec <- theory.getDeclarations) {
         dec match {
-          case const : Constant =>
+          case _ : Constant =>
             ind +=1
             rep +=1
-          case default => rep +=1
+          case _ => rep +=1
         }
       }
     }
@@ -827,7 +826,7 @@ class KnowlDivRepGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               ind +=1
             }
-          case default =>
+          case _ =>
         }
       )
     }
@@ -844,8 +843,8 @@ class KnowledgeGainGraphEvaluator extends GraphEvaluator {
     for (theory <- theories) {
       for (dec <- theory.getDeclarations) {
         dec match {
-          case s :Structure => count -= 1
-          case default =>
+          case s: Structure => count -= 1
+          case _ =>
         }
       }
     }
@@ -856,7 +855,7 @@ class KnowledgeGainGraphEvaluator extends GraphEvaluator {
             if (const.df.nonEmpty) {
               count +=1
             }
-          case default =>
+          case _ =>
         }
       )
     }

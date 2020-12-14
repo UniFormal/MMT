@@ -318,7 +318,7 @@ class ExtensionManager(controller: Controller) extends Logger {
     //serverPlugins
     List(new web.GetActionServer, new web.SVGServer, new web.QueryServer, new web.SearchServer,
       new web.TreeView, new web.BreadcrumbsServer, new web.ActionServer, new web.ContextMenuAggregator, new web.MessageHandler,
-      new web.SubmitCommentServer, new JSONBasedGraphServer).foreach(addExtension(_))
+      new web.SubmitCommentServer, new JSONBasedGraphServer, new SyntaxPresenterServer).foreach(addExtension(_))
     //queryExtensions
     import ontology._
     List(new Parse, new Infer, new Analyze, new Simplify, new Present, new PresentDecl).foreach(addExtension(_))

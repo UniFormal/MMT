@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType, Lambda}
+import info.kwarc.mmt.odk.LFX.RecExp
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
@@ -308,5 +309,78 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
       case _ =>
         NotApplicable(c)
     }
+  }
+}
+
+/**
+  * Creates connecting morphism `ker: Quot(T) -> Hom(T)` between [[QuotOperator]] and [[HomOperator]]
+  * for the kernel of a homomorphism.
+  */
+object HomKerConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+  final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_ker_connector")
+  final override val in: LinearModuleTransformer = QuotOperator
+  final override val out: LinearModuleTransformer = HomOperator
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_ker")
+
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+    val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
+
+    val par = QuotOperator.par.coercedTo(state)
+    val quot = QuotOperator.quot.coercedTo(state)
+
+    val dom = HomOperator.dom.coercedTo(state)
+    val cod = HomOperator.cod.coercedTo(state)
+    val hom = HomOperator.hom.coercedTo(state)
+
+    val parentStructureCopies = List(
+      (par(name), dom(c))
+    )
+
+    parentStructureCopies ::: (tp match {
+      case SFOL.TypeSymbolType() =>
+        // construct assignment `U^q = [| rel = [x y: tm Uᵈ] Uʰ x ≐ Uʰ y |]`
+        val r = RecExp(
+          OML(REL_ACCESSOR, tp = None, df = Some(
+            Lambda(LocalName("x"), SFOL.tm(dom(c)),
+              Lambda(LocalName("y"), SFOL.tm(dom(c)),
+                SFOL.eq(
+                  SFOL.tm(cod(c)),
+                  ApplySpine(hom(c), OMV("x")),
+                  ApplySpine(hom(c), OMV("y"))
+                )
+              )
+            )
+          ))
+        )
+
+        List(
+          (quot(name), r)
+        )
+
+      case SFOL.FunctionSymbolType(_, _) =>
+        List(
+          //  ⊦∀[x⁰₀:Uᵖ]∀[x⁰₁:Uᵖ]∀[x¹₀:Uᵖ]∀[x¹₁:Uᵖ](U_q x⁰₀ x⁰₁)∧(U_q x¹₀ x¹₁)⇒(U_q (opᵖ x⁰₀ x¹₀) (opᵖ x⁰₁ x¹₁))
+          (quot(name), SFOL.sketchLazy(s"""
+Prove $name is a congruence wrt. kernel property.
+Consider the case of a binary operator op. There, our proof goal would be `(U_q (opᵖ x⁰₀ x¹₀) (opᵖ x⁰₁ x¹₁))`,
+or with assignments of this morphism inserted, `Uʰ (opᵈ x⁰₀ x¹₀) ≐ Uʰ (opᶜ x⁰₁ x¹₁)`.
+
+   Uʰ (opᵈ x⁰₀ x¹₀)
+≐ opᶜ (Uʰ x⁰₀) (Uʰ x¹₀)    // by hom. condition on Uʰ
+≐ opᶜ (Uʰ x⁰₁) (Uʰ x¹₁)    // by relatedness of arguments
+≐  Uʰ (opᶜ x⁰₁ x¹₁)        // by hom. condition on Uʰ, qed.
+"""))
+        )
+
+      case SFOL.PredicateSymbolType(_) =>
+        // TODO
+        List(
+          (quot(name), SFOL.sketchLazy(s"Probably *UNPROVABLE*! Check this."))
+        )
+
+      case _ =>
+        NotApplicable(c)
+    })
   }
 }
