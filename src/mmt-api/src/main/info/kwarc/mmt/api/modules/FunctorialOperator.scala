@@ -46,7 +46,10 @@ trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransform
   final override def submitDiagram(newModules: List[MPath]): Term = BasedDiagram(operatorCodomain, newModules)
 }
 
-abstract class LinearOperator extends FunctorialOperator with LinearModuleTransformer with RelativeBaseOperator
+abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTransformer
+
+
+// def toTransformer(t: Term): Transformer
 
 abstract class ParametricLinearOperator extends DiagramOperator {
   def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer]

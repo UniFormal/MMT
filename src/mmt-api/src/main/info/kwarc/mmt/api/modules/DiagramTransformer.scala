@@ -10,22 +10,29 @@ package info.kwarc.mmt.api.modules
   * @see FunctorialOperator.scala for named diagram operators.
   */
 
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMA, OMCOMP, OMIDENT, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include, IncludeData, RuleConstant, Structure, TermContainer}
-import info.kwarc.mmt.api.{ComplexStep, ContainerElement, GeneralError, ImplementationError, InvalidElement, LocalName, MPath}
+import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api._
 
 trait ModulePathTransformer {
   protected def applyModuleName(name: LocalName): LocalName
 
+  // diagram X := FORCE_BIND (HOM ourDiagram) /algebra
+  // FORCE_BIND: DiagramOperator -> Namespace -> DiagramOperator
+  // FORCE_BIND(op, n) := new DiagramOperator {
+  //   def applyModulePath(mpath: MPath) = n ? op.applyModulePath(mpath)
+  //   // otherwise, delegate to op
+  // }
+
   final def applyModulePath(mpath: MPath): MPath = {
-    if (mpath == mpath.mainModule) {
+    mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
+    /*if (mpath == mpath.mainModule) {
       mpath.doc ? applyModuleName(mpath.name)
     } else {
       val newMPath = applyModulePath(mpath.mainModule)
       newMPath.doc ? LocalName(newMPath.name.steps ::: mpath.name.drop(1))
-    }
+    }*/
   }
 }
 
@@ -57,7 +64,9 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
     * state.processedModules.get(m.path).foreach(return _)
     */
   def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module]
+  // ^^^ todo(FR said): always return Module, use interp.errorCont
 
+  // todo(FR said): always return List[MPath], use interp.errorCont
   final def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): Option[List[MPath]] = {
     val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
     val state = initDiagramState(modules, interp)
@@ -137,7 +146,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
   }
 
   /**
-    * @return true if element was processed (or alraedy had been processed), false otherwise.
+    * @return true if element was processed (or already had been processed), false otherwise.
     */
   final protected def applyContainer(inContainer: Container)(implicit interp: DiagramInterpreter, state: DiagramState): Boolean = {
     if (state.processedElements.contains(inContainer.path)) {
@@ -624,6 +633,7 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
   protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[SimpleConstant]
 
   final override protected def applyConstant(container: Container, c: Constant)(implicit interp: DiagramInterpreter, state: LinearState): Unit = {
+    // todo(FR said): not sure if simplify/complexify name worth it/really needed.
     // Since [[applyConstantSimple()]] takes a simplified name and outputs a simplified name again
     // we need to functions for simplifying and complexifying again:
     def simplifyName(name: LocalName) = container match {
@@ -639,6 +649,7 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
 
     def complexifyName(name: LocalName) = container match {
       case _: Theory => name
+      // todo: vvv this is wrong!  vvvvvvvvvvvvvvvvv might not be the same as ComplexStep(mpath) from above
       case link: Link => LocalName(link.from.toMPath) / name
     }
 
@@ -657,6 +668,7 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer
           throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
         }
 
+        // todo(FR said): use Constant apply method
         interp.add(new FinalConstant(
           home = OMMOD(applyModulePath(container.modulePath)),
           name = complexifyName(name), alias = Nil,
