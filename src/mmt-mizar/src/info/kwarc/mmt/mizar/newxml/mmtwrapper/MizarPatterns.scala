@@ -89,14 +89,23 @@ object StructureDefinition {
 }
 
 object StructureInstance {
+  /**
+   * Constructs a Mizar structure instance
+   * @param name
+   * @param l The number of arguments to the structure instance
+   * @param argTps The types of the arguments to the structure instance
+   * @param n The number of structure instances it extends
+   * @param substr A list of OMMOD(p), where p is the mpath of a derived declaration dd
+   *               of another Mizar structure instance
+   * @param m the number of field declarations (selectors in Mizar)
+   * @param fieldDecls The field declarations (selectors) of the structure,
+   *                   inherited selectors must be repeated here
+   */
   def apply(name:String, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): Unit = {
     val args : List[(Option[LocalName], Term)] = argTps map (tp => (None, tp))
     val declarationPath = Mizar.MizarPatternsTh ? name
     MizarStructure.elaborateAsMizarStructure(declarationPath,args,fieldDecls,substr,TranslationController.controller)(declarationPath)
-    /*val fieldDeclss = fieldDecls.flatMap(vd => List(vd.toTerm,vd.tp.get))
-    MizarPatternInstance(name, "StructureInstance", OMI(l)::argTps++(OMI(n)::substr)++(OMI(m)::fieldDeclss))*/
   }
-
   def unapply(mizPattern: DerivedDeclaration) : Option[(String, Int, List[Term],Int,List[Term],Int,List[VarDecl])] = mizPattern match {
     case pat @ MizarPatternInstance(name, patternFeaturn, args) if patternFeaturn == "StructureDefinition" =>
       def match_args(args:Seq[Term]) : (Int, List[Term], Int, List[Term], Int, List[VarDecl]) = {
@@ -154,7 +163,6 @@ object directCompleteFunctorDefinition extends functorDefInstance {
     MizarPatternInstance(name, "directPartFuncDef", List(OMI(argNum), flatten(argTypes), ret, OMI(caseNum), flatten(cases),flatten(caseRes)))
   }
 }
-
 object indirectCompleteFunctorDefinition extends functorDefInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term]) = {
     assert(argTypes.length == argNum)
@@ -178,6 +186,7 @@ object directCompletePredicateDef extends PredicateDefinitionInstance {
     MizarPatternInstance(name, "directComplPredDef", List(OMI(argNum), flatten(argTypes), OMI(caseNum), flatten(cases),flatten(caseRes)))
   }
 }
+
 trait AttributeDefinitionInstance
 object indirectCompleteAttributeDefinitionInstance extends AttributeDefinitionInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term]) = {
@@ -193,6 +202,7 @@ object indirectPartialAttributeDefinitionInstance extends AttributeDefinitionIns
     MizarPatternInstance(name, "indirectPartAttrDef", List(OMI(argNum), flatten(argTypes), motherTp, OMI(caseNum), flatten(cases),flatten(caseRes), defRes))
   }
 }
+
 trait ModeDefinitionInstance
 object directPartialModeDefinitionInstance extends ModeDefinitionInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term) = {
@@ -222,6 +232,7 @@ object indirectCompleteModeDefinitionInstance extends ModeDefinitionInstance {
     MizarPatternInstance(name, "indirectComplModeDef", List(OMI(argNum), flatten(argTypes), OMI(caseNum), flatten(cases),flatten(caseRes)))
   }
 }
+
 object schemeDefinitionInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], assNum:Int, assumptions:List[Term], p:Term) = {
     assert(argTypes.length == argNum)
@@ -229,13 +240,16 @@ object schemeDefinitionInstance {
     MizarPatternInstance(name, "schemeDef", List(OMI(argNum), flatten(argTypes), OMI(assNum), flatten(assumptions), p))
   }
 }
-object attributeRegistrationInstance {
+
+trait RegistrationInstance
+object attributeRegistrationInstance extends RegistrationInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], atrNum:Int, tp:Term, atrs:List[Term]) = {
     assert(argTypes.length == argNum)
     assert(atrs.length == atrNum)
     MizarPatternInstance(name, "attrRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,flatten(atrs)))
   }
 }
+
 trait NotationInstance
 class NymicNotation(key:String) extends NotationInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], v: Term): Unit = {
