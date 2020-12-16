@@ -21,6 +21,7 @@ object FastREPL extends MagicTest("debug") {
     "build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
+    "build MMT/urtheories mmt-omdoc module-expressions-test.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc",
     "build MMT/urtheories scala-bin",

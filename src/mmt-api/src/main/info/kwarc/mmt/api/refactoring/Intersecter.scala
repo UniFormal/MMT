@@ -1,5 +1,14 @@
 package info.kwarc.mmt.api.refactoring
 
+/**
+  * Theory intersections intersect two theories along a partial invertible view.
+  * They can be a means of refactoring a theory graph.
+  *
+  * todo: This whole file needs to be reworked to improve coding style and to become idiomatic
+  *       MMT and Scala code.
+  *       E.g. [[Intersecter]] should arguably *not* be an `Extension`.
+  */
+
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.{Archive, BuildTarget, Update}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
@@ -327,8 +336,7 @@ abstract class Intersecter extends Extension {
 
     val renamed = dec.translate(th.toTerm, LocalName.empty, translator, Context())
     try th.add(renamed) catch {
-      case err : AddError =>
-      case default => throw default
+      case _ : AddError => /* ignore */
     }
     renamings.put(dec.path, renamed.path)
     renamed
