@@ -152,7 +152,7 @@ object Mizar {
   }
   def depTypedAttrAppl(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
     val m = attrs.length
-    val attributes = MMTUtils.flatten(attrs:_*)
+    val attributes = MMTUtils.flatten(attrs)
     val attrApplSym = constant("attr_appl")
     val (nTm, mTm) = (OMI(n), OMI(m))
     ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
@@ -195,6 +195,5 @@ object MMTUtils {
   varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % Mizar.any }
   def freeAlternatingVars(varTps:List[Term], nm:List[String]): List[OMV] =
     varTps.zipWithIndex.flatMap {case (tp:Term,i:Int) => nm map {s => OMV(LocalName(s+i))} }
-  def flatten(tm:Term*) : Term = MizSeq.Sequence(tm.asInstanceOf[MizSeq.Sequence.type])
-  def flatten(tms:List[Term]) : Term = flatten(tms:_*)
+  def flatten(tms:List[Term]) : Term = MizSeq.Sequence.apply(tms:_*)
 }

@@ -9,13 +9,13 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import StructuralFeatureUtil._
-import info.kwarc.mmt.lf.structuralfeatures.InternalDeclaration.{isTypeLevel, structureDeclaration}
-import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{converseEquivName, equivName, inductName, recExpPath, recTypeName, recTypePath, reprName}
-import info.kwarc.mmt.lf.structuralfeatures.Records.{declaresRecords, elaborateContent}
-import info.kwarc.mmt.lf.structuralfeatures.StructuralFeatureUtils.{Eq, parseInternalDeclarations}
-import info.kwarc.mmt.lf.structuralfeatures.{InternalDeclaration, InternalDeclarationUtil, OutgoingTermLevel, Records, StructuralFeatureUtils, TermLevel, TypeLevel}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Ellipsis, OMI, nTerms}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{structureDefRestrName, structureDefSubstrSelPropName}
+import structuralfeatures.InternalDeclaration.{isTypeLevel, structureDeclaration}
+import structuralfeatures.RecordUtil.{converseEquivName, equivName, inductName, recExpPath, recTypeName, recTypePath, reprName}
+import structuralfeatures.Records.{declaresRecords, elaborateContent}
+import structuralfeatures.StructuralFeatureUtils.{Eq, parseInternalDeclarations}
+import structuralfeatures.{InternalDeclaration, InternalDeclarationUtil, OutgoingTermLevel, Records, StructuralFeatureUtils, TermLevel, TypeLevel}
+import MizSeq.{Ellipsis, OMI, nTerms}
+import PatternUtils.{structureDefRestrName, structureDefSubstrSelPropName}
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object MizarStructure {
@@ -33,9 +33,9 @@ object MizarStructure {
 
     val argTps = params map (_.toTerm)
     val l = argTps.length
-    val argsTyped = Ellipsis(OMI(l),LocalName("x"),Mizar.is(MizSeq.Index(OMV(LocalName("x")),OMV(LocalName("i"))), MizSeq.Index(MMTUtils.flatten(argTps:_*),OMV(LocalName("i")))))
+    val argsTyped = Ellipsis(OMI(l),LocalName("x"),Mizar.is(MizSeq.Index(OMV(LocalName("x")),OMV(LocalName("i"))), MizSeq.Index(MMTUtils.flatten(argTps),OMV(LocalName("i")))))
 
-    val structx = Apply(OMV("struct"), MMTUtils.flatten(params.variables.map(_.toTerm):_*))
+    val structx = Apply(OMV("struct"), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
     def typedArgsCont(nm:Option[String]= None) : (Term => Term) = { tm: Term => Pi(LocalName("x"), nTerms(l), nm match {
       case Some(name) => Pi(LocalName(name),argsTyped, tm)
       case None => Arrow(argsTyped, tm) })
@@ -58,7 +58,7 @@ object MizarStructure {
 
 import Records._
 
-class MizarStructure extends StructuralFeature("mizarStructure") with ParametricTheoryLike {
+class MizarStructure extends StructuralFeature("mizarStructure") with MultiTypedParametricTheoryLike {
 
   /**
    * Checks the validity of the mizar structure to be constructed
@@ -73,15 +73,12 @@ class MizarStructure extends StructuralFeature("mizarStructure") with Parametric
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None): Elaboration = {
-    val pars = Type.getParameters(dd)
+    val (params, substructs) = parseMultiTypedDerivedDeclaration(dd)
     implicit val parentTerm = dd.path
-    def isSubstr(vd: VarDecl) = {vd.df.isDefined}
-    def isArg(vd: VarDecl) = {vd.tp.isDefined}
-    val params:Context = pars filter isArg
-    val substructs = pars filter isSubstr map (_.df.get)
+    val substrPaths = substructs map(_.path)
     val context = if (params.nonEmpty) {Some(params)} else {None}
     val origDecls = parseInternalDeclarations(dd, controller, context)
-    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substructs, controller)(parentTerm)
+    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths map(OMS(_)), controller)(parentTerm)
     externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
   }
 }

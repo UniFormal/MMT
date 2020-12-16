@@ -1,16 +1,16 @@
 package info.kwarc.mmt.mizar.newxml.mmtwrapper
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, patterns, _}
-import info.kwarc.mmt.api.symbols.{DerivedDeclaration, ParametricTheoryLike}
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.patterns.PatternFeature
-import info.kwarc.mmt.api.uom.FlexaryConstantScala
+import info.kwarc.mmt.api._
+import symbols.{DerivedDeclaration, ParametricTheoryLike}
+import objects._
+import patterns.PatternFeature
+import uom.FlexaryConstantScala
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lf.structuralfeatures.StructuralFeatureUtils
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Ellipsis, OMI, Rep, nTerms}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
+import structuralfeatures.StructuralFeatureUtils
+import MizSeq.{Ellipsis, OMI, Rep, nTerms}
+import info.kwarc.mmt.mizar.newxml._
+import MMTUtils._
+import translator.TranslationController
 import info.kwarc.mmt.sequences.NatRules
 
 object PatternUtils {
@@ -30,7 +30,7 @@ object StructureDefinition {
     val depType = info.kwarc.mmt.lf.Arrow(Rep(Mizar.any, OMI(l)), Mizar.constant("mode"))
     def mkInd(tm:Term,str:String):Term = MizSeq.Index(tm,OMV(LocalName(str)))
     def proj(tm:Term,ind:Int):Term = MizSeq.Index(tm, OMI(ind))
-    def subInd(tm:List[Term], str:String) = MizSeq.Index(MMTUtils.flatten(tm:_*),OMV(LocalName(str)))
+    def subInd(tm:List[Term], str:String) = MizSeq.Index(MMTUtils.flatten(tm),OMV(LocalName(str)))
     def ellipses(body:Term, str:String, max:Int) = Ellipsis(OMI(max),LocalName(str),body)
 
     val argsTyped =ellipses(Mizar.is(mkInd(OMV(LocalName("x")),"i"), subInd(argTps,"i")),"i",l)
@@ -38,8 +38,8 @@ object StructureDefinition {
       case Some(name) => Pi(LocalName(name),argsTyped, tm)
       case None => Arrow(argsTyped, tm) })
     }
-    val xs = MMTUtils.flatten(params.variables.map(_.toTerm):_*)
-    val ps = MMTUtils.flatten(MMTUtils.freeAlternatingVars(argTps, List("p")):_*)
+    val xs = MMTUtils.flatten(params.variables.map(_.toTerm).toList)
+    val ps = MMTUtils.flatten(MMTUtils.freeAlternatingVars(argTps, List("p")))
     val frs = MMTUtils.freeAlternatingVars(argTps, List("f", "r"))
     val structx = Apply(OMV("struct"), xs)
     def viAppl(i:Int):Term = ApplyGeneral(OMV(fieldDecls(i).name), List(xs, ps, OMV("s")))

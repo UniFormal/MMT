@@ -525,6 +525,72 @@ trait ReferenceLikeTypedParametricTheoryLike extends StructuralFeature with Type
   }
 }
 
+/** for structural features that take both parameters and a type
+ *  Examples are structural features which build structures defined via a derived declaration of another structural feature
+ *  like inductively-defined functions or proofs by induction over an inductively-defined type or terms of a record
+ *  In such a case the type is the other derived declaration instantiated with values for its parameters
+ */
+trait MultiTypedParametricTheoryLike extends StructuralFeature with ParametricTheoryLike {
+  override val Type = ParametricTheoryLike.Type(getClass)
+  val extendingType = MultiTypedParametricTheoryLike.extendingType(getClass)
+
+  override def getHeaderNotation = List(LabelArg(2, LabelInfo.none), Delim("("), Var(1, true, Some(Delim(","))), Delim(":"),
+    SimpSeqArg(3, Delim(","), CommonMarkerProperties.noProps), Delim(")"))
+
+  override def getInnerContext(dd: DerivedDeclaration) = {
+    val params = Type.getParameters(dd)
+    params ++ Context(dd.modulePath)
+  }
+
+  override def processHeader(header: Term) = header match {
+    case OMBINDC(OMMOD(`mpath`), cont, List(OML(name,_, _,_,_))) =>
+      (name, extendingType(cont, Nil))
+    case OMBINDC(OMMOD(`mpath`), cont, OML(name,_, _,_,_)::args) =>
+      (name, extendingType(cont, args))
+    case OMA(OMMOD(`mpath`), OML(name,_, _,_,_)::args) =>
+      (name, extendingType(Context.empty, args))
+    case hdr => throw InvalidObject(header, "ill-formed header: "+header.toStr(true))
+  }
+  override def makeHeader(dd: DerivedDeclaration) = dd.tpC.get match {
+    case Some(extendingType(cont, args)) => OMBINDC(OMMOD(mpath), cont, OML(dd.name, None,None)::args)
+  }
+
+  def parseMultiTypedDerivedDeclaration(dd: DerivedDeclaration, expectedFeature: List[String]=List(this.feature)) : (Context, List[DerivedDeclaration]) = {
+    val (argContext, extendingTypes) = extendingType.getParams(dd)
+    val extendingDDs = extendingTypes map {case OMS(p) => controller.library.get(p) match {
+      case indD: DerivedDeclaration if (expectedFeature.contains(indD.feature)) => indD
+      case d: DerivedDeclaration => throw LocalError("the referenced derived declaration at "+p+" is not among the features "+expectedFeature +" but of the feature "+d.feature+".")
+      case _ => throw LocalError("Expected definition of referenced derived declaration " + "of one of the following features: " + expectedFeature +" at "+p.toString()
+        +" but no derived declaration found at that location.")
+      }
+    }
+    (argContext, extendingDDs)
+  }
+}
+
+/** helper object */
+object MultiTypedParametricTheoryLike {
+  /** official apply/unapply methods for the type of a MultiTypedParametricTheoryLike derived declaration */
+  case class extendingType(cls: Class[_ <: MultiTypedParametricTheoryLike]) {
+    val mpath = SemanticObject.javaToMMT(cls.getCanonicalName)
+
+    def apply(params: Context, args: List[Term]) = OMBINDC(OMMOD(mpath), params, args)
+    def unapply(t: Term) = t match {
+      case OMBINDC(OMMOD(this.mpath), params, args) => Some(params, args)
+      case _ => None
+    }
+
+    /** retrieves the parameters and arguments */
+    def getParams(dd: DerivedDeclaration): (Context, List[Term]) = {
+      dd.tpC.get.get match {
+        case OMBINDC(OMMOD(_), pars, args) => (pars, args)
+      }
+    }
+    /** retrieves the parameters */
+    def getParameters(dd: DerivedDeclaration) = {getParams(dd)._1}
+  }
+}
+
 /**
  * Generative, definitional functors/pushouts with free instantiation
  * called structures in original MMT
