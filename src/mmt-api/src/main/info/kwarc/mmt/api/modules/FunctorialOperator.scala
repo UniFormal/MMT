@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules
 
+
 /**
   * Classes for named functorial operators, i.e., operators bound to an MMT symbol.
   *
