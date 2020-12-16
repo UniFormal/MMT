@@ -7,10 +7,13 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
 import info.kwarc.mmt.odk.diagop.OpUtils.{GeneralApplySpine, GeneralLambda}
 
+/**
+  * Creates the theory `Sub(X)` of substructures for every SFOL theory `X`.
+  */
 object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_operator")
-  override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
-  override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
+  override val operatorDomain: MPath = SFOL.sfoleqnd
+  override val operatorCodomain: MPath = SFOL.sfoleqnd
 
   val par: Renamer[LinearState] = getRenamerFor("ᵖ") // parent symbol copy
   val sub: Renamer[LinearState] = getRenamerFor("ˢ") // substructure symbol/condition
@@ -99,15 +102,15 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 }
 
 /**
-  * Linear connector ''X_sub_full: Sub(X) -> X'' representing the full submodel of a model.
+  * Creates the view `full: SUB(X) -> X` representing the full submodel of a model.
   */
 object SubFullConnector extends SimpleOutwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_full_connector"),
   SubOperator
 ) with SystematicRenamingUtils {
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_full")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_full")
 
-  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
 
@@ -140,6 +143,9 @@ object SubFullConnector extends SimpleOutwardsConnector(
   }
 }
 
+/**
+  * Creates the view `sub_par: X -> SUB(X)` projecting out the parent model.
+  */
 object SubParentConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_par_connector"),
   SubOperator
@@ -152,13 +158,17 @@ object SubParentConnector extends SimpleInwardsConnector(
   }
 }
 
-object SubSubmodelConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_sub_connector"),
+/**
+  * Creates the view `sub_mod: X -> SUB(X)` taking a `SUB(X)`-model and realizing an `X`-model by it
+  * via predicate subtypes.
+  */
+object SubModelConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_mod_connector"),
   SubOperator
 ) with SystematicRenamingUtils {
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_sub")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_mod")
 
-  override protected def applyConstantSimple(container: SubSubmodelConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SubSubmodelConnector.LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
 

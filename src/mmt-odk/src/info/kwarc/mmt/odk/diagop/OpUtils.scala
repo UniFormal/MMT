@@ -9,7 +9,7 @@ private[diagop] object StringUtils {
 
   /**
     * Stringifies an integer with the provided digits.
-    * @param digits A 10-element list of strings representings digits 0 - 9.
+    * @param digits A 10-element list of strings representing digits 0 - 9.
     */
   private def translateInteger(digits: List[String])(i: Int): String = {
     if (i < 0) {
@@ -26,7 +26,7 @@ private[diagop] object StringUtils {
 
 private[diagop] object OpUtils {
   /**
-    * Binds variables of given types freshly in [[ctx]].
+    * Binds variables of given types freshly in `ctx`.
     *
     * Tries to use sensible names like x_0, x_1, ...
     *
@@ -36,7 +36,7 @@ private[diagop] object OpUtils {
     *         It can, for instance, be passed to [[GeneralLambda]].
     */
   def bindFresh(ctx: Context, types: List[Term], hint: Option[Int => String] = None): Context = {
-    val chooseName = hint.getOrElse((idx: Int) => s"x_$idx")
+    val chooseName = hint.getOrElse((idx: Int) => "x" + StringUtils.subscriptInteger(idx))
     val vars: List[OMV] = types.indices.map(idx => OMV(chooseName(idx))).toList
 
     Context(vars.zip(types).map {

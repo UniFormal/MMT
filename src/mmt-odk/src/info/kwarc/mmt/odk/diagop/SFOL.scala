@@ -7,6 +7,8 @@ import info.kwarc.mmt.lf._
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
 private[diagop] object SFOL {
 
+  val sfoleqnd : MPath = Path.parseM("latin:/?SFOLEQND")
+
   val Strengthened : MPath = Path.parseM("latin:/algebraic/diagop-test?StrengthenedSFOL")
 
   object tp extends NullaryLFConstantScala(Path.parseM("latin:/?Types"), "tp")
