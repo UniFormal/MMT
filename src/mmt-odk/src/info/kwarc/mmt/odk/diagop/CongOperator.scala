@@ -4,38 +4,22 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
-import info.kwarc.mmt.lf.{ApplySpine, Lambda}
-import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf, RecExp}
+import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
-
 /**
-  {{{
-    Quotient operator (needs quotient types in logic)
+  * Creates the theory `Cong(X)` of congruences over `X` for every SFOL theory `X`.
+  */
+object CongOperator extends SimpleLinearOperator with SystematicRenamingUtils {
+  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_operator")
+  override val operatorDomain: MPath = SFOL.sfoleqnd
 
-    t: tp
-      |-> t^p: tp
-          t^q: Mod ?EqvRel (tm t^p)
-
-    f: tm t_1 ⟶ ... ⟶ tm t_n ⟶ tm t
-      |-> f^p: tm t_1^p ⟶ ... ⟶ tm t_n^p ⟶ tm t^p
-          f^q: |- forall [x_1: tm t_1^p ... x_n: tm t_n^p             "t^q is congruence wrt. f"
-                          x_1': tm t_1^p ... x_n': tm t_n^p]
-                       t_1^q x_1 x_1' ∧ … ∧ t_n^q x_n x_n' ⇒ t^q (f^p x_1 … x_n) (f^p x_1' … x_n')
-
-    c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
-      |-> c^p: tm t_1^p ⟶ ... ⟶ tm t_n^p ⟶ prop
-          c^q: |- forall [x_1: tm t_1^p ... x_n: tm t_n^p]
-                    forall [x_1': tm t_1^p ... x_n': tm t_n^p]
-                       t_1^q x_1 x_1' ⟶ ... ⟶ t_n^q x_n x_n' ⟶ (c^p x_1 ... x_n) <-> (c^p x_1' ... x_n')
-  }}}
- */
-object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
-  override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_operator")
-  override val operatorDomain: MPath = SFOL.Strengthened
+  // strengthened SFOL because [[CongQuotientConnector]] needs this as its codomain
+  // (due to quotient types) and the diagop framework cannot handle this nicely yet
   override val operatorCodomain: MPath = SFOL.Strengthened
 
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cong")
 
   val par : Renamer[LinearState] = getRenamerFor("ᵖ")
   val quot : Renamer[LinearState] = getRenamerFor("_q")
@@ -75,45 +59,37 @@ object QuotOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   }
 }
 
-object QuotParentConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_par_connector"),
-  QuotOperator
+/**
+  * Creates the view `cong_par: X -> Cong(X)` projecting out the parent model.
+  */
+object CongParentConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_par_connector"),
+  CongOperator
 ) with SystematicRenamingUtils {
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_par")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cong_par")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
-    val par = QuotOperator.par.coercedTo(state)
+    val par = CongOperator.par.coercedTo(state)
     List((name, par(c)))
   }
 }
 
 /**
-  *
-  * not implemented yet
-  *
-  * {{{
-  * map `mod: T -> Quot(T)`
-  *
-  * t |-> t^p quot. t^q
-  * f |-> [x_1: tm (t_1^p quot. t_1^q), ..., x_n: tm (t_n^p quot. t_n^q)]
-  * eqv. class of (f^p (some repr of x_1 in t_1^p) ... (some repr of x_n in t_n^p))
-  * c |-> [x_1: tm (t_1^p quot. t_1^q), ..., x_n: tm (t_n^p quot. t_n^q)]
-  * (c^p (some repr of x_1 in t_1^p) ... (some repr of x_n in t_n^p))
-  * ax |-> ???
-  * }}}
+  * Creates the view `quot: X -> CONG(X)` realizing an `X`-model by taking a `CONG(X)`-model and
+  * quotiening its parent model by its congruence.
   */
-object QuotModConnector extends SimpleInwardsConnector(
-  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?quot_mod_connector"),
-  QuotOperator
+object CongQuotientConnector extends SimpleInwardsConnector(
+  Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_quot_connector"),
+  CongOperator
 ) with SystematicRenamingUtils {
 
-  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot_mod")
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
 
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
 
-    val par = QuotOperator.par.coercedTo(state)
-    val quot = QuotOperator.quot.coercedTo(state)
+    val par = CongOperator.par.coercedTo(state)
+    val quot = CongOperator.quot.coercedTo(state)
 
     tp match {
       case SFOL.TypeSymbolType() =>

@@ -9,15 +9,14 @@ import info.kwarc.mmt.odk.LFX.RecExp
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
-  * Linearly transforms SFOL theories T to Hom(T), the theory of homomorphisms
-  * of T.
+  * Creates the theory `HOM(X)` of homomorphisms between `X` models for every SFOL theory `X`.
   *
   * @see [[HomDomConnector]], [[HomCodConnector]], [[HomImgConnector]]
   */
 object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
-  override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
-  override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
+  override val operatorDomain: MPath = SFOL.sfoleqnd
+  override val operatorCodomain: MPath = SFOL.sfoleqnd
 
   // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
   val dom: Renamer[LinearState] = getRenamerFor("ᵈ")
@@ -114,8 +113,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 }
 
 /**
-  * Linearly transforms an SFOL theory T to morphism ''dom: T -> Hom(T)'' "projecting
-  * the homomorphism's domain out."
+  * Creates the view `dom: X -> HOM(X)` projecting out the homomorphism's domain model.
   */
 object HomDomConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_dom_connector"),
@@ -131,8 +129,7 @@ object HomDomConnector extends SimpleInwardsConnector(
 }
 
 /**
-  * Linearly transforms an SFOL theory T to morphism ''cod: T -> Hom(T)'' "projecting
-  * the homomorphism's codomain out."
+  * Creates the view `cod: X -> HOM(X)` projecting out the homomorphism's codomain model.
   */
 object HomCodConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_cod_connector"),
@@ -148,7 +145,7 @@ object HomCodConnector extends SimpleInwardsConnector(
 }
 
 /**
-  * Linear connector ''X_hom_id: Hom(X) -> X'' representing the identity homomorphism on X.
+  * Creates the view `hom_id: HOM(X) -> X` representing the identity homomorphism on X.
   */
 object HomIdConnector extends SimpleOutwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_id_connector"),
@@ -201,9 +198,7 @@ object HomIdConnector extends SimpleOutwardsConnector(
 }
 
 /**
-  * Linearly transforms an SFOL theory T to morphism ''img: Sub(T) -> Hom(T)''.
-  *
-  * Assumes Sub and Hom have already been applied before.
+  * Creates the view `img: SUB(X) -> HOM(X)` representing the homomorphism's image as a submodel of `X`.
   *
   * Maps as follows:
   *
@@ -313,12 +308,14 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 }
 
 /**
-  * Creates connecting morphism `ker: Quot(T) -> Hom(T)` between [[QuotOperator]] and [[HomOperator]]
-  * for the kernel of a homomorphism.
+  * Creates the view `ker: CONG(X) -> HOM(X)` representing the kernel of the homomorphism.
+  *
+  * At every SFOL type `U: tp` in `X`, the congruence will be `x ~^U y <=> h^U(x) ≐ h^U(y)`
+  * for `x, y: tm U`.
   */
-object HomKerConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+object HomKernelConnector extends SimpleLinearConnector with SystematicRenamingUtils {
   final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_ker_connector")
-  final override val in: LinearModuleTransformer = QuotOperator
+  final override val in: LinearModuleTransformer = CongOperator
   final override val out: LinearModuleTransformer = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_ker")
@@ -326,8 +323,8 @@ object HomKerConnector extends SimpleLinearConnector with SystematicRenamingUtil
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
     val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
 
-    val par = QuotOperator.par.coercedTo(state)
-    val quot = QuotOperator.quot.coercedTo(state)
+    val par = CongOperator.par.coercedTo(state)
+    val quot = CongOperator.quot.coercedTo(state)
 
     val dom = HomOperator.dom.coercedTo(state)
     val cod = HomOperator.cod.coercedTo(state)
@@ -374,10 +371,13 @@ or with assignments of this morphism inserted, `Uʰ (opᵈ x⁰₀ x¹₀) ≐ U
         )
 
       case SFOL.PredicateSymbolType(_) =>
-        // TODO
-        List(
-          (quot(name), SFOL.sketchLazy(s"Probably *UNPROVABLE*! Check this."))
-        )
+        NotApplicable(c, s"""
+The kernel of homomorphisms is *not* a congruence if the original signature
+contained a predicate symbol.
+Namely, homomorphism models as from ${HomOperator.getClass.getSimpleName} only preserve
+applied predicate symbols, but not need reflect them.
+But such reflection is needed to prove the congruence condition on the predicate symbol here.
+""")
 
       case _ =>
         NotApplicable(c)

@@ -24,7 +24,7 @@ private[diagop] trait ModRelClosureCreator[T] {
     * Read the documentation for [[applyFunctionSymbol()]]. In the examples there, terms like ''∀[x₁: tm Uᵖ, x₂: tm Uᵖ]''
     * actually mean the return value of ''∀[x₁: applyTypeSymbolRef(0, U), x₂: tm applyTypeSymbolRef(0, U)]''.
     *
-    * The return value needs not be different for different values of [[structureIdx]]. E.g. the [[QuotOperator]]
+    * The return value needs not be different for different values of [[structureIdx]]. E.g. the [[CongOperator]]
     * uses this trait with [[relationArity]] == 2, but identifies both models in a smart way when overriding this
     * function and [[inRelation()]].
     *

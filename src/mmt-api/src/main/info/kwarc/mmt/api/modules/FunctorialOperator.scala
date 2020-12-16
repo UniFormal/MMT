@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules
 
+
 /**
   * Classes for named functorial operators, i.e., operators bound to an MMT symbol.
   *
@@ -101,12 +102,11 @@ abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearCo
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
-abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
+abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: LinearModuleTransformer)
   extends SimpleLinearConnector {
   final override val in: LinearModuleTransformer = new IdentityLinearTransformer(operator.operatorDomain)
   final override val out: operator.type = operator
 }
-
 
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
