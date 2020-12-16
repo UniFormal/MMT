@@ -28,6 +28,16 @@ object MizarStructure {
     elaborateContent(params, fieldDecls, substructs, controller)
   }
 
+  /**
+   *
+   * @param params A context with the arguments to the structure (instance)
+   * @param origDecls A list with the internal declarations declaring the fields (selectors) of the structure
+   * @param substr A list of OMS containing referencing the (derived declarations) of the
+   *               structure instances extended by this structure instance
+   * @param controller
+   * @param parentTerm (implicit) the path to this derived declaration
+   * @return The list of constants forming the elaboration
+   */
   def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller)(implicit parentTerm: GlobalName): List[Constant] = {
     val recordElabDecls = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
 
@@ -40,14 +50,16 @@ object MizarStructure {
       case Some(name) => Pi(LocalName(name),argsTyped, tm)
       case None => Arrow(argsTyped, tm) })
     }
-    val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap{case (OMS(substrPath),i) =>
+    val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap{case (OMS(substrGN),i) =>
+      val substrPath = substrGN.module / substrGN.name
       val (substruct, substrName, sl, sargTps, sm, sfieldDefs) = TranslationController.controller.get(substrPath) match {
         case subStruct @ StructureInstance(substrName, sl, sargTps, _, _, sm, sfieldDefs) => (subStruct, substrName, sl, sargTps, sm, sfieldDefs)
       }
       val restrName = structureDefRestrName(substrName)
-      val restr = VarDecl(restrName,typedArgsCont(Some("p"))(Pi(LocalName("s"),structx,OMS(StructuralFeatureUtils.externalName(substrPath,LocalName("struct"))))))
+      val restr = VarDecl(restrName,typedArgsCont(Some("p"))(
+        Pi(LocalName("s"),structx,OMS(StructuralFeatureUtils.externalName(substrGN,LocalName("struct"))))))
       val restrSelProps = sfieldDefs map {vd =>
-        VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),OMS(StructuralFeatureUtils.externalName(substrPath,restrName))))
+        VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),OMS(StructuralFeatureUtils.externalName(substrGN,restrName))))
       }
       restr::restrSelProps
     }
@@ -58,7 +70,7 @@ object MizarStructure {
 
 import Records._
 
-class MizarStructure extends StructuralFeature("mizarStructure") with MultiTypedParametricTheoryLike {
+class MizarStructure extends StructuralFeature("mizarStructure") with ParametricTheoryLike {
 
   /**
    * Checks the validity of the mizar structure to be constructed
@@ -73,12 +85,16 @@ class MizarStructure extends StructuralFeature("mizarStructure") with MultiTyped
    * @param dd the derived declaration to be elaborated
    */
   def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[uom.ExtendedSimplificationEnvironment] = None): Elaboration = {
-    val (params, substructs) = parseMultiTypedDerivedDeclaration(dd)
+    val params = Type.getParameters(dd)
     implicit val parentTerm = dd.path
-    val substrPaths = substructs map(_.path)
     val context = if (params.nonEmpty) {Some(params)} else {None}
+    def preProcessIncludes(d:Declaration): (Boolean, Option[Term]) = d match {
+      case PlainInclude(from, to) => (true, Some(OMMOD(to)))
+      case _ => (false, None)
+    }
+    val substrPaths = dd.getDeclarations map (preProcessIncludes(_)) filter (_._1) map (_._2.get)
     val origDecls = parseInternalDeclarations(dd, controller, context)
-    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths map(OMS(_)), controller)(parentTerm)
+    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths, controller)(parentTerm)
     externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
   }
 }

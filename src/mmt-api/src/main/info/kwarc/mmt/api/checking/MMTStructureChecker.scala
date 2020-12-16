@@ -696,6 +696,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       val thy = dec match {
         case t: Module => t
         case nm: NestedModule => nm.module
+        case dd: DerivedDeclaration if (
+          controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
+            match {case sf : ParametricTheoryLike => true
+          case _ => false
+          }) => dd
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory: " + controller.presenter.asString(t)))
           dec
@@ -728,6 +733,11 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
                   t
               }
           }
+        case dd: DerivedDeclaration if (
+          controller.extman.get(classOf[StructuralFeature], dd.feature).getOrElse(throw GeneralError("Structural feature "+dd.feature+" not found."))
+          match {case sf : ParametricTheoryLike => true
+          case _ => false
+          }) => t
         case _ =>
           env.errorCont(InvalidObject(t, "not a theory identifier: " + p.toPath))
           t
