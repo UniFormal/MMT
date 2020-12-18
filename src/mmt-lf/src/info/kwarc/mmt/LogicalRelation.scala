@@ -1,15 +1,16 @@
 package info.kwarc.mmt
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, SimpleLinearOperator}
-import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMS, OMV, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.lf.{ApplySpine, FunType, LF, Lambda, Typed}
+import info.kwarc.mmt.api.utils.UnicodeStrings
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
+import info.kwarc.mmt.lf._
 
 // todo: ask Florian where to put this file
 
 object LogicalRelation {
-  private def star(name: LocalName): LocalName = name.suffixLastSimple("*")
+  private def star(name: LocalName): LocalName = name.suffixLastSimple("ᕁ")
 
   def singleIdentityLogrel(rel: GlobalName => Term): Traverser[Option[Term]] = {
     new Traverser[Option[Term]] {
@@ -50,7 +51,7 @@ object LogicalRelation {
         case FunType(argTypes, retType) if argTypes.nonEmpty =>
           val argNames = argTypes.zipWithIndex.map {
             case ((Some(argName), _), _) => argName
-            case ((None, _), index) => LocalName(s"x_${index}")
+            case ((None, _), index) => LocalName("x" + UnicodeStrings.subscriptInteger(index))
           }
 
           // Output is a new function type, which we will build with FunType
@@ -86,7 +87,7 @@ object LogicalRelation {
   }
 }
 
-object UnaryIdentityLogicalRelationOperator extends SimpleLinearOperator {
+object UnaryIdentityLogicalRelationOperator extends SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unary_id_logrel_operator")
 
   override val operatorDomain: MPath = LF.theoryPath
@@ -94,17 +95,24 @@ object UnaryIdentityLogicalRelationOperator extends SimpleLinearOperator {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("id_log_rel")
 
+  val par: Renamer[LinearState] = getRenamerFor("ᵖ")
+  val logrel: Renamer[LinearState] = getRenamerFor("ʳ")
+
   override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
     val traverser = LogicalRelation.singleIdentityLogrel(p => {
       if (p == c.path || state.processedDeclarations.exists(_.path == p)) {
-        OMS(applyModulePath(p.module) ? p.name)
+        OMS(logrel(p))
       } else {
-        ???
+        return NotApplicable(c, "refers to constant not previously processed. Implementation error?")
       }
     })
 
-    val newTp = traverser(tp, Some(OMS(applyModulePath(c.path.module) ? c.name)))
-    // definienses not mapped so far
-    List((name, newTp, None))
+    val parCopy = (par(name), par(tp), df.map(par(_)))
+    val logrelConstant = {
+      // definienses not mapped so far
+      (logrel(name), traverser(tp, Some(par(c))), None)
+    }
+
+    List(parCopy, logrelConstant)
   }
 }

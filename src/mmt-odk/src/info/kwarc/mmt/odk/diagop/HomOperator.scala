@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType, Lambda}
 import info.kwarc.mmt.odk.LFX.RecExp
 import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
@@ -266,10 +267,10 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 
         val proofSketch = {
           val vars = argTypes.zipWithIndex.map {
-            case (tp, i) => ("y" + StringUtils.subscriptInteger(i), tp)
+            case (tp, i) => ("y" + UnicodeStrings.subscriptInteger(i), tp)
           }
           val varPreimages = argTypes.zipWithIndex.map {
-            case (tp, i) => ("x" + StringUtils.subscriptInteger(i), tp)
+            case (tp, i) => ("x" + UnicodeStrings.subscriptInteger(i), tp)
           }
 
 

@@ -8,11 +8,23 @@ import info.kwarc.mmt.api.symbols.UniformTranslator
 /**
   * A Traverser is a function on Term defined by context-sensitive induction.
   *
-  * During the traversal, a value of type State may be used to carry along state.
+  * During the traversal, a value of type [[State]] may be used to carry along state.
   *
   * To implement a traverser, subclass and overwrite [[traverse()]].
-  * Delegate cases you do not wish to handle to `Traverser.apply(this, _)` from the companion
+  * Delegate cases you do not wish to handle to `Traverser(this, t)` from the companion
   * object.
+  * In a sense, `Traverser(this, t)` works as if [[traverse()]] were extended homomorphically
+  * to `t`. Namely, if `t` is complex (say on [[OMBINDC]]), then [[traverse()]] is called
+  * on all children and the result reassembled to the same kind of term `t` was before
+  * (e.g. again [[OMBINDC]]).
+  * If `t` is simple (say on [[OMID]]), is is returned as-is.
+  *
+  * Hence, therer are two options for doing recursion within [[traverse()]]:
+  *
+  * - call `Traverser(this, t)`: do this only if you determined you do not wish to handle `t`, but
+  *   possibly its children.
+  *
+  * - call `traverse(t)`: do this if you want to recurse (as usual)
   *
   * @example Here is a Traverser that collects all OMS symbol references in a term:
   * {{{
@@ -23,9 +35,6 @@ import info.kwarc.mmt.api.symbols.UniformTranslator
   *     }
   *   }
   * }}}
-  *
-  * To recurse within the `traverse` method, just call `traverse` itself.
-  * (Calling `Traverser(this, t)` would be an error to do recursion!)
   */
 abstract class Traverser[A] {
    protected type State = A

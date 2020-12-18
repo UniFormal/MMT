@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.IntegerLiterals
 import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
@@ -180,10 +181,10 @@ private[diagop] trait ModRelClosureCreator[T] {
         Range(0, relationArity).map(structureIdx => {
           val name = LocalName(
             "x" +
-              StringUtils.superscriptInteger(argIdx) +
+              UnicodeStrings.superscriptInteger(argIdx) +
 
               // In the unary case, omitting the structureIdx (which is always 0 anyway) makes names more readable.
-              (if (relationArity > 1) StringUtils.subscriptInteger(structureIdx) else "")
+              (if (relationArity > 1) UnicodeStrings.subscriptInteger(structureIdx) else "")
           )
           val tp = applyTypeSymbolRef(structureIdx, argTp)
 
@@ -217,7 +218,7 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(suffix)
 
   private val structureRenamers: List[Renamer[LinearState]] = Range(0, relationArity).map(structureIdx => {
-    getRenamerFor("ᵈ" + StringUtils.superscriptInteger(structureIdx))
+    getRenamerFor("ᵈ" + UnicodeStrings.superscriptInteger(structureIdx))
   }).toList
   private val relRenamer = getRenamerFor("ʳ")
 
@@ -268,7 +269,7 @@ class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends Simpl
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(s"_mod_rel${relationArity}${relationTheory.name}")
 
   val modelRenamers : Array[Renamer[LinearState]] = Range(0, relationArity).map(structureIdx => {
-    getRenamerFor(StringUtils.subscriptInteger(structureIdx))
+    getRenamerFor(UnicodeStrings.subscriptInteger(structureIdx))
   }).toArray
 
   val relationRenamer : Renamer[LinearState] = getRenamerFor("h")
