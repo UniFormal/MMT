@@ -6,11 +6,27 @@ import info.kwarc.mmt.api.objects.Conversions._
 import info.kwarc.mmt.api.symbols.UniformTranslator
 
 /**
- * A Traverser is a function on Term defined by context-sensitive induction.
- *
- * The auxiliary methods in the companion object can be used to handle all cases that traverse the object without any change.
- * During the traversal, a value of type State may be used to carry along state.
- */
+  * A Traverser is a function on Term defined by context-sensitive induction.
+  *
+  * During the traversal, a value of type State may be used to carry along state.
+  *
+  * To implement a traverser, subclass and overwrite [[traverse()]].
+  * Delegate cases you do not wish to handle to `Traverser.apply(this, _)` from the companion
+  * object.
+  *
+  * @example Here is a Traverser that collects all OMS symbol references in a term:
+  * {{{
+  *   new Traverser[mutable.ListBuffer] {
+  *     override def traverse(t: Term)(implicit con: Context, state: mutable.ListBuffer): Term = t match {
+  *       case OMS(s) => state += s
+  *       case _ => Traverser(this, t)
+  *     }
+  *   }
+  * }}}
+  *
+  * To recurse within the `traverse` method, just call `traverse` itself.
+  * (Calling `Traverser(this, t)` would be an error to do recursion!)
+  */
 abstract class Traverser[A] {
    protected type State = A
    /** the main method to call the traverser, context defaults to empty */

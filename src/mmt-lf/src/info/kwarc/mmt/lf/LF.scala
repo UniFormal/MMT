@@ -126,19 +126,14 @@ object Apply extends LFSym("apply") {
   */
 object ApplySpine {
   /**
-    * Like [[apply]] but forces a fully curried representation.
-    * If in doubt, rather use [[apply]].
-    */
-  def applyFullyCurried(f: Term, a: List[Term]): Term = a match {
-    case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
-    case arg :: Nil => OMA(Apply.term, List(f, arg))
-    case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
-  }
-
-  /**
-    * Applies an LF function 'f' to *non-empty* list arguments 'a'.
+    * Applies an LF function `f` to a *non-empty* sequence of arguments `a`.
     *
-    * Does not curry, e.g. 'apply(f, a, b)' is represented as 'OMA(?LFApply, f, a, b)'
+    * The output is *not* curried, e.g. `apply(f, a, b) = OMA(?LFApply, f, a, b)`
+    * and not `OMA(OMA(?LFApply, f, a), b)` as one might expect.
+    *
+    * @see [[applyFullyCurried()]] if you want fully curried behavior
+    * @see [[applyOrSymbol()]] if you want the case of empty arguments be treated as just
+    *      returning `f` itself.
     */
   def apply(f: Term, a: Term*): Term = OMA(Apply.term, f :: a.toList)
 
@@ -150,6 +145,25 @@ object ApplySpine {
       }
     case _ => None
   }
+
+
+  /**
+    * Like [[apply]] but forces a fully curried representation.
+    * If in doubt, rather use [[apply]].
+    */
+  def applyFullyCurried(f: Term, a: List[Term]): Term = a match {
+    case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
+    case arg :: Nil => OMA(Apply.term, List(f, arg))
+    case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
+  }
+
+  /**
+    * Applies an LF function `f` to a (possibly empty) sequence of arguments `a`.
+    *
+    * In case of no arguments, `f` itself is returned.
+    * Otherwise, the behavior equals [[apply()]].
+    */
+  def applyOrSymbol(f: Term, a: Term*): Term = if (a.isEmpty) f else apply(f, a : _*)
 }
 
 /**

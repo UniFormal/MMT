@@ -45,8 +45,7 @@ private[diagop] object OpUtils {
   }
 
   /**
-    * Like [[ApplySpine]] but doesn't generate an [[OMA]] upon application with 0 arguments.
-    * Instead it just returns 'f' in that case.
+    * @deprecated Use [[ApplySpine.applyOrSymbol()]].
     */
   def GeneralApplySpine(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
 
