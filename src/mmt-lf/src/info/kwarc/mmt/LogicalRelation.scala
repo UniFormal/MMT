@@ -1,5 +1,9 @@
 package info.kwarc.mmt
 
+/**
+  * @author ComFreek
+  */
+
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Renamer, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
@@ -27,7 +31,7 @@ object LogicalRelation {
 
         case ApplySpine(f, args) =>
           ApplySpine(
-            traverse(f)(con, None),
+            traverse(f)(con, target),
             args.flatMap(arg => List(
               arg,
               traverse(arg)(con, Some(arg))
@@ -53,6 +57,7 @@ object LogicalRelation {
             case ((Some(argName), _), _) => argName
             case ((None, _), index) => LocalName("x" + UnicodeStrings.subscriptInteger(index))
           }
+          val arguments = argNames.zip(argTypes.map(_._2))
 
           // Output is a new function type, which we will build with FunType
 
@@ -60,7 +65,7 @@ object LogicalRelation {
           var newContext = con
 
           // build the new (Pi-bound) arguments, to be later passed to FunType()
-          val newArgs: List[(Option[LocalName], Term)] = argNames.zip(argTypes.map(_._2)).flatMap {
+          val newArgs: List[(Option[LocalName], Term)] = arguments.flatMap {
             case (argName, argTp) =>
               // build `\Pi argName: argTp. \Pi argName*: recurse(argTp, argName)
               val argTpRecursed = traverse(argTp)(con ++ VarDecl(argName, argTp), Some(OMV(argName)))
