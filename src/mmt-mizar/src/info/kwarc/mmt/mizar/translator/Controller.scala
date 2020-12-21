@@ -194,7 +194,7 @@ object TranslationController {
    def addRetTerm(path: GlobalName) = {
        locusVarContext.length match {
          case 0 => locusVarContext.push(OMID(path))
-         case _ => locusVarContext.push(Mizar.apply(OMID(path), locusVarContext : _*))
+         case _ => locusVarContext.push(Mizar.apply(OMID(path), locusVarContext.toSeq : _*))
        }
    }
 

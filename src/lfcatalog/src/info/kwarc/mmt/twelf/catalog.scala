@@ -1,11 +1,12 @@
 package info.kwarc.mmt.twelf
 
-import java.io.{File, BufferedWriter, OutputStreamWriter, FileOutputStream}
+import java.io.{BufferedWriter, File, FileOutputStream, OutputStreamWriter}
 import java.net.URLDecoder
 import java.util.regex.Pattern
+import scala.xml.PrettyPrinter
 
-import scala.xml._
-import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, MutableList, LinkedList}
+//import scala.xml._
+import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, HashMap, ListBuffer}
 import scala.collection.immutable.SortedSet
 
 
@@ -589,7 +590,7 @@ class Catalog(val locationsParam: HashSet[String] = HashSet(),
               case ParseError(s) => {
                 if (document == null) {    // then store an empty Document with this error
                     val theError = ParseError(Time + getOriginalPath(location) + ":" + s)
-                    document = new Document(new URI(Catalog.getPath(location)), None, new MutableList(), new LinkedHashMap(), new LinkedHashSet(), List(theError))
+                    document = new Document(new URI(Catalog.getPath(location)), None, new ListBuffer(), new LinkedHashMap(), new LinkedHashSet(), List(theError))
                 }
               }
           }

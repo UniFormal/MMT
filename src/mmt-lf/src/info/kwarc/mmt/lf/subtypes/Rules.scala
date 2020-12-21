@@ -8,7 +8,7 @@ import objects._
 
 import lf._
 import inhabitation.Inhabitation._
-import Subtyping.Sub
+import subtypes.Subtyping.Sub
 
 class ProveSubtypingRule extends SubtypingRule {
    val head = Sub.path

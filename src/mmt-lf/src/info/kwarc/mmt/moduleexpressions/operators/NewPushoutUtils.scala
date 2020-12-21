@@ -153,8 +153,8 @@ object NewPushoutUtils {
             throw GeneralError(s"Cannot compute canonical pushout due to name clash of to-be-generated ${decl.name} in context of ${B.path}")
           }
 
-          val newType = TermContainer.asParsed(c.tp.map(traverser.apply(_, Unit)))
-          val newDefiniens = TermContainer.asParsed(c.df.map(traverser.apply(_, Unit)))
+          val newType = TermContainer.asParsed(c.tp.map(traverser.apply(_, ())))
+          val newDefiniens = TermContainer.asParsed(c.df.map(traverser.apply(_, ())))
 
           val newDecl = new FinalConstant(
             home = D.toTerm,
@@ -167,7 +167,7 @@ object NewPushoutUtils {
             vs = c.vs
           )
           val newMetadata = decl.metadata.getAll.map {
-            case MetaDatum(key, value: Term) => MetaDatum(key, traverser(value, Unit))
+            case MetaDatum(key, value: Term) => MetaDatum(key, traverser(value, ()))
             case x  => x
           }
           newDecl.metadata.add(newMetadata : _*)

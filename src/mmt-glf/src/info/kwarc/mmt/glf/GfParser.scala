@@ -219,7 +219,7 @@ class GfParser {
       identifiers += expectIdentifier(ctx)
     } while (ctx.popToken() == separator)
     ctx.unpopToken()
-    identifiers
+    identifiers.toSeq
   }
 
   def expectIdentifier(ctx : GfParserContext) : String = {

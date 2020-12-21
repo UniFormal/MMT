@@ -51,6 +51,6 @@ abstract class MMTUnitTest extends BaseTester {
     }
   }
 
-  def assertTermEqual(expected: Term, actual: Term, msg: String = ""): Unit = assertEqual _
-  def assertSetEqual[T](expected: Set[T], actual: Set[T], msg: String = ""): Unit = assertEqual _
+  def assertTermEqual(expected: Term, actual: Term, msg: String = ""): Unit = assertEqual(expected,actual,msg)
+  def assertSetEqual[T](expected: Set[T], actual: Set[T], msg: String = ""): Unit = assertEqual(expected,actual,msg)
 }

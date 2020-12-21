@@ -11,6 +11,7 @@ import modules._
 import notations._
 import objects._
 import symbols._
+import info.kwarc.mmt.oeis.parser.DocumentParser
 
 import scala.xml.Node
 
@@ -55,7 +56,7 @@ class OEISImporter extends Importer {
   def inExts = List("txt")
 
   //stex/latexml generated omdoc
-  var docParser: parser.DocumentParser = null
+  var docParser: DocumentParser = null
 
   override def init(controller: Controller) {
     this.controller = controller
@@ -66,7 +67,7 @@ class OEISImporter extends Importer {
     args match {
       case hd :: Nil =>
         val dict = scala.io.Source.fromFile(hd).getLines().map(_.trim).toSet
-        docParser = new parser.DocumentParser(dict)
+        docParser = new DocumentParser(dict)
       case _ => throw new Exception("Cannot initialize OEISImporter expected one argument (path to the dictionary file), found: " + args.toString)
     }
   }

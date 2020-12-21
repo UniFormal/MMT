@@ -665,7 +665,7 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
     if (hasProp(node)) {
       List((node, pos.reverse))
     } else {
-      node.child.zipWithIndex.flatMap(p => getChildren(p._1, p._2 :: pos))
+      node.child.zipWithIndex.flatMap(p => getChildren(p._1, p._2 :: pos)).toSeq
     }
   }
 

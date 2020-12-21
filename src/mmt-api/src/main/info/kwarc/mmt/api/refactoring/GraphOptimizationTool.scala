@@ -98,7 +98,7 @@ class GraphOptimizationTool extends BuildTarget {
             else {
               ret ++= replacement(from)
             }
-          case _ => Unit
+          case _ => ()
         }
       }
     } catch {
@@ -107,7 +107,7 @@ class GraphOptimizationTool extends BuildTarget {
           declaration match {
             case PlainInclude(from, _) =>
               ret += from
-            case _ => Unit
+            case _ => ()
           }
         }
     }
@@ -151,7 +151,7 @@ class GraphOptimizationTool extends BuildTarget {
     try {
       controller.get(mpath) match {
         case dt: Theory =>
-          var res: mutable.HashSet[MPath] = mutable HashSet[MPath]()
+          var res = mutable.HashSet.empty[MPath]
           res ++= includes(mpath, replacementmap)
           res ++= dt.getNamedStructures.map({ struct => struct.from.toMPath })
           dt.getNamedStructures.foreach({ struct => res ++= getDependencies(struct.from.toMPath, replacementmap) })

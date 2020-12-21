@@ -3,6 +3,7 @@ package info.kwarc.mmt.api.utils
 import info.kwarc.mmt.api._
 import java.io._
 import scala.collection.JavaConverters._
+import utils.File
 
 object ShellCommand {
 

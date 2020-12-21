@@ -31,7 +31,7 @@ object BreadthFirstSearch {
     while (queue.nonEmpty) {
       val newNodes = explorer(queue.dequeue(), collection.toSet, remaining.toSet).diff(collection.toSet)
 
-      queue.enqueue(newNodes.toSeq: _*)
+      queue.enqueueAll(newNodes)
       collection ++= newNodes
       remaining --= newNodes
     }
@@ -54,7 +54,7 @@ object BreadthFirstSearch {
     while (queue.nonEmpty) {
       val newNodes = explorer(queue.dequeue(), collection.toSet).diff(collection.toSet)
 
-      queue.enqueue(newNodes.toSeq: _*)
+      queue.enqueueAll(newNodes)
       collection ++= newNodes
     }
 

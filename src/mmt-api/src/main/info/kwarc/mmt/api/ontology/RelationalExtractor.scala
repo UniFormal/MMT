@@ -25,7 +25,7 @@ abstract class RelationalExtractor extends Extension {
 /** The Extractor produces the declaration-level relational representation of a StructuralElement
  */
 object MMTExtractor extends RelationalExtractor {
-   val allUnary = List(IsDocument,IsTheory,IsView,IsConstant,IsStructure,IsConAss,
+   val allUnary = List(IsDocument,ontology.IsTheory,IsView,IsConstant,IsStructure,IsConAss,
                           IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
          IsAlignedWith, HasViewFrom, IsImplicitly)
@@ -55,7 +55,7 @@ object MMTExtractor extends RelationalExtractor {
          case n: NRef =>
          case oe: OpaqueElement =>
          case t: Theory =>
-            f(IsTheory(path))
+            f(ontology.IsTheory(path))
             t match {
                case t: Theory =>
                   t.meta foreach {p => f(HasMeta(path, p))}

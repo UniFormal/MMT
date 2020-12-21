@@ -29,7 +29,7 @@ class JSONObjectBuffer {
   }
 
   def result(): JSONObject = {
-    JSONObject(buffer.result() :_*)
+    JSONObject.apply(buffer.toSeq :_*)
   }
 }
 
@@ -77,7 +77,7 @@ class JSONListBuffer {
   }
 
   def result(): JSONArray = {
-    JSONArray(buffer.result(): _*)
+    JSONArray.apply(buffer.toSeq:_*)
   }
 }
 

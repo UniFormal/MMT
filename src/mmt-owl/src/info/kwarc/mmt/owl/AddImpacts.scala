@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf._
 
 import scala.collection._
+import mutable.Set
 
 class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
 

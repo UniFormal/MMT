@@ -65,6 +65,6 @@ private class UnresolvablePathCollector(library: Library, referenceModule: MPath
 		val unresolvableTerms = new mutable.ArrayBuffer[OMID]
 		this (term, unresolvableTerms)
 
-		unresolvableTerms
+		unresolvableTerms.toSeq
 	}
 }

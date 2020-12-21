@@ -109,6 +109,8 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
     */
   def MMTPathToContentPath(m: MPath): File = this / content / Archive.MMTPathToContentPath(m)
 
+  import scala.collection.parallel.CollectionConverters._
+
   /** traverses a dimension calling continuations on files and subdirectories */
   def traverse[A](dim: ArchiveDimension, in: FilePath, mode: TraverseMode, sendLog: Boolean = true, forClean: Boolean = false)
                  (onFile: Current => A, onDir: (Current, List[A]) => A = (_: Current, _: List[A]) => ()): Option[A] = {
@@ -205,7 +207,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
       val next = q.dequeue()
       if (!handles.contains(next)) {
         handles.add(next)
-        q.enqueue(next.dependencies.flatMap(s => backend.getArchive(s)): _*)
+        q.enqueueAll(next.dependencies.flatMap(s => backend.getArchive(s)))
       }
     }
 

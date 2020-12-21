@@ -7,8 +7,10 @@ class ComplexHashSet[H, A](hash: A => H) extends Set[A] {
   private var elements = new HashMap[H,Set[A]]()
   private def bucket(h: H) = elements.getOrElseUpdate(h, Set.empty)
 
-  def +=(a: A) = {bucket(hash(a)) += a; this}
-  def -=(a: A) = {bucket(hash(a)) -= a; this}
+  override def clear(): Unit = elements.clear()
+
+  def addOne(a: A) = {bucket(hash(a)) += a; this}
+  def subtractOne(a: A) = {bucket(hash(a)) -= a; this}
   def contains(a: A) = bucket(hash(a)) contains a
   def iterator = elements.valuesIterator.flatten
 

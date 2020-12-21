@@ -37,7 +37,6 @@ object Orders {
     "fundamentals/relations.mmt",
     "fundamentals/equality.mmt",
     "fundamentals/subtyping.mmt",
-    "logic/operators.mmt",
     "logic/pl.mmt",
     "logic/sfol.mmt",
     "logic/booleans.mmt",

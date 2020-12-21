@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.objects.{Term, _}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.uom._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.lf._
+import info.kwarc.mmt.lf.{Apply, ApplyGeneral, Arrow, FunType}
 
 object Hom extends UnaryConstantScala(Combinators._path, "hom")
 

@@ -80,7 +80,7 @@ object SOMDoc {
 
       case PosOrIntLiterals(value) =>
         if (value.isValidInt) {
-          SInteger(value.intValue())
+          SInteger(value.intValue)
         } else {
           System.err.println(s"encountered term for positive or int literals that would overflow Scala's Int: $tm")
           SRawOMDoc(tm.toNode.toString())
