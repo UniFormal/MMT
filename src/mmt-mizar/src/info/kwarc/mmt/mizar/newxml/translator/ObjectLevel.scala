@@ -1,12 +1,12 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.OMV
-import info.kwarc.mmt.lf.structuralfeatures.{StructuralFeatureUtils, RecordUtil}
+import info.kwarc.mmt.api.objects.{OMV, VarDecl}
+import info.kwarc.mmt.lf.structuralfeatures.{RecordUtil, StructuralFeatureUtils}
 import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.{Mizar, MMTUtils, PatternUtils, StructureInstance}
-import info.kwarc.mmt.mizar.newxml.syntax._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.{MMTUtils, Mizar, PatternUtils, StructureInstance}
+import info.kwarc.mmt.mizar.newxml.syntax.{VariableSegments, _}
 import info.kwarc.mmt.mizar.newxml.translator.Utils
 import org.omdoc.latin.foundations.mizar.MizarPatterns
 
@@ -171,8 +171,23 @@ object formulaTranslator {
   }
 }
 
+object contextTranslator {
+  private def translateSingleTypedVariable(_var : Variable, _tp: Type) = {
+    val variable = variableTranslator.translate_Variable(_var)
+    val tp = typeTranslator.translate_Type(_tp)
+    variable % tp
+  }
+  def translate_Context(varSegm: VariableSegments) :objects.Context= varSegm match {
+    case Free_Variable_Segment(pos, _var, _tp) => translateSingleTypedVariable(_var, _tp)
+    case Implicitly_Qualified_Segment(pos, _var, _tp) =>translateSingleTypedVariable(_var, _tp)
+    case Explicitly_Qualified_Segment(pos, _variables, _tp) => _variables._vars.map(v => translateSingleTypedVariable(v,_tp))
+  }
+}
+
 object variableTranslator {
-  def translate_Variable(variable:Variable) : objects.OMV = { ??? }
+  def translate_Variable(variable:Variable) : objects.OMV = {
+    OMV(variable.varAttr.toIdentifier())
+  }
 }
 
 object claimTranslator {

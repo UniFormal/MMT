@@ -131,6 +131,20 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
     ???
   }
 }
+case class GlobalPatternDefiningAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
+case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
+case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
+trait globallyReferencingObjAttrs extends referencingObjAttrs {
+  def globalDefAttrs : GlobalDefAttrs
+  def globalKind = globalDefAttrs.globalKind
+  def globalPatternFile = globalDefAttrs.globalPatternFile
+  def globalPatternNr = globalDefAttrs.globalPatternNr
+  def globalConstrFile = globalDefAttrs.globalConstrFile
+  def globalConstrNr = globalDefAttrs.globalConstrNr
+
+  override def globalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+  def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
+}
 /**
  * An extended list of common attributes for Object (terms and types) definitions
  * @param posNr
@@ -225,6 +239,9 @@ case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
  * @param _locis
  */
 case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
+case class LocalVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
+  def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varNr.varnr.toString
+}
 /**
  *
  * @param pos
@@ -232,14 +249,18 @@ case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci
  * @param serNr
  * @param varnr
  */
-case class RedVarAttrs(pos:Position, orgn:Origin, serNr:SerialNrIdNr, varnr:VarNr) extends Group
+case class RedVarAttrs(pos:Position, orgn:Origin, locVarAttr:LocalVarAttr) extends Group {
+  def variableIdentifier = locVarAttr.localIdentitier
+}
 /**
  *
  * @param spell
  * @param kind
  * @param redVarAttr
  */
-case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group
+case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group {
+  def toIdentifier() : String = spell + "/" + redVarAttr.variableIdentifier
+}
 /**
  * A single case definien consisting of a single expression
  * The expression is optional, since in any instance a single case expression may be left out in favor of a case-by-case definition
