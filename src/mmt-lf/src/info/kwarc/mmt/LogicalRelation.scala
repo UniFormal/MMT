@@ -26,43 +26,24 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
   private val n = mors.size
 
   /**
-    * Maps `x` to `xᵢ`.
-    */
-  private def suffix(name: LocalName, i: Int): LocalName = name.suffixLastSimple(UnicodeStrings.subscriptInteger(i))
-
-  /**
-    * Maps `x` to `List(x₁, …, xₙ)`.
-    */
-  private def suffixAll(name: LocalName): List[LocalName] = mors.indices.map(suffix(name, _)).toList
-
-  /**
-    * Maps `t` to `mᵢ'(t)` where `mᵢ'` is `mᵢ` with subsequent substitution replacing
-    * variables `x` in ctx by `xᵢ`.
-    */
-  private def applyMor(ctx: Context, t: Term, i: Int): Term = {
-    val sub = ctx.map(vd => Sub(vd.name, OMV(suffix(vd.name, i))))
-    lookup.ApplyMorphs(t, mors(i)) ^ sub
-  }
-
-  /**
-    * Maps `t` to `List(m₁(t), … ,mₙ(t))`.
-    */
-  private def applyMors(ctx: Context, t: Term): List[Term] = mors.indices.map(applyMor(ctx, t, _)).toList
-
-  /**
-    * Maps [[VarDecl]] `v: tp [= df]` to `vᵢ: mᵢ'(tp) [= mᵢ'(df)]`.
-    */
-  private def applyMor(ctx: Context, vd: VarDecl, i: Int): VarDecl = {
-    // should refactor VarDecl apply to avoid orNull antipattern?
-    VarDecl(suffix(vd.name, i), vd.tp.map(applyMor(ctx, _, i)).orNull, vd.df.map(applyMor(ctx, _, i)).orNull)
-  }
-
-  /**
-    * Maps [[VarDecl]] `v: tp [= df]` to `List(v₁: m₁'(tp) [= m₁'(df)], …, vₙ: mₙ'(tp) [= mₙ'(df)])`.
+    * For a term `t: tp`, computes the expected type of `lr(t)`.
     *
-    * The resulting [[VarDecl]] should be treated in [[applyMo]]
+    * Namely, the expected type is `lr(tp) m₁(t) … mₙ(t)`.
+    *
+    * This only works for LF, right?
     */
-  private def applyMors(ctx: Context, vd: VarDecl) = mors.indices.map(applyMor(ctx, vd, _)).toList
+  def getExpected(ctx: Context, t: Term, A: Term): Term = ApplySpine(apply(ctx, A), applyMors(ctx, t) : _*)
+
+  /**
+    * For a term `t: tp`, computes the expected judgement `lr(t) : getExpected(t)`…
+    *
+    * Namely, `lr(t) : lr(tp) m₁(t) … mₙ(t)`.
+    *
+    * This only works for LF, right?
+    *
+    * @see [[getExpected()]]
+    */
+  def applyPair(c: Context, t: Term, A: Term): (Term, Term) = (apply(c, t), getExpected(c, t, A))
 
   def apply(ctx: Context, t: Term): Term = t match {
     case OMV(x) => OMV(x)
@@ -104,6 +85,45 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
   }  // g flatMapInContext { case (h, vd) => applyMors(c ++ h, vd) }
 
   /**
+    * Maps `x` to `xᵢ`.
+    */
+  private def suffix(name: LocalName, i: Int): LocalName = name.suffixLastSimple(UnicodeStrings.subscriptInteger(i))
+
+  /**
+    * Maps `x` to `List(x₁, …, xₙ)`.
+    */
+  private def suffixAll(name: LocalName): List[LocalName] = mors.indices.map(suffix(name, _)).toList
+
+  /**
+    * Maps `t` to `mᵢ'(t)` where `mᵢ'` is `mᵢ` with subsequent substitution replacing
+    * variables `x` in ctx by `xᵢ`.
+    */
+  private def applyMor(ctx: Context, t: Term, i: Int): Term = {
+    val sub = ctx.map(vd => Sub(vd.name, OMV(suffix(vd.name, i))))
+    lookup.ApplyMorphs(t, mors(i)) ^ sub
+  }
+
+  /**
+    * Maps `t` to `List(m₁(t), … ,mₙ(t))`.
+    */
+  private def applyMors(ctx: Context, t: Term): List[Term] = mors.indices.map(applyMor(ctx, t, _)).toList
+
+  /**
+    * Maps [[VarDecl]] `v: tp [= df]` to `vᵢ: mᵢ'(tp) [= mᵢ'(df)]`.
+    */
+  private def applyMor(ctx: Context, vd: VarDecl, i: Int): VarDecl = {
+    // should refactor VarDecl apply to avoid orNull antipattern?
+    VarDecl(suffix(vd.name, i), vd.tp.map(applyMor(ctx, _, i)).orNull, vd.df.map(applyMor(ctx, _, i)).orNull)
+  }
+
+  /**
+    * Maps [[VarDecl]] `v: tp [= df]` to `List(v₁: m₁'(tp) [= m₁'(df)], …, vₙ: mₙ'(tp) [= mₙ'(df)])`.
+    *
+    * The resulting [[VarDecl]] should be treated in [[applyMo]]
+    */
+  private def applyMors(ctx: Context, vd: VarDecl) = mors.indices.map(applyMor(ctx, vd, _)).toList
+
+  /**
     * Maps `t` to `List(m₁(t), …, mₙ(t), lr(t))`.
     */
   private def applyTerm(c: Context, t: Term): List[Term] = applyMors(c, t) :+ apply(c, t)
@@ -117,24 +137,4 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
 
     applyMors(ctx, vd) :+ VarDecl(vd.name, tp.orNull)
   }
-
-  /**
-    * For a term `t: tp`, computes the expected type of `lr(t)`.
-    *
-    * Namely, the expected type is `lr(tp) m₁(t) … mₙ(t)`.
-    *
-    * This only works for LF, right?
-    */
-  def getExpected(ctx: Context, t: Term, A: Term): Term = ApplySpine(apply(ctx, A), applyMors(ctx, t) : _*)
-
-  /**
-    * For a term `t: tp`, computes the expected judgement `lr(t) : getExpected(t)`…
-    *
-    * Namely, `lr(t) : lr(tp) m₁(t) … mₙ(t)`.
-    *
-    * This only works for LF, right?
-    *
-    * @see [[getExpected()]]
-    */
-  def applyPair(c: Context, t: Term, A: Term): (Term, Term) = (apply(c, t), getExpected(c, t, A))
 }
