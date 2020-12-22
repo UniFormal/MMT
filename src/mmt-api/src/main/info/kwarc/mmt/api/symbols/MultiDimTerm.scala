@@ -160,11 +160,11 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
       case tc: ObjContainer[T] if hasSameType(tc) =>
          var changed = (read = tc.read)
          if (changed || tc.parsed.isDefined)
-            changed |= (parsed = tc.parsed)
+            changed | {changed = true; (parsed = tc.parsed)}
          if (changed || tc.analyzed.isDefined)
-            changed |= (analyzed = tc.analyzed)
+            changed | {changed = true; (analyzed = tc.analyzed)}
          if (changed || tc.normalized.isDefined)
-            changed |= (normalized = tc.normalized)
+            changed |= {changed = true; (normalized = tc.normalized)}
          changed
       case _ => throw ImplementationError("not a TermContainer")
    }}

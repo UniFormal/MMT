@@ -33,7 +33,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
   private var flat  : String = ""
 
   /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
-  private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
+  private implicit var lineStarts = new Array[(Int, Int)](0)
 
   /** list of parsing errors in the file */
   private var errors : List[Error] = Nil
@@ -64,7 +64,7 @@ class TwelfParser extends Parser(new NotationBasedParser) {
     }
     source = ps.source
     flat = ""
-    lineStarts = new ArraySeq [(Int, Int)] (0)
+    lineStarts = new Array [(Int, Int)] (0)
     errors = Nil
     keepComment = None
     prefixes = ps.nsMap(dpath)

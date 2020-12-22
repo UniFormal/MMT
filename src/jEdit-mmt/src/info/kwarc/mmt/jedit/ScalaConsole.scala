@@ -2,11 +2,12 @@ package info.kwarc.mmt.jedit
 
 import info.kwarc.mmt.api._
 import utils._
-
 import org.gjt.sp.jedit._
 import console._
+
 import scala.tools.nsc.Settings
 import scala.tools.nsc.interpreter._
+import scala.tools.nsc.interpreter.shell.ReplReporterImpl
 
 /** a Scala console for jEdit */ 
 class ScalaConsole extends ThreadedConsole("scala") {
@@ -44,7 +45,7 @@ class ScalaConsole extends ThreadedConsole("scala") {
    private lazy val interpreter = {
      val settings = new Settings
      settings.classpath.value = getClasspath
-     val intp = new IMain(settings, new java.io.PrintWriter(writer))
+     val intp = new IMain(settings, new ReplReporterImpl(settings,new java.io.PrintWriter(writer)))
      // Makarius does some more stuff with class loaders here, but it doesn't seem to make a difference
      intp beQuietDuring {
        intp.bind("mmt", mmt)

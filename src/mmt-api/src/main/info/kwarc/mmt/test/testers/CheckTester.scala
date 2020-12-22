@@ -98,7 +98,7 @@ trait CheckTester extends BaseTester {
 
         // find all messages for this file, with different potential levels
         val messages = ret.filter(_._1.toString == f)
-        val messageCounts = messages.groupBy(_._2.level).mapValues(_.length).withDefault(_ => 0)
+        val messageCounts = messages.groupBy(_._2.level).view.mapValues(_.length).toMap.withDefault(_ => 0)
 
         // find all the different types of errors
         val errorsAndAbove = messageCounts(Level.Error) + messageCounts(Level.Fatal)

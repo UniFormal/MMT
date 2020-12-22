@@ -36,12 +36,12 @@ jobs:
       - name: Install Dependencies
         run: |
           cd src
-          sbt ++2.12.9 update
+          sbt ++2.13.4 update
 
       - name: Build 'mmt.jar'
         run: |
           cd src
-          sbt ++2.12.9 deploy
+          sbt ++2.13.4 deploy
 
       - name: Store 'mmt.jar' artifact
         uses: actions/upload-artifact@v2
@@ -52,7 +52,7 @@ jobs:
       - name: Unit Tests
         run: |
           cd src
-          sbt ++2.12.9 test
+          sbt ++2.13.4 test
 
       - name: Integration Tests
         shell: bash

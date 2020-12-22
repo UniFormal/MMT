@@ -1,8 +1,6 @@
 package info.kwarc.mmt.api.moc
 
-import scala.collection._
-import scala.collection.immutable.{HashMap,HashSet,List}
-
+import scala.collection.immutable.{HashMap, HashSet, List}
 import info.kwarc.mmt.api._
 import ontology._
 import symbols._
@@ -11,6 +9,9 @@ import modules._
 import utils.mmt
 import frontend.ROMemory
 import objects._
+
+import scala.collection.{immutable, mutable}
+import mutable.Set
 
 
 /**

@@ -1,9 +1,9 @@
 package info.kwarc.mmt.api.test
 
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import info.kwarc.mmt.api.utils.CompRegexParsers
 
-class ParserTestSpec extends FlatSpec {
+class ParserTestSpec extends AnyFlatSpec {
   behavior of "a completing string parser"
 
   //

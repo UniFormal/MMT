@@ -2,16 +2,13 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
-import info.kwarc.mmt.api.objects._
 import web._
 
 import scala.collection.mutable
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.refactoring.{ArchiveStore, FullArchive}
+import info.kwarc.mmt.api.refactoring.ArchiveStore
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.utils.{URI, _}
+import info.kwarc.mmt.api.utils.{File, FilePath, JSON, JSONArray, JSONObject, JSONString, URI}
 
-import scala.collection.generic.CanBuildFrom
 import scala.collection.immutable.List
 import scala.util.{Success, Try}
 
@@ -81,7 +78,7 @@ class AlignmentsServer extends ServerExtension("align") {
       }
     }
 
-    def collect[B, That](pf: PartialFunction[Alignment, B])(implicit bf: CanBuildFrom[List[Alignment], B, That]) : That = toList.collect[B,That](pf)(bf)
+    def collect[That](pf: PartialFunction[Alignment, That]) : List[That] = toList.collect(pf)
 
     def filter(f : Alignment => Boolean) = toList.filter(f)
     def map[B](f : Alignment => B) = toList.map(f)
@@ -378,7 +375,7 @@ class AlignmentsServer extends ServerExtension("align") {
   }
 
   /** translation along alignments */
-  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), SetQuery(StringType)) {
+  private class AlignQuery extends QueryFunctionExtension("align", ElementQuery(PathType), new SetQuery(List(StringType))) {
     def evaluate(argument: BaseType, params: List[String]) = {
       log("Evaluating align query")
       log(argument.toString)

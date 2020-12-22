@@ -6,7 +6,7 @@ ADD src/ /build/MMT/src
 ADD deploy/ /build/MMT/deploy
 
 WORKDIR /build/MMT/src
-RUN sbt ++2.12.8 deploy
+RUN sbt ++2.13.4 deploy
 
 # Runtime dependencies
 FROM openjdk:jre-alpine

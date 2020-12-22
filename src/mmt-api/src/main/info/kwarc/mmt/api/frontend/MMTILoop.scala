@@ -2,17 +2,23 @@ package info.kwarc.mmt.api.frontend
 
 import info.kwarc.mmt.api._
 
-import scala.tools.nsc._
-import interpreter._
+import scala.tools.nsc.{settings, _}
+import interpreter.shell.{ILoop, ShellConfig}
+import scala.tools.nsc.interpreter.Results
 
 /** a wrapper around the interactive Scala interpreter
  *
  *  @param controller a controller that is used to initialize the Scala environment
  */
-class MMTILoop(controller: Controller) extends ILoop {
+object MMTILoop {
+  val settings = new Settings() // make sure all classes of the Java classpath are available
+  settings.usejavacp.value = true
+  val cfg = ShellConfig(settings)
+}
+class MMTILoop(controller: Controller) extends ILoop(MMTILoop.cfg) {
    /** this is overridden in order to bind variables after the interpreter has been created */
-   override def createInterpreter {
-      super.createInterpreter
+   override def createInterpreter(settings: Settings = MMTILoop.settings) {
+      super.createInterpreter(settings)
       init
    }
    override def printWelcome {
@@ -22,13 +28,13 @@ class MMTILoop(controller: Controller) extends ILoop {
       out.println
       out.flush
    }
-   override def prompt = "scala-mmt> "
+   override lazy val prompt = "scala-mmt> "
    private def init {
-     def printError(r: IR.Result, s: String) {
-       if (r != IR.Success)
+     def printError(r: Results.Result, s: String) {
+       if (r != Results.Success)
          println("binding of " + s + " failed")
      }
-     intp. // TODO is this needed?
+     //intp. // TODO is this needed?
      intp beQuietDuring {
          intp.interpret("import info.kwarc.mmt.api._")
          printError(intp.bind("controller", controller), "controller")
@@ -41,19 +47,14 @@ class MMTILoop(controller: Controller) extends ILoop {
    }
    /** run a command and return or interactively read commands */
    def run(command: Option[String]) {
-      val settings = new Settings
-      settings.usejavacp.value = true // make sure all classes of the Java classpath are available
       //settings.sourceReader.value = "SimpleReader"
       //settings.debug.value = true
       command match {
          case None =>
-            settings.Yreplsync.value = true
             out.println("It may take a few seconds for the Scala prompt to appear.")
-            process(settings)
          case Some(c) =>
             // code copied from process(settings) but without going into the loop
-            this.settings = settings
-            createInterpreter
+            createInterpreter()
             intp.interpret(c)
             closeInterpreter
       }

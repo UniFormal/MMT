@@ -9,7 +9,7 @@ import objects._
 import symbols._
 import utils._
 
-import scala.collection._
+import scala.collection.mutable
 import scala.ref.SoftReference
 
 /** auxiliary class of [[Library]] to optimize storage

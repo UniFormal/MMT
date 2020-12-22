@@ -77,7 +77,7 @@ abstract class Program {
 object TestProgram extends Program {
    import EXPConversions._
    val declare() = COMMENT("natural numbers as an inductive type")
-   val declare(nat, zero, succ)  = "nat" adt ("zero" of (), "succ" of current)
+   val declare(nat, zero, succ)  = "nat" adt ("zero".of(), "succ" of current)
    val declare() = COMMENT("rational numbers as a record")
    val declare(rat, enum, denom) = "rat" record ("enum" ::: nat, "denom" ::: nat)
    val declare() = COMMENT("type definition for a list of natural numbers")

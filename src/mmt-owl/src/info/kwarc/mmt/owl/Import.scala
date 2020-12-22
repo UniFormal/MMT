@@ -161,7 +161,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
               case c: OWLObjectUnionOf => ("OWL2RL", "objectUnionOf")
             }
             val args = c.getOperandsAsList.asScala.map(classToLF)
-            ApplySpine(OWL2OMS(sig, dec), args: _*)
+            ApplySpine(OWL2OMS(sig, dec), args.toSeq: _*)
 
           case c: OWLObjectComplementOf =>
             val arg = c.getOperand
@@ -400,7 +400,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
                 case ax: OWLDisjointClassesAxiom => ("OWL2SUB", "disjointClasses")
               }
               val args = ax.getClassExpressionsAsList.asScala.map(classToLF)
-              val tp = ApplySpine(OWL2OMS(sig, dec), args: _*)
+              val tp = ApplySpine(OWL2OMS(sig, dec), args.toSeq: _*)
               (null, tp)
           }
         // ObjectPropertyAxiom
@@ -498,7 +498,7 @@ class Import(manager: OWLOntologyManager, controller: Controller) {
             case ax: OWLDifferentIndividualsAxiom => ("OWL2SUB", "differentIndividuals")
           }
           val args = ax.getIndividualsAsList.asScala.map(individualToLF)
-          val tp = ApplySpine(OWL2OMS(sig, dec), args: _*)
+          val tp = ApplySpine(OWL2OMS(sig, dec), args.toSeq: _*)
           (null, tp)
 
         case ax: OWLPropertyAssertionAxiom[p, o] =>
