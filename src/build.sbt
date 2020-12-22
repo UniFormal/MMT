@@ -48,10 +48,10 @@ lazy val mmtMainClass = "info.kwarc.mmt.api.frontend.Run"
 //   (2) verify whether there is a Scala paradise plugin available on Maven central for the new Scala version
 //       Search for "paradise" way to below to find the dependency "org.scalamacros" % "paradise_****" in this build.sbt file.
 //
-scalaVersion in Global := "2.12.9"
+scalaVersion in Global := "2.13.4"
 scalacOptions in Global := Seq(
   "-feature", "-language:postfixOps", "-language:implicitConversions", "-deprecation",
-  "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems
+  // "-Xmax-classfile-name", "128", // fix long classnames on weird filesystems // does not exist anymore since scala 2.13.*
   "-sourcepath", baseDirectory.value.getAbsolutePath // make sure that all scaladoc source paths are relative
 )
 
@@ -99,7 +99,7 @@ def commonSettings(nameStr: String) = Seq(
   sourcesInBase := false,
   autoAPIMappings := true,
   exportJars := true,
-  libraryDependencies += "org.scalatest" % "scalatest_2.12" % "3.0.4" % "test",
+  libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.3" % "test",
   fork := true,
   test in assembly := {},
   assemblyMergeStrategy in assembly := {
@@ -167,7 +167,7 @@ lazy val src = (project in file(".")).
 // This is the main project. 'mmt/deploy' compiles all relevants subprojects, builds a self-contained jar file, and puts into the deploy folder, from where it can be run.
 lazy val mmt = (project in file("mmt")).
   exclusions(excludedProjects).
-  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
+  dependsOn(tptp, stex, pvs, specware, oeis, odk, jedit, latex, openmath, mizar, imps, isabelle, repl, concepts, interviews, mathhub, python, intellij, coq, glf, lsp).
   settings(mmtProjectsSettings("mmt"): _*).
   settings(
     exportJars := false,
@@ -201,6 +201,7 @@ def apiJars(u: Utils) = Seq(
   "scala-parser-combinators.jar",
   "scala-xml.jar",
   "xz.jar",
+  "scala-parallel-collections.jar"
 ).map(u.lib.toJava / _)
 
 // The kernel upon which everything else depends. Maintainer: Florian
@@ -223,7 +224,7 @@ lazy val lf = (project in file("mmt-lf")).
   dependsOn(lfcatalog).
   settings(mmtProjectsSettings("mmt-lf"): _*).
   settings(
-    //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "2.12.8" % "test",
+    //    libraryDependencies += "org.scala-lang" % "scala-parser-combinators" % "1.2.0-M1" % "test",
   )
 
 // =================================
@@ -379,7 +380,7 @@ val finchVersion = "0.32.1"
 // Circe is a JSON library (https://circe.github.io/circe/), a FrameIT dependency
 val circeVersion = "0.13.0"
 lazy val frameit = (project in file("frameit-mmt"))
-  .dependsOn(api, lf)
+  .dependsOn(api, lf, odk)
   .settings(mmtProjectsSettings("frameit-mmt"): _*)
   .settings(
     libraryDependencies ++= Seq(
@@ -406,12 +407,14 @@ lazy val frameit = (project in file("frameit-mmt"))
     ),
 
     scalacOptions in Compile ++= Seq(
-      "-Xplugin-require:macroparadise"
+     // "-Xplugin-require:macroparadise"
+      "-Ymacro-annotations"
     ),
 
     // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
-    resolvers += Resolver.sonatypeRepo("releases"),
-    addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
+    // resolvers += Resolver.sonatypeRepo("releases"),
+    // addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
+
   )
 
 // plugin for mathscheme-related functionality. Obsolete

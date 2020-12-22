@@ -107,7 +107,7 @@ object ServerTiscafAdapter {
           stack.push(s)
     }
     // add all the components back
-    val cleanPath = stack.elems.reverse.mkString("/")
+    val cleanPath = stack.reverse.mkString("/")
     // and add back a final slash if needed
     if(url.endsWith("/")) cleanPath + "/" else cleanPath
   }

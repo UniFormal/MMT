@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import backend._
 import documents._
-import info.kwarc.mmt.api.utils.{MMTSystem, MMT_TODO}
+import info.kwarc.mmt.api.utils.{MMTSystem, MMT_TODO, URI}
 
 import scala.xml._
 
@@ -33,6 +33,13 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
   val serverName : String = "MMT HTTP Server"
   val listenAddress : String = host
   val listenPort : Int = port
+
+  /**
+    * The base URI at which all [[ServerExtension]]s listen.
+    *
+    * Usually something like [[http://localhost:8080/]].
+    */
+  def baseURI: URI = URI(s"http://$host:$port/")
 
   def handleMessage(s: String) {
     log(s)

@@ -120,10 +120,22 @@ object Apply extends LFSym("apply") {
 /** provides apply/unapply methods for application of a term to a list of arguments
   * the unapply method transparently handles associativity (currying) of application
   *
-  * Does *not* handle empty argument lists!
+  * Deliberately does *not* handle empty argument lists!
+  * (Otherwise we would have ApplySpine.unapply(ApplySpine(f))) == None, a breach
+  *  of the apply/unapply idioms, I guess.)
   */
 object ApplySpine {
-  def apply(f: Term, a: Term*) = OMA(Apply.term, f :: a.toList)
+  /**
+    * Applies an LF function `f` to a *non-empty* sequence of arguments `a`.
+    *
+    * The output is *not* curried, e.g. `apply(f, a, b) = OMA(?LFApply, f, a, b)`
+    * and not `OMA(OMA(?LFApply, f, a), b)` as one might expect.
+    *
+    * @see [[applyFullyCurried()]] if you want fully curried behavior
+    * @see [[applyOrSymbol()]] if you want the case of empty arguments be treated as just
+    *      returning `f` itself.
+    */
+  def apply(f: Term, a: Term*): Term = OMA(Apply.term, f :: a.toList)
 
   def unapply(t: Term): Option[(Term, List[Term])] = t match {
     case OMA(Apply.term, f :: args) =>
@@ -133,6 +145,25 @@ object ApplySpine {
       }
     case _ => None
   }
+
+
+  /**
+    * Like [[apply]] but forces a fully curried representation.
+    * If in doubt, rather use [[apply]].
+    */
+  def applyFullyCurried(f: Term, a: List[Term]): Term = a match {
+    case Nil => throw ImplementationError("ApplySpine.applyFullyCurried called with no arguments")
+    case arg :: Nil => OMA(Apply.term, List(f, arg))
+    case args :+ arg => OMA(Apply.term, List(applyFullyCurried(f, args), arg))
+  }
+
+  /**
+    * Applies an LF function `f` to a (possibly empty) sequence of arguments `a`.
+    *
+    * In case of no arguments, `f` itself is returned.
+    * Otherwise, the behavior equals [[apply()]].
+    */
+  def applyOrSymbol(f: Term, a: Term*): Term = if (a.isEmpty) f else apply(f, a : _*)
 }
 
 /**
@@ -241,6 +272,11 @@ object FunTerm {
       Some((name, tp) :: remainingArgs, ultimateScope)
     case t => Some(Nil, t)
   }
+
+  /**
+    * Creates the identity function ''[x: tp] x''.
+    */
+  def identity(tp: Term): Term = Lambda.apply(LocalName("x"), tp, OMV("x"))
 }
 
 /**

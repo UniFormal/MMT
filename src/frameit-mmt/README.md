@@ -1,398 +1,257 @@
 # frameit-mmt: Server component of FrameIT project
 
-This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), maintained by [@ComFreek](https://github.com/ComFreek).
+This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), primarily maintained so far by [@ComFreek](https://github.com/ComFreek).
 
 ## Installation
 
-1. Get a set of UFrameIT archives you want the server to use: `git clone --recursive https://github.com/UFrameIT/archives archive-root`
-
-   Remember the path you clone this to!
-
-2. Clone the MMT repository on devel branch: `git clone --branch devel https://github.com/UniFormal/mmt`
-
-3. Import the source code into a new IntelliJ project: see <https://uniformal.github.io//doc/setup/devel#using-intellij>
-
-4. Open the just created IntelliJ project and locate `src -> frameit-mmt -> src -> info.kwarc.mmt.frameit.communication.Server` in the project browser and run it via the green triangle: 
-
-   ![Project browser showing `info.kwarc.mmt.frameit.communication.Server`](https://i.imgur.com/J75FzWa.png)
-  
-   This will invoke compilation and execution of the server in that order. Compilation hopefully works. See below when you get a stack overflow error *at compilation*. Execution is supposed to result in an error since the server expects some command-line arguments upon execution. We will add them next.
-
-5. Edit the `Server` run configuration
-
-   - first open all run configurations:
-  
-     ![run configurations](https://i.imgur.com/nFd8ETr.png)
-
-   - edit the `Server` configuration by adding `-bind :8085 -archive-root <path to archive root>` to its program arguments:
-  
-     ![program arguments](https://i.imgur.com/lZahL6C.png)
-
-6. Rerun the server via the run configuration dropdown (left to green triangle in IntelliJ's menu band)
-
-   The server should now be running. The initial console output should be
-
-   ```
-   "C:\Program Files (x86)\OpenJDK\jdk-14.0.1\bin\java.exe" [...] info.kwarc.mmt.frameit.communication.Server
-
-   SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
-   SLF4J: Defaulting to no-operation (NOP) logger implementation
-   SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
-
-   WARNING: An illegal reflective access operation has occurred
-   WARNING: Illegal reflective access by com.twitter.jvm.Hotspot (file:/C:/Users/nroux/Desktop/mmt/src/null/Coursier/cache/v1/https/repo1.maven.org/maven2/com/twitter/util-jvm_2.12/20.7.0/util-jvm_2.12-20.7.0.jar) to field sun.management.ManagementFactoryHelper.jvm
-   WARNING: Please consider reporting this to the maintainers of com.twitter.jvm.Hotspot
-   WARNING: Use --illegal-access=warn to enable warnings of further illegal reflective access operations
-   WARNING: All illegal access operations will be denied in a future release
-   ```
-   
-   Don't worry. The first warning is ignorable &mdash; log output is just discarded. The secone one is Twitter's to fix and is under their investigation already (for months, sadly).
-
-**You're done.** The server should now be available at `http://localhost:8085` and respond to the REST API calls detailled below.
-
-As a first test, you can try opening <http://localhost:8085/debug/situationtheory/print>. It should output something like
-
-```
-"\ntheory SituationTheory : http://mathhub.info/FrameIT/frameworld?FactCollection  = \n❚"
-```
-
-## Stack overflow error when compiling
-
-The Scala compiler sometimes (unreproducibly) runs into stackoverflow errors when compiling, concretely, when typechecking. The Internet does not offer many tips for solving this except increasing the stack size for compilation:
-
-- <https://github.com/scala-js/scala-js/issues/3588>
-- <https://github.com/scala/bug/issues/9696>
-
-Not sure if it helped in my case or the error just randomly disappeared.
+See [./installation.md](installation.md).
 
 ## REST API
 
-```
-POST /archive/build-light
-  no payload
-POST /archive/build
-  no payload
+We use UTF-8-encoded JSON payloads for both HTTP request and response bodies.
 
-POST /fact/add
-  payload: {"label": "some label", "tp": OMDoc JSON term, "df": OMDoc JSON term or null or left out}
-  return: {"uri": uri to created fact}
-GET /fact/list
-  no payload
-  return: [
-    {"uri": uri to fact, "label": "some label", "tp": {"original": OMDoc JSON term, "simplified": OMDoc JSON term}, df: same as tp or null or left out},
-    // repeat for other facts
-  ]
+All endpoints indicate success by a 2xx response status code and failure by any other status code.
 
-GET /scroll/list
-  [{
-      "problemTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem",
-      "solutionTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Solution",
-      "label": "OppositeLen",
-      "description": "Given a triangle ABC right angled at C, the distance AB can be computed from the angle at B and the distance BC",
-      "requiredFacts": [{
-        "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-        "label": "pA",
-        "tp": {
-          "original": OMDoc JSON term,
-          "simplified": OMDoc JSON term
-        },
-        "df": same as tp or null or left out
-      } /* more facts */]
-    } /* more scrolls]
+### Endpoints
 
-POST /scroll/check
-  {
-    "scroll": {
-      "problemTheory": "uri to problem theory",
-      "solutionTheory": "uri to solution theory",
-    },
-    "assignments": [
-      ["uri to fact", OMDoc JSON term]
-    ]
-  }
-  return: ??? yet unspecified
+- <details><summary><code>POST /fact/add</code>: make a new fact known to the server</summary>
 
-POST /scroll/try-complete
-  {
-    "scroll": {
-      "problemTheory": "uri to problem theory",
-      "solutionTheory": "uri to solution theory",
-    },
-    "assignments": [
-      ["uri to fact", OMDoc JSON term]
-    ]
-  }
-  return: ??? yet unspecified
+  - request: a fact JSON object (without the "ref" field)
+  - response: a fact reference
 
-POST /scroll/apply
-  {
-    "scroll": {
-      "problemTheory": "uri to problem theory",
-      "solutionTheory": "uri to solution theory",
-    },
-    "assignments": [
-      ["uri to fact", OMDoc JSON term]
-    ]
-  }
-  return: list of new facts (i.e., those received via scroll application by means of a pushout). See /fact/list for the format.
+  </details>
 
-GET debug/situationtheory/print
-  no payload
-  return: string of MMT surface syntax (not to be parsed; debugging only!)
-```
+- <details><summary><code>GET /fact/list</code>: retrieve all facts known to the server</summary>
 
-## Sample output for `scroll/list`
+  - request: empty
+  - response: a JSON array of facts
 
-```
-[
+  </details>
+
+- <details><summary><code>GET /scroll/list</code>: retrieve all scrolls accessible from the current situation theory</summary>
+
+  - request: empty
+  - response: a JSON array of scrolls
+
+  </details>
+
+- <details><summary><code>GET /scroll/listall</code>: retrieve all scrolls known to the server</summary>
+
+  - request: empty
+  - response: a JSON array of scrolls
+
+  </details>
+
+- <details><summary><code>POST /scroll/apply</code>: apply (i.e. use) a scroll and add acquired facts to situation theory</summary>
+
+  - request: a scroll application
+  - <details><summary>response: scroll application info</summary>
+  
+    ```javascript
     {
-        "problemTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem",
-        "solutionTheory": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Solution",
-        "label": "OppositeLen",
-        "description": "Given a triangle ABC right angled at C, the distance AB can be computed from the angle at B and the distance BC",
-        "requiredFacts": [
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-                "label": "pA",
-                "tp": {
-                    "original": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    },
-                    "simplified": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                "label": "pB",
-                "tp": {
-                    "original": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    },
-                    "simplified": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                "label": "pC",
-                "tp": {
-                    "original": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    },
-                    "simplified": {
-                        "uri": "http://mathhub.info/MitM/core/geometry?3DGeometry?point",
-                        "kind": "OMS"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pdistBC_v",
-                "label": "pdistBC_v",
-                "tp": {
-                    "original": {
-                        "uri": "http://mathhub.info/MitM/Foundation?RealLiterals?real_lit",
-                        "kind": "OMS"
-                    },
-                    "simplified": {
-                        "uri": "http://mathhub.info/MitM/Foundation?RealLiterals?real_lit",
-                        "kind": "OMS"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pdistBC",
-                "label": "pdistBC",
-                "tp": {
-                    "original": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?DistanceFact?distanceFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pdistBC_v",
-                                "kind": "OMS"
-                            }
-                        ],
-                        "kind": "OMA"
-                    },
-                    "simplified": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?DistanceFact?distanceFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pdistBC_v",
-                                "kind": "OMS"
-                            }
-                        ],
-                        "kind": "OMA"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pangleABC_v",
-                "label": "pangleABC_v",
-                "tp": {
-                    "original": {
-                        "uri": "http://mathhub.info/MitM/Foundation?RealLiterals?real_lit",
-                        "kind": "OMS"
-                    },
-                    "simplified": {
-                        "uri": "http://mathhub.info/MitM/Foundation?RealLiterals?real_lit",
-                        "kind": "OMS"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pangleABC",
-                "label": "pangleABC",
-                "tp": {
-                    "original": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?AngleFact?angleFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pangleABC_v",
-                                "kind": "OMS"
-                            }
-                        ],
-                        "kind": "OMA"
-                    },
-                    "simplified": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?AngleFact?angleFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pangleABC_v",
-                                "kind": "OMS"
-                            }
-                        ],
-                        "kind": "OMA"
-                    }
-                },
-                "df": null
-            },
-            {
-                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pangleBCA",
-                "label": "pangleBCA",
-                "tp": {
-                    "original": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?AngleFact?angleFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-                                "kind": "OMS"
-                            },
-                            {
-                                "float": 90.0,
-                                "kind": "OMF"
-                            }
-                        ],
-                        "kind": "OMA"
-                    },
-                    "simplified": {
-                        "applicant": {
-                            "uri": "http://mathhub.info/FrameIT/frameworld?AngleFact?angleFact",
-                            "kind": "OMS"
-                        },
-                        "arguments": [
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pB",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pC",
-                                "kind": "OMS"
-                            },
-                            {
-                                "uri": "http://mathhub.info/FrameIT/frameworld?OppositeLen_Problem?pA",
-                                "kind": "OMS"
-                            },
-                            {
-                                "float": 90.0,
-                                "kind": "OMF"
-                            }
-                        ],
-                        "kind": "OMA"
-                    }
-                },
-                "df": null
-            }
-        ]
+        "valid": true|false,
+        "errors": /* an array of "scroll application checking error"s */,
+        "acquiredFacts": /* an array of facts */
     }
-]
-``` 
+    ```
+    
+    Invariant: valid = false => errors.nonEmpty
+    
+    </details>
+    
+  </details>
+
+- <details><summary><code>POST /scroll/dynamic</code>: get dynamic information on a scroll given a (possibly partial) scroll application</summary>
+
+  - request: a scroll application
+  - <details><summary>response: dynamic scroll info</summary>
+  
+    ```javascript
+    {
+        "original": /* a scroll */,
+        "rendered": /* a scroll */,
+        "completions": /* an array of "scroll assignments lists" */,
+        "valid": true|false,
+        "errors": /* an array of "scroll application checking error"s */
+    }
+    ```
+    
+    Invariant: valid = false => errors.nonEmpty
+  
+    The scroll under *original* contains the original scroll.
+    By contrast, in *rendered* all fact and scroll labels, all fact types, and all fact definitions are subject to being dynamically adapted to the (possibly utterly partial) scroll application.
+  
+    For example, if the original scroll stated `A: point ❘ meta ?MetaAnnotations?label "A" ❙` to be a required fact with label "A"
+  and the scroll application maps `A` to `P`  (where `P: point ❘ meta ?MetaAnnotations?label "P"` comes from the situation theory and has label "P"),
+  then the dynamic scroll output by this endpoint will state `A: point ❘ meta ?MetaAnnotations?label "P" ❙`.
+    The same holds for more complex labels built out of multiple labels of facts.
+  
+     Furthermore, *completions* is an array of scroll view completion suggestions for the yet missing assignments.
+    For instance, the first element of *completions* might be a list of some (possibly not all) of the yet missing assignments of the
+    request's scroll view. Analogously for the other elements of *completions*, if they exist.
+  It might happen that multiple mutually exclusive *completions* exist, hence the response contains an array of them.
+
+    </details>
+    
+  </details>
+
+### Formats
+
+JSON (sub)formats shared by multiple endpoints above.
+
+- <details><summary>fact reference</summary>
+
+    ```javascript
+    {"uri": /* MMT URI */}
+    ```
+    
+    The game engine may depend on this format (in contrast to, e.g., the format of scroll references).
+
+  </details>
+
+- <details><summary>fact</summary>
+
+    - variant a: general facts:
+    
+      ```javascript
+      {
+        "ref": /* fact reference */
+        "label": "some label",
+        "kind": "general",
+        "tp": /* SOMDoc */,
+        "df": /* SOMDoc or null or left out */
+      }
+      ```
+
+    - variant b: veq facts
+    
+      ```javascript
+      {
+        "ref": /* fact reference */
+        "label": "some label",
+        "kind": "veq",
+        "lhs":   /* SOMDoc */,
+        "value": /* SOMDoc (must be an OMF) */
+      }
+      ```
+
+  </details>
+
+- <details><summary>scroll reference</summary>
+
+    ```javascript
+    /* MMT URI to theory declaring the scroll */
+    ```
+  
+    Format only given for informational purposes, the game engine should treat JSON blobs of scroll references opaquely.
+    Do not depend on their internal structure. 
+
+  </details>
+
+- <details><summary>scroll</summary>
+
+    ```javascript
+    {
+      "ref": /* scroll reference */,
+      "label": "some label",
+      "description": "some description",
+      "requiredFacts": /* array of facts; facts that the scroll required you to give for scroll application */
+      "acquiredFacts": /* array of facts; facts that the scroll gives you upon successful scroll application */
+    }
+    ```
+
+  </details>
+
+
+- <details><summary>scroll assignments list</summary>
+
+    ```javascript
+    [
+      {
+         "fact": /* a fact reference */,
+         "assignment": /* SOMDoc */
+      },
+      /* more entries like the above
+    ]
+    ```
+
+  </details>
+
+- <details><summary>scroll application</summary>
+
+    ```javascript
+    {
+      "scroll": /* scroll reference */,
+      "assignments": /* a scroll assignments list */
+    }
+    ```
+
+  </details>
+
+- <details><summary>scroll application checking error</summary>
+
+    ```javascript
+    {
+      "kind": "invalidAssignment" | "unknown",
+      "msg": /* some human-readable message */,
+  
+      /* in case of kind being "invalidAssignment": */
+      "fact": /* a fact reference to the fact whose assignment was erroneous */
+    }
+    ```
+
+  </details>
+
+- <details><summary>SOMDoc ("simplified OMDoc")</summary>
+
+    SOMDoc is a JSON representation of a subset of [OMDoc](https://www.omdoc.org/). It is simpler than the [OpenMath-JSON standard](https://omjson.kwarc.info/) and *almost* implements a subset of it.
+    Below is a representative list of all possible SOMDoc terms as JSON:
+    
+    - `{"kind": "OMS", "uri": /* MMT  URI */}`
+    - `{"kind": "OMA", "applicant": /* SOMDoc */, "arguments": /* array of SOMDoc */}`
+    - `{"kind": "OMI", "decimal": 42}`
+    - `{"kind": "OMF", "float": 0.1234}`
+    - `{"kind": "OMSTR", "string": "string in UTF-8"}`
+    - `{"kind": "RAW", "xml": "OMDoc XML as string in UTF-8"}` (our addition to the (insert link here to omdoc json standard))
+    
+    In contrast to OpenMath-JSON, OMS terms simply encode the full MMT URI as a string instead of specifying its components separately. (E.g., OpenMath-JSON would provide fields `cd`, `cdbase`, and `name`.)
+    Moreover, as all but the last bullet point above only represent a subset of OMDoc, we need a way to encode unrepresented terms: we do so by `{kind: "RAW", "xml": "..."}`.
+
+  </details>
+
+- <details><summary>MMT URI</summary>
+
+    A JSON string representing an MMT URI. We follow the string representation of MMT URIs as implemented in MMT itself.
+
+  </details>
+
+## Internal REST API
+
+- <details><summary><code>POST /fact/bulkadd</code>: adds multiple facts at once</summary>
+
+  - request: a JSON array of fact JSON objects (each without the "ref" field)
+
+  - response: a JSON array with elements of the form of either `[/* fact reference */, ""]` or `["error string..."]`
+
+  </details>
+
+- <details><summary><code>GET /debug/space/print</code>: output a stringification of the situation theory (and included theories) known to the server</summary>
+
+  - request: empty
+  - response: an HTTP response with content type `text/plain` (not JSON!) and with body a dump in MMT surface syntax of the situation theory. The dump is probably unparsable by MMT; meant for human consumption only.
+
+  </details>
+
+- <details><summary><code>GET /debug/space/check</code>: typecheck situation space</summary>
+
+  - request: empty
+  - response: a Json response with list of errors
+
+  </details>
+
+## Development
+
+Currently, the primary maintainer and author of most of the code is [@ComFreek](https://github.com/ComFreek). See <./DEV.md> for particularly important developer's notes.
 
 ## License
 

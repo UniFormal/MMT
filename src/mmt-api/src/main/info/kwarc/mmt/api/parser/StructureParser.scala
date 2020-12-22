@@ -544,6 +544,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   case _:Theory =>
                     // tc must be the type, no definiens
                     (tc, new TermContainer)
+                  case _:DerivedDeclaration =>
+                    // tc must be the type, no definiens
+                    (tc, new TermContainer)
                   case link: Link =>
                     // a single theory is a shortcut for including its identity morphism (.get succeeds because term was read above)
                     tc.get.get match {

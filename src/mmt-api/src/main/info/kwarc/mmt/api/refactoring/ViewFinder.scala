@@ -103,10 +103,10 @@ class ViewFinder extends frontend.Extension {
               }
             case _ =>
               log("No preproccesor for archive " + a.id)
-            /* getArchive(a) match {
+            getArchive(a) match {
             case Some(r) => theories(a.id) = r
             case _ =>
-          } */
+          }
           }
         } catch {case t : Throwable => t.printStackTrace()} }
       }
@@ -591,7 +591,7 @@ class FindingProcess(val report : Report, hash : Hasher) extends MMTTask with Lo
     def toView(path : MPath) : View = {
       maps = maps.distinct
       val v = new View(path.parent,path.name,TermContainer(OMMOD(from)),TermContainer(OMMOD(to)),new TermContainer(),false)
-      maps.foreach(m => if (m.from != m.to && !v.declares(m.sfrom.name)) v.add(Constant(v.toTerm,m.sfrom.name,Nil,None,Some(OMS(m.sto)),None)))
+      maps.foreach(m => if (m.from != m.to && !v.declares(m.sfrom.name)) v.add(Constant(v.toTerm,ComplexStep(m.sfrom.module)/m.sfrom.name,Nil,None,Some(OMS(m.sto)),None)))
       v
     }
   }

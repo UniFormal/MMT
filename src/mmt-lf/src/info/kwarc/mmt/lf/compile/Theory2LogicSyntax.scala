@@ -13,6 +13,7 @@ import frontend._
 import patterns._
 import presentation._
 //import scala.sys.process._
+import compile.Declaration
 
 /*
  * translates an mmt theory to a logic syntax

@@ -2,7 +2,7 @@ package info.kwarc.mmt.twelf
 
 import java.io.{File, FileWriter, BufferedWriter}
 import scala.xml._
-import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHashMap, LinkedList}
+import scala.collection.mutable.{HashSet, LinkedHashSet, LinkedHashMap, ListBuffer}
 
 
 // ------------------------------- document-level -------------------------------
@@ -14,7 +14,7 @@ import scala.collection.mutable.{HashSet, LinkedHashSet, MutableList, LinkedHash
   * @param prefixes mapping from namespace prefixes to their URI
   * @param declaredNamespaces list of current namespaces declared in the document
   * @param The errors that occurred during parsing */
-class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: MutableList[ModuleBlock],
+class Document(val url: URI, val associatedComment: Option[SemanticCommentBlock], val modules: ListBuffer[ModuleBlock],
                 val prefixes: LinkedHashMap[String,URI], val declaredNamespaces: LinkedHashSet[URI], var errors: List[ParseError]) {
 
   /** Time, in miliseconds, when the file was last modified */
@@ -87,7 +87,7 @@ abstract class ModuleBlock(override val uri: URI, override val url: URI, overrid
 
 
 /** A theory */
-case class SigBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[DeclBlock], override val deps: LinkedHashSet[URI], override val pos: Position)
+case class SigBlock(override val uri: URI, override val url: URI, override val name: String, val children: ListBuffer[DeclBlock], override val deps: LinkedHashSet[URI], override val pos: Position)
   extends ModuleBlock(uri, url, name, deps, pos) {
   override def toOmdoc : Elem =
     <theory name={name} uri={uri.toString}>
@@ -98,7 +98,7 @@ case class SigBlock(override val uri: URI, override val url: URI, override val n
 
 
 /** A view */
-case class ViewBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[AssignmentBlock], override val deps: LinkedHashSet[URI], val domain: URI, val codomain: LinkedHashSet[URI], override val pos: Position)
+case class ViewBlock(override val uri: URI, override val url: URI, override val name: String, val children: ListBuffer[AssignmentBlock], override val deps: LinkedHashSet[URI], val domain: URI, val codomain: LinkedHashSet[URI], override val pos: Position)
   extends ModuleBlock(uri, url, name, deps, pos) {
   override def toOmdoc : Elem =
     <view name={name} uri={uri.toString}>
@@ -151,7 +151,7 @@ case class CstDeclBlock(override val uri: URI, override val url: URI, override v
 
 
 /** A structure declaration */
-case class StrDeclBlock(override val uri: URI, override val url: URI, override val name: String, val children: MutableList[AssignmentBlock], val domain: Option[URI], override val pos: Position)
+case class StrDeclBlock(override val uri: URI, override val url: URI, override val name: String, val children: ListBuffer[AssignmentBlock], val domain: Option[URI], override val pos: Position)
   extends DeclBlock(uri, url, name, pos) {
   override def toOmdoc : Elem =
     <structure name={name} uri={uri.toString}>

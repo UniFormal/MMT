@@ -43,7 +43,6 @@ package info.kwarc.mmt.api.utils
 import scala.util.parsing.input._
 import scala.collection.mutable.ListBuffer
 import scala.annotation.tailrec
-import scala.collection.immutable.PagedSeq
 import scala.util.DynamicVariable
 import scala.util.matching.Regex
 

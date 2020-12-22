@@ -5,6 +5,7 @@ import frontend._
 import objects._
 import objects.Conversions._
 
+import scala.collection.mutable
 import scala.collection.mutable.HashSet
 
 
@@ -14,24 +15,19 @@ object QueryEvaluator {
   type QuerySubstitution = List[(LocalName, BaseType)]
 }
 
-class ResultSet extends HashSet[List[BaseType]] {
-  def +=(b: BaseType) {
-    this += List(b)
-  }
-}
 
 object ResultSet {
-  def singleton(b : BaseType) : ResultSet = fromElementList(List(b))
+  def singleton(b : BaseType) : mutable.HashSet[List[BaseType]] = fromElementList(List(b))
 
-  def fromElementList( lst : Seq[BaseType]): ResultSet = {
-    val r = new ResultSet
+  def fromElementList( lst : Seq[BaseType]): mutable.HashSet[List[BaseType]] = {
+    val r = new mutable.HashSet[List[BaseType]]
     lst.foreach {
       r += List(_)
     }
     r
   }
-  def fromTupleList( lst : Seq[Seq[BaseType]]) : ResultSet = {
-    val r = new ResultSet
+  def fromTupleList( lst : Seq[Seq[BaseType]]) : mutable.HashSet[List[BaseType]] = {
+    val r = new mutable.HashSet[List[BaseType]]
     lst.foreach {
       r += _.toList
     }
@@ -62,11 +58,11 @@ class QueryEvaluator(controller: Controller) {
     controller.report("query", msg)
   }
 
-  private def empty = new ResultSet
+  private def empty = mutable.HashSet.empty[List[BaseType]]
 
   private def singleton(b: BaseType) = {
     val res = empty
-    res += b
+    res += List(b)
     res
   }
 
@@ -166,7 +162,7 @@ class QueryEvaluator(controller: Controller) {
           val se = lup.get(p)
           se.getComponent(comp) match {
             case Some(tc: AbstractObjectContainer) => tc.get foreach {
-              res += _
+              res += List(_)
             }
             case Some(cc) => throw GetError(s"component $comp exists but it is not an object: $cc" )
             case _ => throw GetError("component does not exist: " + comp)
@@ -192,8 +188,9 @@ class QueryEvaluator(controller: Controller) {
     /** query the rs for all the objects */
     case Related(to, by) =>
       val res = empty
+      def add(p : Path): Unit = {res += List(p)}
       evalSet(to) foreach { p =>
-        rs.query(p.head.asInstanceOf[Path], by)(res += _) // p has type List(Path) by precondition
+        rs.query(p.head.asInstanceOf[Path], by)(add) // p has type List(Path) by precondition
       }
       res
 
@@ -205,7 +202,7 @@ class QueryEvaluator(controller: Controller) {
     case Literals(bs@_*) =>
       val res = empty
       bs foreach {
-        res += _
+        res += List(_)
       }
       res
 
@@ -230,7 +227,7 @@ class QueryEvaluator(controller: Controller) {
         case p: MPath =>
           val res = empty
           rs.theoryClosure(p) foreach {
-            res += _
+            res += List(_)
           }
           res
         case p => throw GetError("must be a module path " + p)
@@ -284,7 +281,7 @@ class QueryEvaluator(controller: Controller) {
     case Projection(p, i) =>
       val t = evalElem(q)
       val res = empty
-      res += t(i - 1)
+      res += List(t(i - 1))
       res
 
     /** apply a query function using the function itself */

@@ -271,7 +271,7 @@ case class AnonymousDiagram(nodes: List[DiagramNode], arrows: List[DiagramArrow]
     */
   def ++(otherDiagram: AnonymousDiagram): Option[AnonymousDiagram] = {
     val otherElements: Map[LocalName, DiagramElement] =
-      otherDiagram.getElements.groupBy(_.label).mapValues(_.head)
+      otherDiagram.getElements.groupBy(_.label).view.mapValues(_.head).toMap
 
     for ((otherName, otherElement) <- otherElements) {
       getElement(otherName) match {

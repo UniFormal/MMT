@@ -1,6 +1,6 @@
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.{Logger, Run}
+import info.kwarc.mmt.api.frontend.{Controller, Logger, Report, Run}
 import info.kwarc.mmt.api.ontology.{DeclarationTreeExporter, DependencyGraphExporter, PathGraphExporter}
 import info.kwarc.mmt.api.presentation.{ConsoleWriter, FlatMMTSyntaxPresenter, MMTSyntaxPresenter}
 import info.kwarc.mmt.api.utils.File
@@ -28,11 +28,11 @@ abstract class Test(val archivepath: String,
                     val serverport: Option[Int] = None,
                     val logfile: Option[String] = None) extends Logger {
   val gotoshell: Boolean = true
-  val controller = Run.controller
+  val controller: Controller = Run.controller
 
   def logPrefix = "user"
 
-  def report = controller.report
+  def report: Report = controller.report
 
   // setup logging
   controller.handleLine("log console")
@@ -47,19 +47,12 @@ abstract class Test(val archivepath: String,
   controller.handleLine("extension info.kwarc.mmt.lf.Plugin")
   controller.handleLine("extension info.kwarc.mmt.odk.Plugin")
 
-  def doFirst: Unit = {}
+  def doFirst(): Unit = {}
 
-  def run: Unit
-
-  /*
-  def log(s : String) = {
-    controller.report("user",s)
-    controller.report.flush
-  }
-  */
+  def run(): Unit
 
   def main(args: Array[String]): Unit = try {
-    doFirst
+    doFirst()
     if (serverport.isDefined) {
       //controller.handleLine("clear")
       controller.handleLine("server on " + serverport.get)
@@ -72,29 +65,17 @@ abstract class Test(val archivepath: String,
       Thread.sleep(1000)
       f
     }) else None
-    run
+    run()
     shell.foreach(f => Await.result(f, Duration.Inf))
-
-    /*
-      if (gotoshell) {
-        Future {
-          Thread.sleep(1000)
-          run
-        }(scala.concurrent.ExecutionContext.global)
-        Run.disableFirstRun = true
-        Run.main(Array())
-      }
-      else run
-      */
   } catch {
     case e: api.Error =>
       println(e.toStringLong)
       sys.exit
   }
 
-  def hl(s: String) = controller.handleLine(s)
+  def hl(s: String): Unit = controller.handleLine(s)
 
-  def logp(s: String) = hl("log+ " + s)
+  def logp(s: String): Unit = hl("log+ " + s)
 }
 
 /**
@@ -121,7 +102,7 @@ object MagicTest {
       home / "MMT" / "myformalizations", // Max Mac
 
       // Navid
-      home / "Desktop" / "FrameIT" / "archives" / "MathHub"
+      home / "Desktop" / "mmt-archives"
     ).find(_.exists).getOrElse(throw GeneralError("MagicTest failed: No known archive root"))
   }
 
@@ -162,8 +143,8 @@ abstract class MagicTest(prefixes: String*) extends Test(
 
   final val presenter: MMTSyntaxPresenter = new FlatMMTSyntaxPresenter()
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     controller.extman.addExtension(presenter)
   }
 

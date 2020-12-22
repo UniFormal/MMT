@@ -132,18 +132,21 @@ object StructuralFeatureUtils {
    * @param parent (implicit) the (new) parent module of all read constants
    */
   def getConstants(decls: List[Declaration], con: Controller)(implicit parent: MPath): List[Constant] = {
+    def getFromInclusion(from:MPath) = {
+      val target: Option[StructuralElement] = con.getO(from)
+      target match {
+        case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
+        case Some(m: ModuleOrLink) => getConstants(m.getDeclarations, con)
+        case Some(t) => throw GeneralError("unsupported include of " + t.path)
+        case None => throw GeneralError("found empty include")
+      }
+    }
     val consts:List[Constant] = decls.flatMap { d: Declaration =>
       d match {
         case c: Constant => List (c)
-        case PlainInclude(from, to) =>
-          val target: Option[StructuralElement] = con.getO(from)
-          target match {
-            case Some(refDD: DerivedDeclaration) => parseInternalDeclarationsIntoConstants(refDD, con)
-            case Some(m: ModuleOrLink) => getConstants(m.getDeclarations, con)
-            case Some(t) => throw GeneralError("unsupported include of " + t.path)
-            case None => throw GeneralError("found empty include")
-          }
-        case _ => throw GeneralError("unsupported declaration")
+        case PlainInclude(from, to) => getFromInclusion(from)
+        case Include(inclData) => getFromInclusion(inclData.from)
+        case _ => throw GeneralError("unsupported declaration of feature "+d.feature)
       }
     }
 
@@ -301,6 +304,9 @@ object StructuralFeatureUtils {
       intDecl
     }
   }
+
+  def externalName(parent: GlobalName, name: LocalName): GlobalName = //(parent.module / parent.name, name)
+    parent.module ? parent.name / name
 }
 
 import StructuralFeatureUtils._

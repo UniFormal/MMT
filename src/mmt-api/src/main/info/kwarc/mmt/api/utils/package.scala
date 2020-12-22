@@ -2,7 +2,6 @@ package info.kwarc.mmt.api
 
 import utils._
 
-import scala.collection.TraversableLike
 import scala.collection.generic.CanBuildFrom
 
 /**

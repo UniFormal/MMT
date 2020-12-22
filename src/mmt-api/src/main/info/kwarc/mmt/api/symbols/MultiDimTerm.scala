@@ -160,11 +160,11 @@ trait ObjContainer[T <: Obj] extends AbstractObjectContainer {
       case tc: ObjContainer[T] if hasSameType(tc) =>
          var changed = (read = tc.read)
          if (changed || tc.parsed.isDefined)
-            changed |= (parsed = tc.parsed)
+            changed | {changed = true; (parsed = tc.parsed)}
          if (changed || tc.analyzed.isDefined)
-            changed |= (analyzed = tc.analyzed)
+            changed | {changed = true; (analyzed = tc.analyzed)}
          if (changed || tc.normalized.isDefined)
-            changed |= (normalized = tc.normalized)
+            changed |= {changed = true; (normalized = tc.normalized)}
          changed
       case _ => throw ImplementationError("not a TermContainer")
    }}
@@ -233,11 +233,17 @@ object TermContainer {
    def asParsed(term: Option[Term]): TermContainer = {
       val tc = new TermContainer
       tc.parsed = term
-
       tc
    }
-
    def asParsed(term: Term): TermContainer = asParsed(Some(term))
+
+
+   def asAnalyzed(term: Option[Term]): TermContainer = {
+      val tc = new TermContainer
+      tc.analyzed = term
+      tc
+   }
+   def asAnalyzed(term: Term): TermContainer = asAnalyzed(Some(term))
 
    def empty(): TermContainer = new TermContainer
 }

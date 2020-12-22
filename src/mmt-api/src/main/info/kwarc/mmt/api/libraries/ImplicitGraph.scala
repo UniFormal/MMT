@@ -57,7 +57,7 @@ class ImplicitGraph {
   private val outgoing = new PathMap
   /** includes(from,to) if there is a plain include from -> to */
   private val includes = new IncrementalTransitiveClosure[MPath]
-
+  /** caches the implicit path between two nodes (one of the paths if there are multiple) */
   private val primaryPath = new HashMap[(MPath,MPath),IPath]
 
   /** maps a structural element to all edges that depends on it */
@@ -124,7 +124,7 @@ class ImplicitGraph {
       if (update) primaryPath(tf) = p
   }
   /** weird-looking function to replace an element in a hash-set with a new version of itself (or add it if it is not in the set yet)
-    * only relevant if the hash-code is not injective, e.g., if is a case class with mutable fields
+    * only relevant if the hash-code is not injective, e.g., if it is a case class with mutable fields
     */
   @inline private def replace[U](hs: HashSet[U], u: U) {
     hs -= u
@@ -198,10 +198,12 @@ class ImplicitGraph {
   /** the most common lookup method: retrieves the implicit morphism between two theories (first if multiple), similar to get(from,to).headOption */
   def apply(from: MPath, to: MPath): Option[Term] = {
     val tf = (from,to)
+    // if there is a valid cached path, use it
     primaryPath.get(tf) foreach {pp =>
       if (isValid(pp))
         return Some(pp.morphism)
     }
+    // otherwise, find a path and update the primaryPath
     if (includes(from,to)) {
       return newPrimary(from, to, IPath(from,to,Nil))
     }

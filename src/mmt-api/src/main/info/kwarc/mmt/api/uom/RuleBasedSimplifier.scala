@@ -160,7 +160,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           val stabilityCriticalPos = recPosComp.getPositions(top)
           var changed = false
           var stable = true
-          // we go through all arguments and try to simplify one of them
+          // we go through all arguments and try to simplify each one of them
           val subobjsNew = t.subobjects.zipWithIndex.tail.map {case ((c,o),i) =>
             if (!recursePositions.contains(i)) {
               o // only recurse if this is one of the recurse positions and no previous subobjects has changed 
@@ -203,9 +203,14 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
           if (state.unit.expandDefinitions) {
             val pCons = controller.globalLookup.getO(ComplexTheory(context), p.toLocalName)
             val pDf = pCons.flatMap {
-              case c: Constant =>
-                normalizeConstant(c, state.unit.fullRecursion)
-                c.dfC.normalized
+              case c: Constant if c.df.isDefined =>
+                if (c.getOrigin.transient) {
+                  c.df
+                } else {
+                  // if this declaration could come up again, we normalize it at its origin and cache the normalization
+                  normalizeConstant(c, state.unit.fullRecursion)
+                  c.dfC.normalized
+                }
               case _ =>
                 None
             }

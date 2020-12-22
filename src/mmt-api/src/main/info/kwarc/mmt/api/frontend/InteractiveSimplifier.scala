@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import objects._
 import uom._
 import tools.nsc._
-import interpreter._
+import interpreter.shell.ILoop
 
 //TODO obsolete
 //should be redone with a clean step-based/interactive object simplifier

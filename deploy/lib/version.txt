@@ -2,10 +2,11 @@ Don't put version numbers into file names here.
 It messes up references every time we upgrade to a new version.
 Instead, track the versions here.
 
-Scala language: 2.12.9
+Scala language: 2.13.4
 Scala modules:
- xml: 1.0.6
- parser-combinators: 1.0.7
- reflect: 2.12.9
+ xml: 2.0.0-M3
+ parser-combinators: 1.2.0-M1
+ reflect: 2.13.4
+ parallel-collections: 1.0.0
 
 xz: 1.8

@@ -3,7 +3,7 @@
 package info.kwarc.mmt.twelf
 
 import java.io.File
-import scala.collection.mutable.{ArraySeq, MutableList, LinkedHashMap, HashSet, LinkedHashSet, LinkedList}
+import scala.collection.mutable.{ArraySeq, LinkedHashMap, HashSet, LinkedHashSet, ListBuffer}
 
 
 /** Crawl a file */
@@ -30,7 +30,7 @@ class FileCrawler(file : File) {
   private var flat  : String = ""
 
   /** array of pairs <position in the flat array, the number of the line that starts at this position>. All indexes are 0-based. */
-  private implicit var lineStarts = new ArraySeq [(Int, Int)] (0)
+  private implicit var lineStarts = new Array[(Int, Int)](0)
 
   /** list of parsing errors in the file */
   private var errors : List[ParseError] = Nil
@@ -71,7 +71,7 @@ class FileCrawler(file : File) {
     var associatedComment : Option[SemanticCommentBlock] = None
 
     // theories and views
-    var modules = new MutableList[ModuleBlock] ()
+    var modules = new ListBuffer[ModuleBlock] ()
 
     // mapping from namespace prefixes to their URI
     var prefixes = new LinkedHashMap[String,URI] ()
@@ -497,7 +497,7 @@ class FileCrawler(file : File) {
   private def crawlStrDecl(start: Int, parentURI: URI, currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : (StrDeclBlock, Int) =
   {
     var i = start
-    val children = new MutableList[AssignmentBlock] ()
+    val children = new ListBuffer[AssignmentBlock] ()
     var domain : Option[URI] = None
     if (i + "%struct".length + 2 >= flat.length)
       throw ParseError(toPair(i, lineStarts) + ": error: %struct statement does not end")
@@ -599,7 +599,7 @@ class FileCrawler(file : File) {
     * @param prefixes the mapping from aliases to namespaces
     * @return the position after the closing }
     * @throws ParseError for syntactical errors */
-  private def crawlSigBody(start: Int, parentURI: URI, children: MutableList[DeclBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Int =
+  private def crawlSigBody(start: Int, parentURI: URI, children: ListBuffer[DeclBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI]) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment stored
@@ -677,7 +677,7 @@ class FileCrawler(file : File) {
     i += 1    // jump over "="
     i = expectNext(i, "{",  toPair(start, lineStarts) + ": error: signature does not have an initial '{'")
 
-    var children = new MutableList[DeclBlock] ()
+    var children = new ListBuffer[DeclBlock] ()
     var deps = LinkedHashSet[URI] ()
     i = crawlSigBody(i, uri, children, deps, currentNS, prefixes)    // read the { body } of the signature
 
@@ -698,7 +698,7 @@ class FileCrawler(file : File) {
     * @param isView true if we are crawling a view, false if we are crawling a structure declaration body
     * @return the position after the closing }
     * @throws ParseError for syntactical errors */
-  private def crawlLinkBody(start: Int, parentURI: URI, children: MutableList[AssignmentBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI], isView: Boolean) : Int =
+  private def crawlLinkBody(start: Int, parentURI: URI, children: ListBuffer[AssignmentBlock], deps: LinkedHashSet[URI], currentNS: Option[URI], prefixes: LinkedHashMap[String,URI], isView: Boolean) : Int =
   {
     var i = start + 1       // jump over '{'
     keepComment = None          // reset the last semantic comment stored
@@ -787,7 +787,7 @@ class FileCrawler(file : File) {
     if (flat.startsWith("%implicit", i))
       i = skipws(i + "%implicit".length)
 
-    val children = new MutableList[AssignmentBlock] ()
+    val children = new ListBuffer[AssignmentBlock] ()
     val deps = LinkedHashSet[URI] ()
 
     i = skipwscomments(i)

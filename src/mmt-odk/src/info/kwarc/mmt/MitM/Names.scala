@@ -155,7 +155,7 @@ object MitM {
 
 
   // strings
-  val strings: MPath = path ? "Strings"
+  val strings: MPath = (DPath(URI.http colon "cds.omdoc.org") / "urtheories") ? "Strings"
   val string: GlobalName = strings ? "string"
 
   // lists

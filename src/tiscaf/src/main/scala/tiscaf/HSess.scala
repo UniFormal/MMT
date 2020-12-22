@@ -29,8 +29,8 @@ final private class HSess(data: HTalkData, resp: HResponse) extends mute.Map[Any
   // scala.collection.mutable.Map
   def get(key: Any): Option[Any] = sidMap._2.get(key)
   def iterator: Iterator[(Any, Any)] = sidMap._2.iterator
-  def +=(kv: (Any, Any)): this.type = { sidMap._2 += kv; this }
-  def -=(key: Any): this.type = { sidMap._2 -= key; this }
+  def addOne(kv: (Any, Any)): this.type = { sidMap._2 += kv; this }
+  def subtractOne(key: Any): this.type = { sidMap._2 -= key; this }
   override def size: Int = sidMap._2.size
   override def clear: Unit = sidMap._2.clear
   override def foreach[U](f: Tuple2[Any, Any] => U): Unit = sidMap._2.foreach { f(_) }

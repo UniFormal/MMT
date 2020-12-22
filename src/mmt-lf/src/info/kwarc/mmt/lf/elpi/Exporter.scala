@@ -12,8 +12,8 @@ import info.kwarc.mmt.sequences.NatRules.NatLit
 import ELPIExporter.translateTerm
 
 object HelpCons {
-  def apply(path: GlobalName) = ELPI.Variable(LocalName("help") / path.name)
-  def apply(path: GlobalName, suffix: String) = ELPI.Variable(LocalName("help") / path.name / suffix)
+  def apply(path: GlobalName)                 : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name)
+  def apply(path: GlobalName, suffix: String) : ELPI.Variable = ELPI.Variable(LocalName("help") / path.name / suffix)
 }
 
 case class ELPIError(msg: String) extends Error(msg)
@@ -63,8 +63,8 @@ class ELPIExporter extends Exporter {
     new IterativeDeepeningHandler(ruleMatcher),
     new ProofTermHandler(ruleMatcher),
     new RuleUseHandler(ruleMatcher),
-    new HandDownHandler(ruleMatcher, ""),
-    new HandDownHandler(ruleMatcher, "2"),
+    new HandDownHandler(ruleMatcher, name = ""),
+    new HandDownHandler(ruleMatcher, name = "2"),
     new BackChainingHandler(ruleMatcher)
   ))
 
@@ -106,7 +106,7 @@ class ELPIExporter extends Exporter {
 
 private class VarCounter {
   private var i = 0
-  def next(upper: Boolean) = {
+  def next(upper: Boolean) : LocalName = {
     i += 1
     val base = if (upper) "X" else "x"
     LocalName(base + i.toString)
@@ -126,8 +126,8 @@ trait ConstantHandler {
 
 class ConstantHandlerSequence(handlers : List[ConstantHandler]) extends ConstantHandler {
   def handle(c : Constant) : List[ELPI.Decl] = handlers.flatMap(_.handle(c))
-  override def setup() : List[ELPI.Decl] = handlers.flatMap(_.setup())
-  override def finish() : List[ELPI.Decl] = handlers.flatMap(_.finish())
+  override def setup()     : List[ELPI.Decl] = handlers.flatMap(_.setup())
+  override def finish()    : List[ELPI.Decl] = handlers.flatMap(_.finish())
 }
 
 class GeneratedFromHandler(controller : Controller) extends ConstantHandler {
@@ -141,7 +141,6 @@ abstract class BaseConstantHandler(handlerName : String) extends ConstantHandler
   }
 }
 
-
 class IfElseHandler(a : ConstantHandler, b : ConstantHandler, useA : Constant => Boolean) extends ConstantHandler() {
   override def setup(): List[ELPI.Decl] = a.setup() ++ b.setup()
   override def finish(): List[ELPI.Decl] = a.setup() ++ b.setup()
@@ -152,7 +151,7 @@ class IfElseHandler(a : ConstantHandler, b : ConstantHandler, useA : Constant =>
 class TypeHandler() extends BaseConstantHandler("th") {
   def handle(c : Constant) : List[ELPI.Decl] = {
     c.tp match {
-      case Some(t) => {
+      case Some(t) =>
         val tE = translateTerm(t)
         val isKind = t match {
           case FunType(_, OMS(Typed.ktype)) => true
@@ -160,7 +159,6 @@ class TypeHandler() extends BaseConstantHandler("th") {
         }
         val decl = ELPI.Data(c.name, tE, isKind)
         List(decl) // TODO check how to write dependent types in ELPI
-      }
       case _ => List()
     }
   }
@@ -175,7 +173,7 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
     * e.g. on "andI : {A,B} ded A -> ded B -> ded (and A B)" */
   def onRule(c : Constant, dr : DeclarativeRule, vc : VarCounter) : List[ELPI.Decl]
 
-  def handle(c: Constant) = {
+  def handle(c: Constant) : List[ELPI.Decl] = {
     val vc = new VarCounter
     if (c.rl contains "Judgment") {
       onIntro(c, vc)
@@ -192,13 +190,13 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   }
 
   /* HELPER METHODS */
-  def V(n: LocalName) = ELPI.Variable(n)
+  def V(n: LocalName) : ELPI.Variable = ELPI.Variable(n)
   val hypSuffix = "hyp"
 
   def getArgVars(c : Constant, vc : VarCounter) : List[ELPI.Variable] = {
     c.tp match {
       case Some(FunType(args, _)) =>
-        (1 to args.length).toList.map(_ => ELPI.Variable(vc.next(true)))
+        (1 to args.length).toList.map(_ => ELPI.Variable(vc.next(upper = true)))
     }
   }
 
@@ -208,10 +206,10 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   def translateComplex(cj: ComplexJudgement)(implicit vc: VarCounter) : (LocalName, ELPI.Expr) = {
     // for parameters: get the name, ignoring the type; for assumptions: translate the judgment and generate a name
     val parNames = cj.parameters.map {vd => vd.name}
-    val (hypNames, hypEs) = cj.hypotheses.map {a => translateAtomic(a, Nil, true)}.unzip
+    val (hypNames, hypEs) = cj.hypotheses.map {a => translateAtomic(a, Nil, hypothesis = true)}.unzip
     val names = parNames ::: hypNames
     // translate the conclusion, return the generated name as the name for the entire complex judgment
-    val (thesisName, thesisE) = translateAtomic(cj.thesis, names, false)
+    val (thesisName, thesisE) = translateAtomic(cj.thesis, names, hypothesis = false)
     // quantify over all names, hypothesis implies conclusion
     val cjE = ELPI.Forall(names, ELPI.Impl(hypEs, thesisE))
     (thesisName, cjE)
@@ -243,14 +241,13 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
   * `ded X (forall P) :- ..., P = F T, ...` instead of `ded X (forall (F T)) :- ...
   */
   def translateConclusion(aj : AtomicJudgement)(implicit vc: VarCounter) : (List[LocalName], ELPI.Expr, List[ELPI.Expr]) = {
-    val cert = vc.next(true)
+    val cert = vc.next( upper = true)
     var names : List[LocalName] = List()
     val (argsE, extra) : (List[ELPI.Expr], List[List[ELPI.Expr]]) = aj.arguments.map {
-      case ApplySpine(OMV(f), a) => {
-        val v = vc.next(true)
+      case ApplySpine(OMV(f), a) =>
+        val v = vc.next(upper = true)
         names = v :: names
         (V(v), List(ELPI.Equal(V(v), translateTerm(ApplySpine(OMV(f), a :_*)))))
-      }
       case x => (translateTerm(x), List())
     }.unzip
 
@@ -269,12 +266,12 @@ abstract class JudgmentHandler(handlerName : String, ruleMatcher : RuleMatcher) 
 
 }
 
-class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("mj", ruleMatcher) {
+class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "mj", ruleMatcher) {
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
-    val certName = vc.next(true)
+    val certName = vc.next(upper = true)
     val cert = ELPI.Variable(certName)
-    val hypName = ELPI.Variable(vc.next(true))
+    val hypName = ELPI.Variable(vc.next(upper = true))
     val right = ELPI.Variable(c.name)(cert :: argNames :_*)
     val left1 = ELPI.Variable(c.name / hypSuffix)(hypName :: argNames :_*)
     val left2 = HelpCons(c.path)(argNames ::: List(hypName, cert) :_*)
@@ -309,12 +306,12 @@ class MainJudgmentHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("mj
 }
 
 
-class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("prod", ruleMatcher) {
-  private object ProdCertCons extends ELPI.Constant("prodcert")
+class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "prod", ruleMatcher) {
+  private object ProdCertCons extends ELPI.Constant(name = "prodcert")
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
-    val certName = vc.next(true)
-    val hypName = ELPI.Variable(vc.next(true))
+    val certName = vc.next(upper = true)
+    val hypName = ELPI.Variable(vc.next(upper = true))
     val cert1 = ELPI.Variable(certName / "1")
     val cert2 = ELPI.Variable(certName / "2")
     val rightProd = HelpCons(c.path)(argNames ::: List(hypName, ProdCertCons(cert1, cert2)): _*)
@@ -334,7 +331,7 @@ class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pro
     }.unzip
 
     val (assNames1,assNames2) = assNamePairs.unzip
-    val certName = vc.next(true)
+    val certName = vc.next(upper = true)
     // e1: first helper predicate applies to a list of inputs with output certName1
     val certName1 = certName / "1"
     // val e1 = HelpCons(c.path, "1")(parNames ::: assNames1 ::: List(certName1))
@@ -352,8 +349,8 @@ class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pro
   /** auxiliary function of productRule: translates the conclusions and generates names for them */
   private def productRuleConc(cj: ComplexJudgement, vc: VarCounter) : ((LocalName,LocalName), ELPI.Expr) = {
     val parNames = cj.parameters.map {vd => vd.name}
-    val hypNames = cj.hypotheses.map {a => vc.next(false)}
-    val certName = vc.next(true)
+    val hypNames = cj.hypotheses.map {_ => vc.next(upper = false)}
+    val certName = vc.next(upper = true)
     val certName1 = certName / "1"
     val certName2 = certName / "2"
     val names = parNames:::hypNames
@@ -362,29 +359,29 @@ class ProductRuleHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pro
   }
 }
 
-class IterativeDeepeningHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("id", ruleMatcher) {
-  object IdCertCons extends ELPI.Constant("idcert")
+class IterativeDeepeningHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler(handlerName = "id", ruleMatcher) {
+  object IdCertCons extends ELPI.Constant(name = "idcert")
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
-    val hypName = ELPI.Variable(vc.next(true))
-    val rightID = HelpCons(c.path)(argNames:::List(hypName,IdCertCons(V(vc.next(true)))) :_*)
+    val hypName = ELPI.Variable(vc.next(upper = true))
+    val rightID = HelpCons(c.path)(argNames:::List(hypName,IdCertCons(V(vc.next(upper = true)))) :_*)
     List(ELPI.Rule(ELPI.Impl(List(), rightID)))
   }
 
   override def onRule(c: Constant, dr: DeclarativeRule, vc: VarCounter): List[ELPI.Decl] = {
     val (parNames, _) = getParNames(dr)(vc)
 
-    val assCertName = vc.next(true)
+    val assCertName = vc.next(upper = true)
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
-        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val hypNames = cj.hypotheses.map { a => vc.next(upper = false) }
         val names = parNames ::: hypNames
         // val res = ELPI.Lambda(names, IdCertCons(V(assCertName)(names)))
         val res = ELPI.Lambda(names, IdCertCons(V(assCertName)))
         (assCertName, res)
     }.unzip
-    val certName = vc.next(true)
+    val certName = vc.next(upper = true)
     val res = HelpCons(c.path)(IdCertCons(List(certName)) :: parNames.map(V) ::: assExprs :_*)
     val cond1 = ELPI.GreaterThan(ELPI.Variable(certName), ELPI.Integer(0))
     val cond2 = ELPI.Is(ELPI.Variable(assCertName), ELPI.Minus(ELPI.Variable(certName), ELPI.Integer(1)))
@@ -395,12 +392,12 @@ class IterativeDeepeningHandler(ruleMatcher : RuleMatcher) extends JudgmentHandl
 
 class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc", ruleMatcher) {
 
-  object BcCertCons extends ELPI.Constant("bccert")
+  object BcCertCons extends ELPI.Constant(name = "bccert")
 
   override def onIntro(c: Constant, vc: VarCounter): List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
-    val hypName = ELPI.Variable(vc.next(true))
-    val cert = ELPI.Variable(vc.next(true))
+    val hypName = ELPI.Variable(vc.next(upper = true))
+    val cert = ELPI.Variable(vc.next(upper = true))
     val rightBC = HelpCons(c.path)(argNames:::List(hypName,BcCertCons(cert)) :_*)
     List(ELPI.Rule(ELPI.Impl(List(), rightBC)))
   }
@@ -413,13 +410,13 @@ class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc
     // val conclVars = getVars(dr.conclusion.arguments.head)
     val needBC = isForward || c.rl.contains("EliminationRule") // parNames.exists(n => !conclVars.contains(n))
 
-    val assCertName = vc.next(true)
+    val assCertName = vc.next(upper = true)
     var isFirstArg = true
     var firstExpr : Option[ELPI.Expr] = None
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
-        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val hypNames = cj.hypotheses.map { a => vc.next(upper = false) }
         val names = parNames ::: hypNames
         val res = if (isFirstArg && needBC) {
           firstExpr = Some(translateTerm(cj.thesis.arguments.head))
@@ -430,9 +427,9 @@ class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc
         isFirstArg = false
         (assCertName, res)
     }.unzip
-    val certName = vc.next(true)
+    val certName = vc.next(upper = true)
     val res = HelpCons(c.path)(BcCertCons(List(certName)) :: parNames.map(V) ::: assExprs  :_*)
-    val certval = ELPI.Variable(vc.next(true))
+    val certval = ELPI.Variable(vc.next(upper = true))
     val conds = if (needBC) {
       val cond1 = V(LocalName("bc/val"))(V(certName), certval)   // TODO: bc/pos suffices if not ForwardRule
       val cond2 = ELPI.GreaterThan(certval, ELPI.Integer(0))
@@ -447,7 +444,7 @@ class BackChainingHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("bc
     }
     val r = ELPI.Forall(parNames ::: assNames ::: List(certName), ELPI.Impl(conds ::: extras,res))
     if (isForward) {
-      val auxres = ELPI.Variable(vc.next(true))
+      val auxres = ELPI.Variable(vc.next(upper = true))
       val concE = translateTerm(dr.conclusion.arguments.head)
       val aux = ELPI.Forall(parNames, ELPI.Impl(V(LocalName("bc/aux"))(concE, auxres),
         V(LocalName("bc/aux"))(firstExpr.get, auxres)))
@@ -464,7 +461,7 @@ class ProofTermHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pt", 
 
   override def onIntro(c : Constant, vc : VarCounter) : List[ELPI.Decl] = {
     val argNames = getArgVars(c, vc)
-    val hypName = ELPI.Variable(vc.next(true))
+    val hypName = ELPI.Variable(vc.next(upper = true))
     val rightPT = HelpCons(c.path)(argNames:::List(hypName,PtCertCons(V(LocalName("i"))(argNames :_*))) :_*)
     List(ELPI.Rule(ELPI.Impl(List(), rightPT)))
   }
@@ -475,9 +472,9 @@ class ProofTermHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pt", 
     val (assNames, assExprs) = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
-        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val hypNames = cj.hypotheses.map { a => vc.next(upper = false) }
         val names = parNames ::: hypNames
-        val assCertName = vc.next(true)
+        val assCertName = vc.next(upper = true)
         val res = ELPI.Lambda(names, PtCertCons(V(assCertName)))
         (assCertName, res)
     }.unzip
@@ -494,12 +491,12 @@ class ProofTermHandler(ruleMatcher : RuleMatcher) extends JudgmentHandler("pt", 
 class RuleUseHandler(ruleMatcher: RuleMatcher) extends JudgmentHandler("u", ruleMatcher) {
   override def onRule(c: Constant, dr: DeclarativeRule, vc: VarCounter): List[ELPI.Decl] = {
     val (parNames, _) = getParNames(dr)(vc)
-    val certName = vc.next(true)
+    val certName = vc.next(upper = true)
     var uExpr : Option[ELPI.Expr] = None
     val assExprs = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
-        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val hypNames = cj.hypotheses.map { a => vc.next(upper = false) }
         val names = parNames ::: hypNames
         if (uExpr.isEmpty) {
           uExpr = Some(translateComplex(cj)(vc)._2)
@@ -521,15 +518,15 @@ class RuleUseHandler(ruleMatcher: RuleMatcher) extends JudgmentHandler("u", rule
 /**
   * simply hands something down. Can e.g. be used to return errors.
   */
-class HandDownHandler(ruleMatcher: RuleMatcher, name : String) extends JudgmentHandler("hd" + name, ruleMatcher) {
+class HandDownHandler(ruleMatcher: RuleMatcher, name : String) extends JudgmentHandler(handlerName = "hd" + name, ruleMatcher) {
   override def onRule(c: Constant, dr: DeclarativeRule, vc: VarCounter): List[ELPI.Decl] = {
     val (parNames, _) = getParNames(dr)(vc)
 
-    val hdcert = V(LocalName("hd" + name + "cert"))(V(vc.next(true)))
+    val hdcert = V(LocalName("hd" + name + "cert"))(V(vc.next(upper = true)))
     val assExprs = dr.arguments.collect {
       case RuleAssumption(cj) =>
         val parNames = cj.parameters.map { vd => vd.name }
-        val hypNames = cj.hypotheses.map { a => vc.next(false) }
+        val hypNames = cj.hypotheses.map { _ => vc.next(upper = false) }
         val names = parNames ::: hypNames
         ELPI.Lambda(names, hdcert)
     }

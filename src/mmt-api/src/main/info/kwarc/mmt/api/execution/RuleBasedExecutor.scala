@@ -6,7 +6,7 @@ import symbols._
 import frontend._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
-class RuntimeEnvironment(val heap: Heap, val stack: Stack, val rules: RuleSet) {
+class RuntimeEnvironment(val heap: Heap, val stack: execution.Stack, val rules: RuleSet) {
   val stdin = System.in
   val stdout = System.out
   lazy val execRules = rules.get(classOf[ExecutionRule])
@@ -16,7 +16,7 @@ class RuleBasedExecutor extends Executor {
   def apply(context: Context, prog: Term) = {
      val heap = new Heap(0, controller)
      controller.add(heap)
-     val stack = new Stack
+     val stack = new execution.Stack
      val rules = RuleSet.collectRules(controller, context)
      val env = new RuntimeEnvironment(heap, stack, rules)
      val runtime = new Runtime(controller, env, logPrefix)

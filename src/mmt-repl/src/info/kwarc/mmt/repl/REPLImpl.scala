@@ -105,7 +105,7 @@ abstract class REPLImpl(historyItems: List[String] = Nil) {
   //========================================
 
   /** prompts the user for a single input */
-  private def prompt(): Option[String] = Try(reader.readLine(promptLeft.orNull, promptRight.orNull, null, "")).toOption
+  private def prompt(): Option[String] = Try(reader.readLine(promptLeft.orNull, promptRight.orNull, null:org.jline.reader.MaskingCallback, "")).toOption
 
   /** checks if this Terminal is dumb */
   protected def isDumb() : Boolean = {

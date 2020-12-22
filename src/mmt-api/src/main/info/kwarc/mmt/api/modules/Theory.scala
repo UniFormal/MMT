@@ -74,9 +74,9 @@ object Theory {
       case (c: Constant, None) =>
         c.df match {
           case None =>
-            val tpE = c.tp map {t => lup.ExpandDefinitions(t, p => defined.contains(p))}
+            val tpE = c.tp.map(lup.ExpandDefinitions(_, defined))
             Iterator((c.path, tpE))
-          case Some(df) =>
+          case Some(_) =>
             defined ::= c.path
             Iterator.empty
         }

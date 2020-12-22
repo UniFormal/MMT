@@ -67,8 +67,8 @@ final class HTalk(data : HTalkData) {
     // implementing mutable.Map
     def get(key : Any) : Option[Any] = if (isAllowed) session.get.get(key) else None
     def iterator : Iterator[(Any, Any)] = if (isAllowed) session.get.iterator else Nil.iterator
-    def +=(kv : (Any, Any)) : this.type = if (isAllowed) { session.get += kv; this } else this
-    def -=(key : Any) : this.type = if (isAllowed) { session.get -= key; this } else this
+    def addOne(kv : (Any, Any)) : this.type = if (isAllowed) { session.get += kv; this } else this
+    def subtractOne(key : Any) : this.type = if (isAllowed) { session.get -= key; this } else this
 
     override def size : Int = if (isAllowed) session.get.size else 0
     override def clear : Unit = if (isAllowed) session.get.clear

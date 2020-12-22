@@ -35,9 +35,14 @@ object Orders {
   val latin2 = List(
     "fundamentals/concepts.mmt",
     "fundamentals/relations.mmt",
+    "fundamentals/base_languages.mmt",
     "fundamentals/equality.mmt",
     "fundamentals/subtyping.mmt",
-    "logic/operators.mmt",
+    "fundamentals/informal.mmt",
+    "fundamentals/type_equality.mmt",
+
+    "algebra/magmas-lf.mmt",
+
     "logic/pl.mmt",
     "logic/sfol.mmt",
     "logic/booleans.mmt",
@@ -49,37 +54,59 @@ object Orders {
     "logic/pl_hilbert.mmt",
     "logic/fol_hilbert.mmt",
     "logic/drt.mmt",
-    "type_theory/operators.mmt",
+    "logic/dependent_pl.mmt",
+
+    "type_theory/nonempty.mmt",
     "type_theory/function_types.mmt",
     "type_theory/power_types.mmt",
+
     "logic/hol.mmt",
     "logic/modal.mmt",
     "logic/multimodal.mmt",
     "logic/dynamic.mmt",
     "logic/hol_andrews.mmt",
-    "type_theory/type_equality.mmt",
+
     "type_theory/type_erasure.mmt",
     "type_theory/product_types.mmt",
-    "type_theory/category_theory.mmt",
-    "type_theory/congruence_types.mmt",
     "type_theory/predicate_subtypes.mmt",
     "type_theory/undefinedness.mmt",
     "type_theory/quotation.mmt",
+    "type_theory/quotient_types.mmt",
+    "type_theory/quotient_types-equiv.mmt",
+
+    "category_theory/category.mmt",
+
     "type_theory/endofunctors/endofunctors.mmt",
     "type_theory/endofunctors/endomagmas.mmt",
-    // "type_theory/endofunctors/monads.mmt", // TODO doesn't work
+    "type_theory/endofunctors/monads.mmt",
+
     "type_theory/collection_types.mmt",
+
+    "set_theory/setfol.mmt",
+    "set_theory/definitions.mmt",
     "set_theory/features.mmt",
+
     "curry-howard/concepts.mmt",
+
     "topology/topology.mmt",
     "topology/topology_morph.mmt",
+
     "proving/fundamentals.mmt",
+    "proving/NewTactics.mmt",
+
     "numbers/nat.mmt",
     // "numbers/nat-induct.mmt", // TODO doesn't work
-    //"algebra/sets.mmt",
-    //"algebra/relations.mmt",
+
+    "algebra/sets.mmt",
+    "algebra/relations.mmt",
     "algebra/magmas.mmt",
     // "algebra/additive_magmas.mmt", // TODO doesn't work
+    // "algebra/bands.mmt", // TODO doesn't work
+    // "algebra/groups.mmt", // TODO doesn't work
+    // "algebra/ringoids.mmt", // TODO doesn't work
+    // "algebra/modules.mmt", // TODO doesn't work
+
+    "logic/stfol.mmt"
   )
   val mitmcore = List(
     "arithmetics/naturals.mmt"

@@ -2,10 +2,11 @@ package info.kwarc.mmt.frameit.archives
 
 import info.kwarc.mmt.api.{DPath, GlobalName}
 import info.kwarc.mmt.api.objects.OMS
-import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardBool, StandardDouble, StandardInt, StandardPositive, StandardString}
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardBool, StandardDouble, StandardInt, StandardNat, StandardPositive, StandardString}
 import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.lf.BinaryLFConstantScala
 
-object MitM {
+private[archives] object MitM {
   /**
     * Symbols and literals of the MitM/Foundation archive.
     *
@@ -14,35 +15,22 @@ object MitM {
   object Foundation {
     val path: DPath = DPath(URI("http", "mathhub.info") / "MitM" / "Foundation")
 
-    private object Math {
-      val bool: GlobalName = path ? "Logic" ? "prop"
-
+    object Math {
+      val pos: GlobalName = path ? "NatLiterals" ? "pos_lit"
       val nat: GlobalName = path ? "NatLiterals" ? "nat_lit"
       val int: GlobalName = path ? "IntLiterals" ? "int_lit"
-      val pos: GlobalName = path ? "IntLiterals" ? "pos_lit"
+
       val real: GlobalName = path ? "RealLiterals" ? "real_lit"
-
-      val string: GlobalName = path ? "Strings" ? "string"
     }
 
-    object BooleanLiterals extends RepresentedRealizedType(OMS(Math.bool), StandardBool)
+    object NatLiterals extends RepresentedRealizedType(OMS(Math.nat), StandardNat)
+    object PosLiterals extends RepresentedRealizedType(OMS(Math.pos), StandardPositive)
+    object IntegerLiterals extends RepresentedRealizedType(OMS(Math.int), StandardInt)
 
-    object StringLiterals extends RepresentedRealizedType(OMS(Math.string), StandardString)
+    object RealLiterals extends RepresentedRealizedType(OMS(Math.real), StandardDouble)
 
-    object RealLiterals extends RepresentedRealizedType(OMS(Math.real), StandardDouble) {
-      override def priority: Int = 2
-    }
-
-    object IntegerLiterals extends RepresentedRealizedType(OMS(Math.int), StandardInt) {
-      override def priority: Int = -1
-    }
-
-    object PosLiterals extends RepresentedRealizedType(OMS(Math.pos), StandardPositive) {
-      override def priority: Int = 1
-    }
-
-    val ded: GlobalName = path ? "Logic" ? "ded"
     val eq: GlobalName = path ? "Logic" ? "eq"
+    val ded: GlobalName = path ? "Logic" ? "ded"
     val sketchOperator: GlobalName = path ? "InformalProofs" ? "proofsketch"
   }
 }

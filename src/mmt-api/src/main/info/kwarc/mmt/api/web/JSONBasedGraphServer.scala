@@ -1,50 +1,58 @@
 package info.kwarc.mmt.api.web
 
-import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension, FormatBasedExtension}
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMS}
-import info.kwarc.mmt.api.ontology.Declares._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.presentation.{HTMLPresenter, MMTDocExporter, MathMLPresenter, StructurePresenter}
+import info.kwarc.mmt.api.presentation.MMTDocExporter
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils._
-
 
 import scala.util.Try
 
 /**
-  * Created by jazzpirate on 07.06.17.
+  * Provides JSON representations of theory graphs (as known to MMT) at [[http://<mmt server>/:jgraph/json?key=<key>&uri=<datum>]].
+  * Most prominently, this JSON endpoint is used by TGView2D at [[http://<mmt server>/graphs/tgview.html?type=<key>&graphdata=<datum>]].
+  *
+  * The [[JSONBasedGraphServer]] server extension hooks up with MMT's web server and replies at URIs like
+  * [[http://<mmt server>/:jgraph/json?key=<key>&uri=<datum>]].
+  *
+  * Here, ''<key>'' selects one of the theory graphs providers declared in this file. And ''<datum>'' is some input
+  * to that provider.
+  * For example, the [[JArchiveGraph]] provider listens at ''<key> = archivegraph'' and expects ''<datum>'' to be an
+  * archive ID.
+  *
+  * @example Say you wanted to query and display the whole theory graph of MMT/LATIN2.
+  *          MMT/LATIN2 is a whole archive, hence you want to use the [[JArchiveGraph]] provider with datum ''MMT/LATIN2''.
+  *          
+  *          You can download the theory graph JSON at [[http://localhost:8080/:jgraph/json?key=archivegraph&uri=MMT/LATIN2]].
+  *          You can access the theory graph visually with TGView2D by browsing at [[http://localhost:8080/graphs/tgview.html?type=archivegraph&graphdata=MMT/LATIN2]].
+  *
+  * @author Jazzpirate (+ docs by ComFreek)
   */
 
-
-abstract class Graphs(val pathPrefix: String) extends FormatBasedExtension {
-
-/**
-  * @param cont the context of the request
-  * @return true if cont is equal to this.context
-  */
-def isApplicable(cont: String): Boolean = cont == pathPrefix
-}
-
-
-class DirectGraphBuilder extends Graphs("jgraph"){
+class DirectGraphBuilder extends FormatBasedExtension {
+  final override def isApplicable(cont: String): Boolean = cont == "jgraph"
   override val logPrefix = "jgraph"
-  private case class CatchError(s : String) extends Throwable
 
-  override def start(args: List[String]) {
-    controller.extman.addExtension(new JDocgraph)
-    controller.extman.addExtension(new JThgraph)
-    controller.extman.addExtension(new JPgraph)
-    controller.extman.addExtension(new JArchiveGraph)
-    controller.extman.addExtension(new JMPDGraph)
+  private case class CatchError(s: String) extends Throwable
+
+  final override def start(args: List[String]) {
+    List(
+      new JDocgraph,
+      new JThgraph,
+      new JPgraph,
+      new JArchiveGraph,
+      new JMPDGraph,
+      new JDiagramGraph
+    ).foreach(controller.extman.addExtension(_))
     super.start(args)
   }
 
-
-  def apply(uri: String, key: String, sem: String = "none", comp: String = "default"): JSON = {
+  private[web] def apply(uri: String, key: String, sem: String = "none", comp: String = "default"): JSON = {
     val exp = controller.extman.getOrAddExtension(classOf[JGraphExporter], key).getOrElse {
       throw CatchError(s"exporter $key not available")
     }
@@ -53,111 +61,122 @@ class DirectGraphBuilder extends Graphs("jgraph"){
       val ret = exp.buildGraph(uri)
       log("Done")
       ret
-    } else {log("With " + sem + " semantic " + "using " + comp + " solver " + "computing " + key + " for " + uri + "...")
+    } else {
+      log("With " + sem + " semantic " + "using " + comp + " solver " + "computing " + key + " for " + uri + "...")
       val ret = exp.computeSem(exp.buildGraph(uri), sem, comp)
       log("Done")
-      ret }
-}}
+      ret
+    }
+  }
+}
 
 
 class JSONBasedGraphServer extends ServerExtension("jgraph") {
-  override val logPrefix = "jgraph"
-  private case class CatchError(s : String) extends Throwable
+  final override val logPrefix = "jgraph"
 
-  override def start(args: List[String]) {
+  private case class CatchError(s: String) extends Throwable
+
+  final override def start(args: List[String]) {
     controller.extman.addExtension(new JGraphSideBar)
     controller.extman.addExtension(new DirectGraphBuilder)
   }
 
-  lazy val sidebar = controller.extman.get(classOf[JGraphSideBar]).head
-  lazy val buil = controller.extman.get(classOf[DirectGraphBuilder]).head
+  lazy private val sidebar = controller.extman.get(classOf[JGraphSideBar]).head
+  lazy private val buil = controller.extman.get(classOf[DirectGraphBuilder]).head
 
-  def apply(request:ServerRequest): ServerResponse = {
+  final override def apply(request: ServerRequest): ServerResponse = {
     log("Paths: " + request.pathForExtension)
     log("Query: " + request.query)
     log("Path: " + request.parsedQuery("uri"))
     log("Semantic: " + request.parsedQuery("semantic"))
-    if (request.pathForExtension.headOption == Some("menu")) {
+    if (request.pathForExtension.headOption.contains("menu")) {
       val id = request.parsedQuery("id").getOrElse("top")
       log("Returning menu for " + id)
-      if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top",true))
+      if (id == "full") ServerResponse.fromJSON(sidebar.getJSON("top", full = true))
       else ServerResponse.fromJSON(sidebar.getJSON(id))
-    } else if (request.pathForExtension.headOption == Some("json")) {
+    } else if (request.pathForExtension.headOption.contains("json")) {
       val uri = request.parsedQuery("uri").getOrElse(return ServerResponse.errorResponse(GetError("Not a URI"), "json"))
       val key = request.parsedQuery("key").getOrElse("pgraph")
       val sem = request.parsedQuery("semantic").getOrElse("none")
       val comp = request.parsedQuery("comp").getOrElse("default")
-      val graph = buil(uri, key , sem , comp)
+      val graph = buil(uri, key, sem, comp)
       val ret = ServerResponse.fromJSON(graph)
       ret
     } else ServerResponse.errorResponse("Invalid path", "json")
   }
 }
 
-class JGraphSideBar extends Extension {
-  private class Tree(val id : String, val str : String, val uri : String, val tp : String) {
-    var children : List[Tree] = Nil
-    def add(ch : Tree) = if (!children.contains(ch)) {
+private class JGraphSideBar extends Extension {
+  private class Tree(val id: String, val str: String, val uri: String, val tp: String) {
+    var children: List[Tree] = Nil
+
+    def add(ch: Tree): Unit = if (!children.contains(ch)) {
       children ::= ch
     }
-    def toJSON : JSON = JSONObject(
-      ("menuText",JSONString(str)),
-      ("id",JSONString(id)),
-      ("uri",JSONString(uri)),
-      ("type",JSONString(tp)),
-      ("hasChildren",JSONBoolean(children.nonEmpty)))
-    def fullJSON : JSON = JSONObject(
-      ("menuText",JSONString(str)),
-      ("id",JSONString(id)),
-      ("uri",JSONString(uri)),
-      ("type",JSONString(tp)),
-      ("children",JSONArray(children.sortBy(_.str).map(_.fullJSON).distinct:_*)))
+
+    def toJSON: JSON = JSONObject(
+      ("menuText", JSONString(str)),
+      ("id", JSONString(id)),
+      ("uri", JSONString(uri)),
+      ("type", JSONString(tp)),
+      ("hasChildren", JSONBoolean(children.nonEmpty)))
+
+    def fullJSON: JSON = JSONObject(
+      ("menuText", JSONString(str)),
+      ("id", JSONString(id)),
+      ("uri", JSONString(uri)),
+      ("type", JSONString(tp)),
+      ("children", JSONArray(children.sortBy(_.str).map(_.fullJSON).distinct: _*)))
   }
+
   private object Tree {
-    private val hm = scala.collection.mutable.HashMap.empty[String,Tree]
-    def apply(id : String, str : String = "", uri : String = "", tp : String ="pathgraph") = {
+    private val hm = scala.collection.mutable.HashMap.empty[String, Tree]
+
+    def apply(id: String, str: String = "", uri: String = "", tp: String = "pathgraph"): Tree = {
       hm.getOrElse(id, {
-        val ret = new Tree(id, if (str=="") id else str, uri, tp)
+        val ret = new Tree(id, if (str == "") id else str, uri, tp)
         hm(id) = ret
         ret
       })
     }
   }
 
-  def getJSON(id : String, full : Boolean = false) = if (id == "top") JSONArray(archs.sortBy(_.str).distinct.map(t =>
-    if (full) t.fullJSON else t.toJSON):_*)
-    else if (full) JSONArray(Tree(id).children.map(_.fullJSON):_*) else JSONArray(Tree(id).children.map(_.toJSON):_*)
+  def getJSON(id: String, full: Boolean = false): JSON = if (id == "top") JSONArray(archs.sortBy(_.str).distinct.map(t =>
+    if (full) t.fullJSON else t.toJSON): _*)
+  else if (full) JSONArray(Tree(id).children.map(_.fullJSON): _*) else JSONArray(Tree(id).children.map(_.toJSON): _*)
 
-  private def trimpath(p : Path) = if (p.toString.trim.last == '/') p.toString.trim.init else p.toString.trim
+  private def trimpath(p: Path) = if (p.toString.trim.last == '/') p.toString.trim.init else p.toString.trim
 
-  private def doArchive(a : Archive) : Tree = {
+  private def doArchive(a: Archive): Tree = {
     val ret = if (a.id contains "/") {
-      val List(pre,post) = utils.stringToList(a.id,"/")
-      Tree(pre,pre,pre,"archivegraph").add(Tree(a.id,post,a.id,"archivegraph"))
+      val List(pre, post) = utils.stringToList(a.id, "/")
+      Tree(pre, pre, pre, "archivegraph").add(Tree(a.id, post, a.id, "archivegraph"))
       Tree(pre)
-    } else Tree(a.id,a.id,a.id,"archivegraph")
-    Tree(a.id).add(Tree(a.id + "-narr","Narration",a.narrationBase.toString,"thgraph"))
-    Tree(a.id).add(Tree(a.id + "-cont","Content",a.id,"archivegraph"))
+    } else Tree(a.id, a.id, a.id, "archivegraph")
+    Tree(a.id).add(Tree(a.id + "-narr", "Narration", a.narrationBase.toString, "thgraph"))
+    Tree(a.id).add(Tree(a.id + "-cont", "Content", a.id, "archivegraph"))
     doNarr(DPath(a.narrationBase)).children.foreach(Tree(a.id + "-narr").add)
     val mods = a.allContent
-    mods.map(p => doCont(p,a.id)).distinct.foreach(Tree(a.id + "-cont").add)
+    mods.map(p => doCont(p, a.id)).distinct.foreach(Tree(a.id + "-cont").add)
     ret
   }
-  private def doCont(p : Path,suffix : String = "") : Tree = p match {
-    case mp : MPath =>
-      val ret = doCont(mp.parent,suffix)
-      Tree(trimpath(mp.parent) + "-cont-" + suffix).add(Tree(trimpath(mp) + "-cont-" + suffix,"?" + mp.name.toString,trimpath(mp),"thgraph"))
+
+  private def doCont(p: Path, suffix: String = ""): Tree = p match {
+    case mp: MPath =>
+      val ret = doCont(mp.parent, suffix)
+      Tree(trimpath(mp.parent) + "-cont-" + suffix).add(Tree(trimpath(mp) + "-cont-" + suffix, "?" + mp.name.toString, trimpath(mp), "thgraph"))
       ret
-    case dp : DPath =>
-      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont-" + suffix,trimpath(dp),trimpath(dp),"pgraph")
+    case dp: DPath =>
+      if (dp.ancestors.length == 1) Tree(trimpath(dp) + "-cont-" + suffix, trimpath(dp), trimpath(dp), "pgraph")
       else {
-        val ret = doCont(dp.^^,suffix)
-        ret.add(Tree(trimpath(dp) + "-cont-" + suffix,dp.last,trimpath(dp),"pgraph"))
+        val ret = doCont(dp.^^, suffix)
+        ret.add(Tree(trimpath(dp) + "-cont-" + suffix, dp.last, trimpath(dp), "pgraph"))
         ret
       }
     case _ => throw ImplementationError("impossible case")
   }
-  private def doNarr(p : Path) : Tree = p match {
+
+  private def doNarr(p: Path): Tree = p match {
     case dp: DPath =>
       val doc = Try(controller.getDocument(dp)).toOption
       val s2 = doc match {
@@ -165,38 +184,42 @@ class JGraphSideBar extends Extension {
         case _ => trimpath(dp)
       }
       doc.foreach(_.getDeclarations.foreach {
-        case r: NRef => Tree(trimpath(dp) + "-narr",s2,trimpath(dp),"docgraph").add(doNarr(r.target))
-        case doc: Document => Tree(trimpath(dp) + "-narr",s2,trimpath(dp),"docgraph").add(doNarr(doc.path))
+        case r: NRef => Tree(trimpath(dp) + "-narr", s2, trimpath(dp), "docgraph").add(doNarr(r.target))
+        case doc: Document => Tree(trimpath(dp) + "-narr", s2, trimpath(dp), "docgraph").add(doNarr(doc.path))
         case _ =>
       })
-      Tree(trimpath(dp) + "-narr",s2,trimpath(dp),"docgraph")
+      Tree(trimpath(dp) + "-narr", s2, trimpath(dp), "docgraph")
     case mp: MPath =>
-      Tree(trimpath(mp) + "-narr","?" + mp.name.toString,trimpath(mp),"thgraph")
+      Tree(trimpath(mp) + "-narr", "?" + mp.name.toString, trimpath(mp), "thgraph")
     case _ => Tree("")
   }
 
   private def archs = controller.backend.getArchives.sortBy(_.id).map(doArchive)
 
-  override def start(args: List[String]) {
+  final override def start(args: List[String]) {
     super.start(args)
     // lazy private val top = archs.map(doArchive).sortBy(_._1).distinct.map(p => (p._1,p._2.toJSON))
   }
 }
 
-abstract class JGraphExporter(val key : String) extends FormatBasedExtension {
-  def isApplicable (format: String): Boolean = format == key
-  def buildGraph(s : String) : JSON
-  def computeSem(f: JSON, sem: String, comp: String) : JSON
+abstract class JGraphExporter(val key: String) extends FormatBasedExtension {
+  def isApplicable(format: String): Boolean = format == key
+
+  def buildGraph(s: String): JSON
+
+  def computeSem(f: JSON, sem: String, comp: String): JSON
 }
 
-abstract class SimpleJGraphExporter (key : String) extends JGraphExporter(key) {
+abstract class SimpleJGraphExporter(key: String) extends JGraphExporter(key) {
   override def logPrefix: String = key
-  val builder : JGraphBuilder
-  val selector : JGraphSelector
-  def buildGraph(s : String) : JSON = {
-    val (ths,vs) = selector.select(s)(controller)
+
+  protected val builder: JGraphBuilder
+  protected val selector: JGraphSelector
+
+  def buildGraph(s: String): JSON = {
+    val (ths, vs) = selector.select(s)(controller)
     log("building...")
-    val res = builder.build(ths,vs)(controller)
+    val res = builder.build(ths, vs)(controller)
     log("Done.")
     res
   }
@@ -212,73 +235,75 @@ abstract class SimpleJGraphExporter (key : String) extends JGraphExporter(key) {
 }
 
 
-
-class JDocgraph extends SimpleJGraphExporter("docgraph"){
-  val builder = GraphBuilder.PlainBuilder
-  val selector = new JGraphSelector {
+private class JDocgraph extends SimpleJGraphExporter("docgraph") {
+  final override protected val builder = GraphBuilder.PlainBuilder
+  final override protected val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val se = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(e : StructuralElement) => e
-        case _ => return (Nil,Nil)
+        case scala.util.Success(e: StructuralElement) => e
+        case _ => return (Nil, Nil)
       }
       val (theories, views) = se match {
         case doc: Document =>
           (controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsTheory)),
             controller.depstore.querySet(doc.path, Transitive(+Declares) * HasType(IsView))
-            )
+          )
         case thy: Theory => (List(thy.path), Nil)
         case view: View =>
           (List(view.from, view.to).flatMap(objects.TheoryExp.getSupport),
             List(view.path)
-            )
+          )
         case d: Declaration => return select(d.parent.doc.toString)
       }
       ((theories.map(controller.getO) collect {
-        case Some(th : Theory) => th
-      }).toList,(views.map(controller.getO) collect {
-        case Some(v : View) => v
+        case Some(th: Theory) => th
+      }).toList, (views.map(controller.getO) collect {
+        case Some(v: View) => v
       }).toList)
     }
   }
 }
-class JThgraph extends SimpleJGraphExporter("thgraph") {
-  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
-  val selector = new JGraphSelector {
+
+private class JThgraph extends SimpleJGraphExporter("thgraph") {
+  final override protected val builder = GraphBuilder.AlignmentBuilder(log(_, None))
+  final override protected val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
-        case scala.util.Success(t : Theory) => t
-        case _ => return (Nil,Nil)
+        case scala.util.Success(t: Theory) => t
+        case _ => return (Nil, Nil)
       }
-      var (theories,views) : (List[Theory],List[View]) = (Nil,Nil)
-      val insouts = controller.depstore.querySet(th.path,Includes | Declares | HasDomain | HasCodomain | RefersTo).toList :::
+      var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
+      val insouts = controller.depstore.querySet(th.path, Includes | Declares | HasDomain | HasCodomain | RefersTo).toList :::
         th.getIncludes ::: th.getDeclarations.filter(_.isInstanceOf[NestedModule]).map(_.path)
-      insouts.map(controller.getO).distinct.foreach{
-        case Some(t : Theory) => theories ::= t
-        case Some(v : View) => views ::= v
+      insouts.map(controller.getO).distinct.foreach {
+        case Some(t: Theory) => theories ::= t
+        case Some(v: View) => views ::= v
         case _ =>
       }
       (th :: theories, views)
     }
   }
 }
-class JPgraph extends SimpleJGraphExporter("pgraph") {
-  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
-  val selector = new JGraphSelector {
+
+private class JPgraph extends SimpleJGraphExporter("pgraph") {
+  final override protected val builder = GraphBuilder.AlignmentBuilder(log(_, None))
+  final override protected val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val dpath = Try(Path.parse(s)) match {
         case scala.util.Success(d: DPath) => d
-        case scala.util.Success(mp : MPath) => mp.parent
-        case scala.util.Success(d : GlobalName) => d.module.parent
-        case _ => return (Nil,Nil)
+        case scala.util.Success(mp: MPath) => mp.parent
+        case scala.util.Success(d: GlobalName) => d.module.parent
+        case _ => return (Nil, Nil)
       }
       log("Doing " + dpath)
-      (alltheories.filter(dpath <= _).map(controller.getO).collect{
-        case Some(th : Theory) => th
-      },allviews.filter(dpath <= _).map(controller.getO).collect{
-        case Some(v : View) => v
+      (alltheories.filter(dpath <= _).map(controller.getO).collect {
+        case Some(th: Theory) => th
+      }, allviews.filter(dpath <= _).map(controller.getO).collect {
+        case Some(v: View) => v
       })
     }
   }
+
   private def alltheories = {
     log("Loading theories...")
     val ret = (controller.depstore.getInds(IsTheory) collect {
@@ -287,54 +312,81 @@ class JPgraph extends SimpleJGraphExporter("pgraph") {
     log("Done.")
     ret
   }
+
   private def allviews = {
     log("Loading views...")
     val ret = (controller.depstore.getInds(IsView) collect {
-      case mp : MPath => mp
+      case mp: MPath => mp
     }).toList
     log("Done.")
     ret
   }
-  /** private def allattacks = {
-    log("Loading attacks...")
-    val ret = (controller.depstore.getInds(IsAttack) collect {
-      case mp : MPath => mp
-    }).toList
-    log("Done.")
-    ret
-  }
-  */
 }
-class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
-  val builder = GraphBuilder.AlignmentBuilder(log(_,None))
-  val selector = new JGraphSelector {
+
+/**
+  * Accepts as graph data an MPath to a [[Diagram diagram derived module]] as string and reads out
+  * the generated theories/views from its dfC.normalized.
+  *
+  * @example Request with TGView 2D: [[http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest]],
+  *          where ''latin:/algebraic/diagop-test?PlayTest'' references the diagram derived module:
+  * {{{
+  *   namespace latin:/algebraic/diagop-test ❚
+  *   diagram PlayTest : ?AlgebraicDiagOps := ... ❚
+  * }}}
+  */
+private class JDiagramGraph extends SimpleJGraphExporter("diaggraph") {
+  final override protected val builder: JGraphBuilder = GraphBuilder.PlainBuilder
+  final override protected val selector: JGraphSelector = new JGraphSelector {
+    override def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
+      try {
+        val paths = Diagram.parseOutput(Path.parseM(s))(controller.globalLookup)
+
+        val (theories, views) = {
+          val modules = paths.map(controller.get)
+          (modules.collect { case x: Theory => x }, modules.collect { case x: View => x })
+        }
+        (theories, views)
+      } catch {
+        case err@(_: ParseError | _: GetError) =>
+          err.printStackTrace()
+          (Nil, Nil)
+      }
+    }
+  }
+}
+
+private class JArchiveGraph extends SimpleJGraphExporter("archivegraph") {
+  final override protected val builder = GraphBuilder.AlignmentBuilder(log(_, None))
+  final override protected val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
       val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
       log("Archives: " + a.map(_.id).mkString(", "))
-      var (theories,views) : (List[Theory],List[View]) = (Nil,Nil)
+      var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
       a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
-        case Some(th : Theory) => theories ::= th
-        case Some(v : View) => views ::= v
+        case Some(th: Theory) => theories ::= th
+        case Some(v: View) => views ::= v
         case _ =>
       }
       log(theories.length + " selected")
-      (theories,views)
+      (theories, views)
     }
   }
 }
-class JMPDGraph extends SimpleJGraphExporter("mpd") {
-  override val logPrefix = "mpd"
-  lazy val mathpres = controller.extman.get(classOf[MMTDocExporter]).headOption.getOrElse{
+
+private class JMPDGraph extends SimpleJGraphExporter("mpd") {
+  final override val logPrefix = "mpd"
+  private lazy val mathpres = controller.extman.get(classOf[MMTDocExporter]).headOption.getOrElse {
     val pr = new MMTDocExporter
     controller.extman.addExtension(pr)
     pr
   }
-  val builder = new StandardBuilder {
-    def doView(v: View)(implicit controller : Controller) = (Nil,Nil)
-    def doTheory(th: Theory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge]) = {
+  final override protected val builder = new StandardBuilder {
+    def doView(v: View)(implicit controller: Controller) = (Nil, Nil)
+
+    def doTheory(th: Theory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge]) = {
       log("Doing theory " + th.path)
-      val consts = th.getPrimitiveDeclarations.collect{case c : Constant => c}
+      val consts = th.getPrimitiveDeclarations.collect { case c: Constant => c }
       val sb = new info.kwarc.mmt.api.presentation.StringBuilder
       val const = consts.find(_.rl contains "Law") match {
         case Some(c) => Some(c)
@@ -343,22 +395,23 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           case _ => consts.find(_.rl contains "Quantity")
         }
       }
-      if (const.isEmpty) return (Nil,Nil)
+      if (const.isEmpty) return (Nil, Nil)
 
-      val ostyle : String = const.map(c => {
+      val ostyle: String = const.map(c => {
         c.rl.get match {
           case "Law" => "model"
           case "BoundaryCondition" => "boundarycondition"
           case "Accepted" => "acceptedtheory"
           case "Rejected" => "rejectedtheory"
           case "Undecided" => "undecidedtheory"
-          case _ => "theory"}
+          case _ => "theory"
+        }
       }).get
 
       ostyle match {
-        case "model" => const.foreach(c => mathpres(c.tp.get,Some(c.path $ TypeComponent))(sb))
-        case "boundarycondition" => const.foreach(c => mathpres(c.tp.get,Some(c.path $ TypeComponent))(sb))
-        case _ => const.foreach(c => mathpres(OMS(c.path),None)(sb))
+        case "model" => const.foreach(c => mathpres(c.tp.get, Some(c.path $ TypeComponent))(sb))
+        case "boundarycondition" => const.foreach(c => mathpres(c.tp.get, Some(c.path $ TypeComponent))(sb))
+        case _ => const.foreach(c => mathpres(OMS(c.path), None)(sb))
       }
       log("Const: " + const)
       log("Style: " + ostyle)
@@ -368,7 +421,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
         val label = Some(th.name.toString)
         val mathml = sb.get
         val uri = Some(th.path.toString)
-        override val others = List(("mathml",mathml))
+        override val others = List(("mathml", mathml))
       })
       val structedges = th.getPrimitiveDeclarations.collect {
         case s: Structure => new JGraphEdge {
@@ -387,7 +440,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
     }
   }
 
-  val selector = new JGraphSelector {
+  final override protected val selector = new JGraphSelector {
     def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       val th = Try(controller.get(Path.parse(s))) match {
         case scala.util.Success(t: Theory) => List(t)
@@ -395,19 +448,20 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           val as = s.toString.split(""" """).map(_.trim).filter(_ != "")
           val a = controller.backend.getArchives.filter(a => as.exists(a.id.startsWith))
           log("Archives: " + a.map(_.id).mkString(", "))
-          var theories : List[Theory] = Nil
+          var theories: List[Theory] = Nil
           a.flatMap(_.allContent).map(c => Try(controller.get(c)).toOption) foreach {
-            case Some(th : Theory) => theories ::= th
+            case Some(th: Theory) => theories ::= th
             case _ =>
           }
           log(theories.length + " selected")
           theories
       }
       var (theories, views): (List[Theory], List[View]) = (Nil, Nil)
-      def recurse(ith : Theory) {
+
+      def recurse(ith: Theory) {
         log("Select: " + s)
         theories ::= ith
-        val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect{
+        val ins = ith.getIncludesWithoutMeta ::: ith.getNamedStructures.collect {
           case st if st.from.isInstanceOf[OMID] => st.from.toMPath
         }
         ins.map(controller.getO).distinct.foreach {
@@ -417,6 +471,7 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
           case _ =>
         }
       }
+
       th foreach recurse
       //log("Selecting " + (th.path :: theories.map(_.path)).mkString(", "))
       (theories.distinct, views)
@@ -425,59 +480,64 @@ class JMPDGraph extends SimpleJGraphExporter("mpd") {
 }
 
 abstract class JGraphNode {
-  val id : String
-  val style : String
-  val label : Option[String]
-  val uri : Option[String]
-  val others : List[(String,String)] = Nil
+  val id: String
+  val style: String
+  val label: Option[String]
+  val uri: Option[String]
+  val others: List[(String, String)] = Nil
 
-  def toJSON = JSONObject(("id",JSONString(id)) :: ("style",JSONString(style)) ::
-    List(label.map(l => ("label",JSONString(l))).toList,uri.map(i => ("url",JSONString("/?" + id))).toList,others.map(p => (p._1,JSONString(p._2)))).flatten :_*)
+  def toJSON: JSON = JSONObject(("id", JSONString(id)) :: ("style", JSONString(style)) ::
+    List(label.map(l => ("label", JSONString(l))).toList, uri.map(i => ("url", JSONString("/?" + id))).toList, others.map(p => (p._1, JSONString(p._2)))).flatten: _*)
 }
 
 abstract class JGraphEdge {
-  val id : String
-  val style : String
-  val from : String
-  val to : String
-  val label : Option[String]
-  val uri : Option[String]
-  val others : List[(String,String)] = Nil
+  val id: String
+  val style: String
+  val from: String
+  val to: String
+  val label: Option[String]
+  val uri: Option[String]
+  val others: List[(String, String)] = Nil
 
-  def toJSON = JSONObject(("id",JSONString(id)) :: ("style",JSONString(style)) :: ("from",JSONString(from)) :: ("to",JSONString(to)) ::
-    List(label.map(l => ("label",JSONString(l))).toList,uri.map(i => ("url",JSONString("/?" + id))).toList,others.map(p => (p._1,JSONString(p._2)))).flatten :_*)
+  def toJSON: JSON = JSONObject(("id", JSONString(id)) :: ("style", JSONString(style)) :: ("from", JSONString(from)) :: ("to", JSONString(to)) ::
+    List(label.map(l => ("label", JSONString(l))).toList, uri.map(i => ("url", JSONString("/?" + id))).toList, others.map(p => (p._1, JSONString(p._2)))).flatten: _*)
 }
 
 abstract class JGraphSelector {
-  def select(s : String)(implicit controller : Controller): (List[Theory],List[View])
+  def select(s: String)(implicit controller: Controller): (List[Theory], List[View])
 }
 
 abstract class JGraphBuilder {
-  def log(s : String) {}
-  def build(theories : List[Theory], views : List[View])(implicit controller : Controller) : JSON
-}
-abstract class StandardBuilder extends JGraphBuilder {
-  protected def doTheory(th : Theory)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge])
-  protected def doView(v : View)(implicit controller : Controller) : (List[JGraphNode],List[JGraphEdge])
+  def log(s: String) {}
 
-  def build(theories : List[Theory], views : List[View])(implicit controller : Controller) = {
-    var edges : List[JGraphEdge] = Nil
-    var nodes : List[JGraphNode] = Nil
+  def build(theories: List[Theory], views: List[View])(implicit controller: Controller): JSON
+}
+
+abstract class StandardBuilder extends JGraphBuilder {
+  protected def doTheory(th: Theory)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge])
+
+  protected def doView(v: View)(implicit controller: Controller): (List[JGraphNode], List[JGraphEdge])
+
+  def build(theories: List[Theory], views: List[View])(implicit controller: Controller): JSON = {
+    var edges: List[JGraphEdge] = Nil
+    var nodes: List[JGraphNode] = Nil
     views foreach (v => doView(v) match {
-      case (ns,es) =>
+      case (ns, es) =>
         nodes = nodes ::: ns
         edges = edges ::: es
     })
     theories.indices foreach (th => {
-      log({th + 1} + "/" + theories.length)
+      log({
+        th + 1
+      } + "/" + theories.length)
       doTheory(theories(th))
     } match {
-        case (ns,es) =>
-          nodes = nodes ::: ns
-          edges = edges ::: es
-      })
+      case (ns, es) =>
+        nodes = nodes ::: ns
+        edges = edges ::: es
+    })
 
-    JSONObject(("nodes",JSONArray(nodes.map(_.toJSON):_*)),("edges",JSONArray(edges.map(_.toJSON):_*)))
+    JSONObject(("nodes", JSONArray(nodes.map(_.toJSON): _*)), ("edges", JSONArray(edges.map(_.toJSON): _*)))
   }
 }
 
@@ -541,7 +601,7 @@ object GraphBuilder {
     def doTheory(th: Theory)(implicit controller: Controller) = standardTheory(th)
   }
 
-  case class AlignmentBuilder(ilog : String => Unit) extends StandardBuilder {
+  case class AlignmentBuilder(ilog: String => Unit) extends StandardBuilder {
     def doView(v: View)(implicit controller: Controller) = standardView(v)
 
     override def log(s: String): Unit = ilog(s)
@@ -565,6 +625,7 @@ object GraphBuilder {
       (ths, views ::: es)
     }
   }
+
 }
 
 abstract class GraphSolverExtension extends Extension {
@@ -576,5 +637,6 @@ abstract class GraphSolverExtension extends Extension {
     *
     */
   val key: String
+
   def apply(graph: JSON, semantics: String, comp: String): JSON
 }
