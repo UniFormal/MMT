@@ -98,7 +98,11 @@ class MizarStructure extends StructuralFeature("mizarStructure") with Parametric
       case _ => (false, None)
     }
     val substrPaths = dd.getDeclarations map (preProcessIncludes(_)) filter (_._1) map (_._2.get)
-    val origDecls = parseInternalDeclarations(dd, controller, context)
+    val origDecls = parseInternalDeclarations(dd, controller, context) map {
+      // Replace types by their definiens, whenever available
+      case tml:OutgoingTermLevel => new OutgoingTermLevel(tml.path, tml.args, tml.df.getOrElse(tml.ret), tml.df)
+      case intDecl => intDecl
+    }
     val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths, controller)(parentTerm)
     externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
   }
