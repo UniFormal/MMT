@@ -39,7 +39,7 @@ object Orders {
     "fundamentals/equality.mmt",
     "fundamentals/subtyping.mmt",
     "fundamentals/informal.mmt",
-    "fundamentals/type-equality.mmt",
+    "fundamentals/type_equality.mmt",
 
     "algebra/magmas-lf.mmt",
 
