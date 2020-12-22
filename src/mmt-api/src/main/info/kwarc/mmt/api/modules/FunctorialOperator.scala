@@ -25,6 +25,8 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
         .flatMap(acceptDiagram(_)(interp))
         .flatMap(applyDiagram)
         .map(submitDiagram)
+
+    case _ => None
   }
 }
 
@@ -56,25 +58,23 @@ abstract class ParametricLinearOperator extends DiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
   def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer]
 
-  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
-    diagram match {
-      case OMA(OMS(`head`), parameters :+ actualDiagram) =>
-        instantiate(parameters).flatMap(op => interp(actualDiagram) match {
-          // TODO: ideally reuse code from RelativeBaseOperator
-          case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
-            op.applyDiagram(modulePaths).map(BasedDiagram(op.operatorCodomain, _))
+  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
+    case OMA(OMS(`head`), parameters :+ actualDiagram) =>
+      instantiate(parameters).flatMap(op => interp(actualDiagram) match {
+        // TODO: ideally reuse code from RelativeBaseOperator
+        case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
+          op.applyDiagram(modulePaths).map(BasedDiagram(op.operatorCodomain, _))
 
-          case Some(unsupportedDiag) =>
-            interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
-            None
+        case Some(unsupportedDiag) =>
+          interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
+          None
 
-          case _ =>
-            interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
-            None
-        })
+        case _ =>
+          interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
+          None
+      })
 
-      case _ => None
-    }
+    case _ => None
   }
 }
 
