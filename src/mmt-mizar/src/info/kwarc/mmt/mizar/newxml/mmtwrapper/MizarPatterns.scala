@@ -16,6 +16,8 @@ import info.kwarc.mmt.sequences.NatRules
 object PatternUtils {
   def structureDefinitionPatternName = LocalName("structureDef")
   def structureDefPropName(decl:String) = LocalName(decl) / "prop"
+  def structureStrictName = LocalName("strict")
+  def structureStrictPropName = structureStrictName / "prop"
   def structureDefRestrName(substrName:String) = LocalName("restr") / substrName
   def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName) = LocalName(restrName) / "selProp" / sel
   def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))

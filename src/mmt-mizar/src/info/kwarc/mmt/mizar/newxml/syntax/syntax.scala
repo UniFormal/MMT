@@ -766,6 +766,13 @@ sealed trait Registrations
  * @param _tp
  */
 case class Functorial_Registration(pos:Position, _aggrTerm:Term, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
+
+/**
+ * saying that some attributes hold on a type
+ * @param pos
+ * @param _adjClust
+ * @param _tp
+ */
 case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * showing that some attributes implies other attributes
