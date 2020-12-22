@@ -72,6 +72,18 @@ object Records {
     }
   }
 
+  /**
+   * Generates the introduction declaration
+   * make: {params, tpTmDecls} declsTm_1 -> declsTm_2 -> ... -> declsTm_n -> recType params,
+   * where tpTmDecls is a context containing the typelevels declsTp
+   * and declsTp, declsTm are the type and termlevels in decls respectively
+   * @param recType
+   * @param decls
+   * @param nm
+   * @param context
+   * @param parent
+   * @return
+   */
   def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
     val Ltp = () => {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)

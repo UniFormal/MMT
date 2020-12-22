@@ -10,12 +10,12 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import StructuralFeatureUtil._
 import structuralfeatures.InternalDeclaration.{isTypeLevel, structureDeclaration}
-import structuralfeatures.RecordUtil.{converseEquivName, equivName, inductName, recExpPath, recTypeName, recTypePath, reprName}
+import structuralfeatures.RecordUtil._
 import structuralfeatures.Records.{declaresRecords, elaborateContent}
 import structuralfeatures.StructuralFeatureUtils.{Eq, parseInternalDeclarations}
 import structuralfeatures.{InternalDeclaration, InternalDeclarationUtil, OutgoingTermLevel, Records, StructuralFeatureUtils, TermLevel, TypeLevel}
 import MizSeq.{Ellipsis, OMI, nTerms}
-import PatternUtils.{structureDefRestrName, structureDefSubstrSelPropName}
+import PatternUtils._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object MizarStructure {
@@ -45,11 +45,16 @@ object MizarStructure {
     val l = argTps.length
     val argsTyped = Ellipsis(OMI(l),LocalName("x"),Mizar.is(MizSeq.Index(OMV(LocalName("x")),OMV(LocalName("i"))), MizSeq.Index(MMTUtils.flatten(argTps),OMV(LocalName("i")))))
 
-    val structx = Apply(OMV("struct"), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
+    val structx = Apply(OMV(recTypeName), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
+    val makex = Apply(OMV(makeName), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
     def typedArgsCont(nm:Option[String]= None) : (Term => Term) = { tm: Term => Pi(LocalName("x"), nTerms(l), nm match {
       case Some(name) => Pi(LocalName(name),argsTyped, tm)
       case None => Arrow(argsTyped, tm) })
     }
+    val strictDecl = VarDecl(structureStrictName,typedArgsCont()(
+      Pi(LocalName("s"),structx,Mizar.prop)))
+    val strictPropDecl = VarDecl(structureStrictName,typedArgsCont()(
+      Pi(LocalName("s"),makex,Mizar.proof(Apply(OMV(structureStrictName), OMV("s"))))))
     val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap{case (OMS(substrGN),i) =>
       val substrPath = substrGN.module / substrGN.name
       val (substruct, substrName, sl, sargTps, sm, sfieldDefs) = TranslationController.controller.get(substrPath) match {
