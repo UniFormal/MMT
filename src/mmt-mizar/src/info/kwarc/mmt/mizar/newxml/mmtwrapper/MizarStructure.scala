@@ -43,17 +43,14 @@ object MizarStructure {
 
     val argTps = params map (_.toTerm)
     val l = argTps.length
-    val argsTyped = Ellipsis(OMI(l),LocalName("x"),Mizar.is(MizSeq.Index(OMV(LocalName("x")),OMV(LocalName("i"))), MizSeq.Index(MMTUtils.flatten(argTps),OMV(LocalName("i")))))
+    val argsTyped = MMTUtils.freeVarContext(argTps)
 
-    val structx = Apply(OMV(recTypeName), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
-    val makex = Apply(OMV(makeName), MMTUtils.flatten(params.variables.toList.map(_.toTerm)))
-    def typedArgsCont(nm:Option[String]= None) : (Term => Term) = { tm: Term => Pi(LocalName("x"), nTerms(l), nm match {
-      case Some(name) => Pi(LocalName(name),argsTyped, tm)
-      case None => Arrow(argsTyped, tm) })
-    }
-    val strictDecl = VarDecl(structureStrictName,typedArgsCont()(
+    val structx = ApplyGeneral(OMV(recTypeName), params.variables.toList.map(_.toTerm))
+    val makex = ApplyGeneral(OMV(makeName), params.variables.toList.map(_.toTerm))
+    def typedArgsCont(tm: Term) = Pi(argsTyped, tm)
+    val strictDecl = VarDecl(structureStrictName,typedArgsCont(
       Pi(LocalName("s"),structx,Mizar.prop)))
-    val strictPropDecl = VarDecl(structureStrictName,typedArgsCont()(
+    val strictPropDecl = VarDecl(structureStrictName,typedArgsCont(
       Pi(LocalName("s"),makex,Mizar.proof(Apply(OMV(structureStrictName), OMV("s"))))))
     val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap{case (OMS(substrGN),i) =>
       val substrPath = substrGN.module / substrGN.name
@@ -61,10 +58,10 @@ object MizarStructure {
         case subStruct @ StructureInstance(substrName, sl, sargTps, _, _, sm, sfieldDefs) => (subStruct, substrName, sl, sargTps, sm, sfieldDefs)
       }
       val restrName = structureDefRestrName(substrName)
-      val restr = VarDecl(restrName,typedArgsCont(Some("p"))(
-        Pi(LocalName("s"),structx,OMS(StructuralFeatureUtils.externalName(substrGN,LocalName("struct"))))))
+      val restr = VarDecl(restrName,typedArgsCont(
+        Pi(LocalName("s"),structx,referenceExtDecl(substrGN,recTypeName))))
       val restrSelProps = sfieldDefs map {vd =>
-        VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),OMS(StructuralFeatureUtils.externalName(substrGN,restrName))))
+        VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),referenceExtDecl(substrGN,restrName.toString)))
       }
       restr::restrSelProps
     }
