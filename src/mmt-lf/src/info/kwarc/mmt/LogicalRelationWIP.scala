@@ -9,13 +9,13 @@ import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.lf._
 
 // todo: ask Florian where to put this file
-
+/*
 object LogicalRelationWIP {
   private def star(name: LocalName): LocalName = name.suffixLastSimple("ᕁ")
 
   def traverser(links: List[Link], rel: GlobalName => Term)(implicit lookup: Lookup): Traverser[Option[Term]] = {
     ???
-    /*
+
     new Traverser[Option[Term]] {
       override def traverse(t: Term)(implicit con: Context, targets: List[Term]): Term = t match {
         case OMS(Typed.ktype) =>
@@ -111,7 +111,7 @@ object LogicalRelationWIP {
 
         case _ => Traverser(this, t)
       }
-    }*/
+    }
   }
 }
 
@@ -171,7 +171,7 @@ object LogicalRelationOperator extends ParametricLinearOperator {
 }
 
 
-/*SimpleLinearOperator with SystematicRenamingUtils {
+SimpleLinearOperator with SystematicRenamingUtils {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unary_id_logrel_operator")
 
   override val operatorDomain: MPath = LF.theoryPath
