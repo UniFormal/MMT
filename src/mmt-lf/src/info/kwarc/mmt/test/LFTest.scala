@@ -35,7 +35,7 @@ object Orders {
   val latin2 = List(
     "fundamentals/concepts.mmt",
     "fundamentals/relations.mmt",
-    "fundamentals/base-languages.mmt",
+    "fundamentals/base_languages.mmt",
     "fundamentals/equality.mmt",
     "fundamentals/subtyping.mmt",
     "fundamentals/informal.mmt",
