@@ -1,9 +1,9 @@
 package info.kwarc.mmt.api.modules.diagops
 
-import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure, TermContainer}
+import info.kwarc.mmt.api.symbols.{Constant, IncludeData, Structure, TermContainer}
+import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
 
 /**
   * Linearly transforms theories to theories, and views to views.
@@ -140,6 +140,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     }).map(outModule => {
       diagState.seenModules += inModule.path
 
+      diagState.processedElements.put(inModule.path, outModule)
       if (diagState.inputToplevelModules.contains(inModule.path)) {
         interp.addToplevelResult(outModule)
       }

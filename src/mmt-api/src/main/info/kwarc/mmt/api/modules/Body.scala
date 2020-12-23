@@ -120,7 +120,8 @@ trait ModuleOrLink extends ContentElement with ContainerElement[Declaration] wit
         if (s equivalentTo old)
           true
         else
-          throw AddError("a declaration for the name " + name + " already exists")
+          throw AddError("a declaration for the name " + name + s" already exists " +
+            s"(full path is ${s.path})")
     }
     statements(name) = s
     addAlternativeNames(s)

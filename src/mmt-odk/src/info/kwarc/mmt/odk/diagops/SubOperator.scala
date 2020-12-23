@@ -1,17 +1,17 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops.{Renamer, SimpleInwardsConnector, SimpleLinearOperator, SimpleOutwardsConnector, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.diagops._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
-import info.kwarc.mmt.odk.diagop.OpUtils.{GeneralApplySpine, GeneralLambda}
+import info.kwarc.mmt.odk.diagops.OpUtils.{GeneralLambda}
 
 /**
   * Creates the theory `Sub(X)` of substructures for every SFOL theory `X`.
   */
-object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
+object SubOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_operator")
   override val operatorDomain: MPath = SFOL.sfoleqnd
   override val operatorCodomain: MPath = SFOL.sfoleqnd
@@ -35,8 +35,8 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
     }
   }
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    val parCopy = (par(name), par(tp), df.map(par(_)))
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    val parCopy = const(par(c.path), par(tp), df.map(par(_)))
 
     parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
@@ -47,7 +47,7 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
           SFOL.prop.term
         )
 
-        List((sub(name), tsType, df.map(sub(_))))
+        List(const(sub(c.path), tsType, df.map(sub(_))))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // input:
@@ -57,8 +57,8 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         //   f^p: tm t_1^p ⟶ … ⟶ tm t_n^p ⟶ tm t^p
         //   f^s: |- ∀ [x_1 … x_n] (t_1^s x_1) ∧ … ∧ (t_n^s x_n) ⇒ t^s (f^p x_1 … x_n)
 
-        List((
-          sub(name),
+        List(const(
+          sub(c.path),
           ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType),
           df.map(_ => SFOL.sketchLazy("provable"))
         ))
@@ -68,13 +68,13 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
       case SFOL.AxiomSymbolType() =>
         // todo: alternative: use predicate subtypes instead of relativation
-        val relativizedAxiom = (
-          sub(name),
+        val relativizedAxiom = const(
+          sub(c.path),
           relativizeQuantifiers(tp, state.outerContext, par.apply(_), sub.apply(_)),
           df.map(_ => SFOL.sketchLazy("provable"))
         )
 
-        List(parCopy, relativizedAxiom)
+        List(relativizedAxiom)
 
       case _ =>
         NotApplicable(c)
@@ -108,25 +108,25 @@ object SubOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 object SubFullConnector extends SimpleOutwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_full_connector"),
   SubOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_full")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
 
-    val parStructureCopy = (par(name), c.toTerm)
+    val parStructureCopy = assgn(par(c.path), c.toTerm)
 
     parStructureCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         List(
           // construct assignment `U^s = [x] true`
-          (sub(name), Lambda(LocalName("x"), SFOL.tm(c.toTerm), SFOL.true_))
+          assgn(sub(c.path), Lambda(LocalName("x"), SFOL.tm(c.toTerm), SFOL.true_))
         )
 
       case SFOL.FunctionSymbolType(_, _) =>
         List(
-          (sub(name), SFOL.sketchLazy("effectively by trueI"))
+          assgn(sub(c.path), SFOL.sketchLazy("effectively by trueI"))
         )
 
       case SFOL.PredicateSymbolType(_) =>
@@ -135,7 +135,7 @@ object SubFullConnector extends SimpleOutwardsConnector(
 
       case SFOL.AxiomSymbolType() =>
         List(
-          (sub(name), SFOL.sketchLazy(s"effectively by axiom `${name}` and trueI"))
+          assgn(sub(c.path), SFOL.sketchLazy(s"effectively by axiom `${c.name}` and trueI"))
         )
 
       case _ =>
@@ -150,12 +150,12 @@ object SubFullConnector extends SimpleOutwardsConnector(
 object SubParentConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_par_connector"),
   SubOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_par")
 
-  override protected def applyConstantSimple(container: SubParentConnector.Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val par = SubOperator.par.coercedTo(state)
-    List((name, par(c)))
+    List(assgn(par(c.path), par(c)))
   }
 }
 
@@ -166,16 +166,16 @@ object SubParentConnector extends SimpleInwardsConnector(
 object SubModelConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_mod_connector"),
   SubOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub_mod")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
 
     tp match {
       case SFOL.TypeSymbolType() =>
-        List((name, SFOL.predicateSubTp(par(c), sub(c))))
+        List(assgn(c.path, SFOL.predicateSubTp(par(c), sub(c))))
 
       // todo: unify function symbol and predicate symbol case nicely (see QuotOperator where this was done)
       case SFOL.FunctionSymbolType(argTypes, retType) =>
@@ -192,18 +192,18 @@ object SubModelConnector extends SimpleInwardsConnector(
         val body = SFOL.downcastParentElementToSubtype(
           parentTp = OMS(par(retType)),
           selectionFun = OMS(sub(retType)),
-          parentElem = GeneralApplySpine(par(c), argTypes.zip(bindingCtx).map {
+          parentElem = ApplySpine.applyOrSymbol(par(c), argTypes.zip(bindingCtx).map {
             case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
               parentTp = OMS(par(tp)),
               selectionFun = OMS(sub(tp)),
               subElem = OMV(vd.name)
             )
           }: _*),
-          containmentProof = SFOL.sketchLazy(s"provable via ${sub(name)}")
+          containmentProof = SFOL.sketchLazy(s"provable via ${sub(c.path)}")
         )
 
         val assignment = GeneralLambda(bindingCtx, body)
-        List((name, assignment))
+        List(assgn(c.path, assignment))
 
       case SFOL.PredicateSymbolType(argTypes) =>
         // input:  c: tm t_1 ⟶ ... ⟶ tm t_n ⟶ prop
@@ -213,7 +213,7 @@ object SubModelConnector extends SimpleInwardsConnector(
           SFOL.tm(SFOL.predicateSubTp(OMS(par(tp)), OMS(sub(tp))))
         }))
 
-        val body = GeneralApplySpine(par(c), argTypes.zip(bindingCtx).map {
+        val body = ApplySpine.applyOrSymbol(par(c), argTypes.zip(bindingCtx).map {
           case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
             parentTp = OMS(par(tp)),
             selectionFun = OMS(sub(tp)),
@@ -222,10 +222,10 @@ object SubModelConnector extends SimpleInwardsConnector(
         }: _*)
 
         val assignment = GeneralLambda(bindingCtx, body)
-        List((name, assignment))
+        List(assgn(c.path, assignment))
 
       case SFOL.AxiomSymbolType() =>
-        List((name, SFOL.sketchLazy("provable")))
+        List(assgn(c.path, SFOL.sketchLazy("provable")))
 
       case _ =>
         NotApplicable(c)

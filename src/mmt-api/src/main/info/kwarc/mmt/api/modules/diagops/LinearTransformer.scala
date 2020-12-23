@@ -31,6 +31,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     * E.g. [[LinearModuleTransformer]] creates theories for theories, and views for views.
     *
     * You may override this method to do additional action.
+    * Pay attention that postconditions of [[applyContainer()]] are fulfilled in the way you override this.
     *
     * @see [[endContainer()]]
     */
@@ -46,6 +47,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * You may override this method. Be sure to call `super.endContainer()` last in your overridden
     * method; or know what you're doing.
+    * Pay attention that postconditions of [[applyContainer()]] are fulfilled in the way you override this.
     *
     * @see [[beginContainer()]]
     */
@@ -155,6 +157,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     val inLinearState = state.initAndRegisterNewLinearState(inContainer)
 
     beginContainer(inContainer, inLinearState).map(outContainer => {
+      inLinearState.outContainer = outContainer
       inContainer.getDeclarations.foreach(decl => {
         inLinearState.registerDeclaration(decl)
         applyDeclaration(decl, inContainer)(inLinearState, interp)

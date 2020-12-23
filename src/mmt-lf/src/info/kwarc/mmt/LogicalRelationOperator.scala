@@ -4,10 +4,10 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.diagops.{ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SystematicRenamingUtils}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 
-final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with SystematicRenamingUtils {
+final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
 
   override val operatorDomain: MPath = commonLinkDomain
   override val operatorCodomain: MPath = commonLinkCodomain
@@ -18,7 +18,7 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
   val par: Renamer[LinearState] = getRenamerFor("ᵖ")
   val logrel: Renamer[LinearState] = getRenamerFor("ʳ")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val lr = (p: GlobalName) => {
       if (p == c.path || state.processedDeclarations.exists(_.path == p)) {
         OMS(logrel(p))
@@ -30,9 +30,9 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
     def g(t: Term): Term = betaReduce(Context.empty, logicalRelation.getExpected(Context.empty, c.toTerm, t), interp.ctrl.simplifier)
 
     List(
-      (par(name), par(tp), df.map(par(_))),
+      const(par(c.path), par(tp), df.map(par(_))),
       // todo: also map definienses
-      (logrel(name), g(tp), None)
+      const(logrel(c.path), g(tp), None)
     )
   }
 

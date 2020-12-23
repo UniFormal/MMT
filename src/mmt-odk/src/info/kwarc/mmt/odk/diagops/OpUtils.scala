@@ -1,4 +1,4 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api.objects.{Context, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.utils.UnicodeStrings
@@ -6,7 +6,7 @@ import info.kwarc.mmt.lf.{ApplySpine, Lambda}
 
 
 
-private[diagop] object OpUtils {
+private[diagops] object OpUtils {
   /**
     * Binds variables of given types freshly in `ctx`.
     *

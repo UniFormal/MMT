@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.modules.diagops
 
-import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName}
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMS, Term}
@@ -8,7 +8,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSRepl
 
 // DSL
 trait OperatorDSL extends DefaultLinearStateOperator with SystematicRenamingUtils {
-  trait NotApplicable {
+  object NotApplicable {
     def apply[T](c: Declaration, msg: String = "")(implicit state: LinearState, interp: DiagramInterpreter): List[T] = {
       state.registerSkippedDeclaration(c)
       interp.errorCont(InvalidElement(
@@ -18,22 +18,24 @@ trait OperatorDSL extends DefaultLinearStateOperator with SystematicRenamingUtil
 
       Nil
     }
-
-    object Module {
-      def apply(m: Module, msg: String)(implicit interp: DiagramInterpreter): Unit = {
-        interp.errorCont(InvalidElement(
-          m,
-          s"`$getClass not applicable " + (if (msg.nonEmpty) ": " + msg else "")
-        ))
-      }
-    }
   }
 
-  def const(p: GlobalName, tp: Term, df: Option[Term] = None): Constant = ???
-  def assgn(p: GlobalName, assignment: Term): Constant = {
+  // note: do not make df an optional Scala argument, as then users could confuse const and assgn
+  // without getting compilation errors
+  def const(p: GlobalName, tp: Term, df: Option[Term])(implicit state: LinearState): Constant = {
+    require(p.module == state.outContainer.path)
+
     new FinalConstant(
       home = OMMOD(p.module),
       name = p.name, alias = Nil,
+      tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
+      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
+    )
+  }
+  def assgn(p: GlobalName, assignment: Term)(implicit state: LinearState): Constant = {
+    new FinalConstant(
+      home = state.outContainer.toTerm,
+      name = ComplexStep(p.module) / p.name, alias = Nil,
       tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(assignment),
       rl = None, notC = NotationContainer.empty(), vs = Visibility.public
     )

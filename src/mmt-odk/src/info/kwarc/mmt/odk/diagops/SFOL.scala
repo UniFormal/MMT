@@ -1,11 +1,11 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.{GlobalName, MPath, Path}
 import info.kwarc.mmt.lf._
 
 // to be replaced by auto-generated classes/objects (via lf-scala build target)
-private[diagop] object SFOL {
+private[diagops] object SFOL {
 
   val sfoleqnd : MPath = Path.parseM("latin:/?SFOLEQND")
 

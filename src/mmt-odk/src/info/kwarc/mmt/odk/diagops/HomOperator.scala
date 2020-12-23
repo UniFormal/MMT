@@ -1,21 +1,20 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops.{LinearModuleTransformer, Renamer, SimpleInwardsConnector, SimpleLinearConnector, SimpleLinearOperator, SimpleOutwardsConnector, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.diagops._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.UnicodeStrings
-import info.kwarc.mmt.lf.{ApplySpine, FunTerm, FunType, Lambda}
+import info.kwarc.mmt.lf.{ApplySpine, Arrow, FunTerm, Lambda}
 import info.kwarc.mmt.odk.LFX.RecExp
-import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
 
 /**
   * Creates the theory `HOM(X)` of homomorphisms between `X` models for every SFOL theory `X`.
   *
   * @see [[HomDomConnector]], [[HomCodConnector]], [[HomImgConnector]]
   */
-object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
+object HomOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
   override val operatorDomain: MPath = SFOL.sfoleqnd
   override val operatorCodomain: MPath = SFOL.sfoleqnd
@@ -29,23 +28,18 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
 
     val structureCopies = List(
-      (dom(name), dom(tp), df.map(dom(_))),
-      (cod(name), cod(tp), df.map(cod(_)))
+      const(dom(c.path), dom(tp), df.map(dom(_))),
+      const(cod(c.path), cod(tp), df.map(cod(_)))
     )
 
     structureCopies ::: (tp match {
       case SFOL.TypeSymbolType() =>
         // input:  t: tp
         // output: t^d: tp, t^c: tp, t^h: tm t^d -> t^c
-        val thType = FunType(
-          List((None, SFOL.tm(dom(c)))),
-          SFOL.tm(cod(c))
-        )
-
-        List((hom(name), thType, df.map(hom(_))))
+        List(const(hom(c.path), Arrow(SFOL.tm(dom(c)), SFOL.tm(cod(c))), df.map(hom(_))))
 
       case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
         val forallContext = OpUtils.bindFresh(
@@ -54,20 +48,20 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
         )
 
         // construct `c^{dom} x_1 ... x_n`
-        val lhs = GeneralApplySpine(
-          OMS(dom(c.path)),
+        val lhs = ApplySpine.applyOrSymbol(
+          dom(c),
           forallContext.map(_.toTerm) : _*
         )
 
         // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
-        val rhs = GeneralApplySpine(
-          OMS(cod(c.path)),
+        val rhs = ApplySpine.applyOrSymbol(
+          cod(c),
           forallContext.map(_.toTerm).zipWithIndex.map {
             case (t, idx) => ApplySpine(OMS(hom(argTypes(idx))), t)
           } : _*
         )
 
-        val closureConstantType: Term = tp match {
+        val closureConstantType: Term = (tp: @unchecked) match {
           case SFOL.FunctionSymbolType(_, retType) =>
             SFOL.ded(SFOL.forallMany(
               forallContext,
@@ -104,7 +98,7 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
           case _ => Some(SFOL.sketchLazy("provable"))
         })
 
-        val closureConstant = (hom(name), closureConstantType, closureConstantDef)
+        val closureConstant = const(hom(c.path), closureConstantType, closureConstantDef)
         List(closureConstant)
 
       case SFOL.AxiomSymbolType() => Nil
@@ -120,13 +114,13 @@ object HomOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 object HomDomConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_dom_connector"),
   HomOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_dom")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit diagInterp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val dom = HomOperator.dom.coercedTo(state)
-    List((name, dom(c)))
+    List(assgn(c.path, dom(c)))
   }
 }
 
@@ -136,13 +130,13 @@ object HomDomConnector extends SimpleInwardsConnector(
 object HomCodConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_cod_connector"),
   HomOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_cod")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val dom = HomOperator.dom.coercedTo(state)
-    List((name, dom(c)))
+    List(assgn(c.path, dom(c)))
   }
 }
 
@@ -152,25 +146,23 @@ object HomCodConnector extends SimpleInwardsConnector(
 object HomIdConnector extends SimpleOutwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_id_connector"),
   HomOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_id")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val dom = HomOperator.dom.coercedTo(state)
     val cod = HomOperator.cod.coercedTo(state)
     val hom = HomOperator.hom.coercedTo(state)
 
     val structureCopiesAssignments = List(
-      (dom(name), c.toTerm),
-      (cod(name), c.toTerm)
+      assgn(dom(c.path), c.toTerm),
+      assgn(cod(c.path), c.toTerm)
     )
 
     structureCopiesAssignments ::: (tp match {
       case SFOL.TypeSymbolType() =>
-        List(
-          (hom(name), FunTerm.identity(SFOL.tm(c.toTerm)))
-        )
+        List(assgn(hom(c.path), FunTerm.identity(SFOL.tm(c.toTerm))))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // e.g. we are in Magma and c is `op: tm U -> tm U -> tm U`
@@ -179,14 +171,14 @@ object HomIdConnector extends SimpleOutwardsConnector(
         // Ideally we would generate the assignment `op_h = forallI ([x] forallI ([y] refl))`
         // But constructing the types in the forallIs (that are implicit in the surface syntax) is tedious.
         List(
-          (hom(name), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] refl`"))
+          assgn(hom(c.path), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] refl`"))
         )
 
       case SFOL.PredicateSymbolType(_) =>
         // As for function symbol types above, constructing the actual proof is easy in surface syntax,
         // but tedious when constructing actual [[Term]]s.
         List(
-          (hom(name), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] implI [y] y`"))
+          assgn(hom(c.path), SFOL.sketchLazy("prove via `forallI [x_0] ... forallI [x_n] implI [y] y`"))
         )
 
       case SFOL.AxiomSymbolType() =>
@@ -218,7 +210,7 @@ object HomIdConnector extends SimpleOutwardsConnector(
   *     |-> a^p := a^c, a^s := proof using a^c, but only possible if a was monotone, right?
   * }}}
   */
-object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_img_connector")
 
   override val in: LinearModuleTransformer = SubOperator
@@ -226,16 +218,16 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_img")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val par = SubOperator.par.coercedTo(state)
     val sub = SubOperator.sub.coercedTo(state)
     val dom = HomOperator.dom.coercedTo(state)
     val cod = HomOperator.cod.coercedTo(state)
     val hom = HomOperator.hom.coercedTo(state)
 
-    val codCopy = (par(name), cod(c))
+    val codCopy = assgn(par(c.path), cod(c))
 
-    tp match {
+    codCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // input: U: tp
         // output:
@@ -259,7 +251,7 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
             )
           )
         )
-        List(codCopy, (sub(name), inImagePredicate))
+        List(assgn(sub(c.path), inImagePredicate))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // f: tm t_1 -> … -> tm t_n -> tm t
@@ -279,33 +271,30 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
           val preimagesIntros = varPreimages.map(v => v._1 + ": " + dom(v._2).name).mkString(", ")
           val varsInSubset = vars.map(v => sub(v._2).name.toString + " " + v._1).mkString(", ")
 
-          s"Goal is to show our homomorphism's image in ${cod(name)} is closed under multiplication in its parent structure.\n" +
+          s"Goal is to show our homomorphism's image in ${cod(c.path)} is closed under multiplication in its parent structure.\n" +
             s"Hence let $varIntros be variables with $varsInSubset (*). " +
-            s"We need to show: ${sub(retType).name} (${cod(name)} ${vars.map(_._1).mkString(" ")}), i.e. the existence of a preimage for the parenthesized term.\n" +
+            s"We need to show: ${sub(retType).name} (${cod(c.path)} ${vars.map(_._1).mkString(" ")}), i.e. the existence of a preimage for the parenthesized term.\n" +
             s"Due to (*), there are preimages $preimagesIntros. " +
-            s"Claim: ${dom(name)} ${varPreimages.map(_._1).mkString(" ")} is the preimage we are looking for.\n" +
-            s"Namely: ${hom(retType).name} (${cod(name)} ${varPreimages.map(_._1).mkString(" ")}) ≐ ${cod(name)} ${varPreimages.map(v => "(" + hom(v._2).name + " " + v._1 + ")").mkString(" ")} ≐ ${cod(name)} ${vars.map(_._1).mkString(" ")}. qed."
+            s"Claim: ${dom(c.path)} ${varPreimages.map(_._1).mkString(" ")} is the preimage we are looking for.\n" +
+            s"Namely: ${hom(retType).name} (${cod(c.path)} ${varPreimages.map(_._1).mkString(" ")}) ≐ ${cod(c.path)} ${varPreimages.map(v => "(" + hom(v._2).name + " " + v._1 + ")").mkString(" ")} ≐ ${cod(c.path)} ${vars.map(_._1).mkString(" ")}. qed."
         }
 
-        List(codCopy, (sub(name), SFOL.sketchLazy(proofSketch)))
+        List(assgn(sub(c.path), SFOL.sketchLazy(proofSketch)))
 
       case SFOL.PredicateSymbolType(_) =>
-        // c: tm t_1 -> … -> tm t_n -> tm t
-        //
-        //   |-> c^p := c^c
-        List(codCopy)
+        Nil
 
       case SFOL.AxiomSymbolType() =>
         val allowedReferences = state.processedDeclarations.map(_.path).toSet
         if (!SFOL.isMonotone(tp, state.outerContext, allowedReferences)) {
           NotApplicable(c, "Axiom not monotone, skipping")
         } else {
-          List(codCopy, (sub(name), SFOL.sketchLazy("probably provable")))
+          List(assgn(sub(c.path), SFOL.sketchLazy("probably provable")))
         }
 
       case _ =>
         NotApplicable(c)
-    }
+    })
   }
 }
 
@@ -315,14 +304,14 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
   * At every SFOL type `U: tp` in `X`, the congruence will be `x ~^U y <=> h^U(x) ≐ h^U(y)`
   * for `x, y: tm U`.
   */
-object HomKernelConnector extends SimpleLinearConnector with SystematicRenamingUtils {
+object HomKernelConnector extends SimpleLinearConnector with OperatorDSL {
   final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_ker_connector")
   final override val in: LinearModuleTransformer = CongOperator
   final override val out: LinearModuleTransformer = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_ker")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
 
     val par = CongOperator.par.coercedTo(state)
@@ -332,11 +321,9 @@ object HomKernelConnector extends SimpleLinearConnector with SystematicRenamingU
     val cod = HomOperator.cod.coercedTo(state)
     val hom = HomOperator.hom.coercedTo(state)
 
-    val parentStructureCopies = List(
-      (par(name), dom(c))
-    )
+    val parentStructureCopy = assgn(par(c.path), dom(c))
 
-    parentStructureCopies ::: (tp match {
+    parentStructureCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // construct assignment `U^q = [| rel = [x y: tm Uᵈ] Uʰ x ≐ Uʰ y |]`
         val r = RecExp(
@@ -353,15 +340,13 @@ object HomKernelConnector extends SimpleLinearConnector with SystematicRenamingU
           ))
         )
 
-        List(
-          (quot(name), r)
-        )
+        List(assgn(quot(c.path), r))
 
       case SFOL.FunctionSymbolType(_, _) =>
         List(
           //  ⊦∀[x⁰₀:Uᵖ]∀[x⁰₁:Uᵖ]∀[x¹₀:Uᵖ]∀[x¹₁:Uᵖ](U_q x⁰₀ x⁰₁)∧(U_q x¹₀ x¹₁)⇒(U_q (opᵖ x⁰₀ x¹₀) (opᵖ x⁰₁ x¹₁))
-          (quot(name), SFOL.sketchLazy(s"""
-Prove $name is a congruence wrt. kernel property.
+          assgn(quot(c.path), SFOL.sketchLazy(s"""
+Prove ${c.path.name} is a congruence wrt. kernel property.
 Consider the case of a binary operator op. There, our proof goal would be `(U_q (opᵖ x⁰₀ x¹₀) (opᵖ x⁰₁ x¹₁))`,
 or with assignments of this morphism inserted, `Uʰ (opᵈ x⁰₀ x¹₀) ≐ Uʰ (opᶜ x⁰₁ x¹₁)`.
 

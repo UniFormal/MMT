@@ -107,17 +107,23 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
       // only applicable on theories and their contents
       case _: View => None
 
-      // we accept structures, but don't create a special out container for them
-      // but to conform to the method signature, we must return Some(-) to keep processing
-      case _: Structure => Some(inContainer)
-
       case inTheory: Theory =>
         beginTheory(inTheory, containerState).map(outView => {
-          interp.addToplevelResult(outView)
           diagState.processedElements.put(inTheory.path, outView)
+          interp.addToplevelResult(outView)
 
           outView
         })
+
+      // We accept structures, but don't create a special out container for them.
+      // (Arguably the asymmetry stems from MMT that makes assignments to constants from structures
+      //  be represented flat in views.)
+      //
+      // To conform to the method signature, we must return Some(-) to keep processing, here
+      // we just reuse inContainer (I hope this won't lead to hard-to-debug bugs :()
+      case _: Structure =>
+        diagState.processedElements.put(inContainer.path, inContainer)
+        Some(inContainer)
     }
   }
 

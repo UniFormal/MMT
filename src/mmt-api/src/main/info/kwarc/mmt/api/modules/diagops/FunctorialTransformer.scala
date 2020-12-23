@@ -81,24 +81,24 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
     val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
     implicit val state: DiagramState = initDiagramState(modules, interp)
 
-    def sanityCheck(m: Module): Unit = {
-      if (!state.processedElements.get(m.path).contains(m)) {
-        throw ImplementationError(s"Functorial operator ${this.getClass.getSimpleName} applied on input " +
-          s"module ${m.path} (via applyModule()) returned module that it did not correctly put into " +
-          "state.processedElements.")
+    def sanityCheck(inModulePath: MPath, outModule: Module): Unit = {
+      if (!state.processedElements.get(inModulePath).contains(outModule)) {
+        throw ImplementationError(s"$getClass applied on input module ${outModule} (via " +
+          s"applyModule()) returned module that it did not correctly put into `state.processedElements`.")
       }
-      if (!interp.hasToplevelResult(m.path)) {
-        throw ImplementationError(s"Functorial operator ${this.getClass.getSimpleName} applied on input " +
-          s"module ${m.path} (via applyModule()) returned module that it did not register as top-level " +
-          s"result")
+
+      if (!interp.hasToplevelResult(outModule.path)) {
+        throw ImplementationError(s"$getClass applied on input module ${inModulePath} (via " +
+          s"applyModule()) returned module that it did not register as top-level result")
       }
     }
 
     modulePaths
-      .flatMap(m => applyModule(interp.get(m)))
-      .map(newModule => {
-        sanityCheck(newModule)
-        newModule.path
+      .flatMap(m => applyModule(interp.get(m)) match {
+        case Some(outModule) =>
+          sanityCheck(m, outModule)
+          Some(outModule.path)
+        case _ => None
       })
   }
 }
