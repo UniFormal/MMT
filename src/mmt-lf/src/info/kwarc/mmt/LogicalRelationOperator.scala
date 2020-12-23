@@ -35,10 +35,11 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
     )
   }
 
-  private def betaReduce(ctx: Context, t: Term, simplifier: Simplifier): Term = {
-    val su = SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = true)
-    simplifier(t, su, RuleSet(lf.Beta))
-  }
+  private def betaReduce(ctx: Context, t: Term, simplifier: Simplifier): Term = simplifier(
+    t,
+    SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = true),
+    RuleSet(lf.Beta)
+  )
 }
 
 object LogicalRelationOperator extends ParametricLinearOperator {
