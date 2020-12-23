@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.diagops.{ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SystematicRenamingUtils}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 
 final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with SystematicRenamingUtils {

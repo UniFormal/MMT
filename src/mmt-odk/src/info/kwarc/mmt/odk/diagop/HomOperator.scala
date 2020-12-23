@@ -2,6 +2,7 @@ package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagops.{LinearModuleTransformer, Renamer, SimpleInwardsConnector, SimpleLinearConnector, SimpleLinearOperator, SimpleOutwardsConnector, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.UnicodeStrings
@@ -276,7 +277,7 @@ object HomImgConnector extends SimpleLinearConnector with SystematicRenamingUtil
 
           val varIntros = vars.map(v => v._1 + ": " + par(v._2).name).mkString(", ")
           val preimagesIntros = varPreimages.map(v => v._1 + ": " + dom(v._2).name).mkString(", ")
-          val varsInSubset = vars.map(v => sub(v._2).name + " " + v._1).mkString(", ")
+          val varsInSubset = vars.map(v => sub(v._2).name.toString + " " + v._1).mkString(", ")
 
           s"Goal is to show our homomorphism's image in ${cod(name)} is closed under multiplication in its parent structure.\n" +
             s"Hence let $varIntros be variables with $varsInSubset (*). " +

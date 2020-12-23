@@ -1,8 +1,9 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.modules.diagops
 
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module}
 import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api._
 
 import scala.collection.mutable
 

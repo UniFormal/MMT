@@ -1,7 +1,13 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.modules.diagops
+
+/**
+  * Foundation-independent diagram operators.
+  * Prime example is the pushout operator.
+  */
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.DiagramInterpreter
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 

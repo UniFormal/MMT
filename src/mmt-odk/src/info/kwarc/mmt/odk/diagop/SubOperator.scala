@@ -2,6 +2,7 @@ package info.kwarc.mmt.odk.diagop
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagops.{Renamer, SimpleInwardsConnector, SimpleLinearOperator, SimpleOutwardsConnector, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, FunType, Lambda}
