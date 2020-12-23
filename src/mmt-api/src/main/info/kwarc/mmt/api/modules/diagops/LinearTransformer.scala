@@ -34,7 +34,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @see [[endContainer()]]
     */
-  protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[Container]
+  protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Container]
 
   /**
     * Finalizes a container.
@@ -49,7 +49,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @see [[beginContainer()]]
     */
-  protected def endContainer(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Unit = {
+  protected def endContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Unit = {
     // be careful with accessing in processedElements
     // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
     diagState.processedElements.get(inContainer.path).foreach {
@@ -58,18 +58,68 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
   }
 
   /**
-    * Post-condition: all added declaration added to ''interp''
-    * (i.e. called [[DiagramInterpreter.add()]] *and* [[DiagramInterpreter.endAdd()]]).
+    * Transforms a [[Declaration]] from `container`.
+    *
+    * The transformation results must be added via [[DiagramInterpreter.add()]] *and*,
+    * when applicable, also via [[DiagramInterpreter.endAdd()]].
+    *
+    * You may override this method to handle more declaration cases specific to your transformer.
+    * When the transformer is inapplicable on `decl`, an error should be signalled via
+    * [[DiagramInterpreter.errorCont]].
+    *
+    * @param decl The declaration from `container`, which is to be transformed
+    * @param container The input container in which `decl` lives.
+    *                  This is *not* the output container into which the transformation result should go!
+    * @param state The linear state of the input `container`.
+    *
+    * @todo should we pass also the `outContainer`?
     */
-  protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit
+  protected def applyDeclaration(decl: Declaration, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = decl match {
+    case c: Constant => applyConstant(c, container)
+    case Include(includeData) => applyIncludeData(includeData, container)
+    case s: Structure => applyStructure(s, container) // must come after Include case
+    case _ =>
+      interp.errorCont(InvalidElement(decl, s"Transformer `$getClass` not applicable on this kind " +
+        s"of declaration."))
+  }
 
   /**
-    * Post-condition: all added declaration added to ''interp''
-    * (i.e. called [[DiagramInterpreter.add()]] *and* [[DiagramInterpreter.endAdd()]]).
+    * See [[applyDeclaration()]]; the same notes apply.
     */
-  protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): Unit
+  protected def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
 
-  final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module] = applyContainer(inModule).map {
+  /**
+    * See [[applyDeclaration()]]; the same notes apply.
+    */
+  protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
+
+  /**
+    * Adds declarations from a [[Structure]] occuring in `container` to the [[LinearState]] of
+    * `container`.
+    *
+    * This ensures implementing transforms can treat theories with declarations
+    * and theories with structure (inducing analogous declarations) in the same way.
+    *
+    * @see [[applyDeclaration()]]; the same notes apply.
+    */
+  protected def applyStructure(s: Structure, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+    applyContainer(s)(state.diagramState, interp).foreach(_ => {
+      // todo: should actually register all (also unmapped) declarations from
+      //   structure's domain theory, no?
+
+      val inducedDeclarationPaths = s.getDeclarations.map(_.path).flatMap(p => {
+        if (p.name.tail.nonEmpty) {
+          Some(s.path / p.name.tail)
+        } else {
+          None
+        }
+      })
+      val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
+      inducedDeclarations.foreach(state.registerDeclaration)
+    })
+  }
+
+  final def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = applyContainer(inModule).map {
     case m: Module => m
     case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
   }
@@ -99,7 +149,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @return true if element was processed (or already had been processed), false otherwise.
     */
-  final protected def applyContainer(inContainer: Container)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Container] = {
+  final protected def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Container] = {
     state.processedElements.get(inContainer.path).foreach(c => return Some(c.asInstanceOf[Container]))
 
     val inLinearState = state.initAndRegisterNewLinearState(inContainer)
@@ -107,65 +157,13 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     beginContainer(inContainer, inLinearState).map(outContainer => {
       inContainer.getDeclarations.foreach(decl => {
         inLinearState.registerDeclaration(decl)
-        decl match {
-          case Include(includeData) => applyIncludeData(inContainer, inLinearState, includeData)
-          case s: Structure => applyStructure(inContainer, inLinearState, s)
-          case decl: Declaration => applyDeclaration(inContainer, inLinearState, decl)
-        }
+        applyDeclaration(decl, inContainer)(inLinearState, interp)
       })
 
       endContainer(inContainer, inLinearState)
 
       outContainer
     })
-  }
-
-  /**
-    * Adds declarations from a [[Structure]] occuring in `container` to the [[LinearState]] of
-    * `container`.
-    *
-    * This ensures implementing transforms can treat theories with declarations
-    * and theories with structure (inducing analogous declarations) in the same way.
-    */
-  protected def applyStructure(container: Container, containerState: LinearState, s: Structure)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
-    applyContainer(s).foreach(_ => {
-      // todo: should actually register all (also unmapped) declarations from
-      //   structure's domain theory, no?
-
-      val inducedDeclarationPaths = s.getDeclarations.map(_.path).flatMap(p => {
-        if (p.name.tail.nonEmpty) {
-          Some(s.path / p.name.tail)
-        } else {
-          None
-        }
-      })
-      val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
-      inducedDeclarations.foreach(containerState.registerDeclaration)
-    })
-  }
-
-  // DSL
-  object NotApplicable {
-    def apply[T](c: Declaration, msg: String = "")(implicit interp: DiagramInterpreter, state: LinearState): List[T] = {
-      state.registerSkippedDeclaration(c)
-      interp.errorCont(InvalidElement(
-        c,
-        s"${LinearTransformer.this.getClass.getSimpleName} not applicable" +
-          (if (msg.nonEmpty) ": " + msg else "")
-      ))
-
-      Nil
-    }
-
-    object Module {
-      def apply(m: Module, msg: String)(implicit interp: DiagramInterpreter): Unit = {
-        interp.errorCont(InvalidElement(
-          m,
-          s"${LinearTransformer.this.getClass.getSimpleName} not applicable" +
-            (if (msg.nonEmpty) ": " + msg else "")
-        ))
-      }
-    }
   }
 }
 

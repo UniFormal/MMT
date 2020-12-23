@@ -15,6 +15,15 @@ import info.kwarc.mmt.api.{InvalidElement, MPath}
   * declaration-by-declaration.
   * Views are not mapped at all.
   *
+  * Implementors must implement
+  *
+  *  - `applyConstant()` (inherited as [[LinearTransformer.applyConstant()]])
+  *
+  * and may override, among other methods, in particular
+  *
+  *  - `beginTheory()`
+  *  - `beginStructure()`
+  *
   * @example In universal algebra, we can create the [[LinearModuleTransformer]] `Sub(-)`
   *          that maps an SFOL-theory `X` to its SFOL-theory of substructures `Sub(X)`.
   *          But we can do more: for every mapped `X` we desire a view `sub_model: X -> Sub(X)`
@@ -81,7 +90,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     *          }
     *           }}}
     */
-  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: LinearDiagramState): Option[View] = {
+  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit diagState: LinearDiagramState, interp: DiagramInterpreter): Option[View] = {
     val outPath = applyModulePath(thy.path)
 
     Some(View(
@@ -92,7 +101,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     ))
   }
 
-  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: LinearDiagramState): Option[Container] = {
+  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: LinearDiagramState, interp: DiagramInterpreter): Option[Container] = {
     sanityCheckOnce()
     inContainer match {
       // only applicable on theories and their contents
@@ -146,8 +155,9 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     * ''include in(S) = conn(T) . in(v)'', but the latter but be somewhat self-referential in conn(T), so unsure
     * whether it works.)
     */
-  final override protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: LinearDiagramState): Unit = {
+  final override protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
+    implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) {
       // unsure what to do
@@ -158,9 +168,9 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
       case p if p == in.operatorDomain =>
         in.operatorCodomain //, OMIDENT(OMMOD(in.operatorCodomain)))
 
-      case from if state.seenModules.contains(from) =>
+      case from if diagramState.seenModules.contains(from) =>
         applyModule(ctrl.getModule(from))
-        state.getLinearState(container.path).inherit(state.getLinearState(from))
+        state.inherit(diagramState.getLinearState(from))
 
         in.applyModulePath(from) //, OMMOD(applyModulePath(include.from)))
 
@@ -171,13 +181,13 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     }
 
     val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
-      case OMMOD(v) if state.seenModules.contains(v) =>
+      case OMMOD(v) if diagramState.seenModules.contains(v) =>
         // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
         applyModule(ctrl.getModule(v))
         // todo: in which order does OMCOMP take its arguments? (Document this, too!)
         OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
 
-      case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) =>
+      case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) =>
         OMMOD(applyModulePath(include.from))
 
       case OMIDENT(OMMOD(p)) if p == in.operatorDomain =>

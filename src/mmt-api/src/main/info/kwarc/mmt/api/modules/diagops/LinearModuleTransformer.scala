@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.modules.diagops
 import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Declaration, IncludeData, Structure, TermContainer}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure, TermContainer}
 
 /**
   * Linearly transforms theories to theories, and views to views.
@@ -12,9 +12,9 @@ import info.kwarc.mmt.api.symbols.{Declaration, IncludeData, Structure, TermCont
   *
   * Implementors must implement
   *
-  *  - `applyDeclaration()`
+  *  - `applyConstant()` (inherited as [[LinearTransformer.applyConstant()]])
   *
-  * and may override
+  * and may override, among other methods, in particular
   *
   *  - `beginTheory()`
   *  - `beginView()`
@@ -40,7 +40,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *          }
     *          }}}
     */
-  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[Theory] = {
+  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
       case mt if interp.ctrl.globalLookup.hasImplicit(mt, operatorDomain) =>
@@ -76,7 +76,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *          }
     *          }}}
     */
-  protected def beginView(view: View, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[View] = {
+  protected def beginView(view: View, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[View] = {
     if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
       return None
     }
@@ -102,7 +102,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *
     * @see [[beginTheory()]], [[beginView()]]
     */
-  protected def beginStructure(s: Structure, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[Structure] = s.tp.flatMap {
+  protected def beginStructure(s: Structure, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
       applyContainer(interp.ctrl.getModule(structureDomain)).getOrElse(return None)
 
@@ -125,9 +125,12 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *
     * @see [[beginTheory()]], [[beginView()]], [[beginStructure()]].
     */
-  private def beginModule(inModule: Module, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[Module] = {
+  private def beginModule(inModule: Module, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Module] = {
     if (!diagState.seenModules.contains(inModule.path)) {
-      NotApplicable.Module(inModule, "unbound module not in input diagram")
+      interp.errorCont(InvalidElement(
+        inModule,
+        "unbound module not in input diagram"
+      ))
       return None
     }
 
@@ -148,7 +151,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   /**
     * See superclass documentation, or [[beginContainer()]].
     */
-  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit interp: DiagramInterpreter, diagState: DiagramState): Option[Container] = {
+  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Container] = {
     val outContainer = inContainer match {
       case m: Module => beginModule(m, containerState)
       case s: Structure => beginStructure(s, containerState)
@@ -178,8 +181,9 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *   ?v                    |-> ?op(v)                   if ?v is in input diagram
     * }}}
     */
-  final override protected def applyIncludeData(container: Container, containerState: LinearState, include: IncludeData)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {
+  final override protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
+    implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) ???
 
@@ -187,11 +191,11 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
       case `operatorDomain` => operatorCodomain.toMPath
 
       // classic case for include preserving behavior of linear operators
-      case from if state.seenModules.contains(from) =>
+      case from if diagramState.seenModules.contains(from) =>
         applyModule(ctrl.getModule(from))
 
         if (container.isInstanceOf[Theory]) {
-          state.getLinearState(container.path).inherit(state.getLinearState(from))
+          state.inherit(diagramState.getLinearState(from))
         }
 
         applyModulePath(from)
@@ -212,7 +216,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
 
     val newDf: Option[Term] = include.df.map {
       case OMIDENT(`operatorDomain`) => OMIDENT(OMMOD(operatorCodomain))
-      case OMIDENT(OMMOD(thy)) if state.seenModules.contains(thy) => OMIDENT(OMMOD(applyModulePath(thy)))
+      case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) => OMIDENT(OMMOD(applyModulePath(thy)))
       case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
         // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
         //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
@@ -221,12 +225,12 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
         // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
         OMIDENT(thy)
 
-      case OMMOD(dfPath) if state.seenModules.contains(dfPath) =>
+      case OMMOD(dfPath) if diagramState.seenModules.contains(dfPath) =>
         // ???: error: morphism provided as definiens to include wasn't contained in diagram
         applyModule(ctrl.getModule(dfPath))
 
         if (container.isInstanceOf[View]) {
-          state.getLinearState(container.path).inherit(state.getLinearState(dfPath))
+          state.inherit(diagramState.getLinearState(dfPath))
         }
 
         OMMOD(applyModulePath(dfPath))
@@ -246,11 +250,16 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   }
 }
 
+/**
+  * No-op transformer; identity on module paths.
+  *
+  * Its purpose is to serve for the `in` or `out` field of [[LinearConnectorTransformer]]s.
+  */
 class IdentityLinearTransformer(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
   override val operatorDomain: MPath = domain
   override val operatorCodomain: MPath = domain
 
   override protected def applyModuleName(name: LocalName): LocalName = name
 
-  final override protected def applyDeclaration(container: Container, containerState: LinearState, decl: Declaration)(implicit interp: DiagramInterpreter, state: DiagramState): Unit = {}
+  override protected def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
 }

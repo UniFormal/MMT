@@ -7,7 +7,7 @@ package info.kwarc.mmt.api.modules.diagops
   * on-the-fly at runtime based on the parameters they receive.
   * The main trait for linear operators is [[LinearModuleTransformer]].
   *
-  * @see FunctorialOperator.scala for named diagram operators.
+  * @see Operators.scala for named diagram operators.
   */
 
 import info.kwarc.mmt.api._
@@ -69,7 +69,7 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
     *         In case of errors, these should be signalled via [[DiagramInterpreter.errorCont]].
     *         In case the transformer was inapplicable, [[None]] should be returned.
     */
-  def applyModule(m: Module)(implicit interp: DiagramInterpreter, state: DiagramState): Option[Module]
+  def applyModule(m: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module]
 
   /**
     * Transforms a diagram module-by-module via [[applyModule()]]

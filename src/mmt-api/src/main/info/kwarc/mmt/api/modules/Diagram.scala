@@ -9,7 +9,7 @@ package info.kwarc.mmt.api.modules
   * Design decisions
   * ====================
   *
-  * - separation into named and anonymous operators in FunctorialOperator.scala and LinearTransformer.scala,
+  * - separation into named and anonymous operators in Operators.scala and LinearTransformer.scala,
   *   respectively.
   *
   *   Named operators are associated to an MMT symbol and inherit SyntaxDrivenRule.
@@ -77,6 +77,8 @@ object Diagram {
     diagModule.dfC.normalized match {
       case Some(RawDiagram(paths)) => paths
       case Some(BasedDiagram(_, paths)) => paths
+      case Some(t) =>
+        throw InvalidObject(t, "not a valid output in dfC of diagram structural feature")
 
       case None =>
         throw InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Have you run the Elaborator on it? In case the diagram is given in a file, have you built the file? (note that diagrams aren't written to OMDoc yet, so you always need to rebuild upon runtime.")
