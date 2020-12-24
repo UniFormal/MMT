@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GlobalName, InvalidObject, MPath}
+import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath, modules}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
@@ -32,7 +32,7 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
 
 trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(dom, operatorDomain) =>
+    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(operatorDomain, dom) =>
       Some(modulePaths)
     case BasedDiagram(dom, _) =>
       // todo check for implicit morphism from `domain` to actual domain
@@ -62,7 +62,7 @@ abstract class ParametricLinearOperator extends DiagramOperator {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>
       instantiate(parameters).flatMap(op => interp(actualDiagram) match {
         // TODO: ideally reuse code from RelativeBaseOperator
-        case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
+        case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(op.operatorDomain, dom) =>
           Some(BasedDiagram(op.operatorCodomain, op.applyDiagram(modulePaths)))
 
         case Some(unsupportedDiag) =>

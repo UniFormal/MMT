@@ -78,38 +78,46 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     *
     * You may override this method to do additional action.
     *
+    * @return The output view. If `Some(outView)` is returned, you must have called
+    *         [[DiagramInterpreter.add()]] on `outView`.
+    *
     * @example Some transformers need to add includes. They should
     *          override the method as follows:
-    * {{{
-    *          override protected def beginTheory(...): Option[View] = {
-    *            super.beginTheory(...).map(view => {
-    *              // add inclusion to view (via interp.ctrl)
+    *          {{{
+    *            override protected def beginTheory(...): Option[View] = {
+    *              super.beginTheory(...).map(view => {
+    *                val include: Structure = /* ... */
+    *                interp.add(include)
+    *                interp.endAdd(include) // don't forget!
     *
-    *              view
-    *            })
-    *          }
+    *                view
+    *              })
+    *            }
     *           }}}
     */
-  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit diagState: LinearDiagramState, interp: DiagramInterpreter): Option[View] = {
+  protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
     val outPath = applyModulePath(thy.path)
 
-    Some(View(
+    val outView = View(
       outPath.doc, outPath.name,
       from = OMMOD(in.applyModulePath(thy.path)),
       to = OMMOD(out.applyModulePath(thy.path)),
       isImplicit = false
-    ))
+    )
+    interp.add(outView)
+
+    Some(outView)
   }
 
-  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: LinearDiagramState, interp: DiagramInterpreter): Option[Container] = {
+  final override protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container] = {
     sanityCheckOnce()
     inContainer match {
       // only applicable on theories and their contents
       case _: View => None
 
       case inTheory: Theory =>
-        beginTheory(inTheory, containerState).map(outView => {
-          diagState.processedElements.put(inTheory.path, outView)
+        beginTheory(inTheory, state).map(outView => {
+          state.diagramState.processedElements.put(inTheory.path, outView)
           interp.addToplevelResult(outView)
 
           outView
@@ -122,7 +130,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
       // To conform to the method signature, we must return Some(-) to keep processing, here
       // we just reuse inContainer (I hope this won't lead to hard-to-debug bugs :()
       case _: Structure =>
-        diagState.processedElements.put(inContainer.path, inContainer)
+        state.diagramState.processedElements.put(inContainer.path, inContainer)
         Some(inContainer)
     }
   }

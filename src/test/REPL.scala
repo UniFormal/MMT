@@ -41,20 +41,20 @@ object FastREPL extends MagicTest("debug") {
   }
 
   override def run(): Unit = {
-    repl.run
+    repl.run()
     sys.exit(0)
   }
 }
 
 private class FastREPLExtension(shortcuts: List[String]) extends REPLExtension {
-  override def run {
+  override def run(): Unit = {
     printQuery()
     Iterator.continually(StdIn.readLine()).takeWhile(_ != null).foreach(line => {
       handleLine(line)
       printQuery()
     })
   }
-  override def exit {}
+  override def exit(): Unit = {}
 
   private def printQuery(): Unit = {
     // print 1-based indices

@@ -28,25 +28,46 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *
     * You may override this method to do additional action.
     *
-    * @example Some transformers need to add includes at the beginning of every theory. They should
-    *          override the method as follows:
+    * @return The output theory. If `Some(outTheory)` is returned, you must have called
+    *         [[DiagramInterpreter.add()]] on `outTheory`.
+    *
+    * @example Some transformers need to add includes at the beginning of every theory, and
+    *          correspondingly an include assignment at the beginning of every view.
+    *
+    *          The transformers can override [[beginTheory()]] and [[beginView()]] as follows:
     *          {{{
-    *          override protected def beginTheory(...): Option[Theory] = {
-    *            super.beginTheory(...).map(thy => {
-    *              // add inclusion to thy (via interp.ctrl)
-
-    *              thy
-    *            })
-    *          }
+    *            val additionalTheory: MPath
+    *
+    *            override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    *              super.beginTheory(thy, state).map(outTheory => {
+    *                val include = PlainInclude(additionalTheory, outTheory.path)
+    *                interp.add(include)
+    *                interp.endAdd(include)  // don't forget endAdd!
+    *                outTheory
+    *              })
+    *            }
+    *
+    *            override protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+    *              super.beginView(view, state).map(outView => {
+    *                val include = Include.assignment(
+    *                  outView.toTerm,
+    *                  OMMOD(additionalTheory),
+    *                  Some(OMIDENT(OMMOD(additionalTheory)))
+    *                )
+    *                interp.add(include)
+    *                interp.endAdd(include)  // don't forget endAdd!
+    *
+    *                outView
+    *              })
     *          }}}
     */
-  protected def beginTheory(thy: Theory, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Theory] = {
+  protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
       case mt if interp.ctrl.globalLookup.hasImplicit(mt, operatorDomain) =>
         operatorCodomain
       case mt =>
-        if (applyModule(interp.ctrl.getModule(mt)).isEmpty) {
+        if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
             s"was no implicit morphism into `$operatorDomain`. Recursing into meta theory as usual " +
             s"failed, too; reasons are probably logged above."))
@@ -55,28 +76,26 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
         applyModulePath(mt)
     }
 
-    Some(Theory.empty(outPath.doc, outPath.name, newMeta))
+    val outTheory = Theory.empty(outPath.doc, outPath.name, newMeta)
+    interp.add(outTheory)
+
+    Some(outTheory)
   }
 
   /**
     * Creates a new output view that serves to contain the to-be-mapped assignments; called by
     * [[beginModule()]].
     *
+    * @return The output view. If `Some(outView)` is returned, you must have called
+    *         [[DiagramInterpreter.add()]] on `outView`.
+    *
     * You may override this method to do additional action.
     *
-    * @example Some transformers need to add includes at the beginning of every view. They should
-    *          override the method as follows:
-    *          {{{
-    *          override protected def beginView(...): Option[View] = {
-    *            super.beginView(...).map(view => {
-    *              // add inclusion to view (via interp.ctrl)
-
-    *              view
-    *            })
-    *          }
-    *          }}}
+    * @see [[beginTheory()]] for an example
     */
-  protected def beginView(view: View, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[View] = {
+  protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+    implicit val diagramState: DiagramState = state.diagramState
+
     if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
       return None
     }
@@ -84,38 +103,46 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
       return None
     }
 
-    containerState.inherit(diagState.getLinearState(view.to.toMPath))
+    state.inherit(diagramState.getLinearState(view.to.toMPath))
 
     val outPath = applyModulePath(view.path)
-    Some(View(
+    val outView = View(
       outPath.doc, outPath.name,
       OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
       view.isImplicit
-    ))
+    )
+    interp.add(outView)
+
+    Some(outView)
   }
 
   /**
     * Creates a new output structure that serves to contain the to-be-mapped assignments; called by
     * [[beginModule()]].
     *
+    * @return The output structure. If `Some(outStructure)` is returned, you must have called
+    *         [[DiagramInterpreter.add()]] on `outStructure`.
+    *
     * You may override this method to do additional action.
     *
     * @see [[beginTheory()]], [[beginView()]]
     */
-  protected def beginStructure(s: Structure, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
+  protected def beginStructure(s: Structure, state: LinearState)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
-      applyContainer(interp.ctrl.getModule(structureDomain)).getOrElse(return None)
+      applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).getOrElse(return None)
 
       // inherit linear state from module where structure is declared
-      containerState.inherit(diagState.getLinearState(s.home.toMPath))
+      state.inherit(state.diagramState.getLinearState(s.home.toMPath))
 
       // TODO: s.dfC is thrown away
-      Some(new Structure(
+      val outStructure = new Structure(
         home = OMMOD(applyModulePath(s.path.module)),
         name = s.name,
         TermContainer.asAnalyzed(OMMOD(applyModulePath(structureDomain))), TermContainer.empty(),
         s.isImplicit, s.isTotal
-      ))
+      )
+      interp.add(outStructure)
+      Some(outStructure)
     case _ => None
   }
 
@@ -125,8 +152,10 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *
     * @see [[beginTheory()]], [[beginView()]], [[beginStructure()]].
     */
-  private def beginModule(inModule: Module, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Module] = {
-    if (!diagState.seenModules.contains(inModule.path)) {
+  private def beginModule(inModule: Module, state: LinearState)(implicit interp: DiagramInterpreter): Option[Module] = {
+    val diagramState = state.diagramState
+
+    if (!diagramState.seenModules.contains(inModule.path)) {
       interp.errorCont(InvalidElement(
         inModule,
         "unbound module not in input diagram"
@@ -135,13 +164,13 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     }
 
     (inModule match {
-      case thy: Theory => beginTheory(thy, containerState)
-      case view: View => beginView(view, containerState)
+      case thy: Theory => beginTheory(thy, state)
+      case view: View => beginView(view, state)
     }).map(outModule => {
-      diagState.seenModules += inModule.path
+      diagramState.seenModules += inModule.path
 
-      diagState.processedElements.put(inModule.path, outModule)
-      if (diagState.inputToplevelModules.contains(inModule.path)) {
+      diagramState.processedElements.put(inModule.path, outModule)
+      if (diagramState.inputToplevelModules.contains(inModule.path)) {
         interp.addToplevelResult(outModule)
       }
 
@@ -152,15 +181,14 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   /**
     * See superclass documentation, or [[beginContainer()]].
     */
-  final override protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Container] = {
+  final override protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container] = {
     val outContainer = inContainer match {
-      case m: Module => beginModule(m, containerState)
-      case s: Structure => beginStructure(s, containerState)
+      case m: Module => beginModule(m, state)
+      case s: Structure => beginStructure(s, state)
     }
 
     outContainer.map(outContainer => {
-      interp.add(outContainer)
-      diagState.processedElements.put(inContainer.path, outContainer)
+      state.diagramState.processedElements.put(inContainer.path, outContainer)
 
       outContainer
     })

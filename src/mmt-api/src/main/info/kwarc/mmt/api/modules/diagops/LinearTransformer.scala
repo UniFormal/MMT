@@ -18,6 +18,16 @@ import info.kwarc.mmt.api.symbols._
   *
   *  - the subclass [[LinearModuleTransformer]] transforms theories to theories, and links to links
   *  - the subclass [[LinearConnectorTransformer]] transforms theories to views, and links not at all
+  *
+  *
+  * Implementation notes for this class and subclasses:
+  *
+  *   - if a method takes a `LinearState`, it shouldn't take a DiagramState on top
+  *   - methods working on containers should take a `LinearState` as a normal parameter
+  *     (not an implicit parameter)
+  *   - methods working on declarations should take a `LinearState` as an implicit parameter
+  *     By contrast to the point above, here, confusing states is less of a problem.
+  *     And also, it makes [[OperatorDSL]] much nicer to work with.
   */
 trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
   type Container = ModuleOrLink
@@ -30,11 +40,18 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     * E.g. [[LinearModuleTransformer]] creates theories for theories, and views for views.
     *
     * You may override this method to do additional action.
-    * Pay attention that postconditions of [[applyContainer()]] are fulfilled in the way you override this.
+    *
+    * Post-conditions:
+    *
+    *   - if `Some(outContainer)` is returned, you must have
+    *
+    *     - [[DiagramInterpreter.add()]] on `outContainer`
+    *     - added `(inContainer, outContainer)` to `state.diagramState.processedElements`
+    *   - see also postconditions of [[applyContainer()]]
     *
     * @see [[endContainer()]]
     */
-  protected def beginContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Option[Container]
+  protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container]
 
   /**
     * Finalizes a container.
@@ -44,16 +61,23 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
     *
+    * Post-conditions:
+    *
+    *   - the container returned by [[beginContainer()]] must have been finalized via
+    *     [[DiagramInterpreter.endAdd()]]
+    *     (You can access that container via `state.diagramState.processedElements`,
+    *      see post-conditions of [[beginContainer()]].)
+    *   - see also postconditions of [[applyContainer()]]
+    *
     * You may override this method. Be sure to call `super.endContainer()` last in your overridden
-    * method; or know what you're doing.
-    * Pay attention that postconditions of [[applyContainer()]] are fulfilled in the way you override this.
+    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
     *
     * @see [[beginContainer()]]
     */
-  protected def endContainer(inContainer: Container, containerState: LinearState)(implicit diagState: DiagramState, interp: DiagramInterpreter): Unit = {
+  protected def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit = {
     // be careful with accessing in processedElements
     // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
-    diagState.processedElements.get(inContainer.path).foreach {
+    state.diagramState.processedElements.get(inContainer.path).foreach {
       case ce: ContainerElement[_] => interp.endAdd(ce)
     }
   }
@@ -139,13 +163,14 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     *  - pre-condition: `inContainer` is known to `interp.ctrl`, the `Controller`.
     *
-    *  - post-condition: if `Some(outContainer)` is returned,
+    *  - post-conditions: if `Some(outContainer)` is returned, you must have
     *
-    *    - (a) `outContainer` has been added to `state.processedElements` and
-    *    - (b) `outContainer` has been passed to [[DiagramInterpreter.add()]].
-    *    - (c) if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult()]]
-    *          `outContainer` must be a [[Module]] and be added via
-    *          [[DiagramInterpreter.addToplevelResult()]].
+    *    - (a) added `(inContainer, outContainer)` `state.processedElements`
+    *    - (b) called [[DiagramInterpreter.add()]] and [[DiagramInterpreter.endAdd()]]
+    *          on `outContainer`
+    *    - (c) if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult()]],
+    *          `outContainer` must be a [[Module]] and you must have called
+    *          [[DiagramInterpreter.addToplevelResult()]] on it.
     *
     *  - it must be efficient to call this function multiple times on the same container; the
     *    computation should only happen once.
