@@ -18,7 +18,7 @@ import scala.util.Try
 object FastREPL extends MagicTest("debug") {
   private val shortcuts = List(
     "build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt",
-    "build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt",
+    "build MMT/LATIN2 mmt-omdoc algebra/diagop-theories.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions-test.mmt",
@@ -35,8 +35,8 @@ object FastREPL extends MagicTest("debug") {
 
   private val repl = new FastREPLExtension(shortcuts)
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     controller.extman.addExtension(repl)
   }
 

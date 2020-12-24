@@ -71,11 +71,22 @@ trait LinearOperatorState extends FunctorialOperatorState {
     */
   protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState
 
+  /**
+    * A linear state is bound to an `inContainer` and an `outContainer`,
+    * storing all declarations processed so far (also transitively).
+    */
   protected trait MinimalLinearState {
     def diagramState: DiagramState
+
+    def inContainer: ModuleOrLink
+    def inContainer_=(m: ModuleOrLink): Unit
+
     def outContainer: ModuleOrLink
     def outContainer_=(m: ModuleOrLink): Unit
-    def outerContext: Context
+
+    // todo: look up all usages of outContext, I (Navid) have the suspicion most are wrong
+    def outContext: Context = Context(outContainer.modulePath)
+
     def processedDeclarations: List[Declaration]
     def registerDeclaration(decl: Declaration): Unit
 
@@ -136,7 +147,7 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     *                     (This being a thing is a bit of a leaking abstraction since linear operators
     *                     should see everything as being flat.)
     */
-  class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState) extends MinimalLinearState {
+  class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
     final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
     final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
@@ -146,7 +157,6 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
     final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
 
     final override var outContainer: ModuleOrLink = _
-    final override def outerContext: Context = Context(outContainer.modulePath)
 
     final override def inherit(other: SkippedDeclsExtendedLinearState): Unit = {
       _processedDeclarations ++= other.processedDeclarations
@@ -155,5 +165,5 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
   }
 
   final override protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
-    new SkippedDeclsExtendedLinearState(diagramState)
+    new SkippedDeclsExtendedLinearState(diagramState, inContainer)
 }

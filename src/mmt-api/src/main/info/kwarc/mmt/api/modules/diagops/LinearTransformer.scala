@@ -1,8 +1,7 @@
 package info.kwarc.mmt.api.modules.diagops
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink, Theory, View}
-import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
 import info.kwarc.mmt.api.symbols._
 
 /**
@@ -62,8 +61,15 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
   /**
     * Transforms a [[Declaration]] from `container`.
     *
-    * The transformation results must be added via [[DiagramInterpreter.add()]] *and*,
-    * when applicable, also via [[DiagramInterpreter.endAdd()]].
+    * Pre-condition:
+    *
+    *   - `decl` must have been added to `state.processedDeclarations`
+    *     (This makes the design [[SystematicRenamingUtils]] much easier.)
+    *
+    * Post-condition:
+    *
+    *   - The transformation results must be added via [[DiagramInterpreter.add()]] *and*,
+    *     results that are containers must also be finalized via [[DiagramInterpreter.endAdd()]].
     *
     * You may override this method to handle more declaration cases specific to your transformer.
     * When the transformer is inapplicable on `decl`, an error should be signalled via

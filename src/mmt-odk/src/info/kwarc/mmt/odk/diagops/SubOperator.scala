@@ -70,7 +70,7 @@ object SubOperator extends SimpleLinearOperator with OperatorDSL {
         // todo: alternative: use predicate subtypes instead of relativation
         val relativizedAxiom = const(
           sub(c.path),
-          relativizeQuantifiers(tp, state.outerContext, par.apply(_), sub.apply(_)),
+          relativizeQuantifiers(tp, state.outContext, par.apply(_), sub.apply(_)),
           df.map(_ => SFOL.sketchLazy("provable"))
         )
 

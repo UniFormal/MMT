@@ -83,7 +83,7 @@ object HomOperator extends SimpleLinearOperator with OperatorDSL {
           case SFOL.PredicateSymbolType(_) =>
             // check monotonicity
             val allowedReferences = state.processedDeclarations.map(_.path).toSet
-            if (SFOL.isMonotone(dfTerm, state.outerContext, allowedReferences)) {
+            if (SFOL.isMonotone(dfTerm, state.outContext, allowedReferences)) {
               Some(SFOL.sketchLazy("provable"))
             } else {
               interp.errorCont(InvalidElement(c, "Hom operator cannot process definiens of SFOL predicate symbol " +
@@ -286,7 +286,7 @@ object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
 
       case SFOL.AxiomSymbolType() =>
         val allowedReferences = state.processedDeclarations.map(_.path).toSet
-        if (!SFOL.isMonotone(tp, state.outerContext, allowedReferences)) {
+        if (!SFOL.isMonotone(tp, state.outContext, allowedReferences)) {
           NotApplicable(c, "Axiom not monotone, skipping")
         } else {
           List(assgn(sub(c.path), SFOL.sketchLazy("probably provable")))
