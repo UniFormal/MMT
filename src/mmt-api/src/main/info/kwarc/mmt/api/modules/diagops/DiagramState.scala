@@ -129,25 +129,12 @@ trait LinearOperatorState extends FunctorialOperatorState {
       ))
     }
   }
-}
 
-/**
-  * Some generally useful [[LinearOperatorState]] for [[LinearOperator]]s.
-  *
-  * It provides a state with methods to register processed and skipped declarations and keeps track of them
-  * as flat lists buffers.
-  */
-trait DefaultLinearStateOperator extends LinearOperatorState {
-  final override type LinearState = SkippedDeclsExtendedLinearState
 
   /**
     * A linear state keeping track of processed and skipped declarations.
-    *
-    * @param outerContext The context containing a single reference to the current [[Module]].
-    *                     (This being a thing is a bit of a leaking abstraction since linear operators
-    *                     should see everything as being flat.)
     */
-  class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
+  protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
     final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
     final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
@@ -158,12 +145,21 @@ trait DefaultLinearStateOperator extends LinearOperatorState {
 
     final override var outContainer: ModuleOrLink = _
 
-    final override def inherit(other: SkippedDeclsExtendedLinearState): Unit = {
+    final override def inherit(other: LinearState): Unit = {
       _processedDeclarations ++= other.processedDeclarations
       _skippedDeclarations ++= other.skippedDeclarations
     }
   }
+}
 
+/**
+  * Some generally useful [[LinearOperatorState]] for [[LinearOperator]]s.
+  *
+  * It provides a state with methods to register processed and skipped declarations and keeps track of them
+  * as flat lists buffers.
+  */
+trait DefaultLinearStateOperator extends LinearOperatorState {
+  final override type LinearState = SkippedDeclsExtendedLinearState
   final override protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
     new SkippedDeclsExtendedLinearState(diagramState, inContainer)
 }

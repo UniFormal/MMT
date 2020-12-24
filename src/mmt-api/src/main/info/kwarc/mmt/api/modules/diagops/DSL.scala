@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, TermContainer, Visibility}
 
 // DSL
-trait OperatorDSL extends DefaultLinearStateOperator with SystematicRenamingUtils {
+trait OperatorDSL extends LinearOperatorState with SystematicRenamingUtils {
   object NotApplicable {
     def apply[T](c: Declaration, msg: String = "")(implicit state: LinearState, interp: DiagramInterpreter): List[T] = {
       state.registerSkippedDeclaration(c)

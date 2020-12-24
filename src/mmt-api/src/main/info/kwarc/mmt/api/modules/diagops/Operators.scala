@@ -56,7 +56,7 @@ abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTran
 
 abstract class ParametricLinearOperator extends DiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
-  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer]
+  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearModuleTransformer]
 
   final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>

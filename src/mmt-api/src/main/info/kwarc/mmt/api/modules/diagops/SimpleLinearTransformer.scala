@@ -1,10 +1,9 @@
 package info.kwarc.mmt.api.modules.diagops
 
-import info.kwarc.mmt.api.{ComplexStep, GeneralError, InvalidElement, LocalName}
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Link, Theory, View}
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, RuleConstant, TermContainer}
+import info.kwarc.mmt.api.modules.DiagramInterpreter
+import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
+import info.kwarc.mmt.api.{GeneralError, InvalidElement}
 
 /**
   * Linearly transforms theories to theories and views to views,
@@ -12,7 +11,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, RuleCon
   *
   * Implementors only need to give a ''applyConstantSimple'' method.
   */
-trait SimpleLinearModuleTransformer extends LinearModuleTransformer with DefaultLinearStateOperator {
+trait SimpleConstantsBasedModuleTransformer extends LinearModuleTransformer {
   /**
     * Transforms a constant to a list of new constants.
     *
@@ -72,53 +71,9 @@ trait SimpleLinearModuleTransformer extends LinearModuleTransformer with Default
 
     applyConstantSimple(c, tp, df).foreach(interp.add)
   }
-
-/*
-    // todo(FR said): not sure if simplify/complexify name worth it/really needed.
-    // Since [[applyConstantSimple()]] takes a simplified name and outputs a simplified name again
-    // we need to functions for simplifying and complexifying again:
-    def simplifyName(name: LocalName) = container match {
-      case _: Theory => name
-
-      // view or structure
-      case link: Link => name match {
-        case LocalName(ComplexStep(mpath) :: domainSymbolName) if mpath == link.from.toMPath =>
-          LocalName(domainSymbolName)
-        case _ => name // fallback
-      }
-    }
-
-    def complexifyName(name: LocalName) = container match {
-      case _: Theory => name
-      // todo: vvv this is wrong!  vvvvvvvvvvvvvvvvv might not be the same as ComplexStep(mpath) from above
-      case link: Link => LocalName(link.from.toMPath) / name
-    }
-
-    val rawTp = c.tp.getOrElse({
-      interp.errorCont(InvalidElement(c, s"Operator $getClass not applicable on constants without type component"))
-      return
-    })
-    val rawDf = c.df
-
-    val tp = interp.ctrl.globalLookup.ExpandDefinitions(rawTp, state.skippedDeclarationPaths)
-    val df = rawDf.map(interp.ctrl.globalLookup.ExpandDefinitions(_, state.skippedDeclarationPaths))
-
-    applyConstantSimple(container, c, simplifyName(c.name), tp, df).foreach {
-      case (name, newTp, newDf) =>
-        if (container.isInstanceOf[View] && newDf.isEmpty) {
-          throw GeneralError(s"applyConstant of SimpleLinearOperator subclass ${this.getClass} returned empty definiens for view declaration ${c.path}")
-        }
-
-        // todo(FR said): use Constant apply method
-        interp.add(new FinalConstant(
-          home = OMMOD(applyModulePath(container.modulePath)),
-          name = complexifyName(name), alias = Nil,
-          tpC = TermContainer.asAnalyzed(newTp), dfC = TermContainer.asAnalyzed(newDf),
-          rl = None, notC = NotationContainer.empty(), vs = c.vs
-        ))
-    }
-  }*/
 }
+
+trait SimpleLinearModuleTransformer extends SimpleConstantsBasedModuleTransformer with DefaultLinearStateOperator {}
 
 trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with DefaultLinearStateOperator {
 

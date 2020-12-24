@@ -40,7 +40,7 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
     })
   }
 
-  val logrel: Renamer[LinearState] = getRenamerFor("ʳ")
+  val logrel: Renamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val lr = (p: GlobalName) => {
