@@ -440,7 +440,7 @@ class BinaryIntersecter extends Intersecter {
     th1.getDeclarations.flatMap(_ match {case PlainInclude(from, to) => Some(PlainInclude(from, to)) case default => None}).foreach(inc => {
       res.add(Include(inc.home, inc.from.toMPath, List(), Some(viewMap(inc.from.toMPath).toTerm)))
     })
-    for (c1 <- vm.keys) res.add(Constant(res.toTerm, ComplexStep(c1.parent)/c1.name, List(), TermContainer.empty, TermContainer(vm(c1).toTerm), None, NotationContainer.empty))
+    for (c1 <- vm.keys) res.add(Constant(res.toTerm, ComplexStep(c1.parent)/c1.name, List(), TermContainer.empty(), TermContainer(vm(c1).toTerm), None, NotationContainer.empty()))
     res
   }
 
@@ -733,14 +733,14 @@ class FindIntersecter[I <: Intersecter, GE <: GraphEvaluator](intersecter : I, g
 
   /** clean intersections in a given archive */
   override def clean(a: Archive, in: FilePath): Unit = {
-    val file = new java.io.File(a.root + "/export/intersections/"+a.id+".mmt")
+    val file = new java.io.File(a.root.toString + "/export/intersections/"+a.id+".mmt")
     file.delete()
   }
 
   /** build or update intersections in a given archive */
   override def build(a: Archive, up: Update, in: FilePath): Unit = {
     val res = findIntersections(a)
-    implicit val fw: FileWriter = new FileWriter(new java.io.File(a.root + "/export/intersections/"+a.id+".mmt"))
+    implicit val fw: FileWriter = new FileWriter(new java.io.File(a.root.toString + "/export/intersections/"+a.id+".mmt"))
     res.foreach(r => {
       r._1._1.foreach(syntaxPresenter.apply(_))
       r._1._2.foreach(syntaxPresenter.apply(_))

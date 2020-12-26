@@ -229,9 +229,9 @@ trait REPLExtension extends Extension {
     controller.report.addHandler(ConsoleHandler)
   }
   /** Called when running the REPL */
-  def run : Unit
+  def run() : Unit
   /** Called up leaving the REPL to clean up */
-  def exit : Unit
+  def exit() : Unit
 }
 
 /** The standard, bare-bones implementation of the REPL */

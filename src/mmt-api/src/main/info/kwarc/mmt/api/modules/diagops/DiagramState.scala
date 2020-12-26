@@ -1,8 +1,9 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.modules.diagops
 
+import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api._
 
 import scala.collection.mutable
 
@@ -68,16 +69,29 @@ trait LinearOperatorState extends FunctorialOperatorState {
     * @param diagramState The current diagram state
     * @param container The container for which the linear state ought to be created
     */
-  protected def initLinearState(diagramState: DiagramState, container: ContainerElement[Declaration]): LinearState
+  protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState
 
+  /**
+    * A linear state is bound to an `inContainer` and an `outContainer`,
+    * storing all declarations processed so far (also transitively).
+    */
   protected trait MinimalLinearState {
     def diagramState: DiagramState
-    def outerContext: Context
+
+    def inContainer: ModuleOrLink
+    def inContainer_=(m: ModuleOrLink): Unit
+
+    def outContainer: ModuleOrLink
+    def outContainer_=(m: ModuleOrLink): Unit
+
+    // todo: look up all usages of outContext, I (Navid) have the suspicion most are wrong
+    def outContext: Context = Context(outContainer.modulePath)
+
     def processedDeclarations: List[Declaration]
     def registerDeclaration(decl: Declaration): Unit
 
     def skippedDeclarations: List[Declaration]
-    def registerSkippedDeclaration(decl: Declaration)
+    def registerSkippedDeclaration(decl: Declaration): Unit
 
     final def skippedDeclarationPaths: List[GlobalName] = skippedDeclarations.map(_.path)
 
@@ -97,13 +111,13 @@ trait LinearOperatorState extends FunctorialOperatorState {
     // todo: actually name ContainerState
     val linearStates: mutable.Map[Path, LinearState] = mutable.Map()
 
-    def initAndRegisterNewLinearState(container: ContainerElement[Declaration]): LinearState = {
-      if (linearStates.contains(container.path)) {
+    def initAndRegisterNewLinearState(inContainer: ModuleOrLink): LinearState = {
+      if (linearStates.contains(inContainer.path)) {
         throw ImplementationError("Tried to initialize linear state twice, this must be a bug in the diag ops framework.")
       }
 
-      val linearState = LinearOperatorState.this.initLinearState(this, container)
-      linearStates.put(container.path, linearState)
+      val linearState = LinearOperatorState.this.initLinearState(this, inContainer)
+      linearStates.put(inContainer.path, linearState)
 
       linearState
     }
@@ -113,6 +127,27 @@ trait LinearOperatorState extends FunctorialOperatorState {
         s"No linear state known for $path yet. Did the diag op framework ignore inclusion order and processed, " +
           s" say a module, too early before another one?"
       ))
+    }
+  }
+
+
+  /**
+    * A linear state keeping track of processed and skipped declarations.
+    */
+  protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
+    final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
+    final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
+    final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
+
+    final val _skippedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
+    final override def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
+    final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
+
+    final override var outContainer: ModuleOrLink = _
+
+    final override def inherit(other: LinearState): Unit = {
+      _processedDeclarations ++= other.processedDeclarations
+      _skippedDeclarations ++= other.skippedDeclarations
     }
   }
 }
@@ -125,31 +160,6 @@ trait LinearOperatorState extends FunctorialOperatorState {
   */
 trait DefaultLinearStateOperator extends LinearOperatorState {
   final override type LinearState = SkippedDeclsExtendedLinearState
-
-  /**
-    * A linear state keeping track of processed and skipped declarations.
-    *
-    * @param outerContext The context containing a single reference to the current [[Module]].
-    *                     (This being a thing is a bit of a leaking abstraction since linear operators
-    *                     should see everything as being flat.)
-    */
-  class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override val outerContext: Context) extends MinimalLinearState {
-    final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
-    final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
-    final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
-
-    final val _skippedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
-    final override def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
-    final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
-
-    final override def inherit(other: SkippedDeclsExtendedLinearState): Unit = {
-      _processedDeclarations ++= other.processedDeclarations
-      _skippedDeclarations ++= other.skippedDeclarations
-    }
-  }
-
-  final override protected def initLinearState(diagramState: DiagramState, container: ContainerElement[Declaration]): LinearState = container.path match {
-    case p: ContentPath => new SkippedDeclsExtendedLinearState(diagramState, Context(p.toMPath))
-    case _ => throw ImplementationError("Diag Op framework: Can only initialize linear state for containers who have an MPath")
-  }
+  final override protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
+    new SkippedDeclsExtendedLinearState(diagramState, inContainer)
 }

@@ -1,17 +1,18 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.IntegerLiterals
 import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
-import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
+import info.kwarc.mmt.odk.diagops.OpUtils.GeneralApplySpine
 
 // todo generate definienses (i.e. proofs) too here
-private[diagop] trait ModRelClosureCreator[T] {
+private[diagops] trait ModRelClosureCreator[T] {
   /**
     * The number of models the relation relates.
     *
@@ -211,7 +212,7 @@ private[diagop] trait ModRelClosureCreator[T] {
   }
 }
 
-class NRelOperator(override val head: GlobalName, suffix: String, relationArity: Int, relationTheory: MPath) extends SimpleLinearOperator with SystematicRenamingUtils {
+class NRelOperator(override val head: GlobalName, suffix: String, relationArity: Int, relationTheory: MPath) extends SimpleLinearOperator with OperatorDSL {
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
@@ -231,9 +232,9 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
       ApplySpine(OMS(relRenamer(tp)), arguments : _*)
   }
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: SkippedDeclsExtendedLinearState): List[(LocalName, Term, Option[Term])] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val copies = structureRenamers.map(s => {
-      (s(name), s(tp), df.map(s(_)))
+      const(s(c.path), s(tp), df.map(s(_)))
     })
 
     copies ::: (tp match {
@@ -245,10 +246,12 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
             structureRenamers.map(s => SFOL.tm(s(c)))
           ))
         )
-        List((relRenamer(name), relTp, None))
+        // todo: also map definiens
+        List(const(relRenamer(c.path), relTp, None))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
-        List((relRenamer(name), ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
+        // todo: also map definiens
+        List(const(relRenamer(c.path), ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
 
       case SFOL.PredicateSymbolType(_) =>
         NotApplicable(c, "not applicable so far -- to be implemented")
@@ -262,7 +265,7 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
   }
 }
 
-class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer with SystematicRenamingUtils {
+class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
   override val operatorDomain: MPath = Path.parseM("latin:/?SFOLEQND")
   override val operatorCodomain: MPath = Path.parseM("latin:/?SFOLEQND")
 
@@ -288,26 +291,26 @@ class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends Simpl
     }
   }
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    val modelCopies: List[(LocalName, Term, Option[Term])] = modelRenamers.map(r => {
-      (r(name), r(tp), df.map(r(_)))
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    val modelCopies = modelRenamers.map(r => {
+      const(r(c.path), r(tp), df.map(r(_)))
     }).toList
 
     modelCopies ::: (tp match {
       case SFOL.TypeSymbolType() =>
         val tps: List[Term] = modelRenamers.map(r => SFOL.tm(OMS(r(c.path)))).toList
         List(
-          (relationRenamer(name), ModelsOf(relationTheory, tps : _*), None)
+          const(relationRenamer(c.path), ModelsOf(relationTheory, tps : _*), None)
         )
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         List(
-          (relationRenamer(name), closureCreator.applyFunctionSymbol(c.path, argTypes, retType), None)
+          const(relationRenamer(c.path), closureCreator.applyFunctionSymbol(c.path, argTypes, retType), None)
         )
 
       case SFOL.PredicateSymbolType(argTypes) =>
         List(
-          (relationRenamer(name), closureCreator.applyPredicateSymbol(c.path, argTypes), None)
+          const(relationRenamer(c.path), closureCreator.applyPredicateSymbol(c.path, argTypes), None)
         )
 
       case SFOL.AxiomSymbolType() =>

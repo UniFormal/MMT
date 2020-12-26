@@ -18,10 +18,10 @@ import scala.util.Try
 object FastREPL extends MagicTest("debug") {
   private val shortcuts = List(
     "build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt",
-    "build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt",
+    "build MMT/LATIN2 mmt-omdoc algebra/diagop-theories.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
-    "build MMT/urtheories mmt-omdoc module-expressions-test.mmt",
+    "build MMT/urtheories mmt-omdoc module-expressions-logrel-test.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc",
     "build MMT/urtheories scala-bin",
@@ -35,26 +35,26 @@ object FastREPL extends MagicTest("debug") {
 
   private val repl = new FastREPLExtension(shortcuts)
 
-  override def doFirst: Unit = {
-    super.doFirst
+  override def doFirst(): Unit = {
+    super.doFirst()
     controller.extman.addExtension(repl)
   }
 
   override def run(): Unit = {
-    repl.run
+    repl.run()
     sys.exit(0)
   }
 }
 
 private class FastREPLExtension(shortcuts: List[String]) extends REPLExtension {
-  override def run {
+  override def run(): Unit = {
     printQuery()
     Iterator.continually(StdIn.readLine()).takeWhile(_ != null).foreach(line => {
       handleLine(line)
       printQuery()
     })
   }
-  override def exit {}
+  override def exit(): Unit = {}
 
   private def printQuery(): Unit = {
     // print 1-based indices

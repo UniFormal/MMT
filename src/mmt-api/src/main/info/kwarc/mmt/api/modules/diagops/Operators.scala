@@ -1,19 +1,19 @@
-package info.kwarc.mmt.api.modules
-
+package info.kwarc.mmt.api.modules.diagops
 
 /**
   * Classes for named functorial operators, i.e., operators bound to an MMT symbol.
   *
   * All of these classes are minor; almost all of the logic lies in the mixed in traits
-  * from DiagramTransformer.scala for anonymous functorial operators.
+  * from LinearTransformer.scala for anonymous functorial operators.
   *
-  * @see DiagramTransformer.scala for anonymous functorial operators
+  * @see LinearTransformer.scala for anonymous functorial operators
   */
 
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GlobalName, ImplementationError, InvalidObject, LocalName, MPath}
+import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath, modules}
 
 abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
   protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
@@ -23,14 +23,16 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
     case OMA(OMS(`head`), List(inputDiagram)) =>
       interp(inputDiagram)
         .flatMap(acceptDiagram(_)(interp))
-        .flatMap(applyDiagram)
+        .map(applyDiagram)
         .map(submitDiagram)
+
+    case _ => None
   }
 }
 
 trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(dom, operatorDomain) =>
+    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(operatorDomain, dom) =>
       Some(modulePaths)
     case BasedDiagram(dom, _) =>
       // todo check for implicit morphism from `domain` to actual domain
@@ -54,27 +56,25 @@ abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTran
 
 abstract class ParametricLinearOperator extends DiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
-  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer]
+  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearModuleTransformer]
 
-  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
-    diagram match {
-      case OMA(OMS(`head`), parameters :+ actualDiagram) =>
-        instantiate(parameters).flatMap(op => interp(actualDiagram) match {
-          // TODO: ideally reuse code from RelativeBaseOperator
-          case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(dom, op.operatorDomain) =>
-            op.applyDiagram(modulePaths).map(BasedDiagram(op.operatorCodomain, _))
+  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
+    case OMA(OMS(`head`), parameters :+ actualDiagram) =>
+      instantiate(parameters).flatMap(op => interp(actualDiagram) match {
+        // TODO: ideally reuse code from RelativeBaseOperator
+        case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(op.operatorDomain, dom) =>
+          Some(BasedDiagram(op.operatorCodomain, op.applyDiagram(modulePaths)))
 
-          case Some(unsupportedDiag) =>
-            interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
-            None
+        case Some(unsupportedDiag) =>
+          interp.errorCont(InvalidObject(unsupportedDiag, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable on diagrams that aren't SimpleDiagrams (even after simplification)"))
+          None
 
-          case _ =>
-            interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
-            None
-        })
+        case _ =>
+          interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
+          None
+      })
 
-      case _ => None
-    }
+    case _ => None
   }
 }
 

@@ -9,7 +9,7 @@ package info.kwarc.mmt.api.modules
   * Design decisions
   * ====================
   *
-  * - separation into named and anonymous operators in FunctorialOperator.scala and DiagramTransformer.scala,
+  * - separation into named and anonymous operators in Operators.scala and LinearTransformer.scala,
   *   respectively.
   *
   *   Named operators are associated to an MMT symbol and inherit SyntaxDrivenRule.
@@ -40,6 +40,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.modules.diagops.LinearOperator
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
@@ -76,6 +77,8 @@ object Diagram {
     diagModule.dfC.normalized match {
       case Some(RawDiagram(paths)) => paths
       case Some(BasedDiagram(_, paths)) => paths
+      case Some(t) =>
+        throw InvalidObject(t, "not a valid output in dfC of diagram structural feature")
 
       case None =>
         throw InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Have you run the Elaborator on it? In case the diagram is given in a file, have you built the file? (note that diagrams aren't written to OMDoc yet, so you always need to rebuild upon runtime.")
@@ -158,39 +161,6 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
   // need access to Controller for generative operators (i.e. most operators)
   // todo: upon error, are modules inconsistently added to controller? avoid that.
   def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term]
-}
-
-/**
-  * Sequences diagram operators and merges their result.
-  *
-  * ''OMA(OMA(OMS(head), diagOps), diagram)'' represents an invocation of this operator.
-  *
-  * All diagram operators referenced in diagOps will be applied in order left-to-right to diagram.
-  *
-  * If all individual results were compatible [[BasedDiagram]]s, the result is also a [[BasedDiagram]]
-  * with suitable base.
-  * Otherwise, the results are merged into a [[RawDiagram]].
-  */
-object SequencedDiagramOperators extends DiagramOperator {
-  final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
-
-  final override def apply(rawDiagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = rawDiagram match {
-    case OMA(OMA(OMS(`head`), diagOps), diagram) =>
-      val results = diagOps.flatMap(op => {
-        val result = interp(OMA(op, diagram))
-        if (result.isEmpty) {
-          interp.errorCont(GeneralError(s"Failed to apply operator `$op` in operator " +
-            s" sequence `$diagOps`. The overall diagram expression was `$diagram`. If " +
-            "subsequent diagram operators in the latter depend on the failed one, they may " +
-            "fail, too."))
-        }
-        result
-      })
-
-      Some(results.reduceLeft[Term]((diag1, diag2) => BasedDiagram.unionWithOther(diag1, diag2)(ctrl.globalLookup)))
-
-    case _ => None
-  }
 }
 
 /**

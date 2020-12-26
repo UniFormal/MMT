@@ -1,17 +1,18 @@
-package info.kwarc.mmt.odk.diagop
+package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, Renamer, SimpleInwardsConnector, SimpleLinearOperator}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Getfield, ModelsOf}
-import info.kwarc.mmt.odk.diagop.OpUtils.GeneralApplySpine
+import info.kwarc.mmt.odk.diagops.OpUtils.GeneralApplySpine
 
 /**
   * Creates the theory `Cong(X)` of congruences over `X` for every SFOL theory `X`.
   */
-object CongOperator extends SimpleLinearOperator with SystematicRenamingUtils {
+object CongOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_operator")
   override val operatorDomain: MPath = SFOL.sfoleqnd
 
@@ -37,21 +38,21 @@ object CongOperator extends SimpleLinearOperator with SystematicRenamingUtils {
       ApplySpine(OMS(quot(tp)), arguments : _*)
   }
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term, Option[Term])] = {
-    val parCopy = (par(name), par(tp), df.map(par(_)))
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    val parCopy = const(par(c.path), par(tp), df.map(par(_)))
 
     parCopy :: (tp match {
       case SFOL.TypeSymbolType() =>
         // create t^q: Mod ?EqvRel (tm t^p)
-        List((quot(name), ModelsOf(Path.parseM("latin:/?DummyEqvRel"), SFOL.tm(par(c))), None))
+        List(const(quot(c.path), ModelsOf(Path.parseM("latin:/?DummyEqvRel"), SFOL.tm(par(c))), None))
 
       case SFOL.FunctionSymbolType(argTypes, retType) =>
         // todo: work on definiens
-        List((quot(name), ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
+        List(const(quot(c.path), ClosureCreator.applyFunctionSymbol(c.path, argTypes, retType), None))
 
       case SFOL.PredicateSymbolType(argTypes) =>
         // todo: work on definiens
-        List((quot(name), ClosureCreator.applyPredicateSymbol(c.path, argTypes), None))
+        List(const(quot(c.path), ClosureCreator.applyPredicateSymbol(c.path, argTypes), None))
 
       case _ =>
         NotApplicable(c)
@@ -65,12 +66,12 @@ object CongOperator extends SimpleLinearOperator with SystematicRenamingUtils {
 object CongParentConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_par_connector"),
   CongOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cong_par")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val par = CongOperator.par.coercedTo(state)
-    List((name, par(c)))
+    List(assgn(c.path, par(c)))
   }
 }
 
@@ -81,11 +82,11 @@ object CongParentConnector extends SimpleInwardsConnector(
 object CongQuotientConnector extends SimpleInwardsConnector(
   Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_quot_connector"),
   CongOperator
-) with SystematicRenamingUtils {
+) with OperatorDSL {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_quot")
 
-  override protected def applyConstantSimple(container: Container, c: Constant, name: LocalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter, state: LinearState): List[(LocalName, Term)] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val REL_ACCESSOR = LocalName("rel") // the relation field of the Mod type of the equivalence relation theory
 
     val par = CongOperator.par.coercedTo(state)
@@ -93,7 +94,7 @@ object CongQuotientConnector extends SimpleInwardsConnector(
 
     tp match {
       case SFOL.TypeSymbolType() =>
-        List((name, SFOL.QuotientTypes.quotientTp(par(c), quot(c))))
+        List(assgn(c.path, SFOL.QuotientTypes.quotientTp(par(c), quot(c))))
 
       case SFOL.FunctionOrPredicateSymbolType(argTypes) =>
         val lambdaCtx = OpUtils.bindFresh(
@@ -114,17 +115,17 @@ object CongQuotientConnector extends SimpleInwardsConnector(
           } : _*
         )
 
-        tp match {
+        (tp: @unchecked) match {
           case SFOL.FunctionSymbolType(_, retType) =>
             val functionEqvClassValue = SFOL.QuotientTypes.quot_project(
               OMS(par(retType)),
               Getfield(OMS(quot(retType)), REL_ACCESSOR),
               rawReturnValue
             )
-            List((name, functionEqvClassValue))
+            List(assgn(c.path, functionEqvClassValue))
 
           case SFOL.PredicateSymbolType(_) =>
-            List((name, rawReturnValue))
+            List(assgn(c.path, rawReturnValue))
         }
 
       case SFOL.AxiomSymbolType() =>
