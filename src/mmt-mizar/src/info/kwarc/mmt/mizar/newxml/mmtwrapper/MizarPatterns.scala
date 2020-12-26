@@ -103,10 +103,13 @@ object StructureInstance {
    * @param fieldDecls The field declarations (selectors) of the structure,
    *                   inherited selectors must be repeated here
    */
-  def apply(name:String, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): Unit = {
-    val args : List[(Option[LocalName], Term)] = argTps map (tp => (None, tp))
+  def apply(name:String, l:Int, argNameTps:List[(Option[LocalName], Term)], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
     val declarationPath = Mizar.MizarPatternsTh ? name
-    MizarStructure.elaborateAsMizarStructure(declarationPath,args,fieldDecls,substr,TranslationController.controller)(declarationPath)
+    MizarStructure.elaborateAsMizarStructure(declarationPath,argNameTps,fieldDecls,substr,TranslationController.controller)(declarationPath)
+  }
+  def withUnnamedArgs(name:String, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
+    val argNameTps = argTps map (tp => (None, tp))
+    StructureInstance(name, l, argNameTps, n, substr, m, fieldDecls)
   }
   def unapply(mizPattern: DerivedDeclaration) : Option[(String, Int, List[Term],Int,List[Term],Int,List[VarDecl])] = mizPattern match {
     case pat @ MizarPatternInstance(name, patternFeaturn, args) if patternFeaturn == "StructureDefinition" =>

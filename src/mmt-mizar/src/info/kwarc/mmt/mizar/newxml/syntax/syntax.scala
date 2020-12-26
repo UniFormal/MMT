@@ -124,11 +124,13 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
   def posNr:PosNr
   def formatNr:FormatNr
   def patternNr: PatternNr
+  def sort: Sort
   def spell: Spelling
   override def pos(): Position = posNr.pos
-  def globalName(): MizarGlobalName = {
+  def globalName(aid: String, constrNr: Option[Int] = None): MizarGlobalName = {
     // requires global id to be added to the esx files by Artur
-    ???
+    MizarGlobalName(aid, sort.sort, constrNr.getOrElse(patternNr.patternnr))
+    // TODO: fix or remove this method
   }
 }
 case class GlobalPatternDefiningAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
@@ -142,7 +144,7 @@ trait globallyReferencingObjAttrs extends referencingObjAttrs {
   def globalConstrFile = globalDefAttrs.globalConstrFile
   def globalConstrNr = globalDefAttrs.globalConstrNr
 
-  override def globalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+  def globalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
   def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
 }
 /**
@@ -333,12 +335,19 @@ sealed trait MMLIdSubitem extends Subitem {
     sgn.makeGlobalName(this.kind)
   }
 }
-case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
+case class Reservation(_reservationSegment: Reservation_Segment) extends Subitem
 case class Definition_Item(_block:Block) extends Subitem {
   def check() = {
-    assert(Utils.fullClassName(_block.kind) == this.getClass.getName)
+    assert(_block.kind == "Definitional-Block")
+    //assert(Utils.fullClassName(_block.kind) == this.getClass.getName)
   }
 }
+
+/**
+ * Starts a new section in the article
+ * An empty item, the only interesting information is given in the containing item,
+ * namely its position
+ */
 case class Section_Pragma() extends Subitem
 case class Pragma(_notionName: Option[Pragmas]) extends Subitem
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
@@ -401,7 +410,6 @@ sealed trait Definition extends Subitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
-
 /**
  * definition of a structure, takes ancestors (a list of structures it inherits from),
  * structure-Pattern contains several loci, corresponds to the universes the structure is over,
@@ -468,13 +476,14 @@ case class ReservedDscr_Type(idnr: IdNr, nr: Nr, srt: Sort, _subs:Substitutions,
 case class Clustered_Type(redObjSubAttrs: RedObjSubAttrs, _adjClust:Adjective_Cluster, _tp:Type) extends Type
 /**
  * Any noun
+ * A (standard) type is called expandable iff it is explicitely defined
  * @param tpAttrs
  * @param noocc
  * @param origNr
  * @param _args
  */
 case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNrConstrNr, _args:Arguments) extends Type {
-  def mizarGlobalName() = tpAttrs.globalName()
+  def mizarGlobalName(aid: String) = tpAttrs.globalName(aid)
 }
 /**
  * the type of a structure
@@ -553,6 +562,13 @@ case class Numeral_Term(objAttr: RedObjAttr, nr:Int, varnr:VarNr) extends Comple
  * @param sort
  */
 case class it_Term(objAttr: RedObjSubAttrs) extends ComplexTerm
+
+/**
+ * Refers to a selector term of a selector already defined within a
+ * definition of a new mizar structure
+ * @param objAttr
+ * @param varnr
+ */
 case class Internal_Selector_Term(objAttr: RedObjAttr, varnr:VarNr) extends ComplexTerm
 /**
  * an expression containing an infix operator -> an OMA

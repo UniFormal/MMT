@@ -2,19 +2,24 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.mizar.newxml.syntax.{Assumption, Assumptions, Attr_Antonym, Attr_Synonym, Attribute_Definition, Attribute_Pattern, Block, CaseBasedExpr, Case_Block, Case_Head, Choice_Statement, Cluster, Conclusion, Constant_Definition, Correctness, Correctness_Condition, Definiens, Definition, Definition_Item, Exemplification, Func_Antonym, Func_Synonym, Functor_Definition, Generalization, Heads, Identify, Justification, Loci_Declaration, Mode_Definition, Mode_Synonym, Nyms, PartialDef, Per_Cases, Pragma, Pred_Antonym, Pred_Synonym, Predicate_Definition, Private_Functor_Definition, Private_Predicate_Definition, Property, Redefine, Reduction, Registrations, Regular_Statement, Reservation, Scheme_Block_Item, Scheme_Head, Section_Pragma, Statement, Structure_Definition, Suppose_Head, Theorem_Item, Type_Changing_Statement}
+import info.kwarc.mmt.api.objects.VarDecl
+import info.kwarc.mmt.lf.ApplyGeneral
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.StructureInstance
+import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, Utils, expressionTranslator, justificationTranslator}
 
 object subitemTranslator {
-  def translate_Reservation(reservation: Reservation) = { ??? }
+  def translate_Reservation(reservation: Reservation) = { Nil }
   def translate_Definition_Item(definition_Item: Definition_Item) = {
     definition_Item.check()
     blockTranslator.translate_Definition_Block(definition_Item._block)
-    ???
   }
-  def translate_Section_Pragma(section_PRagma: Section_Pragma) = { ??? }
+  def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { ??? }
-  def translate_Loci_Declaration(loci_Declaration: Loci_Declaration) = { ??? }
+  def translate_Loci_Declaration(loci_Declaration: Loci_Declaration): List[(Option[LocalName], objects.Term)] = {
+    val varContext = loci_Declaration._qualSegms._children flatMap contextTranslator.translate_Context
+    varContext map {vd => (Some(vd.name), vd.tp.get)}
+  }
   def translate_Cluster(cluster: Cluster) = { ??? }
   def translate_Correctness(correctness: Correctness) = { ??? }
   def translate_Correctness_Condition(correctness_Condition: Correctness_Condition) = { ??? }
@@ -63,7 +68,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition) : info.kwarc.mmt.api.symbols.Declaration = defn match {
+  def translate_Definition(defn:Definition, args: List[(Option[LocalName], objects.Term)]= Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = defn match {
     case at: Attribute_Definition => translate_Attribute_Definition(at)
     case cd: Constant_Definition => translate_Constant_Definition(cd)
     case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)
@@ -71,15 +76,28 @@ object definitionTranslator {
     case pd: Predicate_Definition => translate_Predicate_Definition(pd)
     case d: Private_Functor_Definition  => translate_Private_Functor_Definition(d)
     case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)
-    case d: Structure_Definition => translate_Structure_Definition(d)
+    case d: Structure_Definition => translate_Structure_Definition(d, args)
   }
-  def translate_Structure_Definition(structure_Definition: Structure_Definition) = { ??? }
+  def translate_Structure_Definition(structure_Definition: Structure_Definition, args: List[(Option[LocalName], objects.Term)]): List[symbols.Declaration] = {
+    val l = args.length
+    val substr: List[objects.Term] = structure_Definition._ancestors._structTypes map typeTranslator.translate_Type map {
+      case ApplyGeneral(typeDecl, args) => typeDecl
+    }
+    val n = substr.length
+    def translate_Field_Segment(field_Segment: Field_Segment) : List[VarDecl] = {
+      ???
+    }
+    val fieldDecls = structure_Definition._fieldSegms.flatMap(_._fieldSegments) flatMap translate_Field_Segment
+    val m = fieldDecls.length
+    StructureInstance(structure_Definition._rendering._aggrFuncPat.extPatDef.extPatAttr.patAttr.spell.spelling,
+      l, args, n, substr, m, fieldDecls)
+  }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition) = attribute_Definition match {
     case atd @ Attribute_Definition(_, _redef, _attrPat, _def) =>
       val gn = Utils.MMLIdtoGlobalName(atd.mizarGlobalName())
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       val notC = patternTranslator.translate_Attribute_Pattern(_attrPat)
-      TranslationController.makeConstant(gn, notC, defn, None)
+      List(TranslationController.makeConstant(gn, notC, defn, None))
       /*if (_redef.occurs) {
         translate_Redefine(_redef, atd, elabDefn)
       } else {
@@ -105,17 +123,22 @@ object patternTranslator {
 }
 
 object blockTranslator {
-  def translate_Definition_Block(block:Block): Unit = {
+  def translate_Definition_Block(block:Block):List[symbols.Declaration] = {
     val definitionItems = block._items
+    var args: List[(Option[LocalName], objects.Term)] = Nil
+    var resDecls:List[symbols.Declaration] = Nil
 
-    definitionItems foreach {
-      case defn:Definition =>
-        val sourceReg = defn.pos.sourceRegion()
-        val translDef = definitionTranslator.translate_Definition(defn)
-        //TranslationController.addSourceRef(translDef, sourceReg)
-        translDef
-      case _ => throw new java.lang.Error("definition expected inside definition-item.")
+    definitionItems foreach { it: Item =>
+      it._subitem match {
+        case loci_Declaration: Loci_Declaration =>
+          args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
+        case defn: Definition =>
+          val translDef = definitionTranslator.translate_Definition(defn, args)
+          resDecls = resDecls ++ translDef
+        case defIt => throw new TranslatingError("definition expected inside definition-item.\n Instead found " + defIt.kind)
+      }
     }
+    resDecls
   }
   def translate_Justification_Block(block:Block) : Unit = {
     val justificationItems = block._items

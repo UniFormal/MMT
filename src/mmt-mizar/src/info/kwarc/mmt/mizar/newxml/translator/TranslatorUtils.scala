@@ -4,8 +4,10 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, Contradiction, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Term, Type, Variable, VariableSegments, Variable_Segments, referencingObjAttrs}
+import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Term, Type, Variable, VariableSegments, Variable_Segments, referencingObjAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
+
+class TranslatingError(str: String) extends Exception(str)
 
 object Utils {
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
@@ -13,6 +15,8 @@ object Utils {
     val ln = LocalName(mizarGlobalName.kind+":"+mizarGlobalName.nr)
     TranslationController.currentThyBase ? theoryName ? ln
   }
+  def computeGlobalName(tpAttrs: referencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalName(
+    TranslationController.currentAid))}
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
@@ -43,5 +47,5 @@ object Utils {
     varSegm._vars.head._tp()
   }
   def translateArguments(args: Arguments) : List[objects.Term] = {args._children map termTranslator.translate_Term }
-  def translateObjRef(refObjAttrs:referencingObjAttrs)  = objects.OMS(MMLIdtoGlobalName(refObjAttrs.globalName()))
+  def translateObjRef(refObjAttrs:referencingObjAttrs)  = objects.OMS(computeGlobalName(refObjAttrs))
 }

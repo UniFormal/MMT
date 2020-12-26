@@ -22,12 +22,12 @@ object termTranslator {
   def translate_Term(tm:Term) : objects.Term = tm match {
     case Simple_Term(varAttr, srt) => ???
     case Aggregate_Term(tpAttrs, _args) =>
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val aggrDecl = PatternUtils.referenceExtDecl(gn,RecordUtil.makeName)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _args) =>
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val struct = translate_Term(_args)
       val structTm = TranslationController.simplifyTerm(struct)
       val ApplyGeneral(structAggrDecl, aggrArgs) = structTm
@@ -35,7 +35,7 @@ object termTranslator {
       ApplyGeneral(objects.OMS(gn), List(args, argsTyped, struct))
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(objects.OMS(gn), args)
     case Numeral_Term(redObjAttr, nr, varnr) => mmtwrapper.Mizar.num(nr)
@@ -43,7 +43,7 @@ object termTranslator {
     case Internal_Selector_Term(redObjAttr, varnr) => ???
     case Infix_Term(tpAttrs, infixedArgs) =>
       assert(tpAttrs.sort == "Functor-Term")
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val args = Utils.translateArguments(infixedArgs._args)
       ApplyGeneral(objects.OMS(gn), args)
     case Global_Choice_Term(redObjSubAttrs, _tp) =>
@@ -76,7 +76,7 @@ object termTranslator {
       mmtwrapper.Mizar.simpleFraenkelTerm(expr, args, universe)
     case Qualification_Term(redObjSubAttrs, _tm, _tp) => ???
     case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
-      val gn = Utils.MMLIdtoGlobalName(constrExtObjAttrs.globalName())
+      val gn = Utils.computeGlobalName(constrExtObjAttrs)
       val substr = objects.OMS(gn)
       val struct = translate_Term(_tm)
       val structTm = TranslationController.simplifyTerm(struct)
@@ -90,7 +90,7 @@ object termTranslator {
 
 object typeTranslator {
   def translate_Type(tp:Type) : objects.Term = tp match {
-    case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => ???
+    case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
     case Clustered_Type(redObjSubAttrs, _adjClust, _tp) =>
       val tp = translate_Type(_tp)
       val adjectives = _adjClust._attrs map attributeTranslator.translate_Attribute
@@ -98,12 +98,12 @@ object typeTranslator {
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
       // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
       // TODO: Check this the correct semantics and take care of the noocc attribute
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val tp : objects.Term = objects.OMS(gn)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(tp,args)
     case Struct_Type(tpAttrs, _args) =>
-      val gn = Utils.MMLIdtoGlobalName(tpAttrs.globalName())
+      val gn = Utils.computeGlobalName(tpAttrs)
       val typeDecl = PatternUtils.referenceExtDecl(gn,RecordUtil.recTypeName)
       val args = Utils.translateArguments(_args)
       ApplyGeneral(typeDecl, args)

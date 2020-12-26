@@ -28,7 +28,7 @@ object itemTranslator {
   def translateItem(item: Item) = {
     val sourceReg = item.pos.sourceRegion()
     item.checkKind()
-    val translatedSubitem : info.kwarc.mmt.api.ContentElement = item._subitem match {
+    val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] = item._subitem match {
       case subitem: MMLIdSubitem => subitem match {
         case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item)
         case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item)
@@ -42,7 +42,7 @@ object itemTranslator {
       case defIt: Definition_Item => translate_Definition_Item(defIt)
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
       case pr: Pragma => translate_Pragma(pr)
-      case lociDecl: Loci_Declaration => translate_Loci_Declaration(lociDecl)
+      case lociDecl: Loci_Declaration => throw new TranslatingError("Unexpected Loci-Declaration on Top-Level.")
       case cl: Cluster => translate_Cluster(cl)
       case correctness: Correctness => translate_Correctness(correctness)
       case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
@@ -59,7 +59,7 @@ object itemTranslator {
       case st: Statement => statementTranslator.translate_Statement(st)
       case defn: Definition => definitionTranslator.translate_Definition(defn)
     }
-    translatedSubitem match {
+    translatedSubitem map {
       case decl: Declaration => TranslationController.add(decl)
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
