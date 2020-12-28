@@ -10,7 +10,7 @@ import structuralfeatures.StructuralFeatureUtils
 import MizSeq.{Ellipsis, OMI, Rep, nTerms}
 import info.kwarc.mmt.mizar.newxml._
 import MMTUtils._
-import translator.TranslationController
+import translator.{TranslationController, TranslatorUtils}
 import info.kwarc.mmt.sequences.NatRules
 
 object PatternUtils {
@@ -21,6 +21,10 @@ object PatternUtils {
   def structureDefRestrName(substrName:String) = LocalName("restr") / substrName
   def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName) = LocalName(restrName) / "selProp" / sel
   def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))
+  def referenceIntSel(strName: String, nm: String) = {
+    val strPath = TranslationController.currentTheoryPath ? strName
+    referenceExtDecl(strPath, nm)
+  }
 }
 
 import PatternUtils._
@@ -103,16 +107,16 @@ object StructureInstance {
    * @param fieldDecls The field declarations (selectors) of the structure,
    *                   inherited selectors must be repeated here
    */
-  def apply(name:String, l:Int, argNameTps:List[(Option[LocalName], Term)], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
-    val declarationPath = Mizar.MizarPatternsTh ? name
-    MizarStructure.elaborateAsMizarStructure(declarationPath,argNameTps,fieldDecls,substr,TranslationController.controller)(declarationPath)
+  def apply(declarationPath:GlobalName, l:Int, argNameTps:List[(Option[LocalName], Term)], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
+    MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller)(declarationPath)
   }
-  def withUnnamedArgs(name:String, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
+  def withUnnamedArgs(declarationPath:GlobalName, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
     val argNameTps = argTps map (tp => (None, tp))
-    StructureInstance(name, l, argNameTps, n, substr, m, fieldDecls)
+    StructureInstance(declarationPath:GlobalName, l, argNameTps, n, substr, m, fieldDecls)
   }
+// TODO: replace this by an unapply method that works for the feature not just the pattern
   def unapply(mizPattern: DerivedDeclaration) : Option[(String, Int, List[Term],Int,List[Term],Int,List[VarDecl])] = mizPattern match {
-    case pat @ MizarPatternInstance(name, patternFeaturn, args) if patternFeaturn == "StructureDefinition" =>
+    case pat @ MizarPatternInstance(name, patternFeature, args) if patternFeature == "StructureDefinition" =>
       def match_args(args:Seq[Term]) : (Int, List[Term], Int, List[Term], Int, List[VarDecl]) = {
         val NatRules.NatLit(l)::argss = args
         val (argTps, argsss) = argss.splitAt(l.asInstanceOf[Int])
@@ -126,6 +130,7 @@ object StructureInstance {
       Some((name, l,argTps,n,substr,m,fieldDecls))
     case _ => None
   }
+
 }
 
 object MizarPatternInstance {

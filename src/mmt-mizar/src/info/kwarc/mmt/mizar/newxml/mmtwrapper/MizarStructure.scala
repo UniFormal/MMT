@@ -19,9 +19,9 @@ import PatternUtils._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object MizarStructure {
-  def elaborateAsMizarStructure(declarationPath: GlobalName, args: List[(Option[LocalName], Term)], fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
+  def elaborateAsMizarStructure(args: List[(Option[LocalName], Term)], fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
-      val path = (declarationPath.module / declarationPath.name) ? vd.name
+      val path = (parentTerm.module / parentTerm.name) ? vd.name
       new OutgoingTermLevel(path,args, vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1

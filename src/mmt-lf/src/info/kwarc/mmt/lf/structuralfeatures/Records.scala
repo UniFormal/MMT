@@ -30,9 +30,9 @@ object RecordUtil {
 import RecordUtil._
 
 object Records {
-  def elaborateAsRecord(declarationPath: GlobalName, args: List[(Option[LocalName], Term)], fields: Context, controller: Controller)(implicit parentTerm: GlobalName) = {
+  def elaborateAsRecord(args: List[(Option[LocalName], Term)], fields: Context, controller: Controller)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
-      val path = (declarationPath.module / declarationPath.name) ? vd.name
+      val path = (parentTerm.module / parentTerm.name) ? vd.name
       new OutgoingTermLevel(path,args, vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1

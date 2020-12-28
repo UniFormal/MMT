@@ -4,26 +4,34 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Term, Type, Variable, VariableSegments, Variable_Segments, referencingObjAttrs}
+import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, Expression, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
 
 class TranslatingError(str: String) extends Exception(str)
+class ObjectTranslationError(str: String, tm: Expression) extends TranslatingError(str+"\nObjectTranslationError while translating the "+tm.ThisType()+": "+tm.toString)
 
-object Utils {
-  def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
-    val theoryName = LocalName(mizarGlobalName.aid)
-    val ln = LocalName(mizarGlobalName.kind+":"+mizarGlobalName.nr)
+object TranslatorUtils {
+  def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
+    val theoryName = LocalName(aid)
+    val ln = LocalName(kind+":"+nr)
     TranslationController.currentThyBase ? theoryName ? ln
   }
+  def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
+    makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
+  }
+  // TODO: replace by global versions of it, once the test files contain the corresponding global attributes
   def computeGlobalName(tpAttrs: referencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalName(
     TranslationController.currentAid))}
+  def computeStrGlobalName(tpAttrs: referencingConstrObjAttrs) = {
+    makeGlobalName(TranslationController.currentAid, "Struct-Type", tpAttrs.patternNr.patternnr)
+  }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
   def conforms(A:Type, B:Type) : Boolean = {
-    val List(a,b) = List(A,B) map typeTranslator.translate_Type
+    val List(a,b) = List(A,B).map(typeTranslator.translate_Type(_))
     val List(as, bs) = List(a,b) map TranslationController.simplifyTerm
     as == bs
   }
@@ -46,6 +54,6 @@ object Utils {
   def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
     varSegm._vars.head._tp()
   }
-  def translateArguments(args: Arguments) : List[objects.Term] = {args._children map termTranslator.translate_Term }
+  def translateArguments(args: Arguments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {args._children map termTranslator.translate_Term }
   def translateObjRef(refObjAttrs:referencingObjAttrs)  = objects.OMS(computeGlobalName(refObjAttrs))
 }

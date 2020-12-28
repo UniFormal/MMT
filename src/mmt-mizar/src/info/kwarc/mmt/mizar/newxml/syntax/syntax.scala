@@ -132,11 +132,35 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
     MizarGlobalName(aid, sort.sort, constrNr.getOrElse(patternNr.patternnr))
     // TODO: fix or remove this method
   }
+  def globalName(aid: String, refSort: String, constrNr: Int): MizarGlobalName = {
+    // requires global id to be added to the esx files by Artur
+    MizarGlobalName(aid, sort.sort, constrNr)
+    // TODO: fix or remove this method
+  }
+}
+trait referencingConstrObjAttrs extends referencingObjAttrs {
+  def posNr:PosNr
+  def formatNr:FormatNr
+  def patternNr: PatternNr
+  def constrNr: ConstrNr
+  def sort: Sort
+  def spell: Spelling
+  override def pos(): Position = posNr.pos
+  def globalName(aid: String): MizarGlobalName = {
+    // requires global id to be added to the esx files by Artur
+    MizarGlobalName(aid, sort.sort, constrNr.constrnr)
+    // TODO: fix or remove this method
+  }
+  def globalName(aid: String, refSort: String): MizarGlobalName = {
+    // requires global id to be added to the esx files by Artur
+    MizarGlobalName(aid, refSort, constrNr.constrnr)
+    // TODO: fix or remove this method
+  }
 }
 case class GlobalPatternDefiningAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
 case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
 case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
-trait globallyReferencingObjAttrs extends referencingObjAttrs {
+trait globallyReferencingObjAttrs extends referencingConstrObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
   def globalKind = globalDefAttrs.globalKind
   def globalPatternFile = globalDefAttrs.globalPatternFile
@@ -165,7 +189,7 @@ case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spe
  * @param srt
  * @param constrNr
  */
-case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, constrNr:ConstrNr) extends referencingObjAttrs
+case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, constrNr:ConstrNr) extends referencingConstrObjAttrs
 /**
  *
  * @param posNr
@@ -176,7 +200,9 @@ case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternN
  * @param orgnNr
  * @param constrNr
  */
-case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr) extends referencingObjAttrs
+case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr) extends referencingConstrObjAttrs {
+  override def constrNr: ConstrNr = orgnNrConstrNr.constrNr
+}
 /**
  *
  * @param formatdes
@@ -241,7 +267,7 @@ case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
  * @param _locis
  */
 case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
-case class LocalVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
+case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
   def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varNr.varnr.toString
 }
 /**
@@ -251,8 +277,11 @@ case class LocalVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group 
  * @param serNr
  * @param varnr
  */
-case class RedVarAttrs(pos:Position, orgn:Origin, locVarAttr:LocalVarAttr) extends Group {
+case class RedVarAttrs(pos:Position, orgn:Origin, locVarAttr:LocalRedVarAttr) extends Group {
   def variableIdentifier = locVarAttr.localIdentitier
+}
+case class LocalVarAttr(spell:Spelling, sort:String, redVarAttr:RedVarAttrs) extends Group {
+  def toIdentifier() : String = spell + "/"+sort+"/" + redVarAttr.variableIdentifier
 }
 /**
  *
@@ -261,7 +290,7 @@ case class RedVarAttrs(pos:Position, orgn:Origin, locVarAttr:LocalVarAttr) exten
  * @param redVarAttr
  */
 case class VarAttrs(spell:Spelling, kind:String, redVarAttr:RedVarAttrs) extends Group {
-  def toIdentifier() : String = spell + "/" + redVarAttr.variableIdentifier
+  def toIdentifier() : String = spell + "/" +kind+"/"+ redVarAttr.variableIdentifier
 }
 /**
  * A single case definien consisting of a single expression
@@ -451,7 +480,9 @@ case class Explicitly_Qualified_Segment(pos:Position, _variables:Variables, _tp:
 }
 case class Qualified_Segments(_children:List[VariableSegments])
 
-sealed trait Expression
+sealed trait Expression {
+  def ThisType() = this.getClass.toString
+}
 sealed trait Type extends Expression
 /*
   Non expandable types are mode with implicit definition (using means), cannot expand
@@ -517,8 +548,9 @@ Denotes a constant
  * @param varAttr
  * @param sort
  */
-case class Simple_Term(varAttr:RedVarAttrs, sort:Sort) extends Term {
-  override def pos(): Position = varAttr.pos
+case class Simple_Term(varAttr:LocalVarAttr) extends Term {
+  override def pos(): Position = varAttr.redVarAttr.pos
+  override def sort(): Sort = Sort(varAttr.sort)
 }
 sealed trait ComplexTerm extends Term {
   def objAttr() : RedObjectSubAttrs
@@ -539,7 +571,7 @@ case class Aggregate_Term(objAttr:ConstrExtObjAttrs, _args:Arguments) extends Co
  * @param tpAttrs
  * @param _args
  */
-case class Selector_Term(objAttr:ConstrExtObjAttrs, _args:Term) extends ComplexTerm
+case class Selector_Term(objAttr:ConstrExtObjAttrs, _args:List[Term]) extends ComplexTerm
 /**
  * an expression containing an circumfix operator -> an OMA
  * spelling contains the left delimiter, right circumflex symbol the right delimiter
@@ -900,7 +932,7 @@ case class Locus(varkind:String, varAttr:VarAttrs)
 case class Field_Segments(_fieldSegments:List[Field_Segment])
 case class Field_Segment(pos:Position, _selectors:Selectors, _tp:Type)
 case class Selectors(posNr:PosNr, spell:Spelling, _loci:List[Selector])
-case class Selector(posNr:PosNr, spell:Spelling, _loci:List[Locus])
+case class Selector(posNr:PosNr, spell:Spelling, _loci:Locus)
 case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List)
 case class Selectors_List(_children:List[Patterns])
 case class Correctness_Conditions(_cond:List[CorrectnessConditions])

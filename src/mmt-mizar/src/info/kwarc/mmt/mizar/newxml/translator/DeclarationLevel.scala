@@ -4,9 +4,9 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.VarDecl
 import info.kwarc.mmt.lf.ApplyGeneral
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.StructureInstance
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.{PatternUtils, StructureInstance}
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, Utils, expressionTranslator, justificationTranslator}
+import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, TranslatorUtils, expressionTranslator, justificationTranslator}
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
@@ -80,21 +80,36 @@ object definitionTranslator {
   }
   def translate_Structure_Definition(structure_Definition: Structure_Definition, args: List[(Option[LocalName], objects.Term)]): List[symbols.Declaration] = {
     val l = args.length
-    val substr: List[objects.Term] = structure_Definition._ancestors._structTypes map typeTranslator.translate_Type map {
+    implicit var selectors: List[(Int, VarDecl)] = Nil
+    val substr: List[objects.Term] = structure_Definition._ancestors._structTypes.map(typeTranslator.translate_Type) map {
       case ApplyGeneral(typeDecl, args) => typeDecl
     }
     val n = substr.length
-    def translate_Field_Segment(field_Segment: Field_Segment) : List[VarDecl] = {
-      ???
+    var substitutions : List[objects.Sub] = Nil
+    //val strName = structure_Definition._rendering._aggrFuncPat.extPatDef.extPatAttr.patAttr.spell.spelling
+    val patternNr = structure_Definition._strPat.extPatDef.extPatAttr.patAttr.patternnr.patternnr
+    val declarationPath = TranslatorUtils.makeGlobalName(TranslationController.currentAid, "Struct-Type", patternNr)
+
+    def translate_Field_Segments(field_Segments: List[Field_Segment]) : List[VarDecl] = field_Segments flatMap {
+      case field_Segment: Field_Segment =>
+			val tp = typeTranslator.translate_Type(field_Segment._tp)
+      field_Segment._selectors._loci foreach { case selector =>
+        val selName = contextTranslator.translate_Locus(selector._loci)
+        val sel = (selector.posNr.nr.nr, selName % tp)
+        selectors ::= sel
+        substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
+      }
+      selectors = selectors.reverse
+      selectors map (_._2 ^ substitutions)
     }
-    val fieldDecls = structure_Definition._fieldSegms.flatMap(_._fieldSegments) flatMap translate_Field_Segment
+    val fieldDecls = translate_Field_Segments(structure_Definition._fieldSegms.flatMap(_._fieldSegments).distinct).distinct
     val m = fieldDecls.length
-    StructureInstance(structure_Definition._rendering._aggrFuncPat.extPatDef.extPatAttr.patAttr.spell.spelling,
-      l, args, n, substr, m, fieldDecls)
+    println(declarationPath.toString)
+    StructureInstance(declarationPath, l, args, n, substr, m, fieldDecls)
   }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition) = attribute_Definition match {
     case atd @ Attribute_Definition(_, _redef, _attrPat, _def) =>
-      val gn = Utils.MMLIdtoGlobalName(atd.mizarGlobalName())
+      val gn = TranslatorUtils.MMLIdtoGlobalName(atd.mizarGlobalName())
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       val notC = patternTranslator.translate_Attribute_Pattern(_attrPat)
       List(TranslationController.makeConstant(gn, notC, defn, None))
