@@ -411,11 +411,16 @@ lazy val frameit = (project in file("frameit-mmt"))
       "-Ymacro-annotations"
     ),
 
-    // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
-    // resolvers += Resolver.sonatypeRepo("releases"),
-    // addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
-
+    deploy := Def.taskDyn {
+      val jar = (assembly in Compile).value
+      Def.task {
+        Utils.deployTo(utils.value.deploy / "frameit.jar")(jar)
+      }
+    }.value,
+    mainClass in Compile  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
+    mainClass in assembly := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
+	
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
