@@ -6,3 +6,5 @@ addSbtPlugin("com.eed3si9n" % "sbt-unidoc" % "0.4.3") // for building documentat
 addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0") // for building a fat jar file
 
 addSbtPlugin("com.typesafe.sbteclipse" % "sbteclipse-plugin" % "5.2.4") // for developing in eclipse (untested)
+
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.1")
