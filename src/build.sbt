@@ -330,7 +330,7 @@ lazy val repl = (project in file("mmt-repl")).
   settings(mmtProjectsSettings("mmt-repl")).
   settings(
     libraryDependencies ++= Seq(
-      "org.jline" % "jline" % "3.1.2"
+      "org.jline" % "jline" % "3.18.0"
     )
   )
 
@@ -385,7 +385,7 @@ lazy val frameit = (project in file("frameit-mmt"))
   .settings(
     libraryDependencies ++= Seq(
       //  a server infrastructure library
-      "com.twitter" %% "twitter-server" % "20.7.0",
+      "com.twitter" %% "twitter-server" % "20.12.0",
 
       // an incarnation of an HTTP server library for the above infrastructure
       "com.github.finagle" %% "finchx-core" % finchVersion,
@@ -397,7 +397,7 @@ lazy val frameit = (project in file("frameit-mmt"))
       "com.github.finagle" %% "finchx-test" % finchVersion % "test",
       "com.github.finagle" %% "finchx-json-test" % finchVersion % "test",
 
-      "org.scalatest" %% "scalatest" % "3.2.0" % "test",
+      "org.scalatest" %% "scalatest" % "3.2.3" % "test",
 
       // a JSON library
       "io.circe" %% "circe-generic" % circeVersion,
@@ -411,11 +411,16 @@ lazy val frameit = (project in file("frameit-mmt"))
       "-Ymacro-annotations"
     ),
 
-    // in order for @ConfiguredJsonCodec from circe-generic-extras (a FrameIT dependency above) to work
-    // resolvers += Resolver.sonatypeRepo("releases"),
-    // addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full)
-
+    deploy := Def.taskDyn {
+      val jar = (assembly in Compile).value
+      Def.task {
+        Utils.deployTo(utils.value.deploy / "frameit.jar")(jar)
+      }
+    }.value,
+    mainClass in Compile  := Some("info.kwarc.mmt.frameit.communication.server.Server"),
+    mainClass in assembly := Some("info.kwarc.mmt.frameit.communication.server.Server")
   )
+	
 
 // plugin for mathscheme-related functionality. Obsolete
 lazy val mathscheme = (project in file("mmt-mathscheme")).
@@ -484,7 +489,7 @@ lazy val argsemcomp = (project in file("mmt-argsemcomp")).
   settings(mmtProjectsSettings("mmt-argsemcomp"): _*).
   settings(
     libraryDependencies ++= Seq("com.spotify" % "docker-client" % "latest.integration",
-    "org.slf4j" % "slf4j-simple" % "1.7.26", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
+    "org.slf4j" % "slf4j-simple" % "1.7.30", "net.sf.jargsemsat" % "jArgSemSAT" % "0.1.5")
   )
 
 // =================================
@@ -499,7 +504,7 @@ lazy val tiscaf = (project in file("tiscaf")).
     scalaSource in Compile := baseDirectory.value / "src/main/scala",
     libraryDependencies ++= Seq(
       //      "net.databinder.dispatch" %% "dispatch-core" % "0.11.3" % "test",
-      "org.slf4j" % "slf4j-simple" % "1.7.12" % "test",
+      "org.slf4j" % "slf4j-simple" % "1.7.30" % "test",
       "org.scala-lang" % "scala-compiler" % scalaVersion.value
     ),
     test := {} // disable tests for tiscaf

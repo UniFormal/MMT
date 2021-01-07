@@ -1,10 +1,11 @@
 # frameit-mmt: Server component of FrameIT project
 
-This is the server component of the [FrameIT project](https://kwarc.info/systems/frameit/), primarily maintained so far by [@ComFreek](https://github.com/ComFreek).
+This is the server component of the [FrameIT project](https://uframeit.org), primarily maintained by [@ComFreek](https://github.com/ComFreek).
 
 ## Installation
 
-See [./installation.md](installation.md).
+- End users: you most likely want to use a [pre-packaged UFrameIT release](https://github.com/UFrameIT/UFrameIT/releases)
+- Developers: follow [./DEV.md](DEV.md).
 
 ## REST API
 
