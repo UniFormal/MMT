@@ -7,7 +7,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-sdk-2.13.1" level="application" />
-    <orderEntry type="module" module-name="mmt-api" />
+    <orderEntry type="module" module-name="mmt-api" exported="" />
+    <orderEntry type="module" module-name="lfcatalog" exported="" />
+    <orderEntry type="library" exported="" name="scala-sdk-2.13.4" level="application" />
   </component>
 </module>

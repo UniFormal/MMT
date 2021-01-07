@@ -4,17 +4,23 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, Expression, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
+import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, Expression, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
 
-class TranslatingError(str: String) extends Exception(str)
-class ObjectTranslationError(str: String, tm: Expression) extends TranslatingError(str+"\nObjectTranslationError while translating the "+tm.ThisType()+": "+tm.toString)
+class TranslatingError(str: String) extends Exception()
+class DeclarationTranslationError(str: String, decl: Subitem) extends TranslatingError(str+
+  "\nDeclarationTranslationError while translating the "+decl.shortKind+": "+decl.toString)
+class ObjectTranslationError(str: String, tm: Expression) extends TranslatingError(str+
+  "\nObjectTranslationError while translating the "+tm.ThisType()+": "+tm.toString)
 
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
-    val theoryName = LocalName(aid)
     val ln = LocalName(kind+":"+nr)
-    TranslationController.currentThyBase ? theoryName ? ln
+    TranslationController.getTheoryPath(aid) ? ln
+  }
+  def makeNewGlobalName(kind: String, nr: Int) = {
+    val ln = LocalName(kind+":"+nr)
+    TranslationController.currentTheoryPath ? ln
   }
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)

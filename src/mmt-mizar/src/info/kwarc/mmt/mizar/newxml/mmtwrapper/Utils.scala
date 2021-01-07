@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{constant, constantName}
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 
@@ -40,6 +41,7 @@ object Mizar {
     name match {
       case "any" => TermsTh ? "term"
       case "set" => HiddenTh ? name
+      case "sethood" => HiddenTh ? "sethood_property"
       case "prop"=> PropositionsTh ? name
       case "mode" => TypesTh ? "tp"
       case "proof" => ProofsTh ? "ded"
@@ -56,7 +58,14 @@ object Mizar {
       case _ => MizarTh ? name
     }
   }
-  def constant(name : String) : Term = OMID(constantName(name))
+  object constant {
+    def apply(name: String): Term = OMID(constantName(name))
+
+    def unapply(tm: Term) = tm match {
+      case OMID(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
+      case _ => None
+    }
+  }
 
   def compact(t : Term) : Term = {
     t
@@ -146,16 +155,31 @@ object Mizar {
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
   def num(i: Int) = numRT(i)
 
-  def simpleTypedAttrAppl(baseTp: Term, attrs: List[Term]) = {
-    val attrApplSym = constant("adjective")
-    attrs.foldRight[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+  object SimpleTypedAttrAppl {
+    def apply(baseTp: Term, attrs: List[Term]) = {
+      val attrApplSym = constant("adjective")
+      attrs.foldRight[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+    }
+    def unapply(tm: Term) : Option[(Term, List[Term])] = tm match {
+      case ApplyGeneral(constant("adjective"), tp::attr) => Some((tp, attr))
+      case _ => None
+    }
   }
-  def depTypedAttrAppl(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
-    val m = attrs.length
-    val attributes = MMTUtils.flatten(attrs)
-    val attrApplSym = constant("attr_appl")
-    val (nTm, mTm) = (OMI(n), OMI(m))
-    ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
+  object depTypedAttrAppl {
+    def apply(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
+      val m = attrs.length
+      val attributes = MMTUtils.flatten(attrs)
+      val attrApplSym = constant("attr_appl")
+      val (nTm, mTm) = (OMI(n), OMI(m))
+      ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
+    }
+    def unapply(tm: Term) : Option[(Int, Term, List[Term])] = tm match {
+      case ApplyGeneral(constant("attr_appl"), List(nTm, mTm, nArgsDepType, attributes)) =>
+        val MizSeq.OMI(n) = nTm
+        val Sequence(attrs) = attributes
+        Some((n, nArgsDepType, attrs))
+      case _ => None
+    }
   }
 }
 

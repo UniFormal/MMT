@@ -23,9 +23,9 @@ package info.kwarc.mmt.mizar.newxml.syntax
  */
 
 import info.kwarc.mmt.api.utils._
-
 import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationTranslationError, ObjectTranslationError}
 import info.kwarc.mmt.mizar.objects.{SourceRef, SourceRegion}
 
 case class Position(position:String) extends Group  {
@@ -356,20 +356,25 @@ sealed trait Subitem {
   def kind:String = {
     this.getClass.getName
   }
+  def shortKind: String = kind.split('.').lastOption.getOrElse(kind).replace('_','-')
 }
 sealed trait MMLIdSubitem extends Subitem {
   def MmlId: MMLId
   def mizarGlobalName():MizarGlobalName = {
     val sgn = this.MmlId.mizarSemiGlobalName()
-    sgn.makeGlobalName(this.kind)
+    sgn.makeGlobalName(this.shortKind)
   }
 }
 case class Reservation(_reservationSegment: Reservation_Segment) extends Subitem
 case class Definition_Item(_block:Block) extends Subitem {
   def check() = {
-    assert(_block.kind == "Definitional-Block")
-    //assert(Utils.fullClassName(_block.kind) == this.getClass.getName)
+    val kind = _block.kind
+    if (! allowedKinds.contains(kind)) {
+      throw new DeclarationTranslationError("Expected a definition item of one of the kinds: "+allowedKinds, this)
+    }
+    kind
   }
+  def allowedKinds = List("Definitional-Block", "Registration-Block")
 }
 
 /**
@@ -391,20 +396,9 @@ case class Reduction(_tm:Term, _tm2:Term) extends Subitem
 case class Scheme_Block_Item(MmlId: MMLId, _blocks:List[Block]) extends MMLIdSubitem
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
-  def matchProperty(pr:property) : property = {
+  def matchProperty(pr:MizarProperty) : MizarProperty = {
     val prop = _props.property.get
-    prop match {
-      case "commutativity" => commutativity(_just)
-      case "idempotence" => idempotence(_just)
-      case "involutiveness" => involutiveness(_just)
-      case "projectivity" => projectivity(_just)
-      case "reflexivity" => reflexivity(_just)
-      case "irreflexivity" => irreflexivity(_just)
-      case "symmetry" => symmetry(_just)
-      case "assymmetry" => assymmetry(_just)
-      case "connectiveness" => connectiveness(_just)
-      case "sethood" => sethood(_just)
-    }
+    Utils.matchProperty(prop, _just)
   }
 }
 case class Per_Cases(_just:Justification) extends Subitem
@@ -452,7 +446,7 @@ case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predic
  * @param _fieldSegms
  * @param _rendering
  */
-case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:List[Field_Segments], _rendering:Structure_Patterns_Rendering) extends Definition
+case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends Definition
 case class Constant_Definition(_children:List[Equating]) extends Definition
 case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) extends Definition
 /**
@@ -700,7 +694,7 @@ case class Universal_Quantifier_Formula(redObjectSubAttrs: RedObjSubAttrs, _vars
  * @param _tm
  * @param _clusters
  */
-case class Multi_Attributive_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:Term, _clusters:List[Adjective_Cluster]) extends Formula
+case class Multi_Attributive_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:Term, _cluster:Adjective_Cluster) extends Formula
 /**
  * implication
  * @param srt
@@ -828,28 +822,28 @@ case class SelectorFunctor_Pattern(extPatDef:ExtPatDef) extends FunctorPatterns
 
 sealed trait Registrations
 /**
- * saying that a term tm has some properties
+ * stating that a term tm has some properties
  * @param pos
- * @param _aggrTerm
- * @param _adjCl
- * @param _tp
+ * @param _aggrTerm the term
+ * @param _adjCl its properties
+ * @param _tp (optional) qualifies
  */
 case class Functorial_Registration(pos:Position, _aggrTerm:Term, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
-
 /**
- * saying that some attributes hold on a type
+ * stating that some attributes hold on a type
  * @param pos
  * @param _adjClust
  * @param _tp
  */
 case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 /**
- * showing that some attributes implies other attributes
+ * stating that some attributes attrs implies another attribute at
  * @param pos
- * @param _adjClusts
+ * @param _attrs the attributes attrs
+ * @param _at the implied attribute
  * @param _tp
  */
-case class Conditional_Registration(pos:Position, _adjClusts:List[Adjective_Cluster], _tp:Type) extends Registrations
+case class Conditional_Registration(pos:Position, _attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * registering properties for a mode
  */
@@ -924,7 +918,7 @@ case class Variable(varAttr:VarAttrs)
 case class Substitutions(_childs:List[Substitution])
 case class Substitution(freevarnr:Int, kind:String, varnr:VarNr)
 case class Adjective_Cluster(_attrs: List[Attribute])
-case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:List[Arguments])
+case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:Arguments)
 case class Arguments(_children:List[Term])
 case class Ancestors(_structTypes:List[Struct_Type])
 case class Loci(_loci:List[Locus])
@@ -936,7 +930,19 @@ case class Selector(posNr:PosNr, spell:Spelling, _loci:Locus)
 case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List)
 case class Selectors_List(_children:List[Patterns])
 case class Correctness_Conditions(_cond:List[CorrectnessConditions])
-case class Properties(property:Option[String], _cond:List[Properties], _tp:Option[Type])
+
+/**
+ * There are two kinds of Properties tags in Mizar esx files (unfortunately of same name):
+ * 1) within Property-Registrations
+ * 2) within definitions
+ * In the first case the parameters sort (which within the entire MML is always sethood) and _tp are given
+ * In the second case exactly property and _cond (a proof of it) are given
+ * @param sort
+ * @param property
+ * @param _cond
+ * @param _tp
+ */
+case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type])
 case class Redefine(occurs:Boolean)
 case class Type_Specification(_types:List[Type])
 case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr)
@@ -969,25 +975,37 @@ object Utils {
    * Internal representation of Properties class
    * @param _just (optional) the proof of the property
    */
-  sealed abstract class property(_just:Option[Justification])
+  sealed abstract class MizarProperty(_just:Option[Justification])
   //for functors
   // for bin op
-  case class commutativity(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class commutativity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   //for bin op
-  case class idempotence(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class idempotence(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   // for un op
-  case class involutiveness(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class involutiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   // being a proj op, for un op
-  case class projectivity(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class projectivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
 
   //for predicate
-  case class reflexivity(_just:Option[Justification]) extends property(_just:Option[Justification])
-  case class irreflexivity(_just:Option[Justification]) extends property(_just:Option[Justification])
-  case class symmetry(_just:Option[Justification]) extends property(_just:Option[Justification])
-  case class assymmetry(_just:Option[Justification]) extends property(_just:Option[Justification])
-  case class connectiveness(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class reflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class irreflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class symmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class assymmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class connectiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
 
   //for modes and existential_registrations
   //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
-  case class sethood(_just:Option[Justification]) extends property(_just:Option[Justification])
+  case class sethood(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  def matchProperty(prop: String, _just:Option[Justification]) = prop match {
+    case "commutativity" => commutativity(_just)
+    case "idempotence" => idempotence(_just)
+    case "involutiveness" => involutiveness(_just)
+    case "projectivity" => projectivity(_just)
+    case "reflexivity" => reflexivity(_just)
+    case "irreflexivity" => irreflexivity(_just)
+    case "symmetry" => symmetry(_just)
+    case "assymmetry" => assymmetry(_just)
+    case "connectiveness" => connectiveness(_just)
+    case "sethood" => sethood(_just)
+  }
 }

@@ -2,8 +2,8 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.{OMV, VarDecl}
+import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lf.structuralfeatures.{RecordUtil, StructuralFeatureUtils}
-import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.{MMTUtils, Mizar, PatternUtils, StructureInstance}
 import info.kwarc.mmt.mizar.newxml.syntax._
@@ -97,7 +97,7 @@ object typeTranslator {
     case Clustered_Type(redObjSubAttrs, _adjClust, _tp) =>
       val tp = translate_Type(_tp)
       val adjectives = _adjClust._attrs map attributeTranslator.translate_Attribute
-      Mizar.simpleTypedAttrAppl(tp, adjectives)
+      Mizar.SimpleTypedAttrAppl(tp, adjectives)
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
       // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
       // TODO: Check this the correct semantics and take care of the noocc attribute
@@ -133,7 +133,33 @@ object formulaTranslator {
       val univ = termTranslator.translate_Term(TranslatorUtils.getUniverse(tp))
       val vars = TranslatorUtils.translateVariables(_vars)
       translate_Universal_Quantifier_Formula(vars,univ,_expression)
-    case Multi_Attributive_Formula(redObjSubAttrs, _tm, _clusters) => ???
+    case Multi_Attributive_Formula(redObjSubAttrs, _tm, _cluster) =>
+      val tm = termTranslator.translate_Term(_tm)
+      val attrs = _cluster._attrs map attributeTranslator.translate_Attribute
+/*
+      val attrTps = attrs map(TranslationController.inferType(_))
+      val atrTps = attrTps map(TranslationController.simplifyTerm)
+      val tp = atrTps.head
+      atrTps.tail foreach {case tp2 =>
+        if (!TranslationController.conforms(tp, tp2)) {
+          throw new ObjectTranslationError("mother types of attributes don't match for multi-attributive formula. ", formula)
+        }
+      }
+*/
+        /*tp match {
+        // we have dependent typed attributes
+        case ApplyGeneral(Pi(nName, nTp, Pi(tpName, motherTp, atrTp)), List(n, tp)) if (nTp == uom.StandardInt) =>
+          assert (atrTp == Arrow(Mizar.any, Mizar.prop))
+          val mmtwrapper.MizSeq.OMI(nNum) = n
+          Mizar.is(tm, Mizar.depTypedAttrAppl(nNum, tp, attrs))
+        // simple typed attributes
+        case Apply(Pi(tpName, motherTp, atrTp), tp) =>
+          assert (atrTp == Arrow(Mizar.any, Mizar.prop))
+          Mizar.is(tm, Mizar.SimpleTypedAttrAppl(tp, attrs))
+        case Arrow(a, b) if (a == Mizar.any && b == Mizar.prop) =>*/
+          Mizar.and(attrs.map(at => Apply(at, tm)))
+      /*  case _ => throw new ObjectTranslationError("expected attribute to have type term -> prop, but found type: "+tp, formula)
+      }*/
     case Conditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
       val assumption = claimTranslator.translate_Claim(_frstFormula)
       val conclusion = claimTranslator.translate_Claim(_sndFormula)
@@ -209,7 +235,10 @@ object claimTranslator {
 }
 
 object attributeTranslator {
+  def translateAttributes(adjective_Cluster: Adjective_Cluster) = adjective_Cluster._attrs map translate_Attribute
   def translate_Attribute(attr: Attribute): objects.Term = {
-    ???
+    val gn = TranslatorUtils.computeGlobalName(attr.orgnlExtObjAttrs)
+    val args = TranslatorUtils.translateArguments(attr._args)
+    ApplyGeneral(objects.OMS(gn), args)
   }
 }

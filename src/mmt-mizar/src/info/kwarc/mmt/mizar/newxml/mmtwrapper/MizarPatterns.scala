@@ -134,11 +134,11 @@ object StructureInstance {
 }
 
 object MizarPatternInstance {
-  def apply(name: String, pat: String, args: List[Term]) {
+  def apply(name: String, pat: String, args: List[Term]) : DerivedDeclaration = {
     val home : Term = OMMOD(TranslationController.currentTheoryPath)
     val ln = LocalName(name)
     val pattern = Mizar.MizarPatternsTh ? LocalName(pat)
-    MizInstance(home, ln, pattern, args)
+    MizInstance.apply(home, ln, pattern, args)
   }
   def unapply(mizInstance: DerivedDeclaration): Option[(String, String, List[Term])] = mizInstance match {
     case dd : DerivedDeclaration if dd.feature == "instance"  =>
@@ -244,7 +244,7 @@ object indirectCompleteModeDefinitionInstance extends ModeDefinitionInstance {
 }
 
 object schemeDefinitionInstance {
-  def apply(name: String, argNum: Int, argTypes: List[Term], assNum:Int, assumptions:List[Term], p:Term) = {
+  def apply(name: String, argNum: Int, argTypes: List[Term], assNum:Int, assumptions:List[Term], p:Term):symbols.Declaration = {
     assert(argTypes.length == argNum)
     assert(assumptions.length == assNum)
     MizarPatternInstance(name, "schemeDef", List(OMI(argNum), flatten(argTypes), OMI(assNum), flatten(assumptions), p))
@@ -252,11 +252,32 @@ object schemeDefinitionInstance {
 }
 
 trait RegistrationInstance
-object attributeRegistrationInstance extends RegistrationInstance {
-  def apply(name: String, argNum: Int, argTypes: List[Term], atrNum:Int, tp:Term, atrs:List[Term]) = {
-    assert(argTypes.length == argNum)
-    assert(atrs.length == atrNum)
-    MizarPatternInstance(name, "attrRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,flatten(atrs)))
+object existentialRegistrationInstance extends RegistrationInstance {
+  def apply(name: String, argTypes: List[Term], tp:Term, atrs:List[Term]):symbols.Declaration = {
+    val argNum = argTypes.length
+    val atrNum = atrs.length
+    MizarPatternInstance(name, "existRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,flatten(atrs)))
+  }
+}
+object conditionalRegistrationInstance extends RegistrationInstance {
+  def apply(name: String, argTypes: List[Term], tp:Term, atrs:List[Term], atr:Term):symbols.Declaration = {
+    val argNum = argTypes.length
+    val atrNum = atrs.length
+    MizarPatternInstance(name, "condRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,flatten(atrs),atr))
+  }
+}
+object unqualFunctorRegistrationInstance extends RegistrationInstance {
+  def apply(name: String, argTypes: List[Term], tp:Term, tm:Term, atrs:List[Term]):symbols.Declaration = {
+    val argNum = argTypes.length
+    val atrNum = atrs.length
+    MizarPatternInstance(name, "unqualFunctRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,tm, flatten(atrs)))
+  }
+}
+object qualFunctorRegistrationInstance extends RegistrationInstance {
+  def apply(name: String, argTypes: List[Term], tp:Term, tm:Term, atrs:List[Term]) :symbols.Declaration= {
+    val argNum = argTypes.length
+    val atrNum = atrs.length
+    MizarPatternInstance(name, "qualFunctRegistration", List(OMI(argNum),flatten(argTypes),OMI(atrNum),tp,tm, flatten(atrs)))
   }
 }
 

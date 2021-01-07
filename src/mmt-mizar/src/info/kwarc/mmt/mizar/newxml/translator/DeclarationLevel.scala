@@ -3,16 +3,21 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.VarDecl
-import info.kwarc.mmt.lf.ApplyGeneral
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.{PatternUtils, StructureInstance}
+import info.kwarc.mmt.lf._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper._
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, TranslatorUtils, expressionTranslator, justificationTranslator}
+import org.omdoc.latin.foundations.mizar.MizarPatterns._
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
   def translate_Definition_Item(definition_Item: Definition_Item) = {
-    definition_Item.check()
-    blockTranslator.translate_Definition_Block(definition_Item._block)
+    definition_Item.check() match {
+      case "Definitional-Block" => blockTranslator.translate_Definitional_Block(definition_Item._block)
+      case "Registration-Block" => blockTranslator.translate_Registration_Block(definition_Item._block)
+    }
+
+
   }
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { ??? }
@@ -78,46 +83,41 @@ object definitionTranslator {
     case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)
     case d: Structure_Definition => translate_Structure_Definition(d, args)
   }
-  def translate_Structure_Definition(structure_Definition: Structure_Definition, args: List[(Option[LocalName], objects.Term)]): List[symbols.Declaration] = {
+  def translate_Structure_Definition(strDef: Structure_Definition, args: List[(Option[LocalName], objects.Term)]): List[symbols.Declaration] = {
     val l = args.length
     implicit var selectors: List[(Int, VarDecl)] = Nil
-    val substr: List[objects.Term] = structure_Definition._ancestors._structTypes.map(typeTranslator.translate_Type) map {
+    val substr: List[objects.Term] = strDef._ancestors._structTypes.map(typeTranslator.translate_Type) map {
       case ApplyGeneral(typeDecl, args) => typeDecl
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
     //val strName = structure_Definition._rendering._aggrFuncPat.extPatDef.extPatAttr.patAttr.spell.spelling
-    val patternNr = structure_Definition._strPat.extPatDef.extPatAttr.patAttr.patternnr.patternnr
-    val declarationPath = TranslatorUtils.makeGlobalName(TranslationController.currentAid, "Struct-Type", patternNr)
+    val patternNr = strDef._strPat.extPatDef.extPatAttr.patAttr.patternnr.patternnr
+    val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
-    def translate_Field_Segments(field_Segments: List[Field_Segment]) : List[VarDecl] = field_Segments flatMap {
+    def translate_Field_Segments(field_Segments: Field_Segments) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
 			val tp = typeTranslator.translate_Type(field_Segment._tp)
-      field_Segment._selectors._loci foreach { case selector =>
+      field_Segment._selectors._loci.reverse map { case selector =>
         val selName = contextTranslator.translate_Locus(selector._loci)
         val sel = (selector.posNr.nr.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
+        sel._2 ^ substitutions
       }
-      selectors = selectors.reverse
-      selectors map (_._2 ^ substitutions)
     }
-    val fieldDecls = translate_Field_Segments(structure_Definition._fieldSegms.flatMap(_._fieldSegments).distinct).distinct
+    val fieldDecls = translate_Field_Segments(strDef._fieldSegms)
     val m = fieldDecls.length
-    println(declarationPath.toString)
     StructureInstance(declarationPath, l, args, n, substr, m, fieldDecls)
   }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition) = attribute_Definition match {
     case atd @ Attribute_Definition(_, _redef, _attrPat, _def) =>
+      /* TODO: currently doesn't use the attribute definition pattern
+      will likely need to be reimplemented later */
       val gn = TranslatorUtils.MMLIdtoGlobalName(atd.mizarGlobalName())
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       val notC = patternTranslator.translate_Attribute_Pattern(_attrPat)
       List(TranslationController.makeConstant(gn, notC, defn, None))
-      /*if (_redef.occurs) {
-        translate_Redefine(_redef, atd, elabDefn)
-      } else {
-        elabDefn
-      } */
   }
   def translate_Constant_Definition(constant_Definition: Constant_Definition) = { ??? }
   def translate_Functor_Definition(functor_Definition: Functor_Definition) = { ??? }
@@ -131,6 +131,45 @@ object definitionTranslator {
   }*/
 }
 
+object clusterTranslator {
+  def translate_Cluster(cl:Cluster, args: List[(Option[LocalName], objects.Term)] = Nil): List[info.kwarc.mmt.api.symbols.Declaration] = {
+    cl._registrs map {
+      case Conditional_Registration(pos, _attrs, _at, _tp) =>
+        val tp = typeTranslator.translate_Type(_tp)
+        val adjs = attributeTranslator.translateAttributes(_attrs)
+        val List(at) = attributeTranslator.translateAttributes(_at)
+        val name = "existReg:"+pos.position
+        conditionalRegistrationInstance(name, args map(_._2), tp, adjs, at)
+      case Existential_Registration(pos, _adjClust, _tp) =>
+        val tp = typeTranslator.translate_Type(_tp)
+        val adjs = attributeTranslator.translateAttributes(_adjClust)
+        val name = "existReg:"+pos.position
+        existentialRegistrationInstance(name, args map(_._2), tp, adjs)
+      case Functorial_Registration(pos, _aggrTerm, _adjCl, _tp) =>
+        val tm = termTranslator.translate_Term(_aggrTerm)
+        val adjs = attributeTranslator.translateAttributes(_adjCl)
+        val isQualified = _tp.isDefined
+        val tp = _tp map typeTranslator.translate_Type getOrElse(
+          TranslationController.inferType(tm))
+        val name = "funcReg:"+pos.position
+        if (isQualified) {
+          qualFunctorRegistrationInstance(name, args map(_._2), tp, tm, adjs)
+        } else {
+          unqualFunctorRegistrationInstance(name, args map(_._2), tp, tm, adjs)
+        }
+      case Property_Registration(_props, _just) =>
+        val Properties(Some(sort), None, Nil, Some(_tp)) = _props
+        sort match {
+          case "sethood" =>
+            val just = justificationTranslator.translate_Justification(_just)
+            val tp = typeTranslator.translate_Type(_tp)
+            val name = LocalName("sethood_of_"+tp.toStr(true))
+            val tpO = Some(Apply(Mizar.constant("sethood"), tp))
+            TranslationController.makeConstant(name, tpO, Some(just))
+        }
+    }
+  }
+}
 object patternTranslator {
   def translate_Attribute_Pattern(atp:Attribute_Pattern):NotationContainer = {
     NotationContainer.empty()
@@ -138,7 +177,7 @@ object patternTranslator {
 }
 
 object blockTranslator {
-  def translate_Definition_Block(block:Block):List[symbols.Declaration] = {
+  def translate_Definitional_Block(block:Block):List[symbols.Declaration] = {
     val definitionItems = block._items
     var args: List[(Option[LocalName], objects.Term)] = Nil
     var resDecls:List[symbols.Declaration] = Nil
@@ -150,7 +189,27 @@ object blockTranslator {
         case defn: Definition =>
           val translDef = definitionTranslator.translate_Definition(defn, args)
           resDecls = resDecls ++ translDef
+        case prop:Property => ???
         case defIt => throw new TranslatingError("definition expected inside definition-item.\n Instead found " + defIt.kind)
+      }
+    }
+    resDecls
+  }
+  def translate_Registration_Block(block: Block) : List[symbols.Declaration] = {
+    val registrationItems = block._items
+    var args: List[(Option[LocalName], objects.Term)] = Nil
+    var resDecls:List[symbols.Declaration] = Nil
+
+    registrationItems foreach { it: Item =>
+      it._subitem match {
+        case loci_Declaration: Loci_Declaration =>
+          args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
+        case cl: Cluster =>
+          val translCluster = clusterTranslator.translate_Cluster(cl, args)
+          resDecls = resDecls ++ translCluster
+        case otherIt =>
+          println("cluster expected inside registration-item.\n Instead found " + otherIt.kind)
+          throw new TranslatingError("cluster expected inside registration-item.\n Instead found " + otherIt.kind)
       }
     }
     resDecls

@@ -46,7 +46,12 @@ object TranslationController {
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+mmtwrapper.Mizar.MizarPatternsTh.name.toString+".mmt")
   def localPath : LocalName = LocalName(currentAid.toLowerCase())
   def currentThyBase : DPath = TranslationController.currentOutputBase / localPath
-  def currentTheoryPath : MPath = currentThyBase ? localPath
+  def currentTheoryPath : MPath = {
+    val res = currentThyBase ? localPath
+    assert (res == currentThy.path)
+    res
+  }
+  def getTheoryPath(aid: String) = (TranslationController.currentOutputBase / aid.toLowerCase()) ? aid.toLowerCase()
   def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
@@ -102,8 +107,9 @@ object TranslationController {
     controller.add(m)
   }
   def add(e : Declaration) {
-    val eC = complify(e)
-    controller.add(eC)
+    println(e.toString)
+    //val eC = complify(e)
+    controller.add(e)
   }
   private def complify(d: Declaration) = {
     val rules = RuleSet.collectRules(controller, Context(mmtwrapper.Mizar.MizarPatternsTh))
@@ -273,5 +279,12 @@ object TranslationController {
     val su = SimplificationUnit(Context.empty,true,false)
     val rules = RuleSet.collectRules(controller, su.context)
     controller.simplifier.objectLevel(tm,su, rules)
+  }
+
+  def inferType(tm:objects.Term, ctx: Context = Context.empty): objects.Term = {
+    checking.Solver.infer(controller, ctx, tm, None).getOrElse(Mizar.any)
+  }
+  def conforms(tpA:objects.Term, tpB: objects.Term) : Boolean = {
+    tpA == tpB
   }
 }
