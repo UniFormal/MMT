@@ -42,7 +42,7 @@ object itemTranslator {
       case defIt: Definition_Item => translate_Definition_Item(defIt)
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
       case pr: Pragma => translate_Pragma(pr)
-      case lociDecl: Loci_Declaration => throw new TranslatingError("Unexpected Loci-Declaration on Top-Level.")
+      case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
       case cl: Cluster => translate_Cluster(cl)
       case correctness: Correctness => translate_Correctness(correctness)
       case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
@@ -97,6 +97,6 @@ class MizarXMLImporter extends archives.Importer {
     articleTranslator.translateArticle(text_Proper)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    doc
+    currentThy.asDocument
   }
 }

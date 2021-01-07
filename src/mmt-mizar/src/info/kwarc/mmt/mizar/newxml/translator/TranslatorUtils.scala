@@ -4,15 +4,24 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, Expression, ExtObjAttrs, Negated_Formula, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
+import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, DeclarationLevel, Expression, ExtObjAttrs, Negated_Formula, ObjectLevel, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
 
-class TranslatingError(str: String) extends Exception()
-class DeclarationTranslationError(str: String, decl: Subitem) extends TranslatingError(str+
-  "\nDeclarationTranslationError while translating the "+decl.shortKind+": "+decl.toString)
-class ObjectTranslationError(str: String, tm: Expression) extends TranslatingError(str+
-  "\nObjectTranslationError while translating the "+tm.ThisType()+": "+tm.toString)
-
+sealed abstract class TranslatingError(str: String) extends Exception(str)
+class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
+case class DeclarationTranslationError(str: String, decl: Subitem) extends DeclarationLevelTranslationError(str, decl) {
+  def apply(str: String, decl: Subitem) = {
+    new DeclarationLevelTranslationError(str+
+      "\nDeclarationTranslationError while translating the "+decl.shortKind+": "+decl.toString, decl)
+  }
+}
+class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
+case class ExpressionTranslationError(str: String, tm: Expression) extends ObjectLevelTranslationError(str, tm) {
+  def apply(str: String, expr: Expression) = {
+    new ObjectLevelTranslationError(str+
+      "\nObjectTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
+  }
+}
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
     val ln = LocalName(kind+":"+nr)

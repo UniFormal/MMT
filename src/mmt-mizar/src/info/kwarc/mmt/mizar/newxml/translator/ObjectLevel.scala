@@ -37,11 +37,11 @@ object termTranslator {
       val args = TranslatorUtils.translateArguments(_args)
       ApplyGeneral(objects.OMS(gn), args)
     case Numeral_Term(redObjAttr, nr, varnr) => mmtwrapper.Mizar.num(nr)
-    case itt @ it_Term(redObjSubAttrs) => throw new ObjectTranslationError("Unresolved implicit reference in term.", itt)
+    case itt @ it_Term(redObjSubAttrs) => throw new ObjectLevelTranslationError("Unresolved implicit reference in term.", itt)
     case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
       val nr = redObjAttr.posNr.nr.nr
       val referencedSelector = utils.listmap(selectors, nr).getOrElse(
-        throw new ObjectTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
+        throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
           "\nThe only known selectors are: \n"+selectors.toString(), ist))
       referencedSelector.toTerm
     case Infix_Term(tpAttrs, infixedArgs) =>

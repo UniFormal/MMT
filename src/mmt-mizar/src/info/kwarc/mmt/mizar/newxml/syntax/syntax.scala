@@ -25,7 +25,7 @@ package info.kwarc.mmt.mizar.newxml.syntax
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationTranslationError, ObjectTranslationError}
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, ObjectLevelTranslationError}
 import info.kwarc.mmt.mizar.objects.{SourceRef, SourceRegion}
 
 case class Position(position:String) extends Group  {
@@ -352,12 +352,14 @@ case class Item(kind: String, pos:Positions, _subitem:Subitem) {
   }
 }
 
-sealed trait Subitem {
+sealed trait DeclarationLevel
+sealed trait Subitem extends DeclarationLevel {
   def kind:String = {
     this.getClass.getName
   }
   def shortKind: String = kind.split('.').lastOption.getOrElse(kind).replace('_','-')
 }
+sealed trait ObjectLevel
 sealed trait MMLIdSubitem extends Subitem {
   def MmlId: MMLId
   def mizarGlobalName():MizarGlobalName = {
@@ -370,7 +372,7 @@ case class Definition_Item(_block:Block) extends Subitem {
   def check() = {
     val kind = _block.kind
     if (! allowedKinds.contains(kind)) {
-      throw new DeclarationTranslationError("Expected a definition item of one of the kinds: "+allowedKinds, this)
+      throw new DeclarationLevelTranslationError("Expected a definition item of one of the kinds: "+allowedKinds, this)
     }
     kind
   }
@@ -459,7 +461,7 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
 case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:Term) extends Definition
 case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends Definition
 
-sealed trait VariableSegments {
+sealed trait VariableSegments extends ObjectLevel {
   def _tp(): Type
   def _vars() : List[Variable]
 }
@@ -472,9 +474,9 @@ case class Implicitly_Qualified_Segment(pos:Position, _var:Variable, _tp:Reserve
 case class Explicitly_Qualified_Segment(pos:Position, _variables:Variables, _tp:Type) extends VariableSegments {
   def _vars() = {_variables._vars}
 }
-case class Qualified_Segments(_children:List[VariableSegments])
+case class Qualified_Segments(_children:List[VariableSegments]) extends ObjectLevel
 
-sealed trait Expression {
+sealed trait Expression extends ObjectLevel {
   def ThisType() = this.getClass.toString
 }
 sealed trait Type extends Expression
@@ -588,7 +590,6 @@ case class Numeral_Term(objAttr: RedObjAttr, nr:Int, varnr:VarNr) extends Comple
  * @param sort
  */
 case class it_Term(objAttr: RedObjSubAttrs) extends ComplexTerm
-
 /**
  * Refers to a selector term of a selector already defined within a
  * definition of a new mizar structure
@@ -768,9 +769,9 @@ case class FlexaryDisjunctive_Formula(redObjSubAttrs: RedObjSubAttrs, _formulae:
 case class FlexaryConjunctive_Formula(redObjSubAttrs: RedObjSubAttrs, _formulae:List[Claim]) extends Formula
 case class Multi_Relation_Formula(redObjSubAttrs: RedObjSubAttrs, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
-case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs)
+case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends ObjectLevel
 
-sealed trait Claim
+sealed trait Claim extends ObjectLevel
 case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim
 /**
   whatever still remains to be proven in a proof
@@ -801,7 +802,7 @@ case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumption
 case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
 case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions with Subitem
 
-sealed trait Justification
+sealed trait Justification extends ObjectLevel
 case class Straightforward_Justification(pos:Position, _refs:List[Reference]) extends Justification
 case class Block(kind: String, pos:Positions, _items:List[Item]) extends Justification
 case class Scheme_Justification(posNr:PosNr, idnr:IdNr, schnr:Int, spell:Spelling, _refs:List[Reference]) extends Justification
@@ -820,7 +821,7 @@ case class InfixFunctor_Pattern(orgPatDef: OrgPatDef) extends FunctorPatterns
 case class CircumfixFunctor_Pattern(orgPat: OrgPatAttrs, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci:List[Locus], _locis:List[Loci]) extends FunctorPatterns
 case class SelectorFunctor_Pattern(extPatDef:ExtPatDef) extends FunctorPatterns
 
-sealed trait Registrations
+sealed trait Registrations extends DeclarationLevel
 /**
  * stating that a term tm has some properties
  * @param pos
@@ -852,7 +853,7 @@ case class Property_Registration(_props:Properties, _block:Block) extends Regist
 /**
  * Well-definedness conditions that need to be proven along with definitions
  */
-sealed trait CorrectnessConditions
+sealed trait CorrectnessConditions extends DeclarationLevel
 /**
  * non-emptyness of non-expandable typed (modes) or clustered_types in registrations of attributes
  */
@@ -881,55 +882,55 @@ case class consistency() extends CorrectnessConditions
  */
 case class correctness() extends CorrectnessConditions*/
 
-sealed trait Exemplifications
+sealed trait Exemplifications extends ObjectLevel
 case class ImplicitExemplification(_term:Term) extends Exemplifications
 case class ExemplifyingVariable(_var:Variable, _simplTm:Simple_Term) extends Exemplifications
 case class Example(_var:Variable, _tm:Term) extends Exemplifications
 
-sealed trait Reference
+sealed trait Reference extends ObjectLevel
 case class Local_Reference(pos:Position, spell:Spelling, serialnumber:SerialNrIdNr, labelnr:Int) extends Reference
 case class Definition_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
 case class Link(pos:Position, labelnr:Int) extends Reference
 case class Theorem_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Reference
 
-sealed trait Modes
+sealed trait Modes extends ObjectLevel
 case class Expandable_Mode(_tp:Type) extends Modes
 case class Standard_Mode(_tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Modes
 
-sealed trait Segments
+sealed trait Segments extends DeclarationLevel
 case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tpSpec:Option[Type_Specification]) extends Segments
 case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments
 
-sealed trait EqualityTr
+sealed trait EqualityTr extends ObjectLevel
 case class Equality(_var:Variable, _tm:Term) extends EqualityTr
 case class Equality_To_Itself(_var:Variable, _tm:Term) extends EqualityTr
 
-sealed trait Pragmas
+sealed trait Pragmas extends DeclarationLevel
 case class Unknown(pos:Position, inscription:String) extends Pragmas
 case class Notion_Name(pos:Position, inscription:String) extends Pragmas
 case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
 
-case class Scheme(idNr: IdNr, spell:Spelling, nr:Nr)
-case class Schematic_Variables(_segms:List[Segments])
-case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type)
-case class Variables(_vars:List[Variable])
-case class Variable_Segments(_vars:List[VariableSegments])
-case class Variable(varAttr:VarAttrs)
-case class Substitutions(_childs:List[Substitution])
-case class Substitution(freevarnr:Int, kind:String, varnr:VarNr)
-case class Adjective_Cluster(_attrs: List[Attribute])
-case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:Arguments)
-case class Arguments(_children:List[Term])
-case class Ancestors(_structTypes:List[Struct_Type])
-case class Loci(_loci:List[Locus])
-case class Locus(varkind:String, varAttr:VarAttrs)
-case class Field_Segments(_fieldSegments:List[Field_Segment])
-case class Field_Segment(pos:Position, _selectors:Selectors, _tp:Type)
-case class Selectors(posNr:PosNr, spell:Spelling, _loci:List[Selector])
-case class Selector(posNr:PosNr, spell:Spelling, _loci:Locus)
-case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List)
-case class Selectors_List(_children:List[Patterns])
-case class Correctness_Conditions(_cond:List[CorrectnessConditions])
+case class Scheme(idNr: IdNr, spell:Spelling, nr:Nr) extends DeclarationLevel
+case class Schematic_Variables(_segms:List[Segments]) extends ObjectLevel
+case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends DeclarationLevel
+case class Variables(_vars:List[Variable]) extends ObjectLevel
+case class Variable_Segments(_vars:List[VariableSegments]) extends ObjectLevel
+case class Variable(varAttr:VarAttrs) extends ObjectLevel
+case class Substitutions(_childs:List[Substitution]) extends ObjectLevel
+case class Substitution(freevarnr:Int, kind:String, varnr:VarNr) extends ObjectLevel
+case class Adjective_Cluster(_attrs: List[Attribute]) extends ObjectLevel
+case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:Arguments) extends ObjectLevel
+case class Arguments(_children:List[Term]) extends ObjectLevel
+case class Ancestors(_structTypes:List[Struct_Type]) extends ObjectLevel
+case class Loci(_loci:List[Locus]) extends ObjectLevel
+case class Locus(varkind:String, varAttr:VarAttrs) extends ObjectLevel
+case class Field_Segments(_fieldSegments:List[Field_Segment]) extends ObjectLevel
+case class Field_Segment(pos:Position, _selectors:Selectors, _tp:Type) extends ObjectLevel
+case class Selectors(posNr:PosNr, spell:Spelling, _loci:List[Selector]) extends ObjectLevel
+case class Selector(posNr:PosNr, spell:Spelling, _loci:Locus) extends ObjectLevel
+case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List) extends ObjectLevel
+case class Selectors_List(_children:List[Patterns]) extends ObjectLevel
+case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends ObjectLevel
 
 /**
  * There are two kinds of Properties tags in Mizar esx files (unfortunately of same name):
@@ -942,25 +943,25 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions])
  * @param _cond
  * @param _tp
  */
-case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type])
+case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel
 case class Redefine(occurs:Boolean)
-case class Type_Specification(_types:List[Type])
-case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr)
-case class Label(spell:Spelling, pos:Position, serialnr:SerialNrIdNr, labelnr:Int)
-case class Restriction(_formula:Formula)
-case class Right_Circumflex_Symbol(posNr:PosNr, formatnr:FormatNr, spell:Spelling)
-case class Equating(_var:Variable, _tm:Term)
-case class Loci_Equalities(_lociEqns:List[Loci_Equality])
-case class Loci_Equality(pos:Position, _loci:List[Locus])
-case class Equalities_List(_eqns:List[EqualityTr])
-case class Iterative_Step(pos:Position, _tm:Term, _just:Justification)
-case class Type_List(_tps:List[Type])
-case class Provisional_Formulas(_props:List[Proposition])
-case class Partial_Definiens_List(_partDef:List[Partial_Definiens])
-case class Partial_Definiens(_expr:Expression, _form:Formula)
-case class Otherwise(_expr:Option[Expression])
+case class Type_Specification(_types:List[Type]) extends ObjectLevel
+case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr) extends ObjectLevel
+case class Label(spell:Spelling, pos:Position, serialnr:SerialNrIdNr, labelnr:Int) extends ObjectLevel
+case class Restriction(_formula:Formula) extends ObjectLevel
+case class Right_Circumflex_Symbol(posNr:PosNr, formatnr:FormatNr, spell:Spelling) extends ObjectLevel
+case class Equating(_var:Variable, _tm:Term) extends ObjectLevel
+case class Loci_Equalities(_lociEqns:List[Loci_Equality]) extends ObjectLevel
+case class Loci_Equality(pos:Position, _loci:List[Locus]) extends ObjectLevel
+case class Equalities_List(_eqns:List[EqualityTr]) extends ObjectLevel
+case class Iterative_Step(pos:Position, _tm:Term, _just:Justification) extends ObjectLevel
+case class Type_List(_tps:List[Type]) extends ObjectLevel
+case class Provisional_Formulas(_props:List[Proposition]) extends ObjectLevel
+case class Partial_Definiens_List(_partDef:List[Partial_Definiens]) extends ObjectLevel
+case class Partial_Definiens(_expr:Expression, _form:Formula) extends ObjectLevel
+case class Otherwise(_expr:Option[Expression]) extends ObjectLevel
 
-case class According_Expansion(_attrs:List[Attribute])
+case class According_Expansion(_attrs:List[Attribute]) extends ObjectLevel
 
 object Utils {
   def fullClassName(s: String) = {

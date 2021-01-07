@@ -1,7 +1,5 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.mizar.objects._
-import info.kwarc.mmt.mizar.mmtwrappers._
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
@@ -19,6 +17,7 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 import scala.collection.mutable.ArrayStack
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
 
 import scala.collection._
 
@@ -55,7 +54,7 @@ object TranslationController {
   def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
-    val doc = new Document(currentThyBase, documents.ModuleLevel, None)
+    val doc = new Document(currentThyBase, documents.ModuleLevel, Some(currentThy.asInstanceOf[ModuleOrLink]))
     controller.add(doc)
     currentDoc = doc
     doc
@@ -243,37 +242,6 @@ object TranslationController {
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
   def makeConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) : Constant =
     Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
-
-  def getNotation(kind : String, absnr : Int) : NotationContainer = {
-    val lname = LocalName(kind + absnr.toString)
-    val name = currentTheoryPath ? lname
-    ParsingController.dictionary.getFormatByAbsnr(currentAid, kind, absnr) match {
-      case Some(format) if format.symbol != null => //found a format so will add notation
-        val argnr = format.argnr
-        val leftargnr = format.leftargnr
-        val sname = Delim(format.symbol.name)
-        val args = 1.to(argnr).flatMap {x =>
-          val d = if (x == leftargnr + 1) sname else Delim(",")
-          d :: SimpArg(x) :: Nil
-        }.toList match {
-          case Nil => Nil
-          case l => l.tail //to remove first extra delimiter (need args separated by delim)
-        }
-        val markers : List[Marker] = format.rightsymbol match {
-          case None => //single delimiter
-            if (leftargnr == 0) sname :: args
-            else if (leftargnr == argnr) args ::: List(sname)
-            else args
-          case Some(rightsymbol) => // double delimiter
-            val rsname = Delim(rightsymbol.name)
-            sname :: (args ::: List(rsname)) //TODO, what if not 0 - argnr pair ?
-        }
-        val not = new TextNotation(Mixfix(markers), Precedence.integer(0), None)
-        NotationContainer.apply(not)
-      case x =>
-        NotationContainer()
-    }
-  }
 
   def simplifyTerm(tm:objects.Term): objects.Term = {
     val su = SimplificationUnit(Context.empty,true,false)

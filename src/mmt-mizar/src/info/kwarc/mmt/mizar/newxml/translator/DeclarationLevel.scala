@@ -121,7 +121,16 @@ object definitionTranslator {
   }
   def translate_Constant_Definition(constant_Definition: Constant_Definition) = { ??? }
   def translate_Functor_Definition(functor_Definition: Functor_Definition) = { ??? }
-  def translate_Mode_Definition(mode_Definition: Mode_Definition) = { ??? }
+  def translate_Mode_Definition(mode_Definition: Mode_Definition) = {
+    val patternNr = mode_Definition._pat.patDef.patAttr.patternnr.patternnr
+    val declarationPath = TranslatorUtils.makeNewGlobalName("Mode", patternNr)
+    mode_Definition._expMode match {
+      case Expandable_Mode(_tp) =>
+        val tp = typeTranslator.translate_Type(_tp)
+        List(TranslationController.makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
+      case Standard_Mode(_tpSpec, _def) => ???
+    }
+  }
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition) = { ??? }
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition) = { ??? }
   def translate_Predicate_Definition(predicate_Definition: Predicate_Definition) = { ??? }
@@ -132,7 +141,8 @@ object definitionTranslator {
 }
 
 object clusterTranslator {
-  def translate_Cluster(cl:Cluster, args: List[(Option[LocalName], objects.Term)] = Nil): List[info.kwarc.mmt.api.symbols.Declaration] = {
+  def translate_Cluster(cl:Cluster, cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[info.kwarc.mmt.api.symbols.Declaration] = {
+    //TODO: Also translate the proofs of the correctness conditions
     cl._registrs map {
       case Conditional_Registration(pos, _attrs, _at, _tp) =>
         val tp = typeTranslator.translate_Type(_tp)
@@ -149,8 +159,8 @@ object clusterTranslator {
         val tm = termTranslator.translate_Term(_aggrTerm)
         val adjs = attributeTranslator.translateAttributes(_adjCl)
         val isQualified = _tp.isDefined
-        val tp = _tp map typeTranslator.translate_Type getOrElse(
-          TranslationController.inferType(tm))
+        val tp = _tp map typeTranslator.translate_Type getOrElse({
+          TranslationController.inferType(tm)})
         val name = "funcReg:"+pos.position
         if (isQualified) {
           qualFunctorRegistrationInstance(name, args map(_._2), tp, tm, adjs)
@@ -190,7 +200,7 @@ object blockTranslator {
           val translDef = definitionTranslator.translate_Definition(defn, args)
           resDecls = resDecls ++ translDef
         case prop:Property => ???
-        case defIt => throw new TranslatingError("definition expected inside definition-item.\n Instead found " + defIt.kind)
+        case defIt => throw DeclarationTranslationError("Definition expected inside definition-item.\n Instead found " + defIt.kind+". ", defIt)
       }
     }
     resDecls
@@ -200,16 +210,20 @@ object blockTranslator {
     var args: List[(Option[LocalName], objects.Term)] = Nil
     var resDecls:List[symbols.Declaration] = Nil
 
-    registrationItems foreach { it: Item =>
+    registrationItems.zipWithIndex foreach { case (it: Item, ind: Int) =>
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
         case cl: Cluster =>
-          val translCluster = clusterTranslator.translate_Cluster(cl, args)
+          val corr_conds = registrationItems.drop(ind).takeWhile({
+            case it: Correctness_Condition => true
+            case _ => false
+          }) map {case corCond: Correctness_Condition => corCond}
+          val translCluster = clusterTranslator.translate_Cluster(cl, corr_conds, args)
           resDecls = resDecls ++ translCluster
+        case correctness_Condition: Correctness_Condition =>
         case otherIt =>
-          println("cluster expected inside registration-item.\n Instead found " + otherIt.kind)
-          throw new TranslatingError("cluster expected inside registration-item.\n Instead found " + otherIt.kind)
+          throw DeclarationTranslationError("Cluster expected inside registration-item.\n Instead found " + otherIt.shortKind+". ", otherIt)
       }
     }
     resDecls
