@@ -37,7 +37,9 @@ object termTranslator {
       val args = TranslatorUtils.translateArguments(_args)
       ApplyGeneral(objects.OMS(gn), args)
     case Numeral_Term(redObjAttr, nr, varnr) => mmtwrapper.Mizar.num(nr)
-    case itt @ it_Term(redObjSubAttrs) => throw new ObjectLevelTranslationError("Unresolved implicit reference in term.", itt)
+    case itt @ it_Term(redObjSubAttrs) =>
+      OMV("it")
+      //throw new ObjectLevelTranslationError("Unresolved implicit reference in term.", itt)
     case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
       val nr = redObjAttr.posNr.nr.nr
       val referencedSelector = utils.listmap(selectors, nr).getOrElse(
@@ -92,6 +94,7 @@ object termTranslator {
 }
 
 object typeTranslator {
+  def translate_Type_Specification(tp: Type_Specification) = translate_Type(tp._types)
   def translate_Type(tp:Type)(implicit selectors: List[(Int, VarDecl)] = Nil) : objects.Term = tp match {
     case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
     case Clustered_Type(redObjSubAttrs, _adjClust, _tp) =>

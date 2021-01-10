@@ -73,7 +73,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition, args: List[(Option[LocalName], objects.Term)]= Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = defn match {
+  def translate_Definition(defn:Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = defn match {
     case at: Attribute_Definition => translate_Attribute_Definition(at)
     case cd: Constant_Definition => translate_Constant_Definition(cd)
     case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)
@@ -81,9 +81,9 @@ object definitionTranslator {
     case pd: Predicate_Definition => translate_Predicate_Definition(pd)
     case d: Private_Functor_Definition  => translate_Private_Functor_Definition(d)
     case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)
-    case d: Structure_Definition => translate_Structure_Definition(d, args)
+    case d: Structure_Definition => translate_Structure_Definition(d)
   }
-  def translate_Structure_Definition(strDef: Structure_Definition, args: List[(Option[LocalName], objects.Term)]): List[symbols.Declaration] = {
+  def translate_Structure_Definition(strDef: Structure_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil): List[symbols.Declaration] = {
     val l = args.length
     implicit var selectors: List[(Int, VarDecl)] = Nil
     val substr: List[objects.Term] = strDef._ancestors._structTypes.map(typeTranslator.translate_Type) map {
@@ -95,7 +95,7 @@ object definitionTranslator {
     val patternNr = strDef._strPat.extPatDef.extPatAttr.patAttr.patternnr.patternnr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
-    def translate_Field_Segments(field_Segments: Field_Segments) : List[VarDecl] = field_Segments._fieldSegments flatMap {
+    def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
 			val tp = typeTranslator.translate_Type(field_Segment._tp)
       field_Segment._selectors._loci.reverse map { case selector =>
@@ -110,30 +110,66 @@ object definitionTranslator {
     val m = fieldDecls.length
     StructureInstance(declarationPath, l, args, n, substr, m, fieldDecls)
   }
-  def translate_Attribute_Definition(attribute_Definition: Attribute_Definition) = attribute_Definition match {
-    case atd @ Attribute_Definition(_, _redef, _attrPat, _def) =>
+  def translate_Attribute_Definition(attribute_Definition: Attribute_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = attribute_Definition match {
+    case atd @ Attribute_Definition(a, _redef, _attrPat, _def) =>
       /* TODO: currently doesn't use the attribute definition pattern
       will likely need to be reimplemented later */
       val gn = TranslatorUtils.MMLIdtoGlobalName(atd.mizarGlobalName())
+      val name = gn.name.toString
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
-      val notC = patternTranslator.translate_Attribute_Pattern(_attrPat)
-      List(TranslationController.makeConstant(gn, notC, defn, None))
+      if (defn.isEmpty) {
+        //we have a redefinition?
+        if(_redef.occurs) {
+          // TODO: Replace currendAid by globalOrgConstrFile and shortKind by globalKind, when available
+          val origDecl = TranslatorUtils.makeGlobalName(TranslationController.currentAid, atd.shortKind, _attrPat.orgPatDef.orgPatAttr.orgconstrnr)
+          val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
+          val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
+          List(redef)
+        } else {
+          ???
+        }
+      }
+      val motherTp = TranslationController.inferType(defn.get.someCase)
+      //val notC = patternTranslator.translate_Attribute_Pattern(_attrPat)
+      val (argNum, argTps) = (args.length, args map (_._2))
+      val atrDef = defn.get match {
+        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
+        case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => throw DeclarationTranslationError("Attributes can't be defined directly. ", atd)
+        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
+        case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => throw DeclarationTranslationError("Attributes can't be defined directly. ", atd)
+      }
+      List(atrDef)
   }
-  def translate_Constant_Definition(constant_Definition: Constant_Definition) = { ??? }
-  def translate_Functor_Definition(functor_Definition: Functor_Definition) = { ??? }
-  def translate_Mode_Definition(mode_Definition: Mode_Definition) = {
+  def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
+  def translate_Functor_Definition(functor_Definition: Functor_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
+  def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = {
     val patternNr = mode_Definition._pat.patDef.patAttr.patternnr.patternnr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Mode", patternNr)
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
         val tp = typeTranslator.translate_Type(_tp)
         List(TranslationController.makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
-      case Standard_Mode(_tpSpec, _def) => ???
+      case stm @ Standard_Mode(_tpSpec, _def) =>
+        val name = declarationPath.name.toString
+        val (argNum, argTps) = (args.length, args map (_._2))
+        val defnO = _def map(definiensTranslator.translate_Definiens(_))
+        if (defnO.isEmpty) {
+          assert(_tpSpec.isDefined)
+          List(TranslationController.makeConstant(declarationPath.name, typeTranslator.translate_Type(_tpSpec.get._types)))
+        }
+        val defn = defnO.get
+        val modeDef = defn match {
+          case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
+          case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
+          case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes)
+          case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes)
+        }
+        List(modeDef)
     }
   }
-  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition) = { ??? }
-  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition) = { ??? }
-  def translate_Predicate_Definition(predicate_Definition: Predicate_Definition) = { ??? }
+  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
+  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
+  def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   /*def translate_Redefine(red:Redefine, defn:Definition, elabDefn: info.kwarc.mmt.api.symbols.Declaration):symbols.Declaration = {
     // TODO: translate the redefine
     elabDefn
@@ -197,7 +233,7 @@ object blockTranslator {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
         case defn: Definition =>
-          val translDef = definitionTranslator.translate_Definition(defn, args)
+          val translDef = definitionTranslator.translate_Definition(defn)(args)
           resDecls = resDecls ++ translDef
         case prop:Property => ???
         case defIt => throw DeclarationTranslationError("Definition expected inside definition-item.\n Instead found " + defIt.kind+". ", defIt)
@@ -242,21 +278,71 @@ object blockTranslator {
   }
 }
 
+sealed abstract class CaseByCaseDefinien {
+  /**
+   * Used to do inference on, mainly
+   * @return
+   */
+  def someCase: objects.Term
+  def cases: List[objects.Term]
+  def caseRes: List[objects.Term]
+  def caseNum = cases.length
+}
+case class DirectPartialCaseByCaseDefinien(cases: List[objects.Term], caseRes: List[objects.Term], defRes: objects.Term) extends CaseByCaseDefinien {
+  override def someCase: objects.Term = defRes
+}
+object DirectPartialCaseByCaseDefinien {
+  def apply(tm: objects.Term): DirectPartialCaseByCaseDefinien = DirectPartialCaseByCaseDefinien(Nil, Nil, tm)
+}
+case class IndirectPartialCaseByCaseDefinien(cases: List[objects.Term], caseRes: List[objects.Term], defRes: objects.Term) extends CaseByCaseDefinien {
+  override def someCase: objects.Term = defRes
+}
+case class DirectCompleteCaseByCaseDefinien(cases: List[objects.Term], caseRes: List[objects.Term], completenessProof: Option[objects.Term] = None) extends CaseByCaseDefinien {
+  override def someCase: objects.Term = caseRes.head
+}
+case class IndirectCompleteCaseByCaseDefinien(cases: List[objects.Term], caseRes: List[objects.Term], completenessProof: Option[objects.Term] = None) extends CaseByCaseDefinien {
+  override def someCase: objects.Term = caseRes.head
+}
+
 object definiensTranslator {
-  def translate_Definiens(defs:Definiens):objects.Term = {
+  def translate_Definiens(defs:Definiens, just: Option[Justification] = None): CaseByCaseDefinien = {
     translate_CaseBasedExpr(defs._expr)
   }
-  def translate_CaseBasedExpr(defn:CaseBasedExpr): objects.Term = {
+  def translate_CaseBasedExpr(defn:CaseBasedExpr): CaseByCaseDefinien = {
     defn.check()
     if (defn.isSingleCase()) {
-      expressionTranslator.translate_Expression(defn.singleCasedExpr._expr.get)
+      DirectPartialCaseByCaseDefinien(expressionTranslator.translate_Expression(defn.singleCasedExpr._expr.get))
     } else {
       translate_Cased_Expression(defn.partialCasedExpr)
     }
   }
-  def translate_Cased_Expression(partDef:PartialDef):objects.Term = {
+  def translate_Cased_Expression(partDef:PartialDef): CaseByCaseDefinien = {
     assert(partDef._partDefs.isDefined)
-    ???
+    partDef.check()
+    val defRes = partDef._otherwise.get._expr map expressionTranslator.translate_Expression
+    var isIndirect = false
+    val complCases = partDef._partDefs.get._partDef map {
+      case Partial_Definiens(_expr, _form) =>
+        val caseCond = formulaTranslator.translate_Formula(_form)
+        val caseRes = expressionTranslator.translate_Expression(_expr)
+        if (caseRes.freeVars.contains(LocalName("it"))) {isIndirect = true}
+        (caseCond, caseRes)
+    }
+    val (cases, caseRes) = complCases unzip
+    val res : CaseByCaseDefinien = if (isIndirect) {
+      if (defRes.isDefined) {
+        IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes.get)
+      } else {
+        IndirectCompleteCaseByCaseDefinien(cases, caseRes)
+      }
+    } else {
+      if (defRes.isDefined) {
+        DirectPartialCaseByCaseDefinien(cases, caseRes, defRes.get)
+      } else {
+        DirectCompleteCaseByCaseDefinien(cases, caseRes)
+      }
+    }
+    res
   }
 
   object assumptionTranslator {

@@ -52,7 +52,7 @@ object MizarStructure {
       Pi(LocalName("s"),structx,Mizar.prop)))
     val strictPropDecl = VarDecl(structureStrictName,typedArgsCont(
       Pi(LocalName("s"),makex,Mizar.proof(Apply(OMV(structureStrictName), OMV("s"))))))
-    val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap{case (OMS(substrGN),i) =>
+    val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {case (OMS(substrGN),i) =>
       val substrPath = substrGN.module / substrGN.name
       val (substruct, substrName, sl, sargTps, sm, sfieldDefs) = TranslationController.controller.get(substrPath) match {
         case subStruct @ StructureInstance(substrName, sl, sargTps, _, _, sm, sfieldDefs) => (subStruct, substrName, sl, sargTps, sm, sfieldDefs)
@@ -78,7 +78,7 @@ class MizarStructure extends StructuralFeature("mizarStructure") with Parametric
    * Checks the validity of the mizar structure to be constructed
    * @param dd the derived declaration from which the mizar structure is to be constructed
    */
-  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) {}
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment) : Unit = {}
 
   /**
    * Elaborates the declaration of a Mizar structure into the external declarations of a record type,

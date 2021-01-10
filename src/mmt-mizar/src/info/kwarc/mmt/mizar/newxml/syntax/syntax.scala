@@ -367,7 +367,7 @@ sealed trait MMLIdSubitem extends Subitem {
     sgn.makeGlobalName(this.shortKind)
   }
 }
-case class Reservation(_reservationSegment: Reservation_Segment) extends Subitem
+case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
 case class Definition_Item(_block:Block) extends Subitem {
   def check() = {
     val kind = _block.kind
@@ -895,6 +895,12 @@ case class Theorem_Reference(posNr:PosNr, spell:Spelling, number:Int) extends Re
 
 sealed trait Modes extends ObjectLevel
 case class Expandable_Mode(_tp:Type) extends Modes
+
+/**
+ * Always at least of the _tpSpec and _def are defined
+ * @param _tpSpec
+ * @param _def
+ */
 case class Standard_Mode(_tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Modes
 
 sealed trait Segments extends DeclarationLevel
@@ -945,7 +951,7 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Obj
  */
 case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel
 case class Redefine(occurs:Boolean)
-case class Type_Specification(_types:List[Type]) extends ObjectLevel
+case class Type_Specification(_types:Type) extends ObjectLevel
 case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr) extends ObjectLevel
 case class Label(spell:Spelling, pos:Position, serialnr:SerialNrIdNr, labelnr:Int) extends ObjectLevel
 case class Restriction(_formula:Formula) extends ObjectLevel
@@ -958,6 +964,12 @@ case class Iterative_Step(pos:Position, _tm:Term, _just:Justification) extends O
 case class Type_List(_tps:List[Type]) extends ObjectLevel
 case class Provisional_Formulas(_props:List[Proposition]) extends ObjectLevel
 case class Partial_Definiens_List(_partDef:List[Partial_Definiens]) extends ObjectLevel
+
+/**
+ * A case of a case-based-definien
+ * @param _expr The definien of the case
+ * @param _form The condition of the case
+ */
 case class Partial_Definiens(_expr:Expression, _form:Formula) extends ObjectLevel
 case class Otherwise(_expr:Option[Expression]) extends ObjectLevel
 

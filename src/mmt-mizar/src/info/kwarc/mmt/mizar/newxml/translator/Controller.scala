@@ -70,42 +70,13 @@ object TranslationController {
     controller.endAdd(currentDoc)
   }
 
-  var anonConstNr = 0
-  var defs = 0
-  var justBlocks = 0
-  var theorems = 0
-  var notations = 0
-  var regs = 0
-  var schemes = 0
-  var varContext : ArrayStack[Term] = new ArrayStack
-  var locusVarContext : ArrayStack[Term] = new ArrayStack
-  // consider/set/reconsider everywhere and let in proofs
-  var constContext : mutable.HashMap[Int,Term] = mutable.HashMap()
-  //deftheorems, lemmas, assume and others
-  var propContext : mutable.HashMap[Int,Term] = mutable.HashMap()
-
-  def clear() = {
-    constContext = mutable.HashMap()
-    propContext = mutable.HashMap()
-    //controller.clear
-    anonConstNr = 0
-  }
-
-  def getLmName(nrO : Option[Int]) : String = nrO match {
-    case Some(nr) =>
-      "Lm" + nr
-    case None =>
-      anonConstNr += 1
-      "AnonLm" + anonConstNr
-  }
-
-  def add(e: NarrativeElement) {
+  def add(e: NarrativeElement) : Unit = {
     controller.add(e)
   }
-  def add(m: Module) {
+  def add(m: Module) : Unit = {
     controller.add(m)
   }
-  def add(e : Declaration) {
+  def add(e : Declaration) : Unit = {
     println(e.toString)
     //val eC = complify(e)
     controller.add(e)
@@ -113,127 +84,13 @@ object TranslationController {
   private def complify(d: Declaration) = {
     val rules = RuleSet.collectRules(controller, Context(mmtwrapper.Mizar.MizarPatternsTh))
     org.omdoc.latin.foundations.mizar.IntroductionRule.allRules.foreach {rules.declares(_)}
-    val complifier = controller.complifier(rules).toTranslator
+    val complifier = controller.complifier(rules).toTranslator()
     try {
       d.translate(complifier,Context.empty)
     } catch {case e: Exception =>
       println("error while complifying instance " + d.path)
       d
     }
-  }
-
-  def resolveVar(nr : Int) : Term = {
-    varContext(varContext.length - nr)
-  }
-
-  def resolveLocusVar(nr : Int) : Term = {
-    assert (locusVarContext.length >= nr,"TranslationController.resolveLocusVar " +
-      "for number " + nr +" which is over the size of context " + locusVarContext)
-    locusVarContext(locusVarContext.length - nr)
-  }
-
-  def addLocalProp(nrO : Option[Int]) : LocalName = nrO match {
-    case Some(nr) =>
-      val name = LocalName("p" + nr)
-      propContext(nr) = OMV(name)
-      name
-    case _ => OMV.anonymous
-  }
-
-  def addGlobalProp(nrO : Option[Int], sName : String) = nrO match {
-    case Some(nr) =>
-      val name = LocalName(sName)
-      propContext(nr) = OMID(mmtwrapper.MMTUtils.getPath(TranslationController.currentAid, name))
-    case _ => None
-  }
-
-  def resolveProp(nr : Int) : Term = try {
-    propContext(nr)
-  } catch {
-    case _ : Throwable =>
-      println(propContext)
-      throw new java.lang.Error("propContext lookup failed for " + nr)
-  }
-
-  def addGlobalConst(nr : Int, kind : String) : LocalName = {
-    val name = LocalName(kind + nr)
-    constContext(nr) = OMID(mmtwrapper.MMTUtils.getPath(TranslationController.currentAid, name))
-    name
-  }
-
-  def addLocalConst(nr : Int) : LocalName = {
-    val name = LocalName("c" + nr)
-    constContext(nr) = OMV(name)
-    name
-  }
-
-  def resolveConst(nr : Int) : Term = {
-    if (query) {
-      mmtwrapper.Mizar.apply(OMID(mmtwrapper.MMTUtils.getPath("qvar","const")), OMV("c" + nr.toString))
-    } else {
-      constContext(nr)
-    }
-  }
-
-  def addQVarBinder() = {
-    val name = "x" + varContext.length
-    varContext.push(mmtwrapper.Mizar.apply(OMID(DPath(mmtwrapper.Mizar.mmlBase) ? "qvar" ? "qvar"), OMV(name)))
-  }
-
-  def addVarBinder(n : Option[String]) : String = n match {
-    case Some(x) =>
-      varContext.push(OMV(x))
-      x
-    case None =>
-      val n = varContext.length
-      val base = (n % 10 + 'a').toChar.toString
-      val counter = (n / 10) match {
-        case 0 => ""
-        case n =>  n.toString
-      }
-      val name = base + counter
-      varContext.push(OMV(name))
-      name
-  }
-
-  def clearConstContext() = {
-    constContext = mutable.HashMap()
-  }
-
-  def clearVarBinder() = {
-    varContext.pop()
-  }
-
-  def clearVarContext() = {
-    varContext = new ArrayStack()
-  }
-
-  def addLocusVarBinder(tm : Term) {
-    locusVarContext.push(tm)
-  }
-
-  def addRetTerm(path: GlobalName) = {
-    locusVarContext.length match {
-      case 0 => locusVarContext.push(OMID(path))
-      case _ => locusVarContext.push(mmtwrapper.Mizar.apply(OMID(path), locusVarContext .toSeq: _*))
-    }
-  }
-
-  def clearLocusVarBinder() {
-    locusVarContext.pop()
-  }
-
-  def clearLocusVarContext() {
-    locusVarContext = new ArrayStack()
-  }
-
-  def getFreeVar() : String = {
-    var i : Int = 0
-    val totalContext = varContext.toList ::: locusVarContext.toList
-    while (totalContext.contains(OMV("x" + i))) {
-      i = i + 1
-    }
-    "x" + i
   }
 
   def makeConstant(n: LocalName, t: Term) : Constant =

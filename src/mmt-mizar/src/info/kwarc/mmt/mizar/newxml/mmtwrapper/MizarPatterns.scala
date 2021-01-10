@@ -25,6 +25,7 @@ object PatternUtils {
     val strPath = TranslationController.currentTheoryPath ? strName
     referenceExtDecl(strPath, nm)
   }
+
 }
 
 import PatternUtils._

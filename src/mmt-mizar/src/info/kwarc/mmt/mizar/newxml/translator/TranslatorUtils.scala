@@ -54,8 +54,9 @@ object TranslatorUtils {
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),Sort("Contradiction"))))
   def emptyPosition() = Position("translation internal")
   def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(ExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode")), _, _, args) =>
-      args match { case List(Arguments(List(u))) => u }
+    case Standard_Type(ExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode")), _, _, elementArgs) if (elementArgs._children.length == 1) =>
+      elementArgs match { case Arguments(List(u)) => u }
+    case _ => throw ExpressionTranslationError("Expected a type of form\"Element of <tp>\" for some type tp. ", tp)
   }
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()

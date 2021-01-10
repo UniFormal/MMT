@@ -89,10 +89,8 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
 
-    val doc = TranslationController.makeDocument()
-    //TranslationController.controller.build(TranslationController.currentBaseThyFile)(bf.errorCont)
-
     val th = TranslationController.makeTheory()
+    //val doc = TranslationController.makeDocument()
 
     articleTranslator.translateArticle(text_Proper)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)

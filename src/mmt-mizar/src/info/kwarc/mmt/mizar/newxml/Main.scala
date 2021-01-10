@@ -9,7 +9,7 @@ import info.kwarc.mmt.mizar.newxml.translator.{MizarXMLImporter, TranslationCont
 object Main {
   def makeParser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.mizar.newxml.syntax")
 
-  def main(args: Array[String]) {
+  def main(args: Array[String]) : Unit = {
     val parser = makeParser
     val files= args.map(arg=>File(arg))
     var troublemakers:List[String] = List.empty
