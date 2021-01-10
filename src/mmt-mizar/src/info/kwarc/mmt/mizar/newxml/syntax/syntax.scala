@@ -221,7 +221,15 @@ case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos
  * @param patternnr
  * @param constr
  */
-case class ExtPatAttrs(patAttr:PatternAttrs, constr:String) extends Group
+sealed trait ExtendedPatAttrs extends Group  {
+  def extPatAttrs : ExtPatAttrs
+}
+sealed trait ExtendedOrgPatAttrs extends ExtendedPatAttrs  {
+  def orgPatAttrs : OrgPatAttrs
+}
+case class ExtPatAttrs(patAttr:PatternAttrs, constr:String) extends ExtendedPatAttrs {
+  override def extPatAttrs: ExtPatAttrs = this
+}
 /**
  *
  * @param formatdes
@@ -232,7 +240,9 @@ case class ExtPatAttrs(patAttr:PatternAttrs, constr:String) extends Group
  * @param constr
  * @param orgconstrnr
  */
-case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends Group
+case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends ExtendedOrgPatAttrs {
+  def orgPatAttrs = this
+}
 /**
  *
  * @param formatdes
@@ -253,7 +263,7 @@ case class PatDef(patAttr:PatternAttrs, _loci:List[Loci]) extends Group
  * @param constr
  * @param _loci
  */
-case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
+case class ExtPatDef(extPatAttrs:ExtPatAttrs, _loci:List[Loci]) extends ExtendedPatAttrs
 /**
  *
  * @param formatdes
@@ -266,7 +276,9 @@ case class ExtPatDef(extPatAttr:ExtPatAttrs, _loci:List[Loci]) extends Group
  * @param _loci
  * @param _locis
  */
-case class OrgPatDef(orgPatAttr:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends Group
+case class OrgPatDef(orgPatAttrs:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends ExtendedOrgPatAttrs {
+  def extPatAttrs: ExtPatAttrs = orgPatAttrs.extPatAttrs
+}
 case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
   def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varNr.varnr.toString
 }
@@ -433,7 +445,7 @@ case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) exte
 
 sealed trait Definition extends Subitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
+case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctorPatterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 /**
  * definition of a structure, takes ancestors (a list of structures it inherits from),
@@ -814,12 +826,20 @@ case class Attribute_Pattern(orgPatDef: OrgPatDef) extends Patterns
 case class Mode_Pattern(patDef:PatDef) extends Patterns
 case class Predicate_Pattern(orgPatDef:OrgPatDef) extends Patterns
 case class Strict_Pattern(orgPatDef: OrgPatDef) extends Patterns
-sealed trait FunctorPatterns extends Patterns
-case class AggregateFunctor_Pattern(extPatDef: ExtPatDef) extends FunctorPatterns
-case class ForgetfulFunctor_Pattern(extPatDef: ExtPatDef) extends FunctorPatterns
-case class InfixFunctor_Pattern(orgPatDef: OrgPatDef) extends FunctorPatterns
-case class CircumfixFunctor_Pattern(orgPat: OrgPatAttrs, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci:List[Locus], _locis:List[Loci]) extends FunctorPatterns
-case class SelectorFunctor_Pattern(extPatDef:ExtPatDef) extends FunctorPatterns
+sealed trait FunctorPatterns extends Patterns {
+  def extendedPatAttrs: ExtendedPatAttrs
+  def extPatAttrs: ExtPatAttrs = extendedPatAttrs.extPatAttrs
+}
+sealed trait RedefinableFunctorPatterns extends FunctorPatterns {
+  def extendedOrgPatAttrs: ExtendedOrgPatAttrs
+  def orgPatAttrs : OrgPatAttrs = extendedOrgPatAttrs.orgPatAttrs
+  def extendedPatAttrs: ExtendedPatAttrs = extendedOrgPatAttrs.extPatAttrs
+}
+case class AggregateFunctor_Pattern(extendedPatAttrs: ExtPatDef) extends FunctorPatterns
+case class ForgetfulFunctor_Pattern(extendedPatAttrs: ExtPatDef) extends FunctorPatterns
+case class SelectorFunctor_Pattern(extendedPatAttrs:ExtPatDef) extends FunctorPatterns
+case class InfixFunctor_Pattern(extendedOrgPatAttrs: OrgPatDef) extends RedefinableFunctorPatterns
+case class CircumfixFunctor_Pattern(extendedOrgPatAttrs: OrgPatAttrs, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci:List[Locus], _locis:List[Loci]) extends RedefinableFunctorPatterns
 
 sealed trait Registrations extends DeclarationLevel
 /**
