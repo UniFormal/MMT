@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.{LocalName, objects}
 import info.kwarc.mmt.api.objects.{OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, DeclarationLevel, Expression, ExtObjAttrs, Negated_Formula, ObjectLevel, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, referencingConstrObjAttrs, referencingObjAttrs}
+import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, DeclarationLevel, Expression, ExtObjAttrs, Negated_Formula, ObjectLevel, OrgnlExtObjAttrs, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, globallyReferencingConstrObjAttrs, globallyReferencingObjAttrs, referencingConstrObjAttrs, referencingObjAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
 
 sealed abstract class TranslatingError(str: String) extends Exception(str)
@@ -34,11 +34,9 @@ object TranslatorUtils {
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
-  // TODO: replace by global versions of it, once the test files contain the corresponding global attributes
-  def computeGlobalName(tpAttrs: referencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalName(
-    TranslationController.currentAid))}
-  def computeStrGlobalName(tpAttrs: referencingConstrObjAttrs) = {
-    makeGlobalName(TranslationController.currentAid, "Struct-Type", tpAttrs.patternNr.patternnr)
+  def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
+  def computeStrGlobalName(tpAttrs: globallyReferencingConstrObjAttrs) = {
+    makeGlobalName(tpAttrs.globalPatternFile, "Struct-Type", tpAttrs.globalPatternNr)
   }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
@@ -54,7 +52,7 @@ object TranslatorUtils {
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),Sort("Contradiction"))))
   def emptyPosition() = Position("translation internal")
   def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(ExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode")), _, _, elementArgs) if (elementArgs._children.length == 1) =>
+    case Standard_Type(OrgnlExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode"), orgnNrConstrNr, globalReDefAttrs), _, _, elementArgs) if (elementArgs._children.length == 1) =>
       elementArgs match { case Arguments(List(u)) => u }
     case _ => throw ExpressionTranslationError("Expected a type of form\"Element of <tp>\" for some type tp. ", tp)
   }
@@ -71,5 +69,5 @@ object TranslatorUtils {
     varSegm._vars.head._tp()
   }
   def translateArguments(args: Arguments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {args._children map termTranslator.translate_Term }
-  def translateObjRef(refObjAttrs:referencingObjAttrs)  = objects.OMS(computeGlobalName(refObjAttrs))
+  def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = objects.OMS(computeGlobalPatternName(refObjAttrs))
 }

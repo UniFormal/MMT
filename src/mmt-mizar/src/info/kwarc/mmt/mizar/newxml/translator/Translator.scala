@@ -71,7 +71,7 @@ object itemTranslator {
 import TranslationController._
 class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
-  def inExts = List("esx")
+  def inExts = List("esx", "esx1")
 
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
     val parser = makeParser

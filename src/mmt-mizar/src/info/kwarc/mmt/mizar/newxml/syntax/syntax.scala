@@ -157,20 +157,36 @@ trait referencingConstrObjAttrs extends referencingObjAttrs {
     // TODO: fix or remove this method
   }
 }
-case class GlobalPatternDefiningAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
-case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
-case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
-trait globallyReferencingObjAttrs extends referencingConstrObjAttrs {
+trait globallyReferencingObjAttrs {
+  def globalObjAttrs : GlobalObjAttrs
+  def globalKind = globalObjAttrs.globalKind
+  def globalPatternFile = globalObjAttrs.globalPatternFile
+  def globalPatternNr = globalObjAttrs.globalPatternNr
+
+  def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
+}
+case class GlobalObjAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
+trait globallyReferencingConstrObjAttrs extends referencingConstrObjAttrs with globallyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
-  def globalKind = globalDefAttrs.globalKind
-  def globalPatternFile = globalDefAttrs.globalPatternFile
-  def globalPatternNr = globalDefAttrs.globalPatternNr
+  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
   def globalConstrFile = globalDefAttrs.globalConstrFile
   def globalConstrNr = globalDefAttrs.globalConstrNr
 
   def globalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
-  def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
 }
+case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
+trait globallyReferencingReDefObjAttrs extends globallyReferencingConstrObjAttrs {
+  def globalReDefAttrs : GlobalReDefAttrs
+  override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
+  def globalOrgPatternFile = globalReDefAttrs.globalOrgPatternFile
+  def globalOrgPatternNr = globalReDefAttrs.globalOrgPatternNr
+  def globalOrgConstrFile = globalReDefAttrs.globalOrgConstrFile
+  def globalOrgConstrNr = globalReDefAttrs.globalOrgConstrNr
+
+  def originalPatternName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgPatternNr)
+  def originalGlobalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+}
+case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
 /**
  * An extended list of common attributes for Object (terms and types) definitions
  * @param posNr
@@ -179,7 +195,7 @@ trait globallyReferencingObjAttrs extends referencingConstrObjAttrs {
  * @param spell
  * @param srt
  */
-case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort) extends referencingObjAttrs
+case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, globalObjAttrs: GlobalObjAttrs) extends globallyReferencingObjAttrs
 /**
  *
  * @param posNr
@@ -189,7 +205,7 @@ case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spe
  * @param srt
  * @param constrNr
  */
-case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, constrNr:ConstrNr) extends referencingConstrObjAttrs
+case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, constrNr:ConstrNr, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingConstrObjAttrs
 /**
  *
  * @param posNr
@@ -200,7 +216,7 @@ case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternN
  * @param orgnNr
  * @param constrNr
  */
-case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr) extends referencingConstrObjAttrs {
+case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefObjAttrs {
   override def constrNr: ConstrNr = orgnNrConstrNr.constrNr
 }
 /**
@@ -521,8 +537,8 @@ case class Clustered_Type(redObjSubAttrs: RedObjSubAttrs, _adjClust:Adjective_Cl
  * @param origNr
  * @param _args
  */
-case class Standard_Type(tpAttrs:ExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNrConstrNr, _args:Arguments) extends Type {
-  def mizarGlobalName(aid: String) = tpAttrs.globalName(aid)
+case class Standard_Type(tpAttrs:OrgnlExtObjAttrs, noocc: Option[Boolean], origNr: OriginalNrConstrNr, _args:Arguments) extends Type {
+  def mizarGlobalName(aid: String) = tpAttrs.globalPatternName()
 }
 /**
  * the type of a structure
