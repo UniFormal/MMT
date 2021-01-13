@@ -41,7 +41,7 @@ object termTranslator {
       OMV("it")
       //throw new ObjectLevelTranslationError("Unresolved implicit reference in term.", itt)
     case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
-      val nr = redObjAttr.posNr.nr.nr
+      val nr = redObjAttr.posNr.nr
       val referencedSelector = utils.listmap(selectors, nr).getOrElse(
         throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
           "\nThe only known selectors are: \n"+selectors.toString(), ist))

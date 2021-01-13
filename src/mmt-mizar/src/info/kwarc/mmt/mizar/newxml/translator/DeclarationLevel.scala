@@ -96,7 +96,7 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
-    val patternNr = strDef._strPat.patDef.globalDefAttrs.globalPatternNr
+    val patternNr = strDef._strPat.globalPatternNr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
@@ -104,7 +104,7 @@ object definitionTranslator {
 			val tp = translate_Type(field_Segment._tp)
       field_Segment._selectors._loci.reverse map { case selector =>
         val selName = translate_Locus(selector._loci)
-        val sel = (selector.posNr.nr.nr, selName % tp)
+        val sel = (selector.posNr.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
         sel._2 ^ substitutions
@@ -152,7 +152,7 @@ object definitionTranslator {
       if(_redefine.occurs) {
         //Redefinitions are only possible for Infix or Circumfix Functors
         val orgExtPatAttrs = _pat.patDef
-        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(orgExtPatAttrs)
+        val origDecl = TranslatorUtils.MMLIdtoGlobalName(_pat.globalPatternName())
         val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
         val redef = TranslationController.makeConstant(gn.name, Some(ret getOrElse oldDef.tp.get), oldDef.df)
         List(redef)

@@ -36,7 +36,6 @@ case class Position(position:String) extends Group  {
     SourceRef(line, col)
   }
 }
-case class FormatNr(formatnr:Int) extends Group
 case class PatternNr(patternnr:Int) extends Group
 case class Spelling(spelling:String) extends Group
 case class Sort(sort:String) extends Group
@@ -49,10 +48,8 @@ case class MMLId(MMLId:String) extends Group {
   }
 }
 case class IdNr(idnr:Int) extends Group
-case class Nr(nr:Int) extends Group
 case class VarNr(varnr:Int) extends Group
-case class ConstrNr(constrnr:Int) extends Group
-case class OriginalNrConstrNr(constrNr:ConstrNr, originalnr:Int) extends Group
+case class OriginalNrConstrNr(constrnr:Int, originalnr:Int) extends Group
 case class Origin(origin:String) extends Group
 case class SerialNrIdNr(idnr: IdNr, serialnr:Int) extends Group
 /**
@@ -99,7 +96,7 @@ case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group 
  * @param spell
  * @param srt
  */
-case class ObjectAttrs(formatNr: FormatNr, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group
+case class ObjectAttrs(formatnr: Int, patNr:PatternNr, spell:Spelling, srt:Sort) extends Group
 /**
  * A minimal list of common attributes for objects containing only spelling and sort
  * @param pos Position
@@ -110,7 +107,7 @@ trait RedObjectSubAttrs extends Group {
   def sort() : Sort
 }
 case class RedObjSubAttrs(pos: Position, sort: Sort) extends RedObjectSubAttrs
-case class PosNr(pos:Position, nr:Nr) extends Group
+case class PosNr(pos:Position, nr:Int) extends Group
 /**
  * A minimal list of common attributes (extended by the further attributes position and number) for objects containing only spelling and sort
  * @param posNr
@@ -122,31 +119,20 @@ case class RedObjAttr(posNr:PosNr, spell:Spelling, sort:Sort) extends RedObjectS
 }
 trait referencingObjAttrs extends RedObjectSubAttrs {
   def posNr:PosNr
-  def formatNr:FormatNr
+  def formatnr:Int
   def patternNr: PatternNr
+  def sort: Sort
   def spell: Spelling
   override def pos(): Position = posNr.pos
-  def globalPatternName(aid: String, refSort: String, constrNr: Int): MizarGlobalName = {
-    MizarGlobalName(aid, sort.sort, patternNr.patternnr)
-  }
 }
 trait referencingConstrObjAttrs extends referencingObjAttrs {
   def posNr:PosNr
-  def formatNr:FormatNr
+  def formatnr:Int
   def patternNr: PatternNr
-  def constrNr: ConstrNr
+  def constrnr: Int
+  def sort: Sort
   def spell: Spelling
   override def pos(): Position = posNr.pos
-  def globalName(aid: String): MizarGlobalName = {
-    // requires global id to be added to the esx files by Artur
-    MizarGlobalName(aid, sort.sort, constrNr.constrnr)
-    // TODO: fix or remove this method
-  }
-  def globalName(aid: String, refSort: String): MizarGlobalName = {
-    // requires global id to be added to the esx files by Artur
-    MizarGlobalName(aid, refSort, constrNr.constrnr)
-    // TODO: fix or remove this method
-  }
 }
 trait globallyReferencingObjAttrs {
   def globalObjAttrs : GlobalObjAttrs
@@ -157,7 +143,7 @@ trait globallyReferencingObjAttrs {
   def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
 }
 case class GlobalObjAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
-trait globallyReferencingConstrObjAttrs extends globallyReferencingObjAttrs {
+trait globallyReferencingConstrObjAttrs extends referencingConstrObjAttrs with globallyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
   def globalConstrFile = globalDefAttrs.globalConstrFile
@@ -185,9 +171,8 @@ case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile
  * @param patNr
  * @param spell
  * @param srt
- * @param globalObjAttrs
  */
-case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, globalObjAttrs: GlobalObjAttrs) extends globallyReferencingObjAttrs with referencingObjAttrs
+case class ExtObjAttrs(posNr:PosNr, formatnr: Int, patternNr:PatternNr, spell:Spelling, sort:Sort, globalObjAttrs: GlobalObjAttrs) extends globallyReferencingObjAttrs
 /**
  *
  * @param posNr
@@ -197,7 +182,7 @@ case class ExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spe
  * @param srt
  * @param constrNr
  */
-case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, constrNr:ConstrNr, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingConstrObjAttrs with referencingConstrObjAttrs
+case class ConstrExtObjAttrs(posNr:PosNr, formatnr: Int, patternNr:PatternNr, spell:Spelling, sort:Sort, constrnr:Int, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingConstrObjAttrs
 /**
  *
  * @param posNr
@@ -208,8 +193,8 @@ case class ConstrExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternN
  * @param orgnNr
  * @param constrNr
  */
-case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefObjAttrs with referencingConstrObjAttrs {
-  override def constrNr: ConstrNr = orgnNrConstrNr.constrNr
+case class OrgnlExtObjAttrs(posNr:PosNr, formatnr: Int, patternNr:PatternNr, spell:Spelling, sort:Sort, orgnNrConstrNr:OriginalNrConstrNr, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefObjAttrs {
+  override def constrnr: Int = orgnNrConstrNr.constrnr
 }
 /**
  *
@@ -217,63 +202,9 @@ case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr
  * @param formatNr
  * @param spell
  * @param pos
- * @param globalObjAttrs
  * @param patternnr
  */
-case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos:Position, patternnr:PatternNr) extends Group
-/*
-/**
- *
- * @param formatdes
- * @param formatNr
- * @param spell
- * @param pos
- * @param patternnr
- * @param constrnr
- * @param globalConstrObjAttrs
- * @param constr
- */
-case class ExtPatAttrs(patAttr:PatternAttrs, constr:String, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingConstrObjAttrs
-/**
- *
- * @param formatdes
- * @param formatNr
- * @param spell
- * @param pos
- * @param patternnr
- * @param constrnr
- * @param orgconstrnr
- * @param globalReDefAttrs
- * @param constr
- */
-case class OrgPatAttrs(extPatAttr:ExtPatAttrs, orgconstrnr:Int, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefObjAttrs
-*/
-/**
- *
- * @param formatdes
- * @param formatNr
- * @param spell
- * @param pos
- * @param patternnr
- * @param globalObjAttrs
- * @param _locis
- */
-sealed trait PatDefs extends globallyReferencingReDefObjAttrs {
-  def patDef : PatDef
-  def globalReDefAttrs: GlobalReDefAttrs
-}
-case class PatDef(patAttr:PatternAttrs, globalReDefAttrs: GlobalReDefAttrs, _locis:List[Loci]) extends PatDefs {
-  override def patDef: PatDef = this
-}
-sealed trait ExtendedPatDef extends globallyReferencingReDefObjAttrs with PatDefs {
-  def extPatAttr:ExtPatAttr
-  def _locis:List[Loci]
-  def patDef: PatDef = PatDef(extPatAttr.patAttr, globalReDefAttrs, _locis)
-  def globalReDefAttrs: GlobalReDefAttrs = extPatAttr.globalReDefAttrs
-  override def globalDefAttrs: GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
-  def extPatDef : ExtPatDef = ExtPatDef(extPatAttr, _locis)
-  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
-}
+case class PatternAttrs(formatdes:String, formatnr:Int, spell:Spelling, pos:Position, patternnr:PatternNr, globalReDefAttrs: GlobalReDefAttrs) extends Group
 /**
  *
  * @param formatdes
@@ -282,22 +213,29 @@ sealed trait ExtendedPatDef extends globallyReferencingReDefObjAttrs with PatDef
  * @param pos
  * @param patternnr
  * @param constr
- * @param globalConstrObjAttrs
- * @param _loci
  */
-case class ExtPatAttr(patAttr:PatternAttrs, constr:String, globalReDefAttrs: GlobalReDefAttrs) extends Group
-case class ExtPatDef(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends ExtendedPatDef
-sealed trait ExtendedOrgPatDef extends ExtendedPatDef with globallyReferencingReDefObjAttrs  {
-  def orgExtPatAttr: OrgExtPatAttr
-  def _loci: List[Locus]
-  def _locis:List[Loci]
-  def orgPatDef : OrgPatDef = OrgPatDef(orgExtPatAttr, _loci, _locis)
-  override def extPatDef: ExtPatDef = orgPatDef.extPatDef
-  override def extPatAttr: ExtPatAttr = extPatDef.extPatAttr
-  override def patDef: PatDef = extPatDef.patDef
-  override def globalReDefAttrs: GlobalReDefAttrs = orgExtPatAttr.globalReDefAttrs
+sealed trait ExtendedPatAttrs extends Group  {
+  def extPatAttrs : ExtPatAttrs
+}/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ */
+sealed trait ExtendedPatDefs extends ExtendedPatAttrs {
+  def _locis: List[Loci]
+  def extPatAttrs: ExtPatAttrs
+  def extPatDef : ExtPatDef= ExtPatDef(extPatAttrs, _locis)
 }
-case class OrgExtPatAttr(patAttr:PatternAttrs, constr:String, orgconstrnr:Int, globalReDefAttrs: GlobalReDefAttrs) extends Group
+sealed trait ExtendedOrgPatAttrs extends ExtendedPatAttrs  {
+  def orgPatAttrs : OrgPatAttrs
+}
+case class ExtPatAttrs(patAttr:PatternAttrs, constr:String) extends ExtendedPatAttrs {
+  override def extPatAttrs: ExtPatAttrs = this
+}
 /**
  *
  * @param formatdes
@@ -307,11 +245,46 @@ case class OrgExtPatAttr(patAttr:PatternAttrs, constr:String, orgconstrnr:Int, g
  * @param patternnr
  * @param constr
  * @param orgconstrnr
- * @param globalOrgConstrObjAttrs
+ */
+case class OrgPatAttrs(extPatAttrs:ExtPatAttrs, orgconstrnr:Int) extends ExtendedOrgPatAttrs {
+  def orgPatAttrs = this
+}
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param _loci
+ */
+case class PatDef(patAttr:PatternAttrs, _locis:List[Loci]) extends Group
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ * @param _loci
+ */
+case class ExtPatDef(extPatAttrs:ExtPatAttrs, _locis:List[Loci]) extends ExtendedPatDefs
+/**
+ *
+ * @param formatdes
+ * @param formatNr
+ * @param spell
+ * @param pos
+ * @param patternnr
+ * @param constr
+ * @param orgconstrnr
  * @param _loci
  * @param _locis
  */
-case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends ExtendedOrgPatDef
+case class OrgPatDef(orgPatAttrs:OrgPatAttrs, _loci:List[Locus], _locis:List[Loci]) extends ExtendedOrgPatAttrs with ExtendedPatDefs {
+  def extPatAttrs: ExtPatAttrs = orgPatAttrs.extPatAttrs
+}
 case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
   def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varNr.varnr.toString
 }
@@ -786,7 +759,7 @@ case class Contradiction(redObjectSubAttrs: RedObjSubAttrs) extends Formula
   is tp
  */
 case class Qualifying_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:Term, _tp:Type) extends Formula
-case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrIdNr, constrNr: ConstrNr, _args:Arguments) extends Formula
+case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrIdNr, constrnr: Int, _args:Arguments) extends Formula
 /**
  * A disjunctive formula form1 or ... or formn
  * it gets elaborated by mizar to either a (expanded) disjunctive formula or
@@ -853,28 +826,39 @@ case class Block(kind: String, pos:Positions, _items:List[Item]) extends Justifi
 case class Scheme_Justification(posNr:PosNr, idnr:IdNr, schnr:Int, spell:Spelling, _refs:List[Reference]) extends Justification
 
 /** Notations */
-sealed trait Patterns extends globallyReferencingObjAttrs {
-  def patDef: PatDefs
-  override def globalObjAttrs: GlobalObjAttrs = patDef.globalObjAttrs
+sealed trait Patterns extends globallyReferencingReDefObjAttrs {
+  def patDef: PatDef
+  def globalReDefAttrs: GlobalReDefAttrs = patDef.patAttr.globalReDefAttrs
+
+  override def patternNr: PatternNr = PatternNr(globalOrgPatternNr)
+  override def posNr: PosNr = PosNr(patDef.patAttr.pos, globalPatternNr)
+
+  override def spell: Spelling = patDef.patAttr.spell
+  override def constrnr: Int = globalConstrNr
+  override def sort: Sort = Sort(globalKind)
+  override def formatnr: Int = patDef.patAttr.formatnr
 }
 case class Mode_Pattern(patDef:PatDef) extends Patterns
-case class Structure_Pattern(patDef: ExtPatDef) extends Patterns
-case class Attribute_Pattern(patDef: OrgPatDef) extends Patterns
-case class Predicate_Pattern(patDef:OrgPatDef) extends Patterns
-case class Strict_Pattern(patDef: OrgPatDef) extends Patterns
-sealed trait FunctorPatterns extends Patterns with globallyReferencingConstrObjAttrs {
-  def patDef: ExtendedPatDef
-  override def globalDefAttrs: GlobalDefAttrs = patDef.globalDefAttrs
+sealed trait ConstrPattern extends Patterns {
+  def extPatDef: ExtendedPatDefs
+  override def patDef = PatDef(extPatDef.extPatAttrs.patAttr, extPatDef._locis)
 }
-sealed trait RedefinableFunctorPatterns extends FunctorPatterns  with globallyReferencingReDefObjAttrs {
-  def patDef: ExtendedOrgPatDef
-  override def globalReDefAttrs = patDef.globalReDefAttrs
+case class Structure_Pattern(extPatDef: ExtPatDef) extends ConstrPattern
+case class Attribute_Pattern(extPatDef: OrgPatDef) extends ConstrPattern
+case class Predicate_Pattern(extPatDef:OrgPatDef) extends ConstrPattern
+case class Strict_Pattern(extPatDef: OrgPatDef) extends ConstrPattern
+sealed trait FunctorPatterns extends ConstrPattern
+sealed trait RedefinableFunctorPatterns extends FunctorPatterns {
+  def extendedOrgPatDef: OrgPatDef
+  override def extPatDef: ExtendedPatDefs = extendedOrgPatDef
 }
-case class AggregateFunctor_Pattern(patDef: ExtPatDef) extends FunctorPatterns
-case class ForgetfulFunctor_Pattern(patDef: ExtPatDef) extends FunctorPatterns
-case class SelectorFunctor_Pattern(patDef:ExtPatDef) extends FunctorPatterns
-case class InfixFunctor_Pattern(patDef: OrgPatDef) extends RedefinableFunctorPatterns
-case class CircumfixFunctor_Pattern(patDef: OrgPatDef, _right_Circumflex_Symbol: Right_Circumflex_Symbol) extends RedefinableFunctorPatterns
+case class AggregateFunctor_Pattern(extPatDef: ExtPatDef) extends FunctorPatterns
+case class ForgetfulFunctor_Pattern(extPatDef: ExtPatDef) extends FunctorPatterns
+case class SelectorFunctor_Pattern(extPatDef:ExtPatDef) extends FunctorPatterns
+case class InfixFunctor_Pattern(extendedOrgPatDef: OrgPatDef) extends RedefinableFunctorPatterns
+case class CircumfixFunctor_Pattern(extendedOrgPatAttrs: OrgPatAttrs, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci:List[Locus], _locis:List[Loci]) extends RedefinableFunctorPatterns {
+  def extendedOrgPatDef = OrgPatDef(extendedOrgPatAttrs, _loci:List[Locus], _locis:List[Loci])
+}
 
 sealed trait Registrations extends DeclarationLevel
 /**
