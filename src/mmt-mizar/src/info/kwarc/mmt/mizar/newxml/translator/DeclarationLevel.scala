@@ -96,7 +96,7 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
-    val patternNr = strDef._strPat.extPatDef.extPatAttrs.patAttr.patternnr.patternnr
+    val patternNr = strDef._strPat.patDef.globalDefAttrs.globalPatternNr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
@@ -121,7 +121,8 @@ object definitionTranslator {
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       if (defn.isEmpty) {
         if(_redef.occurs) {
-          val origDecl = TranslatorUtils.computeGlobalOrgPatternName(_attrPat)
+
+          val origDecl = TranslatorUtils.MMLIdtoGlobalName(_attrPat.globalPatternName())
           val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
           val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
           List(redef)
@@ -132,9 +133,9 @@ object definitionTranslator {
       val motherTp = TranslationController.inferType(defn.get.someCase)
       val (argNum, argTps) = (args.length, args map (_._2))
       val atrDef = defn.get match {
-        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => throw DeclarationTranslationError("Attributes can't be defined directly: "+atd, atd)
+        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
         case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
-        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => throw DeclarationTranslationError("Attributes can't be defined directly: "+atd, atd)
+        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
         case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
       }
       List(atrDef)
@@ -150,8 +151,8 @@ object definitionTranslator {
     if (defn.isEmpty) {
       if(_redefine.occurs) {
         //Redefinitions are only possible for Infix or Circumfix Functors
-        val orgExtPatAttrs = _pat.orgPatAttrs
-        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(_pat.extendedOrgPatAttrs)
+        val orgExtPatAttrs = _pat.patDef
+        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(orgExtPatAttrs)
         val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
         val redef = TranslationController.makeConstant(gn.name, Some(ret getOrElse oldDef.tp.get), oldDef.df)
         List(redef)
