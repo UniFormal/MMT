@@ -30,7 +30,7 @@ object ProcessedFactDebugInfo {
       // avoid bubbling up exceptions to always have at least some debug information instead of none
       c.tp.map(_.toString).getOrElse("<no type available>"),
       c.df.map(_.toString).getOrElse("<no definiens available>"),
-      Try(presenter.presentToString(c)).getOrElse("<presentation threw exception>"),
+      Try(presenter.asString(c)).getOrElse("<presentation threw exception>"),
       Try(c.toNode.toString()).getOrElse("<conversion to XML threw exception>")
     )
   }
