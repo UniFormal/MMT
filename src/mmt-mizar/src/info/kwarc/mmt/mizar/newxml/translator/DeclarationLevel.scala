@@ -6,8 +6,13 @@ import info.kwarc.mmt.api.objects.VarDecl
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, TranslatorUtils, expressionTranslator, justificationTranslator}
-import org.omdoc.latin.foundations.mizar.MizarPatterns._
+import info.kwarc.mmt.mizar.newxml.translator._
+import expressionTranslator._
+import justificationTranslator._
+import termTranslator._
+import typeTranslator._
+import contextTranslator._
+import formulaTranslator._
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
@@ -22,7 +27,7 @@ object subitemTranslator {
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { ??? }
   def translate_Loci_Declaration(loci_Declaration: Loci_Declaration): List[(Option[LocalName], objects.Term)] = {
-    val varContext = loci_Declaration._qualSegms._children flatMap contextTranslator.translate_Context
+    val varContext = loci_Declaration._qualSegms._children flatMap(translate_Context(_))
     varContext map {vd => (Some(vd.name), vd.tp.get)}
   }
   def translate_Cluster(cluster: Cluster) = { ??? }
@@ -86,20 +91,19 @@ object definitionTranslator {
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil): List[symbols.Declaration] = {
     val l = args.length
     implicit var selectors: List[(Int, VarDecl)] = Nil
-    val substr: List[objects.Term] = strDef._ancestors._structTypes.map(typeTranslator.translate_Type) map {
+    val substr: List[objects.Term] = strDef._ancestors._structTypes.map(translate_Type) map {
       case ApplyGeneral(typeDecl, args) => typeDecl
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
-    //val strName = structure_Definition._rendering._aggrFuncPat.extPatDef.extPatAttr.patAttr.spell.spelling
     val patternNr = strDef._strPat.extPatDef.extPatAttrs.patAttr.patternnr.patternnr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
-			val tp = typeTranslator.translate_Type(field_Segment._tp)
+			val tp = translate_Type(field_Segment._tp)
       field_Segment._selectors._loci.reverse map { case selector =>
-        val selName = contextTranslator.translate_Locus(selector._loci)
+        val selName = translate_Locus(selector._loci)
         val sel = (selector.posNr.nr.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
@@ -117,8 +121,7 @@ object definitionTranslator {
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       if (defn.isEmpty) {
         if(_redef.occurs) {
-          // TODO: Replace currendAid by globalOrgConstrFile and shortKind by globalKind, when available
-          val origDecl = TranslatorUtils.makeGlobalName(TranslationController.currentAid, atd.shortKind, _attrPat.orgPatDef.orgPatAttrs.orgconstrnr)
+          val origDecl = TranslatorUtils.computeGlobalOrgPatternName(_attrPat)
           val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
           val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
           List(redef)
@@ -141,15 +144,14 @@ object definitionTranslator {
     case fd @ Functor_Definition(_, _redefine, _pat, _tpSpec, _def) =>
   val gn = TranslatorUtils.MMLIdtoGlobalName(fd.mizarGlobalName())
     val name = gn.name.toString
-    val specType = _tpSpec map (tpSpec => typeTranslator.translate_Type(tpSpec._types))
+    val specType = _tpSpec map (tpSpec => translate_Type(tpSpec._types))
     val defn = _def.map(definiensTranslator.translate_Definiens(_))
     val ret = if (specType.isDefined) {specType} else { defn.map(d => TranslationController.inferType(d.someCase)) }
     if (defn.isEmpty) {
       if(_redefine.occurs) {
         //Redefinitions are only possible for Infix or Circumfix Functors
         val orgExtPatAttrs = _pat.orgPatAttrs
-        // TODO: Replace currendAid by globalOrgConstrFile and shortKind by globalKind, when available
-        val origDecl = TranslatorUtils.makeGlobalName(TranslationController.currentAid, fd.shortKind, orgExtPatAttrs.orgconstrnr)
+        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(_pat.extendedOrgPatAttrs)
         val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
         val redef = TranslationController.makeConstant(gn.name, Some(ret getOrElse oldDef.tp.get), oldDef.df)
         List(redef)
@@ -171,7 +173,7 @@ object definitionTranslator {
     val declarationPath = TranslatorUtils.makeNewGlobalName("Mode", patternNr)
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
-        val tp = typeTranslator.translate_Type(_tp)
+        val tp = translate_Type(_tp)
         List(TranslationController.makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
       case stm @ Standard_Mode(_tpSpec, _def) =>
         val name = declarationPath.name.toString
@@ -179,7 +181,7 @@ object definitionTranslator {
         val defnO = _def map(definiensTranslator.translate_Definiens(_))
         if (defnO.isEmpty) {
           assert(_tpSpec.isDefined)
-          List(TranslationController.makeConstant(declarationPath.name, typeTranslator.translate_Type(_tpSpec.get._types)))
+          List(TranslationController.makeConstant(declarationPath.name, translate_Type(_tpSpec.get._types)))
         }
         val defn = defnO.get
         val modeDef = defn match {
@@ -194,10 +196,6 @@ object definitionTranslator {
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
-  /*def translate_Redefine(red:Redefine, defn:Definition, elabDefn: info.kwarc.mmt.api.symbols.Declaration):symbols.Declaration = {
-    // TODO: translate the redefine
-    elabDefn
-  }*/
 }
 
 object clusterTranslator {
@@ -205,21 +203,21 @@ object clusterTranslator {
     //TODO: Also translate the proofs of the correctness conditions
     cl._registrs map {
       case Conditional_Registration(pos, _attrs, _at, _tp) =>
-        val tp = typeTranslator.translate_Type(_tp)
+        val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val List(at) = attributeTranslator.translateAttributes(_at)
         val name = "existReg:"+pos.position
         conditionalRegistrationInstance(name, args map(_._2), tp, adjs, at)
       case Existential_Registration(pos, _adjClust, _tp) =>
-        val tp = typeTranslator.translate_Type(_tp)
+        val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
         val name = "existReg:"+pos.position
         existentialRegistrationInstance(name, args map(_._2), tp, adjs)
       case Functorial_Registration(pos, _aggrTerm, _adjCl, _tp) =>
-        val tm = termTranslator.translate_Term(_aggrTerm)
+        val tm = translate_Term(_aggrTerm)
         val adjs = attributeTranslator.translateAttributes(_adjCl)
         val isQualified = _tp.isDefined
-        val tp = _tp map typeTranslator.translate_Type getOrElse({
+        val tp = _tp map translate_Type getOrElse({
           TranslationController.inferType(tm)})
         val name = "funcReg:"+pos.position
         if (isQualified) {
@@ -232,7 +230,7 @@ object clusterTranslator {
         sort match {
           case "sethood" =>
             val just = justificationTranslator.translate_Justification(_just)
-            val tp = typeTranslator.translate_Type(_tp)
+            val tp = translate_Type(_tp)
             val name = LocalName("sethood_of_"+tp.toStr(true))
             val tpO = Some(Apply(Mizar.constant("sethood"), tp))
             TranslationController.makeConstant(name, tpO, Some(just))
@@ -335,7 +333,7 @@ object definiensTranslator {
   def translate_CaseBasedExpr(defn:CaseBasedExpr): CaseByCaseDefinien = {
     defn.check()
     if (defn.isSingleCase()) {
-      DirectPartialCaseByCaseDefinien(expressionTranslator.translate_Expression(defn.singleCasedExpr._expr.get))
+      DirectPartialCaseByCaseDefinien(translate_Expression(defn.singleCasedExpr._expr.get))
     } else {
       translate_Cased_Expression(defn.partialCasedExpr)
     }
@@ -343,12 +341,12 @@ object definiensTranslator {
   def translate_Cased_Expression(partDef:PartialDef): CaseByCaseDefinien = {
     assert(partDef._partDefs.isDefined)
     partDef.check()
-    val defRes = partDef._otherwise.get._expr map expressionTranslator.translate_Expression
+    val defRes = partDef._otherwise.get._expr map translate_Expression
     var isIndirect = false
     val complCases = partDef._partDefs.get._partDef map {
       case Partial_Definiens(_expr, _form) =>
-        val caseCond = formulaTranslator.translate_Formula(_form)
-        val caseRes = expressionTranslator.translate_Expression(_expr)
+        val caseCond = translate_Formula(_form)
+        val caseRes = translate_Expression(_expr)
         if (caseRes.freeVars.contains(LocalName("it"))) {isIndirect = true}
         (caseCond, caseRes)
     }
