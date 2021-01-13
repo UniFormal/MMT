@@ -196,7 +196,30 @@ object definitionTranslator {
   }
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
-  def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
+  def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = predicate_Definition match {
+    case prd@Predicate_Definition(a, _redef, _predPat, _def) =>
+      val gn = TranslatorUtils.MMLIdtoGlobalName(prd.mizarGlobalName())
+      val name = gn.name.toString
+      val defn = _def.map(definiensTranslator.translate_Definiens(_))
+      if (defn.isEmpty) {
+        if (_redef.occurs) {
+          val origDecl = TranslatorUtils.MMLIdtoGlobalName(_predPat.globalPatternName())
+          val oldDef = TranslationController.controller.get(origDecl) match {
+            case decl: symbols.Constant => decl
+          }
+          val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
+          List(redef)
+        } else {
+          ???
+        }
+      }
+      val (argNum, argTps) = (args.length, args map (_._2))
+      val predDef = defn.get match {
+        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialPredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, defRes)
+        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompletePredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes)
+      }
+      List(predDef)
+  }
 }
 
 object clusterTranslator {
