@@ -220,7 +220,7 @@ case class OrgnlExtObjAttrs(posNr:PosNr, formatNr: FormatNr, patternNr:PatternNr
  * @param globalObjAttrs
  * @param patternnr
  */
-case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos:Position, patternnr:PatternNr, globalObjAttrs: GlobalObjAttrs) extends globallyReferencingObjAttrs
+case class PatternAttrs(formatdes:String, formatNr:FormatNr, spell:Spelling, pos:Position, patternnr:PatternNr) extends Group
 /*
 /**
  *
@@ -258,18 +258,21 @@ case class OrgPatAttrs(extPatAttr:ExtPatAttrs, orgconstrnr:Int, globalReDefAttrs
  * @param globalObjAttrs
  * @param _locis
  */
-sealed trait PatDefs extends globallyReferencingObjAttrs {
+sealed trait PatDefs extends globallyReferencingReDefObjAttrs {
   def patDef : PatDef
-  def globalObjAttrs: GlobalObjAttrs
+  def globalReDefAttrs: GlobalReDefAttrs
 }
-case class PatDef(patAttr:PatternAttrs, globalObjAttrs: GlobalObjAttrs, _locis:List[Loci]) extends PatDefs {
+case class PatDef(patAttr:PatternAttrs, globalReDefAttrs: GlobalReDefAttrs, _locis:List[Loci]) extends PatDefs {
   override def patDef: PatDef = this
 }
-sealed trait ExtendedPatDef extends globallyReferencingConstrObjAttrs with PatDefs {
-  def patDef: PatDef
-  def constr:String
-  def extPatDef : ExtPatDef = ExtPatDef(patDef, constr, globalDefAttrs)
-  def globalDefAttrs: GlobalDefAttrs
+sealed trait ExtendedPatDef extends globallyReferencingReDefObjAttrs with PatDefs {
+  def extPatAttr:ExtPatAttr
+  def _locis:List[Loci]
+  def patDef: PatDef = PatDef(extPatAttr.patAttr, globalReDefAttrs, _locis)
+  def globalReDefAttrs: GlobalReDefAttrs = extPatAttr.globalReDefAttrs
+  override def globalDefAttrs: GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
+  def extPatDef : ExtPatDef = ExtPatDef(extPatAttr, _locis)
+  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
 }
 /**
  *
@@ -282,16 +285,19 @@ sealed trait ExtendedPatDef extends globallyReferencingConstrObjAttrs with PatDe
  * @param globalConstrObjAttrs
  * @param _loci
  */
-case class ExtPatDef(patDef:PatDef, constr:String, globalDefAttrs: GlobalDefAttrs) extends ExtendedPatDef
+case class ExtPatAttr(patAttr:PatternAttrs, constr:String, globalReDefAttrs: GlobalReDefAttrs) extends Group
+case class ExtPatDef(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends ExtendedPatDef
 sealed trait ExtendedOrgPatDef extends ExtendedPatDef with globallyReferencingReDefObjAttrs  {
-  def extPatDef: ExtPatDef
-  def orgconstrnr:Int
+  def orgExtPatAttr: OrgExtPatAttr
   def _loci: List[Locus]
-  def orgPatDef : OrgPatDef = OrgPatDef(extPatDef, orgconstrnr, globalReDefAttrs, _loci)
+  def _locis:List[Loci]
+  def orgPatDef : OrgPatDef = OrgPatDef(orgExtPatAttr, _loci, _locis)
+  override def extPatDef: ExtPatDef = orgPatDef.extPatDef
+  override def extPatAttr: ExtPatAttr = extPatDef.extPatAttr
   override def patDef: PatDef = extPatDef.patDef
-  override def constr: String = extPatDef.constr
-  def globalReDefAttrs: GlobalReDefAttrs
+  override def globalReDefAttrs: GlobalReDefAttrs = orgExtPatAttr.globalReDefAttrs
 }
+case class OrgExtPatAttr(patAttr:PatternAttrs, constr:String, orgconstrnr:Int, globalReDefAttrs: GlobalReDefAttrs) extends Group
 /**
  *
  * @param formatdes
@@ -305,7 +311,7 @@ sealed trait ExtendedOrgPatDef extends ExtendedPatDef with globallyReferencingRe
  * @param _loci
  * @param _locis
  */
-case class OrgPatDef(override val extPatDef:ExtPatDef, orgconstrnr:Int, globalReDefAttrs: GlobalReDefAttrs, _loci:List[Locus]) extends ExtendedOrgPatDef
+case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends ExtendedOrgPatDef
 case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varNr: VarNr) extends Group {
   def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varNr.varnr.toString
 }
