@@ -199,6 +199,20 @@ object directCompletePredicateDef extends PredicateDefinitionInstance {
 }
 
 trait AttributeDefinitionInstance
+object directCompleteAttributeDefinitionInstance extends AttributeDefinitionInstance {
+  def apply(name: String, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term]) = {
+    assert(argTypes.length == argNum)
+    assert(cases.length == caseNum && caseRes.length == caseNum)
+    MizarPatternInstance(name, "directComplAttrDef", List(OMI(argNum), flatten(argTypes), motherTp, OMI(caseNum), flatten(cases),flatten(caseRes)))
+  }
+}
+object directPartialAttributeDefinitionInstance extends AttributeDefinitionInstance {
+  def apply(name: String, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term) = {
+    assert(argTypes.length == argNum)
+    assert(cases.length == caseNum && caseRes.length == caseNum)
+    MizarPatternInstance(name, "directPartAttrDef", List(OMI(argNum), flatten(argTypes), motherTp, OMI(caseNum), flatten(cases),flatten(caseRes), defRes))
+  }
+}
 object indirectCompleteAttributeDefinitionInstance extends AttributeDefinitionInstance {
   def apply(name: String, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term]) = {
     assert(argTypes.length == argNum)
