@@ -1,11 +1,14 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.{LocalName, objects}
-import info.kwarc.mmt.api.objects.{OMMOD, OMV}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.syntax.{Arguments, Claim, ConstrExtObjAttrs, Contradiction, DeclarationLevel, Expression, ExtObjAttrs, Negated_Formula, ObjectLevel, OrgnlExtObjAttrs, Position, RedObjSubAttrs, Sort, Spelling, Standard_Type, Subitem, Term, Type, Variable, VariableSegments, Variable_Segments, globallyReferencingConstrObjAttrs, globallyReferencingObjAttrs, referencingConstrObjAttrs, referencingObjAttrs}
-import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, termTranslator, variableTranslator}
+import info.kwarc.mmt.api._
+import notations.NotationContainer
+import objects.{OMMOD, OMV}
+import info.kwarc.mmt.mizar.newxml.syntax._
+import Utils.MizarGlobalName
+import info.kwarc.mmt.mizar.newxml.translator._
+import termTranslator._
+import typeTranslator._
+import variableTranslator._
 
 sealed abstract class TranslatingError(str: String) extends Exception(str)
 class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
@@ -35,6 +38,7 @@ object TranslatorUtils {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
   def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
+  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
   def computeStrGlobalName(tpAttrs: globallyReferencingConstrObjAttrs) = {
     makeGlobalName(tpAttrs.globalPatternFile, "Struct-Type", tpAttrs.globalPatternNr)
   }
@@ -44,7 +48,7 @@ object TranslatorUtils {
     TranslationController.add(const)
   }
   def conforms(A:Type, B:Type) : Boolean = {
-    val List(a,b) = List(A,B).map(typeTranslator.translate_Type(_))
+    val List(a,b) = List(A,B).map(translate_Type(_))
     val List(as, bs) = List(a,b) map TranslationController.simplifyTerm
     as == bs
   }
@@ -59,8 +63,8 @@ object TranslatorUtils {
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
   }
-  def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(variableTranslator.translate_Variable)}
-  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(variableTranslator.translate_Variable)}
+  def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(translate_Variable)}
+  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(translate_Variable)}
   def firstVariableUniverse(varSegms: VariableSegments) : Type = {
     assert(! varSegms._vars().isEmpty)
     varSegms._tp()
@@ -68,6 +72,6 @@ object TranslatorUtils {
   def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
     varSegm._vars.head._tp()
   }
-  def translateArguments(args: Arguments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {args._children map termTranslator.translate_Term }
+  def translateArguments(args: Arguments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {args._children map translate_Term }
   def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = objects.OMS(computeGlobalPatternName(refObjAttrs))
 }
