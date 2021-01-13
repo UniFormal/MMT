@@ -9,23 +9,14 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
 
 /**
-  * Presents (hopefully) parsable MMT surface syntax from in-memory MMT knowledge items.
+  * Presents (hopefully) parsable MMT surface syntax from [[StructuralElement]]s like
+  * [[Theory theories]], [[View views]], [[Constant constants]], etc.
   *
-  * Usage
-  * {{{
-  * import info.kwarc.mmt.api.presentation
-  * import info.kwarc.mmt.api.presentation.MMTSyntaxPresenter
-  *
-  * val presenter = state.ctrl.extman.getOrAddExtension(classOf[MMTSyntaxPresenter], "present-text-notations").getOrElse(
-  *   throw new Exception // do something
-  * )
-  *
-  * val stringRenderer = new presentation.StringBuilder
-  * val yourTheory : Theory = ???
-  * presenter(yourTheory)
-  *
-  * println(stringRenderer.get)
-  * }}}
+  * @example ''controller.presenter.asString(element)'' to present a
+  *          [[StructuralElement]] ''element'' to a String.
+  *          If you repeatedly present elements to strings, it might be more efficient
+  *          to use the [[apply()]] method with a [[StringBuilder]] (from the
+  *          mmt.api.presentation API!)
   *
   * @see The server ''info.kwarc.mmt.api.web.SyntaxPresenterServer'' exposes this syntax presenter to the web.
   *
@@ -59,21 +50,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     * @param standalone if true, include appropriate header and footer
     * @param rh         output stream
     */
-  override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler) {
+  override def apply(element: StructuralElement, standalone: Boolean = false)(implicit rh: RenderingHandler): Unit = {
     controller.simplifier(element) //TODO simplifying here is bad for elements that are not part of the diagram yet
     present(element, rh)(new PersistentNamespaceMap)
-  }
-
-  /**
-    * Present an element such as a [[Theory]], a [[View]] or a [[Declaration]] to a string.
-    *
-    * Behavior equals [[apply()]] with [[presentation.StringBuilder]] as the [[RenderingHandler]].
-    */
-  def presentToString(element: StructuralElement, standalone: Boolean = false): String = {
-    val stringRenderer = new presentation.StringBuilder
-    apply(element, standalone)(stringRenderer)
-
-    stringRenderer.get
   }
 
   /**
@@ -168,7 +147,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       case dd: DerivedDeclaration =>
         rh << dd.feature + " "
         controller.extman.get(classOf[StructuralFeature], dd.feature) match {
-          case None => rh << dd.name + " (implementation is not known)"
+          case None => rh << dd.name.toString + " (implementation is not known)"
           case Some(sf) =>
             val header = sf.makeHeader(dd)
             apply(header, Some(dd.path $ TypeComponent))(rh)

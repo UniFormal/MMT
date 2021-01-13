@@ -75,16 +75,11 @@ class SyntaxPresenterServer extends ServerExtension(SyntaxPresenterServer.pathPr
 
     val element = controller.get(elementPath)
 
-    val surfaceSyntax = {
-      val sb = new presentation.StringBuilder
-
-      if (element.feature == Diagram.feature && elementPath.isInstanceOf[MPath]) {
-        val outputModules = Diagram.parseOutput(elementPath.asInstanceOf[MPath])(controller.globalLookup)
-        outputModules.map(controller.get).foreach(controller.presenter(_)(sb))
-      } else {
-        controller.presenter(element)(sb)
-      }
-      sb.get
+    val surfaceSyntax = if (element.feature == Diagram.feature && elementPath.isInstanceOf[MPath]) {
+      val outputModules = Diagram.parseOutput(elementPath.asInstanceOf[MPath])(controller.globalLookup)
+      outputModules.map(controller.get).map(controller.presenter.asString).mkString("")
+    } else {
+      controller.presenter.asString(element)
     }
 
     if (request.parsedQuery(SyntaxPresenterServer.plainFlag).isDefined) {
