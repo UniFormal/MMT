@@ -52,11 +52,11 @@ object TranslatorUtils {
     val List(as, bs) = List(a,b) map TranslationController.simplifyTerm
     as == bs
   }
-  def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),Sort("Negated-Formula")),form)
-  def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),Sort("Contradiction"))))
+  def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),"Negated-Formula"),form)
+  def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),"Contradiction")))
   def emptyPosition() = Position("translation internal")
   def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(OrgnlExtObjAttrs(_, _, _, Spelling("Element"), Sort("Mode"), orgnNrConstrNr, globalReDefAttrs), _, _, elementArgs) if (elementArgs._children.length == 1) =>
+    case Standard_Type(OrgnlExtObjAttrs(_, _, _, "Element", "Mode", orgnNrConstrNr, globalReDefAttrs), _, _, elementArgs) if (elementArgs._children.length == 1) =>
       elementArgs match { case Arguments(List(u)) => u }
     case _ => throw ExpressionTranslationError("Expected a type of form\"Element of <tp>\" for some type tp. ", tp)
   }

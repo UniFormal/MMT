@@ -78,7 +78,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = defn match {
+  def translate_Definition(defn:Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil, corr_conds: List[Correctness_Condition] = Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = defn match {
     case at: Attribute_Definition => translate_Attribute_Definition(at)
     case cd: Constant_Definition => translate_Constant_Definition(cd)
     case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)
@@ -96,7 +96,7 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
-    val patternNr = strDef._strPat.globalPatternNr
+    val patternNr = strDef._strPat.patDef.globalDefAttrs.globalPatternNr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
@@ -152,7 +152,7 @@ object definitionTranslator {
       if(_redefine.occurs) {
         //Redefinitions are only possible for Infix or Circumfix Functors
         val orgExtPatAttrs = _pat.patDef
-        val origDecl = TranslatorUtils.MMLIdtoGlobalName(_pat.globalPatternName())
+        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(orgExtPatAttrs)
         val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
         val redef = TranslationController.makeConstant(gn.name, Some(ret getOrElse oldDef.tp.get), oldDef.df)
         List(redef)
@@ -170,7 +170,7 @@ object definitionTranslator {
     List(funcDef)
   }
   def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = {
-    val patternNr = mode_Definition._pat.patDef.patAttr.patternnr.patternnr
+    val patternNr = mode_Definition._pat.patDef.patAttr.patternnr
     val declarationPath = TranslatorUtils.makeNewGlobalName("Mode", patternNr)
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
@@ -251,14 +251,19 @@ object blockTranslator {
     var args: List[(Option[LocalName], objects.Term)] = Nil
     var resDecls:List[symbols.Declaration] = Nil
 
-    definitionItems foreach { it: Item =>
+    definitionItems .zipWithIndex foreach { case (it: Item, ind: Int) =>
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
         case defn: Definition =>
-          val translDef = definitionTranslator.translate_Definition(defn)(args)
+          val corr_conds = definitionItems.drop(ind).takeWhile({
+            case it: Correctness_Condition => true
+            case _ => false
+          }) map {case corCond: Correctness_Condition => corCond}
+          val translDef = definitionTranslator.translate_Definition(defn)(args, corr_conds)
           resDecls = resDecls ++ translDef
         case prop:Property => ???
+        case correctness_Condition: Correctness_Condition =>
         case defIt => throw DeclarationTranslationError("Definition expected inside definition-item.\n Instead found " + defIt.kind+". ", defIt)
       }
     }

@@ -28,11 +28,11 @@ object termTranslator {
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _args) =>
       val strGn = TranslatorUtils.computeStrGlobalName(tpAttrs)
-      val sel = PatternUtils.referenceExtDecl(strGn, tpAttrs.spell.spelling)
+      val sel = PatternUtils.referenceExtDecl(strGn, tpAttrs.spelling)
       val args = _args map(translate_Term)
       ApplyGeneral(sel, args)
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
-      assert(tpAttrs.sort.sort == "Functor-Term")
+      assert(tpAttrs.sort == "Functor-Term")
       val gn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
       val args = TranslatorUtils.translateArguments(_args)
       ApplyGeneral(objects.OMS(gn), args)
@@ -47,7 +47,7 @@ object termTranslator {
           "\nThe only known selectors are: \n"+selectors.toString(), ist))
       referencedSelector.toTerm
     case Infix_Term(tpAttrs, infixedArgs) =>
-      assert(tpAttrs.sort == "Functor-Term")
+      assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
       val gn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
       val args = TranslatorUtils.translateArguments(infixedArgs._args)
       ApplyGeneral(objects.OMS(gn), args)
