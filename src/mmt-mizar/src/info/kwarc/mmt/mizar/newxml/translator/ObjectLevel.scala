@@ -27,7 +27,7 @@ object termTranslator {
       val args = TranslatorUtils.translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _args) =>
-      val strGn = TranslatorUtils.computeStrGlobalName(tpAttrs)
+      val strGn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
       val sel = PatternUtils.referenceExtDecl(strGn, tpAttrs.spelling)
       val args = _args map(translate_Term)
       ApplyGeneral(sel, args)

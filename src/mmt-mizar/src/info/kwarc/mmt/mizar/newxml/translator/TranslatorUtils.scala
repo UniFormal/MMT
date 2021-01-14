@@ -19,12 +19,8 @@ case class DeclarationTranslationError(str: String, decl: Subitem) extends Decla
   }
 }
 class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
-case class ExpressionTranslationError(str: String, tm: Expression) extends ObjectLevelTranslationError(str, tm) {
-  def apply(str: String, expr: Expression) = {
-    new ObjectLevelTranslationError(str+
-      "\nObjectTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
-  }
-}
+case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
+  "\nObjectTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
     val ln = LocalName(kind+":"+nr)
@@ -39,9 +35,6 @@ object TranslatorUtils {
   }
   def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
   def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
-  def computeStrGlobalName(tpAttrs: globallyReferencingConstrObjAttrs) = {
-    makeGlobalName(tpAttrs.globalPatternFile, "Struct-Type", tpAttrs.globalPatternNr)
-  }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
@@ -56,7 +49,7 @@ object TranslatorUtils {
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),"Contradiction")))
   def emptyPosition() = Position("translation internal")
   def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(OrgnlExtObjAttrs(_, _, _, "Element", "Mode", orgnNrConstrNr, globalReDefAttrs), _, _, elementArgs) if (elementArgs._children.length == 1) =>
+    case Standard_Type(OrgnlExtObjAttrs(_, _, _, "Element", _, _, globalReDefAttrs), _, _, elementArgs) if (elementArgs._children.length == 1) =>
       elementArgs match { case Arguments(List(u)) => u }
     case _ => throw ExpressionTranslationError("Expected a type of form\"Element of <tp>\" for some type tp. ", tp)
   }

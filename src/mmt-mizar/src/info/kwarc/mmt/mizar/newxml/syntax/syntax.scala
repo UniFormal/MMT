@@ -354,14 +354,16 @@ sealed trait MMLIdSubitem extends Subitem {
 }
 case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
 case class Definition_Item(_block:Block) extends Subitem {
+  //verify addumptions for translation
   def check() = {
     val kind = _block.kind
     if (! allowedKinds.contains(kind)) {
-      throw new DeclarationLevelTranslationError("Expected a definition item of one of the kinds: "+allowedKinds, this)
+      throw new DeclarationLevelTranslationError("Expected a definition item of one of the kinds: "+allowedKinds+
+        "\nBut found: "+kind, this)
     }
     kind
   }
-  def allowedKinds = List("Definitional-Block", "Registration-Block")
+  def allowedKinds = List("Definitional-Block", "Registration-Block", "Notation-Block")
 }
 
 /**
@@ -399,11 +401,11 @@ case class Case_Head(_ass:Assumptions) extends Heads
 sealed trait Nyms extends Subitem
 case class Pred_Antonym(_predPats:List[Predicate_Pattern]) extends Nyms
 case class Pred_Synonym(_predPats:List[Predicate_Pattern]) extends Nyms
-case class Attr_Synonym(_predPats:List[Attribute_Pattern]) extends Nyms
-case class Attr_Antonym(_predPats:List[Attribute_Pattern]) extends Nyms
-case class Func_Synonym(_predPats:List[FunctorPatterns]) extends Nyms
-case class Func_Antonym(_predPats:List[FunctorPatterns]) extends Nyms
-case class Mode_Synonym(_predPats:List[Mode_Pattern]) extends Nyms
+case class Attr_Synonym(_attrPats:List[Attribute_Pattern]) extends Nyms
+case class Attr_Antonym(_attrPats:List[Attribute_Pattern]) extends Nyms
+case class Func_Synonym(_funcPats:List[Functor_Patterns]) extends Nyms
+case class Func_Antonym(_funcPats:List[Functor_Patterns]) extends Nyms
+case class Mode_Synonym(_modePats:List[Mode_Pattern]) extends Nyms
 
 sealed trait Statement extends Subitem
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
@@ -418,7 +420,7 @@ case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) exte
 
 sealed trait Definition extends Subitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctorPatterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
+case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 /**
  * definition of a structure, takes ancestors (a list of structures it inherits from),
@@ -820,13 +822,13 @@ case class Structure_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends 
 case class Attribute_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns
 case class Predicate_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns
 case class Strict_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns
-sealed trait FunctorPatterns extends Patterns with ConstrPattern
-sealed trait RedefinableFunctorPatterns extends FunctorPatterns with RedefinablePatterns
-case class AggregateFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends FunctorPatterns
-case class ForgetfulFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends FunctorPatterns
-case class SelectorFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends FunctorPatterns
-case class InfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctorPatterns
-case class CircumfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctorPatterns
+sealed trait Functor_Patterns extends Patterns with ConstrPattern
+sealed trait RedefinableFunctor_Patterns extends Functor_Patterns with RedefinablePatterns
+case class AggregateFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
+case class ForgetfulFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
+case class SelectorFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
+case class InfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
+case class CircumfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
 
 sealed trait Registrations extends DeclarationLevel
 /**

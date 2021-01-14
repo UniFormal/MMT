@@ -298,7 +298,7 @@ object qualFunctorRegistrationInstance extends RegistrationInstance {
 
 trait NotationInstance
 class NymicNotation(key:String) extends NotationInstance {
-  def apply(name: String, argNum: Int, argTypes: List[Term], v: Term): Unit = {
+  def apply(name: String, argNum: Int, argTypes: List[Term], v: Term): DerivedDeclaration = {
     assert(argTypes.length == argNum)
     MizarPatternInstance(name, key, List(OMI(argNum),flatten(argTypes),v))
   }

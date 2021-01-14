@@ -13,6 +13,7 @@ import termTranslator._
 import typeTranslator._
 import contextTranslator._
 import formulaTranslator._
+import info.kwarc.mmt.lf.structuralfeatures.StructuralFeatureUtils
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
@@ -20,9 +21,8 @@ object subitemTranslator {
     definition_Item.check() match {
       case "Definitional-Block" => blockTranslator.translate_Definitional_Block(definition_Item._block)
       case "Registration-Block" => blockTranslator.translate_Registration_Block(definition_Item._block)
+      case "Notation-Block" => blockTranslator.translate_Notation_Block(definition_Item._block)
     }
-
-
   }
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { ??? }
@@ -52,14 +52,40 @@ object headTranslator {
 }
 
 object nymTranslator {
-  def translate_Nym(nym:Nyms) = { ??? }
-  def translate_Pred_Antonym(pred_Antonym: Pred_Antonym) = {}
-  def translate_Pred_Synonym(pred_Synonym: Pred_Synonym) = {}
-  def translate_Attr_Synonym(attr_Synonym: Attr_Synonym) = {}
-  def translate_Attr_Antonym(attr_Antonym: Attr_Antonym) = {}
-  def translate_Func_Synonym(func_Synonym: Func_Synonym) = {}
-  def translate_Func_Antonym(func_Antonym: Func_Antonym) = {}
-  def translate_Mode_Synonym(mode_Synonym: Mode_Synonym) = {}
+  def translate_Nym(nym:Nyms)(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = nym match {
+    case Pred_Antonym(_predPats) => translate_Pred_Antonym(_predPats)
+    case Pred_Synonym(_predPats) =>translate_Pred_Synonym(_predPats)
+    case Attr_Synonym(_attrPats) =>translate_Attr_Synonym(_attrPats)
+    case Attr_Antonym(_attrPats) =>translate_Attr_Antonym(_attrPats)
+    case Func_Synonym(_funcPats) =>translate_Func_Synonym(_funcPats)
+    case Func_Antonym(_funcPats) =>translate_Func_Antonym(_funcPats)
+    case Mode_Synonym(_modePats) =>translate_Mode_Synonym(_modePats)
+  }
+  def translate_Pred_Antonym(_predPats: List[Predicate_Pattern]): List[symbols.Declaration] = {???}
+  def translate_Pred_Synonym(_predPats: List[Predicate_Pattern]): List[symbols.Declaration] = {???}
+  def translate_Attr_Synonym(_attrPats: List[Attribute_Pattern])(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = {
+    val attrs = _attrPats map(p=>TranslatorUtils.MMLIdtoGlobalName(p.globalPatternName())) map (gn => TranslationController.controller.get(StructuralFeatureUtils.externalName(gn, LocalName("attribute"))))
+    attrs map { case c: symbols.Constant =>
+      val (name, tp, defO) = (c.name, c.tp.get, c.df)
+      val FunType(addArgs, prop) = tp
+      val allArgs = args ++ addArgs
+      val (argNum, argTps) = (allArgs.length, allArgs map (_._2))
+      synonymicNotation(name.toString, argNum, argTps, c.toTerm)
+    }
+  }
+  def translate_Attr_Antonym(_attrPats: List[Attribute_Pattern])(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = {
+    val attrs = _attrPats map(p=>TranslatorUtils.MMLIdtoGlobalName(p.globalPatternName())) map (gn => TranslationController.controller.get(StructuralFeatureUtils.externalName(gn, LocalName("attribute"))))
+    attrs map { case c: symbols.Constant =>
+      val (name, tp, defO) = (c.name, c.tp.get, c.df)
+      val FunType(addArgs, prop) = tp
+      val allArgs = args ++ addArgs
+      val (argNum, argTps) = (allArgs.length, allArgs map (_._2))
+      antonymicNotation(name.toString, argNum, argTps, c.toTerm)
+    }
+  }
+  def translate_Func_Synonym(_funcPats: List[Functor_Patterns]): List[symbols.Declaration] = {???}
+  def translate_Func_Antonym(_funcPats: List[Functor_Patterns]): List[symbols.Declaration] = {???}
+  def translate_Mode_Synonym(_modePats: List[Mode_Pattern]): List[symbols.Declaration] = {???}
 }
 
 object statementTranslator {
@@ -96,14 +122,13 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
-    val patternNr = strDef._strPat.patDef.globalDefAttrs.globalPatternNr
-    val declarationPath = TranslatorUtils.makeNewGlobalName("Struct-Type", patternNr)
+    val declarationPath = TranslatorUtils.computeGlobalPatternName(strDef._strPat)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
 			val tp = translate_Type(field_Segment._tp)
       field_Segment._selectors._loci.reverse map { case selector =>
-        val selName = translate_Locus(selector._loci)
+        val selName = objects.OMV(selector.spelling)//translate_Locus(selector._loci)
         val sel = (selector.posNr.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
@@ -310,7 +335,7 @@ object blockTranslator {
           resDecls = resDecls ++ translCluster
         case correctness_Condition: Correctness_Condition =>
         case otherIt =>
-          throw DeclarationTranslationError("Cluster expected inside registration-item.\n Instead found " + otherIt.shortKind+". ", otherIt)
+          throw DeclarationTranslationError("Found unexpected item inside registration-item: " + otherIt.shortKind+". ", otherIt)
       }
     }
     resDecls
@@ -326,6 +351,29 @@ object blockTranslator {
         translJust
       case _ => throw new java.lang.Error("justification expected inside justification-item.")
     }
+  }
+  def translate_Notation_Block(block: Block): List[symbols.Declaration] = {
+    val notationItems = block._items
+    var args: List[(Option[LocalName], objects.Term)] = Nil
+    var resDecls:List[symbols.Declaration] = Nil
+
+    notationItems.zipWithIndex foreach { case (it: Item, ind: Int) =>
+      it._subitem match {
+        case loci_Declaration: Loci_Declaration =>
+          args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
+        case nym: Nyms =>
+          val corr_conds = notationItems.drop(ind).takeWhile({
+            case it: Correctness_Condition => true
+            case _ => false
+          }) map { case corCond: Correctness_Condition => corCond }
+          val translNyms = nymTranslator.translate_Nym(nym)(corr_conds, args)
+          resDecls = resDecls ++ translNyms
+        case correctness_Condition: Correctness_Condition =>
+        case otherIt =>
+          throw DeclarationTranslationError("Cluster expected inside registration-item.\n Instead found " + otherIt.shortKind + ". ", otherIt)
+      }
+    }
+    resDecls
   }
 }
 

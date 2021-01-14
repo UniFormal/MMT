@@ -22,7 +22,7 @@ object MizarStructure {
   def elaborateAsMizarStructure(args: List[(Option[LocalName], Term)], fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
       val path = (parentTerm.module / parentTerm.name) ? vd.name
-      new OutgoingTermLevel(path,args, vd.tp.get)
+      new OutgoingTermLevel(path, args, vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
     elaborateContent(params, fieldDecls, substructs, controller)
@@ -52,21 +52,20 @@ object MizarStructure {
       Pi(LocalName("s"),structx,Mizar.prop)))
     val strictPropDecl = VarDecl(structureStrictName,typedArgsCont(
       Pi(LocalName("s"),makex,Mizar.proof(Apply(OMV(structureStrictName), OMV("s"))))))
+    val strictDecls = List(strictDecl, strictPropDecl) map (_.toConstant(parentTerm.module,Context.empty))
     val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {case (OMS(substrGN),i) =>
-      val substrPath = substrGN.module / substrGN.name
-      val (substruct, substrName, sl, sargTps, sm, sfieldDefs) = TranslationController.controller.get(substrPath) match {
-        case subStruct @ StructureInstance(substrName, sl, sargTps, _, _, sm, sfieldDefs) => (subStruct, substrName, sl, sargTps, sm, sfieldDefs)
-      }
-      val restrName = structureDefRestrName(substrName)
+      val (substrPrePath, substrName) = (substrGN.module ? substrGN.name.init, substrGN.name.head)
+      val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
+      val restrName = structureDefRestrName(substrName.toString)
       val restr = VarDecl(restrName,typedArgsCont(
-        Pi(LocalName("s"),structx,referenceExtDecl(substrGN,recTypeName))))
-      val restrSelProps = sfieldDefs map {vd =>
-        VarDecl(structureDefSubstrSelPropName(restrName,vd.name),Mizar.eq(OMV(restrName),referenceExtDecl(substrGN,restrName.toString)))
+        Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
+      val restrSelProps = subselectors map {n =>
+        VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(OMV(restrName),OMS(substrPrePath/restrName)))
       }
       restr::restrSelProps
     }
     val substrRestrDecls = substrRestr map (_.toConstant(parentTerm.module,Context.empty))
-    recordElabDecls ++ substrRestrDecls
+    recordElabDecls ++ substrRestrDecls //++ strictDecls
   }
 }
 
