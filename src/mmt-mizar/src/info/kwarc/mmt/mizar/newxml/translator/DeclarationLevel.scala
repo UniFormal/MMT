@@ -5,6 +5,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.VarDecl
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
+import PatternUtils._
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator._
 import expressionTranslator._
@@ -13,7 +14,6 @@ import termTranslator._
 import typeTranslator._
 import contextTranslator._
 import formulaTranslator._
-import info.kwarc.mmt.lf.structuralfeatures.StructuralFeatureUtils
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
@@ -52,40 +52,14 @@ object headTranslator {
 }
 
 object nymTranslator {
-  def translate_Nym(nym:Nyms)(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = nym match {
-    case Pred_Antonym(_predPats) => translate_Pred_Antonym(_predPats)
-    case Pred_Synonym(_predPats) =>translate_Pred_Synonym(_predPats)
-    case Attr_Synonym(_attrPats) =>translate_Attr_Synonym(_attrPats)
-    case Attr_Antonym(_attrPats) =>translate_Attr_Antonym(_attrPats)
-    case Func_Synonym(_funcPats) =>translate_Func_Synonym(_funcPats)
-    case Func_Antonym(_funcPats) =>translate_Func_Antonym(_funcPats)
-    case Mode_Synonym(_modePats) =>translate_Mode_Synonym(_modePats)
+  def translate_Nym(nym:Nyms)(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = {
+    val oldPat = nym._patOld
+    val newPat: Patterns = nym._patNew
+    val newName = TranslatorUtils.MMLIdtoGlobalName(newPat.globalPatternName())
+    val (_, addArgsTps, mainDecl, _) = patternTranslator.translate_Referencing_Pattern(oldPat)
+    val allArgs = args.map(_._2) ++ addArgsTps
+    List(synonymicNotation(newName.toString, allArgs.length, allArgs, mainDecl))
   }
-  def translate_Pred_Antonym(_predPats: List[Predicate_Pattern]): List[symbols.Declaration] = {???}
-  def translate_Pred_Synonym(_predPats: List[Predicate_Pattern]): List[symbols.Declaration] = {???}
-  def translate_Attr_Synonym(_attrPats: List[Attribute_Pattern])(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = {
-    val attrs = _attrPats map(p=>TranslatorUtils.MMLIdtoGlobalName(p.globalPatternName())) map (gn => TranslationController.controller.get(StructuralFeatureUtils.externalName(gn, LocalName("attribute"))))
-    attrs map { case c: symbols.Constant =>
-      val (name, tp, defO) = (c.name, c.tp.get, c.df)
-      val FunType(addArgs, prop) = tp
-      val allArgs = args ++ addArgs
-      val (argNum, argTps) = (allArgs.length, allArgs map (_._2))
-      synonymicNotation(name.toString, argNum, argTps, c.toTerm)
-    }
-  }
-  def translate_Attr_Antonym(_attrPats: List[Attribute_Pattern])(implicit cor_conds: List[Correctness_Condition] = Nil, args: List[(Option[LocalName], objects.Term)] = Nil): List[symbols.Declaration] = {
-    val attrs = _attrPats map(p=>TranslatorUtils.MMLIdtoGlobalName(p.globalPatternName())) map (gn => TranslationController.controller.get(StructuralFeatureUtils.externalName(gn, LocalName("attribute"))))
-    attrs map { case c: symbols.Constant =>
-      val (name, tp, defO) = (c.name, c.tp.get, c.df)
-      val FunType(addArgs, prop) = tp
-      val allArgs = args ++ addArgs
-      val (argNum, argTps) = (allArgs.length, allArgs map (_._2))
-      antonymicNotation(name.toString, argNum, argTps, c.toTerm)
-    }
-  }
-  def translate_Func_Synonym(_funcPats: List[Functor_Patterns]): List[symbols.Declaration] = {???}
-  def translate_Func_Antonym(_funcPats: List[Functor_Patterns]): List[symbols.Declaration] = {???}
-  def translate_Mode_Synonym(_modePats: List[Mode_Pattern]): List[symbols.Declaration] = {???}
 }
 
 object statementTranslator {
@@ -141,7 +115,7 @@ object definitionTranslator {
   }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = attribute_Definition match {
     case atd @ Attribute_Definition(a, _redef, _attrPat, _def) =>
-      val gn = TranslatorUtils.MMLIdtoGlobalName(atd.mizarGlobalName())
+      val gn = TranslatorUtils.MMLIdtoGlobalName(_attrPat.globalPatternName())
       val name = gn.name.toString
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       if (defn.isEmpty) {
@@ -158,17 +132,17 @@ object definitionTranslator {
       val motherTp = TranslationController.inferType(defn.get.someCase)
       val (argNum, argTps) = (args.length, args map (_._2))
       val atrDef = defn.get match {
-        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
-        case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
-        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
-        case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteAttributeDefinitionInstance(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
+        case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
+        case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
+        case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
+        case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes)
       }
       List(atrDef)
   }
   def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   def translate_Functor_Definition(functor_Definition: Functor_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = functor_Definition match {
     case fd @ Functor_Definition(_, _redefine, _pat, _tpSpec, _def) =>
-  val gn = TranslatorUtils.MMLIdtoGlobalName(fd.mizarGlobalName())
+  val gn = TranslatorUtils.MMLIdtoGlobalName(_pat.globalPatternName())
     val name = gn.name.toString
     val specType = _tpSpec map (tpSpec => translate_Type(tpSpec._types))
     val defn = _def.map(definiensTranslator.translate_Definiens(_))
@@ -196,7 +170,7 @@ object definitionTranslator {
   }
   def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = {
     val patternNr = mode_Definition._pat.patDef.patAttr.patternnr
-    val declarationPath = TranslatorUtils.makeNewGlobalName("Mode", patternNr)
+    val declarationPath = TranslatorUtils.MMLIdtoGlobalName(mode_Definition._pat.globalPatternName())
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
         val tp = translate_Type(_tp)
@@ -211,10 +185,10 @@ object definitionTranslator {
         }
         val defn = defnO.get
         val modeDef = defn match {
-          case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
-          case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
-          case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes)
-          case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteModeDefinitionInstance(name, argNum, argTps, defn.caseNum, cases, caseRes)
+          case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
+          case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => indirectPartialModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes)
+          case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompleteModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes)
+          case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => indirectCompleteModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes)
         }
         List(modeDef)
     }
@@ -223,7 +197,7 @@ object definitionTranslator {
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = { ??? }
   def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: List[(Option[LocalName], objects.Term)]= Nil) = predicate_Definition match {
     case prd@Predicate_Definition(a, _redef, _predPat, _def) =>
-      val gn = TranslatorUtils.MMLIdtoGlobalName(prd.mizarGlobalName())
+      val gn = TranslatorUtils.MMLIdtoGlobalName(_predPat.globalPatternName())
       val name = gn.name.toString
       val defn = _def.map(definiensTranslator.translate_Definiens(_))
       if (defn.isEmpty) {
@@ -256,12 +230,12 @@ object clusterTranslator {
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val List(at) = attributeTranslator.translateAttributes(_at)
         val name = "existReg:"+pos.position
-        conditionalRegistrationInstance(name, args map(_._2), tp, adjs, at)
+        conditionalRegistration(name, args map(_._2), tp, adjs, at)
       case Existential_Registration(pos, _adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
         val name = "existReg:"+pos.position
-        existentialRegistrationInstance(name, args map(_._2), tp, adjs)
+        existentialRegistration(name, args map(_._2), tp, adjs)
       case Functorial_Registration(pos, _aggrTerm, _adjCl, _tp) =>
         val tm = translate_Term(_aggrTerm)
         val adjs = attributeTranslator.translateAttributes(_adjCl)
@@ -270,9 +244,9 @@ object clusterTranslator {
           TranslationController.inferType(tm)})
         val name = "funcReg:"+pos.position
         if (isQualified) {
-          qualFunctorRegistrationInstance(name, args map(_._2), tp, tm, adjs)
+          qualifiedFunctorRegistration(name, args map(_._2), tp, tm, adjs)
         } else {
-          unqualFunctorRegistrationInstance(name, args map(_._2), tp, tm, adjs)
+          unqualifiedFunctorRegistration(name, args map(_._2), tp, tm, adjs)
         }
       case Property_Registration(_props, _just) =>
         val Properties(Some(sort), None, Nil, Some(_tp)) = _props
@@ -288,8 +262,42 @@ object clusterTranslator {
   }
 }
 object patternTranslator {
-  def translate_Attribute_Pattern(atp:Attribute_Pattern):NotationContainer = {
-    NotationContainer.empty()
+  def translate_Pattern(pat:Patterns) : (LocalName, GlobalName, NotationContainer) = {
+    val gn = TranslatorUtils.MMLIdtoGlobalName(pat.globalPatternName())
+    val name = gn.name
+    //TODO: translate notations as well
+    val notC = NotationContainer.empty()
+    (name, gn, notC)
+  }
+  def translate_Referencing_Pattern(pat: Patterns): (LocalName, List[objects.Term], objects.Term, NotationContainer) = {
+    val (name, gn, notC) = translate_Pattern(pat)
+    val referencedDeclSE = TranslationController.controller.getO(gn).getOrElse(
+      throw new ObjectLevelTranslationError("Trying to lookup declaration referenced by pattern: "+pat+", but no such Declaration found. ", pat))
+    val (mainDecl, addArgsTps): (objects.Term, List[objects.Term]) = referencedDeclSE match {
+      case c: symbols.Constant =>
+        val FunType(addArgsTps, prop) = c.tp.getOrElse(
+          throw new ObjectLevelTranslationError("Trying to retrieve type of looked up declaration "+c.name+" referenced by pattern: "+pat+", but declaration has not type defined. ", pat))
+        (c.toTerm, addArgsTps.map(_._2))
+      case dd: symbols.DerivedDeclaration =>
+        val addArgTps = dd match {
+        case directPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+        case indirectPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+        case directCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case indirectCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case directPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+        case indirectPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+        case directCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case indirectCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case directPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case indirectPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+        case directCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
+        case indirectCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
+        case directPartialPredicateDef(_, _, addArgTps, _, _, _, _) => addArgTps
+        case directCompletePredicateDef(_, _, addArgTps, _, _, _) => addArgTps
+      }
+        (dd.toTerm, addArgTps)
+    }
+    (name, addArgsTps, mainDecl, notC)
   }
 }
 

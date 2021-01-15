@@ -1,9 +1,11 @@
 package info.kwarc.mmt.mizar.newxml.mmtwrapper
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.patterns.Instance.Type
 import objects._
 import notations._
 import symbols._
+import patterns._
 
 //Utility objects for constructing MMT Patterns and  MMT Instances (of Patterns) for the Mizar Import
 //Main function is to shield the rest of Mizar code from changes to the MMT API.
@@ -20,4 +22,15 @@ object MizInstance {
      //println("instance " + name + " with arguments " + argsS)
      patterns.Instance(home, name, pattern, arguments, notCont)
    }
+  def unapply(dd: DerivedDeclaration) : Option[(Term, LocalName, GlobalName, List[Term], NotationContainer)] = dd match {
+    case dd : DerivedDeclaration if (dd.feature == "instance") =>
+      val home = dd.home
+      val name = dd.name
+      val tp = dd.tpC
+      val Type(patternMPath, args) = tp.get.getOrElse(throw ImplementationError("No type found for derived declaration at: "+home.toMPath ? name.toString))
+      val notC = dd.notC
+      val pattern = patternMPath.doc ? patternMPath.name.init ? patternMPath.name.last
+      Some((home, name, pattern, args, notC))
+    case _ => None
+  }
 }

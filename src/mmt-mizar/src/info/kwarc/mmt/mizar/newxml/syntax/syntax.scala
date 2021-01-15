@@ -398,14 +398,24 @@ case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _p
 case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads
 
-sealed trait Nyms extends Subitem
-case class Pred_Antonym(_predPats:List[Predicate_Pattern]) extends Nyms
-case class Pred_Synonym(_predPats:List[Predicate_Pattern]) extends Nyms
-case class Attr_Synonym(_attrPats:List[Attribute_Pattern]) extends Nyms
-case class Attr_Antonym(_attrPats:List[Attribute_Pattern]) extends Nyms
-case class Func_Synonym(_funcPats:List[Functor_Patterns]) extends Nyms
-case class Func_Antonym(_funcPats:List[Functor_Patterns]) extends Nyms
-case class Mode_Synonym(_modePats:List[Mode_Pattern]) extends Nyms
+sealed trait Nyms extends Subitem {
+  def _patOld: Patterns
+  def _patNew: Patterns
+  def antonymic: Boolean
+}
+sealed trait Synonym extends Nyms {
+  override def antonymic = false
+}
+sealed trait Antonym extends Nyms {
+  override def antonymic = true
+}
+case class Pred_Synonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Synonym
+case class Pred_Antonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Antonym
+case class Attr_Synonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Synonym
+case class Attr_Antonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Antonym
+case class Func_Synonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Synonym
+case class Func_Antonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Antonym
+case class Mode_Synonym(_patOld:Mode_Pattern, _patNew:Mode_Pattern) extends Synonym
 
 sealed trait Statement extends Subitem
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
@@ -795,7 +805,7 @@ case class Block(kind: String, pos:Positions, _items:List[Item]) extends Justifi
 case class Scheme_Justification(posNr:PosNr, idnr:Int, schnr:Int, spelling:String, _refs:List[Reference]) extends Justification
 
 /** Notations */
-sealed trait Patterns extends globallyReferencingObjAttrs {
+sealed trait Patterns extends ObjectLevel with globallyReferencingObjAttrs {
   def patternAttrs: PatternAttrs
   def _locis: List[Loci]
   def patDef: PatDefs = PatDef(patternAttrs, _locis)

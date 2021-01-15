@@ -3,7 +3,6 @@ package info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt._
 import api._
 import api.objects._
-import info.kwarc.mmt.api.uom.StandardNat
 import sequences._
 
 /** abstractions for creating sequence-related terms */
@@ -14,7 +13,7 @@ object MizSeq {
   object Sequence {
     def apply = Sequences.flatseq
     def unapply(tm: Term): Option[List[Term]] = tm match {
-      case Sequences.flatseq(tms: Seq[Term]) => Some(tms.toList)
+      case OMA(Sequences.flatseq.term, tms) => Some(tms)
       case _ => None
     }
   }
@@ -24,7 +23,7 @@ object MizSeq {
   object OMI {
     def apply(i: Int) = NatRules.NatLit(i)
     def unapply(tm: Term) = tm match {
-      case OMLIT(value: Int, rt) if (rt.semType == StandardNat) => Some(value)
+      case NatRules.NatLit(i) => Some(i.toInt)
       case _ => None
     }
   }
