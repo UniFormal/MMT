@@ -87,7 +87,7 @@ object termTranslator {
       val structTm = TranslationController.simplifyTerm(struct)
       val ApplyGeneral(objects.OMS(strAggrPath), aggrArgs) = structTm
       val strPath = strAggrPath.module ? strAggrPath.name.steps.init
-      val restr = PatternUtils.referenceExtDecl(strPath,PatternUtils.structureDefRestrName(gn.name.toString).toString)
+      val restr = PatternUtils.referenceExtDecl(strPath,PatternUtils.structureDefRestrName(gn.name.toString)(strPath).toString)
       val args::argsTyped::_ = aggrArgs
       ApplyGeneral(restr, List(args, argsTyped, struct))
   }

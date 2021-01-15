@@ -195,18 +195,11 @@ object MMTUtils {
     }
   }
 
-  def getPath(aid: String, kind: String, absnr: Int): GlobalName = {
-    getTheoryPath(aid) ? (aid + "_" + kind + "_" + absnr.toString)
-
+  def getPath(aid: String, kind: String, nr: Int): GlobalName = {
+    getTheoryPath(aid) ? (aid + "_" + kind + "_" + nr.toString)
   }
   def getPath(aid: String, name: String): GlobalName = {
     getTheoryPath(aid) ? name
-  }
-  def getPath(aid: String, name: LocalName): GlobalName = {
-    getTheoryPath(aid) ? name
-  }
-  def getPath(aid: String, name: List[String]): GlobalName = {
-    getTheoryPath(aid) ? LocalName(name.map(SimpleStep))
   }
 
   def Lam(name: String, tp: Term, body: Term): Term = {

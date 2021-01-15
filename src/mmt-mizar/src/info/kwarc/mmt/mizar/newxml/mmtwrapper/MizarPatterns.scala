@@ -14,12 +14,10 @@ import translator.{TranslationController, TranslatorUtils}
 import info.kwarc.mmt.sequences.NatRules
 
 object PatternUtils {
-  def structureDefinitionPatternName = LocalName("structureDef")
-  def structureDefPropName(decl:String) = LocalName(decl) / "prop"
-  def structureStrictName = LocalName("strict")
-  def structureStrictPropName = structureStrictName / "prop"
-  def structureDefRestrName(substrName:String) = LocalName("restr") / substrName
-  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName) = LocalName(restrName) / "selProp" / sel
+  def structureStrictDeclName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictDef")
+  def structureStrictPropName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictProp")
+  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("restr") / substrName
+  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName) = parentTerm.name / LocalName(restrName) / "selProp" / sel
   def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))
   def referenceIntSel(strName: String, nm: String) = {
     val strPath = TranslationController.currentTheoryPath ? strName

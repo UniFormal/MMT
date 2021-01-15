@@ -9,14 +9,13 @@ import modules._
 import frontend.Controller
 import info.kwarc.mmt.lf._
 import StructuralFeatureUtil._
-import structuralfeatures.InternalDeclaration.{isTypeLevel, structureDeclaration}
-import structuralfeatures.RecordUtil._
-import structuralfeatures.Records.{declaresRecords, elaborateContent}
-import structuralfeatures.StructuralFeatureUtils.{Eq, parseInternalDeclarations}
-import structuralfeatures.{InternalDeclaration, InternalDeclarationUtil, OutgoingTermLevel, Records, StructuralFeatureUtils, TermLevel, TypeLevel}
-import MizSeq.{Ellipsis, OMI, nTerms}
+import structuralfeatures._
+import RecordUtil._
+import StructuralFeatureUtils.{Eq, parseInternalDeclarations}
 import PatternUtils._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
+import info.kwarc.mmt.mizar.newxml._
+import translator.TranslationController
+import MMTUtils._
 
 object MizarStructure {
   def elaborateAsMizarStructure(args: List[(Option[LocalName], Term)], fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
@@ -41,18 +40,18 @@ object MizarStructure {
   def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller)(implicit parentTerm: GlobalName): List[Constant] = {
     val recordElabDecls = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
 
-    val argTps = params map (_.toTerm)
+    val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
     val l = argTps.length
-    val argsTyped = MMTUtils.freeVarContext(argTps)
+    val argsTyped = MMTUtils.freeVarContext(argTps map(_.toTerm))
+    def refDecl(nm: String) = OMS(parentTerm.toMPath ? nm)
 
-    val structx = ApplyGeneral(OMV(recTypeName), params.variables.toList.map(_.toTerm))
-    val makex = ApplyGeneral(OMV(makeName), params.variables.toList.map(_.toTerm))
-    def typedArgsCont(tm: Term) = Pi(argsTyped, tm)
-    val strictDecl = VarDecl(structureStrictName,typedArgsCont(
-      Pi(LocalName("s"),structx,Mizar.prop)))
-    val strictPropDecl = VarDecl(structureStrictName,typedArgsCont(
-      Pi(LocalName("s"),makex,Mizar.proof(Apply(OMV(structureStrictName), OMV("s"))))))
-    val strictDecls = List(strictDecl, strictPropDecl) map (_.toConstant(parentTerm.module,Context.empty))
+    val structx = ApplyGeneral(refDecl(recTypeName), params.variables.toList.map(_.toTerm))
+    val makex = ApplyGeneral(refDecl(makeName), (params++argsTyped).variables.toList.map(_.toTerm))
+    def typedArgsCont(tm: Term) = if ((params++argsTyped).isEmpty) tm else Pi(params++argsTyped, tm)
+    val strict = VarDecl(structureStrictDeclName,typedArgsCont(
+      Lam("s", structx, Mizar.prop)))
+    val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
+      Lam("s", makex, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
     val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {case (OMS(substrGN),i) =>
       val (substrPrePath, substrName) = (substrGN.module ? substrGN.name.init, substrGN.name.head)
       val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
@@ -60,12 +59,12 @@ object MizarStructure {
       val restr = VarDecl(restrName,typedArgsCont(
         Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
       val restrSelProps = subselectors map {n =>
-        VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(OMV(restrName),OMS(substrPrePath/restrName)))
+        VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(refDecl(restrName.toString),OMS(substrPrePath/restrName)))
       }
       restr::restrSelProps
     }
-    val substrRestrDecls = substrRestr map (_.toConstant(parentTerm.module,Context.empty))
-    recordElabDecls ++ substrRestrDecls //++ strictDecls
+    val furtherDecls = (substrRestr++List(strict, strictProp)) map (_.toConstant(parentTerm.module,Context.empty))
+    recordElabDecls ++ furtherDecls
   }
 }
 
