@@ -133,36 +133,13 @@ object formulaTranslator {
       }
     case Universal_Quantifier_Formula(redObjSubAttrs, _vars, _restrict, _expression) =>
       val tp : Type = TranslatorUtils.firstVariableUniverse(_vars)
-      val univ = termTranslator.translate_Term(TranslatorUtils.getUniverse(tp))
+      val univ = typeTranslator.translate_Type(tp)
       val vars = TranslatorUtils.translateVariables(_vars)
       translate_Universal_Quantifier_Formula(vars,univ,_expression)
     case Multi_Attributive_Formula(redObjSubAttrs, _tm, _cluster) =>
       val tm = termTranslator.translate_Term(_tm)
       val attrs = _cluster._attrs map attributeTranslator.translate_Attribute
-/*
-      val attrTps = attrs map(TranslationController.inferType(_))
-      val atrTps = attrTps map(TranslationController.simplifyTerm)
-      val tp = atrTps.head
-      atrTps.tail foreach {case tp2 =>
-        if (!TranslationController.conforms(tp, tp2)) {
-          throw new ObjectTranslationError("mother types of attributes don't match for multi-attributive formula. ", formula)
-        }
-      }
-*/
-        /*tp match {
-        // we have dependent typed attributes
-        case ApplyGeneral(Pi(nName, nTp, Pi(tpName, motherTp, atrTp)), List(n, tp)) if (nTp == uom.StandardInt) =>
-          assert (atrTp == Arrow(Mizar.any, Mizar.prop))
-          val mmtwrapper.MizSeq.OMI(nNum) = n
-          Mizar.is(tm, Mizar.depTypedAttrAppl(nNum, tp, attrs))
-        // simple typed attributes
-        case Apply(Pi(tpName, motherTp, atrTp), tp) =>
-          assert (atrTp == Arrow(Mizar.any, Mizar.prop))
-          Mizar.is(tm, Mizar.SimpleTypedAttrAppl(tp, attrs))
-        case Arrow(a, b) if (a == Mizar.any && b == Mizar.prop) =>*/
           Mizar.and(attrs.map(at => Apply(at, tm)))
-      /*  case _ => throw new ObjectTranslationError("expected attribute to have type term -> prop, but found type: "+tp, formula)
-      }*/
     case Conditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
       val assumption = claimTranslator.translate_Claim(_frstFormula)
       val conclusion = claimTranslator.translate_Claim(_sndFormula)
@@ -171,7 +148,10 @@ object formulaTranslator {
       val frstConjunct = claimTranslator.translate_Claim(_frstConjunct)
       val sndConjunct = claimTranslator.translate_Claim(_sndConjunct)
       mmtwrapper.Mizar.binaryAnd(frstConjunct, sndConjunct)
-    case Biconditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) => ???
+    case Biconditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
+      val frstForm = claimTranslator.translate_Claim(_frstFormula)
+      val sndForm = claimTranslator.translate_Claim(_sndFormula)
+      mmtwrapper.Mizar.iff(frstForm, sndForm)
     case Disjunctive_Formula(redObjSubAttrs, _frstDisjunct, _sndDisjunct) =>
       val frstDisjunct = claimTranslator.translate_Claim(_frstDisjunct)
       val sndDisjunct = claimTranslator.translate_Claim(_sndDisjunct)
@@ -229,11 +209,12 @@ object claimTranslator {
   def translate_Claim(claim:Claim) : objects.Term = claim match {
     case Assumption(_ass) => ???
     case formula: Formula => formulaTranslator.translate_Formula(formula)
-    case Proposition(pos, _label, _thesis) => ???
+    case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(redObjSubAttrs) => ???
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
     case Conditions(_props) => ???
     case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
+    case form: Formula => formulaTranslator.translate_Formula(form)
   }
 }
 

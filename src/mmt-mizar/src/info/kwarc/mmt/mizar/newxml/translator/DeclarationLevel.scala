@@ -72,7 +72,18 @@ object statementTranslator {
   }
   def translate_Conclusion(conclusion: Conclusion) = { ??? }
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement) = { ??? }
-  def translate_Theorem_Item(reservation: Theorem_Item) = { ??? }
+  def translate_Theorem_Item(theorem_Item: Theorem_Item) = {
+    val prfedClaim = theorem_Item.prfClaim
+    prfedClaim.check()
+    val gn = TranslatorUtils.MMLIdtoGlobalName(theorem_Item.mizarGlobalName())
+    val (_claim, _just) = (prfedClaim._claim, prfedClaim._just)
+    val claim = claimTranslator.translate_Claim(_claim)
+    val proof = _just map {
+      case justification: Justification => justificationTranslator.translate_Justification(justification)
+    } getOrElse((_claim match {case it:Iterative_Equality => Some(it) case _ => None}).map(justificationTranslator.translate_Iterative_Equality_Proof))
+    val theoremDecl = TranslationController.makeConstant(gn.name, Some(claim), proof)
+    List(theoremDecl)
+  }
   def translate_Choice_Statement(reservation: Choice_Statement) = { ??? }
   def translate_Regular_Statement(regular_Statement: Regular_Statement) = { ??? }
 }
@@ -228,9 +239,9 @@ object clusterTranslator {
       case Conditional_Registration(pos, _attrs, _at, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
-        val List(at) = attributeTranslator.translateAttributes(_at)
+        val ats = attributeTranslator.translateAttributes(_at)
         val name = "existReg:"+pos.position
-        conditionalRegistration(name, args map(_._2), tp, adjs, at)
+        conditionalRegistration(name, args map(_._2), tp, adjs, ats)
       case Existential_Registration(pos, _adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
@@ -256,7 +267,7 @@ object clusterTranslator {
             val tp = translate_Type(_tp)
             val name = LocalName("sethood_of_"+tp.toStr(true))
             val tpO = Some(Apply(Mizar.constant("sethood"), tp))
-            TranslationController.makeConstant(name, tpO, Some(just))
+            TranslationController.makeConstant(name, tpO, just)
         }
     }
   }

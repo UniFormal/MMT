@@ -12,6 +12,7 @@ object MizSeq {
   val Ellipsis = Sequences.ellipsis
   object Sequence {
     def apply = Sequences.flatseq
+    def apply(tms: List[Term]): Term = apply(tms:_*)
     def unapply(tm: Term): Option[List[Term]] = tm match {
       case OMA(Sequences.flatseq.term, tms) => Some(tms)
       case _ => None
