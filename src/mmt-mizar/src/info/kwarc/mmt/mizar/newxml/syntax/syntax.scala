@@ -837,7 +837,7 @@ sealed trait RedefinableFunctor_Patterns extends Functor_Patterns with Redefinab
 case class AggregateFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
 case class ForgetfulFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
 case class SelectorFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends Functor_Patterns
-case class InfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
+case class InfixFunctor_Pattern(rightargsbracketed: Option[Boolean], orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
 case class CircumfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
 
 sealed trait Registrations extends DeclarationLevel

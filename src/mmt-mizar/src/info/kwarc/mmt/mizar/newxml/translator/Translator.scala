@@ -2,6 +2,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import documents.Document
+import info.kwarc.mmt.api.modules.Theory
 import symbols.Declaration
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
@@ -81,17 +82,18 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
 
-    val th = TranslationController.makeTheory()
     //val doc = TranslationController.makeDocument()
+    val th = TranslationController.makeTheory()
 
     articleTranslator.translateArticle(text_Proper)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    log("The translated article: "+bf.narrationDPath.last+": ")
-    currentThy.getDeclarations foreach  {
-      case decl: Declaration => log(TranslationController.controller.presenter.asString(decl))
-    }
+    log("The translated article " + bf.narrationDPath.last + ": ")
 
-    currentThy.asDocument
+    log("theory "+th.name)
+    th.getDeclarations foreach {
+      case decl: Declaration => log("\t"+TranslationController.controller.presenter.asString(decl))
+    }
+    TranslationController.currentDoc//currentThy.asDocument
   }
 }

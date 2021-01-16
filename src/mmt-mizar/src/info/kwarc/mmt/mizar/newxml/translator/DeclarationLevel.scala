@@ -2,6 +2,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api._
+import notations._
 import info.kwarc.mmt.api.objects.{Context, VarDecl}
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
@@ -15,6 +16,8 @@ import typeTranslator._
 import contextTranslator._
 import formulaTranslator._
 import TranslatorUtils._
+import info.kwarc.mmt.mizar.newxml.translator.definiensTranslator.translate_Definiens
+import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.translate_Pattern
 
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
@@ -55,11 +58,11 @@ object nymTranslator {
   def translate_Nym(nym:Nyms)(implicit cor_conds: List[Correctness_Condition] = Nil, args: Context = Context.empty): List[symbols.Declaration] = {
     val oldPat = nym._patOld
     val newPat: Patterns = nym._patNew
-    val newName = TranslatorUtils.MMLIdtoGlobalName(newPat.globalPatternName())
+    val (name, newName, notC) = translate_Pattern(newPat)
     val (_, addArgsTps, mainDecl, _) = patternTranslator.translate_Referencing_Pattern(oldPat)
     val allArgs = args.map(_.tp.get) ++ addArgsTps
     val tr = namedDefArgsTranslator()
-    List(tr(synonymicNotation(newName.toString, allArgs.length, allArgs, mainDecl)))
+    List(tr(synonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)))
   }
 }
 
@@ -134,14 +137,14 @@ object definitionTranslator {
   }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition)(implicit args: Context= Context.empty) = attribute_Definition match {
     case atd @ Attribute_Definition(a, _redef, _attrPat, _def) =>
-      val gn = TranslatorUtils.MMLIdtoGlobalName(_attrPat.globalPatternName())
-      val name = gn.name.toString
-      val defn = _def.map(definiensTranslator.translate_Definiens(_))
+      val (name, gn, notC) = translate_Pattern(_attrPat)
+      implicit val notCon = notC
+      val defn = _def.map(translate_Definiens(_))
       if (defn.isEmpty) {
         if(_redef.occurs) {
           val origDecl = TranslatorUtils.MMLIdtoGlobalName(_attrPat.globalPatternName())
           val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
-          val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
+          val redef = TranslationController.makeConstant(name, oldDef.tp, oldDef.df)
           List(redef)
         } else {
           ???
@@ -160,10 +163,10 @@ object definitionTranslator {
   def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit args: Context= Context.empty) = { ??? }
   def translate_Functor_Definition(functor_Definition: Functor_Definition)(implicit args: Context= Context.empty) = functor_Definition match {
     case fd @ Functor_Definition(_, _redefine, _pat, _tpSpec, _def) =>
-  val gn = TranslatorUtils.MMLIdtoGlobalName(_pat.globalPatternName())
-    val name = gn.name.toString
+    val (name, gn, notC) = translate_Pattern(_pat)
+    implicit val notCon = notC
     val specType = _tpSpec map (tpSpec => translate_Type(tpSpec._types))
-    val defn = _def.map(definiensTranslator.translate_Definiens(_))
+    val defn = _def.map(translate_Definiens(_))
 
     val ret = if (specType.isDefined) {specType} else { defn.map(d => TranslationController.inferType(d.someCase)) }
     if (defn.isEmpty) {
@@ -188,16 +191,16 @@ object definitionTranslator {
     List(funcDef)
   }
   def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit args: Context = Context.empty) = {
-    val patternNr = mode_Definition._pat.patDef.patAttr.patternnr
-    val declarationPath = TranslatorUtils.MMLIdtoGlobalName(mode_Definition._pat.globalPatternName())
+    val (name, declarationPath, notC) = translate_Pattern(mode_Definition._pat)
+    implicit val notCon = notC
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
         val tp = translate_Type(_tp)
         List(TranslationController.makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
       case stm @ Standard_Mode(_tpSpec, _def) =>
-        val name = declarationPath.name.toString
+        val name = declarationPath.name
         val (argNum, argTps) = (args.length, args.map(_.tp.get))
-        val defnO = _def map(definiensTranslator.translate_Definiens(_))
+        val defnO = _def map(translate_Definiens(_))
 
         if (defnO.isEmpty) {
           assert(_tpSpec.isDefined)
@@ -217,16 +220,16 @@ object definitionTranslator {
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit args: Context= Context.empty) = { ??? }
   def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit args: Context= Context.empty) = predicate_Definition match {
     case prd@Predicate_Definition(a, _redef, _predPat, _def) =>
-      val gn = TranslatorUtils.MMLIdtoGlobalName(_predPat.globalPatternName())
-      val name = gn.name.toString
-      val defn = _def.map(definiensTranslator.translate_Definiens(_))
+      val (name, gn, notC) = translate_Pattern(_predPat)
+      implicit val notCon = notC
+      val defn = _def.map(translate_Definiens(_))
       if (defn.isEmpty) {
         if (_redef.occurs) {
           val origDecl = TranslatorUtils.MMLIdtoGlobalName(_predPat.globalPatternName())
           val oldDef = TranslationController.controller.get(origDecl) match {
             case decl: symbols.Constant => decl
           }
-          val redef = TranslationController.makeConstant(gn.name, oldDef.tp, oldDef.df)
+          val redef = TranslationController.makeConstant(name, oldDef.tp, oldDef.df)
           List(redef)
         } else {
           ???
@@ -250,12 +253,12 @@ object clusterTranslator {
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val ats = attributeTranslator.translateAttributes(_at)
-        val name = "existReg:"+pos.position
+        val name = LocalName("existReg:"+pos.position)
         conditionalRegistration(name, args map(_.tp.get), tp, adjs, ats)
       case Existential_Registration(pos, _adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
-        val name = "existReg:"+pos.position
+        val name = LocalName("existReg:"+pos.position)
         existentialRegistration(name, args map(_.tp.get), tp, adjs)
       case Functorial_Registration(pos, _aggrTerm, _adjCl, _tp) =>
         val tm = translate_Term(_aggrTerm)
@@ -263,7 +266,7 @@ object clusterTranslator {
         val isQualified = _tp.isDefined
         val tp = _tp map translate_Type getOrElse({
           TranslationController.inferType(tm)})
-        val name = "funcReg:"+pos.position
+        val name = LocalName("funcReg:"+pos.position)
         if (isQualified) {
           qualifiedFunctorRegistration(name, args map(_.tp.get), tp, tm, adjs)
         } else {
@@ -284,11 +287,38 @@ object clusterTranslator {
   }
 }
 object patternTranslator {
+  def parseFormatDesc(formatdes: String): (Int, Int, Int) = {
+    val interior = formatdes.substring(formatdes.indexOf('[')+1, formatdes.lastIndexOf(']'))
+    val List(pre, int, suf) = interior.split(Array('(', ')')).toList map(_.toInt)
+    (pre, int, suf)
+  }
   def translate_Pattern(pat:Patterns) : (LocalName, GlobalName, NotationContainer) = {
     val gn = TranslatorUtils.MMLIdtoGlobalName(pat.globalPatternName())
     val name = gn.name
+
+    val (infixNr, circumfixNr, suffixNr) = parseFormatDesc(pat.patternAttrs.formatdes)
     //TODO: translate notations as well
-    val notC = NotationContainer.empty()
+    val notC = pat match {
+      case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
+        val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
+        val infixedArgMarkers = (1 to infixNr).map(i=>SimpArg(i)).toList
+        val functorMarker = Delim(orgExtPatAttr.extPatAttr.patAttr.spelling)
+        val suffixedArgsMarkers = (infixNr+1 to infixNr+suffixNr).map(i=>SimpArg(i)).toList
+        val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
+        val fixity = Mixfix(infixedArgMarkers++(functorMarker::suffMarkers))
+        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+      case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
+        val leftDelim = Delim(orgExtPatAttr.extPatAttr.patAttr.spelling)
+        val rightDelim = Delim(_right_Circumflex_Symbol.spelling)
+        val circumfixedArgsMarkers = (1 to circumfixNr).map(i=>SimpArg(i)).toList
+        val fixity = Mixfix(rightDelim::(circumfixedArgsMarkers.+:(rightDelim)))
+        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+      case pat: Patterns =>
+        val functorMarker = Delim(pat.patternAttrs.spelling)
+        val suffixedArgsMarkers = (infixNr+1 to infixNr+suffixNr).map(i=>SimpArg(i)).toList
+        val fixity = Mixfix(functorMarker::suffixedArgsMarkers)
+        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+    }
     (name, gn, notC)
   }
   def translate_Referencing_Pattern(pat: Patterns): (LocalName, List[objects.Term], objects.Term, NotationContainer) = {

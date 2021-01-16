@@ -49,7 +49,7 @@ object TranslationController {
   def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
-    val doc = new Document(currentThyBase, documents.ModuleLevel, Some(currentThy.asInstanceOf[ModuleOrLink]))
+    val doc = new Document(currentThyBase, documents.FileLevel)
     controller.add(doc)
     currentDoc = doc
     doc
@@ -62,6 +62,9 @@ object TranslationController {
   }
   def endMake() = {
     controller.endAdd(currentThy)
+    val doc = currentThy.asDocument
+    currentDoc = doc
+    controller.add(currentDoc)
     controller.endAdd(currentDoc)
   }
 
@@ -90,10 +93,8 @@ object TranslationController {
 
   def makeConstant(n: LocalName, t: Term) : Constant =
     Constant(OMMOD(currentTheoryPath), n, Nil, Some(t), None, None)
-  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term]) : Constant =
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty()) : Constant =
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
-  def makeConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) : Constant =
-    Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
 
   def simplifyTerm(tm:objects.Term): objects.Term = {
     val su = SimplificationUnit(Context.empty,true,false)
@@ -103,8 +104,5 @@ object TranslationController {
 
   def inferType(tm:objects.Term, ctx: Context = Context.empty): objects.Term = {
     checking.Solver.infer(controller, ctx, tm, None).getOrElse(Mizar.any)
-  }
-  def conforms(tpA:objects.Term, tpB: objects.Term) : Boolean = {
-    tpA == tpB
   }
 }
