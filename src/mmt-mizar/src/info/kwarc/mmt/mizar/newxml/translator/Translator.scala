@@ -1,18 +1,10 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, OMV}
-import info.kwarc.mmt.api.symbols.Declaration
-import info.kwarc.mmt.api.{DPath, LocalName, NarrativeElement, archives, documents, objects}
-import info.kwarc.mmt.lf.{Apply, ApplyGeneral}
+import info.kwarc.mmt.api._
+import documents.Document
+import symbols.Declaration
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
-import info.kwarc.mmt.mizar.newxml.mmtwrapper
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarGlobalName
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator._
 import info.kwarc.mmt.mizar.newxml.translator.definiensTranslator.assumptionTranslator
 
 
@@ -60,11 +52,11 @@ object itemTranslator {
       case defn: Definition => definitionTranslator.translate_Definition(defn)
     }
     translatedSubitem map {
+      //Currently probably the only case that actually occurs in practise
       case decl: Declaration => TranslationController.add(decl)
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
     }
-    //TranslationController.addSourceRef(translatedSubitem, sourceReg)
   }
 }
 
@@ -95,6 +87,11 @@ class MizarXMLImporter extends archives.Importer {
     articleTranslator.translateArticle(text_Proper)
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
+    log("The translated article: "+bf.narrationDPath.last+": ")
+    currentThy.getDeclarations foreach  {
+      case decl: Declaration => log(TranslationController.controller.presenter.asString(decl))
+    }
+
     currentThy.asDocument
   }
 }

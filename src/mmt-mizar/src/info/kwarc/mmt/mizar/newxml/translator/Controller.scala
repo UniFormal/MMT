@@ -3,21 +3,16 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.libraries._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.parser._
 import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
-import scala.collection.mutable.ArrayStack
-import info.kwarc.mmt.lf._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
+import info.kwarc.mmt.mizar.newxml._
+import foundations._
+import mmtwrapper.Mizar
 
 import scala.collection._
 
@@ -77,13 +72,13 @@ object TranslationController {
     controller.add(m)
   }
   def add(e : Declaration) : Unit = {
-    println(e.toString)
-    //val eC = complify(e)
-    controller.add(e)
+    val eC = complify(e)
+    //println(controller.presenter.asString(eC))
+    controller.add(eC)
   }
   private def complify(d: Declaration) = {
     val rules = RuleSet.collectRules(controller, Context(mmtwrapper.Mizar.MizarPatternsTh))
-    org.omdoc.latin.foundations.mizar.IntroductionRule.allRules.foreach {rules.declares(_)}
+    foundations.IntroductionRule.allRules.foreach {rules.declares(_)}
     val complifier = controller.complifier(rules).toTranslator()
     try {
       d.translate(complifier,Context.empty)

@@ -18,10 +18,10 @@ import translator.TranslationController
 import MMTUtils._
 
 object MizarStructure {
-  def elaborateAsMizarStructure(args: List[(Option[LocalName], Term)], fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
+  def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
       val path = (parentTerm.module / parentTerm.name) ? vd.name
-      new OutgoingTermLevel(path, args, vd.tp.get)
+      new OutgoingTermLevel(path, args.map(vd => (Some(vd.name), vd.toTerm)), vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
     elaborateContent(params, fieldDecls, substructs, controller)

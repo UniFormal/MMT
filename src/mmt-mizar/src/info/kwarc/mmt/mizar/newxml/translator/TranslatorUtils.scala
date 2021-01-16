@@ -2,10 +2,14 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import notations.NotationContainer
-import objects.{OMMOD, OMV}
-import info.kwarc.mmt.mizar.newxml.syntax._
+import objects.{Context, OMMOD, OMV}
+import info.kwarc.mmt.mizar.newxml._
+import syntax._
 import Utils.MizarGlobalName
-import info.kwarc.mmt.mizar.newxml.translator._
+import info.kwarc.mmt.api.symbols.{Renamer, TraversingTranslator}
+import translator._
+import mmtwrapper._
+import MizSeq._
 import termTranslator._
 import typeTranslator._
 import variableTranslator._
@@ -67,6 +71,17 @@ object TranslatorUtils {
   def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
     varSegm._vars.head._tp()
   }
-  def translateArguments(args: Arguments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {args._children map translate_Term }
+  def namedDefArgsSubstition(varName: String = "x")(implicit args: Context = Context.empty) = {
+    val (argNum, argTps) = (args.length, args map (_.toTerm))
+    objects.Substitution(argTps.zipWithIndex map {
+      case (vd, i) => vd / objects.OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
+    }:_*)
+  }
+  def namedDefArgsTranslator(varName: String = "x")(implicit args: Context = Context.empty) : symbols.Declaration => symbols.Declaration = {
+    {d: symbols.Declaration =>
+      val tl = symbols.ApplySubs(namedDefArgsSubstition(varName))
+     d.translate(tl, Context.empty)}
+  }
+  def translateArguments(arguments: Arguments)(implicit args: Context=Context.empty, selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {arguments._children map translate_Term }
   def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = objects.OMS(computeGlobalPatternName(refObjAttrs))
 }

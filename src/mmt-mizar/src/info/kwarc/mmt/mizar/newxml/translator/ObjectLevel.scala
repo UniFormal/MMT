@@ -1,17 +1,17 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.objects.{OMV, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMV, VarDecl}
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lf.structuralfeatures.{RecordUtil, StructuralFeatureUtils}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.{MMTUtils, Mizar, PatternUtils, StructureInstance}
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils
+import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils._
 import org.omdoc.latin.foundations.mizar.MizarPatterns
 
 object expressionTranslator {
-  def translate_Expression(expr:Expression): objects.Term = expr match {
+  def translate_Expression(expr:Expression)(implicit args: Context = Context.empty): objects.Term = expr match {
     case tm: Term => termTranslator.translate_Term(tm)
     case tp: Type => typeTranslator.translate_Type(tp)
     case formula: Formula => formulaTranslator.translate_Formula(formula)
@@ -19,23 +19,26 @@ object expressionTranslator {
 }
 
 object termTranslator {
-  def translate_Term(tm:Term)(implicit selectors: List[(Int, VarDecl)] = Nil) : objects.Term = tm match {
-    case Simple_Term(locVarAttr) => OMV(locVarAttr.toIdentifier())
+  def translate_Term(tm:Term)(implicit args: Context, selectors: List[(Int, VarDecl)] = Nil) : objects.Term = tm match {
+    case Simple_Term(locVarAttr) =>
+      val tr = TranslatorUtils.namedDefArgsSubstition()
+      val refTm = LocalName(locVarAttr.toIdentifier())
+      tr(refTm).getOrElse(OMV(refTm))
     case Aggregate_Term(tpAttrs, _args) =>
       val gn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
       val aggrDecl = PatternUtils.referenceExtDecl(gn,RecordUtil.makeName)
       val args = TranslatorUtils.translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _args) =>
-      val strGn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
+      val strGn = MMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
       val sel = PatternUtils.referenceExtDecl(strGn, tpAttrs.spelling)
-      val args = _args map(translate_Term)
-      ApplyGeneral(sel, args)
+      val arguments = _args map(translate_Term)
+      ApplyGeneral(sel, arguments)
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
       val gn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
-      val args = TranslatorUtils.translateArguments(_args)
-      ApplyGeneral(objects.OMS(gn), args)
+      val arguments = TranslatorUtils.translateArguments(_args)
+      ApplyGeneral(objects.OMS(gn), arguments)
     case Numeral_Term(redObjAttr, nr, varnr) => mmtwrapper.Mizar.num(nr)
     case itt @ it_Term(redObjSubAttrs) =>
       OMV("it")
@@ -59,7 +62,7 @@ object termTranslator {
     case Fraenkel_Term(redObjSubAttrs, _varSegms, _tm, _form) =>
       val tp : Type = TranslatorUtils.firstVariableUniverse(_varSegms)
       val universe = translate_Term(TranslatorUtils.getUniverse(tp))
-      val args : List[objects.OMV] = _varSegms._vars map {
+      val arguments : List[objects.OMV] = _varSegms._vars map {
         case explSegm: Explicitly_Qualified_Segment =>
           assert(TranslatorUtils.conforms(explSegm._tp, tp))
           explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
@@ -67,18 +70,18 @@ object termTranslator {
       }
       val cond = formulaTranslator.translate_Formula(_form)
       val expr = translate_Term(_tm)
-      mmtwrapper.Mizar.fraenkelTerm(expr, args, universe, cond)
+      mmtwrapper.Mizar.fraenkelTerm(expr, arguments, universe, cond)
     case Simple_Fraenkel_Term(redObjSubAttrs, _varSegms, _tm) =>
       val tp : Type = TranslatorUtils.firstVariableUniverse(_varSegms)
       val universe = translate_Term(TranslatorUtils.getUniverse(tp))
-      val args : List[objects.OMV] = _varSegms._vars map {
+      val arguments : List[objects.OMV] = _varSegms._vars map {
         case explSegm: Explicitly_Qualified_Segment =>
           assert(TranslatorUtils.conforms(explSegm._tp, tp))
           explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
         case segm => segm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
       }
       val expr = translate_Term(_tm)
-      mmtwrapper.Mizar.simpleFraenkelTerm(expr, args, universe)
+      mmtwrapper.Mizar.simpleFraenkelTerm(expr, arguments, universe)
     case Qualification_Term(redObjSubAttrs, _tm, _tp) => ???
     case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
       val gn = TranslatorUtils.computeGlobalPatternName(constrExtObjAttrs)
@@ -88,8 +91,8 @@ object termTranslator {
       val ApplyGeneral(objects.OMS(strAggrPath), aggrArgs) = structTm
       val strPath = strAggrPath.module ? strAggrPath.name.steps.init
       val restr = PatternUtils.referenceExtDecl(strPath,PatternUtils.structureDefRestrName(gn.name.toString)(strPath).toString)
-      val args::argsTyped::_ = aggrArgs
-      ApplyGeneral(restr, List(args, argsTyped, struct))
+      val arguments::argsTyped::_ = aggrArgs
+      ApplyGeneral(restr, List(arguments, argsTyped, struct))
   }
 }
 
@@ -117,7 +120,7 @@ object typeTranslator {
 }
 
 object formulaTranslator {
-  def translate_Formula(formula:Formula) : objects.Term = formula match {
+  def translate_Formula(formula:Formula)(implicit args: Context) : objects.Term = formula match {
     case Existential_Quantifier_Formula(redObjSubAttrs, _vars, _expression) =>
       val tp : Type = TranslatorUtils.firstVariableUniverse(_vars)
       val univ = termTranslator.translate_Term(TranslatorUtils.getUniverse(tp))
@@ -169,16 +172,16 @@ object formulaTranslator {
       mmtwrapper.Mizar.and(formulae)
     case Multi_Relation_Formula(redObjSubAttrs, _relForm, _rhsOfRFs) => ???
   }
-  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim) = vars match {
+  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim)(implicit args: Context=Context.empty): objects.Term = vars match {
     case Nil => claimTranslator.translate_Claim(expression)
     case v::vs =>
-      val expr = claimTranslator.translate_Claim(expression)
+      val expr = translate_Existential_Quantifier_Formula(vs, univ, expression)
       mmtwrapper.Mizar.exists(v,univ,expr)
   }
-  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim) = vars match {
+  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim)(implicit args: Context=Context.empty): objects.Term = vars match {
     case Nil => claimTranslator.translate_Claim(expression)
     case v::vs =>
-      val expr = claimTranslator.translate_Claim(expression)
+      val expr = translate_Universal_Quantifier_Formula(vs, univ, expression)
       mmtwrapper.Mizar.forall(v,univ,expr)
   }
 }
@@ -189,7 +192,7 @@ object contextTranslator {
     val tp = typeTranslator.translate_Type(_tp)
     variable % tp
   }
-  def translate_Context(varSegm: VariableSegments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : objects.Context= varSegm match {
+  def translate_Context(varSegm: VariableSegments)(implicit selectors: List[(Int, objects.VarDecl)] = Nil) : Context= varSegm match {
     case Free_Variable_Segment(pos, _var, _tp) => translateSingleTypedVariable(_var, _tp)
     case Implicitly_Qualified_Segment(pos, _var, _tp) =>translateSingleTypedVariable(_var, _tp)
     case Explicitly_Qualified_Segment(pos, _variables, _tp) => _variables._vars.map(v => translateSingleTypedVariable(v,_tp))
@@ -206,7 +209,7 @@ object variableTranslator {
 }
 
 object claimTranslator {
-  def translate_Claim(claim:Claim) : objects.Term = claim match {
+  def translate_Claim(claim:Claim)(implicit args: Context) : objects.Term = claim match {
     case Assumption(_ass) => ???
     case formula: Formula => formulaTranslator.translate_Formula(formula)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)

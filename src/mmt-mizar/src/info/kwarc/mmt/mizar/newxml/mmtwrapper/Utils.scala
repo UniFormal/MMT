@@ -108,7 +108,8 @@ object Mizar {
   object eq extends BinaryLFConstantScala(eqCon.module, "eq")
 
   class Quantifier(n: String) {
-    def apply(v : OMV, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(v % univ, prop))
+    def apply(v : OMV, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(v % Mizar.any, prop))
+    def apply(v : String, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(LocalName(v), Mizar.any, prop))
     def unapply(t: Term): Option[(OMV,Term,Term)] = t match {
       case ApplySpine(OMS(q), List(a, Lambda(x, _, prop))) if q == constantName(n) => Some((OMV(x), a, prop))
       case _ => None
