@@ -8,6 +8,8 @@ import info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.{MMTUtils, Mizar, PatternUtils, StructureInstance}
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils._
+import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Context
+import info.kwarc.mmt.mizar.newxml.translator.formulaTranslator.translate_Existential_Quantifier_Formula
 import org.omdoc.latin.foundations.mizar.MizarPatterns
 
 object expressionTranslator {
@@ -125,7 +127,8 @@ object formulaTranslator {
       val tp : Type = TranslatorUtils.firstVariableUniverse(_vars)
       val univ = termTranslator.translate_Term(TranslatorUtils.getUniverse(tp))
       val vars = TranslatorUtils.translateVariables(_vars)
-      translate_Existential_Quantifier_Formula(vars,univ,_expression)
+      val expr = claimTranslator.translate_Claim(_expression)
+      translate_Existential_Quantifier_Formula(vars, univ, expr)
     case Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
       if (antonymic.isDefined && antonymic.get) {
         translate_Formula(TranslatorUtils.negatedFormula(Relation_Formula(objectAttrs, None, infixedArgs)))
@@ -172,8 +175,8 @@ object formulaTranslator {
       mmtwrapper.Mizar.and(formulae)
     case Multi_Relation_Formula(redObjSubAttrs, _relForm, _rhsOfRFs) => ???
   }
-  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:Claim)(implicit args: Context=Context.empty): objects.Term = vars match {
-    case Nil => claimTranslator.translate_Claim(expression)
+  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:objects.Term, expression:objects.Term)(implicit args: Context=Context.empty): objects.Term = vars match {
+    case Nil => expression
     case v::vs =>
       val expr = translate_Existential_Quantifier_Formula(vs, univ, expression)
       mmtwrapper.Mizar.exists(v,univ,expr)
@@ -210,7 +213,27 @@ object variableTranslator {
 
 object claimTranslator {
   def translate_Claim(claim:Claim)(implicit args: Context) : objects.Term = claim match {
-    case Assumption(_ass) => ???
+    case Assumption(_ass) => _ass match {
+      case Single_Assumption(pos, _prop) => translate_Claim(_prop)
+      case Collective_Assumption(pos, _cond) => Mizar.and(_cond._props map translate_Claim)
+      case Existential_Assumption(_qualSegm, _cond) =>
+        implicit var arguments = args
+        def qualifySegments(vs: List[(List[OMV], objects.Term)], claim: objects.Term): objects.Term = vs match {
+          case con::cons =>
+            translate_Existential_Quantifier_Formula(con._1, con._2, qualifySegments(cons, claim))(arguments)
+          case List(con) => translate_Existential_Quantifier_Formula(con._1, con._2, claim)(arguments)
+        }
+        val vars = _qualSegm._children.map({
+          case vs: Variable_Segments =>
+            val ctx = translate_Context(vs)
+            arguments ++= ctx
+            val con = ctx.variables.map(_.toTerm).toList
+            val tp = ctx.variables.head.tp.get
+            (con, tp)
+        })
+        val claim = Mizar.and(_cond._props.map(translate_Claim(_)(arguments)))
+        qualifySegments(vars, claim)
+    }
     case formula: Formula => formulaTranslator.translate_Formula(formula)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(redObjSubAttrs) => ???

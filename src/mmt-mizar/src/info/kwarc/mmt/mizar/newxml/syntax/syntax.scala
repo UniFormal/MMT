@@ -119,7 +119,7 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
   def spelling: String
   override def pos(): Position = posNr.pos
   def globalPatternName(aid: String, refSort: String, constrnr: Int): MizarGlobalName = {
-    MizarGlobalName(aid, sort, patternnr)
+    MizarGlobalName(aid, refSort, patternnr)
   }
 }
 trait referencingConstrObjAttrs extends referencingObjAttrs {
@@ -317,8 +317,8 @@ case class CaseBasedExpr(singleCasedExpr:SingleCaseExpr, partialCasedExpr:Partia
   def expr() :Option[Expression] = {singleCasedExpr._expr}
   def partialDef()= {partialCasedExpr._partDefs}
   def otherwise() = {partialCasedExpr._otherwise}
-  def isPartial() = {check(); partialDef.isDefined}
-  def isSingleCase() = {check(); expr.isDefined}
+  def isPartial() = {check(); partialDef().isDefined}
+  def isSingleCase() = {check(); expr().isDefined}
 }
 
 case class Text_Proper(articleid: String, articleext: String, pos: Position, _items: List[Item]) {
@@ -547,8 +547,8 @@ case class Simple_Term(varAttr:LocalVarAttr) extends Term {
 }
 sealed trait ComplexTerm extends Term {
   def objAttr() : RedObjectSubAttrs
-  override def sort() : String = objAttr().sort
-  override def pos(): Position = objAttr().pos
+  override def sort() : String = objAttr().sort()
+  override def pos(): Position = objAttr().pos()
 }
 /**
  * introduction form of a structure

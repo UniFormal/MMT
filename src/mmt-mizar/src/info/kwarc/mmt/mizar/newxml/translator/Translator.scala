@@ -54,7 +54,9 @@ object itemTranslator {
     }
     translatedSubitem map {
       //Currently probably the only case that actually occurs in practise
-      case decl: Declaration => TranslationController.add(decl)
+      case decl: Declaration =>
+        val name = decl.name
+        TranslationController.add(decl)
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
     }
@@ -91,8 +93,15 @@ class MizarXMLImporter extends archives.Importer {
     log("The translated article " + bf.narrationDPath.last + ": ")
 
     log("theory "+th.name)
-    th.getDeclarations foreach {
-      case decl: Declaration => log("\t"+TranslationController.controller.presenter.asString(decl))
+    th.getDeclarations foreach {case decl: Declaration =>
+    try {
+        log("\t" + TranslationController.controller.presenter.asString(decl))
+      } catch {
+        case e: GeneralError =>
+          println("General error while presenting the declaration: "+decl.toString+": ")
+          println(e.toStringLong)
+          throw e
+      }
     }
     TranslationController.currentDoc//currentThy.asDocument
   }
