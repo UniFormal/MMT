@@ -192,8 +192,7 @@ trait DefaultLinearStateOperator extends LinearModuleTransformerState {
   final override type DiagramState = MinimalLinearModuleDiagramState
   final override type LinearState = SkippedDeclsExtendedLinearState
 
-  final override def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
-    new SkippedDeclsExtendedLinearState(diagramState, inContainer)
+  final override def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState = new SkippedDeclsExtendedLinearState(diagramState, inContainer)
 
   final override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new MinimalLinearModuleDiagramState(toplevelModules)
 }
