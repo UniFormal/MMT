@@ -10,7 +10,7 @@ package info.kwarc.mmt.api.modules.diagops
   */
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator}
+import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, RawDiagram}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{GlobalName, InvalidObject, MPath}
@@ -55,11 +55,20 @@ abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTran
 
 abstract class ParametricLinearOperator extends DiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
-  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearModuleTransformer]
+  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer]
 
   final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>
-      instantiate(parameters).flatMap(op => interp(actualDiagram) match {
+
+      instantiate(parameters).flatMap(tx => {
+        val modulePaths = interp(actualDiagram).map {
+          case BasedDiagram(_, paths) => paths
+          case RawDiagram(paths) => paths
+        }
+
+        modulePaths.map(tx.applyDiagram(_))
+      }).map(outputPaths => RawDiagram(outputPaths))
+      /*instantiate(parameters).flatMap(op => interp(actualDiagram) match {
         // TODO: ideally reuse code from RelativeBaseOperator
         case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(op.operatorDomain, dom) =>
           Some(BasedDiagram(op.operatorCodomain, op.applyDiagram(modulePaths)))
@@ -71,7 +80,7 @@ abstract class ParametricLinearOperator extends DiagramOperator {
         case _ =>
           interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
           None
-      })
+      })*/
 
     case _ => None
   }

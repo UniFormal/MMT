@@ -5,22 +5,40 @@ import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends LinearTransformer {
-  type DiagramState = LinearDiagramState
-  type LinearState = ThisState
+  type DiagramState = TxAggregationDiagramState
+  type LinearState = LinearTxAggregationState
 
   override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = {
-    transformers.map(tx => tx.initDiagramState(toplevelModules, interp))
-    new LinearDiagramState(toplevelModules)
+    val txDiagStates = transformers
+      .map(tx => tx.initDiagramState(toplevelModules, interp).asInstanceOf[MinimalDiagramState])
+      .toArray
+    new TxAggregationDiagramState(toplevelModules, txDiagStates)
   }
 
-  class ThisState(val txStates: Array[MinimalLinearState], override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
+  class TxAggregationDiagramState(inputToplevelModules: Map[MPath, Module], val txDiagStates: Array[MinimalDiagramState]) extends LinearDiagramState(inputToplevelModules)
+
+  class LinearTxAggregationState(val txStates: Array[MinimalLinearState], override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
     override def registerDeclaration(decl: Declaration): Unit = {}
     override val processedDeclarations: List[Declaration] = Nil
 
     override def registerSkippedDeclaration(decl: Declaration): Unit = {}
     override val skippedDeclarations: List[Declaration] = Nil
 
-    override def inherit(other: ThisState): Unit = {}
+    override def inherit(other: LinearTxAggregationState): Unit = {
+      transformers.zip(txStates).zip(other.txStates).foreach {
+        case ((tx, txState), txStateToInherit) =>
+          txState.inherit(txStateToInherit.asInstanceOf[LinearState])
+      }
+    }
+  }
+
+  override def initLinearState(diagramState: DiagramState, inContainer: Container): LinearState = {
+    val txStates = transformers.zip(diagramState.txDiagStates).map {
+      case (tx, txDiagState) =>
+        tx.initLinearState(txDiagState.asInstanceOf[tx.DiagramState], inContainer)
+    }.map(_.asInstanceOf[MinimalLinearState]).toArray
+
+    new LinearTxAggregationState(txStates, diagramState, inContainer)
   }
 
   // cannot concisely express return type in Scala's type system, hence LinearTransformer#LinearState
@@ -32,14 +50,6 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
     }
   }
 
-  override def initLinearState(diagramState: DiagramState, inContainer: Container): LinearState = {
-    val txStates = transformers.map(tx => {
-      tx.initLinearState(diagramState.asInstanceOf[tx.DiagramState], inContainer)
-    }).map(_.asInstanceOf[MinimalLinearState]).toArray
-
-    new ThisState(txStates, diagramState, inContainer)
-  }
-
   override def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean = {
     foreachTransformer((tx, txState) => {
       tx.beginContainer(inContainer, txState.asInstanceOf[tx.LinearState])
@@ -47,7 +57,7 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
     true
   }
 
-  override def endContainer(inContainer: Container, state: ThisState)(implicit interp: DiagramInterpreter): Unit = {
+  override def endContainer(inContainer: Container, state: LinearTxAggregationState)(implicit interp: DiagramInterpreter): Unit = {
     foreachTransformer((tx, txState) => {
       tx.endContainer(inContainer, txState.asInstanceOf[tx.LinearState])
     })(state)
@@ -59,7 +69,18 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
     })(state)
   }
 
-  override def applyConstant(c: Constant, container: Container)(implicit state: ThisState, interp: DiagramInterpreter): Unit = { require(requirement = false, "unreachable") }
+  override def applyConstant(c: Constant, container: Container)(implicit state: LinearTxAggregationState, interp: DiagramInterpreter): Unit = { require(requirement = false, "unreachable") }
 
   override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = { require(requirement = false, "unreachable") }
+
+  override def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath] = {
+    val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
+    val state = initDiagramState(modules, interp)
+
+    modulePaths.map(interp.ctrl.getModule).foreach(module => {
+      applyContainer(module)(state, interp)
+    })
+
+    transformers.flatMap(_.applyDiagram(modulePaths))
+  }
 }

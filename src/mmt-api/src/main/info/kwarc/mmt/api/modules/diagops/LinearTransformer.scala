@@ -4,7 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
 import info.kwarc.mmt.api.symbols._
 
-trait LinearTransformer extends LinearTransformerState {
+trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   type Container = ModuleOrLink
 
   /**
@@ -238,6 +238,6 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
 }
 
 trait RelativeBaseTransformer {
-  val operatorDomain: MPath
-  val operatorCodomain: MPath
+  def operatorDomain: MPath
+  def operatorCodomain: MPath
 }
