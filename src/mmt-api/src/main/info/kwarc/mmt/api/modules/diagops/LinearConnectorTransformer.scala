@@ -38,9 +38,9 @@ import info.kwarc.mmt.api.{InvalidElement, MPath}
   *  - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
   *    have a definiens)
   */
-trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTransformer {
-  val in: LinearModuleTransformer
-  val out: LinearModuleTransformer
+trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBaseTransformer {
+  val in: LinearFunctorialTransformer
+  val out: LinearFunctorialTransformer
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
@@ -109,29 +109,30 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     Some(outView)
   }
 
-  final override protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container] = {
+  final override def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean = {
     sanityCheckOnce()
     inContainer match {
       // only applicable on theories and their contents
-      case _: View => None
+      case _: View => false
 
       case inTheory: Theory =>
-        beginTheory(inTheory, state).map(outView => {
-          state.diagramState.processedElements.put(inTheory.path, outView)
-          interp.addToplevelResult(outView)
+        beginTheory(inTheory, state) match {
+          case Some(outView) =>
+            state.diagramState.processedElements.put(inTheory.path, outView)
+            interp.addToplevelResult(outView)
+            true
 
-          outView
-        })
+          case _ => false
+        }
 
       // We accept structures, but don't create a special out container for them.
       // (Arguably the asymmetry stems from MMT that makes assignments to constants from structures
       //  be represented flat in views.)
-      //
-      // To conform to the method signature, we must return Some(-) to keep processing, here
-      // we just reuse inContainer (I hope this won't lead to hard-to-debug bugs :()
       case _: Structure =>
+        // to fulfill invariants of other code snippets, we have to put something
+        // arbitrary into processedElements
         state.diagramState.processedElements.put(inContainer.path, inContainer)
-        Some(inContainer)
+        true
     }
   }
 
@@ -169,7 +170,7 @@ trait LinearConnectorTransformer extends LinearTransformer with RelativeBaseTran
     * ''include in(S) = conn(T) . in(v)'', but the latter but be somewhat self-referential in conn(T), so unsure
     * whether it works.)
     */
-  final override protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
     implicit val diagramState: DiagramState = state.diagramState
 

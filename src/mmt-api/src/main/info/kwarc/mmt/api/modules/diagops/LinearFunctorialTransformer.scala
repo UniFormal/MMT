@@ -20,7 +20,7 @@ import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
   *  - `beginView()`
   *  - `beginStructure()`
   */
-trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransformer {
+trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeBaseTransformer {
 
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
@@ -129,7 +129,9 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     */
   protected def beginStructure(s: Structure, state: LinearState)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
-      applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).getOrElse(return None)
+      if (!applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp)) {
+        return None
+      }
 
       // inherit linear state from module where structure is declared
       state.inherit(state.diagramState.getLinearState(s.home.toMPath))
@@ -181,17 +183,19 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   /**
     * See superclass documentation, or [[beginContainer()]].
     */
-  final override protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container] = {
+  final override def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean = {
     val outContainer = inContainer match {
       case m: Module => beginModule(m, state)
       case s: Structure => beginStructure(s, state)
     }
 
-    outContainer.map(outContainer => {
-      state.diagramState.processedElements.put(inContainer.path, outContainer)
+    outContainer match {
+      case Some(outContainer) =>
+        state.diagramState.processedElements.put(inContainer.path, outContainer)
+        true
 
-      outContainer
-    })
+      case _ => false
+    }
   }
 
   /**
@@ -210,7 +214,7 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *   ?v                    |-> ?op(v)                   if ?v is in input diagram
     * }}}
     */
-  final override protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val diagramState: DiagramState = state.diagramState
 
@@ -284,11 +288,11 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   *
   * Its purpose is to serve for the `in` or `out` field of [[LinearConnectorTransformer]]s.
   */
-class IdentityLinearTransformer(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
+class IdentityLinearTransformer(private val domain: MPath) extends LinearFunctorialTransformer with DefaultLinearStateOperator {
   override val operatorDomain: MPath = domain
   override val operatorCodomain: MPath = domain
 
-  override protected def applyModuleName(name: LocalName): LocalName = name
+  override def applyModuleName(name: LocalName): LocalName = name
 
-  override protected def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
+  override def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
 }

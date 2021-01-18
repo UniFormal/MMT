@@ -37,8 +37,8 @@ class CopyOperator(override val head: GlobalName, override val operatorDomain: M
 
 class CopyConnectorFirst(override val head: GlobalName, copyOp: CopyOperator) extends SimpleLinearConnector with OperatorDSL {
 
-  override val in: LinearModuleTransformer = new IdentityLinearTransformer(copyOp.operatorDomain)
-  override val out: LinearModuleTransformer = copyOp
+  override val in: LinearFunctorialTransformer = new IdentityLinearTransformer(copyOp.operatorDomain)
+  override val out: LinearFunctorialTransformer = copyOp
 
   override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy1")
 

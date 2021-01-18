@@ -6,25 +6,19 @@ import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.symbols.Declaration
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
-/**
-  * State declarations and factory methods for [[FunctorialOperator]]s.
-  *
-  * The idea is that a (subclass of) [[FunctorialOperator]] should be able to keep track of some state while
-  * all modules in the input diagram are being processed.
-  * Moreover, that state should be subject to type safety. Hence, this trait declares a type field
-  * ''DiagramState'' that subclasses of [[FunctorialOperator]] may narrow to (a more enriched) state class.
-  */
-trait FunctorialOperatorState {
+trait DiagramTransformerState {
   /**
     * The type of diagram states.
     *
-    * Most likely, in your subclass of [[FunctorialOperator]] you want to narrow down this type field
+    * Most likely, in your subclass of [[ModuleOperator]] you want to narrow down this type field
     * to a class larger than [[MinimalFunctorialOpState]].
     *
     * Since we're speaking of state, that class may very well carry mutable state. It is encouraged to do so.
     */
-  protected type DiagramState <: MinimalFunctorialOpState
+  protected type DiagramState <: MinimalDiagramState
+
 
   /**
     * Factory method to initialize a [[DiagramState]].
@@ -34,8 +28,32 @@ trait FunctorialOperatorState {
     */
   def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
 
-  protected trait MinimalFunctorialOpState {
-    val inputToplevelModules: Map[MPath, Module]
+  protected trait MinimalDiagramState {
+    def inputToplevelModules: Map[MPath, Module]
+  }
+}
+
+/**
+  * State declarations and factory methods for [[ModuleOperator]]s.
+  *
+  * The idea is that a (subclass of) [[ModuleOperator]] should be able to keep track of some state while
+  * all modules in the input diagram are being processed.
+  * Moreover, that state should be subject to type safety. Hence, this trait declares a type field
+  * ''DiagramState'' that subclasses of [[ModuleOperator]] may narrow to (a more enriched) state class.
+  */
+trait ModuleTransformerState extends DiagramTransformerState {
+  /**
+    * The type of diagram states.
+    *
+    * Most likely, in your subclass of [[ModuleOperator]] you want to narrow down this type field
+    * to a class larger than [[MinimalFunctorialOpState]].
+    *
+    * Since we're speaking of state, that class may very well carry mutable state. It is encouraged to do so.
+    */
+  protected type DiagramState <: MinimalModuleState
+
+  protected trait MinimalModuleState extends MinimalDiagramState {
+    override val inputToplevelModules: Map[MPath, Module]
 
     /**
       * All the processed modules so far: a map from the [[MPath]] of the input [[Module]] to the
@@ -43,21 +61,11 @@ trait FunctorialOperatorState {
       */
     val processedElements: mutable.Map[Path, ContentElement] = mutable.Map()
 
-    // todo: why not def?
-    val seenModules: mutable.Set[MPath] = mutable.Set(inputToplevelModules.keys.toSeq : _*)
+    def seenModules: mutable.Set[MPath] = mutable.Set(inputToplevelModules.keys.toSeq : _*)
   }
 }
 
-/**
-  * State declarations and factory methods for [[LinearOperator]]s.
-  *
-  * Akin to [[FunctorialOperatorState]], a linear operator should also be able to carry state. However, since a linear
-  * operator works declaration-by-declaration, it should get a fine-granular state (a ''LinearState'').
-  * Especially, a ''LinearState'' stores all declarations that have been processed so far -- from the POV
-  * of a module and its transitively included modules.
-  * In other words, from the POV of a linear operator, theories and views are flat, and so is ''LinearState''.
-  */
-trait LinearOperatorState extends FunctorialOperatorState {
+trait LinearTransformerState extends DiagramTransformerState {
   protected type LinearState <: MinimalLinearState
 
   /**
@@ -69,23 +77,13 @@ trait LinearOperatorState extends FunctorialOperatorState {
     * @param diagramState The current diagram state
     * @param container The container for which the linear state ought to be created
     */
-  protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState
+  def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState
 
-  /**
-    * A linear state is bound to an `inContainer` and an `outContainer`,
-    * storing all declarations processed so far (also transitively).
-    */
   protected trait MinimalLinearState {
     def diagramState: DiagramState
 
     def inContainer: ModuleOrLink
     def inContainer_=(m: ModuleOrLink): Unit
-
-    def outContainer: ModuleOrLink
-    def outContainer_=(m: ModuleOrLink): Unit
-
-    // todo: look up all usages of outContext, I (Navid) have the suspicion most are wrong
-    def outContext: Context = Context(outContainer.modulePath)
 
     def processedDeclarations: List[Declaration]
     def registerDeclaration(decl: Declaration): Unit
@@ -104,10 +102,10 @@ trait LinearOperatorState extends FunctorialOperatorState {
     def inherit(other: LinearState): Unit
   }
 
-  final override type DiagramState = LinearDiagramState
-  final override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)
+  type DiagramState <: LinearDiagramState
+  /*override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)*/
 
-  final protected class LinearDiagramState(val inputToplevelModules: Map[MPath, Module]) extends MinimalFunctorialOpState {
+  protected class LinearDiagramState(val inputToplevelModules: Map[MPath, Module]) extends MinimalDiagramState {
     // todo: actually name ContainerState
     val linearStates: mutable.Map[Path, LinearState] = mutable.Map()
 
@@ -116,7 +114,7 @@ trait LinearOperatorState extends FunctorialOperatorState {
         throw ImplementationError("Tried to initialize linear state twice, this must be a bug in the diag ops framework.")
       }
 
-      val linearState = LinearOperatorState.this.initLinearState(this, inContainer)
+      val linearState = LinearTransformerState.this.initLinearState(this.asInstanceOf[DiagramState], inContainer)
       linearStates.put(inContainer.path, linearState)
 
       linearState
@@ -129,18 +127,50 @@ trait LinearOperatorState extends FunctorialOperatorState {
       ))
     }
   }
+}
 
+/**
+  * State declarations and factory methods for [[LinearOperator]]s.
+  *
+  * Akin to [[ModuleOperatorState]], a linear operator should also be able to carry state. However, since a linear
+  * operator works declaration-by-declaration, it should get a fine-granular state (a ''LinearState'').
+  * Especially, a ''LinearState'' stores all declarations that have been processed so far -- from the POV
+  * of a module and its transitively included modules.
+  * In other words, from the POV of a linear operator, theories and views are flat, and so is ''LinearState''.
+  */
+trait LinearModuleTransformerState extends ModuleTransformerState with LinearTransformerState {
+  type LinearState <: MinimalLinearModuleState
+  type DiagramState <: MinimalLinearModuleDiagramState
+
+  final protected class MinimalLinearModuleDiagramState(inputToplevelModules: Map[MPath, Module]) extends LinearDiagramState(inputToplevelModules) with MinimalModuleState {
+  }
+
+  /**
+    * A linear state is bound to an `inContainer` and an `outContainer`,
+    * storing all declarations processed so far (also transitively).
+    */
+  protected trait MinimalLinearModuleState extends MinimalLinearState {
+    def outContainer: ModuleOrLink
+    def outContainer_=(m: ModuleOrLink): Unit
+
+    // todo: look up all usages of outContext, I (Navid) have the suspicion most are wrong
+    def outContext: Context = Context(outContainer.modulePath)
+  }
 
   /**
     * A linear state keeping track of processed and skipped declarations.
     */
-  protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearState {
-    final var _processedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
+  protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearModuleState {
+    final var _processedDeclarations: ListBuffer[Declaration] = mutable.ListBuffer()
+
     final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
+
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
 
-    final val _skippedDeclarations: mutable.ListBuffer[Declaration] = mutable.ListBuffer()
+    final val _skippedDeclarations: ListBuffer[Declaration] = mutable.ListBuffer()
+
     final override def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
+
     final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
 
     final override var outContainer: ModuleOrLink = _
@@ -153,13 +183,17 @@ trait LinearOperatorState extends FunctorialOperatorState {
 }
 
 /**
-  * Some generally useful [[LinearOperatorState]] for [[LinearOperator]]s.
+  * Some generally useful [[LinearModuleOperatorState]] for [[LinearOperator]]s.
   *
   * It provides a state with methods to register processed and skipped declarations and keeps track of them
   * as flat lists buffers.
   */
-trait DefaultLinearStateOperator extends LinearOperatorState {
+trait DefaultLinearStateOperator extends LinearModuleTransformerState {
+  final override type DiagramState = MinimalLinearModuleDiagramState
   final override type LinearState = SkippedDeclsExtendedLinearState
-  final override protected def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
+
+  final override def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState =
     new SkippedDeclsExtendedLinearState(diagramState, inContainer)
+
+  final override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new MinimalLinearModuleDiagramState(toplevelModules)
 }

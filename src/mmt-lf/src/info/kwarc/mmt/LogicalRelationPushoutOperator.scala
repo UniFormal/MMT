@@ -9,7 +9,7 @@ import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 import info.kwarc.mmt.api.utils.UnicodeStrings
 
 import scala.collection.mutable
-
+/*
 final class LogicalRelationPushoutTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleConstantsBasedModuleTransformer with OperatorDSL {
 
   override val operatorDomain: MPath = commonLinkDomain
@@ -17,13 +17,12 @@ final class LogicalRelationPushoutTransformer(initialLogrel: Term, mors: List[Te
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel_pushed")
 
-  override protected type LinearState = State
+  override type LinearState = State
   protected class State(diagramState: DiagramState, inContainer: ModuleOrLink) extends SkippedDeclsExtendedLinearState(diagramState, inContainer) {
 
     val logrel: mutable.Map[GlobalName, Term] = ??? // initialLogrel
 
   }
-  override protected def initLinearState(diagramState: LinearDiagramState, inContainer: Container): State = ???
 
   val copyRenamers: Array[Renamer[LinearState]] = mors.indices.map(i =>
     getRenamerFor(UnicodeStrings.subscriptInteger(i))
@@ -74,6 +73,27 @@ final class LogicalRelationPushoutTransformer(initialLogrel: Term, mors: List[Te
     SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = true),
     RuleSet(lf.Beta)
   )
+
+  override type DiagramState = this.type
+
+  /**
+    * Side effect-free (!) factory method to initialize a [[LinearState]].
+    *
+    * If you want to initialize a new linear state *and* register it to some [[DiagramState]], then
+    * call [[LinearDiagramState.initAndRegisterNewLinearState()]].
+    *
+    * @param diagramState The current diagram state
+    * @param container    The container for which the linear state ought to be created
+    */
+  override def initLinearState(diagramState: LogicalRelationPushoutTransformer.this.type, inContainer: Container): State = ???
+
+  /**
+    * Factory method to initialize a [[DiagramState]].
+    *
+    * @param diagram         The full input diagram expression.
+    * @param toplevelModules The extracted modules in the input diagram
+    */
+  override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): LogicalRelationPushoutTransformer.this.type = ???
 }
 
 object LogicalRelationPushoutOperator extends ParametricLinearOperator {
@@ -88,4 +108,4 @@ object LogicalRelationPushoutOperator extends ParametricLinearOperator {
         None
     }
   }
-}
+}*/
