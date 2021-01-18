@@ -30,7 +30,7 @@ private class PushoutTransformer(
                           override val operatorDomain: MPath,
                           override val operatorCodomain: MPath,
                           mor: Term)
-  extends PushoutPathTransformer(operatorDomain, operatorCodomain, mor)
+  extends PushoutTransformer.PathTransformer(operatorDomain, operatorCodomain, mor)
     with SimpleLinearModuleTransformer
     with OperatorDSL {
 
@@ -42,7 +42,7 @@ private class PushoutTransformer(
       case v: View => v.to.toMPath
     }
 
-    OMMOD(new PushoutConnectorPathTransformer(mor).applyModulePath(exprContext))
+    OMMOD(new PushoutConnector.PathTransformer(mor).applyModulePath(exprContext))
   }
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
@@ -61,10 +61,17 @@ private class PushoutTransformer(
   }
 }
 
-private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends PushoutConnectorPathTransformer(mor) with SimpleLinearConnectorTransformer with OperatorDSL {
+object PushoutTransformer {
+  class PathTransformer(override val operatorDomain: MPath, override val operatorCodomain: MPath, mor: Term) extends ModulePathTransformer with RelativeBaseTransformer {
+    def applyModuleName(name: LocalName): LocalName =
+      name.suffixLastSimple("_pushout_over_" + mor.toStr(shortURIs = true))
+  }
+}
+
+private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends PushoutConnector.PathTransformer(mor) with SimpleLinearConnectorTransformer with OperatorDSL {
 
   override val in = new IdentityLinearTransformer(dom)
-  override val out = new PushoutPathTransformer(dom, cod, mor)
+  override val out = new PushoutTransformer.PathTransformer(dom, cod, mor)
   override val translationView: Term = mor
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
@@ -72,12 +79,9 @@ private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends Pushou
   }
 }
 
-private class PushoutPathTransformer(override val operatorDomain: MPath, override val operatorCodomain: MPath, mor: Term) extends ModulePathTransformer with RelativeBaseTransformer {
-  def applyModuleName(name: LocalName): LocalName =
-    name.suffixLastSimple("_pushout_over_" + mor.toStr(shortURIs = true))
-}
-
-private class PushoutConnectorPathTransformer(mor: Term) extends ModulePathTransformer {
-  def applyModuleName(name: LocalName): LocalName =
-    name.suffixLastSimple("_pushout_view_over_" + mor.toStr(shortURIs = true))
+object PushoutConnector {
+  class PathTransformer(mor: Term) extends ModulePathTransformer {
+    def applyModuleName(name: LocalName): LocalName =
+      name.suffixLastSimple("_pushout_view_over_" + mor.toStr(shortURIs = true))
+  }
 }

@@ -23,6 +23,7 @@ object FastREPL extends MagicTest("debug") {
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions-pushout-test.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions-logrel-test.mmt",
+    "build MMT/urtheories mmt-omdoc module-expressions-logrel-pushout-test.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc",
     "build MMT/urtheories scala-bin",
