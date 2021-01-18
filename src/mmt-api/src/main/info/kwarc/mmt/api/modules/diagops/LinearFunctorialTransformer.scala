@@ -192,6 +192,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     outContainer match {
       case Some(outContainer) =>
         state.diagramState.processedElements.put(inContainer.path, outContainer)
+        state.outContainer = outContainer
         true
 
       case _ => false

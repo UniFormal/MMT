@@ -8,49 +8,25 @@ trait LinearTransformer extends LinearTransformerState {
   type Container = ModuleOrLink
 
   /**
-    * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
+    * Hook before the declarations of a container are gone linearly through; called by
+    * [[applyContainer()]].
     *
-    * If the transformer is applicable on `inContainer`, it creates a new output container
-    * and return it. Transformers may choose on their own what kind of output container to create.
-    * E.g. [[LinearModuleTransformer]] creates theories for theories, and views for views.
-    *
-    * You may override this method to do additional action.
-    *
-    * Post-conditions:
-    *
-    *   - if `Some(outContainer)` is returned, you must have
-    *
-    *     - [[DiagramInterpreter.add()]] on `outContainer`
-    *     - added `(inContainer, outContainer)` to `state.diagramState.processedElements`
-    *   - see also postconditions of [[applyContainer()]]
+    * @return `true` if the transformer is applicable on the container, `false` otherwise.
+    *         If `false` is returned, the declarations within the container aren't processed.
     *
     * @see [[endContainer()]]
     */
   def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
 
   /**
-    * Finalizes a container.
+    * Hook after all declarations of a container have been gone through; called by
+    * [[applyContainer()]].
     *
-    * By default, this method uses `DiagramState.processedElements` to lookup to which container
-    * `inContainer` has been mapped to, and calls [[DiagramInterpreter.endAdd()]] on the latter.
-    *
-    * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
-    *
-    * Post-conditions:
-    *
-    *   - the container returned by [[beginContainer()]] must have been finalized via
-    *     [[DiagramInterpreter.endAdd()]]
-    *     (You can access that container via `state.diagramState.processedElements`,
-    *      see post-conditions of [[beginContainer()]].)
-    *   - see also postconditions of [[applyContainer()]]
-    *
-    * You may override this method. Be sure to call `super.endContainer()` last in your overridden
-    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
+    * Only called if [[beginContainer()]] returned `true` on `inContainer`.
     *
     * @see [[beginContainer()]]
     */
   def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit
-
 
   /**
     * Transforms a [[Declaration]] from `container`.
@@ -153,7 +129,6 @@ trait LinearTransformer extends LinearTransformerState {
     val inLinearState = state.initAndRegisterNewLinearState(inContainer)
 
     if (beginContainer(inContainer, inLinearState)) {
-      // TODO: inLinearState.outContainer = outContainer
       inContainer.getDeclarations.foreach(decl => {
         inLinearState.registerDeclaration(decl)
         applyDeclaration(decl, inContainer)(inLinearState, interp)
@@ -195,6 +170,7 @@ trait LinearTransformer extends LinearTransformerState {
   */
 trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
   final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
+    applyContainer(inModule)
     state.processedElements.get(inModule.path).map {
       case m: Module => m
       case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
@@ -209,6 +185,49 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     }
   }
 
+  /**
+    * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
+    *
+    * If the transformer is applicable on `inContainer`, it creates a new output container,
+    * performs the post-conditions below, and returns true.
+    * Transformers may choose on their own what kind of output container to create.
+    * E.g. [[LinearFunctorialTransformer]] creates theories for theories, and views for views,
+    * and [[LinearConnectorTransformer]] creates views for theories and is inapplicable on view.s
+    *
+    * Post-conditions:
+    *
+    *   - if `true` is returned, you must have
+    *
+    *     - [[DiagramInterpreter.add()]] on `outContainer`
+    *     - added `(inContainer, outContainer)` to `state.diagramState.processedElements`
+    *     - set `state.outContainer = outContainer`
+    *   - see also postconditions of [[applyContainer()]]
+    *
+    * @see [[endContainer()]]
+    */
+  def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
+
+  /**
+    * Finalizes a container.
+    *
+    * By default, this method uses `DiagramState.processedElements` to lookup to which container
+    * `inContainer` has been mapped to, and calls [[DiagramInterpreter.endAdd()]] on the latter.
+    *
+    * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
+    *
+    * Post-conditions:
+    *
+    *   - the container returned by [[beginContainer()]] must have been finalized via
+    *     [[DiagramInterpreter.endAdd()]]
+    *     (You can access that container via `state.diagramState.processedElements`,
+    *      see post-conditions of [[beginContainer()]].)
+    *   - see also postconditions of [[applyContainer()]]
+    *
+    * You may override this method. Be sure to call `super.endContainer()` last in your overridden
+    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
+    *
+    * @see [[beginContainer()]]
+    */
   override def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit = {
     // be careful with accessing in processedElements
     // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements

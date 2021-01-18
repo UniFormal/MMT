@@ -120,6 +120,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
           case Some(outView) =>
             state.diagramState.processedElements.put(inTheory.path, outView)
             interp.addToplevelResult(outView)
+            state.outContainer = outView
             true
 
           case _ => false
@@ -132,6 +133,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
         // to fulfill invariants of other code snippets, we have to put something
         // arbitrary into processedElements
         state.diagramState.processedElements.put(inContainer.path, inContainer)
+        // TODO: fulfill method contract and set `state.outContainer = ???`
         true
     }
   }

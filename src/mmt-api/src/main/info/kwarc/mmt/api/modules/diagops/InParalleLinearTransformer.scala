@@ -23,9 +23,9 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
     override def inherit(other: ThisState): Unit = {}
   }
 
-  // cannot concisely express return type in Scala's type system, hence Object
+  // cannot concisely express return type in Scala's type system, hence LinearTransformer#LinearState
   // ideally, return type would be a sigma type: `Σ(tx: LinearTransformer). tx.LinearState`
-  private def foreachTransformer[T](f: (LinearTransformer, Object) => T)(implicit state: LinearState): Unit = {
+  private def foreachTransformer[T](f: (LinearTransformer, LinearTransformer#LinearState) => T)(implicit state: LinearState): Unit = {
     transformers.zipWithIndex.foreach {
       case (tx, i) =>
         f(tx, state.txStates(i).asInstanceOf[tx.LinearState])
