@@ -2,10 +2,9 @@ package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api.modules.DiagramInterpreter
 import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, SimpleLinearOperator}
-import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
-import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName, MPath, Path}
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
 
 abstract class PolymorphifyOperator extends SimpleLinearOperator with OperatorDSL {
