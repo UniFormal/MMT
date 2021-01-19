@@ -1,10 +1,10 @@
 package info.kwarc.mmt
 
-import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.objects.{Context, OMIDENT, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
+import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 import info.kwarc.mmt.lf.LF
 
@@ -44,10 +44,10 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val lr = (p: GlobalName) => {
-      if (state.processedDeclarations.exists(_.path == p)) {
+      if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
         OMS(logrel(p))
       } else {
-        return NotApplicable(c, "refers to constant not previously processed. Implementation error?")
+        return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
       }
     }
     val logicalRelation = new LogicalRelation(mors, lr, interp.ctrl.globalLookup)
@@ -64,6 +64,7 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
   )
 }
 
+// todo: support complex morphisms
 object LogicalRelationOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_operator")
 
@@ -75,24 +76,5 @@ object LogicalRelationOperator extends ParametricLinearOperator {
       case _ =>
         None
     }
-    /*val links = parameters.map {
-      case OMMOD(linkPath) => interp.ctrl.getAs(classOf[Link], linkPath)
-      case t =>
-        interp.errorCont(InvalidObject(t, "cannot parse as path to link"))
-        return None
-    }
-
-    val (domain, codomain) = {
-      val domainsCodomains = links.map(link => (link.from, link.to)).unzip
-      (domainsCodomains._1.distinct, domainsCodomains._2.distinct) match {
-        case (List(dom), List(cod)) => (dom, cod)
-        case _ =>
-          interp.errorCont(GeneralError("passed links to logical relation operators must all have same domain/codomain"))
-          return None
-      }
-    }
-
-    Some(new LogicalRelationTransformer(links, domain.toMPath, codomain.toMPath))
-    */
   }
 }

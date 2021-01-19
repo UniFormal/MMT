@@ -5,10 +5,7 @@ import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagops._
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Structure}
-import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
-import info.kwarc.mmt.api.utils.UnicodeStrings
-
-import scala.collection.mutable
+import info.kwarc.mmt.api.uom.SimplificationUnit
 
 object LogicalRelationPushoutOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_pushout_operator")
