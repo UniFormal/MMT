@@ -6,13 +6,8 @@ import objects.{Context, OMMOD, OMV}
 import info.kwarc.mmt.mizar.newxml._
 import syntax._
 import Utils.MizarGlobalName
-import info.kwarc.mmt.api.symbols.{Renamer, TraversingTranslator}
-import translator._
-import mmtwrapper._
-import MizSeq._
+import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
-import typeTranslator._
-import variableTranslator._
 
 sealed abstract class TranslatingError(str: String) extends Exception(str)
 class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
@@ -23,8 +18,10 @@ case class DeclarationTranslationError(str: String, decl: Subitem) extends Decla
   }
 }
 class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
+case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends ObjectLevelTranslationError(str+
+  "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString, prfedClaim)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
-  "\nObjectTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
+  "\nExpressionTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
     val ln = LocalName(kind+":"+nr)
@@ -37,24 +34,18 @@ object TranslatorUtils {
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
-  def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
-  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName)}
+  def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
+  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
-  def conforms(A:Type, B:Type) : Boolean = {
-    val List(a,b) = List(A,B).map(translate_Type(_))
-    val List(as, bs) = List(a,b) map TranslationController.simplifyTerm
-    as == bs
-  }
   def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),"Negated-Formula"),form)
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),"Contradiction")))
   def emptyPosition() = Position("translation internal")
   def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(tpAttrs, _, _, elementArgs) if (elementArgs._children.length == 1) =>
-      elementArgs match { case Arguments(List(u)) => u }
+    case Standard_Type(tpAttrs, _, _, Arguments(List(u))) => u
     case Standard_Type(tpAttrs, noocc, origNr, elementArgs) =>throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. "+
       "In particular expected exactly 1 argument, but found "+elementArgs._children.length+". ", tp)
     case _ => throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. ", tp)
@@ -71,13 +62,33 @@ object TranslatorUtils {
   def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
     varSegm._vars.head._tp()
   }
-  def namedDefArgsSubstition(varName: String = "x")(implicit args: Context = Context.empty) = {
+  /**
+   * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
+   * where <varName> is the name of the argument sequence from the corresponding pattern
+   *
+   * This is make the arguments used the names actually used in the binder of the pattern,
+   * not the names given to the arguments in Mizar
+   * @param varName (default "x") The name of the argument sequence in the corresponding pattern
+   * @param args (implicit) the arguments to build the substitution for
+   * @return
+   */
+  def namedDefArgsSubstition(varName: String = "x")(implicit args: Context) = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
       case (vd, i) => vd / objects.OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
     }:_*)
   }
-  def namedDefArgsTranslator(varName: String = "x")(implicit args: Context = Context.empty) : symbols.Declaration => symbols.Declaration = {
+  /**
+   * Compute a translator substituting the implicitely sublied argument within type and definition of a declaration by terms of the form OMV(<varName> / i),
+   * where <varName> is the name of the argument sequence from the corresponding pattern
+   *
+   * This is make the arguments use the names actually used in the binder of the pattern,
+   * not the names given to the arguments in Mizar
+   * @param varName (default "x") The name of the argument sequence in the corresponding pattern
+   * @param args (implicit) the arguments to build the substitution for
+   * @return A translation function on declarations making the substitution
+   */
+  def namedDefArgsTranslator(varName: String = "x")(implicit args: Context) : symbols.Declaration => symbols.Declaration = {
     {d: symbols.Declaration =>
       val tl = symbols.ApplySubs(namedDefArgsSubstition(varName))
      d.translate(tl, Context.empty)}

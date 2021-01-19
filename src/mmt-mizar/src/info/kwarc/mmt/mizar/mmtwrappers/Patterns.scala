@@ -10,12 +10,12 @@ import symbols._
 //Typically only these two objects need to be updated if the structural extensions API of MMT changes
 object MizPattern {
   def apply(name : LocalName, params: Context, body : Context) = {
-     patterns.Pattern(OMMOD(Mizar.MizarPatternsTh), name, params, body, NotationContainer())
+     patterns.Pattern(OMMOD(Mizar.MizarPatternsTh), name, params, body, NotationContainer.empty())
   }
 }
 
 object MizInstance {
-   def apply(home : Term, name : LocalName, pattern : GlobalName, arguments: List[Term], notCont: NotationContainer = NotationContainer()) = {
+   def apply(home : Term, name : LocalName, pattern : GlobalName, arguments: List[Term], notCont: NotationContainer = NotationContainer.empty()) = {
      //val argsS = arguments.map(a => TranslationController.controller.presenter.asString(a)).mkString("\n")
      //println("instance " + name + " with arguments " + argsS)
      patterns.Instance(home, name, pattern, arguments, notCont)

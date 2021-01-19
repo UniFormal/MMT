@@ -77,7 +77,6 @@ object Mizar {
   //val any : Term = constant("any")
   def tp : Term = constant("tp")
   def set = constant("set")
-  // TODO: make sure this really gives us what we want
   def any =constant("any")
 
   def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)

@@ -74,7 +74,7 @@ case class Positions(position:Position, endposition:String) extends Group {
  * @param _claim the claim
  * @param _just (optional) the justification for the claim
  */
-case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group {
+case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group  with ObjectLevel {
   /**
    * An empty justification is only allowed if the claim is an iterative equality
    */
@@ -119,7 +119,7 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
   def spelling: String
   override def pos(): Position = posNr.pos
   def globalPatternName(aid: String, refSort: String, constrnr: Int): MizarGlobalName = {
-    MizarGlobalName(aid, sort, patternnr)
+    MizarGlobalName(aid, refSort, patternnr)
   }
 }
 trait referencingConstrObjAttrs extends referencingObjAttrs {
@@ -317,8 +317,8 @@ case class CaseBasedExpr(singleCasedExpr:SingleCaseExpr, partialCasedExpr:Partia
   def expr() :Option[Expression] = {singleCasedExpr._expr}
   def partialDef()= {partialCasedExpr._partDefs}
   def otherwise() = {partialCasedExpr._otherwise}
-  def isPartial() = {check(); partialDef.isDefined}
-  def isSingleCase() = {check(); expr.isDefined}
+  def isPartial() = {check(); partialDef().isDefined}
+  def isSingleCase() = {check(); expr().isDefined}
 }
 
 case class Text_Proper(articleid: String, articleext: String, pos: Position, _items: List[Item]) {
@@ -374,7 +374,7 @@ case class Definition_Item(_block:Block) extends Subitem {
 case class Section_Pragma() extends Subitem
 case class Pragma(_notionName: Option[Pragmas]) extends Subitem
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
-case class Cluster(_registrs:List[Registrations]) extends Subitem
+case class Cluster(_registrs:List[Registrations]) extends BlockSubitem
 case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
 case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
 case class Exemplification(_exams:List[Exemplifications]) extends Subitem
@@ -398,7 +398,7 @@ case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _p
 case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads
 
-sealed trait Nyms extends Subitem {
+sealed trait Nyms extends BlockSubitem {
   def _patOld: Patterns
   def _patNew: Patterns
   def antonymic: Boolean
@@ -428,7 +428,8 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
 case class Theorem_Item(MmlId:MMLId, prfClaim:ProvedClaim) extends Statement with MMLIdSubitem
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
 
-sealed trait Definition extends Subitem
+sealed trait BlockSubitem extends Subitem
+sealed trait Definition extends BlockSubitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
@@ -547,8 +548,8 @@ case class Simple_Term(varAttr:LocalVarAttr) extends Term {
 }
 sealed trait ComplexTerm extends Term {
   def objAttr() : RedObjectSubAttrs
-  override def sort() : String = objAttr().sort
-  override def pos(): Position = objAttr().pos
+  override def sort() : String = objAttr().sort()
+  override def pos(): Position = objAttr().pos()
 }
 /**
  * introduction form of a structure

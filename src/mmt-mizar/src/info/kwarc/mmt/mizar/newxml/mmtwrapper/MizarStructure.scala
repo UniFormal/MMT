@@ -14,7 +14,7 @@ import RecordUtil._
 import StructuralFeatureUtils.{Eq, parseInternalDeclarations}
 import PatternUtils._
 import info.kwarc.mmt.mizar.newxml._
-import translator.TranslationController
+import translator.{DeclarationTranslationError, TranslationController}
 import MMTUtils._
 
 object MizarStructure {
@@ -52,16 +52,19 @@ object MizarStructure {
       Lam("s", structx, Mizar.prop)))
     val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
       Lam("s", makex, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
-    val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {case (OMS(substrGN),i) =>
-      val (substrPrePath, substrName) = (substrGN.module ? substrGN.name.init, substrGN.name.head)
-      val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
-      val restrName = structureDefRestrName(substrName.toString)
-      val restr = VarDecl(restrName,typedArgsCont(
-        Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
-      val restrSelProps = subselectors map {n =>
-        VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(refDecl(restrName.toString),OMS(substrPrePath/restrName)))
-      }
-      restr::restrSelProps
+      val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {
+        case (OMS(substrGN),i) =>
+          val substrPrePath = substrGN.module ? substrGN.name.init
+          val substrName = substrGN.toMPath.name.toString
+          val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
+          val restrName = structureDefRestrName(substrName)
+          val restr = VarDecl(restrName,typedArgsCont(
+            Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
+          val restrSelProps = subselectors map {n =>
+            VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(refDecl(restrName.toString),OMS(substrPrePath/restrName)))
+          }
+          restr::restrSelProps
+        case tm => throw ImplementationError("Expected an OMS referencing the type declaration of a substructure, but instead found the term "+tm._1.toStr(true))
     }
     val furtherDecls = (substrRestr++List(strict, strictProp)) map (_.toConstant(parentTerm.module,Context.empty))
     recordElabDecls ++ furtherDecls

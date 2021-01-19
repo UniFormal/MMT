@@ -3,7 +3,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt.api._
 import documents.Document
 import info.kwarc.mmt.api.modules.Theory
-import symbols.Declaration
+import symbols.{Constant, Declaration, DerivedDeclaration}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.definiensTranslator.assumptionTranslator
@@ -54,7 +54,9 @@ object itemTranslator {
     }
     translatedSubitem map {
       //Currently probably the only case that actually occurs in practise
-      case decl: Declaration => TranslationController.add(decl)
+      case decl: Declaration =>
+        val name = decl.name
+        TranslationController.add(decl)
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
     }
@@ -91,8 +93,33 @@ class MizarXMLImporter extends archives.Importer {
     log("The translated article " + bf.narrationDPath.last + ": ")
 
     log("theory "+th.name)
-    th.getDeclarations foreach {
-      case decl: Declaration => log("\t"+TranslationController.controller.presenter.asString(decl))
+
+    def presentTm(tm: objects.Term): String = TranslationController.controller.presenter.asString(tm)
+
+    /**
+     * Presenter that also show notations
+     * @param d
+     * @return
+     */
+    def presentDecl(d: Declaration) : String = d match {
+      case c: Constant =>
+        c.name.toString+": "+presentTm(c.tp.get)+
+          (if (c.df.isDefined) {" | = "+presentTm(c.df.get)})+
+          (if (c.not.isDefined) {" | # "+c.not.get.toString})
+      case dd: DerivedDeclaration =>
+        TranslationController.controller.presenter.asString(dd)+
+          (if (dd.not.isDefined) {" | # "+dd.not.get.toString})
+    }
+
+    th.getDeclarations foreach {case decl: Declaration =>
+    try {
+        log(presentDecl(decl))
+      } catch {
+        case e: GeneralError =>
+          println("General error while presenting the declaration: "+decl.toString+": ")
+          println(e.toStringLong)
+          throw e
+      }
     }
     TranslationController.currentDoc//currentThy.asDocument
   }

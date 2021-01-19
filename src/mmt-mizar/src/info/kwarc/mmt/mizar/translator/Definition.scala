@@ -34,7 +34,7 @@ object DefinitionTranslator {
   */
 
    def makeSubs(argTypes : List[Term], ret : Option[(String, Term)], cases : List[Term], results : List[Term], default : Option[Term]): List[Term] = {
-     val argSubs:List[Sub] = Sub("n", OMI(argTypes.length)) :: Sub("args", Sequence(argTypes: _*)) :: Nil
+     val argSubs = Sub("n", OMI(argTypes.length)) :: Sub("args", Sequence(argTypes: _*)) :: Nil
      val retSub = ret.map(t => Sub(t._1, t._2) :: Nil).getOrElse(Nil)
      val lamCases = cases.map(c => MMTUtils.LamArgs("x", argTypes.length, c))
      val lamResults = results.map(r => MMTUtils.LamArgs("x", argTypes.length, r))

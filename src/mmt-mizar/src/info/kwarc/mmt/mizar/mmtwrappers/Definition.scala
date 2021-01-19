@@ -316,6 +316,7 @@ object DefPatterns {
                     VarDecl("strict",Arrow(Mizar.any, Mizar.prop)))  ++ genMSElab(nrMS))
    }
 
+
    val MizSelDef =  MizPattern(LocalName("MizSelector"),
          Context(VarDecl("mType", Mizar.tp),
                 VarDecl("retType", Mizar.tp)),
