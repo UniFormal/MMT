@@ -374,7 +374,7 @@ case class Definition_Item(_block:Block) extends Subitem {
 case class Section_Pragma() extends Subitem
 case class Pragma(_notionName: Option[Pragmas]) extends Subitem
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
-case class Cluster(_registrs:List[Registrations]) extends Subitem
+case class Cluster(_registrs:List[Registrations]) extends BlockSubitem
 case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
 case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
 case class Exemplification(_exams:List[Exemplifications]) extends Subitem
@@ -398,7 +398,7 @@ case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _p
 case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads
 
-sealed trait Nyms extends Subitem {
+sealed trait Nyms extends BlockSubitem {
   def _patOld: Patterns
   def _patNew: Patterns
   def antonymic: Boolean
@@ -428,7 +428,8 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
 case class Theorem_Item(MmlId:MMLId, prfClaim:ProvedClaim) extends Statement with MMLIdSubitem
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
 
-sealed trait Definition extends Subitem
+sealed trait BlockSubitem extends Subitem
+sealed trait Definition extends BlockSubitem
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem

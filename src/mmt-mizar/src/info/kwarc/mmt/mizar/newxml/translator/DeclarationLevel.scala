@@ -18,6 +18,7 @@ import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils.Lam
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.any
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator.translate_Claim
 import info.kwarc.mmt.mizar.newxml.translator.clusterTranslator.translate_Cluster
+import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
 import info.kwarc.mmt.mizar.newxml.translator.nymTranslator.translate_Nym
 import patternTranslator._
 
@@ -96,7 +97,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition)(implicit args: Context= Context.empty, corr_conds: List[Correctness_Condition] = Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = {
+  def translate_Definition(defn:Definition)(implicit args: Context= Context.empty, assumptions: List[objects.Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil) : List[info.kwarc.mmt.api.symbols.Declaration] = {
     val resDecls = defn match {
       case at: Attribute_Definition => translate_Attribute_Definition(at)
       case cd: Constant_Definition => translate_Constant_Definition(cd)
@@ -357,89 +358,73 @@ object patternTranslator {
 }
 
 object blockTranslator {
-  def translate_Definitional_Block(block:Block):List[symbols.Declaration] = {
-    val definitionItems = block._items
+  def collectSubitems[mainSort <: Subitem](block: Block) : (Context, List[objects.Term], List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])]) = {
+    val items = block._items
     implicit var args: Context = objects.Context.empty
     implicit var assumptions: List[objects.Term] = Nil
-    var resDecls:List[symbols.Declaration] = Nil
+    var resDecls: List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])] = Nil
 
-    definitionItems .zipWithIndex foreach { case (it: Item, ind: Int) =>
+    items.zipWithIndex foreach { case (it: Item, ind: Int) =>
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
-        case defn: Definition =>
-          implicit val corr_conds = definitionItems.drop(ind).map(_._subitem).takeWhile({
-            case it: Correctness_Condition => true
-            case cor: Correctness => true
-            case _ => false
-          }) map {
-            case corCond @ Correctness_Condition(_cor, _justO) => JustifiedCorrectnessConditions(List(_cor), _justO)
-            case Correctness(_cor, _just) => JustifiedCorrectnessConditions(_cor._cond, Some(_just))
-          }
-          val translDef = definitionTranslator.translate_Definition(defn)
-          resDecls = resDecls ++ translDef
-        case prop:Property => ???
         case ass: Assumption => assumptions +:= translate_Claim(ass)
-        case correctness_Condition: Correctness_Condition =>
+        case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
+          implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil
+          implicit var props: List[Property] = Nil
+          items.drop(ind).map(_._subitem match {
+            case corCond: Correctness_Condition => (true, Some(corCond))
+            case cor: Correctness => (true, Some(cor))
+            case prop: Property => (true, Some(prop))
+            case _ => (false, None)
+          }) filter(_._1) foreach(_._2.get match {
+            case corCond @ Correctness_Condition(_cor, _justO) =>
+              corr_conds +:= JustifiedCorrectnessConditions(List(_cor), _justO)
+            case Correctness(_cor, _just) =>
+              corr_conds +:= JustifiedCorrectnessConditions(_cor._cond, Some(_just))
+            case prop : Property => props +:= prop
+          })
+          resDecls +:= (defn, corr_conds, props)
         case corr: Correctness =>
-        case defIt => throw DeclarationTranslationError("Definition expected inside definition-item.\n Instead found " + defIt.kind+". ", defIt)
+        case correctness_Condition: Correctness_Condition =>
+        case prop:Property =>
+        case defIt => throw DeclarationTranslationError("Unexpected item of type " + defIt.kind+" found, in "+block.kind, defIt)
       }
     }
-    resDecls
+    (args, assumptions, resDecls)
+  }
+  def translate_Definitional_Block(block:Block):List[symbols.Declaration] = {
+    val (arguments, ass, definitionItems) = collectSubitems[Definition](block)
+    implicit var args: Context = arguments
+    implicit var assumptions: List[objects.Term] = ass
+    definitionItems flatMap {
+      case (defn: Definition, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
+        implicit val corrConds = corConds
+        implicit val properties = props
+        translate_Definition(defn)
+    }
   }
   def translate_Registration_Block(block: Block) : List[symbols.Declaration] = {
-    val registrationItems = block._items
-    var args: Context = Context.empty
-    var resDecls:List[symbols.Declaration] = Nil
-
-    registrationItems.zipWithIndex foreach { case (it: Item, ind: Int) =>
-      it._subitem match {
-        case loci_Declaration: Loci_Declaration =>
-          args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
-        case cl: Cluster =>
-          implicit val corr_conds = registrationItems.drop(ind).map(_._subitem).takeWhile({
-            case it: Correctness_Condition => true
-            case cor: Correctness => true
-            case _ => false
-          }) map {
-            case corCond @ Correctness_Condition(_cor, _justO) => JustifiedCorrectnessConditions(List(_cor), _justO)
-            case Correctness(_cor, _just) => JustifiedCorrectnessConditions(_cor._cond, Some(_just))
-          }
-          val translCluster = translate_Cluster(cl, corr_conds)(args)
-          resDecls = resDecls ++ translCluster
-        case correctness_Condition: Correctness_Condition =>
-        case otherIt =>
-          throw DeclarationTranslationError("Found unexpected item inside registration-item: " + otherIt.shortKind+". ", otherIt)
-      }
+    val (arguments, ass, definitionItems) = collectSubitems[Cluster](block)
+    implicit var args: Context = arguments
+    implicit var assumptions: List[objects.Term] = ass
+    definitionItems flatMap {
+      case (cl: Cluster, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
+        implicit val corrConds = corConds
+        implicit val properties = props
+        translate_Cluster(cl)
     }
-    resDecls
   }
   def translate_Notation_Block(block: Block): List[symbols.Declaration] = {
-    val notationItems = block._items
-    var args: Context = Context.empty
-    var resDecls:List[symbols.Declaration] = Nil
-
-    notationItems.zipWithIndex foreach { case (it: Item, ind: Int) =>
-      it._subitem match {
-        case loci_Declaration: Loci_Declaration =>
-          args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
-        case nym: Nyms =>
-          implicit val corr_conds = notationItems.drop(ind).map(_._subitem).takeWhile({
-            case it: Correctness_Condition => true
-            case cor: Correctness => true
-            case _ => false
-          }) map {
-            case corCond @ Correctness_Condition(_cor, _justO) => JustifiedCorrectnessConditions(List(_cor), _justO)
-            case Correctness(_cor, _just) => JustifiedCorrectnessConditions(_cor._cond, Some(_just))
-          }
-          val translNyms = translate_Nym(nym)(corr_conds, args)
-          resDecls = resDecls ++ translNyms
-        case correctness_Condition: Correctness_Condition =>
-        case otherIt =>
-          throw DeclarationTranslationError("Cluster expected inside registration-item.\n Instead found " + otherIt.shortKind + ". ", otherIt)
-      }
+    val (arguments, ass, definitionItems) = collectSubitems[Nyms](block)
+    implicit var args: Context = arguments
+    implicit var assumptions: List[objects.Term] = ass
+    definitionItems flatMap {
+      case (nym: Nyms, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
+        implicit val corrConds = corConds
+        implicit val properties = props
+        translate_Nym(nym)
     }
-    resDecls
   }
 }
 
