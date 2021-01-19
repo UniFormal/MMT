@@ -288,16 +288,28 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
 }
 
 // to be renamed to Diagram (after structural feature has been renamed)
-sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT]) {
+sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
   def toTerm: Term = mt match {
     case Some(baseDiagram) => OMA(OMS(DiagramTermBridge.basedDiagram), baseDiagram.toTerm :: DiagramTermBridge.PathCodec(modules))
     case None => OMA(OMS(DiagramTermBridge.rawDiagram), DiagramTermBridge.PathCodec(modules))
   }
 
   /**
-    * Returns modules contained in this diagram and contained in all meta diagrams.
+    * All modules contained in this diagram and contained in all meta diagrams.
     */
-  def getAllModules: Set[MPath] = modules.toSet ++ mt.map(_.getAllModules).getOrElse(Set.empty[MPath])
+  lazy val getAllModules: Set[MPath] = modules.toSet ++ mt.map(_.getAllModules).getOrElse(Set.empty[MPath])
+
+  def hasImplicitFrom(source: MPath)(implicit lookup: Lookup): Boolean = {
+    getAllModules.exists(m => lookup.hasImplicit(source, m))
+  }
+
+  def hasImplicitTo(target: MPath)(implicit lookup: Lookup): Boolean = {
+    getAllModules.exists(m => lookup.hasImplicit(m, target))
+  }
+
+  def subsumes(other: DiagramT): Boolean = {
+    ???
+  }
 
   /**
     * Closes a diagram wrt. a meta diagram.
@@ -355,6 +367,10 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT]) {
       case _ => Traverser(this, t)
     }
   }
+}
+
+object DiagramT {
+  def singleton(theory: MPath): DiagramT = DiagramT(List(theory))
 }
 
 object DiagramTermBridge {

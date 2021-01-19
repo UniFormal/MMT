@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules.diagops
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, Theory, View}
+import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols.{Constant, IncludeData, Structure, TermContainer}
 import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
@@ -64,8 +65,8 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
   protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if interp.ctrl.globalLookup.hasImplicit(mt, operatorDomain) =>
-        operatorCodomain
+      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.globalLookup) =>
+        applyMetaModule(OMMOD(mt)).toMPath
       case mt =>
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
@@ -218,12 +219,13 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     */
   final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
+    implicit val lookup: Lookup = ctrl.globalLookup
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) ???
 
     val newFrom: MPath = include.from match {
-      case p if p == operatorDomain => operatorCodomain.toMPath
+      case p if operatorDomain.hasImplicitFrom(p) => applyMetaModule(OMMOD(p)).toMPath
 
       // classic case for include preserving behavior of linear operators
       case from if diagramState.seenModules.contains(from) =>
@@ -235,14 +237,6 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
 
         applyModulePath(from)
 
-      case from if ctrl.globalLookup.hasImplicit(OMMOD(from), OMMOD(operatorDomain)) =>
-        // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
-        //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
-        //      but in general it might be something else
-        //
-        // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-        from
-
       case _ =>
         interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
           s"`${include.from}`: unbound in input diagram, leaving as-is"))
@@ -250,15 +244,15 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     }
 
     val newDf: Option[Term] = include.df.map {
-      case OMIDENT(OMMOD(p)) if p == operatorDomain => OMIDENT(OMMOD(operatorCodomain))
+      case df @ OMIDENT(OMMOD(p)) if operatorDomain.hasImplicitFrom(p) => applyMetaModule(df)
       case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) => OMIDENT(OMMOD(applyModulePath(thy)))
-      case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
+      case df @ OMIDENT(OMMOD(thy)) if operatorDomain.hasImplicitFrom(thy) =>
         // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
         //      the view will feature an "include ?meta = OMIDENT(OMMOD(?meta))"
         //      but in general it might be something else
         //
         // todo: what to do here? add to context? just retain and hope there's an implicit morphism from from to operatorCodomain, too?
-        OMIDENT(thy)
+        applyMetaModule(df)
 
       case OMMOD(dfPath) if diagramState.seenModules.contains(dfPath) =>
         // ???: error: morphism provided as definiens to include wasn't contained in diagram
@@ -285,16 +279,21 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
   }
 }
 
-/**
-  * No-op transformer; identity on module paths.
-  *
-  * Its purpose is to serve for the `in` or `out` field of [[LinearConnectorTransformer]]s.
-  */
-class IdentityLinearTransformer(private val domain: MPath) extends LinearFunctorialTransformer with DefaultLinearStateOperator {
-  override val operatorDomain: MPath = domain
-  override val operatorCodomain: MPath = domain
+object LinearFunctorialTransformer {
+  /**
+    * No-op identity [[LinearTransformer transformer]] on some diagram.
+    *
+    * Its purpose is to serve for the `in` or `out` field of [[LinearConnectorTransformer]]s.
+    */
+  def identity(domain: DiagramT): LinearFunctorialTransformer = new LinearFunctorialTransformer with DefaultLinearStateOperator {
+    override val operatorDomain: DiagramT = domain
+    override val operatorCodomain: DiagramT = domain
+    override def applyMetaModule(m: Term): Term = m
 
-  override def applyModuleName(name: LocalName): LocalName = name
+    override def applyModuleName(name: LocalName): LocalName = name
 
-  override def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
+    override def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
+  }
+
+  def identity(domainTheory: MPath): LinearFunctorialTransformer = identity(DiagramT(List(domainTheory), None))
 }

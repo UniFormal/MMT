@@ -14,11 +14,11 @@ import info.kwarc.mmt.odk.diagops.OpUtils.GeneralApplySpine
   */
 object CongOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?cong_operator")
-  override val operatorDomain: MPath = SFOL.sfoleqnd
+  override val operatorDomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
 
   // strengthened SFOL because [[CongQuotientConnector]] needs this as its codomain
   // (due to quotient types) and the diagop framework cannot handle this nicely yet
-  override val operatorCodomain: MPath = SFOL.Strengthened
+  override val operatorCodomain: DiagramT = DiagramT.singleton(SFOL.Strengthened)
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cong")
 

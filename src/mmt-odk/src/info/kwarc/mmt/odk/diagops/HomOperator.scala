@@ -16,8 +16,9 @@ import info.kwarc.mmt.odk.LFX.RecExp
   */
 object HomOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_operator")
-  override val operatorDomain: MPath = SFOL.sfoleqnd
-  override val operatorCodomain: MPath = SFOL.sfoleqnd
+
+  override val operatorDomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
+  override val operatorCodomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
 
   // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
   val dom: Renamer[LinearState] = getRenamerFor("ᵈ")

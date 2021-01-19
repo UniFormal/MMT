@@ -10,7 +10,7 @@ package info.kwarc.mmt.api.modules.diagops
   */
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, RawDiagram}
+import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, DiagramT, DiagramTermBridge, RawDiagram}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{GlobalName, InvalidObject, MPath}
@@ -32,21 +32,22 @@ abstract class ModuleOperator extends DiagramOperator with DiagramTransformer {
 
 trait RelativeBaseOperator extends ModuleOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(operatorDomain, dom) =>
-      Some(modulePaths)
-    case BasedDiagram(dom, _) =>
-      // todo check for implicit morphism from `domain` to actual domain
+    case DiagramTermBridge(diag) if operatorDomain.subsumes(diag) =>
+      Some(diag.modules)
+
+    case DiagramTermBridge(diag) =>
       interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
-        s"on diagrams over $operatorDomain. Given diagram was over $dom (and no implicits from $dom " +
-        "to $operatorDomain available."))
+        s"on diagrams over $operatorDomain. Given diagram was over $diag."))
       None
+
     case _ =>
       interp.errorCont(InvalidObject(diagram, s"Operator ${this.getClass.getSimpleName} only applicable " +
-        "on simple diagrams. Did simplification not kick in?"))
+        "on atomic diagrams expressions. Did simplification not kick in?"))
       None
   }
 
-  final override def submitDiagram(newModules: List[MPath]): Term = BasedDiagram(operatorCodomain, newModules)
+  final override def submitDiagram(newModules: List[MPath]): Term =
+    DiagramT(newModules, Some(operatorCodomain)).toTerm
 }
 
 abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTransformer
@@ -61,10 +62,10 @@ abstract class ParametricLinearOperator extends DiagramOperator {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>
 
       instantiate(parameters).flatMap(tx => {
-        val modulePaths = interp(actualDiagram).map {
-          case BasedDiagram(_, paths) => paths
-          case RawDiagram(paths) => paths
-        }
+        val modulePaths: Option[List[MPath]] = interp(actualDiagram).collect {
+          case DiagramTermBridge(diag) => Some(diag.modules)
+          case _ => None
+        }.flatten
 
         modulePaths.map(tx.applyDiagram(_))
       }).map(outputPaths => RawDiagram(outputPaths))
@@ -97,23 +98,14 @@ abstract class LinearConnector extends LinearOperator with LinearConnectorTransf
   */
 abstract class SimpleLinearOperator extends LinearOperator with LinearFunctorialTransformer with SimpleLinearModuleTransformer
 
-abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer {
-  final override def sanityCheck()(implicit interp: DiagramInterpreter): Unit = {
-    super.sanityCheck()
-
-    if (!interp.ctrl.globalLookup.hasImplicit(in.operatorCodomain, out.operatorCodomain)) {
-      // todo:
-      // throw ImplementationError(s"Connector ${this.getClass.getSimpleName} tried to connect operators in an incompatible way: there is no implicit morphism from ${in.operatorCodomain} to ${out.operatorCodomain}. This case does not make sense.")
-    }
-  }
-}
+abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
 
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
 abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
-  final override val in: LinearFunctorialTransformer = new IdentityLinearTransformer(operator.operatorDomain)
+  final override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(operator.operatorDomain)
   final override val out: operator.type = operator
 }
 
@@ -123,20 +115,5 @@ abstract class SimpleInwardsConnector(final override val head: GlobalName, val o
 abstract class SimpleOutwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
   final override val in: operator.type = operator
-  final override val out: LinearFunctorialTransformer = new IdentityLinearTransformer(operator.operatorDomain)
+  final override val out: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(operator.operatorDomain)
 }
-
-/*
-
-a nice DSL for specifying operators together with connectors:
-
-  // helper functions to make up a nice DSL
-  final protected def MainResults(decls: SimpleConstant*): List[List[SimpleConstant]] = List(decls.toList)
-  final protected def MainResults(initDecls: Seq[SimpleConstant], decls: SimpleConstant*): List[List[SimpleConstant]] = MainResults((initDecls.toList ::: decls.toList) : _*)
-
-  // Conn results are almost always morphisms, hence definiens must always be given (no Option[Term])
-  final protected def ConnResults(decls: (LocalName, Term, Term)*): List[List[SimpleConstant]] =
-    List(decls.map(d => (d._1, d._2, Some(d._3))).toList)
-
-    final protected val NoResults: List[List[SimpleConstant]] = Nil
-*/

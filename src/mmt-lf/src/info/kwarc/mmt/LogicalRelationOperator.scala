@@ -10,8 +10,8 @@ import info.kwarc.mmt.lf.LF
 
 final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
 
-  override val operatorDomain: MPath = LF.theoryPath
-  override val operatorCodomain: MPath = LF.theoryPath
+  override val operatorDomain: DiagramT   = DiagramT(List(LF.theoryPath))
+  override val operatorCodomain: DiagramT = DiagramT(List(LF.theoryPath))
 
   // todo: encode links in name?
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")

@@ -13,8 +13,9 @@ import info.kwarc.mmt.odk.diagops.OpUtils.{GeneralLambda}
   */
 object SubOperator extends SimpleLinearOperator with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?sub_operator")
-  override val operatorDomain: MPath = SFOL.sfoleqnd
-  override val operatorCodomain: MPath = SFOL.sfoleqnd
+
+  override val operatorDomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
+  override val operatorCodomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
 
   val par: Renamer[LinearState] = getRenamerFor("ᵖ") // parent symbol copy
   val sub: Renamer[LinearState] = getRenamerFor("ˢ") // substructure symbol/condition

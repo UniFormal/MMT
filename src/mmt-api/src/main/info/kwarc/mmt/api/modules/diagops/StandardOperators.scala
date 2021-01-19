@@ -7,7 +7,7 @@ package info.kwarc.mmt.api.modules.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.DiagramInterpreter
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 
@@ -20,7 +20,11 @@ object CopyOperator extends ParametricRule {
 }
 
 
-class CopyOperator(override val head: GlobalName, override val operatorDomain: MPath, override val operatorCodomain: MPath) extends SimpleLinearOperator with OperatorDSL {
+class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with OperatorDSL {
+
+  override val operatorDomain: DiagramT = DiagramT(List(dom))
+  override val operatorCodomain: DiagramT = DiagramT(List(cod))
+  override def applyMetaModule(m: Term): Term = ???
 
   override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy")
 
@@ -37,7 +41,7 @@ class CopyOperator(override val head: GlobalName, override val operatorDomain: M
 
 class CopyConnectorFirst(override val head: GlobalName, copyOp: CopyOperator) extends SimpleLinearConnector with OperatorDSL {
 
-  override val in: LinearFunctorialTransformer = new IdentityLinearTransformer(copyOp.operatorDomain)
+  override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(copyOp.operatorDomain)
   override val out: LinearFunctorialTransformer = copyOp
 
   override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy1")

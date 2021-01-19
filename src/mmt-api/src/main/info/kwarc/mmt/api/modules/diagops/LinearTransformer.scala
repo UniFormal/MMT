@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.modules.diagops
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Module, ModuleOrLink}
+import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.symbols._
 
 trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
@@ -242,6 +243,13 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
 }
 
 trait RelativeBaseTransformer {
-  def operatorDomain: MPath
-  def operatorCodomain: MPath
+  def operatorDomain: DiagramT
+  def operatorCodomain: DiagramT
+
+  /**
+    * A functor from [[operatorDomain]] to [[operatorCodomain]].
+    *
+    * By default the identity.
+    */
+  def applyMetaModule(m: Term): Term = m
 }

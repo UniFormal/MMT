@@ -1,9 +1,10 @@
 package info.kwarc.mmt.api.modules.diagops
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Theory, View}
+import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Theory, View}
 import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols.{Include, IncludeData, Structure}
-import info.kwarc.mmt.api.{ImplementationError, InvalidElement, MPath}
+import info.kwarc.mmt.api.{InvalidElement, MPath}
 
 /**
   * Linearly connects diagrams output by two [[LinearModuleTransformer]] `in` and `out` with views.
@@ -45,31 +46,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  final override lazy val operatorDomain: MPath = in.operatorDomain
-  final override lazy val operatorCodomain: MPath = in.operatorCodomain
-
-  /**
-    * Returns the view to assign to inclusions of the connector's domain.
-    *
-    * Override this if [[in]] and [[out]] have differing codomains.
-    *
-    * Concretely, if [[applyDeclaration()]] is called on `include {in.operatorDomain}`,
-    * then an [[Include]] is emitted of the form
-    * `include {out.operatorCodomain} = {translationView}`.
-    *
-    * By default, this is the identity view on `out.operatorCodomain`.
-    * This is not always correct, see throws clause.
-    *
-    * @throws [[ImplementationError]] if `in.operatorCodomain != out.operatorCodomain`.
-    */
-  def translationView: Term = {
-    if (in.operatorCodomain == out.operatorCodomain) {
-      OMIDENT(OMMOD(out.operatorCodomain))
-    } else {
-      throw ImplementationError("Implementor of diagram operator connector did not " +
-        "override translationView even though it must, see its docs.")
-    }
-  }
+  final override lazy val operatorDomain: DiagramT = in.operatorCodomain
+  final override lazy val operatorCodomain: DiagramT = out.operatorCodomain
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
@@ -198,6 +176,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     */
   final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
+    implicit val lookup: Lookup = ctrl.globalLookup
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) {
@@ -206,8 +185,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     }
 
     val newFrom: MPath = include.from match {
-      case p if p == in.operatorDomain =>
-        in.operatorCodomain
+      case p if in.operatorDomain.hasImplicitFrom(p) =>
+        applyModulePath(p)
 
       case from if diagramState.seenModules.contains(from) =>
         applyModule(ctrl.getModule(from))
@@ -231,8 +210,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
       case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) =>
         OMMOD(applyModulePath(include.from))
 
-      case OMIDENT(OMMOD(p)) if p == in.operatorDomain =>
-        translationView
+      case OMIDENT(OMMOD(p)) if in.operatorDomain.hasImplicitFrom(p) =>
+        OMIDENT(OMMOD(applyModulePath(p)))
 
       case _ => ???
     }

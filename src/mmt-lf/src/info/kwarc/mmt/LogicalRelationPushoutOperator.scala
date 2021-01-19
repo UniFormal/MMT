@@ -119,6 +119,18 @@ final class LogicalRelationPushoutTransformer(
   }
 }
 
+object LogicalRelationPushoutTransformer {
+  class PathTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends ModulePathTransformer with RelativeBaseTransformer {
+
+    override val operatorDomain: DiagramT = DiagramT.singleton(commonLinkDomain)
+    override val operatorCodomain: DiagramT = DiagramT.singleton(commonLinkCodomain)
+
+    // TODO: encode morphism names into name here?
+    def applyModuleName(name: LocalName): LocalName =
+      name.suffixLastSimple("_logrel_pushout")
+  }
+}
+
 private class LogicalRelationPushoutConnector(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath)
   extends LogicalRelationPushoutConnector.PathTransformer(initialLogrel, mors, commonLinkDomain, commonLinkCodomain)
     with SimpleLinearConnectorTransformer
@@ -135,23 +147,8 @@ private class LogicalRelationPushoutConnector(initialLogrel: Term, mors: List[Te
   }
 }
 
-object LogicalRelationPushoutTransformer {
-  class PathTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends ModulePathTransformer with RelativeBaseTransformer {
-
-    override val operatorDomain: MPath = commonLinkDomain
-    override val operatorCodomain: MPath = commonLinkCodomain
-
-    // TODO: encode morphism names into name here?
-    def applyModuleName(name: LocalName): LocalName =
-      name.suffixLastSimple("_logrel_pushout")
-  }
-}
-
 object LogicalRelationPushoutConnector {
-  class PathTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends ModulePathTransformer with RelativeBaseTransformer {
+  class PathTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends ModulePathTransformer {
     override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel_pushout_logrel")
-
-    override def operatorDomain: MPath = commonLinkDomain
-    override def operatorCodomain: MPath = commonLinkCodomain
   }
 }
