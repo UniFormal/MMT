@@ -116,6 +116,7 @@ object definitionTranslator {
     implicit var selectors: List[(Int, VarDecl)] = Nil
     val substr: List[objects.Term] = strDef._ancestors._structTypes.map(translate_Type) map {
       case ApplyGeneral(typeDecl, args) => typeDecl
+      case _ => throw ImplementationError("This should be impossible.")
     }
     val n = substr.length
     var substitutions : List[objects.Sub] = Nil
@@ -358,7 +359,7 @@ object patternTranslator {
 }
 
 object blockTranslator {
-  def collectSubitems[mainSort <: Subitem](block: Block) : (Context, List[objects.Term], List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])]) = {
+  def collectSubitems[mainSort <: BlockSubitem](block: Block) : (Context, List[objects.Term], List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])]) = {
     val items = block._items
     implicit var args: Context = objects.Context.empty
     implicit var assumptions: List[objects.Term] = Nil
@@ -369,19 +370,17 @@ object blockTranslator {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
         case ass: Assumption => assumptions +:= translate_Claim(ass)
+        //We put the guard, since the type pattern is eliminated by the compiler, it is for better error messages only, as we shouldn't ever encounter any other subitems at this point
         case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
           implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil
           implicit var props: List[Property] = Nil
           items.drop(ind).map(_._subitem match {
-            case corCond: Correctness_Condition => (true, Some(corCond))
-            case cor: Correctness => (true, Some(cor))
+            case Correctness_Condition(_cor, _justO) => (true, Some(JustifiedCorrectnessConditions(List(_cor), _justO)))
+            case Correctness(_cor, _just) => (true, Some(JustifiedCorrectnessConditions(_cor._cond, Some(_just))))
             case prop: Property => (true, Some(prop))
             case _ => (false, None)
-          }) filter(_._1) foreach(_._2.get match {
-            case corCond @ Correctness_Condition(_cor, _justO) =>
-              corr_conds +:= JustifiedCorrectnessConditions(List(_cor), _justO)
-            case Correctness(_cor, _just) =>
-              corr_conds +:= JustifiedCorrectnessConditions(_cor._cond, Some(_just))
+          }).takeWhile(_._1) foreach(_._2.get match {
+            case just: JustifiedCorrectnessConditions => corr_conds +:= just
             case prop : Property => props +:= prop
           })
           resDecls +:= (defn, corr_conds, props)

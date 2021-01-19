@@ -74,7 +74,7 @@ case class Positions(position:Position, endposition:String) extends Group {
  * @param _claim the claim
  * @param _just (optional) the justification for the claim
  */
-case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group {
+case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group  with ObjectLevel {
   /**
    * An empty justification is only allowed if the claim is an iterative equality
    */

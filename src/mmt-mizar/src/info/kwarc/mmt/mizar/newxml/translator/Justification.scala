@@ -20,6 +20,7 @@ object justificationTranslator {
     val prf = (provedClaim._claim, provedClaim._just) match {
       case (_, Some(just)) => translate_Justification(just, claim)
       case (it: Iterative_Equality, None) => Some(translate_Iterative_Equality_Proof(it))
+      case (claim, None) => throw ProvedClaimTranslationError("No proof given for claim, which is not an iterative-equality (proving itself). ", provedClaim)
     }
     (claim, prf)
   }
