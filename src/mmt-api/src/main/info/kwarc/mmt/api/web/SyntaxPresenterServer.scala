@@ -76,7 +76,7 @@ class SyntaxPresenterServer extends ServerExtension(SyntaxPresenterServer.pathPr
     val element = controller.get(elementPath)
 
     val surfaceSyntax = if (element.feature == Diagram.feature && elementPath.isInstanceOf[MPath]) {
-      val outputModules = Diagram.parseOutput(elementPath.asInstanceOf[MPath])(controller.globalLookup)
+      val outputModules = Diagram.parseOutput(elementPath.asInstanceOf[MPath])(controller.globalLookup).modules
       outputModules.map(controller.get).map(controller.presenter.asString).mkString("")
     } else {
       controller.presenter.asString(element)

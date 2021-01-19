@@ -5,10 +5,14 @@ package info.kwarc.mmt.api.modules.diagops
   * to build union, intersection of diagrams (not yet implemented).
   */
 
-import info.kwarc.mmt.api.{GeneralError, GlobalName, Path}
+import info.kwarc.mmt.api.{GeneralError, GlobalName, MPath, Path}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, RawDiagram}
-import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
+import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, DiagramT, DiagramTermBridge, Module, RawDiagram, Theory}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMMOD, OMS, Term, Traverser}
+import info.kwarc.mmt.api.symbols.{NestedModule, Structure}
+
+import scala.collection.mutable
 
 
 /**
@@ -39,6 +43,48 @@ object SequencedDiagramOperators extends DiagramOperator {
       })
 
       Some(results.reduceLeft[Term]((diag1, diag2) => BasedDiagram.unionWithOther(diag1, diag2)(ctrl.globalLookup)))
+
+    case _ => None
+  }
+}
+
+/**
+  * Closes a diagram wrt. a meta diagram.
+  *
+  * E.g. suppose you got a hierachy of theories encoding FOL (FOLForall, FOLExists, FOLForallNDIntro,
+  * FOLForallNDElim, FOLForallND, ...). Suppose the theory FOL includes them all, and that everything
+  * is based on a formalization of propositional logic PL that is also modular.
+  * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
+  */
+object ClosureDiagramOperator extends DiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?closure_operator")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    // so far only support closing diagrams with no meta diagram
+    case OMA(OMS(`head`), List(metaDiagramTerm, diagramTerm)) =>
+
+      (interp(metaDiagramTerm), interp(diagramTerm)) match {
+        case (Some(DiagramTermBridge(metaDiagram)), Some(DiagramTermBridge(diagram @ DiagramT(_, None)))) =>
+          Some(diagram.closure(metaDiagram)(interp.ctrl.globalLookup).toTerm)
+
+        case _ => None
+      }
+
+    case _ => None
+  }
+}
+
+object UnionDiagramOperator extends DiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?union_operator")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), diagramTerms) =>
+      val diagrams = diagramTerms.map(interp.apply).collect {
+        case Some(DiagramTermBridge(diag @ DiagramT(_, None))) => diag
+        case _ => return None
+      }
+
+      Some(DiagramTermBridge(DiagramT(diagrams.flatMap(_.modules), None)))
 
     case _ => None
   }

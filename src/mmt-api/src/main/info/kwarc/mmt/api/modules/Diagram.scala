@@ -66,7 +66,7 @@ object Diagram {
     * @throws InvalidElement if the module hasn't been elaborated before
     * @return All module entries of the output diagram (as were the result of elaboration before).
     */
-  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): List[MPath] = {
+  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): DiagramT = {
     val diagModule = lookup.get(diagPath) match {
       case diagModule: DerivedModule if diagModule.feature == Diagram.feature =>
         diagModule
@@ -75,8 +75,8 @@ object Diagram {
     }
 
     diagModule.dfC.normalized match {
-      case Some(RawDiagram(paths)) => paths
-      case Some(BasedDiagram(_, paths)) => paths
+      case Some(DiagramTermBridge(diag)) => diag
+
       case Some(t) =>
         throw InvalidObject(t, "not a valid output in dfC of diagram structural feature")
 
@@ -116,7 +116,8 @@ ${this.getClass.getSimpleName} debug
 input: $df
 operators in scope: ${rules.get(classOf[DiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
 
-output: see above or ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}
+output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
+        ${outputDiagram.toStr(shortURIs = true)}
 -------------------------------------
 
 """)
@@ -158,8 +159,18 @@ abstract class DiagramOperator extends SyntaxDrivenRule {
   // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
   override val head: GlobalName
 
-  // need access to Controller for generative operators (i.e. most operators)
-  // todo: upon error, are modules inconsistently added to controller? avoid that.
+
+  /**
+    * Call [[DiagramInterpreter.apply()]] on diagram arguments before inspecting them!
+    *
+    * // need access to Controller for generative operators (i.e. most operators)
+    * // todo: upon error, are modules inconsistently added to controller? avoid that.
+    *
+    * @param diagram
+    * @param interp
+    * @param ctrl
+    * @return
+    */
   def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term]
 }
 
@@ -233,46 +244,142 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     *         Yet otherwise, diag is simplified, and upon changes due to simplification in the term,
     *         [[apply()]] is tried again. If diag was alraedy stable, an [[Error]] is thrown.
     */
-  def apply(diag: Term): Option[Term] = {
-    val diag_ = removeOmbindc(diag)
-    val head = diag_.head
+  def apply(t: Term): Option[Term] = {
+    object HasHead {
+      def unapply(t: Term): Option[ContentPath] = t.head
+    }
 
-    head.foreach {
-      case p: GlobalName if operators.contains(p) =>
+    removeOmbindc(t) match {
+      case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         val matchingOp = operators(p)
-        val opResult = matchingOp(diag)(this, ctrl)
-        return opResult
+        val opResult = matchingOp(operatorExpression)(this, ctrl)
+        opResult
 
-      case _ => // carry on
+      case diag @ DiagramTermBridge(_) => Some(diag)
+
+      case OMMOD(diagramDerivedModule) =>
+        Some(Diagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup).toTerm)
+
+      case diag =>
+        val simplifiedDiag = {
+          val su = SimplificationUnit(
+            context = interpreterContext,
+            expandDefinitions = true,
+            fullRecursion = true
+          )
+
+          // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
+          // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
+          removeOmbindc(ctrl.simplifier(ctrl.globalLookup.ExpandDefinitions(diag, _ => true), su))
+        }
+
+        if (simplifiedDiag == diag) {
+          throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
+            s"nor is it a BasedDiagram: $simplifiedDiag. Is the operator you are trying to apply in-scope in " +
+            s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)? " +
+            "Does the operator (a Scala object, not class!) have the correct `head` field?")
+        }
+
+        apply(simplifiedDiag)
+    }
+  }
+}
+
+// to be renamed to Diagram (after structural feature has been renamed)
+sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT]) {
+  def toTerm: Term = mt match {
+    case Some(baseDiagram) => OMA(OMS(DiagramTermBridge.basedDiagram), baseDiagram.toTerm :: DiagramTermBridge.PathCodec(modules))
+    case None => OMA(OMS(DiagramTermBridge.rawDiagram), DiagramTermBridge.PathCodec(modules))
+  }
+
+  /**
+    * Returns modules contained in this diagram and contained in all meta diagrams.
+    */
+  def getAllModules: Set[MPath] = modules.toSet ++ mt.map(_.getAllModules).getOrElse(Set.empty[MPath])
+
+  /**
+    * Closes a diagram wrt. a meta diagram.
+    *
+    * E.g. suppose you got a hierachy of theories encoding FOL (FOLForall, FOLExists, FOLForallNDIntro,
+    * FOLForallNDElim, FOLForallND, ...). Suppose the theory FOL includes them all, and that everything
+    * is based on a formalization of propositional logic PL that is also modular.
+    * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
+    */
+  def closure(intendedMeta: DiagramT)(implicit lookup: Lookup): DiagramT = {
+    require(mt.isEmpty, "closure of diagram that already has meta diagram not yet implemented")
+    val metaModules = intendedMeta.getAllModules
+
+    val queue = mutable.ListBuffer[MPath]()
+    val seen = mutable.HashSet[MPath]()
+    val collected = mutable.HashSet[MPath]()
+
+    queue ++= modules
+
+    while (queue.nonEmpty) {
+      val next = queue.remove(0)
+
+      if (!seen.contains(next)) {
+        seen += next
+
+        val m = lookup.getModule(next)
+        if (!metaModules.exists(metaModule => lookup.hasImplicit(m.path, metaModule))) {
+          val referencedModulePaths = m.getDeclarations.flatMap {
+            case s: Structure => getAllModulePaths(s.from) ++ getAllModulePaths(s.to)
+            case nm: NestedModule => Set(nm.module.path)
+            case _ => Set.empty
+          }.toSet
+
+          collected += m.path
+          queue ++= referencedModulePaths
+        }
+      }
     }
 
-    diag_ match {
-      case BasedDiagram(_, _) => return Some(diag_)
-      case _ => // carry on
+    DiagramT(collected.toList, Some(intendedMeta))
+  }
+
+  private def getAllModulePaths(t: Term): Set[MPath] = {
+    val paths = mutable.HashSet[MPath]()
+    modulePathExtractor(t, paths)
+
+    paths.toSet
+  }
+
+  private val modulePathExtractor = new Traverser[mutable.Set[MPath]] {
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+      case OMMOD(mp) =>
+        state += mp
+        t
+      case _ => Traverser(this, t)
     }
+  }
+}
 
-    val simplifiedDiag = {
-      val su = SimplificationUnit(
-        context = interpreterContext,
-        expandDefinitions = true,
-        fullRecursion = true
-      )
+object DiagramTermBridge {
+  val rawDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?raw_diagram")
+  val basedDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?based_diagram")
 
-      // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
-      // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
-      removeOmbindc(ctrl.simplifier(ctrl.globalLookup.ExpandDefinitions(diag_, _ => true), su))
-    }
+  def apply(diag: DiagramT): Term = diag.toTerm
 
-    if (simplifiedDiag == diag_) {
-      throw GeneralError(s"Cannot interpret diagram expressions below. Neither a diagram operator rule matches " +
-        s"nor is it a BasedDiagram: $simplifiedDiag. Is the operator you are trying to apply in-scope in " +
-        s"the meta theory you specified for the diagram structural feature (`diagram d : ?meta := ...`)? " +
-        "Does the operator (a Scala object, not class!) have the correct `head` field?")
-    }
+  def unapply(t: Term): Option[DiagramT] = t match {
+    case OMA(OMS(`rawDiagram`), PathCodec(modules)) =>
+      Some(DiagramT(modules, None))
 
-    apply(simplifiedDiag)
+    case OMA(OMS(`basedDiagram`), DiagramTermBridge(baseDiagram) :: PathCodec(modules)) =>
+      Some(DiagramT(modules, Some(baseDiagram)))
+
+    case _ => None
+  }
+
+  object PathCodec {
+    def apply(pathTerms: List[MPath]): List[Term] = pathTerms.map(OMMOD(_))
+
+    def unapply(pathTerms: List[Term]): Option[List[MPath]] = Some(pathTerms.collect {
+      case OMMOD(path) => path
+      case _ => return None
+    })
   }
 }
 

@@ -339,7 +339,7 @@ private class JDiagramGraph extends SimpleJGraphExporter("diaggraph") {
   final override protected val selector: JGraphSelector = new JGraphSelector {
     override def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       try {
-        val paths = Diagram.parseOutput(Path.parseM(s))(controller.globalLookup)
+        val paths = Diagram.parseOutput(Path.parseM(s))(controller.globalLookup).modules
 
         val (theories, views) = {
           val modules = paths.map(controller.get)
