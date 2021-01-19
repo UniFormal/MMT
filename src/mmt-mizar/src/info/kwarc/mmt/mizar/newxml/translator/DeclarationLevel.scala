@@ -276,7 +276,7 @@ object clusterTranslator {
         if (isQualified) {
           qualifiedFunctorRegistration(name, args map(_.tp.get), tp, tm, adjs)
         } else {
-          unqualifiedFunctorRegistration(name, args map(_.tp.get), tp, tm, adjs)
+          unqualifiedFunctorRegistration(name, args map(_.tp.get), tp, tm, adjs)(NotationContainer.empty())
         }
       case Property_Registration(_props, _just) =>
         val Properties(Some(sort), None, Nil, Some(_tp)) = _props
