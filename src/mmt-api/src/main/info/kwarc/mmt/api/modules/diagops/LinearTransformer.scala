@@ -4,83 +4,29 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
 import info.kwarc.mmt.api.symbols._
 
-/**
-  * Linearly transforms [[Module modules]] to modules in a diagram.
-  *
-  * Even more, we (recursively) linearly transforms [[ModuleOrLink]]s to [[ModuleOrLink]]s.
-  * For instance, if a [[Module]] (as passed to `applyModule()`) contains nested modules,
-  * we recurse into them. Or if it contains links (e.g. structures), we also recurse into them.
-  *
-  * To have a handier name, we call [[ModuleOrLink]]s "containers" in function/parameter names and comments.
-  *
-  * It is left to implementations on which containers exactly they are applicable on, and if so,
-  * how the type of output container relates to the type of the input container:
-  *
-  *  - the subclass [[LinearModuleTransformer]] transforms theories to theories, and links to links
-  *  - the subclass [[LinearConnectorTransformer]] transforms theories to views, and links not at all
-  *
-  *
-  * Implementation notes for this class and subclasses:
-  *
-  *   - if a method takes a `LinearState`, it shouldn't take a DiagramState on top
-  *   - methods working on containers should take a `LinearState` as a normal parameter
-  *     (not an implicit parameter)
-  *   - methods working on declarations should take a `LinearState` as an implicit parameter
-  *     By contrast to the point above, here, confusing states is less of a problem.
-  *     And also, it makes [[OperatorDSL]] much nicer to work with.
-  */
-trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
+trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   type Container = ModuleOrLink
 
   /**
-    * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
+    * Hook before the declarations of a container are gone linearly through; called by
+    * [[applyContainer()]].
     *
-    * If the transformer is applicable on `inContainer`, it creates a new output container
-    * and return it. Transformers may choose on their own what kind of output container to create.
-    * E.g. [[LinearModuleTransformer]] creates theories for theories, and views for views.
-    *
-    * You may override this method to do additional action.
-    *
-    * Post-conditions:
-    *
-    *   - if `Some(outContainer)` is returned, you must have
-    *
-    *     - [[DiagramInterpreter.add()]] on `outContainer`
-    *     - added `(inContainer, outContainer)` to `state.diagramState.processedElements`
-    *   - see also postconditions of [[applyContainer()]]
+    * @return `true` if the transformer is applicable on the container, `false` otherwise.
+    *         If `false` is returned, the declarations within the container aren't processed.
     *
     * @see [[endContainer()]]
     */
-  protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container]
+  def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
 
   /**
-    * Finalizes a container.
+    * Hook after all declarations of a container have been gone through; called by
+    * [[applyContainer()]].
     *
-    * By default, this method uses `DiagramState.processedElements` to lookup to which container
-    * `inContainer` has been mapped to, and calls [[DiagramInterpreter.endAdd()]] on the latter.
-    *
-    * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
-    *
-    * Post-conditions:
-    *
-    *   - the container returned by [[beginContainer()]] must have been finalized via
-    *     [[DiagramInterpreter.endAdd()]]
-    *     (You can access that container via `state.diagramState.processedElements`,
-    *      see post-conditions of [[beginContainer()]].)
-    *   - see also postconditions of [[applyContainer()]]
-    *
-    * You may override this method. Be sure to call `super.endContainer()` last in your overridden
-    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
+    * Only called if [[beginContainer()]] returned `true` on `inContainer`.
     *
     * @see [[beginContainer()]]
     */
-  protected def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit = {
-    // be careful with accessing in processedElements
-    // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
-    state.diagramState.processedElements.get(inContainer.path).foreach {
-      case ce: ContainerElement[_] => interp.endAdd(ce)
-    }
-  }
+  def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit
 
   /**
     * Transforms a [[Declaration]] from `container`.
@@ -106,7 +52,7 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @todo should we pass also the `outContainer`?
     */
-  protected def applyDeclaration(decl: Declaration, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = decl match {
+  def applyDeclaration(decl: Declaration, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = decl match {
     case c: Constant => applyConstant(c, container)
     case Include(includeData) => applyIncludeData(includeData, container)
     case s: Structure => applyStructure(s, container) // must come after Include case
@@ -115,15 +61,16 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
         s"of declaration."))
   }
 
-  /**
-    * See [[applyDeclaration()]]; the same notes apply.
-    */
-  protected def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
 
   /**
     * See [[applyDeclaration()]]; the same notes apply.
     */
-  protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
+  def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
+
+  /**
+    * See [[applyDeclaration()]]; the same notes apply.
+    */
+  def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
 
   /**
     * Adds declarations from a [[Structure]] occuring in `container` to the [[LinearState]] of
@@ -134,8 +81,8 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @see [[applyDeclaration()]]; the same notes apply.
     */
-  protected def applyStructure(s: Structure, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
-    applyContainer(s)(state.diagramState, interp).foreach(_ => {
+  def applyStructure(s: Structure, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+    if (applyContainer(s)(state.diagramState, interp)) {
       // todo: should actually register all (also unmapped) declarations from
       //   structure's domain theory, no?
 
@@ -148,13 +95,9 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
       })
       val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
       inducedDeclarations.foreach(state.registerDeclaration)
-    })
+    }
   }
 
-  final def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = applyContainer(inModule).map {
-    case m: Module => m
-    case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
-  }
 
   /**
     * Transforms a container (i.e. a [[ModuleOrLink]]).
@@ -182,13 +125,14 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
     *
     * @return true if element was processed (or already had been processed), false otherwise.
     */
-  final protected def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Container] = {
-    state.processedElements.get(inContainer.path).foreach(c => return Some(c.asInstanceOf[Container]))
+  def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
+    if (state.linearStates.contains(inContainer.path)) {
+      return true
+    }
 
     val inLinearState = state.initAndRegisterNewLinearState(inContainer)
 
-    beginContainer(inContainer, inLinearState).map(outContainer => {
-      inLinearState.outContainer = outContainer
+    if (beginContainer(inContainer, inLinearState)) {
       inContainer.getDeclarations.foreach(decl => {
         inLinearState.registerDeclaration(decl)
         applyDeclaration(decl, inContainer)(inLinearState, interp)
@@ -196,12 +140,108 @@ trait LinearTransformer extends FunctorialTransformer with LinearOperatorState {
 
       endContainer(inContainer, inLinearState)
 
-      outContainer
-    })
+      true
+    } else {
+      false
+    }
+  }
+}
+
+/**
+  * Linearly transforms [[Module modules]] to modules in a diagram.
+  *
+  * Even more, we (recursively) linearly transforms [[ModuleOrLink]]s to [[ModuleOrLink]]s.
+  * For instance, if a [[Module]] (as passed to `applyModule()`) contains nested modules,
+  * we recurse into them. Or if it contains links (e.g. structures), we also recurse into them.
+  *
+  * To have a handier name, we call [[ModuleOrLink]]s "containers" in function/parameter names and comments.
+  *
+  * It is left to implementations on which containers exactly they are applicable on, and if so,
+  * how the type of output container relates to the type of the input container:
+  *
+  *  - the subclass [[LinearModuleTransformer]] transforms theories to theories, and links to links
+  *  - the subclass [[LinearConnectorTransformer]] transforms theories to views, and links not at all
+  *
+  *
+  * Implementation notes for this class and subclasses:
+  *
+  *   - if a method takes a `LinearState`, it shouldn't take a DiagramState on top
+  *   - methods working on containers should take a `LinearState` as a normal parameter
+  *     (not an implicit parameter)
+  *   - methods working on declarations should take a `LinearState` as an implicit parameter
+  *     By contrast to the point above, here, confusing states is less of a problem.
+  *     And also, it makes [[OperatorDSL]] much nicer to work with.
+  */
+trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
+  final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
+    applyContainer(inModule)
+    state.processedElements.get(inModule.path).map {
+      case m: Module => m
+      case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
+    }
+  }
+
+  override def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
+    if (state.processedElements.contains(inContainer.path)) {
+      true
+    } else {
+      super.applyContainer(inContainer)
+    }
+  }
+
+  /**
+    * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
+    *
+    * If the transformer is applicable on `inContainer`, it creates a new output container,
+    * performs the post-conditions below, and returns true.
+    * Transformers may choose on their own what kind of output container to create.
+    * E.g. [[LinearFunctorialTransformer]] creates theories for theories, and views for views,
+    * and [[LinearConnectorTransformer]] creates views for theories and is inapplicable on view.s
+    *
+    * Post-conditions:
+    *
+    *   - if `true` is returned, you must have
+    *
+    *     - [[DiagramInterpreter.add()]] on `outContainer`
+    *     - added `(inContainer, outContainer)` to `state.diagramState.processedElements`
+    *     - set `state.outContainer = outContainer`
+    *   - see also postconditions of [[applyContainer()]]
+    *
+    * @see [[endContainer()]]
+    */
+  def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
+
+  /**
+    * Finalizes a container.
+    *
+    * By default, this method uses `DiagramState.processedElements` to lookup to which container
+    * `inContainer` has been mapped to, and calls [[DiagramInterpreter.endAdd()]] on the latter.
+    *
+    * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
+    *
+    * Post-conditions:
+    *
+    *   - the container returned by [[beginContainer()]] must have been finalized via
+    *     [[DiagramInterpreter.endAdd()]]
+    *     (You can access that container via `state.diagramState.processedElements`,
+    *      see post-conditions of [[beginContainer()]].)
+    *   - see also postconditions of [[applyContainer()]]
+    *
+    * You may override this method. Be sure to call `super.endContainer()` last in your overridden
+    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
+    *
+    * @see [[beginContainer()]]
+    */
+  override def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit = {
+    // be careful with accessing in processedElements
+    // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
+    state.diagramState.processedElements.get(inContainer.path).foreach {
+      case ce: ContainerElement[_] => interp.endAdd(ce)
+    }
   }
 }
 
 trait RelativeBaseTransformer {
-  val operatorDomain: MPath
-  val operatorCodomain: MPath
+  def operatorDomain: MPath
+  def operatorCodomain: MPath
 }

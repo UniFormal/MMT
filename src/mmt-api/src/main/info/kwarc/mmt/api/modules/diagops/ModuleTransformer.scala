@@ -35,19 +35,23 @@ trait ModulePathTransformer {
   }
 }
 
+trait DiagramTransformer extends DiagramTransformerState {
+  def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath]
+}
+
 /**
   * Transforms modules to modules in a diagram.
   *
   * Base class of whole trait hierarchy of [[LinearModuleTransformer]]s and [[LinearConnectorTransformer]]s.
   *
-  * In contrast to the somewhat parallel class hierarchy of [[FunctorialOperator]]s, [[LinearOperator]]s, and
+  * In contrast to the somewhat parallel class hierarchy of [[ModuleOperator]]s, [[LinearOperator]]s, and
   * [[LinearConnector]]s, this trait hierarchy only concerns itself with the functional behavior of
   * operators/connectors and *not* with parsing input diagram expressions (which are [[Term]]s) and constructing
   * output diagram expressions.
   * Especially, all traits in this hierarchy are *not* associated with any MMT symbol.
-  * In contrast, [[FunctorialOperator]] implements [[SyntaxDrivenRule]].
+  * In contrast, [[ModuleOperator]] implements [[SyntaxDrivenRule]].
   */
-trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTransformer {
+trait ModuleTransformer extends DiagramTransformer with ModuleTransformerState with ModulePathTransformer {
   /**
     * Transforms a module.
     *
@@ -77,7 +81,7 @@ trait FunctorialTransformer extends FunctorialOperatorState with ModulePathTrans
     * @return The paths of the transformed modules (i.e. modules for which [[applyModule()]] returned
     *         `Some(_)`).
     */
-  final def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath] = {
+  final override def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath] = {
     val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
     implicit val state: DiagramState = initDiagramState(modules, interp)
 

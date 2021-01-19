@@ -11,7 +11,7 @@ import info.kwarc.mmt.api.{GeneralError, InvalidElement}
   *
   * Implementors only need to give a ''applyConstantSimple'' method.
   */
-trait SimpleConstantsBasedModuleTransformer extends LinearModuleTransformer {
+trait SimpleConstantsBasedModuleTransformer extends LinearFunctorialTransformer {
   /**
     * Transforms a constant to a list of new constants.
     *
@@ -60,7 +60,7 @@ trait SimpleConstantsBasedModuleTransformer extends LinearModuleTransformer {
     */
   protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant]
 
-  final override protected def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val rawTp = c.tp.getOrElse({
       interp.errorCont(InvalidElement(c, s"Transformer `$getClass` not applicable on constants without type component"))
       return
@@ -86,7 +86,7 @@ trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with D
     */
   protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant]
 
-  final override protected def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val rawTp = c.tp.getOrElse({
       interp.errorCont(GeneralError(s"Connector `$getClass` not applicable on constants without type component"))
       return

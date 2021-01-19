@@ -10,12 +10,12 @@ package info.kwarc.mmt.api.modules.diagops
   */
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator}
+import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, RawDiagram}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{GlobalName, InvalidObject, LocalName, MPath, modules}
+import info.kwarc.mmt.api.{GlobalName, InvalidObject, MPath}
 
-abstract class FunctorialOperator extends DiagramOperator with FunctorialTransformer {
+abstract class ModuleOperator extends DiagramOperator with DiagramTransformer {
   protected def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]]
   protected def submitDiagram(newModules: List[MPath]): Term
 
@@ -30,7 +30,7 @@ abstract class FunctorialOperator extends DiagramOperator with FunctorialTransfo
   }
 }
 
-trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransformer {
+trait RelativeBaseOperator extends ModuleOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
     case BasedDiagram(dom, modulePaths) if interp.ctrl.globalLookup.hasImplicit(operatorDomain, dom) =>
       Some(modulePaths)
@@ -51,16 +51,24 @@ trait RelativeBaseOperator extends FunctorialOperator with RelativeBaseTransform
 
 abstract class LinearOperator extends RelativeBaseOperator with LinearModuleTransformer
 
-
 // def toTransformer(t: Term): Transformer
 
 abstract class ParametricLinearOperator extends DiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
-  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearModuleTransformer]
+  def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer]
 
   final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>
-      instantiate(parameters).flatMap(op => interp(actualDiagram) match {
+
+      instantiate(parameters).flatMap(tx => {
+        val modulePaths = interp(actualDiagram).map {
+          case BasedDiagram(_, paths) => paths
+          case RawDiagram(paths) => paths
+        }
+
+        modulePaths.map(tx.applyDiagram(_))
+      }).map(outputPaths => RawDiagram(outputPaths))
+      /*instantiate(parameters).flatMap(op => interp(actualDiagram) match {
         // TODO: ideally reuse code from RelativeBaseOperator
         case Some(BasedDiagram(dom, modulePaths)) if interp.ctrl.globalLookup.hasImplicit(op.operatorDomain, dom) =>
           Some(BasedDiagram(op.operatorCodomain, op.applyDiagram(modulePaths)))
@@ -72,13 +80,13 @@ abstract class ParametricLinearOperator extends DiagramOperator {
         case _ =>
           interp.errorCont(InvalidObject(diagram, s"Parametric linear operator ${this.getClass.getSimpleName} not applicable"))
           None
-      })
+      })*/
 
     case _ => None
   }
 }
 
-abstract class LinearConnector extends FunctorialOperator with LinearConnectorTransformer with RelativeBaseOperator
+abstract class LinearConnector extends LinearOperator with LinearConnectorTransformer with RelativeBaseOperator
 
 /**
   * A [[LinearOperator]] that works (type, definiens)-by-(type, definiens): all declarations that are
@@ -87,7 +95,7 @@ abstract class LinearConnector extends FunctorialOperator with LinearConnectorTr
   *
   * Moreover, for convenience the linear state is fixed to be the one from [[DefaultLinearStateOperator]].
   */
-abstract class SimpleLinearOperator extends LinearOperator with SimpleLinearModuleTransformer
+abstract class SimpleLinearOperator extends LinearOperator with LinearFunctorialTransformer with SimpleLinearModuleTransformer
 
 abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer {
   final override def sanityCheck()(implicit interp: DiagramInterpreter): Unit = {
@@ -103,9 +111,9 @@ abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearCo
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
-abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: LinearModuleTransformer)
+abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
-  final override val in: LinearModuleTransformer = new IdentityLinearTransformer(operator.operatorDomain)
+  final override val in: LinearFunctorialTransformer = new IdentityLinearTransformer(operator.operatorDomain)
   final override val out: operator.type = operator
 }
 
@@ -115,7 +123,7 @@ abstract class SimpleInwardsConnector(final override val head: GlobalName, val o
 abstract class SimpleOutwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
   extends SimpleLinearConnector {
   final override val in: operator.type = operator
-  final override val out: LinearModuleTransformer = new IdentityLinearTransformer(operator.operatorDomain)
+  final override val out: LinearFunctorialTransformer = new IdentityLinearTransformer(operator.operatorDomain)
 }
 
 /*

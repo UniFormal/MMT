@@ -20,7 +20,7 @@ import info.kwarc.mmt.api.{InvalidElement, LocalName, MPath}
   *  - `beginView()`
   *  - `beginStructure()`
   */
-trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransformer {
+trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeBaseTransformer {
 
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
@@ -70,10 +70,11 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
             s"was no implicit morphism into `$operatorDomain`. Recursing into meta theory as usual " +
-            s"failed, too; reasons are probably logged above."))
-          return None
+            s"failed, too; reasons are probably logged above. Keeping meta theory as-is."))
+          mt
+        } else {
+          applyModulePath(mt)
         }
-        applyModulePath(mt)
     }
 
     val outTheory = Theory.empty(outPath.doc, outPath.name, newMeta)
@@ -129,7 +130,9 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     */
   protected def beginStructure(s: Structure, state: LinearState)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
-      applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).getOrElse(return None)
+      if (!applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp)) {
+        return None
+      }
 
       // inherit linear state from module where structure is declared
       state.inherit(state.diagramState.getLinearState(s.home.toMPath))
@@ -181,17 +184,20 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   /**
     * See superclass documentation, or [[beginContainer()]].
     */
-  final override protected def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Option[Container] = {
+  final override def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean = {
     val outContainer = inContainer match {
       case m: Module => beginModule(m, state)
       case s: Structure => beginStructure(s, state)
     }
 
-    outContainer.map(outContainer => {
-      state.diagramState.processedElements.put(inContainer.path, outContainer)
+    outContainer match {
+      case Some(outContainer) =>
+        state.diagramState.processedElements.put(inContainer.path, outContainer)
+        state.outContainer = outContainer
+        true
 
-      outContainer
-    })
+      case _ => false
+    }
   }
 
   /**
@@ -210,14 +216,14 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
     *   ?v                    |-> ?op(v)                   if ?v is in input diagram
     * }}}
     */
-  final override protected def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) ???
 
     val newFrom: MPath = include.from match {
-      case `operatorDomain` => operatorCodomain.toMPath
+      case p if p == operatorDomain => operatorCodomain.toMPath
 
       // classic case for include preserving behavior of linear operators
       case from if diagramState.seenModules.contains(from) =>
@@ -239,12 +245,12 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
 
       case _ =>
         interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
-          s"`${include.from}`: unbound in input diagram"))
-        return
+          s"`${include.from}`: unbound in input diagram, leaving as-is"))
+        include.from
     }
 
     val newDf: Option[Term] = include.df.map {
-      case OMIDENT(`operatorDomain`) => OMIDENT(OMMOD(operatorCodomain))
+      case OMIDENT(OMMOD(p)) if p == operatorDomain => OMIDENT(OMMOD(operatorCodomain))
       case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) => OMIDENT(OMMOD(applyModulePath(thy)))
       case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
         // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
@@ -284,11 +290,11 @@ trait LinearModuleTransformer extends LinearTransformer with RelativeBaseTransfo
   *
   * Its purpose is to serve for the `in` or `out` field of [[LinearConnectorTransformer]]s.
   */
-class IdentityLinearTransformer(private val domain: MPath) extends LinearModuleTransformer with DefaultLinearStateOperator {
+class IdentityLinearTransformer(private val domain: MPath) extends LinearFunctorialTransformer with DefaultLinearStateOperator {
   override val operatorDomain: MPath = domain
   override val operatorCodomain: MPath = domain
 
-  override protected def applyModuleName(name: LocalName): LocalName = name
+  override def applyModuleName(name: LocalName): LocalName = name
 
-  override protected def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
+  override def applyConstant(c: Constant, container: Container)(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): Unit = {}
 }

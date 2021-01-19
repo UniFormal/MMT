@@ -213,8 +213,8 @@ object HomIdConnector extends SimpleOutwardsConnector(
 object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_img_connector")
 
-  override val in: LinearModuleTransformer = SubOperator
-  override val out: LinearModuleTransformer = HomOperator
+  override val in: LinearFunctorialTransformer = SubOperator
+  override val out: LinearFunctorialTransformer = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_img")
 
@@ -306,8 +306,8 @@ object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
   */
 object HomKernelConnector extends SimpleLinearConnector with OperatorDSL {
   final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_ker_connector")
-  final override val in: LinearModuleTransformer = CongOperator
-  final override val out: LinearModuleTransformer = HomOperator
+  final override val in: LinearFunctorialTransformer = CongOperator
+  final override val out: LinearFunctorialTransformer = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_ker")
 

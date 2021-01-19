@@ -38,11 +38,11 @@ import info.kwarc.mmt.lf._
 class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) {
 
   /**
-    * For a term `t: tp`, computes the expected type of `lr(t)`.
+    * For a term `t: A`, computes the expected type of `lr(t)`.
     *
-    * Namely, the expected type is `lr(tp) m₁(t) … mₙ(t)`.
+    * Namely, the expected type is `lr(A) m₁(t) … mₙ(t)`.
     *
-    * This only works for LF, right?
+    * TODO: This only works for LF, right?
     */
   def getExpected(ctx: Context, t: Term, A: Term): Term = ApplySpine(apply(ctx, A), applyMors(ctx, t) : _*)
 

@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, TermContainer, Visibility}
 
 // DSL
-trait OperatorDSL extends LinearOperatorState with SystematicRenamingUtils {
+trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUtils {
   object NotApplicable {
     def apply[T](c: Declaration, msg: String = "")(implicit state: LinearState, interp: DiagramInterpreter): List[T] = {
       state.registerSkippedDeclaration(c)
@@ -95,7 +95,7 @@ trait Renamer[T] {
   *
   * @todo add example
   */
-trait SystematicRenamingUtils extends LinearTransformer {
+trait SystematicRenamingUtils extends LinearModuleTransformer {
   protected def coerceRenamer[T](renamer: Renamer[T])(implicit state: LinearState): Renamer[LinearState] = {
     implicit val coercedState: T = state.asInstanceOf[T]
     new Renamer[LinearState] {
@@ -105,6 +105,8 @@ trait SystematicRenamingUtils extends LinearTransformer {
       override def apply(c: Constant)(implicit state: LinearState): OMID = renamer(c)
     }
   }
+
+  protected lazy val emptyRenamer: Renamer[LinearState] = getRenamerFor("")
 
   protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
