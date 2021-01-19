@@ -52,8 +52,9 @@ case class Mixfix(markers: List[Marker]) extends Fixity {
        case d: Delimiter => d
        case a: Arg => a * {x => x+n}
        case a: ImplicitArg => a * {x => x+n}
-       //TODO other cases
-       case other => throw ImplementationError("undefined case of marker "+other.toString())
+       case v: Var => v.copy(number = v.number + 1)
+       // TODO other cases
+       case other => throw ImplementationError("undefined case of marker " + other.toString())
      }
      Mixfix(markersM)
    }

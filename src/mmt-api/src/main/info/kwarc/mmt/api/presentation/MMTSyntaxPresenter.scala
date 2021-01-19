@@ -326,9 +326,14 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh(s"role $roleStr")
     })
 
-    val notationElements = c.notC.parsing.toList.map(textNotation => (rh: RenderingHandler) => {
-      rh(s"# ${textNotation.toText}")
-    })
+    val notationElements = List(c.notC.getParseDefault, c.notC.getPresentDefault).zipWithIndex.map { not =>
+      (rh: RenderingHandler) => not match {
+        case (Some(not), 0) => rh(s"# ${not.toText}")
+        case (Some(not), 1) => rh(s"## ${not.toText}")
+        case (None, _) => // nothing to do
+        case _ => ??? // not yet implemented
+      }
+    }
 
     // TODO: (1) generalize this metadata output to theories, views (i.e. modules), and documents
     //       (2) Do not print special metadata like source references

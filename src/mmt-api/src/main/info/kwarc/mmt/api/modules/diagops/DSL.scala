@@ -106,6 +106,8 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
     }
   }
 
+  protected lazy val emptyRenamer: Renamer[LinearState] = getRenamerFor("")
+
   protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
 

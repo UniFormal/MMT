@@ -126,6 +126,10 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     * @return true if element was processed (or already had been processed), false otherwise.
     */
   def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
+    if (state.linearStates.contains(inContainer.path)) {
+      return true
+    }
+
     val inLinearState = state.initAndRegisterNewLinearState(inContainer)
 
     if (beginContainer(inContainer, inLinearState)) {

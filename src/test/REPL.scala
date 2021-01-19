@@ -17,13 +17,17 @@ import scala.util.Try
   */
 object FastREPL extends MagicTest("debug") {
   private val shortcuts = List(
-    "build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt",
-    "build MMT/LATIN2 mmt-omdoc algebra/diagop-theories.mmt",
-    "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
+    "-------------------------------------------",
+    "build MMT/LATIN2 mmt-omdoc logic/fol-diagop.mmt",
+    "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions-pushout-test.mmt",
+    "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions-logrel-test.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions-logrel-pushout-test.mmt",
+    "-------------------------------------------",
+    "build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt",
+    "build MMT/LATIN2 mmt-omdoc algebra/diagop-theories.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc",
     "build MMT/urtheories scala-bin",

@@ -85,13 +85,18 @@ trait LinearTransformerState extends DiagramTransformerState {
     def inContainer: ModuleOrLink
     def inContainer_=(m: ModuleOrLink): Unit
 
-    def processedDeclarations: List[Declaration]
+    def processedDeclarations: Seq[Declaration]
     def registerDeclaration(decl: Declaration): Unit
 
-    def skippedDeclarations: List[Declaration]
+    def skippedDeclarations: Seq[Declaration]
     def registerSkippedDeclaration(decl: Declaration): Unit
 
-    final def skippedDeclarationPaths: List[GlobalName] = skippedDeclarations.map(_.path)
+    final def skippedDeclarationPaths: Seq[GlobalName] = skippedDeclarations.map(_.path)
+
+    /**
+      * Declarations either processed or skipped.
+      */
+    final def seenDeclarations: Seq[Declaration] = processedDeclarations ++ skippedDeclarations
 
     /**
       * Inherits another linear state into this.
@@ -163,13 +168,13 @@ trait LinearModuleTransformerState extends ModuleTransformerState with LinearTra
   protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearModuleState {
     final var _processedDeclarations: ListBuffer[Declaration] = mutable.ListBuffer()
 
-    final override def processedDeclarations: List[Declaration] = _processedDeclarations.toList
+    final override def processedDeclarations: Seq[Declaration] = _processedDeclarations.toSeq
 
     final override def registerDeclaration(decl: Declaration): Unit = _processedDeclarations += decl
 
     final val _skippedDeclarations: ListBuffer[Declaration] = mutable.ListBuffer()
 
-    final override def skippedDeclarations: List[Declaration] = _skippedDeclarations.toList
+    final override def skippedDeclarations: Seq[Declaration] = _skippedDeclarations.toSeq
 
     final override def registerSkippedDeclaration(decl: Declaration): Unit = _skippedDeclarations += decl
 

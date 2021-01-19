@@ -70,10 +70,11 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
             s"was no implicit morphism into `$operatorDomain`. Recursing into meta theory as usual " +
-            s"failed, too; reasons are probably logged above."))
-          return None
+            s"failed, too; reasons are probably logged above. Keeping meta theory as-is."))
+          mt
+        } else {
+          applyModulePath(mt)
         }
-        applyModulePath(mt)
     }
 
     val outTheory = Theory.empty(outPath.doc, outPath.name, newMeta)
@@ -222,7 +223,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     if (include.args.nonEmpty) ???
 
     val newFrom: MPath = include.from match {
-      case `operatorDomain` => operatorCodomain.toMPath
+      case p if p == operatorDomain => operatorCodomain.toMPath
 
       // classic case for include preserving behavior of linear operators
       case from if diagramState.seenModules.contains(from) =>
@@ -244,12 +245,12 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
 
       case _ =>
         interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
-          s"`${include.from}`: unbound in input diagram"))
-        return
+          s"`${include.from}`: unbound in input diagram, leaving as-is"))
+        include.from
     }
 
     val newDf: Option[Term] = include.df.map {
-      case OMIDENT(`operatorDomain`) => OMIDENT(OMMOD(operatorCodomain))
+      case OMIDENT(OMMOD(p)) if p == operatorDomain => OMIDENT(OMMOD(operatorCodomain))
       case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) => OMIDENT(OMMOD(applyModulePath(thy)))
       case OMIDENT(thy) if ctrl.globalLookup.hasImplicit(thy, OMMOD(operatorDomain)) =>
         // e.g. for a view v: ?S -> ?T and S, T both having meta theory ?meta,
