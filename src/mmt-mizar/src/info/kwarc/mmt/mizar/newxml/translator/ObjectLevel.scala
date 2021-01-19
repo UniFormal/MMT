@@ -9,14 +9,14 @@ import info.kwarc.mmt.mizar.newxml.mmtwrapper.{MMTUtils, Mizar, PatternUtils, St
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Context
-import info.kwarc.mmt.mizar.newxml.translator.formulaTranslator.translate_Existential_Quantifier_Formula
+import info.kwarc.mmt.mizar.newxml.translator.formulaTranslator.{translate_Existential_Quantifier_Formula, translate_Formula}
 import org.omdoc.latin.foundations.mizar.MizarPatterns
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit args: Context = Context.empty): objects.Term = expr match {
     case tm: Term => termTranslator.translate_Term(tm)
     case tp: Type => typeTranslator.translate_Type(tp)
-    case formula: Formula => formulaTranslator.translate_Formula(formula)
+    case formula: Formula => translate_Formula(formula)
   }
 }
 
@@ -67,10 +67,10 @@ object termTranslator {
       val arguments : List[objects.OMV] = _varSegms._vars map {
         case explSegm: Explicitly_Qualified_Segment =>
           assert(TranslatorUtils.conforms(explSegm._tp, tp))
-          explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
+          explSegm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
         case segm => segm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
       }
-      val cond = formulaTranslator.translate_Formula(_form)
+      val cond = translate_Formula(_form)
       val expr = translate_Term(_tm)
       mmtwrapper.Mizar.fraenkelTerm(expr, arguments, universe, cond)
     case Simple_Fraenkel_Term(redObjSubAttrs, _varSegms, _tm) =>
@@ -79,7 +79,7 @@ object termTranslator {
       val arguments : List[objects.OMV] = _varSegms._vars map {
         case explSegm: Explicitly_Qualified_Segment =>
           assert(TranslatorUtils.conforms(explSegm._tp, tp))
-          explSegm._vars match { case List(v) => variableTranslator.translate_Variable(v) }
+          explSegm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
         case segm => segm._vars() match { case List(v) => variableTranslator.translate_Variable(v) }
       }
       val expr = translate_Term(_tm)
@@ -108,7 +108,7 @@ object typeTranslator {
       Mizar.SimpleTypedAttrAppl(tp, adjectives)
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
       // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
-      // TODO: Check this the correct semantics and take care of the noocc attribute
+      // TODO: Check this is the correct semantics and take care of the noocc attribute
       val gn = TranslatorUtils.computeGlobalPatternName(tpAttrs)
       val tp : objects.Term = objects.OMS(gn)
       val args = TranslatorUtils.translateArguments(_args)
@@ -221,7 +221,7 @@ object claimTranslator {
         def qualifySegments(vs: List[(List[OMV], objects.Term)], claim: objects.Term): objects.Term = vs match {
           case con::cons =>
             translate_Existential_Quantifier_Formula(con._1, con._2, qualifySegments(cons, claim))(arguments)
-          case List(con) => translate_Existential_Quantifier_Formula(con._1, con._2, claim)(arguments)
+          case Nil => claim
         }
         val vars = _qualSegm._children.map({
           case vs: Variable_Segments =>
@@ -234,13 +234,12 @@ object claimTranslator {
         val claim = Mizar.and(_cond._props.map(translate_Claim(_)(arguments)))
         qualifySegments(vars, claim)
     }
-    case formula: Formula => formulaTranslator.translate_Formula(formula)
+    case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(redObjSubAttrs) => ???
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
     case Conditions(_props) => ???
     case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
-    case form: Formula => formulaTranslator.translate_Formula(form)
   }
 }
 

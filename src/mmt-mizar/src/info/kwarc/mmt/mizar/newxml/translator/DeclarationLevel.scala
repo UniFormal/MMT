@@ -6,11 +6,8 @@ import notations._
 import info.kwarc.mmt.api.objects.{Context, VarDecl}
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
-import PatternUtils._
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator._
 import expressionTranslator._
-import justificationTranslator._
 import termTranslator._
 import typeTranslator._
 import contextTranslator._
@@ -245,6 +242,7 @@ object definitionTranslator {
       val predDef = defn.get match {
         case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialPredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, defRes)
         case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) => directCompletePredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes)
+        case _ => throw DeclarationTranslationError("Predicate definition can't be indirect. ", prd)
       }
       List(predDef)
   }
@@ -303,7 +301,6 @@ object patternTranslator {
     val name = gn.name
 
     val (infixNr, circumfixNr, suffixNr) = parseFormatDesc(pat.patternAttrs.formatdes)
-    //TODO: translate notations as well
     val notC = pat match {
       case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
