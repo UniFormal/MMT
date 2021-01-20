@@ -81,7 +81,6 @@ object statementTranslator {
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement) = { ??? }
   def translate_Theorem_Item(theorem_Item: Theorem_Item)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = {
     val prfedClaim = theorem_Item.prfClaim
-    prfedClaim.check()
     implicit val gn = TranslatorUtils.MMLIdtoGlobalName(theorem_Item.mizarGlobalName())
     val (_claim, _just) = (prfedClaim._claim, prfedClaim._just)
     val claim = translate_Claim(_claim)
@@ -120,6 +119,7 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[Sub] = Nil
+    //TODO: this shouldn't be neccesary ideally
     val declarationPath = MMLIdtoGlobalName(strDef._strPat.globalPatternName().copy(kind = "L"))//TranslatorUtils.computeGlobalPatternName(strDef._strPat)
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : List[VarDecl] = field_Segments._fieldSegments flatMap {
@@ -128,7 +128,7 @@ object definitionTranslator {
       field_Segment._selectors._loci.reverse map { case selector =>
 
         val selName = OMV(selector.spelling)//translate_Locus(selector._loci)
-        val sel = (selector.posNr.nr, selName % tp)
+        val sel = (selector.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
         sel._2 ^ substitutions
@@ -177,8 +177,7 @@ object definitionTranslator {
     if (defn.isEmpty) {
       if(_redefine.occurs) {
         //Redefinitions are only possible for Infix or Circumfix Functors
-        val orgExtPatAttrs = _pat.patDef
-        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(orgExtPatAttrs)
+        val origDecl = TranslatorUtils.computeGlobalOrgPatternName(_pat)
         val oldDef = TranslationController.controller.get(origDecl) match {case decl: symbols.Constant => decl}
         val redef = TranslationController.makeConstant(gn.name, Some(ret getOrElse oldDef.tp.get), oldDef.df)
         List(redef)
@@ -259,7 +258,7 @@ object clusterTranslator {
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val ats = attributeTranslator.translateAttributes(_at)
-        val name = LocalName("existReg:"+pos.position)
+        val name = LocalName("condReg:"+pos.position)
         conditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats)
       case Existential_Registration(pos, _adjClust, _tp) =>
         val tp = translate_Type(_tp)

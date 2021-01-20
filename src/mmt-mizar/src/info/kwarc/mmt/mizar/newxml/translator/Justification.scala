@@ -11,11 +11,10 @@ object justificationTranslator {
     case Block(kind, pos, _items) =>
       //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
       None
-    case Scheme_Justification(posNr, idnr, schnr, spelling, _refs) => ???
+    case Scheme_Justification(pos, nr, idnr, schnr, spelling, _refs) => ???
   }
   def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = { ??? }
   def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext) = {
-    provedClaim.check()
     val claim = claimTranslator.translate_Claim(provedClaim._claim)
     val prf = (provedClaim._claim, provedClaim._just) match {
       case (_, Some(just)) => translate_Justification(just, claim)

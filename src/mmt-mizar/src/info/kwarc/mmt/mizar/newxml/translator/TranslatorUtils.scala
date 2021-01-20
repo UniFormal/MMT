@@ -5,7 +5,7 @@ import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
 import syntax.Utils.MizarGlobalName
-import syntax.{Arguments, Claim, Contradiction, DeclarationLevel, Expression, Negated_Formula, ObjectLevel, Position, Property, ProvedClaim, RedObjSubAttrs, RedObjectSubAttrs, Standard_Type, Subitem, Type, Variable, VariableSegments, Variable_Segments, globallyReferencingDefAttrs, globallyReferencingObjAttrs, globallyReferencingReDefAttrs}
+import syntax._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
@@ -40,9 +40,9 @@ object TranslatorUtils {
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
-  def emptyPosition() = Position("translation internal")
-  def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),"Negated-Formula"),form)
-  def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),"Contradiction")))
+  def emptyPosition() = syntax.Position("translation internal")
+  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(),"Negated-Formula",form)
+  def emptyCondition() = negatedFormula(Contradiction(emptyPosition(),"Contradiction"))
 
   /**
    * Retrieves the type argument <T> of a type <tp> of the form Element of <T>

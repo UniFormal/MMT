@@ -45,9 +45,9 @@ object termTranslator {
       val arguments = translateArguments(_args)
       ApplyGeneral(OMS(gn), arguments)
     case Numeral_Term(redObjAttr, nr, varnr) => num(nr)
-    case itt @ it_Term(redObjSubAttrs) => OMV("it")
+    case itt @ it_Term(_, _) => OMV("it")
     case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
-      val nr = redObjAttr.posNr.nr
+      val nr = redObjAttr.nr
       val referencedSelector = utils.listmap(selectors, nr).getOrElse(
         throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
           "\nThe only known selectors are: \n"+selectors.toString(), ist))
@@ -57,25 +57,25 @@ object termTranslator {
       val gn = computeGlobalPatternName(tpAttrs)
       val args = translateArguments(infixedArgs._args)
       ApplyGeneral(OMS(gn), args)
-    case Global_Choice_Term(redObjSubAttrs, _tp) =>
+    case Global_Choice_Term(pos, sort, _tp) =>
       val tp = translate_Type(_tp)
       Apply(constant("choice"), tp)
     case Placeholder_Term(redObjAttr, varnr) => throw new java.lang.Error("Unresolved argument reference in term.")
     case Private_Functor_Term(redObjAttr, serialnr, _args) => ???
-    case Fraenkel_Term(redObjSubAttrs, _varSegms, _tm, _form) =>
+    case Fraenkel_Term(pos, sort, _varSegms, _tm, _form) =>
       val tp : Type = _varSegms._vars.head._tp()
       val universe = getUniverse(tp)
       val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
       val cond = translate_Formula(_form)
       val expr = translate_Term(_tm)
       fraenkelTerm(expr, arguments, universe, cond)
-    case Simple_Fraenkel_Term(redObjSubAttrs, _varSegms, _tm) =>
+    case Simple_Fraenkel_Term(pos, sort, _varSegms, _tm) =>
       val tp : Type = _varSegms._vars.head._tp()
       val universe = getUniverse(tp)
       val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
       val expr = translate_Term(_tm)
       simpleFraenkelTerm(expr, arguments, universe)
-    case Qualification_Term(redObjSubAttrs, _tm, _tp) => ???
+    case Qualification_Term(pos, sort, _tm, _tp) => ???
     case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
       val gn = computeGlobalPatternName(constrExtObjAttrs)
       val substr = OMS(gn)
@@ -93,7 +93,7 @@ object typeTranslator {
   def translate_Type_Specification(tp: Type_Specification) = translate_Type(tp._types)
   def translate_Type(tp:Type)(implicit selectors: List[(Int, VarDecl)] = Nil) : Term = tp match {
     case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
-    case Clustered_Type(redObjSubAttrs, _adjClust, _tp) =>
+    case Clustered_Type(pos, sort, _adjClust, _tp) =>
       val tp = translate_Type(_tp)
       val adjectives = _adjClust._attrs map translate_Attribute
       SimpleTypedAttrAppl(tp, adjectives)
@@ -114,7 +114,7 @@ object typeTranslator {
 
 object formulaTranslator {
   def translate_Formula(formula:Formula)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = formula match {
-    case Existential_Quantifier_Formula(redObjSubAttrs, _vars, _expression) =>
+    case Existential_Quantifier_Formula(pos, sort, _vars, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = getUniverse(tp)
       val vars = translateVariables(_vars)
@@ -128,43 +128,43 @@ object formulaTranslator {
         val args = translateArguments(infixedArgs._args)
         ApplyGeneral(rel, args)
       }
-    case Universal_Quantifier_Formula(redObjSubAttrs, _vars, _restrict, _expression) =>
+    case Universal_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
       val vars = translateVariables(_vars)
       translate_Universal_Quantifier_Formula(vars,univ,_expression)
-    case Multi_Attributive_Formula(redObjSubAttrs, _tm, _cluster) =>
+    case Multi_Attributive_Formula(pos, sort, _tm, _cluster) =>
       val tm = termTranslator.translate_Term(_tm)
       val attrs = _cluster._attrs map translate_Attribute
           and(attrs.map(at => Apply(at, tm)))
-    case Conditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
+    case Conditional_Formula(pos, sort, _frstFormula, _sndFormula) =>
       val assumption = translate_Claim(_frstFormula)
       val conclusion = translate_Claim(_sndFormula)
       implies(assumption, conclusion)
-    case Conjunctive_Formula(redObjSubAttrs, _frstConjunct, _sndConjunct) =>
+    case Conjunctive_Formula(pos, sort, _frstConjunct, _sndConjunct) =>
       val frstConjunct = translate_Claim(_frstConjunct)
       val sndConjunct = translate_Claim(_sndConjunct)
       binaryAnd(frstConjunct, sndConjunct)
-    case Biconditional_Formula(redObjSubAttrs, _frstFormula, _sndFormula) =>
+    case Biconditional_Formula(pos, sort, _frstFormula, _sndFormula) =>
       val frstForm = translate_Claim(_frstFormula)
       val sndForm = translate_Claim(_sndFormula)
       iff(frstForm, sndForm)
-    case Disjunctive_Formula(redObjSubAttrs, _frstDisjunct, _sndDisjunct) =>
+    case Disjunctive_Formula(pos, sort, _frstDisjunct, _sndDisjunct) =>
       val frstDisjunct = translate_Claim(_frstDisjunct)
       val sndDisjunct = translate_Claim(_sndDisjunct)
       binaryOr(frstDisjunct, sndDisjunct)
-    case Negated_Formula(redObjSubAttrs, _formula) =>
+    case Negated_Formula(pos, sort, _formula) =>
       Apply(constant("not"),translate_Claim(_formula))
-    case Contradiction(redObjSubAttrs) => constant("contradiction")
-    case Qualifying_Formula(redObjSubAttrs, _tm, _tp) => ???
+    case Contradiction(pos, sort) => constant("contradiction")
+    case Qualifying_Formula(pos, sort, _tm, _tp) => ???
     case Private_Predicate_Formula(redObjAttr, serialNr, constrNr, _args) => ???
-    case FlexaryDisjunctive_Formula(redObjSubAttrs, _formulae) =>
+    case FlexaryDisjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       or(formulae)
-    case FlexaryConjunctive_Formula(redObjSubAttrs, _formulae) =>
+    case FlexaryConjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       and(formulae)
-    case Multi_Relation_Formula(redObjSubAttrs, _relForm, _rhsOfRFs) => ???
+    case Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) => ???
   }
   def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term)(implicit args: Context=Context.empty): Term = vars match {
     case Nil => expression
@@ -217,7 +217,7 @@ object claimTranslator {
     }
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
-    case Thesis(redObjSubAttrs) => ???
+    case Thesis(pos, sort) => ???
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
     case Conditions(_props) => ???
     case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
