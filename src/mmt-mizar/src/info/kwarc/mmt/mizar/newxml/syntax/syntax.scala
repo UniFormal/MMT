@@ -91,8 +91,6 @@ trait RedObjectSubAttrs extends Group {
   def pos() : Position
   def sort() : String
 }
-//case class RedObjSubAttrs(pos: Position, sort: String) extends RedObjectSubAttrs
-case class PosNr(pos:Position, nr:Int) extends Group
 /**
  * A minimal list of common attributes (extended by the further attributes position and number) for objects containing only spelling and sort
  * @param posNr
@@ -187,7 +185,15 @@ case class OrgnlExtObjAttrs(pos: Position, nr: Int, formatnr: Int, patternnr:Int
  * @param globalObjAttrs
  * @param patternnr
  */
+
 case class PatternAttrs(formatdes:String, formatnr: Int, spelling:String, pos:Position, patternnr:Int, globalObjAttrs: GlobalObjAttrs) extends Group
+case class ExtPatAttr(patAttr:PatternAttrs, globalConstrFile: String, globalConstrNr: Int, constr:String) extends Group {
+  def globalDefAttrs = GlobalDefAttrs(patAttr.globalObjAttrs.globalKind, patAttr.globalObjAttrs.globalPatternFile, patAttr.globalObjAttrs.globalPatternNr,
+    globalConstrFile, globalConstrNr)
+}
+case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
+  override def patAttr = orgExtPatAttr.extPatAttr.patAttr
+}
 /**
  *
  * @param formatdes
@@ -205,27 +211,13 @@ sealed trait PatDefs extends globallyReferencingObjAttrs {
   def patDef : PatDef = PatDef(patAttr, _locis)
 }
 case class PatDef(patAttr:PatternAttrs, _locis:List[Loci]) extends PatDefs
-/**
- *
- * @param formatdes
- * @param formatNr
- * @param spelling
- * @param pos
- * @param patternnr
- * @param constr
- * @param globalConstrObjAttrs
- * @param _loci
- */
-case class ExtPatAttr(patAttr:PatternAttrs, globalConstrFile: String, globalConstrNr: Int, constr:String) extends Group {
-  def globalDefAttrs = GlobalDefAttrs(patAttr.globalObjAttrs.globalKind, patAttr.globalObjAttrs.globalPatternFile, patAttr.globalObjAttrs.globalPatternNr,
-    globalConstrFile, globalConstrNr)
-}
 case class ExtPatDef(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends PatDefs {
   override def patAttr: PatternAttrs = extPatAttr.patAttr
 }
 case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group {
   def globalReDefAttrs = GlobalReDefAttrs(extPatAttr.globalDefAttrs, globalOrgPatternFile, globalOrgPatternNr, globalOrgConstrFile, globalOrgConstrNr)
 }
+
 /**
  *
  * @param formatdes
@@ -239,10 +231,7 @@ case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatter
  * @param _loci
  * @param _locis
  */
-case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
-  override def patAttr = orgExtPatAttr.extPatAttr.patAttr
-}
-case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varnr: Int) extends Group {
+case class LocalRedVarAttr(pos:Position, origin:String, serialNrIdNr: SerialNrIdNr, varnr: Int) extends Group {
   def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varnr.toString
 }
 /**
@@ -252,11 +241,8 @@ case class LocalRedVarAttr(serialNrIdNr: SerialNrIdNr, varnr: Int) extends Group
  * @param serNr
  * @param varnr
  */
-case class RedVarAttrs(pos:Position, origin:String, locVarAttr:LocalRedVarAttr) extends Group {
-  def variableIdentifier = locVarAttr.localIdentitier
-}
-case class LocalVarAttr(spelling:String, sort:String, redVarAttr:RedVarAttrs) extends Group {
-  def toIdentifier() : String = spelling + "/"+sort+"/" + redVarAttr.variableIdentifier
+case class LocalVarAttr(locVarAttr:LocalRedVarAttr, spelling:String, sort:String) extends Group {
+  def toIdentifier() : String = spelling + "/"+sort+"/" + locVarAttr.localIdentitier
 }
 /**
  *
@@ -264,9 +250,10 @@ case class LocalVarAttr(spelling:String, sort:String, redVarAttr:RedVarAttrs) ex
  * @param kind
  * @param redVarAttr
  */
-case class VarAttrs(spelling:String, kind:String, redVarAttr:RedVarAttrs) extends Group {
-  def toIdentifier() : String = spelling + "/" +kind+"/"+ redVarAttr.variableIdentifier
+case class VarAttrs(locVarAttr:LocalRedVarAttr, spelling:String, kind:String) extends Group {
+  def toIdentifier() : String = spelling + "/" +kind+"/"+ locVarAttr.localIdentitier
 }
+
 /**
  * A single case definien consisting of a single expression
  * The expression is optional, since in any instance a single case expression may be left out in favor of a case-by-case definition
@@ -311,6 +298,13 @@ case class CaseBasedExpr(singleCasedExpr:SingleCaseExpr, partialCasedExpr:Partia
   def isSingleCase() = {check(); expr().isDefined}
 }
 
+/**
+ * Contains the content of an Mizar article
+ * @param articleid the name of the article
+ * @param articleext the article extension (usually .miz)
+ * @param pos the position in the source file at which the article content starts (usually after importing some content from other files)
+ * @param _items the children items with the actual content
+ */
 case class Text_Proper(articleid: String, articleext: String, pos: Position, _items: List[Item]) {
   def prettyPrint = {
     def itemsStr(items:List[Item]):String = items match {
@@ -410,7 +404,7 @@ case class Mode_Synonym(_patOld:Mode_Pattern, _patNew:Mode_Pattern) extends Syno
 sealed trait Statement extends Subitem
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
 /**
- * corresponsds to a recosider
+ * corresponds to a reconsider
  * followed by a list of assignments
   */
 case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement
@@ -431,10 +425,10 @@ case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predic
  * a field segment is a list of selectors of the same type
  * a selector is a field of the structure (or an inherited one)
  * finally there is a Structure_Patterns_Rendering defining the new notations (namely introducing the selectors)
- * @param _ancestors
- * @param _strPat
- * @param _fieldSegms
- * @param _rendering
+ * @param _ancestors a list of structures (whoose selectors') to import
+ * @param _strPat the structure pattern
+ * @param _fieldSegms a list of field segments containing the selectors (fields) of the structure
+ * @param _rendering contains patterns with notations for the selectors, the restriction
  */
 case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends Definition
 case class Constant_Definition(_children:List[Equating]) extends Definition
@@ -501,15 +495,14 @@ case class Standard_Type(tpAttrs:OrgnlExtObjAttrs, noocc: Option[Boolean], origN
   def mizarGlobalName(aid: String) = tpAttrs.globalPatternName()
 }
 /**
- * the type of a structure
- * @param tpAttrs
- * @param _args
+ * the type of a structure (applied to the arguments in _args)
+ * @param tpAttrs referencing the (type definitino of the) structure
+ * @param _args the arguments
  */
 case class Struct_Type(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Type
 
 /**
- * In Mizar Terminology a complex term is any Expression
- * Named MizTerm to avoid nameclashes with api.objects.Term
+ * Named MizTerm to avoid name-clashes with api.objects.Term
  */
 sealed trait MizTerm extends Expression {
   def sort() : String
@@ -528,15 +521,18 @@ Denotes a constant
  */
 /**
  * A constant term
- *
  * usually local within some block (e.g. an argument to a definition)
  * @param varAttr
  * @param sort
  */
 case class Simple_Term(varAttr:LocalVarAttr) extends MizTerm {
-  override def pos(): Position = varAttr.redVarAttr.pos
+  override def pos(): Position = varAttr.locVarAttr.pos
   override def sort(): String = varAttr.sort
 }
+
+/**
+ * In Mizar Terminology a complex term is any Expression
+ */
 sealed trait ComplexTerm extends MizTerm
 sealed trait ObjAttrsComplexTerm extends ComplexTerm {
   def objAttr() : RedObjectSubAttrs
@@ -552,25 +548,24 @@ sealed trait ObjAttrsComplexTerm extends ComplexTerm {
  */
 case class Aggregate_Term(objAttr:ConstrExtObjAttrs, _args:Arguments) extends ObjAttrsComplexTerm
 /**
- * result of applying a selector (specified as attributes) to a term (as child),
- * whoose tp is a structure including this selector
+ * result of applying a selector (specified as attributes) to a term _arg,
+ * whose tp is a structure including this selector
  * @param tpAttrs
- * @param _args
+ * @param _arg
  */
-case class Selector_Term(objAttr:ConstrExtObjAttrs, _args:List[MizTerm]) extends ObjAttrsComplexTerm
+case class Selector_Term(objAttr:ConstrExtObjAttrs, _arg:MizTerm) extends ObjAttrsComplexTerm
 /**
- * an expression containing an circumfix operator -> an OMA
+ * an expression containing an circumfix operator -> an OMA in MMT Terminology
  * spelling contains the left delimiter, right circumflex symbol the right delimiter
- * @param tpAttrs
- * @param _symbol
- * @param _args
+ * @param tpAttrs references the function to apply
+ * @param _symbol contains the right delimiter
+ * @param _args the arguments to apply the function to
  */
 case class Circumfix_Term(objAttr:OrgnlExtObjAttrs, _symbol:Right_Circumflex_Symbol, _args:Arguments) extends ObjAttrsComplexTerm
 /**
  * An integer value, the value is stored in the attribute number
- * @param pos
+ * @param objAttr
  * @param nr
- * @param sort
  * @param varnr
  */
 case class Numeral_Term(objAttr: RedObjAttr, nr:Int, varnr:Int) extends ObjAttrsComplexTerm
@@ -656,9 +651,17 @@ case class Qualification_Term(pos: Position, sort: String, _tm:MizTerm, _tp:Type
  */
 case class Forgetful_Functor_Term(objAttr: ConstrExtObjAttrs, _tm:MizTerm) extends ObjAttrsComplexTerm
 
-sealed trait Formula extends Claim with Expression
-/*
+/**
 primitive FOL formuli and relational formula, Multi_Attributive_Formula and Qualifying_Formula
+ */
+sealed trait Formula extends Claim with Expression
+
+/**
+ * Existentially quantify the expression _expression over the variables contained in _vars
+ * @param pos
+ * @param sort
+ * @param _vars
+ * @param _expression
  */
 case class Existential_Quantifier_Formula(pos: Position, sort: String, _vars:Variable_Segments, _expression:Claim) extends Formula
 /**
@@ -669,52 +672,54 @@ case class Existential_Quantifier_Formula(pos: Position, sort: String, _vars:Var
 case class Relation_Formula(objectAttrs: OrgnlExtObjAttrs, antonymic:Option[Boolean], infixedArgs: InfixedArgs) extends Formula
 /**
  * forall
- * @param srt
+ * @param sort
  * @param pos
  * @param _vars
  * @param _restrict
  * @param _expression
  */
 case class Universal_Quantifier_Formula(pos: Position, sort: String, _vars:Variable_Segments, _restrict:Option[Restriction], _expression:Claim) extends Formula
-
 /**
  * generated by
  * is adjective1, adjective2, ...
- * @param srt
+ * @param sort
  * @param pos
  * @param _tm
- * @param _clusters
+ * @param _cluster
  */
 case class Multi_Attributive_Formula(pos: Position, sort: String, _tm:MizTerm, _cluster:Adjective_Cluster) extends Formula
 /**
  * implication
- * @param srt
+ * @param sort
  * @param pos
- * @param _formulae
+ * @param _assumption
+ * @param _conclusion
  */
 case class Conditional_Formula(pos: Position, sort: String, _assumption:Claim, _conclusion:Claim) extends Formula
 /**
- * Multinary and
- * @param srt
+ * and
+ * @param sort
  * @param pos
- * @param _formulae
+ * @param _frstConjunct
+ * @param _sndConjunct
  */
 case class Conjunctive_Formula(pos: Position, sort: String, _frstConjunct:Claim, _sndConjunct:Claim) extends Formula
 /**
- * Doube implication
- * @param srt
+ * iff
+ * @param sort
  * @param pos
  * @param _frstFormula
  * @param _sndFormula
  */
 case class Biconditional_Formula(pos: Position, sort: String, _frstFormula:Claim, _sndFormula:Claim) extends Formula
 /**
- * Multinary or
- * @param srt
+ * or
+ * @param sort
  * @param pos
- * @param _formulae
+ * @param _frstDisjunct
+ * @param _sndDisjunct
  */
-case class Disjunctive_Formula(pos: Position, sort: String, _frstDisjunct: Claim, _sndDisjunct:Claim) extends Formula
+case class Disjunctive_Formula(pos: Position, sort: String, _frstDisjunct: Claim, _sndDisjunct: Claim) extends Formula
 /**
  * negation
  * @param sort
@@ -742,7 +747,7 @@ case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrId
  * 1=1 or ... or 5=5 -> 1=1 or 2=2 or 3=3 or 4=4 or 5=5
  * 1=1 or ... or 100 = 100 -> ex i being natural number st 0 <= i <= 100 & i=i
  *
- * @param srt
+ * @param sort
  * @param pos
  * @param _formulae
  */
@@ -867,7 +872,7 @@ case class Property_Registration(_props:Properties, _block:Block) extends Regist
  */
 sealed trait CorrectnessConditions extends DeclarationLevel
 /**
- * non-emptyness of non-expandable typed (modes) or clustered_types in registrations of attributes
+ * non-emptyness of non-expandable types (modes) or clustered_types in registrations of attributes
  */
 case class existence() extends CorrectnessConditions
 /**
@@ -947,7 +952,7 @@ case class Field_Segment(pos:Position, _selectors:Selectors, _tp:Type) extends O
 case class Selectors(pos: Position, nr: Int, spelling:String, _loci:List[Selector]) extends ObjectLevel
 case class Selector(pos: Position, nr: Int, spelling:String, _loci:Locus) extends ObjectLevel
 case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List) extends ObjectLevel
-case class Selectors_List(_children:List[Patterns]) extends ObjectLevel
+case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends ObjectLevel
 case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends ObjectLevel
 
 /**
@@ -1002,16 +1007,16 @@ object Utils {
    */
   sealed abstract class MizarProperty(_just:Option[Justification])
   //for functors
-  // for bin op
+  // for binary operators
   case class commutativity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  //for bin op
+  //for binary operators
   case class idempotence(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  // for un op
+  // for unary operators
   case class involutiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  // being a proj op, for un op
+  // being a projection operators, for unary operators
   case class projectivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
 
-  //for predicate
+  //for predicates
   case class reflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   case class irreflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   case class symmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])

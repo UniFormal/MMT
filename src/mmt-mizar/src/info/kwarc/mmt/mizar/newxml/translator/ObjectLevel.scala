@@ -34,11 +34,11 @@ object termTranslator {
       val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
       val args = translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
-    case Selector_Term(tpAttrs, _args) =>
+    case Selector_Term(tpAttrs, _arg) =>
       val strGn = MMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
       val sel = referenceExtDecl(strGn, tpAttrs.spelling)
-      val arguments = _args map(translate_Term)
-      ApplyGeneral(sel, arguments)
+      val argument = translate_Term (_arg)
+      Apply(sel, argument)
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
       val gn = computeGlobalPatternName(tpAttrs)

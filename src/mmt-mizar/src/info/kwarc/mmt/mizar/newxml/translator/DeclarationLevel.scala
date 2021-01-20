@@ -121,6 +121,8 @@ object definitionTranslator {
     var substitutions : List[Sub] = Nil
     //TODO: this shouldn't be neccesary ideally
     val declarationPath = MMLIdtoGlobalName(strDef._strPat.globalPatternName().copy(kind = "L"))//TranslatorUtils.computeGlobalPatternName(strDef._strPat)
+    val Structure_Patterns_Rendering(_aggrFuncPat, _, _strFuncPat, Selectors_List(_selectorFuncPat)) = strDef._rendering
+    val aggrNot::strNot::selNots  = _aggrFuncPat::_strFuncPat::_selectorFuncPat map translate_Pattern map(t=> (t._1, t._3))
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
@@ -131,7 +133,7 @@ object definitionTranslator {
         val sel = (selector.nr, selName % tp)
         selectors ::= sel
         substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
-        sel._2 ^ substitutions
+        (sel._2 ^ substitutions).copy(not = selNots.find(_._1 == sel._2.name).map(_._2.getAllNotations.head))
       }
     }
     val fieldDecls = translate_Field_Segments(strDef._fieldSegms)

@@ -18,13 +18,13 @@ import translator.{DeclarationTranslationError, TranslationController}
 import MMTUtils._
 
 object MizarStructure {
-  def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller)(implicit parentTerm: GlobalName) = {
+  def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller, notC: NotationContainer)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
       val path = (parentTerm.module / parentTerm.name) ? vd.name
       new OutgoingTermLevel(path, args.map(vd => (Some(vd.name), vd.toTerm)), vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
-    elaborateContent(params, fieldDecls, substructs, controller)
+    elaborateContent(params, fieldDecls, substructs, controller, notC)
   }
 
   /**
@@ -37,8 +37,12 @@ object MizarStructure {
    * @param parentTerm (implicit) the path to this derived declaration
    * @return The list of constants forming the elaboration
    */
-  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller)(implicit parentTerm: GlobalName): List[Constant] = {
-    val recordElabDecls = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
+  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller, notC: NotationContainer)(implicit parentTerm: GlobalName): List[Constant] = {
+    val recordElabDeclsNoNot = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
+    val recordElabDecls = recordElabDeclsNoNot match {
+      case Nil => Nil
+      case hd::tl => Constant(hd.home, hd.name, hd.alias, hd.tp, hd.df, hd.rl, notC)::tl
+    }
 
     val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
     val l = argTps.length
@@ -101,7 +105,8 @@ class MizarStructure extends StructuralFeature("mizarStructure") with Parametric
       case tml:OutgoingTermLevel => new OutgoingTermLevel(tml.path, tml.args, tml.df.getOrElse(tml.ret), tml.df)
       case intDecl => intDecl
     }
-    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths, controller)(parentTerm)
+    val notC = dd.not map(NotationContainer(_)) getOrElse NotationContainer.empty()
+    val elabDecls = MizarStructure.elaborateContent(params, origDecls, substrPaths, controller, notC)(parentTerm)
     externalDeclarationsToElaboration(elabDecls, Some({c => log(defaultPresenter(c)(controller))}))
   }
 }
