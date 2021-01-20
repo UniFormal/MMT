@@ -30,13 +30,12 @@ object itemTranslator {
         case pd: Predicate_Definition => definitionTranslator.translate_Predicate_Definition(pd)
       }
       case existAss: Existential_Assumption => assumptionTranslator.translateAssumptions(existAss)
-      case propReg: Property_Registration => registrationTranslator.translateRegistration(propReg:Registrations)
       case res: Reservation => translate_Reservation(res)
       case defIt: Definition_Item => translate_Definition_Item(defIt)
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
       case pr: Pragma => translate_Pragma(pr)
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
-      case cl: Cluster => translate_Cluster(cl)
+      case cl: Cluster => clusterTranslator.translate_Cluster(cl)
       case correctness: Correctness => translate_Correctness(correctness)
       case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
       case exemplification: Exemplification => translate_Exemplification(exemplification)
@@ -44,13 +43,11 @@ object itemTranslator {
       case identify: Identify => translate_Identify(identify)
       case generalization: Generalization => translate_Generalization(generalization)
       case reduction: Reduction => translate_Reduction(reduction)
-      case property: Property => translate_Property(property)
-      case per_Cases: Per_Cases => translate_Per_Cases(per_Cases)
-      case case_block: Case_Block => translate_Case_Block(case_block)
       case head: Heads => headTranslator.translate_Head(head)
       case nym: Nyms => nymTranslator.translate_Nym(nym)
       case st: Statement => statementTranslator.translate_Statement(st)
       case defn: Definition => definitionTranslator.translate_Definition(defn)
+      case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
     }
     translatedSubitem map {
       //Currently probably the only case that actually occurs in practise

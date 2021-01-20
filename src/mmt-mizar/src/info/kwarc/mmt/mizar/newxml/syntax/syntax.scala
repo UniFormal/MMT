@@ -139,16 +139,16 @@ trait globallyReferencingObjAttrs {
   def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
 }
 case class GlobalObjAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
-trait globallyReferencingConstrObjAttrs extends globallyReferencingObjAttrs {
+trait globallyReferencingDefAttrs extends globallyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
   def globalConstrFile = globalDefAttrs.globalConstrFile
   def globalConstrNr = globalDefAttrs.globalConstrNr
 
-  def globalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+  def globalConstrName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
 }
 case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
-trait globallyReferencingReDefObjAttrs extends globallyReferencingConstrObjAttrs {
+trait globallyReferencingReDefAttrs extends globallyReferencingDefAttrs {
   def globalReDefAttrs : GlobalReDefAttrs
   override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
   def globalOrgPatternFile = globalReDefAttrs.globalOrgPatternFile
@@ -156,8 +156,8 @@ trait globallyReferencingReDefObjAttrs extends globallyReferencingConstrObjAttrs
   def globalOrgConstrFile = globalReDefAttrs.globalOrgConstrFile
   def globalOrgConstrNr = globalReDefAttrs.globalOrgConstrNr
 
-  def originalPatternName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgPatternNr)
-  def originalGlobalName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+  def globalOrgPatternName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgPatternNr)
+  def globalOrgConstrName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgConstrNr)
 }
 case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
 /**
@@ -179,7 +179,7 @@ case class ExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling:Strin
  * @param srt
  * @param constrnr
  */
-case class ConstrExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling:String, sort:String, constrnr:Int, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingConstrObjAttrs with referencingConstrObjAttrs
+case class ConstrExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling:String, sort:String, constrnr:Int, globalDefAttrs: GlobalDefAttrs) extends globallyReferencingDefAttrs with referencingConstrObjAttrs
 /**
  *
  * @param posNr
@@ -190,7 +190,7 @@ case class ConstrExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling
  * @param orgnNr
  * @param constrnr
  */
-case class OrgnlExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling:String, sort:String, orgnNrConstrNr:OriginalNrConstrNr, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefObjAttrs with referencingConstrObjAttrs {
+case class OrgnlExtObjAttrs(posNr:PosNr, formatnr: Int, patternnr:Int, spelling:String, sort:String, orgnNrConstrNr:OriginalNrConstrNr, globalReDefAttrs: GlobalReDefAttrs) extends globallyReferencingReDefAttrs with referencingConstrObjAttrs {
   override def constrnr: Int = orgnNrConstrNr.constrnr
 }
 /**
@@ -213,7 +213,7 @@ case class PatternAttrs(formatdes:String, formatnr: Int, spelling:String, pos:Po
  * @param globalObjAttrs
  * @param _locis
  */
-sealed trait PatDefs extends globallyReferencingReDefObjAttrs {
+sealed trait PatDefs extends globallyReferencingReDefAttrs {
   def patAttr: PatternAttrs
   def _locis: List[Loci]
   def globalReDefAttrs: GlobalReDefAttrs = patAttr.globalReDefAttrs
@@ -381,7 +381,7 @@ case class Exemplification(_exams:List[Exemplifications]) extends Subitem
 case class Assumption(_ass:Assumptions) extends Claim with Subitem
 case class Identify(_pats:List[Patterns], _lociEqns:Loci_Equalities) extends Subitem
 case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
-case class Reduction(_tm:Term, _tm2:Term) extends Subitem
+case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
 case class Scheme_Block_Item(MmlId: MMLId, _blocks:List[Block]) extends MMLIdSubitem
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
@@ -456,7 +456,7 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
  * @param _tpList
  * @param _tm
  */
-case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:Term) extends Definition
+case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends Definition
 case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends Definition
 
 sealed trait VariableSegments extends ObjectLevel {
@@ -519,8 +519,9 @@ case class Struct_Type(tpAttrs:ConstrExtObjAttrs, _args:Arguments) extends Type
 
 /**
  * In Mizar Terminology a complex term is any Expression
+ * Named MizTerm to avoid nameclashes with api.objects.Term
  */
-sealed trait Term extends Expression {
+sealed trait MizTerm extends Expression {
   def sort() : String
   def pos() : Position
 }
@@ -542,11 +543,11 @@ Denotes a constant
  * @param varAttr
  * @param sort
  */
-case class Simple_Term(varAttr:LocalVarAttr) extends Term {
+case class Simple_Term(varAttr:LocalVarAttr) extends MizTerm {
   override def pos(): Position = varAttr.redVarAttr.pos
   override def sort(): String = varAttr.sort
 }
-sealed trait ComplexTerm extends Term {
+sealed trait ComplexTerm extends MizTerm {
   def objAttr() : RedObjectSubAttrs
   override def sort() : String = objAttr().sort()
   override def pos(): Position = objAttr().pos()
@@ -565,7 +566,7 @@ case class Aggregate_Term(objAttr:ConstrExtObjAttrs, _args:Arguments) extends Co
  * @param tpAttrs
  * @param _args
  */
-case class Selector_Term(objAttr:ConstrExtObjAttrs, _args:List[Term]) extends ComplexTerm
+case class Selector_Term(objAttr:ConstrExtObjAttrs, _args:List[MizTerm]) extends ComplexTerm
 /**
  * an expression containing an circumfix operator -> an OMA
  * spelling contains the left delimiter, right circumflex symbol the right delimiter
@@ -629,7 +630,7 @@ case class Private_Functor_Term(objAttr: RedObjAttr, serialnr:SerialNrIdNr, _arg
  * @param _tm
  * @param _form
  */
-case class Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segments, _tm:Term, _form:Formula) extends ComplexTerm
+case class Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segments, _tm:MizTerm, _form:Formula) extends ComplexTerm
 /**
  * invoking specification axiom for sets
  * generated by
@@ -639,7 +640,7 @@ case class Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segments, _
  * @param _varSegms
  * @param _tm
  */
-case class Simple_Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segments, _tm:Term) extends ComplexTerm
+case class Simple_Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segments, _tm:MizTerm) extends ComplexTerm
 /**
  * generated by
  * term qua tp
@@ -653,7 +654,7 @@ case class Simple_Fraenkel_Term(objAttr: RedObjSubAttrs, _varSegms:Variable_Segm
  * @param _tm
  * @param _tp
  */
-case class Qualification_Term(objAttr: RedObjSubAttrs, _tm:Term, _tp:Type) extends ComplexTerm
+case class Qualification_Term(objAttr: RedObjSubAttrs, _tm:MizTerm, _tp:Type) extends ComplexTerm
 /**
  * given structure T inheriting from structure S, t instance of structure T
  * writing in Mizar
@@ -662,7 +663,7 @@ case class Qualification_Term(objAttr: RedObjSubAttrs, _tm:Term, _tp:Type) exten
  * @param constrExtObjAttrs
  * @param _tm
  */
-case class Forgetful_Functor_Term(objAttr: ConstrExtObjAttrs, _tm:Term) extends ComplexTerm
+case class Forgetful_Functor_Term(objAttr: ConstrExtObjAttrs, _tm:MizTerm) extends ComplexTerm
 
 sealed trait Formula extends Claim with Expression
 /*
@@ -693,7 +694,7 @@ case class Universal_Quantifier_Formula(redObjectSubAttrs: RedObjSubAttrs, _vars
  * @param _tm
  * @param _clusters
  */
-case class Multi_Attributive_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:Term, _cluster:Adjective_Cluster) extends Formula
+case class Multi_Attributive_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:MizTerm, _cluster:Adjective_Cluster) extends Formula
 /**
  * implication
  * @param srt
@@ -738,7 +739,7 @@ case class Contradiction(redObjectSubAttrs: RedObjSubAttrs) extends Formula
   generated by
   is tp
  */
-case class Qualifying_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:Term, _tp:Type) extends Formula
+case class Qualifying_Formula(redObjectSubAttrs: RedObjSubAttrs, _tm:MizTerm, _tp:Type) extends Formula
 case class Private_Predicate_Formula(redObjAttr:RedObjAttr, serialNr: SerialNrIdNr, constrnr: Int, _args:Arguments) extends Formula
 /**
  * A disjunctive formula form1 or ... or formn
@@ -813,14 +814,14 @@ sealed trait Patterns extends ObjectLevel with globallyReferencingObjAttrs {
   override def globalObjAttrs: GlobalObjAttrs = patDef.globalObjAttrs
 }
 case class Mode_Pattern(patternAttrs: PatternAttrs, _locis: List[Loci]) extends Patterns
-sealed trait ConstrPattern extends Patterns with globallyReferencingConstrObjAttrs {
+sealed trait ConstrPattern extends Patterns with globallyReferencingDefAttrs {
   def extPatAttr: ExtPatAttr
   def _locis:List[Loci]
   def extPatDef: ExtPatDef = ExtPatDef(extPatAttr, _locis)
   override def patternAttrs: PatternAttrs = extPatDef.extPatAttr.patAttr
   override def globalDefAttrs: GlobalDefAttrs = extPatDef.globalDefAttrs
 }
-sealed trait RedefinablePatterns extends ConstrPattern with globallyReferencingReDefObjAttrs {
+sealed trait RedefinablePatterns extends ConstrPattern with globallyReferencingReDefAttrs {
   def orgExtPatAttr: OrgExtPatAttr
   def _loci: List[Locus]
   def orgPatDef: OrgPatDef = OrgPatDef(orgExtPatAttr, _loci, _locis)
@@ -849,7 +850,7 @@ sealed trait Registrations extends DeclarationLevel
  * @param _adjCl its properties
  * @param _tp (optional) qualifies
  */
-case class Functorial_Registration(pos:Position, _aggrTerm:Term, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
+case class Functorial_Registration(pos:Position, _aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 /**
  * stating that some attributes hold on a type
  * @param pos
@@ -903,9 +904,9 @@ case class consistency() extends CorrectnessConditions
 case class correctness() extends CorrectnessConditions*/
 
 sealed trait Exemplifications extends ObjectLevel
-case class ImplicitExemplification(_term:Term) extends Exemplifications
+case class ImplicitExemplification(_term:MizTerm) extends Exemplifications
 case class ExemplifyingVariable(_var:Variable, _simplTm:Simple_Term) extends Exemplifications
-case class Example(_var:Variable, _tm:Term) extends Exemplifications
+case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications
 
 sealed trait Reference extends ObjectLevel
 case class Local_Reference(pos:Position, spelling:String, serialnumber:SerialNrIdNr, labelnr:Int) extends Reference
@@ -928,8 +929,8 @@ case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tp
 case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments
 
 sealed trait EqualityTr extends ObjectLevel
-case class Equality(_var:Variable, _tm:Term) extends EqualityTr
-case class Equality_To_Itself(_var:Variable, _tm:Term) extends EqualityTr
+case class Equality(_var:Variable, _tm:MizTerm) extends EqualityTr
+case class Equality_To_Itself(_var:Variable, _tm:MizTerm) extends EqualityTr
 
 sealed trait Pragmas extends DeclarationLevel
 case class Unknown(pos:Position, inscription:String) extends Pragmas
@@ -946,7 +947,7 @@ case class Substitutions(_childs:List[Substitution]) extends ObjectLevel
 case class Substitution(freevarnr:Int, kind:String, varnr:Int) extends ObjectLevel
 case class Adjective_Cluster(_attrs: List[Attribute]) extends ObjectLevel
 case class Attribute(orgnlExtObjAttrs: OrgnlExtObjAttrs, noocc: Option[Boolean], _args:Arguments) extends ObjectLevel
-case class Arguments(_children:List[Term]) extends ObjectLevel
+case class Arguments(_children:List[MizTerm]) extends ObjectLevel
 case class Ancestors(_structTypes:List[Struct_Type]) extends ObjectLevel
 case class Loci(_loci:List[Locus]) extends ObjectLevel
 case class Locus(varkind:String, varAttr:VarAttrs) extends ObjectLevel
@@ -976,11 +977,11 @@ case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _exp
 case class Label(spelling:String, pos:Position, serialnr:SerialNrIdNr, labelnr:Int) extends ObjectLevel
 case class Restriction(_formula:Formula) extends ObjectLevel
 case class Right_Circumflex_Symbol(posNr:PosNr, formatnr:FormatNr, spelling:String) extends ObjectLevel
-case class Equating(_var:Variable, _tm:Term) extends ObjectLevel
+case class Equating(_var:Variable, _tm:MizTerm) extends ObjectLevel
 case class Loci_Equalities(_lociEqns:List[Loci_Equality]) extends ObjectLevel
 case class Loci_Equality(pos:Position, _loci:List[Locus]) extends ObjectLevel
 case class Equalities_List(_eqns:List[EqualityTr]) extends ObjectLevel
-case class Iterative_Step(pos:Position, _tm:Term, _just:Justification) extends ObjectLevel
+case class Iterative_Step(pos:Position, _tm:MizTerm, _just:Justification) extends ObjectLevel
 case class Type_List(_tps:List[Type]) extends ObjectLevel
 case class Provisional_Formulas(_props:List[Proposition]) extends ObjectLevel
 case class Partial_Definiens_List(_partDef:List[Partial_Definiens]) extends ObjectLevel

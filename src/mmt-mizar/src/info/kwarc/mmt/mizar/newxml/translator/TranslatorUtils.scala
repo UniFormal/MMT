@@ -2,10 +2,10 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import notations.NotationContainer
-import objects.{Context, OMMOD, OMV}
+import objects._
 import info.kwarc.mmt.mizar.newxml._
-import syntax._
-import Utils.MizarGlobalName
+import syntax.Utils.MizarGlobalName
+import syntax.{Arguments, Claim, Contradiction, DeclarationLevel, Expression, Negated_Formula, ObjectLevel, Position, Property, ProvedClaim, RedObjSubAttrs, RedObjectSubAttrs, Standard_Type, Subitem, Type, Variable, VariableSegments, Variable_Segments, globallyReferencingDefAttrs, globallyReferencingObjAttrs, globallyReferencingReDefAttrs}
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
@@ -22,31 +22,36 @@ case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) ext
   "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString, prfedClaim)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
   "\nExpressionTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
+
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
     val ln = LocalName(kind+":"+nr)
     TranslationController.getTheoryPath(aid) ? ln
   }
-  def makeNewGlobalName(kind: String, nr: Int) = {
-    val ln = LocalName(kind+":"+nr)
-    TranslationController.currentTheoryPath ? ln
-  }
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
   def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
-  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
-  def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[objects.Term], tp:Option[objects.Term] = None) = {
+  def computeGlobalConstrName(tpAttrs: globallyReferencingDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalConstrName())}
+  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgPatternName())}
+  def computeGlobalOrgConstrName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgConstrName())}
+  def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
+  def emptyPosition() = Position("translation internal")
   def negatedFormula(form:Claim) = Negated_Formula(RedObjSubAttrs(emptyPosition(),"Negated-Formula"),form)
   def emptyCondition() = negatedFormula(Contradiction(RedObjSubAttrs(emptyPosition(),"Contradiction")))
-  def emptyPosition() = Position("translation internal")
-  def getUniverse(tp:Type) : Term = tp match {
-    case Standard_Type(tpAttrs, _, _, Arguments(List(u))) => u
-    case Standard_Type(tpAttrs, noocc, origNr, elementArgs) =>throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. "+
+
+  /**
+   * Retrieves the type argument <T> of a type <tp> of the form Element of <T>
+   * @param tp the type <tp>
+   * @return
+   */
+  def getUniverse(tp:Type)(implicit args: Context= Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil) : Term = tp match {
+    case Standard_Type(tpAttrs, _, _, Arguments(List(u))) => translate_Term(u)
+    case Standard_Type(tpAttrs, _, _, elementArgs) => throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. "+
       "In particular expected exactly 1 argument, but found "+elementArgs._children.length+". ", tp)
     case _ => throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. ", tp)
   }
@@ -55,13 +60,7 @@ object TranslatorUtils {
   }
   def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(translate_Variable)}
   def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(translate_Variable)}
-  def firstVariableUniverse(varSegms: VariableSegments) : Type = {
-    assert(! varSegms._vars().isEmpty)
-    varSegms._tp()
-  }
-  def firstVariableUniverse(varSegm: Variable_Segments) : Type = {
-    varSegm._vars.head._tp()
-  }
+
   /**
    * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
    * where <varName> is the name of the argument sequence from the corresponding pattern
@@ -72,7 +71,7 @@ object TranslatorUtils {
    * @param args (implicit) the arguments to build the substitution for
    * @return
    */
-  def namedDefArgsSubstition(varName: String = "x")(implicit args: Context) = {
+  def namedDefArgsSubstition(args: Context, varName: String = "x") = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
       case (vd, i) => vd / objects.OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
@@ -88,11 +87,12 @@ object TranslatorUtils {
    * @param args (implicit) the arguments to build the substitution for
    * @return A translation function on declarations making the substitution
    */
-  def namedDefArgsTranslator(varName: String = "x")(implicit args: Context) : symbols.Declaration => symbols.Declaration = {
+  private def namedDefArgsTranslator(varName: String, args: Context) : symbols.Declaration => symbols.Declaration = {
     {d: symbols.Declaration =>
-      val tl = symbols.ApplySubs(namedDefArgsSubstition(varName))
+      val tl = symbols.ApplySubs(namedDefArgsSubstition(args, varName))
      d.translate(tl, Context.empty)}
   }
-  def translateArguments(arguments: Arguments)(implicit args: Context=Context.empty, selectors: List[(Int, objects.VarDecl)] = Nil) : List[objects.Term] = {arguments._children map translate_Term }
-  def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = objects.OMS(computeGlobalPatternName(refObjAttrs))
+  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(varName, defContext.args)
+  def translateArguments(arguments: Arguments)(implicit args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = {arguments._children map translate_Term }
+  def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = OMS(computeGlobalPatternName(refObjAttrs))
 }
