@@ -22,6 +22,9 @@ import claimTranslator._
 import clusterTranslator._
 import definitionTranslator._
 import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.newxml.translator.justificationTranslator.translate_Justification
+import info.kwarc.mmt.mizar.newxml.translator.propertyTranslator.translate_JustifiedProperty
 import nymTranslator._
 import patternTranslator._
 
@@ -47,7 +50,10 @@ object subitemTranslator {
   def translate_Generalization(generalization: Generalization) = { ??? }
   def translate_Reduction(reduction: Reduction) = { ??? }
   def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item) = { ??? }
-  def translate_Property(property: Property, decl: Definition) : List[Declaration] = { ??? }
+  def translate_Property(property: Property, decl: Option[Definition]) : List[Declaration] = {
+    val justProp = JustifiedProperty(property._props, decl.map( d=> translate_Definition(d).head), property._just)
+    List(translate_JustifiedProperty(justProp))
+  }
 }
 
 object headTranslator {
@@ -85,7 +91,7 @@ object statementTranslator {
     val (_claim, _just) = (prfedClaim._claim, prfedClaim._just)
     val claim = translate_Claim(_claim)
     val proof = _just map {
-      case justification: Justification => justificationTranslator.translate_Justification(justification, claim)
+      case justification: Justification => translate_Justification(justification, claim)
     } getOrElse((_claim match {case it:Iterative_Equality => Some(it) case _ => None}).map(justificationTranslator.translate_Iterative_Equality_Proof))
 
     val theoremDecl = TranslationController.makeConstant(gn.name, Some(claim), proof)
@@ -97,7 +103,7 @@ object statementTranslator {
 
 object definitionTranslator {
   def translate_Definition(defn:Definition)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : List[Declaration] = {
-    val resDecls = defn match {
+    val translatedDecls = defn match {
       case at: Attribute_Definition => translate_Attribute_Definition(at)
       case cd: Constant_Definition => translate_Constant_Definition(cd)
       case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)
@@ -108,7 +114,9 @@ object definitionTranslator {
       case d: Structure_Definition => translate_Structure_Definition(d)
     }
     val tr = namedDefArgsTranslator()
-    resDecls.map(tr) ++ defContext.props.flatMap(p => subitemTranslator.translate_Property(p, defn))
+    val preResDecl = translatedDecls.map(tr)
+    val justProps = defContext.props.map(p => JustifiedProperty(p, preResDecl))
+    preResDecl ++ justProps.map(translate_JustifiedProperty(_))
   }
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit defContext: DefinitionContext = DefinitionContext.empty()): List[Declaration] = {
     val l = defContext.args.length
@@ -281,12 +289,11 @@ object clusterTranslator {
           unqualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs)(NotationContainer.empty())
         }
       case Property_Registration(_props, _just) =>
-        val Properties(Some(sort), None, Nil, Some(_tp)) = _props
-        sort match {
-          case "sethood" =>
-            val tp = translate_Type(_tp)
+        val justProp = JustifiedProperty(_props, None, Some(_just))
+        justProp match {
+          case JustifiedProperty(conds, Sethood(_just), Some(tp), _) =>
             val claim = Apply(Mizar.constant("sethood"), tp)
-            val just = justificationTranslator.translate_Justification(_just, claim)
+            val just = _just map(translate_Justification(_, claim)) getOrElse(None)
             val name = LocalName("sethood_of_"+tp.toStr(true))
             TranslationController.makeConstant(name, Some(Univ(1)), just)
         }
@@ -450,6 +457,17 @@ case class IndirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[T
 }
 
 case class JustifiedCorrectnessConditions(correctness_Condition: List[CorrectnessConditions], just: Option[Justification])
+case class JustifiedProperty(conds: List[MizarProperty], prop: MizarProperty, tp: Option[Term], decl: Option[Declaration])
+object JustifiedProperty {
+  def apply(property: Property, decls: List[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property, decls.headOption)
+  def apply(property: Property, decl: Option[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property._props, decl, property._just)
+  def apply(properties: Properties, decl: Option[Declaration], justO: Option[Justification] = None)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()) : JustifiedProperty = {
+    val prop = properties.matchProperty(justO)
+    val conds = properties._cond.map(_.matchProperty())
+    val tp = properties._tp map translate_Type
+    JustifiedProperty(conds, prop, tp, decl)
+  }
+}
 
 case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil)
 object DefinitionContext {
@@ -508,6 +526,12 @@ object definiensTranslator {
   object assumptionTranslator {
     def translateAssumption(ass:Assumption) = translateAssumptions(ass._ass)
       def translateAssumptions(ass:Assumptions) = { ??? }
+  }
+}
+
+object propertyTranslator {
+  def translate_JustifiedProperty(justProp: JustifiedProperty): Declaration = {
+    ???
   }
 }
 

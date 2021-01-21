@@ -369,10 +369,7 @@ case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
 case class Scheme_Block_Item(MmlId: MMLId, _blocks:List[Block]) extends MMLIdSubitem
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
-  def matchProperty(pr:MizarProperty) : MizarProperty = {
-    val prop = _props.property.get
-    Utils.matchProperty(prop, _just)
-  }
+  def matchProperty() : MizarProperty = _props.matchProperty(_just)
 }
 case class Per_Cases(_just:Justification) extends Subitem
 case class Case_Block(_block:Block) extends Subitem
@@ -966,7 +963,9 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Obj
  * @param _cond
  * @param _tp
  */
-case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel
+case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
+  def matchProperty(_just: Option[Justification] = None ) = Utils.matchProperty(property.get, _just)
+}
 case class Redefine(occurs:Boolean)
 case class Type_Specification(_types:Type) extends ObjectLevel
 case class Definiens(pos:Position, kind:String, shape:String, _label:Label, _expr:CaseBasedExpr) extends ObjectLevel
@@ -1008,34 +1007,34 @@ object Utils {
   sealed abstract class MizarProperty(_just:Option[Justification])
   //for functors
   // for binary operators
-  case class commutativity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Commutativity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   //for binary operators
-  case class idempotence(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Idempotence(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   // for unary operators
-  case class involutiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Involutiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   // being a projection operators, for unary operators
-  case class projectivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Projectivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
 
   //for predicates
-  case class reflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class irreflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class symmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class assymmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class connectiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Reflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Irreflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Symmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Assymmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Connectiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
 
   //for modes and existential_registrations
   //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
-  case class sethood(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  case class Sethood(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
   def matchProperty(prop: String, _just:Option[Justification]) = prop match {
-    case "commutativity" => commutativity(_just)
-    case "idempotence" => idempotence(_just)
-    case "involutiveness" => involutiveness(_just)
-    case "projectivity" => projectivity(_just)
-    case "reflexivity" => reflexivity(_just)
-    case "irreflexivity" => irreflexivity(_just)
-    case "symmetry" => symmetry(_just)
-    case "assymmetry" => assymmetry(_just)
-    case "connectiveness" => connectiveness(_just)
-    case "sethood" => sethood(_just)
+    case "commutativity" => Commutativity(_just)
+    case "idempotence" => Idempotence(_just)
+    case "involutiveness" => Involutiveness(_just)
+    case "projectivity" => Projectivity(_just)
+    case "reflexivity" => Reflexivity(_just)
+    case "irreflexivity" => Irreflexivity(_just)
+    case "symmetry" => Symmetry(_just)
+    case "assymmetry" => Assymmetry(_just)
+    case "connectiveness" => Connectiveness(_just)
+    case "sethood" => Sethood(_just)
   }
 }
