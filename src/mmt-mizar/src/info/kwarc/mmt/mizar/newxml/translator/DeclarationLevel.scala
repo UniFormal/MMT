@@ -290,13 +290,7 @@ object clusterTranslator {
         }
       case Property_Registration(_props, _just) =>
         val justProp = JustifiedProperty(_props, None, Some(_just))
-        justProp match {
-          case JustifiedProperty(conds, Sethood(_just), Some(tp), _) =>
-            val claim = Apply(Mizar.constant("sethood"), tp)
-            val just = _just map(translate_Justification(_, claim)) getOrElse(None)
-            val name = LocalName("sethood_of_"+tp.toStr(true))
-            TranslationController.makeConstant(name, Some(Univ(1)), just)
-        }
+        translate_JustifiedProperty(justProp)
     }
     resDecls map tr
   }
@@ -530,8 +524,13 @@ object definiensTranslator {
 }
 
 object propertyTranslator {
-  def translate_JustifiedProperty(justProp: JustifiedProperty): Declaration = {
-    ???
+  def translate_JustifiedProperty(justProp: JustifiedProperty)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()): Declaration = justProp match {
+    case JustifiedProperty(conds, Sethood(_just), Some(tp), _) =>
+      val claim = Apply(Mizar.constant("sethood"), tp)
+      val just = _just map(translate_Justification(_, claim)) getOrElse(None)
+      val name = LocalName("sethood_of_"+tp.toStr(true))
+      TranslationController.makeConstant(name, Some(Univ(1)), just)
+    case _ => ???
   }
 }
 
