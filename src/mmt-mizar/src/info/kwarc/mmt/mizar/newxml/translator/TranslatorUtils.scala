@@ -1,12 +1,15 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
+import info.kwarc.mmt.api.symbols.OMSReplacer
 import info.kwarc.mmt.api.{objects, _}
+import info.kwarc.mmt.lf.elpi.ELPI.Lambda
 import info.kwarc.mmt.lf.{Pi, Univ}
 import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.nTerms
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.PiOrEmpty
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils.Lam
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
 import syntax.Utils.MizarGlobalName
 import syntax._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
@@ -96,13 +99,6 @@ object TranslatorUtils {
      d.translate(tl, Context.empty)}
   }
   def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(varName, defContext.args)
-  def piQuantifyArgs(args: List[Term]): List[Term] = {
-    args map({
-      case arg =>
-        val PiOrEmpty(ctx, tm) = arg
-        Pi(OMV("x") % nTerms(args.length), tm)
-    })
-  }
   def translateArguments(arguments: Arguments)(implicit args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = {arguments._children map translate_Term }
   def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = OMS(computeGlobalPatternName(refObjAttrs))
 }

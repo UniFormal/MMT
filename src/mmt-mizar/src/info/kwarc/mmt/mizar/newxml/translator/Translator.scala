@@ -110,12 +110,13 @@ class MizarXMLImporter extends archives.Importer {
 
     th.getDeclarations foreach {case decl: Declaration =>
     try {
-        log(TranslationController.controller.presenter.asString(decl))
-      } catch {
-        case e: GeneralError =>
-          println("General error while presenting the declaration: "+decl.toString+": ")
-          println(e.toStringLong)
-          throw e
+      log(decl.toString)
+      log(TranslationController.controller.presenter.asString(decl))
+    } catch {
+      case e: GeneralError =>
+        println("General error while presenting the declaration: "+decl.toString+": ")
+        println(e.toStringLong)
+        throw e
       }
     }
     TranslationController.currentDoc//currentThy.asDocument

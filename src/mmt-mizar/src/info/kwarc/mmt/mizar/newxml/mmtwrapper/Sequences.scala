@@ -3,6 +3,7 @@ package info.kwarc.mmt.mizar.newxml.mmtwrapper
 import info.kwarc.mmt._
 import api._
 import api.objects._
+import info.kwarc.mmt.lf.Univ
 import sequences._
 
 /** abstractions for creating sequence-related terms */
@@ -29,4 +30,5 @@ object MizSeq {
     }
   }
   def nTerms(n:Int) = Rep(Mizar.any, OMI(n))
+  def nTypes(n:Int) = Rep(Univ(1), OMI(n))
 }

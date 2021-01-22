@@ -353,27 +353,37 @@ object patternTranslator {
     val gn = TranslatorUtils.MMLIdtoGlobalName(pat.globalPatternName())
     val name = gn.name
 
-    val (infixNr, circumfixNr, suffixNr) = parseFormatDesc(pat.patternAttrs.formatdes)
+    def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false) = {
+      PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum)
+    }
+    def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int) = {
+      Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr)
+    }
+    def makeNotCont(fixity: Fixity): NotationContainer = {
+      def reasonableChar: Char => Boolean = {c => c.isLetterOrDigit || c.isWhitespace || "|.<>=+-*/()&^%$@!~,".contains(c)}
+      val reasonable = fixity match {
+        case Circumfix(lDelim, rDelim, num) => (lDelim++rDelim).forall(reasonableChar)
+        case fixity: SimpleFixity => fixity.delim.text.forall(reasonableChar)
+        case _ => false
+      }
+      if (reasonable) {
+        NotationContainer(TextNotation(fixity = fixity, precedence = Precedence.integer(ones = 20), meta = None))
+      } else {
+        NotationContainer.empty()
+      }
+    }
+    val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pat.patternAttrs.formatdes)
     val notC = pat match {
       case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
-        val infixedArgMarkers = (1 to infixNr).map(i=>SimpArg(i)).toList
-        val functorMarker = Delim(orgExtPatAttr.extPatAttr.patAttr.spelling)
-        val suffixedArgsMarkers = (infixNr+1 to infixNr+suffixNr).map(i=>SimpArg(i)).toList
-        val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
-        val fixity = Mixfix(infixedArgMarkers++(functorMarker::suffMarkers))
-        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+        val fixity = PrePostFixMarkers(orgExtPatAttr.extPatAttr.patAttr.spelling, infixArgNr, suffixArgNr, rightArgsBracketed)
+        makeNotCont(fixity)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
-        val leftDelim = Delim(orgExtPatAttr.extPatAttr.patAttr.spelling)
-        val rightDelim = Delim(_right_Circumflex_Symbol.spelling)
-        val circumfixedArgsMarkers = (1 to circumfixNr).map(i=>SimpArg(i)).toList
-        val fixity = Mixfix(rightDelim::(circumfixedArgsMarkers.+:(rightDelim)))
-        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+        val fixity = CircumfixMarkers(orgExtPatAttr.extPatAttr.patAttr.spelling, _right_Circumflex_Symbol.spelling, circumfixArgNr)
+        makeNotCont(fixity)
       case pat: Patterns =>
-        val functorMarker = Delim(pat.patternAttrs.spelling)
-        val suffixedArgsMarkers = (infixNr+1 to infixNr+suffixNr).map(i=>SimpArg(i)).toList
-        val fixity = Mixfix(functorMarker::suffixedArgsMarkers)
-        NotationContainer(TextNotation(fixity, Precedence.integer(0), None, false))
+        val fixity = PrePostFixMarkers(pat.patternAttrs.spelling, infixArgNr, suffixArgNr)
+        makeNotCont(fixity)
     }
     (name, gn, notC)
   }

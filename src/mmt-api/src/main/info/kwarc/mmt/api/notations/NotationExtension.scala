@@ -60,6 +60,67 @@ case class Mixfix(markers: List[Marker]) extends Fixity {
    }
 }
 
+object Circumfix extends Fixity {
+  def apply(leftDelim: Delim, rightDelim: Delim, argNum: Int) = Mixfix(leftDelim :: (0 until argNum).toList.map(i=>SimpArg(i+1)).+:(rightDelim))
+  override def asString: (String, String) = this.asInstanceOf[Mixfix].asString
+  override def markers = this.asInstanceOf[Mixfix].markers
+  override def addInitialImplicits(n: Int) = this.asInstanceOf[Mixfix].addInitialImplicits(n)
+  def unapply(fix: Fixity) = fix match {
+    case mix: Mixfix if (mix.markers.length >= 3) => mix.markers match {
+      case Nil => None
+      case Delim(lDelim)::tl => (tl.init, tl.last) match {
+        case (args: List[SimpArg], Delim(rDelim)) => Some((lDelim, rDelim, args.length))
+        case _ => None
+      }
+      case _ => None
+    }
+    case _ => None
+  }
+}
+
+object PrePostfix extends Fixity {
+  def apply(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0) : Mixfix = {
+    lazy val markers = if (expl != 0) {
+      val implArgs = (0 until impl).toList.map(i => ImplicitArg(i+1))
+      val infixedArgMarkers = (impl until impl + prefixedArgsNum).map(i => SimpArg(i + 1)).toList
+      val suffixedArgsMarkers = (impl + prefixedArgsNum until impl + expl).map(i => SimpArg(i + 1)).toList
+      val suffMarkers: List[Marker] = if (rightArgsBracketed) {
+        Delim("(") :: suffixedArgsMarkers.+:(Delim(")"))
+      } else {
+        suffixedArgsMarkers
+      }
+      infixedArgMarkers ++ (delim :: suffMarkers) ::: implArgs
+    } else (0 until prefixedArgsNum).toList.map(i => SimpArg(1 + impl + i)) ::: delim ::
+      (prefixedArgsNum until expl).toList.map(i => SimpArg(1 + impl + i)) ::: (0 until impl).toList.map(i => ImplicitArg(i + 1))
+    Mixfix(markers)
+  }
+  override def asString: (String, String) = this.asInstanceOf[Mixfix].asString
+  override def markers = this.asInstanceOf[Mixfix].markers
+  override def addInitialImplicits(n: Int) = this.asInstanceOf[Mixfix].addInitialImplicits(n)
+  def unapply(fix: Fixity) = fix match {
+    case Mixfix(markers) =>
+      val prefixes = markers.takeWhile { case SimpArg(_, _) => true case _ => false }
+      val remainingMarkers = markers.drop(prefixes.length)
+      val (delim, suffixesP) = (remainingMarkers.head, remainingMarkers.tail)
+      val rightArgsBracketed = if (suffixesP.length >= 2) {
+        (suffixesP.head == Delim("(") && suffixesP.last == Delim(")"))
+      } else {
+        false
+      }
+      val suffixes = if (rightArgsBracketed) {
+        suffixesP.tail.init
+      } else {
+        suffixesP
+      }
+      val suffs = suffixes.takeWhile { case SimpArg(_, _) => true case _ => false }
+      val implArgs = suffixes.drop(suffs.length)
+      ((delim, suffs, implArgs) match {
+        case (Delim(del), sufs: List[SimpArg], impls: List[ImplicitArg]) => Some((delim, prefixes.length, prefixes.length + sufs.length, rightArgsBracketed, impls.length))
+        case _ => None
+      })
+    case _ => None
+  }
+}
 /**
  * A SimpleFixity is one out of multiple typical fixities (infix, postfix, etc) characterized by using only a single delimiter.
  *
@@ -88,6 +149,17 @@ abstract class SimpleFixity extends Fixity {
       }
       (impl :: expl :: delimStr).mkString(" ")
    }
+}
+
+case class PrePostfix(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
+  lazy val markers = if (expl != 0) {
+    val infixedArgMarkers = (impl until impl+prefixedArgsNum).map(i=>SimpArg(i+1)).toList
+    val suffixedArgsMarkers = (impl+prefixedArgsNum until impl+expl).map(i=>SimpArg(i+1)).toList
+    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
+    infixedArgMarkers++(delim::suffMarkers)
+  } else argsWithOp(prefixedArgsNum) ::: implArgs
+  def asString = ("mixfix", simpleArgs)
+  def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
 
 /** delimiter followed by the (explicit) arguments */

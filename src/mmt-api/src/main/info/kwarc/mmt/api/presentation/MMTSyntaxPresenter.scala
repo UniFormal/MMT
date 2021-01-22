@@ -126,6 +126,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
           case None => rh("module " + r.target.toPath)
           case Some(m) => present(m, rh)
         }
+      case s: SRef =>
+        controller.getO(s.target) match {
+          case None => rh("symbol " + s.target.toPath)
+          case Some(m) => present(m, rh)
+        }
       case oe: OpaqueElement =>
         rh("\n/T ")
         val pres = controller.extman.get(classOf[OpaqueTextPresenter], oe.format)
@@ -153,7 +158,26 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
             apply(header, Some(dd.path $ TypeComponent))(rh)
         }
         rh << "\n"
+        val notationElements = List(dd.notC.getParseDefault, dd.notC.getPresentDefault).zipWithIndex.map { not =>
+          (rh: RenderingHandler) => not match {
+            case (Some(not), 0) => rh(s"# ${not.toText}")
+            case (Some(not), 1) => rh(s"## ${not.toText}")
+            case (None, _) => // nothing to do
+            case _ => ??? // not yet implemented
+          }
+        }
+        val indentedRh = indented(rh)
+        notationElements.zipWithIndex.foreach { case (renderFunction, index) =>
+          if (index == 0) {
+            indentedRh("\n")
+          } else {
+            indentedRh("\n" + OBJECT_DELIMITER + " ")
+          }
+          renderFunction(indentedRh)
+        }
+        rh("\n")
         dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
+
       case dm: DerivedModule =>
         doTheory(dm, indented(rh))
       case nm: NestedModule =>
@@ -172,6 +196,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     case _: Document => /* do nothing */
     case _: DRef => // rh(MODULE_DELIMITER)
     case _: MRef => // rh(MODULE_DELIMITER)
+    case s : SRef =>
     case s: Structure if s.isInclude => rh(DECLARATION_DELIMITER + "\n")
 
     // TODO Fix for [[Structure.isInclude]] not accounting for inclusions
@@ -349,7 +374,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       typeElements ::: definiensElements ::: roleElements ::: aliasElements ::: notationElements ::: metadataElements
 
     // present all elements
-    rh(c.name.last.toString)
+    rh(c.name.toString)//rh(c.name.last.toString)
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {
