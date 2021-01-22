@@ -307,6 +307,11 @@ trait RelativeBaseTransformer {
     *  - For [[LinearFunctorialTransformer]], this is a functor.
     *  - For [[LinearConnectorTransformer]] (between functors [[LinearConnectorTransformer.in]] and
     *    [[LinearConnectorTransformer.out]]), this is a natural transformation between `in` and `out`.
+    *
+    *
+    * @todo ask Florian whether this method is good, ideally we should only be forced to give the functor
+    *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
+    *       this?
     */
   def applyMetaModule(t: Term): Term = (operatorDomain.modules, operatorCodomain.modules) match {
     case (List(domTheory), List(codTheory)) => t match {
