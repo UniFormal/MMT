@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 /**
   * Foundation-independent diagram operators.
@@ -7,7 +7,6 @@ package info.kwarc.mmt.api.modules.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 
@@ -22,8 +21,8 @@ object CopyOperator extends ParametricRule {
 
 class CopyOperator(override val head: GlobalName, dom: MPath, cod: MPath) extends SimpleLinearOperator with OperatorDSL {
 
-  override val operatorDomain: DiagramT = DiagramT(List(dom))
-  override val operatorCodomain: DiagramT = DiagramT(List(cod))
+  override val operatorDomain: Diagram = Diagram(List(dom))
+  override val operatorCodomain: Diagram = Diagram(List(cod))
   override def applyMetaModule(m: Term): Term = ???
 
   override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_copy")

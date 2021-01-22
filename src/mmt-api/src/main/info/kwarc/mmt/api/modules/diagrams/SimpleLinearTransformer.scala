@@ -1,6 +1,5 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.modules.DiagramInterpreter
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.symbols.{Constant, FinalConstant}
 import info.kwarc.mmt.api.{GeneralError, InvalidElement}

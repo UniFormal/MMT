@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.modules
+package info.kwarc.mmt.api.modules.diagrams
 
 /*
   * Diagram operators implementation:
@@ -40,7 +40,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
-import info.kwarc.mmt.api.modules.diagops.LinearOperator
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
@@ -51,24 +51,24 @@ import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 import scala.collection.mutable
 
-object Diagram {
+object InstallDiagram {
   val feature: String = "diagram"
 
-  def saveOutput(diagPath: MPath, output: Term)(implicit lookup: Lookup): Unit = {
-    lookup.getModule(diagPath).dfC.normalized = Some(output)
+  def saveOutput(diagFeaturePath: MPath, diagram: Diagram)(implicit lookup: Lookup): Unit = {
+    lookup.getModule(diagFeaturePath).dfC.normalized = Some(diagram.toTerm)
   }
 
   /**
-    * Parses the output of a previously elaborated [[Diagram]] structural feature.
+    * Parses the output of a previously elaborated [[InstallDiagram]] structural feature.
     *
     * @throws GetError if the module referenced by diagramModulePath cannot be found
     * @throws InvalidElement if the module doesn't correspond to a usage of the Diagram structural feature
     * @throws InvalidElement if the module hasn't been elaborated before
     * @return All module entries of the output diagram (as were the result of elaboration before).
     */
-  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): DiagramT = {
+  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): Diagram = {
     val diagModule = lookup.get(diagPath) match {
-      case diagModule: DerivedModule if diagModule.feature == Diagram.feature =>
+      case diagModule: DerivedModule if diagModule.feature == InstallDiagram.feature =>
         diagModule
 
       case s => throw InvalidElement(s, s"referenced diagram DerivedModule `$s` not a derived module or doesn't have diagram feature")
@@ -91,7 +91,7 @@ object Diagram {
   *
   * @todo Navid: add example
   */
-class Diagram extends ModuleLevelFeature(Diagram.feature) {
+class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
   override def getHeaderNotation: List[Marker] = Nil
   /** */
   def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
@@ -105,7 +105,7 @@ class Diagram extends ModuleLevelFeature(Diagram.feature) {
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
-        Diagram.saveOutput(dm.path, outputDiagram)(controller.globalLookup)
+        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.globalLookup)
 
         // syntax-present output diagram for quick debugging
         diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
@@ -117,7 +117,7 @@ input: $df
 operators in scope: ${rules.get(classOf[DiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
 
 output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
-        ${outputDiagram.toStr(shortURIs = true)}
+        $outputDiagram
 -------------------------------------
 
 """)
@@ -233,18 +233,12 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
   }
 
   /**
-    * Tries to evaluate a diagram expression and to delegate to [[DiagramOperator]]s found
+    * Tries to fully evaluate a diagram expression and to delegate to [[DiagramOperator]]s found
     * in [[interpreterContext]].
     *
-    * At most one step is performed.
-    *
-    * @param diag The input diagram
-    * @return If diag is a [[BasedDiagram]], it is returned as-is. Otherwise, if an operator
-    *         in [[interpreterContext]] matches, that opreator is applied on diag.
-    *         Yet otherwise, diag is simplified, and upon changes due to simplification in the term,
-    *         [[apply()]] is tried again. If diag was alraedy stable, an [[Error]] is thrown.
+    * @param t The input diagram expression
     */
-  def apply(t: Term): Option[Term] = {
+  def apply(t: Term): Option[Diagram] = {
     object HasHead {
       def unapply(t: Term): Option[ContentPath] = t.head
     }
@@ -255,12 +249,12 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
         // the called operator may still simplify arguments on its own later on
         val matchingOp = operators(p)
         val opResult = matchingOp(operatorExpression)(this, ctrl)
-        opResult
+        opResult.flatMap(apply)
 
-      case diag @ DiagramTermBridge(_) => Some(diag)
+      case DiagramTermBridge(diag) => Some(diag)
 
       case OMMOD(diagramDerivedModule) =>
-        Some(Diagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup).toTerm)
+        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup))
 
       case diag =>
         val simplifiedDiag = {
@@ -287,8 +281,21 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
   }
 }
 
-// to be renamed to Diagram (after structural feature has been renamed)
-sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
+/**
+  * A diagram of MMT [[Module]]s over some optional meta diagram.
+  *
+  * Among other uses, diagrams serve as the domain and codomain of most diagram operators, see
+  * [[RelativeBaseTransformer]] as the most general trait fleshing this out.
+  * If a diagram operator has domain `Dom`, then you may apply the operator to all diagrams
+  * `D` "that are over `Dom`". Concretely, the operator is applicable iff.
+  * `D.mt.exists(Dom.subsumes(_))`.
+  *
+  * FUTURE WORK: diagrams may also contain commutativity assertions.
+  *
+  * @param modules The contained [[Module]]s as referenced via their paths.
+  * @param mt Meta diagram
+  */
+sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
   def toTerm: Term = mt match {
     case Some(baseDiagram) => OMA(OMS(DiagramTermBridge.basedDiagram), baseDiagram.toTerm :: DiagramTermBridge.PathCodec(modules))
     case None => OMA(OMS(DiagramTermBridge.rawDiagram), DiagramTermBridge.PathCodec(modules))
@@ -307,9 +314,24 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
     getAllModules.exists(m => lookup.hasImplicit(m, target))
   }
 
-  def subsumes(other: DiagramT)(implicit lookup: Lookup): Boolean = {
-    val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitTo)
+  def subsumes(other: Diagram)(implicit lookup: Lookup): Boolean = {
+    val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitFrom)
     doesSubsume
+  }
+
+  /**
+    * Computes naive union, probably not what we want for long-term
+    */
+  def union(other: Diagram)(implicit lookup: Lookup): Diagram = {
+    val newModules = (modules ++ other.modules).distinct
+    val newMeta = (mt, other.mt) match {
+      case (Some(m1), Some(m2)) => Some(m1.union(m2))
+      case (Some(m1), _) => Some(m1)
+      case (_, Some(m2)) => Some(m2)
+      case (_, _) => None
+    }
+
+    Diagram(newModules, newMeta)
   }
 
   /**
@@ -320,7 +342,7 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
     * is based on a formalization of propositional logic PL that is also modular.
     * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
     */
-  def closure(intendedMeta: DiagramT)(implicit lookup: Lookup): DiagramT = {
+  def closure(intendedMeta: Diagram)(implicit lookup: Lookup): Diagram = {
     require(mt.isEmpty, "closure of diagram that already has meta diagram not yet implemented")
     val metaModules = intendedMeta.getAllModules
 
@@ -350,7 +372,7 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
       }
     }
 
-    DiagramT(collected.toList, Some(intendedMeta))
+    Diagram(collected.toList, Some(intendedMeta))
   }
 
   private def getAllModulePaths(t: Term): Set[MPath] = {
@@ -370,23 +392,25 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
   }
 }
 
-object DiagramT {
-  val empty: DiagramT = DiagramT(List())
-  def singleton(theory: MPath): DiagramT = DiagramT(List(theory))
+object Diagram {
+  val empty: Diagram = Diagram(List())
+  def singleton(theory: MPath): Diagram = Diagram(List(theory))
+
+  def union(diags: Seq[Diagram])(implicit lookup: Lookup): Diagram = diags.reduceLeft((d1, d2) => d1.union(d2))
 }
 
 object DiagramTermBridge {
   val rawDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?raw_diagram")
   val basedDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?based_diagram")
 
-  def apply(diag: DiagramT): Term = diag.toTerm
+  def apply(diag: Diagram): Term = diag.toTerm
 
-  def unapply(t: Term): Option[DiagramT] = t match {
+  def unapply(t: Term): Option[Diagram] = t match {
     case OMA(OMS(`rawDiagram`), PathCodec(modules)) =>
-      Some(DiagramT(modules, None))
+      Some(Diagram(modules, None))
 
     case OMA(OMS(`basedDiagram`), DiagramTermBridge(baseDiagram) :: PathCodec(modules)) =>
-      Some(DiagramT(modules, Some(baseDiagram)))
+      Some(Diagram(modules, Some(baseDiagram)))
 
     case _ => None
   }
@@ -398,82 +422,5 @@ object DiagramTermBridge {
       case OMMOD(path) => path
       case _ => return None
     })
-  }
-}
-
-object BasedDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?based_diagram")
-
-  def apply(baseTheory: MPath, paths: List[MPath]): Term = {
-    OMA(OMS(constant), OMMOD(baseTheory) :: paths.map(OMMOD(_)))
-  }
-  def unapply(t: Term): Option[(MPath, List[MPath])] = t match {
-    case OMA(OMS(`constant`), OMMOD(baseTheory) :: pathTerms) =>
-      val paths = pathTerms.collect {
-        case OMMOD(path) => path
-        case _ => return None
-      }
-      Some((baseTheory, paths))
-
-    case _ => None
-  }
-
-  // we probably want to have case classes for RawDiagram and BasedDiagram, which would simplify
-  // this function tremendously
-
-  /**
-    * Merges two diagrams, keeps only distinct diagram elements.
-    *
-    * If they are both compatible [[BasedDiagram]]s, the result is a [[BasedDiagram]] again.
-    * Otherwise, they will both be merged into a [[RawDiagram]].
-    *
-    * ''BasedDiagram(b1, paths1)'' and ''BasedDiagram(b2, paths2)'' are compatible if there is either
-    * an implicit morphism b1 -> b2 or b2 -> b1. IN both cases, they will be merged into a [[BasedDiagram]]
-    * with paths ''(paths1 ::: paths2).distinct'' over the codomain of the implicit morphism (i.e., the
-    * stronger base theory).
-    */
-  def unionWithOther(diag1: Term, diag2: Term)(implicit lookup: Lookup): Term = {
-    val paths1 = diag1 match {
-      case BasedDiagram(_, paths) => paths
-      case RawDiagram(paths) => paths
-    }
-    val paths2 = diag2 match {
-      case BasedDiagram(_, paths) => paths
-      case RawDiagram(paths) => paths
-    }
-    val paths = (paths1 ::: paths2).distinct
-
-    diag1 match {
-      case RawDiagram(paths1) => diag2 match {
-        case RawDiagram(_) => RawDiagram(paths)
-        case BasedDiagram(_, paths2) => RawDiagram(paths)
-      }
-      case BasedDiagram(base1, paths1) => diag2 match {
-        case RawDiagram(paths2) => RawDiagram(paths)
-        // base 2 is stronger
-        case BasedDiagram(base2, paths2) if lookup.hasImplicit(base1, base2) => BasedDiagram(base2, paths)
-        // base 1 is stronger
-        case BasedDiagram(base2, paths2) if lookup.hasImplicit(base2, base1) => BasedDiagram(base1, paths)
-        case BasedDiagram(_, paths2) => RawDiagram(paths)
-      }
-    }
-  }
-}
-
-object RawDiagram {
-  private val constant = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?raw_diagram")
-
-  def apply(paths: List[MPath]): Term = {
-    OMA(OMS(constant), paths.map(OMMOD(_)))
-  }
-  def unapply(t: Term): Option[List[MPath]] = t match {
-    case OMA(OMS(`constant`), pathTerms) =>
-      val paths = pathTerms.collect {
-        case OMMOD(path) => path
-        case _ => return None
-      }
-      Some(paths)
-
-    case _ => None
   }
 }

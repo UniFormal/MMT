@@ -1,7 +1,7 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Module, ModuleOrLink}
+import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.symbols._
 
@@ -201,6 +201,25 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     }
   }
 
+  final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
+    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.globalLookup))
+  }
+
+  final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
+    if (beginDiagram(diag)) {
+      implicit val state: DiagramState = initDiagramState(diag, interp)
+
+      val newModules = diag.modules
+        .map(interp.ctrl.getModule)
+        .flatMap(applyModule)
+        .map(_.path)
+
+      Some(Diagram(newModules, Some(operatorCodomain)))
+    } else {
+      None
+    }
+  }
+
   override def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
     if (state.processedElements.contains(inContainer.path)) {
       true
@@ -267,14 +286,17 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
 /**
   * Base trait of transformers that have some notion of an `operatorDomain` and `operatorCodomain`.
   *
+  * As a first approximation, transformers could have a mere [[MPath]] as their domain and codomain.
+  * But this trait directly generalizes this to whole [[Diagram]]s as domain and codomain.
+  *
   * So far it is only used in [[LinearFunctorialTransformer]] and [[LinearConnectorTransformer]].
   * There, diagrams are transformed module-by-module and declaration-by-declaration, and upon
   * includes the following happens: for an `include T = t`, where `T` stems from `operatorDomain`,
   * we transform it into an `include applyMetaModule(T) = applyMetaModule(t)` (very roughly).
   */
 trait RelativeBaseTransformer {
-  def operatorDomain: DiagramT
-  def operatorCodomain: DiagramT
+  def operatorDomain: Diagram
+  def operatorCodomain: Diagram
 
   /**
     * Translates occurrences (e.g. includes) of theories and views from [[operatorDomain]]

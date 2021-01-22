@@ -2,7 +2,7 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
+import info.kwarc.mmt.api.modules.diagrams.{DiagramInterpreter, Diagram, OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
@@ -10,8 +10,8 @@ import info.kwarc.mmt.lf.LF
 
 final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
 
-  override val operatorDomain: DiagramT   = DiagramT(List(LF.theoryPath))
-  override val operatorCodomain: DiagramT = DiagramT(List(LF.theoryPath))
+  override val operatorDomain: Diagram   = Diagram(List(LF.theoryPath))
+  override val operatorCodomain: Diagram = Diagram(List(LF.theoryPath))
 
   // todo: encode links in name?
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")

@@ -7,7 +7,8 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.{GlobalName, InvalidElement, InvalidObject, Path}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramOperator, Module, RawDiagram, View}
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, DiagramOperator}
+import info.kwarc.mmt.api.modules.{Module, View}
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, OMS, Term}
 
 private abstract class IntersecterOperator extends DiagramOperator {
@@ -31,7 +32,7 @@ private abstract class IntersecterOperator extends DiagramOperator {
         (a ::: b.flatMap(p => List(p._1, p._2)) ::: c ::: d.flatMap(p => List(p._1, p._2))).distinct
       }
 
-      Some(RawDiagram(outputModules.map(_.path)))
+      Some(Diagram(outputModules.map(_.path)).toTerm)
 
     case _ =>
       None

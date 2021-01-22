@@ -1,7 +1,7 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName}
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module}
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, TermContainer, Visibility}

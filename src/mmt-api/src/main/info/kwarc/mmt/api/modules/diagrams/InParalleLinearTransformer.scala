@@ -1,7 +1,6 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.MPath
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
+import info.kwarc.mmt.api.modules.ModuleOrLink
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 import scala.collection.mutable
@@ -10,17 +9,17 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
   type DiagramState = TxAggregationDiagramState
   type LinearState = LinearTxAggregationState
 
-  override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = {
+  override def initDiagramState(diag: Diagram, interp: DiagramInterpreter): DiagramState = {
     val txDiagStates = transformers
       .map(tx => {
-        val diagState = tx.initDiagramState(toplevelModules, interp)
+        val diagState = tx.initDiagramState(diag, interp)
         diagState.asInstanceOf[LinearTransformer#LinearDiagramState]
       })
       .toArray
-    new TxAggregationDiagramState(toplevelModules, txDiagStates)
+    new TxAggregationDiagramState(diag, txDiagStates)
   }
 
-  class TxAggregationDiagramState(inputToplevelModules: Map[MPath, Module], val txDiagStates: Array[LinearTransformer#LinearDiagramState]) extends LinearDiagramState(inputToplevelModules) {
+  class TxAggregationDiagramState(diag: Diagram, val txDiagStates: Array[LinearTransformer#LinearDiagramState]) extends LinearDiagramState(diag) {
     override def initAndRegisterNewLinearState(inContainer: Container): LinearTxAggregationState = {
       txDiagStates.foreach(txDiagState =>
         txDiagState.initAndRegisterNewLinearState(inContainer)
@@ -104,14 +103,29 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
 
   override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = { require(requirement = false, "unreachable") }
 
-  override def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath] = {
-    val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
-    val state = initDiagramState(modules, interp)
+  override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
+    transformers.forall(_.beginDiagram(diag))
+  }
 
-    modulePaths.map(interp.ctrl.getModule).foreach(module => {
-      applyContainer(module)(state, interp)
-    })
+  override def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit = {
+    transformers.foreach(_.endDiagram(diag))
+  }
 
-    transformers.flatMap(_.applyDiagram(modulePaths))
+  override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
+    val state = initDiagramState(diag, interp)
+
+    if (beginDiagram(diag)) {
+      diag.modules.map(interp.ctrl.getModule).foreach(module => {
+        applyContainer(module)(state, interp)
+      })
+
+      // to collect all output diagrams, we employ the hack to call applyDiagram
+      // on every transformer
+      // this assumes that things are not recomputed, otherwise we're pretty inefficient
+      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.globalLookup)
+      Some(outDiagram)
+    } else {
+      None
+    }
   }
 }

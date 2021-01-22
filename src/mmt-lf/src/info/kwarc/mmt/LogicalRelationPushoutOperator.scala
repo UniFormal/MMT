@@ -2,7 +2,7 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops._
+import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Structure}
 import info.kwarc.mmt.api.uom.SimplificationUnit
@@ -122,8 +122,8 @@ final class LogicalRelationPushoutTransformer(
 object LogicalRelationPushoutTransformer {
   class PathTransformer(initialLogrel: Term, mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends ModulePathTransformer with RelativeBaseTransformer {
 
-    override val operatorDomain: DiagramT = DiagramT.singleton(commonLinkDomain)
-    override val operatorCodomain: DiagramT = DiagramT.singleton(commonLinkCodomain)
+    override val operatorDomain: Diagram = Diagram.singleton(commonLinkDomain)
+    override val operatorCodomain: Diagram = Diagram.singleton(commonLinkCodomain)
 
     // TODO: encode morphism names into name here?
     def applyModuleName(name: LocalName): LocalName =
