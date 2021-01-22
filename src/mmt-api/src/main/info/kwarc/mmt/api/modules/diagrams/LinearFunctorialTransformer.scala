@@ -131,18 +131,19 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     */
   protected def beginStructure(s: Structure, state: LinearState)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
-      if (applyModule(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).isEmpty) {
+      val newStructureDomain = applyModule(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).getOrElse(
         return None
-      }
+      )
 
       // inherit linear state from module where structure is declared
       state.inherit(state.diagramState.getLinearState(s.home.toMPath))
 
-      // TODO: s.dfC is thrown away
+      // TODO: s.dfC is thrown away/ignored
       val outStructure = new Structure(
         home = OMMOD(applyModulePath(s.path.module)),
         name = s.name,
-        TermContainer.asAnalyzed(OMMOD(applyModulePath(structureDomain))), TermContainer.empty(),
+        tpC = TermContainer.asAnalyzed(newStructureDomain.toTerm),
+        dfC = TermContainer.empty(),
         s.isImplicit, s.isTotal
       )
       interp.add(outStructure)

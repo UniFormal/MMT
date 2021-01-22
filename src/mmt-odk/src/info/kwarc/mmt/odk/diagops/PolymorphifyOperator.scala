@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.diagops
 
-import info.kwarc.mmt.api.modules.diagrams.{DiagramInterpreter, Diagram, OperatorDSL, SimpleLinearOperator}
-import info.kwarc.mmt.api.objects.{Context, OMS, OMV, Term}
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, OperatorDSL, SimpleLinearOperator}
+import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
@@ -63,6 +63,11 @@ object TypifyFOLOperator extends PolymorphifyOperator {
     Path.parseM("latin:/?OneTyped"), Path.parseM("latin:/?Relation"), Path.parseM("latin:/?Reflexivity"), Path.parseM("latin:/?Symmetry"), Path.parseM("latin:/?Transitivity"), Path.parseM("latin:/?Preorder"), Path.parseM("latin:/?EquivalenceRelation"), Path.parseM("latin:/?Congruence"), Path.parseM("latin:/?EquivalenceCongruence")
   ))
   override def operatorCodomain: Diagram = Diagram.singleton(Path.parseM("latin:/?TypedLogic"))
+
+  override def applyMetaModule(t: Term): Term = t match {
+    case OMMOD(p) if p == Path.parseM("latin:/?UntypedLogic") => OMMOD(Path.parseM("latin:/?TypedLogic"))
+    case t => t
+  }
 
   override protected def indexType: Term = OMS(Path.parseS("latin:/?Types?tp"))
   override protected def baseSymbolsTranslations: Map[GlobalName, Term] = Map(

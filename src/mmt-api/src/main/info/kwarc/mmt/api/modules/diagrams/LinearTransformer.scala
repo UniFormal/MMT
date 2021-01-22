@@ -94,10 +94,10 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
 
   /**
-    * Adds declarations from a [[Structure]] occuring in `container` to the [[LinearState]] of
+    * Adds the elaborated constants of a [[Structure]] (which occurs in `container`) to the [[LinearState]] of
     * `container`.
     *
-    * This ensures implementing transforms can treat theories with declarations
+    * This ensures implementing transformers can treat theories with declarations
     * and theories with structure (inducing analogous declarations) in the same way.
     *
     * @see [[applyDeclaration()]]; the same notes apply.
@@ -107,15 +107,20 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
       // todo: should actually register all (also unmapped) declarations from
       //   structure's domain theory, no?
 
-      val inducedDeclarationPaths = s.getDeclarations.map(_.path).flatMap(p => {
-        if (p.name.tail.nonEmpty) {
-          Some(s.path / p.name.tail)
-        } else {
-          None
-        }
-      })
-      val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
-      inducedDeclarations.foreach(state.registerDeclaration)
+      // As an example, assume `container` is a theory `T`, `s` is a structure `s`,
+      // and that `s` maps a constant `c := E` from a theory `R`.
+      // Then the elaborated constant for that assignment has the path
+      //   `T.path ? (s/[?R]/c)`.
+      //
+      // (By contrast, the path `T.path / s ? ([?R]/c)` would refer to the assignment within the structure,
+      //  not the elaborated constant.)
+      val elaboratedConstantPaths = s.getDeclarations.map(_.path.name).map(assignmentName =>
+        s.path.module ? (s.path.name / assignmentName)
+      )
+
+      elaboratedConstantPaths
+        .map(interp.ctrl.getAs(classOf[Declaration], _))
+        .foreach(state.registerDeclaration)
     }
   }
 
@@ -320,7 +325,8 @@ trait RelativeBaseTransformer {
       case t => t
     }
 
-    case _ => throw ImplementationError("Implementors of RelativeBaseTransformer must override applyMetaModule " +
-      "if operatorDomain and operatorCodomain are more than just singletons of theories!")
+    case _ => throw ImplementationError(s"Implementor ${getClass.getSimpleName} of RelativeBaseTransformer " +
+      "did not override applyMetaModule, but yet had operatorDomain and/or operatorCodomain that were more " +
+      "than just singletons (for which the default implementation would have provided a fallback).")
   }
 }

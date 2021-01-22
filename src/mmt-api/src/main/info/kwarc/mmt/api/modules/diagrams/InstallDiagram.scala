@@ -106,9 +106,11 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
     diagInterp(df) match {
       case Some(outputDiagram) =>
         InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.globalLookup)
+        val outputModules = outputDiagram.modules.map(controller.getModule)
 
         // syntax-present output diagram for quick debugging
-        diagInterp.toplevelResults.foreach(controller.presenter(_)(ConsoleWriter))
+        outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
+                                                                      // TODO: investigate why they differ
         println(s"""
 
 ${this.getClass.getSimpleName} debug
@@ -122,7 +124,7 @@ output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://local
 
 """)
 
-        diagInterp.toplevelResults
+        outputModules
 
       case None =>
         env.errorCont(InvalidElement(dm, "Diagram operator returned None"))
@@ -244,17 +246,17 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     }
 
     removeOmbindc(t) match {
+      case DiagramTermBridge(diag) => Some(diag)
+
+      case OMMOD(diagramDerivedModule) =>
+        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup))
+
       case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
         // no simplification needed at this point
         // the called operator may still simplify arguments on its own later on
         val matchingOp = operators(p)
         val opResult = matchingOp(operatorExpression)(this, ctrl)
         opResult.flatMap(apply)
-
-      case DiagramTermBridge(diag) => Some(diag)
-
-      case OMMOD(diagramDerivedModule) =>
-        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup))
 
       case diag =>
         val simplifiedDiag = {

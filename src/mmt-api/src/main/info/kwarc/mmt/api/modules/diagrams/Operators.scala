@@ -16,8 +16,11 @@ import info.kwarc.mmt.api.symbols._
 
 // TODO: rework this part of the class hierarchy, DiagramTransformer should correspond (and be named like) to SemanticDiagramOperator
 abstract class SemanticDiagramOperator extends DiagramOperator with DiagramTransformer {
-  override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = {
-    interp(diagram).flatMap(applyDiagram).map(_.toTerm)
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), List(diag)) =>
+      interp(diag).flatMap(applyDiagram).map(_.toTerm)
+
+    case _ => None
   }
 }
 

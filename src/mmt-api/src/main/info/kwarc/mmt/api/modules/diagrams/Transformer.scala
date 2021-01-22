@@ -23,6 +23,10 @@ trait ModulePathTransformer {
   //   // otherwise, delegate to op
   // }
 
+  /**
+    * For [[LinearModuleTransformer]]s: only call this function IF YOU KNOW that the operator transforms mpath
+    *   e.g. if mpath stems from operator domain and is left untouched, DO NOT CALL THIS FUNCTION
+    */
   final def applyModulePath(mpath: MPath): MPath = {
     mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
     /*if (mpath == mpath.mainModule) {
