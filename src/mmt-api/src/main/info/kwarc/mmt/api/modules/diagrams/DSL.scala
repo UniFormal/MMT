@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName, MPath}
 import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, TermContainer, Visibility}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, Structure, TermContainer, Visibility}
 
 // DSL
 trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUtils {
@@ -148,5 +148,27 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
     }
 
     override def apply(c: Constant)(implicit state: LinearState): OMID = OMS(apply(c.path))
+  }
+
+  trait StructureHelper {
+    def linkFor(thy: MPath): MPath
+    def apply(p: GlobalName)(implicit state: LinearState): GlobalName
+    def structure(thy: MPath): Structure
+  }
+
+  def getStructureHelper(name: LocalName, domain: MPath => MPath): StructureHelper = new StructureHelper {
+    def structure(thy: MPath): Structure = Structure(
+      home = OMMOD(applyModulePath(thy)),
+      name = name,
+      from = OMMOD(domain(thy)),
+      isImplicit = false,
+      isTotal = true // TODO: is this correct?
+    )
+
+    override def linkFor(thy: MPath): MPath = thy / name
+
+    override def apply(p: GlobalName)(implicit state: LinearState): GlobalName = {
+      (applyModulePath(p.module) / name) ? (LocalName(domain(p.module)) / p.name)
+    }
   }
 }
