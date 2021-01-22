@@ -73,12 +73,10 @@ final class LogicalRelationTransformer(
         case Some(LogicalRelationInfo(baseLogrelType, baseLogrel))
           if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonLinkDomain) =>
 
-          val t = interp.ctrl.globalLookup.ApplyMorphs(
+          interp.ctrl.globalLookup.ApplyMorphs(
             OMS(logrel.applyAlways(p)),
             baseLogrel
           )
-          val s = t
-          s
 
         case _ =>
           return NotApplicable(c, "refers to constant not previously seen. Implementation error?")

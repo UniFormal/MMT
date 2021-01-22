@@ -44,10 +44,7 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
     *
     * TODO: This only works for LF, right?
     */
-  def getExpected(ctx: Context, t: Term, A: Term): Term = {
-    val tmpForDebugging = ApplySpine(apply(ctx, A), applyMors(ctx, t) : _*)
-    tmpForDebugging
-  }
+  def getExpected(ctx: Context, t: Term, A: Term): Term = ApplySpine(apply(ctx, A), applyMors(ctx, t) : _*)
 
   /**
     * For a term `t: tp`, computes the expected judgement `lr(t) : getExpected(t)`…
@@ -97,7 +94,7 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
           )
       }
 
-      val ret = Lambda(
+      Lambda(
         targetBinder,
         Pi(
           apply(ctx, boundCtx),
@@ -107,7 +104,6 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
           )
         )
       )
-      ret
 
     // case for LFX' Sigma similar to Pi's case?
 
@@ -132,8 +128,7 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
     case OMBIND(Lambda.path, boundCtx, t) => Lambda(apply(ctx, boundCtx), apply(ctx ++ boundCtx, t))
 
     case OMS(p) => // this case is last as it definitely needs to come after Univ(1)
-      val ret = lr(p)
-      ret
+      lr(p)
   }
 
   /**
@@ -231,7 +226,6 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
     val vars = suffixAll(vd.name).map(OMV(_))
     val tp = vd.tp.map(t => ApplySpine(apply(ctx, t), vars : _*))
 
-    val ret = applyMors(ctx, vd) :+ VarDecl(star(vd.name), tp.orNull)
-    ret
+    applyMors(ctx, vd) :+ VarDecl(star(vd.name), tp.orNull)
   }
 }
