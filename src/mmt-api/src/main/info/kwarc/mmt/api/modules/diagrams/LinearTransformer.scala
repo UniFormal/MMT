@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
 
 /**
@@ -214,6 +214,8 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
         .flatMap(applyModule)
         .map(_.path)
 
+      endDiagram(diag)
+
       Some(Diagram(newModules, Some(operatorCodomain)))
     } else {
       None
@@ -305,8 +307,15 @@ trait RelativeBaseTransformer {
     *  - For [[LinearFunctorialTransformer]], this is a functor.
     *  - For [[LinearConnectorTransformer]] (between functors [[LinearConnectorTransformer.in]] and
     *    [[LinearConnectorTransformer.out]]), this is a natural transformation between `in` and `out`.
-    *
-    * By default this is the identity.
     */
-  def applyMetaModule(t: Term): Term = t
+  def applyMetaModule(t: Term): Term = (operatorDomain.modules, operatorCodomain.modules) match {
+    case (List(domTheory), List(codTheory)) => t match {
+      case OMMOD(`domTheory`) => OMMOD(codTheory)
+      case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
+      case t => t
+    }
+
+    case _ => throw ImplementationError("Implementors of RelativeBaseTransformer must override applyMetaModule " +
+      "if operatorDomain and operatorCodomain are more than just singletons of theories!")
+  }
 }

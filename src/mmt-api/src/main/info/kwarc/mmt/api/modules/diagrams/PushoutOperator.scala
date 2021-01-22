@@ -70,13 +70,6 @@ object PushoutTransformer {
     override val operatorDomain: Diagram = Diagram(List(dom))
     override val operatorCodomain: Diagram = Diagram(List(cod))
 
-    override def applyMetaModule(m: Term): Term = m match {
-      case OMMOD(`dom`) => OMMOD(`cod`)
-      case OMIDENT(OMMOD(`dom`)) => OMIDENT(OMMOD(`cod`))
-
-      case _ => throw ImplementationError("unreachable")
-    }
-
     def applyModuleName(name: LocalName): LocalName =
       name.suffixLastSimple("_pushout_over_" + mor.toStr(shortURIs = true))
   }
@@ -87,8 +80,8 @@ private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends Pushou
   override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(dom)
   override val out = new PushoutTransformer.PathTransformer(dom, cod, mor)
   override def applyMetaModule(m: Term): Term = m match {
-    case OMMOD(`dom`) => OMMOD(`cod`)
-    case OMIDENT(`dom`) => mor
+    case OMMOD(`dom`) => OMMOD(dom)
+    case OMIDENT(OMMOD(`dom`)) => mor
     case _ => throw ImplementationError("unreachable")
   }
 

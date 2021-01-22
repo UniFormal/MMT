@@ -186,7 +186,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
     val newFrom: MPath = include.from match {
       case p if in.operatorDomain.hasImplicitFrom(p) =>
-        applyModulePath(p)
+        applyMetaModule(OMMOD(p)).toMPath
 
       case from if diagramState.seenModules.contains(from) =>
         applyModule(ctrl.getModule(from))
@@ -211,7 +211,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
         OMMOD(applyModulePath(include.from))
 
       case OMIDENT(OMMOD(p)) if in.operatorDomain.hasImplicitFrom(p) =>
-        OMIDENT(OMMOD(applyModulePath(p)))
+        applyMetaModule(OMIDENT(OMMOD(p)))
 
       case _ => ???
     }
