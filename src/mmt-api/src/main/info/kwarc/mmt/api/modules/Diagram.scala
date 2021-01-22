@@ -307,8 +307,9 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
     getAllModules.exists(m => lookup.hasImplicit(m, target))
   }
 
-  def subsumes(other: DiagramT): Boolean = {
-    ???
+  def subsumes(other: DiagramT)(implicit lookup: Lookup): Boolean = {
+    val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitTo)
+    doesSubsume
   }
 
   /**
@@ -370,6 +371,7 @@ sealed case class DiagramT(modules: List[MPath], mt: Option[DiagramT] = None) {
 }
 
 object DiagramT {
+  val empty: DiagramT = DiagramT(List())
   def singleton(theory: MPath): DiagramT = DiagramT(List(theory))
 }
 

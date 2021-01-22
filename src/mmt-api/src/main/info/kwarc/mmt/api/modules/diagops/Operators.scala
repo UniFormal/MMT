@@ -10,7 +10,7 @@ package info.kwarc.mmt.api.modules.diagops
   */
 
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.{BasedDiagram, DiagramInterpreter, DiagramOperator, DiagramT, DiagramTermBridge, RawDiagram}
+import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.{GlobalName, InvalidObject, MPath}
@@ -32,7 +32,7 @@ abstract class ModuleOperator extends DiagramOperator with DiagramTransformer {
 
 trait RelativeBaseOperator extends ModuleOperator with RelativeBaseTransformer {
   final override def acceptDiagram(diagram: Term)(implicit interp: DiagramInterpreter): Option[List[MPath]] = diagram match {
-    case DiagramTermBridge(diag) if operatorDomain.subsumes(diag) =>
+    case DiagramTermBridge(diag) if diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.globalLookup)) =>
       Some(diag.modules)
 
     case DiagramTermBridge(diag) =>

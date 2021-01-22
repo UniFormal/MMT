@@ -131,7 +131,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     */
   protected def beginStructure(s: Structure, state: LinearState)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
-      if (!applyContainer(interp.ctrl.getModule(structureDomain))(state.diagramState, interp)) {
+      if (applyModule(interp.ctrl.getModule(structureDomain))(state.diagramState, interp).isEmpty) {
         return None
       }
 

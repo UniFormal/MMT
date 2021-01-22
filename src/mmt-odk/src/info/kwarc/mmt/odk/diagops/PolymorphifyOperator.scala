@@ -56,7 +56,13 @@ object TypifyFOLOperator extends PolymorphifyOperator {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sfol")
 
-  override def operatorDomain: DiagramT = DiagramT.singleton(Path.parseM("latin:/?UntypedLogic"))
+  override def operatorDomain: DiagramT = DiagramT(List(
+    Path.parseM("latin:/?PLND"),
+    Path.parseM("latin:/?UntypedLogic"),
+    Path.parseM("latin:/?Terms"),
+
+    Path.parseM("latin:/?OneTyped"), Path.parseM("latin:/?Relation"), Path.parseM("latin:/?Reflexivity"), Path.parseM("latin:/?Symmetry"), Path.parseM("latin:/?Transitivity"), Path.parseM("latin:/?Preorder"), Path.parseM("latin:/?EquivalenceRelation"), Path.parseM("latin:/?Congruence"), Path.parseM("latin:/?EquivalenceCongruence")
+  ))
   override def operatorCodomain: DiagramT = DiagramT.singleton(Path.parseM("latin:/?TypedLogic"))
 
   override protected def indexType: Term = OMS(Path.parseS("latin:/?Types?tp"))
