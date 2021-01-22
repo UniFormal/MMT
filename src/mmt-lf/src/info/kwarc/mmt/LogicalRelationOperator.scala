@@ -19,6 +19,13 @@ final class LogicalRelationTransformer(logrelType: MPath => LogicalRelationType)
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")
 
   override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    val currentLinkDomain = logrelType(thy.path).commonLinkDomain
+    if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
+      interp.errorCont(InvalidElement(thy, s"Failed to apply logrel operator on `${thy.path}` because that theory " +
+        s"is outside the domain of the morphisms, namely `$currentLinkDomain`."))
+      return None
+    }
+
     super.beginTheory(thy, state).map(outTheory => {
       val include = PlainInclude(logrelType(thy.path).commonLinkCodomain, outTheory.path)
       interp.add(include)
@@ -54,7 +61,7 @@ final class LogicalRelationTransformer(logrelType: MPath => LogicalRelationType)
       }
     }
 
-    val currentLogrelType = state.outContainer match {
+    val currentLogrelType = state.inContainer match {
       case thy: Theory => logrelType(thy.path)
       case link: Link => logrelType(link.to.toMPath)
     }
