@@ -1,9 +1,12 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.{objects, _}
+import info.kwarc.mmt.lf.{Pi, Univ}
 import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.nTerms
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.PiOrEmpty
 import syntax.Utils.MizarGlobalName
 import syntax._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
@@ -74,7 +77,7 @@ object TranslatorUtils {
   def namedDefArgsSubstition(args: Context, varName: String = "x") = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
-      case (vd, i) => vd / objects.OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
+      case (vd, i) => vd / OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
     }:_*)
   }
   /**
@@ -93,6 +96,13 @@ object TranslatorUtils {
      d.translate(tl, Context.empty)}
   }
   def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(varName, defContext.args)
+  def piQuantifyArgs(args: List[Term]): List[Term] = {
+    args map({
+      case arg =>
+        val PiOrEmpty(ctx, tm) = arg
+        Pi(OMV("x") % nTerms(args.length), tm)
+    })
+  }
   def translateArguments(arguments: Arguments)(implicit args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = {arguments._children map translate_Term }
   def translateObjRef(refObjAttrs:globallyReferencingObjAttrs)  = OMS(computeGlobalPatternName(refObjAttrs))
 }

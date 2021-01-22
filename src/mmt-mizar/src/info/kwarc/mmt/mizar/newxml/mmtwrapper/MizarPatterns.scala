@@ -11,6 +11,7 @@ import MizSeq.{Ellipsis, OMI, Rep, Sequence, nTerms}
 import info.kwarc.mmt.mizar.newxml._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils.piQuantifyArgs
 import translator.{TranslationController, TranslatorUtils}
 import info.kwarc.mmt.sequences.NatRules
 
@@ -23,6 +24,27 @@ object PatternUtils {
   def referenceIntSel(strName: String, nm: String) = {
     val strPath = TranslationController.currentTheoryPath ? strName
     referenceExtDecl(strPath, nm)
+  }
+
+  //effectively copied from InternalDeclarationUtil
+  //TODO: Make it accessible and usable at one central location
+  object PiOrEmpty {
+    def apply(ctx: Context, body: Term) = if (ctx.isEmpty) body else Pi(ctx, body)
+    def unapply(tm: Term) : Option[(Context, Term)] = Some(tm match {
+      case Pi(n, tp, x) =>
+        val PiOrEmpty(ctx, body) = x
+        (OMV(n) % tp::ctx, body)
+      case t => (Context.empty, t)
+    })
+  }
+  object LambdaOrEmpty {
+    def apply(ctx: Context, body: Term) = if (ctx.isEmpty) body else Lambda(ctx, body)
+    def unapply(tm: Term) : Option[(Context, Term)] = Some(tm match {
+      case Lambda(n, tp, x) =>
+        val LambdaOrEmpty(ctx, body) = x
+        (OMV(n) % tp::ctx, body)
+      case t => (Context.empty, t)
+    })
   }
 }
 
@@ -54,6 +76,11 @@ object MizarPatternInstance {
   def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val home : Term = OMMOD(TranslationController.currentTheoryPath)
     val pattern = Mizar.MizarPatternsTh ? LocalName(pat)
+    //quantify each argument over all arguments with a Pi (a hack to allow dependent types)
+    val OMI(argsNum) = args.head
+    val argumentsUnqualified = args.tail.take(argsNum)
+    val arguments = piQuantifyArgs(argumentsUnqualified)
+    val fixedArgs = OMI(argsNum)::arguments ++ args.drop(argsNum+1)
     MizInstance.apply(home, name, pattern, args, notC)
   }
   def unapply(mizInstance: DerivedDeclaration): Option[(LocalName, String, List[Term])] = mizInstance match {

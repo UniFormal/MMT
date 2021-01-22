@@ -28,6 +28,54 @@ import info.kwarc.mmt.mizar.newxml.translator.propertyTranslator.translate_Justi
 import nymTranslator._
 import patternTranslator._
 
+case class JustifiedCorrectnessConditions(correctness_Condition: List[CorrectnessConditions], just: Option[Justification])
+case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil)
+object DefinitionContext {
+  def empty() = DefinitionContext()
+  def addArguments(arguments: Context)(implicit defContext: DefinitionContext) = defContext.copy(args = defContext.args ++ arguments)
+}
+
+case class JustifiedProperty(conds: List[MizarProperty], prop: MizarProperty, tp: Option[Term], decl: Option[Declaration])
+object JustifiedProperty {
+  def apply(property: Property, decls: List[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property, decls.headOption)
+  def apply(property: Property, decl: Option[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property._props, decl, property._just)
+  def apply(properties: Properties, decl: Option[Declaration], justO: Option[Justification] = None)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()) : JustifiedProperty = {
+    val prop = properties.matchProperty(justO)
+    val conds = properties._cond.map(_.matchProperty())
+    val tp = properties._tp map translate_Type
+    JustifiedProperty(conds, prop, tp, decl)
+  }
+}
+
+sealed abstract class CaseByCaseDefinien {
+  /**
+   * Used to do inference on, mainly
+   * @return
+   */
+  def someCase: Term
+  def cases: List[Term]
+  def caseRes: List[Term]
+  def caseNum = cases.length
+}
+case class DirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien {
+  override def someCase: Term = defRes
+}
+object DirectPartialCaseByCaseDefinien {
+  def apply(tm: Term): DirectPartialCaseByCaseDefinien = DirectPartialCaseByCaseDefinien(Nil, Nil, tm)
+}
+case class IndirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien {
+  override def someCase: Term = defRes
+}
+object IndirectPartialCaseByCaseDefinien {
+  def apply(tm: Term): IndirectPartialCaseByCaseDefinien = IndirectPartialCaseByCaseDefinien(Nil, Nil, Lam("it", any, tm))
+}
+case class DirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], completenessProof: Option[Term] = None) extends CaseByCaseDefinien {
+  override def someCase: Term = caseRes.head
+}
+case class IndirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], completenessProof: Option[Term] = None) extends CaseByCaseDefinien {
+  override def someCase: Term = caseRes.head
+}
+
 object subitemTranslator {
   def translate_Reservation(reservation: Reservation) = { Nil }
   def translate_Definition_Item(definition_Item: Definition_Item) = {
@@ -419,54 +467,6 @@ object blockTranslator {
         translate_Nym(nym)
     }
   }
-}
-
-sealed abstract class CaseByCaseDefinien {
-  /**
-   * Used to do inference on, mainly
-   * @return
-   */
-  def someCase: Term
-  def cases: List[Term]
-  def caseRes: List[Term]
-  def caseNum = cases.length
-}
-case class DirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien {
-  override def someCase: Term = defRes
-}
-object DirectPartialCaseByCaseDefinien {
-  def apply(tm: Term): DirectPartialCaseByCaseDefinien = DirectPartialCaseByCaseDefinien(Nil, Nil, tm)
-}
-case class IndirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien {
-  override def someCase: Term = defRes
-}
-object IndirectPartialCaseByCaseDefinien {
-  def apply(tm: Term): IndirectPartialCaseByCaseDefinien = IndirectPartialCaseByCaseDefinien(Nil, Nil, Lam("it", any, tm))
-}
-case class DirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], completenessProof: Option[Term] = None) extends CaseByCaseDefinien {
-  override def someCase: Term = caseRes.head
-}
-case class IndirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], completenessProof: Option[Term] = None) extends CaseByCaseDefinien {
-  override def someCase: Term = caseRes.head
-}
-
-case class JustifiedCorrectnessConditions(correctness_Condition: List[CorrectnessConditions], just: Option[Justification])
-case class JustifiedProperty(conds: List[MizarProperty], prop: MizarProperty, tp: Option[Term], decl: Option[Declaration])
-object JustifiedProperty {
-  def apply(property: Property, decls: List[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property, decls.headOption)
-  def apply(property: Property, decl: Option[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property._props, decl, property._just)
-  def apply(properties: Properties, decl: Option[Declaration], justO: Option[Justification] = None)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()) : JustifiedProperty = {
-    val prop = properties.matchProperty(justO)
-    val conds = properties._cond.map(_.matchProperty())
-    val tp = properties._tp map translate_Type
-    JustifiedProperty(conds, prop, tp, decl)
-  }
-}
-
-case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil)
-object DefinitionContext {
-  def empty() = DefinitionContext()
-  def addArguments(arguments: Context)(implicit defContext: DefinitionContext) = defContext.copy(args = defContext.args ++ arguments)
 }
 
 object definiensTranslator {

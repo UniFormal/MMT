@@ -81,7 +81,7 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
 
-    //val doc = TranslationController.makeDocument()
+    val doc = TranslationController.makeDocument()
     val th = TranslationController.makeTheory()
 
     articleTranslator.translateArticle(text_Proper)
@@ -110,7 +110,7 @@ class MizarXMLImporter extends archives.Importer {
 
     th.getDeclarations foreach {case decl: Declaration =>
     try {
-        log(presentDecl(decl))
+        log(TranslationController.controller.presenter.asString(decl))
       } catch {
         case e: GeneralError =>
           println("General error while presenting the declaration: "+decl.toString+": ")

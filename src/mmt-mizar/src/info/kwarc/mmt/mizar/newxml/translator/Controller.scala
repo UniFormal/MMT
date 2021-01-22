@@ -49,9 +49,9 @@ object TranslationController {
   def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
-    val doc = new Document(currentThyBase, documents.FileLevel)
-    controller.add(doc)
+    val doc = new Document(currentThyBase)
     currentDoc = doc
+    controller.add(currentDoc)
     doc
   }
   def makeTheory() = {
@@ -62,9 +62,7 @@ object TranslationController {
   }
   def endMake() = {
     controller.endAdd(currentThy)
-    val doc = currentThy.asDocument
-    currentDoc = doc
-    controller.add(currentDoc)
+    currentDoc.add(MRef(currentDoc.path, currentThy.path))
     controller.endAdd(currentDoc)
   }
 
