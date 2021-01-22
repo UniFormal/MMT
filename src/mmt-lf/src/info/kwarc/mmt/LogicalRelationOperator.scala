@@ -4,16 +4,29 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, LinearTransformer, OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
+import info.kwarc.mmt.api.symbols.{Constant, Include, IncludeData, PlainInclude, Structure}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 import info.kwarc.mmt.lf.LF
 
 sealed case class LogicalRelationType(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath)
+sealed case class LogicalRelationInfo(logrelType: LogicalRelationType, logrel: Term)
 
-final class LogicalRelationTransformer(logrelType: MPath => LogicalRelationType) extends SimpleLinearModuleTransformer with OperatorDSL {
+final class LogicalRelationTransformer(
+                                        logrelType: MPath => LogicalRelationType,
+                                        baseLogrelInfo: Option[LogicalRelationInfo] = None
+                                      ) extends SimpleLinearModuleTransformer with OperatorDSL {
 
-  override val operatorDomain: Diagram   = Diagram(List(LF.theoryPath))
-  override val operatorCodomain: Diagram = Diagram(List(LF.theoryPath))
+  override val operatorDomain: Diagram   =
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkDomain).toList)
+  override val operatorCodomain: Diagram =
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkCodomain).toList)
+
+  override def applyMetaModule(t: Term): Term = t match {
+    case OMMOD(p) if baseLogrelInfo.exists(_.logrelType.commonLinkDomain == p) =>
+      OMMOD(baseLogrelInfo.get.logrelType.commonLinkCodomain)
+
+    case t => t
+  }
 
   // todo: encode links in name?
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")
@@ -56,8 +69,17 @@ final class LogicalRelationTransformer(logrelType: MPath => LogicalRelationType)
     val lr = (p: GlobalName) => {
       if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
         OMS(logrel(p))
-      } else {
-        return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
+      } else baseLogrelInfo match {
+        case Some(LogicalRelationInfo(baseLogrelType, baseLogrel))
+          if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonLinkDomain) =>
+
+          interp.ctrl.globalLookup.ApplyMorphs(
+            OMS(logrel.applyAlways(p)),
+            baseLogrel
+          )
+
+        case _ =>
+          return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
       }
     }
 

@@ -218,7 +218,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     *   ?v                    |-> ?op(v)                   if ?v is in input diagram
     * }}}
     */
-  final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val lookup: Lookup = ctrl.globalLookup
     implicit val diagramState: DiagramState = state.diagramState
