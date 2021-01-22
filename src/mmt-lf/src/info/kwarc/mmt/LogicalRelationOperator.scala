@@ -2,23 +2,45 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, LinearTransformer, OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
+import info.kwarc.mmt.api.symbols.{Constant, Include, IncludeData, PlainInclude, Structure}
 import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
 import info.kwarc.mmt.lf.LF
 
-final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
+sealed case class LogicalRelationType(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath)
+sealed case class LogicalRelationInfo(logrelType: LogicalRelationType, logrel: Term)
 
-  override val operatorDomain: DiagramT   = DiagramT(List(LF.theoryPath))
-  override val operatorCodomain: DiagramT = DiagramT(List(LF.theoryPath))
+final class LogicalRelationTransformer(
+                                        logrelType: MPath => LogicalRelationType,
+                                        baseLogrelInfo: Option[LogicalRelationInfo] = None
+                                      ) extends SimpleLinearModuleTransformer with OperatorDSL {
+
+  override val operatorDomain: Diagram   =
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkDomain).toList)
+  override val operatorCodomain: Diagram =
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkCodomain).toList)
+
+  override def applyMetaModule(t: Term): Term = t match {
+    case OMMOD(p) if baseLogrelInfo.exists(_.logrelType.commonLinkDomain == p) =>
+      OMMOD(baseLogrelInfo.get.logrelType.commonLinkCodomain)
+
+    case t => t
+  }
 
   // todo: encode links in name?
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")
 
   override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    val currentLinkDomain = logrelType(thy.path).commonLinkDomain
+    if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
+      interp.errorCont(InvalidElement(thy, s"Failed to apply logrel operator on `${thy.path}` because that theory " +
+        s"is outside the domain of the morphisms, namely `$currentLinkDomain`."))
+      return None
+    }
+
     super.beginTheory(thy, state).map(outTheory => {
-      val include = PlainInclude(commonLinkCodomain, outTheory.path)
+      val include = PlainInclude(logrelType(thy.path).commonLinkCodomain, outTheory.path)
       interp.add(include)
       interp.endAdd(include)
 
@@ -28,10 +50,11 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
 
   override protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
     super.beginView(view, state).map(outView => {
+      val currentLogrelCodomain = logrelType(view.to.toMPath).commonLinkCodomain
       val include = Include.assignment(
         outView.toTerm,
-        commonLinkCodomain,
-        Some(OMIDENT(OMMOD(commonLinkCodomain)))
+        currentLogrelCodomain,
+        Some(OMIDENT(OMMOD(currentLogrelCodomain)))
       )
       interp.add(include)
       interp.endAdd(include)
@@ -46,11 +69,26 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
     val lr = (p: GlobalName) => {
       if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
         OMS(logrel(p))
-      } else {
-        return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
+      } else baseLogrelInfo match {
+        case Some(LogicalRelationInfo(baseLogrelType, baseLogrel))
+          if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonLinkDomain) =>
+
+          interp.ctrl.globalLookup.ApplyMorphs(
+            OMS(logrel.applyAlways(p)),
+            baseLogrel
+          )
+
+        case _ =>
+          return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
       }
     }
-    val logicalRelation = new LogicalRelation(mors, lr, interp.ctrl.globalLookup)
+
+    val currentLogrelType = state.inContainer match {
+      case thy: Theory => logrelType(thy.path)
+      case link: Link => logrelType(link.to.toMPath)
+    }
+
+    val logicalRelation = new LogicalRelation(currentLogrelType.mors, lr, interp.ctrl.globalLookup)
     def g(t: Term): Term = betaReduce(Context.empty, logicalRelation.getExpected(Context.empty, c.toTerm, t), interp.ctrl.simplifier)
 
     // todo: also map definienses
@@ -68,10 +106,12 @@ final class LogicalRelationTransformer(mors: List[Term], commonLinkDomain: MPath
 object LogicalRelationOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_operator")
 
-  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[SimpleLinearModuleTransformer] = {
+  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = {
     parameters match {
       case OMMOD(domain) :: OMMOD(codomain) :: mors =>
-        Some(new LogicalRelationTransformer(mors, domain, codomain))
+        val constantLogrelType = (_: MPath) => LogicalRelationType(mors, domain, codomain)
+
+        Some(new LogicalRelationTransformer(constantLogrelType))
 
       case _ =>
         None

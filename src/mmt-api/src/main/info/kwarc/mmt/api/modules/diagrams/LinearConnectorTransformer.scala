@@ -1,7 +1,7 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.libraries.Lookup
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Theory, View}
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols.{Include, IncludeData, Structure}
 import info.kwarc.mmt.api.{InvalidElement, MPath}
@@ -46,8 +46,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  final override lazy val operatorDomain: DiagramT = in.operatorCodomain
-  final override lazy val operatorCodomain: DiagramT = out.operatorCodomain
+  final override lazy val operatorDomain: Diagram = in.operatorCodomain
+  final override lazy val operatorCodomain: Diagram = out.operatorCodomain
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
@@ -186,7 +186,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
     val newFrom: MPath = include.from match {
       case p if in.operatorDomain.hasImplicitFrom(p) =>
-        applyModulePath(p)
+        applyMetaModule(OMMOD(p)).toMPath
 
       case from if diagramState.seenModules.contains(from) =>
         applyModule(ctrl.getModule(from))
@@ -211,7 +211,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
         OMMOD(applyModulePath(include.from))
 
       case OMIDENT(OMMOD(p)) if in.operatorDomain.hasImplicitFrom(p) =>
-        OMIDENT(OMMOD(applyModulePath(p)))
+        applyMetaModule(OMIDENT(OMMOD(p)))
 
       case _ => ???
     }

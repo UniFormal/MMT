@@ -1,10 +1,30 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Module, ModuleOrLink}
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
+import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
 
+/**
+  * Performs an action on [[ModuleOrLink]]s declaration-by-declaration ("linearly").
+  *
+  * It offers methods `beginContainer`, `endContainer`, `applyDeclaration`, `applyConstant`, among others.
+  * What action is performed in those methods, is left up to the implementation.
+  *
+  * To have a handier name, we call [[ModuleOrLink]]s "containers" in this trait.
+  *
+  * @see [[ModuleTransformer]] for a subtrait that in `beginContainer` creates
+  *      new module for each passed module.
+  *
+  * @see [[LinearFunctorialTransformer]] for a subtrait that in `beginContainer` for
+  *      [[info.kwarc.mmt.api.modules.Theory theories]] creates new theories,
+  *      for [[info.kwarc.mmt.api.modules.View views]] createss new views,
+  *      and maps declarations in both declaration-by-declaration.
+  *
+  * @see [[LinearConnectorTransformer]] for a subtrait that in `beginContainer` for
+  *      theories creates views, for views does no action at all,
+  *      and maps declarations in theories to view assignments for the created view.
+  */
 trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   type Container = ModuleOrLink
 
@@ -74,10 +94,10 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
 
   /**
-    * Adds declarations from a [[Structure]] occuring in `container` to the [[LinearState]] of
+    * Adds the elaborated constants of a [[Structure]] (which occurs in `container`) to the [[LinearState]] of
     * `container`.
     *
-    * This ensures implementing transforms can treat theories with declarations
+    * This ensures implementing transformers can treat theories with declarations
     * and theories with structure (inducing analogous declarations) in the same way.
     *
     * @see [[applyDeclaration()]]; the same notes apply.
@@ -87,18 +107,22 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
       // todo: should actually register all (also unmapped) declarations from
       //   structure's domain theory, no?
 
-      val inducedDeclarationPaths = s.getDeclarations.map(_.path).flatMap(p => {
-        if (p.name.tail.nonEmpty) {
-          Some(s.path / p.name.tail)
-        } else {
-          None
-        }
-      })
-      val inducedDeclarations = inducedDeclarationPaths.map(interp.ctrl.getAs(classOf[Declaration], _))
-      inducedDeclarations.foreach(state.registerDeclaration)
+      // As an example, assume `container` is a theory `T`, `s` is a structure `s`,
+      // and that `s` maps a constant `c := E` from a theory `R`.
+      // Then the elaborated constant for that assignment has the path
+      //   `T.path ? (s/[?R]/c)`.
+      //
+      // (By contrast, the path `T.path / s ? ([?R]/c)` would refer to the assignment within the structure,
+      //  not the elaborated constant.)
+      val elaboratedConstantPaths = s.getDeclarations.map(_.path.name).map(assignmentName =>
+        s.path.module ? (s.path.name / assignmentName)
+      )
+
+      elaboratedConstantPaths
+        .map(interp.ctrl.getAs(classOf[Declaration], _))
+        .foreach(state.registerDeclaration)
     }
   }
-
 
   /**
     * Transforms a container (i.e. a [[ModuleOrLink]]).
@@ -149,20 +173,16 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
 }
 
 /**
-  * Linearly transforms [[Module modules]] to modules in a diagram.
+  * Linearly transforms [[Module]]s to modules in a diagram.
   *
-  * Even more, we (recursively) linearly transforms [[ModuleOrLink]]s to [[ModuleOrLink]]s.
-  * For instance, if a [[Module]] (as passed to `applyModule()`) contains nested modules,
-  * we recurse into them. Or if it contains links (e.g. structures), we also recurse into them.
+  * It does so by going through modules declaration-by-declaration (using the [[LinearTransformer]]
+  * trait) and recursing into nested modules or structures when needed.
   *
-  * To have a handier name, we call [[ModuleOrLink]]s "containers" in function/parameter names and comments.
-  *
-  * It is left to implementations on which containers exactly they are applicable on, and if so,
+  * It is left to implementations on which modules exactly they are applicable on, and if so,
   * how the type of output container relates to the type of the input container:
   *
-  *  - the subclass [[LinearModuleTransformer]] transforms theories to theories, and links to links
-  *  - the subclass [[LinearConnectorTransformer]] transforms theories to views, and links not at all
-  *
+  *  - the subtrait [[LinearFunctorialTransformer]] transforms theories to theories, and views to views
+  *  - the subtrait [[LinearConnectorTransformer]] transforms theories to views, and views not at all
   *
   * Implementation notes for this class and subclasses:
   *
@@ -175,10 +195,35 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   */
 trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
   final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
-    applyContainer(inModule)
-    state.processedElements.get(inModule.path).map {
-      case m: Module => m
-      case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
+    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.globalLookup)) {
+      Some(inModule)
+    } else {
+      applyContainer(inModule)
+      state.processedElements.get(inModule.path).map {
+        case m: Module => m
+        case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
+      }
+    }
+  }
+
+  final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
+    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.globalLookup))
+  }
+
+  final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
+    if (beginDiagram(diag)) {
+      implicit val state: DiagramState = initDiagramState(diag, interp)
+
+      val newModules = diag.modules
+        .map(interp.ctrl.getModule)
+        .flatMap(applyModule)
+        .map(_.path)
+
+      endDiagram(diag)
+
+      Some(Diagram(newModules, Some(operatorCodomain)))
+    } else {
+      None
     }
   }
 
@@ -190,6 +235,9 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     }
   }
 
+  // We restate the declaration of beginContainer here even though it is already included in
+  // our parent trait LinearTransformer for the sake of adding more documentation, pre-, and
+  // post-conditions.
   /**
     * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
     *
@@ -242,14 +290,43 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
   }
 }
 
+/**
+  * Base trait of transformers that have some notion of an `operatorDomain` and `operatorCodomain`.
+  *
+  * As a first approximation, transformers could have a mere [[MPath]] as their domain and codomain.
+  * But this trait directly generalizes this to whole [[Diagram]]s as domain and codomain.
+  *
+  * So far it is only used in [[LinearFunctorialTransformer]] and [[LinearConnectorTransformer]].
+  * There, diagrams are transformed module-by-module and declaration-by-declaration, and upon
+  * includes the following happens: for an `include T = t`, where `T` stems from `operatorDomain`,
+  * we transform it into an `include applyMetaModule(T) = applyMetaModule(t)` (very roughly).
+  */
 trait RelativeBaseTransformer {
-  def operatorDomain: DiagramT
-  def operatorCodomain: DiagramT
+  def operatorDomain: Diagram
+  def operatorCodomain: Diagram
 
   /**
-    * A functor from [[operatorDomain]] to [[operatorCodomain]].
+    * Translates occurrences (e.g. includes) of theories and views from [[operatorDomain]]
+    * to something over [[operatorCodomain]].
     *
-    * By default the identity.
+    *  - For [[LinearFunctorialTransformer]], this is a functor.
+    *  - For [[LinearConnectorTransformer]] (between functors [[LinearConnectorTransformer.in]] and
+    *    [[LinearConnectorTransformer.out]]), this is a natural transformation between `in` and `out`.
+    *
+    *
+    * @todo ask Florian whether this method is good, ideally we should only be forced to give the functor
+    *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
+    *       this?
     */
-  def applyMetaModule(m: Term): Term = m
+  def applyMetaModule(t: Term): Term = (operatorDomain.modules, operatorCodomain.modules) match {
+    case (List(domTheory), List(codTheory)) => t match {
+      case OMMOD(`domTheory`) => OMMOD(codTheory)
+      case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
+      case t => t
+    }
+
+    case _ => throw ImplementationError(s"Implementor ${getClass.getSimpleName} of RelativeBaseTransformer " +
+      "did not override applyMetaModule, but yet had operatorDomain and/or operatorCodomain that were more " +
+      "than just singletons (for which the default implementation would have provided a fallback).")
+  }
 }

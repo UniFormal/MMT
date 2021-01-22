@@ -13,7 +13,7 @@ thygraph    info.kwarc.mmt.api.ontology.TheoryGraphExporter
 decltree    info.kwarc.mmt.api.ontology.DeclarationTreeExporter
 index       info.kwarc.mmt.api.archives.OMDocImporter
 pvs-omdoc   info.kwarc.mmt.pvs.Plugin
-diagram     info.kwarc.mmt.api.modules.Diagram
+diagram     info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 
 sms        info.kwarc.mmt.stex.SmsGenerator
 tex-deps   info.kwarc.mmt.stex.DepsGenerator

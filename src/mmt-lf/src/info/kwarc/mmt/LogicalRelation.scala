@@ -104,6 +104,7 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
           )
         )
       )
+
     // case for LFX' Sigma similar to Pi's case?
 
     case FunType(args, retType) if args.nonEmpty =>
@@ -126,7 +127,8 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
       )
     case OMBIND(Lambda.path, boundCtx, t) => Lambda(apply(ctx, boundCtx), apply(ctx ++ boundCtx, t))
 
-    case OMS(p) => lr(p) // this case is last as it definitely needs to come after Univ(1)
+    case OMS(p) => // this case is last as it definitely needs to come after Univ(1)
+      lr(p)
   }
 
   /**

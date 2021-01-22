@@ -1,7 +1,7 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module, ModuleOrLink}
+import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.symbols.Declaration
 
@@ -26,10 +26,10 @@ trait DiagramTransformerState {
     * @param diagram The full input diagram expression.
     * @param toplevelModules The extracted modules in the input diagram
     */
-  def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState
+  def initDiagramState(diag: Diagram, interp: DiagramInterpreter): DiagramState
 
   protected trait MinimalDiagramState {
-    def inputToplevelModules: Map[MPath, Module]
+    def inputDiagram: Diagram
   }
 }
 
@@ -53,15 +53,14 @@ trait ModuleTransformerState extends DiagramTransformerState {
   protected type DiagramState <: MinimalModuleState
 
   protected trait MinimalModuleState extends MinimalDiagramState {
-    override val inputToplevelModules: Map[MPath, Module]
-
     /**
       * All the processed modules so far: a map from the [[MPath]] of the input [[Module]] to the
       * generated output [[Module]].
       */
     val processedElements: mutable.Map[Path, ContentElement] = mutable.Map()
 
-    def seenModules: mutable.Set[MPath] = mutable.Set(inputToplevelModules.keys.toSeq : _*)
+    @deprecated("idk what the use is or should be")
+    val seenModules: mutable.Set[MPath] = mutable.Set(inputDiagram.modules : _*)
   }
 }
 
@@ -110,7 +109,7 @@ trait LinearTransformerState extends DiagramTransformerState {
   type DiagramState <: LinearDiagramState
   /*override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new LinearDiagramState(toplevelModules)*/
 
-  protected class LinearDiagramState(val inputToplevelModules: Map[MPath, Module]) extends MinimalDiagramState {
+  protected class LinearDiagramState(override val inputDiagram: Diagram) extends MinimalDiagramState {
     // todo: actually name ContainerState
     val linearStates: mutable.Map[Path, LinearState] = mutable.Map()
 
@@ -147,7 +146,7 @@ trait LinearModuleTransformerState extends ModuleTransformerState with LinearTra
   type LinearState <: MinimalLinearModuleState
   type DiagramState <: MinimalLinearModuleDiagramState
 
-  final protected class MinimalLinearModuleDiagramState(inputToplevelModules: Map[MPath, Module]) extends LinearDiagramState(inputToplevelModules) with MinimalModuleState {
+  final protected class MinimalLinearModuleDiagramState(inputDiagram: Diagram) extends LinearDiagramState(inputDiagram) with MinimalModuleState {
   }
 
   /**
@@ -199,5 +198,5 @@ trait DefaultLinearStateOperator extends LinearModuleTransformerState {
 
   final override def initLinearState(diagramState: DiagramState, inContainer: ModuleOrLink): LinearState = new SkippedDeclsExtendedLinearState(diagramState, inContainer)
 
-  final override def initDiagramState(toplevelModules: Map[MPath, Module], interp: DiagramInterpreter): DiagramState = new MinimalLinearModuleDiagramState(toplevelModules)
+  final override def initDiagramState(diag: Diagram, interp: DiagramInterpreter): DiagramState = new MinimalLinearModuleDiagramState(diag)
 }

@@ -1,10 +1,10 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName}
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName, MPath}
+import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, TermContainer, Visibility}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, Structure, TermContainer, Visibility}
 
 // DSL
 trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUtils {
@@ -13,7 +13,7 @@ trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUt
       state.registerSkippedDeclaration(c)
       interp.errorCont(InvalidElement(
         c,
-        s"`$getClass` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
+        s"`${OperatorDSL.this.getClass.getSimpleName}` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
       ))
 
       Nil
@@ -56,7 +56,20 @@ trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUt
 // todo: rename this class as mmt API already features a "Renamer" class?
 trait Renamer[T] {
   def apply(name: LocalName): LocalName
+
+  /**
+    * Only renames symbols already processed in `state`.
+    */
   def apply(path: GlobalName)(implicit state: T): GlobalName
+
+  /**
+    * Always renames the symbol referred to by `path`.
+    *
+    * Use case: your operator has once processed `path` in a previous diagram operator invocation, but
+    * in the meantime "forgot" about it. And now in a second operator invocation, you need to rename this symbol
+    * still.
+    */
+  def applyAlways(path: GlobalName): GlobalName
   def apply(term: Term)(implicit state: T): Term
   def apply(c: Constant)(implicit state: T): OMID
 
@@ -72,6 +85,7 @@ trait Renamer[T] {
     new Renamer[S] {
       override def apply(name: LocalName): LocalName = Renamer.this(name)
       override def apply(path: GlobalName)(implicit state: S): GlobalName = Renamer.this(path)
+      override def applyAlways(path: GlobalName): GlobalName = Renamer.this.applyAlways(path)
       override def apply(term: Term)(implicit state: S): Term = Renamer.this(term)
       override def apply(c: Constant)(implicit state: S): OMID = Renamer.this(c)
     }
@@ -101,6 +115,7 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
     new Renamer[LinearState] {
       override def apply(name: LocalName): LocalName = renamer(name)
       override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = renamer(path)
+      override def applyAlways(path: GlobalName): GlobalName = renamer.applyAlways(path)
       override def apply(term: Term)(implicit state: LinearState): Term = renamer(term)
       override def apply(c: Constant)(implicit state: LinearState): OMID = renamer(c)
     }
@@ -127,17 +142,21 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
       */
     override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
       if (state.processedDeclarations.exists(_.path == path)) {
-        val newModule = applyModulePath(path.module)
-        val newName = path.name match {
-          case LocalName(ComplexStep(domain) :: name) =>
-            LocalName(applyModulePath(domain)) / apply(name)
-          case name => apply(name)
-        }
-
-        newModule ? newName
+        applyAlways(path)
       } else {
         path
       }
+    }
+
+    override def applyAlways(path: GlobalName): GlobalName = {
+      val newModule = applyModulePath(path.module)
+      val newName = path.name match {
+        case LocalName(ComplexStep(domain) :: name) =>
+          LocalName(applyModulePath(domain)) / apply(name)
+        case name => apply(name)
+      }
+
+      newModule ? newName
     }
 
     override def apply(term: Term)(implicit state: LinearState): Term = {
@@ -148,5 +167,27 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
     }
 
     override def apply(c: Constant)(implicit state: LinearState): OMID = OMS(apply(c.path))
+  }
+
+  trait StructureHelper {
+    def linkFor(thy: MPath): MPath
+    def apply(p: GlobalName)(implicit state: LinearState): GlobalName
+    def structure(thy: MPath): Structure
+  }
+
+  def getStructureHelper(name: LocalName, domain: MPath => MPath): StructureHelper = new StructureHelper {
+    def structure(thy: MPath): Structure = Structure(
+      home = OMMOD(applyModulePath(thy)),
+      name = name,
+      from = OMMOD(domain(thy)),
+      isImplicit = false,
+      isTotal = true // TODO: is this correct?
+    )
+
+    override def linkFor(thy: MPath): MPath = thy / name
+
+    override def apply(p: GlobalName)(implicit state: LinearState): GlobalName = {
+      (applyModulePath(p.module) / name) ? (LocalName(domain(p.module)) / p.name)
+    }
   }
 }

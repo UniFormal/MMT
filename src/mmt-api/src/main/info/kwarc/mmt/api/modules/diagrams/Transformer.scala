@@ -1,4 +1,4 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
 /**
   * Traits for "anonymous" functorial operators, i.e., operators that are not bound
@@ -11,8 +11,7 @@ package info.kwarc.mmt.api.modules.diagops
   */
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, Module}
-import info.kwarc.mmt.api.objects.Term
+import info.kwarc.mmt.api.modules.Module
 
 trait ModulePathTransformer {
   protected def applyModuleName(name: LocalName): LocalName
@@ -24,6 +23,10 @@ trait ModulePathTransformer {
   //   // otherwise, delegate to op
   // }
 
+  /**
+    * For [[LinearModuleTransformer]]s: only call this function IF YOU KNOW that the operator transforms mpath
+    *   e.g. if mpath stems from operator domain and is left untouched, DO NOT CALL THIS FUNCTION
+    */
   final def applyModulePath(mpath: MPath): MPath = {
     mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
     /*if (mpath == mpath.mainModule) {
@@ -36,20 +39,15 @@ trait ModulePathTransformer {
 }
 
 trait DiagramTransformer extends DiagramTransformerState {
-  def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath]
+  def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean
+  def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram]
+
+  // overwrite if necessary
+  def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit = {}
 }
 
 /**
   * Transforms modules to modules in a diagram.
-  *
-  * Base class of whole trait hierarchy of [[LinearModuleTransformer]]s and [[LinearConnectorTransformer]]s.
-  *
-  * In contrast to the somewhat parallel class hierarchy of [[ModuleOperator]]s, [[LinearOperator]]s, and
-  * [[LinearConnector]]s, this trait hierarchy only concerns itself with the functional behavior of
-  * operators/connectors and *not* with parsing input diagram expressions (which are [[Term]]s) and constructing
-  * output diagram expressions.
-  * Especially, all traits in this hierarchy are *not* associated with any MMT symbol.
-  * In contrast, [[ModuleOperator]] implements [[SyntaxDrivenRule]].
   */
 trait ModuleTransformer extends DiagramTransformer with ModuleTransformerState with ModulePathTransformer {
   /**
@@ -74,35 +72,4 @@ trait ModuleTransformer extends DiagramTransformer with ModuleTransformerState w
     *         In case the transformer was inapplicable, [[None]] should be returned.
     */
   def applyModule(m: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module]
-
-  /**
-    * Transforms a diagram module-by-module via [[applyModule()]]
-    * @param modulePaths The modules in the diagram.
-    * @return The paths of the transformed modules (i.e. modules for which [[applyModule()]] returned
-    *         `Some(_)`).
-    */
-  final override def applyDiagram(modulePaths: List[MPath])(implicit interp: DiagramInterpreter): List[MPath] = {
-    val modules: Map[MPath, Module] = modulePaths.map(p => (p, interp.ctrl.getModule(p))).toMap
-    implicit val state: DiagramState = initDiagramState(modules, interp)
-
-    def sanityCheck(inModulePath: MPath, outModule: Module): Unit = {
-      if (!state.processedElements.get(inModulePath).contains(outModule)) {
-        throw ImplementationError(s"$getClass applied on input module ${outModule} (via " +
-          s"applyModule()) returned module that it did not correctly put into `state.processedElements`.")
-      }
-
-      if (!interp.hasToplevelResult(outModule.path)) {
-        throw ImplementationError(s"$getClass applied on input module ${inModulePath} (via " +
-          s"applyModule()) returned module that it did not register as top-level result")
-      }
-    }
-
-    modulePaths
-      .flatMap(m => applyModule(interp.get(m)) match {
-        case Some(outModule) =>
-          sanityCheck(m, outModule)
-          Some(outModule.path)
-        case _ => None
-      })
-  }
 }

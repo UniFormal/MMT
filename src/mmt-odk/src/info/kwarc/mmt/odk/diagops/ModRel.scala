@@ -2,7 +2,7 @@ package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagops.{OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SimpleLinearOperator, SystematicRenamingUtils}
+import info.kwarc.mmt.api.modules.diagrams.{DiagramInterpreter, Diagram, OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer, SimpleLinearOperator, SystematicRenamingUtils}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.utils.UnicodeStrings
@@ -213,8 +213,8 @@ private[diagops] trait ModRelClosureCreator[T] {
 }
 
 class NRelOperator(override val head: GlobalName, suffix: String, relationArity: Int, relationTheory: MPath) extends SimpleLinearOperator with OperatorDSL {
-  override val operatorDomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
-  override val operatorCodomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
+  override val operatorDomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
+  override val operatorCodomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(suffix)
 
@@ -266,8 +266,8 @@ class NRelOperator(override val head: GlobalName, suffix: String, relationArity:
 }
 
 class ModRelTransformer(relationArity: Int, relationTheory: MPath) extends SimpleLinearModuleTransformer with OperatorDSL {
-  override val operatorDomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
-  override val operatorCodomain: DiagramT = DiagramT.singleton(SFOL.sfoleqnd)
+  override val operatorDomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
+  override val operatorCodomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple(s"_mod_rel${relationArity}${relationTheory.name}")
 

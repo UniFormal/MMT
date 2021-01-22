@@ -7,6 +7,7 @@ package info.kwarc.mmt.moduleexpressions.operators
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 
@@ -190,7 +191,7 @@ object Common {
               case None => default
             }
             Some(at)
-          case Some(dm: DerivedModule) if dm.feature == Diagram.feature =>
+          case Some(dm: DerivedModule) if dm.feature == InstallDiagram.feature =>
             dm.dfC.normalized flatMap {
               case AnonymousDiagramCombinator(ad) =>
                 ad.getDistNode map { n => n.theory }
@@ -259,7 +260,7 @@ object Common {
       // named diagrams
       case OMMOD(p) =>
         solver.lookup.getO(p) match {
-          case Some(dm: DerivedModule) if dm.feature == Diagram.feature =>
+          case Some(dm: DerivedModule) if dm.feature == InstallDiagram.feature =>
             dm.dfC.normalized flatMap {
               case AnonymousDiagramCombinator(ad) =>
                 Some(ad)

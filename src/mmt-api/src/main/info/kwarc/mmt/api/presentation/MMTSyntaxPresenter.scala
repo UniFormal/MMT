@@ -351,13 +351,14 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       rh(s"role $roleStr")
     })
 
-    val notationElements = List(c.notC.getParseDefault, c.notC.getPresentDefault).zipWithIndex.map { not =>
-      (rh: RenderingHandler) => not match {
-        case (Some(not), 0) => rh(s"# ${not.toText}")
-        case (Some(not), 1) => rh(s"## ${not.toText}")
-        case (None, _) => // nothing to do
-        case _ => ??? // not yet implemented
-      }
+    // zipWithIndex before collecting (filtering) since we want to enforce that
+    // parsing notations are presented with one hash ('#'), and presentation notations with two hashes ('##')
+    val notationElements = List(c.notC.getParseDefault, c.notC.getPresentDefault).zipWithIndex.collect {
+      case (Some(not), i) => (not, i)
+    }.map { x => (rh: RenderingHandler) => x match {
+          case (not, 0) => rh(s"# ${not.toText}")
+          case (not, 1) => rh(s"## ${not.toText}")
+        }
     }
 
     // TODO: (1) generalize this metadata output to theories, views (i.e. modules), and documents

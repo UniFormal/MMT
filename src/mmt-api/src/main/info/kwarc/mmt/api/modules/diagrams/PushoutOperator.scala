@@ -1,6 +1,6 @@
-package info.kwarc.mmt.api.modules.diagops
+package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.modules.{DiagramInterpreter, DiagramT, Theory, View}
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName, MPath, Path}
@@ -10,7 +10,7 @@ object PushoutOperator extends ParametricLinearOperator {
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = parameters match {
     case List(OMMOD(dom), OMMOD(cod), mor) =>
-      Some(new InParalleLinearTransformer(List(
+      Some(new InParallelLinearTransformer(List(
         new PushoutTransformer(dom, cod, mor),
         new PushoutConnector(dom, cod, mor)
       )))
@@ -34,8 +34,8 @@ private class PushoutTransformer(
     with SimpleLinearModuleTransformer
     with OperatorDSL {
 
-  override val operatorDomain: DiagramT = DiagramT(List(dom))
-  override val operatorCodomain: DiagramT = DiagramT(List(cod))
+  override val operatorDomain: Diagram = Diagram(List(dom))
+  override val operatorCodomain: Diagram = Diagram(List(cod))
 
   private def getMorphismIntoPushout(container: Container): Term = {
     // The expressions in container are expressions over the theory
@@ -67,15 +67,8 @@ private class PushoutTransformer(
 object PushoutTransformer {
   class PathTransformer(dom: MPath, cod: MPath, mor: Term) extends ModulePathTransformer with RelativeBaseTransformer {
 
-    override val operatorDomain: DiagramT = DiagramT(List(dom))
-    override val operatorCodomain: DiagramT = DiagramT(List(cod))
-
-    override def applyMetaModule(m: Term): Term = m match {
-      case OMMOD(`dom`) => OMMOD(`cod`)
-      case OMIDENT(OMMOD(`dom`)) => OMIDENT(OMMOD(`cod`))
-
-      case _ => throw ImplementationError("unreachable")
-    }
+    override val operatorDomain: Diagram = Diagram(List(dom))
+    override val operatorCodomain: Diagram = Diagram(List(cod))
 
     def applyModuleName(name: LocalName): LocalName =
       name.suffixLastSimple("_pushout_over_" + mor.toStr(shortURIs = true))
@@ -87,8 +80,8 @@ private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends Pushou
   override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(dom)
   override val out = new PushoutTransformer.PathTransformer(dom, cod, mor)
   override def applyMetaModule(m: Term): Term = m match {
-    case OMMOD(`dom`) => OMMOD(`cod`)
-    case OMIDENT(`dom`) => mor
+    case OMMOD(`dom`) => OMMOD(dom)
+    case OMIDENT(OMMOD(`dom`)) => mor
     case _ => throw ImplementationError("unreachable")
   }
 

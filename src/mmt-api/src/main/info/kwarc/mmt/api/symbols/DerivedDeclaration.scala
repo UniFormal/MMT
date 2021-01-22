@@ -10,6 +10,7 @@ import notations._
 
 import scala.xml.Elem
 import Theory._
+import info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 import info.kwarc.mmt.api.utils.MMT_TODO
 
 
@@ -199,7 +200,7 @@ abstract class StructuralFeature(feature: String) extends GeneralStructuralFeatu
   * A module-level structural feature: a structural feature that can occur in documents and elaborates
   * into modules.
   *
-  * A classic example is the [[Diagram]] structural feature installing the result of diagram operators
+  * A classic example is the [[InstallDiagram]] structural feature installing the result of diagram operators
   * applied on diagrams.
   *
   * @param feature A feature string, see docs of [[GeneralStructuralFeature]].

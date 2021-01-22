@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.archives.Archive
 import info.kwarc.mmt.api.documents.{Document, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension, FormatBasedExtension}
 import info.kwarc.mmt.api.modules._
+import info.kwarc.mmt.api.modules.diagrams.InstallDiagram
 import info.kwarc.mmt.api.objects.{OMID, OMMOD, OMS}
 import info.kwarc.mmt.api.ontology._
 import info.kwarc.mmt.api.presentation.MMTDocExporter
@@ -324,7 +325,7 @@ private class JPgraph extends SimpleJGraphExporter("pgraph") {
 }
 
 /**
-  * Accepts as graph data an MPath to a [[Diagram diagram derived module]] as string and reads out
+  * Accepts as graph data an MPath to a [[InstallDiagram diagram derived module]] as string and reads out
   * the generated theories/views from its dfC.normalized.
   *
   * @example Request with TGView 2D: [[http://localhost:8080/graphs/tgview.html?type=diaggraph&graphdata=latin:/algebraic/diagop-test?PlayTest]],
@@ -339,7 +340,7 @@ private class JDiagramGraph extends SimpleJGraphExporter("diaggraph") {
   final override protected val selector: JGraphSelector = new JGraphSelector {
     override def select(s: String)(implicit controller: Controller): (List[Theory], List[View]) = {
       try {
-        val paths = Diagram.parseOutput(Path.parseM(s))(controller.globalLookup).modules
+        val paths = InstallDiagram.parseOutput(Path.parseM(s))(controller.globalLookup).modules
 
         val (theories, views) = {
           val modules = paths.map(controller.get)
