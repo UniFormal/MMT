@@ -10,7 +10,7 @@ object PushoutOperator extends ParametricLinearOperator {
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = parameters match {
     case List(OMMOD(dom), OMMOD(cod), mor) =>
-      Some(new InParalleLinearTransformer(List(
+      Some(new InParallelLinearTransformer(List(
         new PushoutTransformer(dom, cod, mor),
         new PushoutConnector(dom, cod, mor)
       )))

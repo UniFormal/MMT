@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 import scala.collection.mutable
 
-class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends LinearTransformer {
+class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends LinearTransformer {
   type DiagramState = TxAggregationDiagramState
   type LinearState = LinearTxAggregationState
 
@@ -24,7 +24,7 @@ class InParalleLinearTransformer(transformers: List[LinearTransformer]) extends 
       txDiagStates.foreach(txDiagState =>
         txDiagState.initAndRegisterNewLinearState(inContainer)
       )
-      InParalleLinearTransformer.this.initLinearState(this, inContainer)
+      InParallelLinearTransformer.this.initLinearState(this, inContainer)
     }
   }
 

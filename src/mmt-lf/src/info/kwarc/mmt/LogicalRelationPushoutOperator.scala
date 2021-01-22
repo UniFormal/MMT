@@ -9,16 +9,12 @@ import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
 /**
-  * Some almost plain data object passed around between classes in this file.
+  * Some plain data object (+ utility methods) passed around between classes in this file.
   * Stores general information of what should be computed for the logical relation pushout.
   */
 sealed case class LogrelPushoutInfo(initialLogrelInfo: LogicalRelationInfo) {
   val initialLogrel: Term = initialLogrelInfo.logrel
   val initialLogrelType: LogicalRelationType = initialLogrelInfo.logrelType
-
-  lazy val pushoutInjectionTransformers: List[ModulePathTransformer] = initialLogrelType.mors.map(mor =>
-    new PushoutConnector.PathTransformer(mor)
-  )
 
   def getLogicalRelationTypeFor(m: MPath): LogicalRelationType = {
     val currentMors: List[Term] = initialLogrelType.mors.indices.map(i =>
@@ -59,7 +55,7 @@ object LogicalRelationPushoutOperator extends ParametricLinearOperator {
           List(new LogrelPushoutLogrelConnector(pushoutInfo))
         ).flatten
 
-        Some(new InParalleLinearTransformer(transformers))
+        Some(new InParallelLinearTransformer(transformers))
 
       case _ => None
     }
@@ -89,9 +85,14 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
     val logrelType = pushoutInfo.getLogicalRelationTypeFor(theoryContext)
     val logrel = pushoutInfo.getLogicalRelationFor(theoryContext)
 
+    val logrelRenamer: Renamer[LinearState] = {
+      new LogicalRelationTransformer(_ => logrelType, Some(pushoutInfo.initialLogrelInfo))
+        .logrel.coercedTo(state)
+    }
+
     val homomorphicLogrel = new LogicalRelation(
       logrelType.mors,
-      p => lookup.ApplyMorphs(logrel, OMS(p)),
+      p => lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrel),
       lookup
     )
 
@@ -111,8 +112,8 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
           home = state.outContainer.toTerm,
           name = renamer(c.name),
           alias = Nil,
-          tp = c.tp.map(translatePushout(i, _)),
-          df = c.df.map(translatePushout(i, _)),
+          tp = c.tp.map(translatePushout(i, _)).map(betaReduce),
+          df = c.df.map(translatePushout(i, _)).map(betaReduce),
           rl = None
         )
     }.toList
@@ -157,7 +158,7 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
 
   override def applyMetaModule(t: Term): Term = t match {
     case OMMOD(p) if p == pushoutInfo.initialLogrelType.commonLinkDomain =>
-      OMMOD(pushoutInfo.initialLogrelType.commonLinkCodomain)
+      OMMOD(in.applyModulePath(pushoutInfo.initialLogrelType.commonLinkDomain))
 
     case OMIDENT(OMMOD(p)) if p == pushoutInfo.initialLogrelType.commonLinkDomain =>
       pushoutInfo.initialLogrel
@@ -170,8 +171,10 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
   }
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    val logrelRenamer: Renamer[LinearState] = in.logrel.coercedTo(state)
+
     List(assgn(
-      c.path,
+      logrelRenamer(c.path),
       getRelatedRenamer(state)(c)
     ))
   }
