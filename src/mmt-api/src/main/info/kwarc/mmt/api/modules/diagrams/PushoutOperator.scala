@@ -54,7 +54,7 @@ private class PushoutTransformer(
 
     List(Constant(
       home = state.outContainer.toTerm,
-      name = emptyRenamer(c.name),
+      name = c.name,
       alias = c.alias,
       tp = c.tp.map(translate),
       df = c.df.map(translate),

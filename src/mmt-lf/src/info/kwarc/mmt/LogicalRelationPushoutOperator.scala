@@ -4,6 +4,7 @@ import info.kwarc.mmt
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
+import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
@@ -15,6 +16,7 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 sealed case class LogrelPushoutInfo(initialLogrelInfo: LogicalRelationInfo) {
   val initialLogrel: Term = initialLogrelInfo.logrel
   val initialLogrelType: LogicalRelationType = initialLogrelInfo.logrelType
+  val numMors: Int = initialLogrelInfo.logrelType.mors.size
 
   def getLogicalRelationTypeFor(m: MPath): LogicalRelationType = {
     val currentMors: List[Term] = initialLogrelType.mors.indices.map(i =>
@@ -106,15 +108,23 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
     }
 
+
+
     val pushedOutConstants = pushoutRenamers.zipWithIndex.map {
       case (renamer, i) =>
+        val onlySingleMor = pushoutInfo.numMors == 1
+
         Constant(
           home = state.outContainer.toTerm,
-          name = renamer(c.name),
-          alias = Nil,
+          // only index original name if more than one morphism
+          name = if (onlySingleMor) c.name else renamer(c.name),
+          // but even in the case of one morphism, the indexed name should be available as an alias
+          // (such that users can systematically rely on the operator's output)
+          alias = if (onlySingleMor) List(renamer(c.name)) else Nil,
           tp = c.tp.map(translatePushout(i, _)).map(betaReduce),
           df = c.df.map(translatePushout(i, _)).map(betaReduce),
-          rl = None
+          rl = None,
+          not = if (onlySingleMor) c.notC.copy() else NotationContainer.empty()
         )
     }.toList
 
