@@ -75,6 +75,8 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
   val related: Renamer[LinearState] = getRenamerFor("_T") // "ᵀ"
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    // a lot of helper declarations follow
+    // =======================================
     val lookup = interp.ctrl.globalLookup
 
     // The expressions in container are expressions over the theory
@@ -108,7 +110,9 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
     }
 
-
+    // end of helper declarations
+    // =======================================
+    // now do actual work:
 
     val pushedOutConstants = pushoutRenamers.zipWithIndex.map {
       case (renamer, i) =>
@@ -119,11 +123,11 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
           // only index original name if more than one morphism
           name = if (onlySingleMor) c.name else renamer(c.name),
           // but even in the case of one morphism, the indexed name should be available as an alias
-          // (such that users can systematically rely on the operator's output)
-          alias = if (onlySingleMor) List(renamer(c.name)) else Nil,
+          // (not in views; irrelevant there), such that users can systematically rely on the operator's output
+          alias = if (onlySingleMor && !state.inContainer.isInstanceOf[View]) List(renamer(c.name)) else Nil,
           tp = c.tp.map(translatePushout(i, _)).map(betaReduce),
           df = c.df.map(translatePushout(i, _)).map(betaReduce),
-          rl = None,
+          rl = c.rl,
           not = if (onlySingleMor) c.notC.copy() else NotationContainer.empty()
         )
     }.toList
@@ -133,7 +137,7 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       name = related(c.name),
       alias = Nil,
       tp = c.tp.map(homomorphicLogrel.getExpected(Context.empty, OMS(c.path), _)).map(betaReduce),
-      df = None,
+      df = c.df.map(homomorphicLogrel.apply(Context.empty, _)).map(betaReduce),
       rl = None
     )
 

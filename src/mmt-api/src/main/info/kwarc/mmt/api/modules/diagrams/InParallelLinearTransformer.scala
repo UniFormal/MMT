@@ -5,6 +5,18 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 import scala.collection.mutable
 
+/**
+  * Transforms a diagram by multiple linear transformers in parallel,
+  * which are all run step-by-step.
+  *
+  * Upon a declaration `d`, first all transformers are run on `d`, and only
+  * then is the next declaration considered.
+  *
+  * This is useful when linear transformers are interdependent, as is the case
+  * in [[PushoutOperator]], for example.
+  *
+  * TODO (WARNING): the input diagram must be ordered by dependency already due to implementation details.
+  */
 class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends LinearTransformer {
   type DiagramState = TxAggregationDiagramState
   type LinearState = LinearTxAggregationState
@@ -19,14 +31,7 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
     new TxAggregationDiagramState(diag, txDiagStates)
   }
 
-  class TxAggregationDiagramState(diag: Diagram, val txDiagStates: Array[LinearTransformer#LinearDiagramState]) extends LinearDiagramState(diag) {
-    override def initAndRegisterNewLinearState(inContainer: Container): LinearTxAggregationState = {
-      txDiagStates.foreach(txDiagState =>
-        txDiagState.initAndRegisterNewLinearState(inContainer)
-      )
-      InParallelLinearTransformer.this.initLinearState(this, inContainer)
-    }
-  }
+  class TxAggregationDiagramState(diag: Diagram, val txDiagStates: Array[LinearTransformer#LinearDiagramState]) extends LinearDiagramState(diag)
 
   class LinearTxAggregationState(
                                   val txStates: Array[MinimalLinearState],
@@ -56,10 +61,11 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
   }
 
   override def initLinearState(diagramState: DiagramState, inContainer: Container): LinearState = {
-    val txStates = transformers.zip(diagramState.txDiagStates).map {
-      case (tx, txDiagState) =>
-        tx.initLinearState(txDiagState.asInstanceOf[tx.DiagramState], inContainer)
-    }.map(_.asInstanceOf[MinimalLinearState]).toArray
+    val txStates = diagramState.txDiagStates
+      .toList // without this, scalac complains about "missing class tag"
+      .map(_.initAndRegisterNewLinearState(inContainer))
+      .map(_.asInstanceOf[MinimalLinearState])
+      .toArray
 
     new LinearTxAggregationState(txStates, diagramState, inContainer)
   }
@@ -77,7 +83,7 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
     foreachTransformer((tx, txState, i) => {
       if (tx.beginContainer(inContainer, txState.asInstanceOf[tx.LinearState])) {
           state.applicableStates += i
-        }
+      }
     })(state)
 
     true
@@ -92,9 +98,9 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
   }
 
   override def applyDeclaration(decl: Declaration, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
-    foreachTransformer((tx, txState, i) => {
+    foreachTransformer((tx, txState_, i) => {
       if (state.applicableStates.contains(i)) {
-        tx.applyDeclaration(decl, container)(txState.asInstanceOf[tx.LinearState], interp)
+        tx.applyDeclaration(decl, container)(txState_.asInstanceOf[tx.LinearState], interp)
       }
     })(state)
   }

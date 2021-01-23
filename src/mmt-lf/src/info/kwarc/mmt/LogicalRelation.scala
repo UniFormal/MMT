@@ -125,7 +125,7 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
         apply(ctx, f),
         args.flatMap(applyTerm(ctx, _)) : _*
       )
-    case OMBIND(Lambda.path, boundCtx, t) => Lambda(apply(ctx, boundCtx), apply(ctx ++ boundCtx, t))
+    case OMBIND(OMS(Lambda.path), boundCtx, t) => Lambda(apply(ctx, boundCtx), apply(ctx ++ boundCtx, t))
 
     case OMS(p) => // this case is last as it definitely needs to come after Univ(1)
       lr(p)
