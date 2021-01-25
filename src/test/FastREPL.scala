@@ -19,6 +19,7 @@ object FastREPL extends MagicTest("debug") {
   val shortcuts = List(
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
     "-------------------------------------------",
+    "build MMT/LATIN2 mmt-omdoc fundamentals/base_language_translations.mmt",
     "build MMT/LATIN2 mmt-omdoc logic/fol-diagop.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions-pushout-test.mmt",

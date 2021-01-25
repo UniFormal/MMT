@@ -2,10 +2,10 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, LinearTransformer, OperatorDSL, ParametricLinearOperator, Renamer, SimpleLinearModuleTransformer}
+import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.{Constant, Include, IncludeData, PlainInclude, Structure}
-import info.kwarc.mmt.api.uom.{SimplificationUnit, Simplifier}
+import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
+import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.lf.LF
 
 sealed case class LogicalRelationType(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath)
@@ -106,7 +106,6 @@ final class LogicalRelationTransformer(
   }
 }
 
-// todo: support complex morphisms
 object LogicalRelationOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_operator")
 
