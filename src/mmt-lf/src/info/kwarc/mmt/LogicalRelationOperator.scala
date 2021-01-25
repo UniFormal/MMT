@@ -88,18 +88,22 @@ final class LogicalRelationTransformer(
       case link: Link => logrelType(link.to.toMPath)
     }
 
+    def betaReduce(t: Term): Term = {
+      val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
+      interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
+    }
+
     val logicalRelation = new LogicalRelation(currentLogrelType.mors, lr, interp.ctrl.globalLookup)
-    def g(t: Term): Term = betaReduce(Context.empty, logicalRelation.getExpected(Context.empty, c.toTerm, t), interp.ctrl.simplifier)
 
-    // todo: also map definienses
-    List(const(logrel(c.path), g(tp), None))
+    List(Constant(
+      home = state.outContainer.toTerm,
+      name = logrel(c.name),
+      alias = Nil,
+      tp = c.tp.map(logicalRelation.getExpected(Context.empty, c.toTerm, _)).map(betaReduce),
+      df = c.df.map(logicalRelation.apply(Context.empty, _)).map(betaReduce),
+      rl = None
+    ))
   }
-
-  private def betaReduce(ctx: Context, t: Term, simplifier: Simplifier): Term = simplifier(
-    t,
-    SimplificationUnit(ctx, expandDefinitions = false, fullRecursion = true),
-    RuleSet(lf.Beta)
-  )
 }
 
 // todo: support complex morphisms

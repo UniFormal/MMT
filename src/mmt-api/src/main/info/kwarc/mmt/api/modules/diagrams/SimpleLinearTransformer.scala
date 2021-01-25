@@ -72,7 +72,7 @@ trait SimpleConstantsBasedModuleTransformer extends LinearFunctorialTransformer 
   }
 }
 
-trait SimpleLinearModuleTransformer extends SimpleConstantsBasedModuleTransformer with DefaultLinearStateOperator {}
+trait SimpleLinearModuleTransformer extends SimpleConstantsBasedModuleTransformer with DefaultLinearStateOperator
 
 trait SimpleLinearConnectorTransformer extends LinearConnectorTransformer with DefaultLinearStateOperator {
 

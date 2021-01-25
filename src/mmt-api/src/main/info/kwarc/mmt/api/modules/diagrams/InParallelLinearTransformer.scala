@@ -39,6 +39,11 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
                                   override var inContainer: ModuleOrLink
                                 ) extends MinimalLinearState {
 
+    /**
+      * The [[transformers]] (by index) which signaled applicability
+      * on [[inContainer]] by their [[LinearTransformer.beginContainer()]] function
+      * having returned true.
+      */
     var applicableStates: mutable.Set[Int] = mutable.HashSet()
 
     override def registerDeclaration(decl: Declaration): Unit = {

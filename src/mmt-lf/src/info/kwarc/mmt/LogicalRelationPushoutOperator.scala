@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
   * Some plain data object (+ utility methods) passed around between classes in this file.
   * Stores general information of what should be computed for the logical relation pushout.
   */
-sealed case class LogrelPushoutInfo(initialLogrelInfo: LogicalRelationInfo) {
+private sealed case class LogrelPushoutInfo(initialLogrelInfo: LogicalRelationInfo) {
   val initialLogrel: Term = initialLogrelInfo.logrel
   val initialLogrelType: LogicalRelationType = initialLogrelInfo.logrelType
   val numMors: Int = initialLogrelInfo.logrelType.mors.size
@@ -64,7 +64,7 @@ object LogicalRelationPushoutOperator extends ParametricLinearOperator {
   }
 }
 
-final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
+private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
   extends LogrelPushoutTransformer.PathTransformer(pushoutInfo)
     with SimpleLinearModuleTransformer
     with OperatorDSL {
@@ -145,7 +145,7 @@ final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
   }
 }
 
-object LogrelPushoutTransformer {
+private object LogrelPushoutTransformer {
   class PathTransformer(pushoutInfo: LogrelPushoutInfo) extends ModulePathTransformer with RelativeBaseTransformer {
 
     override val operatorDomain: Diagram = Diagram.singleton(pushoutInfo.initialLogrelType.commonLinkDomain)
@@ -194,7 +194,7 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
   }
 }
 
-object LogrelPushoutLogrelConnector {
+private object LogrelPushoutLogrelConnector {
   class PathTransformer(pushoutInfo: LogrelPushoutInfo) extends ModulePathTransformer {
     // TODO: encode morphism names into name here?
     override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_lopu_logrel")
@@ -233,7 +233,7 @@ private class LogrelPushoutConnector(pushoutInfo: LogrelPushoutInfo, morIndex: I
   }
 }
 
-object LogrelPushoutConnector {
+private object LogrelPushoutConnector {
   class PathTransformer(pushoutInfo: LogrelPushoutInfo, morIndex: Integer) extends ModulePathTransformer {
     def applyModuleName(name: LocalName): LocalName =
       name.suffixLastSimple(s"_lopu_pushout$morIndex")
