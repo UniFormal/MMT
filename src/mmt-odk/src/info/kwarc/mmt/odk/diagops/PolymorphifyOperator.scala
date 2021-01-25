@@ -4,11 +4,24 @@ import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, Operato
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
 
 abstract class PolymorphifyOperator extends SimpleLinearOperator with OperatorDSL {
   protected def indexType: Term
   protected def baseSymbolsTranslations: Map[GlobalName, Term]
+
+  override def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    if (interp.ctrl.library.hasImplicit(???, thy.path)) {
+      super.beginTheory(thy, state)
+    } else {
+      None
+    }
+  }
+
+  override def beginView(view: View, state: SkippedDeclsExtendedLinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+    super.beginView(view, state)
+  }
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
 

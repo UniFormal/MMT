@@ -195,7 +195,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   */
 trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
   final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
-    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.globalLookup)) {
+    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
       Some(inModule)
     } else {
       applyContainer(inModule)
@@ -207,7 +207,7 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
   }
 
   final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
-    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.globalLookup))
+    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.library))
   }
 
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {

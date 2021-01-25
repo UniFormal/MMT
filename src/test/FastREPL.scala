@@ -16,10 +16,10 @@ import scala.util.Try
   * Hence, I (Navid) exclusively use FastREPL from now on.
   */
 object FastREPL extends MagicTest("debug") {
-  val shortcuts = List(
+  val shortcuts: List[String] = List(
+    "build MMT/LATIN2 mmt-omdoc itp2021/input.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
     "-------------------------------------------",
-    "build MMT/LATIN2 mmt-omdoc fundamentals/base_language_translations.mmt",
     "build MMT/LATIN2 mmt-omdoc logic/fol-diagop.mmt",
     "-------------------------------------------",
     "build MMT/urtheories mmt-omdoc module-expressions-pushout-test.mmt",

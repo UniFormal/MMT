@@ -134,7 +134,7 @@ class InParallelLinearTransformer(transformers: List[LinearTransformer]) extends
       //   to collect all output diagrams, we employ the hack to call applyDiagram
       //   on every transformer. This assumes that things are not recomputed, otherwise we're
       //   pretty inefficient
-      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.globalLookup)
+      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.library)
 
       endDiagram(diag)
 

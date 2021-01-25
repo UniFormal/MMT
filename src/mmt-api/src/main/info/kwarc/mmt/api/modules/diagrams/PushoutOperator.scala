@@ -48,9 +48,9 @@ private class PushoutTransformer(
     OMMOD(new PushoutConnector.PathTransformer(mor).applyModulePath(exprContext))
   }
 
-  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): List[Constant] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     def translate(t: Term): Term =
-      interp.ctrl.globalLookup.ApplyMorphs(t, getMorphismIntoPushout(state.inContainer))
+      interp.ctrl.library.ApplyMorphs(t, getMorphismIntoPushout(state.inContainer))
 
     List(Constant(
       home = state.outContainer.toTerm,

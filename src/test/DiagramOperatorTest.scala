@@ -34,3 +34,17 @@ object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper
     sys.exit(0)
   }
 }
+
+/**
+  * Test for ITP 2021 paper by Florian and Navid.
+  */
+object ITP2021Test extends MagicTest("debug") with DiagramOperatorHelper {
+
+  override def run(): Unit = {
+    val repl = new FastREPLExtension(FastREPL.shortcuts, Some("build MMT/LATIN2 mmt-omdoc itp2021/input.mmt"))
+    controller.extman.addExtension(repl)
+
+    repl.run()
+    sys.exit(0)
+  }
+}

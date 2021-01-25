@@ -176,7 +176,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     */
   final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
-    implicit val lookup: Lookup = ctrl.globalLookup
+    implicit val library: Lookup = ctrl.library
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) {

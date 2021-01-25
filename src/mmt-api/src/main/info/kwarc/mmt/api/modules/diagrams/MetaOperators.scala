@@ -33,7 +33,7 @@ object SequencedDiagramOperators extends DiagramOperator {
             None
         }
 
-      Some(Diagram.union(outDiagrams)(interp.ctrl.globalLookup).toTerm)
+      Some(Diagram.union(outDiagrams)(interp.ctrl.library).toTerm)
 
     case _ => None
   }
@@ -56,7 +56,7 @@ object ClosureDiagramOperator extends DiagramOperator {
 
       (interp(metaDiagramTerm), interp(diagramTerm)) match {
         case (Some(metaDiagram), Some(diag @ Diagram(_, None))) =>
-          Some(diag.closure(metaDiagram)(interp.ctrl.globalLookup).toTerm)
+          Some(diag.closure(metaDiagram)(interp.ctrl.library).toTerm)
 
         case _ => None
       }
@@ -71,7 +71,7 @@ object UnionDiagramOperator extends DiagramOperator {
   override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
     case OMA(OMS(`head`), diagramTerms) =>
       val diagrams = diagramTerms.flatMap(interp.apply)
-      Some(Diagram.union(diagrams)(interp.ctrl.globalLookup).toTerm)
+      Some(Diagram.union(diagrams)(interp.ctrl.library).toTerm)
 
     case _ => None
   }

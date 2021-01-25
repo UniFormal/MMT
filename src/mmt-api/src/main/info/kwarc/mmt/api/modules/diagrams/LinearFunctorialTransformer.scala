@@ -65,7 +65,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
   protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.globalLookup) =>
+      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.library) =>
         applyMetaModule(OMMOD(mt)).toMPath
       case mt =>
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
@@ -220,7 +220,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     */
   override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
-    implicit val lookup: Lookup = ctrl.globalLookup
+    implicit val library: Lookup = ctrl.library
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) ???

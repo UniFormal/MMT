@@ -1,6 +1,7 @@
 package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.objects._
@@ -8,22 +9,36 @@ import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.lf.LF
 
-sealed case class LogicalRelationType(mors: List[Term], commonLinkDomain: MPath, commonLinkCodomain: MPath)
-sealed case class LogicalRelationInfo(logrelType: LogicalRelationType, logrel: Term)
+/**
+  * The type of a logical relation; do not confuse "type" with MMT types.
+  *
+  * Currently, the morphisms' domain and codomain are limitied to theories, i.e. [[MPath]]s
+  * due to limitiations in the diagram operator framework, e.g. domain and codomain must be
+  * usable as elements in a [[Diagram]].
+  */
+sealed case class LogrelType(mors: List[Term], commonMorDomain: MPath, commonMorCodomain: MPath)
 
-final class LogicalRelationTransformer(
-                                        logrelType: MPath => LogicalRelationType,
-                                        baseLogrelInfo: Option[LogicalRelationInfo] = None
-                                      ) extends SimpleLinearModuleTransformer with OperatorDSL {
+/**
+  * References a concrete logical relation formalized in OMDoc
+  * @param logrelType The type of it
+  * @param logrel The realization of the logrel interface theory (i.e. an MMT morphism) represented as
+  *               a [[Term]]
+  */
+sealed case class ConcreteLogrel(logrelType: LogrelType, logrel: Term)
+
+final class LogrelTransformer(
+                               logrelType: MPath => LogrelType,
+                               baseLogrelInfo: Option[ConcreteLogrel] = None
+                             ) extends SimpleLinearModuleTransformer with OperatorDSL {
 
   override val operatorDomain: Diagram   =
-    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkDomain).toList)
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonMorDomain).toList)
   override val operatorCodomain: Diagram =
-    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonLinkCodomain).toList)
+    Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonMorCodomain).toList)
 
   override def applyMetaModule(t: Term): Term = t match {
-    case OMMOD(p) if baseLogrelInfo.exists(_.logrelType.commonLinkDomain == p) =>
-      OMMOD(baseLogrelInfo.get.logrelType.commonLinkCodomain)
+    case OMMOD(p) if baseLogrelInfo.exists(_.logrelType.commonMorDomain == p) =>
+      OMMOD(baseLogrelInfo.get.logrelType.commonMorCodomain)
 
     case t => t
   }
@@ -32,7 +47,7 @@ final class LogicalRelationTransformer(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")
 
   override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
-    val currentLinkDomain = logrelType(thy.path).commonLinkDomain
+    val currentLinkDomain = logrelType(thy.path).commonMorDomain
     if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
       interp.errorCont(InvalidElement(thy, s"Failed to apply logrel operator on `${thy.path}` because that theory " +
         s"is outside the domain of the morphisms, namely `$currentLinkDomain`."))
@@ -40,7 +55,7 @@ final class LogicalRelationTransformer(
     }
 
     super.beginTheory(thy, state).map(outTheory => {
-      val include = PlainInclude(logrelType(thy.path).commonLinkCodomain, outTheory.path)
+      val include = PlainInclude(logrelType(thy.path).commonMorCodomain, outTheory.path)
       interp.add(include)
       interp.endAdd(include)
 
@@ -50,7 +65,7 @@ final class LogicalRelationTransformer(
 
   override protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
     super.beginView(view, state).map(outView => {
-      val currentLogrelCodomain = logrelType(view.to.toMPath).commonLinkCodomain
+      val currentLogrelCodomain = logrelType(view.to.toMPath).commonMorCodomain
       val include = Include.assignment(
         outView.toTerm,
         currentLogrelCodomain,
@@ -70,8 +85,8 @@ final class LogicalRelationTransformer(
       if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
         OMS(logrel(p))
       } else baseLogrelInfo match {
-        case Some(LogicalRelationInfo(baseLogrelType, baseLogrel))
-          if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonLinkDomain) =>
+        case Some(ConcreteLogrel(baseLogrelType, baseLogrel))
+          if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonMorDomain) =>
 
           interp.ctrl.globalLookup.ApplyMorphs(
             OMS(logrel.applyAlways(p)),
@@ -106,18 +121,38 @@ final class LogicalRelationTransformer(
   }
 }
 
-object LogicalRelationOperator extends ParametricLinearOperator {
-  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_operator")
-
+abstract class LogrelOperator extends ParametricLinearOperator {
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = {
     parameters match {
-      case OMMOD(domain) :: OMMOD(codomain) :: mors =>
-        val constantLogrelType = (_: MPath) => LogicalRelationType(mors, domain, codomain)
-
-        Some(new LogicalRelationTransformer(constantLogrelType))
+      case mors if mors.nonEmpty =>
+        LogrelOperator.parseLogRelInfo(mors)(interp.ctrl.globalLookup).map(logrelType =>
+          new LogrelTransformer((_: MPath) => logrelType)
+        )
 
       case _ =>
         None
     }
   }
+}
+
+object LogrelOperator {
+  def parseLogRelInfo(mors: List[Term])(implicit lookup: Lookup): Option[LogrelType] = {
+    val (commonMorDomain, commonMorCodomain) =
+      mors.map(mor => (Morph.domain(mor), Morph.codomain(mor))).distinct match {
+        // TODO: support complex morphisms
+        //       problem so far: MPaths required to define operatorDomain way above in this file
+        case List((Some(OMMOD(dom)), Some(OMMOD(cod)))) => (dom, cod)
+        case _ => return None
+      }
+
+    Some(LogrelType(mors, commonMorDomain, commonMorCodomain))
+  }
+}
+
+object FlexaryLogrelOperator extends LogrelOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel_operator")
+}
+
+object UnaryLogrelOperator extends LogrelOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unary_logrel_operator")
 }
