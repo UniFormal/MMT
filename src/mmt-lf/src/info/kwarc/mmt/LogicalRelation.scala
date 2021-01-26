@@ -6,6 +6,17 @@ import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.lf._
 
+/*
+
+But even if `partOfRel(t) == true`, the result of applying the logical relation to `t` differs depending on what other things are `partOfRel` or not.
+
+- consider `pair: t` with `t := {A: tp, B: tp} tm A -> tm B -> tm AxB`
+- naively, applying the logrel on `t` yields `{A: tp, A*: Unit, B: tp, B*: Unit, a: tm A, a*: a :: A, b: tm B, b*: b :: B}  (pair A A a b) :: (AxB)`
+- we have `partOfRel(t)`, but still would like to get rid of `A*`
+
+So what new contexts we synthesize must depend on `partOfRel(-)` applied to the types of the vardecls in the contexts.
+ */
+
 /**
   * Logical Relations
   *

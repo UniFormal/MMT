@@ -207,7 +207,13 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
   }
 
   final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
-    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.library))
+    if (diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.library))) {
+      true
+    } else {
+      interp.errorCont(InvalidObject(diag.toTerm, s"Transformer ${getClass.getSimpleName} not applicable on " +
+        s"diagram because operator domain `$operatorDomain` does not subsume meta diagram of given diagram."))
+      false
+    }
   }
 
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {

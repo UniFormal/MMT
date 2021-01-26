@@ -5,13 +5,14 @@ import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
+import info.kwarc.mmt.api.uom.TheoryScala
+import info.kwarc.mmt.lf.{ApplySpine, Lambda, NullaryLFConstantScala, Pi, UnaryLFConstantScala}
 
 abstract class PolymorphifyOperator extends SimpleLinearOperator with OperatorDSL {
   protected def indexType: Term
   protected def baseSymbolsTranslations: Map[GlobalName, Term]
 
-  override def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+  /*override def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     if (interp.ctrl.library.hasImplicit(???, thy.path)) {
       super.beginTheory(thy, state)
     } else {
@@ -21,7 +22,7 @@ abstract class PolymorphifyOperator extends SimpleLinearOperator with OperatorDS
 
   override def beginView(view: View, state: SkippedDeclsExtendedLinearState)(implicit interp: DiagramInterpreter): Option[View] = {
     super.beginView(view, state)
-  }
+  }*/
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
 
@@ -61,6 +62,38 @@ abstract class PolymorphifyOperator extends SimpleLinearOperator with OperatorDS
       }
     }.apply(t, Context.empty)
   }
+}
+
+object TypifyOperator_ITP2021 extends PolymorphifyOperator {
+  override val head: GlobalName = Path.parseS("latin:/itp2021?DiagOps?typify_operator")
+
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hardtyped")
+
+  private object Untyped extends TheoryScala {
+    override val _base: DPath = Path.parseD("latin:/itp2021", NamespaceMap.empty)
+    override val _name: LocalName = LocalName("Untyped")
+    object term extends NullaryLFConstantScala(_path, "term")
+  }
+
+  private object HardTyped extends TheoryScala {
+    override val _base: DPath = Path.parseD("latin:/itp2021", NamespaceMap.empty)
+    override val _name: LocalName = LocalName("HardTyped")
+    object tp extends NullaryLFConstantScala(_path, "tp")
+    object tm extends UnaryLFConstantScala(_path, "tm")
+  }
+
+  override def operatorDomain: Diagram = Diagram.singleton(Untyped._path)
+  override def operatorCodomain: Diagram = Diagram.singleton(HardTyped._path)
+
+  override def applyMetaModule(t: Term): Term = t match {
+    case OMMOD(Untyped._path) => OMMOD(HardTyped._path)
+    case t => t
+  }
+
+  override protected def indexType: Term = HardTyped.tp.term
+  override protected def baseSymbolsTranslations: Map[GlobalName, Term] = Map(
+    Untyped.term.path -> HardTyped.tm.term
+  )
 }
 
 object TypifyFOLOperator extends PolymorphifyOperator {

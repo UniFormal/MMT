@@ -31,7 +31,7 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
   }
 
   def getLogicalRelationFor(m: MPath): Term = {
-    OMMOD(new mmt.LogrelPushoutLogrelConnector.PathTransformer(this).applyModulePath(m))
+    OMMOD(new LogrelPushoutLogrelConnector.PathTransformer(this).applyModulePath(m))
   }
 }
 
@@ -106,7 +106,11 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
 
     def translatePushout(i: Integer, t: Term): Term = {
       val relevantPushoutView = new LogrelPushoutConnector.PathTransformer(pushoutInfo, i).applyModulePath(theoryContext)
-      interp.ctrl.globalLookup.ApplyMorphs(t, OMMOD(relevantPushoutView))
+      try {
+        interp.ctrl.globalLookup.ApplyMorphs(t, OMMOD(relevantPushoutView))
+      } catch {
+        case err: GetError if err.toString.contains("no assignment") => t
+      }
     }
 
     def betaReduce(t: Term): Term = {

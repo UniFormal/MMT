@@ -46,8 +46,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  final override lazy val operatorDomain: Diagram = in.operatorCodomain
-  final override lazy val operatorCodomain: Diagram = out.operatorCodomain
+  final override lazy val operatorDomain: Diagram = in.operatorDomain // == out.operatorDomain ideally
+  final override lazy val operatorCodomain: Diagram = out.operatorCodomain // == in.operatorCodomain ideally
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
