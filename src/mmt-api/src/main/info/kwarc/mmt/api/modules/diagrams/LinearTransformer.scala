@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
@@ -195,7 +196,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   */
 trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
   final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
-    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.globalLookup)) {
+    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
       Some(inModule)
     } else {
       applyContainer(inModule)
@@ -207,7 +208,13 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
   }
 
   final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
-    diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.globalLookup))
+    if (diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.library))) {
+      true
+    } else {
+      interp.errorCont(InvalidObject(diag.toTerm, s"Transformer ${getClass.getSimpleName} not applicable on " +
+        s"diagram because operator domain `$operatorDomain` does not subsume meta diagram of given diagram."))
+      false
+    }
   }
 
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
@@ -318,10 +325,14 @@ trait RelativeBaseTransformer {
     *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
     *       this?
     */
-  def applyMetaModule(t: Term): Term = (operatorDomain.modules, operatorCodomain.modules) match {
+  def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = (operatorDomain.modules, operatorCodomain.modules) match {
     case (List(domTheory), List(codTheory)) => t match {
       case OMMOD(`domTheory`) => OMMOD(codTheory)
       case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
+      case OMMOD(m) if lookup.hasImplicit(m, domTheory) => OMMOD(codTheory)
+
+      // todo: this default case probably does more harm than good
+      //       above some cases are probably missing, too
       case t => t
     }
 

@@ -65,8 +65,8 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
   protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.globalLookup) =>
-        applyMetaModule(OMMOD(mt)).toMPath
+      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.library) =>
+        applyMetaModule(OMMOD(mt))(interp.ctrl.globalLookup).toMPath
       case mt =>
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
@@ -220,7 +220,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     */
   override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
-    implicit val lookup: Lookup = ctrl.globalLookup
+    implicit val library: Lookup = ctrl.library
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) ???
@@ -289,7 +289,7 @@ object LinearFunctorialTransformer {
   def identity(domain: Diagram): LinearFunctorialTransformer = new LinearFunctorialTransformer with DefaultLinearStateOperator {
     override val operatorDomain: Diagram = domain
     override val operatorCodomain: Diagram = domain
-    override def applyMetaModule(m: Term): Term = m
+    override def applyMetaModule(m: Term)(implicit lookup: Lookup): Term = m
 
     override def applyModuleName(name: LocalName): LocalName = name
 
