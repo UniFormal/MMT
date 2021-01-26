@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
@@ -324,10 +325,14 @@ trait RelativeBaseTransformer {
     *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
     *       this?
     */
-  def applyMetaModule(t: Term): Term = (operatorDomain.modules, operatorCodomain.modules) match {
+  def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = (operatorDomain.modules, operatorCodomain.modules) match {
     case (List(domTheory), List(codTheory)) => t match {
       case OMMOD(`domTheory`) => OMMOD(codTheory)
       case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
+      case OMMOD(m) if lookup.hasImplicit(m, domTheory) => OMMOD(codTheory)
+
+      // todo: this default case probably does more harm than good
+      //       above some cases are probably missing, too
       case t => t
     }
 

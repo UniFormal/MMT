@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, Operato
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.uom.TheoryScala
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, NullaryLFConstantScala, Pi, UnaryLFConstantScala}
@@ -85,11 +86,6 @@ object TypifyOperator_ITP2021 extends PolymorphifyOperator {
   override def operatorDomain: Diagram = Diagram.singleton(Untyped._path)
   override def operatorCodomain: Diagram = Diagram.singleton(HardTyped._path)
 
-  override def applyMetaModule(t: Term): Term = t match {
-    case OMMOD(Untyped._path) => OMMOD(HardTyped._path)
-    case t => t
-  }
-
   override protected def indexType: Term = HardTyped.tp.term
   override protected def baseSymbolsTranslations: Map[GlobalName, Term] = Map(
     Untyped.term.path -> HardTyped.tm.term
@@ -110,7 +106,7 @@ object TypifyFOLOperator extends PolymorphifyOperator {
   ))
   override def operatorCodomain: Diagram = Diagram.singleton(Path.parseM("latin:/?TypedLogic"))
 
-  override def applyMetaModule(t: Term): Term = t match {
+  override def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = t match {
     case OMMOD(p) if p == Path.parseM("latin:/?UntypedLogic") => OMMOD(Path.parseM("latin:/?TypedLogic"))
     case t => t
   }

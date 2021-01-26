@@ -66,7 +66,7 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
       case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.library) =>
-        applyMetaModule(OMMOD(mt)).toMPath
+        applyMetaModule(OMMOD(mt))(interp.ctrl.globalLookup).toMPath
       case mt =>
         if (applyModule(interp.ctrl.getModule(mt))(state.diagramState, interp).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
@@ -289,7 +289,7 @@ object LinearFunctorialTransformer {
   def identity(domain: Diagram): LinearFunctorialTransformer = new LinearFunctorialTransformer with DefaultLinearStateOperator {
     override val operatorDomain: Diagram = domain
     override val operatorCodomain: Diagram = domain
-    override def applyMetaModule(m: Term): Term = m
+    override def applyMetaModule(m: Term)(implicit lookup: Lookup): Term = m
 
     override def applyModuleName(name: LocalName): LocalName = name
 

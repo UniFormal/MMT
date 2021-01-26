@@ -2,12 +2,15 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
+
+import scala.annotation.tailrec
 
 /**
   * Some plain data object (+ utility methods) passed around between classes in this file.
@@ -33,6 +36,46 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
   def getLogicalRelationFor(m: MPath): Term = {
     OMMOD(new LogrelPushoutLogrelConnector.PathTransformer(this).applyModulePath(m))
   }
+
+  def getPartialLogrel(theoryContext: MPath, seenModules: Set[MPath], logrelRenamer: Renamer[_])
+                      (implicit lookup: Lookup): PartialLogrel = {
+    @tailrec
+    def nonUnit(t: Term): Boolean = t match {
+      case OMS(p) => p.name != LocalName("Unit")
+      case OMBIND(_, _, body) => nonUnit(body)
+      case _ => true
+    }
+
+    def getLogrelBaseAssignment(logrel: Term, p: GlobalName): Option[Term] = {
+      val applicable =
+        seenModules.contains(p.module) || lookup.hasImplicit(p.module, initialLogrelType.commonMorDomain)
+      if (applicable) {
+        Some(lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrel)).filter(nonUnit)
+      } else {
+        None
+      }
+    }
+
+    val logrelType = getLogicalRelationTypeFor(theoryContext)
+    val logrelBase = getLogicalRelationFor(theoryContext)
+
+    new PartialLogrel(logrelType.mors, getLogrelBaseAssignment(logrelBase, _), lookup)
+  }
+
+  /*def getFullLogrel(theoryContext: MPath, seenModules: Set[MPath], logrelRenamer: Renamer[_])
+                      (implicit lookup: Lookup): GlobalName => Term = {
+
+    val logrelBase = getLogicalRelationFor(theoryContext)
+    p => {
+      val applicable =
+        seenModules.contains(p.module) || lookup.hasImplicit(p.module, initialLogrelType.commonMorDomain)
+      if (applicable) {
+        lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrelBase)
+      } else {
+        ???
+      }
+    }
+  }*/
 }
 
 abstract class LogrelPushoutOperator extends ParametricLinearOperator {
@@ -44,11 +87,15 @@ abstract class LogrelPushoutOperator extends ParametricLinearOperator {
 
           // order is important!
           val transformers = List(
+            // the transformers creating the pushout injections
             mors.indices.map(new LogrelPushoutConnector(pushoutInfo, _)),
+            // the transformer creating the pushout result as such
             List(new LogrelPushoutTransformer(pushoutInfo)),
+            // the transformer creating the logrel interface theory
             List(new LogrelTransformer(
               pushoutInfo.getLogicalRelationTypeFor, Some(pushoutInfo.initialLogrelInfo)
             )),
+            // the transformer realizing the logrel interface theory
             List(new LogrelPushoutLogrelConnector(pushoutInfo))
           ).flatten
 
@@ -81,7 +128,7 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     // a lot of helper declarations follow
     // =======================================
-    val lookup = interp.ctrl.globalLookup
+    implicit val lookup: Lookup = interp.ctrl.globalLookup
 
     // The expressions in container are expressions over the theory
     // with the following module path:
@@ -90,19 +137,13 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       case link: Link => link.to.toMPath
     }
 
-    val logrelType = pushoutInfo.getLogicalRelationTypeFor(theoryContext)
-    val logrel = pushoutInfo.getLogicalRelationFor(theoryContext)
-
     val logrelRenamer: Renamer[LinearState] = {
+      val logrelType = pushoutInfo.getLogicalRelationTypeFor(theoryContext)
       new LogrelTransformer(_ => logrelType, Some(pushoutInfo.initialLogrelInfo))
-        .logrel.coercedTo(state)
+        .logrelRenamer.coercedTo(state)
     }
 
-    val homomorphicLogrel = new LogicalRelation(
-      logrelType.mors,
-      p => lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrel),
-      lookup
-    )
+    val logrel = pushoutInfo.getPartialLogrel(theoryContext, state.diagramState.seenModules.toSet, logrelRenamer)
 
     def translatePushout(i: Integer, t: Term): Term = {
       val relevantPushoutView = new LogrelPushoutConnector.PathTransformer(pushoutInfo, i).applyModulePath(theoryContext)
@@ -140,16 +181,27 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
         )
     }.toList
 
-    val constantsRelated = Constant(
-      home = state.outContainer.toTerm, // todo: probably wrong?
-      name = related(c.name),
-      alias = Nil,
-      tp = c.tp.map(homomorphicLogrel.getExpected(Context.empty, OMS(c.path), _)).map(betaReduce),
-      df = c.df.map(homomorphicLogrel.apply(Context.empty, _)).map(betaReduce),
-      rl = None
-    )
+    if (c.name == LocalName("pair")) {
+      val dbg = logrel(Context.empty, c.tp.get)
+    }
+    val constantsRelatedTp = c.tp.flatMap(logrel.getExpected(Context.empty, OMS(c.path), _)).map(betaReduce)
+    val constantsRelatedDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(betaReduce)
 
-    pushedOutConstants :+ constantsRelated
+    constantsRelatedTp match {
+      case Some(_) =>
+        val constantsRelated = Constant(
+          home = state.outContainer.toTerm, // todo: probably wrong?
+          name = related(c.name),
+          alias = Nil,
+          tp = constantsRelatedTp,
+          df = constantsRelatedDf,
+          rl = None
+        )
+
+        pushedOutConstants :+ constantsRelated
+
+      case None => pushedOutConstants
+    }
   }
 }
 
@@ -178,7 +230,7 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
   override val in = new LogrelTransformer(pushoutInfo.getLogicalRelationTypeFor, Some(pushoutInfo.initialLogrelInfo))
   override val out = new LogrelPushoutTransformer.PathTransformer(pushoutInfo)
 
-  override def applyMetaModule(t: Term): Term = t match {
+  override def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = t match {
     case OMMOD(p) if p == pushoutInfo.initialLogrelType.commonMorDomain =>
       OMMOD(in.applyModulePath(pushoutInfo.initialLogrelType.commonMorDomain))
 
@@ -193,11 +245,20 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
   }
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
-    val logrelRenamer: Renamer[LinearState] = in.logrel.coercedTo(state)
+    val logrelRenamer: Renamer[LinearState] = in.logrelRenamer.coercedTo(state)
+    /*val relatedConstant = getRelatedRenamer(state)(c)
+
+    val assignment = if (interp.ctrl.getO(relatedConstant.path).isDefined) {
+      relatedConstant
+    } else {
+      /*val logrel = pushoutInfo.getPartialLogrel(state.inTheoryContext, state.diagramState.seenModules.toSet, logrelRenamer)(interp.ctrl.globalLookup)
+      logrel.synthesize(p => OMV("unit"), ???)(Context.empty, tp)*/
+      OMV("TODO: we should synthesize this")
+    }*/
 
     List(assgn(
       logrelRenamer(c.path),
-      getRelatedRenamer(state)(c)
+      OMV("TODO: we should synthesize this") // assignment
     ))
   }
 }
@@ -219,11 +280,11 @@ private class LogrelPushoutConnector(pushoutInfo: LogrelPushoutInfo, morIndex: I
   override val out: ModulePathTransformer with RelativeBaseTransformer =
     new LogrelPushoutTransformer.PathTransformer(pushoutInfo)
 
-  override def applyMetaModule(m: Term): Term = m match {
+  override def applyMetaModule(m: Term)(implicit lookup: Lookup): Term = m match {
     case OMMOD(p) if p == pushoutInfo.initialLogrelType.commonMorDomain =>
       OMMOD(pushoutInfo.initialLogrelType.commonMorDomain)
 
-    case OMIDENT(OMMOD(p)) if p == pushoutInfo.initialLogrelType.commonMorDomain =>
+    case OMIDENT(OMMOD(p)) if lookup.hasImplicit(p, pushoutInfo.initialLogrelType.commonMorDomain) =>
       pushoutInfo.initialLogrelType.mors(morIndex)
 
     // TODO(@FR,@NR): this is actually wrong

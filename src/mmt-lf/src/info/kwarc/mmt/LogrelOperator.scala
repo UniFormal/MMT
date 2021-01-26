@@ -36,7 +36,7 @@ final class LogrelTransformer(
   override val operatorCodomain: Diagram =
     Diagram(List(LF.theoryPath) ::: baseLogrelInfo.map(_.logrelType.commonMorCodomain).toList)
 
-  override def applyMetaModule(t: Term): Term = t match {
+  override def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = t match {
     case OMMOD(p) if baseLogrelInfo.exists(_.logrelType.commonMorDomain == p) =>
       OMMOD(baseLogrelInfo.get.logrelType.commonMorCodomain)
 
@@ -48,11 +48,11 @@ final class LogrelTransformer(
 
   override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val currentLinkDomain = logrelType(thy.path).commonMorDomain
-    if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
+    /*if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
       interp.errorCont(InvalidElement(thy, s"Failed to apply logrel operator on `${thy.path}` because that theory " +
         s"is outside the domain of the morphisms, namely `$currentLinkDomain`."))
       return None
-    }
+    }*/
 
     super.beginTheory(thy, state).map(outTheory => {
       val include = PlainInclude(logrelType(thy.path).commonMorCodomain, outTheory.path)
@@ -78,29 +78,39 @@ final class LogrelTransformer(
     })
   }
 
-  val logrel: Renamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
+  val logrelRenamer: Renamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
-    val lr = (p: GlobalName) => {
-      if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
-        OMS(logrel(p))
-      } else baseLogrelInfo match {
-        case Some(ConcreteLogrel(baseLogrelType, baseLogrel))
-          if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonMorDomain) =>
-
-          interp.ctrl.globalLookup.ApplyMorphs(
-            OMS(logrel.applyAlways(p)),
-            baseLogrel
-          )
-
-        case _ =>
-          return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
+    val logrel: PartialLogrel = {
+      val currentLogrelType = state.inContainer match {
+        case thy: Theory => logrelType(thy.path)
+        case link: Link => logrelType(link.to.toMPath)
       }
-    }
 
-    val currentLogrelType = state.inContainer match {
-      case thy: Theory => logrelType(thy.path)
-      case link: Link => logrelType(link.to.toMPath)
+      val logrelBase: GlobalName => Option[Term] = p => {
+        if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
+          Some(OMS(logrelRenamer(p)))
+        } else baseLogrelInfo match {
+          case Some(ConcreteLogrel(baseLogrelType, baseLogrel))
+            => // if interp.ctrl.globalLookup.hasImplicit(p.module, baseLogrelType.commonMorDomain) =>
+
+            try {
+              Some(interp.ctrl.globalLookup.ApplyMorphs(
+                OMS(logrelRenamer.applyAlways(p)),
+                baseLogrel
+              ))
+            } catch {
+              case err: GetError =>
+                println(err) // todo: do not use exceptions for control flow here! println is a reminder to redo it
+                None
+            }
+
+          case _ =>
+            return NotApplicable(c, "refers to constant not previously seen. Implementation error?")
+        }
+      }
+
+      new PartialLogrel(currentLogrelType.mors, logrelBase, interp.ctrl.globalLookup)
     }
 
     def betaReduce(t: Term): Term = {
@@ -108,16 +118,21 @@ final class LogrelTransformer(
       interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
     }
 
-    val logicalRelation = new LogicalRelation(currentLogrelType.mors, lr, interp.ctrl.globalLookup)
+    val newTp = c.tp.flatMap(logrel.getExpected(Context.empty, c.toTerm, _)).map(betaReduce)
+    val newDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(betaReduce)
 
-    List(Constant(
-      home = state.outContainer.toTerm,
-      name = logrel(c.name),
-      alias = Nil,
-      tp = c.tp.map(logicalRelation.getExpected(Context.empty, c.toTerm, _)).map(betaReduce),
-      df = c.df.map(logicalRelation.apply(Context.empty, _)).map(betaReduce),
-      rl = None
-    ))
+    newTp match {
+      case Some(_) => List(Constant(
+        home = state.outContainer.toTerm,
+        name = logrelRenamer(c.name),
+        alias = Nil,
+        tp = newTp,
+        df = newDf,
+        rl = None
+      ))
+
+      case None => Nil
+    }
   }
 }
 

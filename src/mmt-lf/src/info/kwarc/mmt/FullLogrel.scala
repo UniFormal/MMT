@@ -6,17 +6,6 @@ import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.lf._
 
-/*
-
-But even if `partOfRel(t) == true`, the result of applying the logical relation to `t` differs depending on what other things are `partOfRel` or not.
-
-- consider `pair: t` with `t := {A: tp, B: tp} tm A -> tm B -> tm AxB`
-- naively, applying the logrel on `t` yields `{A: tp, A*: Unit, B: tp, B*: Unit, a: tm A, a*: a :: A, b: tm B, b*: b :: B}  (pair A A a b) :: (AxB)`
-- we have `partOfRel(t)`, but still would like to get rid of `A*`
-
-So what new contexts we synthesize must depend on `partOfRel(-)` applied to the types of the vardecls in the contexts.
- */
-
 /**
   * Logical Relations
   *
@@ -46,7 +35,7 @@ So what new contexts we synthesize must depend on `partOfRel(-)` applied to the 
   *   The overall goal is to make comments human-readable and useful to give an intuition on what the
   *   code does to a human reader.
   */
-class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) {
+class FullLogrel(override val mors: List[Term], lr: GlobalName => Term, override val lookup: Lookup) extends Logrel {
 
   /**
     * For a term `t: A`, computes the expected type of `lr(t)`.
@@ -140,6 +129,8 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
 
     case OMS(p) => // this case is last as it definitely needs to come after Univ(1)
       lr(p)
+
+    case _ => ???
   }
 
   /**
@@ -148,92 +139,19 @@ class LogicalRelation(mors: List[Term], lr: GlobalName => Term, lookup: Lookup) 
     * d_1, ..., d_r ---> lr(d_1) ... lr(d_n)
     * todo: improve docs here
     */
-  def apply(ctx: Context, g: Context): Context = {
+  override def apply(ctx: Context, g: Context): Context = {
     g.mapVarDecls((partialCtx, vd) => applyVarDecl(ctx ++ partialCtx, vd)).flatten
   }
 
   /**
-    * Maps a variable name (from the logrel's domain) to the name of the variable standing
-    * for the proof of relatedness of `suffix(name, 0) … suffix(name, n - 1)`.
-    *
-    * The case of just a single morphism is special-cased to overall produce more human-readable
-    * variable names.
-    *
-    * Only change in conjunction with [[suffix()]]!
-    */
-  private def star(name: LocalName): LocalName = {
-    if (mors.size == 1) name.suffixLastSimple("ᕁ") else name
-  }
-
-  /**
-    * Maps a variable name (from the logrel's domain) to the name of the i-th variable translated
-    * through mᵢ.
-    *
-    * The case of just a single morphism is special-cased to overall produce more human-readable
-    * variable names.
-    *
-    * Only change in conjunction with [[star()]]!
-    */
-  private def suffix(name: LocalName, i: Int): LocalName = {
-    // i + 1 to since human-readable argument indices are usually 1-based
-    if (mors.size == 1) name else name.suffixLastSimple(UnicodeStrings.subscriptInteger(i + 1))
-  }
-
-  /**
-    * Maps `x` to `List(x₁, …, xₙ)`.
-    */
-  private def suffixAll(name: LocalName): List[LocalName] = mors.indices.map(suffix(name, _)).toList
-
-  /**
-    * Maps `t` to `mᵢ'(t)` where `mᵢ'` is `mᵢ` with subsequent substitution replacing
-    * variables `x` in ctx by `xᵢ`.
-    */
-  private def applyMor(ctx: Context, t: Term, i: Int): Term = {
-    val sub = ctx.map(vd => Sub(vd.name, OMV(suffix(vd.name, i))))
-    lookup.ApplyMorphs(t, mors(i)) ^ sub
-  }
-
-  /**
-    * Maps `t` to `List(m₁(t), … ,mₙ(t))`.
-    */
-  private def applyMors(ctx: Context, t: Term): List[Term] = mors.indices.map(applyMor(ctx, t, _)).toList
-
-  /**
-    * Maps [[VarDecl]] `v: tp [= df]` to `vᵢ: mᵢ'(tp) [= mᵢ'(df)]`.
-    */
-  private def applyMor(ctx: Context, vd: VarDecl, i: Int): VarDecl = {
-    // should refactor VarDecl apply to avoid orNull antipattern?
-    VarDecl(suffix(vd.name, i), vd.tp.map(applyMor(ctx, _, i)).orNull, vd.df.map(applyMor(ctx, _, i)).orNull)
-  }
-
-  /**
-    * Maps [[VarDecl]] `v: tp [= df]` to `List(v₁: m₁'(tp) [= m₁'(df)], …, vₙ: mₙ'(tp) [= mₙ'(df)])`.
-    *
-    * The resulting [[VarDecl]] should be treated in [[applyMo]]
-    */
-  private def applyMors(ctx: Context, vd: VarDecl): List[VarDecl] =
-    mors.indices.map(applyMor(ctx, vd, _)).toList
-
-  /**
     * Maps `t` to `List(m₁(t), …, mₙ(t), lr(t))`.
     */
-  private def applyTerm(c: Context, t: Term): List[Term] = applyMors(c, t) :+ apply(c, t)
-
-  /**
-    * Creates the [[Context]] `name₁: m₁'(tp), …, nameₙ: mₙ'(tp)`.
-    *
-    * Should be used dually to [[applyTerm]].
-    */
-  private def bindTerm(ctx: Context, name: LocalName, tp: Term): Context = {
-    applyMors(ctx, tp).zipWithIndex.map {
-      case (mTp, i) => VarDecl(suffix(name, i), mTp)
-    }
-  }
+  override def applyTerm(c: Context, t: Term): List[Term] = applyMors(c, t) :+ apply(c, t)
 
   /**
     * Maps [[VarDecl]] `v: tp [=df]` to `List(v₁: m₁'(tp) [= m₁'(df)], …, vₙ: mₙ'(tp) [= mₙ'(df)], v: lr(tp) x₁ … xₙ)`.
     */
-  private def applyVarDecl(ctx: Context, vd: VarDecl): List[VarDecl] = {
+  override def applyVarDecl(ctx: Context, vd: VarDecl): List[VarDecl] = {
     val vars = suffixAll(vd.name).map(OMV(_))
     val tp = vd.tp.map(t => ApplySpine(apply(ctx, t), vars : _*))
 
