@@ -25,7 +25,7 @@ object TPTPExporterTest extends MagicTest("debug") {
   // hence, we apply some dirty waiting mechanism here.
   override def run(): Unit = {
     val theory = controller.getTheory(Path.parseM("https://example.com/tptpexptest?ExampleOfPLNaturalDeduction"))
-    val translated = translate_theory(theory)
+    val translated = translate_theory(theory)(controller)
     println(translated)
   }
 
@@ -53,7 +53,7 @@ object TPTPExporterTest extends MagicTest("debug") {
       (axioms.map(_.toString) ++ conjectures.map(_.toString)).mkString("\n\n")
     }
   }
-  def translate_theory(thy: Theory): TPTPTheory = {
+  def translate_theory(thy: Theory)(implicit ctrl: Controller): TPTPTheory = {
     var axioms = new ListBuffer[TPTPAxiom]();
     var conjectures = new ListBuffer[TPTPConjecture]();
     for (decl <- thy.getDeclarations) { decl match {
@@ -129,6 +129,9 @@ object TPTPExporterTest extends MagicTest("debug") {
       Binary(translate_formula(left), Impl, translate_formula(right))
     case ApplySpine(OMID(FOL.equivalence), List(left, right)) =>
       Binary(translate_formula(left), <=>, translate_formula(right))
+    case ApplySpine(OMID(FOL.neg), List(arg)) =>
+      Unary(Not, translate_formula(arg))
+
 
     case OMID(f) =>
       Atomic(Plain(Func(f.name.toString(), Nil)))
@@ -138,7 +141,7 @@ object TPTPExporterTest extends MagicTest("debug") {
     t match {
       case ApplySpine(OMID(f), args) =>
         // f: GlobalName, args: List[Term]
-        Func(f.name.toString(), args.map(translate_term)) //TODO: expanding, but has to be done earlier -> Formula
+        Func(f.name.toString(), args.map(translate_term))
 
       case OMID(f) =>
         Func(f.name.toString(), Nil)
