@@ -22,6 +22,7 @@ package info.kwarc.mmt.mizar.newxml.syntax
  * the traits they extend (if any)
  */
 
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
@@ -232,7 +233,7 @@ case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatter
  * @param _locis
  */
 case class LocalRedVarAttr(pos:Position, origin:String, serialNrIdNr: SerialNrIdNr, varnr: Int) extends Group {
-  def localIdentitier : String = "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varnr.toString
+  def localIdentitier(localId: Boolean = false) : String = MizarRedVarName(serialNrIdNr, varnr, localId)
 }
 /**
  *
@@ -242,7 +243,7 @@ case class LocalRedVarAttr(pos:Position, origin:String, serialNrIdNr: SerialNrId
  * @param varnr
  */
 case class LocalVarAttr(locVarAttr:LocalRedVarAttr, spelling:String, sort:String) extends Group {
-  def toIdentifier() : String = spelling + "/"+sort+"/" + locVarAttr.localIdentitier
+  def toIdentifier(localId : Boolean = false) : String = MizarVariableName(spelling, sort, locVarAttr.serialNrIdNr, locVarAttr.varnr, localId)
 }
 /**
  *
@@ -251,7 +252,11 @@ case class LocalVarAttr(locVarAttr:LocalRedVarAttr, spelling:String, sort:String
  * @param redVarAttr
  */
 case class VarAttrs(locVarAttr:LocalRedVarAttr, spelling:String, kind:String) extends Group {
-  def toIdentifier() : String = spelling + "/" +kind+"/"+ locVarAttr.localIdentitier
+  /**
+   * @param localId if set use the idNr as identifier instead of serialNr and varNr
+   * @return
+   */
+  def toIdentifier(localId : Boolean = false) : String = MizarVariableName(spelling, kind, locVarAttr.serialNrIdNr, locVarAttr.varnr, localId)
 }
 
 /**
@@ -358,7 +363,7 @@ case class Definition_Item(_block:Block) extends Subitem {
 case class Section_Pragma() extends Subitem
 case class Pragma(_notionName: Option[Pragmas]) extends Subitem
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
-case class Cluster(_registrs:List[Registrations]) extends BlockSubitem
+case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
 case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
 case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
 case class Exemplification(_exams:List[Exemplifications]) extends Subitem
@@ -366,7 +371,23 @@ case class Assumption(_ass:Assumptions) extends Claim with Subitem
 case class Identify(_pats:List[Patterns], _lociEqns:Loci_Equalities) extends Subitem
 case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
 case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
-case class Scheme_Block_Item(MmlId: MMLId, _blocks:List[Block]) extends MMLIdSubitem
+case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
+  def scheme_head(): Scheme_Head = {
+    assert(_block.kind == "Scheme-Block")
+    val scheme_head_item = _block._items.head
+    assert(scheme_head_item.kind == "Scheme-Head")
+    scheme_head_item._subitem match {
+      case scheme_Head: Scheme_Head => scheme_Head
+      case _ => throw ImplementationError("Scheme head expected as first item in Scheme-Block-Item. ")
+    }
+  }
+  def provenSentence() = {
+    val justItems = _block._items.tail
+    val startPos = justItems.head.pos.startPosition()
+    val endPos = justItems.last.pos.endposition
+    ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line+"\\"+startPos.col), endPos), justItems)))
+  }
+}
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
   def matchProperty() : MizarProperty = _props.matchProperty(_just)
@@ -433,8 +454,8 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
 /**
  * 1-1 corresponds to a deffunc definition, its uses are private_functor_terms
  * used as shortcut and visible within its block
- * @param _var
- * @param _tpList
+ * @param _var its variable
+ * @param _tpList contains the type of the variable
  * @param _tm
  */
 case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends Definition
@@ -660,7 +681,7 @@ sealed trait Formula extends Claim with Expression
  * @param _vars
  * @param _expression
  */
-case class Existential_Quantifier_Formula(pos: Position, sort: String, _vars:Variable_Segments, _expression:Claim) extends Formula
+case class Existential_Quantifier_Formula(pos: Position, sort: String, _vars:Variable_Segments, _restrict:Option[Restriction], _expression:Claim) extends Formula
 /**
  * Applying a relation to its arguments (and possibly negating the result) //An assignment to a variable
  * @param objectAttrs
@@ -672,8 +693,8 @@ case class Relation_Formula(objectAttrs: OrgnlExtObjAttrs, antonymic:Option[Bool
  * @param sort
  * @param pos
  * @param _vars
- * @param _restrict
- * @param _expression
+ * @param _restrict further assumptions on the variable quantified over
+ * @param _expression the body of the formula
  */
 case class Universal_Quantifier_Formula(pos: Position, sort: String, _vars:Variable_Segments, _restrict:Option[Restriction], _expression:Claim) extends Formula
 /**
@@ -835,7 +856,8 @@ case class SelectorFunctor_Pattern(extPatAttr: ExtPatAttr, _locis:List[Loci]) ex
 case class InfixFunctor_Pattern(rightargsbracketed: Option[Boolean], orgExtPatAttr: OrgExtPatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
 case class CircumfixFunctor_Pattern(orgExtPatAttr: OrgExtPatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
 
-sealed trait Registrations extends DeclarationLevel
+sealed trait RegistrationSubitems extends BlockSubitem
+sealed trait Registrations extends RegistrationSubitems
 /**
  * stating that a term tm has some properties
  * @param pos
@@ -917,9 +939,15 @@ case class Expandable_Mode(_tp:Type) extends Modes
  */
 case class Standard_Mode(_tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Modes
 
-sealed trait Segments extends DeclarationLevel
+sealed trait Segments extends DeclarationLevel {
+  def _vars: Variables
+  def _tpList: Type_List
+  def _tpSpec: Option[Type_Specification]
+}
 case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tpSpec:Option[Type_Specification]) extends Segments
-case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments
+case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments {
+  override def _tpSpec: Option[Type_Specification] = None
+}
 
 sealed trait EqualityTr extends ObjectLevel
 case class Equality(_var:Variable, _tm:MizTerm) extends EqualityTr
@@ -964,7 +992,10 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Obj
  * @param _tp
  */
 case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
-  def matchProperty(_just: Option[Justification] = None ) = Utils.matchProperty(property.get, _just)
+  def matchProperty(_just: Option[Justification] = None ) = {
+    assert(property.isDefined)
+    Utils.matchProperty(property.get, _just)
+  }
 }
 case class Redefine(occurs:Boolean)
 case class Type_Specification(_types:Type) extends ObjectLevel
@@ -999,6 +1030,18 @@ object Utils {
     def makeGlobalName(kind:String) : MizarGlobalName = {MizarGlobalName(aid, kind, nr)}
   }
   case class MizarGlobalName(aid:String, kind: String, nr:Int)
+
+  def MizarRedVarName(serialNrIdNr: SerialNrIdNr): String = "idNr: "+serialNrIdNr.idnr.toString
+  def MizarRedVarName(serialNrIdNr: SerialNrIdNr, varnr: Int, localId: Boolean = false): String = {
+    if (localId) {MizarRedVarName(serialNrIdNr)} else
+      "serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varnr.toString
+  }
+  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr): String = {
+    spelling + "/" +kind+"/"+ MizarRedVarName(serialNrIdNr)
+  }
+  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr, varnr: Int, localId: Boolean = false): String = {
+    spelling + "/" +kind+"/"+ MizarRedVarName(serialNrIdNr, varnr, localId)
+  }
 
   /**
    * Internal representation of Properties class

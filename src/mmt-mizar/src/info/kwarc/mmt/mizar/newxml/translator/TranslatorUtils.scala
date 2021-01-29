@@ -31,9 +31,10 @@ case class ExpressionTranslationError(str: String, expr: Expression) extends Obj
 
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
-    val ln = LocalName(kind+":"+nr)
+    val ln = LocalName(kind+"_"+nr)
     TranslationController.getTheoryPath(aid) ? ln
   }
+  def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
@@ -64,9 +65,6 @@ object TranslatorUtils {
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
   }
-  def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(translate_Variable)}
-  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(translate_Variable)}
-
   /**
    * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
    * where <varName> is the name of the argument sequence from the corresponding pattern

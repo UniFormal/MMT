@@ -47,25 +47,26 @@ object MizarStructure {
     val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
     val l = argTps.length
     val argsTyped = MMTUtils.freeVarContext(argTps map(_.toTerm))
-    def refDecl(nm: String) = OMS(parentTerm.toMPath ? nm)
+    def refDecl(nm: String) = OMS(parentTerm.module ? parentTerm.name / nm)
 
     val structx = ApplyGeneral(refDecl(recTypeName), params.variables.toList.map(_.toTerm))
-    val makex = ApplyGeneral(refDecl(makeName), (params++argsTyped).variables.toList.map(_.toTerm))
     def typedArgsCont(tm: Term) = if ((params++argsTyped).isEmpty) tm else Pi(params++argsTyped, tm)
     val strict = VarDecl(structureStrictDeclName,typedArgsCont(
       Lam("s", structx, Mizar.prop)))
     val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
-      Lam("s", makex, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
+      Lam("s", structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
       val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {
         case (OMS(substrGN),i) =>
           val substrPrePath = substrGN.module ? substrGN.name.init
-          val substrName = substrGN.toMPath.name.toString
+          val substrName = substrGN.toMPath.name.init.toString
           val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
           val restrName = structureDefRestrName(substrName)
-          val restr = VarDecl(restrName,typedArgsCont(
+          val restr = VarDecl(parentTerm.name / restrName,typedArgsCont(
             Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
           val restrSelProps = subselectors map {n =>
-            VarDecl(structureDefSubstrSelPropName(restrName,n),Mizar.eq(refDecl(restrName.toString),OMS(substrPrePath/restrName)))
+            VarDecl(parentTerm.name / structureDefSubstrSelPropName(restrName,n),Pi(LocalName("s"),structx, Mizar.proof(Mizar.eq(
+              Apply(referenceExtDecl(substrPrePath, n.toString), Apply(refDecl(restrName.toString), OMV("s"))),
+              Apply(refDecl(n.toString), OMV("s"))))))
           }
           restr::restrSelProps
         case tm => throw ImplementationError("Expected an OMS referencing the type declaration of a substructure, but instead found the term "+tm._1.toStr(true))
@@ -96,7 +97,9 @@ class MizarStructure extends StructuralFeature("mizarStructure") with Parametric
     implicit val parentTerm = dd.path
     val context = if (params.nonEmpty) {Some(params)} else {None}
     def preProcessIncludes(d:Declaration): (Boolean, Option[Term]) = d match {
-      case PlainInclude(from, to) => (true, Some(OMMOD(to)))
+      case PlainInclude(from, to) =>
+        assert(dd.path.toMPath == from)
+        (true, Some(OMMOD(to)))
       case _ => (false, None)
     }
     val substrPaths = dd.getDeclarations map (preProcessIncludes(_)) filter (_._1) map (_._2.get)

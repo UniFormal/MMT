@@ -14,8 +14,8 @@ import translator.{TranslationController, TranslatorUtils}
 object PatternUtils {
   def structureStrictDeclName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictDef")
   def structureStrictPropName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictProp")
-  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("restr") / substrName
-  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName) = parentTerm.name / LocalName(restrName) / "selProp" / sel
+  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName) = LocalName("restr") / substrName
+  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName) = LocalName(restrName) / "selProp" / sel
   def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))
   def referenceIntSel(strName: String, nm: String) = {
     val strPath = TranslationController.currentTheoryPath ? strName
@@ -69,7 +69,7 @@ object StructureInstance {
 }
 
 object MizarPatternInstance {
-  private def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
+  def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val home : Term = OMMOD(TranslationController.currentTheoryPath)
     val pattern = Mizar.MizarPatternsTh ? LocalName(pat)
     MizInstance.apply(home, name, pattern, args, notC)
@@ -114,13 +114,14 @@ object MizarPatternInstance {
    * @param notC
    * @return
    */
-  def apply(name: LocalName, pat: String, argNumI: Int, arguments: List[Term], assNumI: Option[Int], ass: List[Term], pred: Term)(implicit notC: NotationContainer) : DerivedDeclaration = {
+  def apply(name: LocalName, pat: String, argNumI: Int, arguments: List[Term], assNumI: Option[Int], ass: List[Term], pred: Term, proofU: Option[Term] = None)(implicit notC: NotationContainer) : DerivedDeclaration = {
     if (assNumI.isDefined) {assert(assNumI.get == ass.length)}
     val assNum = assNumI map(tm => List(OMI(tm))) getOrElse Nil
     implicit val args = arguments
     val assumptions = Sequence(ass map lambdaBindArgs)
     val v = lambdaBindArgs(pred)
-    val furtherParameters: List[Term] = assNum++List(assumptions, v)
+    val proof = proofU map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
+    val furtherParameters: List[Term] = assNum++List(assumptions, v)++proof
     apply(name, pat, argNumI, arguments, furtherParameters)
   }
   /**
@@ -137,7 +138,7 @@ object MizarPatternInstance {
    * @param notC
    * @return
    */
-  def apply(name: LocalName, pat: String, arguments: List[Term], tpU: Term, tmO: Option[Term], attrAssU: List[Term], attrConclU: List[Term])(implicit notC: NotationContainer = NotationContainer.empty()) : DerivedDeclaration = {
+  def apply(name: LocalName, pat: String, arguments: List[Term], tpU: Term, tmO: Option[Term], attrAssU: List[Term], attrConclU: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val attrConclNumI = if (attrConclU.isEmpty) {None} else {Some(attrConclU.length)}
     if (attrConclNumI.isDefined) {assert(attrConclNumI.get == attrConclU.length)}
     val attrConclNum = attrConclNumI map(tm=>List(OMI(tm))) getOrElse Nil
@@ -321,8 +322,8 @@ object indirectCompleteModeDefinition extends ModeDefinitionInstance {
 }
 
 object schemeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], assNum:Int, assumptions:List[Term], p:Term)(implicit notC: NotationContainer = NotationContainer.empty()) = {
-    MizarPatternInstance(name, "schemeDef", argNum, argTypes, Some(assNum), assumptions, p)
+  def apply(name: LocalName, argTypes: List[Term], assumptions:List[Term], p:Term, prf: Option[Term] = None)(implicit notC: NotationContainer = NotationContainer.empty()) = {
+    MizarPatternInstance(name, "schemeDef", argTypes.length, argTypes, Some(assumptions.length), assumptions, p, prf)
   }
 }
 
