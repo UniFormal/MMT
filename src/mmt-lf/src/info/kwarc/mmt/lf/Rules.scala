@@ -2,6 +2,8 @@ package info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import objects._
 import checking._
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.lf
 import objects.Conversions._
 import uom._
 
@@ -416,7 +418,17 @@ class GenericBeta(conforms: ArgumentChecker) extends ComputationRule(Apply.path)
 /**
  * the usual beta-reduction rule s : A  --->  (lambda x:A.t) s = t [x/s]
  */
-object Beta extends GenericBeta(StandardArgumentChecker)
+object Beta extends GenericBeta(StandardArgumentChecker) {
+  /**
+    * Fully beta-reduces a given term using [[Controller.simplifier]].
+    *
+    * Effectively applies the simplifier to the term using only one rule, namely `this`.
+    */
+  def reduce(t: Term)(implicit ctrl: Controller): Term = {
+    val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
+    ctrl.simplifier(t, su, RuleSet(lf.Beta))
+  }
+}
 
 /*
 /**

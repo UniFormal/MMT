@@ -61,7 +61,8 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     ApplySpine(relation, applyMors(ctx, t): _*)
   })
 
-  private def partOfRel(ctx: Context, t: Term): Boolean = apply(ctx, t).isDefined
+  // TODO: in the future we might implement this more efficiently: we only need to recurse on the return types as FR once sketched in PM to NR.
+  def isDefined(ctx: Context, t: Term): Boolean = apply(ctx, t).isDefined
 
   /**
     * Transforms a [[Term]] matching a [[FunType]] to a term matching a [[Pi]].
@@ -83,8 +84,8 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
 
   def apply(ctx: Context, t: Term): Option[Term] = t match {
     case OMV(x) =>
-      if (ctx.get(x).tp.exists(partOfRel(ctx, _))) Some(OMV(star(x)))
-      else Some(OMV(x))
+      if (ctx.get(x).tp.exists(isDefined(ctx, _))) Some(OMV(star(x)))
+      else None // TODO(NR@FR): Is returning None correct here? Previously, I thoguht about Some(OMV(x)) but that broke things.
 
     // Cases for inhabitable t
     // =========================================================================

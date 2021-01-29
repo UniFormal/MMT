@@ -2,6 +2,7 @@ package info.kwarc.mmt
 
 import info.kwarc.mmt
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
@@ -9,6 +10,7 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.lf.{ApplySpine, Beta}
 
 import scala.annotation.tailrec
 
@@ -30,7 +32,7 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
     val currentMorsCodomain: MPath =
       new LogrelPushoutTransformer.PathTransformer(this).applyModulePath(m)
 
-    LogrelType(currentMors, currentMorsDomain, currentMorsCodomain)
+    LogrelType(currentMors, currentMorsDomain, currentMorsCodomain, initialLogrelType.excludedTypes)
   }
 
   def getLogicalRelationFor(m: MPath): Term = {
@@ -49,8 +51,13 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
     def getLogrelBaseAssignment(logrel: Term, p: GlobalName): Option[Term] = {
       val applicable =
         seenModules.contains(p.module) || lookup.hasImplicit(p.module, initialLogrelType.commonMorDomain)
+
       if (applicable) {
-        Some(lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrel)).filter(nonUnit)
+        try {
+          Some(lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrel)).filter(nonUnit)
+        } catch {
+          case err: GetError => None // TODO: very hacky
+        }
       } else {
         None
       }
@@ -81,8 +88,12 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
 abstract class LogrelPushoutOperator extends ParametricLinearOperator {
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = {
     parameters match {
-      case mors :+ OMMOD(logrel) =>
-        LogrelOperator.parseLogRelInfo(mors)(interp.ctrl.globalLookup).map(logrelType => {
+      // TODO: currently pattern-matches only for one morphism since we needed excludedTypes, too
+      //   and we cannot easily represent two lists in OMDoc, but the logic below is all suitable for multiple morphisms
+      //   only pattern matching is to be fixed in the future!
+      case mor +: excludedTypes :+ OMMOD(logrel) =>
+        val mors = List(mor)
+        LogrelOperator.parseLogRelInfo(mors, excludedTypes).map(logrelType => {
           val pushoutInfo = LogrelPushoutInfo(ConcreteLogrel(logrelType, OMMOD(logrel)))
 
           // order is important!
@@ -128,6 +139,7 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     // a lot of helper declarations follow
     // =======================================
+    implicit val ctrl: Controller = interp.ctrl
     implicit val lookup: Lookup = interp.ctrl.globalLookup
 
     // The expressions in container are expressions over the theory
@@ -154,11 +166,6 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       }
     }
 
-    def betaReduce(t: Term): Term = {
-      val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
-      interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
-    }
-
     // end of helper declarations
     // =======================================
     // now do actual work:
@@ -174,18 +181,15 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
           // but even in the case of one morphism, the indexed name should be available as an alias
           // (not in views; irrelevant there), such that users can systematically rely on the operator's output
           alias = if (onlySingleMor && !state.inContainer.isInstanceOf[View]) List(renamer(c.name)) else Nil,
-          tp = c.tp.map(translatePushout(i, _)).map(betaReduce),
-          df = c.df.map(translatePushout(i, _)).map(betaReduce),
+          tp = c.tp.map(translatePushout(i, _)).map(Beta.reduce),
+          df = c.df.map(translatePushout(i, _)).map(Beta.reduce),
           rl = c.rl,
           not = if (onlySingleMor) c.notC.copy() else NotationContainer.empty()
         )
     }.toList
 
-    if (c.name == LocalName("pair")) {
-      val dbg = logrel(Context.empty, c.tp.get)
-    }
-    val constantsRelatedTp = c.tp.flatMap(logrel.getExpected(Context.empty, OMS(c.path), _)).map(betaReduce)
-    val constantsRelatedDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(betaReduce)
+    val constantsRelatedTp = c.tp.flatMap(logrel.getExpected(Context.empty, OMS(c.path), _)).map(Beta.reduce)
+    val constantsRelatedDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(Beta.reduce)
 
     constantsRelatedTp match {
       case Some(_) =>
@@ -245,21 +249,15 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
   }
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
-    val logrelRenamer: Renamer[LinearState] = in.logrelRenamer.coercedTo(state)
-    /*val relatedConstant = getRelatedRenamer(state)(c)
+    val logrelRenamer = in.logrelRenamer.coercedTo(state)
+    val relatedRenamer = getRelatedRenamer
+    val logrel = pushoutInfo.getPartialLogrel(state.inTheoryContext, state.diagramState.seenModules.toSet, logrelRenamer)(interp.ctrl.globalLookup)
 
-    val assignment = if (interp.ctrl.getO(relatedConstant.path).isDefined) {
-      relatedConstant
+    if (c.tp.exists(logrel.isDefined(Context.empty, _))) {
+      List(assgn(logrelRenamer(c.path), relatedRenamer(c)))
     } else {
-      /*val logrel = pushoutInfo.getPartialLogrel(state.inTheoryContext, state.diagramState.seenModules.toSet, logrelRenamer)(interp.ctrl.globalLookup)
-      logrel.synthesize(p => OMV("unit"), ???)(Context.empty, tp)*/
-      OMV("TODO: we should synthesize this")
-    }*/
-
-    List(assgn(
-      logrelRenamer(c.path),
-      OMV("TODO: we should synthesize this") // assignment
-    ))
+      Nil
+    }
   }
 }
 
