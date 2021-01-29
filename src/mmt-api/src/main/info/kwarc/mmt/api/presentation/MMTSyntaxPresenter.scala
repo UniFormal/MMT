@@ -160,22 +160,18 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
         rh << "\n"
         val notationElements = List(dd.notC.getParseDefault, dd.notC.getPresentDefault).zipWithIndex.map { not =>
           (rh: RenderingHandler) => not match {
-            case (Some(not), 0) => rh(s"# ${not.toText}")
-            case (Some(not), 1) => rh(s"## ${not.toText}")
+            case (Some(not), 0) =>
+              indented(rh)("\n")
+              indented(rh)(s"# ${not.toText}")
+            case (Some(not), 1) =>
+              indented(rh)("\n" + OBJECT_DELIMITER + " ")
+              indented(rh)(s"## ${not.toText}")
             case (None, _) => // nothing to do
             case _ => ??? // not yet implemented
           }
         }
-        val indentedRh = indented(rh)
-        notationElements.zipWithIndex.foreach { case (renderFunction, index) =>
-          if (index == 0) {
-            indentedRh("\n")
-          } else {
-            indentedRh("\n" + OBJECT_DELIMITER + " ")
-          }
-          renderFunction(indentedRh)
-        }
-        rh("\n")
+        notationElements.foreach { _(rh) }
+        rh(OBJECT_DELIMITER + " =\n")
         dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
 
       case dm: DerivedModule =>
@@ -375,7 +371,10 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       typeElements ::: definiensElements ::: roleElements ::: aliasElements ::: notationElements ::: metadataElements
 
     // present all elements
-    rh(c.name.toString)//rh(c.name.last.toString)
+    if (c.name.length >1) {
+      rh("constant "+c.name.toString)
+    } else rh(c.name.toString)
+    //rh(c.name.last.toString)
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {
