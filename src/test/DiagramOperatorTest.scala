@@ -1,6 +1,5 @@
-import info.kwarc.mmt.api.{DPath, Path}
+import info.kwarc.mmt.api.DPath
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 /**
   * Debugging links for diagram output:
@@ -25,63 +24,27 @@ trait DiagramOperatorHelper {
   *
   * @author Navid
   */
-object DiagOpAlgebraTest extends MagicTest("debug") with DiagramOperatorHelper {
+object DiagramOperatorTest extends MagicTest("debug") with DiagramOperatorHelper {
 
-  override def doFirst(): Unit = {
-    super.doFirst()
-    controller.extman.addExtension(new SyntaxPresenterServer(), Nil)
-    // hl("extension info.kwarc.mmt.api.modules.DiagramOutputServer")
-
-    //hl("build MMT/urtheories -mmt-omdoc module-expressions.mmt")
-    //hl("build MMT/urtheories mmt-omdoc module-expressions.mmt")
-    //hl("build MMT/LATIN2 -mmt-omdoc algebra/diagop-test.mmt")
-    hl("build MMT/LATIN2 mmt-omdoc algebra/diagop-test.mmt")
-  }
-
-  // This [[run]] method is run in parallel to the build process started above in [[doFirst]],
-  // hence, we apply some dirty waiting mechanism here.
   override def run(): Unit = {
-    /*
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy_Copy_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection1"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?Test_CopyProjection2"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_Copy"))
-    waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_Copy"))*/
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExt_copy"))
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestView_copy"))
-    // waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
-    //waitThenPrint(Path.parseM("http://cds.omdoc.org/urtheories?TestExtView_copy"))
-    // sys.exit(0)
+    val repl = new FastREPLExtension(FastREPL.shortcuts, Some("build MMT/urtheories mmt-omdoc module-expressions-logrel-pushout-test.mmt"))
+    controller.extman.addExtension(repl)
+
+    repl.run()
+    sys.exit(0)
   }
 }
 
 /**
-  * Debugging playground for Navid's implementation of diagram operators.
-  * For debugging-debugging purposes only - might contain dirty code.
-  *
-  * @author Navid
+  * Test for ITP 2021 paper by Florian and Navid.
   */
-object LATIN2Test extends MagicTest("debug", "DiagramDefinition") with DiagramOperatorHelper {
-  private val latin : DPath = DPath(URI("latin:/"))
-
-  override def doFirst: Unit = {
-    super.doFirst
-
-    hl("build MMT/urtheories mmt-omdoc")
-    hl("build MMT/LATIN2 scala-bin")
-    hl("build MMT/LATIN2 mmt-omdoc type_theory/operators.mmt")
-    hl("build MMT/LATIN2 mmt-omdoc logic/fol.mmt")
-    hl("build MMT/LATIN2 mmt-omdoc logic/operators.mmt")
-
-    // hl("build MMT/LATIN2 lf-scala")
-  }
+object ITP2021Test extends MagicTest("debug") with DiagramOperatorHelper {
 
   override def run(): Unit = {
-    waitThenPrint(latin ? "TestEndoMagmaSingle_pres")
-    waitThenPrint(latin ? "TestEndoMagmaMulti_pres")
+    val repl = new FastREPLExtension(FastREPL.shortcuts, Some("build MMT/LATIN2 mmt-omdoc itp2021/input.mmt"))
+    controller.extman.addExtension(repl)
 
-    waitThenPrint(latin ? "TypedUniversalQuantification_by_diagop")
+    repl.run()
+    sys.exit(0)
   }
 }
-

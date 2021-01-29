@@ -46,8 +46,8 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  final override lazy val operatorDomain: Diagram = in.operatorCodomain
-  final override lazy val operatorCodomain: Diagram = out.operatorCodomain
+  final override lazy val operatorDomain: Diagram = in.operatorDomain // == out.operatorDomain ideally
+  final override lazy val operatorCodomain: Diagram = out.operatorCodomain // == in.operatorCodomain ideally
 
   // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
   private var hasRunSanityCheck = false
@@ -176,7 +176,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     */
   final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
-    implicit val lookup: Lookup = ctrl.globalLookup
+    implicit val library: Lookup = ctrl.library
     implicit val diagramState: DiagramState = state.diagramState
 
     if (include.args.nonEmpty) {
@@ -185,7 +185,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     }
 
     val newFrom: MPath = include.from match {
-      case p if in.operatorDomain.hasImplicitFrom(p) =>
+      case p if operatorDomain.hasImplicitFrom(p) =>
         applyMetaModule(OMMOD(p)).toMPath
 
       case from if diagramState.seenModules.contains(from) =>

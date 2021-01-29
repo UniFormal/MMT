@@ -54,8 +54,8 @@ import scala.collection.mutable
 object InstallDiagram {
   val feature: String = "diagram"
 
-  def saveOutput(diagFeaturePath: MPath, diagram: Diagram)(implicit lookup: Lookup): Unit = {
-    lookup.getModule(diagFeaturePath).dfC.normalized = Some(diagram.toTerm)
+  def saveOutput(diagFeaturePath: MPath, diagram: Diagram)(implicit library: Lookup): Unit = {
+    library.getModule(diagFeaturePath).dfC.normalized = Some(diagram.toTerm)
   }
 
   /**
@@ -66,8 +66,8 @@ object InstallDiagram {
     * @throws InvalidElement if the module hasn't been elaborated before
     * @return All module entries of the output diagram (as were the result of elaboration before).
     */
-  def parseOutput(diagPath: MPath)(implicit lookup: Lookup): Diagram = {
-    val diagModule = lookup.get(diagPath) match {
+  def parseOutput(diagPath: MPath)(implicit library: Lookup): Diagram = {
+    val diagModule = library.get(diagPath) match {
       case diagModule: DerivedModule if diagModule.feature == InstallDiagram.feature =>
         diagModule
 
@@ -105,7 +105,7 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
-        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.globalLookup)
+        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.library)
         val outputModules = outputDiagram.modules.map(controller.getModule)
 
         // syntax-present output diagram for quick debugging
@@ -249,7 +249,7 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
       case DiagramTermBridge(diag) => Some(diag)
 
       case OMMOD(diagramDerivedModule) =>
-        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.globalLookup))
+        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.library))
 
       case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
         // no simplification needed at this point
@@ -268,7 +268,7 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
 
           // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
           // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
-          removeOmbindc(ctrl.simplifier(ctrl.globalLookup.ExpandDefinitions(diag, _ => true), su))
+          removeOmbindc(ctrl.simplifier(ctrl.library.ExpandDefinitions(diag, _ => true), su))
         }
 
         if (simplifiedDiag == diag) {

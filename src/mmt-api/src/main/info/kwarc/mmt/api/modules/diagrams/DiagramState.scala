@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
+import info.kwarc.mmt.api.modules.{Link, Module, ModuleOrLink, Theory}
 import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.symbols.Declaration
 
@@ -154,6 +154,8 @@ trait LinearModuleTransformerState extends ModuleTransformerState with LinearTra
     * storing all declarations processed so far (also transitively).
     */
   protected trait MinimalLinearModuleState extends MinimalLinearState {
+    def inTheoryContext: MPath
+
     def outContainer: ModuleOrLink
     def outContainer_=(m: ModuleOrLink): Unit
 
@@ -165,6 +167,11 @@ trait LinearModuleTransformerState extends ModuleTransformerState with LinearTra
     * A linear state keeping track of processed and skipped declarations.
     */
   protected class SkippedDeclsExtendedLinearState(override val diagramState: DiagramState, override var inContainer: ModuleOrLink) extends MinimalLinearModuleState {
+    override val inTheoryContext: MPath = inContainer match {
+      case thy: Theory => thy.path
+      case link: Link => link.to.toMPath
+    }
+
     final var _processedDeclarations: ListBuffer[Declaration] = mutable.ListBuffer()
 
     final override def processedDeclarations: Seq[Declaration] = _processedDeclarations.toSeq

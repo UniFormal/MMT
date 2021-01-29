@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
@@ -48,13 +49,13 @@ private class PushoutTransformer(
     OMMOD(new PushoutConnector.PathTransformer(mor).applyModulePath(exprContext))
   }
 
-  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: SkippedDeclsExtendedLinearState, interp: DiagramInterpreter): List[Constant] = {
+  override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     def translate(t: Term): Term =
-      interp.ctrl.globalLookup.ApplyMorphs(t, getMorphismIntoPushout(state.inContainer))
+      interp.ctrl.library.ApplyMorphs(t, getMorphismIntoPushout(state.inContainer))
 
     List(Constant(
       home = state.outContainer.toTerm,
-      name = emptyRenamer(c.name),
+      name = c.name,
       alias = c.alias,
       tp = c.tp.map(translate),
       df = c.df.map(translate),
@@ -79,9 +80,9 @@ private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends Pushou
 
   override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(dom)
   override val out = new PushoutTransformer.PathTransformer(dom, cod, mor)
-  override def applyMetaModule(m: Term): Term = m match {
+  override def applyMetaModule(m: Term)(implicit lookup: Lookup): Term = m match {
     case OMMOD(`dom`) => OMMOD(dom)
-    case OMIDENT(OMMOD(`dom`)) => mor
+    case OMIDENT(OMMOD(p)) if lookup.hasImplicit(p, dom) => mor
     case _ => throw ImplementationError("unreachable")
   }
 
