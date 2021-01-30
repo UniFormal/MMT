@@ -10,5 +10,5 @@ then
   classpath "$ISABELLE_MMT_ROOT/deploy/mmt.jar"
   isabelle_scala_service "info.kwarc.mmt.isabelle.Tools"
 else
-  echo "### Missing $ISABELLE_MMT_ROOT/deploy/mmt.jar"
+  echo >&2 "### Missing $ISABELLE_MMT_ROOT/deploy/mmt.jar"
 fi
