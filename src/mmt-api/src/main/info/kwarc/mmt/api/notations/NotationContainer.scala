@@ -40,8 +40,12 @@ class NotationDimension {
    }
    def delete(): Unit = notations.clear()
 
-  def mapInPlace(f: TextNotation => TextNotation): Unit = {
-    _notations.mapValuesInPlace((_, not) => not.map(f))
+  def mapInPlace(f: TextNotation => TextNotation): Unit = collectInPlace(not => Some(f(not)))
+
+  def collectInPlace(f: TextNotation => Option[TextNotation]): Unit = {
+    _notations.mapValuesInPlace((_, not) => {
+      not.flatMap(f)
+    })
     // TODO: recompute _maxArity?
   }
 }
@@ -151,10 +155,12 @@ class NotationContainer extends ComponentContainer {
      ).flatten
    }
 
-  def mapInPlace(f: TextNotation => TextNotation): this.type = {
-    _parsingDim.mapInPlace(f)
-    _presentationDim.mapInPlace(f)
-    _verbalizationDim.mapInPlace(f)
+  def mapInPlace(f: TextNotation => TextNotation): this.type = collectInPlace(x => Some(f(x)))
+
+  def collectInPlace(f: TextNotation => Option[TextNotation]): this.type = {
+    _parsingDim.collectInPlace(f)
+    _presentationDim.collectInPlace(f)
+    _verbalizationDim.collectInPlace(f)
     this
   }
 
