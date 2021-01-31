@@ -49,13 +49,13 @@ object HomOperator extends SimpleLinearOperator with OperatorDSL {
         )
 
         // construct `c^{dom} x_1 ... x_n`
-        val lhs = ApplySpine.applyOrSymbol(
+        val lhs = ApplySpine.orSymbol(
           dom(c),
           forallContext.map(_.toTerm) : _*
         )
 
         // construct `c^{cod} (c^h x_1) ... (c^h x_n)`
-        val rhs = ApplySpine.applyOrSymbol(
+        val rhs = ApplySpine.orSymbol(
           cod(c),
           forallContext.map(_.toTerm).zipWithIndex.map {
             case (t, idx) => ApplySpine(OMS(hom(argTypes(idx))), t)

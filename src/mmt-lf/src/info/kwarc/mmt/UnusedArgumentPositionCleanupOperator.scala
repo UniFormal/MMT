@@ -131,7 +131,7 @@ object UnusedArgumentsCleaner {
   def cleanRemovedArguments(t: Term, removedArgs: Map[GlobalName, List[ArgPath]]): Term = {
     new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-        case ApplySpine(OMS(p), args) if removedArgs.contains(p) && removedArgs(p).nonEmpty =>
+        case ApplySpine.orSymbol(OMS(p), args) if removedArgs.contains(p) && removedArgs(p).nonEmpty =>
           val argsToRemove = removedArgs(p).toSet
 
           if (args.size < argsToRemove.max) { // recall: argsToRemove has one-based argument positions

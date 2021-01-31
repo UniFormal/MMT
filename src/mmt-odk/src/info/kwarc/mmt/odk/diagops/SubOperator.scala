@@ -193,7 +193,7 @@ object SubModelConnector extends SimpleInwardsConnector(
         val body = SFOL.downcastParentElementToSubtype(
           parentTp = OMS(par(retType)),
           selectionFun = OMS(sub(retType)),
-          parentElem = ApplySpine.applyOrSymbol(par(c), argTypes.zip(bindingCtx).map {
+          parentElem = ApplySpine.orSymbol(par(c), argTypes.zip(bindingCtx).map {
             case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
               parentTp = OMS(par(tp)),
               selectionFun = OMS(sub(tp)),
@@ -214,7 +214,7 @@ object SubModelConnector extends SimpleInwardsConnector(
           SFOL.tm(SFOL.predicateSubTp(OMS(par(tp)), OMS(sub(tp))))
         }))
 
-        val body = ApplySpine.applyOrSymbol(par(c), argTypes.zip(bindingCtx).map {
+        val body = ApplySpine.orSymbol(par(c), argTypes.zip(bindingCtx).map {
           case (tp, vd) => SFOL.injectSubtypeElementIntoParent(
             parentTp = OMS(par(tp)),
             selectionFun = OMS(sub(tp)),
