@@ -1,5 +1,7 @@
 package info.kwarc.mmt
 
+import info.kwarc.mmt.UnusedArgumentsCleaner.KeepInfo
+import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.metadata.MetaData
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.{Mixfix, NotationContainer}
@@ -40,17 +42,30 @@ object UnusedArgumentPositionCleanupTransformer extends SimpleConstantsBasedModu
 
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
+    implicit val lookup: Lookup = interp.ctrl.globalLookup
+
+    val keepInfo: KeepInfo = UnusedArgumentsCleaner.readKeepInfo(c.metadata)
+
+    val newTp = c.tp
+      .map(UnusedArgumentsCleaner.cleanArgumentsOfType(c.path, _, keepInfo, state.removedArguments))
+      .map(emptyRenamer(_))
+
+    val newDf = c.df
+      .map(UnusedArgumentsCleaner.cleanArgumentsOfDef(c.path, _, state.removedArguments))
+      .map(emptyRenamer(_))
+
+    val newNotC = UnusedArgumentsCleaner.cleanArgumentsInNotation(c.path, c.notC, state.removedArguments)
+
     val outConstant = Constant(
       home = state.outContainer.toTerm,
       name = emptyRenamer(c.name),
       alias = c.alias,
-      tp = c.tp.map(emptyRenamer(_)),
-      df = c.df.map(emptyRenamer(_)),
+      tp = newTp,
+      df = newDf,
       rl = c.rl,
-      not = c.notC.copy()
+      not = newNotC
     )
-    outConstant.metadata.add(c.metadata.getAll : _*)
-    UnusedArgumentsCleaner.cleanArgumentsOfType(outConstant, state.removedArguments)
+    // outConstant.metadata.add(c.metadata.getAll : _*), too much clutter
 
     List(outConstant)
   }
@@ -87,33 +102,34 @@ object UnusedArgumentsCleaner {
     */
   val INITIAL_PATH: ArgPath = 1
 
-  def cleanArgumentsOfType(c: Constant, removedArgs: mutable.Map[GlobalName, List[ArgPath]]): Unit = {
-    val keepInfo = readKeepInfo(c.metadata)
+  def cleanArgumentsOfType(p: GlobalName, tp: Term, keepInfo: KeepInfo, removedArgs: mutable.Map[GlobalName, List[ArgPath]])(implicit lookup: Lookup): Term = {
+    val (cleanedTerm, removedArgsHere) = cleanUnusedArguments(cleanRemovedArguments(tp, removedArgs.toMap), keepInfo)
 
-    c.tpC.analyzed = c.tp
-      .map(cleanRemovedArguments(_, removedArgs.toMap))
-      .map(cleanUnusedArguments(_, keepInfo))
-      .map {
-        case (cleanedTerm, removedArgsHere) =>
-          if (removedArgsHere.nonEmpty) {
-            removedArgs.put(c.path, removedArgsHere)
-          }
-          cleanedTerm
-      }
+    if (removedArgsHere.nonEmpty) {
+      removedArgs.put(p, removedArgsHere)
+    }
+    cleanedTerm
+  }
 
-    c.df
+  def cleanArgumentsOfDef(p: GlobalName, df: Term, removedArgs: mutable.Map[GlobalName, List[ArgPath]])(implicit lookup: Lookup): Term = {
+    cleanRemovedArguments(df, removedArgs.toMap) // insufficient for defined constants, but okay-ish for view assignments
+  }
 
-    c.notC.collectInPlace(not => {
+  /**
+    * Cleans notation in a copy of input notation container
+    */
+  def cleanArgumentsInNotation(p: GlobalName, notC: NotationContainer, removedArgs: mutable.Map[GlobalName, List[ArgPath]]): NotationContainer = {
+    notC.copy().collectInPlace(not => {
       val newFixity = not.fixity match {
         case fixity: Mixfix =>
-          fixity.removeArguments(removedArgs.getOrElse(c.path, Nil).toSet)
-        case x => None // not implemented yet
+          fixity.removeArguments(removedArgs.getOrElse(p, Nil).toSet)
+        case _ => None // not implemented yet
       }
       newFixity.map(fix => not.copy(fixity = fix))
     })
   }
 
-  private def readKeepInfo(metadata: MetaData): KeepInfo = {
+  def readKeepInfo(metadata: MetaData): KeepInfo = {
     val keepInfo: Option[KeepInfo] =
       metadata.get(Metadata.keepInfoKey).headOption.map(_.value).collect {
         case OMS(Metadata.keepAll) =>
@@ -128,22 +144,39 @@ object UnusedArgumentsCleaner {
     keepInfo.getOrElse(KeepAsDesired())
   }
 
-  def cleanRemovedArguments(t: Term, removedArgs: Map[GlobalName, List[ArgPath]]): Term = {
+  def etaExpand(p: GlobalName)(implicit lookup: Lookup): Term = {
+    lookup.getConstant(p).tp match {
+      case Some(FunType(argTypes, _)) =>
+        val ctx: Context = argTypes.zipWithIndex.map {
+          case ((maybeName, argType), idx) =>
+            val name = maybeName.getOrElse(LocalName(s"arg$idx"))
+            VarDecl(name, argType)
+        }
+
+        Lambda(ctx, ApplySpine(OMS(p), ctx.map(_.toTerm): _*))
+
+      case _ => ??? // cannot eta-expand constant without type component
+    }
+  }
+
+  def cleanRemovedArguments(t: Term, removedArgs: Map[GlobalName, List[ArgPath]])(implicit lookup: Lookup): Term = {
     new StatelessTraverser {
       override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
         case ApplySpine.orSymbol(OMS(p), args) if removedArgs.contains(p) && removedArgs(p).nonEmpty =>
           val argsToRemove = removedArgs(p).toSet
 
-          if (args.size < argsToRemove.max) { // recall: argsToRemove has one-based argument positions
-            // error, not eta-expanded by user
-            ???
-          }
+          if (args.size >= argsToRemove.max) { // (recall: argsToRemove has one-based argument positions)
+            // All argument positions that we want to remove are given.
 
-          val newArgs = args.zipWithIndex.filter {
-            // recall: argsToRemove has one-based argument positions
-            case (_, index) => !argsToRemove.contains(index + 1)
-          }.map(_._1)
-          ApplySpine(OMS(p), newArgs : _*)
+            val newArgs = args.zipWithIndex.filter {
+              case (_, index) => !argsToRemove.contains(index + 1)
+            }.map(_._1)
+            ApplySpine(OMS(p), newArgs : _*)
+          } else {
+            // At least one argument position that we wanted to remove is not given,
+            // hence reduce to eta-expanded case.
+            ApplySpine(traverse(etaExpand(p)), args : _*)
+          }
 
         case t => Traverser(this, t)
       }

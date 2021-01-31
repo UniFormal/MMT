@@ -92,7 +92,6 @@ final class LogrelTransformer(
     val logrel: PartialLogrel = {
       val logrelBase: GlobalName => Option[Term] = p => {
         if (currentLogrelType.excludedTypes.contains(p) || state.skippedDeclarations.exists(_.path == p)) {
-          state.registerSkippedDeclaration(c)
           None
         } else if (state.processedDeclarations.exists(_.path == p)) {
           Some(OMS(logrelRenamer(p)))
@@ -133,7 +132,9 @@ final class LogrelTransformer(
         rl = None
       ))
 
-      case None => Nil
+      case None =>
+        state.registerSkippedDeclaration(c)
+        Nil
     }
   }
 }
