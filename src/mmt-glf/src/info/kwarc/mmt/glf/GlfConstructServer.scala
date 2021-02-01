@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.objects.{OMBIND, OMLIT, OMS, OMV, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{DPath, LocalName, MPath}
-import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONObject, JSONString, URI}
+import info.kwarc.mmt.api.utils.{JSON, JSONArray, JSONBoolean, JSONInt, JSONObject, JSONString, URI}
 import info.kwarc.mmt.api.web.{ServerError, ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lf.elpi.{BaseConstantHandler, ELPIExporter}
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, Lambda, Pi}
@@ -71,10 +71,19 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
       .map(t => removeFakeLambdas(t, Set()))
       .distinct
 
-    if (query.toElpi) {
-      ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*))
+    val result = if (query.toElpi) {
+                   JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
+                 } else {
+                   JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
+                 }
+    if (query.version == 1) {
+      ServerResponse.JsonResponse(result)
     } else {
-      ServerResponse.JsonResponse(JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*))
+      ServerResponse.JsonResponse(JSONObject(
+        ("isSuccessful", JSONBoolean(true)),
+        ("result", result),
+        ("errors", JSONArray()),
+      ))
     }
   }
 
@@ -124,7 +133,8 @@ class GlfConstructQuery(val asts : List[String],
                         val semanticsView : Option[MPath],
                         val simplify : Boolean,
                         val deltaExpansion : Boolean,
-                        val toElpi : Boolean)
+                        val toElpi : Boolean,
+                        val version : Int)
 
 object GlfConstructQuery {
   def fromJSON(json : JSON) : GlfConstructQuery = {
@@ -134,6 +144,7 @@ object GlfConstructQuery {
     var simplify = true
     var deltaExpansion = false
     var toElpi = false
+    var version = 1
 
     json match {
       case JSONObject(map) =>
@@ -151,6 +162,7 @@ object GlfConstructQuery {
             case (JSONString("simplify"), JSONBoolean(value)) => simplify = value
             case (JSONString("deltaExpansion"), JSONBoolean(value)) => deltaExpansion = value
             case (JSONString("toElpi"), JSONBoolean(value)) => toElpi = value
+            case (JSONString("version"), JSONInt(value)) => version = value.toInt
             case (key, _) => throw ServerError("Invalid JSON: can't handle entry '" + key.toFormattedString("") + "'" )
           }
         }
@@ -158,6 +170,6 @@ object GlfConstructQuery {
     }
     val semanticsView : Option[MPath] = semView.map(s => DPath(URI(s)).toMPath)
     val languageTheory = langTheo.map(p => DPath(URI(p)).toMPath)
-    new GlfConstructQuery(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion, toElpi)
+    new GlfConstructQuery(asts.toList, languageTheory, semanticsView, simplify, deltaExpansion, toElpi, version)
   }
 }
