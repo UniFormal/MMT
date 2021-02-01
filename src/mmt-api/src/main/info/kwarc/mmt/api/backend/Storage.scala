@@ -124,12 +124,18 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
 
 /** a variant of a [[Storage]] that loads Scala objects from the class path */
 trait RealizationStorage {
-  def getLoader: java.lang.ClassLoader
+  protected def getLoader: java.lang.ClassLoader
   // this must be a val to make sure all classes are loaded by the same class loader (the same class loaded by different class loaders are distinct)
-  private var loader = getLoader
+  private var _loader : Option[java.lang.ClassLoader] = None
+  def loader = _loader match {
+    case Some(l) => l
+    case _ =>
+      resetLoader
+      _loader.get
+  }
   /** the only way to unload classes is to let them and the class loader be garbage-collected; so this method creates a fresh copy of the class loader */
   def resetLoader {
-    loader = getLoader
+    _loader = Some(getLoader)
   }
   /**
     * @param p the path to use in error messages
@@ -179,7 +185,7 @@ trait RealizationStorage {
 }
 
 /** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
-class RealizationArchive(file: File) extends Storage with RealizationStorage {
+class RealizationArchive(val file: File, parent : Unit => Option[RealizationArchive]) extends Storage with RealizationStorage {
   override def toString = "realization archive for " + file
 
   override def clear {
@@ -187,7 +193,12 @@ class RealizationArchive(file: File) extends Storage with RealizationStorage {
   }
 
   def getLoader: ClassLoader = try {
-    val optCl = Option(getClass.getClassLoader)
+    val optCl = parent(()) match {
+      case None =>
+        Option(getClass.getClassLoader)
+      case Some(a) =>
+        Some(a.loader)
+    }
     // the class loader that loaded this class, may be null for bootstrap class loader
     optCl match {
       case None =>
