@@ -9,6 +9,7 @@ import objects._
 import info.kwarc.mmt.mizar.newxml._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils.Lam
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
 import syntax.Utils.MizarGlobalName
 import syntax._
@@ -26,15 +27,23 @@ case class DeclarationTranslationError(str: String, decl: Subitem) extends Decla
 class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
 case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends ObjectLevelTranslationError(str+
   "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString, prfedClaim)
+case class PatternTranslationError(str: String, pat: Patterns) extends ObjectLevelTranslationError(str+
+  "\nPatternClaimTranslationError while translating the pattern with spelling "+pat.patternAttrs.spelling+": "+pat.toString, pat)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
   "\nExpressionTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
 
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
-    val ln = LocalName(kind+"_"+nr)
+    val ln = LocalName(kind+nr)
     TranslationController.getTheoryPath(aid) ? ln
   }
+  def makeGlobalPatConstrName(patAid: String, constrAid: String, kind: String, patNr: Int, constrNr: Int) : info.kwarc.mmt.api.GlobalName = {
+    val patGN = makeGlobalName(patAid, kind, patNr)
+    val constrGN = makeGlobalName(constrAid, kind, constrNr)
+    constrGN.copy(name = LocalName(patGN.name.toString + constrGN.name.toString))
+  }
   def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
+
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
@@ -42,6 +51,8 @@ object TranslatorUtils {
   def computeGlobalConstrName(tpAttrs: globallyReferencingDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalConstrName())}
   def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgPatternName())}
   def computeGlobalOrgConstrName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgConstrName())}
+  def computeGlobalPatConstrName(tpAttrs: globallyReferencingDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalPatternFile, tpAttrs.globalConstrFile, tpAttrs.globalKind, tpAttrs.globalPatternNr, tpAttrs.globalConstrNr)}
+  def computeGlobalOrgPatConstrName(tpAttrs: globallyReferencingReDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalOrgPatternFile, tpAttrs.globalOrgConstrFile, tpAttrs.globalKind, tpAttrs.globalOrgPatternNr, tpAttrs.globalOrgConstrNr)}
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
@@ -64,6 +75,18 @@ object TranslatorUtils {
   }
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
+  }
+
+  val hiddenArt = TranslationController.getTheoryPath("hidden")
+  val hiddenArts = List("hidden", "tarski", "tarski_a") map TranslationController.getTheoryPath
+
+  def resolveHiddenReferences() = {
+    OMSReplacer({gn: GlobalName =>
+      val hiddenModule = hiddenArt
+      gn match {
+      case GlobalName(hiddenModule, name) => Mizar.translate_hidden(name)
+      case _ => None
+    }})
   }
   /**
    * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
@@ -93,7 +116,7 @@ object TranslatorUtils {
    */
   private def namedDefArgsTranslator(varName: String, args: Context) : symbols.Declaration => symbols.Declaration = {
     {d: symbols.Declaration =>
-      val tl = symbols.ApplySubs(namedDefArgsSubstition(args, varName))
+      val tl = symbols.ApplySubs(namedDefArgsSubstition(args, varName)).compose(resolveHiddenReferences().toTranslator())
      d.translate(tl, Context.empty)}
   }
   def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(varName, defContext.args)

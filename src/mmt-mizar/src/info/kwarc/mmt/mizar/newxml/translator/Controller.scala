@@ -43,6 +43,10 @@ object TranslationController {
   def incrementAnonymousTheoremCount() = {anonymousTheoremCount += 1}
   def getAnonymousTheoremCount() = anonymousTheoremCount
 
+  private var identifyCount = 0
+  def incrementIdentifyCount() = {identifyCount += 1}
+  def getIdentifyCount() = identifyCount
+
   def currentBaseThy : Option[MPath] = Some(mmtwrapper.Mizar.MizarPatternsTh)
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+mmtwrapper.Mizar.MizarPatternsTh.name.toString+".mmt")
   def localPath : LocalName = LocalName(currentAid.toLowerCase())
@@ -66,6 +70,8 @@ object TranslationController {
     val thy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
     controller.add(thy)
     currentThy = thy
+    identifyCount = 0
+    anonymousTheoremCount = 0
     thy
   }
   def getDependencies() : List[MPath] = {
@@ -75,7 +81,7 @@ object TranslationController {
       .filter(p=>isDependency(p.toString))
     currentThy.getDeclarations foreach {
       case decl: Declaration =>
-        val s = TranslationController.controller.presenter.asString(decl)
+        val s = controller.presenter.asString(decl)
         val deps: List[GlobalName] = if (isDependency(s)) {
           decl match {
             case MizarPatternInstance(_, _, args) =>
@@ -120,7 +126,8 @@ object TranslationController {
   def add(e : Declaration) : Unit = {
     val eC = complify(e)
     try {
-      println(controller.presenter.asString(eC))
+      //println(eC.toString)
+      //println(controller.presenter.asString(eC))
       controller.add(eC)
     } catch {
       case e: AddError =>

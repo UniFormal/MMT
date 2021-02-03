@@ -16,7 +16,7 @@ object justificationTranslator {
     case Scheme_Justification(pos, nr, idnr, schnr, spelling, _refs) => ???
   }
   def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = { ??? }
-  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext) = {
+  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = {
     val claim = provedClaim._claim match {
       case Diffuse_Statement(spelling, serialnr, labelnr, _label) => provedClaim._just.get match {
         case Block(kind, pos, _items) =>

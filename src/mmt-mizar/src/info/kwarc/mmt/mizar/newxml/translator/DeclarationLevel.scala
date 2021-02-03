@@ -20,11 +20,12 @@ import claimTranslator._
 import clusterTranslator._
 import definitionTranslator._
 import blockTranslator._
-import info.kwarc.mmt.api.symbols.Declaration
+import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import clusterTranslator._
 import definiensTranslator._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.{addUnresolvedDependency, controller, currentAid, getAnonymousTheoremCount, getIdentifyCount, getUnresolvedDependencies, incrementAnonymousTheoremCount, incrementIdentifyCount, inferType, localPath, makeConstant}
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
 import justificationTranslator._
 import propertyTranslator._
@@ -32,10 +33,12 @@ import nymTranslator._
 import patternTranslator._
 
 case class JustifiedCorrectnessConditions(correctness_Condition: List[CorrectnessConditions], just: Option[Justification])
-case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil)
+case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, usedFacts: List[(Term, Option[Term])] = Nil) {
+  def addArguments(arguments: Context) = this.copy(args = this.args ++ arguments)
+  def addAssumptions(assumptions: List[Term]) = this.copy(assumptions = this.assumptions ++ assumptions)
+}
 object DefinitionContext {
   def empty() = DefinitionContext()
-  def addArguments(arguments: Context)(implicit defContext: DefinitionContext) = defContext.copy(args = defContext.args ++ arguments)
 }
 
 case class JustifiedProperty(conds: List[MizarProperty], prop: MizarProperty, tp: Option[Term], decl: Option[Declaration])
@@ -131,10 +134,14 @@ object nymTranslator {
     val oldPat = nym._patOld
     val newPat: Patterns = nym._patNew
     val (name, newName, notC) = translate_Pattern(newPat)
-    val (_, addArgsTps, mainDecl, _) = patternTranslator.translate_Referencing_Pattern(oldPat)
-    val allArgs = defContext.args.map(_.tp.get) ++ addArgsTps
-    val tr = namedDefArgsTranslator()
-    List(tr(synonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)))
+    try {
+      val (_, addArgsTps, mainDecl, _, _) = translate_Referencing_Pattern(oldPat)
+      val allArgs = defContext.args.map(_.tp.get) ++ addArgsTps
+      val tr = namedDefArgsTranslator()
+      List(tr(synonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)))
+    } catch {
+      case e: ObjectLevelTranslationError => Nil
+    }
   }
 }
 
@@ -144,13 +151,13 @@ object statementTranslator {
     case type_Changing_Statement: Type_Changing_Statement => translate_Type_Changing_Statement(type_Changing_Statement)
     case theorem_Item: Theorem_Item => translate_Theorem_Item(theorem_Item)
     case choice_Statement: Choice_Statement =>
-      val (args, claim, proof) = translate_Choice_Statement(choice_Statement)
-      TranslationController.incrementAnonymousTheoremCount()
-      val gn = makeNewGlobalName("Choice_Statement", TranslationController.getAnonymousTheoremCount())
+      val (args, (claim, proof)) = translate_Choice_Statement(choice_Statement)
+      incrementAnonymousTheoremCount()
+      val gn = makeNewGlobalName("Choice_Statement", getAnonymousTheoremCount())
       implicit val defCtx = DefinitionContext(args, List(claim))
       implicit val notC = NotationContainer.empty()
       val tr = namedDefArgsTranslator()
-      val theoremDecl = TranslationController.makeConstant(gn.name, Some(claim), proof)
+      val theoremDecl = makeConstant(gn.name, Some(claim), proof)
       List(theoremDecl) map tr
     case regular_Statement: Regular_Statement => translate_Regular_Statement(regular_Statement)
   }
@@ -158,25 +165,25 @@ object statementTranslator {
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement) = { ??? }
   def translate_Theorem_Item(theorem_Item: Theorem_Item)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = {
     val prfedClaim = theorem_Item.prfClaim
-    implicit val gn = TranslatorUtils.MMLIdtoGlobalName(theorem_Item.mizarGlobalName())
+    implicit val gn = MMLIdtoGlobalName(theorem_Item.mizarGlobalName())
     val (claim, proof) = translate_Proved_Claim(theorem_Item.prfClaim)
     val tr = namedDefArgsTranslator()
-    val theoremDecl = TranslationController.makeConstant(gn.name, Some(claim), proof)
+    val theoremDecl = makeConstant(gn.name, Some(claim), proof)
     List(theoremDecl) map tr
   }
-  def translate_Choice_Statement(choice_Statement: Choice_Statement)(implicit defContext: DefinitionContext = DefinitionContext.empty()): (Context, Term, Option[Term]) = {
+  def translate_Choice_Statement(choice_Statement: Choice_Statement)(implicit defContext: DefinitionContext = DefinitionContext.empty()): (Context, (Term, Option[Term])) = {
     val vars: Context = choice_Statement._qual._children.flatMap(translate_Context(_))
-    val (ass, prf) = translate_Proved_Claim(choice_Statement.prfClaim)
-    (vars, ass, prf)
+    val facts = translate_Proved_Claim(choice_Statement.prfClaim)
+    (vars, facts)
   }
   def translate_Regular_Statement(regular_Statement: Regular_Statement) = {
-    TranslationController.incrementAnonymousTheoremCount()
-    val gn = makeNewGlobalName("Regular-Statement", TranslationController.getAnonymousTheoremCount())
+    incrementAnonymousTheoremCount()
+    val gn = makeNewGlobalName("Regular-Statement", getAnonymousTheoremCount())
     implicit val defCtx = DefinitionContext.empty()
     implicit val notC = NotationContainer.empty()
     val (claim, proof) = translate_Proved_Claim(regular_Statement.prfClaim)
     val tr = namedDefArgsTranslator()
-    val theoremDecl = TranslationController.makeConstant(gn.name, Some(claim), proof)
+    val theoremDecl = makeConstant(gn.name, Some(claim), proof)
     List(theoremDecl) map tr
   }
 }
@@ -210,7 +217,7 @@ object definitionTranslator {
     //TODO: this shouldn't be neccesary ideally
     val declarationPath = MMLIdtoGlobalName(strDef._strPat.globalPatternName().copy(kind = "L"))//TranslatorUtils.computeGlobalPatternName(strDef._strPat)
     val Structure_Patterns_Rendering(_aggrFuncPat, _, _strFuncPat, Selectors_List(_selectorFuncPat)) = strDef._rendering
-    val aggrNot::strNot::selNots  = _aggrFuncPat::_strFuncPat::_selectorFuncPat map translate_Pattern map(t=> (t._1, t._3))
+    val aggrNot::strNot::selNots  = _aggrFuncPat::_strFuncPat::_selectorFuncPat map(translate_Pattern(_)) map(t=> (t._1, t._3))
 
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       case field_Segment: Field_Segment =>
@@ -242,7 +249,7 @@ object definitionTranslator {
           ???
         }
       } else {
-        val motherTp = TranslationController.inferType(defn.get.someCase)
+        val motherTp = inferType(defn.get.someCase)
         val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
         val atrDef = defn.get match {
           case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) => directPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes)
@@ -261,7 +268,7 @@ object definitionTranslator {
     val specType = _tpSpec map (tpSpec => translate_Type(tpSpec._types))
     val defn = _def.map(translate_Definiens(_))
 
-    val ret = if (specType.isDefined) {specType} else { defn.map(d => TranslationController.inferType(d.someCase)) }
+    val ret = if (specType.isDefined) {specType} else { defn.map(d => inferType(d.someCase)) }
     if (defn.isEmpty) {
       if(_redefine.occurs) {
         List(translate_Redefine(_pat))
@@ -285,15 +292,20 @@ object definitionTranslator {
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
         val tp = translate_Type(_tp)
-        List(TranslationController.makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
+        List(makeConstant(declarationPath.name, Some(Mizar.tp),Some(tp)))
       case stm @ Standard_Mode(_tpSpec, _def) =>
         val name = declarationPath.name
         val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
         val defnO = _def map(translate_Definiens(_))
 
         if (defnO.isEmpty) {
-          assert(_tpSpec.isDefined)
-          List(TranslationController.makeConstant(declarationPath.name, translate_Type(_tpSpec.get._types)))
+          if (_tpSpec.isDefined) {
+            List(makeConstant(declarationPath.name, translate_Type(_tpSpec.get._types)))
+          } else {
+            //Only here we may have content that doesn't typecheck
+            assert(hiddenArts contains declarationPath.module)
+            Nil
+          }
         } else {
           val defn = defnO.get
           val modeDef = defn match {
@@ -313,7 +325,7 @@ object definitionTranslator {
     val tp = PiOrEmpty(args, any)
     val dfBody = translate_Term(private_Functor_Definition._tm)
     val df = LambdaOrEmpty(args, dfBody)
-    val res = TranslationController.makeConstant(gn.name, Some(tp), Some(df))
+    val res = makeConstant(gn.name, Some(tp), Some(df))
     val tr = namedDefArgsTranslator()
     List(tr(res))
   }
@@ -324,7 +336,7 @@ object definitionTranslator {
     val tp = PiOrEmpty(args, prop)
     val dfBody = translate_Formula(private_Predicate_Definition._form)
     val df = LambdaOrEmpty(args, dfBody)
-    val res = TranslationController.makeConstant(gn.name, Some(tp), Some(df))
+    val res = makeConstant(gn.name, Some(tp), Some(df))
     val tr = namedDefArgsTranslator()
     List(tr(res))
   }
@@ -350,12 +362,13 @@ object definitionTranslator {
       }
   }
   def translate_Redefine(pat: RedefinablePatterns, ret: Option[Term] = None) = {
-    val (name, gn, notC) = translate_Pattern(pat)
+    val (name, origDecl, notC) = translate_Pattern(pat, true)
     implicit val notCon = notC
-    val origDecl = TranslatorUtils.computeGlobalOrgPatternName(pat)
-    TranslationController.controller.get(origDecl) match {
-      case c: symbols.Constant => TranslationController.makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)
-      case MizarPatternInstance(ln, pat, params) => MizarPatternInstance(gn.name, pat, params)
+    val gn = TranslatorUtils.computeGlobalPatternName(pat)
+    controller.getO(origDecl) match {
+      case Some(c: Constant) => makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)
+      case Some(MizarPatternInstance(ln, pat, params)) => MizarPatternInstance(gn.name, pat, params)
+      case None => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
     }
   }
 }
@@ -383,7 +396,7 @@ object clusterTranslator {
         val adjs = attributeTranslator.translateAttributes(_adjCl)
         val isQualified = _tp.isDefined
         val tp = _tp map translate_Type getOrElse({
-          TranslationController.inferType(tm)})
+          inferType(tm)})
         val name = LocalName("funcReg:"+pos.position)
         if (isQualified) {
           qualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs)
@@ -395,6 +408,19 @@ object clusterTranslator {
         translate_JustifiedProperty(justProp)
     })}
     (resDecl.map(tr)).map(List(_)).getOrElse(Nil)
+  }
+  def translate_Identify(_fstPat:Patterns, _sndPat:Patterns)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()): List[Declaration] = {
+    val tr = namedDefArgsTranslator()
+    /*val num = getIdentifyCount()
+    incrementIdentifyCount()
+    val name = LocalName("identify"+num)
+    val (_, _, f, _, fparams) = translate_Referencing_Pattern(_fstPat)
+    val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
+    val tpO = Some(Mizar.eq(ApplyGeneral(f, fparams), ApplyGeneral(g, gparams)))
+    val resDecls = List(makeConstant(name, tpO, None))*/
+    //Since the patterns don't contains global Ids, it is currently impossible to translate them
+    val resDecls : List[Declaration] = Nil
+    resDecls map tr
   }
   def translate_Cluster(cl:Cluster)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()): List[Declaration] = {
     //TODO: Also translate the proofs of the correctness conditions
@@ -430,12 +456,24 @@ object patternTranslator {
   def makeNotationCont(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false) = {
     makeNotCont(PrePostFixMarkers(del, infixArgNum, suffixArgNum, rightArgsBracketed))
   }
-  def translate_Pattern(pat:Patterns) : (LocalName, GlobalName, NotationContainer) = {
-    val gn = TranslatorUtils.MMLIdtoGlobalName(pat.globalPatternName())
+  def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false) : (LocalName, GlobalName, NotationContainer) = {
+    val referencedGn = pattern match {
+      case pat: RedefinablePatterns =>
+        if (orgVersion) {
+          computeGlobalOrgPatternName(pat)//computeGlobalOrgPatConstrName(pat)
+        } else computeGlobalPatternName(pat)//computeGlobalPatConstrName(pat)
+      case pat: ConstrPattern => computeGlobalPatternName(pat)//computeGlobalPatConstrName(pat)
+      case pat => MMLIdtoGlobalName(pat.globalPatternName())
+    }
+    val gn = if (TranslationController.getTheoryPath("hidden") == referencedGn.module) {
+      resolveHiddenReferences()(OMS(referencedGn), Context.empty) match {
+        case OMS(p) => p
+      }
+    } else referencedGn
     val name = gn.name
 
-    val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pat.patternAttrs.formatdes)
-    val notC = pat match {
+    val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
+    val notC = pattern match {
       case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
         makeNotationCont(orgExtPatAttr.extPatAttr.patAttr.spelling, infixArgNr, suffixArgNr, rightArgsBracketed)
@@ -447,60 +485,66 @@ object patternTranslator {
     }
     (name, gn, notC)
   }
-  def translate_Referencing_Pattern(pat: Patterns): (LocalName, List[Term], Term, NotationContainer) = {
-    val (name, gn, notC) = translate_Pattern(pat)
-    val referencedDeclSE = TranslationController.controller.getO(gn) getOrElse ({
+
+  /**
+   * Get the name, argument types, reference to the declaration, notation and parameters
+   * of the declaration referenced by the pattern
+   * @param pat
+   * @return
+   */
+  def translate_Referencing_Pattern(pat: Patterns): (LocalName, List[Term], Term, NotationContainer, List[Term]) = {
+    val params = pat._locis.flatMap(_._loci map translate_Locus)
+    val (name, gn, notC) = translate_Pattern(pat, true)
+    val referencedDeclSE = controller.getO(gn) getOrElse ({
       println("Error looking up the declaration at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. "
-        +"Probably this is because we require the dependency theory "+gn.module+" of the article currently being translated "+TranslationController.localPath+" to be already translated: \n"
+        +"Probably this is because we require the dependency theory "+gn.module+" of the article currently being translated "+localPath+" to be already translated: \n"
         +"Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
-      if (! (TranslationController.getUnresolvedDependencies contains gn.module)) {
-        TranslationController.addUnresolvedDependency(gn.module)
+      if (! (getUnresolvedDependencies contains gn.module)) {
+        addUnresolvedDependency(gn.module)
       }
       throw new ObjectLevelTranslationError("Trying to lookup declaration (presumably) at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. ", pat)})
     val (mainDecl, addArgsTps): (Term, List[Term]) = referencedDeclSE match {
-      case c: symbols.Constant =>
+      case c: Constant =>
         val FunType(addArgsTps, prop) = c.tp.getOrElse(
-          throw new ObjectLevelTranslationError("Trying to retrieve type of looked up declaration "+c.name+" referenced by pattern: "+pat+", but declaration has not type defined. ", pat))
+          throw new ObjectLevelTranslationError("Trying to retrieve type of looked up declaration " + c.name + " referenced by pattern: " + pat + ", but declaration has not type defined. ", pat))
         (c.toTerm, addArgsTps.map(_._2))
       case dd: symbols.DerivedDeclaration =>
         val addArgTps = dd match {
-        case directPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-        case indirectPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-        case directCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case indirectCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case directPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-        case indirectPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-        case directCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case indirectCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case directPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case indirectPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-        case directCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
-        case indirectCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
-        case directPartialPredicateDef(_, _, addArgTps, _, _, _, _) => addArgTps
-        case directCompletePredicateDef(_, _, addArgTps, _, _, _) => addArgTps
-      }
+          case directPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+          case indirectPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+          case directCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case indirectCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case directPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+          case indirectPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
+          case directCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case indirectCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case directPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case indirectPartialModeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
+          case directCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
+          case indirectCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
+          case directPartialPredicateDef(_, _, addArgTps, _, _, _, _) => addArgTps
+          case directCompletePredicateDef(_, _, addArgTps, _, _, _) => addArgTps
+          case other => throw PatternTranslationError("Expected reference to original declaration of same kind in redefinition, but instead found "+other.feature+" at referenced location "+other.path+"\nReferenced by the pattern: "+pat+". ", pat)
+        }
         (dd.toTerm, addArgTps)
     }
-    (name, addArgsTps, mainDecl, notC)
+    (name, addArgsTps, mainDecl, notC, params)
   }
 }
 
 object blockTranslator {
-  def collectSubitems[mainSort <: BlockSubitem](block: Block) : (Context, List[Term], List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])]) = {
+  def collectSubitems[mainSort <: BlockSubitem](block: Block) : (Context, List[Term], List[(Term, Option[Term])], List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])]) = {
     val items = block._items
     implicit var args: Context = Context.empty
     implicit var assumptions: List[Term] = Nil
+    implicit var usedFacts: List[(Term, Option[Term])] = Nil
     var resDecls: List[(mainSort, List[JustifiedCorrectnessConditions], List[Property])] = Nil
 
     items.zipWithIndex foreach { case (it: Item, ind: Int) =>
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
-        case choice_Statement: Choice_Statement =>
-          val (addArgs, addAss, prf) = translate_Choice_Statement(choice_Statement)
-          args ++= addArgs
-          assumptions +:= addAss
-        case ass: Assumption => assumptions +:= translate_Claim(ass)
+        case ass: Claim => assumptions +:= translate_Claim(ass)
         //We put the guard, since the type pattern is eliminated by the compiler, it is for better error messages only, as we shouldn't ever encounter any other subitems at this point
         case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
           implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil
@@ -519,32 +563,51 @@ object blockTranslator {
         case correctness_Condition: Correctness_Condition =>
         case prop:Property =>
         case prag: Pragma =>
-        case defIt => throw DeclarationTranslationError("Unexpected item of type " + defIt.kind+" found, in "+block.kind, defIt)
+        //TODO: figure out what to do with this
+        case red: Reduction =>
+        /*This is tricky to translate:
+        It corresponds to a (proven) statement which is later used as an assumption in the definition
+
+        For now, we simply pass it on to the definition context
+        TODO: Actually use them
+        */
+        case choice_Statement: Choice_Statement =>
+          val (addArgs, addFacts) = translate_Choice_Statement(choice_Statement)
+          args ++= addArgs
+          usedFacts +:= addFacts
+        case statement: Regular_Statement =>
+          usedFacts +:= translate_Proved_Claim(statement.prfClaim)
+        case defIt => throw DeclarationTranslationError("Unexpected item of type " + defIt.kind+" found, in "+block.kind+" at line "+(it.pos.startPosition().line+1).toString+" in file "+currentAid+".miz", defIt)
       }
     }
-    (args, assumptions, resDecls)
+    (args, assumptions, usedFacts, resDecls)
   }
   def translate_Definitional_Block(block:Block):List[Declaration] = {
-    val (arguments, assumptions, definitionItems) = collectSubitems[Definition](block)
+    val (arguments, assumptions, usedFacts, definitionItems) = collectSubitems[Definition](block)
     definitionItems flatMap {
       case (defn: Definition, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
-        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props)
+        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props, usedFacts)
         translate_Definition(defn)
     }
   }
   def translate_Registration_Block(block: Block) : List[Declaration] = {
-    val (arguments, assumptions, clusterItems) = collectSubitems[RegistrationSubitems](block)
+    val (arguments, assumptions, usedFacts, clusterItems) = collectSubitems[RegistrationSubitems](block)
     clusterItems flatMap {
       case (cl: Cluster, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
-        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props)
+        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props, usedFacts)
         translate_Cluster(cl)
       case (reg: Registrations, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
-        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props)
+        implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props, usedFacts)
         translate_Registration(reg)
+      case (Identify(_firstPat, _sndPat, _lociEqns), corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
+        val defContextPrev = DefinitionContext(arguments, assumptions, corConds, props, usedFacts)
+        val translatedLociEqns = translate_Loci_Equalities(_lociEqns)(defContextPrev)
+        implicit val defContext = defContextPrev.addAssumptions(translatedLociEqns)
+        translate_Identify(_firstPat, _sndPat)
     }
   }
   def translate_Notation_Block(block: Block): List[Declaration] = {
-    val (arguments, assumptions, notationItems) = collectSubitems[Nyms](block)
+    val (arguments, assumptions, usedFacts, notationItems) = collectSubitems[Nyms](block)
     notationItems flatMap {
       case (nym: Nyms, corConds: List[JustifiedCorrectnessConditions], props: List[Property]) =>
         implicit val defContext = DefinitionContext(arguments, assumptions, corConds, props)
@@ -599,11 +662,6 @@ object definiensTranslator {
     }
     res
   }
-
-  object assumptionTranslator {
-    def translateAssumption(ass:Assumption) = translateAssumptions(ass._ass)
-      def translateAssumptions(ass:Assumptions) = { ??? }
-  }
 }
 
 object propertyTranslator {
@@ -612,7 +670,7 @@ object propertyTranslator {
       val claim = Apply(Mizar.constant("sethood"), tp)
       val just = _just map(translate_Justification(_, claim)) getOrElse(None)
       val name = LocalName("sethood_of_"+tp.toStr(true))
-      TranslationController.makeConstant(name, Some(Univ(1)), just)
+      makeConstant(name, Some(Univ(1)), just)
     case _ => ???
   }
 }

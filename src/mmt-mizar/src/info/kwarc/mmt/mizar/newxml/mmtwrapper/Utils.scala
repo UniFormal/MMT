@@ -42,6 +42,7 @@ object Mizar {
       case "any" => TermsTh ? "term"
       case "set" => HiddenTh ? name
       case "sethood" => HiddenTh ? "sethood_property"
+      case "in" => HiddenTh ? "in"
       case "prop"=> PropositionsTh ? name
       case "mode" => TypesTh ? "tp"
       case "proof" => ProofsTh ? "ded"
@@ -49,7 +50,7 @@ object Mizar {
       case "and" => ConjunctionTh ? name
       case "or" => DisjunctionTh ? name
       case "eq" => EqualityTh ? "equal"
-      case "ineq" => HiddenTh ? "inequal"
+      case "neq" => HiddenTh ? "inequal"
       case "true" => TruthTh ? name
       case "false" => FalsityTh ? name
       case "not" => NegationTh ? name
@@ -77,6 +78,7 @@ object Mizar {
   //val any : Term = constant("any")
   def tp : Term = constant("tp")
   def set = constant("set")
+  def in = constant("in")
   def any =constant("any")
 
   def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
@@ -96,7 +98,6 @@ object Mizar {
   def seqConn(connective : String, length : Term, seq : Term) : Term =
     apply(constant(connective), length, seq)
 
-
   def trueCon = constant("true")
   def falseCon = constant("false")
 
@@ -105,6 +106,8 @@ object Mizar {
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
   object eq extends BinaryLFConstantScala(eqCon.module, "eq")
+  def neqCon = constantName("neq")
+  object neq extends BinaryLFConstantScala(MizarTh, "inequal")
 
   class Quantifier(n: String) {
     def apply(v : OMV, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(v % Mizar.any, prop))
@@ -118,7 +121,6 @@ object Mizar {
   object exists extends Quantifier("ex")
 
   object proof extends UnaryLFConstantScala(MizarTh, "proof")
-
 
   //     OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
 
@@ -180,6 +182,15 @@ object Mizar {
         Some((n, nArgsDepType, attrs))
       case _ => None
     }
+  }
+
+  def translate_hidden(name: LocalName) : Option[Term] = name.toString match {
+    case "M1" => Some(any)
+    case "M2" => Some(set)
+    case "R1" => Some(eq.term)
+    case "R2" => Some(neq.term)
+    case "R3" => Some(in)
+    case _ => None
   }
 }
 

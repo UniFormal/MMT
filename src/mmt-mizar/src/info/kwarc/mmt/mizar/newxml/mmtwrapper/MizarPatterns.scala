@@ -76,7 +76,7 @@ object MizarPatternInstance {
   }
   private def lambdaBindArgs(tm: Term)(implicit args: List[Term]): Term = {
     val LambdaOrEmpty(ctx, body) = tm
-    Lam("x", nTypes(args.length), tm)
+    if (args.length > 0) tm else Lam("x", nTypes(args.length), tm)
   }
   private def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val argNum = OMI(argNumI)
@@ -116,12 +116,11 @@ object MizarPatternInstance {
    */
   def apply(name: LocalName, pat: String, argNumI: Int, arguments: List[Term], assNumI: Option[Int], ass: List[Term], pred: Term, proofU: Option[Term] = None)(implicit notC: NotationContainer) : DerivedDeclaration = {
     if (assNumI.isDefined) {assert(assNumI.get == ass.length)}
-    val assNum = assNumI map(tm => List(OMI(tm))) getOrElse Nil
     implicit val args = arguments
-    val assumptions = Sequence(ass map lambdaBindArgs)
+    val assumptions = assNumI map(tm => List(OMI(tm), Sequence(ass map lambdaBindArgs))) getOrElse Nil
     val v = lambdaBindArgs(pred)
     val proof = proofU map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
-    val furtherParameters: List[Term] = assNum++List(assumptions, v)++proof
+    val furtherParameters: List[Term] = assumptions:::v::proof
     apply(name, pat, argNumI, arguments, furtherParameters)
   }
   /**
@@ -139,18 +138,16 @@ object MizarPatternInstance {
    * @return
    */
   def apply(name: LocalName, pat: String, arguments: List[Term], tpU: Term, tmO: Option[Term], attrAssU: List[Term], attrConclU: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
-    val attrConclNumI = if (attrConclU.isEmpty) {None} else {Some(attrConclU.length)}
-    if (attrConclNumI.isDefined) {assert(attrConclNumI.get == attrConclU.length)}
-    val attrConclNum = attrConclNumI map(tm=>List(OMI(tm))) getOrElse Nil
-    val attrAssNum = OMI(attrAssU.length)
     implicit val args = arguments
     val argNumI = args.length
-
+    val attrAssNum = OMI(attrAssU.length)
     val tp = lambdaBindArgs(tpU)
     val tm = tmO map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val attrAss = Sequence(attrAssU map lambdaBindArgs)
-    val attrConcl = List(Sequence(attrConclU map lambdaBindArgs))
-    val furtherParameters: List[Term] = attrAssNum::tp::tm++(attrAss::attrConclNum++attrConcl)
+    val attrConcl = if (attrConclU.isEmpty) Nil else {
+      List(OMI(attrConclU.length), Sequence(attrConclU map lambdaBindArgs))}
+
+    val furtherParameters: List[Term] = attrAssNum::tp::tm:::attrAss::attrConcl
     apply(name, pat, argNumI, arguments, furtherParameters)
   }
   def unapply(mizInstance: DerivedDeclaration): Option[(LocalName, String, List[Term])] = mizInstance match {
@@ -352,7 +349,7 @@ object qualifiedFunctorRegistration extends RegistrationInstance {
 trait NotationInstance
 class NymicNotation(key:String) extends NotationInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer = NotationContainer.empty()) = {
-    MizarPatternInstance(name, key, argNum, argTypes, None, Nil, v)
+    MizarPatternInstance(name, key, argNum, argTypes, None, Nil, v, None)
   }
 }
 object synonymicNotation extends NymicNotation("synonymicNotation")
