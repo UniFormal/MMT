@@ -12,11 +12,13 @@ import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
 
 object PatternUtils {
-  def structureStrictDeclName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictDef")
-  def structureStrictPropName(implicit parentTerm: GlobalName) = parentTerm.name / LocalName("strictProp")
-  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName) = LocalName("restr") / substrName
-  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName) = LocalName(restrName) / "selProp" / sel
-  def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(StructuralFeatureUtils.externalName(substrPath,LocalName(nm)))
+  def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
+  def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
+  def structureStrictDeclName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictDef"))
+  def structureStrictPropName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictProp"))
+  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName) = pseudoSlash(LocalName("restr"), substrName)
+  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName) = pseudoSlash(pseudoSlash(LocalName(restrName), "selProp"), sel)
+  def referenceExtDecl(substrPath:GlobalName, nm: String) = OMS(substrPath.module ? pseudoSlash(substrPath.name, LocalName(nm)))
   def referenceIntSel(strName: String, nm: String) = {
     val strPath = TranslationController.currentTheoryPath ? strName
     referenceExtDecl(strPath, nm)
@@ -60,7 +62,7 @@ object StructureInstance {
    *                   inherited selectors must be repeated here
    */
   def apply(declarationPath:GlobalName, l:Int, argNameTps:Context, n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl], notationC: NotationContainer = NotationContainer.empty()): List[symbols.Declaration] = {
-    MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller, notationC)(declarationPath)
+    MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller, notationC, Some(pseudoSlash(_, _)))(declarationPath)
   }
   def withUnnamedArgs(declarationPath:GlobalName, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
     val argNameTps = argTps.zipWithIndex.map {case (tp, ind) => OMV("x"+ind) % tp}

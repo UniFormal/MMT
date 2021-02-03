@@ -185,11 +185,11 @@ object Mizar {
   }
 
   def translate_hidden(name: LocalName) : Option[Term] = name.toString match {
-    case "M1" => Some(any)
-    case "M2" => Some(set)
-    case "R1" => Some(eq.term)
-    case "R2" => Some(neq.term)
-    case "R3" => Some(in)
+    case "M1M1" => Some(any)
+    case "M2M2" => Some(set)
+    case "R1R1" => Some(eq.term)
+    case "R2R1" => Some(neq.term)
+    case "R3R2" => Some(in)
     case _ => None
   }
 }

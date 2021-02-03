@@ -260,7 +260,14 @@ object definitionTranslator {
         List(atrDef)
       }
   }
-  def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = { ??? }
+  def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: DefinitionContext = DefinitionContext.empty()): List[Constant] = {
+    constant_Definition._children map {eq =>
+      val name = LocalName(eq._var.varAttr.copy(kind = "DefConstant").toIdentifier(true))
+      val df = translate_Term(eq._tm)
+      val notC = makeNotationCont(eq._var.varAttr.spelling, 0, 0)
+      makeConstant(name, None, Some(df))(notC)
+    }
+  }
   def translate_Functor_Definition(functor_Definition: Functor_Definition)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = functor_Definition match {
     case fd @ Functor_Definition(_, _redefine, _pat, _tpSpec, _def) =>
     val (name, gn, notC) = translate_Pattern(_pat)
@@ -364,8 +371,18 @@ object definitionTranslator {
   def translate_Redefine(pat: RedefinablePatterns, ret: Option[Term] = None) = {
     val (name, origDecl, notC) = translate_Pattern(pat, true)
     implicit val notCon = notC
-    val gn = TranslatorUtils.computeGlobalPatternName(pat)
-    controller.getO(origDecl) match {
+    val gn = TranslatorUtils.computeGlobalName(pat)
+    val mod = controller.getModule(origDecl.module)
+    //try to match both constrnr and patternnr
+    mod.getO(origDecl.name) orElse {
+      //use only the constrnr to match
+      val constrNrPart = pat.globalKind+pat.globalConstrNr
+      val constrNumBasedName = mod.domain.filter(_.toString.endsWith(constrNrPart)) match {
+        case List(name) => Some(name)
+        case _ => None
+      }
+      constrNumBasedName map mod.get
+    } match {
       case Some(c: Constant) => makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)
       case Some(MizarPatternInstance(ln, pat, params)) => MizarPatternInstance(gn.name, pat, params)
       case None => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
@@ -459,13 +476,11 @@ object patternTranslator {
   def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false) : (LocalName, GlobalName, NotationContainer) = {
     val referencedGn = pattern match {
       case pat: RedefinablePatterns =>
-        if (orgVersion) {
-          computeGlobalOrgPatternName(pat)//computeGlobalOrgPatConstrName(pat)
-        } else computeGlobalPatternName(pat)//computeGlobalPatConstrName(pat)
-      case pat: ConstrPattern => computeGlobalPatternName(pat)//computeGlobalPatConstrName(pat)
-      case pat => MMLIdtoGlobalName(pat.globalPatternName())
+        computeGlobalName(pat, orgVersion)//computeGlobalOrgPatConstrName(pat)
+      case pat: ConstrPattern => computeGlobalName(pat)//computeGlobalPatConstrName(pat)
+      case pat => computeGlobalName(pat)
     }
-    val gn = if (TranslationController.getTheoryPath("hidden") == referencedGn.module) {
+    val gn = if (referencedGn.toString.toLowerCase contains "hidden") {
       resolveHiddenReferences()(OMS(referencedGn), Context.empty) match {
         case OMS(p) => p
       }
@@ -496,9 +511,9 @@ object patternTranslator {
     val params = pat._locis.flatMap(_._loci map translate_Locus)
     val (name, gn, notC) = translate_Pattern(pat, true)
     val referencedDeclSE = controller.getO(gn) getOrElse ({
-      println("Error looking up the declaration at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. "
+      throw PatternTranslationError("Error looking up the declaration at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. "
         +"Probably this is because we require the dependency theory "+gn.module+" of the article currently being translated "+localPath+" to be already translated: \n"
-        +"Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
+        +"Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ", pat)
       if (! (getUnresolvedDependencies contains gn.module)) {
         addUnresolvedDependency(gn.module)
       }

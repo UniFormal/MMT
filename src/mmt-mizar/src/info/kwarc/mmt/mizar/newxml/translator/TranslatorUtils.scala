@@ -16,7 +16,7 @@ import syntax._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
-sealed abstract class TranslatingError(str: String) extends Exception(str)
+sealed class TranslatingError(str: String) extends Exception(str)
 class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
 case class DeclarationTranslationError(str: String, decl: Subitem) extends DeclarationLevelTranslationError(str, decl) {
   def apply(str: String, decl: Subitem) = {
@@ -47,12 +47,19 @@ object TranslatorUtils {
   def MMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
     makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
   }
-  def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
-  def computeGlobalConstrName(tpAttrs: globallyReferencingDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalConstrName())}
-  def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgPatternName())}
-  def computeGlobalOrgConstrName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgConstrName())}
-  def computeGlobalPatConstrName(tpAttrs: globallyReferencingDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalPatternFile, tpAttrs.globalConstrFile, tpAttrs.globalKind, tpAttrs.globalPatternNr, tpAttrs.globalConstrNr)}
-  def computeGlobalOrgPatConstrName(tpAttrs: globallyReferencingReDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalOrgPatternFile, tpAttrs.globalOrgConstrFile, tpAttrs.globalKind, tpAttrs.globalOrgPatternNr, tpAttrs.globalOrgConstrNr)}
+  private def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {MMLIdtoGlobalName(tpAttrs.globalPatternName())}
+  private def computeGlobalConstrName(tpAttrs: globallyReferencingDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalConstrName())}
+  private def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgPatternName())}
+  private def computeGlobalOrgConstrName(tpAttrs: globallyReferencingReDefAttrs) = {MMLIdtoGlobalName(tpAttrs.globalOrgConstrName())}
+  private def computeGlobalPatConstrName(tpAttrs: globallyReferencingDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalPatternFile, tpAttrs.globalConstrFile, tpAttrs.globalKind, tpAttrs.globalPatternNr, tpAttrs.globalConstrNr)}
+  private def computeGlobalOrgPatConstrName(tpAttrs: globallyReferencingReDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalOrgPatternFile, tpAttrs.globalOrgConstrFile, tpAttrs.globalKind, tpAttrs.globalOrgPatternNr, tpAttrs.globalOrgConstrNr)}
+  def computeGlobalName(pat: globallyReferencingObjAttrs, orgName: Boolean = false) = pat match {
+    case p: RedefinablePatterns => if (orgName) computeGlobalOrgPatConstrName(p) else computeGlobalPatConstrName(p)
+    case p: ConstrPattern => computeGlobalPatConstrName(p)
+    case objAttrs: globallyReferencingReDefAttrs => if (orgName) computeGlobalOrgPatConstrName(objAttrs) else computeGlobalPatConstrName(objAttrs)
+    case objAttrs: globallyReferencingDefAttrs => computeGlobalPatConstrName(objAttrs)
+    case objAttrs => computeGlobalPatternName(objAttrs)
+  }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
@@ -62,17 +69,6 @@ object TranslatorUtils {
   def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(),"Negated-Formula",form)
   def emptyCondition() = negatedFormula(Contradiction(emptyPosition(),"Contradiction"))
 
-  /**
-   * Retrieves the type argument <T> of a type <tp> of the form Element of <T>
-   * @param tp the type <tp>
-   * @return
-   */
-  def getUniverse(tp:Type)(implicit args: Context= Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil) : Term = tp match {
-    case Standard_Type(tpAttrs, _, _, Arguments(List(u))) => translate_Term(u)
-    case Standard_Type(tpAttrs, _, _, elementArgs) => throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. "+
-      "In particular expected exactly 1 argument, but found "+elementArgs._children.length+". ", tp)
-    case _ => throw ExpressionTranslationError("Expected a type of form\"<element of> <tp>\" for some type tp. ", tp)
-  }
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
   }
@@ -101,7 +97,7 @@ object TranslatorUtils {
   def namedDefArgsSubstition(args: Context, varName: String = "x") = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
-      case (vd, i) => vd / OMV(LocalName(varName) / i.toString)//Index(OMV(varName), OMI(i))
+      case (vd, i) => vd / OMV(LocalName(varName)/ i.toString)
     }:_*)
   }
   /**

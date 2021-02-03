@@ -30,9 +30,11 @@ object termTranslator {
     case Simple_Term(locVarAttr) =>
       val tr = TranslatorUtils.namedDefArgsSubstition(defContext.args)
       val refTm = LocalName(locVarAttr.toIdentifier(true))
-      tr(refTm).getOrElse(OMV(refTm))
+      if (TranslationController.currentThy.declares(refTm)) {
+        OMS(TranslationController.currentTheoryPath ? refTm)
+      } else tr(refTm).getOrElse(OMV(refTm))
     case Aggregate_Term(tpAttrs, _args) =>
-      val gn = computeGlobalPatternName(tpAttrs)
+      val gn = computeGlobalName(tpAttrs)
       val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
       val args = translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
@@ -43,7 +45,7 @@ object termTranslator {
       Apply(sel, argument)
     case Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
-      val gn = computeGlobalPatternName(tpAttrs)
+      val gn = computeGlobalName(tpAttrs)
       val arguments = translateArguments(_args)
       ApplyGeneral(OMS(gn), arguments)
     case Numeral_Term(redObjAttr, nr, varnr) => num(nr)
@@ -56,7 +58,7 @@ object termTranslator {
       referencedSelector.toTerm
     case Infix_Term(tpAttrs, infixedArgs) =>
       assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
-      val gn = computeGlobalPatternName(tpAttrs)
+      val gn = computeGlobalName(tpAttrs)
       val args = translateArguments(infixedArgs._args)
       ApplyGeneral(OMS(gn), args)
     case Global_Choice_Term(pos, sort, _tp) =>
@@ -66,14 +68,14 @@ object termTranslator {
     case Private_Functor_Term(redObjAttr, serialNrIdNr, _args) => OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), serialNrIdNr))
     case Fraenkel_Term(pos, sort, _varSegms, _tm, _form) =>
       val tp : Type = _varSegms._vars.head._tp()
-      val universe = translate_Type(tp)//getUniverse(tp)
+      val universe = translate_Type(tp)
       val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
       val cond = translate_Formula(_form)
       val expr = translate_Term(_tm)
       fraenkelTerm(expr, arguments, universe, cond)
     case Simple_Fraenkel_Term(pos, sort, _varSegms, _tm) =>
       val tp : Type = _varSegms._vars.head._tp()
-      val universe = translate_Type(tp)//getUniverse(tp)
+      val universe = translate_Type(tp)
       val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
       val expr = translate_Term(_tm)
       simpleFraenkelTerm(expr, arguments, universe)
@@ -81,7 +83,7 @@ object termTranslator {
       //TODO: do the required checks
       translate_Term(_tm)
     case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
-      val gn = computeGlobalPatternName(constrExtObjAttrs)
+      val gn = computeGlobalName(constrExtObjAttrs)
       val substr = OMS(gn)
       val struct = translate_Term(_tm)
       val structTm = TranslationController.simplifyTerm(struct)
@@ -102,14 +104,13 @@ object typeTranslator {
       val adjectives = _adjClust._attrs map translate_Attribute
       SimpleTypedAttrAppl(tp, adjectives)
     case Standard_Type(tpAttrs, noocc, origNr, _args) =>
-      // Seems to roughly correspond to an OMS referencing a type, potentially applied to some arguments
       // TODO: Check this is the correct semantics and take care of the noocc attribute
-      val gn = computeGlobalPatternName(tpAttrs)
+      val gn = computeGlobalName(tpAttrs)
       val tp : Term = OMS(gn)
       val args = translateArguments(_args)
       ApplyGeneral(tp,args)
     case Struct_Type(tpAttrs, _args) =>
-      val gn = computeGlobalPatternName(tpAttrs)
+      val gn = computeGlobalName(tpAttrs)
       val typeDecl = referenceExtDecl(gn,RecordUtil.recTypeName)
       val args = translateArguments(_args)
       ApplyGeneral(typeDecl, args)
@@ -263,7 +264,7 @@ object claimTranslator {
 object attributeTranslator {
   def translateAttributes(adjective_Cluster: Adjective_Cluster) = adjective_Cluster._attrs map translate_Attribute
   def translate_Attribute(attr: Attribute): Term = {
-    val gn = computeGlobalPatternName(attr.orgnlExtObjAttrs)
+    val gn = computeGlobalName(attr.orgnlExtObjAttrs)
     val args = translateArguments(attr._args)
     ApplyGeneral(OMS(gn), args)
   }

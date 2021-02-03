@@ -76,17 +76,18 @@ object TranslationController {
   }
   def getDependencies() : List[MPath] = {
     var dependencies: List[MPath] = Nil
-    def isDependency(p: String) = p contains currentOutputBase.toString //"http://mathhub.info/Mizar/testmml-new/"
+    def isDependency(p: String) = p contains currentOutputBase.toString
     def getDependencies(tm: Term) = tm.subobjects.map(_._2).filter({case OMS(p) => true case _ => false}).map({case OMS(p) => p})
       .filter(p=>isDependency(p.toString))
     currentThy.getDeclarations foreach {
       case decl: Declaration =>
-        val s = controller.presenter.asString(decl)
-        val deps: List[GlobalName] = if (isDependency(s)) {
+        //val s = controller.presenter.asString(decl)
+        val deps: List[GlobalName] = if (isDependency(decl.toString())) {
           decl match {
             case MizarPatternInstance(_, _, args) =>
               args flatMap getDependencies
-            case c: Constant => getDependencies(c.tp.get) ++ c.df.map(getDependencies).getOrElse(Nil)
+            case c: Constant =>
+              List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)) flatMap getDependencies
             case _ => Nil
           }
         } else {
@@ -99,14 +100,14 @@ object TranslationController {
   }
   def includeDependencies() = {
     val includes = getDependencies() map(PlainInclude(_, currentTheoryPath))
-    includes foreach {inc =>
+    includes.reverse foreach {inc =>
       try {
-        add(inc)
+        addFront(inc)
       } catch {
         case e: GetError =>
-          println("GetError while trying to include the dependent theory "+inc.from.toMPath+" of the translated theory "+inc.to.toMPath+": \n"+
-          "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
           addUnresolvedDependency(inc.from.toMPath)
+          throw new TranslatingError("GetError while trying to include the dependent theory "+inc.from.toMPath+" of the translated theory "+inc.to.toMPath+": \n"+
+          "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
       }
     }
   }
@@ -123,6 +124,9 @@ object TranslationController {
   def add(m: Module) : Unit = {
     controller.add(m)
   }
+  def addFront(inc: Structure) : Unit = {
+    controller.add(inc, AtBegin)
+  }
   def add(e : Declaration) : Unit = {
     val eC = complify(e)
     try {
@@ -131,7 +135,7 @@ object TranslationController {
       controller.add(eC)
     } catch {
       case e: AddError =>
-        println("error adding declaration "+eC.name+", since a declaration of that name is already present. ")
+        throw new TranslatingError("error adding declaration "+eC.name+", since a declaration of that name is already present. ")
     }
   }
   private def complify(d: Declaration) = {
