@@ -1,13 +1,14 @@
 package info.kwarc.mmt
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Include, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.lf.LF
+import info.kwarc.mmt.lf.{Beta, LF}
 
 /**
   * The type of a logical relation; do not confuse "type" with MMT types.
@@ -16,7 +17,12 @@ import info.kwarc.mmt.lf.LF
   * due to limitiations in the diagram operator framework, e.g. domain and codomain must be
   * usable as elements in a [[Diagram]].
   */
-sealed case class LogrelType(mors: List[Term], commonMorDomain: MPath, commonMorCodomain: MPath)
+sealed case class LogrelType(
+                              mors: List[Term],
+                              commonMorDomain: MPath,
+                              commonMorCodomain: MPath,
+                              excludedTypes: List[GlobalName]
+                            )
 
 /**
   * References a concrete logical relation formalized in OMDoc
@@ -47,13 +53,6 @@ final class LogrelTransformer(
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_logrel")
 
   override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
-    val currentLinkDomain = logrelType(thy.path).commonMorDomain
-    /*if (!interp.ctrl.globalLookup.hasImplicit(thy.path, currentLinkDomain)) {
-      interp.errorCont(InvalidElement(thy, s"Failed to apply logrel operator on `${thy.path}` because that theory " +
-        s"is outside the domain of the morphisms, namely `$currentLinkDomain`."))
-      return None
-    }*/
-
     super.beginTheory(thy, state).map(outTheory => {
       val include = PlainInclude(logrelType(thy.path).commonMorCodomain, outTheory.path)
       interp.add(include)
@@ -81,14 +80,21 @@ final class LogrelTransformer(
   val logrelRenamer: Renamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
-    val logrel: PartialLogrel = {
-      val currentLogrelType = state.inContainer match {
-        case thy: Theory => logrelType(thy.path)
-        case link: Link => logrelType(link.to.toMPath)
-      }
+    val currentLogrelType = state.inContainer match {
+      case thy: Theory => logrelType(thy.path)
+      case link: Link => logrelType(link.to.toMPath)
+    }
 
+    if (currentLogrelType.excludedTypes.contains(c.path)) {
+      return Nil
+    }
+
+    val logrel: PartialLogrel = {
       val logrelBase: GlobalName => Option[Term] = p => {
-        if ((state.processedDeclarations ++ state.skippedDeclarations).exists(_.path == p)) {
+        if (currentLogrelType.excludedTypes.contains(p) || state.skippedDeclarations.exists(_.path == p)) {
+          state.registerSkippedDeclaration(c)
+          None
+        } else if (state.processedDeclarations.exists(_.path == p)) {
           Some(OMS(logrelRenamer(p)))
         } else baseLogrelInfo match {
           case Some(ConcreteLogrel(baseLogrelType, baseLogrel))
@@ -113,13 +119,9 @@ final class LogrelTransformer(
       new PartialLogrel(currentLogrelType.mors, logrelBase, interp.ctrl.globalLookup)
     }
 
-    def betaReduce(t: Term): Term = {
-      val su = SimplificationUnit(Context.empty, expandDefinitions = false, fullRecursion = true)
-      interp.ctrl.simplifier(t, su, RuleSet(lf.Beta))
-    }
-
-    val newTp = c.tp.flatMap(logrel.getExpected(Context.empty, c.toTerm, _)).map(betaReduce)
-    val newDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(betaReduce)
+    implicit val ctrl: Controller = interp.ctrl
+    val newTp = c.tp.flatMap(logrel.getExpected(Context.empty, c.toTerm, _)).map(Beta.reduce)
+    val newDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(Beta.reduce)
 
     newTp match {
       case Some(_) => List(Constant(
@@ -140,7 +142,7 @@ abstract class LogrelOperator extends ParametricLinearOperator {
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = {
     parameters match {
       case mors if mors.nonEmpty =>
-        LogrelOperator.parseLogRelInfo(mors)(interp.ctrl.globalLookup).map(logrelType =>
+        LogrelOperator.parseLogRelInfo(mors, excludedTypes = Nil).map(logrelType =>
           new LogrelTransformer((_: MPath) => logrelType)
         )
 
@@ -151,7 +153,10 @@ abstract class LogrelOperator extends ParametricLinearOperator {
 }
 
 object LogrelOperator {
-  def parseLogRelInfo(mors: List[Term])(implicit lookup: Lookup): Option[LogrelType] = {
+  // TODO: hacky, implement proper error reporting to DiagramInterpreter!
+  def parseLogRelInfo(mors: List[Term], excludedTypes: List[Term])(implicit interp: DiagramInterpreter): Option[LogrelType] = {
+    implicit val lookup: Lookup = interp.ctrl.globalLookup
+
     val (commonMorDomain, commonMorCodomain) =
       mors.map(mor => (Morph.domain(mor), Morph.codomain(mor))).distinct match {
         // TODO: support complex morphisms
@@ -160,7 +165,9 @@ object LogrelOperator {
         case _ => return None
       }
 
-    Some(LogrelType(mors, commonMorDomain, commonMorCodomain))
+    val excludedTypesPaths = excludedTypes.collect { case OMID(p: GlobalName) => p }
+
+    Some(LogrelType(mors, commonMorDomain, commonMorCodomain, excludedTypesPaths))
   }
 }
 
@@ -170,4 +177,20 @@ object FlexaryLogrelOperator extends LogrelOperator {
 
 object UnaryLogrelOperator extends LogrelOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unary_logrel_operator")
+}
+
+object PartialUnaryLogrelOperator extends ParametricLinearOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?partial_unary_logrel_operator")
+
+  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = {
+    parameters match {
+      case mor :: excludedTypes =>
+        LogrelOperator.parseLogRelInfo(List(mor), excludedTypes).map(logrelType =>
+          new LogrelTransformer((_: MPath) => logrelType)
+        )
+
+      case _ =>
+        None
+    }
+  }
 }
