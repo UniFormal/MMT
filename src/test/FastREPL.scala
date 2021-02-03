@@ -18,8 +18,12 @@ import scala.util.Try
 object FastREPL extends MagicTest("debug") {
   val shortcuts: List[String] = List(
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
-    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/1-base.mmt",
-    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/2-type_theoretical_features.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/a-basic.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/b-concepts.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/c-type_theoretical_features.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/d-softening.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/e-logical_features.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/f-hard_logical_features.mmt",
     "-------------------------------------------",
     "build MMT/LATIN2 mmt-omdoc logic/fol-diagop.mmt",
     "-------------------------------------------",

@@ -12,17 +12,16 @@ import info.kwarc.mmt.lf._
 
 import scala.collection.mutable
 
-object UnusedArgumentPositionCleanupOperator extends ParametricLinearOperator {
-  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unused_arg_pos_cleanup_operator")
+object DropUnusedArgumentsOperator extends ParametricLinearOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?drop_args_operator")
 
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] =
-    Some(UnusedArgumentPositionCleanupTransformer)
+    Some(DropUnusedArgumentsTransformer)
 }
 
-object UnusedArgumentPositionCleanupTransformer extends SimpleConstantsBasedModuleTransformer with LackingLinearStateOperator with OperatorDSL {
+object DropUnusedArgumentsTransformer extends SimpleConstantsBasedModuleTransformer with LackingLinearStateOperator with OperatorDSL {
   override def operatorDomain: Diagram = Diagram.singleton(LF.theoryPath)
-
   override def operatorCodomain: Diagram = Diagram.singleton(LF.theoryPath)
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cleaned")
@@ -44,7 +43,7 @@ object UnusedArgumentPositionCleanupTransformer extends SimpleConstantsBasedModu
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     implicit val lookup: Lookup = interp.ctrl.globalLookup
 
-    val keepInfo: KeepInfo = UnusedArgumentsCleaner.readKeepInfo(c.metadata)
+    val keepInfo: KeepInfo = UnusedArgumentsCleaner.KeepInfo.parse(c.metadata)
 
     val newTp = c.tp
       .map(UnusedArgumentsCleaner.cleanArgumentsOfType(c.path, _, keepInfo, state.removedArguments))
@@ -76,15 +75,34 @@ object UnusedArgumentPositionCleanupTransformer extends SimpleConstantsBasedModu
   */
 object UnusedArgumentsCleaner {
   object Metadata {
-    val keepInfoKey: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unused_arg_pos_cleanup_operator_meta_keep_info")
-    val keepAll: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unused_arg_pos_cleanup_operator_meta_keep_all")
-    val keepSpecific: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?unused_arg_pos_cleanup_operator_meta_keep_specific")
+    val keepInfoKey: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?drop_args_keep")
+    val keepAll: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?drop_args_keep_all")
+    val keepSpecific: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?drop_args_keep_specific")
   }
 
   type ArgPath = Int
 
   abstract class KeepInfo {
     def mustKeep(argPath: ArgPath): Boolean
+  }
+  object KeepInfo {
+    /**
+      * See urtheories/module-expressions.mmt for how KeepInfo needs to be given as meta values.
+      */
+    def parse(metadata: MetaData): KeepInfo = {
+      def parseSpecificString(str: String) = KeepSpecific(str.split(",").map(Integer.parseInt).toSet)
+
+      val keepInfo: Option[KeepInfo] =
+        metadata.get(Metadata.keepInfoKey).headOption.map(_.value).collect {
+          case OMS(Metadata.keepAll) => KeepAll()
+          case Strings(keep) => parseSpecificString(keep)
+          case OMA(OMS(Metadata.keepSpecific), List(Strings(keep))) => parseSpecificString(keep)
+          // TODO: due to meta values being parsed very strangely
+          case ApplySpine(OMS(Metadata.keepSpecific), List(Strings(keep))) => parseSpecificString(keep)
+        }
+
+      keepInfo.getOrElse(KeepAsDesired())
+    }
   }
   sealed case class KeepAll() extends KeepInfo {
     override def mustKeep(argPath: ArgPath): Boolean = true
@@ -95,7 +113,6 @@ object UnusedArgumentsCleaner {
   sealed case class KeepSpecific(positions: Set[ArgPath]) extends KeepInfo {
     override def mustKeep(argPath: ArgPath): Boolean = positions.contains(argPath)
   }
-
 
   /**
     * One-based since argument positions of notations are also one-based.
@@ -127,21 +144,6 @@ object UnusedArgumentsCleaner {
       }
       newFixity.map(fix => not.copy(fixity = fix))
     })
-  }
-
-  def readKeepInfo(metadata: MetaData): KeepInfo = {
-    val keepInfo: Option[KeepInfo] =
-      metadata.get(Metadata.keepInfoKey).headOption.map(_.value).collect {
-        case OMS(Metadata.keepAll) =>
-          KeepAll()
-        case OMA(OMS(Metadata.keepSpecific), List(Strings(keep))) =>
-          KeepSpecific(keep.split(",").map(Integer.parseInt).toSet)
-
-        case ApplySpine(OMS(Metadata.keepSpecific), List(Strings(keep))) => // TODO: due to meta values being parsed very strangely
-          KeepSpecific(keep.split(",").map(Integer.parseInt).toSet)
-      }
-
-    keepInfo.getOrElse(KeepAsDesired())
   }
 
   def etaExpand(p: GlobalName)(implicit lookup: Lookup): Term = {

@@ -355,7 +355,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // parsing notations are presented with one hash ('#'), and presentation notations with two hashes ('##')
     val notationElements = List(c.notC.getParseDefault, c.notC.getPresentDefault).zipWithIndex.collect {
       case (Some(not), i) => (not, i)
-    }.map { x => (rh: RenderingHandler) => x match {
+    }.map { x => (rh: RenderingHandler) => (x: @unchecked) match { // match is exhausting, scalac doesn't get it, though
           case (not, 0) => rh(s"# ${not.toText}")
           case (not, 1) => rh(s"## ${not.toText}")
         }
@@ -395,9 +395,9 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
   }
 
   private def doStructure(s: Structure, rh: RenderingHandler)(implicit nsm: PersistentNamespaceMap): Unit = s match {
-    // special case of structures: trivial include
+    // special case of structures: plain includes and realizations
     case Include(IncludeData(home, from, args, df, total)) =>
-      rh("include ")
+      if (total) rh("realize ") else rh("include ")
       doURI(OMMOD(from), rh, needsHand = true)
       // TODO args ignored
       df.foreach(definiensTerm => {

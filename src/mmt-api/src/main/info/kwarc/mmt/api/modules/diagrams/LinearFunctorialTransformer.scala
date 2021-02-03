@@ -278,8 +278,13 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
       isImplicit = if (container.isInstanceOf[Theory]) true else false,
       isTotal = include.total
     )
-    interp.add(s)
-    interp.endAdd(s)
+
+    // TODO hack to prevent: "add error: a declaration for the name [...] already exists [...]"
+    //      when refactoring the whole framework, we should fix this anyway in the course of doing so
+    if (ctrl.getO(s.path).isEmpty) {
+      interp.add(s)
+      interp.endAdd(s)
+    }
   }
 }
 

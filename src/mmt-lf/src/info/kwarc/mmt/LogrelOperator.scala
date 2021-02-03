@@ -122,8 +122,12 @@ final class LogrelTransformer(
     val newTp = c.tp.flatMap(logrel.getExpected(Context.empty, c.toTerm, _)).map(Beta.reduce)
     val newDf = c.df.flatMap(logrel.apply(Context.empty, _)).map(Beta.reduce)
 
-    newTp match {
-      case Some(_) => List(Constant(
+    // if the logrel was partial on tp or df
+    if ((c.tp.isDefined && newTp.isEmpty) || (c.df.isDefined && newDf.isEmpty)) {
+      state.registerSkippedDeclaration(c)
+      Nil
+    } else {
+      List(Constant(
         home = state.outContainer.toTerm,
         name = logrelRenamer(c.name),
         alias = Nil,
@@ -131,10 +135,6 @@ final class LogrelTransformer(
         df = newDf,
         rl = None
       ))
-
-      case None =>
-        state.registerSkippedDeclaration(c)
-        Nil
     }
   }
 }

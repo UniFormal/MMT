@@ -56,7 +56,11 @@ object ClosureDiagramOperator extends DiagramOperator {
 
       (interp(metaDiagramTerm), interp(diagramTerm)) match {
         case (Some(metaDiagram), Some(diag @ Diagram(_, None))) =>
-          Some(diag.closure(metaDiagram)(interp.ctrl.library).toTerm)
+          val closedDiagram = diag.closure(metaDiagram)(interp.ctrl.library)
+          // Some diagram operators (hackily) expect their input diagram to be sorted in dependency order
+          val sortedDiagram = Diagram(closedDiagram.modules.sortWith(ctrl.globalLookup.hasImplicit), closedDiagram.mt)
+
+          Some(sortedDiagram.toTerm)
 
         case _ => None
       }
