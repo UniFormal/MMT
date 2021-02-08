@@ -17,6 +17,7 @@ object MizPattern {
 }
 
 object MizInstance {
+  //TODO: attach the notation to the *main* external declaration
    def apply(home : Term, name : LocalName, pattern : GlobalName, arguments: List[Term], notCont: NotationContainer = NotationContainer.empty()) = {
      //val argsS = arguments.map(a => TranslationController.controller.presenter.asString(a)).mkString("\n")
      //println("instance " + name + " with arguments " + argsS)

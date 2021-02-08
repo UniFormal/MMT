@@ -84,19 +84,16 @@ object TranslationController {
         //val s = controller.presenter.asString(decl)
         val deps: List[GlobalName] = if (isDependency(decl.toString())) {
           decl match {
-            case MizarPatternInstance(_, _, args) =>
-              args flatMap getDependencies
+            case MizarPatternInstance(_, _, args) => args flatMap getDependencies
             case c: Constant =>
               List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)) flatMap getDependencies
             case _ => Nil
           }
-        } else {
-          Nil
-        }
+        } else Nil
         val depThs = deps.map(_.module)
         dependencies = (dependencies ++ depThs).distinct
     }
-    dependencies.filter(_ != currentTheoryPath)
+    dependencies.filterNot(List(currentTheoryPath, TranslatorUtils.hiddenArt).contains _)
   }
   def includeDependencies() = {
     val includes = getDependencies() map(PlainInclude(_, currentTheoryPath))

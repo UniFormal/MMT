@@ -780,6 +780,15 @@ case class FlexaryDisjunctive_Formula(pos: Position, sort: String, _formulae:Lis
  * @param _formulae
  */
 case class FlexaryConjunctive_Formula(pos: Position, sort: String, _formulae:List[Claim]) extends Formula
+
+/**
+ * Apply relations <_i in a sequence to a list of arguments a_1, ..., a_p leading to
+ * a_1 <_1 a_2 <_2 ... <_1 a_n_1 <_2 a_n_1+1 <_2 ... <_3 ... <_m a_p
+ * @param pos
+ * @param sort
+ * @param _relForm the relation formula a_1 <_1 a_2
+ * @param _rhsOfRFs contains the remaining relations <_2 ... <_m and the arguments those are applied to
+ */
 case class Multi_Relation_Formula(pos: Position, sort: String, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
 case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends ObjectLevel

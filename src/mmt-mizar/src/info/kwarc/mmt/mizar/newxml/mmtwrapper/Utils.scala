@@ -5,8 +5,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{constant, constantName}
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
-
 
 object Mizar {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
@@ -75,7 +73,6 @@ object Mizar {
   def apply(f : Term, args : Term*) = ApplyGeneral(f, args.toList)
 
   def prop : Term = constant("prop")
-  //val any : Term = constant("any")
   def tp : Term = constant("tp")
   def set = constant("set")
   def in = constant("in")
@@ -120,9 +117,16 @@ object Mizar {
   object forall extends Quantifier("for")
   object exists extends Quantifier("ex")
 
-  object proof extends UnaryLFConstantScala(MizarTh, "proof")
-
-  //     OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
+  object proof extends UnaryLFConstantScala(ProofsTh, "proof")
+  object Uses extends TernaryLFConstantScala(MizarTh, "using")
+  def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
+  def zeroAryAndPropCon = constant("0ary_and_prop")
+  object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
+  object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
+  def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
+    val suffix = if (direct) "Dir" else "Indir" + resKind
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
+  }
 
   def attr(t : Term) = apply(Mizar.constant("attr"), t)
   def adjective(cluster : Term, typ : Term) = apply(Mizar.constant("adjective"), typ, cluster)
@@ -183,35 +187,10 @@ object Mizar {
       case _ => None
     }
   }
-
-  def translate_hidden(name: LocalName) : Option[Term] = name.toString match {
-    case "M1M1" => Some(any)
-    case "M2M2" => Some(set)
-    case "R1R1" => Some(eq.term)
-    case "R2R1" => Some(neq.term)
-    case "R3R2" => Some(in)
-    case _ => None
-  }
 }
 
 object MMTUtils {
   val mainPatternName = OMV.anonymous
-
-  def getTheoryPath(aid: String): MPath = {
-    if (aid == TranslationController.currentAid)
-      TranslationController.currentTheoryPath
-    else aid match {
-      case "HIDDEN" => Mizar.HiddenTh
-      case _ => DPath(Mizar.mmlBase) ? aid
-    }
-  }
-
-  def getPath(aid: String, kind: String, nr: Int): GlobalName = {
-    getTheoryPath(aid) ? (aid + "_" + kind + "_" + nr.toString)
-  }
-  def getPath(aid: String, name: String): GlobalName = {
-    getTheoryPath(aid) ? name
-  }
 
   def Lam(name: String, tp: Term, body: Term): Term = {
     Lambda(LocalName(name), tp, body)

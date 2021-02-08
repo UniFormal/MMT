@@ -61,11 +61,12 @@ object MizarStructure {
     def refDecl(nm: String) = OMS(parentTerm.module ? pseudoSlash1(parentTerm.name, LocalName(nm)))
 
     val structx = ApplyGeneral(refDecl(recTypeName), params.variables.toList.map(_.toTerm))
-    def typedArgsCont(tm: Term) = if ((params++argsTyped).isEmpty) tm else Pi(params++argsTyped, tm)
+    def typedArgsCont = PiOrEmpty(params++argsTyped, _)
+    val prop = Mizar.prop
     val strict = VarDecl(structureStrictDeclName,typedArgsCont(
-      Lam("s", structx, Mizar.prop)))
+      Lambda(LocalName("s"), structx, prop)))
     val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
-      Lam("s", structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
+      Lambda(LocalName("s"), structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
       val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {
         case (OMS(substrGN),i) =>
           val substrPrePath = substrGN.module ? substrGN.name.init

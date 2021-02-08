@@ -39,7 +39,7 @@ object termTranslator {
       val args = translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _arg) =>
-      val strGn = MMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
+      val strGn = mMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
       val sel = referenceExtDecl(strGn, tpAttrs.spelling)
       val argument = translate_Term (_arg)
       Apply(sel, argument)
@@ -127,13 +127,10 @@ object formulaTranslator {
       val assumptions = translate_Restriction(_restrict)
       translate_Existential_Quantifier_Formula(vars, univ, expr, assumptions)
     case Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
-      if (antonymic.isDefined && antonymic.get) {
-        translate_Formula(negatedFormula(Relation_Formula(objectAttrs, None, infixedArgs)))
-      } else {
-        val rel = translateObjRef(objectAttrs)
-        val args = translateArguments(infixedArgs._args)
-        ApplyGeneral(rel, args)
-      }
+      val rel = OMS(computeGlobalName(objectAttrs))
+      val args = translateArguments(infixedArgs._args)
+      val form = ApplyGeneral(rel, args)
+      if (antonymic.isDefined && antonymic.get) not(form) else form
     case Universal_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
@@ -173,7 +170,18 @@ object formulaTranslator {
     case FlexaryConjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       and(formulae)
-    case Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) => ???
+    case Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
+      val firstForm = translate_Formula(_relForm)
+      val (rel, negated) = firstForm match {
+        case ApplyGeneral(rel, List(arg1, arg2)) => (rel, false)
+        case not(ApplyGeneral(rel, List(arg1, arg2))) => (rel, true)
+      }
+      def nextRelat(rhsOfRF:RightSideOf_Relation_Formula) : Term => Term = {
+        val furtherArgs = translateArguments(rhsOfRF.infixedArgs._args)
+        def relFunc(a: Term, b: Term): Term = if (negated) not(ApplyGeneral(rel, List(a, b))) else ApplyGeneral(rel, List(a, b))
+        furtherArgs.foldLeft(_)(relFunc(_, _))
+      }
+      _rhsOfRFs.foldRight(firstForm)(nextRelat(_)(_))
   }
   def translate_Existential_Quantifier_Formula(vars:Context, expression:Term, assumptions: Option[Claim])(implicit args: Context): Term = vars.variables match {
     case Nil => assumptions match {
