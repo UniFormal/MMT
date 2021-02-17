@@ -2,7 +2,7 @@ package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
 
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, SemanticHighlightingServerCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, SemanticHighlightingServerCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
@@ -251,7 +251,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
                     ): CompletableFuture[util.List[Location]] = a_TD2.implementation(position)
 
   @JsonRequest("textDocument/hover")
-  def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = a_TD.hover(params)
+  def hover(params: HoverParams): CompletableFuture[Hover] = a_TD.hover(params)
 
   @JsonRequest("textDocument/documentHighlight")
   def documentHighlights(
@@ -270,6 +270,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
                   params: DocumentFormattingParams
                 ): CompletableFuture[util.List[TextEdit]] = a_TD2.formatting(params)
 
+
   @JsonRequest("textDocument/rename")
   def rename(
               params: RenameParams
@@ -285,7 +286,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
 
   @JsonRequest("textDocument/signatureHelp")
   def signatureHelp(
-                     params: TextDocumentPositionParams
+                     params: SignatureHelpParams
                    ): CompletableFuture[SignatureHelp] = a_TD.signatureHelp(params)
 
   @JsonRequest("textDocument/codeAction")

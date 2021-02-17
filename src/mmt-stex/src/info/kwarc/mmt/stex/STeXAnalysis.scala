@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex
-
+/*
 import info.kwarc.mmt.api.{Error, Level}
 import info.kwarc.mmt.api.archives._
 import info.kwarc.mmt.api.utils.{File, FilePath}
@@ -351,3 +351,5 @@ trait STeXAnalysis {
     }
   }
 }
+
+ */

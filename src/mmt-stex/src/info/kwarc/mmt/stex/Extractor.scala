@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex
-
+/*
 import info.kwarc.mmt.api._
 import symbols._
 import modules._
@@ -41,3 +41,5 @@ class sTeXExtractor extends RelationalExtractor {
     case _ => //do nothing
   }}
 }
+
+ */

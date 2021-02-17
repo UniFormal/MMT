@@ -1,22 +1,39 @@
 package info.kwarc.mmt.stex
 
-/**
-  * Created by maeder on 11.11.15.
-  */
+import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, TraversingBuildTarget, `export`, source}
+import info.kwarc.mmt.api.utils.File
 
-import java.util.regex.PatternSyntaxException
+class LaTeXToHTML extends TraversingBuildTarget {
+  val key = "stex-xhtml"
+  val inDim = source
+  val outDim = Dim("xhtml")
+  override val outExt = "xhtml"
 
-import info.kwarc.mmt.api.Level._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.utils.AnaArgs._
-import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, _}
-import info.kwarc.mmt.api.{ExtensionError, Level}
-import info.kwarc.mmt.stex.STeXUtils._
+  override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
-import scala.concurrent.duration._
-import scala.sys.process.{ProcessBuilder, ProcessLogger}
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    LaTeXML.initializeIfNecessary(controller)
+  }
+
+  override def buildFile(bf: BuildTask): BuildResult = {
+    log("building " + bf.inFile)
+    LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
+      case (i,ls) =>
+        bf.errorCont(new STeXError(ls.head,Some(ls.tail.mkString("\n")),Some(i)))
+    }
+    val doc = XHTML.parse(bf.outFile)
+    doc.get("div")(("","class","ltx_page_logo")).foreach(_.delete)
+    doc.get("div")(("","class","ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
+    doc.get("head")().head.add(XHTMLNode("","link",(("","rel"),"stylesheet"),(("","href"),"https://latex.now.sh/style.css")))
+    File.write(bf.outFile,doc.toString)
+    BuildResult.empty
+  }
+}
+
+
+
+/*
 
 /** common code for sms, latexml und pdf generation */
 abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
@@ -265,3 +282,5 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }
+
+ */

@@ -468,7 +468,12 @@ lazy val specware = (project in file("mmt-specware")).
 // plugin for reading stex. Originally developed by Mihnea, currently dormant but functional
 lazy val stex = (project in file("mmt-stex")).
   dependsOn(api).
-  settings(mmtProjectsSettings("mmt-stex"): _*)
+  settings(
+    mmtProjectsSettings("mmt-stex"),
+    libraryDependencies ++= Seq(
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
+    )
+  )
 
 // plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).

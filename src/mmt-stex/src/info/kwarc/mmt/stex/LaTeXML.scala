@@ -1,5 +1,118 @@
 package info.kwarc.mmt.stex
 
+import info.kwarc.mmt.api.Level
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.utils.{File, MMTSystem, OS, Windows}
+
+import scala.sys.process.{Process, ProcessLogger}
+
+object LaTeXML {
+  private var latexmlc_cmd = "latexmlc"
+  private var latexmls = "latexmls"
+  private var expire: Int = 0 // 600
+  private val delaySecs: Int = 1000
+  private val portDefault: Int = 3334
+  private var port: Int = 0 //portDefault
+  // private val portModulo: Int = 1000
+  // private var portSet: Boolean = false
+  // private var profile = "stex-smglom-module"
+  // private var profileSet: Boolean = false
+  // private val perl5lib = "perl5lib"
+  private var preloads: Seq[String] = Seq("LaTeX.pool")
+  private var paths: Seq[String] = Nil
+  private var includestyles = true
+  private var initialized = false
+  // private var reboot: Boolean = false
+  // private var nopost: Boolean = false
+
+  def latexmlc(in: File, out: File, log_out : Option[String => Unit] = None,log_err : Option[String => Unit] = None) = {
+    var args = List("--dest=" + out.toString, in.toString)
+    if (expire != 0) args ::= "--expire=" + expire.toString
+    if (port != 0) args ::= "--port=" + port.toString
+    preloads.foreach(args ::= "--preload=" + _)
+    if (includestyles) args ::= "--includestyles"
+    val log = (log_out,log_err) match {
+      case (None,None) => None
+      case (o,e) => Some(ProcessLogger(o.getOrElse(_ => ()),e.getOrElse(_ => ())))
+    }
+    val (_,_,errStrs) = runCmd(latexmlc_cmd, args.reverse: _*)(Some(in.up),log)
+    errStrs.foldRight(Nil : List[(Int,List[String])]){(s, ls) =>
+      if (s.startsWith("Warning:")) {
+        (Level.Warning,s.drop(8) :: Nil) :: ls
+      } else if (s.startsWith("Error:")) {
+        (Level.Error,s.drop(6) :: Nil) :: ls
+      } else if (s.startsWith("Info:")) {
+        (Level.Info,s.drop(5) :: Nil) :: ls
+      } else if (s.startsWith("\t")) ls match {
+        case (i,err) :: rest =>
+          (i, s.drop(1) :: err) :: rest
+        case _ =>
+          ls
+      } else ls
+    }.map{case (i,ls) => (i,ls.reverse)}.reverse
+  }
+
+  def runCmd(cmd: String, args: String*)(in: Option[File] = None, log: Option[ProcessLogger] = None) = {
+    val process = Process(cmd + args.mkString(" ", " ", ""), in.map(_.toJava))
+    var out: List[String] = Nil
+    var err: List[String] = Nil
+    val logger = ProcessLogger(s => {out ::= s; log.foreach(_.out(s))}, {s => err ::= s; log.foreach(_.err(s))})
+    val exitcode = process.!(logger)
+    (exitcode, out, err)
+  }
+
+  def which(cmd: String) = {
+    val cmdres = OS.detect match {
+      case Windows => runCmd("for", "%i in (" + cmd + ".exe) do @echo.")()
+      case _ => runCmd("which", cmd)()
+    }
+    cmdres match {
+      case (0, s, _) if s.nonEmpty =>
+        Some(s.head)
+      case _ =>
+        None
+    }
+  }
+
+  def initialize(controller: Controller) {
+    initialized = true
+    controller.getEnvVar("LATEXMLC") match {
+      case Some(s) =>
+        latexmlc_cmd = s
+      case None =>
+        which("latexmlc").foreach(latexmlc_cmd = _)
+    }
+  }
+  def initializeIfNecessary(controller: Controller) = if (!initialized) initialize(controller)
+}
+
+/*    val (_, nonOpts) = splitOptions(remainingStartArguments)
+    optionsMap.get("latexmlc").foreach { s =>
+      if (nameOfExecutable.nonEmpty) {
+        logError("executable overwritten by --latexmlc")
+      }
+      nameOfExecutable = s.getStringVal
+    }
+    val nonOptArgs = if (nameOfExecutable.isEmpty) nonOpts else nameOfExecutable :: nonOpts
+    latexmlc = getFromFirstArgOrEnvvar(nonOptArgs, "LATEXMLC", latexmlc)
+    latexmls = optionsMap.get("latexmls").map(v => Some(v.getStringVal)).getOrElse(controller.getEnvVar("LATEXMLS")).
+      getOrElse(latexmls)
+    expire = getArg("expire", optionsMap).getOrElse(expire.toString).toInt
+    val newPort = getArg("port", optionsMap)
+    portSet = newPort.isDefined
+    port = newPort.getOrElse(port.toString).toInt
+    val newProfile = getArg("profile", optionsMap)
+    profileSet = newProfile.isDefined
+    profile = newProfile.getOrElse(profile)
+    preloads = getStringList(optionsMap, "preload") ++
+      controller.getEnvVar("LATEXMLPRELOADS").getOrElse("").split(" ").filter(_.nonEmpty)
+    paths = getStringList(optionsMap, "path") ++
+      controller.getEnvVar("LATEXMLPATHS").getOrElse("").split(" ").filter(_.nonEmpty)
+    reboot = optionsMap.contains("reboot")
+    if (reboot) expire = 1
+    nopost = optionsMap.contains("nopost") */
+
+/*
 import java.net.{BindException, ServerSocket}
 import java.nio.file.Files
 
@@ -719,3 +832,4 @@ class TikzSvg extends PdfLatex
     getDirFilesByExt(a, srcDir, toBeCleanedExts).foreach(deleteWithLog)
   }
 }
+ */
