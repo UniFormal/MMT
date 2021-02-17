@@ -24,6 +24,7 @@ stex-omdoc info.kwarc.mmt.stex.STeXImporter
 alltex     info.kwarc.mmt.stex.AllTeX
 allpdf     info.kwarc.mmt.stex.AllPdf
 localpaths info.kwarc.mmt.stex.LocalPaths
+stex-xhtml info.kwarc.mmt.stex.LaTeXToHTML
 
 dummy     info.kwarc.mmt.api.archives.DummyBuildTarget
 
