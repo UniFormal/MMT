@@ -2,6 +2,7 @@ package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, TraversingBuildTarget, `export`, source}
 import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.stex.xhtml.{XHTML, XHTMLNode}
 
 class LaTeXToHTML extends TraversingBuildTarget {
   val key = "stex-xhtml"
@@ -22,10 +23,11 @@ class LaTeXToHTML extends TraversingBuildTarget {
       case (i,ls) =>
         bf.errorCont(new STeXError(ls.head,Some(ls.tail.mkString("\n")),Some(i)))
     }
-    val doc = XHTML.parse(bf.outFile)
+    import XHTML.Rules._
+    val doc = XHTML.parse(bf.outFile).head
     doc.get("div")(("","class","ltx_page_logo")).foreach(_.delete)
     doc.get("div")(("","class","ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
-    doc.get("head")().head.add(XHTMLNode("","link",(("","rel"),"stylesheet"),(("","href"),"https://latex.now.sh/style.css")))
+    doc.get("head")().head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
     File.write(bf.outFile,doc.toString)
     BuildResult.empty
   }

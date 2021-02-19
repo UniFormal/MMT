@@ -10,6 +10,61 @@ import informal._
 import utils._
 import metadata._
 import uom.OMLiteral.OMSTR
+
+object STeX {
+  val doc = DPath(URI.http colon "mathhub.info") / "smglom"
+  import info.kwarc.mmt.api.objects.Conversions._
+  val prop = (doc / "logic") ? "Propositions" ? "Proposition"
+  object Forall {
+    val path = (doc / "logic") ? "UniversalQuantifier" ? "Forall"
+    def apply(x : LocalName,tp : Option[Term], tm : Term) : OMBINDC = tm match {
+      case Forall(ctx2,bd) =>
+        OMBIND(OMS(path),ctx2 ++ (if (tp.isDefined) x%tp.get else VarDecl(x)),bd)
+      case _ =>
+        OMBIND(OMS(path),Context(VarDecl(x,None,tp,None,None)),tm)
+    }
+    def apply(ctx : Context,tm : Term) : OMBINDC = tm match {
+      case Forall(ctx2,bd) =>
+        OMBIND(OMS(path),ctx2 ++ ctx,bd)
+      case _ =>
+        OMBIND(OMS(path),ctx,tm)
+    }
+    def unapply(tm : Term) : Option[(Context,Term)] = tm match {
+      case OMBIND(OMS(`path`),ctx,bd) if ctx.nonEmpty =>
+        unapply(bd) match {
+          case Some((ctx2,bd2)) =>
+            Some(ctx2 ++ ctx,bd2)
+          case _ => Some(ctx,bd)
+        }
+      case _ => None
+    }
+  }
+  object Exists {
+    val path = (doc / "logic") ? "ExistentialQuantifier" ? "Exists"
+    def apply(x : LocalName,tp : Option[Term], tm : Term) : OMBINDC = tm match {
+      case Exists(ctx2,bd) =>
+        OMBIND(OMS(path),ctx2 ++ (if (tp.isDefined) x%tp.get else VarDecl(x)),bd)
+      case _ =>
+        OMBIND(OMS(path),Context(VarDecl(x,None,tp,None,None)),tm)
+    }
+    def apply(ctx : Context,tm : Term) : OMBINDC = tm match {
+      case Exists(ctx2,bd) =>
+        OMBIND(OMS(path),ctx2 ++ ctx,bd)
+      case _ =>
+        OMBIND(OMS(path),ctx,tm)
+    }
+    def unapply(tm : Term) : Option[(Context,Term)] = tm match {
+      case OMBIND(OMS(`path`),ctx,bd) if ctx.nonEmpty =>
+        unapply(bd) match {
+          case Some((ctx2,bd2)) =>
+            Some(ctx2 ++ ctx,bd2)
+          case _ => Some(ctx,bd)
+        }
+      case _ => None
+    }
+  }
+}
+
 /*
 
 object sTeXMetaData {
