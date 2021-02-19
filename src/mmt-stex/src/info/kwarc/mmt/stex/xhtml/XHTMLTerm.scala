@@ -2,7 +2,7 @@ package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.notations.TextNotation
+import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.{ContentPath, LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMID, OMMOD, OMS, OMV, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
@@ -12,6 +12,7 @@ import info.kwarc.mmt.stex.STeX
 import scala.xml.{Elem, Node}
 
 object XHTMLTerm {
+  def notation(s : String) = if (s.isEmpty) NotationContainer(None) else NotationContainer(Some(TextNotation.parse(s,NamespaceMap.empty)))
   val theorem_rule = XHTMLRule({case (e : Elem,parent,rules) if (e.label == "span" || e.label=="div") && e.attributes.asAttrMap.get("property").contains("stex:theorem") => new XHTMLTheorem(e,parent)(rules)})
   val vardecl_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "script" && e.attributes.asAttrMap.get("property").contains("stex:vardecl") => new XHTMLVarDecl(e,parent)(rules)})
   val oma_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "span" && e.attributes.asAttrMap.get("property").contains("stex:OMA") => new XHTMLOMA(e,parent)(rules)})
@@ -19,8 +20,9 @@ object XHTMLTerm {
   val omid_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "span" && e.attributes.asAttrMap.get("property").contains("stex:OMID") => new XHTMLOMID(e,parent)(rules)})
   val arg_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "span" && e.attributes.asAttrMap.get("property").contains("stex:arg") => new XHTMLStexArg(e,parent)(rules)})
   val theory_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "div" && e.attributes.asAttrMap.get("property").contains("stex:theory") => new XHTMLTheory(e,parent)(rules)})
+  val tref_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "span" && e.attributes.asAttrMap.get("property").contains("stex:tref") => new XHTMLTref(e,parent)(rules)})
 
-  implicit val rules : List[XHTMLRule] = List(theory_rule,theorem_rule,vardecl_rule,oma_rule,omv_rule,omid_rule,arg_rule) ::: XHTML.Rules.defaultrules
+  implicit val rules : List[XHTMLRule] = List(theory_rule,theorem_rule,vardecl_rule,oma_rule,omv_rule,omid_rule,tref_rule,arg_rule) ::: XHTML.Rules.defaultrules
 }
 
 abstract class XHTMLOmdocElement(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLElem(e,iparent) {
@@ -68,7 +70,7 @@ abstract class XHTMLDecl(e : Elem,iparent : Option[XHTMLNode])(implicit rules : 
 abstract class XHTMLTerm(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLOmdocElement(e,iparent) {
   def toTerm : Term
 }
-trait HasHeadSymbol extends XHTMLTerm {
+trait HasHeadSymbol extends XHTMLElem {
   def head : ContentPath
 }
 
@@ -97,10 +99,11 @@ class XHTMLVarDecl(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[X
     case _ =>
       ???
   }
-  override def name = LocalName(vdnode.attributes.getOrElse(("","name"),{
+  override def path = Path.parseS(vdnode.attributes.getOrElse(("","path"),{
     print("")
     ???
   }))
+  override def name = path.name
   def notation = vdnode.attributes.getOrElse(("","notation"),name.toString)
   def universal = vdnode.attributes.get(("","quantified")) match {
     case Some("universal") => Some(true)
@@ -114,7 +117,12 @@ class XHTMLVarDecl(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[X
           Obj.parseTerm(tpN.node,NamespaceMap.empty)
       }
   }.flatten
-  def toDeclaration = ???
+  def toDeclaration = {
+    val c = Constant(OMMOD(path.module),name,Nil,tp,None,Some("variable"),XHTMLTerm.notation(notation))
+    if (universal.contains(true) || universal.isEmpty) c.metadata.update(STeX.meta_quantification,OMS(STeX.Forall.path))
+    else c.metadata.update(STeX.meta_quantification,OMS(STeX.Exists.path))
+    c
+  }
   def vardecl = VarDecl(name,None,tp,None,if (notation.isEmpty) None else Some(TextNotation.parse(notation,NamespaceMap.empty)))
 }
 class XHTMLStexArg(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLOmdocElement(e,iparent) {
@@ -124,10 +132,11 @@ trait XHTMLComplexTerm extends XHTMLTerm with HasHeadSymbol {
   def head = Path.parseMS(attributes(("","resource")),NamespaceMap.empty)
   sealed trait SubElem {val elem : XHTMLNode}
   case class TextElem(elem : XHTMLNode) extends SubElem
-  case class SemanticElem(elem : XHTMLTerm) extends SubElem
+  case class SemanticElem(elem : XHTMLNode) extends SubElem
 
   protected def deconstruct(o : XHTMLNode) : List[SubElem] = o.children.flatMap {
     case e : XHTMLTerm => List(SemanticElem(e))
+    case e : HasHeadSymbol => List(SemanticElem(e))
     case o if o.isEmpty => Nil
     case o if semanticChildrenI(o).isEmpty => List(TextElem(o))
     case o => deconstruct(o)
@@ -156,10 +165,23 @@ class XHTMLOMA(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTML
   def toTerm = OMA(OMID(head),args)
 }
 class XHTMLOMV(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLTerm(e,iparent) {
-  var name = LocalName(attributes(("","resource")))
+  def vardecl = iterateUp(this)
+  private def iterateUp(e : XHTMLNode) : Option[VarDecl] = e.get(classOf[XHTMLVarDecl]).collectFirst{
+    case vd if vd.name == name => vd.vardecl
+  } match {
+    case Some(vd) => Some(vd)
+    case _ if e.parent.isDefined => iterateUp(e.parent.get)
+    case _ => None
+  }
+  var path = Path.parseS(attributes(("","resource")))
+  def name = path.name
   def toTerm = OMV(name)
 }
 class XHTMLOMID(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLTerm(e,iparent) with HasHeadSymbol {
   var head = Path.parseMS(attributes(("","resource")),NamespaceMap.empty)
   def toTerm = OMID(head)
+}
+
+class XHTMLTref(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLElem(e,iparent) with HasHeadSymbol {
+  var head = Path.parseMS(attributes(("","resource")),NamespaceMap.empty)
 }

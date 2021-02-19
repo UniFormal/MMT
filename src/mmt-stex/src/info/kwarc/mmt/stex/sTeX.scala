@@ -13,6 +13,8 @@ import uom.OMLiteral.OMSTR
 
 object STeX {
   val doc = DPath(URI.http colon "mathhub.info") / "smglom"
+  val metadata = doc ? "MetaData"
+  val meta_quantification = metadata ? "quantification"
   import info.kwarc.mmt.api.objects.Conversions._
   val prop = (doc / "logic") ? "Propositions" ? "Proposition"
   object Forall {

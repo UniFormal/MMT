@@ -2,10 +2,10 @@ package info.kwarc.mmt.stex.demo
 
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{ContentPath, DPath, DefComponent, GlobalName, LocalName, NamespaceMap}
+import info.kwarc.mmt.api.{ContentPath, DPath, DefComponent, GlobalName, LocalName, NamespaceMap, Path}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
-import info.kwarc.mmt.api.objects.{OMA, OMBIND, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMA, OMBIND, OMS, Term, VarDecl}
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, AlignmentTranslation, LinkTranslation, TranslationGroup, TranslationTarget}
 import info.kwarc.mmt.api.symbols.Constant
@@ -14,26 +14,25 @@ import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Typed}
 import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.{InformalMathMLPresenter, STeX}
-import info.kwarc.mmt.stex.xhtml.{HasHeadSymbol, XHTML, XHTMLDecl, XHTMLNode, XHTMLSidebar, XHTMLTerm, XHTMLTheorem, XHTMLTheory, XHTMLVarDecl}
+import info.kwarc.mmt.stex.xhtml.{HasHeadSymbol, XHTML, XHTMLDecl, XHTMLNode, XHTMLOMV, XHTMLSidebar, XHTMLTerm, XHTMLTheorem, XHTMLTheory, XHTMLVarDecl}
 
 import scala.xml.NodeSeq
 
 class DemoServer extends ServerExtension("stexdemo") {
   private var initialized = false
   object Content {
-    def notation(s : String) = NotationContainer(Some(TextNotation.parse(s,NamespaceMap.empty)))
     lazy val th_nat = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("NaturalNumbers"),None)
-    lazy val c_nat = Constant(th_nat.toTerm,LocalName("NaturalNumbers"),Nil,None,None,None,notation("ℕ"))
+    lazy val c_nat = Constant(th_nat.toTerm,LocalName("NaturalNumbers"),Nil,None,None,None,XHTMLTerm.notation("ℕ"))
     lazy val th_logic = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "logic",LocalName("Implication"),None)
-    lazy val c_impl = Constant(th_logic.toTerm,LocalName("Implication"),Nil,None,None,None,notation("1 ⟹ 2 prec 10"))
+    lazy val c_impl = Constant(th_logic.toTerm,LocalName("Implication"),Nil,None,None,None,XHTMLTerm.notation("1 ⟹ 2 prec 10"))
     lazy val th_div = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Divisibility"),None)
-    lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,None,None,None,notation("even( 1 ) prec -20"))
+    lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,None,None,None,XHTMLTerm.notation("even( 1 ) prec 50"))
     lazy val th_exp = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Exponentiation"),None)
-    lazy val c_square = Constant(th_exp.toTerm,LocalName("square"),Nil,None,None,None,notation("1 ² prec 1"))
+    lazy val c_square = Constant(th_exp.toTerm,LocalName("square"),Nil,None,None,None,XHTMLTerm.notation("1 ² prec 70"))
     lazy val th_forall = Theory(STeX.Forall.path.module.parent,STeX.Forall.path.module.name,None)
-    lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,notation("∀ V1,… . 2 prec -20"))
+    lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLTerm.notation("∀ V1,… . 2 prec -20"))
     lazy val th_exists = Theory(STeX.Exists.path.module.parent,STeX.Exists.path.module.name,None)
-    lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,notation("∃ V1,… . 2 prec -20"))
+    lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLTerm.notation("∃ V1,… . 2 prec -20"))
 
     lazy val trl_nat = new AcrossLibraryTranslation {
       val tmm = c_nat.toTerm
@@ -146,7 +145,7 @@ class DemoServer extends ServerExtension("stexdemo") {
   def doMainHeader(doc : XHTMLNode): Unit = {
     val p = XHTML.empty
     val head = doHeader(doc)
-
+/*
     (  <script type="text/javascript" src="script/jquery/jquery.js">{p}</script>
         <link rel="stylesheet" type="text/css" href="css/bootstrap-jobad/css/bootstrap.less.css"/>
         <link rel="stylesheet" type="text/css" href="css/mmt.css" />
@@ -168,6 +167,7 @@ class DemoServer extends ServerExtension("stexdemo") {
       <script type="text/javascript" src="script/jobad/modules/hovering.js">{p}</script>
       <script type="text/javascript" src="script/jobad/modules/interactive-viewing.js">{p}</script>
       <script type="text/javascript" src="script/mmt/browser.js">{p}</script>).toList.foreach(head.add(_))
+ */
 
     head.add(<style>{scala.xml.Text(""".stexoverlay {
                                       |  position:absolute;
@@ -187,61 +187,6 @@ class DemoServer extends ServerExtension("stexdemo") {
                                       |}""".stripMargin)}</style>)
   }
 
-  override def apply(request: ServerRequest): ServerResponse = try {
-    import info.kwarc.mmt.stex.xhtml.XHTMLTerm._
-    initialize
-
-    if(request.path.contains("overlay")) {
-      request.query match {
-        case "" =>
-          ???
-        case s =>
-          val filecontent = XHTML.applyString(getFragment(s)).head
-          doHeader(filecontent)
-          val body = filecontent.get("body")().head
-          body.attributes(("","style")) = "margin:0;padding:0;"
-          val doc = body.get("div")(("","class","ltx_page_main")).head
-          doc.attributes(("","style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
-          doc.get("div")().foreach {e =>
-            if (e.attributes.get(("","class")).exists(_.contains("ltx_theorem"))) {
-              e.attributes(("","style")) = "margin:0;"
-            }
-          }
-          return ServerResponse(filecontent.toString, "html")
-      }
-    }
-
-    val filecontent = XHTML.applyString(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml")).head
-    doMainHeader(filecontent)
-
-    filecontent.iterate{
-      case thm : XHTMLTheory =>
-        thm.toModule(controller)
-        thm.add(XHTMLSidebar(thm.path.toString,scala.xml.Text("Theory: " + thm.name.toString)),thm.children.headOption)
-      case thm : XHTMLTheorem =>
-        val c = thm.toDeclaration
-        controller add c
-        val sb = List(scala.xml.Text("Theorem " + thm.name.toString + "\n"),presenter.asXML(c.df.get,Some(c.path $ DefComponent)))
-        thm.add(XHTMLSidebar(thm.path.toString,sb:_*),None)
-      case v : XHTMLVarDecl =>
-        val is = List(if ((v.universal contains true) || v.universal.isEmpty) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)"))
-        val seq = scala.xml.Text("Variable ") :: presenter.asXML(v.vardecl,None) :: is
-        v.parent.foreach(_.add(XHTMLSidebar(v.name.toString,seq :_*),Some(v)))
-      case _ =>
-    }
-    filecontent.iterate{
-      case t : HasHeadSymbol =>
-        t.addOverlay("/:" + this.pathPrefix + "/overlay?" + t.head.toString)
-      case _ =>
-    }
-
-    ServerResponse(filecontent.toString, "html")
-  } catch {
-    case t : Throwable =>
-      print("")
-      throw t
-  }
-
   def getFragment(s:String) : String = MMTSystem.getResourceAsString("mmt-web" + (s match {
     case _ if s == Content.c_nat.path.toString =>
       "/stex/demo/naturalnumbers.en.xhtml"
@@ -253,6 +198,117 @@ class DemoServer extends ServerExtension("stexdemo") {
       "/stex/demo/square.en.xhtml"
     case _ => "missing"
   }))
-    //xhtml.get("div")(("","class","ltx_document")).head.children.map(_.node)
+
+  def doFragment(uri : String) = {
+    import info.kwarc.mmt.stex.xhtml.XHTML.Rules._
+    val filecontent = XHTML.applyString(getFragment(uri)).head
+    doHeader(filecontent)
+    val body = filecontent.get("body")().head
+    body.attributes(("","style")) = "margin:0;padding:0;"
+    val doc = body.get("div")(("","class","ltx_page_main")).head
+    doc.attributes(("","style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
+    doc.get("div")().foreach {e =>
+      if (e.attributes.get(("","class")).exists(_.contains("ltx_theorem"))) {
+        e.attributes(("","style")) = "margin:0;"
+      }
+    }
+    ServerResponse(filecontent.toString, "html")
+  }
+
+  def getDocument(uri : String) : String = uri match {
+    case "http://mathhub.info/fomtex/demo.xhtml" =>
+      MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml")
+    case _ => ???
+  }
+
+  def doDocument(uri : String) = {
+    import info.kwarc.mmt.stex.xhtml.XHTMLTerm._
+
+    val filecontent = XHTML.applyString(getDocument(uri)).head
+    doMainHeader(filecontent)
+
+    filecontent.iterate {
+      case thm: XHTMLTheory =>
+        thm.toModule(controller)
+        thm.add(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)), thm.children.headOption)
+      case thm: XHTMLTheorem =>
+        val c = thm.toDeclaration
+        controller add c
+        val sb = List(scala.xml.Text("Theorem " + thm.name.toString + "\n"), presenter.asXML(c.df.get, Some(c.path $ DefComponent)))
+        thm.add(XHTMLSidebar(thm.path.toString, sb: _*), None)
+      case v: XHTMLVarDecl =>
+        controller add v.toDeclaration
+        val is = List(if ((v.universal contains true) || v.universal.isEmpty) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)"))
+        val seq = scala.xml.Text("Variable ") :: presenter.asXML(v.vardecl, None) :: is
+        v.parent.foreach(_.add(XHTMLSidebar(v.name.toString, seq: _*), Some(v)))
+      case _ =>
+    }
+    filecontent.iterate {
+      case t: HasHeadSymbol =>
+        t.addOverlay("/:" + this.pathPrefix + "/fragment?" + t.head.toString)
+      case v : XHTMLOMV =>
+        v.addOverlay("/:" + this.pathPrefix + "/declaration?" + v.path)
+      case _ =>
+    }
+    ServerResponse(filecontent.toString, "html")
+  }
+
+  def doDeclaration(s : String) = {
+    val path = Path.parseS(s)
+    val c = controller.getConstant(path)
+    val header = """<!DOCTYPE html>
+                   |<html xmlns="http://www.w3.org/1999/xhtml"
+                   |  xmlns:om="http://www.openmath.org/OpenMath"
+                   |  xmlns:stex="http://www.mathhub.info"
+                   |  xmlns:ml="http://www.w3.org/1998/Math/MathML">
+                   |<head></head>
+                   |<body>""".stripMargin
+    val content = c.rl match {
+      case Some("variable") =>
+        "Variable: " + presenter.asXML(VarDecl(c.name,None,c.tp,None,c.not),None) + {
+          c.metadata.getValues(STeX.meta_quantification) match {
+            case List(OMS(STeX.Forall.path)) => " (universally quantified)"
+            case List(OMS(STeX.Exists.path)) => " (existentially quantified)"
+            case _ => ""
+          }
+        }
+      case _ =>
+        ???
+    }
+    val footer = "</body>\n</html>"
+    ServerResponse(header + content + footer, "html")
+  }
+
+  override def apply(request: ServerRequest): ServerResponse = try {
+    initialize
+    request.path.lastOption match {
+      case Some("fragment") =>
+        request.query match {
+          case "" =>
+            ???
+          case s => doFragment(s)
+        }
+      case Some("document") =>
+        request.query match {
+          case "" =>
+            ???
+          case s =>
+            doDocument(s)
+        }
+      case Some("declaration") =>
+        request.query match {
+          case "" =>
+            ???
+          case s =>
+            doDeclaration(s)
+        }
+      case _ => ServerResponse(MMTSystem.getResourceAsString("/mmt-web/stex/demo/index.html"),"html")
+    }
+  } catch {
+    case t : Throwable =>
+      print("")
+      throw t
+  }
+
 
 }

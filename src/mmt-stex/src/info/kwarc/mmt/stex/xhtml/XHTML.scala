@@ -148,17 +148,18 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
     get(matches)
   }
   protected def get(matches : XHTMLNode => Boolean) : List[XHTMLNode] = children.filter(matches) ::: children.flatMap(_.get(matches))
-
-  def addOverlay(url : String): Unit = {
-    val top = new XHTMLElem(<span style="position:relative;"></span>,None)
-    val overlay = new XHTMLElem(<span class="stexoverlay"><iframe src={url} width="100%" style="margin:0%; padding:0%; display:block;">{XHTML.empty}</iframe></span>,None)
+  def addOverlay(nodes:Node*): Unit = {
+    val top = new XHTMLElem(<span style="position:relative"></span>,None)
+    val overlay = new XHTMLElem(<span class="stexoverlay">{nodes}</span>,None)
     val container = new XHTMLElem(<span class="stexoverlaycontainer"></span>,None)
     top.add(container,None)
     top.add(overlay,None)
     parent.foreach(_.add(top,Some(this)))
     this.delete
     container.add(this,None)
+
   }
+  def addOverlay(url : String): Unit = addOverlay(<iframe src={url} width="100%" style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)">{XHTML.empty}</iframe>)
 
   def isEmpty : Boolean = children.isEmpty || children.forall(_.isEmpty)
 }
@@ -192,5 +193,5 @@ class XHTMLDocument(e : Elem)(implicit rules : List[XHTMLRule]) extends XHTMLEle
 
 case class XHTMLSidebar(id:String,ls:Node*)(implicit rules : List[XHTMLRule]) extends XHTMLElem(
   Elem(null,"span",XHTMLNode.makeAttributes(),scala.xml.TopScope,true,
-    (<label for={id} class="sidenote-toggle">{XHTML.empty}</label><input type="checkbox" id={id} class="sidenote-toggle" /><span class="sidenote">{ls}</span>) :_*),
+    (<label for={id} class="sidenote-toggle">{XHTML.empty}</label><input type="checkbox" id={id} class="sidenote-toggle"/><span class="sidenote">{ls}</span>) :_*),
   None)
