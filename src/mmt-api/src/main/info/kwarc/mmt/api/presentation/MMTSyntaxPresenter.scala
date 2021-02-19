@@ -373,9 +373,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
       typeElements ::: definiensElements ::: roleElements ::: aliasElements ::: notationElements ::: metadataElements
 
     // present all elements
-    if (c.name.length >1) {
-      rh("constant "+c.name.toString)
-    } else rh(c.name.toString)
+    rh(c.name.toString)
     //rh(c.name.last.toString)
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>

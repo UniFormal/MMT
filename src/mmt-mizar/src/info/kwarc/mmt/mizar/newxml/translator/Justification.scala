@@ -39,4 +39,18 @@ object justificationTranslator {
     }
     (claim, prf)
   }
+  def usedInJustification(just: Justification): List[Term] = just match {
+    case Straightforward_Justification(pos, _refs) => Nil
+    case Block(kind, pos, _items) =>_items.map(_._subitem) flatMap {
+      case st: Statement =>
+        val (claim, prf) = (translate_Claim(st.prfClaim._claim), st.prfClaim._just)
+        claim::prf.map(usedInJustification).getOrElse(Nil)
+      case ex: Exemplification => Nil //TODO: translate
+      case Assumption(ass) => Nil //Since they already need to be known
+      case red: Reduction => Nil//TODO: translate this to something
+      case id : Identify => Nil
+      case gen: Generalization => Nil
+    }
+    case Scheme_Justification(position, nr, idnr, schnr, spelling, _refs) =>_refs.map(r => OMS(r.referencedLabel()))
+  }
 }

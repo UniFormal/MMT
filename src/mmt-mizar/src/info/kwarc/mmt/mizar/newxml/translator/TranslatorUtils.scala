@@ -26,8 +26,8 @@ case class DeclarationTranslationError(str: String, decl: Subitem) extends Decla
   }
 }
 class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
-case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends ObjectLevelTranslationError(str+
-  "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString, prfedClaim)
+case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends TranslatingError(str+
+  "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString)
 case class PatternTranslationError(str: String, pat: Patterns) extends ObjectLevelTranslationError(str+
   "\nPatternClaimTranslationError while translating the pattern with spelling "+pat.patternAttrs.spelling+": "+pat.toString, pat)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+

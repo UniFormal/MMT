@@ -119,7 +119,9 @@ object Mizar {
 
   object proof extends UnaryLFConstantScala(ProofsTh, "proof")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
+  object Exemplification extends BinaryLFConstantScala(MizarTh, "proofByExample")
   def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
+  def exemplification(tp: Term, tm: Term) = Exemplification(tp, tm)
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")

@@ -242,7 +242,7 @@ object contextTranslator {
 
 object claimTranslator {
   def translate_Claim(claim:Claim)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = claim match {
-    case Assumption(_ass) => translate_Assumption(_ass)
+    //case Assumption(_ass) => translate_Assumption(_ass)
     case ass: Assumptions => translate_Assumption(ass)
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
