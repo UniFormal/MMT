@@ -12,6 +12,7 @@ import proving._
 import parser.ParseResult
 
 import scala.collection.mutable.HashSet
+import scala.runtime.NonLocalReturnControl
 
 /* ideas
  * inferType should guarantee well-formedness (what about LambdaTerm?)
@@ -69,6 +70,30 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
     */
    protected object state {
       // stateful fields
+
+     /**
+      * For cycle detection in solveEquality
+      */
+
+     private var solveEqualityStack : List[Equality] = Nil
+     object SolveEqualityStack {
+       def apply(j : Equality)(a : => Boolean): Boolean = try {
+         if (solveEqualityStack contains j) {
+           log("Cycle in solveEquality!")
+           return false
+         }
+         solveEqualityStack ::= j
+         val ret = a
+         assert(solveEqualityStack.head == j)
+         solveEqualityStack = solveEqualityStack.tail
+         ret
+       } catch {
+         case rc : NonLocalReturnControl[Boolean@unchecked] =>
+           assert(solveEqualityStack.head == j)
+           solveEqualityStack = solveEqualityStack.tail
+           rc.value
+       }
+     }
 
       /** tracks the solution, initially equal to unknowns, then a definiens is added for every solved variable */
       private var _solution : Context = initUnknowns
@@ -149,7 +174,8 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
       private def mutable = pushedStates.isEmpty
       /** the state that is stored here for backtracking */
       private case class StateData(solutions: Context, bounds: ListMap[LocalName,List[TypeBound]],
-                                   dependencies: List[CPath], delayed: List[DelayedConstraint], allowDelay: Boolean, allowSolving: Boolean) {
+                                   dependencies: List[CPath], delayed: List[DelayedConstraint],solveEqualityStack : List[Equality] = Nil,
+                                   allowDelay: Boolean, allowSolving: Boolean) {
          var delayedInThisRun: List[DelayedConstraint] = Nil
       }
       /** a stack of states for dry runs */
@@ -164,7 +190,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
        * all state changes are rolled back unless evaluation is successful and commitOnSuccess is true
        */
       def immutably[A](allowDelay: Boolean, allowSolving: Boolean, commitOnSuccess: A => Boolean)(a: => A): DryRunResult = {
-         val tempState = StateData(solution, _bounds, dependencies, _delayed, allowDelay, allowSolving)
+         val tempState = StateData(solution, _bounds, dependencies, _delayed, solveEqualityStack, allowDelay, allowSolving)
          pushedStates ::= tempState
          def rollback {
             val oldState = pushedStates.head
@@ -173,6 +199,7 @@ class Solver(val controller: Controller, val checkingUnit: CheckingUnit, val rul
             _bounds = oldState.bounds
             _dependencies = oldState.dependencies
             _delayed = oldState.delayed
+           solveEqualityStack = oldState.solveEqualityStack
          }
          try {
            val aR = a

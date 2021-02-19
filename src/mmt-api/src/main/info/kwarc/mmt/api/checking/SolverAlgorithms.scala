@@ -1010,35 +1010,12 @@ trait SolverAlgorithms {self: Solver =>
   // *** auxiliary functions for solving
   // ******************************************************************************************
 
-  /**
-    * For cycle detection in solveEquality
-    */
-  private object SolveEqualityStack {
-    private var stack : List[Equality] = Nil
-    def apply(j : Equality)(a : => Boolean): Boolean = try {
-      if (stack contains j) {
-        log("Cycle in solveEquality!")
-        return false
-      }
-      stack ::= j
-      val ret = a
-      assert(stack.head == j)
-      stack = stack.tail
-      ret
-    } catch {
-      case rc : NonLocalReturnControl[Boolean@unchecked] =>
-        assert(stack.head == j)
-        stack = stack.tail
-        rc.value
-    }
-  }
-
    /** tries to solve an unknown occurring in tm1 in terms of tm2
     *
     *  returns true if the unknowns were solved and the equality proved
     *  otherwise, returns false without state change (returning false here does not signal that the equality is disproved)
     */
-   private def solveEquality(j: Equality)(implicit history: History): Boolean = SolveEqualityStack(j) {
+   private def solveEquality(j: Equality)(implicit history: History): Boolean = state.SolveEqualityStack(j) {
       implicit val stack = j.stack
      log("Solving " + j.present)
       j.tm1 match {

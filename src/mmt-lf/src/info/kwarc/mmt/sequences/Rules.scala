@@ -163,6 +163,8 @@ object IndexCompute extends ComputationRule(index.path) {
             Simplify(as(l.toInt))
           case _ => RecurseOnly(List(2))
         }
+      case OMS(gn) if solver.lookup.getConstant(gn).df.isDefined => // hacky, but necessary if gn is defined as a sequence!
+        apply(solver)(Sequences.index(solver.lookup.getConstant(gn).df.get,at),covered)
       case s =>
         if ((nO contains OMS(one)) && at == NatLit(0)) {
           Simplify(s)
