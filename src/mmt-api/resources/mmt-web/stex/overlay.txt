@@ -1,0 +1,52 @@
+<style>
+	.stexoverlay {
+		position:absolute;
+		top:2em;
+		opacity:0;
+		width:0%;
+		height:0%;
+		margin:0%;
+		padding:0%;
+		display:block;
+		background-color:hsl(210, 20%, 98%);
+		transition: .5s ease;
+	}
+	.stexoverlaycontainer:hover {
+		background-color:yellow;
+	}
+	#stexMainOverlay {
+		
+	}
+</style>
+<script type="text/javascript">
+	function stexOverlayOn(id,url) {
+		var elem = document.getElementById(id);
+		elem.src = url;
+		elem.style.opacity = 1;
+		elem.style.width = "80ch";
+		elem.style.height= "30ch";
+	}
+	function stexOverlayOff(id) {
+		var elem = document.getElementById(id);
+		elem.src="";
+		elem.style.opacity = 0;
+		elem.style.width = "0%";
+		elem.style.height = "0%";
+	}
+	
+	function stexMainOverlayFade() {
+	  var iframe = document.getElementById("stexMainOverlay");
+		iframe.style.opacity = 1;
+		iframe.style.width = "80ch";
+		iiframe = document.getElementById("stexoverlayinner");
+		iiframe.style.width="100%";
+    iiframe.style.height = iiframe.contentWindow.document.documentElement.scrollHeight + 'px';
+    iframe.style.height = (iiframe.contentWindow.document.documentElement.scrollHeight + 70) + 'px';
+	}
+	function stexMainOverlayOn(url) {
+		document.getElementById("stexoverlayinner").src = url;
+		alert(content);
+		alert(escape(content));
+		stexMainOverlayFade();
+	}
+</script>

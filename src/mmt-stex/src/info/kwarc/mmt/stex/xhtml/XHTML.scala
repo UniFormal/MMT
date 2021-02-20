@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex.xhtml
 
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils.{File, XMLEscaping}
+import info.kwarc.mmt.api.utils.{File, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.{LocalName, NamespaceMap, Path}
 import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 import org.xml.sax.InputSource
@@ -14,41 +14,11 @@ import scala.xml.parsing.NoBindingFactoryAdapter
 case class XHTMLRule(f : PartialFunction[(Node,Option[XHTMLNode],List[XHTMLRule]),XHTMLNode])
 
 object XHTML {
-  val overlayHeader = {
-    <style>{scala.xml.Text(""".stexoverlay {
-                             |  position:absolute;
-                             |  top:2em;
-                             |  opacity:0;
-                             |  width:0%;
-                             |  height:0%;
-                             |  transition: .5s ease;
-                             |  transition-delay:1s;
-                             |}
-                             |.stexoverlaycontainer:hover {
-                             |  background-color:yellow;
-                             |}
-                             |span.stexoverlaycontainer:hover + span.stexoverlay {
-                             |  opacity: 1;
-                             |  width:80ch;
-                             |  height:100%;
-                             |  transition-delay:0s;
-                             |}""".stripMargin)}</style>
-  }
-  val overlayJS = {
-    <script type="text/javascript">{scala.xml.Text("""function overlayOn(id) {
-                                                     |  var elem = document.getElementById(id);
-                                                     |  elem.style.opacity = 1;
-                                                     |  elem.style.width = "80ch";
-                                                     |  elem.style.height = "100%";
-                                                     |  elem.style.transitionDelay = "0s";
-                                                     |}
-                                                     |function overlayOff(id) {
-                                                     |  var elem = document.getElementById(id);
-                                                     |  elem.style.opacity = 0;
-                                                     |  elem.style.width = "0%";
-                                                     |  elem.style.height = "0%";
-                                                     |  elem.style.transitionDelay = "1s";
-                                                     |}""".stripMargin)}</script>
+  def overlayHeader: List[XHTMLNode] = {
+    val full = applyString(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))(Rules.defaultrules)
+    val ret = full.head.get("head")().head.children
+    ret.foreach(_.delete)
+    ret
   }
 
   object Rules {
@@ -195,46 +165,54 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
   protected def get(matches : XHTMLNode => Boolean) : List[XHTMLNode] = children.filter(matches) ::: children.flatMap(_.get(matches))
 
   var overlayset = false
-  var jsoverlayset = false
 
-  def addOverlay(nodes:Node*): Unit = {
+  def addOverlay(url:String): Unit = {
     val t = this.top
     if (!t.overlayset) {
       t.overlayset = true
-      t.getHead.add(XHTML.overlayHeader)
+      val h = t.getHead
+      XHTML.overlayHeader.foreach(h.add(_,None))
+      val body = t.get("body")().head
+      body.children ::= new XHTMLElem(
+        <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid;position:fixed;top:10px">
+          <table style="width:80ch;height:100%">
+            <tr style="height:28px"><td style="text-align:right"><button onclick="stexOverlayOff('stexMainOverlay')">X</button></td></tr>
+            <tr width="100%" height="100%"><td><iframe id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();}" width="100%" height="100%"
+                            style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">{XHTML.empty}</iframe>
+            </td></tr>
+            </table>
+        </div>
+        ,Some(body))
     }
+    attributes(("","class")) = attributes.get(("","class")) match {
+      case Some(s) => s + " stexoverlaycontainer"
+      case _ => "stexoverlaycontainer"
+    }
+    val id = t.generateId
+    attributes(("","onmouseover")) = "stexOverlayOn('"+id+"','"+url+"')"
+    attributes(("","onmouseout")) = "stexOverlayOff('"+id+"')"
+    attributes(("","onmouseclick")) = "alert('" + url + "')"
+    val overlay = new XHTMLElem(<span style="position:relative">
+      <iframe src=" " class="stexoverlay" id={id}>{XHTML.empty}</iframe>
+    </span>,None)
     if (!ismath) {
-      val top = new XHTMLElem(<span style="position:relative"></span>,None)
-      val overlay = new XHTMLElem(<span class="stexoverlay">{nodes}</span>,None)
-      val container = new XHTMLElem(<span class="stexoverlaycontainer"></span>,None)
-      top.add(container,None)
-      top.add(overlay,None)
-      parent.foreach(_.add(top,Some(this)))
+      val p = parent.get
+      p.add(overlay,Some(this))
       this.delete
-      container.add(this,None)
+      p.add(this,Some(overlay))
+      print("")
     } else {
-      if (!t.jsoverlayset) {
-        t.jsoverlayset = true
-        t.getHead.add(XHTML.overlayJS)
-      }
-      attributes(("","class")) = attributes.get(("","class")) match {
-        case Some(s) => s + " stexoverlaycontainer"
-        case _ => "stexoverlaycontainer"
-      }
-      val id = t.generateId
-      val overlay = new XHTMLElem(<span class="stexoverlay" id={id}>{nodes}</span>,None)
       getNonMath.add(overlay,None)
-      attributes(("","onmouseover")) = "overlayOn('"+id+"')"
-      attributes(("","onmouseout")) = "overlayOff('"+id+"')"
+      print("")
     }
   }
+
   private var _id = 0
-  protected def generateId = {
+  def generateId = {
     _id += 1
     "stexelem" + (_id-1)
   }
   private def getNonMath : XHTMLNode = if (!ismath) this else parent.get.getNonMath
-  def addOverlay(url : String): Unit = addOverlay(<iframe src={url} width="100%" height="250ch" style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)">{XHTML.empty}</iframe>)
 
   def isEmpty : Boolean = children.isEmpty || children.forall(_.isEmpty)
 }
@@ -250,6 +228,51 @@ class XHTMLText(e : scala.xml.Text,parent : Option[XHTMLNode])(implicit rules : 
   override def node: scala.xml.Text = scala.xml.Text(text)
 
   override def isEmpty: Boolean = text.trim.isEmpty
+
+  override def addOverlay(url:String): Unit = {
+    val t = this.top
+    if (!t.overlayset) {
+      t.overlayset = true
+      val h = t.getHead
+      XHTML.overlayHeader.foreach(h.add(_, None))
+      val body = t.get("body")().head
+      body.children ::= new XHTMLElem(
+        <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid">
+          <table style="width:80ch;height:100%">
+            <tr style="height:28px">
+              <td style="text-align:right">
+                <button onclick="stexOverlayOff('stexMainOverlay')">X</button>
+              </td>
+            </tr>
+            <tr width="100%" height="100%">
+              <td>
+                <iframe id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();}" width="100%" height="100%"
+                        style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">
+                  {XHTML.empty}
+                </iframe>
+              </td>
+            </tr>
+          </table>
+        </div>
+        , Some(body))
+    }
+    val newthis = new XHTMLElem(<span></span>, None)
+    newthis.attributes(("", "class")) = "stexoverlaycontainer"
+    val id = t.generateId
+    newthis.attributes(("", "onmouseover")) = "stexOverlayOn('" + id + "','" + url + "')"
+    newthis.attributes(("", "onmouseout")) = "stexOverlayOff('" + id + "')"
+    newthis.attributes(("", "onmouseclick")) = "alert('" + url + "')"
+    val overlay = new XHTMLElem(<span style="position:relative">
+      <iframe src=" " class="stexoverlay" id={id}>
+        {XHTML.empty}
+      </iframe>
+    </span>, None)
+    val p = parent.get
+    p.add(overlay, Some(this))
+    this.delete
+    p.add(newthis, Some(overlay))
+    newthis.add(this, None)
+  }
 }
 
 class XMHTMLMath(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) extends XHTMLElem(e,iparent) {

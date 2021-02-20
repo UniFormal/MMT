@@ -104,13 +104,13 @@ class DemoServer extends ServerExtension("stexdemo") {
                    |<body>""".stripMargin
     val (prefix,suffix) = c.rl match {
       case Some("variable") =>
-        ("Variable",c.metadata.getValues(STeX.meta_quantification) match {
+        ("<b>Variable</b>",c.metadata.getValues(STeX.meta_quantification) match {
             case List(OMS(STeX.Forall.path)) => " (universally quantified)"
             case List(OMS(STeX.Exists.path)) => " (existentially quantified)"
             case _ => ""
           })
       case _ =>
-        ("Symbol","")
+        ("<b>Symbol</b>","")
     }
     val content = prefix + " <a href=\"/?"+s+"\" target=\"_blank\">" + XMLEscaping(c.path.toString) +
       "</a>:<br><table><tr><th>Macro</th><th>Presentation</th><th>Type</th><th></th></tr><tr><td>" + {
@@ -182,9 +182,9 @@ class DemoServer extends ServerExtension("stexdemo") {
   }
 
   def termLink(o : Obj, comp : Option[CPath]) = { // TODO should be POST
-    <form method="get" action={"/:" + this.pathPrefix + "/expression"} class="inline" target="_blank">
+    <form method="get" action={"/:" + this.pathPrefix + "/expression"} class="inline" onsubmit="this.target='stexoverlayinner'" target="stexoverlayinner">
       <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
-      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")} class="link">
+      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")}>
         {presenter.asXML(o, comp)}
       </button>
     </form>
@@ -257,9 +257,9 @@ class DemoServer extends ServerExtension("stexdemo") {
     body.addString("Translations: ")
     Translators.getTranslators.foreach {t =>
       body.add(
-        <form method="get" action={"/:" + this.pathPrefix + "/translation"} class="inline" target="_blank">
+        <form method="get" action={"/:" + this.pathPrefix + "/translate"} class="inline" target="_self">
           <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
-          <button type="submit" name="target" value={t.language} class="link">
+          <button type="submit" name="target" value={t.language}>
             {scala.xml.Text(t.language)}
           </button>
         </form>)
@@ -268,31 +268,32 @@ class DemoServer extends ServerExtension("stexdemo") {
   }
 
 
-  def doTranslation(tmI : Term,trl : Translator)(session: Session) = {
-    val thp = DPath(URI.http colon "stex.temp") ? session.id
+  def doTranslation(tmI : Term,trl : Translator) = {
+    val doc = emptydoc
+    doMainHeader(doc)
+    val body = doc.get("div")(("","class","ltx_document")).head
+    body.addString("Expression: ")
+    body.add(presenter.asXML(tmI,None))
+    body.add(<hr/>)
+
     trl.translator.translate(tmI) match {
       case (tm,Nil) =>
-        val th = Theory(thp.doc,thp.name,trl.meta)
-        controller add th
-        var includes : List[MPath] = Nil
-        val mptraverser = new StatelessTraverser {
-          override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-            case OMS(s) =>
-              includes ::= s.module
-              t
-            case _ => Traverser(this,t)
-          }
-        }
-        mptraverser.apply(tm,())
-        includes.distinct.foreach {mp => controller.add(PlainInclude(mp,th.path))}
-        val c = Constant(th.toTerm,LocalName("tm_" + tm.hash),Nil,None,Some(tm),None)
-        controller.add(c)
-        "<!DOCTYPE html><html height=\"100vh\"><body height=\"100vh\"><iframe width=\"100%\" height=\"1000px\" src=\"/?" + c.path +  "\" style=\"margin:0%; padding:0%; display:block\"></iframe></body></html>"
-      case (tm,ls) if ls.nonEmpty =>
-        // TODO
-        ???
+        body.addString("Translated to " + trl.language + ": ")
+        body.add(presenter.asXML(tm,None))
+      case (_,ls) if ls.nonEmpty =>
+        body.addString("Translation to " + trl.language + " failed. Missing elements:")
+        body.add(<ul>{ls.map(p => <li><code>{scala.xml.Text(p.toString)}</code></li>)}</ul>)
     }
-
+    body.iterate {
+      case e if e.label == "mo" =>
+        e.attributes.get(("","data-mmt-symref")) match {
+          case Some(str) =>
+            e.addOverlay("/:" + this.pathPrefix + "/fragment?" + str)
+          case _ =>
+        }
+      case _ =>
+    }
+    doc
   }
 
   def doDocument(uri : String) = {
@@ -367,7 +368,7 @@ class DemoServer extends ServerExtension("stexdemo") {
             }
             doExpression(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),comp)
         }
-      case Some("translation") => // TODO should be POST
+      case Some("translate") => // TODO should be POST
         request.query match {
           case "" =>
             ???
@@ -382,7 +383,7 @@ class DemoServer extends ServerExtension("stexdemo") {
                 ???
               case Some(trl) => trl
             }
-            doTranslation(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),trl)(request.session.get)
+            doTranslation(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),trl)
         }
       case _ => MMTSystem.getResourceAsString("/mmt-web/stex/demo/index.html")
     }

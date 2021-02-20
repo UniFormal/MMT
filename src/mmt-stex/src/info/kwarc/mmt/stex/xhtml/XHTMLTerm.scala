@@ -152,7 +152,8 @@ trait XHTMLComplexTerm extends XHTMLTerm with HasHeadSymbol {
 
   override def addOverlay(url: String): Unit = {
     deconstruct(this).foreach {
-      case TextElem(e) => e.addOverlay(url)
+      case TextElem(e) =>
+        e.addOverlay(url)
       case _ =>
     }
   }

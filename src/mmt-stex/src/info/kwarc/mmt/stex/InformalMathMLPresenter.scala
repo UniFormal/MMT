@@ -2,8 +2,8 @@ package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.informal.{MathMLNarration, Narration}
 import info.kwarc.mmt.api.notations.{Delim, Delimiter}
-import info.kwarc.mmt.api.objects.{ComplexTerm, OMA, OMATTR, OMFOREIGN, OMID, OMS, Obj, Position, Term}
-import info.kwarc.mmt.api.{CPath, GlobalName, presentation}
+import info.kwarc.mmt.api.objects.{ComplexTerm, Context, OMA, OMATTR, OMFOREIGN, OMID, OMS, Obj, Position, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.{CPath, ContentPath, GlobalName, MPath, presentation}
 import info.kwarc.mmt.api.presentation.{HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.utils.xml
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
@@ -161,5 +161,36 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
         //TODO report warning
         //nothing to do
       }
+  }
+
+  override protected def preparePresentation(o: Obj, origin: Option[CPath])(implicit rh : RenderingHandler) = {
+    origin.map(_.parent).foreach {
+      case p: ContentPath => if (p.module != p) controller.simplifier(p.module)
+      case _ =>
+    }
+    val globalCont = (o,origin) match {
+      case (tm : Term,None) =>
+        var mpaths : List[MPath] = Nil
+        new StatelessTraverser {
+          override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+            case OMS(s) =>
+              mpaths ::= s.module
+              t
+            case _ => Traverser(this,t)
+          }
+        }.apply(tm,())
+        val em = mpaths.distinct.foldLeft(Context.empty)((c,p) => c ++ Context(p))
+        controller.simplifier.elaborateContext(Context.empty,em)
+      case (_,Some(cp)) => controller.getO(cp.parent) match {
+        case None =>
+          Context.empty
+        case Some(se) =>
+          val c1 = controller.getContext(se)
+          val c2 = se.getComponentContext(cp.component)
+          c1 ++ c2
+      }
+      case _ => Context.empty
+    }
+    PresentationContext(rh, origin, Nil, None, Position.Init, globalCont, Nil, None)
   }
 }
