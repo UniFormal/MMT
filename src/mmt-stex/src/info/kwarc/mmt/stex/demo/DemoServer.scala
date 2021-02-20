@@ -2,21 +2,23 @@ package info.kwarc.mmt.stex.demo
 
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{CPath, ContentPath, DPath, DefComponent, GlobalName, LocalName, NamespaceMap, Path, TypeComponent}
+import info.kwarc.mmt.api.{CPath, ContentPath, DPath, DefComponent, GlobalName, LocalName, MPath, NamespaceMap, Path, TypeComponent}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.{Delim, Marker, NotationContainer, SimpArg, TextNotation, Var}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMLITTrait, OMS, OMV, Obj, Term, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMLITTrait, OMS, OMV, Obj, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, AlignmentTranslation, LinkTranslation, TranslationGroup, TranslationTarget}
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.utils.{File, MMTSystem, URI, XMLEscaping}
-import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
+import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse, Session}
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, Lambda, Typed}
 import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.{InformalMathMLPresenter, MMTInformalPresenter, STeX}
 import info.kwarc.mmt.stex.xhtml.{HasHeadSymbol, XHTML, XHTMLDecl, XHTMLDocument, XHTMLElem, XHTMLNode, XHTMLOMV, XHTMLSidebar, XHTMLTerm, XHTMLTheorem, XHTMLTheory, XHTMLVarDecl}
 
 import scala.xml.{Node, NodeSeq}
+
+case class Translator(language : String,translator : AcrossLibraryTranslator, meta : Option[MPath])
 
 class DemoServer extends ServerExtension("stexdemo") {
   private var initialized = false
@@ -26,44 +28,13 @@ class DemoServer extends ServerExtension("stexdemo") {
     initialize
   }
 
-  def initialize = if (!initialized) {
-    import Content._
-    controller.add(th_set)
-    controller.add(c_set)
-    controller.add(th_nat)
-    controller.add(PlainInclude(th_set.path,th_nat.path))
-    controller.add(c_nat)
-    controller.add(th_prop)
-    controller.add(PlainInclude(th_set.path,th_prop.path))
-    controller.add(c_prop)
-    controller.add(th_fun)
-    controller.add(PlainInclude(th_set.path,th_fun.path))
-    controller.add(c_fun)
-    controller.add(th_impl)
-    controller.add(PlainInclude(th_fun.path,th_impl.path))
-    controller.add(PlainInclude(th_prop.path,th_impl.path))
-    controller.add(c_impl)
-    controller.add(th_div)
-    controller.add(PlainInclude(th_fun.path,th_div.path))
-    controller.add(PlainInclude(th_prop.path,th_div.path))
-    controller.add(PlainInclude(th_nat.path,th_div.path))
-    controller.add(c_even)
-    controller.add(th_exp)
-    controller.add(PlainInclude(th_fun.path,th_exp.path))
-    controller.add(PlainInclude(th_nat.path,th_exp.path))
-    controller.add(c_natexp)
-    controller.add(th_forall)
-    controller.add(PlainInclude(th_prop.path,th_forall.path))
-    controller.add(c_forall)
-    controller.add(th_exists)
-    controller.add(PlainInclude(th_prop.path,th_exists.path))
-    controller.add(c_exists)
+  object Translators {
+    lazy val mitm_translator = new AcrossLibraryTranslator(controller,Content.translations,Nil,((path: GlobalName, _: Controller) =>
+      Typed._base <= path ||
+        LFX.ns <= path ||
+        MitM.basepath <= path),false)
+    def getTranslators = List(Translator("MitM",mitm_translator,Some(Path.parseM("http://mathhub.info/MitM/Foundation?Logic"))))
   }
-
-  lazy val mitm_translator = new AcrossLibraryTranslator(controller,Content.translations,Nil,((path: GlobalName, _: Controller) =>
-    Typed._base <= path ||
-    LFX.ns <= path ||
-    MitM.basepath <= path),false)
 
   lazy val presenter = controller.extman.get(classOf[MMTInformalPresenter]) match {
     case p :: _ => p
@@ -211,9 +182,9 @@ class DemoServer extends ServerExtension("stexdemo") {
   }
 
   def termLink(o : Obj, comp : Option[CPath]) = { // TODO should be POST
-    <form method="get" action={"/:" + this.pathPrefix + "/expression"} class="inline">
+    <form method="get" action={"/:" + this.pathPrefix + "/expression"} class="inline" target="_blank">
       <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
-      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")} class="link" target="_blank">
+      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")} class="link">
         {presenter.asXML(o, comp)}
       </button>
     </form>
@@ -268,7 +239,7 @@ class DemoServer extends ServerExtension("stexdemo") {
     val doc = emptydoc
     doMainHeader(doc)
     val body = doc.get("div")(("","class","ltx_document")).head
-    body.add(scala.xml.Text("Expression: "))
+    body.addString("Expression: ")
     body.add(presenter.asXML(o,src))
     body.iterate {
       case e if e.label == "mo" =>
@@ -279,10 +250,49 @@ class DemoServer extends ServerExtension("stexdemo") {
         }
       case _ =>
     }
-    body.add(<br/>)
-    body.add(scala.xml.Text("LaTeX: "))
+    body.add(<hr/>)
+    body.addString("LaTeX: ")
     body.add(<code><pre>{scala.xml.Text(toLaTeX(o))}</pre></code>)
+    body.add(<hr/>)
+    body.addString("Translations: ")
+    Translators.getTranslators.foreach {t =>
+      body.add(
+        <form method="get" action={"/:" + this.pathPrefix + "/translation"} class="inline" target="_blank">
+          <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
+          <button type="submit" name="target" value={t.language} class="link">
+            {scala.xml.Text(t.language)}
+          </button>
+        </form>)
+    }
     doc
+  }
+
+
+  def doTranslation(tmI : Term,trl : Translator)(session: Session) = {
+    val thp = DPath(URI.http colon "stex.temp") ? session.id
+    trl.translator.translate(tmI) match {
+      case (tm,Nil) =>
+        val th = Theory(thp.doc,thp.name,trl.meta)
+        controller add th
+        var includes : List[MPath] = Nil
+        val mptraverser = new StatelessTraverser {
+          override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
+            case OMS(s) =>
+              includes ::= s.module
+              t
+            case _ => Traverser(this,t)
+          }
+        }
+        mptraverser.apply(tm,())
+        includes.distinct.foreach {mp => controller.add(PlainInclude(mp,th.path))}
+        val c = Constant(th.toTerm,LocalName("tm_" + tm.hash),Nil,None,Some(tm),None)
+        controller.add(c)
+        "<!DOCTYPE html><html height=\"100vh\"><body height=\"100vh\"><iframe width=\"100%\" height=\"1000px\" src=\"/?" + c.path +  "\" style=\"margin:0%; padding:0%; display:block\"></iframe></body></html>"
+      case (tm,ls) if ls.nonEmpty =>
+        // TODO
+        ???
+    }
+
   }
 
   def doDocument(uri : String) = {
@@ -349,13 +359,30 @@ class DemoServer extends ServerExtension("stexdemo") {
             val (xml,compO) = s.indexOf("&component=") match {
               case -1 =>
                 ???
-              case i => (XMLEscaping.unapply(s.slice("openmath=".length, i)),XMLEscaping.unapply(s.drop(i+1)))
+              case i => (XMLEscaping.unapply(s.slice("openmath=".length, i)),XMLEscaping.unapply(s.drop(i+11)))
             }
             val comp = compO match {
               case "None" => None
               case s => Some(Path.parseC(s,NamespaceMap.empty))
             }
             doExpression(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),comp)
+        }
+      case Some("translation") => // TODO should be POST
+        request.query match {
+          case "" =>
+            ???
+          case s =>
+            val (xml,langO) = s.indexOf("&target=") match {
+              case -1 =>
+                ???
+              case i => (XMLEscaping.unapply(s.slice("openmath=".length, i)),XMLEscaping.unapply(s.drop(i+8)))
+            }
+            val trl = Translators.getTranslators.find(_.language == langO) match {
+              case None =>
+                ???
+              case Some(trl) => trl
+            }
+            doTranslation(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),trl)(request.session.get)
         }
       case _ => MMTSystem.getResourceAsString("/mmt-web/stex/demo/index.html")
     }
@@ -422,12 +449,12 @@ class DemoServer extends ServerExtension("stexdemo") {
       val tmm = c_natexp.toTerm
       val exp = (MitM.basepath / "core" / "arithmetics") ? "NaturalArithmetics" ? "exponentiation"
       override def applicable(tm: Term)(implicit translator: AcrossLibraryTranslator): Boolean = tm match {
-        case OMA(`tmm`,List(_)) => true
+        case OMA(`tmm`,List(_,_)) => true
         case _ => false
       }
       override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = {
-        val OMA(`tmm`,List(a)) = tm
-        ApplySpine(OMS(exp),a,NatLiterals(2))
+        val OMA(`tmm`,List(a,b)) = tm
+        ApplySpine(OMS(exp),a,b)
       }
     }
     lazy val trl_forall = new AcrossLibraryTranslation {
@@ -438,7 +465,7 @@ class DemoServer extends ServerExtension("stexdemo") {
       }
       override def apply(tm: Term)(implicit translator: AcrossLibraryTranslator): Term = {
         val OMBIND(`tmm`,ctx,a) = tm
-        ctx.foldRight(a)((vd,t) => ApplySpine(OMS(MitM.forall),Lambda(vd.name,vd.tp.get,t))) // TODO safer
+        ctx.foldRight(a)((vd,t) => ApplySpine(OMS(MitM.forall),vd.tp.get,Lambda(vd.name,vd.tp.get,t))) // TODO safer
       }
     }
     lazy val trl_exists = new AcrossLibraryTranslation {
@@ -453,6 +480,41 @@ class DemoServer extends ServerExtension("stexdemo") {
       }
     }
     lazy val translations = List(trl_nat,trl_impl,trl_even,trl_square,trl_forall,trl_exists)
+  }
+
+
+  def initialize = if (!initialized) {
+    import Content._
+    controller.add(th_set)
+    controller.add(c_set)
+    controller.add(th_nat)
+    controller.add(PlainInclude(th_set.path,th_nat.path))
+    controller.add(c_nat)
+    controller.add(th_prop)
+    controller.add(PlainInclude(th_set.path,th_prop.path))
+    controller.add(c_prop)
+    controller.add(th_fun)
+    controller.add(PlainInclude(th_set.path,th_fun.path))
+    controller.add(c_fun)
+    controller.add(th_impl)
+    controller.add(PlainInclude(th_fun.path,th_impl.path))
+    controller.add(PlainInclude(th_prop.path,th_impl.path))
+    controller.add(c_impl)
+    controller.add(th_div)
+    controller.add(PlainInclude(th_fun.path,th_div.path))
+    controller.add(PlainInclude(th_prop.path,th_div.path))
+    controller.add(PlainInclude(th_nat.path,th_div.path))
+    controller.add(c_even)
+    controller.add(th_exp)
+    controller.add(PlainInclude(th_fun.path,th_exp.path))
+    controller.add(PlainInclude(th_nat.path,th_exp.path))
+    controller.add(c_natexp)
+    controller.add(th_forall)
+    controller.add(PlainInclude(th_prop.path,th_forall.path))
+    controller.add(c_forall)
+    controller.add(th_exists)
+    controller.add(PlainInclude(th_prop.path,th_exists.path))
+    controller.add(c_exists)
   }
 
 }

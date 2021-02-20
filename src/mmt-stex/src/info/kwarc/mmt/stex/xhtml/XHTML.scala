@@ -146,6 +146,7 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
     override val attributes = XHTMLNode.makeAttributes(self.attributes.toSeq:_*)
     override val scope = self.scope
   }
+  def addString(s : String,before : Option[XHTMLNode] = None) = add(scala.xml.Text(s),before)
   def add(e : Node,before : Option[XHTMLNode] = None) : Unit = XHTML.apply(e,Some(this)).foreach(add(_,before))
   def add(e : XHTMLNode,before : Option[XHTMLNode]) : Unit = before.map(ee => children.indexOf(ee)).getOrElse(-1) match {
     case -1 => children = children ::: List(e)
