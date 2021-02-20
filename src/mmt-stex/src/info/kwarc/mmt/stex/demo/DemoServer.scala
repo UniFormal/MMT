@@ -2,10 +2,10 @@ package info.kwarc.mmt.stex.demo
 
 import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.{ContentPath, DPath, DefComponent, GlobalName, LocalName, NamespaceMap, Path, TypeComponent}
+import info.kwarc.mmt.api.{CPath, ContentPath, DPath, DefComponent, GlobalName, LocalName, NamespaceMap, Path, TypeComponent}
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
-import info.kwarc.mmt.api.objects.{OMA, OMBIND, OMS, Term, VarDecl}
+import info.kwarc.mmt.api.notations.{Delim, Marker, NotationContainer, SimpArg, TextNotation, Var}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMLITTrait, OMS, OMV, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.ontology.FormalAlignment
 import info.kwarc.mmt.api.refactoring.{AcrossLibraryTranslation, AcrossLibraryTranslator, AlignmentTranslation, LinkTranslation, TranslationGroup, TranslationTarget}
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
@@ -16,7 +16,7 @@ import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.{InformalMathMLPresenter, MMTInformalPresenter, STeX}
 import info.kwarc.mmt.stex.xhtml.{HasHeadSymbol, XHTML, XHTMLDecl, XHTMLDocument, XHTMLElem, XHTMLNode, XHTMLOMV, XHTMLSidebar, XHTMLTerm, XHTMLTheorem, XHTMLTheory, XHTMLVarDecl}
 
-import scala.xml.NodeSeq
+import scala.xml.{Node, NodeSeq}
 
 class DemoServer extends ServerExtension("stexdemo") {
   private var initialized = false
@@ -111,31 +111,12 @@ class DemoServer extends ServerExtension("stexdemo") {
       <script type="text/javascript" src="script/jobad/modules/interactive-viewing.js">{p}</script>
       <script type="text/javascript" src="script/mmt/browser.js">{p}</script>).toList.foreach(head.add(_))
  */
-
-    head.add(<style>{scala.xml.Text(""".stexoverlay {
-                                      |  position:absolute;
-                                      |  top:2em;
-                                      |  opacity:0;
-                                      |  width:0%;
-                                      |  height:0%;
-                                      |  transition: .5s ease;
-                                      |  transition-delay:1s;
-                                      |}
-                                      |.stexoverlaycontainer:hover {
-                                      |  background-color:yellow;
-                                      |}
-                                      |span.stexoverlaycontainer:hover + span.stexoverlay {
-                                      |  opacity: 1;
-                                      |  width:80ch;
-                                      |  height:100%;
-                                      |  transition-delay:0s;
-                                      |}""".stripMargin)}</style>)
   }
 
   def emptydoc = {
     val dummynode = <div></div>
     val doc = new XHTMLDocument(dummynode)(XHTML.Rules.defaultrules)
-    doc.add(<head></head>)
+    doc.add(<head><meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/></head>)
     doc.add(<body><div class="ltx_page_main"><div class="ltx_page_content"><div class="ltx_document"></div></div></div></body>)
     doc
   }
@@ -229,6 +210,81 @@ class DemoServer extends ServerExtension("stexdemo") {
     case _ => ???
   }
 
+  def termLink(o : Obj, comp : Option[CPath]) = { // TODO should be POST
+    <form method="get" action={"/:" + this.pathPrefix + "/expression"} class="inline">
+      <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
+      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")} class="link" target="_blank">
+        {presenter.asXML(o, comp)}
+      </button>
+    </form>
+ //   <a href ={"/:" + this.pathPrefix + "/expression/???"}  target="_blank">{presenter.asXML(o, comp)}</a>
+  }
+
+  private def toLatex(notation : List[Marker],args : List[Obj]) : String = notation.map{
+    case Delim(s) => s
+    case Var(i,_,_,_) =>
+      val v = args(i-1) match {
+        case Context(vd) => vd
+        case vd : VarDecl => vd
+        case _ =>
+          ???
+      }
+      toLaTeX(v)
+    case SimpArg(i,_) => toLaTeX(args(i-1))
+    case _ =>
+      ???
+  }.mkString("")
+  def toLaTeX(o : Obj) : String = o match {
+    case OMBIND(OMS(f),ctx,bd) =>
+      controller.getConstant(f).notC.parsing match {
+        case Some(tn) =>
+          toLatex(tn.markers,ctx :: bd :: Nil)
+        case _ =>
+          ???
+      }
+    case OMA(OMS(f),args) =>
+      controller.getConstant(f).notC.parsing match {
+        case Some(tn) =>
+          toLatex(tn.markers,args)
+        case _ =>
+          ???
+      }
+    case OMV(n) => "\\" + n.toString
+    case OMS(s) =>
+      controller.getConstant(s).notC.parsing match {
+        case Some(tn) =>
+          toLatex(tn.markers,Nil)
+        case _ =>
+          ???
+      }
+    case vd:VarDecl => "\\" + vd.name.toString
+    case o : OMLITTrait => o.valueString
+    case _ =>
+      print("")
+      ???
+  }
+
+  def doExpression(o : Obj,src:Option[CPath]) = {
+    val doc = emptydoc
+    doMainHeader(doc)
+    val body = doc.get("div")(("","class","ltx_document")).head
+    body.add(scala.xml.Text("Expression: "))
+    body.add(presenter.asXML(o,src))
+    body.iterate {
+      case e if e.label == "mo" =>
+        e.attributes.get(("","data-mmt-symref")) match {
+          case Some(str) =>
+            e.addOverlay("/:" + this.pathPrefix + "/fragment?" + str)
+          case _ =>
+        }
+      case _ =>
+    }
+    body.add(<br/>)
+    body.add(scala.xml.Text("LaTeX: "))
+    body.add(<code><pre>{scala.xml.Text(toLaTeX(o))}</pre></code>)
+    doc
+  }
+
   def doDocument(uri : String) = {
     import info.kwarc.mmt.stex.xhtml.XHTMLTerm._
 
@@ -242,7 +298,7 @@ class DemoServer extends ServerExtension("stexdemo") {
       case thm: XHTMLTheorem =>
         val c = thm.toDeclaration
         controller add c
-        val sb = <a href ={"/?" + c.path.toString}  target="_blank">{scala.xml.Text("Theorem " + thm.name.toString + "\n")}{presenter.asXML(c.df.get, Some(c.path $ DefComponent))}</a>
+        val sb = <div>{scala.xml.Text("Theorem " + thm.name.toString + ":\n")}{termLink(c.df.get, Some(c.path $ DefComponent))}</div>
         thm.add(XHTMLSidebar(thm.path.toString, sb: _*), None)
       case v: XHTMLVarDecl =>
         val decl = v.toDeclaration
@@ -285,6 +341,22 @@ class DemoServer extends ServerExtension("stexdemo") {
           case s =>
             doDeclaration(s)
         }
+      case Some("expression") => // TODO should be POST
+        request.query match {
+          case "" =>
+            ???
+          case s =>
+            val (xml,compO) = s.indexOf("&component=") match {
+              case -1 =>
+                ???
+              case i => (XMLEscaping.unapply(s.slice("openmath=".length, i)),XMLEscaping.unapply(s.drop(i+1)))
+            }
+            val comp = compO match {
+              case "None" => None
+              case s => Some(Path.parseC(s,NamespaceMap.empty))
+            }
+            doExpression(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),comp)
+        }
       case _ => MMTSystem.getResourceAsString("/mmt-web/stex/demo/index.html")
     }
     ServerResponse(ret.toString, "html")
@@ -302,18 +374,18 @@ class DemoServer extends ServerExtension("stexdemo") {
     lazy val th_prop = Theory(STeX.prop.doc,STeX.prop.module.name,None)
     lazy val c_prop = Constant(th_prop.toTerm,STeX.prop.name,Nil,Some(c_set.toTerm),None,None,XHTMLTerm.notation("\\prop","prop"))
     lazy val th_fun = Theory(STeX.funtype.doc,STeX.funtype.module.name,None)
-    lazy val c_fun = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None,XHTMLTerm.notation("\\funtype{1}","1⟶… prec -9990"))
+    lazy val c_fun = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None,XHTMLTerm.notation("\\funtype{ 1 }","1⟶… prec -9990"))
     lazy val th_impl = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "logic",LocalName("Implication"),None)
-    lazy val c_impl = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None,XHTMLTerm.notation("\\implication{1}{2}","1 ⟹ 2 prec 10"))
+    lazy val c_impl = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None,XHTMLTerm.notation("\\implication{ 1 }{ 2 }","1 ⟹ 2 prec 10"))
     lazy val th_div = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Divisibility"),None)
-    lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_prop.toTerm))),None,None,XHTMLTerm.notation("\\even{1}","even( 1 ) prec 50"))
+    lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_prop.toTerm))),None,None,XHTMLTerm.notation("\\even{ 1 }","even( 1 ) prec 50"))
     lazy val th_exp = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Exponentiation"),None)
-    lazy val c_natexp = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None,XHTMLTerm.notation("\\natpow{1}{2}","1 ^ 2 prec 70"))
+    lazy val c_natexp = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None,XHTMLTerm.notation("\\natpow{ 1 }{ 2 }","1 ^ 2 prec 70"))
 
     lazy val th_forall = Theory(STeX.Forall.path.module.parent,STeX.Forall.path.module.name,None)
-    lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sforall{V1}{2}","∀ V1,… . 2 prec -20"))
+    lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sforall{ V1 }{ 2 }","∀ V1,… . 2 prec -20"))
     lazy val th_exists = Theory(STeX.Exists.path.module.parent,STeX.Exists.path.module.name,None)
-    lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sexists{V1}{2}","∃ V1,… . 2 prec -20"))
+    lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sexists{ V1 }{ 2 }","∃ V1,… . 2 prec -20"))
 
     lazy val trl_nat = new AcrossLibraryTranslation {
       val tmm = c_nat.toTerm

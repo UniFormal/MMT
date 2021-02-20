@@ -14,6 +14,43 @@ import scala.xml.parsing.NoBindingFactoryAdapter
 case class XHTMLRule(f : PartialFunction[(Node,Option[XHTMLNode],List[XHTMLRule]),XHTMLNode])
 
 object XHTML {
+  val overlayHeader = {
+    <style>{scala.xml.Text(""".stexoverlay {
+                             |  position:absolute;
+                             |  top:2em;
+                             |  opacity:0;
+                             |  width:0%;
+                             |  height:0%;
+                             |  transition: .5s ease;
+                             |  transition-delay:1s;
+                             |}
+                             |.stexoverlaycontainer:hover {
+                             |  background-color:yellow;
+                             |}
+                             |span.stexoverlaycontainer:hover + span.stexoverlay {
+                             |  opacity: 1;
+                             |  width:80ch;
+                             |  height:100%;
+                             |  transition-delay:0s;
+                             |}""".stripMargin)}</style>
+  }
+  val overlayJS = {
+    <script type="text/javascript">{scala.xml.Text("""function overlayOn(id) {
+                                                     |  var elem = document.getElementById(id);
+                                                     |  elem.style.opacity = 1;
+                                                     |  elem.style.width = "80ch";
+                                                     |  elem.style.height = "100%";
+                                                     |  elem.style.transitionDelay = "0s";
+                                                     |}
+                                                     |function overlayOff(id) {
+                                                     |  var elem = document.getElementById(id);
+                                                     |  elem.style.opacity = 0;
+                                                     |  elem.style.width = "0%";
+                                                     |  elem.style.height = "0%";
+                                                     |  elem.style.transitionDelay = "1s";
+                                                     |}""".stripMargin)}</script>
+  }
+
   object Rules {
     val document_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "html" && parent.isEmpty => new XHTMLDocument(e)(rules)})
     val math_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "math" => new XMHTMLMath(e,parent)(rules)})
@@ -74,6 +111,13 @@ object XHTMLNode {
 
 class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) {
   protected var _parent = iparent
+  var ismath = false
+  def top : XHTMLNode = _parent match {
+    case None => this
+    case Some(p) => p.top
+  }
+  def getHead = top.get("head")().head
+
   def parent = _parent
   var prefix = initial_node.prefix
   var label = initial_node.label
@@ -93,14 +137,14 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
   var scope = initial_node.scope
   var children = initial_node.child.toList.flatMap(XHTML.apply(_,Some(this)))
 
-  private val top = this
+  private val self = this
 
   def node : Node = new Node {
-    override val label: String = top.label
-    override val child: collection.Seq[Node] = top.children.map(_.node)
-    override val prefix = top.prefix
-    override val attributes = XHTMLNode.makeAttributes(top.attributes.toSeq:_*)
-    override val scope = top.scope
+    override val label: String = self.label
+    override val child: collection.Seq[Node] = self.children.map(_.node)
+    override val prefix = self.prefix
+    override val attributes = XHTMLNode.makeAttributes(self.attributes.toSeq:_*)
+    override val scope = self.scope
   }
   def add(e : Node,before : Option[XHTMLNode] = None) : Unit = XHTML.apply(e,Some(this)).foreach(add(_,before))
   def add(e : XHTMLNode,before : Option[XHTMLNode]) : Unit = before.map(ee => children.indexOf(ee)).getOrElse(-1) match {
@@ -148,17 +192,47 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
     get(matches)
   }
   protected def get(matches : XHTMLNode => Boolean) : List[XHTMLNode] = children.filter(matches) ::: children.flatMap(_.get(matches))
-  def addOverlay(nodes:Node*): Unit = {
-    val top = new XHTMLElem(<span style="position:relative"></span>,None)
-    val overlay = new XHTMLElem(<span class="stexoverlay">{nodes}</span>,None)
-    val container = new XHTMLElem(<span class="stexoverlaycontainer"></span>,None)
-    top.add(container,None)
-    top.add(overlay,None)
-    parent.foreach(_.add(top,Some(this)))
-    this.delete
-    container.add(this,None)
 
+  var overlayset = false
+  var jsoverlayset = false
+
+  def addOverlay(nodes:Node*): Unit = {
+    val t = this.top
+    if (!t.overlayset) {
+      t.overlayset = true
+      t.getHead.add(XHTML.overlayHeader)
+    }
+    if (!ismath) {
+      val top = new XHTMLElem(<span style="position:relative"></span>,None)
+      val overlay = new XHTMLElem(<span class="stexoverlay">{nodes}</span>,None)
+      val container = new XHTMLElem(<span class="stexoverlaycontainer"></span>,None)
+      top.add(container,None)
+      top.add(overlay,None)
+      parent.foreach(_.add(top,Some(this)))
+      this.delete
+      container.add(this,None)
+    } else {
+      if (!t.jsoverlayset) {
+        t.jsoverlayset = true
+        t.getHead.add(XHTML.overlayJS)
+      }
+      attributes(("","class")) = attributes.get(("","class")) match {
+        case Some(s) => s + " stexoverlaycontainer"
+        case _ => "stexoverlaycontainer"
+      }
+      val id = t.generateId
+      val overlay = new XHTMLElem(<span class="stexoverlay" id={id}>{nodes}</span>,None)
+      getNonMath.add(overlay,None)
+      attributes(("","onmouseover")) = "overlayOn('"+id+"')"
+      attributes(("","onmouseout")) = "overlayOff('"+id+"')"
+    }
   }
+  private var _id = 0
+  protected def generateId = {
+    _id += 1
+    "stexelem" + (_id-1)
+  }
+  private def getNonMath : XHTMLNode = if (!ismath) this else parent.get.getNonMath
   def addOverlay(url : String): Unit = addOverlay(<iframe src={url} width="100%" height="250ch" style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)">{XHTML.empty}</iframe>)
 
   def isEmpty : Boolean = children.isEmpty || children.forall(_.isEmpty)
@@ -181,6 +255,8 @@ class XMHTMLMath(e : Elem,iparent : Option[XHTMLNode])(implicit rules : List[XHT
   //override def toString: String = "<math xmlns=\"http://www.w3.org/1998/Math/MathML\" " +
   //  _attributes.map{case ((p,k),v) => k+"=\"" + v + "\"" }.mkString(" ") + ">" + _children.mkString + "</math>"
   attributes(("","xmlns")) = "http://www.w3.org/1998/Math/MathML"
+  get()().foreach(_.ismath = true)
+  ismath = true
 }
 
 class XHTMLDocument(e : Elem)(implicit rules : List[XHTMLRule]) extends XHTMLElem(e,None)  {
