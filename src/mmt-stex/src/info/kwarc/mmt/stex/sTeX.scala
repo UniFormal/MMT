@@ -1,7 +1,9 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardNat}
 import parser._
+
 import scala.xml._
 import modules._
 import symbols._
@@ -17,6 +19,13 @@ object STeX {
   val meta_quantification = metadata ? "quantification"
   import info.kwarc.mmt.api.objects.Conversions._
   val prop = (doc / "logic") ? "Propositions" ? "Proposition"
+  val set = (doc / "sets") ? "Sets" ? "Set"
+  val funtype = (doc / "sets") ? "Functions" ? "FunctionType"
+
+  val nat = (doc / "arithmetics" / "natural_numbers") ? "NaturalNumbers" ? "NaturalNumbers"
+
+  object NatLiterals extends RepresentedRealizedType(OMS(nat),StandardNat)
+
   object Forall {
     val path = (doc / "logic") ? "UniversalQuantifier" ? "Forall"
     def apply(x : LocalName,tp : Option[Term], tm : Term) : OMBINDC = tm match {

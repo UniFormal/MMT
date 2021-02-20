@@ -159,7 +159,7 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
     container.add(this,None)
 
   }
-  def addOverlay(url : String): Unit = addOverlay(<iframe src={url} width="100%" style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)">{XHTML.empty}</iframe>)
+  def addOverlay(url : String): Unit = addOverlay(<iframe src={url} width="100%" height="250ch" style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)">{XHTML.empty}</iframe>)
 
   def isEmpty : Boolean = children.isEmpty || children.forall(_.isEmpty)
 }

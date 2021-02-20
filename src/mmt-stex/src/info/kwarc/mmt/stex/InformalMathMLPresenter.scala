@@ -4,10 +4,13 @@ import info.kwarc.mmt.api.informal.{MathMLNarration, Narration}
 import info.kwarc.mmt.api.notations.{Delim, Delimiter}
 import info.kwarc.mmt.api.objects.{ComplexTerm, OMA, OMATTR, OMFOREIGN, OMID, OMS, Obj, Position, Term}
 import info.kwarc.mmt.api.{CPath, GlobalName, presentation}
-import info.kwarc.mmt.api.presentation.{HTMLAttributes, PresentationContext, RenderingHandler}
+import info.kwarc.mmt.api.presentation.{HTMLAttributes, HTMLPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.utils.xml
 import info.kwarc.mmt.api.utils.xml.{closeTag, namespace, openTag}
 
+class MMTInformalPresenter extends HTMLPresenter(new InformalMathMLPresenter) {
+  val key = "immtdoc"
+}
 
 class InformalMathMLPresenter extends presentation.MathMLPresenter {
   def doTermApplication(f : Term, args : List[Term])(implicit pc: PresentationContext) : Int = {
