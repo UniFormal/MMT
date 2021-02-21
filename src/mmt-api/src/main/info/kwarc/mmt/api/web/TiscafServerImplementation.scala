@@ -2,11 +2,11 @@ package info.kwarc.mmt.api.web
 
 import info.kwarc.mmt.api._
 import utils._
-import java.io.{IOException, InputStream}
 
+import java.io.{IOException, InputStream}
 import tiscaf._
 
-import scala.collection.mutable
+import scala.collection.{immutable, mutable}
 
 /** Implements an HTTP Server using Tiscaf */
 trait TiscafServerImplementation extends HServer with ServerImplementation {
@@ -144,7 +144,12 @@ object ServerTiscafAdapter {
   }
 
   /** parses a tiscaf object into a body */
-  def tiscaf2Body(tk: HTalk) = new Body(tk.req.octets)
+  def tiscaf2Body(tk: HTalk) = {
+    val map = immutable.Map.from(tk.req.paramsKeys.collect{
+      case s if tk.req.param(s).isDefined => (s,tk.req.param(s).get)
+    })
+    new Body(tk.req.octets,map)
+  }
 
   /** turns a statusCode into a Tiscaf StatusCode */
   def code2Tiscaf(code : Int) : HStatus.Value = {

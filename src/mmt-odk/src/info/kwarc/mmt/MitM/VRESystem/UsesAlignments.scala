@@ -59,8 +59,8 @@ trait UsesAlignments extends VRESystem {
     new AcrossLibraryTranslator(controller,aligns ::: complexTranslations ::: trls,linktrs,to, false)
   }
 
-  protected lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
-  protected lazy val translator_from = translator(new TranslationTarget {
+  lazy val translator_to = translator(ArchiveTarget(archive),toTranslations)
+  lazy val translator_from = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean =
       Typed._base <= path ||
       LFX.ns <= path ||

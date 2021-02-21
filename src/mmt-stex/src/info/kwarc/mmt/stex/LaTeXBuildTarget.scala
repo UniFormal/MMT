@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex
 
+import info.kwarc.mmt.api.Level
 import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, TraversingBuildTarget, `export`, source}
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.stex.xhtml.{XHTML, XHTMLNode}
@@ -24,11 +25,13 @@ class LaTeXToHTML extends TraversingBuildTarget {
         bf.errorCont(new STeXError(ls.head,Some(ls.tail.mkString("\n")),Some(i)))
     }
     import XHTML.Rules._
-    val doc = XHTML.parse(bf.outFile).head
-    doc.get("div")(("","class","ltx_page_logo")).foreach(_.delete)
-    doc.get("div")(("","class","ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
-    doc.get("head")().head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
-    File.write(bf.outFile,doc.toString)
+    if (bf.outFile.exists()) {
+      val doc = XHTML.parse(bf.outFile).head
+      doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
+      doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
+      doc.get("head")().head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
+      File.write(bf.outFile, doc.toString)
+    } else throw new STeXError("No .xhtml generated",None,Some(Level.Error))
     BuildResult.empty
   }
 }

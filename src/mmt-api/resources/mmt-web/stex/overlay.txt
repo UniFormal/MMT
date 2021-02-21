@@ -24,7 +24,7 @@
 		elem.src = url;
 		elem.style.opacity = 1;
 		elem.style.width = "80ch";
-		elem.style.height= "30ch";
+		elem.style.height= "25ch";
 	}
 	function stexOverlayOff(id) {
 		var elem = document.getElementById(id);

@@ -55,8 +55,10 @@ object XHTML {
           List(init,content,end).filterNot(_.isEmpty).map(s => new XHTMLText(scala.xml.Text(s),parent))
         case e : Elem =>
           List(new XHTMLElem(e,parent))
+        case a : Atom[String] =>
+          apply(scala.xml.Text(a.data),parent)
         case _ =>
-          List(new XHTMLNode(node,parent))
+          ???
       }
     }
   }
@@ -68,7 +70,7 @@ object XHTMLNode {
     Elem(if (prefix == "") null else prefix,label,makeAttributes(attrs:_*),scala.xml.TopScope,true,Nil :_*),
     None)
 
-  def text(s : String)(implicit rules : List[XHTMLRule]) = new XHTMLNode(scala.xml.Text(s),None)
+  def text(s : String)(implicit rules : List[XHTMLRule]) = new XHTMLText(scala.xml.Text(s),None)
 
 
   def makeAttributes(ls : ((String,String),String)*) = ls.foldLeft(scala.xml.Null : MetaData){
@@ -79,7 +81,7 @@ object XHTMLNode {
   }//.toSeq.map((k,v) => Attribute.)
 }
 
-class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) {
+abstract class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules : List[XHTMLRule]) {
   protected var _parent = iparent
   var ismath = false
   def top : XHTMLNode = _parent match {
@@ -109,13 +111,7 @@ class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implicit rules 
 
   private val self = this
 
-  def node : Node = new Node {
-    override val label: String = self.label
-    override val child: collection.Seq[Node] = self.children.map(_.node)
-    override val prefix = self.prefix
-    override val attributes = XHTMLNode.makeAttributes(self.attributes.toSeq:_*)
-    override val scope = self.scope
-  }
+  def node : Node
   def addString(s : String,before : Option[XHTMLNode] = None) = add(scala.xml.Text(s),before)
   def add(e : Node,before : Option[XHTMLNode] = None) : Unit = XHTML.apply(e,Some(this)).foreach(add(_,before))
   def add(e : XHTMLNode,before : Option[XHTMLNode]) : Unit = before.map(ee => children.indexOf(ee)).getOrElse(-1) match {
