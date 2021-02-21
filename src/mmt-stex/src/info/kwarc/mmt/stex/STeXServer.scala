@@ -94,18 +94,23 @@ class STeXServer extends ServerExtension("fomtex") {
     filecontent.iterate {
       case thm: XHTMLTheory =>
         thm.toModule(controller)
-        thm.add(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)), thm.children.headOption)
+        thm.children.headOption match {
+          case Some(h) =>
+            thm.addBefore(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)),h)
+          case _ =>
+            thm.add(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)))
+        }
       case thm: XHTMLTheorem =>
         val c = thm.toDeclaration
         controller add c
         val sb = <div>{scala.xml.Text("Theorem " + thm.name.toString + ":\n")}{termLink(c.df.get, Some(c.path $ DefComponent))}</div>
-        thm.add(XHTMLSidebar(thm.path.toString, sb: _*), None)
+        thm.add(XHTMLSidebar(thm.path.toString, sb: _*))
       case v: XHTMLVarDecl =>
         val decl = v.toDeclaration
         controller add decl
         val is = List(if ((v.universal contains true) || v.universal.isEmpty) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)"))
         val seq = scala.xml.Text("Variable ") :: presenter.asXML(v.vardecl, None) :: is
-        v.parent.foreach(_.add(XHTMLSidebar(v.name.toString, seq: _*), Some(v)))
+        v.parent.foreach(_.addBefore(XHTMLSidebar(v.name.toString, seq: _*), v))
       case _ =>
     }
     filecontent.iterate {
@@ -142,9 +147,9 @@ class STeXServer extends ServerExtension("fomtex") {
     val border = new XHTMLElem(<div style="font-size:small">{decl.map(_.node)}{ if (!default) <hr/>}</div>,None)
     doc.children.foreach {c =>
       c.delete
-      border.add(c,None)
+      border.add(c)
     }
-    doc.add(border,None)
+    doc.add(border)
     filecontent
   }
 
@@ -219,7 +224,7 @@ class STeXServer extends ServerExtension("fomtex") {
   def doExpression(o : Obj,src:Option[CPath]) = {
     val (doc,body) = emptydoc
     doMainHeader(doc)
-    body.addString("Expression: ")
+    body.add("Expression: ")
     body.add(presenter.asXML(o,src))
     body.iterate {
       case e if e.label == "mo" =>
@@ -231,10 +236,10 @@ class STeXServer extends ServerExtension("fomtex") {
       case _ =>
     }
     body.add(<hr/>)
-    body.addString("LaTeX: ")
+    body.add("LaTeX: ")
     body.add(<code><pre>{scala.xml.Text(toLaTeX(o))}</pre></code>)
     body.add(<hr/>)
-    body.addString("Translations: ")
+    body.add("Translations: ")
     val translations = <table><tr>
       {Translators.getTranslators.map {t =>
         <td><form method="post" action={"/:" + this.pathPrefix + "/translate"} class="inline" target="_self">
@@ -251,16 +256,16 @@ class STeXServer extends ServerExtension("fomtex") {
   def doTranslation(tmI : Term,trl : Translator) = {
     val (doc,body) = emptydoc
     doMainHeader(doc)
-    body.addString("Expression: ")
+    body.add("Expression: ")
     body.add(presenter.asXML(tmI,None))
     body.add(<hr/>)
 
     trl.translator.translate(tmI) match {
       case (tm,Nil) =>
-        body.addString("Translated to " + trl.language + ": ")
+        body.add("Translated to " + trl.language + ": ")
         body.add(presenter.asXML(tm,None))
       case (_,ls) if ls.nonEmpty =>
-        body.addString("Translation to " + trl.language + " failed. Translators missing for:")
+        body.add("Translation to " + trl.language + " failed. Translators missing for:")
         body.add(<ul>{ls.map(p => <li><code>{scala.xml.Text(p.toString)}</code></li>)}</ul>)
     }
     body.iterate {

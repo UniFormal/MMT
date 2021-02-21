@@ -112,14 +112,24 @@ abstract class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implic
   private val self = this
 
   def node : Node
-  def addString(s : String,before : Option[XHTMLNode] = None) = add(scala.xml.Text(s),before)
-  def add(e : Node,before : Option[XHTMLNode] = None) : Unit = XHTML.apply(e,Some(this)).foreach(add(_,before))
-  def add(e : XHTMLNode,before : Option[XHTMLNode]) : Unit = before.map(ee => children.indexOf(ee)).getOrElse(-1) match {
+
+  def add(s : String) : Unit = add(scala.xml.Text(s))
+  def add(e : Node) : Unit = XHTML.apply(e,Some(this)).foreach(add)
+  def add(e : XHTMLNode) : Unit = children = children ::: List(e)
+
+  def addBefore(e : XHTMLNode,before : XHTMLNode) : Unit = children.indexOf(before) match {
     case -1 => children = children ::: List(e)
       e._parent = Some(this)
     case i => children = children.take(i) ::: e :: children.drop(i)
       e._parent = Some(this)
   }
+  def addAfter(e : XHTMLNode,after : XHTMLNode) : Unit = children.indexOf(after) match {
+    case -1 => children = children ::: List(e)
+      e._parent = Some(this)
+    case i => children = children.take(i+1) ::: e :: children.drop(i+1)
+      e._parent = Some(this)
+  }
+
   protected def delete(e : XHTMLNode) : Unit = children = children.filterNot(_ == e)
   def delete : Unit = _parent.foreach(_.delete(this))
 
@@ -167,7 +177,7 @@ abstract class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implic
     if (!t.overlayset) {
       t.overlayset = true
       val h = t.getHead
-      XHTML.overlayHeader.foreach(h.add(_,None))
+      XHTML.overlayHeader.foreach(h.add)
       val body = t.get("body")().head
       body.children ::= new XHTMLElem(
         <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid;position:fixed;top:10px">
@@ -193,12 +203,11 @@ abstract class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implic
     </span>,None)
     if (!ismath) {
       val p = parent.get
-      p.add(overlay,Some(this))
-      this.delete
-      p.add(this,Some(overlay))
+      p.addAfter(overlay,this)
       print("")
     } else {
-      getNonMath.add(overlay,None)
+      val tm = getTopMath
+      tm.parent.foreach(_.addAfter(overlay,tm))
       print("")
     }
   }
@@ -208,7 +217,7 @@ abstract class XHTMLNode(initial_node : Node,iparent : Option[XHTMLNode])(implic
     _id += 1
     "stexelem" + (_id-1)
   }
-  private def getNonMath : XHTMLNode = if (!ismath) this else parent.get.getNonMath
+  private def getTopMath : XHTMLNode = if (!parent.get.ismath) this else parent.get.getTopMath
 
   def isEmpty : Boolean = children.isEmpty || children.forall(_.isEmpty)
 }
@@ -230,7 +239,7 @@ class XHTMLText(e : scala.xml.Text,parent : Option[XHTMLNode])(implicit rules : 
     if (!t.overlayset) {
       t.overlayset = true
       val h = t.getHead
-      XHTML.overlayHeader.foreach(h.add(_, None))
+      XHTML.overlayHeader.foreach(h.add)
       val body = t.get("body")().head
       body.children ::= new XHTMLElem(
         <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid">
@@ -264,10 +273,10 @@ class XHTMLText(e : scala.xml.Text,parent : Option[XHTMLNode])(implicit rules : 
       </iframe>
     </span>, None)
     val p = parent.get
-    p.add(overlay, Some(this))
+    p.addBefore(overlay, this)
     this.delete
-    p.add(newthis, Some(overlay))
-    newthis.add(this, None)
+    p.addBefore(newthis,overlay)
+    newthis.add(this)
   }
 }
 
