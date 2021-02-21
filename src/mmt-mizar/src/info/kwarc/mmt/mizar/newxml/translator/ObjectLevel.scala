@@ -12,7 +12,7 @@ import info.kwarc.mmt.mizar.newxml.translator.attributeTranslator.translate_Attr
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator.translate_Claim
 import info.kwarc.mmt.mizar.newxml.translator.typeTranslator.translate_Type
 import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
-import syntax._
+import syntax.{Equality, _}
 import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
@@ -141,7 +141,7 @@ object formulaTranslator {
     case Multi_Attributive_Formula(pos, sort, _tm, _cluster) =>
       val tm = termTranslator.translate_Term(_tm)
       val attrs = _cluster._attrs map translate_Attribute
-          and(attrs.map(at => Apply(at, tm)))
+          And(attrs.map(at => Apply(at, tm)))
     case Conditional_Formula(pos, sort, _frstFormula, _sndFormula) =>
       val assumption = translate_Claim(_frstFormula)
       val conclusion = translate_Claim(_sndFormula)
@@ -166,15 +166,16 @@ object formulaTranslator {
       OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), serialNrIdNr))
     case FlexaryDisjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
-      or(formulae)
+      Or(formulae)
     case FlexaryConjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
-      and(formulae)
-    case Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
+      And(formulae)
+    case mrl @ Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
       val firstForm = translate_Formula(_relForm)
       val (rel, negated) = firstForm match {
         case ApplyGeneral(rel, List(arg1, arg2)) => (rel, false)
         case not(ApplyGeneral(rel, List(arg1, arg2))) => (rel, true)
+        case _ => throw ExpressionTranslationError("Expected binary (possibly negated) relation formula in iterative equality, but instead found: "+firstForm, mrl)
       }
       def nextRelat(rhsOfRF:RightSideOf_Relation_Formula) : Term => Term = {
         val furtherArgs = translateArguments(rhsOfRF.infixedArgs._args)
@@ -196,11 +197,18 @@ object formulaTranslator {
     val ctx = vars map (_ % univ)
     translate_Existential_Quantifier_Formula(ctx, expression, assumptions)
   }
-  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit args: Context=Context.empty): Term = vars match {
-    case Nil => assumptions map translate_Claim map(implies(_, expression)) getOrElse expression
+  def translate_Universal_Quantifier_Formula(vars: Context, expression:Term, assumptions: Option[Claim])(implicit args: Context): Term = vars.variables match {
+    case Nil => assumptions match {
+      case Some(ass) => implies(translate_Claim(ass), expression)
+      case None => expression
+    }
     case v::vs =>
-      val expr = translate_Universal_Quantifier_Formula(vs, univ, expression, assumptions)
-      forall(v,univ,expr)
+      val expr = translate_Universal_Quantifier_Formula(vs, expression, assumptions)
+      forall(v.toTerm, v.tp.get,expr)
+  }
+  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit args: Context=Context.empty): Term = {
+    val ctx = vars map (_ % univ)
+    translate_Universal_Quantifier_Formula(ctx, expression, assumptions)
   }
   def translate_Restriction(maybeRestriction: Option[Restriction]) = maybeRestriction map {
     case Restriction(_formula) => _formula
@@ -241,15 +249,40 @@ object contextTranslator {
 }
 
 object claimTranslator {
-  def translate_Claim(claim:Claim)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = claim match {
+  def translate_Claim(claim:Claim)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) : Term = claim match {
     //case Assumption(_ass) => translate_Assumption(_ass)
     case ass: Assumptions => translate_Assumption(ass)
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
-    case Thesis(pos, sort) => ???
+    case Thesis(pos, sort) => defContext.thesis.toTerm(defContext)
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
-    case Conditions(_props) => and(_props map translate_Claim)
-    case Iterative_Equality(_label, _formula, _just, _iterSteps) => ???
+    case Conditions(_props) => And(_props map translate_Claim)
+    case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
+      val fstRelat = translate_Formula(_formula)
+      val ApplyGeneral(relat, List(_, sndTm)) = fstRelat match
+      { case not(f) => f case f => f }
+      val otherTms = _iterSteps.map(_._tm).map(translate_Term)
+      val eqClaims = sndTm::otherTms.init .zip(otherTms)
+        .map {case (x, y) => ApplyGeneral(relat, List(x, y))}
+      And(eqClaims)
+    case Type_Changing_Claim(_eqList, _tp) =>
+      val tp = translate_Type(_tp)
+      val reconsideringVars = _eqList._eqns map { case eq =>
+        val v = VarDecl(translate_Variable(eq._var).name, tp, translate_Term(eq._tm))
+        //adjust known variables in the context
+        eq match {
+          case Equality(_var, _tm) =>
+            defContext.args +:= v
+          case Equality_To_Itself(_var, _tm) =>
+            defContext.args = defContext.args.map {
+              case w if (w.name == v.name) => v
+              case w => w
+            }
+        }
+        v
+      }
+      val typingClaims = reconsideringVars.map(_.df.get) map(is(_, tp))
+      And(typingClaims)
   }
   def translate_Loci_Equality(loci_Equality: Loci_Equality)(implicit defContext: DefinitionContext) : Term = {
     val List(a, b) = List(loci_Equality._frstLocus, loci_Equality._sndLocus) map translate_Locus

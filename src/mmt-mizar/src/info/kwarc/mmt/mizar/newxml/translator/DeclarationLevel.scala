@@ -52,9 +52,96 @@ object JustifiedCorrectnessConditions {
     just flatMap(translate_Justification(_, tp))
   }
 }
-case class DefinitionContext(args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, usedFacts: List[(Term, Option[Term])] = Nil) {
+
+private[translator] class ThesisTerm(tm: Term) {
+  private def matchTerm(tm: Term): (List[VarDecl], List[Term], List[VarDecl], List[VarDecl], List[Term]) = tm match {
+    case PiOrEmpty(ctx, tm) =>
+      val args = ctx map (vd => vd.copy(tp = vd.tp))
+    def matchConds(tm: Term): (List[Term], Term) = tm match {
+      case Mizar.implies(cond, rest) =>
+        val (conds, body) = matchConds(rest)
+        (cond::conds, body)
+      case _ => (Nil, tm)
+    }
+      val (conds, actualClaim) = matchConds(tm)
+    def existentialQuantifier(tm: Term): (Context, Term) = tm match {
+        case Mizar.exists(vname, vtype, body) =>
+          val (ctx, tm) = existentialQuantifier(body)
+          (vname % TranslationController.simplifyTerm(vtype) :: ctx, tm)
+        case _ => (Context.empty, tm)
+      }
+      val (existQuants, body) = existentialQuantifier(actualClaim)
+
+      def univQuantifier(tm: Term): (Context, Term) = tm match {
+        case Mizar.forall(vname, vtype, body) =>
+          val (ctx, tm) = univQuantifier(body)
+          (vname % TranslationController.simplifyTerm(vtype) :: ctx, tm)
+        case _ => (Context.empty, tm)
+      }
+      val (univQuants, conjunction) = univQuantifier(body)
+      val conjuncts = tm match  {
+        case And(conjuncts) => conjuncts// map TranslationController.simplifyTerm
+        case tm => List(tm)//TranslationController.simplifyTerm(tm))
+      }
+      (args, conds, existQuants, univQuants, conjuncts)
+    case _ => throw ImplementationError("This can't ever happen.")
+  }
+  var args: List[VarDecl] = matchTerm(tm)._1
+  var conditions: List[Term] = matchTerm(tm)._2
+  var existQuants: Context = matchTerm(tm)._3
+  var univQuants: Context = matchTerm(tm)._4
+  var conjuncts: List[Term] = matchTerm(tm)._5
+  private def killOne(cond: VarDecl, ctx: => List[VarDecl]): Unit = cond match {
+    case VarDecl(OMV.anonymous, _, tp, _, _) => ctx.filterNot {
+      case VarDecl(_, _, vtp, _, _) => vtp.get == TranslationController.simplifyTerm(tp.get)
+    }
+    case VarDecl(name, _, tp, _, _) => ctx filterNot {
+      case VarDecl(vname, _, vtp, _, _) => if (name == vname) true else if (vname != OMV.anonymous) false else vtp.get == TranslationController.simplifyTerm(tp.get)
+    }
+  }
+  def killArg(arg: VarDecl) = killOne(arg, args)
+  def killExistVar(v: VarDecl) = killOne(v, existQuants)
+  def killUnivVar(v: VarDecl) = killOne(v, univQuants)
+  def killConjunct(tm: Term) = {
+    assert(tm == conjuncts.head)
+    conjuncts = conjuncts.tail
+  }
+  def killCond(tm: Term) = {
+    assert(tm == conditions.head)
+    conditions = conditions.tail
+  }
+  def doneProving(): Boolean = (conditions ++ existQuants ++ univQuants).isEmpty && conjuncts == Nil
+  def toTerm(implicit defContext: DefinitionContext): Term = {
+    val allConjunctions = Mizar.And(conjuncts)
+    val univQuantified = translate_Universal_Quantifier_Formula(univQuants, allConjunctions, None)(defContext.args)
+    val existQuantified = translate_Existential_Quantifier_Formula(existQuants, univQuantified, None)(defContext.args)
+    val furtherArgs = defContext.args.filter(existQuantified.freeVars contains _)
+    PiOrEmpty(furtherArgs++args, conditions.foldRight(existQuantified)(Mizar.implies(_, _)))
+  }
+  def subobjects: List[(Context, Obj)] = (conditions ++ existQuants ++ univQuants).flatMap(_.subobjects) ++ conjuncts.flatMap(_.subobjects)
+}
+private[translator] object ThesisTerm {
+  def empty() : ThesisTerm = {
+    var ths = new ThesisTerm(Mizar.trueCon)
+    ths.conjuncts = Nil
+    ths
+  }
+}
+case class DefinitionContext(var args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, usedFacts: List[(Term, Option[Term])] = Nil, var thesis: ThesisTerm = ThesisTerm.empty()) {
   def addArguments(arguments: Context) = this.copy(args = this.args ++ arguments)
   def addAssumptions(assumptions: List[Term]) = this.copy(assumptions = this.assumptions ++ assumptions)
+  def killArg(arg: VarDecl): Unit = thesis.killArg(arg)
+  def killConjunct(conjunct: Term): Unit = thesis.killConjunct(conjunct)
+  def killAssumption(assumption: Term): Unit = thesis.killCond(assumption)
+  def killExistQuant(existQuant: VarDecl): Unit = thesis.killExistVar(existQuant)
+  def killUnivQuant(univQuant: VarDecl): Unit = thesis.killUnivVar(univQuant)
+  private[translator] def setThesis(claim: Term): Unit = {
+    assert (thesis.doneProving())
+    thesis = new ThesisTerm(claim)
+  }
+  private[translator] def setThesis(claim: ThesisTerm): Unit = {
+    thesis = claim
+  }
 }
 object DefinitionContext {
   def empty() = DefinitionContext()
@@ -185,8 +272,12 @@ object patternTranslator {
       case pat: ConstrPattern => computeGlobalName(pat)//computeGlobalPatConstrName(pat)
       case pat => computeGlobalName(pat)
     }
-    val gn = if (referencedGn.toString contains "hidden") resolveHiddenReferences(referencedGn).map {
-        case OMS(p) => p} getOrElse referencedGn else referencedGn
+    val gn = if (referencedGn.toString contains "hidden") {
+      resolveHiddenReferences(referencedGn) match {
+        case Some(OMS(p)) => p
+        case _ => referencedGn
+      }
+    } else referencedGn
     val name = gn.name
 
     val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
@@ -216,7 +307,7 @@ object patternTranslator {
       throw PatternTranslationError("Error looking up the declaration at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. "
         +"Probably this is because we require the dependency theory "+gn.module+" of the article currently being translated "+localPath+" to be already translated: \n"
         +"Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ", pat)
-      if (! (getUnresolvedDependencies contains gn.module)) {
+      if (! (getUnresolvedDependencies() contains gn.module)) {
         addUnresolvedDependency(gn.module)
       }
       throw new ObjectLevelTranslationError("Trying to lookup declaration (presumably) at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. ", pat)})
@@ -344,7 +435,7 @@ object statementTranslator {
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement) = { ??? }
   def translate_Theorem_Item(theorem_Item: Theorem_Item)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = {
     val prfedClaim = theorem_Item.prfClaim
-    implicit val gn = mMLIdtoGlobalName(theorem_Item.mizarGlobalName())
+    implicit val gn = theorem_Item.referencedLabel()//mMLIdtoGlobalName(theorem_Item.mizarGlobalName())
     val (claim, proof) = translate_Proved_Claim(theorem_Item.prfClaim)
     val tr = namedDefArgsTranslator()
     val theoremDecl = makeConstant(gn.name, Some(claim), proof)
@@ -593,7 +684,7 @@ object definitionTranslator {
     } match {
       case Some(c: Constant) => makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)
       case Some(MizarPatternInstance(ln, pat, params)) => MizarPatternInstance(gn.name, pat, params)
-      case None => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
+      case _ => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
     }
   }
 }
@@ -602,20 +693,18 @@ object clusterTranslator {
   def translate_Registration(reg: Registrations)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()): List[Declaration] = {
     val tr = namedDefArgsTranslator()
     val resDecl: Option[Declaration] = reg match {
-      case Property_Registration(_props, _just) if (_props.property.isEmpty) => None
-      case reg => Some(reg match {
       case Conditional_Registration(pos, _attrs, _at, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val ats = attributeTranslator.translateAttributes(_at)
         val name = LocalName("condReg:"+pos.position)
-        conditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats)
+        Some(conditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats))
       case Existential_Registration(pos, _adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
         //TODO:
         val name = LocalName("existReg:"+pos.position)
-        existentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs)
+        Some(existentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs))
       case Functorial_Registration(pos, _aggrTerm, _adjCl, _tp) =>
         val tm = translate_Term(_aggrTerm)
         val adjs = attributeTranslator.translateAttributes(_adjCl)
@@ -623,15 +712,15 @@ object clusterTranslator {
         val tp = _tp map translate_Type getOrElse({
           inferType(tm)})
         val name = LocalName("funcReg:"+pos.position)
-        if (isQualified) {
+        Some(if (isQualified) {
           qualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs)
         } else {
           unqualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs)(NotationContainer.empty())
-        }
-      case Property_Registration(_props, _just) if (_props.property.isDefined) =>
-        val justProp = JustifiedProperty(_props, None, Some(_just))
-        translate_JustifiedProperty(justProp)
-    })}
+        })
+      case Property_Registration(_props, _just) => _props.property map {_ =>
+        translate_JustifiedProperty(JustifiedProperty(_props, None, Some(_just)))
+      }
+    }
     (resDecl.map(tr)).map(List(_)).getOrElse(Nil)
   }
   def translate_Identify(_fstPat:Patterns, _sndPat:Patterns)(implicit definitionContext: DefinitionContext = DefinitionContext.empty()): List[Declaration] = {
@@ -665,6 +754,7 @@ object blockTranslator {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
         case ass: Claim => assumptions +:= translate_Claim(ass)
+        case Assumption(ass) => assumptions +:= translate_Claim(ass)
         //We put the guard, since the type pattern is eliminated by the compiler, it is for better error messages only, as we shouldn't ever encounter any other subitems at this point
         case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
           implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil

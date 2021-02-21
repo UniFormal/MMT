@@ -334,10 +334,24 @@ case class FlexaryConjunctive_Formula(pos: Position, sort: String, _formulae:Lis
  * @param _rhsOfRFs contains the remaining relations <_2 ... <_m and the arguments those are applied to
  */
 case class Multi_Relation_Formula(pos: Position, sort: String, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
-
+/**
+ * see Multi_Relation_Formula
+ * @param objAttr
+ * @param infixedArgs
+ */
 case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends ObjectLevel
 
-case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim
+/**
+ * A labelled claim
+ * within proofs the labels might be deferred to with local references
+ * immediately after Therorem, ...
+ * @param pos
+ * @param _label
+ * @param _thesis
+ */
+case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim with ProvenFactReference {
+  def referencedLabel() = TranslationController.currentTheoryPath ? LocalName(_label.spelling)
+}
 /**
 whatever still remains to be proven in a proof
   thesis is changed by
@@ -360,7 +374,7 @@ case class Thesis(pos: Position, sort: String) extends Claim
  */
 case class Diffuse_Statement(spelling:String, serialnr:SerialNrIdNr, labelnr:Int, _label:Label) extends Claim
 case class Conditions(_props:List[Proposition]) extends Claim
-case class Iterative_Equality(_label:Label, _formula:Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
+case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
 private[newxml] case class Type_Changing_Claim(_eqList:Equalities_List, _tp:Type) extends Claim
 
 sealed trait Assumptions extends Claim
@@ -415,7 +429,7 @@ case class ExemplifyingVariable(_var:Variable, _simplTm:Simple_Term) extends Exe
 case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications
 
 sealed trait Reference extends ObjectLevel
-sealed trait ProvenFactReference extends Reference {
+trait ProvenFactReference extends Reference {
   def referencedLabel(): GlobalName
 }
 case class Local_Reference(pos:Position, spelling:String, serialnumber:SerialNrIdNr, labelnr:Int) extends ProvenFactReference {
@@ -447,9 +461,22 @@ case class Expandable_Mode(_tp:Type) extends Modes
  * @param _def
  */
 case class Standard_Mode(_tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Modes
-
-sealed trait EqualityTr extends ObjectLevel
+sealed trait EqualityTr extends ObjectLevel {
+  def _var: Variable
+  def _tm: MizTerm
+}
+/**
+ * Introduce a new variable equal to the given Term, show its coherence to another type
+ * and consequently view the variable as a variable of that type
+ * @param _var
+ * @param _tm
+ */
 case class Equality(_var:Variable, _tm:MizTerm) extends EqualityTr
+/**
+ * Shows that a variable is coherent also to another type and view it as an element of that type from now on
+ * @param _var
+ * @param _tm
+ */
 case class Equality_To_Itself(_var:Variable, _tm:MizTerm) extends EqualityTr
 
 case class Schematic_Variables(_segms:List[Segments]) extends ObjectLevel

@@ -1,12 +1,12 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.ImplementationError
+import info.kwarc.mmt.api.{GlobalName, ImplementationError}
 import info.kwarc.mmt.mizar.newxml.syntax.Claim
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.DeclarationLevelTranslationError
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslatorUtils}
 
-private[newxml] sealed trait DeclarationLevel
-private[newxml] trait Subitem extends DeclarationLevel {
+sealed trait DeclarationLevel
+trait Subitem extends DeclarationLevel {
   def kind:String = {
     this.getClass.getName
   }
@@ -63,7 +63,7 @@ case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
     val justItems = _block._items.tail
     val startPos = justItems.head.pos.startPosition()
     val endPos = justItems.last.pos.endposition
-    ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line+"\\"+startPos.col), endPos), justItems)))
+    ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line.toString+"\\"+startPos.col), endPos), justItems)))
   }
 }
 //telling Mizar to remember these properties for proofs later
@@ -110,7 +110,11 @@ case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Just
   override def prfClaim: ProvedClaim = ProvedClaim(claim, Some(_just))
 }
 case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
-case class Theorem_Item(MmlId:MMLId, prfClaim:ProvedClaim) extends Statement with MMLIdSubitem
+case class Theorem_Item(MmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
+  override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
+  def labelled: Boolean = _prop._label.spelling != ""
+  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else TranslatorUtils.mMLIdtoGlobalName(mizarGlobalName())
+}
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
 
 sealed trait BlockSubitem extends Subitem
