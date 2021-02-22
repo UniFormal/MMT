@@ -52,39 +52,39 @@ object ULO {
 
   trait ULOTrait {
     def toIri : IRI
-    private[ontology] def inverseOf(p : Resource*) : this.type  = {
+    private[rdf] def inverseOf(p : Resource*) : this.type  = {
       add(this,OWL.INVERSEOF,sequence(p))
       this
     }
-    private[ontology] def domain(p : Resource*) : this.type  = {
+    private[rdf] def domain(p : Resource*) : this.type  = {
       add(this,RDFS.DOMAIN,sequence(p))
       this
     }
-    private[ontology] def range(p : Resource*) : this.type  = {
+    private[rdf] def range(p : Resource*) : this.type  = {
       add(this,RDFS.RANGE,sequence(p))
       this
     }
-    private[ontology] def comment(s : String) : this.type  = {
+    private[rdf] def comment(s : String) : this.type  = {
       add(this,RDFS.COMMENT,org.eclipse.rdf4j.model.util.Values.literal(s))
       this
     }
-    private[ontology] def _type(p : Resource*) : this.type  = {
+    private[rdf] def _type(p : Resource*) : this.type  = {
       add(this,RDF.TYPE,sequence(p))
       this
     }
-    private[ontology] def isDisjointUnionOf(p : Resource*) : this.type  = {
+    private[rdf] def isDisjointUnionOf(p : Resource*) : this.type  = {
       add(this,OWL.DISJOINTUNIONOF,sequence(p))
       this
     }
-    private[ontology] def isIntersectionOf(p : Resource*) : this.type  = {
+    private[rdf] def isIntersectionOf(p : Resource*) : this.type  = {
       add(this,OWL.INTERSECTIONOF,sequence(p))
       this
     }
-    private[ontology] def subclassOf(p : Resource*) : this.type  = {
+    private[rdf] def subclassOf(p : Resource*) : this.type  = {
       add(this,RDFS.SUBCLASSOF,sequence(p))
       this
     }
-    private[ontology] def complementOf(p : Resource*) : this.type  = {
+    private[rdf] def complementOf(p : Resource*) : this.type  = {
       add(this,OWL.COMPLEMENTOF,sequence(p))
       this
     }
@@ -96,11 +96,11 @@ object ULO {
 
   case class ObjectProperty(s : String) extends ULOElem(s) {
     _type(OWL.OBJECTPROPERTY)
-    private[ontology] def subpropertyOf(p : Resource*) : this.type = {
+    private[rdf] def subpropertyOf(p : Resource*) : this.type = {
       add(this,RDFS.SUBPROPERTYOF,sequence(p))
       this
     }
-    private[ontology] def disjointWith(p : Resource*) : this.type  = {
+    private[rdf] def disjointWith(p : Resource*) : this.type  = {
       add(this,OWL.PROPERTYDISJOINTWITH,sequence(p))
       this
     }
@@ -137,7 +137,7 @@ object ULO {
 
   case class DatatypeProperty(s : String) extends ULOElem(s) {
     _type(OWL.DATATYPEPROPERTY)
-    private[ontology] def subpropertyOf(p : Resource*) : this.type = {
+    private[rdf] def subpropertyOf(p : Resource*) : this.type = {
       add(this,RDFS.SUBPROPERTYOF,sequence(p))
       this
     }
@@ -148,7 +148,7 @@ object ULO {
   }
   case class Class(s : String) extends ULOElem(s) {
     _type(OWL.CLASS)
-    private[ontology] def disjointWith(p : Resource*) : this.type  = {
+    private[rdf] def disjointWith(p : Resource*) : this.type  = {
       add(this,OWL.DISJOINTWITH,sequence(p))
       this
     }

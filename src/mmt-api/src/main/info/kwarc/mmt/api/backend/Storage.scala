@@ -15,8 +15,8 @@ case class NotApplicable(message: String = "") extends Error(message)
 /** An abstraction over physical storage units that hold MMT content */
 abstract class Storage {
   /** implementing classes should call this to load an OMDoc XML stream (which this method will close afterwards) */
-  protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader)(implicit controller: Controller) {
-    val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader)
+  protected def loadXML(u: URI, dpath: DPath, reader: BufferedReader,si : SourceInfo)(implicit controller: Controller) {
+    val ps = new ParsingStream(u, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", reader,si)
     controller.report("storage", "found by " + toString + " at URL " + u)
     try {
       controller.read(ps, interpret = false)(ErrorThrower)
@@ -74,7 +74,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
     // dref must be unnamed; using name={n} would give the dref the same URI as the referenced document
     val node = <omdoc>{entries.map(n => <dref name="" target={prefix + n.name}/>)}</omdoc>
     val reader = new BufferedReader(new java.io.StringReader(node.toString))
-    loadXML(uri, DPath(uri), reader)
+    loadXML(uri, DPath(uri), reader,FileSource(folder))
   }
 
   def load(path: Path)(implicit controller: Controller) {
@@ -83,7 +83,7 @@ class LocalCopy(scheme: String, authority: String, prefix: String, val base: Fil
     val target = base / suffix
     if (target.isFile) {
        val reader = File.Reader(target)
-       loadXML(uri, path.doc, reader)
+       loadXML(uri, path.doc, reader,FileSource(target))
     } else if (target.isDirectory) {
        loadFromFolder(uri, suffix)
     } else throw NotApplicable("file/folder " + target + " not found or not accessible: " + path)
@@ -118,7 +118,7 @@ class ArchiveNarrationStorage(a: Archive, folderName: String) extends {val nBase
       val es = entries.map(n => <dref name={n.name + ".ref"} target={prefix + n.name}/>).mkString("\n")
       val docS = s"""<omdoc level="folder">$oe$es</omdoc>"""
       val reader = new BufferedReader(new java.io.StringReader(docS))
-      loadXML(uri, DPath(uri), reader)
+      loadXML(uri, DPath(uri), reader,StringSource)
    }
 }
 
@@ -251,7 +251,7 @@ case class LocalSystem(base: URI) extends Storage {
     val uri = base.resolve(path.doc.uri)
     val _ = getSuffix(localBase, uri)
     val file = new java.io.File(uri.toJava)
-    loadXML(uri, path.doc, File.Reader(file))
+    loadXML(uri, path.doc, File.Reader(file),FileSource(File(file)))
   }
 }
 

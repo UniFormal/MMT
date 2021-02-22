@@ -6,6 +6,7 @@ import libraries._
 import archives.{BuildResult, BuildSuccess, BuildTask, LogicalDependency}
 import checking.Interpreter
 import frontend.Controller
+import info.kwarc.mmt.api.ontology.rdf.Database
 import modules._
 import notations._
 import objects._
@@ -125,6 +126,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val reg = currentSourceRegion
     SourceRef.update(se, state.makeSourceRef(reg))
     try {
+      Database.get(controller).add(se,state.ps.si)
       controller.add(se)
       state.ps.reportProgress(Parsed(se))
       if (!state.ps.isKilled) {

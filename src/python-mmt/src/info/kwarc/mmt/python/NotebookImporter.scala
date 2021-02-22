@@ -38,7 +38,7 @@ class NotebookImporter extends Importer {
      }
      val sourceURL = bt.base / bt.inPath
      val dpath = bt.narrationDPath
-     val ps = new ParsingStream(sourceURL, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", ParsingStream.stringToReader(docS))
+     val ps = new ParsingStream(sourceURL, IsRootDoc(dpath), NamespaceMap(dpath), "omdoc", ParsingStream.stringToReader(docS),FileSource(bt.inFile))
      val doc = controller.read(ps, interpret = false)(ErrorThrower)
      SourceRef.update(doc, SourceRef(sourceURL, SourceRegion(SourcePosition(0, 0, 0), SourcePosition(s.length - 1, -1, -1))))
      index(doc)

@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.parser.{FileInArchiveSource, FileSource}
 import info.kwarc.mmt.api.utils._
 
 import scala.collection.mutable
@@ -85,7 +86,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (!f.existsCompressed) throw NotApplicable("file not found")
         // dpath is a dummy URI to be used when creating the Document that contains the module mod
         val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(topmod).segments)
-        loadXML(mod.doc.uri, dpath, File.Reader(f))
+        loadXML(mod.doc.uri, dpath, File.Reader(f),FileInArchiveSource(this,f))
       case m ?? _ => load(m)
     }
   }
