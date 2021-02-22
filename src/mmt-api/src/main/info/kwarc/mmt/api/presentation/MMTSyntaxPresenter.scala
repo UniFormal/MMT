@@ -381,6 +381,7 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     // we have the problem that these encode the domain of the assigned symbol as a ComplexStep
     // in the name.
     rh(c.name.last.toString)
+
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>
       if (index == 0) {

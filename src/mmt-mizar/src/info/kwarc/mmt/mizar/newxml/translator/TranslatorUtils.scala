@@ -26,8 +26,8 @@ case class DeclarationTranslationError(str: String, decl: Subitem) extends Decla
   }
 }
 class ObjectLevelTranslationError(str: String, tm: ObjectLevel) extends TranslatingError(str)
-case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends ObjectLevelTranslationError(str+
-  "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString, prfedClaim)
+case class ProvedClaimTranslationError(str: String, prfedClaim: ProvedClaim) extends TranslatingError(str+
+  "\nProvedClaimTranslationError while translating the (proved) "+prfedClaim._claim.getClass.getName+": "+prfedClaim.toString)
 case class PatternTranslationError(str: String, pat: Patterns) extends ObjectLevelTranslationError(str+
   "\nPatternClaimTranslationError while translating the pattern with spelling "+pat.patternAttrs.spelling+": "+pat.toString, pat)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
@@ -136,7 +136,7 @@ object TranslatorUtils {
         case str if (str.endsWith("M2")) => Some(set)
         case str if (str.endsWith("R1") && neqPats.exists(str.endsWith(_))) => Some(neq.term)
         case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(Mizar.eq.term)
-        case str if (str.endsWith("R2")) => Some(in)
+        case str if (str.endsWith("R2") || str.endsWith("R3")) => Some(in)
         case _ =>  throw new ImplementationError("Failure to translate the reference to a declaration in hidden of name "+name.toString)
       }
       case _ => None
