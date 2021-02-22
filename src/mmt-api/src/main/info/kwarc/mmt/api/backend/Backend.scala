@@ -154,7 +154,20 @@ class Backend(extman: ExtensionManager, val report: info.kwarc.mmt.api.frontend.
           arch.properties.get("classpath").foreach {cp =>
             val rF = root / cp
             log("loading realization archive" + rF)
-            val ra = new RealizationArchive(rF)
+            val parent : Unit => Option[RealizationArchive] = arch.properties.get("scaladep") match {
+              case None => _ => None
+              case Some(a) =>
+                _ => {
+                  getArchive(a) match {
+                    case Some(arch) =>
+                      stores.collectFirst {
+                        case ra: RealizationArchive if ra.file.toString.startsWith(arch.root.toString) => ra
+                      }
+                    case _ => None
+                  }
+                }
+            }
+            val ra = new RealizationArchive(rF,parent)
             addStore(ra)
           }
           List(arch)

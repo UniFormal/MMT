@@ -5,8 +5,6 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{constant, constantName}
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
-
 
 object Mizar {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
@@ -42,6 +40,7 @@ object Mizar {
       case "any" => TermsTh ? "term"
       case "set" => HiddenTh ? name
       case "sethood" => HiddenTh ? "sethood_property"
+      case "in" => HiddenTh ? "in"
       case "prop"=> PropositionsTh ? name
       case "mode" => TypesTh ? "tp"
       case "proof" => ProofsTh ? "ded"
@@ -49,7 +48,7 @@ object Mizar {
       case "and" => ConjunctionTh ? name
       case "or" => DisjunctionTh ? name
       case "eq" => EqualityTh ? "equal"
-      case "ineq" => HiddenTh ? "inequal"
+      case "neq" => HiddenTh ? "inequal"
       case "true" => TruthTh ? name
       case "false" => FalsityTh ? name
       case "not" => NegationTh ? name
@@ -74,9 +73,9 @@ object Mizar {
   def apply(f : Term, args : Term*) = ApplyGeneral(f, args.toList)
 
   def prop : Term = constant("prop")
-  //val any : Term = constant("any")
   def tp : Term = constant("tp")
   def set = constant("set")
+  def in = constant("in")
   def any =constant("any")
 
   def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
@@ -96,7 +95,6 @@ object Mizar {
   def seqConn(connective : String, length : Term, seq : Term) : Term =
     apply(constant(connective), length, seq)
 
-
   def trueCon = constant("true")
   def falseCon = constant("false")
 
@@ -105,6 +103,8 @@ object Mizar {
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
   object eq extends BinaryLFConstantScala(eqCon.module, "eq")
+  def neqCon = constantName("neq")
+  object neq extends BinaryLFConstantScala(MizarTh, "inequal")
 
   class Quantifier(n: String) {
     def apply(v : OMV, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(v % Mizar.any, prop))
@@ -117,10 +117,16 @@ object Mizar {
   object forall extends Quantifier("for")
   object exists extends Quantifier("ex")
 
-  object proof extends UnaryLFConstantScala(MizarTh, "proof")
-
-
-  //     OMBIND(apply(Mizar.constant("for"), tp),Context(VarDecl(LocalName(v), Some(Mizar.any), None, None)), prop)
+  object proof extends UnaryLFConstantScala(ProofsTh, "proof")
+  object Uses extends TernaryLFConstantScala(MizarTh, "using")
+  def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
+  def zeroAryAndPropCon = constant("0ary_and_prop")
+  object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
+  object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
+  def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
+    val suffix = if (direct) "Dir" else "Indir" + resKind
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
+  }
 
   def attr(t : Term) = apply(Mizar.constant("attr"), t)
   def adjective(cluster : Term, typ : Term) = apply(Mizar.constant("adjective"), typ, cluster)
@@ -185,22 +191,6 @@ object Mizar {
 
 object MMTUtils {
   val mainPatternName = OMV.anonymous
-
-  def getTheoryPath(aid: String): MPath = {
-    if (aid == TranslationController.currentAid)
-      TranslationController.currentTheoryPath
-    else aid match {
-      case "HIDDEN" => Mizar.HiddenTh
-      case _ => DPath(Mizar.mmlBase) ? aid
-    }
-  }
-
-  def getPath(aid: String, kind: String, nr: Int): GlobalName = {
-    getTheoryPath(aid) ? (aid + "_" + kind + "_" + nr.toString)
-  }
-  def getPath(aid: String, name: String): GlobalName = {
-    getTheoryPath(aid) ? name
-  }
 
   def Lam(name: String, tp: Term, body: Term): Term = {
     Lambda(LocalName(name), tp, body)

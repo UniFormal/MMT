@@ -1,0 +1,956 @@
+{
+	"info": {
+		"_postman_id": "8347f2b8-c8a6-4c8b-800c-c4d3b01c9580",
+		"name": "MMT FrameIT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Server Dev (mostly Navid)",
+			"item": [
+				{
+					"name": "debug: print situation space",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/debug/space/print",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"debug",
+								"space",
+								"print"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "debug: check situation space",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/debug/space/check",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"debug",
+								"space",
+								"check"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "debug: force error",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/debug/forceerror",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"debug",
+								"forceerror"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List facts",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/fact/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"fact",
+								"list"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List scrolls",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/scroll/list",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"list"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "List all scrolls",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/scroll/listall",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"listall"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Apply OppositeLen scroll",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?A\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?B\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?C\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?C\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?distanceBC\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?angleABC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?angleABC\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_RightAngledProblem?rightAngleBCA\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?rightAngledC\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/apply",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"apply"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dyanmic (total, id mapping): OppositeLen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?A\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?B\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?C\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?C\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?distanceBC\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?angleABC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?angleABC\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_RightAngledProblem?rightAngleBCA\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?rightAngledC\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/dynamic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"dynamic"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dynamic (total, w/ type errors): OppositeLen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?C\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?A\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?C\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?B\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?distanceBC\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?angleABC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?angleABC\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/dynamic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"dynamic"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dynamic (partial): OppositeLen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?C\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?A\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?distanceBC\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/dynamic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"dynamic"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dynamic (utterly partial): OppositeLen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleScroll_GeneralProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?A\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld/integrationtests?SampleSituationSpace/Root?distanceBC\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/dynamic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"dynamic"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reload FrameWorld Archive",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/archive/reload",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"archive",
+								"reload"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Requests mimicking Unity",
+			"item": [
+				{
+					"name": "One by one",
+					"item": [
+						{
+							"name": "Add point A",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"general\",\n   \"label\": \"A\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 1.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 2.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 3.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add point B",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"general\",\n   \"label\": \"B\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 4.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 5.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 6.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add point C",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"value": "application/json",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"general\",\n   \"label\": \"C\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 7.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 8.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 9.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add distance BC",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"veq\",\n   \"label\": \"BC\",\n   \"lhs\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?metric\"},\n      \"arguments\": [\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\n      ]\n   },\n   \"valueTp\": {\n       \"kind\": \"OMS\",\n       \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"\n   },\n   \"value\": {\n      \"kind\": \"OMF\",\n      \"float\": 42\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add angle ABC measured",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"veq\",\n   \"label\": \"∠ABC\",\n   \"lhs\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?angle_between\"},\n      \"arguments\": [\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\n      ]\n   },\n   \"valueTp\": {\n       \"kind\": \"OMS\",\n       \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"\n   },\n   \"value\": {\n      \"kind\": \"OMF\",\n      \"float\": 45.0\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add angle BCA = 90.0°",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"name": "Content-Type",
+										"type": "text",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n   \"kind\": \"general\",\n   \"label\": \"∟C\",\n   \"tp\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?Logic?ded\"},\n      \"arguments\": [{\n          \"kind\": \"OMA\",\n          \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?Logic?eq\"},\n          \"arguments\": [\n              {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"},\n              {\n                  \"kind\": \"OMA\",\n                  \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?angle_between\"},\n                  \"arguments\": [\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"},\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"}\n                  ]\n              },\n              {\"kind\": \"OMF\", \"float\": 90.0}\n          ]\n      }]\n   }\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "http://localhost:8085/fact/add",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8085",
+									"path": [
+										"fact",
+										"add"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "List all scrolls",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/scroll/listall",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"listall"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add all required: A,B,C,BC,ABC,BCA=90°",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "[{\n   \"kind\": \"general\",\n   \"label\": \"A\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 1.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 2.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 3.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n},\n{\n   \"kind\": \"general\",\n   \"label\": \"B\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 4.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 5.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 6.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n},\n{\n   \"kind\": \"general\",\n   \"label\": \"C\",\n   \"tp\": {\n      \"uri\": \"http://mathhub.info/MitM/core/geometry?3DGeometry?point\",\n      \"kind\": \"OMS\"\n   },\n   \"df\": {\n      \"applicant\": {\n         \"uri\": \"http://gl.mathhub.info/MMT/LFX/Sigma?Symbols?Tuple\",\n         \"kind\": \"OMS\"\n      },\n      \"arguments\": [\n         {\n            \"float\": 7.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 8.0,\n            \"kind\": \"OMF\"\n         },\n         {\n            \"float\": 9.0,\n            \"kind\": \"OMF\"\n         }\n      ],\n      \"kind\": \"OMA\"\n   }\n},\n{\n   \"kind\": \"veq\",\n   \"label\": \"BC\",\n   \"lhs\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?metric\"},\n      \"arguments\": [\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\n      ]\n   },\n   \"valueTp\": {\n       \"kind\": \"OMS\",\n       \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"\n   },\n   \"value\": {\n      \"kind\": \"OMF\",\n      \"float\": 42\n   }\n},\n{\n   \"kind\": \"veq\",\n   \"label\": \"∠ABC\",\n   \"lhs\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?angle_between\"},\n      \"arguments\": [\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n         {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\n      ]\n   },\n   \"valueTp\": {\n       \"kind\": \"OMS\",\n       \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"\n   },\n   \"value\": {\n      \"kind\": \"OMF\",\n      \"float\": 45.0\n   }\n},\n{\n   \"kind\": \"general\",\n   \"label\": \"∟C\",\n   \"tp\": {\n      \"kind\": \"OMA\",\n      \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?Logic?ded\"},\n      \"arguments\": [{\n          \"kind\": \"OMA\",\n          \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?Logic?eq\"},\n          \"arguments\": [\n              {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/Foundation?RealLiterals?real_lit\"},\n              {\n                  \"kind\": \"OMA\",\n                  \"applicant\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/MitM/core/geometry?Geometry/Common?angle_between\"},\n                  \"arguments\": [\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"},\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"},\n                      {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"}\n                  ]\n              },\n              {\"kind\": \"OMF\", \"float\": 90.0}\n          ]\n      }]\n   }\n}\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/fact/bulkadd",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"fact",
+								"bulkadd"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "debug: print situation space",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/debug/space/print",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"debug",
+								"space",
+								"print"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "debug: check situation space",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8085/debug/space/check",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"debug",
+								"space",
+								"check"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Apply OppositeLen (w/ type errors)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?C\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact4\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem_AngleAtB?angleB\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact5\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem_RightAngleAtC?rightAngleC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact6\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/apply",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"apply"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Apply OppositeLen scroll",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?A\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact1\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?B\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact2\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem?C\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact3\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact4\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem_AngleAtB?angleB\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact5\"}\r\n       },\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?TriangleProblem_RightAngleAtC?rightAngleC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact6\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/apply",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"apply"
+							],
+							"query": [
+								{
+									"key": "simplified",
+									"value": "true",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dynamic (partial): OppositeLen",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n   \"scroll\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen\",\r\n   \"assignments\": [\r\n       {\r\n           \"fact\": {\"uri\": \"http://mathhub.info/FrameIT/frameworld?OppositeLen/Problem?distanceBC\"},\r\n           \"assignment\": {\"kind\": \"OMS\", \"uri\": \"http://mathhub.info/FrameIT/frameworld?DefaultSituationSpace/Root?fact4\"}\r\n       }\r\n   ]\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8085/scroll/dynamic",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8085",
+							"path": [
+								"scroll",
+								"dynamic"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		}
+	]
+}

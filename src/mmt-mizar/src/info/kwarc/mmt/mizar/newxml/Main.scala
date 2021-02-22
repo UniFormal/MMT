@@ -45,11 +45,11 @@ object Main {
       println("We encountered the following issues during parsing: " + prettyPrintList("\n", troubles))
       println("There were issues while parsing the following files: " + prettyPrintList(" ", troublemakers))
     }
-
-    TranslationController.currentThyBase
+    /*TranslationController.currentThyBase
     parsedFiles map {txtp:Text_Proper =>
       TranslationController.currentAid = txtp.articleid
       TranslationController.currentOutputBase = DPath(Mizar.mmlBase)
-      translator.articleTranslator.translateArticle(txtp)}
+      translator.articleTranslator.translateArticle(txtp)
+    }*/
   }
 }

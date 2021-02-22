@@ -368,7 +368,7 @@ case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justificat
 case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
 case class Exemplification(_exams:List[Exemplifications]) extends Subitem
 case class Assumption(_ass:Assumptions) extends Claim with Subitem
-case class Identify(_pats:List[Patterns], _lociEqns:Loci_Equalities) extends Subitem
+case class Identify(_firstPat:Patterns, _sndPat:Patterns, _lociEqns:Loci_Equalities) extends RegistrationSubitems
 case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
 case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
 case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
@@ -780,6 +780,15 @@ case class FlexaryDisjunctive_Formula(pos: Position, sort: String, _formulae:Lis
  * @param _formulae
  */
 case class FlexaryConjunctive_Formula(pos: Position, sort: String, _formulae:List[Claim]) extends Formula
+
+/**
+ * Apply relations <_i in a sequence to a list of arguments a_1, ..., a_p leading to
+ * a_1 <_1 a_2 <_2 ... <_1 a_n_1 <_2 a_n_1+1 <_2 ... <_3 ... <_m a_p
+ * @param pos
+ * @param sort
+ * @param _relForm the relation formula a_1 <_1 a_2
+ * @param _rhsOfRFs contains the remaining relations <_2 ... <_m and the arguments those are applied to
+ */
 case class Multi_Relation_Formula(pos: Position, sort: String, _relForm:Relation_Formula, _rhsOfRFs:List[RightSideOf_Relation_Formula]) extends Formula
 
 case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: InfixedArgs) extends ObjectLevel
@@ -810,7 +819,7 @@ case class Diffuse_Statement(spelling:String, serialnr:SerialNrIdNr, labelnr:Int
 case class Conditions(_props:List[Proposition]) extends Claim
 case class Iterative_Equality(_label:Label, _formula:Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
 
-sealed trait Assumptions
+sealed trait Assumptions extends Claim
 case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
 case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
 case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions with Subitem
@@ -1005,7 +1014,7 @@ case class Restriction(_formula:Formula) extends ObjectLevel
 case class Right_Circumflex_Symbol(position: Position, nr: Int, formatnr:Int, spelling:String) extends ObjectLevel
 case class Equating(_var:Variable, _tm:MizTerm) extends ObjectLevel
 case class Loci_Equalities(_lociEqns:List[Loci_Equality]) extends ObjectLevel
-case class Loci_Equality(pos:Position, _loci:List[Locus]) extends ObjectLevel
+case class Loci_Equality(pos:Position, _frstLocus:Locus, _sndLocus:Locus) extends ObjectLevel
 case class Equalities_List(_eqns:List[EqualityTr]) extends ObjectLevel
 case class Iterative_Step(pos:Position, _tm:MizTerm, _just:Justification) extends ObjectLevel
 case class Type_List(_tps:List[Type]) extends ObjectLevel

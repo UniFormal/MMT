@@ -1,4 +1,6 @@
-import info.kwarc.mmt.api.frontend.REPLExtension
+import info.kwarc.mmt.api.SemanticObject
+import info.kwarc.mmt.api.backend.{NotApplicable, RealizationStorage}
+import info.kwarc.mmt.api.frontend.{Controller, Extension, REPLExtension}
 import info.kwarc.mmt.api.frontend.actions.ActionResultError
 
 import scala.io.StdIn

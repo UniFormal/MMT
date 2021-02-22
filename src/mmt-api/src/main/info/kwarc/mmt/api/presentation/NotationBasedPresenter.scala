@@ -92,8 +92,18 @@ class NotationBasedPresenter extends ObjectPresenter {
     * names are given in human-oriented form and not parsable if there are name clashes
     */
    def doIdentifier(p: ContentPath)(implicit pc: PresentationContext) {
-      val s = p match {
-         case GlobalName(_, name) => name.toPath
+     def getThO(m: MPath): Option[Theory] = controller.getO(m) match {case Some(m: Theory) => Some(m) case _ => None}
+     def getProperIncludes(m: MPath) = getThO(m).map {th => th.getAllIncludes.map(_.from).filter(Some(_) != th.meta)} getOrElse Nil
+     def declaresTwice(ms: List[MPath], name: LocalName) = (ms.filter(getThO(_).map(_.declares(name)) getOrElse false).length > 1)
+     val nameOnly = pc.owner match {
+       case Some(CPath(gn: GlobalName, key: TermComponentKey)) =>
+         if (gn.module == p.module) {true} else {
+           !(declaresTwice(getProperIncludes(gn.module), p.name))
+         }
+       case None => true
+     }
+     val s = p match {
+         case GlobalName(module, name) => if(nameOnly) {name.toPath} else {"☞"+p.toString}
          case MPath(_, name) => "?" + name.toPath
       }
       pc.out(s)

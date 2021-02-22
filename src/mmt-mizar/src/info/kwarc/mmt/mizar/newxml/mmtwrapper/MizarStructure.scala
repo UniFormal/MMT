@@ -18,13 +18,13 @@ import translator.{DeclarationTranslationError, TranslationController}
 import MMTUtils._
 
 object MizarStructure {
-  def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller, notC: NotationContainer)(implicit parentTerm: GlobalName) = {
+  def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller, notC: NotationContainer, slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
       val path = (parentTerm.module / parentTerm.name) ? vd.name
       new OutgoingTermLevel(path, args.map(vd => (Some(vd.name), vd.toTerm)), vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
-    elaborateContent(params, fieldDecls, substructs, controller, notC)
+    elaborateContent(params, fieldDecls, substructs, controller, notC, slashFunction)
   }
 
   /**
@@ -37,34 +37,46 @@ object MizarStructure {
    * @param parentTerm (implicit) the path to this derived declaration
    * @return The list of constants forming the elaboration
    */
-  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller, notC: NotationContainer)(implicit parentTerm: GlobalName): List[Constant] = {
+  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], substr: List[Term], controller: Controller, notC: NotationContainer, slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName): List[Constant] = {
     val recordElabDeclsNoNot = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
-    val recordElabDecls = recordElabDeclsNoNot match {
+    def pseudoSlash1: (LocalName, LocalName) => LocalName = slashFunction getOrElse {(a:LocalName, b:LocalName) => a / b}
+    def replaceSlashesLN(n: LocalName) = n.steps.tail.foldLeft(LocalName(List(n.steps.head)))((nm, step) => pseudoSlash1(nm, LocalName(step)))
+    def replaceSlashes(gn: GlobalName) = {
+      OMS(gn.module ? replaceSlashesLN(gn.name))
+    }
+    val rep = OMSReplacer(gn => Some(replaceSlashes(gn)))
+    val tr = {
+      c: Constant =>
+        val List(tpO: Option[Term], dfO: Option[Term]) = List(c.tp, c.df).map(_.map(rep.toTranslator()(Context.empty, _)))
+        Constant(c.home, replaceSlashesLN(c.name), c.alias, tpO, dfO, c.rl, c.notC)
+    }
+    val recordElabDecls = (recordElabDeclsNoNot match {
       case Nil => Nil
       case hd::tl => Constant(hd.home, hd.name, hd.alias, hd.tp, hd.df, hd.rl, notC)::tl
-    }
+    })
 
     val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
     val l = argTps.length
     val argsTyped = MMTUtils.freeVarContext(argTps map(_.toTerm))
-    def refDecl(nm: String) = OMS(parentTerm.module ? parentTerm.name / nm)
+    def refDecl(nm: String) = OMS(parentTerm.module ? pseudoSlash1(parentTerm.name, LocalName(nm)))
 
     val structx = ApplyGeneral(refDecl(recTypeName), params.variables.toList.map(_.toTerm))
-    def typedArgsCont(tm: Term) = if ((params++argsTyped).isEmpty) tm else Pi(params++argsTyped, tm)
+    def typedArgsCont = PiOrEmpty(params++argsTyped, _)
+    val prop = Mizar.prop
     val strict = VarDecl(structureStrictDeclName,typedArgsCont(
-      Lam("s", structx, Mizar.prop)))
+      Lambda(LocalName("s"), structx, prop)))
     val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
-      Lam("s", structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
+      Lambda(LocalName("s"), structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
       val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {
         case (OMS(substrGN),i) =>
           val substrPrePath = substrGN.module ? substrGN.name.init
           val substrName = substrGN.toMPath.name.init.toString
-          val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath/n).isDefined) map (n => LocalName(n))
+          val subselectors = origDecls.map(_.path.name.last).filter(n => TranslationController.controller.getO(substrPrePath.module ? pseudoSlash1(substrPrePath.name, LocalName(n))).isDefined) map (n => LocalName(n))
           val restrName = structureDefRestrName(substrName)
           val restr = VarDecl(parentTerm.name / restrName,typedArgsCont(
-            Pi(LocalName("s"),structx,OMS(substrPrePath/recTypeName))))
+            Pi(LocalName("s"),structx,OMS(substrPrePath / LocalName(recTypeName)))))
           val restrSelProps = subselectors map {n =>
-            VarDecl(parentTerm.name / structureDefSubstrSelPropName(restrName,n),Pi(LocalName("s"),structx, Mizar.proof(Mizar.eq(
+            VarDecl(parentTerm.name/ structureDefSubstrSelPropName(restrName,n), Pi(LocalName("s"),structx, Mizar.proof(Mizar.eq(
               Apply(referenceExtDecl(substrPrePath, n.toString), Apply(refDecl(restrName.toString), OMV("s"))),
               Apply(refDecl(n.toString), OMV("s"))))))
           }
@@ -72,7 +84,7 @@ object MizarStructure {
         case tm => throw ImplementationError("Expected an OMS referencing the type declaration of a substructure, but instead found the term "+tm._1.toStr(true))
     }
     val furtherDecls = (substrRestr++List(strict, strictProp)) map (_.toConstant(parentTerm.module,Context.empty))
-    recordElabDecls ++ furtherDecls
+    (recordElabDecls ++ furtherDecls) map tr
   }
 }
 

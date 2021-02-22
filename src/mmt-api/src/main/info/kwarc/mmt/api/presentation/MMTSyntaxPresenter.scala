@@ -157,26 +157,25 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
             val header = sf.makeHeader(dd)
             apply(header, Some(dd.path $ TypeComponent))(rh)
         }
-        rh << "\n"
+        if (dd.getDeclarations.nonEmpty) {rh << "\n"}
         val notationElements = List(dd.notC.getParseDefault, dd.notC.getPresentDefault).zipWithIndex.map { not =>
           (rh: RenderingHandler) => not match {
-            case (Some(not), 0) => rh(s"# ${not.toText}")
-            case (Some(not), 1) => rh(s"## ${not.toText}")
+            case (Some(not), 0) =>
+              rh("\n")
+              rh(s"# ${not.toText}")
+            case (Some(not), 1) =>
+              rh("\n" + OBJECT_DELIMITER + " ")
+              rh(s"## ${not.toText}")
             case (None, _) => // nothing to do
             case _ => ??? // not yet implemented
           }
         }
-        val indentedRh = indented(rh)
-        notationElements.zipWithIndex.foreach { case (renderFunction, index) =>
-          if (index == 0) {
-            indentedRh("\n")
-          } else {
-            indentedRh("\n" + OBJECT_DELIMITER + " ")
-          }
-          renderFunction(indentedRh)
+
+        notationElements.foreach { _(indented(rh)) }
+        if (dd.getDeclarations.nonEmpty) {
+          rh(OBJECT_DELIMITER + " =\n")
+          dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
         }
-        rh("\n")
-        dd.module.getDeclarations.foreach { d => present(d, indented(rh)) }
 
       case dm: DerivedModule =>
         doTheory(dm, indented(rh))
@@ -438,6 +437,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     }
   }
 }
+
+
 
 /** flattened */
 class FlatMMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPresenter) extends MMTSyntaxPresenter(objectPresenter) {

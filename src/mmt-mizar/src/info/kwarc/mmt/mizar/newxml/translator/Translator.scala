@@ -9,7 +9,6 @@ import symbols.{Constant, Declaration, DerivedDeclaration}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPatternInstance
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.definiensTranslator.assumptionTranslator
 
 
 object articleTranslator {
@@ -32,7 +31,6 @@ object itemTranslator {
         case funcDef: Functor_Definition => definitionTranslator.translate_Functor_Definition(funcDef)
         case pd: Predicate_Definition => definitionTranslator.translate_Predicate_Definition(pd)
       }
-      case existAss: Existential_Assumption => assumptionTranslator.translateAssumptions(existAss)
       case res: Reservation => translate_Reservation(res)
       case defIt: Definition_Item => translate_Definition_Item(defIt)
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
@@ -109,6 +107,7 @@ class MizarXMLImporter extends archives.Importer {
             try {
               log(TranslationController.controller.presenter.asString(decl))
             } catch {
+              case e: GetError =>
               case e: GeneralError =>
                 println("General error while presenting the declaration: " + decl.toString + ": ")
                 println(e.toStringLong)
@@ -117,8 +116,10 @@ class MizarXMLImporter extends archives.Importer {
         }
       }
     }
-    val res = TranslationController.currentDoc
-    println("Unresolved dependencies: "+TranslationController.getUnresolvedDependencies().map(_.name))
-    res
+    val unres = TranslationController.getUnresolvedDependencies()
+    if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
+    val deps = TranslationController.getDependencies()
+    if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+    TranslationController.currentDoc
   }
 }
