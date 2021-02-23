@@ -112,3 +112,4 @@ trait DocumentBuilder { this: Builder =>
     )
   }
 }
+

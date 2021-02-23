@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.{DPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.archives.LMHHubArchiveEntry
 import info.kwarc.mmt.api.utils.File
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
-import info.kwarc.mmt.mathhub.library.{IArchive, IArchiveRef}
+import info.kwarc.mmt.mathhub.library.{IArchive, IArchiveRef, IDocument, IDocumentRef}
 
 import scala.util.Try
 
@@ -65,7 +65,8 @@ trait ArchiveBuilder { this: Builder =>
         buildPseudoDocument(pseudoPath, "This archive has no content")
       })
 
-    Some(IArchive(
+    // make the archive
+    var archive = IArchive(
       ref.parent, ref.id, ref.name,
       getStats(entry.statistics),
       ref.title, ref.teaser,
@@ -76,6 +77,14 @@ trait ArchiveBuilder { this: Builder =>
       responsible,
 
       narrativeRoot
-    ))
+    )
+
+    // call all the pseudos on this archive!
+    pseudos.foreach(pseudo => {
+      archive = pseudo.extendArchive(this, archive)
+    })
+
+    // and return it!
+    Some(archive)
   }
 }
