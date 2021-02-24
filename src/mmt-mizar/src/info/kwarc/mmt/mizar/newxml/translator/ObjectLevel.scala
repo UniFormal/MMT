@@ -26,94 +26,100 @@ object expressionTranslator {
 }
 
 object termTranslator {
-  def translate_Term(tm:syntax.MizTerm)(implicit defContext: DefinitionContext = DefinitionContext.empty(), selectors: List[(Int, VarDecl)] = Nil) : Term = tm match {
-    case Simple_Term(locVarAttr) =>
-      val tr = TranslatorUtils.namedDefArgsSubstition(defContext.args)
-      val refTm = LocalName(locVarAttr.toIdentifier(true))
-      if (TranslationController.currentThy.declares(refTm)) {
-        OMS(TranslationController.currentTheoryPath ? refTm)
-      } else tr(refTm).getOrElse(OMV(refTm))
-    case Aggregate_Term(tpAttrs, _args) =>
-      val gn = computeGlobalName(tpAttrs)
-      val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
-      val args = translateArguments(_args)
-      ApplyGeneral(aggrDecl, args)
-    case Selector_Term(tpAttrs, _arg) =>
-      val strGn = mMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
-      val sel = referenceExtDecl(strGn, tpAttrs.spelling)
-      val argument = translate_Term (_arg)
-      Apply(sel, argument)
-    case Circumfix_Term(tpAttrs, _symbol, _args) =>
-      assert(tpAttrs.sort == "Functor-Term")
-      val gn = computeGlobalName(tpAttrs)
-      val arguments = translateArguments(_args)
-      ApplyGeneral(OMS(gn), arguments)
-    case Numeral_Term(redObjAttr, nr, varnr) => num(nr)
-    case itt @ it_Term(_, _) => OMV("it")
-    case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
-      val nr = redObjAttr.nr
-      val referencedSelector = utils.listmap(selectors, nr).getOrElse(
-        throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
-          "\nThe only known selectors are: \n"+selectors.toString(), ist))
-      referencedSelector.toTerm
-    case Infix_Term(tpAttrs, infixedArgs) =>
-      assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
-      val gn = computeGlobalName(tpAttrs)
-      val args = translateArguments(infixedArgs._args)
-      ApplyGeneral(OMS(gn), args)
-    case Global_Choice_Term(pos, sort, _tp) =>
-      val tp = translate_Type(_tp)
-      Apply(constant("choice"), tp)
-    case Placeholder_Term(redObjAttr, varnr) => OMV("placeholder_"+redObjAttr.nr.toString)
-    case Private_Functor_Term(redObjAttr, serialNrIdNr, _args) => OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), serialNrIdNr))
-    case Fraenkel_Term(pos, sort, _varSegms, _tm, _form) =>
-      val tp : Type = _varSegms._vars.head._tp()
-      val universe = translate_Type(tp)
-      val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
-      val cond = translate_Formula(_form)
-      val expr = translate_Term(_tm)
-      fraenkelTerm(expr, arguments, universe, cond)
-    case Simple_Fraenkel_Term(pos, sort, _varSegms, _tm) =>
-      val tp : Type = _varSegms._vars.head._tp()
-      val universe = translate_Type(tp)
-      val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
-      val expr = translate_Term(_tm)
-      simpleFraenkelTerm(expr, arguments, universe)
-    case Qualification_Term(pos, sort, _tm, _tp) =>
-      //TODO: do the required checks
-      translate_Term(_tm)
-    case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
-      val gn = computeGlobalName(constrExtObjAttrs)
-      val substr = OMS(gn)
-      val struct = translate_Term(_tm)
-      val structTm = TranslationController.simplifyTerm(struct)
-      val ApplyGeneral(OMS(strAggrPath), aggrArgs) = structTm
-      val strPath = strAggrPath.module ? strAggrPath.name.steps.init
-      val restr = referenceExtDecl(strPath,structureDefRestrName(gn.name.toString)(strPath).toString)
-      val arguments::argsTyped::_ = aggrArgs
-      ApplyGeneral(restr, List(arguments, argsTyped, struct))
+  def translate_Term(tm:syntax.MizTerm)(implicit defContext: DefinitionContext = DefinitionContext.empty(), selectors: List[(Int, VarDecl)] = Nil) : Term = {
+    val preRes: Term = tm match {
+      case Simple_Term(locVarAttr) =>
+        val tr = TranslatorUtils.namedDefArgsSubstition(defContext.args)
+        val refTm = LocalName(locVarAttr.toIdentifier(true))
+        if (TranslationController.currentThy.declares(refTm)) {
+          OMS(TranslationController.currentTheoryPath ? refTm)
+        } else tr(refTm).getOrElse(OMV(refTm))
+      case Aggregate_Term(tpAttrs, _args) =>
+        val gn = computeGlobalName(tpAttrs)
+        val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
+        val args = translateArguments(_args)
+        ApplyGeneral(aggrDecl, args)
+      case Selector_Term(tpAttrs, _arg) =>
+        val strGn = mMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
+        val sel = referenceExtDecl(strGn, tpAttrs.spelling)
+        val argument = translate_Term (_arg)
+        Apply(sel, argument)
+      case Circumfix_Term(tpAttrs, _symbol, _args) =>
+        assert(tpAttrs.sort == "Functor-Term")
+        val gn = computeGlobalName(tpAttrs)
+        val arguments = translateArguments(_args)
+        ApplyGeneral(OMS(gn), arguments)
+      case Numeral_Term(redObjAttr, nr, varnr) => num(nr)
+      case itt @ it_Term(_, _) => OMV("it")
+      case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
+        val nr = redObjAttr.nr
+        val referencedSelector = utils.listmap(selectors, nr).getOrElse(
+          throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
+            "\nThe only known selectors are: \n"+selectors.toString(), ist))
+        referencedSelector.toTerm
+      case Infix_Term(tpAttrs, infixedArgs) =>
+        assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
+        val gn = computeGlobalName(tpAttrs)
+        val args = translateArguments(infixedArgs._args)
+        ApplyGeneral(OMS(gn), args)
+      case Global_Choice_Term(pos, sort, _tp) =>
+        val tp = translate_Type(_tp)
+        Apply(constant("choice"), tp)
+      case Placeholder_Term(redObjAttr, varnr) => OMV("placeholder_"+redObjAttr.nr.toString)
+      case Private_Functor_Term(redObjAttr, serialNrIdNr, _args) => OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), serialNrIdNr))
+      case Fraenkel_Term(pos, sort, _varSegms, _tm, _form) =>
+        val tp : Type = _varSegms._vars.head._tp()
+        val universe = translate_Type(tp)
+        val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
+        val cond = translate_Formula(_form)
+        val expr = translate_Term(_tm)
+        fraenkelTerm(expr, arguments, universe, cond)
+      case Simple_Fraenkel_Term(pos, sort, _varSegms, _tm) =>
+        val tp : Type = _varSegms._vars.head._tp()
+        val universe = translate_Type(tp)
+        val arguments : List[OMV] = _varSegms._vars flatMap(translate_Context(_)) map(_.toTerm)
+        val expr = translate_Term(_tm)
+        simpleFraenkelTerm(expr, arguments, universe)
+      case Qualification_Term(pos, sort, _tm, _tp) =>
+        //TODO: do the required checks
+        translate_Term(_tm)
+      case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
+        val gn = computeGlobalName(constrExtObjAttrs)
+        val substr = OMS(gn)
+        val struct = translate_Term(_tm)
+        val structTm = TranslationController.simplifyTerm(struct)
+        val ApplyGeneral(OMS(strAggrPath), aggrArgs) = structTm
+        val strPath = strAggrPath.module ? strAggrPath.name.steps.init
+        val restr = referenceExtDecl(strPath,structureDefRestrName(gn.name.toString)(strPath).toString)
+        val arguments::argsTyped::_ = aggrArgs
+        ApplyGeneral(restr, List(arguments, argsTyped, struct))
+    }
+    preRes ^ namedDefArgsSubstition(defContext.args)
   }
 }
 
 object typeTranslator {
   def translate_Type_Specification(tp: Type_Specification) = translate_Type(tp._types)
-  def translate_Type(tp:Type)(implicit selectors: List[(Int, VarDecl)] = Nil) : Term = tp match {
-    case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
-    case Clustered_Type(pos, sort, _adjClust, _tp) =>
-      val tp = translate_Type(_tp)
-      val adjectives = _adjClust._attrs map translate_Attribute
-      SimpleTypedAttrAppl(tp, adjectives)
-    case Standard_Type(tpAttrs, noocc, origNr, _args) =>
-      // TODO: Check this is the correct semantics and take care of the noocc attribute
-      val gn = computeGlobalName(tpAttrs)
-      val tp : Term = OMS(gn)
-      val args = translateArguments(_args)
-      ApplyGeneral(tp,args)
-    case Struct_Type(tpAttrs, _args) =>
-      val gn = computeGlobalName(tpAttrs)
-      val typeDecl = referenceExtDecl(gn,RecordUtil.recTypeName)
-      val args = translateArguments(_args)
-      ApplyGeneral(typeDecl, args)
+  def translate_Type(tp:Type)(implicit selectors: List[(Int, VarDecl)] = Nil, defContext: DefinitionContext = DefinitionContext.empty()) : Term = {
+    val preRes = tp match {
+      case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
+      case Clustered_Type(pos, sort, _adjClust, _tp) =>
+        val tp = translate_Type(_tp)
+        val adjectives = _adjClust._attrs map translate_Attribute
+        SimpleTypedAttrAppl(tp, adjectives)
+      case Standard_Type(tpAttrs, noocc, origNr, _args) =>
+        // TODO: Check this is the correct semantics and take care of the noocc attribute
+        val gn = computeGlobalName(tpAttrs)
+        val tp : Term = OMS(gn)
+        val args = translateArguments(_args)
+        ApplyGeneral(tp,args)
+      case Struct_Type(tpAttrs, _args) =>
+        val gn = computeGlobalName(tpAttrs)
+        val typeDecl = referenceExtDecl(gn,RecordUtil.recTypeName)
+        val args = translateArguments(_args)
+        ApplyGeneral(typeDecl, args)
+    }
+    preRes ^ namedDefArgsSubstition(defContext.args)
   }
 }
 
