@@ -4,20 +4,26 @@ import info.kwarc.mmt.api.archives.MathHub
 import info.kwarc.mmt.api.frontend.Controller
 
 class TestTree(
-                override protected val controller: Controller,
-                override protected val mathhub: MathHub
-              ) extends VirtualTree(controller, mathhub) {
+                controller: Controller,
+                mathhub: MathHub
+              ) extends OpaqueTree(controller, mathhub) {
   val key = "test"
   val displayName = "Test Tree Elements"
 
-  def applicable(archive: String): Boolean = true // applicable to every archive
+  /** applicable to every archive */
+  def applicable(archive: String): Boolean = true
 
-  def exists(archive: String, path: List[String]): Boolean = path.isEmpty // only a top-level node exists
-  def children(archive: String, path: List[String]): List[String] = Nil // no children
+  /** only the root node exists */
+  def children(archive: String, path: List[String]): List[String] = Nil
 
-  def isLeaf(archiveID: String, path: List[String]): Boolean = true
+  /** every node has content */
+  def hasContent(archive: String, path: List[String]): Boolean = true
 
-  def getLeafContent(archiveID: String, path: List[String]): (String, String) = {
+  /** a single piece of content is found in the node */
+  def content(archive: String, path: List[String]): List[String] = List("dummy")
+
+  /** contains a single dummy node */
+  def opaqueContent(archive: String, path: List[String], name: String): (String, String) = {
     ("html", "This is a <b>test</b> tree inserted into the root")
   }
 }
