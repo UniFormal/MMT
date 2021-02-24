@@ -2,7 +2,8 @@ package info.kwarc.mmt.mizar.newxml.mmtwrapper
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.lf._
+import info.kwarc.mmt.api.uom.ConstantScala
+import info.kwarc.mmt.lf.{BinaryLFConstantScala, _}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{constant, constantName}
 
@@ -58,7 +59,7 @@ object Mizar {
     }
   }
   object constant {
-    def apply(name: String): Term = OMID(constantName(name))
+    def apply(name: String): OMID = OMID(constantName(name))
 
     def unapply(tm: Term) = tm match {
       case OMID(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
@@ -78,22 +79,30 @@ object Mizar {
   def in = constant("in")
   def any =constant("any")
 
-  def is(t1 : Term, t2 : Term) = apply(constant("is"), t1, t2)
-  def be(t1 : Term, t2 : Term) = apply(constant("be"), t1, t2)
+  object is extends BinaryLFConstantScala(softTypedTermsTh, "is")
+  object be extends BinaryLFConstantScala(MizarTh, "be")
 
   def andCon = constantName("and")
-  def naryAndCon = constantName("nary_and")
-
-  def and(tms : List[Term]) : Term = apply(OMS(naryAndCon), (OMI(tms.length)::tms):_*)
-  def binaryAnd(a:Term, b:Term) : Term = apply(OMS(andCon),List(a,b):_*)
+  object naryAndSym extends BinaryLFConstantScala(MizarTh, "nary_and")
+  object And {
+    def apply(tms : List[Term]) : Term = naryAndSym(OMI(tms.length), Sequence(tms))
+    def unapply(t: Term) = t match {
+      case naryAndSym(OMI(n), Sequence(tms)) if (tms.length == n) => Some(tms)
+      case _ => None
+    }
+  }
+  def binaryAnd(a:Term, b:Term) : Term = And(List(a,b))
   def orCon = constantName("or")
-  def naryOrCon = constantName("nary_or")
-  def or(tms : List[Term]) : Term = apply(OMS(naryOrCon), (OMI(tms.length)::tms):_*)
-  def binaryOr(a:Term, b:Term) : Term = apply(OMS(orCon),List(a,b):_*)
+  object naryOrSym extends BinaryLFConstantScala(MizarTh, "nary_or")
+  object Or {
+    def apply(tms: List[Term]) = naryOrSym(OMI(tms.length), Sequence(tms))
 
-  // Special function for 'and' and 'or' applied to an sequence (e.g. Ellipsis or sequence variable)
-  def seqConn(connective : String, length : Term, seq : Term) : Term =
-    apply(constant(connective), length, seq)
+    def unapply(t: Term) = t match {
+      case naryOrSym(OMI(n), Sequence(tms)) if (n == tms.length) => Some(tms)
+      case _ => None
+    }
+  }
+  def binaryOr(a:Term, b:Term) : Term = Or(List(a,b))
 
   def trueCon = constant("true")
   def falseCon = constant("false")
@@ -119,7 +128,9 @@ object Mizar {
 
   object proof extends UnaryLFConstantScala(ProofsTh, "proof")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
+  object Exemplification extends BinaryLFConstantScala(MizarTh, "proofByExample")
   def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
+  def exemplification(tp: Term, tm: Term) = Exemplification(tp, tm)
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")

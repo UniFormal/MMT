@@ -97,9 +97,9 @@ class NotationBasedPresenter extends ObjectPresenter {
      def declaresTwice(ms: List[MPath], name: LocalName) = (ms.filter(getThO(_).map(_.declares(name)) getOrElse false).length > 1)
      val nameOnly = pc.owner match {
        case Some(CPath(gn: GlobalName, key: TermComponentKey)) =>
-         if (gn.module == p.module) {true} else {
+         //if (gn.module == p.module) {true} else {
            !(declaresTwice(getProperIncludes(gn.module), p.name))
-         }
+         //}
        case None => true
      }
      val s = p match {

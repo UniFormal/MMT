@@ -1,4 +1,6 @@
-import info.kwarc.mmt.api.frontend.REPLExtension
+import info.kwarc.mmt.api.SemanticObject
+import info.kwarc.mmt.api.backend.{NotApplicable, RealizationStorage}
+import info.kwarc.mmt.api.frontend.{Controller, Extension, REPLExtension}
 import info.kwarc.mmt.api.frontend.actions.ActionResultError
 
 import scala.io.StdIn
@@ -17,9 +19,13 @@ import scala.util.Try
   */
 object FastREPL extends MagicTest("debug") {
   val shortcuts: List[String] = List(
-    "build MMT/urtheories mmt-omdoc module-expressions-partial-logrel-test.mmt",
-    "build MMT/LATIN2 mmt-omdoc itp2021/input.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/a-basic.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/b-concepts.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/c-type_theoretical_features.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/d-softening.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/e-logical_features.mmt",
+    "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/f-hard_logical_features.mmt",
     "-------------------------------------------",
     "build MMT/LATIN2 mmt-omdoc logic/fol-diagop.mmt",
     "-------------------------------------------",

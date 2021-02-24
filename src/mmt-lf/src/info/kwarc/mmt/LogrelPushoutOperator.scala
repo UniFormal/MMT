@@ -1,16 +1,15 @@
 package info.kwarc.mmt
 
-import info.kwarc.mmt
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.uom.SimplificationUnit
-import info.kwarc.mmt.lf.{ApplySpine, Beta}
+import info.kwarc.mmt.lf.Beta
 
 import scala.annotation.tailrec
 
@@ -68,21 +67,6 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
 
     new PartialLogrel(logrelType.mors, getLogrelBaseAssignment(logrelBase, _), lookup)
   }
-
-  /*def getFullLogrel(theoryContext: MPath, seenModules: Set[MPath], logrelRenamer: Renamer[_])
-                      (implicit lookup: Lookup): GlobalName => Term = {
-
-    val logrelBase = getLogicalRelationFor(theoryContext)
-    p => {
-      val applicable =
-        seenModules.contains(p.module) || lookup.hasImplicit(p.module, initialLogrelType.commonMorDomain)
-      if (applicable) {
-        lookup.ApplyMorphs(OMS(logrelRenamer.applyAlways(p)), logrelBase)
-      } else {
-        ???
-      }
-    }
-  }*/
 }
 
 abstract class LogrelPushoutOperator extends ParametricLinearOperator {
@@ -174,18 +158,20 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       case (renamer, i) =>
         val onlySingleMor = pushoutInfo.numMors == 1
 
-        Constant(
+        val outc = Constant(
           home = state.outContainer.toTerm,
-          // only index original name if more than one morphism
-          name = if (onlySingleMor) c.name else renamer(c.name),
-          // but even in the case of one morphism, the indexed name should be available as an alias
-          // (not in views; irrelevant there), such that users can systematically rely on the operator's output
-          alias = if (onlySingleMor && !state.inContainer.isInstanceOf[View]) List(renamer(c.name)) else Nil,
+          // Always generate an indexed name such that users can systematically rely on the operator's output
+          name = renamer(c.name),
+          // In the case of one morphism, the original (non-indexed) name should be available as an alias
+          // (not in views; irrelevant there) for enhanced user experience
+          alias = if (onlySingleMor && !state.inContainer.isInstanceOf[View]) List(c.name) else Nil,
           tp = c.tp.map(translatePushout(i, _)).map(Beta.reduce),
           df = c.df.map(translatePushout(i, _)).map(Beta.reduce),
           rl = c.rl,
           not = if (onlySingleMor) c.notC.copy() else NotationContainer.empty()
         )
+        outc.metadata.add(c.metadata.getAll : _*)
+        outc
     }.toList
 
     val constantsRelatedTp = c.tp.flatMap(logrel.getExpected(Context.empty, OMS(c.path), _)).map(Beta.reduce)
@@ -194,13 +180,17 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
     constantsRelatedTp match {
       case Some(_) =>
         val constantsRelated = Constant(
-          home = state.outContainer.toTerm, // todo: probably wrong?
+          home = state.outContainer.toTerm,
           name = related(c.name),
           alias = Nil,
           tp = constantsRelatedTp,
           df = constantsRelatedDf,
           rl = None
         )
+        constantsRelated.metadata.add(MetaDatum(
+          UnusedArgumentsCleaner.Metadata.keepInfoKey,
+          OMS(UnusedArgumentsCleaner.Metadata.keepAll)
+        ))
 
         pushedOutConstants :+ constantsRelated
 
@@ -253,10 +243,19 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
     val relatedRenamer = getRelatedRenamer
     val logrel = pushoutInfo.getPartialLogrel(state.inTheoryContext, state.diagramState.seenModules.toSet, logrelRenamer)(interp.ctrl.globalLookup)
 
-    if (c.tp.exists(logrel.isDefined(Context.empty, _))) {
-      List(assgn(logrelRenamer(c.path), relatedRenamer(c)))
-    } else {
-      Nil
+    val expectedTp = c.tp.flatMap(logrel.getExpected(Context.empty, OMS(c.path), _))
+
+    expectedTp match {
+      case Some(_) => List(Constant(
+        home = state.outContainer.toTerm,
+        name = logrelRenamer(c.name),
+        alias = Nil,
+        tp = expectedTp,
+        df = Some(relatedRenamer(c)),
+        rl = None
+      ))
+
+      case _ => Nil
     }
   }
 }
@@ -293,10 +292,18 @@ private class LogrelPushoutConnector(pushoutInfo: LogrelPushoutInfo, morIndex: I
     new LogrelPushoutTransformer(pushoutInfo).pushoutRenamers(morIndex).coercedTo(state)
   }
 
+  private def getRelatedRenamer(implicit state: LinearState): Renamer[LinearState] = {
+    new LogrelPushoutTransformer(pushoutInfo).related.coercedTo(state)
+  }
+
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
-    List(assgn(
-      c.path,
-      getPushoutRenamer(state)(c)
+    List(Constant(
+      home = state.outContainer.toTerm,
+      name = ComplexStep(c.path.module) / c.name,
+      alias = Nil,
+      tp = None,
+      df = Some(getPushoutRenamer(state)(c)),
+      rl = None
     ))
   }
 }

@@ -186,11 +186,18 @@ trait LinearModuleTransformerState extends ModuleTransformerState with LinearTra
 
     final override var outContainer: ModuleOrLink = _
 
-    final override def inherit(other: LinearState): Unit = {
+    override def inherit(other: LinearState): Unit = {
       _processedDeclarations ++= other.processedDeclarations
       _skippedDeclarations ++= other.skippedDeclarations
     }
   }
+}
+
+// todo: better name
+trait LackingLinearStateOperator extends LinearModuleTransformer {
+  final override type DiagramState = MinimalLinearModuleDiagramState
+
+  final override def initDiagramState(diag: Diagram, interp: DiagramInterpreter): DiagramState = new MinimalLinearModuleDiagramState(diag)
 }
 
 /**

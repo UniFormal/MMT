@@ -22,7 +22,7 @@ class LaTeXToHTML extends TraversingBuildTarget {
     log("building " + bf.inFile)
     LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
       case (i,ls) =>
-        bf.errorCont(new STeXError(ls.head,Some(ls.tail.mkString("\n")),Some(i)))
+        bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
     }
     import XHTML.Rules._
     if (bf.outFile.exists()) {
@@ -31,7 +31,8 @@ class LaTeXToHTML extends TraversingBuildTarget {
       doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
       doc.get("head")().head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
       File.write(bf.outFile, doc.toString)
-    } else throw new STeXError("No .xhtml generated",None,Some(Level.Error))
+    } else throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
+    log("Finished: " + bf.inFile)
     BuildResult.empty
   }
 }

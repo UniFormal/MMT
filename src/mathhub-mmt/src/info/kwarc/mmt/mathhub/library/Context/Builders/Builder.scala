@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.mathhub.library.Context.Builders.Special.{SmglomTree, TestTree}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IReferencable, IReference, IStatistic}
 
@@ -36,6 +37,13 @@ trait Builder
 
   protected val controller: Controller
 
+  /** opaque element builders */
+  protected val pseudos: List[PseudoBuilder] =
+    List(
+      // new TestTree(controller, mathHub)
+      new SmglomTree(controller, mathHub)
+    ).map(e =>new PseudoBuilder(e))
+
   /** logs something for debugging the mathhub extensiion */
   protected def logDebug(s: => String): Unit = log(s, Some("debug"))
 
@@ -43,6 +51,10 @@ trait Builder
 
   /** gets a reference to an object, either from the cache or newly built */
   def getReference(id: String): Option[IReference] = if (id.contains(":")) {
+    getPseudoReference(id) match {
+      case Some(ref) => return Some(ref)
+      case _ =>
+    }
     getLibraryReference(
       Try(Path.parse(id)).getOrElse(return buildFailure(id, "Path.parse(ref.id)")),
       id
@@ -78,12 +90,31 @@ trait Builder
       case _ => buildFailure(id, "controller.get(ref.path) match")
     }
   })
+
   def getLibraryReference(path: Path): Option[IReference] = getLibraryReference(path, path.toPath)
 
+  /** attempts to build a pseudo object for the given type */
+  def getPseudoReference(id: String): Option[IReference] = {
+    pseudos.foreach(pseudo => {
+      pseudo.buildTreeRef(this, id) match {
+        case Some(r) => return Some(r)
+        case _ =>
+      }
+      pseudo.buildContentRef(this, id) match {
+        case Some(r) => return Some(r)
+        case _ =>
+      }
+    })
+    None
+  }
 
 
   /** gets an object, either from the cache or newly built */
   def getObject(id: String): Option[IReferencable] = if (id.contains(":")) {
+    getPseudoObject(id) match {
+      case Some(o) => return Some(o)
+      case _ =>
+    }
     getLibraryObject(
       Try(Path.parse(id)).getOrElse(return buildFailure(id, "Path.parse(ref.id)")),
       id
@@ -119,6 +150,20 @@ trait Builder
     }
   })
 
+  /** attempts to build a pseudo object for the given id */
+  def getPseudoObject(id: String): Option[IReferencable] = {
+    pseudos.foreach(pseudo => {
+      pseudo.buildTreeDoc(this, id) match {
+        case Some(o) => return Some(o)
+        case _ =>
+      }
+      pseudo.buildContentObj(this, id) match {
+        case Some(o) => return Some(o)
+        case _ =>
+      }
+    })
+    None
+  }
 
   /** indicates that a failure has occured during then build */
   protected def buildFailure(uri: String, during: String): Option[Nothing] ={

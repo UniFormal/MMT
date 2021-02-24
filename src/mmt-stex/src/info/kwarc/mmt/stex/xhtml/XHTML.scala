@@ -24,7 +24,12 @@ object XHTML {
   object Rules {
     val document_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "html" && parent.isEmpty => new XHTMLDocument(e)(rules)})
     val math_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "math" => new XMHTMLMath(e,parent)(rules)})
-    implicit val defaultrules : List[XHTMLRule] = List(document_rule,math_rule)
+    val svg_rule = XHTMLRule({case (e : Elem,parent,rules) if e.label == "svg" => {
+      val ne = new XHTMLElem(e,parent)(rules)
+      ne.attributes(("","xmlns")) = "http://www.w3.org/2000/svg"
+      ne
+    }})
+    implicit val defaultrules : List[XHTMLRule] = List(document_rule,math_rule,svg_rule)
   }
   private lazy val parserFactory = {
     val ret = new SAXFactoryImpl
@@ -53,6 +58,7 @@ object XHTML {
           val end = t.toString().reverse.takeWhile(_.isWhitespace).reverse
           val content = t.toString().drop(init.length).dropRight(end.length)
           List(init,content,end).filterNot(_.isEmpty).map(s => new XHTMLText(scala.xml.Text(s),parent))
+
         case e : Elem =>
           List(new XHTMLElem(e,parent))
         case a : Atom[String] =>
