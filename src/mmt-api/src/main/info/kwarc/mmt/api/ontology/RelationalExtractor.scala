@@ -26,7 +26,7 @@ abstract class RelationalExtractor extends Extension {
  */
 object MMTExtractor extends RelationalExtractor {
    val allUnary = List(IsDocument,ontology.IsTheory,IsView,IsConstant,IsStructure,IsConAss,
-                          IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance)
+                          IsStrAss,IsNotation,IsDerivedDeclaration,IsPattern,IsInstance,IsUntypedConstant)
    val allBinary = List(RefersTo,DependsOn,Includes,IsAliasFor,IsInstanceOf,HasMeta,HasDomain,HasCodomain,Declares,
          IsAlignedWith, HasViewFrom, IsImplicitly)
 

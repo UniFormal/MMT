@@ -1,9 +1,13 @@
 package info.kwarc.mmt.api.ontology.rdf
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.utils.Escaping
+import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.utils.{Escaping, URI}
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
+
+import java.net.URLEncoder
+import scala.List
 
 trait ULOStatement {
   def triples : Seq[(Resource,IRI,Value)]
@@ -17,6 +21,8 @@ object ULO {
   import org.eclipse.rdf4j.model.util.Values.iri
   import org.eclipse.rdf4j.model.vocabulary.{DC, OWL, RDF, RDFS}
   import org.eclipse.rdf4j.model.{IRI, Resource}
+
+  val mmt_uri = DPath(URI.scheme("mmt"))
 
   val namespace = "https://mathhub.info/ulo"
   val model = new TreeModel()
@@ -108,43 +114,58 @@ object ULO {
   }
 
   object URLEscape {
-    def apply(p : Path) : String = p match {
+    def apply(p : Path) = try {iri(applyI(p))} catch {
+      case t : Throwable =>
+        print("")
+        throw t
+    }
+    private def applyI(p : Path) : String = p match {
       case DPath(uri) =>
         uri.scheme.map(_ + "://").getOrElse("") +
         uri.authority.getOrElse("") + "/" +
         uri.path.map(URLEscaping.apply).mkString("/")
       case mp : MPath =>
-        apply(mp.doc) + "?" + doName(mp.name)
+        applyI(mp.doc) + "?" + doName(mp.name)
       case gn : GlobalName =>
-        apply(gn.module) + "%3F" + doName(gn.name)
+        applyI(gn.module) + "%3F" + doName(gn.name)
+      case CPath(parent, component) =>
+        applyI(parent) + "%3F" + component.toString
       case _ =>
         ???
     }
-    private def doName(ln : LocalName) = ln.steps.map{
+    def doName(ln : LocalName) = ln.steps.map{
       case ComplexStep(path) => URLEscaping("[" + path.toString + "]")
       case step => URLEscaping(step.toString)
     }.mkString("%2F")
-    val URLEscaping = new Escaping {
-      val escapeChar = '%'
-      override def usePlainEscape = Nil
-      override def useCustomEscape = List(
-        ' ' -> "20",'[' -> "5B", ']' -> "5D", '/' -> "2F", '?' -> "3F"
-      )
+    object URLEscaping {
+      def apply(s : String) = URLEncoder.encode(s,"UTF-8")
     }
   }
 
-  private def pathToString(p : Path) = iri(URLEscape(p))
+  private def pathToString(p : Path) = URLEscape(p)
 
   case class DatatypeProperty(s : String) extends ULOElem(s) {
     _type(OWL.DATATYPEPROPERTY)
-    private[rdf] def subpropertyOf(p : Resource*) : this.type = {
-      add(this,RDFS.SUBPROPERTYOF,sequence(p))
+
+    private[rdf] def subpropertyOf(p: Resource*): this.type = {
+      add(this, RDFS.SUBPROPERTYOF, sequence(p))
       this
     }
-    def apply(s : Path,o : Any) = SimpleStatement(pathToString(s),this.toIri,o match {
-      case p : Path => pathToString(p)
-      case _ => iri(o.toString)
-    })
+
+    def apply(s: Path, o: Any) = try {
+      SimpleStatement(pathToString(s), this.toIri, o match {
+        case p: Path => pathToString(p)
+        case sr: SourceRef =>
+          iri(pathToString(DPath(sr.container)) + "#" + sr.region.toString)
+        case ln: LocalName =>
+          org.eclipse.rdf4j.model.util.Values.literal(URLEscape.doName(ln))
+        case _ =>
+          iri(o.toString)
+      })
+    } catch {
+      case t : Throwable =>
+        throw t
+    }
   }
   case class Class(s : String) extends ULOElem(s) {
     _type(OWL.CLASS)
@@ -209,7 +230,7 @@ object ULO {
   val inspired_by = ObjectProperty("inspired-by")
     .subpropertyOf(crossrefs)
   val instance_of = ObjectProperty("instance-of")
-    .comment("S is an instance of O iff it is a model of O, iniherits from O, interprets O, etc.")
+    .comment("S is an instance of O iff it is a model of O, inherits from O, interprets O, etc.")
   val interface_uses = ObjectProperty("interface-uses")
     .subpropertyOf(uses)
   val interface_uses_implementation_of = ObjectProperty("interface-uses-implementation-of")
@@ -421,6 +442,9 @@ object ULO {
     .subclassOf(theory_morphism)
   val include = Class("include")
     .subclassOf(structure)
+  val has_structure_from = ObjectProperty("has-structure-from")
+  val includes = ObjectProperty("includes")
+    .subpropertyOf(has_structure_from)
   val constant = Class("constant")
     .subclassOf(declaration)
   val rule_constant = Class("rule-constant")
@@ -435,44 +459,47 @@ object ULO {
   val nested_module = Class("nested-module")
     .subclassOf(module)
     .subclassOf(declaration)
-  trait Morphism extends ULOStatement {
+  val realization = Class("realization")
+    .subclassOf(structure)
+  val has_view_from = ObjectProperty("has-view-from")
+  val has_metatheory = ObjectProperty("has-metatheory")
+    .subpropertyOf(includes)
+  val realizes = ObjectProperty("realizes")
+    .subpropertyOf(has_structure_from)
+  val constructor = Class("constructor")
+    .subclassOf(constant)
+  val judgment_constructor = Class("judgment-constructor")
+    .subclassOf(function)
+  val high_universe = Class("high-universe")
+    .subclassOf(universe)
+
+  abstract class Morphism(morph : Option[Class], domtocod : Option[ObjectProperty], codtodom : Option[ObjectProperty]) extends ULOStatement {
     val _domain : MPath
     val _codomain : MPath
     val name : Resource
-    val relation : Class
-    override def triples: Seq[(Resource, IRI, Value)] =
-      Seq((name,RDF.TYPE,relation),(name,domain.toIri,pathToString(_domain)),(name,codomain.toIri,pathToString(_codomain)))
+    override def triples: Seq[(Resource, IRI, Value)] = {
+      val tail = morph.toSeq.flatMap(mo => List((name,RDF.TYPE,mo.toIri),(name,domain.toIri,pathToString(_domain)),(name,codomain.toIri,pathToString(_codomain))))
+      val mid = domtocod match {
+        case Some(v) => (v(_domain,_codomain)).triples ++ tail
+        case _ => tail
+      }
+      codtodom match {
+        case Some(v) => (v(_codomain,_domain)).triples ++ mid
+        case _ => mid
+      }
+    }
   }
-  case class HasMeta(_codomain : MPath,_domain : MPath) extends Morphism {
+  case class HasMeta(_codomain : MPath,_domain : MPath) extends Morphism(Some(meta_theory),None,Some(has_metatheory)) {
     val name = iri(pathToString(_codomain).toString + "#meta-theory")
     val relation = meta_theory
   }
-  case class View(path : MPath, _domain : MPath,_codomain : MPath) extends Morphism {
+  case class ULOView(path : MPath, _domain : MPath, _codomain : MPath) extends Morphism(Some(view),None,Some(has_view_from)) {
     val name = pathToString(path)
-    val relation = view
   }
-  class ULOStructure(val path : GlobalName, val _domain : MPath, val _codomain : MPath) extends Morphism {
+  case class ULOStructure(val path : GlobalName, val _domain : MPath, val _codomain : MPath) extends Morphism(Some(structure),None,Some(has_structure_from)) {
     val name = pathToString(path)
-    val relation = structure
-    override def equals(obj: Any): Boolean = obj match {
-      case i : ULOStructure => i._domain == _domain && i._codomain == _codomain && i.path == path
-      case _ => false
-    }
-    override def hashCode(): Int = path.hashCode() + _domain.hashCode() + _codomain.hashCode()
   }
-  object Structure{
-    def apply(path : GlobalName, _domain : MPath, _codomain : MPath) = new ULOStructure(path,_domain,_codomain)
-  }
-  object Include {
-    def apply( _domain : MPath, _codomain : MPath, _path : Option[GlobalName] = None) = new ULOInclude(_domain,_codomain,_path)
-  }
-  class ULOInclude(_domain : MPath, _codomain : MPath, _path : Option[GlobalName] = None)
-    extends ULOStructure(_path.getOrElse(_codomain ? ComplexStep(_domain)),_domain,_codomain) {
-    override val relation = include
-    override def equals(obj: Any): Boolean = obj match {
-      case i : ULOInclude => i._domain == _domain && i._codomain == _codomain
-      case _ => false
-    }
-    override def hashCode(): Int = _domain.hashCode() + _codomain.hashCode()
+  case class ULOInclude(_domain : MPath, _codomain : MPath, _path : Option[GlobalName] = None) extends Morphism(Some(include),None,Some(includes)) {
+    val name = pathToString(_path.getOrElse(_codomain ? ComplexStep(_domain)))
   }
 }

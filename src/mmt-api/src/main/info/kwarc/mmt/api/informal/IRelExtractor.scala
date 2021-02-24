@@ -1,17 +1,19 @@
 package info.kwarc.mmt.api.informal
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.ontology.rdf.ULO
 import ontology._
 import modules._
 import symbols._
 import objects._
 
 object IRels {
-  val isDefinedBy = CustomBinary("isDefinedBy", "is defined by", "is definition for")
-  val isExemplifiedBy = CustomBinary("isExemplifiedBy", "is exemplified by", "is example for")
-  val isExercise = CustomUnary("exercise")
-  val isExample = CustomUnary("example")
-  val isDefinition = CustomUnary("definition")
+  private val ns = ULO.mmt_uri / "informal"
+  val isDefinedBy = CustomBinary("isDefinedBy", "is defined by", "is definition for",ns)
+  val isExemplifiedBy = CustomBinary("isExemplifiedBy", "is exemplified by", "is example for",ns)
+  val isExercise = CustomUnary("exercise",ns)
+  val isExample = CustomUnary("example",ns)
+  val isDefinition = CustomUnary("definition",ns)
 
   val allBinary = List(isDefinedBy, isExemplifiedBy)
   val allUnary = List(isExercise, isDefinition, isExample)

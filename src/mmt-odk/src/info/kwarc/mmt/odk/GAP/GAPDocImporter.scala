@@ -177,7 +177,7 @@ class GAPDocImporter extends Importer {
         val rname = (ref \ ("@" + dtype)).text
         var refName = LocalName(dtype) / rname
         val label = (ref \ "@Label").text
-        if (!label.isEmpty) refName /= label.split(" ").mkString("_")
+        if (!label.isEmpty) refName /= label.split(' ').mkString("_")
         val constants = controller.library.get(spath.module).getDeclarations.collect {case c : Constant => c}
         constants.filter(c => c.name.steps.length >= 2 && c.name.steps.tail.head.toPath == rname) match {
           case Nil =>

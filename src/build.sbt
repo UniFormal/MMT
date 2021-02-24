@@ -202,7 +202,11 @@ def apiJars(u: Utils) = Seq(
   "scala-xml.jar",
   "xz.jar",
   "scala-parallel-collections.jar",
-  "rdf4j.jar"
+  "rdf4j.jar",
+  "slf4j.jar",
+  "log4j.jar",
+  "commons-io.jar",
+  "slf4j-log4j.jar"
 ).map(u.lib.toJava / _)
 
 // The kernel upon which everything else depends. Maintainer: Florian

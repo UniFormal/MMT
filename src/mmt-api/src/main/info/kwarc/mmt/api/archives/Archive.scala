@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
+import info.kwarc.mmt.api.ontology.rdf.ULO
 import info.kwarc.mmt.api.parser.{FileInArchiveSource, FileSource}
 import info.kwarc.mmt.api.utils._
 
@@ -38,6 +39,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param report the reporting mechanism
   */
 class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
+  lazy val ulo_uri = DPath(ULO.mmt_uri.uri colon id.replace('/','.'))
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
@@ -223,7 +225,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         utils.File.ReadLineWise(inFile) { line =>
           try {
             val re = controller.relman.parse(line, NamespaceMap(DPath(narrationBase)))
-            /* this made reading relational very inefficient; anyway a better way to load implicit moprhisms should be found 
+            /* this made reading relational very inefficient; anyway a better way to load implicit moprhisms should be found
             re match {
               case Relation(Includes, to: MPath, from: MPath) =>
                 controller.library.addImplicit(OMMOD(from), OMMOD(to), OMIDENT(OMMOD(to)))

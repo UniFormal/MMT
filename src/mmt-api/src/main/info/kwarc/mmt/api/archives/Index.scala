@@ -37,6 +37,7 @@ trait GeneralImporter extends Extension {
     val node = doc.toNode
     xml.writeFile(node, narrFile)
     // write relational file
+    controller.db.add(doc,a,docPath)
     writeToRel(doc, a / relational / docPath)
     doc.getModulesResolved(controller.globalLookup) foreach { mod =>
       if (!mod.isGenerated) indexModule(a, mod)
@@ -49,6 +50,7 @@ trait GeneralImporter extends Extension {
     // write content file
     writeToContent(a, mod)
     // write relational file
+    controller.db.add(mod,a,Archive.MMTPathToContentPath(mod.path))
     writeToRel(mod, a / relational / Archive.MMTPathToContentPath(mod.path))
     // write notations file, nice idea but does not eliminate all retrievals yet during presentation
     // writeToNot(mod, a / notational / Archive.MMTPathToContentPath(mod.path))
@@ -163,6 +165,7 @@ abstract class Importer extends TraversingBuildTarget with GeneralImporter {imp 
     bd.outFile.up.mkdirs
     val doc = controller.get(DPath(bd.archive.narrationBase / bd.inPath.segments)).asInstanceOf[Document]
     val inPathFile = Archive.narrationSegmentsAsFile(bd.inPath, "omdoc")
+    controller.db.add(doc,bd.archive,inPathFile)
     writeToRel(doc, bd.archive / relational / inPathFile)
     BuildResult.empty
   }

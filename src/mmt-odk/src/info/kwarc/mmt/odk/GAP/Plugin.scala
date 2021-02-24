@@ -56,9 +56,9 @@ object GAP {
 }
 
 object FilterRelations extends RelationalExtractor {
-  val Implies = CustomBinary("implies","implies","is implied by")
-  val IsFilter = CustomUnary("IsFilter")
-  val IsAttribute = CustomUnary("IsAttribute")
+  val Implies = CustomBinary("implies","implies","is implied by",GAP._base)
+  val IsFilter = CustomUnary("IsFilter",GAP._base)
+  val IsAttribute = CustomUnary("IsAttribute",GAP._base)
 
   def allUnary = List(IsFilter, IsAttribute)
   def allBinary = List(Implies)

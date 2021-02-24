@@ -137,8 +137,9 @@ class GAPJSONImporter extends Importer {
         case _ => Nil
       }
     }
-    val name = names.find(s => !s.contains("_") && !s.contains(" ") && s.toLowerCase != s && s.toUpperCase != s).getOrElse(names.head)
-    val aka = names.filter(_ != name)
+    val iname = names.find(s => !s.contains("_") && !s.contains(" ") && s.toLowerCase != s && s.toUpperCase != s).getOrElse(names.head)
+    val aka = names.filter(_ != iname)
+    val name = iname.replace("[]","_brackets_").replace("(","").replace(")","").replace(" and ","_and_")
 
     reg.regs foreach {r =>
       name match {

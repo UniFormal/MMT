@@ -7,6 +7,7 @@ import checking._
 import documents._
 import gui._
 import actions._
+import info.kwarc.mmt.api.ontology.rdf.Database
 import libraries._
 import moc._
 import modules._
@@ -90,6 +91,8 @@ class Controller(report_ : Report = new Report) extends ROController with Action
 
   /** maintains all knowledge: structural elements, relational data, etc. */
   val memory = new Memory(extman, report)
+  val db = new Database
+  extman.addExtension(db)
   /** shortcut for the relational manager */
   val depstore = memory.ontology
   /** shortcut for the library */
@@ -568,6 +571,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
                     _.delete
                   }
                 }
+                db.add(nw)
                 // activate the old one
                 memory.content.reactivate(old)
                 // notify listeners if a component changed
@@ -576,6 +580,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
               } else {
                 // delete the deactivated old one, and add the new one
                 log("overwriting deactivated " + old.path)
+                db.add(nw)
                 memory.content.update(nw)
                 notifyListeners.onUpdate(old, nw)
               }
@@ -588,10 +593,12 @@ class Controller(report_ : Report = new Report) extends ROController with Action
               // This condition is necessary in case lookup succeeds for an element that is not physically present
               // This happens, e.g., during elaboration or in links where elements are generated dynamically by the library.
               // TODO there should be two kinds of lookup - physcial and logical
+              db.add(nw)
               memory.content.update(nw)
               notifyListeners.onUpdate(old, nw)
             case _ =>
               // the normal case
+              db.add(nw)
               memory.content.add(nw, at)
               // load extension providing semantics for a Module
               nw match {
