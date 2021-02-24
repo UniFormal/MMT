@@ -2,6 +2,8 @@ package info.kwarc.mmt.mathhub.library.Context.Builders.Special
 
 import info.kwarc.mmt.api.archives.{Archive, MathHub}
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.utils.File.read
 
 class SmglomTree(
                 controller: Controller,
@@ -43,8 +45,22 @@ class SmglomTree(
 
 trait STeXReader { this: SmglomTree =>
 
+  val extension = "xhtml"
+
+  private def listModuleFiles(archive: String): List[String] = {
+    val root = controller.backend.getArchive(archive).getOrElse(return Nil).root / extension
+    if (root.exists && root.isDirectory) {
+      root.listFiles(_.isFile).toList.map(_.getName)
+        .filter(_.endsWith("." + extension))
+        .map(_.dropRight(extension.length + 1))
+    } else {
+      Nil
+    }
+  }
+
   protected def findModules(archive: String): List[String] = {
-    List("fake module")
+    // if a name has an extra '.' it is part of that module!
+    listModuleFiles(archive).filter(p => !p.contains('.'))
   }
 
   protected def readModuleName(archive: String, module: String): String = {
@@ -52,7 +68,9 @@ trait STeXReader { this: SmglomTree =>
   }
 
   protected def findModuleParts(archive: String, module: String): List[String] = {
-    List("", "en", "de")
+    listModuleFiles(archive)
+      .filter(f => f.startsWith(module + ".") || f == module)
+      .map(f => if (f == module) "" else f.drop(module.length + 1)) // drop the module prefix
   }
 
   protected def readModulePartName(archive: String, module: String, part: String): String = {
@@ -64,6 +82,13 @@ trait STeXReader { this: SmglomTree =>
   }
 
   protected def readModulePartHTML(archive: String, module: String, part: String): String = {
-    "Bla bla bla, this will read html <b>" + part + "</b>"
+    val root = controller.backend.getArchive(archive).getOrElse(return "").root / extension
+    val filename = part match {
+      case "" => module + "." + extension
+      case s => module + "." + s + "." + extension
+    }
+    xml.Utility.escape(
+      read(File(root / filename)) // TODO: extract the html body
+    )
   }
 }
