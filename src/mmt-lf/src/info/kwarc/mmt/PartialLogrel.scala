@@ -57,8 +57,8 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     *
     * TODO: This only works for LF, right?
     */
-  def getExpected(ctx: Context, t: Term, A: Term): Option[Term] = apply(ctx, A).map(relation => {
-    ApplySpine(relation, applyMors(ctx, t): _*)
+  def getExpected(ctx: Context, t: Term, A: Term): Option[Term] = apply(ctx, A).map(relationAtA => {
+    ApplySpine(relationAtA, applyMors(ctx, t): _*)
   })
 
   // TODO: in the future we might implement this more efficiently: we only need to recurse on the return types as FR once sketched in PM to NR.
@@ -99,7 +99,8 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     //
     case Univ(1) => // @DM: try to match Univ(i) in this style
       // create context `{x₁: m₁'(t), …, xₙ: mₙ'(t)}`
-      val targetBinder = bindTerm(ctx, LocalName("x"), t)
+      val targetBinder = bindTerm(ctx, Context.pickFresh(ctx, LocalName("x"))._1, t)
+      // TODO: ^^^ Is Context.pickFresh(ctx, _) sufficient to pick a fresh name? Shouldn't we pick a name that is *also* fresh in the output context?
 
       // return `λx₁: m₁'(t). … λxₙ: mₙ'(t). x₁ ⟶ … ⟶ xₙ ⟶ type
       Some(Lambda(
@@ -111,7 +112,8 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
       apply(ctx ++ boundCtx, retType).map(newRetType => {
         // For reading along in comments, suppose `boundCtx = {a: tp_a, …, z: tp_z}`.
         // create context `{f₁: m₁'(t), …, fₙ: mₙ'(t)}`
-        val targetBinder = bindTerm(ctx, LocalName("f"), t)
+        val targetBinder = bindTerm(ctx, Context.pickFresh(apply(ctx, boundCtx), LocalName("f"))._1, t)
+        // TODO: ^^^ Is the Context.pickFresh(-, _) call here sufficient to pick a fresh name?
 
         // create `List(f₁ a₁ … zₙ, …, fₙ aₙ … zₙ )`
         val targetApplications = targetBinder.zipWithIndex.map {
@@ -159,6 +161,7 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     case _ => ???
   }
 
+  /* TODO(NR): remove this
   def synthesize(synthesizer: GlobalName => Term, fullLr: GlobalName => Term)(ctx: Context, t: Term): Term = {
     val fullLogrel = new FullLogrel(mors, fullLr, lookup)
     
@@ -172,7 +175,7 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     }
     
     _synthesize(ctx, t)
-  }
+  }*/
 
 
   /**

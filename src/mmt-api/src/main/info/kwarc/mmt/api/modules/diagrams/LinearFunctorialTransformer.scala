@@ -238,10 +238,10 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
 
         applyModulePath(from)
 
-      case _ =>
-        interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
-          s"`${include.from}`: unbound in input diagram, leaving as-is"))
-        include.from
+      case from =>
+        interp.errorCont(InvalidElement(container, s"Origin ('from') `$from` of include or structure unbound " +
+          "in input diagram, leaving as-is"))
+        from
     }
 
     val newDf: Option[Term] = include.df.map {
@@ -264,7 +264,10 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
         }
 
         OMMOD(applyModulePath(dfPath))
-      case _ =>  ???
+      case df =>
+        interp.errorCont(InvalidElement(container, s"Definiens `$df` of include or structure unbound in input " +
+          s"diagram, leaving as-is"))
+        df
     }
 
     val s = Structure(
@@ -275,8 +278,13 @@ trait LinearFunctorialTransformer extends LinearModuleTransformer with RelativeB
       isImplicit = if (container.isInstanceOf[Theory]) true else false,
       isTotal = include.total
     )
-    interp.add(s)
-    interp.endAdd(s)
+
+    // TODO hack to prevent: "add error: a declaration for the name [...] already exists [...]"
+    //      when refactoring the whole framework, we should fix this anyway in the course of doing so
+    if (ctrl.getO(s.path).isEmpty) {
+      interp.add(s)
+      interp.endAdd(s)
+    }
   }
 }
 

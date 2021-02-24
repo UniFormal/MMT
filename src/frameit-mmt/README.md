@@ -10,8 +10,14 @@ This is the server component of the [FrameIT project](https://uframeit.org), pri
 ## REST API
 
 We use UTF-8-encoded JSON payloads for both HTTP request and response bodies.
-
 All endpoints indicate success by a 2xx response status code and failure by any other status code.
+
+**Playground.**
+The [kwarc research group](https://kwarc.info) uses [Postman](https://www.postman.com/) to collaboratively tinker with the request & response API.
+We maintain a [Postman team](https://kwarc-frameit.postman.co/team) (public), a [Postman workspace](https://kwarc-frameit.postman.co/workspace/FrameIT-Postman-Workspace~d9c28eb0-b28c-47b9-8403-864de6799418) (not public), and a [Postman sample request & response collection](https://kwarc-frameit.postman.co/workspace/FrameIT-Postman-Workspace~d9c28eb0-b28c-47b9-8403-864de6799418/collection/9866886-8347f2b8-c8a6-4c8b-800c-c4d3b01c9580?ctx=documentation) (not public).
+You can request read and/or write access by contacting one of the [UFrameIT team members](https://uframeit.org/).
+Technically, the Postman workspace is attributed to "`kwarc` DOT `group` AT `gmail.com`" to prevent losing access when team members fluctuate.
+Yet, as yet another counter measure, in [`./mmt-frameit-server-2021-02-17.postman_collection.json`](./mmt-frameit-server-2021-02-17.postman_collection.json) you can find an exported version of the workspace's contents.
 
 ### Endpoints
 

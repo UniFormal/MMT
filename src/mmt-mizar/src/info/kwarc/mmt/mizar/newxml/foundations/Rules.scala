@@ -26,7 +26,7 @@ import IntroductionRule._
 /**
  * (X implies Y) and (Y implies X) ---> X equiv Y
  */
-object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2), and(List(implies(X,Y),implies(Y,X))), iff(X,Y)) with ComplificationRule {
+object IntroduceEquivalence extends RewriteRule(constantName("iff"), context(2), And(List(implies(X,Y),implies(Y,X))), iff(X,Y)) with ComplificationRule {
   /** lower than [[IntroduceImplication]] because it can only fire afterwards anyway */
   override def priority = -10
 }
@@ -58,14 +58,14 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
         // n = 0, nothing to do
           None
         else {
-          val disj = if (succ.length == 1) succ.head else or(succ)
+          val disj = if (succ.length == 1) succ.head else Or(succ)
           val anteL = args.length-succ.length
           val res = if (anteL == 0)
           // m = 0, return disjunction
             disj
           else {
             // default case: return implication
-            val conj = if (anteL == 1) args.head else and(args.take(anteL))
+            val conj = if (anteL == 1) args.head else And(args.take(anteL))
             implies(conj, disj)
           }
           Some(res)

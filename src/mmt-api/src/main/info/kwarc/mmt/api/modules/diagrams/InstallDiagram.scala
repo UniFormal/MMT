@@ -318,7 +318,7 @@ sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
   }
 
   def subsumes(other: Diagram)(implicit lookup: Lookup): Boolean = {
-    val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitFrom)
+    val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitTo)
     doesSubsume
   }
 

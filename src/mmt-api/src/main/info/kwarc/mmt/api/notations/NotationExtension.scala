@@ -46,18 +46,66 @@ abstract class Fixity {
  *  the default Fixity, which is directly a list of markers
  */
 case class Mixfix(markers: List[Marker]) extends Fixity {
-   def asString = ("mixfix", markers.mkString(" "))
-   def addInitialImplicits(n: Int) = {
+   def asString: (String, String) = ("mixfix", markers.mkString(" "))
+   def addInitialImplicits(n: Int): Mixfix = {
      val markersM = markers.map {
        case d: Delimiter => d
-       case a: Arg => a * {x => x+n}
-       case a: ImplicitArg => a * {x => x+n}
+       case a: Arg => a * {_ + n}
+       case a: ImplicitArg => a * {_ + n}
        case v: Var => v.copy(number = v.number + 1)
        // TODO other cases
-       case other => throw ImplementationError("undefined case of marker " + other.toString())
+       case other => throw ImplementationError("undefined case of marker " + other.toString)
      }
      Mixfix(markersM)
    }
+
+  /**
+    * Consider a `Constant` c with notation `not: Mixfix`.
+    * Suppose we remove the arguments specified in `removedArgs` from the type of `c`.
+    * Then you can use this function to suitably transform `not`.
+    *
+    * @example Suppose we had `pair: {A: tp, B: tp} term -> term -> term # <3, 4>` as the constant.
+    *          Assume we want to remove the first two unnecessary arguments, i.e. specify
+    *          `removedArgs = Set(0,1)`.
+    *          Suppose we then transform the type to `term -> term ->term` by some means (e.g. the diagram operator
+    *          by Navid).
+    *          To transform the notation, we call this function, i.e. `removeArguments(removedArgs)`,
+    *          to ultimately get the new Mixfix notation `<1, 2>`.
+    *
+    * @param removedArgs One-based (!!) set of argument positions to be removed.
+    *                    Note that argument positions in MMT surface syntax are also
+    *                    usually given one-based.
+    *
+    * @return The transformed notation if possible. Otherwise, e.g., if some explicitly listed
+    *         argument marker depended on a to-be-removed argument position, [[None]] is returned.
+    *         (Rationale: even though we could just remove those argument markers, too, we cannot possibly
+    *          determine whether the resulting notation makes sense typographically.)
+    */
+  def removeArguments(removedArgs: Set[Int]): Option[Mixfix] = {
+    if (removedArgs.isEmpty) {
+      return Some(this)
+    }
+
+    val markersM = markers.flatMap {
+      case d: Delimiter => Some(d)
+
+      case a: Arg if removedArgs.contains(a.number) => return None
+      // throw away markers for implicit arguments positions that are now removed
+      case a: ImplicitArg if removedArgs.contains(a.number) => None
+
+      case a: Arg =>
+        val decrement = removedArgs.count(_ < a.number)
+        Some(a * {_ - decrement})
+
+      case a: ImplicitArg =>
+        val decrement = removedArgs.count(_ < a.number)
+        Some(a * {_ - decrement})
+
+      // TODO other cases
+      case other => throw ImplementationError("undefined case of marker " + other.toString)
+    }
+    Some(Mixfix(markersM))
+  }
 }
 
 object Circumfix extends Fixity {
@@ -86,7 +134,9 @@ object PrePostfix extends Fixity {
       val suffixedArgsMarkers = (impl + prefixedArgsNum until impl + expl).map(i => SimpArg(i + 1)).toList
       val suffMarkers: List[Marker] = if (rightArgsBracketed) {
         Delim("(") :: suffixedArgsMarkers.+:(Delim(")"))
-      } else suffixedArgsMarkers
+      } else {
+        suffixedArgsMarkers
+      }
       infixedArgMarkers ++ (delim :: suffMarkers) ::: implArgs
     } else (0 until prefixedArgsNum).toList.map(i => SimpArg(1 + impl + i)) ::: delim ::
       (prefixedArgsNum until expl).toList.map(i => SimpArg(1 + impl + i)) ::: (0 until impl).toList.map(i => ImplicitArg(i + 1))
@@ -102,10 +152,14 @@ object PrePostfix extends Fixity {
       val (delim, suffixesP) = (remainingMarkers.head, remainingMarkers.tail)
       val rightArgsBracketed = if (suffixesP.length >= 2) {
         (suffixesP.head == Delim("(") && suffixesP.last == Delim(")"))
-      } else false
+      } else {
+        false
+      }
       val suffixes = if (rightArgsBracketed) {
         suffixesP.tail.init
-      } else suffixesP
+      } else {
+        suffixesP
+      }
       val suffs = suffixes.takeWhile { case SimpArg(_, _) => true case _ => false }
       val implArgs = suffixes.drop(suffs.length)
       ((delim, suffs, implArgs) match {
@@ -115,7 +169,6 @@ object PrePostfix extends Fixity {
     case _ => None
   }
 }
-
 /**
  * A SimpleFixity is one out of multiple typical fixities (infix, postfix, etc) characterized by using only a single delimiter.
  *
@@ -144,6 +197,17 @@ abstract class SimpleFixity extends Fixity {
       }
       (impl :: expl :: delimStr).mkString(" ")
    }
+}
+
+case class PrePostfix(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0)  extends SimpleFixity {
+  lazy val markers = if (expl != 0) {
+    val infixedArgMarkers = (impl until impl+prefixedArgsNum).map(i=>SimpArg(i+1)).toList
+    val suffixedArgsMarkers = (impl+prefixedArgsNum until impl+expl).map(i=>SimpArg(i+1)).toList
+    val suffMarkers: List[Marker] = if (rightArgsBracketed) {Delim("(")::suffixedArgsMarkers.+:(Delim(")"))} else {suffixedArgsMarkers}
+    infixedArgMarkers++(delim::suffMarkers)
+  } else argsWithOp(prefixedArgsNum) ::: implArgs
+  def asString = ("mixfix", simpleArgs)
+  def addInitialImplicits(n: Int) = copy(impl = impl+n)
 }
 
 /** delimiter followed by the (explicit) arguments */

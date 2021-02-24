@@ -106,12 +106,12 @@ object MizarPatternInstance {
     val x = OMV("x")
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => Mizar.zeroAryAndPropCon
-      case (1, _) => Mizar.uses(Mizar.naryAndCon(1, Sequence(Mizar.implies(
-        Apply(MizSeq.Index(OMV("cases"), 1), x), Mizar.naryAndCon(1, Sequence(Mizar.implies(
-          Apply(MizSeq.Index(OMV("cases"), 1), x), Mizar.eq(
-            Apply(MizSeq.Index(OMV("caseRes"), 1), x),
-            Apply(MizSeq.Index(OMV("caseRes"), 1), x)))))))), Nil)
       case (_, Some(pf)) => pf
+      case (n, _) => Mizar.uses(Mizar.And((1 to n).toList map (i => Mizar.implies(
+        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), Mizar.And((i to n).toList map(j => Mizar.implies(
+          Apply(MizSeq.Index(OMV("cases"), OMI(j)), x), Mizar.eq(
+            Apply(MizSeq.Index(OMV("caseRes"), OMI(i)), x),
+            Apply(MizSeq.Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")
     }
     val consistencyProof = Pi(x.name, Rep(Mizar.any), Lam("argsWellTyped", Sequence(args map {arg =>

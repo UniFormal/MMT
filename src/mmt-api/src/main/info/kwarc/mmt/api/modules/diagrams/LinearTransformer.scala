@@ -324,12 +324,19 @@ trait RelativeBaseTransformer {
     * @todo ask Florian whether this method is good, ideally we should only be forced to give the functor
     *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
     *       this?
+    *
+    * @todo this is very hacky, please completely rethink conceptually
     */
   def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = (operatorDomain.modules, operatorCodomain.modules) match {
     case (List(domTheory), List(codTheory)) => t match {
       case OMMOD(`domTheory`) => OMMOD(codTheory)
       case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
-      case OMMOD(m) if lookup.hasImplicit(m, domTheory) => OMMOD(codTheory)
+      case OMMOD(m) if lookup.hasImplicit(m, domTheory) =>
+        if (lookup.hasImplicit(m, codTheory)) {
+          OMMOD(m) // a very general theory, e.g. LF
+        } else {
+          OMMOD(codTheory)
+        }
 
       // todo: this default case probably does more harm than good
       //       above some cases are probably missing, too
