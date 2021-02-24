@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Logger}
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.mathhub.library.Context.Builders.Special.TestTree
+import info.kwarc.mmt.mathhub.library.Context.Builders.Special.{SmglomTree, TestTree}
 import info.kwarc.mmt.mathhub.library.Context.MathHubAPIContext
 import info.kwarc.mmt.mathhub.library.{IReferencable, IReference, IStatistic}
 
@@ -40,13 +40,14 @@ trait Builder
   /** opaque element builders */
   protected val pseudos: List[PseudoBuilder] =
     List(
-      new TestTree(controller, mathHub)
+      // new TestTree(controller, mathHub)
+      new SmglomTree(controller, mathHub)
     ).map(e =>new PseudoBuilder(e))
 
   /** logs something for debugging the mathhub extensiion */
   protected def logDebug(s: => String): Unit = log(s, Some("debug"))
 
-  protected[Builders] def mathHub: MathHub = controller.getMathHub.getOrElse(throw GeneralError("No MathHub configured"))
+  protected def mathHub: MathHub = controller.getMathHub.getOrElse(throw GeneralError("No MathHub configured"))
 
   /** gets a reference to an object, either from the cache or newly built */
   def getReference(id: String): Option[IReference] = if (id.contains(":")) {
@@ -89,17 +90,18 @@ trait Builder
       case _ => buildFailure(id, "controller.get(ref.path) match")
     }
   })
+
   def getLibraryReference(path: Path): Option[IReference] = getLibraryReference(path, path.toPath)
 
   /** attempts to build a pseudo object for the given type */
   def getPseudoReference(id: String): Option[IReference] = {
     pseudos.foreach(pseudo => {
-      pseudo.buildDocumentRef(this, id) match {
-        case Some(d) => return Some(d)
+      pseudo.buildTreeRef(this, id) match {
+        case Some(r) => return Some(r)
         case _ =>
       }
-      pseudo.buildOpaqueRef(this, id) match {
-        case Some(o) => return Some(o)
+      pseudo.buildContentRef(this, id) match {
+        case Some(r) => return Some(r)
         case _ =>
       }
     })
@@ -151,11 +153,11 @@ trait Builder
   /** attempts to build a pseudo object for the given id */
   def getPseudoObject(id: String): Option[IReferencable] = {
     pseudos.foreach(pseudo => {
-      pseudo.buildDocument(this, id) match {
-        case Some(d) => return Some(d)
+      pseudo.buildTreeDoc(this, id) match {
+        case Some(o) => return Some(o)
         case _ =>
       }
-      pseudo.buildOpaque(this, id) match {
+      pseudo.buildContentObj(this, id) match {
         case Some(o) => return Some(o)
         case _ =>
       }

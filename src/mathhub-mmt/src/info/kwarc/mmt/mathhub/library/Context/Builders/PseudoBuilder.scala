@@ -1,18 +1,15 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders
 
-import info.kwarc.mmt.api.archives.LMHHubArchiveEntry
+import info.kwarc.mmt.api.archives.{LMHHubArchiveEntry, content}
 import info.kwarc.mmt.mathhub.library.Context.Builders.Special.VirtualTree
-import info.kwarc.mmt.mathhub.library.{IArchive, IDocument, IDocumentParentRef, IDocumentRef, INarrativeElement, IOpaqueElement, IOpaqueElementRef}
+import info.kwarc.mmt.mathhub.library.{IArchive, IDocument, IDocumentParentRef, IDocumentRef, INarrativeElement, IOpaqueElement, IOpaqueElementRef, IReferencable, IReference}
 
 /**
-  * Builds a pseudo tree living under an archive.
-  * Inner nodes are reprensented as documents, leaf nodes as opaque elements.
-  *
-  * @param tree
+  * Builds elements found within a virtual tree.
   */
 class PseudoBuilder(val tree: VirtualTree) {
-  private val docuri = PseudoBuilderURL("pseudo-document://" + tree.key + "/")
-  private val opuri = PseudoBuilderURL("pseudo-opaque://" + tree.key + "/")
+  private val docuri = PseudoTreeURL("pseudo-tree://" + tree.key + "/")
+  private val opuri = PseudoLeafURL("pseudo-leaf://" + tree.key + "/")
 
   /**
     * Add a reference to the root document induces by the OpaqueTree (if applicable).
@@ -29,56 +26,53 @@ class PseudoBuilder(val tree: VirtualTree) {
     archive.copy(narrativeRoot = archive.narrativeRoot.copy(declarations = declarations))
   }
 
-  /** builds a document reference for the provided uri */
-  def buildDocumentRef(builder: Builder, uri: String): Option[IDocumentRef] = {
+  /** builds a document reference for the provided tree node */
+  def buildTreeRef(builder: Builder, uri: String): Option[IDocumentRef] = {
     val (archive, path) = docuri(uri).getOrElse(return None)
-    if (!tree.applicable(archive)) return None
     if (!tree.exists(archive, path)) return None
 
-    // find the path
-    val parentURI = if(path.nonEmpty) {
-      docuri(archive, path.dropRight(1))
+    // find the parent
+    val parent = if(path.nonEmpty) {
+      // simple case: move up one folder
+      builder.getDocumentRef(docuri(archive, path.dropRight(1))).getOrElse(return None)
     } else {
-      findNarrativeRoot(builder, archive).getOrElse(return None)
+      // get the dpath of the archive narrative root
+      val dpath = builder.getArchiveNarrativeRoot(archive).getOrElse(return None)
+      // find the document or use a pseudo reference!
+      builder.getDocumentRef(dpath.toString) match {
+        case Some(dref) => dref
+        case None => builder.makeDPathReference(dpath).getOrElse(return None)
+      }
     }
-
-    val parent = builder.getDocumentRef(parentURI).getOrElse(return None)
 
     // return the document!
     Some(IDocumentRef(
       parent = Some(parent),
       id = uri,
-      name = tree.getName(archive, path),
+      name = tree.displayName(archive, path),
     ))
   }
 
-  /** finds the narrative root for a specific archive */
-  private def findNarrativeRoot(builder: Builder, archive: String): Option[String] = {
-    builder.mathHub.installedEntries.foreach({
-      case ae: LMHHubArchiveEntry if ae.id == archive =>
-        return Some(ae.archive.narrationBase.toString)
-      case _ =>
-    })
-    None
-  }
-
   /** builds a document for the provided uri */
-  def buildDocument(builder: Builder, uri: String): Option[IDocument] = {
-    val ref = buildDocumentRef(builder, uri).getOrElse(return None)
+  def buildTreeDoc(builder: Builder, uri: String): Option[IDocument] = {
+    val ref = buildTreeRef(builder, uri).getOrElse(return None)
     val (archive, path) = docuri(uri).get // when none, we already returned above
 
-    // fetch the children of "real" inner nodes
-    // these point to their respective "document" URIs
-    val children: List[INarrativeElement]  = if (!tree.isLeaf(archive, path)) {
+    // we have an inner node and should just build it's children!
+    val children: List[INarrativeElement]  = if (!tree.hasContent(archive, path)) {
       tree.children(archive, path).map(child => {
         val childPath = path ::: (child :: Nil)
         val childURI = docuri(archive, childPath)
         builder.getDocumentRef(childURI).getOrElse(return None)
       })
 
-    // "fake" inner nodes contain only the opaque element
+    // we have a leaf node and should generate the actual inner nodes!
     } else {
-      List(builder.getOpaqueElement(opuri(archive, path)).getOrElse(return None))
+      val contentNodes = tree.content(archive, path)
+      contentNodes.map(name => {
+        val uri = opuri(archive, path, name)
+        buildContentPtr(builder, uri).getOrElse(return None)
+      })
     }
 
     Some(IDocument(
@@ -93,53 +87,90 @@ class PseudoBuilder(val tree: VirtualTree) {
     ))
   }
 
-  /** builds an opaque element reference for the provided uri */
-  def buildOpaqueRef(builder: Builder, uri: String): Option[IOpaqueElementRef] = {
-    val (archive, path) = opuri(uri).getOrElse(return None)
-    if (!tree.applicable(archive)) return None
-    if (!tree.exists(archive, path)) return None
-    if (!tree.isLeaf(archive, path)) return None
+  /** builds a narrative element to be included inside a tree leaf document */
+  private def buildContentPtr(builder: Builder, uri: String): Option[INarrativeElement] = {
+    val (archive, path, name) = opuri(uri).getOrElse(return None)
+    if (!tree.existsContent(archive, path, name)) return None
 
-    // the parent is the fake inner node
     val parent = builder.getDocumentRef(docuri(archive, path)).getOrElse(return None)
 
-    Some(IOpaqueElementRef(
-      parent = Some(parent),
-      id = uri,
-      name = tree.getName(archive, path),
+    Some(tree.contentPointer(
+      archive = archive,
+      path = path,
+      name = name,
+      parent = parent,
+      id = uri
     ))
   }
 
-  def buildOpaque(builder: Builder, uri: String): Option[IOpaqueElement] = {
-    val ref = buildOpaqueRef(builder, uri).getOrElse(return None)
-    val (archive, path) = opuri(uri).get // when none, already returned above
 
-    val (format, content) = tree.getLeafContent(archive, path)
+  /** builds a reference to a content object inside a leaf */
+  def buildContentRef(builder: Builder, uri: String): Option[IReference] = {
+    val (archive, path, name) = opuri(uri).getOrElse(return None)
+    if (!tree.existsContent(archive, path, name)) return None
 
-    return Some(IOpaqueElement(
-      parent = ref.parent,
-      id = ref.id,
-      name = ref.name,
+    val parent = builder.getDocumentRef(docuri(archive, path)).getOrElse(return None)
 
-      statistics = None,
-      contentFormat = format,
-      content = content,
+    Some(tree.contentRef(
+      archive = archive,
+      path = path,
+      name = name,
+      parent = parent,
+      id = uri,
+    ))
+  }
+
+  /** builds a content object (found within a leaf) */
+  def buildContentObj(builder: Builder, uri: String): Option[IReferencable] = {
+    val (archive, path, name) = opuri(uri).getOrElse(return None)
+    if (!tree.existsContent(archive, path, name)) return None
+
+    // parent is the containing document!
+    val parent = builder.getDocumentRef(docuri(archive, path)).getOrElse(return None)
+
+    Some(tree.contentObj(
+      archive = archive,
+      path = path,
+      name = name,
+      parent = parent,
+      id = uri
     ))
   }
 
 }
 
 /** Mapping between URI and (archive, path) pair */
-case class PseudoBuilderURL(prefix: String) {
+case class PseudoTreeURL(prefix: String) {
   def apply(id: String): Option[(String, List[String])] = {
     if(!id.startsWith(prefix)) { return None }
 
-    id.substring(prefix.length).split("/").toList match {
+    id.substring(prefix.length).split("/", -1).toList match {
       case gid::aid::path => Some(gid + "/" + aid, path)
       case _ => None
     }
   }
   def apply(archive: String, path: List[String]): String = {
     prefix + (archive :: path).mkString("/")
+  }
+}
+
+/** Mapping between URI and (archive, path) pair */
+case class PseudoLeafURL(prefix: String) {
+  private val url = PseudoTreeURL(prefix)
+  def apply(id: String): Option[(String, List[String], String)] = {
+    // trim off part after a single comma!
+    val (splitID, name) = id.split(",", -1).toList match {
+      case before :: after :: Nil => (before, after)
+      case _ => return None
+    }
+
+    // apply the normal URL mapping!
+    url(splitID) match {
+      case Some((archive, path)) => Some((archive, path, name))
+      case None => None
+    }
+  }
+  def apply(archive: String, path: List[String], name: String): String = {
+    url.apply(archive, path) + "," + name
   }
 }
