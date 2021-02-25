@@ -51,6 +51,7 @@ trait STeXReader { this: SmglomTree =>
       root.listFiles(_.isFile).toList.map(_.getName)
         .filter(_.endsWith("." + extension))
         .map(_.dropRight(extension.length + 1))
+        .sorted
     } else {
       Nil
     }
