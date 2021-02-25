@@ -113,8 +113,8 @@ object TranslatorUtils {
       }).toTranslator())
      d.translate(tl, Context.empty)}
   }
-  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(LocalName(varName), defContext.args)
-  def translateArguments(arguments: Arguments)(implicit args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = {arguments._children map translate_Term }
+  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = {d => d}//namedDefArgsTranslator(LocalName(varName), defContext.args)
+  def translateArguments(arguments: Arguments)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = { arguments._children map translate_Term }
   val hiddenArt = TranslationController.getTheoryPath("hidden")
   val hiddenArts = List("hidden", "tarski", "tarski_a") map TranslationController.getTheoryPath
 

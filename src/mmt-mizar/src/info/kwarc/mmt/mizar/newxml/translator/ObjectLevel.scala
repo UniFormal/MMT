@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil
 import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Index, OMI}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
@@ -124,7 +125,7 @@ object typeTranslator {
 }
 
 object formulaTranslator {
-  def translate_Formula(formula:Formula)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = formula match {
+  def translate_Formula(formula:Formula)(implicit defContext: DefinitionContext) : Term = formula match {
     case Existential_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
@@ -169,7 +170,9 @@ object formulaTranslator {
     case Contradiction(pos, sort) => constant("contradiction")
     case Qualifying_Formula(pos, sort, _tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
     case Private_Predicate_Formula(redObjAttr, serialNrIdNr, constrNr, _args) =>
-      OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), serialNrIdNr))
+      val v = OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), serialNrIdNr))
+      //v ^ namedDefArgsSubstition(defContext.args)
+      defContext.args.zipWithIndex.find(_._1.name == v.name).map(_._2).map(ind => Index(OMV("x"), OMI(ind))).get
     case FlexaryDisjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       Or(formulae)
@@ -222,25 +225,58 @@ object formulaTranslator {
 }
 
 object contextTranslator {
-  def translate_Variable(variable:Variable, localId: Boolean = true) : OMV = {
+  def translate_Variable(variable:Variable, localId: Boolean = true)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = {
+    OMV(variable.varAttr.toIdentifier(localId)) ^ namedDefArgsSubstition(defContext.args)
+  }
+  /**
+   * translate a new variable within a binder to the corrensponding OMV
+   * @param variable
+   * @param localId
+   * @return
+   */
+  def translate_bound_Variable(variable:Variable, localId: Boolean = true) : OMV = {
     OMV(variable.varAttr.toIdentifier(localId))
   }
-  private def translateSingleTypedVariable(_var : Variable, _tp: Type)(implicit selectors: List[(Int, VarDecl)] = Nil) = {
-    val variable = translate_Variable(_var)
+  /**
+   * translate a new variable within a binder to the corrensponding OMV
+   * @param variable
+   * @param localId
+   * @return
+   */
+  def translate_binding_Variable(variable:Variable, tp: Term)(implicit defContext: => DefinitionContext) : Term = {
+    val v = OMV(variable.varAttr.toIdentifier(true)) % tp
+    defContext.args :+= v
+    namedDefArgsSubstition(defContext.args)(v.name).get
+  }
+  private def translateSingleTypedVariable(_var : Variable, _tp: Type)(implicit defContext: DefinitionContext = DefinitionContext.empty(), selectors: List[(Int, VarDecl)] = Nil) = {
+    val variable = translate_bound_Variable(_var)
     val tp = translate_Type(_tp)
     variable % tp
   }
-  def translate_Context(varSegm: VariableSegments)(implicit selectors: List[(Int, VarDecl)] = Nil) : Context= varSegm match {
+  def translate_Context(varSegm: VariableSegments)(implicit defContext: DefinitionContext = DefinitionContext.empty(), selectors: List[(Int, VarDecl)] = Nil) : Context= varSegm match {
     case Free_Variable_Segment(pos, _var, _tp) => translateSingleTypedVariable(_var, _tp)
     case Implicitly_Qualified_Segment(pos, _var, _tp) =>translateSingleTypedVariable(_var, _tp)
     case Explicitly_Qualified_Segment(pos, _variables, _tp) => _variables._vars.map(v => translateSingleTypedVariable(v,_tp))
   }
-  def translateVariables(varSegms: VariableSegments) : List[OMV] = {varSegms._vars().map(translate_Variable(_))}
-  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(translate_Variable(_))}
-  def translateVariables(segm: Segments) : Context = {
+  def translateVariables(varSegms: VariableSegments)(implicit defContext: DefinitionContext) : List[Term] = {varSegms._vars().map(translate_Variable(_))}
+  def translateVariables(varSegms: Variable_Segments) : List[OMV] = {getVariables(varSegms).map(translate_bound_Variable(_))}
+  def translateBindingVariables(segm: Segments)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : List[Term] = {
+    val argTypes = segm._tpList._tps map translate_Type
+    val ret = segm match {
+      case Functor_Segment(pos, _vars, _tpList, _tpSpec) => _tpSpec map(_._types) map translate_Type get
+      case Predicate_Segment(pos, _vars, _tpList) => prop
+    }
+    val tp = Arrow(argTypes, ret)
+    segm._vars._vars.map {
+      v =>
+        translate_binding_Variable(v, tp)
+    }
+  }
+    def translateVariables(segm: Segments)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Context = {
     val vs = segm._vars._vars.map {
       v =>
-        translate_Variable(v, true)}
+        translate_bound_Variable(v, true)
+    }
     val argTypes = segm._tpList._tps map translate_Type
     val ret = segm match {
       case Functor_Segment(pos, _vars, _tpList, _tpSpec) => _tpSpec map(_._types) map translate_Type get
@@ -249,8 +285,8 @@ object contextTranslator {
     val tp = Arrow(argTypes, ret)
     vs map (_ % tp)
   }
-	def translate_Locus(loc:Locus) : OMV = {
-		OMV(loc.varAttr.toIdentifier())
+	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext = DefinitionContext.empty()) : Term = {
+		OMV(loc.varAttr.toIdentifier()) ^ namedDefArgsSubstition(defContext.args)
 	}
 }
 
@@ -258,13 +294,13 @@ object claimTranslator {
   def translate_Claim(claim:Claim)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) : Term = claim match {
     //case Assumption(_ass) => translate_Assumption(_ass)
     case ass: Assumptions => translate_Assumption(ass)
-    case form: Formula => translate_Formula(form)
+    case form: Formula => translate_Formula(form)(defContext)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(pos, sort) => defContext.thesis.toTerm(defContext)
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
     case Conditions(_props) => And(_props map translate_Claim)
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
-      val fstRelat = translate_Formula(_formula)
+      val fstRelat = translate_Formula(_formula)(defContext)
       val ApplyGeneral(relat, List(_, sndTm)) = fstRelat match
       { case not(f) => f case f => f }
       val otherTms = _iterSteps.map(_._tm).map(translate_Term)
@@ -274,7 +310,7 @@ object claimTranslator {
     case Type_Changing_Claim(_eqList, _tp) =>
       val tp = translate_Type(_tp)
       val reconsideringVars = _eqList._eqns map { case eq =>
-        val v = VarDecl(translate_Variable(eq._var).name, tp, translate_Term(eq._tm))
+        val v = VarDecl(translate_bound_Variable(eq._var).name, tp, translate_Term(eq._tm))
         //adjust known variables in the context
         eq match {
           case Equality(_var, _tm) =>
@@ -309,8 +345,8 @@ object claimTranslator {
 }
 
 object attributeTranslator {
-  def translateAttributes(adjective_Cluster: Adjective_Cluster) = adjective_Cluster._attrs map translate_Attribute
-  def translate_Attribute(attr: Attribute): Term = {
+  def translateAttributes(adjective_Cluster: Adjective_Cluster)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = adjective_Cluster._attrs map translate_Attribute
+  def translate_Attribute(attr: Attribute)(implicit defContext: DefinitionContext = DefinitionContext.empty()): Term = {
     val gn = computeGlobalName(attr.orgnlExtObjAttrs)
     val args = translateArguments(attr._args)
     ApplyGeneral(OMS(gn), args)

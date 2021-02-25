@@ -375,13 +375,13 @@ object subitemTranslator {
       val gn = mMLIdtoGlobalName(sbi.mizarGlobalName())
       val provenSentence = sbi.provenSentence()
       val Scheme_Head(_sch, _vars, _form, _provForm) = sbi.scheme_head()
-      val args : Context = _vars._segms.flatMap(translateVariables(_))
-      implicit val defContext = DefinitionContext(args)
-      val ass : List[Term] = _provForm.map(_._props map(translate_Claim)) getOrElse Nil
+      implicit var defContext = DefinitionContext.empty()
+      val args : List[Term] = _vars._segms.flatMap (translateBindingVariables(_))
+      val ass : List[Term] = _provForm.map(_._props map(translate_Claim(_))) getOrElse Nil
       implicit val notC = makeNotationCont(_sch.spelling, 0, args.length, true)
       val (p, prf) = translate_Proved_Claim(provenSentence)
       val tr = namedDefArgsTranslator()
-      List(schemeDefinitionInstance(gn.name, args.map(_.tp.get), ass, p, prf)) map tr
+      List(schemeDefinitionInstance(gn.name, args, ass, p, prf)) map tr
   }
   def translate_Property(property: Property, decl: Option[Definition]) : List[Declaration] = {
     val justProp = JustifiedProperty(property._props, decl.map( d=> translate_Definition(d).head), property._just)
