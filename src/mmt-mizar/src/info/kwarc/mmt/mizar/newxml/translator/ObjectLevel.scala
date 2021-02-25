@@ -34,7 +34,7 @@ object termTranslator {
         val refTm = LocalName(locVarAttr.toIdentifier(true))
         if (TranslationController.currentThy.declares(refTm)) {
           OMS(TranslationController.currentTheoryPath ? refTm)
-        } else tr(refTm).getOrElse(OMV(refTm))
+        } else tr(refTm).getOrElse(OMV(refTm) ^ namedDefArgsSubstition(defContext.args))
       case Aggregate_Term(tpAttrs, _args) =>
         val gn = computeGlobalName(tpAttrs)
         val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
@@ -67,7 +67,7 @@ object termTranslator {
         val tp = translate_Type(_tp)
         Apply(constant("choice"), tp)
       case Placeholder_Term(redObjAttr, varnr) => OMV("placeholder_"+redObjAttr.nr.toString)
-      case Private_Functor_Term(redObjAttr, serialNrIdNr, _args) => OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), serialNrIdNr))
+      case Private_Functor_Term(redObjAttr, serialNrIdNr, _args) => OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), serialNrIdNr)) ^ namedDefArgsSubstition(defContext.args)
       case Fraenkel_Term(pos, sort, _varSegms, _tm, _form) =>
         val tp : Type = _varSegms._vars.head._tp()
         val universe = translate_Type(tp)
@@ -172,7 +172,7 @@ object formulaTranslator {
     case Private_Predicate_Formula(redObjAttr, serialNrIdNr, constrNr, _args) =>
       val v = OMV(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), serialNrIdNr))
       //v ^ namedDefArgsSubstition(defContext.args)
-      defContext.args.zipWithIndex.find(_._1.name == v.name).map(_._2).map(ind => Index(OMV("x"), OMI(ind))).get
+      defContext.args.zipWithIndex.find({case (vd, ind) => vd.name == v.name}).map(_._2).map(ind => Index(OMV("x"), OMI(ind))).get
     case FlexaryDisjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       Or(formulae)
@@ -193,7 +193,7 @@ object formulaTranslator {
       }
       _rhsOfRFs.foldRight(firstForm)(nextRelat(_)(_))
   }
-  def translate_Existential_Quantifier_Formula(vars:Context, expression:Term, assumptions: Option[Claim])(implicit args: Context): Term = vars.variables match {
+  def translate_Existential_Quantifier_Formula(vars:Context, expression:Term, assumptions: Option[Claim])(implicit defContext: DefinitionContext): Term = vars.variables match {
     case Nil => assumptions match {
       case Some(ass) => implies(translate_Claim(ass), expression)
       case None => expression
@@ -202,11 +202,11 @@ object formulaTranslator {
       val expr = translate_Existential_Quantifier_Formula(vs, expression, assumptions)
       exists(v.toTerm, v.tp.get,expr)
   }
-  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit args: Context=Context.empty): Term = {
+  def translate_Existential_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit defContext: DefinitionContext = DefinitionContext.empty()): Term = {
     val ctx = vars map (_ % univ)
     translate_Existential_Quantifier_Formula(ctx, expression, assumptions)
   }
-  def translate_Universal_Quantifier_Formula(vars: Context, expression:Term, assumptions: Option[Claim])(implicit args: Context): Term = vars.variables match {
+  def translate_Universal_Quantifier_Formula(vars: Context, expression:Term, assumptions: Option[Claim])(implicit defContext: DefinitionContext): Term = vars.variables match {
     case Nil => assumptions match {
       case Some(ass) => implies(translate_Claim(ass), expression)
       case None => expression
@@ -215,7 +215,7 @@ object formulaTranslator {
       val expr = translate_Universal_Quantifier_Formula(vs, expression, assumptions)
       forall(v.toTerm, v.tp.get,expr)
   }
-  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit args: Context=Context.empty): Term = {
+  def translate_Universal_Quantifier_Formula(vars:List[OMV], univ:Term, expression:Term, assumptions: Option[Claim] = None)(implicit defContext: DefinitionContext = DefinitionContext.empty()): Term = {
     val ctx = vars map (_ % univ)
     translate_Universal_Quantifier_Formula(ctx, expression, assumptions)
   }
@@ -291,14 +291,14 @@ object contextTranslator {
 }
 
 object claimTranslator {
-  def translate_Claim(claim:Claim)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) : Term = claim match {
+  def translate_Claim(claim:Claim)(implicit defContext: => DefinitionContext) : Term = claim match {
     //case Assumption(_ass) => translate_Assumption(_ass)
     case ass: Assumptions => translate_Assumption(ass)
     case form: Formula => translate_Formula(form)(defContext)
-    case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
+    case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)(defContext)
     case Thesis(pos, sort) => defContext.thesis.toTerm(defContext)
     case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
-    case Conditions(_props) => And(_props map translate_Claim)
+    case Conditions(_props) => And(_props map(translate_Claim(_)(defContext)))
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
       val fstRelat = translate_Formula(_formula)(defContext)
       val ApplyGeneral(relat, List(_, sndTm)) = fstRelat match
@@ -339,7 +339,7 @@ object claimTranslator {
     case Existential_Assumption(_qualSegm, _cond) =>
       val args = _qualSegm._children flatMap translate_Context
       val cond = translate_Claim(_cond)
-      translate_Existential_Quantifier_Formula(args, cond, None)(defContext.args)
+      translate_Existential_Quantifier_Formula(args, cond, None)(defContext)
     case Single_Assumption(pos, _prop) => translate_Claim(_prop)
   }
 }

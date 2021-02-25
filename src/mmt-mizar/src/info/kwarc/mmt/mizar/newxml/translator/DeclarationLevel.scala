@@ -111,8 +111,8 @@ private[translator] class ThesisTerm(tm: Term) {
   def doneProving(): Boolean = (conditions ++ existQuants ++ univQuants).isEmpty && conjuncts == Nil
   def toTerm(implicit defContext: DefinitionContext): Term = {
     val allConjunctions = And(conjuncts)
-    val univQuantified = translate_Universal_Quantifier_Formula(univQuants, allConjunctions, None)(defContext.args)
-    val existQuantified = translate_Existential_Quantifier_Formula(existQuants, univQuantified, None)(defContext.args)
+    val univQuantified = translate_Universal_Quantifier_Formula(univQuants, allConjunctions, None)(defContext)
+    val existQuantified = translate_Existential_Quantifier_Formula(existQuants, univQuantified, None)(defContext)
     val furtherArgs = defContext.args.filter(existQuantified.freeVars contains _)
     PiOrEmpty(furtherArgs++args, conditions.foldRight(existQuantified)(implies(_, _)))
   }
@@ -379,7 +379,7 @@ object subitemTranslator {
       val args : List[Term] = _vars._segms.flatMap (translateBindingVariables(_))
       val ass : List[Term] = _provForm.map(_._props map(translate_Claim(_))) getOrElse Nil
       implicit val notC = makeNotationCont(_sch.spelling, 0, args.length, true)
-      val (p, prf) = translate_Proved_Claim(provenSentence)
+      val (p, prf) = translate_Proved_Claim(provenSentence)(defContext)
       val tr = namedDefArgsTranslator()
       List(schemeDefinitionInstance(gn.name, args, ass, p, prf)) map tr
   }
@@ -751,8 +751,8 @@ object blockTranslator {
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
           args = args ++ subitemTranslator.translate_Loci_Declaration(loci_Declaration)
-        case ass: Claim => assumptions +:= translate_Claim(ass)
-        case Assumption(ass) => assumptions +:= translate_Claim(ass)
+        case ass: Claim => assumptions +:= translate_Claim(ass)(DefinitionContext(args))
+        case Assumption(ass) => assumptions +:= translate_Claim(ass)(DefinitionContext(args))
         //We put the guard, since the type pattern is eliminated by the compiler, it is for better error messages only, as we shouldn't ever encounter any other subitems at this point
         case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
           implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil
@@ -784,7 +784,7 @@ object blockTranslator {
           args ++= addArgs
           usedFacts +:= addFacts
         case statement: Regular_Statement =>
-          usedFacts +:= translate_Proved_Claim(statement.prfClaim)
+          usedFacts +:= translate_Proved_Claim(statement.prfClaim)(DefinitionContext(args, assumptions, Nil, Nil, usedFacts))
         case defIt => throw DeclarationTranslationError("Unexpected item of type " + defIt.kind+" found, in "+block.kind+" at line "+(it.pos.startPosition().line+1).toString+" in file "+currentAid+".miz", defIt)
       }
     }

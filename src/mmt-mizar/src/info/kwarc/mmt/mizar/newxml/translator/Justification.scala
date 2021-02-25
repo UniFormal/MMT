@@ -31,7 +31,7 @@ object justificationTranslator {
     //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
     Mizar.uses(claim, usedFacts)
   }
-  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext = DefinitionContext.empty()) = {
+  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext) = {
     val claim = provedClaim._claim match {
       case Diffuse_Statement(spelling, serialnr, labelnr, _label) => provedClaim._just.get match {
         case Block(kind, pos, _items) =>
@@ -48,7 +48,7 @@ object justificationTranslator {
     }
     (claim, prf)
   }
-  def usedInJustification(just: Justification): List[Term] = just match {
+  def usedInJustification(just: Justification)(implicit defContext: DefinitionContext): List[Term] = just match {
     case Straightforward_Justification(pos, _refs) => Nil
     case Block(kind, pos, _items) =>
       def translateSubitems(subs: List[Subitem]): List[Term] = subs match {
