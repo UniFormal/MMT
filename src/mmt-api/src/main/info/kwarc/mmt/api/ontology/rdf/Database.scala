@@ -6,33 +6,79 @@ import info.kwarc.mmt.api.documents.{Document, InterpretationInstruction, NRef}
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import info.kwarc.mmt.api.modules.{Link, Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMPMOD, TheoryExp}
-import info.kwarc.mmt.api.ontology.{Declares, Individual, IsConstant, IsDocument, IsUntypedConstant, Relation, RelationalElement}
+import info.kwarc.mmt.api.ontology.{Choice, Declares, HasType, Individual, IsConstant, IsDocument, IsUntypedConstant, Reflexive, Relation, RelationExp, RelationalElement, Sequence, ToObject, ToSubject, Transitive}
 import info.kwarc.mmt.api.ontology.rdf.ULO.ULOElem
 import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.api.parser.{FileInArchiveSource, SourceInfo, SourceRef}
-import info.kwarc.mmt.api.parser.SourceRef.toURI
 import info.kwarc.mmt.api.patterns.{Instance, Pattern}
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, NestedModule, ObjContainer, RuleConstant, Structure}
 import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 import org.apache.log4j.{BasicConfigurator, LogManager}
+import org.eclipse.rdf4j.model.vocabulary.RDF
 import org.eclipse.rdf4j.model.{Resource, Statement}
+import org.eclipse.rdf4j.query.QueryResults
 import org.eclipse.rdf4j.repository.RepositoryResult
 import org.eclipse.rdf4j.repository.sail.SailRepository
 import org.eclipse.rdf4j.rio.helpers.ParseErrorLogger
 import org.eclipse.rdf4j.rio.{RDFFormat, RDFParseException, Rio}
 import org.eclipse.rdf4j.sail.memory.MemoryStore
+import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries
+import org.eclipse.rdf4j.sparqlbuilder.core.{PropertyPaths, QueryElement, SparqlBuilder, Variable}
+import org.eclipse.rdf4j.sparqlbuilder.graphpattern.{GraphPattern, GraphPatterns}
+import org.eclipse.rdf4j.sparqlbuilder.rdf.RdfPredicate
 
 import java.io.FileOutputStream
+import scala.collection.mutable
+import scala.collection.mutable.HashSet
+import scala.concurrent.Future
 
 object Database {
   def get(controller : Controller) = controller.extman.get(classOf[Database]).head
 }
 
 class Database extends Extension {
+  override def logPrefix: String = "database"
   BasicConfigurator.configure()
   import scala.jdk.CollectionConverters._
   LogManager.getRootLogger.setLevel(org.apache.log4j.Level.ERROR)
   import org.eclipse.rdf4j.model.util.Values.iri
+
+  object Threadstack {
+    class Thread(fun : Unit => Any) {
+      def execute = {
+        val ret = fun(())
+        this.synchronized{value = Some(ret)}
+      }
+      private var value : Option[Any] = None
+      def get = {
+        while (this.synchronized{value.isEmpty}) {
+          Thread.sleep(100)
+        }
+        value.get
+      }
+    }
+    import scala.concurrent.ExecutionContext.Implicits._
+    private val threads : mutable.Queue[Thread] = mutable.Queue.empty
+
+    def busy = threads.synchronized{threads.nonEmpty}
+    def queue[A](f : => A) : Unit = threads.synchronized{threads.enqueue(new Thread({_ => f}))}
+    def await[A](f : => A) = {
+      val t = new Thread({_ => f})
+      if (threads.synchronized(threads.nonEmpty)) log("Database busy. Waiting...")
+      threads.synchronized{threads.enqueue(t)}
+      t.get.asInstanceOf[A]
+    }
+
+    Future {
+      while (true) {
+        if (threads.synchronized {threads.isEmpty}) Thread.sleep(100)
+        else {
+          val f = threads.synchronized{threads.dequeue()}
+          f.execute
+        }
+      }
+    }
+  }
 
   private lazy val repo = new SailRepository(new MemoryStore())
   private lazy val connection = repo.getConnection
@@ -72,7 +118,8 @@ class Database extends Extension {
     furi
   }
 
-  def add(archive : Archive): Unit = {
+  def add(archive : Archive): Unit = Threadstack.queue {
+    log("Adding archive " + archive.id)
     archive.id.split('/').toList match {
       case List(id) =>
         add(ULO.library(archive.ulo_uri),ULO.mmt_uri)
@@ -89,7 +136,7 @@ class Database extends Extension {
     }
   }
 
-  def add(e : StructuralElement,si : SourceInfo) : Unit = {} /* si match {
+  def add(e : StructuralElement,si : SourceInfo) : Unit = Threadstack.queue {} /* si match {
     case FileInArchiveSource(a, f) =>
       import info.kwarc.mmt.api.archives._
       val uri = DPath(mmt_uri colon a.id.replace('/', '.'))
@@ -112,7 +159,7 @@ class Database extends Extension {
       print("")
   } */
 
-  def add(e : StructuralElement,context : Path*) : Unit = {
+  def add(e : StructuralElement,context : Path*) : Unit = Threadstack.queue {
     remove(e.path)
     if (context.isEmpty) addElement(e)(memory_uri,e.path)
     else addElement(e)(context :_*)
@@ -133,19 +180,27 @@ class Database extends Extension {
 
   }
 
-  def get(s : Option[Path] = None,p : Option[ULOElem] = None, o : Option[Path] = None,inferred : Boolean = true)(context : Path*) = {
+  def get(s : Option[Path] = None,p : Option[ULOElem] = None, o : Option[Path] = None,inferred : Boolean = true)(context : Path*) = Threadstack.await {
     GetResult(connection.getStatements(s.map(ULO.URLEscape(_)).orNull,p.map(_.toIri).orNull,o.map(ULO.URLEscape(_)).orNull,inferred,context.map(ULO.URLEscape(_)):_*))
   }
+  def getInds(cls : ULO.Class)(context : Path*) = Threadstack.await {
+    GetResult(connection.getStatements(null,RDF.TYPE,cls.toIri,true,context.map(ULO.URLEscape(_)):_*))
+  }
 
-  def remove(p : Path) = try {
+  def remove(p : Path) = Threadstack.queue { try {
     get()(p).foreach(connection.remove(_))
   } catch {
     case t : Throwable =>
       throw t
+  } }
+
+  def removeAll = Threadstack.queue {
+    get()().foreach(connection.remove(_))
+    connection.add(ULO.model)
   }
 
 
-  def add(e : StructuralElement,a : Archive,f : FilePath) : Unit = {
+  def add(e : StructuralElement,a : Archive,f : FilePath) : Unit = Threadstack.queue {
     val uri = DPath(ULO.mmt_uri.uri colon a.id.replace('/', '.'))
     val file = f.segments.foldLeft(uri)((p, d) => p / d)
     add(ULO.contains(uri, file), uri)
@@ -162,7 +217,7 @@ class Database extends Extension {
     } finally {stream.close()}
   }
 
-  def add(rel : RelationalElement, context : Path*) : Unit = {
+  def add(rel : RelationalElement, context : Path*) : Unit = Threadstack.queue {
     rel.toULO match {
       case Some(v) => add(v,context :_*)
       case _ =>
@@ -281,4 +336,79 @@ class Database extends Extension {
       add(r,context :_*)
     }
   }
+
+  def query(start : Path, q : RelationExp) = Threadstack.await {
+    val qv = SparqlBuilder.`var`("qv")
+    val p = makeQuery(q)
+    val query = Queries.SELECT(qv).where(GraphPatterns.tp(qv,p,ULO.URLEscape(start)))
+    import scala.jdk.CollectionConverters._
+    connection.prepareTupleQuery(query.getQueryString).evaluate().iterator().asScala.toList.map {
+      _.getBinding("qv").getValue
+    }
+  }
+
+  private def makeQuery(q : RelationExp) : RdfPredicate = q match {
+    case ToSubject(dep) =>
+      dep.toULO match {
+        case Some(ulo) =>
+          () => "<" + ulo.toIri + ">"
+        case _ =>
+          ???
+      }
+    case ToObject(dep) =>
+      dep.toULO match {
+        case Some(ulo) =>
+          () => "^<" + ulo.toIri + ">"
+        case _ =>
+          ???
+      }
+    case Choice(qs@_*) if qs.contains(Reflexive) =>
+      val nqs = qs.filterNot(_ == Reflexive)
+      () => "(" + makeQuery(Choice(nqs:_*)).getQueryString + ")?"
+    case Choice(qs@_*) =>
+      () => "(" + qs.map(makeQuery(_).getQueryString).mkString("|") + ")"
+    case Transitive(q) =>
+      () => "(" + makeQuery(q).getQueryString + ")+"
+    case _ =>
+      ???
+  }
+/*
+  private def makeQuery(start : Path, q : RelationExp) : Query = q match {
+    case ToObject(d) => objects(start, d).foreach(add)   //all paths related to start via d
+    case ToSubject(d) => subjects(d, start).foreach(add) //all paths inversely related to start via d
+    //only start itself
+    case Reflexive => add(start)
+    //the set of paths related to start via arbitrarily many q-steps (depth-first, children before parent)
+    case Transitive(qn) =>
+      var added = HashSet.empty[Path]
+      def step(p : Path) {
+        if (! added.contains(p)) {
+          //println("Added path "+p.toString()+" as a path related to the starting path "+start.toString()+" with search query "+q.toString())
+          added += p
+          val next = makeQuery(p, qn)(step)
+          add(p) //add parent only after children
+        }
+      }
+      val next = makeQuery(start, qn)(step)
+    //the set of paths related to start by any of the relations in qs (in the order listed)
+    case Choice(qs @ _*) => qs.foreach(q => makeQuery(start, q))
+    //the set of paths related to start by making steps according to qs
+    case Sequence(qs @ _*) => qs.toList match {
+      case Nil => add(start)
+      case hd :: tl => makeQuery(start, hd) {p => makeQuery(p, Sequence(tl : _*))}
+    }
+    //only start itself iff it has the right type
+    case HasType(mustOpt,mustNot) =>
+      val tpO = getType(start)
+      val inMust = mustOpt match {
+        case None => true
+        case Some(must) => tpO exists {must contains _}
+      }
+      lazy val notInMustNot = tpO.exists(tp => ! (mustNot contains tp))
+      if (inMust && notInMustNot)
+        add(start)
+  }
+
+ */
+
 }

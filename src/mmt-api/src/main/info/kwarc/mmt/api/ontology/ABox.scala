@@ -150,9 +150,9 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
         val tpO = getType(start)
         val inMust = mustOpt match {
           case None => true
-          case Some(must) => tpO.map {tp => must contains tp}.getOrElse(false)
+          case Some(must) => tpO exists {must contains _}
         }
-        lazy val notInMustNot = tpO.map(tp => ! (mustNot contains tp)).getOrElse(true)
+        lazy val notInMustNot = tpO.exists(tp => ! (mustNot contains tp))
         if (inMust && notInMustNot)
           add(start)
    }}
