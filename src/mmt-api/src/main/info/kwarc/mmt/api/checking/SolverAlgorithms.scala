@@ -491,7 +491,10 @@ trait SolverAlgorithms {self: Solver =>
      // otherwise, apply a subtyping rule
      history += "not obviously equal, trying subtyping rules"
      val res = tryAllRules(subtypingRules,tp1,tp2){(r,t1,t2) => r.applicable(t1,t2)} { (rule,tp1S,tp2S,h) =>
-       rule(this)(tp1S,tp2S)(stack,h)
+       try { rule(this)(tp1S,tp2S)(stack,h) } catch {
+         case d : rule.DelayJudgment =>
+           return delay(j)
+       }
      }
      res.getOrElse {
        history += "falling back to checking equality"
