@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import foundations._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs}
 import mmtwrapper.{Mizar, MizarPatternInstance}
 
 import scala.collection._
@@ -142,15 +143,23 @@ object TranslationController {
     try {
       d.translate(complifier,Context.empty)
     } catch {case e: Exception =>
-      println("error while complifying instance " + d.path)
-      d
+      println("error while complifying instance " + d.path+": ")
+      println(d.name+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
+      //println(controller.presenter.asString(d))
+      throw e
     }
   }
 
-  def makeConstant(n: LocalName, t: Term) : Constant =
-    Constant(OMMOD(currentTheoryPath), n, Nil, Some(t), None, None)
-  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty()) : Constant =
+  def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty()) : Constant = {
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
+  }
+  def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term], unboundArgs: Context)(implicit notC:NotationContainer) : Constant = {
+    val args = unboundArgs.map(vd => vd.copy(tp = vd.tp map (lambdaBindArgs(_)(unboundArgs map (_.toTerm)))))
+    makeConstant(n, tO map(PiOrEmpty(args, _)), dO map(LambdaOrEmpty(args, _)))
+  }
+  def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext = DefinitionContext.empty()): Constant =
+    makeConstantInContext(n, tO, dO, defContext.args)
 
   def simplifyTerm(tm:objects.Term): objects.Term = {
     val su = SimplificationUnit(Context.empty,true,false)

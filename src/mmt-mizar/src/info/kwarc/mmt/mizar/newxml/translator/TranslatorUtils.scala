@@ -84,10 +84,10 @@ object TranslatorUtils {
    * @param args (implicit) the arguments to build the substitution for
    * @return
    */
-  def namedDefArgsSubstition(args: Context, varName: String = "x") = {
+  def namedDefArgsSubstition(args: Context, varName: LocalName = LocalName("x")) = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
-      case (vd, i) => vd / OMV(LocalName(varName)/ i.toString)
+      case (vd, i) => vd / Index(OMV(varName),  OMI(i))
     }:_*)
   }
   /**
@@ -100,7 +100,7 @@ object TranslatorUtils {
    * @param args (implicit) the arguments to build the substitution for
    * @return A translation function on declarations making the substitution
    */
-  private def namedDefArgsTranslator(varName: String, args: Context) : symbols.Declaration => symbols.Declaration = {
+  private def namedDefArgsTranslator(varName: LocalName, args: Context) : symbols.Declaration => symbols.Declaration = {
     {d: symbols.Declaration =>
       val tl = symbols.ApplySubs(namedDefArgsSubstition(args, varName)).compose(OMSReplacer({gn =>
         try {
@@ -113,8 +113,8 @@ object TranslatorUtils {
       }).toTranslator())
      d.translate(tl, Context.empty)}
   }
-  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = namedDefArgsTranslator(varName, defContext.args)
-  def translateArguments(arguments: Arguments)(implicit args: Context = Context.empty, assumptions: List[Term] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = {arguments._children map translate_Term }
+  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = {d => d}//namedDefArgsTranslator(LocalName(varName), defContext.args)
+  def translateArguments(arguments: Arguments)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = { arguments._children map translate_Term }
   val hiddenArt = TranslationController.getTheoryPath("hidden")
   val hiddenArts = List("hidden", "tarski", "tarski_a") map TranslationController.getTheoryPath
 

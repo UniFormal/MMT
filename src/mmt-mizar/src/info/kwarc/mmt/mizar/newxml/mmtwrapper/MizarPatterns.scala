@@ -44,6 +44,9 @@ object PatternUtils {
       case t => (Context.empty, t)
     })
   }
+  def lambdaBindArgs(tm: Term)(implicit args: List[Term]): Term = {
+    Lam("x", nTerms(args.length), tm)
+  }
 }
 
 import PatternUtils._
@@ -61,7 +64,7 @@ object StructureInstance {
    * @param fieldDecls The field declarations (selectors) of the structure,
    *                   inherited selectors must be repeated here
    */
-  def apply(declarationPath:GlobalName, l:Int, argNameTps:Context, n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl], notationC: NotationContainer = NotationContainer.empty()): List[symbols.Declaration] = {
+  def apply(declarationPath:GlobalName, l:Int, argNameTps:Context, n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl], notationC: NotationContainer = NotationContainer.empty()): List[symbols.Constant] = {
     MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller, notationC, Some(pseudoSlash(_, _)))(declarationPath)
   }
   def withUnnamedArgs(declarationPath:GlobalName, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
@@ -75,10 +78,6 @@ object MizarPatternInstance {
     val home : Term = OMMOD(TranslationController.currentTheoryPath)
     val pattern = Mizar.MizarPatternsTh ? LocalName(pat)
     MizInstance.apply(home, name, pattern, args, notC)
-  }
-  private def lambdaBindArgs(tm: Term)(implicit args: List[Term]): Term = {
-    val LambdaOrEmpty(ctx, body) = tm
-    if (args.length > 0) tm else Lam("x", nTypes(args.length), tm)
   }
   private def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val argNum = OMI(argNumI)
@@ -96,7 +95,7 @@ object MizarPatternInstance {
    * @return
    */
   def apply(name: LocalName, pat: String, argNumI: Int, arguments: List[Term], retO: Option[Term], motherTpUnbound: Option[Term], caseNumI: Int, casesUnbound: List[Term], caseResUnbound: List[Term], consistencyProofUnbound: Option[Term], defResUnbound: Option[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
-    assert(casesUnbound.length == caseNumI && caseResUnbound.length == caseNumI)
+    assert(casesUnbound.length == caseNumI && caseResUnbound.length == caseNumI && argNumI == arguments.length)
     val caseNum = OMI(caseNumI)
     implicit val args = arguments
     val ret = retO map(List(_)) getOrElse Nil
@@ -104,18 +103,32 @@ object MizarPatternInstance {
     val cases = Sequence(casesUnbound map lambdaBindArgs)
     val caseRes = Sequence(caseResUnbound map lambdaBindArgs)
     val x = OMV("x")
+    def index(x: OMV): Int => Term = {i: Int => OMV(x.name / i.toString)} // MizSeq.Index(x, OMI(_))
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => Mizar.zeroAryAndPropCon
       case (_, Some(pf)) => pf
-      case (n, _) => Mizar.uses(Mizar.And((1 to n).toList map (i => Mizar.implies(
-        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), Mizar.And((i to n).toList map(j => Mizar.implies(
+      case (m, _) => Mizar.uses(Mizar.And((0 until m).toList map (i => Mizar.implies(
+        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), Mizar.And((i until m).toList map(j => Mizar.implies(
           Apply(MizSeq.Index(OMV("cases"), OMI(j)), x), Mizar.eq(
             Apply(MizSeq.Index(OMV("caseRes"), OMI(i)), x),
             Apply(MizSeq.Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")
     }
-    val consistencyProof = Pi(x.name, Rep(Mizar.any), Lam("argsWellTyped", Sequence(args map {arg =>
-      Mizar.proof(Mizar.is(MizSeq.Index(x, OMV("i")), Apply(MizSeq.Index(Sequence(args), OMV("i")), x)))}), consistencyProofU))
+    def caseResSingleTp(n: Int) = pat match {
+      case s if (s.contains("Func") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.any)
+      case s if (s.contains("Func") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.any)
+      case s if (s.contains("Pred") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.prop)
+      case s if (s.contains("Pred") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.prop)
+      case s if (s.contains("Attr") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.prop)
+      case s if (s.contains("Attr") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.prop)
+      case s if (s.contains("Mode") && s.contains ("dir")) => Arrow(nTerms(n), Arrow(Mizar.any, Mizar.prop))
+      case s if (s.contains("Mode") && s.contains ("indir")) => Arrow(nTerms(n), Arrow(Arrow(Mizar.any, Mizar.prop), Mizar.prop))
+    }
+    val casesTp = Rep(Arrow(nTerms(argNumI), Mizar.prop), caseNum)
+    val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
+
+    val consistencyProof = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
+      Mizar.proof(Mizar.is(index(x)(ind), Apply(MizSeq.Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU))))
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val furtherParameters: List[Term] = ret ++ motherType ++ (caseNum::cases::caseRes::consistencyProof::defRes)
     apply(name, pat, argNumI, arguments, furtherParameters)

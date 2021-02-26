@@ -1,9 +1,7 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders.Special
 
-import info.kwarc.mmt.api.archives.{Archive, MathHub}
+import info.kwarc.mmt.api.archives.{ MathHub}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.api.utils.File.read
 
 class SmglomTree(
                 controller: Controller,
@@ -39,7 +37,7 @@ class SmglomTree(
 
   /** contains a single dummy node */
   def opaqueContent(archive: String, path: List[String], name: String): (String, String) = {
-    ("html", readModulePartHTML(archive, path.head, path(1)))
+    ("application/xhtml+stex", readModulePartHTML(archive, path.head, path(1)))
   }
 }
 
@@ -53,6 +51,7 @@ trait STeXReader { this: SmglomTree =>
       root.listFiles(_.isFile).toList.map(_.getName)
         .filter(_.endsWith("." + extension))
         .map(_.dropRight(extension.length + 1))
+        .sorted
     } else {
       Nil
     }
@@ -87,8 +86,15 @@ trait STeXReader { this: SmglomTree =>
       case "" => module + "." + extension
       case s => module + "." + s + "." + extension
     }
-    xml.Utility.escape(
-      read(File(root / filename)) // TODO: extract the html body
-    )
+
+    val documentNode = scala.xml.XML.loadFile(root / filename)
+    val contentNodes = findNode(documentNode, "class", "ltx_page_main")
+    val content = contentNodes.headOption.getOrElse(return "No content found in document")
+    content.toString
+  }
+
+  private def findNode(element: scala.xml.Elem, attribute: String, value: String): scala.xml.NodeSeq = {
+    def attrEqual(n: scala.xml.Node, a: String, v: String) =  (n \ ("@" + a)).text == value
+    element \\ "_" filter { n => attrEqual(n, attribute, value) }
   }
 }
