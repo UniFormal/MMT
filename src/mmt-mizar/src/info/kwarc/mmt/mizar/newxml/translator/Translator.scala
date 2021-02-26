@@ -23,7 +23,8 @@ object itemTranslator {
   def translateItem(item: Item) = {
     val sourceReg = item.pos.sourceRegion()
     item.checkKind()
-    val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] = item._subitem match {
+    //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
+    (item._subitem match {
       case subitem: MMLIdSubitem => subitem match {
         case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item)
         case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item)
@@ -49,15 +50,15 @@ object itemTranslator {
       case st: Statement => statementTranslator.translate_Statement(st)
       case defn: Definition => definitionTranslator.translate_Definition(defn)
       case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
-    }
-    translatedSubitem map {
+    }).foreach({TranslationController.add(_)})
+    /*translatedSubitem map {
       //Currently probably the only case that actually occurs in practise
       case decl: Declaration =>
         val name = decl.name
         TranslationController.add(decl)
       case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
       case nar: NarrativeElement => TranslationController.add(nar)
-    }
+    }*/
   }
 }
 

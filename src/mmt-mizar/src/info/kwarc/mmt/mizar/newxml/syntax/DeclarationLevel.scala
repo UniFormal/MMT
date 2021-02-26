@@ -119,6 +119,7 @@ case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) exte
 
 sealed trait BlockSubitem extends Subitem
 sealed trait Definition extends BlockSubitem
+sealed trait PrivateDefinition extends Definition
 case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
 case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
@@ -145,8 +146,8 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
  * @param _tpList contains the type of the variable
  * @param _tm
  */
-case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends Definition
-case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends Definition
+case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends PrivateDefinition
+case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends PrivateDefinition
 
 sealed trait RegistrationSubitems extends BlockSubitem
 sealed trait Registrations extends RegistrationSubitems

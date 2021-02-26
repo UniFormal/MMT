@@ -96,14 +96,14 @@ class NotationBasedPresenter extends ObjectPresenter {
      def getProperIncludes(m: MPath) = getThO(m).map {th => th.getAllIncludes.map(_.from).filter(Some(_) != th.meta)} getOrElse Nil
      def declaresTwice(ms: List[MPath], name: LocalName) = (ms.filter(getThO(_).map(_.declares(name)) getOrElse false).length > 1)
      val nameOnly = pc.owner match {
-       case Some(CPath(gn: GlobalName, key: TermComponentKey)) =>
+       case Some(CPath(gn: GlobalName, _: TermComponentKey)) =>
          //if (gn.module == p.module) {true} else {
            !(declaresTwice(getProperIncludes(gn.module), p.name))
          //}
-       case None => true
+       case _ => true
      }
      val s = p match {
-         case GlobalName(module, name) => if(nameOnly) {name.toPath} else {"☞"+p.toString}
+         case GlobalName(_, name) => if(nameOnly) {name.toPath} else {"☞"+p.toString}
          case MPath(_, name) => "?" + name.toPath
       }
       pc.out(s)
