@@ -5,9 +5,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.ConstantScala
 import info.kwarc.mmt.lf.{BinaryLFConstantScala, _}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{constant, constantName}
 
-object Mizar {
+object MizarPrimitiveConcepts {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
   val mathHubBase = "http://gl.mathhub.info/Mizar/MML/blob/master"
   // private val mizarBase =  DPath(utils.URI("http", "latin.omdoc.org") / "foundations"/ "mizar")
@@ -116,8 +115,9 @@ object Mizar {
   object neq extends BinaryLFConstantScala(MizarTh, "inequal")
 
   class Quantifier(n: String) {
-    def apply(v : OMV, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(v % Mizar.any, prop))
-    def apply(v : String, univ : Term, prop : Term) = ApplySpine(OMS(constantName(n)), univ, Lambda(LocalName(v), Mizar.any, prop))
+    def apply(v : OMV, univ : Term, prop : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, prop))
+    def apply(v: VarDecl, prop: Term): Term = apply(v.toTerm, v.tp.get, prop)
+    def apply(v : String, univ : Term, prop : Term): Term = apply(OMV(v), univ, prop)
     def unapply(t: Term): Option[(OMV,Term,Term)] = t match {
       case ApplySpine(OMS(q), List(a, Lambda(x, _, prop))) if q == constantName(n) => Some((OMV(x), a, prop))
       case _ => None
@@ -139,12 +139,12 @@ object Mizar {
     ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
   }
 
-  def attr(t : Term) = apply(Mizar.constant("attr"), t)
-  def adjective(cluster : Term, typ : Term) = apply(Mizar.constant("adjective"), typ, cluster)
-  def cluster(a1 : Term, a2 : Term) = apply(Mizar.constant("cluster"), a1, a2)
-  def choice(tp : Term) = apply(Mizar.constant("choice"), tp)
+  def attr(t : Term) = apply(constant("attr"), t)
+  def adjective(cluster : Term, typ : Term) = apply(constant("adjective"), typ, cluster)
+  def cluster(a1 : Term, a2 : Term) = apply(constant("cluster"), a1, a2)
+  def choice(tp : Term) = apply(constant("choice"), tp)
   def fraenkel(v : String, t : Term, p : Term, f : Term) =
-    apply(Mizar.constant("fraenkel"), t, Lambda(LocalName(v), Mizar.any, p), Lambda(LocalName(v), Mizar.any, f))
+    apply(constant("fraenkel"), t, Lambda(LocalName(v), any, p), Lambda(LocalName(v), any, f))
 
   /**
    * invoking specification axiom for sets
@@ -161,12 +161,12 @@ object Mizar {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val cond = info.kwarc.mmt.lf.Pi(argsCont, condition)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(Mizar.constant(name="fraenkelTerm"), List(universe,OMI(args.length),cond,expr):_*)
+    apply(constant("fraenkelTerm"), List(universe,OMI(args.length),cond,expr):_*)
   }
   def simpleFraenkelTerm(expression: Term, args: List[OMV], universe:Term) = {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(Mizar.constant(name="simpleFraenkelTerm"), List(universe,OMI(args.length),expr):_*)
+    apply(constant("simpleFraenkelTerm"), List(universe,OMI(args.length),expr):_*)
   }
 
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
@@ -210,7 +210,7 @@ object MMTUtils {
   def freeVarContext(varTps:List[Term]): Context =
     varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName("x_"+i)) % tp }
   def freeVars(varTps:List[Term], nm:Option[String]=None): Context =
-  varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % Mizar.any }
+  varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % MizarPrimitiveConcepts.any }
   def freeAlternatingVars(varTps:List[Term], nm:List[String]): List[OMV] =
     varTps.zipWithIndex.flatMap {case (tp:Term,i:Int) => nm map {s => OMV(LocalName(s+i))} }
   def flatten(tms:List[Term]) : Term = MizSeq.Sequence.apply(tms:_*)

@@ -12,7 +12,8 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import foundations._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs}
-import mmtwrapper.{Mizar, MizarPatternInstance}
+import mmtwrapper.MizarPrimitiveConcepts._
+import mmtwrapper.MizarPatternInstance
 
 import scala.collection._
 
@@ -48,8 +49,8 @@ object TranslationController {
   def incrementIdentifyCount() = {identifyCount += 1}
   def getIdentifyCount() = identifyCount
 
-  def currentBaseThy : Option[MPath] = Some(mmtwrapper.Mizar.MizarPatternsTh)
-  def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+mmtwrapper.Mizar.MizarPatternsTh.name.toString+".mmt")
+  def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
+  def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+MizarPatternsTh.name.toString+".mmt")
   def localPath : LocalName = LocalName(currentAid.toLowerCase())
   def currentThyBase : DPath = currentOutputBase / localPath
     //DPath(utils.URI(TranslationController.currentOutputBase.toString + localPath.toString))
@@ -59,7 +60,7 @@ object TranslationController {
     res
   }
   def getTheoryPath(aid: String) = (TranslationController.currentOutputBase / aid.toLowerCase()) ? aid.toLowerCase()
-  def currentSource : String = mmtwrapper.Mizar.mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
+  def currentSource : String = mathHubBase + "/source/" + currentAid.toLowerCase() + ".miz"
 
   def makeDocument() = {
     val doc = new Document(currentThyBase)
@@ -126,18 +127,20 @@ object TranslationController {
     controller.add(inc, AtBegin)
   }
   def add(e : Declaration) : Unit = {
-    val eC = complify(e)
     try {
+      println("Uncomplified:"+controller.presenter.asString(e))
+      val eC = complify(e)
       //println(eC.toString)
-      //println(controller.presenter.asString(eC))
+      println("Complified: "+controller.presenter.asString(eC))
       controller.add(eC)
     } catch {
-      case e: AddError =>
-        throw new TranslatingError("error adding declaration "+eC.name+", since a declaration of that name is already present. ")
+      case ae: AddError =>
+        throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
+      case ge: GeneralError => throw ge
     }
   }
   private def complify(d: Declaration) = {
-    val rules = RuleSet.collectRules(controller, Context(mmtwrapper.Mizar.MizarPatternsTh))
+    val rules = RuleSet.collectRules(controller, Context(MizarPatternsTh))
     foundations.IntroductionRule.allRules.foreach {rules.declares(_)}
     val complifier = controller.complifier(rules).toTranslator()
     try {
@@ -168,6 +171,6 @@ object TranslationController {
   }
 
   def inferType(tm:objects.Term, ctx: Context = Context.empty): objects.Term = {
-    checking.Solver.infer(controller, ctx, tm, None).getOrElse(Mizar.any)
+    checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
   }
 }

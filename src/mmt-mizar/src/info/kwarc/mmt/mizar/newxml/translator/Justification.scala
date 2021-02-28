@@ -3,7 +3,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt._
 import api._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
 import info.kwarc.mmt.mizar.newxml.translator.TranslatorUtils.mMLIdtoGlobalName
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator.translate_Claim
 import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
@@ -14,36 +14,36 @@ object justificationTranslator {
   def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext): Option[objects.Term] = just match {
     case Straightforward_Justification(pos, _refs) => None
     case Block(kind, pos, _items) =>
-      val currentThesis = defContext.thesis
+      val currentThesis = if (defContext.withinProof) Some(defContext.getThesis) else None
       defContext.setThesis(claim)
       val usedFacts: List[Term] = usedInJustification(just)
-      defContext.setThesis(currentThesis)
+      currentThesis foreach { defContext.setThesis(_) }
       //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
-      Some(Mizar.uses(claim, usedFacts))
+      Some(uses(claim, usedFacts))
     case Scheme_Justification(pos, nr, idnr, schnr, spelling, _refs) => ???
   }
   def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
     val claim = translate_Claim(it)
-    val currentThesis = defContext.thesis
+    val currentThesis = if (defContext.withinProof) Some(defContext.getThesis) else None
     defContext.setThesis(claim)
     val usedFacts: List[Term] = it._just::it._iterSteps.map(_._just) flatMap(usedInJustification)
-    defContext.setThesis(currentThesis)
+    currentThesis foreach { defContext.setThesis(_) }
     //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
-    Mizar.uses(claim, usedFacts)
+    uses(claim, usedFacts)
   }
-  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: DefinitionContext) = {
+  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Option[Term]) = {
     val claim = provedClaim._claim match {
       case Diffuse_Statement(spelling, serialnr, labelnr, _label) => provedClaim._just.get match {
         case Block(kind, pos, _items) =>
           val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
-          Mizar.And(claims.map(translate_Claim(_)))
-        case _ => Mizar.trueCon
+          And(claims.map(translate_Claim(_)(defContext)))
+        case _ => trueCon
       }
-      case _ => translate_Claim(provedClaim._claim)
+      case _ => translate_Claim(provedClaim._claim)(defContext)
     }
     val prf = (provedClaim._claim, provedClaim._just) match {
-      case (_, Some(just)) => translate_Justification(just, claim)
-      case (it: Iterative_Equality, None) => Some(translate_Iterative_Equality_Proof(it))
+      case (_, Some(just)) => translate_Justification(just, claim)(defContext)
+      case (it: Iterative_Equality, None) => Some(translate_Iterative_Equality_Proof(it)(defContext))
       case (_, None) => throw ProvedClaimTranslationError("No proof given for claim, which is not an iterative-equality (proving itself). ", provedClaim)
     }
     (claim, prf)
@@ -60,7 +60,7 @@ object justificationTranslator {
               case ds: Diffuse_Statement => j map usedInJustification getOrElse Nil
               case Proposition(_, _, Thesis(_, _)) => j map usedInJustification getOrElse Nil
               case it: Iterative_Equality if (j == None) =>
-                val Mizar.And(clms) = translate_Claim(it)
+                val And(clms) = translate_Claim(it)
                 val justs = it._just :: it._iterSteps.map(_._just)
                 clms ::: justs.flatMap(usedInJustification)
               case claim =>

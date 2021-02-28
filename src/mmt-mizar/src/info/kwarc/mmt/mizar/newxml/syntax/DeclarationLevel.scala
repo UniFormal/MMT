@@ -49,6 +49,12 @@ case class Assumption(_ass:Assumptions) extends Subitem
 case class Identify(_firstPat:Patterns, _sndPat:Patterns, _lociEqns:Loci_Equalities) extends RegistrationSubitems
 case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
 case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
+
+/**
+ * Contains a single block containing one subitem being the scheme head for this scheme and some futher subitems jointly forming the proof of it
+ * @param MmlId
+ * @param _block
+ */
 case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
   def scheme_head(): Scheme_Head = {
     assert(_block.kind == "Scheme-Block")
@@ -59,6 +65,10 @@ case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
       case _ => throw ImplementationError("Scheme head expected as first item in Scheme-Block-Item. ")
     }
   }
+  /**
+   * Statement and proof of the scheme
+   * @return
+   */
   def provenSentence() = {
     val justItems = _block._items.tail
     val startPos = justItems.head.pos.startPosition()
@@ -74,6 +84,14 @@ case class Per_Cases(_just:Justification) extends Subitem
 case class Case_Block(_block:Block) extends Subitem
 
 sealed trait Heads extends Subitem
+
+/**
+ *
+ * @param _sch
+ * @param _vars
+ * @param _form
+ * @param _provForm
+ */
 case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _provForm:Option[Provisional_Formulas]) extends Heads
 case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads

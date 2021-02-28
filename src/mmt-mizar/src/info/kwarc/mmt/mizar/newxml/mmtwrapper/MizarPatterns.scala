@@ -7,10 +7,10 @@ import info.kwarc.mmt.lf._
 import structuralfeatures.StructuralFeatureUtils
 import MizSeq.{Ellipsis, Index, OMI, Rep, Sequence, nTerms, nTypes}
 import info.kwarc.mmt.mizar.newxml._
+import MizarPrimitiveConcepts._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
-
 object PatternUtils {
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
   def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
@@ -76,7 +76,7 @@ object StructureInstance {
 object MizarPatternInstance {
   def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val home : Term = OMMOD(TranslationController.currentTheoryPath)
-    val pattern = Mizar.MizarPatternsTh ? LocalName(pat)
+    val pattern = MizarPatternsTh ? LocalName(pat)
     MizInstance.apply(home, name, pattern, args, notC)
   }
   private def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
@@ -105,30 +105,30 @@ object MizarPatternInstance {
     val x = OMV("x")
     def index(x: OMV): Int => Term = {i: Int => OMV(x.name / i.toString)} // MizSeq.Index(x, OMI(_))
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
-      case (0, _) => Mizar.zeroAryAndPropCon
+      case (0, _) => zeroAryAndPropCon
       case (_, Some(pf)) => pf
-      case (m, _) => Mizar.uses(Mizar.And((0 until m).toList map (i => Mizar.implies(
-        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), Mizar.And((i until m).toList map(j => Mizar.implies(
-          Apply(MizSeq.Index(OMV("cases"), OMI(j)), x), Mizar.eq(
+      case (m, _) => uses(And((0 until m).toList map (i => implies(
+        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), And((i until m).toList map(j => implies(
+          Apply(MizSeq.Index(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.eq(
             Apply(MizSeq.Index(OMV("caseRes"), OMI(i)), x),
             Apply(MizSeq.Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")
     }
     def caseResSingleTp(n: Int) = pat match {
-      case s if (s.contains("Func") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.any)
-      case s if (s.contains("Func") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.any)
-      case s if (s.contains("Pred") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.prop)
-      case s if (s.contains("Pred") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.prop)
-      case s if (s.contains("Attr") && s.contains ("dir")) => Arrow(nTerms(n), Mizar.prop)
-      case s if (s.contains("Attr") && s.contains ("indir")) => Arrow(nTerms(n+1), Mizar.prop)
-      case s if (s.contains("Mode") && s.contains ("dir")) => Arrow(nTerms(n), Arrow(Mizar.any, Mizar.prop))
-      case s if (s.contains("Mode") && s.contains ("indir")) => Arrow(nTerms(n), Arrow(Arrow(Mizar.any, Mizar.prop), Mizar.prop))
+      case s if (s.contains("Func") && s.contains ("dir")) => Arrow(nTerms(n), any)
+      case s if (s.contains("Func") && s.contains ("indir")) => Arrow(nTerms(n+1), any)
+      case s if (s.contains("Pred") && s.contains ("dir")) => Arrow(nTerms(n), prop)
+      case s if (s.contains("Pred") && s.contains ("indir")) => Arrow(nTerms(n+1), prop)
+      case s if (s.contains("Attr") && s.contains ("dir")) => Arrow(nTerms(n), prop)
+      case s if (s.contains("Attr") && s.contains ("indir")) => Arrow(nTerms(n+1), prop)
+      case s if (s.contains("Mode") && s.contains ("dir")) => Arrow(nTerms(n), Arrow(any, prop))
+      case s if (s.contains("Mode") && s.contains ("indir")) => Arrow(nTerms(n), Arrow(Arrow(any, prop), prop))
     }
-    val casesTp = Rep(Arrow(nTerms(argNumI), Mizar.prop), caseNum)
+    val casesTp = Rep(Arrow(nTerms(argNumI), prop), caseNum)
     val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
 
     val consistencyProof = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
-      Mizar.proof(Mizar.is(index(x)(ind), Apply(MizSeq.Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU))))
+      proof(is(index(x)(ind), Apply(MizSeq.Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU))))
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val furtherParameters: List[Term] = ret ++ motherType ++ (caseNum::cases::caseRes::consistencyProof::defRes)
     apply(name, pat, argNumI, arguments, furtherParameters)
@@ -179,7 +179,7 @@ object MizarPatternInstance {
     apply(name, pat, argNumI, arguments, furtherParameters)
   }
   def unapply(mizInstance: DerivedDeclaration): Option[(LocalName, String, List[Term])] = mizInstance match {
-    case MizInstance(home, name, pattern, args, notC) if pattern.module == Mizar.MizarPatternsTh =>
+    case MizInstance(home, name, pattern, args, notC) if pattern.module == MizarPatternsTh =>
       Some(name, pattern.name.toString, args)
     case _ => None
   }
