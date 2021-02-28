@@ -128,10 +128,19 @@ object TranslationController {
   }
   def add(e : Declaration) : Unit = {
     try {
-      println("Uncomplified:"+controller.presenter.asString(e))
-      val eC = complify(e)
-      //println(eC.toString)
-      println("Complified: "+controller.presenter.asString(eC))
+      var complificationSucessful = false
+      val eC: Declaration = try {
+        val res = complify(e)
+        complificationSucessful = true
+        res
+      } catch {
+        case ge: GeneralError =>
+          println("Uncomplified:"+controller.presenter.asString(e))
+          var shouldWork = false
+          try {controller.presenter.asString(e); shouldWork = true} catch {case _ =>}
+          if (shouldWork) e else throw ge
+      }
+      //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
       controller.add(eC)
     } catch {
       case ae: AddError =>

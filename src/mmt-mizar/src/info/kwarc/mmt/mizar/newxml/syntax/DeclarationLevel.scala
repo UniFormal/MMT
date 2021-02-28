@@ -78,7 +78,7 @@ case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
 }
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
-  def matchProperty() : MizarProperty = _props.matchProperty(_just)
+  def matchProperty() : Option[MizarProperty] = _props.matchProperty(_just)
 }
 case class Per_Cases(_just:Justification) extends Subitem
 case class Case_Block(_block:Block) extends Subitem

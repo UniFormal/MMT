@@ -115,11 +115,11 @@ object MizarPrimitiveConcepts {
   object neq extends BinaryLFConstantScala(MizarTh, "inequal")
 
   class Quantifier(n: String) {
-    def apply(v : OMV, univ : Term, prop : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, prop))
-    def apply(v: VarDecl, prop: Term): Term = apply(v.toTerm, v.tp.get, prop)
-    def apply(v : String, univ : Term, prop : Term): Term = apply(OMV(v), univ, prop)
+    def apply(v : OMV, univ : Term, p : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, p))
+    def apply(v: VarDecl, p: Term): Term = apply(v.toTerm, v.tp.get, p)
+    def apply(v : String, univ : Term, p : Term): Term = apply(OMV(v), univ, p)
     def unapply(t: Term): Option[(OMV,Term,Term)] = t match {
-      case ApplySpine(OMS(q), List(a, Lambda(x, _, prop))) if q == constantName(n) => Some((OMV(x), a, prop))
+      case ApplySpine(OMS(q), List(a, Lambda(x, _, p))) if q == constantName(n) => Some((OMV(x), a, p))
       case _ => None
     }
   }

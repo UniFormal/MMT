@@ -12,6 +12,7 @@ import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
 object PatternUtils {
+  def argsVarName = "argumentSequence"
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
   def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
   def structureStrictDeclName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictDef"))
@@ -45,7 +46,7 @@ object PatternUtils {
     })
   }
   def lambdaBindArgs(tm: Term)(implicit args: List[Term]): Term = {
-    Lam("x", nTerms(args.length), tm)
+    Lam(argsVarName, nTerms(args.length), tm)
   }
 }
 
@@ -68,7 +69,7 @@ object StructureInstance {
     MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller, notationC, Some(pseudoSlash(_, _)))(declarationPath)
   }
   def withUnnamedArgs(declarationPath:GlobalName, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
-    val argNameTps = argTps.zipWithIndex.map {case (tp, ind) => OMV("x"+ind) % tp}
+    val argNameTps = argTps.zipWithIndex.map {case (tp, ind) => OMV("arg"+ind) % tp}
     StructureInstance(declarationPath:GlobalName, l, argNameTps, n, substr, m, fieldDecls)
   }
 }
@@ -102,7 +103,7 @@ object MizarPatternInstance {
     val motherType = motherTpUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val cases = Sequence(casesUnbound map lambdaBindArgs)
     val caseRes = Sequence(caseResUnbound map lambdaBindArgs)
-    val x = OMV("x")
+    val x = OMV(argsVarName)
     def index(x: OMV): Int => Term = {i: Int => OMV(x.name / i.toString)} // MizSeq.Index(x, OMI(_))
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => zeroAryAndPropCon

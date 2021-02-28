@@ -512,9 +512,8 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Obj
  * @param _tp
  */
 case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
-  def matchProperty(_just: Option[Justification] = None ) = {
-    assert(property.isDefined)
-    Utils.matchProperty(property.get, _just)
+  def matchProperty(_just: Option[Justification] = None ): Option[Utils.MizarProperty] = {
+    property map (Utils.matchProperty(_, _just))
   }
 }
 case class Redefine(occurs:Boolean)

@@ -74,22 +74,23 @@ object TranslatorUtils {
     case segm: VariableSegments => segm._vars()
   }
 
-  /**
-   * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
-   * where <varName> is the name of the argument sequence from the corresponding pattern
-   *
-   * This is make the arguments used the names actually used in the binder of the pattern,
-   * not the names given to the arguments in Mizar
-   * @param varName (default "x") The name of the argument sequence in the corresponding pattern
-   * @param args (implicit) the arguments to build the substitution for
-   * @return
-   */
-  def namedDefArgsSubstition(args: Context, varName: LocalName = LocalName("x")) = {
+  private def namedDefArgsSubstition(args: Context, varName: LocalName): objects.Substitution = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
       case (vd, i) => vd / Index(OMV(varName),  OMI(i))
     }:_*)
   }
+  /**
+   * Compute a substitution substituting the arguments from the implicitely sublied definition context by terms of the form Index(OMV(<varName>), OMI(i)),
+   * where <varName> is the name of the argument sequence from the corresponding pattern
+   *
+   * This is make the arguments used the names actually used in the binder of the pattern,
+   * not the names given to the arguments in Mizar
+   * @param varName (default PatternUtils.argsVarName) The name of the argument sequence in the corresponding pattern
+   * @param defContext (implicit) the arguments to build the substitution for
+   * @return A substitution replacing the arguments by the corresponding index terms
+   */
+  def namedDefArgsSubstition(varName: LocalName = LocalName(mmtwrapper.PatternUtils.argsVarName))(implicit defContext: DefinitionContext): objects.Substitution = namedDefArgsSubstition(defContext.args, varName)
   /**
    * Compute a translating function any references to constants in hidden to the corresponding ones in the Mizar base theories
    * @return A translation function on declarations making the substitution

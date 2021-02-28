@@ -29,7 +29,6 @@ import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.OMI
 import info.kwarc.mmt.mizar.newxml.translator.JustifiedCorrectnessConditions.translate_consistency
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController.{addUnresolvedDependency, controller, currentAid, getAnonymousTheoremCount, getIdentifyCount, getUnresolvedDependencies, incrementAnonymousTheoremCount, incrementIdentifyCount, inferType, localPath, makeConstant, makeConstantInContext}
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
-import info.kwarc.mmt.mizar.newxml.translator.subitemTranslator.translate_Loci_Declaration
 import justificationTranslator._
 import propertyTranslator._
 import nymTranslator._
@@ -127,6 +126,15 @@ private[translator] object ThesisTerm {
   }
 }
 case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, private var thesis: Option[ThesisTerm] = None) {
+  private var localDefinitions: Option[List[(LocalName, Term)]] = None
+  def addLocalDefinition(n: LocalName, defn: Term) = {
+    assert (withinProof)
+    val toAdd = (n, defn)
+    localDefinitions = Some(localDefinitions.getOrElse(Nil):+toAdd)
+  }
+  def lookupLocalDefinitionWithinSameProof(n: LocalName): Option[Term] = {
+    if (withinProof) localDefinitions.flatMap(_.find(_ == n)).map(_._2) else None
+  }
   def addArguments(arguments: Context): Unit = { this.args ++= arguments }
   /**
    * Replaces the argument of same name by this one
@@ -175,9 +183,9 @@ object JustifiedProperty {
   def apply(property: Property, decl: Option[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property._props, decl, property._just)
   def apply(properties: Properties, decl: Option[Declaration], justO: Option[Justification] = None)(implicit definitionContext: DefinitionContext) : JustifiedProperty = {
     val prop = properties.matchProperty(justO)
-    val conds = properties._cond.map(_.matchProperty())
+    val conds = properties._cond.flatMap(_.matchProperty())
     val tp = properties._tp map translate_Type
-    JustifiedProperty(conds, prop, tp, decl)
+    JustifiedProperty(conds, prop.get, tp, decl)
   }
 }
 
@@ -271,7 +279,7 @@ object patternTranslator {
     Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr)
   }
   private def makeNotCont(fixity: Fixity): NotationContainer = {
-    def reasonableChar: Char => Boolean = {c => !("#" contains c)}//c.isLetterOrDigit || c.isWhitespace || "|.<>=+-*/()&^%$@!~,".contains(c)}
+    def reasonableChar: Char => Boolean = {c => !("#" == c)}//c.isLetterOrDigit || c.isWhitespace || "|.<>=+-*/()&^%$@!~,".contains(c)}
     val reasonable = fixity match {
       case Circumfix(lDelim, rDelim, num) => (lDelim++rDelim).forall(reasonableChar)
       case fixity: SimpleFixity => fixity.delim.text.forall(reasonableChar)
@@ -385,9 +393,6 @@ object subitemTranslator {
   }
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { Nil }
-  def translate_Loci_Declaration(loci_Declaration: Loci_Declaration)(implicit defContext: DefinitionContext): Context = {
-    loci_Declaration._qualSegms._children flatMap(translate_Context(_))
-  }
   def translate_Correctness(correctness: Correctness) = { throw notToplevel }
   def translate_Correctness_Condition(correctness_Condition: Correctness_Condition) = { throw notToplevel }
   def translate_Exemplification(exemplification: Exemplification) = { throw notToplevel }
@@ -479,19 +484,19 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition)(implicit defContext: DefinitionContext) : List[Declaration] = {
+  def translate_Definition(defn:Definition)(implicit defContext: => DefinitionContext) : List[Declaration] = {
     val translatedDecls: List[Declaration] = defn match {
-      case at: Attribute_Definition => translate_Attribute_Definition(at)
-      case cd: Constant_Definition => translate_Constant_Definition(cd)
-      case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)
-      case md: Mode_Definition => translate_Mode_Definition(md)
-      case pd: Predicate_Definition => translate_Predicate_Definition(pd)
-      case d: Private_Functor_Definition  => translate_Private_Functor_Definition(d)
-      case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)
-      case d: Structure_Definition => translate_Structure_Definition(d)
+      case d: Private_Functor_Definition  => translate_Private_Functor_Definition(d)(defContext)
+      case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)(defContext)
+      case at: Attribute_Definition => translate_Attribute_Definition(at)(defContext)
+      case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
+      case funcDef: Functor_Definition => translate_Functor_Definition(funcDef)(defContext)
+      case md: Mode_Definition => translate_Mode_Definition(md)(defContext)
+      case pd: Predicate_Definition => translate_Predicate_Definition(pd)(defContext)
+      case d: Structure_Definition => translate_Structure_Definition(d)(defContext)
     }
-    val justProps = defContext.props.map(p => JustifiedProperty(p, translatedDecls))
-    translatedDecls ++ justProps.map(translate_JustifiedProperty(_))
+    val justProps = defContext.props.filter(_._props.property.isDefined).map(p => JustifiedProperty(p, translatedDecls)(defContext))
+    translatedDecls ++ justProps.map(translate_JustifiedProperty(_)(defContext))
   }
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit defContext: DefinitionContext): List[Declaration] = {
     val l = defContext.args.length
@@ -521,9 +526,8 @@ object definitionTranslator {
     }
     val fieldDecls = translate_Field_Segments(strDef._fieldSegms)
     val m = fieldDecls.length
-    val trS = namedDefArgsSubstition(defContext.args)
 
-    StructureInstance(declarationPath, l, defContext.args, n, substr, m, Context.list2context(fieldDecls) ^ trS)
+    StructureInstance(declarationPath, l, defContext.args, n, substr, m, Context.list2context(fieldDecls) ^ namedDefArgsSubstition())
   }
   def translate_Attribute_Definition(attribute_Definition: Attribute_Definition)(implicit defContext: DefinitionContext) = attribute_Definition match {
     case atd @ Attribute_Definition(a, _redefine, _attrPat, _def) =>
@@ -638,25 +642,31 @@ object definitionTranslator {
         }
     }
   }
-  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: DefinitionContext) = {
-    val v = translate_Variable(private_Functor_Definition._var)
+  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext) = {
+    val v = translate_Variable(private_Functor_Definition._var)(defContext)
     val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.locVarAttr.serialNrIdNr.idnr)
-    val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
+    val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
     val tp = PiOrEmpty(args, any)
-    val dfBody = translate_Term(private_Functor_Definition._tm)
+    val dfBody = translate_Term(private_Functor_Definition._tm)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
     val res = makeConstantInContext(gn.name, Some(tp), Some(df))
-    List(res)
+    if (! defContext.withinProof) List(res) else {
+      defContext.addLocalDefinition(gn.name, df)
+      Nil
+    }
   }
-  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: DefinitionContext) = {
-    val v = translate_Variable(private_Predicate_Definition._var)
+  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext) = {
+    val v = translate_Variable(private_Predicate_Definition._var)(defContext)
     val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.locVarAttr.serialNrIdNr.idnr)
-    val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
+    val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
     val tp = PiOrEmpty(args, prop)
-    val dfBody = translate_Formula(private_Predicate_Definition._form)
+    val dfBody = translate_Formula(private_Predicate_Definition._form)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
     val res = makeConstantInContext(gn.name, Some(tp), Some(df))
-    List(res)
+    if (! defContext.withinProof) List(res) else {
+      defContext.addLocalDefinition(gn.name, df)
+      Nil
+    }
   }
   def translate_Predicate_Definition(predicate_Definition: Predicate_Definition)(implicit defContext: DefinitionContext) = predicate_Definition match {
     case prd@Predicate_Definition(a, _redefine, _predPat, _def) =>
@@ -764,7 +774,9 @@ object blockTranslator {
     items.zipWithIndex foreach { case (it: Item, ind: Int) =>
       it._subitem match {
         case loci_Declaration: Loci_Declaration =>
-          defContext.addArguments(translate_Loci_Declaration(loci_Declaration))
+          loci_Declaration._qualSegms._children foreach {segm =>
+            defContext.addArguments(translate_Context(segm)(defContext))
+          }
         case ass: Claim => defContext.addAssumption(translate_Claim(ass))
         case Assumption(ass) => defContext.addAssumption(translate_Claim(ass))
         case choice_Statement: Choice_Statement =>

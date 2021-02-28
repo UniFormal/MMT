@@ -73,9 +73,9 @@ object justificationTranslator {
           case id: Identify => translateSubitems(tail)
           case gen: Generalization => translateSubitems(tail)
           case prDef: PrivateDefinition =>
-            val List(trDef: Constant) = translate_Definition(prDef)
-            val tr = OMSReplacer({ case gn if (gn == trDef.path) => trDef.df case _ => None })
-            translateSubitems(tail) map (tr.toTranslator()(Context.empty, _))
+            // This will add the definition as to the list of local definitions inside the definition context
+            translate_Definition(prDef)
+            translateSubitems(tail)
           case _ => Nil
         }
       }
