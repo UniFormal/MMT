@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.ontology.rdf
 
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, Unary}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.{Escaping, URI}
 import org.eclipse.rdf4j.model.vocabulary.XSD
@@ -100,7 +101,7 @@ object ULO {
     override def toIri: IRI = ulo ## s
   }
 
-  case class ObjectProperty(s : String) extends ULOElem(s) {
+  case class ObjectProperty(s : String, binary : Option[Binary] = None) extends ULOElem(s) {
     _type(OWL.OBJECTPROPERTY)
     private[rdf] def subpropertyOf(p : Resource*) : this.type = {
       add(this,RDFS.SUBPROPERTYOF,sequence(p))
@@ -111,9 +112,47 @@ object ULO {
       this
     }
     def apply(s : Path,o : Path) = SimpleStatement(pathToString(s),this.toIri,pathToString(o))
+    def toBinary : Binary = binary.getOrElse(CustomBinary(s,"","",Path.parseD(namespace,NamespaceMap.empty)))
+  }
+
+  case class DatatypeProperty(s : String, binary : Option[Binary] = None) extends ULOElem(s) {
+    _type(OWL.DATATYPEPROPERTY)
+
+    private[rdf] def subpropertyOf(p: Resource*): this.type = {
+      add(this, RDFS.SUBPROPERTYOF, sequence(p))
+      this
+    }
+
+    def apply(s: Path, o: Any) = try {
+      SimpleStatement(pathToString(s), this.toIri, o match {
+        case p: Path => pathToString(p)
+        case sr: SourceRef =>
+          iri(pathToString(DPath(sr.container)) + "#" + sr.region.toString)
+        case ln: LocalName =>
+          org.eclipse.rdf4j.model.util.Values.literal(URLEscape.doName(ln))
+        case _ =>
+          iri(o.toString)
+      })
+    } catch {
+      case t : Throwable =>
+        throw t
+    }
+    def toBinary : Binary = binary.getOrElse(CustomBinary(s,"","",Path.parseD(namespace,NamespaceMap.empty)))
+  }
+  case class Class(s : String, unary : Option[Unary] = None) extends ULOElem(s) {
+    _type(OWL.CLASS)
+    private[rdf] def disjointWith(p : Resource*) : this.type  = {
+      add(this,OWL.DISJOINTWITH,sequence(p))
+      this
+    }
+    def apply(p : Path) = SimpleStatement(pathToString(p),RDF.TYPE,this)
+    def toUnary = unary.getOrElse(CustomUnary(s,Path.parseD(namespace,NamespaceMap.empty)))
   }
 
   object URLEscape {
+    def unapply(s : String) : Path = {
+      ???
+    }
     def apply(p : Path) = try {iri(applyI(p))} catch {
       case t : Throwable =>
         print("")
@@ -143,38 +182,6 @@ object ULO {
   }
 
   private def pathToString(p : Path) = URLEscape(p)
-
-  case class DatatypeProperty(s : String) extends ULOElem(s) {
-    _type(OWL.DATATYPEPROPERTY)
-
-    private[rdf] def subpropertyOf(p: Resource*): this.type = {
-      add(this, RDFS.SUBPROPERTYOF, sequence(p))
-      this
-    }
-
-    def apply(s: Path, o: Any) = try {
-      SimpleStatement(pathToString(s), this.toIri, o match {
-        case p: Path => pathToString(p)
-        case sr: SourceRef =>
-          iri(pathToString(DPath(sr.container)) + "#" + sr.region.toString)
-        case ln: LocalName =>
-          org.eclipse.rdf4j.model.util.Values.literal(URLEscape.doName(ln))
-        case _ =>
-          iri(o.toString)
-      })
-    } catch {
-      case t : Throwable =>
-        throw t
-    }
-  }
-  case class Class(s : String) extends ULOElem(s) {
-    _type(OWL.CLASS)
-    private[rdf] def disjointWith(p : Resource*) : this.type  = {
-      add(this,OWL.DISJOINTWITH,sequence(p))
-      this
-    }
-    def apply(p : Path) = SimpleStatement(pathToString(p),RDF.TYPE,this)
-  }
 
   val ulo = new ULOTrait {
     override def toIri: IRI = iri(namespace)
