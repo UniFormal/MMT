@@ -5,6 +5,7 @@ import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, Translator
 
 sealed trait ObjectLevel
 sealed trait Claim extends ObjectLevel
+sealed trait TypeUnchangingClaim extends Claim
 sealed trait VariableSegments extends ObjectLevel {
   def _tp(): Type
   def _vars() : List[Variable]
@@ -216,7 +217,7 @@ case class Forgetful_Functor_Term(objAttr: ConstrExtObjAttrs, _tm:MizTerm) exten
 /**
 primitive FOL formuli and relational formula, Multi_Attributive_Formula and Qualifying_Formula
  */
-sealed trait Formula extends Claim with Expression
+sealed trait Formula extends TypeUnchangingClaim with Expression
 
 /**
  * Existentially quantify the expression _expression over the variables contained in _vars
@@ -349,7 +350,7 @@ case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: I
  * @param _label
  * @param _thesis
  */
-case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends Claim with ProvenFactReference {
+case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends TypeUnchangingClaim with ProvenFactReference {
   def referencedLabel() = TranslationController.currentTheoryPath ? LocalName(_label.spelling)
 }
 /**
@@ -367,17 +368,17 @@ whatever still remains to be proven in a proof
   proofs the next conjunct, so thesis is changed to respective conjunct or claim
   hereby is abbreviation for thus + now
  */
-case class Thesis(pos: Position, sort: String) extends Claim
+case class Thesis(pos: Position, sort: String) extends TypeUnchangingClaim
 /** corresponds to a  now ... end block
  * makes the statements inside known to mizar, even if unproven or even false
  * this is never needed, but often convenient
  */
-case class Diffuse_Statement(spelling:String, serialnr:SerialNrIdNr, labelnr:Int, _label:Label) extends Claim
-case class Conditions(_props:List[Proposition]) extends Claim
-case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends Claim
+case class Diffuse_Statement(spelling:String, serialnr:SerialNrIdNr, labelnr:Int, _label:Label) extends TypeUnchangingClaim
+case class Conditions(_props:List[Proposition]) extends TypeUnchangingClaim
+case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends TypeUnchangingClaim
 private[newxml] case class Type_Changing_Claim(_eqList:Equalities_List, _tp:Type) extends Claim
 
-sealed trait Assumptions extends Claim
+sealed trait Assumptions extends TypeUnchangingClaim
 case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
 case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
 case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions with Subitem
@@ -511,9 +512,8 @@ case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Obj
  * @param _tp
  */
 case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
-  def matchProperty(_just: Option[Justification] = None ) = {
-    assert(property.isDefined)
-    Utils.matchProperty(property.get, _just)
+  def matchProperty(_just: Option[Justification] = None ): Option[Utils.MizarProperty] = {
+    property map (Utils.matchProperty(_, _just))
   }
 }
 case class Redefine(occurs:Boolean)

@@ -7,10 +7,10 @@ import info.kwarc.mmt.lf.{Pi, Univ}
 import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MMTUtils.Lam
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar.{any, eq, in, neq, set}
+import mmtwrapper.MizarPrimitiveConcepts._
+import mmtwrapper.MMTUtils.Lam
+import mmtwrapper.MizSeq._
+import mmtwrapper.MizarPrimitiveConcepts
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
 import syntax.Utils.MizarGlobalName
 import syntax._
@@ -74,46 +74,30 @@ object TranslatorUtils {
     case segm: VariableSegments => segm._vars()
   }
 
-  /**
-   * Compute a substitution substituting the implicitely sublied argument by terms of the form OMV(<varName> / i),
-   * where <varName> is the name of the argument sequence from the corresponding pattern
-   *
-   * This is make the arguments used the names actually used in the binder of the pattern,
-   * not the names given to the arguments in Mizar
-   * @param varName (default "x") The name of the argument sequence in the corresponding pattern
-   * @param args (implicit) the arguments to build the substitution for
-   * @return
-   */
-  def namedDefArgsSubstition(args: Context, varName: LocalName = LocalName("x")) = {
+  private def namedDefArgsSubstition(args: Context, varName: LocalName): objects.Substitution = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {
       case (vd, i) => vd / Index(OMV(varName),  OMI(i))
     }:_*)
   }
   /**
-   * Compute a translator substituting the implicitely sublied argument within type and definition of a declaration by terms of the form OMV(<varName> / i),
+   * Compute a substitution substituting the arguments from the implicitely sublied definition context by terms of the form Index(OMV(<varName>), OMI(i)),
    * where <varName> is the name of the argument sequence from the corresponding pattern
    *
-   * This is make the arguments use the names actually used in the binder of the pattern,
+   * This is make the arguments used the names actually used in the binder of the pattern,
    * not the names given to the arguments in Mizar
-   * @param varName (default "x") The name of the argument sequence in the corresponding pattern
-   * @param args (implicit) the arguments to build the substitution for
+   * @param varName (default PatternUtils.argsVarName) The name of the argument sequence in the corresponding pattern
+   * @param defContext (implicit) the arguments to build the substitution for
+   * @return A substitution replacing the arguments by the corresponding index terms
+   */
+  def namedDefArgsSubstition(varName: LocalName = LocalName(mmtwrapper.PatternUtils.argsVarName))(implicit defContext: DefinitionContext): objects.Substitution = namedDefArgsSubstition(defContext.args, varName)
+  /**
+   * Compute a translating function any references to constants in hidden to the corresponding ones in the Mizar base theories
    * @return A translation function on declarations making the substitution
    */
-  private def namedDefArgsTranslator(varName: LocalName, args: Context) : symbols.Declaration => symbols.Declaration = {
-    {d: symbols.Declaration =>
-      val tl = symbols.ApplySubs(namedDefArgsSubstition(args, varName)).compose(OMSReplacer({gn =>
-        try {
-          resolveHiddenReferences(gn)
-        } catch {
-          case trE: TranslatingError =>
-            println("Can't translate the reference to hidden "+gn)
-            throw trE
-        }
-      }).toTranslator())
-     d.translate(tl, Context.empty)}
+  def hiddenRefTranslator(d: symbols.Declaration): symbols.Declaration = {
+    d.translate(OMSReplacer(gn => resolveHiddenReferences(gn)).toTranslator(), Context.empty)
   }
-  def namedDefArgsTranslator(varName: String = "x")(implicit defContext: DefinitionContext) : symbols.Declaration => symbols.Declaration = {d => d}//namedDefArgsTranslator(LocalName(varName), defContext.args)
   def translateArguments(arguments: Arguments)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = { arguments._children map translate_Term }
   val hiddenArt = TranslationController.getTheoryPath("hidden")
   val hiddenArts = List("hidden", "tarski", "tarski_a") map TranslationController.getTheoryPath
@@ -135,7 +119,7 @@ object TranslatorUtils {
         case str if (str.endsWith("M1")) => Some(any)
         case str if (str.endsWith("M2")) => Some(set)
         case str if (str.endsWith("R1") && neqPats.exists(str.endsWith(_))) => Some(neq.term)
-        case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(Mizar.eq.term)
+        case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(MizarPrimitiveConcepts.eq.term)
         case str if (str.endsWith("R2") || str.endsWith("R3")) => Some(in)
         case _ =>  throw new ImplementationError("Failure to translate the reference to a declaration in hidden of name "+name.toString)
       }
