@@ -190,7 +190,7 @@ trait functorDefInstance {
   def unapply(dd: DerivedDeclaration): Option[Product]
 }
 object directPartialFunctorDefinition extends functorDefInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -200,7 +200,7 @@ object directPartialFunctorDefinition extends functorDefInstance {
   }
 }
 object indirectPartialFunctorDefinition extends functorDefInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -210,7 +210,7 @@ object indirectPartialFunctorDefinition extends functorDefInstance {
   }
 }
 object directCompleteFunctorDefinition extends functorDefInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directComplFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
@@ -220,7 +220,7 @@ object directCompleteFunctorDefinition extends functorDefInstance {
   }
 }
 object indirectCompleteFunctorDefinition extends functorDefInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectComplFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
@@ -234,7 +234,7 @@ trait PredicateDefinitionInstance {
   def unapply(dd: DerivedDeclaration): Option[Product]
 }
 object directPartialPredicateDef extends PredicateDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartPredDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
     }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -244,7 +244,7 @@ object directPartialPredicateDef extends PredicateDefinitionInstance {
   }
 }
 object directCompletePredicateDef extends PredicateDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartPredDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, None)
     }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = dd match {
@@ -258,7 +258,7 @@ trait AttributeDefinitionInstance {
   def unapply(dd: DerivedDeclaration): Option[Product]
 }
 object directCompleteAttributeDefinition extends AttributeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directComplAttrDef", argNum, argTypes, None, Some(motherTp), caseNum, cases, caseRes, consistencyProof, None)
     }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
@@ -269,7 +269,7 @@ object directCompleteAttributeDefinition extends AttributeDefinitionInstance {
     }
 }
 object directPartialAttributeDefinition extends AttributeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartAttrDef", argNum, argTypes, None, Some(motherTp), caseNum, cases, caseRes, consistencyProof, Some(defRes))
     }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -280,7 +280,7 @@ object directPartialAttributeDefinition extends AttributeDefinitionInstance {
   }
 }
 object indirectCompleteAttributeDefinition extends AttributeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectComplAttrDef", argNum, argTypes, None, Some(motherTp), caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
@@ -291,7 +291,7 @@ object indirectCompleteAttributeDefinition extends AttributeDefinitionInstance {
   }
 }
 object indirectPartialAttributeDefinition extends AttributeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], motherTp:Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectPartAttrDef", argNum, argTypes, None, Some(motherTp), caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -307,7 +307,7 @@ trait ModeDefinitionInstance {
 
 }
 object directPartialModeDefinition extends ModeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartModeDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -317,7 +317,7 @@ object directPartialModeDefinition extends ModeDefinitionInstance {
   }
 }
 object directCompleteModeDefinition extends ModeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directComplModeDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = dd match {
@@ -327,7 +327,7 @@ object directCompleteModeDefinition extends ModeDefinitionInstance {
   }
 }
 object indirectPartialModeDefinition extends ModeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectPartModeDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term, Term)] = dd match {
@@ -337,7 +337,7 @@ object indirectPartialModeDefinition extends ModeDefinitionInstance {
   }
 }
 object indirectCompleteModeDefinition extends ModeDefinitionInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectComplModeDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = dd match {
@@ -348,7 +348,7 @@ object indirectCompleteModeDefinition extends ModeDefinitionInstance {
 }
 
 object schemeDefinitionInstance {
-  def apply(name: LocalName, argTypes: List[Term], assumptions:List[Term], p:Term, prf: Option[Term] = None)(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argTypes: List[Term], assumptions:List[Term], p:Term, prf: Option[Term] = None)(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "schemeDef", argTypes.length, argTypes, Some(assumptions.length), assumptions, p, prf)
   }
 }
@@ -377,7 +377,7 @@ object qualifiedFunctorRegistration extends RegistrationInstance {
 
 trait NotationInstance
 class NymicNotation(key:String) extends NotationInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer = NotationContainer.empty()) = {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, key, argNum, argTypes, None, Nil, v, None)
   }
 }

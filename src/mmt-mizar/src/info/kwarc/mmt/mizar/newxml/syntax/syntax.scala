@@ -235,7 +235,7 @@ case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatter
  * @param _locis
  */
 case class LocalRedVarAttr(pos:Position, origin:String, serialNrIdNr: SerialNrIdNr, varnr: Int) extends Group {
-  def localIdentitier: String = MizarRedVarName(serialNrIdNr, varnr)
+  def localIdentitier: LocalName = MizarRedVarName(serialNrIdNr, varnr)
 }
 /**
  *
@@ -245,7 +245,7 @@ case class LocalRedVarAttr(pos:Position, origin:String, serialNrIdNr: SerialNrId
  * @param varnr
  */
 case class LocalVarAttr(locVarAttr:LocalRedVarAttr, spelling:String, sort:String) extends Group {
-  def toIdentifier : String = MizarVariableName(spelling, sort, locVarAttr.serialNrIdNr, locVarAttr.varnr)
+  def toIdentifier : LocalName = MizarVariableName(spelling, sort, locVarAttr.serialNrIdNr, locVarAttr.varnr)
 }
 /**
  *
@@ -257,7 +257,7 @@ case class VarAttrs(locVarAttr:LocalRedVarAttr, spelling:String, kind:String) ex
   /**
    * compute the string value of corresponding omv
    */
-  def toIdentifier: String = MizarVariableName(spelling, kind, locVarAttr.serialNrIdNr, locVarAttr.varnr)
+  def toIdentifier: LocalName = MizarVariableName(spelling, kind, locVarAttr.serialNrIdNr, locVarAttr.varnr)
 }
 
 /**
@@ -336,15 +336,15 @@ object Utils {
   }
   case class MizarGlobalName(aid:String, kind: String, nr:Int)
 
-  def MizarRedVarName(serialNrIdNr: SerialNrIdNr): String = "idNr_"+serialNrIdNr.idnr.toString
-  def MizarRedVarName(serialNrIdNr: SerialNrIdNr, varnr: Int): String = {
+  def MizarRedVarName(serialNrIdNr: SerialNrIdNr): LocalName = LocalName("idNr_"+serialNrIdNr.idnr.toString)
+  def MizarRedVarName(serialNrIdNr: SerialNrIdNr, varnr: Int): LocalName = {
     MizarRedVarName(serialNrIdNr) //"serialNr:"+serialNrIdNr.serialnr.toString+",varNr:"+varnr.toString
   }
-  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr): String = {
-    spelling + "/" +kind+"/"+ MizarRedVarName(serialNrIdNr)
+  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr): LocalName = {
+    LocalName(spelling) / LocalName(kind) / MizarRedVarName(serialNrIdNr)
   }
-  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr, varnr: Int): String = {
-    spelling + "/" +kind+"/"+ MizarRedVarName(serialNrIdNr, varnr)
+  def MizarVariableName(spelling: String, kind: String, serialNrIdNr: SerialNrIdNr, varnr: Int): LocalName = {
+    LocalName(spelling) / LocalName(kind) / MizarRedVarName(serialNrIdNr, varnr)
   }
 
   /**
