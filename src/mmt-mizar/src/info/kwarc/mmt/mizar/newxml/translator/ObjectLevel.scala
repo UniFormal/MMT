@@ -39,7 +39,7 @@ object termTranslator {
       val args = translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
     case Selector_Term(tpAttrs, _arg) =>
-      val strGn = mMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
+      val strGn = tpAttrs.globalPatternName
       val sel = referenceExtDecl(strGn, tpAttrs.spelling)
       val argument = translate_Term (_arg)
       Apply(sel, argument)
@@ -125,6 +125,7 @@ object typeTranslator {
 
 object formulaTranslator {
   def translate_Formula(formula:Formula)(implicit defContext: DefinitionContext) : Term = formula match {
+    case Scope(_expr) => translate_Claim(_expr)
     case Existential_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
@@ -181,7 +182,7 @@ object formulaTranslator {
     case FlexaryConjunctive_Formula(pos, sort, _formulae) =>
       val formulae = _formulae map translate_Claim
       And(formulae)
-    case mrl @ Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
+    case mrl@Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
       val firstForm = translate_Formula(_relForm)
       val (rel, negated) = firstForm match {
         case ApplyGeneral(rel, List(arg1, arg2)) => (rel, false)
@@ -290,7 +291,7 @@ object claimTranslator {
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(pos, sort) => defContext.getThesisAsTerm
-    case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
+    case Diffuse_Statement(spell, serialnr, labelnr, _label) => throw ImplementationError("This should never be called.")
     case Conditions(_props) => And(_props map translate_Claim)
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
       val fstRelat = translate_Formula(_formula)

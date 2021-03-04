@@ -189,7 +189,7 @@ object TranslationController {
           var shouldWork = false
           try {controller.presenter.asString(e); shouldWork = true} catch {case _ =>}
           if (shouldWork) e else throw ge
-        case parseError: ParseError => println(info+"\n"+parseError.shortMsg); throw parseError
+        case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
       //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
       controller.add(eC)
@@ -214,8 +214,8 @@ object TranslationController {
   }
 
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
-  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty()) : Constant = {
-    Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), role: Option[String] = None) : Constant = {
+    Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None, notC)
   }
   def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term], unboundArgs: Context)(implicit notC:NotationContainer) : Constant = {
     val args = unboundArgs.map(vd => vd.copy(tp = vd.tp map (lambdaBindArgs(_)(unboundArgs map (_.toTerm)))))

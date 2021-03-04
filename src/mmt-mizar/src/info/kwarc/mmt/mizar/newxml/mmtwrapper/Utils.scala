@@ -86,6 +86,7 @@ object MizarPrimitiveConcepts {
   object And {
     def apply(tms : List[Term]) : Term = naryAndSym(OMI(tms.length), Sequence(tms))
     def unapply(t: Term) = t match {
+      case ApplyGeneral(OMS(gn), conjs@List(conj1, conj2)) if (gn == andCon) => Some(conjs)
       case naryAndSym(OMI(n), Sequence(tms)) if (tms.length == n) => Some(tms)
       case _ => None
     }
@@ -95,8 +96,8 @@ object MizarPrimitiveConcepts {
   object naryOrSym extends BinaryLFConstantScala(MizarTh, "nary_or")
   object Or {
     def apply(tms: List[Term]) = naryOrSym(OMI(tms.length), Sequence(tms))
-
     def unapply(t: Term) = t match {
+      case ApplyGeneral(OMS(gn), disjs@List(disj1, disj2)) if (gn == orCon) => Some(disjs)
       case naryOrSym(OMI(n), Sequence(tms)) if (n == tms.length) => Some(tms)
       case _ => None
     }
@@ -128,9 +129,8 @@ object MizarPrimitiveConcepts {
 
   object proof extends UnaryLFConstantScala(ProofsTh, "proof")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
-  object Exemplification extends BinaryLFConstantScala(MizarTh, "proofByExample")
+  object ProofByExample extends BinaryLFConstantScala(MizarTh, "proof_by_example")
   def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
-  def exemplification(tp: Term, tm: Term) = Exemplification(tp, tm)
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")

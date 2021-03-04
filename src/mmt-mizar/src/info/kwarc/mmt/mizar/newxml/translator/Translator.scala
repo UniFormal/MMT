@@ -83,6 +83,7 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.controller = controller
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
+    val startTime = System.nanoTime()
 
     val doc = TranslationController.makeDocument()
     val thy = TranslationController.makeTheory()
@@ -99,8 +100,9 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    log("The translated article " + bf.narrationDPath.last + ": ")
 
+    /*
+    log("The translated article " + bf.narrationDPath.last + ": ")
     doc.getModules(TranslationController.controller.globalLookup) foreach {
       case mpath: MPath => TranslationController.controller.getModule(mpath) match {
         case th: Theory => log("theory " + th.name)
@@ -117,11 +119,16 @@ class MizarXMLImporter extends archives.Importer {
             }
         }
       }
-    }
+    }*/
     val unres = TranslationController.getUnresolvedDependencies()
     if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
     val deps = TranslationController.getDependencies()
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+
+    val translationTime = math.round((System.nanoTime() - startTime) / 1e9d)
+    val seconds = translationTime % 60
+    val minutes = (translationTime - seconds) / 60
+    println("The overall translation took "+minutes+" minutes and "+seconds+" seconds.")
     println (TranslationController.notationStatistics)
 
     println(TranslationController.articleStatistics.makeArticleStatistics)

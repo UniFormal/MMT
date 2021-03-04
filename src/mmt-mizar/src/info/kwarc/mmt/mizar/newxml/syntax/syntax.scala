@@ -39,11 +39,9 @@ case class Position(position:String) extends Group  {
 }
 
 case class MMLId(MMLId:String) extends Group {
-  def mizarSemiGlobalName():MizarSemiGlobalName = {
-    val gns = MMLId.split(':')
-    assert(gns.length == 2 )
-    val List(aidStr, nrStr) = gns.toList
-    MizarSemiGlobalName(aidStr, nrStr.toInt)
+  def globalName(kind: String): GlobalName = {
+    val Array(aid, ln) = MMLId.split(":")
+    TranslationController.getTheoryPath(aid) ? LocalName(kind+ln)
   }
 }
 
@@ -106,8 +104,8 @@ trait referencingObjAttrs extends RedObjectSubAttrs {
   def formatnr:Int
   def patternnr: Int
   def spelling: String
-  def globalPatternName(aid: String, refSort: String, constrnr: Int): MizarGlobalName = {
-    MizarGlobalName(aid, refSort, patternnr)
+  def globalPatternName(aid: String, refSort: String, constrnr: Int): GlobalName = {
+    TranslationController.getTheoryPath(aid) ? LocalName(refSort+"_"+patternnr)
   }
 }
 trait referencingConstrObjAttrs extends referencingObjAttrs {
@@ -122,18 +120,36 @@ trait globallyReferencingObjAttrs {
   def globalPatternFile = globalObjAttrs.globalPatternFile
   def globalPatternNr = globalObjAttrs.globalPatternNr
 
-  def globalPatternName() : MizarGlobalName = MizarGlobalName(globalPatternFile, globalKind, globalPatternNr)
+  protected def absoluteName(str: String) : GlobalName = {
+    val Array(aid, ln) = str.split(":") match {
+      case Array(a, b) if (! (a.isEmpty || b.isEmpty)) => Array(a, b)
+      case other =>
+        throw ImplementationError("")
+    }
+    TranslationController.getTheoryPath(aid) ? LocalName(globalKind+ln)
+  }
+  def globalPatternName: GlobalName = absoluteName(globalObjAttrs.absolutepatternMMLId)/*{
+    val s = globalObjAttrs.absolutepatternMMLId
+    val str = if (s != "") s else globalPatternFile+":"+globalPatternNr
+    absoluteName(str)
+  }*/
 }
-case class GlobalObjAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int) extends Group
+case class GlobalObjAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, absolutepatternMMLId: String) extends Group
 trait globallyReferencingDefAttrs extends globallyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
-  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr)
+  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.globalKind, globalDefAttrs.globalPatternFile, globalDefAttrs.globalPatternNr, globalDefAttrs.absolutepatternMMLId)
   def globalConstrFile = globalDefAttrs.globalConstrFile
   def globalConstrNr = globalDefAttrs.globalConstrNr
 
-  def globalConstrName() : MizarGlobalName = MizarGlobalName(globalConstrFile, globalKind, globalConstrNr)
+  def globalConstrName() : GlobalName = absoluteName(globalDefAttrs.absoluteconstrMMLId)/*{
+    val s = globalDefAttrs.absoluteconstrMMLId
+    val str = if (s != "") s else globalConstrFile+":"+globalConstrNr
+    absoluteName(str)
+  }*/
+  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = c.module ? LocalName(p.name.toString + c.name.toString)
+  def globalPatConstrName(): GlobalName = absolutePatConstrName(globalPatternName, globalConstrName())
 }
-case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int) extends Group
+case class GlobalDefAttrs(globalKind: String, globalPatternFile: String, globalPatternNr:Int, globalConstrFile: String, globalConstrNr: Int, absolutepatternMMLId: String, absoluteconstrMMLId: String) extends Group
 trait globallyReferencingReDefAttrs extends globallyReferencingDefAttrs {
   def globalReDefAttrs : GlobalReDefAttrs
   override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
@@ -142,10 +158,19 @@ trait globallyReferencingReDefAttrs extends globallyReferencingDefAttrs {
   def globalOrgConstrFile = globalReDefAttrs.globalOrgConstrFile
   def globalOrgConstrNr = globalReDefAttrs.globalOrgConstrNr
 
-  def globalOrgPatternName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgPatternNr)
-  def globalOrgConstrName() : MizarGlobalName = MizarGlobalName(globalOrgConstrFile, globalKind, globalOrgConstrNr)
+  def globalOrgPatternName() : GlobalName = absoluteName(globalReDefAttrs.absoluteorigpatternMMLId) /*{
+     val s = globalReDefAttrs.absoluteorigpatternMMLId
+    val str = if (s != "") s else globalOrgPatternFile+":"+globalOrgPatternNr
+    absoluteName(str)
+  }*/
+  def globalOrgConstrName() : GlobalName = absoluteName(globalReDefAttrs.absoluteorigconstrMMLId) /*{
+    val s = globalReDefAttrs.absoluteorigconstrMMLId
+    val str = if (s != "") s else globalOrgConstrFile+":"+globalOrgConstrNr
+    absoluteName(str)
+  }*/
+  def globalOrgPatConstrName(): GlobalName = absolutePatConstrName(globalOrgPatternName, globalOrgConstrName)
 }
-case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group
+case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int, absoluteorigpatternMMLId: String, absoluteorigconstrMMLId: String) extends Group
 /**
  * An extended list of common attributes for Object (terms and types) definitions
  * @param posNr
@@ -190,9 +215,9 @@ case class OrgnlExtObjAttrs(pos: Position, nr: Int, formatnr: Int, patternnr:Int
  */
 
 case class PatternAttrs(formatdes:String, formatnr: Int, spelling:String, pos:Position, patternnr:Int, globalObjAttrs: GlobalObjAttrs) extends Group
-case class ExtPatAttr(patAttr:PatternAttrs, globalConstrFile: String, globalConstrNr: Int, constr:String) extends Group {
+case class ExtPatAttr(patAttr:PatternAttrs, absoluteconstrMMLId: String, globalConstrFile: String, globalConstrNr: Int, constr:String) extends Group {
   def globalDefAttrs = GlobalDefAttrs(patAttr.globalObjAttrs.globalKind, patAttr.globalObjAttrs.globalPatternFile, patAttr.globalObjAttrs.globalPatternNr,
-    globalConstrFile, globalConstrNr)
+    globalConstrFile, globalConstrNr, patAttr.globalObjAttrs.absolutepatternMMLId, absoluteconstrMMLId)
 }
 case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
   override def patAttr = orgExtPatAttr.extPatAttr.patAttr
@@ -217,8 +242,8 @@ case class PatDef(patAttr:PatternAttrs, _locis:List[Loci]) extends PatDefs
 case class ExtPatDef(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends PatDefs {
   override def patAttr: PatternAttrs = extPatAttr.patAttr
 }
-case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int) extends Group {
-  def globalReDefAttrs = GlobalReDefAttrs(extPatAttr.globalDefAttrs, globalOrgPatternFile, globalOrgPatternNr, globalOrgConstrFile, globalOrgConstrNr)
+case class OrgExtPatAttr(extPatAttr:ExtPatAttr, orgconstrnr:Int, globalOrgPatternFile: String, globalOrgPatternNr:Int, globalOrgConstrFile: String, globalOrgConstrNr: Int, absoluteorigpatternMMLId: String, absoluteorigconstrMMLId: String) extends Group {
+  def globalReDefAttrs = GlobalReDefAttrs(extPatAttr.globalDefAttrs, globalOrgPatternFile, globalOrgPatternNr, globalOrgConstrFile, globalOrgConstrNr, absoluteorigpatternMMLId, absoluteorigconstrMMLId)
 }
 
 /**
@@ -331,10 +356,6 @@ object Utils {
   def fullClassName(s: String) = {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
-  case class MizarSemiGlobalName(aid:String, nr:Int) {
-    def makeGlobalName(kind:String) : MizarGlobalName = {MizarGlobalName(aid, kind, nr)}
-  }
-  case class MizarGlobalName(aid:String, kind: String, nr:Int)
 
   def MizarRedVarName(serialNrIdNr: SerialNrIdNr): LocalName = LocalName("idNr_"+serialNrIdNr.idnr.toString)
   def MizarRedVarName(serialNrIdNr: SerialNrIdNr, varnr: Int): LocalName = {

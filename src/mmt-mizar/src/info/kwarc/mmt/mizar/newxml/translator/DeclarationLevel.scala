@@ -59,6 +59,7 @@ private[translator] class ThesisTerm(tm: Term) {
       case implies(cond, rest) =>
         val (conds, body) = matchConds(rest)
         (cond::conds, body)
+      case iff(a, b) => matchConds(And(List(implies(a, b), implies(b, a))))
       case _ => (Nil, tm)
     }
       val (conds, actualClaim) = matchConds(tm)
@@ -77,7 +78,7 @@ private[translator] class ThesisTerm(tm: Term) {
         case _ => (Context.empty, tm)
       }
       val (univQuants, conjunction) = univQuantifier(body)
-      val conjuncts = tm match  {
+      val conjuncts = conjunction match  {
         case And(conjuncts) => conjuncts// map TranslationController.simplifyTerm
         case tm => List(tm)//TranslationController.simplifyTerm(tm))
       }
@@ -89,6 +90,12 @@ private[translator] class ThesisTerm(tm: Term) {
   private var existQuants: Context = matchTerm(tm)._3
   private var univQuants: Context = matchTerm(tm)._4
   private var conjuncts: List[Term] = matchTerm(tm)._5
+  def getConjuncts: List[Term] = conjuncts
+  def getDisjuncts: List[Term] = conjuncts.headOption match {
+    case Some(Or(disjs)) => disjs
+    case Some(other) => List(other)
+    case None => List(trueCon)
+  }
   private def killOne(cond: VarDecl, ctx: => List[VarDecl]): Unit = cond match {
     case VarDecl(OMV.anonymous, _, tp, _, _) => ctx.filterNot {
       case VarDecl(_, _, vtp, _, _) => vtp.get == TranslationController.simplifyTerm(tp.get)
@@ -100,13 +107,30 @@ private[translator] class ThesisTerm(tm: Term) {
   def killArg(arg: VarDecl) = killOne(arg, args)
   def killExistVar(v: VarDecl) = killOne(v, existQuants)
   def killUnivVar(v: VarDecl) = killOne(v, univQuants)
-  def killConjunct(tm: Term) = {
-    assert(tm == conjuncts.head)
-    conjuncts = conjuncts.tail
+  def nextExistVar(vO: Option[OMV] = None): Option[VarDecl] = vO flatMap(v => existQuants find(_.name == v.name)) orElse(existQuants.variables.headOption orElse({
+    conjuncts.headOption match {
+      case Some(hd) => val subThesis = new ThesisTerm(hd)
+        if (subThesis.conjuncts.head == conjuncts.head) None else subThesis.nextExistVar(vO)
+      case None => None
+    }
+  }))
+  def nextUnivVar(vO: Option[OMV] = None): VarDecl = vO flatMap (v => univQuants.find (_.name == v.name)) getOrElse univQuants.variables.head
+  def killConjunct(tm: Term) = conjuncts match {
+    case Nil => Nil
+    case hd::tl => if (tm == hd) conjuncts = conjuncts.drop(1)
   }
-  def killCond(tm: Term) = {
-    assert(tm == conditions.head)
-    conditions = conditions.tail
+  def killDisjunct(tm: Term) = {
+    val disjuncts = getDisjuncts
+    assert(tm == disjuncts.head)
+    conjuncts = conjuncts match {
+      case hd::tl => Or(disjuncts.tail)::conjuncts.tail
+      case Nil => List(trueCon)
+    }
+  }
+  def killCond(tm: Term) = conditions match {
+    case Nil =>
+    case hd::tl =>
+      if (tm == conditions.head) conditions = conditions.drop(1)
   }
   def doneProving(): Boolean = (conditions ++ existQuants ++ univQuants).isEmpty && conjuncts == Nil
   def toTerm(implicit defContext: DefinitionContext): Term = {
@@ -114,7 +138,7 @@ private[translator] class ThesisTerm(tm: Term) {
     val univQuantified = translate_Universal_Quantifier_Formula(univQuants, allConjunctions, None)(defContext)
     val existQuantified = translate_Existential_Quantifier_Formula(existQuants, univQuantified, None)(defContext)
     val furtherArgs = defContext.args.filter(existQuantified.freeVars contains _)
-    PiOrEmpty(furtherArgs++args, conditions.foldRight(existQuantified)(implies(_, _)))
+    PiOrEmpty(furtherArgs, conditions.foldRight(existQuantified)(implies(_, _)))
   }
   def subobjects: List[(Context, Obj)] = (conditions ++ existQuants ++ univQuants).flatMap(_.subobjects) ++ conjuncts.flatMap(_.subobjects)
 }
@@ -125,7 +149,7 @@ private[translator] object ThesisTerm {
     ths
   }
 }
-case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, private var thesis: Option[ThesisTerm] = None) {
+case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, private var thesis: List[ThesisTerm] = Nil) {
   private var localDefinitions: Option[List[(LocalName, Term)]] = None
   def addLocalDefinition(n: LocalName, defn: Term) = {
     assert (withinProof)
@@ -133,7 +157,7 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
     localDefinitions = Some(localDefinitions.getOrElse(Nil):+toAdd)
   }
   def lookupLocalDefinitionWithinSameProof(n: LocalName): Option[Term] = {
-    if (withinProof) localDefinitions.flatMap(_.find(_ == n)).map(_._2) else None
+    if (withinProof) localDefinitions.flatMap(_.find(_._1 == n)).map(_._2) else None
   }
   def addArguments(arguments: Context): Unit = { this.args ++= arguments }
   /**
@@ -153,25 +177,47 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   def addUsedFacts(usedFacts: List[(Term, Option[Term])]): Unit = { this.usedFacts ++= usedFacts }
   def addUsedFact(usedFact: (Term, Option[Term])): Unit = { this.usedFacts :+= usedFact }
   private def notWithinProofError = new TranslatingError("Trying to access thesis (seemingly) outside of a proof. ")
-  def killArg(arg: VarDecl): Unit = thesis foreach (_.killArg(arg))
-  def killConjunct(conjunct: Term): Unit = thesis foreach (_.killConjunct(conjunct))
-  def killAssumption(assumption: Term): Unit = thesis foreach (_.killCond(assumption))
-  def killExistQuant(existQuant: VarDecl): Unit = thesis foreach (_.killExistVar(existQuant))
-  def killUnivQuant(univQuant: VarDecl): Unit = thesis foreach (_.killUnivVar(univQuant))
-  private[translator] def setThesis(claim: Term): Unit = {
-    assert (! withinProof)
-    thesis = Some(new ThesisTerm(claim))
+  def killArg(arg: VarDecl): Unit = thesis.headOption foreach (_.killArg(arg))
+  def killArguments(ctx: Context): Unit = ctx foreach (killArg(_))
+  def killConjunct(conjunct: Term): Unit = thesis.headOption foreach (_.killConjunct(conjunct))
+  def getConjuncts(): List[Term] = thesis.headOption map (_.getConjuncts) getOrElse (throw notWithinProofError)
+  def killDisjunct(disjunct: Term): Unit = thesis.headOption foreach (_.killDisjunct(disjunct))
+  def getDisjuncts(): List[Term] = thesis.headOption map (_.getDisjuncts) getOrElse (throw notWithinProofError)
+  def killAssumption(assumption: Term): Unit = thesis.headOption foreach (_.killCond(assumption))
+  def killExistQuant(existQuant: VarDecl): Unit = thesis.headOption foreach (_.killExistVar(existQuant))
+  def popExistQuant(v: Option[OMV] = None): Option[VarDecl] = thesis match {
+    case thesisTm::_ =>
+    val existQuant = thesis.find(_.nextExistVar(v).isDefined).flatMap(_.nextExistVar(v))
+      existQuant foreach killExistQuant
+    existQuant
+    case Nil => throw notWithinProofError
   }
-  private[translator] def setThesis(claim: ThesisTerm): Unit = {
-    thesis = Some(claim)
+  def killUnivQuant(univQuant: VarDecl): Unit = thesis.headOption foreach (_.killUnivVar(univQuant))
+  def popUnivQuant(v: Option[OMV] = None): VarDecl = thesis match {
+    case thesisTm::_ =>
+      val univQuant = thesisTm.nextUnivVar(v)
+      killUnivQuant(univQuant)
+      univQuant
+    case Nil => throw notWithinProofError
+  }
+  private[translator] def pushThesis(claim: Term): Unit = {
+    thesis ::= new ThesisTerm(claim)
+  }
+  private[translator] def pushThesis(claim: ThesisTerm): Unit = {
+    thesis ::= claim
   }
   def getThesisAsTerm: Term = thesis match {
-    case None => throw notWithinProofError
-    case Some(thesisTerm) => thesisTerm.toTerm(this)
+    case Nil => throw notWithinProofError
+    case thesisTerm::_ => thesisTerm.toTerm(this)
   }
-  def getThesis: ThesisTerm = thesis getOrElse (throw notWithinProofError)
-  def withinProof: Boolean = thesis.isDefined
-  def trivialThesis = thesis.map(_.doneProving()) getOrElse false
+  def popThesis: ThesisTerm = thesis match {
+    case hd::tl =>
+      thesis = tl
+      hd
+    case Nil => throw notWithinProofError
+  }
+  def withinProof: Boolean = ! thesis.isEmpty
+  def trivialThesis = thesis.map(_.doneProving()).headOption getOrElse false
 }
 object DefinitionContext {
   def empty() = DefinitionContext()
@@ -293,12 +339,7 @@ object patternTranslator {
     makeNotCont(PrePostFixMarkers(del, infixArgNum, suffixArgNum, rightArgsBracketed))
   }
   def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false) : (LocalName, GlobalName, NotationContainer) = {
-    val referencedGn = pattern match {
-      case pat: RedefinablePatterns =>
-        computeGlobalName(pat, orgVersion)//computeGlobalOrgPatConstrName(pat)
-      case pat: ConstrPattern => computeGlobalName(pat)//computeGlobalPatConstrName(pat)
-      case pat => computeGlobalName(pat)
-    }
+    val referencedGn = computeGlobalName(pattern, orgVersion)
     val gn = if (referencedGn.toString contains "hidden") {
       resolveHiddenReferences(referencedGn) match {
         case Some(OMS(p)) => p
@@ -308,14 +349,19 @@ object patternTranslator {
     val name = gn.name
 
     val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
+    val fstDel = pattern.patternAttrs.spelling
+    assert (! fstDel.isEmpty)
+    //val fstDel = if (spl != "") spl else name.toString
     val fixity = pattern match {
       case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
-        PrePostFixMarkers(orgExtPatAttr.extPatAttr.patAttr.spelling, infixArgNr, suffixArgNr, rightArgsBracketed)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
-        CircumfixMarkers(orgExtPatAttr.extPatAttr.patAttr.spelling, _right_Circumflex_Symbol.spelling, circumfixArgNr)
+        val sndDel = _right_Circumflex_Symbol.spelling
+        assert (! sndDel.isEmpty)
+        CircumfixMarkers(fstDel, sndDel, circumfixArgNr)
       case pat: Patterns =>
-        PrePostFixMarkers(pat.patternAttrs.spelling, infixArgNr, suffixArgNr)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr)
     }
     (name, gn, makeNotCont(fixity))
   }
@@ -326,9 +372,30 @@ object patternTranslator {
    * @param pat
    * @return
    */
-  def translate_Referencing_Pattern(pat: Patterns)(implicit defContext: DefinitionContext): (LocalName, List[Term], Term, NotationContainer, List[Term]) = {
+  def translate_Referencing_Pattern(pse: Pattern_Shaped_Expression)(implicit defContext: DefinitionContext): (LocalName, List[Term], Term, NotationContainer, List[Term]) = {
+    val pat: Patterns = pse._pat match {
+      case Mode_Pattern(patternAttrs, _locis) => Mode_Pattern(patternAttrs.copy(globalObjAttrs = patternAttrs.globalObjAttrs.copy(globalKind = "M")), _locis)
+      case pattern: ConstrPattern =>
+        val kind = pattern.extPatDef.extPatAttr.constr.head.toString
+        def extPatAttrNew = pattern.extPatAttr.copy(patAttr = pattern.extPatAttr.patAttr.copy(globalObjAttrs = pattern.extPatAttr.patAttr.globalObjAttrs.copy(globalKind = kind)))
+        pattern match {
+        case patterns: RedefinablePatterns =>
+          def orgExtPatAttrNew = patterns.orgExtPatAttr.copy(extPatAttr = extPatAttrNew)
+          patterns match {
+          case p:Attribute_Pattern => p.copy(orgExtPatAttr = orgExtPatAttrNew)//"V"
+          case p:Predicate_Pattern => p.copy(orgExtPatAttr = orgExtPatAttrNew)//"R"
+          case p:Strict_Pattern => p.copy(orgExtPatAttr = orgExtPatAttrNew)//"V"
+          case p:InfixFunctor_Pattern => p.copy(orgExtPatAttr = orgExtPatAttrNew)//"K"
+          case p:CircumfixFunctor_Pattern => p.copy(orgExtPatAttr = orgExtPatAttrNew)//"K"
+        }
+        case sp:Structure_Pattern => sp.copy(extPatAttr = extPatAttrNew)//"L"
+        case p:AggregateFunctor_Pattern => p.copy(extPatAttr = extPatAttrNew)//"G"
+        case p:ForgetfulFunctor_Pattern => p.copy(extPatAttr = extPatAttrNew)//"U"
+        case p:SelectorFunctor_Pattern => p.copy(extPatAttr = extPatAttrNew)//"J"
+      }
+    }
     val params = pat._locis.flatMap(_._loci map translate_Locus)
-    val (name, gn, notC) = translate_Pattern(pat, true)
+    val (name, gn, notC) = translate_Pattern(pat)
     val referencedDeclSE = controller.getO(gn) getOrElse ({
       throw PatternTranslationError("Error looking up the declaration at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. "
         +"Probably this is because we require the dependency theory "+gn.module+" of the article currently being translated "+localPath+" to be already translated: \n"
@@ -336,7 +403,7 @@ object patternTranslator {
       if (! (getUnresolvedDependencies() contains gn.module)) {
         addUnresolvedDependency(gn.module)
       }
-      throw new ObjectLevelTranslationError("Trying to lookup declaration (presumably) at "+gn.toString+" referenced by pattern: "+pat+", but no such Declaration found. ", pat)})
+      throw new ObjectLevelTranslationError("Trying to lookup declaration (presumably) at "+gn.toString+" referenced by pattern-shaped-expression: "+pse+", but no such Declaration found. ", pat)})
     val (mainDecl, addArgsTps): (Term, List[Term]) = referencedDeclSE match {
       case c: Constant =>
         val FunType(addArgsTps, prop) = c.tp.getOrElse(
@@ -398,7 +465,7 @@ object subitemTranslator {
   def translate_Reduction(reduction: Reduction) = { ??? }
   def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
     case sbi @ Scheme_Block_Item(_, _block) =>
-      val gn = mMLIdtoGlobalName(sbi.mizarGlobalName())
+      val gn = sbi.globalName()
       val provenSentence = sbi.provenSentence()
       val Scheme_Head(_sch, _vars, _form, _provForm) = sbi.scheme_head()
       _vars._segms foreach (segm => translateBindingVariables(segm)(defContext))
@@ -424,11 +491,11 @@ object headTranslator {
 
 object nymTranslator {
   def translate_Nym(nym:Nyms)(implicit defContext: DefinitionContext): List[Declaration] = {
-    val oldPat = nym._patOld
+    val oldPatRef = nym._patRefOld
     val newPat: Patterns = nym._patNew
     val (name, newName, notC) = translate_Pattern(newPat)
     try {
-      val (_, addArgsTps, mainDecl, _, _) = translate_Referencing_Pattern(oldPat)
+      val (_, addArgsTps, mainDecl, _, _) = translate_Referencing_Pattern(oldPatRef)
       val allArgs = defContext.args.map(_.tp.get) ++ addArgsTps
       val res  = synonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)(notC)
       TranslationController.articleStatistics.incrementStatisticsCounter("nym")
@@ -505,8 +572,7 @@ object definitionTranslator {
     }
     val n = substr.length
     var substitutions : List[Sub] = Nil
-    //TODO: this shouldn't be neccesary ideally
-    val declarationPath = mMLIdtoGlobalName(strDef._strPat.globalPatternName().copy(kind = "L"))//TranslatorUtils.computeGlobalPatternName(strDef._strPat)
+    val declarationPath = strDef._strPat.globalPatternName
     val Structure_Patterns_Rendering(_aggrFuncPat, _, _strFuncPat, Selectors_List(_selectorFuncPat)) = strDef._rendering
     val aggrNot::strNot::selNots  = _aggrFuncPat::_strFuncPat::_selectorFuncPat map(translate_Pattern(_)) map(t=> (t._1, t._3))
 
@@ -704,16 +770,20 @@ object definitionTranslator {
     //try to match both constrnr and patternnr
     mod.getO(origDecl.name) orElse {
       //use only the constrnr to match
-      val constrNrPart = pat.globalKind+pat.globalConstrNr
+      val constrNrPart = origDecl.name.toString.tail.dropWhile(_ != 'K')
       val constrNumBasedName = mod.domain.filter(_.toString.endsWith(constrNrPart)) match {
         case List(name) => Some(name)
-        case _ => None
+        case hd::_ =>
+          //TODO: Talk with Artur and figure out how to avoid this situation
+          Some(hd)
+        case Nil => None
       }
       constrNumBasedName map mod.get
     } match {
-      case Some(c: Constant) => makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)
+      case Some(c: Constant) => makeConstant(gn.name, Some(ret getOrElse c.tp.get), c.df)(notCon)
       case Some(MizarPatternInstance(ln, pat, params)) => MizarPatternInstance(gn.name, pat, params)
-      case _ => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
+      case _ =>
+        throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+origDecl.module.last+"?"+origDecl.name+"(full path "+origDecl+"). ", pat)
     }
   }
 }
@@ -752,16 +822,14 @@ object clusterTranslator {
     }
     resDecl.map(List(_)).getOrElse(Nil)
   }
-  def translate_Identify(_fstPat:Patterns, _sndPat:Patterns)(implicit definitionContext: DefinitionContext): List[Declaration] = {
-    /*val num = getIdentifyCount()
+  def translate_Identify(_fstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression)(implicit definitionContext: DefinitionContext): List[Declaration] = {
     incrementIdentifyCount()
+    val num = getIdentifyCount()
     val name = LocalName("identify"+num)
     val (_, _, f, _, fparams) = translate_Referencing_Pattern(_fstPat)
     val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
-    val tpO = Some(eq(ApplyGeneral(f, fparams), ApplyGeneral(g, gparams)))
-    val resDecls = List(makeConstant(name, tpO, None))*/
-    //Since the patterns don't contains global Ids, it is currently impossible to translate them
-    val resDecls : List[Declaration] = Nil
+    val tpO = Some(MizarPrimitiveConcepts.eq(ApplyGeneral(f, fparams), ApplyGeneral(g, gparams)))
+    val resDecls = List(makeConstantInContext(name, tpO, None))
     resDecls
   }
   def translate_Cluster(cl:Cluster)(implicit definitionContext: DefinitionContext): List[Declaration] = {

@@ -1,9 +1,9 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.{GlobalName, ImplementationError}
+import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
 import info.kwarc.mmt.mizar.newxml.syntax.Claim
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslatorUtils}
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslationController, TranslatorUtils}
 
 sealed trait DeclarationLevel
 trait Subitem extends DeclarationLevel {
@@ -14,14 +14,14 @@ trait Subitem extends DeclarationLevel {
 }
 sealed trait MMLIdSubitem extends Subitem {
   def MmlId: MMLId
-  def mizarGlobalName():MizarGlobalName = {
-    val sgn = this.MmlId.mizarSemiGlobalName()
-    sgn.makeGlobalName(this.shortKind)
+  def globalName(kind: String = this.shortKind): GlobalName = {
+    val Array(aid, ln) = MmlId.MMLId.split(":")
+    TranslationController.getTheoryPath(aid) ? LocalName(kind+ln)
   }
 }
 case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
 case class Definition_Item(_block:Block) extends Subitem {
-  //verify addumptions for translation
+  //verify assumptions for translation
   def check() = {
     val kind = _block.kind
     if (! allowedKinds.contains(kind)) {
@@ -44,10 +44,21 @@ case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditi
 case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
 case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
 case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
-case class Exemplification(_exams:List[Exemplifications]) extends Subitem
+case class Exemplification(_exams: List[Exemplifications]) extends Subitem
 case class Assumption(_ass:Assumptions) extends Subitem
-case class Identify(_firstPat:Patterns, _sndPat:Patterns, _lociEqns:Loci_Equalities) extends RegistrationSubitems
-case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
+case class Identify(_firstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression, _lociEqns:Loci_Equalities) extends RegistrationSubitems
+/**
+ * Fix variables that are universally quantified over in a proof
+ * @param _qual variable segments containing the variables
+ * @param _conds
+ */
+case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem
+/**
+ * Fix variables in a proof
+ * @param _qual variable segments conatining the variables
+ * @param _conds
+ */
+case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem
 case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
 
 /**
@@ -97,8 +108,8 @@ case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads
 
 sealed trait Nyms extends BlockSubitem {
-  def _patOld: Patterns
   def _patNew: Patterns
+  def _patRefOld: Pattern_Shaped_Expression
   def antonymic: Boolean
 }
 sealed trait Synonym extends Nyms {
@@ -107,13 +118,13 @@ sealed trait Synonym extends Nyms {
 sealed trait Antonym extends Nyms {
   override def antonymic = true
 }
-case class Pred_Synonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Synonym
-case class Pred_Antonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Antonym
-case class Attr_Synonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Synonym
-case class Attr_Antonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Antonym
-case class Func_Synonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Synonym
-case class Func_Antonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Antonym
-case class Mode_Synonym(_patOld:Mode_Pattern, _patNew:Mode_Pattern) extends Synonym
+case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
+case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
+case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Func_Antonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 
 sealed trait Statement extends Subitem {
   def prfClaim: ProvedClaim
@@ -131,7 +142,7 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
 case class Theorem_Item(MmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else TranslatorUtils.mMLIdtoGlobalName(mizarGlobalName())
+  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else globalName()
 }
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
 
