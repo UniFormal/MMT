@@ -23,6 +23,7 @@ object itemTranslator {
   def translateItem(item: Item) = {
     val sourceReg = item.pos.sourceRegion()
     item.checkKind()
+    implicit val defCtx = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
     (item._subitem match {
       case subitem: MMLIdSubitem => subitem match {
@@ -50,7 +51,7 @@ object itemTranslator {
       case st: Statement => statementTranslator.translate_Statement(st)
       case defn: Definition => definitionTranslator.translate_Definition(defn)
       case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
-    }).foreach({TranslationController.add(_)})
+    }).foreach({d => TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))})
     /*translatedSubitem map {
       //Currently probably the only case that actually occurs in practise
       case decl: Declaration =>
@@ -121,6 +122,9 @@ class MizarXMLImporter extends archives.Importer {
     if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
     val deps = TranslationController.getDependencies()
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+    println (TranslationController.notationStatistics)
+
+    println(TranslationController.articleStatistics.makeArticleStatistics)
     TranslationController.currentDoc
   }
 }

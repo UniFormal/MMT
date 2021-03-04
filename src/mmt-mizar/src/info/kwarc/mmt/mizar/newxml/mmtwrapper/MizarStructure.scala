@@ -16,6 +16,7 @@ import PatternUtils._
 import info.kwarc.mmt.mizar.newxml._
 import translator.{DeclarationTranslationError, TranslationController}
 import MMTUtils._
+import MizarPrimitiveConcepts._
 
 object MizarStructure {
   def elaborateAsMizarStructure(args: Context, fields: Context, substructs: List[Term], controller: Controller, notC: NotationContainer, slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName) = {
@@ -62,11 +63,10 @@ object MizarStructure {
 
     val structx = ApplyGeneral(refDecl(recTypeName), params.variables.toList.map(_.toTerm))
     def typedArgsCont = PiOrEmpty(params++argsTyped, _)
-    val prop = Mizar.prop
     val strict = VarDecl(structureStrictDeclName,typedArgsCont(
       Lambda(LocalName("s"), structx, prop)))
     val strictProp = VarDecl(structureStrictPropName,typedArgsCont(
-      Lambda(LocalName("s"), structx, Mizar.proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
+      Lambda(LocalName("s"), structx, proof(Apply(refDecl(structureStrictDeclName.toString), OMV("s"))))))
       val substrRestr : List[VarDecl] = substr.zipWithIndex.flatMap {
         case (OMS(substrGN),i) =>
           val substrPrePath = substrGN.module ? substrGN.name.init
@@ -76,7 +76,7 @@ object MizarStructure {
           val restr = VarDecl(parentTerm.name / restrName,typedArgsCont(
             Pi(LocalName("s"),structx,OMS(substrPrePath / LocalName(recTypeName)))))
           val restrSelProps = subselectors map {n =>
-            VarDecl(parentTerm.name/ structureDefSubstrSelPropName(restrName,n), Pi(LocalName("s"),structx, Mizar.proof(Mizar.eq(
+            VarDecl(parentTerm.name/ structureDefSubstrSelPropName(restrName,n), Pi(LocalName("s"),structx, proof(MizarPrimitiveConcepts.eq(
               Apply(referenceExtDecl(substrPrePath, n.toString), Apply(refDecl(restrName.toString), OMV("s"))),
               Apply(refDecl(n.toString), OMV("s"))))))
           }

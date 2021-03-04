@@ -29,6 +29,6 @@ object MizSeq {
       case _ => None
     }
   }
-  def nTerms(n:Int) = Rep(Mizar.any, OMI(n))
+  def nTerms(n:Int) = Rep(MizarPrimitiveConcepts.any, OMI(n))
   def nTypes(n:Int) = Rep(Univ(1), OMI(n))
 }

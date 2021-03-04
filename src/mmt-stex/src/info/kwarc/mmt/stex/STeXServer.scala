@@ -12,7 +12,7 @@ import info.kwarc.mmt.stex.xhtml._
 
 case class Translator(language : String,translator : AcrossLibraryTranslator, meta : Option[MPath])
 
-class STeXServer extends ServerExtension("fomtex") {
+class STeXServer extends ServerExtension("fomid") {
   private var initialized = false
   def initialize = if (!initialized) {
     DemoContent.add(controller)
@@ -125,7 +125,7 @@ class STeXServer extends ServerExtension("fomtex") {
 
   // TODO
   def getDocument(uri : String) : String = uri match {
-    case "http://mathhub.info/fomtex/demo.xhtml" =>
+    case "http://mathhub.info/fomid/demo.xhtml" =>
       MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml")
     case _ =>
       ???

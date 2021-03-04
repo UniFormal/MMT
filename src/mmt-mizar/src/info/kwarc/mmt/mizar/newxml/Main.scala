@@ -2,7 +2,7 @@ package info.kwarc.mmt.mizar.newxml
 
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.Mizar
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
 import info.kwarc.mmt.mizar.newxml.syntax.Text_Proper
 import info.kwarc.mmt.mizar.newxml.translator.{MizarXMLImporter, TranslationController}
 
