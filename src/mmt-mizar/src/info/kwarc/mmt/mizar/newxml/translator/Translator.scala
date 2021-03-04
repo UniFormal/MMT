@@ -122,6 +122,9 @@ class MizarXMLImporter extends archives.Importer {
     if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
     val deps = TranslationController.getDependencies()
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+    println (TranslationController.notationStatistics)
+
+    println(TranslationController.articleStatistics.makeArticleStatistics)
     TranslationController.currentDoc
   }
 }
