@@ -2,6 +2,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, ExtendedCheckingEnvironment}
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.utils.FilePath
@@ -9,6 +10,7 @@ import symbols.{Constant, Declaration, DerivedDeclaration}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPatternInstance
 import info.kwarc.mmt.mizar.newxml.syntax._
+import org.xml.sax.ErrorHandler
 
 
 object articleTranslator {
@@ -70,10 +72,27 @@ class MizarXMLImporter extends archives.Importer {
 
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
     val parser = makeParser
+    val startParsingTime = System.nanoTime()
+    def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+      val diffTime = math.round(nanoDiff / 1e9d)
+      val seconds = diffTime % 60
+      val minutes = (diffTime - seconds) / 60
+      println(prefix+minutes.toString+" minutes and "+seconds.toString+" seconds. ")
+    }
+
     val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
+
+    printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
+    val startTranslationTime = System.nanoTime()
+
     val doc = translate(text_Proper, bf)
 
+    printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
+    val startAddingTime = System.nanoTime()
+
     index(doc)
+    printTimeDiff(System.nanoTime() - startParsingTime, "The adding took ")
+
     //archives.BuildResult.empty
     archives.BuildResult.fromImportedDocument(doc)
   }
@@ -83,8 +102,7 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.controller = controller
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
-    val startTime = System.nanoTime()
-
+    
     val doc = TranslationController.makeDocument()
     val thy = TranslationController.makeTheory()
 
@@ -100,6 +118,10 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
+    val structChecker = TranslationController.controller.extman.get(classOf[checking.Checker], "mmt").get
+    val structureSimplifier = TranslationController.controller.simplifier
+    val errHandler = ErrorThrower//bf.errocCont
+    structChecker.apply(TranslationController.currentThy)(new CheckingEnvironment(structureSimplifier, errHandler, checking.RelationHandler.ignore, MMTTask.generic))
 
     /*
     log("The translated article " + bf.narrationDPath.last + ": ")
@@ -125,10 +147,6 @@ class MizarXMLImporter extends archives.Importer {
     val deps = TranslationController.getDependencies()
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
 
-    val translationTime = math.round((System.nanoTime() - startTime) / 1e9d)
-    val seconds = translationTime % 60
-    val minutes = (translationTime - seconds) / 60
-    println("The overall translation took "+minutes+" minutes and "+seconds+" seconds.")
     println (TranslationController.notationStatistics)
 
     println(TranslationController.articleStatistics.makeArticleStatistics)
