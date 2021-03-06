@@ -78,7 +78,7 @@ object MizarPrimitiveConcepts {
   def in = constant("in")
   def any =constant("any")
 
-  object is extends BinaryLFConstantScala(softTypedTermsTh, "is")
+  object is extends BinaryLFConstantScala(softTypedTermsTh, "of")
   object be extends BinaryLFConstantScala(MizarTh, "be")
 
   def andCon = constantName("and")
