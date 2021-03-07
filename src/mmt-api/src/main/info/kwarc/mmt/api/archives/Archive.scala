@@ -6,8 +6,7 @@ import info.kwarc.mmt.api.frontend._
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.ontology._
-import info.kwarc.mmt.api.ontology.rdf.ULO
-import info.kwarc.mmt.api.parser.{FileInArchiveSource, FileSource}
+import info.kwarc.mmt.api.ontology.rdf.{Database, ULO}
 import info.kwarc.mmt.api.utils._
 
 import scala.collection.mutable
@@ -39,7 +38,7 @@ abstract class ROArchive extends Storage with Logger {
   * @param report the reporting mechanism
   */
 class Archive(val root: File, val properties: mutable.Map[String, String], val report: Report) extends ROArchive with Validate with ScalaCode with ZipArchive {
-  lazy val ulo_uri = DPath(ULO.mmt_uri.uri colon id.replace('/','.'))
+  lazy val ulo_uri = DPath(Database.mmt_uri.uri colon id.replace('/','.'))
 
   val rootString = root.toString
   val archString = root.up.getName + "/" + root.getName
@@ -88,7 +87,7 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
         if (!f.existsCompressed) throw NotApplicable("file not found")
         // dpath is a dummy URI to be used when creating the Document that contains the module mod
         val dpath = DPath(narrationBase / Archive.MMTPathToContentPath(topmod).segments)
-        loadXML(mod.doc.uri, dpath, File.Reader(f),FileInArchiveSource(this,f))
+        loadXML(mod.doc.uri, dpath, File.Reader(f))
       case m ?? _ => load(m)
     }
   }
@@ -233,7 +232,8 @@ class Archive(val root: File, val properties: mutable.Map[String, String], val r
                 controller.library.addImplicit(OMMOD(meta), OMMOD(thy), OMIDENT(OMMOD(thy)))
               case _ =>
             }*/
-            controller.depstore += re
+            controller.database.addRel(re)(Some(this.ulo_uri))
+            //controller.depstore += re
           } catch { //TODO treat this as normal build target and report errors
             case e : Error => log(e.getMessage)
           }

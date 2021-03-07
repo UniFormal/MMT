@@ -23,7 +23,7 @@ class REPLSession(val doc: Document, val id: String, interpreter: TwoStepInterpr
   def parseStructure(s: String, scopeOpt: Option[HasParentInfo] = None): StructuralElement = {
     val buffer = ParsingStream.stringToReader(s)
     val scope = scopeOpt.getOrElse(currentScope)
-    val ps = ParsingStream(path.uri, scope, doc.getNamespaceMap, interpreter.format, buffer,StringSource)
+    val ps = ParsingStream(path.uri, scope, doc.getNamespaceMap, interpreter.format, buffer)
     val se = interpreter(ps)(errorCont)
     se match {
       case r: MRef => currentScope = IsMod(r.target, LocalName.empty)

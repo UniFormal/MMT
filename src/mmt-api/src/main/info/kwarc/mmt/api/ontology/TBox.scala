@@ -36,10 +36,13 @@ case object IsStrAss extends Unary("strass")
 case object IsNotation extends Unary("notation")
 
 /** Extractor extensions should use instances of this class to extend the ontology for unary relations */
-case class CustomUnary(name : String, val namespace : DPath) extends Unary(name) {
-   override val toULO: Option[ULO.Class] = Some(new ULO.Class(name) {
-      override def toIri: IRI = iri(ULO.URLEscape.apply(namespace).toString + "#" + ULO.URLEscape.URLEscaping(name))
-   })
+case class CustomUnary(name : String, val namespace : DPath,ulo : Option[ULO.Class] = None) extends Unary(name,ulo) {
+   override val toULO: Option[ULO.Class] = ulo match {
+      case Some(value) => Some(value)
+      case _ =>Some(new ULO.Class(name) {
+         override def toIri: IRI = iri(namespace.toString + "#" + ULO.URLEscape.URLEscaping(name))
+      })
+   }
 }
 
 

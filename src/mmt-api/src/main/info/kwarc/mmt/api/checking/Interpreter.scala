@@ -4,7 +4,6 @@ import info.kwarc.mmt.api._
 import archives._
 import documents._
 import frontend._
-import info.kwarc.mmt.api.ontology.rdf.Database
 import modules._
 import ontology.{Declares, RelationExp}
 import parser._
@@ -44,7 +43,7 @@ abstract class Interpreter extends Importer {
     val inPathOMDoc = bf.inPath.toFile.setExtension("omdoc").toFilePath
     val dPath = DPath(bf.archive.narrationBase / inPathOMDoc.segments) // bf.narrationDPath except for extension
     val nsMap = controller.getNamespaceMap ++ bf.archive.namespaceMap
-    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile),FileInArchiveSource(bf.archive,bf.inFile)).diesWith(bf)
+    val ps = new ParsingStream(bf.base / bf.inPath.segments, IsRootDoc(dPath), nsMap, format, File.Reader(bf.inFile)).diesWith(bf)
     (dPath,ps)
   }
 
@@ -121,9 +120,7 @@ class TwoStepInterpreter(val parser: Parser, val checker: Checker, override val 
 class OneStepInterpreter(val parser: Parser) extends Interpreter {
     def format = parser.format
     def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler) = {
-      val cont = new StructureParserContinuations(errorCont) {
-        override def onElement(se: StructuralElement): Unit = Database.get(controller).add(se,ps.si)
-      }
+      val cont = new StructureParserContinuations(errorCont)
       parser(ps)(cont)
     }
     def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler) = {

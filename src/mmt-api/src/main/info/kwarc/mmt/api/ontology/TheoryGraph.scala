@@ -50,30 +50,30 @@ class TheoryGraph(rs: RelStore) {
     */
    def edgesFrom(from: Path) : List[(Path,List[EdgeTo])] = {
       var eds : List[EdgeTo] = Nil
-      rs.query(from, - HasDomain) {
-         link => rs.query(link, + HasCodomain) {
+      rs.queryList(from, - HasDomain).foreach {
+         link => rs.queryList(link, + HasCodomain).foreach {
             cod =>
                if (rs.hasType(link, IsView)) eds ::= EdgeTo(cod,ViewEdge(link))
                else if (rs.hasType(link, IsStructure)) eds ::= EdgeTo(cod, StructureEdge(link))
          }
       }
-      rs.query(from, - HasCodomain) {
-         link => rs.query(link, + HasDomain) {
+      rs.queryList(from, - HasCodomain).foreach {
+         link => rs.queryList(link, + HasDomain).foreach {
             dom =>
                if (rs.hasType(link, IsView)) eds ::= EdgeTo(dom,ViewEdge(link), true)
                else if (rs.hasType(link, IsStructure)) eds ::= EdgeTo(dom, StructureEdge(link), true)
          }
       }
-      rs.query(from, - Includes) {
+      rs.queryList(from, - Includes).foreach {
          i => eds ::= EdgeTo(i, IncludeEdge)
       }
-      rs.query(from, + Includes) {
+      rs.queryList(from, + Includes).foreach {
          i => eds ::= EdgeTo(i, IncludeEdge, true)
       }
-      rs.query(from, - HasMeta) {
+      rs.queryList(from, - HasMeta).foreach {
          i => eds ::= EdgeTo(i, MetaEdge)
       }
-      rs.query(from, + HasMeta) {
+      rs.queryList(from, + HasMeta).foreach {
          i => eds ::= EdgeTo(i, MetaEdge, true)
       }
       val filtered = eds filterNot {
@@ -83,12 +83,12 @@ class TheoryGraph(rs: RelStore) {
    }
    /** return the domain of this link, if any */
    def domain(link: Path) : Option[Path] = {
-      rs.query(link, +HasDomain)(p => return Some(p))
+      rs.queryList(link, +HasDomain).foreach(p => return Some(p))
       return None
    }
    /** return the codomain of this link, if any */
    def codomain(link: Path) : Option[Path] = {
-      rs.query(link, +HasCodomain)(p => return Some(p))
+      rs.queryList(link, +HasCodomain).foreach(p => return Some(p))
       return None
    }
 }

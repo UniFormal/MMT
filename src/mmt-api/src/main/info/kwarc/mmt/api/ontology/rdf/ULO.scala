@@ -1,14 +1,15 @@
 package info.kwarc.mmt.api.ontology.rdf
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, Unary}
+import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, CustomUnary, IsConstant, IsDatatypeConstructor, IsDerivedDeclaration, IsDocument, Unary}
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.utils.{Escaping, URI}
 import org.eclipse.rdf4j.model.vocabulary.XSD
 import org.eclipse.rdf4j.model.{IRI, Resource, Value}
 
-import java.net.URLEncoder
+import java.net.{URLDecoder, URLEncoder}
 import scala.List
+import scala.collection.mutable
 
 trait ULOStatement {
   def triples : Seq[(Resource,IRI,Value)]
@@ -23,7 +24,7 @@ object ULO {
   import org.eclipse.rdf4j.model.vocabulary.{DC, OWL, RDF, RDFS}
   import org.eclipse.rdf4j.model.{IRI, Resource}
 
-  val mmt_uri = DPath(URI.scheme("mmt"))
+  private val vf = Database.repo.getValueFactory
 
   val namespace = "https://mathhub.info/ulo"
   val model = new TreeModel()
@@ -99,6 +100,7 @@ object ULO {
 
   class ULOElem(s : String) extends ULOTrait {
     override def toIri: IRI = ulo ## s
+    toULO(toIri.toString) = this
   }
 
   case class ObjectProperty(s : String, binary : Option[Binary] = None) extends ULOElem(s) {
@@ -146,17 +148,24 @@ object ULO {
       this
     }
     def apply(p : Path) = SimpleStatement(pathToString(p),RDF.TYPE,this)
-    def toUnary = unary.getOrElse(CustomUnary(s,Path.parseD(namespace,NamespaceMap.empty)))
+    def toUnary = unary.getOrElse(CustomUnary(s,Path.parseD(namespace,NamespaceMap.empty),Some(this)))
   }
 
   object URLEscape {
-    def unapply(s : String) : Path = {
-      ???
-    }
-    def apply(p : Path) = try {iri(applyI(p))} catch {
+    def unapply(s : String) : Path = try {
+      val ns = URLEscaping.unapply(s)
+      Path.parse(ns)
+    } catch {
       case t : Throwable =>
         print("")
         throw t
+    }
+    def apply(p : Path) = {
+      try {iri(URLEscaping(p.toPath))} catch {
+        case t : Throwable =>
+          print("")
+          throw t
+      }
     }
     private def applyI(p : Path) : String = p match {
       case DPath(uri) =>
@@ -177,11 +186,15 @@ object ULO {
       case step => URLEscaping(step.toString)
     }.mkString("%2F")
     object URLEscaping {
-      def apply(s : String) = URLEncoder.encode(s,"UTF-8")
+      def apply(s : String) = URLEncoder.encode(s,"UTF-8").replaceFirst("%3A",":")
+      def unapply(s : String) = URLDecoder.decode(s,"UTF-8")
     }
   }
 
   private def pathToString(p : Path) = URLEscape(p)
+
+
+  val toULO : mutable.Map[String,ULOElem] = mutable.Map.empty
 
   val ulo = new ULOTrait {
     override def toIri: IRI = iri(namespace)
@@ -427,7 +440,9 @@ object ULO {
 
   // additions
 
-  val document = Class("document")
+  val document = new Class("document"){
+    override def toUnary = IsDocument
+  }
     .subclassOf(logical)
   val module = Class("module")
   theory.subclassOf(module)
@@ -454,13 +469,15 @@ object ULO {
   val includes = ObjectProperty("includes")
     .subpropertyOf(has_structure_from)
     .subpropertyOf(has_implicit_morphism_from)
-  val constant = Class("constant")
-    .subclassOf(declaration)
+  val constant = new Class("constant") {
+    override def toUnary = IsConstant
+  }.subclassOf(declaration)
   val rule_constant = Class("rule-constant")
     .subclassOf(constant)
   val depends_on = uses
-  val derived_declaration = Class("derived-declaraion")
-    .isIntersectionOf(derived,declaration)
+  val derived_declaration = new Class("derived-declaration") {
+    override def toUnary = IsDerivedDeclaration
+  }.isIntersectionOf(derived,declaration)
   val pattern = Class("pattern")
     .subclassOf(derived_declaration)
   val instance = Class("instance")
@@ -475,8 +492,9 @@ object ULO {
     .subpropertyOf(has_implicit_morphism_from)
   val realizes = ObjectProperty("realizes")
     .subpropertyOf(has_structure_from)
-  val constructor = Class("constructor")
-    .subclassOf(constant)
+  val constructor = new Class("constructor") {
+    override def toUnary: Unary = IsDatatypeConstructor
+  }.subclassOf(constant)
   val judgment_constructor = Class("judgment-constructor")
     .subclassOf(function)
   val high_universe = Class("high-universe")

@@ -88,7 +88,7 @@ trait MathPathActionHandling {self: Controller =>
   def addArchive(root: File): List[Archive] =  {
     val archs = backend.openArchive(root)
     archs.foreach {a => report("user", "opened archive " + a.root)}
-    archs.foreach(db.add)
+    archs.foreach(database.add)
     archs.foreach {a => notifyListeners.onArchiveOpen(a)} // TODO this should happen in backend
     archs
   }

@@ -196,7 +196,7 @@ class FoundationalImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem)
    */
   protected def dependsOn(path : Path) : Set[Path] = {
     val impacts = new mutable.HashSet[Path]()
-    mem.ontology.query(path,ToSubject(DependsOn))(p => impacts += p)
+    mem.ontology.querySet(path,ToSubject(DependsOn)).foreach(p => impacts += p)
     impacts
   }
 
@@ -273,7 +273,7 @@ class OccursInImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
     val impacts = new mutable.HashSet[Path]()
 
     affectedPaths(path) foreach {p =>
-      mem.ontology.query(p,ToSubject(RefersTo)) {
+      mem.ontology.queryList(p,ToSubject(RefersTo)).foreach {
          case p: ContentPath => try {
           mem.content.get(p) match {
             case c : Constant =>
@@ -376,7 +376,7 @@ class StructuralImpactPropagator(mem : ROMemory) extends ImpactPropagator(mem) {
 
     path match {
       case CPath(GlobalName(mod, lname), DefComponent) =>
-        mem.ontology.query(mod, ToSubject(HasDomain)) {
+        mem.ontology.queryList(mod, ToSubject(HasDomain)).foreach {
           case viewPath : MPath =>
             impacts += viewPath ? lname
           case _ =>

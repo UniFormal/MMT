@@ -2,6 +2,10 @@ package info.kwarc.mmt.api.ontology
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.objects._
+import info.kwarc.mmt.api.ontology.rdf.ULO.{ULOElem, ulo}
+import info.kwarc.mmt.api.ontology.rdf.{Database, ULO}
+import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF}
+import org.eclipse.rdf4j.model.{IRI, Statement}
 
 import scala.collection.mutable
 import scala.collection.mutable.{HashMap, HashSet}
@@ -41,6 +45,42 @@ import scala.collection.mutable.{HashMap, HashSet}
   * Triples (subject, binary, object) are hashed three ways so that for any two components
   * the set of third components can be retrieved efficiently.
  */
+
+class RelStore(db : Database,report:frontend.Report) extends RelStoreStatistics {
+  protected def log(msg : => String) = report("abox", msg)
+  def theoryClosure(mp : MPath) = {
+    val q = Transitive(+HasMeta | +Includes | +DependsOn | Reflexive)
+    db.query(mp,q) collect { case mpath : MPath => mpath}
+  }
+  def queryList(start : Path, q : RelationExp) : List[Path] = {
+   db.query(start, q)
+  }
+  def querySet(start : Path, q : RelationExp) : Set[Path] = {
+    db.query(start, q).toSet
+  }
+
+  private val hasType = new ULOElem("TYPE") {
+    override def toIri: IRI = RDF.TYPE
+  }
+  private val owlClass = new ULOElem("CLASS") {
+    override def toIri: IRI = OWL.CLASS
+  }
+
+  def getInds : Iterator[Individual] = {
+    db.getInds().iterator
+  }
+  /** retrieves all individual of a certain type */
+  def getInds(tp: Unary) : Iterator[Path] = db.getInds(tp.toULO).map(_.path).iterator
+  def getType(p: Path) : Option[Unary] = ??? //types.get(p)
+  /** checks if an individual has a given type */
+  def hasType(p: Path, tp: Unary) : Boolean = ??? //individuals(tp) contains p
+  /** retrieves all Relation declarations */
+  def getDeps : Iterator[Relation] = ??? //dependencies.pairs map {case ((p,q), d) => Relation(d,p,q)}
+  /** tests if there is a relation holds between two individuals */
+  def hasDep(from: Path, to: Path, bin: Binary) : Boolean = ??? // dependencies((from,to)) contains bin
+}
+
+/*
 class RelStore(report : frontend.Report) extends RelStoreStatistics {
    private val individuals = new HashMapToSet[Unary, Path]
    private val types = new HashMap[Path,Unary]
@@ -180,3 +220,4 @@ class RelStore(report : frontend.Report) extends RelStoreStatistics {
       }
    }
 }
+ */

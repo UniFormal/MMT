@@ -1,20 +1,21 @@
 package info.kwarc.mmt.api.ontology.rdf
 
 import info.kwarc.mmt.api.archives.{Archive, relational}
-import info.kwarc.mmt.api.{DPath, DeclarationComponent, ElaborationOf, GeneratedMRef, Original, Path, StructuralElement}
+import info.kwarc.mmt.api.{DPath, DeclarationComponent, ElaborationOf, GeneratedMRef, MPath, Original, Path, StructuralElement}
 import info.kwarc.mmt.api.documents.{Document, InterpretationInstruction, NRef}
-import info.kwarc.mmt.api.frontend.{Controller, Extension}
+import info.kwarc.mmt.api.frontend.{Controller, Extension, Logger}
 import info.kwarc.mmt.api.modules.{Link, Module, Theory, View}
 import info.kwarc.mmt.api.objects.{OMPMOD, TheoryExp}
-import info.kwarc.mmt.api.ontology.{Choice, Declares, HasType, Individual, IsConstant, IsDocument, IsUntypedConstant, Reflexive, Relation, RelationExp, RelationalElement, Sequence, ToObject, ToSubject, Transitive}
-import info.kwarc.mmt.api.ontology.rdf.ULO.{ULOElem, mmt_uri}
+import info.kwarc.mmt.api.ontology.rdf.Database.memory_uri
+import info.kwarc.mmt.api.ontology.{Choice, Declares, DependsOn, HasMeta, HasType, Includes, Individual, IsConstant, IsDocument, IsUntypedConstant, Reflexive, Relation, RelationExp, RelationalElement, Sequence, ToObject, ToSubject, Transitive}
+import info.kwarc.mmt.api.ontology.rdf.ULO.{ULOElem}
 import info.kwarc.mmt.api.opaque.OpaqueElement
-import info.kwarc.mmt.api.parser.{FileInArchiveSource, SourceInfo, SourceRef}
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.patterns.{Instance, Pattern}
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, NestedModule, ObjContainer, RuleConstant, Structure}
 import info.kwarc.mmt.api.utils.{File, FilePath, URI}
 import org.apache.log4j.{BasicConfigurator, LogManager}
-import org.eclipse.rdf4j.model.vocabulary.RDF
+import org.eclipse.rdf4j.model.vocabulary.{OWL, RDF}
 import org.eclipse.rdf4j.model.{IRI, Resource, Statement, Value}
 import org.eclipse.rdf4j.query.QueryResults
 import org.eclipse.rdf4j.repository.RepositoryResult
@@ -23,7 +24,7 @@ import org.eclipse.rdf4j.rio.helpers.ParseErrorLogger
 import org.eclipse.rdf4j.rio.{RDFFormat, RDFParseException, Rio}
 import org.eclipse.rdf4j.sail.memory.MemoryStore
 import org.eclipse.rdf4j.sparqlbuilder.core.query.Queries
-import org.eclipse.rdf4j.sparqlbuilder.core.{PropertyPaths, QueryElement, SparqlBuilder, Variable}
+import org.eclipse.rdf4j.sparqlbuilder.core.{PropertyPaths, QueryElement, QueryPattern, SparqlBuilder, Variable}
 import org.eclipse.rdf4j.sparqlbuilder.graphpattern.{GraphPattern, GraphPatterns}
 import org.eclipse.rdf4j.sparqlbuilder.rdf.RdfPredicate
 
@@ -33,12 +34,20 @@ import scala.collection.mutable.HashSet
 import scala.concurrent.Future
 
 object Database {
-  def get(controller : Controller) = controller.extman.get(classOf[Database]).head
-  val memory_uri = DPath(ULO.mmt_uri.uri colon "memory")
+  val mmt_uri = DPath(URI.scheme("mmt"))
+  val memory_uri = DPath(mmt_uri.uri colon "memory")
+  val path_uri = DPath(mmt_uri.uri colon "paths")
+  val dpath = path_uri ? "DPath"
+  val mpath = path_uri ? "MPath"
+  val globalname = path_uri ? "GlobalName"
+  val cpath = path_uri ? "CPath"
+  lazy val repo = new SailRepository(new MemoryStore())
 }
 
-class Database extends Extension {
+class Database(controller : Controller) extends Logger {
   override def logPrefix: String = "database"
+  val report = controller.report
+
   BasicConfigurator.configure()
   LogManager.getRootLogger.setLevel(org.apache.log4j.Level.ERROR)
 
@@ -60,13 +69,13 @@ class Database extends Extension {
     private val threads : mutable.Queue[Thread] = mutable.Queue.empty
 
     def busy = threads.synchronized{threads.nonEmpty}
-    def queue[A](f : => A) : Unit = threads.synchronized{threads.enqueue(new Thread({_ => f}))}
-    def await[A](f : => A) = {
+    def queue[A](f : => A) : Unit = f //threads.synchronized{threads.enqueue(new Thread({_ => f}))}
+    def await[A](f : => A) = f /* {
       val t = new Thread({_ => f})
       if (threads.synchronized(threads.nonEmpty)) log("Database busy. Waiting...")
       threads.synchronized{threads.enqueue(t)}
       t.get.asInstanceOf[A]
-    }
+    } */
 
     Future {
       while (true) {
@@ -79,13 +88,9 @@ class Database extends Extension {
     }
   }
 
-  private lazy val repo = new SailRepository(new MemoryStore())
-  private lazy val connection = repo.getConnection
+  private lazy val connection = Database.repo.getConnection
 
-  override def start(args: List[String]): Unit = {
-    super.start(args)
-    connection.add(ULO.model)
-  }
+  connection.add(ULO.model)
 
   def relpath(archive : Archive,f : File) = {
     val sub = (archive / relational).relativize(f).toFilePath
@@ -105,15 +110,16 @@ class Database extends Extension {
   }
 
   def add(archive : Archive): Unit = Threadstack.queue {
+    import Database._
     log("Adding archive " + archive.id)
     archive.id.split('/').toList match {
       case List(id) =>
-        addStatement(ULO.library(archive.ulo_uri))(Some(ULO.mmt_uri))
+        addStatement(ULO.library(archive.ulo_uri))(Some(mmt_uri))
       case List(a, _) =>
-        val group = DPath(ULO.mmt_uri.uri colon a)
-        addStatement(ULO.library_group(group))(Some(ULO.mmt_uri))
-        addStatement(ULO.library(archive.ulo_uri))(Some(ULO.mmt_uri))
-        addStatement(ULO.contains(group, archive.ulo_uri))(Some(ULO.mmt_uri))
+        val group = DPath(mmt_uri.uri colon a)
+        addStatement(ULO.library_group(group))(Some(mmt_uri))
+        addStatement(ULO.library(archive.ulo_uri))(Some(mmt_uri))
+        addStatement(ULO.contains(group, archive.ulo_uri))(Some(mmt_uri))
     }
     if ((archive / relational).isDirectory) (archive / relational).descendants.filter(_.getExtension.contains("rdf")).foreach { f =>
       val path = ULO.URLEscape(relpath(archive, f))
@@ -126,8 +132,6 @@ class Database extends Extension {
       }
     }
   }
-
-  def add(e : StructuralElement,si : SourceInfo) : Unit = Threadstack.queue {}
 
   def add(e : StructuralElement)(implicit context : Option[Path] = None) : Unit = Threadstack.queue {
     remove(e.path)
@@ -147,24 +151,47 @@ class Database extends Extension {
 
     def toIterator = it.asScala
     def foreach(f : Statement => Unit) = toIterator.foreach(f)
+    def toRelational : List[RelationalElement] = toIterator.toList.map { statement =>
+      statement.getPredicate match {
+        case RDF.TYPE =>
+          Individual(
+            ULO.URLEscape.unapply(statement.getSubject.toString),
+            ULO.toULO(ULO.URLEscape.unapply(statement.getObject.toString).toString) match {
+              case cls : ULO.Class => cls.toUnary
+              case _ =>
+                ???
+            })
+        case pred =>
+          Relation(
+            ULO.toULO(ULO.URLEscape.unapply(pred.toString).toString) match {
+              case op : ULO.ObjectProperty => op.toBinary
+              case dp : ULO.DatatypeProperty => dp.toBinary
+              case _ =>
+                ???
+            },
+            ULO.URLEscape.unapply(statement.getSubject.toString),
+            ULO.URLEscape.unapply(statement.getObject.toString),
+          )
+      }
+    }
 
   }
 
-  def get(s : Option[Path] = None,p : Option[ULOElem] = None, o : Option[Path] = None,inferred : Boolean = true,context : Option[Path] = None)
+  def get(subject : Option[Path] = None, predicate : Option[ULOElem] = None, obj : Option[Path] = None, inferred : Boolean = true, context : Option[Path] = None)
   = Threadstack.await {
-    GetResult(connection.getStatements(s.map(ULO.URLEscape(_)).orNull,p.map(_.toIri).orNull,o.map(ULO.URLEscape(_)).orNull,inferred,context.map(ULO.URLEscape(_)).toList:_*))
-  }
-  def getInds(cls : ULO.Class, context : Option[Path] = None)
-  = Threadstack.await {
-    GetResult(connection.getStatements(null,RDF.TYPE,cls.toIri,true,context.map(ULO.URLEscape(_)).toList:_*))
+    GetResult(connection.getStatements(subject.map(ULO.URLEscape(_)).orNull,predicate.map(_.toIri).orNull,obj.map(ULO.URLEscape(_)).orNull,inferred,context.map(ULO.URLEscape(_)).toList:_*))
   }
 
   private def remove(p : Path) = try { // TODO
     val deletes = query(p,Transitive(Declares | ULO.contains.toBinary | Reflexive))
-    deletes.foreach(s => get(s = Some(s)).foreach(connection.remove(_)))
+    deletes.foreach(s => get(subject = Some(s)).foreach(connection.remove(_)))
   } catch {
     case t : Throwable =>
       throw t
+  }
+
+  def clear = Threadstack.queue {
+    get(context = Some(memory_uri)).foreach(connection.remove(_))
   }
 
   def removeAll = Threadstack.queue {
@@ -339,6 +366,33 @@ class Database extends Extension {
       _.getBinding("qv").getValue
     }
     values.map(v => ULO.URLEscape.unapply(v.toString))
+  }
+
+  def getInds(cls : Option[ULO.Class] = None) : List[Individual]
+  = Threadstack.await {
+    import scala.jdk.CollectionConverters._
+    val qv = SparqlBuilder.`var`("qv")
+    val query = cls match {
+      case Some(c) =>
+        Queries.SELECT(qv).where(GraphPatterns.tp(qv,RDF.TYPE,c.toIri))
+      case None =>
+        val qo = SparqlBuilder.`var`("qo")
+        Queries.SELECT(qv,qo).where(GraphPatterns.and(
+          GraphPatterns.tp(qv,RDF.TYPE,qo),
+          GraphPatterns.tp(qo,RDF.TYPE,OWL.CLASS)
+        ))
+    }
+    val values = connection.prepareTupleQuery(query.getQueryString).evaluate().iterator().asScala.toList.map { s =>
+      cls match {
+        case Some(c) => Individual(ULO.URLEscape.unapply(s.getBinding("qv").getValue.toString),c.toUnary)
+        case None if s.hasBinding("qo") =>
+          Individual(ULO.URLEscape.unapply(s.getBinding("qv").getValue.toString),ULO.toULO(s.getBinding("qo").getValue.toString).asInstanceOf[ULO.Class].toUnary)
+        case _ =>
+          ???
+      }
+    }
+    values
+    // values.map(v => ULO.URLEscape.unapply(v.toString))
   }
 
   private def makeQuery(q : RelationExp) : RdfPredicate = q match {

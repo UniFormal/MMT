@@ -2,6 +2,7 @@ package info.kwarc.mmt.api.ontology
 
 import info.kwarc.mmt.api._
 import frontend._
+import info.kwarc.mmt.api.ontology.rdf.ULO
 import objects._
 import objects.Conversions._
 
@@ -190,7 +191,7 @@ class QueryEvaluator(controller: Controller) {
       val res = empty
       def add(p : Path): Unit = {res += List(p)}
       evalSet(to) foreach { p =>
-        rs.query(p.head.asInstanceOf[Path], by)(add) // p has type List(Path) by precondition
+        rs.queryList(p.head.asInstanceOf[Path], by) foreach (add) // p has type List(Path) by precondition
       }
       res
 

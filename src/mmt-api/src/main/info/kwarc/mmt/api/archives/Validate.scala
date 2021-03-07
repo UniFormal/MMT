@@ -18,7 +18,7 @@ trait Validate {self: Archive =>
     val relHandler = new RelationHandler {
       def apply(r: RelationalElement) {
         rels += r
-        controller.memory.ontology += r
+        controller.database.addRel(r)(Some(self.ulo_uri))
       }
     }
     val checker = new MMTStructureChecker(new NullChecker.Objects)

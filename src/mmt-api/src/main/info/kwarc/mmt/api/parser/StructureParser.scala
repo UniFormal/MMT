@@ -126,7 +126,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
     val reg = currentSourceRegion
     SourceRef.update(se, state.makeSourceRef(reg))
     try {
-      Database.get(controller).add(se,state.ps.si)
       controller.add(se)
       state.ps.reportProgress(Parsed(se))
       if (!state.ps.isKilled) {
@@ -552,7 +551,7 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
                   case link: Link =>
                     // a single theory is a shortcut for including its identity morphism (.get succeeds because term was read above)
                     tc.get.get match {
-                      case t @ OMMOD(p) => 
+                      case t @ OMMOD(p) =>
                         lup.getO(p) match {
                           case Some(_: Theory) =>
                             tc.parsed = OMIDENT(t).from(t)

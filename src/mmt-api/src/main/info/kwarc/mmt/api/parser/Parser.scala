@@ -112,15 +112,10 @@ case class IsMod(modParent: MPath, relDocParent: LocalName) extends HasParentInf
   * @param format the format of the stream
   * @param stream the stream to parse
   */
-case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader, si : SourceInfo) extends MMTTask {
+case class ParsingStream(source: URI, parentInfo: ParentInfo, nsMap: NamespaceMap, format: String, stream: java.io.BufferedReader) extends MMTTask {
   /** the whole stream as a string */
   def fullString = Stream.continually(stream.readLine()).takeWhile(_ != null).mkString("\n")
 }
-
-sealed class SourceInfo
-case class FileSource(f : File) extends SourceInfo
-case class FileInArchiveSource(a : Archive, f : File) extends SourceInfo
-case object StringSource extends SourceInfo
 
 object ParsingStream {
   /** to allow passing a string instead of a reader */
@@ -143,7 +138,7 @@ object ParsingStream {
     val nsMap = nsMapOpt.getOrElse(NamespaceMap(dpath))
     val format = formatOpt.getOrElse(f.getExtension.getOrElse(""))
     val stream = streamOpt.getOrElse(fileToReader(f))
-    new ParsingStream(FileURI(f), IsRootDoc(dpath), nsMap, format, stream,FileSource(f))
+    new ParsingStream(FileURI(f), IsRootDoc(dpath), nsMap, format, stream)
   }
 
   /** creates a ParsingStream from a string
@@ -155,7 +150,7 @@ object ParsingStream {
     */
   def fromString(s: String, dpath: DPath, format: String, nsMapOpt: Option[NamespaceMap] = None) = {
     val nsMap = nsMapOpt.getOrElse(NamespaceMap(dpath))
-    new ParsingStream(dpath.uri, IsRootDoc(dpath), nsMap, format, s,StringSource)
+    new ParsingStream(dpath.uri, IsRootDoc(dpath), nsMap, format, s)
   }
 
   /** creates a parsing stream for a source file in an archive
@@ -177,7 +172,7 @@ object ParsingStream {
     val dpath = DPath(base / inPathOMDoc) // bf.narrationDPath except for extension
     val stream = strOpt.getOrElse(File.Reader(a / source / inPath))
     val nsMap = nsMapOpt.getOrElse(NamespaceMap.empty) ++ a.namespaceMap
-    ParsingStream(base / inPath.segments, IsRootDoc(dpath), nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream,FileInArchiveSource(a,a / source / inPath))
+    ParsingStream(base / inPath.segments, IsRootDoc(dpath), nsMap(dpath), inPath.toFile.getExtension.getOrElse(""), stream)
   }
 }
 

@@ -148,7 +148,7 @@ abstract class MakeConcrete {
 case class Deps(path: Path) extends MakeConcrete {
   def make(controller: Controller, rb: RenderingHandler) {
     rb.elem("mmtabox", "xmlns" -> "http://omdoc.org/abox") {
-      (controller.depstore.getInds ++ controller.depstore.getDeps).foreach(
+      controller.database.get().toRelational.foreach(
         (d: ontology.RelationalElement) => if (path <= d.path) rb(d.toNode)
       )
     }

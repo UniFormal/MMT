@@ -38,9 +38,9 @@ class AddImpacts(memory: ROMemory) extends ImpactPropagator(memory) {
       case None => false //throw Exception("Not a Term!")
     }
     if (isApplication)
-      memory.ontology.query(path, ToObject(RefersTo))(p => impacts += p) //axiom
+      memory.ontology.queryList(path, ToObject(RefersTo)).foreach(p => impacts += p) //axiom
     else
-      memory.ontology.query(path, ToSubject(RefersTo))(p => impacts += p) //entity
+      memory.ontology.queryList(path, ToSubject(RefersTo)).foreach(p => impacts += p) //entity
     /*whichTerm match{
     case OMS(s) =>  memory.ontology.query(path,ToSubject(RefersTo)) (p => impacts += p) //entity
     case _ =>   memory.ontology.query(path,ToObject(RefersTo)) (p => impacts += p) //axiom
