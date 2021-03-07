@@ -60,7 +60,7 @@ class Database(controller : Controller) extends Logger {
       private var value : Option[Any] = None
       def get = {
         while (this.synchronized{value.isEmpty}) {
-          Thread.sleep(100)
+          Thread.sleep(10)
         }
         value.get
       }
@@ -69,17 +69,17 @@ class Database(controller : Controller) extends Logger {
     private val threads : mutable.Queue[Thread] = mutable.Queue.empty
 
     def busy = threads.synchronized{threads.nonEmpty}
-    def queue[A](f : => A) : Unit = f //threads.synchronized{threads.enqueue(new Thread({_ => f}))}
-    def await[A](f : => A) = f /* {
+    def queue[A](f : => A) : Unit = threads.synchronized{threads.enqueue(new Thread({_ => f}))}
+    def await[A](f : => A) = {
       val t = new Thread({_ => f})
       if (threads.synchronized(threads.nonEmpty)) log("Database busy. Waiting...")
       threads.synchronized{threads.enqueue(t)}
       t.get.asInstanceOf[A]
-    } */
+    }
 
     Future {
       while (true) {
-        if (threads.synchronized {threads.isEmpty}) Thread.sleep(100)
+        if (threads.synchronized {threads.isEmpty}) Thread.sleep(10)
         else {
           val f = threads.synchronized{threads.dequeue()}
           f.execute
