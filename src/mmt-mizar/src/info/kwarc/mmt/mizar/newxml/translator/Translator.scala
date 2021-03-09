@@ -27,33 +27,29 @@ object itemTranslator {
     item.checkKind()
     implicit val defCtx = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
-    (item._subitem match {
-      case subitem: MMLIdSubitem => subitem match {
-        case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item)
-        case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item)
-        case attrDef: Attribute_Definition => definitionTranslator.translate_Attribute_Definition(attrDef)
-        case funcDef: Functor_Definition => definitionTranslator.translate_Functor_Definition(funcDef)
-        case pd: Predicate_Definition => definitionTranslator.translate_Predicate_Definition(pd)
-      }
-      case res: Reservation => translate_Reservation(res)
-      case defIt: Definition_Item => translate_Definition_Item(defIt)
-      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
-      case pr: Pragma => translate_Pragma(pr)
+    def add(d: Declaration): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
+    item._subitem match {
+      case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
+      case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
+      case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item) foreach add
+      case res: Reservation => translate_Reservation(res) foreach add
+      case defIt: Definition_Item => translate_Definition_Item(defIt) foreach add
+      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
+      case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
-      case cl: Cluster => clusterTranslator.translate_Cluster(cl)
+      case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
       case correctness: Correctness => translate_Correctness(correctness)
       case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
       case exemplification: Exemplification => translate_Exemplification(exemplification)
       case assumption: Assumption => translate_Assumption(assumption)
-      case identify: Identify => translate_Identify(identify)
+      case identify: Identify => translate_Identify(identify) foreach add
       case generalization: Generalization => translate_Generalization(generalization)
       case reduction: Reduction => translate_Reduction(reduction)
-      case head: Heads => headTranslator.translate_Head(head)
-      case nym: Nyms => nymTranslator.translate_Nym(nym)
-      case st: Statement => statementTranslator.translate_Statement(st)
-      case defn: Definition => definitionTranslator.translate_Definition(defn)
+      case head: Heads => headTranslator.translate_Head(head) foreach add
+      case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
+      case st: Statement => statementTranslator.translate_Statement(st)  foreach add
       case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
-    }).foreach({d => TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))})
+    }
     /*translatedSubitem map {
       //Currently probably the only case that actually occurs in practise
       case decl: Declaration =>
@@ -68,7 +64,7 @@ object itemTranslator {
 import TranslationController._
 class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
-  def inExts = List("esx1")
+  def inExts = List("esx")
 
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
     val parser = makeParser
@@ -81,6 +77,7 @@ class MizarXMLImporter extends archives.Importer {
     }
 
     val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
+
 
     printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
     val startTranslationTime = System.nanoTime()

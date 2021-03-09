@@ -192,7 +192,7 @@ object TranslationController {
         case ge: GeneralError =>
           //println("Uncomplified:"+controller.presenter.asString(e))
           var shouldWork = false
-          try {controller.presenter.asString(e); shouldWork = true} catch {case _ =>}
+          try {controller.presenter.asString(e); shouldWork = true} catch {case _ : Throwable =>}
           if (shouldWork) e else throw ge
         case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
@@ -212,7 +212,7 @@ object TranslationController {
       d.translate(complifier,Context.empty)
     } catch {case e: Exception =>
       println("error while complifying instance " + d.path+": ")
-      println(d.name+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
+      println(d.name.toString+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
       //println(controller.presenter.asString(d))
       throw e
     }

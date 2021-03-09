@@ -42,7 +42,7 @@ object justificationTranslator {
   }
   def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Option[Term]) = {
     val claim = provedClaim._claim match {
-      case Diffuse_Statement(spelling, serialnr, labelnr, _label) => provedClaim._just.get match {
+      case Diffuse_Statement(_label) => provedClaim._just.get match {
         case Block(kind, pos, _items) =>
           val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
           And(claims.map(translate_Claim(_)(defContext)))
@@ -84,7 +84,7 @@ object justificationTranslator {
             defContext.pushThesis(claim)
             val trIt = st.prfClaim._claim match {
               case ds: Diffuse_Statement => j map usedInJustification getOrElse Nil
-              case Proposition(_, _, Thesis(_, _)) => j map usedInJustification getOrElse Nil
+              case Proposition(_, _, Thesis(_)) => j map usedInJustification getOrElse Nil
               case it: Iterative_Equality if (j == None) =>
                 val And(clms) = translate_Claim(it)
                 val justs = it._just :: it._iterSteps.map(_._just)

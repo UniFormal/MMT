@@ -13,10 +13,10 @@ trait Subitem extends DeclarationLevel {
   def shortKind: String = kind.split('.').lastOption.getOrElse(kind).replace('_','-')
 }
 sealed trait MMLIdSubitem extends Subitem {
-  def MmlId: MMLId
-  def globalName(kind: String = this.shortKind): GlobalName = {
-    val Array(aid, ln) = MmlId.MMLId.split(":")
-    TranslationController.getTheoryPath(aid) ? LocalName(kind+ln)
+  def mmlId: MMLId
+  def globalName: GlobalName = {
+    val Array(aid, ln) = mmlId.MMLId.split(":")
+    TranslationController.getTheoryPath(aid) ? LocalName(this.shortKind+ln)
   }
 }
 case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
@@ -63,10 +63,10 @@ case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
 
 /**
  * Contains a single block containing one subitem being the scheme head for this scheme and some futher subitems jointly forming the proof of it
- * @param MmlId
+ * @param mmlId
  * @param _block
  */
-case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
+case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
   def scheme_head(): Scheme_Head = {
     assert(_block.kind == "Scheme-Block")
     val scheme_head_item = _block._items.head
@@ -139,19 +139,46 @@ case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Just
   override def prfClaim: ProvedClaim = ProvedClaim(claim, Some(_just))
 }
 case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
-case class Theorem_Item(MmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
+case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else globalName()
+  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else globalName
 }
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
 
 sealed trait BlockSubitem extends Subitem
 sealed trait Definition extends BlockSubitem
 sealed trait PrivateDefinition extends Definition
-case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
+/**
+ * Definitions which have a label and may get redefined
+ * @precondition _def.isEmpty => (redefinition <=> _pat.hasOrgiRefs && redefinition => mmlIdO.isEmpty)
+ */
+sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
+  def mmlIdO: Option[MMLId]
+  def _redef: Redefine
+  def _pat: RedefinablePatterns
+  def _def: Option[Definiens]
+  def redefinition = _redef.occurs
+  def check: Unit = {
+    if (! (_def.isDefined || (redefinition == _pat.hasOrigRefs && (!redefinition || mmlIdO.isEmpty)))) {
+      throw ImplementationError("Wrong parsing assumption. ")
+    }
+  }
+
+  override def mmlId: MMLId = mmlIdO.get
+  def defKind: Char = this match {
+    case ad: Attribute_Definition => Utils.shortKind(Utils.AttributeKind())
+    case fd: Functor_Definition => Utils.shortKind(Utils.FunctorKind())
+    case pd: Predicate_Definition => Utils.shortKind(Utils.PredicateKind())
+  }
+  override def globalName = {
+    val Array(aid, ln) = mmlId.MMLId.split(":")
+    TranslationController.getTheoryPath(aid) ? LocalName(defKind.toString+ln)
+  }
+}
+case class Attribute_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Attribute_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
+case class Functor_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends RedefinableLabeledDefinition
+case class Predicate_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Predicate_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
 /**
  * definition of a structure, takes ancestors (a list of structures it inherits from),
  * structure-Pattern contains several loci, corresponds to the universes the structure is over,
@@ -245,7 +272,7 @@ case class Unknown(pos:Position, inscription:String) extends Pragmas
 case class Notion_Name(pos:Position, inscription:String) extends Pragmas
 case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
 
-case class Scheme(idNr: Int, spelling:String, nr:Int) extends DeclarationLevel
+case class Scheme(idnr: Int, spelling:String, nr:Int) extends DeclarationLevel
 case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends DeclarationLevel
 
 sealed trait Segments extends DeclarationLevel {

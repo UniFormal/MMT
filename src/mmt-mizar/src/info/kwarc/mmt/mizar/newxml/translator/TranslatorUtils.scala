@@ -44,11 +44,11 @@ object TranslatorUtils {
   }
   def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
 
-  def computeGlobalName(pat: globallyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
+  def computeGlobalName(pat: GloballyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
     case p: RedefinablePatterns => if (orgVersion) p.globalOrgPatConstrName else p.globalPatConstrName
     case p: ConstrPattern => p.globalPatConstrName
-    case objAttrs: globallyReferencingReDefAttrs => objAttrs.globalPatConstrName
-    case objAttrs: globallyReferencingDefAttrs => objAttrs.globalPatConstrName
+    case objAttrs: GloballyReferencingReDefAttrs => objAttrs.globalPatConstrName
+    case objAttrs: GloballyReferencingDefAttrs => objAttrs.globalPatConstrName
     case objAttrs => objAttrs.globalPatternName
   }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
@@ -57,8 +57,8 @@ object TranslatorUtils {
     TranslationController.add(const)
   }
   def emptyPosition() = syntax.Position("translation internal")
-  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(),"Negated-Formula",form)
-  def emptyCondition() = negatedFormula(Contradiction(emptyPosition(),"Contradiction"))
+  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(), form)
+  def emptyCondition() = negatedFormula(Contradiction(emptyPosition()))
 
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
