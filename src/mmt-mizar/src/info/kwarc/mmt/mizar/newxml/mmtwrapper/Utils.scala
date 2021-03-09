@@ -127,7 +127,7 @@ object MizarPrimitiveConcepts {
   object forall extends Quantifier("for")
   object exists extends Quantifier("ex")
 
-  object proof extends UnaryLFConstantScala(ProofsTh, "proof")
+  object proof extends UnaryLFConstantScala(ProofsTh, "ded")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
   object ProofByExample extends BinaryLFConstantScala(MizarTh, "proof_by_example")
   def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))

@@ -55,7 +55,7 @@ object justificationTranslator {
       case (it: Iterative_Equality, None) => Some(translate_Iterative_Equality_Proof(it)(defContext))
       case (_, None) => throw ProvedClaimTranslationError("No proof given for claim, which is not an iterative-equality (proving itself). ", provedClaim)
     }
-    (claim, prf)
+    (proof(claim), prf)
   }
   def translate_Diffuse_Statement(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext) = _just match {
     case Some(Block(kind, pos, _items)) =>

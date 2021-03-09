@@ -11,6 +11,7 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import foundations._
+import info.kwarc.mmt.api.checking.CheckingEnvironment
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs}
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.{MizarPatternInstance, PatternUtils}
@@ -26,6 +27,10 @@ object TranslationController {
     //       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
     c
   }
+  def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
+  def structureSimplifier = controller.simplifier
+  def typeCheckingErrHandler = ErrorThrower//bf.errocCont
+  val checkingEnvironment = new CheckingEnvironment(TranslationController.structureSimplifier, TranslationController.typeCheckingErrHandler, checking.RelationHandler.ignore, MMTTask.generic)
 
   var query : Boolean = false
 

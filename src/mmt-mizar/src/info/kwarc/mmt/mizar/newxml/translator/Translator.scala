@@ -118,10 +118,7 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    val structChecker = TranslationController.controller.extman.get(classOf[checking.Checker], "mmt").get
-    val structureSimplifier = TranslationController.controller.simplifier
-    val errHandler = ErrorThrower//bf.errocCont
-    structChecker.apply(TranslationController.currentThy)(new CheckingEnvironment(structureSimplifier, errHandler, checking.RelationHandler.ignore, MMTTask.generic))
+    //TranslationController.structChecker(TranslationController.currentThy)(TranslationController.checkingEnvironment))
 
     /*
     log("The translated article " + bf.narrationDPath.last + ": ")
