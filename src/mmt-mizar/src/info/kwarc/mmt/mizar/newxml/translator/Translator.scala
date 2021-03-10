@@ -25,17 +25,17 @@ object itemTranslator {
     item._subitem match {
       case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
-      case theorem_Item: Theorem_Item => add(statementTranslator.translate_Theorem_Item(theorem_Item))
+      case theorem_Item: Theorem_Item => add (statementTranslator.translate_Theorem_Item(theorem_Item))
       case res: Reservation => translate_Reservation(res) foreach add
       case defIt: Definition_Item => translate_Definition_Item(defIt) foreach add
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
       case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
       case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
-      case identify: Identify => translate_Identify(identify) foreach add
+      case identify: Identify => add (translate_Identify(identify))
       case head: Heads => headTranslator.translate_Head(head) foreach add
       case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
-      case st: Statement with TopLevel => add(statementTranslator.translate_Statement(st))
+      case st: Statement with TopLevel => add (statementTranslator.translate_Statement(st))
       case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
     }
   }

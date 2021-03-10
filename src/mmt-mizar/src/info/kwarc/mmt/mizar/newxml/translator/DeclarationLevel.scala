@@ -450,7 +450,7 @@ object subitemTranslator {
   }
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { Nil }
-  def translate_Identify(identify: Identify)(implicit defContext: DefinitionContext) = { clusterTranslator.translate_Identify(identify._firstPat, identify._sndPat) }
+  def translate_Identify(identify: Identify)(implicit defContext: DefinitionContext) = { clusterTranslator.translate_Identify(identify) }
   def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
     case sbi @ Scheme_Block_Item(_, _block) =>
       val gn = sbi.globalName
@@ -769,14 +769,16 @@ object clusterTranslator {
     }
     resDecl.map(List(_)).getOrElse(Nil)
   }
-  def translate_Identify(_fstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression)(implicit definitionContext: DefinitionContext): List[Declaration] = {
-    val num = incrementAndGetIdentifyCount()
-    val name = LocalName("identify"+num)
-    val (_, _, f, _, fparams) = translate_Referencing_Pattern(_fstPat)
-    val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
-    val tpO = Some(MizarPrimitiveConcepts.eq(ApplyGeneral(f, fparams), ApplyGeneral(g, gparams)))
-    val resDecls = List(makeConstantInContext(name, tpO, None))
-    resDecls
+  def translate_Identify(identify: syntax.Identify)(implicit defContext: DefinitionContext): Declaration = identify match {
+    case syntax.Identify(_firstPat, _sndPat, _lociEqns) =>
+      val translatedLociEqns = _lociEqns._lociEqns map {
+        case Loci_Equality(_, _fstLoc, _sndLoc) => (translate_Locus(_fstLoc)(defContext), translate_Locus(_sndLoc)(defContext))
+      }
+      val num = incrementAndGetIdentifyCount()
+      val name = LocalName("identify"+num)
+      val (_, _, f, _, fparams) = translate_Referencing_Pattern(_firstPat)
+      val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
+      mmtwrapper.Identify(name, defContext.args map(_.tp.get), translatedLociEqns, f(fparams:_*), g(gparams:_*))
   }
   def translate_Cluster(cl:Cluster)(implicit definitionContext: DefinitionContext): List[Declaration] = {
     //TODO: Also translate the proofs of the correctness conditions
@@ -846,12 +848,8 @@ object blockTranslator {
     clusterItems flatMap {
       case (cl: Cluster, defContext: DefinitionContext) =>
         translate_Cluster(cl)(defContext)
-      case (reg: Registrations, defContext: DefinitionContext) =>
-        translate_Registration(reg)(defContext)
-      case (Identify(_firstPat, _sndPat, _lociEqns), defContext: DefinitionContext) =>
-        val translatedLociEqns = translate_Loci_Equalities(_lociEqns)(defContext)
-        defContext.addAssumptions(translatedLociEqns)
-        translate_Identify(_firstPat, _sndPat)(defContext)
+      case (reg: Registrations, defContext: DefinitionContext) => translate_Registration(reg)(defContext)
+      case (id: syntax.Identify, defContext: DefinitionContext) => List(translate_Identify(id)(defContext))
     }
   }
   def translate_Notation_Block(block: Block): List[Declaration] = {

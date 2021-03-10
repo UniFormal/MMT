@@ -319,14 +319,6 @@ object claimTranslator {
       And(typingClaims)
     case claim: TypeUnchangingClaim => translate_Type_Unchanging_Claim(claim)(definContext)
   }
-  def translate_Loci_Equality(loci_Equality: Loci_Equality)(implicit defContext: DefinitionContext) : Term = {
-    val List(a, b) = List(loci_Equality._frstLocus, loci_Equality._sndLocus) map translate_Locus
-    assert(defContext.args.variables.map(_.toTerm).contains(a) && defContext.args.variables.map(_.toTerm).contains(b))
-    MizarPrimitiveConcepts.eq(a, b)
-  }
-  def translate_Loci_Equalities(loci_Equalities: Loci_Equalities)(implicit defContext: DefinitionContext) : List[Term] = {
-    loci_Equalities._lociEqns map translate_Loci_Equality
-  }
   def translate_Assumption_Claim(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
     case Collective_Assumption(pos, _cond) => translate_Claim(_cond)
     case Existential_Assumption(_qualSegm, _cond) =>

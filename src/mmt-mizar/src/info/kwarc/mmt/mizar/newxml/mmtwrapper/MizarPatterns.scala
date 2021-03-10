@@ -12,7 +12,7 @@ import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
 object PatternUtils {
-  def argsVarName = "x"//"argumentSequence"
+  def argsVarName = "argumentSequence"
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
   def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
   def structureStrictDeclName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictDef"))
@@ -80,7 +80,7 @@ object MizarPatternInstance {
     val pattern = MizarPatternsTh ? LocalName(pat)
     MizInstance.apply(home, name, pattern, args, notC)
   }
-  private def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
+  private[mmtwrapper] def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     val argNum = OMI(argNumI)
     implicit val args = argumentsUnbound.map(lambdaBindArgs(_)(argumentsUnbound))
     assert(args.length == argNumI)
@@ -372,6 +372,22 @@ object UnqualifiedFunctorRegistration extends RegistrationInstance {
 object QualifiedFunctorRegistration extends RegistrationInstance {
   def apply(name: LocalName, argTypes: List[Term], tp:Term, tm:Term, atrs:List[Term])(implicit notC: NotationContainer = NotationContainer.empty()) = {
     MizarPatternInstance(name, "qualFuncRegistration", argTypes, tp, Some(tm), atrs, Nil)
+  }
+}
+object Identify extends RegistrationInstance {
+  def apply(name: LocalName, argTypes: List[Term], eqns: List[(Term, Term)], expr1:Term, expr2: Term)(implicit notC: NotationContainer = NotationContainer.empty()) = {
+    val (asU, bsU) = eqns unzip
+
+    implicit val args = argTypes
+    val argNumI = args.length
+    val eqnNum = OMI(eqns.length)
+    val fstExpr = lambdaBindArgs(expr1)
+    val sndExpr = lambdaBindArgs(expr2)
+    val as = Sequence(asU map lambdaBindArgs)
+    val bs = Sequence(bsU map lambdaBindArgs)
+
+    val furtherParameters: List[Term] = List(eqnNum, as, bs, fstExpr, sndExpr)
+    MizarPatternInstance(name, "identify", argNumI, argTypes, furtherParameters)
   }
 }
 
