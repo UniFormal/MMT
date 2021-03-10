@@ -286,7 +286,6 @@ object contextTranslator {
 
 object claimTranslator {
   def translate_Type_Unchanging_Claim(claim: TypeUnchangingClaim)(implicit defContext: DefinitionContext): Term = claim match {
-    case ass: Assumptions => translate_Assumption(ass)
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
     case Thesis(_) => defContext.getThesisAsTerm
@@ -328,7 +327,7 @@ object claimTranslator {
   def translate_Loci_Equalities(loci_Equalities: Loci_Equalities)(implicit defContext: DefinitionContext) : List[Term] = {
     loci_Equalities._lociEqns map translate_Loci_Equality
   }
-  def translate_Assumption(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
+  def translate_Assumption_Claim(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
     case Collective_Assumption(pos, _cond) => translate_Claim(_cond)
     case Existential_Assumption(_qualSegm, _cond) =>
       val args = _qualSegm._children flatMap translate_Context

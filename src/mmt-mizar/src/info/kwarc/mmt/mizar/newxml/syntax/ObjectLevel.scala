@@ -405,11 +405,6 @@ case class Conditions(_props:List[Proposition]) extends TypeUnchangingClaim
 case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends TypeUnchangingClaim
 private[newxml] case class Type_Changing_Claim(_eqList:Equalities_List, _tp:Type) extends Claim
 
-sealed trait Assumptions extends TypeUnchangingClaim
-case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
-case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
-case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions with Subitem
-
 sealed trait Justification extends ObjectLevel
 case class Straightforward_Justification(pos:Position, _refs:List[Reference]) extends Justification
 case class Block(kind: String, pos:Positions, _items:List[Item]) extends Justification
@@ -613,3 +608,20 @@ case class Partial_Definiens(_expr:Expression, _form:Formula) extends ObjectLeve
 case class Otherwise(_expr:Option[Expression]) extends ObjectLevel
 
 case class According_Expansion(_attrs:List[Attribute]) extends ObjectLevel
+
+sealed trait Pragmas extends ObjectLevel
+case class Unknown(pos:Position, inscription:String) extends Pragmas
+case class Notion_Name(pos:Position, inscription:String) extends Pragmas
+case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
+
+case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends ObjectLevel
+
+sealed trait Segments extends ObjectLevel {
+  def _vars: Variables
+  def _tpList: Type_List
+  def _tpSpec: Option[Type_Specification]
+}
+case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tpSpec:Option[Type_Specification]) extends Segments
+case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments {
+  override def _tpSpec: Option[Type_Specification] = None
+}

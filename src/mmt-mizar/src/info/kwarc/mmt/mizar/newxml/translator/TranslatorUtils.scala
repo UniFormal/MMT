@@ -17,7 +17,7 @@ import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variab
 import termTranslator._
 
 sealed class TranslatingError(str: String) extends Exception(str)
-class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
+class DeclarationLevelTranslationError(str: String, decl: Subitem) extends TranslatingError(str)
 case class DeclarationTranslationError(str: String, decl: Subitem) extends DeclarationLevelTranslationError(str, decl) {
   def apply(str: String, decl: Subitem) = {
     new DeclarationLevelTranslationError(str+

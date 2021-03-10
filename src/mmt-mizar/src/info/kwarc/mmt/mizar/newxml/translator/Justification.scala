@@ -4,12 +4,12 @@ import info.kwarc.mmt._
 import api._
 import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
-import info.kwarc.mmt.mizar.newxml.translator.claimTranslator.translate_Claim
+import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.{translate_Context, translate_new_Variable}
 import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
 import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
-import objects.{Context, OMA, OMATTR, OMBINDC, OMFOREIGN, OMID, OML, OMLIT, OMLITTrait, OMS, OMSemiFormal, OMV, Term, UnknownOMLIT}
+import objects._
 import mizar.newxml.syntax._
 
 object justificationTranslator {
@@ -109,7 +109,7 @@ object justificationTranslator {
             usedInJustification(_just):::usedInCases:::translateSubitems(remainingTail)
           //case cb@Case_Block(_block) => throw DeclarationTranslationError("Unexpected case block in proof outside of per cases. ", cb)
           case Assumption(ass) =>
-            defContext.killAssumption(translate_Claim(ass))
+            defContext.killAssumption(translate_Assumption_Claim(ass))
             translateSubitems(tail) //Since they already need to be known
           case red: Reduction => translateSubitems(tail) //TODO: translate this to something
           case id: Identify => translateSubitems(tail)

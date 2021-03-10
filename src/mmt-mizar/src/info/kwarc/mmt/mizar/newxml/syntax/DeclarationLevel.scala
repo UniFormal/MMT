@@ -5,22 +5,31 @@ import info.kwarc.mmt.mizar.newxml.syntax.Claim
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslationController, TranslatorUtils}
 
-sealed trait DeclarationLevel
-trait Subitem extends DeclarationLevel {
+sealed trait Subitem {
   def kind:String = {
     this.getClass.getName
   }
   def shortKind: String = kind.split('.').lastOption.getOrElse(kind).replace('_','-')
 }
-sealed trait MMLIdSubitem extends Subitem {
+sealed trait TopLevel extends Subitem
+sealed trait DeclarationLevel extends Subitem
+sealed trait TopOrDeclarationLevel extends TopLevel with DeclarationLevel
+sealed trait ProofLevel extends DeclarationLevel
+sealed trait MMLIdSubitem extends TopOrDeclarationLevel {
   def mmlId: MMLId
   def globalName: GlobalName = {
     val Array(aid, ln) = mmlId.MMLId.split(":")
     TranslationController.getTheoryPath(aid) ? LocalName(this.shortKind+ln)
   }
 }
-case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
-case class Definition_Item(_block:Block) extends Subitem {
+sealed trait BlockSubitem extends Subitem
+sealed trait RegistrationSubitems extends BlockSubitem
+sealed trait Registrations extends RegistrationSubitems
+sealed trait Definition extends BlockSubitem
+sealed trait PrivateDefinition extends Definition
+
+case class Reservation(_reservationSegments: List[Reservation_Segment]) extends TopOrDeclarationLevel
+case class Definition_Item(_block:Block) extends TopOrDeclarationLevel {
   //verify assumptions for translation
   def check() = {
     val kind = _block.kind
@@ -38,28 +47,37 @@ case class Definition_Item(_block:Block) extends Subitem {
  * An empty item, the only interesting information is given in the containing item,
  * namely its position
  */
-case class Section_Pragma() extends Subitem
-case class Pragma(_notionName: Option[Pragmas]) extends Subitem
-case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
+case class Section_Pragma() extends TopLevel
+case class Pragma(_notionName: Option[Pragmas]) extends TopLevel
+case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends DeclarationLevel
 case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
-case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
-case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
-case class Exemplification(_exams: List[Exemplifications]) extends Subitem
-case class Assumption(_ass:Assumptions) extends Subitem
+case class Assumption(_ass:Assumptions) extends DeclarationLevel
+sealed trait Assumptions extends DeclarationLevel
+case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
+case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
+case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
+
 case class Identify(_firstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression, _lociEqns:Loci_Equalities) extends RegistrationSubitems
+
+/**
+ * For subitems that can occur within a block (except for the first two within a proof), but not on toplevel
+ */
+case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel
+case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends DeclarationLevel
+case class Exemplification(_exams: List[Exemplifications]) extends ProofLevel
 /**
  * Fix variables that are universally quantified over in a proof
  * @param _qual variable segments containing the variables
  * @param _conds
  */
-case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem
+case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
 /**
  * Fix variables in a proof
  * @param _qual variable segments conatining the variables
  * @param _conds
  */
-case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem
-case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
+case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
+case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends ProofLevel
 
 /**
  * Contains a single block containing one subitem being the scheme head for this scheme and some futher subitems jointly forming the proof of it
@@ -88,14 +106,22 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
   }
 }
 //telling Mizar to remember these properties for proofs later
-case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
+case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
   def matchProperty() : Option[MizarProperty] = _props.matchProperty(_just)
 }
-case class Per_Cases(_just:Justification) extends Subitem
-case class Case_Block(_block:Block) extends Subitem
+/**
+ * Corresponds to a case distinction in a proof
+ * Only occurs within proofs
+ * @param _just the remaining Proof, starting with the distinguished cases (as Case_Blocks)
+ */
+case class Per_Cases(_just:Justification) extends ProofLevel
+/**
+ * A single case in a case distinction
+ * @param _block
+ */
+case class Case_Block(_block:Block) extends ProofLevel
 
-sealed trait Heads extends Subitem
-
+sealed trait Heads extends TopLevel
 /**
  *
  * @param _sch
@@ -126,7 +152,7 @@ case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expr
 case class Func_Antonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Antonym
 case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 
-sealed trait Statement extends Subitem {
+sealed trait Statement extends ProofLevel {
   def prfClaim: ProvedClaim
 }
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
@@ -134,21 +160,18 @@ case class Conclusion(prfClaim:ProvedClaim) extends Statement
  * corresponds to a reconsider
  * followed by a list of assignments
  */
-case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement {
+case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement with TopOrDeclarationLevel {
   def claim = Type_Changing_Claim(_eqList, _tp)
   override def prfClaim: ProvedClaim = ProvedClaim(claim, Some(_just))
 }
-case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
+case class Regular_Statement(prfClaim:ProvedClaim) extends Statement with TopOrDeclarationLevel
 case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
   override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else globalName
 }
-case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
+case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement with TopOrDeclarationLevel
 
-sealed trait BlockSubitem extends Subitem
-sealed trait Definition extends BlockSubitem
-sealed trait PrivateDefinition extends Definition
 /**
  * Definitions which have a label and may get redefined
  * @precondition _def.isEmpty => (redefinition <=> _pat.hasOrgiRefs && redefinition => mmlIdO.isEmpty)
@@ -205,8 +228,6 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
 case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends PrivateDefinition
 case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends PrivateDefinition
 
-sealed trait RegistrationSubitems extends BlockSubitem
-sealed trait Registrations extends RegistrationSubitems
 /**
  * stating that a term tm has some properties
  * @param pos
@@ -267,20 +288,4 @@ case class consistency() extends CorrectnessConditions
  */
 case class correctness() extends CorrectnessConditions*/
 
-sealed trait Pragmas extends DeclarationLevel
-case class Unknown(pos:Position, inscription:String) extends Pragmas
-case class Notion_Name(pos:Position, inscription:String) extends Pragmas
-case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
-
-case class Scheme(idnr: Int, spelling:String, nr:Int) extends DeclarationLevel
-case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends DeclarationLevel
-
-sealed trait Segments extends DeclarationLevel {
-  def _vars: Variables
-  def _tpList: Type_List
-  def _tpSpec: Option[Type_Specification]
-}
-case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tpSpec:Option[Type_Specification]) extends Segments
-case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments {
-  override def _tpSpec: Option[Type_Specification] = None
-}
+case class Scheme(idnr: Int, spelling:String, nr:Int) extends TopOrDeclarationLevel

@@ -2,15 +2,9 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
-import info.kwarc.mmt.api.checking.{CheckingEnvironment, ExtendedCheckingEnvironment}
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils.FilePath
 import symbols.{Constant, Declaration, DerivedDeclaration}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPatternInstance
 import info.kwarc.mmt.mizar.newxml.syntax._
-import org.xml.sax.ErrorHandler
 
 
 object articleTranslator {
@@ -31,33 +25,19 @@ object itemTranslator {
     item._subitem match {
       case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
-      case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item) foreach add
+      case theorem_Item: Theorem_Item => add(statementTranslator.translate_Theorem_Item(theorem_Item))
       case res: Reservation => translate_Reservation(res) foreach add
       case defIt: Definition_Item => translate_Definition_Item(defIt) foreach add
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
       case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
       case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
-      case correctness: Correctness => translate_Correctness(correctness)
-      case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
-      case exemplification: Exemplification => translate_Exemplification(exemplification)
-      case assumption: Assumption => translate_Assumption(assumption)
       case identify: Identify => translate_Identify(identify) foreach add
-      case generalization: Generalization => translate_Generalization(generalization)
-      case reduction: Reduction => translate_Reduction(reduction)
       case head: Heads => headTranslator.translate_Head(head) foreach add
       case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
-      case st: Statement => statementTranslator.translate_Statement(st)  foreach add
-      case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
+      case st: Statement with TopLevel => add(statementTranslator.translate_Statement(st))
+      case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
     }
-    /*translatedSubitem map {
-      //Currently probably the only case that actually occurs in practise
-      case decl: Declaration =>
-        val name = decl.name
-        TranslationController.add(decl)
-      case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
-      case nar: NarrativeElement => TranslationController.add(nar)
-    }*/
   }
 }
 
