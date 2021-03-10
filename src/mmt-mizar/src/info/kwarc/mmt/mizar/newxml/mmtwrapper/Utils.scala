@@ -21,7 +21,7 @@ object MizarPrimitiveConcepts {
   val softTypedTermsTh = latinBase ? "SoftTypedTerms"
   val ConjunctionTh = latinBase ? "Conjunction"
   val DisjunctionTh = latinBase ? "SoftTypedDefinedFOL"
-  val EqualityTh = latinBase ? "Equality"
+  val EqualityTh = latinBase ? "UntypedEquality"
   val TruthTh = latinBase ? "Truth"
   val FalsityTh = latinBase ? "Falsity"
   val NegationTh = latinBase ? "Negation"
@@ -111,9 +111,9 @@ object MizarPrimitiveConcepts {
   object iff extends BinaryLFConstantScala(MizarTh, "iff")
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
-  object eq extends BinaryLFConstantScala(eqCon.module, "eq")
+  object eq extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
   def neqCon = constantName("neq")
-  object neq extends BinaryLFConstantScala(MizarTh, "inequal")
+  object neq extends BinaryLFConstantScala(neqCon.module, neqCon.name.toString)
 
   class Quantifier(n: String) {
     def apply(v : OMV, univ : Term, p : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, p))

@@ -12,7 +12,7 @@ import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
 object PatternUtils {
-  def argsVarName = "argumentSequence"
+  def argsVarName = "x"//"argumentSequence"
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
   def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
   def structureStrictDeclName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictDef"))
@@ -104,15 +104,14 @@ object MizarPatternInstance {
     val cases = Sequence(casesUnbound map lambdaBindArgs)
     val caseRes = Sequence(caseResUnbound map lambdaBindArgs)
     val x = OMV(argsVarName)
-    def index(x: OMV): Int => Term = {i: Int => OMV(x.name / i.toString)} // MizSeq.Index(x, OMI(_))
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => zeroAryAndPropCon
       case (_, Some(pf)) => pf
       case (m, _) => uses(And((0 until m).toList map (i => implies(
-        Apply(MizSeq.Index(OMV("cases"), OMI(i)), x), And((i until m).toList map(j => implies(
-          Apply(MizSeq.Index(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.eq(
-            Apply(MizSeq.Index(OMV("caseRes"), OMI(i)), x),
-            Apply(MizSeq.Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
+        Index(OMV("cases"), OMI(i))(x), And((i until m).toList map(j => implies(
+          Index(OMV("cases")(OMI(j)), x), MizarPrimitiveConcepts.eq(
+            Apply(Index(OMV("caseRes"), OMI(i)), x),
+            Apply(Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")
     }
     def caseResSingleTp(n: Int) = pat match {
@@ -128,8 +127,9 @@ object MizarPatternInstance {
     val casesTp = Rep(Arrow(nTerms(argNumI), prop), caseNum)
     val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
 
-    val consistencyProof = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
-      proof(is(index(x)(ind), Apply(MizSeq.Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU))))
+    def argsWellTyped(body: Term) = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
+      proof(is(Index(x, OMI(ind)), Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind))(x)))})), body))
+    val consistencyProof = argsWellTyped(Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU)))
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val furtherParameters: List[Term] = ret ++ motherType ++ (caseNum::cases::caseRes::consistencyProof::defRes)
     apply(name, pat, argNumI, arguments, furtherParameters)

@@ -16,6 +16,7 @@ import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrE
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.{MizarPatternInstance, PatternUtils}
 
+import java.io.PrintStream
 import scala.collection._
 
 object TranslationController {
@@ -27,10 +28,11 @@ object TranslationController {
     //       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
     c
   }
-  def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
-  def structureSimplifier = controller.simplifier
-  def typeCheckingErrHandler = ErrorThrower//bf.errocCont
-  val checkingEnvironment = new CheckingEnvironment(TranslationController.structureSimplifier, TranslationController.typeCheckingErrHandler, checking.RelationHandler.ignore, MMTTask.generic)
+  private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
+  private def structureSimplifier = controller.simplifier
+  private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new ErrorContainer(logger)
+  private def checkingEnvironment(logger: Option[frontend.Report]) = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler(logger), checking.RelationHandler.ignore, MMTTask.generic)
+  def typecheckContent(e: StructuralElement, logger: Option[frontend.Report] = None) = structChecker(e)(checkingEnvironment(logger))
 
   var query : Boolean = false
 
@@ -47,11 +49,15 @@ object TranslationController {
   def getUnresolvedDependencies() = unresolvedDependencies
 
   private var anonymousTheoremCount = 0
-  def incrementAnonymousTheoremCount() = {anonymousTheoremCount += 1}
+  def incrementAndGetAnonymousTheoremCount() = {anonymousTheoremCount += 1; anonymousTheoremCount}
   def getAnonymousTheoremCount() = anonymousTheoremCount
 
+  private var anonymousSchemeCount = 0
+  def incrementAndGetAnonymousSchemeCount() = {anonymousSchemeCount += 1; anonymousSchemeCount}
+  def getAnonymousSchemeCount() = anonymousSchemeCount
+
   private var identifyCount = 0
-  def incrementIdentifyCount() = {identifyCount += 1}
+  def incrementAndGetIdentifyCount() = {identifyCount += 1; identifyCount}
   def getIdentifyCount() = identifyCount
 
   object articleStatistics {

@@ -22,7 +22,7 @@ sealed trait MMLIdSubitem extends TopOrDeclarationLevel {
     TranslationController.getTheoryPath(aid) ? LocalName(this.shortKind+ln)
   }
 }
-sealed trait BlockSubitem extends Subitem
+sealed trait BlockSubitem extends TopOrDeclarationLevel
 sealed trait RegistrationSubitems extends BlockSubitem
 sealed trait Registrations extends RegistrationSubitems
 sealed trait Definition extends BlockSubitem
@@ -49,35 +49,9 @@ case class Definition_Item(_block:Block) extends TopOrDeclarationLevel {
  */
 case class Section_Pragma() extends TopLevel
 case class Pragma(_notionName: Option[Pragmas]) extends TopLevel
-case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends DeclarationLevel
 case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
-case class Assumption(_ass:Assumptions) extends DeclarationLevel
-sealed trait Assumptions extends DeclarationLevel
-case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
-case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
-case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
 
 case class Identify(_firstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression, _lociEqns:Loci_Equalities) extends RegistrationSubitems
-
-/**
- * For subitems that can occur within a block (except for the first two within a proof), but not on toplevel
- */
-case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel
-case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends DeclarationLevel
-case class Exemplification(_exams: List[Exemplifications]) extends ProofLevel
-/**
- * Fix variables that are universally quantified over in a proof
- * @param _qual variable segments containing the variables
- * @param _conds
- */
-case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
-/**
- * Fix variables in a proof
- * @param _qual variable segments conatining the variables
- * @param _conds
- */
-case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
-case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends ProofLevel
 
 /**
  * Contains a single block containing one subitem being the scheme head for this scheme and some futher subitems jointly forming the proof of it
@@ -105,21 +79,6 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
     ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line.toString+"\\"+startPos.col), endPos), justItems)))
   }
 }
-//telling Mizar to remember these properties for proofs later
-case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
-  def matchProperty() : Option[MizarProperty] = _props.matchProperty(_just)
-}
-/**
- * Corresponds to a case distinction in a proof
- * Only occurs within proofs
- * @param _just the remaining Proof, starting with the distinguished cases (as Case_Blocks)
- */
-case class Per_Cases(_just:Justification) extends ProofLevel
-/**
- * A single case in a case distinction
- * @param _block
- */
-case class Case_Block(_block:Block) extends ProofLevel
 
 sealed trait Heads extends TopLevel
 /**
@@ -168,7 +127,7 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement with TopOrD
 case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else globalName
+  override def referencedLabel: GlobalName = if (labelled) _prop.referencedLabel else globalName
 }
 case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement with TopOrDeclarationLevel
 
@@ -254,8 +213,20 @@ case class Conditional_Registration(pos:Position, _attrs:Adjective_Cluster, _at:
 /**
  * registering properties for a mode
  */
-case class Property_Registration(_props:Properties, _block:Block) extends Registrations with Subitem
+case class Property_Registration(_props:Properties, _block:Block) extends Registrations
 
+case class Scheme(idnr: Int, spelling:String, nr:Int) extends TopOrDeclarationLevel
+
+case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends DeclarationLevel
+case class Assumption(_ass:Assumptions) extends DeclarationLevel
+sealed trait Assumptions extends DeclarationLevel
+case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
+case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
+case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
+
+case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel
+case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends DeclarationLevel
+case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends DeclarationLevel
 /**
  * Well-definedness conditions that need to be proven along with definitions
  */
@@ -287,5 +258,33 @@ case class consistency() extends CorrectnessConditions
  * conjunction of all necessary correctness conditions, doesn't appear in esx files
  */
 case class correctness() extends CorrectnessConditions*/
+//telling Mizar to remember these properties for proofs later
+case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
+  def matchProperty() : Option[MizarProperty] = _props.matchProperty(_just)
+}
+/**
+ * Corresponds to a case distinction in a proof
+ * Only occurs within proofs
+ * @param _just the remaining Proof, starting with the distinguished cases (as Case_Blocks)
+ */
+case class Per_Cases(_just:Justification) extends ProofLevel
+/**
+ * A single case in a case distinction
+ * @param _block
+ */
+case class Case_Block(_block:Block) extends ProofLevel
 
-case class Scheme(idnr: Int, spelling:String, nr:Int) extends TopOrDeclarationLevel
+case class Exemplification(_exams: List[Exemplifications]) extends ProofLevel
+/**
+ * Fix variables that are universally quantified over in a proof
+ * @param _qual variable segments containing the variables
+ * @param _conds
+ */
+case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
+/**
+ * Fix variables in a proof
+ * @param _qual variable segments conatining the variables
+ * @param _conds
+ */
+case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
+case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends ProofLevel

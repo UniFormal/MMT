@@ -26,7 +26,7 @@ import clusterTranslator._
 import definiensTranslator._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.OMI
 import info.kwarc.mmt.mizar.newxml.translator.JustifiedCorrectnessConditions.translate_consistency
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController.{addUnresolvedDependency, controller, currentAid, getAnonymousTheoremCount, getIdentifyCount, getUnresolvedDependencies, incrementAnonymousTheoremCount, incrementIdentifyCount, inferType, localPath, makeConstant, makeConstantInContext}
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.{addUnresolvedDependency, controller, currentAid, getAnonymousTheoremCount, getIdentifyCount, getUnresolvedDependencies, incrementAndGetAnonymousTheoremCount, incrementAndGetIdentifyCount, inferType, localPath, makeConstant, makeConstantInContext}
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
 import justificationTranslator._
 import propertyTranslator._
@@ -318,9 +318,11 @@ object patternTranslator {
     (pre, int, suf)
   }
   private def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false) = {
+    assert (!del.isEmpty, "Encountered empty delimiter in PrePostFix. ")
     PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum)
   }
   private def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int) = {
+    assert (!leftDel.isEmpty && !rightDel.isEmpty, "Encountered empty delimiter in CircumMarkers.\nThe delimiters are \""+leftDel+"\" and \""+rightDel+"\".")
     Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr)
   }
   private def makeNotCont(fixity: Fixity): NotationContainer = {
@@ -454,9 +456,10 @@ object subitemTranslator {
       val gn = sbi.globalName
       val provenSentence = sbi.provenSentence()
       val Scheme_Head(_sch, _vars, _form, _provForm) = sbi.scheme_head()
+      val spelling = _sch.spelling match { case "" => "AnonymousScheme_"+TranslationController.incrementAndGetAnonymousSchemeCount().toString case str => str }
       _vars._segms foreach (segm => translateBindingVariables(segm)(defContext))
       val ass : List[Term] = _provForm.map(_._props map(translate_Claim(_)(defContext))) getOrElse Nil
-      implicit val notC = makeNotationCont(_sch.spelling, 0, defContext.args.length, true)
+      implicit val notC = makeNotationCont(spelling, 0, defContext.args.length, true)
       val (p, prf) = translate_Proved_Claim(provenSentence)(defContext)
       TranslationController.articleStatistics.incrementStatisticsCounter("scheme")
       List(SchemeDefinitionInstance(gn.name, defContext.args map (_.tp.get), ass, p, prf))
@@ -496,8 +499,7 @@ object statementTranslator {
   def translate_Statement(st:Statement with TopLevel)(implicit defContext: DefinitionContext): Declaration = st match {
     case choice_Statement: Choice_Statement =>
       val (addArgs, (claim, proof)) = translate_Choice_Statement(choice_Statement)
-      incrementAnonymousTheoremCount()
-      val gn = makeNewGlobalName("Choice_Statement", getAnonymousTheoremCount())
+      val gn = makeNewGlobalName("Choice_Statement", incrementAndGetAnonymousTheoremCount())
       implicit val defCtx = defContext.copy(args = defContext.args ++ addArgs, assumptions = defContext.assumptions :+ claim)
       val theoremDecl = makeConstantInContext(gn.name, Some(claim), proof)(defContext = defCtx)
       theoremDecl
@@ -507,14 +509,12 @@ object statementTranslator {
   }
   def translate_Conclusion(conclusion: Conclusion) = { Nil }
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement)(implicit defContext: => DefinitionContext) : Declaration = {
-    incrementAnonymousTheoremCount()
-    val gn = makeNewGlobalName("Type_Changing_Statement", getAnonymousTheoremCount())
+    val gn = makeNewGlobalName("Type_Changing_Statement", incrementAndGetAnonymousTheoremCount())
     val (claim, proof) = translate_Proved_Claim(type_Changing_Statement.prfClaim)(defContext)
     makeConstantInContext(gn.name, Some(claim), proof)
   }
   def translate_Theorem_Item(theorem_Item: Theorem_Item)(implicit defContext: DefinitionContext) = {
-    val prfedClaim = theorem_Item.prfClaim
-    implicit val gn = theorem_Item.referencedLabel()//mMLIdtoGlobalName(theorem_Item.mizarGlobalName())
+    implicit val gn = theorem_Item.referencedLabel
     val (claim, proof) = translate_Proved_Claim(theorem_Item.prfClaim)
     TranslationController.articleStatistics.incrementStatisticsCounter("thm")
     makeConstantInContext(gn.name, Some(claim), proof)
@@ -525,8 +525,7 @@ object statementTranslator {
     (vars, facts)
   }
   def translate_Regular_Statement(regular_Statement: Regular_Statement)(implicit defContext: DefinitionContext) = {
-    incrementAnonymousTheoremCount()
-    val gn = makeNewGlobalName("Regular-Statement", getAnonymousTheoremCount())
+    val gn = makeNewGlobalName("Regular-Statement", incrementAndGetAnonymousTheoremCount())
     val (claim, proof) = translate_Proved_Claim(regular_Statement.prfClaim)
     val theoremDecl = makeConstantInContext(gn.name, Some(claim), proof)
     theoremDecl
@@ -730,6 +729,7 @@ object definitionTranslator {
     globalLookup(p) match {
       case c: Constant => makeConstant(ln, Some(ret getOrElse c.tp.get), c.df)
       case dd@MizarPatternInstance(_, pat, params) => makeConstant(ln, dd.tp, Some(dd.path()))//MizarPatternInstance(ln, pat, params)
+      case dd@MizarPatternInstance(_, pat, params) => makeConstant(ln, dd.tp, Some(dd.path()))//MizarPatternInstance(ln, pat, params)
       case d => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+d.path.module.last+"?"+d.path.name+"(full path "+d.path+"). ", p)
     }
   }
@@ -770,8 +770,7 @@ object clusterTranslator {
     resDecl.map(List(_)).getOrElse(Nil)
   }
   def translate_Identify(_fstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression)(implicit definitionContext: DefinitionContext): List[Declaration] = {
-    incrementIdentifyCount()
-    val num = getIdentifyCount()
+    val num = incrementAndGetIdentifyCount()
     val name = LocalName("identify"+num)
     val (_, _, f, _, fparams) = translate_Referencing_Pattern(_fstPat)
     val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)

@@ -378,7 +378,7 @@ case class RightSideOf_Relation_Formula(objAttr:OrgnlExtObjAttrs, infixedArgs: I
  * @param _thesis
  */
 case class Proposition(pos:Position, _label:Label, _thesis:Claim) extends TypeUnchangingClaim with ProvenFactReference {
-  def referencedLabel() = TranslationController.currentTheoryPath ? LocalName(_label.spelling)
+  def referencedLabel = TranslationController.currentTheoryPath ? LocalName(_label.spelling)
 }
 /**
 whatever still remains to be proven in a proof
@@ -482,13 +482,13 @@ case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications {
 
 sealed trait Reference extends ObjectLevel
 trait ProvenFactReference extends Reference {
-  def referencedLabel(): GlobalName
+  def referencedLabel: GlobalName
 }
 case class Local_Reference(pos:Position, spelling:String, serialnumber:SerialNrIdNr, labelnr:Int) extends ProvenFactReference {
-  def referencedLabel() = TranslationController.currentTheoryPath ? LocalName(spelling)
+  def referencedLabel = TranslationController.currentTheoryPath ? LocalName(spelling)
 }
 case class Definition_Reference(position: Position, nr: Int, spelling:String, number:Int) extends ProvenFactReference {
-  def referencedLabel() = TranslationController.getTheoryPath(spelling) ? LocalName("Def"+number)
+  def referencedLabel = TranslationController.getTheoryPath(spelling) ? LocalName("Def"+number)
 }
 /**
  * I don't really understand the semantics of a link, so far they seem to not have any meaning at all
@@ -497,7 +497,7 @@ case class Definition_Reference(position: Position, nr: Int, spelling:String, nu
  */
 case class Link(pos:Position, labelnr:Int) extends Reference
 case class Theorem_Reference(position: Position, nr: Int, spelling:String, number:Int) extends ProvenFactReference {
-  override def referencedLabel(): GlobalName = {
+  override def referencedLabel: GlobalName = {
     TranslationController.getTheoryPath(spelling) ? LocalName("Theorem-Item"+number)
   }
 }
@@ -566,7 +566,6 @@ case class Selectors(_loci:List[Selector]) extends ObjectLevel
 case class Selector(pos: Position, nr: Int, spelling:String, _loci:Locus) extends ObjectLevel
 case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _forgetfulFuncPat:ForgetfulFunctor_Pattern, _strFuncPat:Strict_Pattern, _selList:Selectors_List) extends ObjectLevel
 case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends ObjectLevel
-case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends ObjectLevel
 
 /**
  * There are two kinds of Properties tags in Mizar esx files (unfortunately of same name):
