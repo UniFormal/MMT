@@ -572,15 +572,16 @@ case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends Objec
  * 1) within Property-Registrations
  * 2) within definitions
  * In the first case the parameters sort (which within the entire MML is always sethood) and _tp are given
- * In the second case exactly property and _cond (a proof of it) are given
+ * In the second case exactly property and _just (a proof of it) are given
  * @param sort
  * @param property
  * @param _cond
  * @param _tp
  */
-case class Properties(sort: Option[String], property:Option[String], _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
-  def matchProperty(_just: Option[Justification] = None ): Option[Utils.MizarProperty] = {
-    property map (Utils.matchProperty(_, _just))
+case class Properties(sort: String, property: String, _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
+  def matchProperty(_just: Option[Justification] = None ): Utils.MizarProperty = (sort, property) match {
+    case (sort, _) if (sort.nonEmpty) => Utils.matchProperty(sort, _just, _tp)
+    case (_, prop) if (prop.nonEmpty) => Utils.matchProperty(prop, _just, _tp)
   }
 }
 case class Redefine(occurs:Boolean)

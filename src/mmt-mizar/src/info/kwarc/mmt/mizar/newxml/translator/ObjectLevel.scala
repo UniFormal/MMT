@@ -10,6 +10,7 @@ import mmtwrapper._
 import MizarPrimitiveConcepts._
 import MizSeq.{Index, OMI}
 import PatternUtils._
+import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalLookup
 import translator.attributeTranslator.translate_Attribute
 import translator.claimTranslator.translate_Claim
 import translator.typeTranslator.translate_Type
@@ -45,7 +46,7 @@ object termTranslator {
       Apply(sel, argument)
     case ct@Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
-      val gn = computeGlobalName(ct)
+      val gn = globalLookup(ct)
       val arguments = translateArguments(_args)
       ApplyGeneral(OMS(gn), arguments)
     case Numeral_Term(nr, _, _) => num(nr)
@@ -57,7 +58,7 @@ object termTranslator {
       referencedSelector.toTerm
     case it@Infix_Term(tpAttrs, infixedArgs) =>
       assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
-      val gn = computeGlobalName(it)
+      val gn = globalLookup(it)
       val args = translateArguments(infixedArgs._args)
       ApplyGeneral(OMS(gn), args)
     case Global_Choice_Term(pos, sort, _tp) =>
@@ -110,7 +111,7 @@ object typeTranslator {
         SimpleTypedAttrAppl(tp, adjectives)
       case st@Standard_Type(_, _args) =>
         // TODO: Check this is the correct semantics and take care of the noocc attribute
-        val gn = computeGlobalName(st)
+        val gn = globalLookup(st)
         val tp : Term = OMS(gn)
         val args = translateArguments(_args)
         ApplyGeneral(tp,args)
@@ -133,9 +134,9 @@ object formulaTranslator {
       val assumptions = translate_Restriction(_restrict)
       translate_Existential_Quantifier_Formula(vars, univ, expr, assumptions)
     case rf@Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
-      val rel = OMS(computeGlobalName(rf))
+      val rel = globalLookup(rf)
       val args = translateArguments(infixedArgs._args)
-      val form = ApplyGeneral(rel, args)
+      val form = ApplyGeneral(OMS(rel), args)
       if (antonymic.isDefined && antonymic.get) not(form) else form
     case Universal_Quantifier_Formula(pos, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
@@ -332,7 +333,7 @@ object claimTranslator {
 object attributeTranslator {
   def translateAttributes(adjective_Cluster: Adjective_Cluster)(implicit defContext: DefinitionContext) = adjective_Cluster._attrs map translate_Attribute
   def translate_Attribute(attr: Attribute)(implicit defContext: DefinitionContext): Term = {
-    val gn = computeGlobalName(attr)
+    val gn = globalLookup(attr)
     val args = translateArguments(attr._args)
     ApplyGeneral(OMS(gn), args)
   }

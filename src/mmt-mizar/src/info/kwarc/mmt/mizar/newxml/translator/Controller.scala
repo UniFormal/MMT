@@ -203,7 +203,10 @@ object TranslationController {
         case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
       //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
-      controller.add(eC)
+      controller.add(eC) /*eC match {
+        case c: Constant => controller.add(c)
+        case dd: DerivedDeclaration => dd.getDeclarationsElaborated foreach (controller.add(_))
+      }*/
     } catch {
       case ae: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")

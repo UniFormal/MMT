@@ -108,8 +108,8 @@ object MizarPatternInstance {
       case (0, _) => zeroAryAndPropCon
       case (_, Some(pf)) => pf
       case (m, _) => uses(And((0 until m).toList map (i => implies(
-        Index(OMV("cases"), OMI(i))(x), And((i until m).toList map(j => implies(
-          Index(OMV("cases")(OMI(j)), x), MizarPrimitiveConcepts.eq(
+        Index(Apply(OMV("cases"), OMI(i)), x), And((i until m).toList map(j => implies(
+          Index(Apply(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.eq(
             Apply(Index(OMV("caseRes"), OMI(i)), x),
             Apply(Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")
@@ -128,7 +128,7 @@ object MizarPatternInstance {
     val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
 
     def argsWellTyped(body: Term) = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
-      proof(is(Index(x, OMI(ind)), Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind))(x)))})), body))
+      proof(is(Index(x, OMI(ind)), Apply(Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), body))
     val consistencyProof = argsWellTyped(Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU)))
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val furtherParameters: List[Term] = ret ++ motherType ++ (caseNum::cases::caseRes::consistencyProof::defRes)
@@ -182,6 +182,20 @@ object MizarPatternInstance {
   def unapply(mizInstance: DerivedDeclaration): Option[(LocalName, String, List[Term])] = mizInstance match {
     case MizInstance(home, name, pattern, args, notC) if pattern.module == MizarPatternsTh =>
       Some(name, pattern.name.toString, args)
+    case _ => None
+  }
+  def mainDeclO(dd: DerivedDeclaration): Option[GlobalName] = dd match {
+    case MizarPatternInstance(ln, pat, _) =>
+      Some(TranslationController.currentTheoryPath ? ln / LocalName(pat match {
+      case s if (s.toLowerCase contains "func") => "func"
+      case s if (s.toLowerCase contains "pred") => "pred"
+      case s if (s.toLowerCase contains "attr") => "attribute"
+      case s if (s.toLowerCase contains "mode") => "mode"
+      case s if (s.toLowerCase contains "schemeDef") => "scheme"
+      case s if (s.toLowerCase contains "notation") => "notation"
+      case s if (s.toLowerCase contains "registration") => "registration"
+      case s if (s.toLowerCase contains "identify") => "registration"
+    }))
     case _ => None
   }
 }

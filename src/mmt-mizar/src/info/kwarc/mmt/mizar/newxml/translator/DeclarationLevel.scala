@@ -50,21 +50,20 @@ object JustifiedCorrectnessConditions {
   }
 }
 
-case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil) {
+case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[MizarProperty] = Nil) {
   // nested proof level, 0 if not within a proof
   private var proofLevel = 0
-  private var localDefinitions: Option[List[(LocalName, Term)]] = None
+  private var localDefinitions: List[List[(LocalName, Term)]] = Nil
   // binding variables (of new binders) within the current proof (and its parents)
   private var localBindingVars: List[Context] = Nil
   def addLocalDefinition(n: LocalName, defn: Term) = {
     assert (withinProof)
     val toAdd = (n, defn)
-    localDefinitions = Some(localDefinitions.getOrElse(Nil):+toAdd)
+    localDefinitions = localDefinitions.head.:+(toAdd) :: localDefinitions.tail
   }
   def lookupLocalDefinitionWithinSameProof(n: LocalName): Option[Term] = {
-    if (withinProof) localDefinitions.flatMap(_.find(_._1 == n)).map(_._2) else None
+    if (withinProof) localDefinitions.flatMap(_.find(_._1 == n)).headOption.map(_._2) else None
   }
-
   /**
    * A a binding variable with scope the current proof
    * @param vd
@@ -88,25 +87,21 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   def addAssumption(assumption: Term): Unit = { this.assumptions :+= assumption }
   def addUsedFacts(usedFacts: List[(Term, Option[Term])]): Unit = { this.usedFacts ++= usedFacts }
   def addUsedFact(usedFact: (Term, Option[Term])): Unit = { this.usedFacts :+= usedFact }
-  def enterProof = { proofLevel += 1; localBindingVars ::= Nil }
-  def exitProof = { proofLevel -= 1;  localBindingVars = localBindingVars.tail }
+  def enterProof = {
+    proofLevel += 1
+    localBindingVars ::= Nil
+    localDefinitions ::= Nil
+  }
+  def exitProof = {
+    proofLevel -= 1
+    localBindingVars = localBindingVars.tail
+    localDefinitions = localDefinitions.tail
+  }
   def withinProof = proofLevel > 0
   private def notWithinProofError = new TranslatingError("Trying to access thesis (seemingly) outside of a proof. ")
 }
 object DefinitionContext {
   def empty() = DefinitionContext()
-}
-
-case class JustifiedProperty(conds: List[MizarProperty], prop: MizarProperty, tp: Option[Term], decl: Option[Declaration])
-object JustifiedProperty {
-  def apply(property: Property, decls: List[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property, decls.headOption)
-  def apply(property: Property, decl: Option[Declaration])(implicit definitionContext: DefinitionContext) : JustifiedProperty = apply(property._props, decl, property._just)
-  def apply(properties: Properties, decl: Option[Declaration], justO: Option[Justification] = None)(implicit definitionContext: DefinitionContext) : JustifiedProperty = {
-    val prop = properties.matchProperty(justO)
-    val conds = properties._cond.flatMap(_.matchProperty())
-    val tp = properties._tp map translate_Type
-    JustifiedProperty(conds, prop.get, tp, decl)
-  }
 }
 
 sealed abstract class CaseByCaseDefinien {
@@ -213,7 +208,7 @@ object patternTranslator {
   def makeNotationCont(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false) = {
     makeNotCont(PrePostFixMarkers(del, infixArgNum, suffixArgNum, rightArgsBracketed))
   }
-  def globalLookup(pat: GloballyReferencingObjAttrs) = {
+  def globalLookup(pat: GloballyReferencingObjAttrs, notMainExtDecl: Boolean = true): GlobalName = {
     val referencedGn = computeGlobalName(pat, true)
     val gn = if (referencedGn.toString contains "hidden") {
       resolveHiddenReferences(referencedGn) match {
@@ -238,12 +233,12 @@ object patternTranslator {
       mod.get(ln)
     }
     decl match {
-      case c: Constant => c
-      case mpi @ MizarPatternInstance(_, _, _) => mpi
+      case c: Constant => c.path
+      case mpi @ MizarPatternInstance(_, _, _) => if (notMainExtDecl) mpi.path else MizarPatternInstance.mainDeclO(mpi).getOrElse(mpi.path)
     }
   }
   def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false) : (LocalName, GlobalName, NotationContainer) = {
-    val gn = if (orgVersion) globalLookup(pattern).path else computeGlobalName(pattern)
+    val gn = if (orgVersion) globalLookup(pattern) else computeGlobalName(pattern)
     val name = gn.name
 
     val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
@@ -303,13 +298,18 @@ object patternTranslator {
 }
 
 object propertyTranslator {
-  def translate_JustifiedProperty(justProp: JustifiedProperty)(implicit definitionContext: DefinitionContext): Declaration = justProp match {
-    case JustifiedProperty(conds, Sethood(_just), Some(tp), _) =>
-      val claim = Apply(constant("sethood"), tp)
+  def translate_JustifiedProperty(justProp: MizarProperty, definitionRef: Option[GlobalName])(implicit definitionContext: DefinitionContext): Declaration = (justProp, definitionRef) match {
+    case (Sethood(_just, Some(_tp)), None) =>
+      val tp = translate_Type(_tp)
+      val claim = constant("sethood")(tp)
       val just = _just map (translate_Justification(_, claim)) getOrElse None
       val name = LocalName("sethood_of_"+tp.toStr(true))
       makeConstantInContext(name, Some(Univ(1)), just)
-    case _ => ???
+    case (p: MizarProperty, Some(defRef)) =>
+      val claim =constant(p.property)(defRef())
+      val just = p.just map (translate_Justification(_, claim)) getOrElse None
+      val name = LocalName(p.property+"_of_"+defRef.name.toString)
+      makeConstantInContext(name, Some(Univ(1)), just)
   }
 }
 
@@ -338,10 +338,6 @@ object subitemTranslator {
       val (p, prf) = translate_Proved_Claim(provenSentence)(defContext)
       TranslationController.articleStatistics.incrementStatisticsCounter("scheme")
       List(SchemeDefinitionInstance(gn.name, defContext.args map (_.tp.get), ass, p, prf))
-  }
-  def translate_Property(property: Property, decl: Option[Definition])(implicit defContext: DefinitionContext) : List[Declaration] = {
-    val justProp = JustifiedProperty(property._props, decl.map( d=> translate_Definition(d).head), property._just)
-    List(translate_JustifiedProperty(justProp))
   }
 }
 
@@ -410,17 +406,20 @@ object statementTranslator {
 object definitionTranslator {
   def translate_Definition(defn:Definition)(implicit defContext: => DefinitionContext) : List[Declaration] = {
     val translatedDecls: List[Declaration] = defn match {
-      case d: Private_Functor_Definition  => translate_Private_Functor_Definition(d)(defContext)
-      case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)(defContext)
-      case rld: RedefinableLabeledDefinition => translate_Redefinable_Labelled_Definition(rld)(defContext)
-      case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
-      case md: Mode_Definition => translate_Mode_Definition(md)(defContext)
       case d: Structure_Definition => translate_Structure_Definition(d)(defContext)
+      case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
+      case otherwise => List(otherwise match {
+          case d: Private_Functor_Definition => translate_Private_Functor_Definition(d)(defContext)
+          case d: Private_Predicate_Definition => translate_Private_Predicate_Definition(d)(defContext)
+          case rld: RedefinableLabeledDefinition => translate_Redefinable_Labelled_Definition(rld)(defContext)
+          case md: Mode_Definition => translate_Mode_Definition(md)(defContext)
+        })
     }
-    val justProps = defContext.props.filter(_._props.property.isDefined).map(p => JustifiedProperty(p, translatedDecls)(defContext))
-    translatedDecls ++ justProps.map(translate_JustifiedProperty(_)(defContext))
+    val declRef = Some(translatedDecls.head.path)
+    lazy val justProps = defContext.props.map(translate_JustifiedProperty(_, declRef)(defContext))
+    translatedDecls ++ (if (defContext.withinProof) justProps else Nil)
   }
-  def translate_Redefinable_Labelled_Definition(redefinableLabeledDefinition: RedefinableLabeledDefinition)(implicit defContext: DefinitionContext): List[Declaration] = {
+  def translate_Redefinable_Labelled_Definition(redefinableLabeledDefinition: RedefinableLabeledDefinition)(implicit defContext: DefinitionContext): Declaration = {
     redefinableLabeledDefinition.check
     val (pat, _defn, label) = (redefinableLabeledDefinition._pat, redefinableLabeledDefinition._def, redefinableLabeledDefinition.mmlIdO)
     val (ln, gn, notC) = translate_Pattern(pat)
@@ -436,11 +435,12 @@ object definitionTranslator {
             specType orElse { defn.map(d => inferType(d.someCase)) }
           case _ => None
         }
-        List(translate_Redefine(pat, ln, ret)(notC))
+        translate_Redefine(pat, ln, ret)(notC)
       } else {
         throw ImplementationError("This should never occur. ")
       }
     } else {
+      lazy val consistencyOf = defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap(_.just)
       val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
       val resDef = redefinableLabeledDefinition match {
         case ad : Attribute_Definition =>
@@ -448,16 +448,16 @@ object definitionTranslator {
           TranslationController.articleStatistics.incrementStatisticsCounter("attr")
           defn.get match {
             case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "attr")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "attr")
               DirectPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistency)
             case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "attr")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "attr")
               IndirectPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistency)
             case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "attr")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "attr")
               DirectCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, consistency)
             case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "attr")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "attr")
               IndirectCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, consistency)
           }
         case Functor_Definition(mmlIdO, _redef, _pat, _tpSpec, _def) =>
@@ -466,31 +466,31 @@ object definitionTranslator {
           TranslationController.articleStatistics.incrementStatisticsCounter("funct")
           defn.get match {
             case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "func")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "func")
               DirectPartialFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistency)
             case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "func")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "func")
               IndirectPartialFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistency)
             case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "func")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "func")
               DirectCompleteFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, consistency)
             case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "func")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "func")
               IndirectCompleteFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, consistency)
           }
         case prd: Predicate_Definition =>
           TranslationController.articleStatistics.incrementStatisticsCounter("pred")
           defn.get match {
             case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "pred")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "pred")
               DirectPartialPredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, defRes, consistency)
             case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "pred")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "pred")
               DirectCompletePredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, consistency)
             case _ => throw DeclarationTranslationError("Predicate definition can't be indirect. ", prd)
           }
       }
-      List(resDef)
+      resDef
     }
   }
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit defContext: DefinitionContext): List[Declaration] = {
@@ -538,7 +538,7 @@ object definitionTranslator {
     mode_Definition._expMode match {
       case Expandable_Mode(_tp) =>
         val tp = translate_Type(_tp)
-        List(makeConstantInContext(declarationPath.name, Some(tp), Some(tp)))
+        makeConstantInContext(declarationPath.name, Some(tp), Some(tp))
       case stm @ Standard_Mode(_tpSpec, _def) =>
         val name = declarationPath.name
         val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
@@ -546,66 +546,74 @@ object definitionTranslator {
 
         if (defnO.isEmpty) {
           if (_tpSpec.isDefined) {
-            List(makeConstant(declarationPath.name, translate_Type(_tpSpec.get._types)))
+            makeConstant(declarationPath.name, translate_Type(_tpSpec.get._types))
           } else {
             //Only here we may have content that doesn't typecheck
             assert(hiddenArts contains declarationPath.module)
-            Nil
+            ???
           }
         } else {
           val defn = defnO.get
           TranslationController.articleStatistics.incrementStatisticsCounter("mode")
-          val consistency = defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap(_.just)
-          val modeDef = defn match {
+          val consistencyOf = defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap(_.just)
+          defn match {
             case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "mode")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "mode")
               DirectPartialModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes, consistency)
             case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "mode")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "mode")
               IndirectPartialModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes, consistency)
             case DirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, true, "mode")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, true, "mode")
               DirectCompleteModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, consistency)
             case IndirectCompleteCaseByCaseDefinien(cases, caseRes, completenessProof) =>
-              val consistency = translate_consistency(defContext.corr_conds.find(_.correctness_Condition == syntax.consistency()) flatMap (_.just), argTps, cases, caseRes, false, "mode")
+              val consistency = translate_consistency(consistencyOf, argTps, cases, caseRes, false, "mode")
               IndirectCompleteModeDefinition(name, argNum, argTps, defn.caseNum, cases, caseRes, consistency)
           }
-          List(modeDef)
         }
     }
   }
-  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext) = {
+
+  /**
+   * translates a private functor definition
+   * @param private_Functor_Definition the private functor definition to translate
+   * @param defContext the definition context
+   * @effect if within a proof add the translated functor definition to the lists of local definitions
+   * @return the translated functor definition
+   */
+  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration = {
     val v = translate_Variable(private_Functor_Definition._var)(defContext)
     val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.locVarAttr.serialNrIdNr.idnr)
     val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
     val tp = PiOrEmpty(args, any)
     val dfBody = translate_Term(private_Functor_Definition._tm)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
-    val res = makeConstantInContext(gn.name, Some(tp), Some(df))
-    if (! defContext.withinProof) List(res) else {
-      defContext.addLocalDefinition(gn.name, df)
-      Nil
-    }
+    if (defContext.withinProof) defContext.addLocalDefinition(gn.name, df)
+    makeConstantInContext(gn.name, Some(tp), Some(df))
   }
-  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext) = {
+  /**
+   * translates a private predicate definition
+   * @param private_Predicate_Definition the private predicate definition to translate
+   * @param defContext the definition context
+   * @effect if within a proof add the translated predicate definition to the lists of local definitions
+   * @return the translated predicate definition
+   */
+  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration = {
     val v = translate_Variable(private_Predicate_Definition._var)(defContext)
     val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.locVarAttr.serialNrIdNr.idnr)
     val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map({case (tp, i) => OMV("placeholder_"+i.toString) % tp})
     val tp = PiOrEmpty(args, prop)
     val dfBody = translate_Formula(private_Predicate_Definition._form)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
-    val res = makeConstantInContext(gn.name, Some(tp), Some(df))
-    if (! defContext.withinProof) List(res) else {
-      defContext.addLocalDefinition(gn.name, df)
-      Nil
-    }
+    if (defContext.withinProof) defContext.addLocalDefinition(gn.name, df)
+    makeConstantInContext(gn.name, Some(tp), Some(df))
   }
   def translate_Redefine(p: RedefinablePatterns, ln: LocalName, ret: Option[Term])(implicit notC: NotationContainer) = {
-    globalLookup(p) match {
+    TranslationController.controller.get(globalLookup(p, true)) match {
       case c: Constant => makeConstant(ln, Some(ret getOrElse c.tp.get), c.df)
       case dd@MizarPatternInstance(_, pat, params) => makeConstant(ln, dd.tp, Some(dd.path()))//MizarPatternInstance(ln, pat, params)
       case dd@MizarPatternInstance(_, pat, params) => makeConstant(ln, dd.tp, Some(dd.path()))//MizarPatternInstance(ln, pat, params)
-      case d => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+d.path.module.last+"?"+d.path.name+"(full path "+d.path+"). ", p)
+      case d: Declaration => throw PatternTranslationError("Failure to look up the referenced definition to redefine at "+d.path.module.last+"?"+d.path.name+"(full path "+d.path+"). ", p)
     }
   }
 }
@@ -638,9 +646,7 @@ object clusterTranslator {
         } else {
           UnqualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs)
         })
-      case Property_Registration(_props, _just) => _props.property map {_ =>
-        translate_JustifiedProperty(JustifiedProperty(_props, None, Some(_just)))
-      }
+      case Property_Registration(_props, _just) => Some(translate_JustifiedProperty(_props.matchProperty(Some(_just)), None)(definitionContext))
     }
     resDecl.map(List(_)).getOrElse(Nil)
   }
@@ -683,11 +689,11 @@ object blockTranslator {
         //We put the guard, since the type pattern is eliminated by the compiler, it is for better error messages only, as we shouldn't ever encounter any other subitems (not to be ignored) at this point
         case defn : mainSort if (defn.isInstanceOf[BlockSubitem]) =>
           implicit var corr_conds: List[JustifiedCorrectnessConditions] = Nil
-          implicit var props: List[Property] = Nil
+          implicit var props: List[MizarProperty] = Nil
           items.drop(ind).foreach(_._subitem match {
             case Correctness_Condition(_cor, _justO) => corr_conds ++:= JustifiedCorrectnessConditions.translate(List(_cor), _justO).reverse
             case Correctness(_cor, _just) => corr_conds ++:= JustifiedCorrectnessConditions.translate(_cor._cond, Some(_just)).reverse
-            case prop: Property => props ::= prop
+            case prop: Property => props ::= prop.matchProperty()
             case _ =>
           })
           corr_conds = corr_conds.reverse

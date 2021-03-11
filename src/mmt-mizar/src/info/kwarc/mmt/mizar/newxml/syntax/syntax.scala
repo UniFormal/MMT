@@ -351,28 +351,69 @@ object Utils {
    * Internal representation of Properties class
    * @param _just (optional) the proof of the property
    */
-  sealed abstract class MizarProperty(_just:Option[Justification])
-  //for functors
-  // for binary operators
-  case class Commutativity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  //for binary operators
-  case class Idempotence(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  // for unary operators
-  case class Involutiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  // being a projection operators, for unary operators
-  case class Projectivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
+  sealed abstract class MizarProperty(_property: String, _just:Option[Justification]) {
+    def property = _property
+    def just = _just
+  }
+  /**
+   * Commutativity of binary functors f, i.e. it means:
+   * for [x, y] f(x, y) = f(y, x)
+   * @param _just (optional) the proof of the property
+   */
+  case class Commutativity(_just:Option[Justification]) extends MizarProperty("commutativity", _just:Option[Justification])
+  /**
+   * Idempotence of binary functors f, i.e. it means:
+   * for [x] f(x, x) = x
+   * @param _just (optional) the proof of the property
+   */
+  case class Idempotence(_just:Option[Justification]) extends MizarProperty("idempotence", _just:Option[Justification])
+  /**
+   * Involutiveness of binary functors f, i.e. it means:
+   * for [x] f(f(x)) = x
+   * @param _just (optional) the proof of the property
+   */
+  case class Involutiveness(_just:Option[Justification]) extends MizarProperty("involutiveness", _just:Option[Justification])
+  /**
+   * Projectivity of binary functors f, i.e. it means:
+   * for [x] f(f(x)) = f(x)
+   * @param _just (optional) the proof of the property
+   */
+  case class Projectivity(_just:Option[Justification]) extends MizarProperty("projectivity", _just:Option[Justification])
 
-  //for predicates
-  case class Reflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class Irreflexivity(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class Symmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class Assymmetry(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  case class Connectiveness(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-
+  /**
+   * Reflexivity of binary predicates (relations) R, i.e. it means:
+   * for [x] x R x
+   * @param _just (optional) the proof of the property
+   */
+  case class Reflexivity(_just:Option[Justification]) extends MizarProperty("reflexivity", _just:Option[Justification])
+  /**
+   * Irreflexivity of binary predicates (relations) R, i.e. it means:
+   * for [x] not x R x
+   * @param _just (optional) the proof of the property
+   */
+  case class Irreflexivity(_just:Option[Justification]) extends MizarProperty("irreflexivity", _just:Option[Justification])
+  /**
+   * Symmetry of binary predicates (relations) R, i.e. it means:
+   * for [x, y] x R y => y R x
+   * @param _just (optional) the proof of the property
+   */
+  case class Symmetry(_just:Option[Justification]) extends MizarProperty("symmetry", _just:Option[Justification])
+  /**
+   * Assymmetry of binary predicates (relations) R, i.e. it means:
+   * for [x, y] x R y => not y R x
+   * @param _just (optional) the proof of the property
+   */
+  case class Assymmetry(_just:Option[Justification]) extends MizarProperty("assymmetry", _just:Option[Justification])
+  /**
+   * For binary predicates (relations) R, its meaning is:
+   * for [x, y] x R y or y R x
+   * @param _just (optional) the proof of the property
+   */
+  case class Connectedness(_just:Option[Justification]) extends MizarProperty("connectedness", _just:Option[Justification])
   //for modes and existential_registrations
   //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
-  case class Sethood(_just:Option[Justification]) extends MizarProperty(_just:Option[Justification])
-  def matchProperty(prop: String, _just:Option[Justification]) = prop match {
+  case class Sethood(_just:Option[Justification], _tp: Option[Type]) extends MizarProperty("sethood", _just:Option[Justification])
+  def matchProperty(prop: String, _just:Option[Justification], _tp:Option[Type] = None) = prop match {
     case "commutativity" => Commutativity(_just)
     case "idempotence" => Idempotence(_just)
     case "involutiveness" => Involutiveness(_just)
@@ -380,9 +421,9 @@ object Utils {
     case "reflexivity" => Reflexivity(_just)
     case "irreflexivity" => Irreflexivity(_just)
     case "symmetry" => Symmetry(_just)
-    case "assymmetry" => Assymmetry(_just)
-    case "connectiveness" => Connectiveness(_just)
-    case "sethood" => Sethood(_just)
+    case "asymmetry" => Assymmetry(_just)
+    case "connectedness" => Connectedness(_just)
+    case "sethood" => Sethood(_just, _tp)
   }
   sealed abstract class DeclarationKinds extends PatternKinds
   case class ModeKind() extends DeclarationKinds

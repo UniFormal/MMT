@@ -260,7 +260,7 @@ case class consistency() extends CorrectnessConditions
 case class correctness() extends CorrectnessConditions*/
 //telling Mizar to remember these properties for proofs later
 case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
-  def matchProperty() : Option[MizarProperty] = _props.matchProperty(_just)
+  def matchProperty() : MizarProperty = _props.matchProperty(_just)
 }
 /**
  * Corresponds to a case distinction in a proof

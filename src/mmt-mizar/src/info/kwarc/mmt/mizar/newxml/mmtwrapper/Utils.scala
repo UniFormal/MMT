@@ -40,6 +40,15 @@ object MizarPrimitiveConcepts {
       case "any" => TermsTh ? "term"
       case "set" => HiddenTh ? name
       case "sethood" => HiddenTh ? "sethood_property"
+      case "commutativity" => HiddenTh ? "commutativity_property"
+      case "idempotence" => HiddenTh ? "idempotence_property"
+      case "projectivity" => HiddenTh ? "projectivity_property"
+      case "involutiveness" => HiddenTh ? "involutiveness_property"
+      case "symmetry" => HiddenTh ? "symmetry_property"
+      case "assymmetry" => HiddenTh ? "assymmetry_property"
+      case "connectedness" => HiddenTh ? "connectedness_property"
+      case "reflexivity" => HiddenTh ? "reflexivity_property"
+      case "irreflexivity" => HiddenTh ? "irreflexivity_property"
       case "in" => HiddenTh ? "in"
       case "prop"=> PropositionsTh ? name
       case "mode" => TypesTh ? "tp"
