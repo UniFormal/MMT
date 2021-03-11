@@ -114,6 +114,7 @@ object MizarPrimitiveConcepts {
   object eq extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
   def neqCon = constantName("neq")
   object neq extends BinaryLFConstantScala(neqCon.module, neqCon.name.toString)
+  def thesis = constantName("thesis")
 
   class Quantifier(n: String) {
     def apply(v : OMV, univ : Term, p : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, p))

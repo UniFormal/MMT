@@ -288,7 +288,7 @@ object claimTranslator {
   def translate_Type_Unchanging_Claim(claim: TypeUnchangingClaim)(implicit defContext: DefinitionContext): Term = claim match {
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
-    case Thesis(_) => defContext.getThesisAsTerm
+    case Thesis(_) => thesis()
     case Diffuse_Statement(_label) => throw ImplementationError("This should never be called.")
     case Conditions(_props) => And(_props map translate_Claim)
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>

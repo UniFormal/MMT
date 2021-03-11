@@ -50,106 +50,12 @@ object JustifiedCorrectnessConditions {
   }
 }
 
-private[translator] class ThesisTerm(tm: Term) {
-  private def matchTerm(tm: Term): (List[VarDecl], List[Term], List[VarDecl], List[VarDecl], List[Term]) = tm match {
-    case PiOrEmpty(ctx, tm) =>
-      val args = ctx map (vd => vd.copy(tp = vd.tp))
-    def matchConds(tm: Term): (List[Term], Term) = tm match {
-      case implies(cond, rest) =>
-        val (conds, body) = matchConds(rest)
-        (cond::conds, body)
-      case iff(a, b) => matchConds(And(List(implies(a, b), implies(b, a))))
-      case _ => (Nil, tm)
-    }
-      val (conds, actualClaim) = matchConds(tm)
-    def existentialQuantifier(tm: Term): (Context, Term) = tm match {
-        case exists(vname, vtype, body) =>
-          val (ctx, tm) = existentialQuantifier(body)
-          (vname % TranslationController.simplifyTerm(vtype) :: ctx, tm)
-        case _ => (Context.empty, tm)
-      }
-      val (existQuants, body) = existentialQuantifier(actualClaim)
-
-      def univQuantifier(tm: Term): (Context, Term) = tm match {
-        case forall(vname, vtype, body) =>
-          val (ctx, tm) = univQuantifier(body)
-          (vname % TranslationController.simplifyTerm(vtype) :: ctx, tm)
-        case _ => (Context.empty, tm)
-      }
-      val (univQuants, conjunction) = univQuantifier(body)
-      val conjuncts = conjunction match  {
-        case And(conjuncts) => conjuncts// map TranslationController.simplifyTerm
-        case tm => List(tm)//TranslationController.simplifyTerm(tm))
-      }
-      (args, conds, existQuants, univQuants, conjuncts)
-    case _ => throw ImplementationError("This can't ever happen.")
-  }
-  private var args: List[VarDecl] = matchTerm(tm)._1
-  private var conditions: List[Term] = matchTerm(tm)._2
-  private var existQuants: Context = matchTerm(tm)._3
-  private var univQuants: Context = matchTerm(tm)._4
-  private var conjuncts: List[Term] = matchTerm(tm)._5
-  def getConjuncts: List[Term] = conjuncts
-  def getDisjuncts: List[Term] = conjuncts.headOption match {
-    case Some(Or(disjs)) => disjs
-    case Some(other) => List(other)
-    case None => List(trueCon)
-  }
-  private def killOne(cond: VarDecl, ctx: => List[VarDecl]): Unit = cond match {
-    case VarDecl(OMV.anonymous, _, tp, _, _) => ctx.filterNot {
-      case VarDecl(_, _, vtp, _, _) => vtp.get == TranslationController.simplifyTerm(tp.get)
-    }
-    case VarDecl(name, _, tp, _, _) => ctx filterNot {
-      case VarDecl(vname, _, vtp, _, _) => if (name == vname) true else if (vname != OMV.anonymous) false else vtp.get == TranslationController.simplifyTerm(tp.get)
-    }
-  }
-  def killArg(arg: VarDecl) = killOne(arg, args)
-  def killExistVar(v: VarDecl) = killOne(v, existQuants)
-  def killUnivVar(v: VarDecl) = killOne(v, univQuants)
-  def nextExistVar(vO: Option[OMV] = None): Option[VarDecl] = vO flatMap(v => existQuants find(_.name == v.name)) orElse(existQuants.variables.headOption orElse({
-    conjuncts.headOption match {
-      case Some(hd) => val subThesis = new ThesisTerm(hd)
-        if (subThesis.conjuncts.head == conjuncts.head) None else subThesis.nextExistVar(vO)
-      case None => None
-    }
-  }))
-  def nextUnivVar(vO: Option[OMV] = None): VarDecl = vO flatMap (v => univQuants.find (_.name == v.name)) getOrElse univQuants.variables.head
-  def killConjunct(tm: Term) = conjuncts match {
-    case Nil => Nil
-    case hd::tl => if (tm == hd) conjuncts = conjuncts.drop(1)
-  }
-  def killDisjunct(tm: Term) = {
-    val disjuncts = getDisjuncts
-    assert(tm == disjuncts.head)
-    conjuncts = conjuncts match {
-      case hd::tl => Or(disjuncts.tail)::conjuncts.tail
-      case Nil => List(trueCon)
-    }
-  }
-  def killCond(tm: Term) = conditions match {
-    case Nil =>
-    case hd::tl =>
-      if (tm == conditions.head) conditions = conditions.drop(1)
-  }
-  def doneProving(): Boolean = (conditions ++ existQuants ++ univQuants).isEmpty && conjuncts == Nil
-  def toTerm(implicit defContext: DefinitionContext): Term = {
-    val allConjunctions = And(conjuncts)
-    val univQuantified = translate_Universal_Quantifier_Formula(univQuants, allConjunctions, None)(defContext)
-    val existQuantified = translate_Existential_Quantifier_Formula(existQuants, univQuantified, None)(defContext)
-    val furtherArgs = defContext.args.filter(existQuantified.freeVars contains _)
-    PiOrEmpty(furtherArgs, conditions.foldRight(existQuantified)(implies(_, _)))
-  }
-  def subobjects: List[(Context, Obj)] = (conditions ++ existQuants ++ univQuants).flatMap(_.subobjects) ++ conjuncts.flatMap(_.subobjects)
-}
-private[translator] object ThesisTerm {
-  def trivial() : ThesisTerm = {
-    var ths = new ThesisTerm(trueCon)
-    ths.conjuncts = Nil
-    ths
-  }
-}
-case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil, private var thesis: List[ThesisTerm] = Nil) {
+case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Option[Term])] = Nil, corr_conds: List[JustifiedCorrectnessConditions] = Nil, props: List[Property] = Nil) {
+  // nested proof level, 0 if not within a proof
+  private var proofLevel = 0
   private var localDefinitions: Option[List[(LocalName, Term)]] = None
+  // binding variables (of new binders) within the current proof (and its parents)
+  private var localBindingVars: List[Context] = Nil
   def addLocalDefinition(n: LocalName, defn: Term) = {
     assert (withinProof)
     val toAdd = (n, defn)
@@ -158,7 +64,14 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   def lookupLocalDefinitionWithinSameProof(n: LocalName): Option[Term] = {
     if (withinProof) localDefinitions.flatMap(_.find(_._1 == n)).map(_._2) else None
   }
-  def addArguments(arguments: Context): Unit = { this.args ++= arguments }
+
+  /**
+   * A a binding variable with scope the current proof
+   * @param vd
+   */
+  def addLocalBindingVar(vd: VarDecl): Unit = { if (withinProof) localBindingVars = localBindingVars.head ++ vd  :: localBindingVars.tail }
+  def getLocalBindingVars: Context = localBindingVars flatMap(_.variables)
+  def addArguments(arguments: Context): Unit = { args ++= arguments }
   /**
    * Replaces the argument of same name by this one
    * This is used for changing the argument type when translating type changing statements
@@ -175,48 +88,10 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   def addAssumption(assumption: Term): Unit = { this.assumptions :+= assumption }
   def addUsedFacts(usedFacts: List[(Term, Option[Term])]): Unit = { this.usedFacts ++= usedFacts }
   def addUsedFact(usedFact: (Term, Option[Term])): Unit = { this.usedFacts :+= usedFact }
+  def enterProof = { proofLevel += 1; localBindingVars ::= Nil }
+  def exitProof = { proofLevel -= 1;  localBindingVars = localBindingVars.tail }
+  def withinProof = proofLevel > 0
   private def notWithinProofError = new TranslatingError("Trying to access thesis (seemingly) outside of a proof. ")
-  def killArg(arg: VarDecl): Unit = thesis.headOption foreach (_.killArg(arg))
-  def killArguments(ctx: Context): Unit = ctx foreach (killArg(_))
-  def killConjunct(conjunct: Term): Unit = thesis.headOption foreach (_.killConjunct(conjunct))
-  def getConjuncts: List[Term] = thesis.headOption map (_.getConjuncts) getOrElse (throw notWithinProofError)
-  def killDisjunct(disjunct: Term): Unit = thesis.headOption foreach (_.killDisjunct(disjunct))
-  def getDisjuncts: List[Term] = thesis.headOption map (_.getDisjuncts) getOrElse (throw notWithinProofError)
-  def killAssumption(assumption: Term): Unit = thesis.headOption foreach (_.killCond(assumption))
-  def killExistQuant(existQuant: VarDecl): Unit = thesis.headOption foreach (_.killExistVar(existQuant))
-  def popExistQuant(v: Option[OMV] = None): Option[VarDecl] = thesis match {
-    case thesisTm::_ =>
-    val existQuant = thesis.find(_.nextExistVar(v).isDefined).flatMap(_.nextExistVar(v))
-      existQuant foreach killExistQuant
-    existQuant
-    case Nil => throw notWithinProofError
-  }
-  def killUnivQuant(univQuant: VarDecl): Unit = thesis.headOption foreach (_.killUnivVar(univQuant))
-  def popUnivQuant(v: Option[OMV] = None): VarDecl = thesis match {
-    case thesisTm::_ =>
-      val univQuant = thesisTm.nextUnivVar(v)
-      killUnivQuant(univQuant)
-      univQuant
-    case Nil => throw notWithinProofError
-  }
-  private[translator] def pushThesis(claim: Term): Unit = {
-    thesis ::= new ThesisTerm(claim)
-  }
-  private[translator] def pushThesis(claim: ThesisTerm): Unit = {
-    thesis ::= claim
-  }
-  def getThesisAsTerm: Term = thesis match {
-    case Nil => throw notWithinProofError
-    case thesisTerm::_ => thesisTerm.toTerm(this)
-  }
-  def popThesis: ThesisTerm = thesis match {
-    case hd::tl =>
-      thesis = tl
-      hd
-    case Nil => throw notWithinProofError
-  }
-  def withinProof: Boolean = ! thesis.isEmpty
-  def trivialThesis = thesis.map(_.doneProving()).headOption getOrElse false
 }
 object DefinitionContext {
   def empty() = DefinitionContext()

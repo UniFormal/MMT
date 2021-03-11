@@ -235,13 +235,19 @@ object TranslationController {
   def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext = DefinitionContext.empty()): Constant =
     makeConstantInContext(n, tO, dO, defContext.args)
 
-  def simplifyTerm(tm:objects.Term): objects.Term = {
+  def simplifyTerm(tm:Term): Term = {
     val su = SimplificationUnit(Context.empty,true,false)
     val rules = RuleSet.collectRules(controller, su.context)
     controller.simplifier.objectLevel(tm,su, rules)
   }
 
-  def inferType(tm:objects.Term, ctx: Context = Context.empty): objects.Term = {
-    checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
+  def inferType(tm:Term, ctx: Context = Context.empty): Term = {
+    try {
+      checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
+    } catch {
+      case e: LookupError =>
+        println("Variable not declared in context. ")
+        throw e
+    }
   }
 }
