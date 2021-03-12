@@ -51,6 +51,12 @@ case class Section_Pragma() extends TopLevel
 case class Pragma(_notionName: Option[Pragmas]) extends TopLevel
 case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
 
+/**
+ * State that if the _lociEqns are satesfied, then the pattern_shaped_expressions should be identified as equal
+ * @param _firstPat
+ * @param _sndPat
+ * @param _lociEqns
+ */
 case class Identify(_firstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression, _lociEqns:Loci_Equalities) extends RegistrationSubitems
 
 /**

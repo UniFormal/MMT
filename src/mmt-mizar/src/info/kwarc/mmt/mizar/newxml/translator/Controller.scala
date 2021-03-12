@@ -44,6 +44,7 @@ object TranslationController {
   var currentThy : Theory = null
   var currentOutputBase : DPath = null
 
+
   private var unresolvedDependencies : List[MPath] = Nil
   def addUnresolvedDependency(dep: MPath) = if (unresolvedDependencies.contains(dep)) {} else {unresolvedDependencies +:= dep}
   def getUnresolvedDependencies() = unresolvedDependencies
@@ -172,10 +173,10 @@ object TranslationController {
   private def withoutNotationProper = withoutNotation - articleStatistics.numRegistrs - articleStatistics.totalNumTheorems
   def notationStatistics = "We translated "+withNotation.toString+" declarations with notation and "+withoutNotation.toString+" declarations without, "+withoutNotationProper.toString+" of which aren't theorems and registrations (which are expected to have no notation)."
 
-  def add(e : Declaration) : Unit = {
+  def add(e : Declaration with HasType with HasDefiniens with HasNotation) : Unit = {
     try {
       var complificationSucessful = false
-      val info = e.toString+"\nwith notations: "+(e match {case d: HasNotation => d.notC.getNotations(dim = Some(1)).map(f => f.toText) case _ => ""})
+      val info = e.toString+"\nwith notations: "+(e.notC.getNotations(dim = Some(1)).map(f => f.toText))
 
       val eC: Declaration = try {
         val s = controller.presenter.asString(e)
@@ -184,14 +185,11 @@ object TranslationController {
         if (s contains (PatternUtils.argsVarName+"/r")) {
           println("Trying to add unwellformed declaration "+s)
         }
-        e match {
-          case d: HasNotation with HasType =>
-            if (! d.notC.isDefined) {
-              //println("Trying to add declaration without notation "+s)
-              withoutNotation += 1
-            } else {
-              withNotation += 1
-            }
+        if (! e.notC.isDefined) {
+          //println("Trying to add declaration without notation "+s)
+          withoutNotation += 1
+        } else {
+          withNotation += 1
         }
         res
       } catch {

@@ -2,7 +2,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
-import symbols.{Constant, Declaration, DerivedDeclaration}
+import symbols.{Constant, Declaration, DerivedDeclaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
 
@@ -21,7 +21,7 @@ object itemTranslator {
     item.checkKind()
     implicit val defCtx = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
-    def add(d: Declaration): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
+    def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
     item._subitem match {
       case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add

@@ -133,7 +133,7 @@ trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
 
   def globalConstrName : GlobalName = absoluteName(globalDefAttrs.absoluteconstrMMLId)
-  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = c.module ? LocalName(p.name.toString + c.name.toString)
+  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = p.module ? LocalName(p.name.toString + c.name.toString)
   def globalPatConstrName: GlobalName = absolutePatConstrName(globalPatternName, globalConstrName)
 }
 case class GlobalDefAttrs(absolutepatternMMLId: String, absoluteconstrMMLId: String) extends Group
