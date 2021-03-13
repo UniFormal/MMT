@@ -7,7 +7,7 @@ mkdir -p /content/MathHub
 # if the $MMT_ARCHIVES variable is set, install all the archives
 if [ ! -z "$MMT_ARCHIVES" ]; then
     echo "Installing MMT Archives: $MMT_ARCHIVES"
-    mmt --file /install.msl "lmh install $MMT_ARCHIVES"
+    mmt "$@" --file /install.msl "lmh install $MMT_ARCHIVES ; exit"
     echo "Done. "
 fi
 

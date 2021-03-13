@@ -11,10 +11,12 @@ import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import foundations._
+import info.kwarc.mmt.api.checking.CheckingEnvironment
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs}
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.{MizarPatternInstance, PatternUtils}
 
+import java.io.PrintStream
 import scala.collection._
 
 object TranslationController {
@@ -26,6 +28,11 @@ object TranslationController {
     //       c.setCheckNone //c.setFoundChecker(new libraries.DefaultFoundation(controller.report))
     c
   }
+  private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
+  private def structureSimplifier = controller.simplifier
+  private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new ErrorContainer(logger)
+  private def checkingEnvironment(logger: Option[frontend.Report]) = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler(logger), checking.RelationHandler.ignore, MMTTask.generic)
+  def typecheckContent(e: StructuralElement, logger: Option[frontend.Report] = None) = structChecker(e)(checkingEnvironment(logger))
 
   var query : Boolean = false
 
@@ -37,16 +44,21 @@ object TranslationController {
   var currentThy : Theory = null
   var currentOutputBase : DPath = null
 
+
   private var unresolvedDependencies : List[MPath] = Nil
   def addUnresolvedDependency(dep: MPath) = if (unresolvedDependencies.contains(dep)) {} else {unresolvedDependencies +:= dep}
   def getUnresolvedDependencies() = unresolvedDependencies
 
   private var anonymousTheoremCount = 0
-  def incrementAnonymousTheoremCount() = {anonymousTheoremCount += 1}
+  def incrementAndGetAnonymousTheoremCount() = {anonymousTheoremCount += 1; anonymousTheoremCount}
   def getAnonymousTheoremCount() = anonymousTheoremCount
 
+  private var anonymousSchemeCount = 0
+  def incrementAndGetAnonymousSchemeCount() = {anonymousSchemeCount += 1; anonymousSchemeCount}
+  def getAnonymousSchemeCount() = anonymousSchemeCount
+
   private var identifyCount = 0
-  def incrementIdentifyCount() = {identifyCount += 1}
+  def incrementAndGetIdentifyCount() = {identifyCount += 1; identifyCount}
   def getIdentifyCount() = identifyCount
 
   object articleStatistics {
@@ -161,10 +173,10 @@ object TranslationController {
   private def withoutNotationProper = withoutNotation - articleStatistics.numRegistrs - articleStatistics.totalNumTheorems
   def notationStatistics = "We translated "+withNotation.toString+" declarations with notation and "+withoutNotation.toString+" declarations without, "+withoutNotationProper.toString+" of which aren't theorems and registrations (which are expected to have no notation)."
 
-  def add(e : Declaration) : Unit = {
+  def add(e : Declaration with HasType with HasDefiniens with HasNotation) : Unit = {
     try {
       var complificationSucessful = false
-      val info = e.toString+"\nwith notations: "+(e match {case d: HasNotation => d.notC.getNotations(dim = Some(1)).map(f => f.toText) case _ => ""})
+      val info = e.toString+"\nwith notations: "+(e.notC.getNotations(dim = Some(1)).map(f => f.toText))
 
       val eC: Declaration = try {
         val s = controller.presenter.asString(e)
@@ -173,26 +185,26 @@ object TranslationController {
         if (s contains (PatternUtils.argsVarName+"/r")) {
           println("Trying to add unwellformed declaration "+s)
         }
-        e match {
-          case d: HasNotation with HasType =>
-            if (! d.notC.isDefined) {
-              //println("Trying to add declaration without notation "+s)
-              withoutNotation += 1
-            } else {
-              withNotation += 1
-            }
+        if (! e.notC.isDefined) {
+          //println("Trying to add declaration without notation "+s)
+          withoutNotation += 1
+        } else {
+          withNotation += 1
         }
         res
       } catch {
         case ge: GeneralError =>
           //println("Uncomplified:"+controller.presenter.asString(e))
           var shouldWork = false
-          try {controller.presenter.asString(e); shouldWork = true} catch {case _ =>}
+          try {controller.presenter.asString(e); shouldWork = true} catch {case _ : Throwable =>}
           if (shouldWork) e else throw ge
-        case parseError: ParseError => println(info+"\n"+parseError.shortMsg); throw parseError
+        case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
       //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
-      controller.add(eC)
+      controller.add(eC) /*eC match {
+        case c: Constant => controller.add(c)
+        case dd: DerivedDeclaration => dd.getDeclarationsElaborated foreach (controller.add(_))
+      }*/
     } catch {
       case ae: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
@@ -207,15 +219,15 @@ object TranslationController {
       d.translate(complifier,Context.empty)
     } catch {case e: Exception =>
       println("error while complifying instance " + d.path+": ")
-      println(d.name+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
+      println(d.name.toString+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
       //println(controller.presenter.asString(d))
       throw e
     }
   }
 
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
-  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty()) : Constant = {
-    Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None)
+  def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), role: Option[String] = None) : Constant = {
+    Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None, notC)
   }
   def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term], unboundArgs: Context)(implicit notC:NotationContainer) : Constant = {
     val args = unboundArgs.map(vd => vd.copy(tp = vd.tp map (lambdaBindArgs(_)(unboundArgs map (_.toTerm)))))
@@ -224,13 +236,19 @@ object TranslationController {
   def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext = DefinitionContext.empty()): Constant =
     makeConstantInContext(n, tO, dO, defContext.args)
 
-  def simplifyTerm(tm:objects.Term): objects.Term = {
+  def simplifyTerm(tm:Term): Term = {
     val su = SimplificationUnit(Context.empty,true,false)
     val rules = RuleSet.collectRules(controller, su.context)
     controller.simplifier.objectLevel(tm,su, rules)
   }
 
-  def inferType(tm:objects.Term, ctx: Context = Context.empty): objects.Term = {
-    checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
+  def inferType(tm:Term, ctx: Context = Context.empty): Term = {
+    try {
+      checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
+    } catch {
+      case e: LookupError =>
+        println("Variable not declared in context. ")
+        throw e
+    }
   }
 }

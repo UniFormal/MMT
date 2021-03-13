@@ -7,20 +7,19 @@ object TPTPPlaygroundTest extends MagicTest {
   }
 
   def run(): Unit = {
-    // fully-qualified Scala class name to Extension object in one MMT archive
-    val clazz = "latin2.tptp.Playground"
-
-    val ext = loadMMTExtensionFromArchives(clazz)(controller).get
-    controller.extman.addExtension(ext)
+    loadMMTExtensionFromArchives("latin2.tptp.SFOLExporter")(controller)
   }
 
   /**
-    * Loads an [[Extension]] object from MMT archives.
+    * Instantiates an [[Extension]] (to be found in some loaded archive) and adds it to the [[Controller]].
     *
-    * @param objClazz Fully qualified Scala class name referencing the MMT extension (a Scala object), i.e. without
-    *                 trailing $.
+    * @param clazz Fully qualified Scala class name referencing the MMT extension (a Scala class)
     */
-  private def loadMMTExtensionFromArchives(objClazz: String)(implicit ctrl: Controller): Option[Extension] = {
-    ctrl.backend.loadClass(objClazz + "$").map(_.getField("MODULE$").get(null).asInstanceOf[Extension])
+  private def loadMMTExtensionFromArchives(clazz: String)(implicit ctrl: Controller): Boolean = {
+    ctrl.backend
+      .loadClass(clazz)
+      .map(_.getDeclaredConstructor().newInstance().asInstanceOf[Extension])
+      .map(ctrl.extman.addExtension(_))
+      .isDefined
   }
 }

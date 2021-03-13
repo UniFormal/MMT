@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
-import info.kwarc.mmt.api.symbols.OMSReplacer
+import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
 import info.kwarc.mmt.api.{objects, _}
 import info.kwarc.mmt.lf.elpi.ELPI.Lambda
 import info.kwarc.mmt.lf.{Pi, Univ}
@@ -12,13 +12,12 @@ import mmtwrapper.MMTUtils.Lam
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
-import syntax.Utils.MizarGlobalName
 import syntax._
 import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
 sealed class TranslatingError(str: String) extends Exception(str)
-class DeclarationLevelTranslationError(str: String, decl: DeclarationLevel) extends TranslatingError(str)
+class DeclarationLevelTranslationError(str: String, decl: Subitem) extends TranslatingError(str)
 case class DeclarationTranslationError(str: String, decl: Subitem) extends DeclarationLevelTranslationError(str, decl) {
   def apply(str: String, decl: Subitem) = {
     new DeclarationLevelTranslationError(str+
@@ -45,21 +44,12 @@ object TranslatorUtils {
   }
   def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
 
-  def mMLIdtoGlobalName(mizarGlobalName: MizarGlobalName): info.kwarc.mmt.api.GlobalName = {
-    makeGlobalName(mizarGlobalName.aid, mizarGlobalName.kind, mizarGlobalName.nr)
-  }
-  private def computeGlobalPatternName(tpAttrs: globallyReferencingObjAttrs) = {mMLIdtoGlobalName(tpAttrs.globalPatternName())}
-  private def computeGlobalConstrName(tpAttrs: globallyReferencingDefAttrs) = {mMLIdtoGlobalName(tpAttrs.globalConstrName())}
-  private def computeGlobalOrgPatternName(tpAttrs: globallyReferencingReDefAttrs) = {mMLIdtoGlobalName(tpAttrs.globalOrgPatternName())}
-  private def computeGlobalOrgConstrName(tpAttrs: globallyReferencingReDefAttrs) = {mMLIdtoGlobalName(tpAttrs.globalOrgConstrName())}
-  private def computeGlobalPatConstrName(tpAttrs: globallyReferencingDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalPatternFile, tpAttrs.globalConstrFile, tpAttrs.globalKind, tpAttrs.globalPatternNr, tpAttrs.globalConstrNr)}
-  private def computeGlobalOrgPatConstrName(tpAttrs: globallyReferencingReDefAttrs) = {makeGlobalPatConstrName(tpAttrs.globalOrgPatternFile, tpAttrs.globalOrgConstrFile, tpAttrs.globalKind, tpAttrs.globalOrgPatternNr, tpAttrs.globalOrgConstrNr)}
-  def computeGlobalName(pat: globallyReferencingObjAttrs, orgName: Boolean = false) = pat match {
-    case p: RedefinablePatterns => if (orgName) computeGlobalOrgPatConstrName(p) else computeGlobalPatConstrName(p)
-    case p: ConstrPattern => computeGlobalPatConstrName(p)
-    case objAttrs: globallyReferencingReDefAttrs => if (orgName) computeGlobalOrgPatConstrName(objAttrs) else computeGlobalPatConstrName(objAttrs)
-    case objAttrs: globallyReferencingDefAttrs => computeGlobalPatConstrName(objAttrs)
-    case objAttrs => computeGlobalPatternName(objAttrs)
+  def computeGlobalName(pat: GloballyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
+    case p: RedefinablePatterns => if (orgVersion) p.globalOrgPatConstrName else p.globalPatConstrName
+    case p: ConstrPattern => p.globalPatConstrName
+    case objAttrs: GloballyReferencingReDefAttrs => objAttrs.globalPatConstrName
+    case objAttrs: GloballyReferencingDefAttrs => objAttrs.globalPatConstrName
+    case objAttrs => objAttrs.globalPatternName
   }
   def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
     val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
@@ -67,8 +57,8 @@ object TranslatorUtils {
     TranslationController.add(const)
   }
   def emptyPosition() = syntax.Position("translation internal")
-  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(),"Negated-Formula",form)
-  def emptyCondition() = negatedFormula(Contradiction(emptyPosition(),"Contradiction"))
+  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(), form)
+  def emptyCondition() = negatedFormula(Contradiction(emptyPosition()))
 
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
@@ -95,8 +85,8 @@ object TranslatorUtils {
    * Compute a translating function any references to constants in hidden to the corresponding ones in the Mizar base theories
    * @return A translation function on declarations making the substitution
    */
-  def hiddenRefTranslator(d: symbols.Declaration): symbols.Declaration = {
-    d.translate(OMSReplacer(gn => resolveHiddenReferences(gn)).toTranslator(), Context.empty)
+  def hiddenRefTranslator(d: symbols.Declaration with HasType with HasDefiniens with HasNotation) = {
+    d.translate(OMSReplacer(gn => resolveHiddenReferences(gn)).toTranslator(), Context.empty).asInstanceOf[Declaration with HasType with HasDefiniens with HasNotation]
   }
   def translateArguments(arguments: Arguments)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : List[Term] = { arguments._children map translate_Term }
   val hiddenArt = TranslationController.getTheoryPath("hidden")
@@ -121,7 +111,8 @@ object TranslatorUtils {
         case str if (str.endsWith("R1") && neqPats.exists(str.endsWith(_))) => Some(neq.term)
         case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(MizarPrimitiveConcepts.eq.term)
         case str if (str.endsWith("R2") || str.endsWith("R3")) => Some(in)
-        case _ =>  throw new ImplementationError("Failure to translate the reference to a declaration in hidden of name "+name.toString)
+        case _ =>
+          throw new ImplementationError("Failure to translate the reference to a declaration in hidden of name "+name.toString)
       }
       case _ => None
     }

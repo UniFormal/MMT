@@ -10,6 +10,7 @@ import mmtwrapper._
 import MizarPrimitiveConcepts._
 import MizSeq.{Index, OMI}
 import PatternUtils._
+import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalLookup
 import translator.attributeTranslator.translate_Attribute
 import translator.claimTranslator.translate_Claim
 import translator.typeTranslator.translate_Type
@@ -33,32 +34,31 @@ object termTranslator {
       if (TranslationController.currentThy.declares(refTm)) {
         OMS(TranslationController.currentTheoryPath ? refTm)
       } else OMV(refTm) ^ namedDefArgsSubstition()
-    case Aggregate_Term(tpAttrs, _args) =>
-      val gn = computeGlobalName(tpAttrs)
+    case at@Aggregate_Term(tpAttrs, _args) =>
+      val gn = computeGlobalName(at)
       val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
       val args = translateArguments(_args)
       ApplyGeneral(aggrDecl, args)
-    case Selector_Term(tpAttrs, _arg) =>
-      val strGn = mMLIdtoGlobalName(tpAttrs.globalPatternName().copy(kind = "L"))
+    case st@Selector_Term(tpAttrs, _arg) =>
+      val strGn = computeGlobalName(st)
       val sel = referenceExtDecl(strGn, tpAttrs.spelling)
       val argument = translate_Term (_arg)
       Apply(sel, argument)
-    case Circumfix_Term(tpAttrs, _symbol, _args) =>
+    case ct@Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
-      val gn = computeGlobalName(tpAttrs)
+      val gn = globalLookup(ct)
       val arguments = translateArguments(_args)
       ApplyGeneral(OMS(gn), arguments)
-    case Numeral_Term(redObjAttr, nr, varnr) => num(nr)
+    case Numeral_Term(nr, _, _) => num(nr)
     case itt @ it_Term(_, _) => OMV("it")
-    case ist @ Internal_Selector_Term(redObjAttr, varnr) =>
-      val nr = redObjAttr.nr
-      val referencedSelector = utils.listmap(selectors, nr).getOrElse(
-        throw new ObjectLevelTranslationError("The referenced selector with number "+nr+" is unknown, hence the internal selector term can't be translated. "+
+    case ist @ Internal_Selector_Term(objAttr, varnr) =>
+      val referencedSelector = utils.listmap(selectors, objAttr.nr).getOrElse(
+        throw new ObjectLevelTranslationError("The referenced selector with number "+objAttr.nr+" is unknown, hence the internal selector term can't be translated. "+
           "\nThe only known selectors are: \n"+selectors.toString(), ist))
       referencedSelector.toTerm
-    case Infix_Term(tpAttrs, infixedArgs) =>
+    case it@Infix_Term(tpAttrs, infixedArgs) =>
       assert(tpAttrs.sort == "Functor-Term", "Expected Infix-Term to have sort Functor-Term, but instead found sort "+tpAttrs.sort)
-      val gn = computeGlobalName(tpAttrs)
+      val gn = globalLookup(it)
       val args = translateArguments(infixedArgs._args)
       ApplyGeneral(OMS(gn), args)
     case Global_Choice_Term(pos, sort, _tp) =>
@@ -88,8 +88,8 @@ object termTranslator {
     case Qualification_Term(pos, sort, _tm, _tp) =>
       //TODO: do the required checks
       translate_Term(_tm)
-    case Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
-      val gn = computeGlobalName(constrExtObjAttrs)
+    case fft@Forgetful_Functor_Term(constrExtObjAttrs, _tm) =>
+      val gn = computeGlobalName(fft)
       val substr = OMS(gn)
       val struct = translate_Term(_tm)
       val structTm = TranslationController.simplifyTerm(struct)
@@ -104,19 +104,19 @@ object termTranslator {
 object typeTranslator {
   def translate_Type_Specification(tp: Type_Specification)(implicit defContext: DefinitionContext) = translate_Type(tp._types)
   def translate_Type(tp:Type)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : Term = tp match {
-      case ReservedDscr_Type(idnr, nr, srt, _subs, _tp) => translate_Type(_tp)
-      case Clustered_Type(pos, sort, _adjClust, _tp) =>
+      case ReservedDscr_Type(_, _, _, _, _subs, _tp) => translate_Type(_tp)
+      case Clustered_Type(_, _, _adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjectives = _adjClust._attrs map translate_Attribute
         SimpleTypedAttrAppl(tp, adjectives)
-      case Standard_Type(tpAttrs, noocc, origNr, _args) =>
+      case st@Standard_Type(_, _args) =>
         // TODO: Check this is the correct semantics and take care of the noocc attribute
-        val gn = computeGlobalName(tpAttrs)
+        val gn = globalLookup(st)
         val tp : Term = OMS(gn)
         val args = translateArguments(_args)
         ApplyGeneral(tp,args)
-      case Struct_Type(tpAttrs, _args) =>
-        val gn = computeGlobalName(tpAttrs)
+      case st@Struct_Type(_, _args) =>
+        val gn = computeGlobalName(st)
         val typeDecl = referenceExtDecl(gn,RecordUtil.recTypeName)
         val args = translateArguments(_args)
         ApplyGeneral(typeDecl, args)
@@ -125,49 +125,50 @@ object typeTranslator {
 
 object formulaTranslator {
   def translate_Formula(formula:Formula)(implicit defContext: DefinitionContext) : Term = formula match {
-    case Existential_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
+    case Scope(_expr) => translate_Claim(_expr)
+    case Existential_Quantifier_Formula(_, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
       val vars = translateVariables(_vars)
       val expr = translate_Claim(_expression)
       val assumptions = translate_Restriction(_restrict)
       translate_Existential_Quantifier_Formula(vars, univ, expr, assumptions)
-    case Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
-      val rel = OMS(computeGlobalName(objectAttrs))
+    case rf@Relation_Formula(objectAttrs, antonymic, infixedArgs) =>
+      val rel = globalLookup(rf)
       val args = translateArguments(infixedArgs._args)
-      val form = ApplyGeneral(rel, args)
+      val form = ApplyGeneral(OMS(rel), args)
       if (antonymic.isDefined && antonymic.get) not(form) else form
-    case Universal_Quantifier_Formula(pos, sort, _vars, _restrict, _expression) =>
+    case Universal_Quantifier_Formula(pos, _vars, _restrict, _expression) =>
       val tp : Type = _vars._vars.head._tp()
       val univ = translate_Type(tp)
       val vars = translateVariables(_vars)
       val expr = translate_Claim(_expression)
       val assumptions = translate_Restriction(_restrict)
       translate_Universal_Quantifier_Formula(vars, univ, expr, assumptions)
-    case Multi_Attributive_Formula(pos, sort, _tm, _cluster) =>
+    case Multi_Attributive_Formula(_, _tm, _cluster) =>
       val tm = termTranslator.translate_Term(_tm)
       val attrs = _cluster._attrs map translate_Attribute
           And(attrs.map(at => Apply(at, tm)))
-    case Conditional_Formula(pos, sort, _frstFormula, _sndFormula) =>
+    case Conditional_Formula(_, _frstFormula, _sndFormula) =>
       val assumption = translate_Claim(_frstFormula)
       val conclusion = translate_Claim(_sndFormula)
       implies(assumption, conclusion)
-    case Conjunctive_Formula(pos, sort, _frstConjunct, _sndConjunct) =>
+    case Conjunctive_Formula(_, _frstConjunct, _sndConjunct) =>
       val frstConjunct = translate_Claim(_frstConjunct)
       val sndConjunct = translate_Claim(_sndConjunct)
       binaryAnd(frstConjunct, sndConjunct)
-    case Biconditional_Formula(pos, sort, _frstFormula, _sndFormula) =>
+    case Biconditional_Formula(_, _frstFormula, _sndFormula) =>
       val frstForm = translate_Claim(_frstFormula)
       val sndForm = translate_Claim(_sndFormula)
       iff(frstForm, sndForm)
-    case Disjunctive_Formula(pos, sort, _frstDisjunct, _sndDisjunct) =>
+    case Disjunctive_Formula(_, _frstDisjunct, _sndDisjunct) =>
       val frstDisjunct = translate_Claim(_frstDisjunct)
       val sndDisjunct = translate_Claim(_sndDisjunct)
       binaryOr(frstDisjunct, sndDisjunct)
-    case Negated_Formula(pos, sort, _formula) =>
+    case Negated_Formula(_, _formula) =>
       Apply(constant("not"),translate_Claim(_formula))
-    case Contradiction(pos, sort) => constant("contradiction")
-    case Qualifying_Formula(pos, sort, _tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
+    case Contradiction(_) => constant("contradiction")
+    case Qualifying_Formula(_, _tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
     case Private_Predicate_Formula(redObjAttr, serialNrIdNr, constrNr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), serialNrIdNr))
       if (TranslationController.currentThy.declares(ln)) {
@@ -175,13 +176,13 @@ object formulaTranslator {
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)
       } else OMV(ln) ^ namedDefArgsSubstition()
-    case FlexaryDisjunctive_Formula(pos, sort, _formulae) =>
+    case FlexaryDisjunctive_Formula(_, _formulae) =>
       val formulae = _formulae map translate_Claim
       Or(formulae)
-    case FlexaryConjunctive_Formula(pos, sort, _formulae) =>
+    case FlexaryConjunctive_Formula(_, _formulae) =>
       val formulae = _formulae map translate_Claim
       And(formulae)
-    case mrl @ Multi_Relation_Formula(pos, sort, _relForm, _rhsOfRFs) =>
+    case mrl@Multi_Relation_Formula(_, _relForm, _rhsOfRFs) =>
       val firstForm = translate_Formula(_relForm)
       val (rel, negated) = firstForm match {
         case ApplyGeneral(rel, List(arg1, arg2)) => (rel, false)
@@ -280,17 +281,16 @@ object contextTranslator {
       segm._vars._vars.map (translate_new_Variable(_) % tp)
   }
 	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = {
-    OMV(loc.varAttr.toIdentifier) ^ namedDefArgsSubstition()
+    OMV(loc.toIdentifier) ^ namedDefArgsSubstition()
 	}
 }
 
 object claimTranslator {
   def translate_Type_Unchanging_Claim(claim: TypeUnchangingClaim)(implicit defContext: DefinitionContext): Term = claim match {
-    case ass: Assumptions => translate_Assumption(ass)
     case form: Formula => translate_Formula(form)
     case Proposition(pos, _label, _thesis) => translate_Claim(_thesis)
-    case Thesis(pos, sort) => defContext.getThesisAsTerm
-    case Diffuse_Statement(spell, serialnr, labelnr, _label) => ???
+    case Thesis(_) => thesis()
+    case Diffuse_Statement(_label) => throw ImplementationError("This should never be called.")
     case Conditions(_props) => And(_props map translate_Claim)
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
       val fstRelat = translate_Formula(_formula)
@@ -320,15 +320,7 @@ object claimTranslator {
       And(typingClaims)
     case claim: TypeUnchangingClaim => translate_Type_Unchanging_Claim(claim)(definContext)
   }
-  def translate_Loci_Equality(loci_Equality: Loci_Equality)(implicit defContext: DefinitionContext) : Term = {
-    val List(a, b) = List(loci_Equality._frstLocus, loci_Equality._sndLocus) map translate_Locus
-    assert(defContext.args.variables.map(_.toTerm).contains(a) && defContext.args.variables.map(_.toTerm).contains(b))
-    MizarPrimitiveConcepts.eq(a, b)
-  }
-  def translate_Loci_Equalities(loci_Equalities: Loci_Equalities)(implicit defContext: DefinitionContext) : List[Term] = {
-    loci_Equalities._lociEqns map translate_Loci_Equality
-  }
-  def translate_Assumption(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
+  def translate_Assumption_Claim(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
     case Collective_Assumption(pos, _cond) => translate_Claim(_cond)
     case Existential_Assumption(_qualSegm, _cond) =>
       val args = _qualSegm._children flatMap translate_Context
@@ -341,7 +333,7 @@ object claimTranslator {
 object attributeTranslator {
   def translateAttributes(adjective_Cluster: Adjective_Cluster)(implicit defContext: DefinitionContext) = adjective_Cluster._attrs map translate_Attribute
   def translate_Attribute(attr: Attribute)(implicit defContext: DefinitionContext): Term = {
-    val gn = computeGlobalName(attr.orgnlExtObjAttrs)
+    val gn = globalLookup(attr)
     val args = translateArguments(attr._args)
     ApplyGeneral(OMS(gn), args)
   }

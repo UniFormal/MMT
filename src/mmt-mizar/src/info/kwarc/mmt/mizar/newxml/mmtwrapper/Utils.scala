@@ -21,7 +21,7 @@ object MizarPrimitiveConcepts {
   val softTypedTermsTh = latinBase ? "SoftTypedTerms"
   val ConjunctionTh = latinBase ? "Conjunction"
   val DisjunctionTh = latinBase ? "SoftTypedDefinedFOL"
-  val EqualityTh = latinBase ? "Equality"
+  val EqualityTh = latinBase ? "UntypedEquality"
   val TruthTh = latinBase ? "Truth"
   val FalsityTh = latinBase ? "Falsity"
   val NegationTh = latinBase ? "Negation"
@@ -40,6 +40,15 @@ object MizarPrimitiveConcepts {
       case "any" => TermsTh ? "term"
       case "set" => HiddenTh ? name
       case "sethood" => HiddenTh ? "sethood_property"
+      case "commutativity" => HiddenTh ? "commutativity_property"
+      case "idempotence" => HiddenTh ? "idempotence_property"
+      case "projectivity" => HiddenTh ? "projectivity_property"
+      case "involutiveness" => HiddenTh ? "involutiveness_property"
+      case "symmetry" => HiddenTh ? "symmetry_property"
+      case "assymmetry" => HiddenTh ? "assymmetry_property"
+      case "connectedness" => HiddenTh ? "connectedness_property"
+      case "reflexivity" => HiddenTh ? "reflexivity_property"
+      case "irreflexivity" => HiddenTh ? "irreflexivity_property"
       case "in" => HiddenTh ? "in"
       case "prop"=> PropositionsTh ? name
       case "mode" => TypesTh ? "tp"
@@ -78,7 +87,7 @@ object MizarPrimitiveConcepts {
   def in = constant("in")
   def any =constant("any")
 
-  object is extends BinaryLFConstantScala(softTypedTermsTh, "is")
+  object is extends BinaryLFConstantScala(softTypedTermsTh, "of")
   object be extends BinaryLFConstantScala(MizarTh, "be")
 
   def andCon = constantName("and")
@@ -86,6 +95,7 @@ object MizarPrimitiveConcepts {
   object And {
     def apply(tms : List[Term]) : Term = naryAndSym(OMI(tms.length), Sequence(tms))
     def unapply(t: Term) = t match {
+      case ApplyGeneral(OMS(gn), conjs@List(conj1, conj2)) if (gn == andCon) => Some(conjs)
       case naryAndSym(OMI(n), Sequence(tms)) if (tms.length == n) => Some(tms)
       case _ => None
     }
@@ -95,8 +105,8 @@ object MizarPrimitiveConcepts {
   object naryOrSym extends BinaryLFConstantScala(MizarTh, "nary_or")
   object Or {
     def apply(tms: List[Term]) = naryOrSym(OMI(tms.length), Sequence(tms))
-
     def unapply(t: Term) = t match {
+      case ApplyGeneral(OMS(gn), disjs@List(disj1, disj2)) if (gn == orCon) => Some(disjs)
       case naryOrSym(OMI(n), Sequence(tms)) if (n == tms.length) => Some(tms)
       case _ => None
     }
@@ -110,9 +120,10 @@ object MizarPrimitiveConcepts {
   object iff extends BinaryLFConstantScala(MizarTh, "iff")
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
-  object eq extends BinaryLFConstantScala(eqCon.module, "eq")
+  object eq extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
   def neqCon = constantName("neq")
-  object neq extends BinaryLFConstantScala(MizarTh, "inequal")
+  object neq extends BinaryLFConstantScala(neqCon.module, neqCon.name.toString)
+  def thesis = constantName("thesis")
 
   class Quantifier(n: String) {
     def apply(v : OMV, univ : Term, p : Term): Term = ApplySpine(OMS(constantName(n)), univ, Lambda(v % any, p))
@@ -126,11 +137,10 @@ object MizarPrimitiveConcepts {
   object forall extends Quantifier("for")
   object exists extends Quantifier("ex")
 
-  object proof extends UnaryLFConstantScala(ProofsTh, "proof")
+  object proof extends UnaryLFConstantScala(ProofsTh, "ded")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
-  object Exemplification extends BinaryLFConstantScala(MizarTh, "proofByExample")
+  object ProofByExample extends BinaryLFConstantScala(MizarTh, "proof_by_example")
   def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
-  def exemplification(tp: Term, tm: Term) = Exemplification(tp, tm)
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
