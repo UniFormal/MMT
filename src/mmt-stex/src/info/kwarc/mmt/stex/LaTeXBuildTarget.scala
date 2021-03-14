@@ -1,8 +1,10 @@
 package info.kwarc.mmt.stex
 
-import info.kwarc.mmt.api.Level
-import info.kwarc.mmt.api.archives.{BuildResult, BuildTask, Dim, TraversingBuildTarget, `export`, source}
-import info.kwarc.mmt.api.utils.File
+import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.{ExtensionError, Level}
+import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
+import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
+import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg}
 import info.kwarc.mmt.stex.xhtml.{XHTML, XHTMLNode}
 
 class LaTeXToHTML extends TraversingBuildTarget {
@@ -37,9 +39,12 @@ class LaTeXToHTML extends TraversingBuildTarget {
   }
 }
 
-
-
-/*
+import STeXUtils._
+import java.util.regex.PatternSyntaxException
+import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.sys.process.{ProcessBuilder,ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
 abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
@@ -191,7 +196,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val proc = pb.run(log)
     val fut = Future(blocking(proc.exitValue()))
     try {
-      Await.result(fut, timeoutVal.seconds)
+      Await.result(fut,Duration(timeoutVal,duration.SECONDS))
     } catch {
       case e: TimeoutException =>
         proc.destroy()
@@ -288,5 +293,3 @@ abstract class LaTeXDirTarget extends LaTeXBuildTarget {
 
   def buildDir(a: Archive, in: FilePath, dir: File, force: Boolean): BuildResult
 }
-
- */
