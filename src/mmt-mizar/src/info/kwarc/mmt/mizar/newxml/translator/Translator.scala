@@ -17,7 +17,6 @@ import subitemTranslator._
 object itemTranslator {
   // Adds the corresponding content to the TranslationController
   def translateItem(item: Item) = {
-    val sourceReg = item.pos.sourceRegion()
     item.checkKind()
     implicit val defCtx = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =

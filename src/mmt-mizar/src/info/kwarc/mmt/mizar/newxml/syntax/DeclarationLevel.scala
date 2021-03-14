@@ -80,9 +80,7 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
    */
   def provenSentence() = {
     val justItems = _block._items.tail
-    val startPos = justItems.head.pos.startPosition()
-    val endPos = justItems.last.pos.endposition
-    ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line.toString+"\\"+startPos.col), endPos), justItems)))
+    ProvedClaim(scheme_head()._form, Some(Block("Proof", justItems)))
   }
 }
 
@@ -165,6 +163,16 @@ sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
   }
 }
 case class Attribute_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Attribute_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
+
+/**
+ * Definition of a new functor (function)
+ * @param mmlIdO
+ * @param _redef whether this is a redefinition
+ * @param _pat the pattern giving name and notation of the newly defined functor
+ * @param _tpSpec (optional) the return type of the functor
+ * @param _def (optional) the definien
+ * @precondition unless _redef.occurs both _tpSpec and _def are given
+ */
 case class Functor_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends RedefinableLabeledDefinition
 case class Predicate_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Predicate_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
 /**
@@ -200,14 +208,14 @@ case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:
  * @param _adjCl its properties
  * @param _tp (optional) qualifies
  */
-case class Functorial_Registration(pos:Position, _aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
+case class Functorial_Registration(_aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 /**
  * stating that some attributes hold on a type
  * @param pos
  * @param _adjClust
  * @param _tp
  */
-case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
+case class Existential_Registration(_adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * stating that some attributes attrs implies another attribute at
  * @param pos
@@ -215,7 +223,7 @@ case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _
  * @param _at the implied attribute
  * @param _tp
  */
-case class Conditional_Registration(pos:Position, _attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
+case class Conditional_Registration(_attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * registering properties for a mode
  */
@@ -226,8 +234,8 @@ case class Scheme(idnr: Int, spelling:String, nr:Int) extends TopOrDeclarationLe
 case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends DeclarationLevel
 case class Assumption(_ass:Assumptions) extends DeclarationLevel
 sealed trait Assumptions extends DeclarationLevel
-case class Single_Assumption(pos:Position, _prop:Proposition) extends Assumptions
-case class Collective_Assumption(pos:Position, _cond:Conditions) extends Assumptions
+case class Single_Assumption(_prop:Proposition) extends Assumptions
+case class Collective_Assumption(_cond:Conditions) extends Assumptions
 case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
 
 case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel

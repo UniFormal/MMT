@@ -13,14 +13,14 @@ import mizar.newxml.syntax._
 
 object justificationTranslator {
   def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext): Option[objects.Term] = just match {
-    case Straightforward_Justification(pos, _refs) => None
+    case Straightforward_Justification(_refs) => None
     case _: Block =>
       defContext.enterProof
       val usedFacts: List[Term] = usedInJustification(just)
       defContext.exitProof
       //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
       Some(uses(claim, usedFacts))
-    case Scheme_Justification(_, _, _, _, _, _refs) => Some(uses(claim, globalReferences(_refs)))
+    case Scheme_Justification(_, _, _, _, _refs) => Some(uses(claim, globalReferences(_refs)))
   }
   def globalReferences(refs: List[Reference]): List[Term] = refs flatMap {
     case ref: Theorem_Reference => Some(ref.referencedLabel())
@@ -38,14 +38,14 @@ object justificationTranslator {
   def translate_Exemplification(exemplification: Exemplification)(implicit defContext: => DefinitionContext): List[objects.Term] = {
     exemplification._exams map { exam =>
       val exemTm: Term = translate_Term(exam._tm)(defContext)
-      val exemTp: Term = TranslationController.inferType(exemTm, defContext.args++defContext.getLocalBindingVars)
+      val exemTp: Term = TranslationController.inferType(exemTm)(defContext)
       ProofByExample(exemTp, exemTm)
     }
   }
   def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Option[Term]) = {
     val claim = provedClaim._claim match {
       case Diffuse_Statement(_) => provedClaim._just.get match {
-        case Block(_, _, _items) =>
+        case Block(_, _items) =>
           val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
           And(claims.map(translate_Claim(_)(defContext)))
         case _ => trueCon
@@ -60,14 +60,14 @@ object justificationTranslator {
     (proof(claim), prf)
   }
   def translate_Diffuse_Statement(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext) = _just match {
-    case Some(Block(_, _, _items)) =>
+    case Some(Block(_, _items)) =>
       val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
       And(claims.map(translate_Claim(_)))
     case _ => trueCon
   }
   def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
-    case Straightforward_Justification(_, _refs) => globalReferences(_refs)
-    case Block(_, _, _items) =>
+    case Straightforward_Justification(_refs) => globalReferences(_refs)
+    case Block(_, _items) =>
       def translateSubitems(subs: List[Subitem]): List[Term] = subs match {
         case Nil => Nil
         case it :: tail => it match {
@@ -86,7 +86,7 @@ object justificationTranslator {
             defContext.enterProof
             val trIt = st.prfClaim._claim match {
               case _: Diffuse_Statement => j map (usedInJustification(_)(defContext)) getOrElse Nil
-              case Proposition(_, _, Thesis(_)) => j map (usedInJustification(_)(defContext)) getOrElse Nil
+              case Proposition(_, Thesis()) => j map (usedInJustification(_)(defContext)) getOrElse Nil
               case it: Iterative_Equality if (j == None) =>
                 val And(clms) = translate_Claim(it)(defContext)
                 val justs = it._just :: it._iterSteps.map(_._just)
@@ -121,6 +121,6 @@ object justificationTranslator {
         }
       }
       translateSubitems(_items map (_._subitem))
-    case Scheme_Justification(_, _, _, _, _, _refs) => globalReferences(_refs)
+    case Scheme_Justification(_, _, _, _, _refs) => globalReferences(_refs)
   }
 }

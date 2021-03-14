@@ -201,15 +201,15 @@ object MizarPatternInstance {
 }
 
 sealed trait FunctorDefInstance {
-  def unapply(dd: DerivedDeclaration): Option[Product]
+  def unapply(dd: DerivedDeclaration): Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Option[Term])]
 }
 object DirectPartialFunctorDefinition extends FunctorDefInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
-  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
+  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Some[Term])] = dd match {
     case MizarPatternInstance(name, "directPartFuncDef", List(OMI(argNum), Sequence(argTypes), ret, OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof, defRes)) =>
-      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, defRes))
+      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, Some(defRes)))
     case _ => None
   }
 }
@@ -217,9 +217,9 @@ object IndirectPartialFunctorDefinition extends FunctorDefInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPartFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, Some(defRes))
   }
-  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Term)] = dd match {
+  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term, Some[Term])] = dd match {
     case MizarPatternInstance(name, "indirectPartFuncDef", List(OMI(argNum), Sequence(argTypes), ret, OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof, defRes)) =>
-      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, defRes))
+      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, Some(defRes)))
     case _ => None
   }
 }
@@ -227,9 +227,9 @@ object DirectCompleteFunctorDefinition extends FunctorDefInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directComplFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, None)
   }
-  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
+  def unapply(dd: DerivedDeclaration) = dd match {
     case MizarPatternInstance(name, "directComplFuncDef", List(OMI(argNum), Sequence(argTypes), ret, OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof)) =>
-      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof))
+      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, None))
     case _ => None
   }
 }
@@ -237,9 +237,9 @@ object IndirectCompleteFunctorDefinition extends FunctorDefInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Option[Term])(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "indirectComplFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, consistencyProof, None)
   }
-  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Term)] = dd match {
+  def unapply(dd: DerivedDeclaration) = dd match {
     case MizarPatternInstance(name, "indirectComplFuncDef", List(OMI(argNum), Sequence(argTypes), ret, OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof)) =>
-      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof))
+      Some((name, argNum, argTypes, ret, caseNum, cases, caseRes, consistencyProof, None))
     case _ => None
   }
 }
@@ -408,8 +408,24 @@ object Identify extends RegistrationInstance {
 trait NotationInstance
 class NymicNotation(key:String) extends NotationInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer) = {
-    MizarPatternInstance(name, key, argNum, argTypes, None, Nil, v, None)
+    MizarPatternInstance(name, key, argNum, argTypes, List(v))
   }
 }
-object SynonymicNotation extends NymicNotation("synonymicNotation")
-object AntonymicNotation extends NymicNotation("antonymicNotation")
+object NymicNotation {
+  def unapply(dd: DerivedDeclaration): Option[(LocalName, String, Int, List[Term], Term)] = dd match {
+    case MizarPatternInstance(name, key, List(OMI(n), Sequence(argTypes), v)) => Some((name, key, n, argTypes, v))
+    case _ => None
+  }
+}
+object SynonymicNotation extends NymicNotation("synonymicNotation") {
+  def unapply(dd: DerivedDeclaration): Option[(LocalName, String, Int, List[Term], Term)] = dd match {
+    case NymicNotation(name, "synonymicNotation", n, argTypes, v) => Some((name, "synonymicNotation", n, argTypes, v))
+    case _ => None
+  }
+}
+object AntonymicNotation extends NymicNotation("antonymicNotation") {
+  def unapply(dd: DerivedDeclaration): Option[(LocalName, String, Int, List[Term], Term)] = dd match {
+    case NymicNotation(name, "antonymicNotation", n, argTypes, v) => Some((name, "antonymicNotation", n, argTypes, v))
+    case _ => None
+  }
+}

@@ -154,6 +154,12 @@ object TranslationController {
   def endMake() = {
     includeDependencies()
     controller.endAdd(currentThy)
+    try {
+      controller.simplifier(currentThy)
+    } catch {
+      case ge: GeneralError =>
+        throw ge
+    }
     currentDoc.add(MRef(currentDoc.path, currentThy.path))
     controller.endAdd(currentDoc)
   }
@@ -186,7 +192,6 @@ object TranslationController {
           println("Trying to add unwellformed declaration "+s)
         }
         if (! e.notC.isDefined) {
-          //println("Trying to add declaration without notation "+s)
           withoutNotation += 1
         } else {
           withNotation += 1
@@ -201,14 +206,12 @@ object TranslationController {
         case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
       //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
-      controller.add(eC) /*eC match {
-        case c: Constant => controller.add(c)
-        case dd: DerivedDeclaration => dd.getDeclarationsElaborated foreach (controller.add(_))
-      }*/
+      controller.add(eC)
     } catch {
       case ae: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
-      case ge: GeneralError => throw ge
+      case ge: GeneralError =>
+        throw ge
     }
   }
   private def complify(d: Declaration) = {
@@ -242,9 +245,9 @@ object TranslationController {
     controller.simplifier.objectLevel(tm,su, rules)
   }
 
-  def inferType(tm:Term, ctx: Context = Context.empty): Term = {
+  def inferType(tm:Term)(implicit defContext: DefinitionContext): Term = {
     try {
-      checking.Solver.infer(controller, ctx, tm, None).getOrElse(any)
+      checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
         println("Variable not declared in context. ")

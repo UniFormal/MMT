@@ -56,9 +56,8 @@ object TranslatorUtils {
     val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
     TranslationController.add(const)
   }
-  def emptyPosition() = syntax.Position("translation internal")
-  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(), form)
-  def emptyCondition() = negatedFormula(Contradiction(emptyPosition()))
+  def negatedFormula(form:Claim) = Negated_Formula(form)
+  def emptyCondition() = negatedFormula(Contradiction())
 
   def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
     case segm: VariableSegments => segm._vars()
