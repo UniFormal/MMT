@@ -89,15 +89,15 @@ object termTranslator {
       //TODO: do the required checks
       translate_Term(_tm)
     case fft@Forgetful_Functor_Term(_, _tm) =>
-      val substructGn = computeGlobalName(fft)
-      val substruct = substructGn.module ? substructGn.name.init
+      val structGn = computeGlobalName(fft)
+      val substructs = MizarStructure.getTransitiveAncestors(structGn)
       val structTm = translate_Term(_tm)
-      val struct = TranslationController.inferType(structTm)
-      val ApplyGeneral(OMS(strAggrPath), aggrArgs) = struct
-      val strPath = strAggrPath.module ? strAggrPath.name.steps.init
-      val restr = referenceExtDecl(strPath.module ? strPath.name.init, structureDefRestrName(substruct.name.toString)(strPath).toString)
-      val arguments::argsTyped::_ = aggrArgs
-      ApplyGeneral(restr, List(arguments, argsTyped, struct))
+      val structTp = TranslationController.inferType(structTm)
+      val substruct = substructs.find(_ == structTp).get
+      val ApplyGeneral(OMS(substrTpPath), substrTpArgs) = substruct
+      val strPath = structGn.module ? structGn.name.steps.init
+      val restr = referenceExtDecl(strPath.module ? strPath.name.init, structureDefRestrName(substrTpPath.name.toString)(strPath).toString)
+      ApplyGeneral(restr, substrTpArgs:+structTm)
   }
 }
 

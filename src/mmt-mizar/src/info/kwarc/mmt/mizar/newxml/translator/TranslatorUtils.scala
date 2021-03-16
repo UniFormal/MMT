@@ -31,6 +31,9 @@ case class PatternTranslationError(str: String, pat: Patterns) extends ObjectLev
   "\nPatternClaimTranslationError while translating the pattern with spelling "+pat.patternAttrs.spelling+": "+pat.toString, pat)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
   "\nExpressionTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
+object ExpectedTheoryAt {
+  def apply(mpath: MPath) = new TranslatingError("Error looking up the theory at: "+mpath.toString)
+}
 
 object TranslatorUtils {
   def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {

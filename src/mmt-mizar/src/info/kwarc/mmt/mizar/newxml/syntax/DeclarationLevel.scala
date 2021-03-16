@@ -244,30 +244,32 @@ case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justi
 /**
  * Well-definedness conditions that need to be proven along with definitions
  */
-sealed trait CorrectnessConditions extends DeclarationLevel
+sealed abstract class CorrectnessConditions(_sort: String) extends DeclarationLevel {
+  def sort = _sort
+}
 /**
  * non-emptyness of non-expandable types (modes) or clustered_types in registrations of attributes
  */
-case class existence() extends CorrectnessConditions
+case class existence() extends CorrectnessConditions("existence")
 /**
  * uniqueness for functors
  */
-case class uniqueness() extends CorrectnessConditions
+case class uniqueness() extends CorrectnessConditions("uniqueness")
 /**
  * can define functor using means or equals
  * if defined using equals need coherence to correct type
  */
-case class coherence() extends CorrectnessConditions
+case class coherence() extends CorrectnessConditions("coherence")
 /**
  * reduce x * 1.L to x
  * reducibility by Def6
  */
-case class reducibility() extends CorrectnessConditions
-case class compatibility() extends CorrectnessConditions
+case class reducibility() extends CorrectnessConditions("reducibility")
+case class compatibility() extends CorrectnessConditions("compatibility")
 /**
  * for overlap of case-by-case (complex) defns
  */
-case class consistency() extends CorrectnessConditions
+case class consistency() extends CorrectnessConditions("consistency")
 /*/**
  * conjunction of all necessary correctness conditions, doesn't appear in esx files
  */

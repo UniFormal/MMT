@@ -76,8 +76,8 @@ object TranslationController {
     private var theorems = 0
     private def anonymousTheorems = anonymousTheoremCount
     def makeArticleStatistics: String = "Overall we translated "+totalNumDefinitions+" definitions, "+registrations+" registrations and "+totalNumTheorems+" statements from this article."
-    def incrementStatisticsCounter(kind: String): Unit = kind match {
-      case "funct" => functorDefinitions += 1
+    def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
+      case "func" => functorDefinitions += 1
       case "pred" => predicateDefinitions += 1
       case "attr" => attributeDefinitions += 1
       case "mode" => modeDefinitions += 1

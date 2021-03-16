@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.ConstantScala
 import info.kwarc.mmt.lf.{BinaryLFConstantScala, _}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.newxml.syntax.CorrectnessConditions
 
 object MizarPrimitiveConcepts {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
@@ -144,9 +145,28 @@ object MizarPrimitiveConcepts {
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
-  def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
+  /*def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
     val suffix = if (direct) "Dir" else "Indir" + resKind
     ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
+  }
+  def modeExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term], direct: Boolean) = {
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existence"+(if (direct) "Dir" else "Indir")+(if (defRes.isDefined) "Part" else "Compl")+"ModeDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
+  }
+  def functExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existence"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
+  }
+  def functUniquenessTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("uniqueness"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
+  }
+  def functUniqueExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = List(functExistenceTp(argTps, ret, cases, caseRes, defRes), functUniquenessTp(argTps, ret, cases, caseRes, defRes))
+  def coherenceFuncDefTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
+    List(ApplyGeneral(OMS(MizarPatternsTh ? LocalName("coherence"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil)))
+  }
+  def existentialRegExistenceTp(argTps: List[Term], t: Term, attrs: List[Term]) = {
+    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existenceReg")), List(OMI(argTps.length), Sequence(argTps), t, OMI(attrs.length), Sequence(attrs)))
+  }*/
+  def correctnessCondClaim(correctnessCondition: CorrectnessConditions, pattern: String): Term = {
+    OMS(MizarPatternsTh ? LocalName(correctnessCondition.sort+pattern.capitalize))
   }
 
   def attr(t : Term) = apply(constant("attr"), t)
