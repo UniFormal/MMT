@@ -2,18 +2,13 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
 import info.kwarc.mmt.api.{objects, _}
-import info.kwarc.mmt.lf.elpi.ELPI.Lambda
-import info.kwarc.mmt.lf.{Pi, Univ}
 import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
 import mmtwrapper.MizarPrimitiveConcepts._
-import mmtwrapper.MMTUtils.Lam
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
 import syntax._
-import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
 sealed class TranslatingError(str: String) extends Exception(str)
