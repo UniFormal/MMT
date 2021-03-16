@@ -62,10 +62,6 @@ object TranslatorUtils {
   def negatedFormula(form:Claim) = Negated_Formula(form)
   def emptyCondition() = negatedFormula(Contradiction())
 
-  def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
-    case segm: VariableSegments => segm._vars()
-  }
-
   private def namedDefArgsSubstition(args: Context, varName: LocalName): objects.Substitution = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
     objects.Substitution(argTps.zipWithIndex map {

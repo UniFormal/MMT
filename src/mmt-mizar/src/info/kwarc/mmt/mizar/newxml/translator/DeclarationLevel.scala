@@ -564,7 +564,7 @@ object definitionTranslator {
   def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit defContext: DefinitionContext) = {
     val (name, declarationPath, notC) = translate_Pattern(mode_Definition._pat)
     implicit val notCon = notC
-    mode_Definition._expMode match {
+    mode_Definition._mode match {
       case Expandable_Mode(_tp) =>
         val tp = translate_Type(_tp)
         makeConstantInContext(declarationPath.name, Some(tp), Some(tp))
@@ -651,7 +651,7 @@ object clusterTranslator {
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val ats = attributeTranslator.translateAttributes(_at)
         val name = LocalName("condReg_"+TranslationController.articleStatistics.numRegistrs)
-        val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence) getOrElse Correctness_Condition(coherence(), None)
+        val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         val coherenceProof = translate_reg_correctness_condition(coherenceCond._just, "condRegistration", adjs.length, Some(tp), None, Some(adjs), Some(ats), None)
         Some(ConditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats, coherenceProof))
       case Existential_Registration(_adjClust, _tp) =>
@@ -659,7 +659,7 @@ object clusterTranslator {
         val adjs = attributeTranslator.translateAttributes(_adjClust)
         //TODO:
         val name = LocalName("existReg_"+TranslationController.articleStatistics.numRegistrs)
-        val existenceCond = definitionContext.corr_conds.find(_._cond == syntax.existence) getOrElse Correctness_Condition(existence(), None)
+        val existenceCond = definitionContext.corr_conds.find(_._cond == syntax.existence()) getOrElse Correctness_Condition(existence(), None)
         val existenceProof = translate_reg_correctness_condition(existenceCond._just, "existRegistration", adjs.length, Some(tp), None, Some(adjs), None, None)
         Some(ExistentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, existenceProof))
       case Functorial_Registration(_aggrTerm, _adjCl, _tp) =>
@@ -669,7 +669,7 @@ object clusterTranslator {
         val tp = _tp map translate_Type getOrElse({
           inferType(tm)})
         val name = LocalName("funcReg_"+TranslationController.articleStatistics.numRegistrs)
-        val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence) getOrElse Correctness_Condition(coherence(), None)
+        val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         def coherenceProof(kind: String) = translate_reg_correctness_condition(coherenceCond._just, kind+"FuncRegistration", adjs.length, Some(tp), Some(tm), Some(adjs), None, None)
         Some(if (isQualified) {
           QualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs, coherenceProof("qual"))

@@ -34,10 +34,12 @@ object MizarStructure {
         val prefix = structureDefRestrName("anything").init
       val args = mod.get(LocalName(recTypeName)).asInstanceOf[Constant].tp.get match {
         case PiOrEmpty(params, Univ(1)) => params
+        case _ => Context.empty
       }
       (str::(mod.domain.filter(_.init == prefix).map(prefix / _) map (mod.get(_).asInstanceOf[Constant].tp.get) flatMap {
         case PiOrEmpty(_, substr) => getTransitiveAncestors(substr)
       })) map (_ ^ Substitution(args zip params map {case (a, b) => a.toTerm / b} :_*))
+    case _ => throw new ImplementationError("This can never happen.")
   }
   def getTransitiveAncestors(str: GlobalName): List[Term] = {
     implicit val strGn = str.module ? str.name.init

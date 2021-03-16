@@ -17,10 +17,7 @@ sealed trait TopOrDeclarationLevel extends TopLevel with DeclarationLevel
 sealed trait ProofLevel extends DeclarationLevel
 sealed trait MMLIdSubitem extends TopOrDeclarationLevel {
   def mmlId: MMLId
-  def globalName: GlobalName = {
-    val Array(aid, ln) = mmlId.MMLId.split(":")
-    TranslationController.getTheoryPath(aid) ? LocalName(this.shortKind+ln)
-  }
+  def globalName: GlobalName = mmlId.globalName(this.shortKind)
 }
 sealed trait BlockSubitem extends TopOrDeclarationLevel
 sealed trait RegistrationSubitems extends BlockSubitem
@@ -86,11 +83,11 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
 
 sealed trait Heads extends TopLevel
 /**
- *
+ * the head (first subitem) of a scheme(-block)
  * @param _sch
  * @param _vars
  * @param _form
- * @param _provForm
+ * @param _provForm assumptions to a scheme
  */
 case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _provForm:Option[Provisional_Formulas]) extends Heads
 case class Suppose_Head(_ass:Assumptions) extends Heads
@@ -190,7 +187,7 @@ case class Predicate_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Pred
  */
 case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends Definition
 case class Constant_Definition(_children:List[Equating]) extends Definition
-case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) extends Definition
+case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _mode:Modes) extends Definition
 /**
  * 1-1 corresponds to a deffunc definition, its uses are private_functor_terms
  * used as shortcut and visible within its block

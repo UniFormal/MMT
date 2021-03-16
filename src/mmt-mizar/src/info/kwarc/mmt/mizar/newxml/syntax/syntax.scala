@@ -18,7 +18,7 @@ package info.kwarc.mmt.mizar.newxml.syntax
  * Traits are used to group up classes representing XML tags defining similar objects, for instance terms Patterns, ...
  *
  * The case classes (and some traits grouping them) corresponding to declaration-level XML tags are defined in the DeclarationLevel file,
- * the ones corresponding to object-level content are defined in the ObjectLEvel file
+ * the ones corresponding to object-level content are defined in the ObjectLevel file
  */
 
 import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
@@ -27,8 +27,16 @@ import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, ObjectLevelTranslationError, TranslationController, TranslatorUtils}
 import info.kwarc.mmt.mizar.objects.{SourceRef, SourceRegion}
-
+/**
+ * A label that can later be referenced
+ * @param MMLId the label, typically the article followed by a running counter of id of the same type
+ */
 case class MMLId(MMLId:String) extends Group {
+  /**
+   * Given the kind of object, construct a unique identifier from the label
+   * @param kind said kind
+   * @return the identifier
+   */
   def globalName(kind: String): GlobalName = {
     val Array(aid, ln) = MMLId.split(":")
     TranslationController.getTheoryPath(aid) ? LocalName(kind+ln)
@@ -36,6 +44,7 @@ case class MMLId(MMLId:String) extends Group {
 }
 /**
  * Contains the attribute leftargscount and the child Arguments
+ * used in various functor terms
  */
 case class InfixedArgs(leftargscount:Int, _args:Arguments) extends Group
 /**
@@ -47,38 +56,31 @@ case class InfixedArgs(leftargscount:Int, _args:Arguments) extends Group
  */
 case class ProvedClaim(_claim:Claim, _just:Option[Justification]) extends Group
 /**
- * Several common attributes for Object (terms and types) definitions
- * @param formatnr
- * @param patternnr
+ * Two common attributes for Object (terms and types) definitions
  * @param spelling
  * @param sort
  */
 case class ObjectAttrs(spelling:String, sort:String) extends Group
 /**
- * A minimal list of common attributes for objects containing only spelling and sort
- * @param pos Position
- * @param sort Sort
+ * A minimal list of common attributes for objects containing only spelling, sort and nr
+ * used for local objects locally referencing something with the nr, e.g. Placeholder terms or Internal selector terms
+ * @param nr the nr
+ * @param spelling the spelling of the object
+ * @param sort the sort of the object
  */
-trait RedObjectSubAttrs extends Group {
-  def sort: String
-}
+case class RedObjAttr(nr: Int, spelling:String, sort:String) extends Group
 /**
- * A minimal list of common attributes (extended by the further attributes position and number) for objects containing only spelling and sort
- * @param posNr
- * @param spelling
- * @param sort
+ * common trait for ConstrObjAttrs and ReDefObjAttrs, which define common attributes for globally referencing objects
  */
-case class RedObjAttr(nr: Int, spelling:String, sort:String) extends RedObjectSubAttrs
-trait ReferencingObjAttrs extends RedObjectSubAttrs {
-  def spelling: String
-  def globalObjAttrs: GlobalObjAttrs
-}
-trait ReferencingConstrObjAttrs extends ReferencingObjAttrs {
+trait ReferencingConstrObjAttrs {
+  def sort: String
   def spelling: String
   def globalDefAttrs: GlobalDefAttrs
-  override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
 }
-trait GloballyReferencingObjAttrs extends {
+/**
+ * Common trait for globally referencing objects
+ */
+trait GloballyReferencingObjAttrs {
   def globalObjAttrs : GlobalObjAttrs
   def globalKind: Char
 
@@ -92,7 +94,14 @@ trait GloballyReferencingObjAttrs extends {
   }
   def globalPatternName: GlobalName = absoluteName(globalObjAttrs.absolutepatternMMLId)
 }
+/**
+ * A global reference to a pattern of a (re)-definition in mizar
+ * @param absolutepatternMMLId
+ */
 case class GlobalObjAttrs(absolutepatternMMLId: String) extends Group
+/**
+ * trait for objects globally referencing definitions
+ */
 trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
@@ -101,11 +110,25 @@ trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = p.module ? LocalName(p.name.toString + c.name.toString)
   def globalPatConstrName: GlobalName = absolutePatConstrName(globalPatternName, globalConstrName)
 }
+/**
+ * global references to both a pattern and the corresponding constructor of a (re)-definition in mizar
+ * @param absolutepatternMMLId
+ * @param absoluteconstrMMLId
+ */
 case class GlobalDefAttrs(absolutepatternMMLId: String, absoluteconstrMMLId: String) extends Group
+/**
+ * A global reference to the initial pattern and constructor
+ * of the referenced definition, in case it got redefined
+ * @param absoluteorigpatternMMLId
+ * @param absoluteorigconstrMMLId
+ */
 case class GlobalOrgAttrs(absoluteorigpatternMMLId: String, absoluteorigconstrMMLId: String) extends Group {
   def isDefinedPat = absoluteorigpatternMMLId.nonEmpty
   def isDefinedConstr = absoluteorigconstrMMLId.nonEmpty
 }
+/**
+ * trait for objects globally referencing redefinable definitions
+ */
 trait GloballyReferencingReDefAttrs extends GloballyReferencingDefAttrs {
   def globalReDefAttrs : GlobalReDefAttrs
   override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
@@ -114,66 +137,33 @@ trait GloballyReferencingReDefAttrs extends GloballyReferencingDefAttrs {
   def globalOrgConstrName: GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedConstr) globalReDefAttrs.globalOrgAttrs.absoluteorigconstrMMLId else globalDefAttrs.absoluteconstrMMLId)
   def globalOrgPatConstrName: GlobalName = absolutePatConstrName(globalOrgPatternName, globalOrgConstrName)
 }
+/**
+ * A global reference to a pattern and constructor in mizar, as well as references to the initial pattern and constructor
+ * of this definition, in case it got redefined
+ * @param globalDefAttrs
+ * @param globalOrgAttrs
+ */
 case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgAttrs: GlobalOrgAttrs) extends Group {
   def hasOrigRefs = globalOrgAttrs.isDefinedPat && globalOrgAttrs.isDefinedConstr
 }
 /**
- * An extended list of common attributes for Object (terms and types) definitions
- * @param posNr
- * @param formatNr
- * @param patNr
+ * common attributes for objects globally referencing definitions
+ * @param sort
  * @param spelling
- * @param srt
- * @param globalObjAttrs
+ * @param globalDefAttrs
  */
-case class ExtObjAttrs(spelling:String, sort:String, globalObjAttrs: GlobalObjAttrs) extends ReferencingObjAttrs
+case class ConstrObjAttrs(spelling:String, sort:String, globalDefAttrs: GlobalDefAttrs) extends ReferencingConstrObjAttrs
 /**
- *
- * @param posNr
- * @param formatNr
- * @param patNr
+ * common attributes for objects globally referencing a (re)-definitions
+ * @param sort
  * @param spelling
- * @param srt
- * @param constrnr
+ * @param globalReDefAttrs
  */
-case class ConstrExtObjAttrs(spelling:String, sort:String, globalDefAttrs: GlobalDefAttrs) extends ReferencingConstrObjAttrs
-/**
- *
- * @param posNr
- * @param formatNr
- * @param patNr
- * @param spelling
- * @param srt
- * @param orgnNr
- * @param constrnr
- */
-case class OrgnlExtObjAttrs(spelling:String, sort:String, globalDefAttrs: GlobalDefAttrs) extends ReferencingConstrObjAttrs
-/**
- *
- * @param formatdes
- * @param formatNr
- * @param spelling
- * @param pos
- * @param globalObjAttrs
- * @param patternnr
- */
-
-case class PatternAttrs(formatdes:String, spelling:String, globalObjAttrs: GlobalObjAttrs) extends Group
-case class ExtPatAttr(patAttr:PatternAttrs, absoluteconstrMMLId: String) extends Group {
-  def globalDefAttrs = GlobalDefAttrs(patAttr.globalObjAttrs.absolutepatternMMLId, absoluteconstrMMLId)
-}
-case class OrgPatDef(orgExtPatAttr: OrgExtPatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
-  override def patAttr = orgExtPatAttr.extPatAttr.patAttr
+case class ReDefObjAttrs(spelling:String, sort:String, globalReDefAttrs: GlobalReDefAttrs) extends ReferencingConstrObjAttrs {
+  override def globalDefAttrs: GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
 }
 /**
- *
- * @param formatdes
- * @param formatNr
- * @param spelling
- * @param pos
- * @param patternnr
- * @param globalObjAttrs
- * @param _locis
+ * common attribute and children for patterns in mizar
  */
 sealed trait PatDefs {
   def patAttr: PatternAttrs
@@ -181,29 +171,67 @@ sealed trait PatDefs {
   def globalObjAttrs: GlobalObjAttrs = patAttr.globalObjAttrs
   def patDef : PatDef = PatDef(patAttr, _locis)
 }
+/**
+ * Common attributes for patterns in mizar
+ * @param formatdes
+ * @param spelling
+ * @param globalObjAttrs
+ */
+case class PatternAttrs(formatdes:String, spelling:String, globalObjAttrs: GlobalObjAttrs) extends Group
+/**
+ * A minimal list of attributes and children for patterns in mizar
+ * @param patAttr
+ * @param _locis
+ */
 case class PatDef(patAttr:PatternAttrs, _locis:List[Loci]) extends PatDefs
-case class ExtPatDef(extPatAttr: ExtPatAttr, _locis:List[Loci]) extends PatDefs {
+/**
+ * Common attributes for ConstrPatterns in mizar
+ * @param patAttr
+ * @param absoluteconstrMMLId
+ */
+case class ConstrPatAttr(patAttr:PatternAttrs, absoluteconstrMMLId: String) extends Group {
+  def globalDefAttrs = GlobalDefAttrs(patAttr.globalObjAttrs.absolutepatternMMLId, absoluteconstrMMLId)
+}
+/**
+ * Common attribute and children for ConstrPatterns in mizar
+ * @param extPatAttr
+ * @param _locis
+ */
+case class ConstrPatDef(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends PatDefs {
   override def patAttr: PatternAttrs = extPatAttr.patAttr
 }
-case class OrgExtPatAttr(extPatAttr:ExtPatAttr, globalOrgAttrs: GlobalOrgAttrs) extends Group {
+/**
+ * Common attributes for RedefinablePatterns in mizar
+ * @param extPatAttr
+ * @param globalOrgAttrs
+ */
+case class RedefinablePatAttr(extPatAttr:ConstrPatAttr, globalOrgAttrs: GlobalOrgAttrs) extends Group {
   def globalReDefAttrs = GlobalReDefAttrs(extPatAttr.globalDefAttrs, globalOrgAttrs)
+}
+/**
+ * Common attributes and children for RedefinablePatterns i mizar
+ * @param orgExtPatAttr
+ * @param _loci
+ * @param _locis
+ */
+case class RedefinablePatDef(orgExtPatAttr: RedefinablePatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
+  override def patAttr = orgExtPatAttr.extPatAttr.patAttr
 }
 
 /**
- *
- * @param pos
- * @param orgn
- * @param serNr
- * @param varnr
+ * Common attributes for (local) reference to a term
+ * @param idnr
+ * @param spelling
+ * @param sort
  */
-case class LocalVarAttr(idnr: Int, spelling:String, sort:String) extends Group {
+case class LocalConstAttr(idnr: Int, spelling:String, sort:String) extends Group {
   def toIdentifier : LocalName = MizarVariableName(spelling, sort, idnr)
 }
 /**
- *
+ * Common attributes for (local) variables
  * @param spelling
  * @param kind
- * @param redVarAttr
+ * @param idnr
  */
 case class VarAttrs(idnr: Int, spelling:String, kind:String) extends Group {
   /**
@@ -260,7 +288,6 @@ case class CaseBasedExpr(singleCasedExpr:SingleCaseExpr, partialCasedExpr:Partia
  * Contains the content of an Mizar article
  * @param articleid the name of the article
  * @param articleext the article extension (usually .miz)
- * @param pos the position in the source file at which the article content starts (usually after importing some content from other files)
  * @param _items the children items with the actual content
  */
 case class Text_Proper(articleid: String, articleext: String, _items: List[Item]) {
@@ -273,120 +300,13 @@ case class Text_Proper(articleid: String, articleext: String, _items: List[Item]
     "Text_Proper(ArticleId=\""+articleid+"\", artExt=\""+articleext+"\",List(\n"+itemsStr(_items)+")"
   }
 }
+/**
+ * A self-contained toplevel, declarationlevel or even prooflevel item containing a single subitem with mizar content
+ * @param kind the kind of the subitem
+ * @param _subitem the subitem with the content
+ */
 case class Item(kind: String, _subitem:Subitem) {
   def checkKind() = {
     assert(_subitem.kind == Utils.fullClassName(kind))
-  }
-}
-
-object Utils {
-  def fullClassName(s: String) = {
-    "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
-  }
-
-  def MizarRedVarName(idnr: Int): LocalName = LocalName("idNr_"+idnr.toString)
-  def MizarVariableName(spelling: String, kind: String, idnr: Int): LocalName = {
-    LocalName(spelling) / LocalName(kind) / MizarRedVarName(idnr)
-  }
-
-  /**
-   * Internal representation of Properties class
-   * @param _just (optional) the proof of the property
-   */
-  sealed abstract class MizarProperty(_property: String, _just:Option[Justification]) {
-    def property = _property
-    def just = _just
-  }
-  /**
-   * Commutativity of binary functors f, i.e. it means:
-   * for [x, y] f(x, y) = f(y, x)
-   * @param _just (optional) the proof of the property
-   */
-  case class Commutativity(_just:Option[Justification]) extends MizarProperty("commutativity", _just:Option[Justification])
-  /**
-   * Idempotence of binary functors f, i.e. it means:
-   * for [x] f(x, x) = x
-   * @param _just (optional) the proof of the property
-   */
-  case class Idempotence(_just:Option[Justification]) extends MizarProperty("idempotence", _just:Option[Justification])
-  /**
-   * Involutiveness of binary functors f, i.e. it means:
-   * for [x] f(f(x)) = x
-   * @param _just (optional) the proof of the property
-   */
-  case class Involutiveness(_just:Option[Justification]) extends MizarProperty("involutiveness", _just:Option[Justification])
-  /**
-   * Projectivity of binary functors f, i.e. it means:
-   * for [x] f(f(x)) = f(x)
-   * @param _just (optional) the proof of the property
-   */
-  case class Projectivity(_just:Option[Justification]) extends MizarProperty("projectivity", _just:Option[Justification])
-
-  /**
-   * Reflexivity of binary predicates (relations) R, i.e. it means:
-   * for [x] x R x
-   * @param _just (optional) the proof of the property
-   */
-  case class Reflexivity(_just:Option[Justification]) extends MizarProperty("reflexivity", _just:Option[Justification])
-  /**
-   * Irreflexivity of binary predicates (relations) R, i.e. it means:
-   * for [x] not x R x
-   * @param _just (optional) the proof of the property
-   */
-  case class Irreflexivity(_just:Option[Justification]) extends MizarProperty("irreflexivity", _just:Option[Justification])
-  /**
-   * Symmetry of binary predicates (relations) R, i.e. it means:
-   * for [x, y] x R y => y R x
-   * @param _just (optional) the proof of the property
-   */
-  case class Symmetry(_just:Option[Justification]) extends MizarProperty("symmetry", _just:Option[Justification])
-  /**
-   * Assymmetry of binary predicates (relations) R, i.e. it means:
-   * for [x, y] x R y => not y R x
-   * @param _just (optional) the proof of the property
-   */
-  case class Assymmetry(_just:Option[Justification]) extends MizarProperty("assymmetry", _just:Option[Justification])
-  /**
-   * For binary predicates (relations) R, its meaning is:
-   * for [x, y] x R y or y R x
-   * @param _just (optional) the proof of the property
-   */
-  case class Connectedness(_just:Option[Justification]) extends MizarProperty("connectedness", _just:Option[Justification])
-  //for modes and existential_registrations
-  //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
-  case class Sethood(_just:Option[Justification], _tp: Option[Type]) extends MizarProperty("sethood", _just:Option[Justification])
-  def matchProperty(prop: String, _just:Option[Justification], _tp:Option[Type] = None) = prop match {
-    case "commutativity" => Commutativity(_just)
-    case "idempotence" => Idempotence(_just)
-    case "involutiveness" => Involutiveness(_just)
-    case "projectivity" => Projectivity(_just)
-    case "reflexivity" => Reflexivity(_just)
-    case "irreflexivity" => Irreflexivity(_just)
-    case "symmetry" => Symmetry(_just)
-    case "asymmetry" => Assymmetry(_just)
-    case "connectedness" => Connectedness(_just)
-    case "sethood" => Sethood(_just, _tp)
-  }
-  sealed abstract class DeclarationKinds extends PatternKinds
-  case class ModeKind() extends DeclarationKinds
-  case class StructureKind() extends DeclarationKinds
-  case class FunctorKind() extends DeclarationKinds
-  case class AttributeKind() extends DeclarationKinds
-  case class PredicateKind() extends DeclarationKinds
-  sealed abstract class PatternKinds
-  case class StrictKind() extends PatternKinds
-  case class AggregateKind() extends PatternKinds
-  case class SelectorKind() extends PatternKinds
-  case class ForgetfulKind() extends PatternKinds
-  def shortKind(kind: PatternKinds): Char = kind match {
-    case ModeKind() => 'M'
-    case StructureKind() => 'L'
-    case FunctorKind() => 'K'
-    case AttributeKind() => 'V'
-    case PredicateKind() => 'R'
-    case StrictKind() => 'V'
-    case AggregateKind() => 'G'
-    case SelectorKind() => 'J'
-    case ForgetfulKind() => 'U'
   }
 }
