@@ -6,7 +6,7 @@ import notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
 import info.kwarc.mmt.mizar.newxml._
-import mmtwrapper.{FunctorDefInstance, _}
+import mmtwrapper.{FunctorDefinitionInstance, _}
 import MMTUtils._
 import MizarPrimitiveConcepts._
 import syntax._
@@ -293,20 +293,10 @@ object patternTranslator {
         (c.toTerm, addArgsTps.map(_._2))
       case dd: symbols.DerivedDeclaration =>
         val addArgTps = dd match {
-          case DirectPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case IndirectPartialAttributeDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case DirectCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-          case IndirectCompleteAttributeDefinition(_, _, addArgTps, _, _, _, _) => addArgTps
-          case DirectPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case IndirectPartialFunctorDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case DirectCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case IndirectCompleteFunctorDefinition(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case DirectPartialModeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-          case IndirectPartialModeDefinition(_, _, addArgTps, _, _, _, _, _) => addArgTps
-          case DirectCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
-          case IndirectCompleteModeDefinition(_, _, addArgTps, _, _, _) => addArgTps
-          case DirectPartialPredicateDef(_, _, addArgTps, _, _, _, _, _) => addArgTps
-          case DirectCompletePredicateDef(_, _, addArgTps, _, _, _) => addArgTps
+          case AttributeDefinitionInstance(_, _, addArgTps, _, _, _, _, _) => addArgTps
+          case FunctorDefinitionInstance(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
+          case ModeDefinitionInstance(_, _, addArgTps, _, _, _, _) => addArgTps
+          case PredicateDefinitionInstance(_, _, addArgTps, _, _, _, _, _) => addArgTps
           case other => throw PatternTranslationError("Expected reference to original declaration of same kind in redefinition, but instead found "+other.feature+" at referenced location "+other.path+"\nReferenced by the pattern: "+pat+". ", pat)
         }
         (OMS(globalLookup(pat)), addArgTps)
@@ -444,17 +434,13 @@ object definitionTranslator {
     val name = path.name
     implicit val notCon = notC
     val defn = _defn.map(translate_Definiens(_))
-    val firstRes = if (defn.isEmpty) {
-      if(redefinableLabeledDefinition.redefinition) {
-        val ret = redefinableLabeledDefinition match {
-          case Functor_Definition(mmlIdO, _redef, _pat, _tpSpec, _def) =>
-            _tpSpec map (tpSpec => translate_Type(tpSpec._types))
-          case _ => None
-        }
-        translate_Redefine(pat, ln, ret)(notC)
-      } else {
-        throw ImplementationError("This should never occur. ")
+    val firstRes = if (redefinableLabeledDefinition.redefinition) {
+      lazy val ret = redefinableLabeledDefinition match {
+        case Functor_Definition(mmlIdO, _redef, _pat, _tpSpec, _def) =>
+          _tpSpec map (tpSpec => translate_Type(tpSpec._types))
+        case _ => None
       }
+      translate_Redefine(pat, ln, ret, defn)(notC)
     } else {
       def corrConds(implicit kind: String, retO: Option[Term] = None) = defContext.corr_conds.map(jcc => translate_def_correctness_condition(jcc._cond, jcc._just, defn.get, kind, retO))
       def get (cc: CorrectnessConditions)(implicit kind: String, retO: Option[Term] = None): Term = corrConds zip defContext.corr_conds find (_._2._cond == cc) map (_._1) getOrElse (translate_def_correctness_condition(cc, None, defn.get, kind, retO))
@@ -632,7 +618,14 @@ object definitionTranslator {
     if (defContext.withinProof) defContext.addLocalDefinition(gn.name, df)
     makeConstantInContext(gn.name, Some(tp), Some(df))
   }
-  def translate_Redefine(p: RedefinablePatterns, ln: LocalName, ret: Option[Term])(implicit notC: NotationContainer) = {
+  def translate_Redefine(p: RedefinablePatterns, ln: LocalName, ret: Option[Term], defn: Option[CaseByCaseDefinien])(implicit notC: NotationContainer) = {
+    if (defn.isEmpty) {
+      //In this case we have a type redefinition
+
+    } else {
+      //In this case we define new definiens
+
+    }
     TranslationController.controller.get(globalLookup(p, true)) match {
       case c: Constant => makeConstant(ln, Some(ret getOrElse c.tp.get), c.df)
       case dd@MizarPatternInstance(_, pat, params) => makeConstant(ln, dd.tp, Some(dd.path()))//MizarPatternInstance(ln, pat, params)
