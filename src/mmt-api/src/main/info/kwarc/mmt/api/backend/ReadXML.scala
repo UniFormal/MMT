@@ -388,7 +388,6 @@ class XMLReader(controller: Controller) extends Logger {
                case _ => throw ParseError("unexpected definition element")
             }
          case <notations>{notN}</notations> =>
-            val tp = Obj.parseTerm(notN, nsMap)
             body match {
                case d: HasNotation =>
                  val ntC = NotationContainer.parse(notN, body.path)

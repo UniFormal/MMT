@@ -2,6 +2,7 @@ package info.kwarc.mmt.mizar.newxml.mmtwrapper
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.patterns.Instance.Type
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
 import objects._
 import notations._
 import symbols._
@@ -12,7 +13,7 @@ import patterns._
 //Typically only these two objects need to be updated if the structural extensions API of MMT changes
 object MizPattern {
   def apply(name : LocalName, params: Context, body : Context) = {
-     patterns.Pattern(OMMOD(Mizar.MizarPatternsTh), name, params, body, NotationContainer.empty())
+     patterns.Pattern(OMMOD(MizarPatternsTh), name, params, body, NotationContainer.empty())
   }
 }
 

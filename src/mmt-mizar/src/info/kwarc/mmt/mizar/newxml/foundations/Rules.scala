@@ -7,7 +7,7 @@ import uom._
 import sequences._
 
 import info.kwarc.mmt.mizar.newxml.mmtwrapper._
-import Mizar._
+import MizarPrimitiveConcepts._
 
 object IntroductionRule {
   val metaVarBase = LocalName("")
@@ -45,12 +45,12 @@ object IntroduceImplication extends TermTransformationRule with ComplificationRu
       case Apply(OMS(negCon), ApplySpine(OMS(andCon), NoSeqs(args))) =>
         var succ: List[Term] = Nil
         args.reverse.find {
-          case Mizar.not(a) =>
+          case not(a) =>
             succ ::= a
             false
-          case Mizar.forall(n,t,Mizar.not(a)) =>
+          case forall(n,t,not(a)) =>
             // forall with negated body often stems from negated existential
-            succ ::= Mizar.exists(n.name.toString,t,a)
+            succ ::= exists(n.name.toString,t,a)
             false
           case _ => true
         }
@@ -90,7 +90,7 @@ object IntroduceExistential extends TermTransformationRule with ComplificationRu
 
   def apply(matcher: Matcher, goalContext: Context, goal: Term): Option[Term] = {
     goal match {
-      case Mizar.not(Mizar.forall(n, x, Mizar.not(y))) => Some(Mizar.exists(n, x, y))
+      case not(forall(n, x, not(y))) => Some(exists(n, x, y))
       case _ => None
     }
   }

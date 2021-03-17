@@ -1,27 +1,33 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.{GlobalName, ImplementationError}
+import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
 import info.kwarc.mmt.mizar.newxml.syntax.Claim
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslatorUtils}
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslationController, TranslatorUtils}
 
-sealed trait DeclarationLevel
-trait Subitem extends DeclarationLevel {
+sealed trait Subitem {
   def kind:String = {
     this.getClass.getName
   }
   def shortKind: String = kind.split('.').lastOption.getOrElse(kind).replace('_','-')
 }
-sealed trait MMLIdSubitem extends Subitem {
-  def MmlId: MMLId
-  def mizarGlobalName():MizarGlobalName = {
-    val sgn = this.MmlId.mizarSemiGlobalName()
-    sgn.makeGlobalName(this.shortKind)
-  }
+sealed trait TopLevel extends Subitem
+sealed trait DeclarationLevel extends Subitem
+sealed trait TopOrDeclarationLevel extends TopLevel with DeclarationLevel
+sealed trait ProofLevel extends DeclarationLevel
+sealed trait MMLIdSubitem extends TopOrDeclarationLevel {
+  def mmlId: MMLId
+  def globalName: GlobalName = mmlId.globalName(this.shortKind)
 }
-case class Reservation(_reservationSegments: List[Reservation_Segment]) extends Subitem
-case class Definition_Item(_block:Block) extends Subitem {
-  //verify addumptions for translation
+sealed trait BlockSubitem extends TopOrDeclarationLevel
+sealed trait RegistrationSubitems extends BlockSubitem
+sealed trait Registrations extends RegistrationSubitems
+sealed trait Definition extends BlockSubitem
+sealed trait PrivateDefinition extends Definition
+
+case class Reservation(_reservationSegments: List[Reservation_Segment]) extends TopOrDeclarationLevel
+case class Definition_Item(_block:Block) extends TopOrDeclarationLevel {
+  //verify assumptions for translation
   def check() = {
     val kind = _block.kind
     if (! allowedKinds.contains(kind)) {
@@ -38,18 +44,24 @@ case class Definition_Item(_block:Block) extends Subitem {
  * An empty item, the only interesting information is given in the containing item,
  * namely its position
  */
-case class Section_Pragma() extends Subitem
-case class Pragma(_notionName: Option[Pragmas]) extends Subitem
-case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends Subitem
+case class Section_Pragma() extends TopLevel
+case class Pragma(_notionName: Option[Pragmas]) extends TopLevel
 case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
-case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Subitem
-case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Subitem
-case class Exemplification(_exams:List[Exemplifications]) extends Subitem
-case class Assumption(_ass:Assumptions) extends Subitem
-case class Identify(_firstPat:Patterns, _sndPat:Patterns, _lociEqns:Loci_Equalities) extends RegistrationSubitems
-case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends Subitem // let
-case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends Subitem
-case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
+
+/**
+ * State that if the _lociEqns are satesfied, then the pattern_shaped_expressions should be identified as equal
+ * @param _firstPat
+ * @param _sndPat
+ * @param _lociEqns
+ */
+case class Identify(_firstPat:Pattern_Shaped_Expression, _sndPat:Pattern_Shaped_Expression, _lociEqns:Loci_Equalities) extends RegistrationSubitems
+
+/**
+ * Contains a single block containing one subitem being the scheme head for this scheme and some futher subitems jointly forming the proof of it
+ * @param mmlId
+ * @param _block
+ */
+case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
   def scheme_head(): Scheme_Head = {
     assert(_block.kind == "Scheme-Block")
     val scheme_head_item = _block._items.head
@@ -59,28 +71,31 @@ case class Scheme_Block_Item(MmlId: MMLId, _block:Block) extends MMLIdSubitem {
       case _ => throw ImplementationError("Scheme head expected as first item in Scheme-Block-Item. ")
     }
   }
+  /**
+   * Statement and proof of the scheme
+   * @return
+   */
   def provenSentence() = {
     val justItems = _block._items.tail
-    val startPos = justItems.head.pos.startPosition()
-    val endPos = justItems.last.pos.endposition
-    ProvedClaim(scheme_head()._form, Some(Block("Proof", Positions(Position(startPos.line.toString+"\\"+startPos.col), endPos), justItems)))
+    ProvedClaim(scheme_head()._form, Some(Block("Proof", justItems)))
   }
 }
-//telling Mizar to remember these properties for proofs later
-case class Property(_props:Properties, _just:Option[Justification]) extends Subitem {
-  def matchProperty() : MizarProperty = _props.matchProperty(_just)
-}
-case class Per_Cases(_just:Justification) extends Subitem
-case class Case_Block(_block:Block) extends Subitem
 
-sealed trait Heads extends Subitem
+sealed trait Heads extends TopLevel
+/**
+ * the head (first subitem) of a scheme(-block)
+ * @param _sch
+ * @param _vars
+ * @param _form
+ * @param _provForm assumptions to a scheme
+ */
 case class Scheme_Head(_sch:Scheme, _vars:Schematic_Variables, _form:Formula, _provForm:Option[Provisional_Formulas]) extends Heads
 case class Suppose_Head(_ass:Assumptions) extends Heads
 case class Case_Head(_ass:Assumptions) extends Heads
 
 sealed trait Nyms extends BlockSubitem {
-  def _patOld: Patterns
   def _patNew: Patterns
+  def _patRefOld: Pattern_Shaped_Expression
   def antonymic: Boolean
 }
 sealed trait Synonym extends Nyms {
@@ -89,15 +104,15 @@ sealed trait Synonym extends Nyms {
 sealed trait Antonym extends Nyms {
   override def antonymic = true
 }
-case class Pred_Synonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Synonym
-case class Pred_Antonym(_patOld:Predicate_Pattern, _patNew: Predicate_Pattern) extends Antonym
-case class Attr_Synonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Synonym
-case class Attr_Antonym(_patOld:Attribute_Pattern, _patNew:Attribute_Pattern) extends Antonym
-case class Func_Synonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Synonym
-case class Func_Antonym(_patOld:Functor_Patterns, _patNew:Functor_Patterns) extends Antonym
-case class Mode_Synonym(_patOld:Mode_Pattern, _patNew:Mode_Pattern) extends Synonym
+case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
+case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
+case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Func_Antonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 
-sealed trait Statement extends Subitem {
+sealed trait Statement extends ProofLevel {
   def prfClaim: ProvedClaim
 }
 case class Conclusion(prfClaim:ProvedClaim) extends Statement
@@ -105,24 +120,58 @@ case class Conclusion(prfClaim:ProvedClaim) extends Statement
  * corresponds to a reconsider
  * followed by a list of assignments
  */
-case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement {
+case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement with TopOrDeclarationLevel {
   def claim = Type_Changing_Claim(_eqList, _tp)
   override def prfClaim: ProvedClaim = ProvedClaim(claim, Some(_just))
 }
-case class Regular_Statement(prfClaim:ProvedClaim) extends Statement
-case class Theorem_Item(MmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
+case class Regular_Statement(prfClaim:ProvedClaim) extends Statement with TopOrDeclarationLevel
+case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  override def referencedLabel(): GlobalName = if (labelled) _prop.referencedLabel() else TranslatorUtils.mMLIdtoGlobalName(mizarGlobalName())
+  override def referencedLabel: GlobalName = if (labelled) _prop.referencedLabel else globalName
 }
-case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement
+case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) extends Statement with TopOrDeclarationLevel
 
-sealed trait BlockSubitem extends Subitem
-sealed trait Definition extends BlockSubitem
-sealed trait PrivateDefinition extends Definition
-case class Attribute_Definition(MmlId:MMLId, _redef:Redefine, _attrPat:Attribute_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Functor_Definition(MmlId:MMLId, _redefine:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends Definition with MMLIdSubitem
-case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predicate_Pattern, _def:Option[Definiens]) extends Definition with MMLIdSubitem
+/**
+ * Definitions which have a label and may get redefined
+ * @precondition _def.isEmpty => (redefinition <=> _pat.hasOrgiRefs && redefinition => mmlIdO.isEmpty)
+ */
+sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
+  def mmlIdO: Option[MMLId]
+  def _redef: Redefine
+  def _pat: RedefinablePatterns
+  def _def: Option[Definiens]
+  def redefinition = _redef.occurs
+  def check: Unit = {
+    if (! (_def.isDefined || (redefinition == _pat.hasOrigRefs && (!redefinition || mmlIdO.isEmpty)))) {
+      throw ImplementationError("Wrong parsing assumption. ")
+    }
+  }
+
+  override def mmlId: MMLId = mmlIdO.get
+  def defKind: Char = this match {
+    case ad: Attribute_Definition => Utils.shortKind(Utils.AttributeKind())
+    case fd: Functor_Definition => Utils.shortKind(Utils.FunctorKind())
+    case pd: Predicate_Definition => Utils.shortKind(Utils.PredicateKind())
+  }
+  override def globalName = {
+    val Array(aid, ln) = mmlId.MMLId.split(":")
+    TranslationController.getTheoryPath(aid) ? LocalName(defKind.toString+ln)
+  }
+}
+case class Attribute_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Attribute_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
+
+/**
+ * Definition of a new functor (function)
+ * @param mmlIdO
+ * @param _redef whether this is a redefinition
+ * @param _pat the pattern giving name and notation of the newly defined functor
+ * @param _tpSpec (optional) the return type of the functor
+ * @param _def (optional) the definien
+ * @precondition unless _redef.occurs both _tpSpec and _def are given
+ */
+case class Functor_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:RedefinableFunctor_Patterns, _tpSpec:Option[Type_Specification], _def:Option[Definiens]) extends RedefinableLabeledDefinition
+case class Predicate_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Predicate_Pattern, _def:Option[Definiens]) extends RedefinableLabeledDefinition
 /**
  * definition of a structure, takes ancestors (a list of structures it inherits from),
  * structure-Pattern contains several loci, corresponds to the universes the structure is over,
@@ -138,7 +187,7 @@ case class Predicate_Definition(MmlId:MMLId, _redefine:Redefine, _predPat:Predic
  */
 case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends Definition
 case class Constant_Definition(_children:List[Equating]) extends Definition
-case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) extends Definition
+case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _mode:Modes) extends Definition
 /**
  * 1-1 corresponds to a deffunc definition, its uses are private_functor_terms
  * used as shortcut and visible within its block
@@ -149,8 +198,6 @@ case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _expMode:Modes) e
 case class Private_Functor_Definition(_var:Variable, _tpList:Type_List, _tm:MizTerm) extends PrivateDefinition
 case class Private_Predicate_Definition(_var:Variable, _tpList:Type_List, _form:Formula) extends PrivateDefinition
 
-sealed trait RegistrationSubitems extends BlockSubitem
-sealed trait Registrations extends RegistrationSubitems
 /**
  * stating that a term tm has some properties
  * @param pos
@@ -158,14 +205,14 @@ sealed trait Registrations extends RegistrationSubitems
  * @param _adjCl its properties
  * @param _tp (optional) qualifies
  */
-case class Functorial_Registration(pos:Position, _aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
+case class Functorial_Registration(_aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 /**
  * stating that some attributes hold on a type
  * @param pos
  * @param _adjClust
  * @param _tp
  */
-case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
+case class Existential_Registration(_adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * stating that some attributes attrs implies another attribute at
  * @param pos
@@ -173,58 +220,84 @@ case class Existential_Registration(pos:Position, _adjClust:Adjective_Cluster, _
  * @param _at the implied attribute
  * @param _tp
  */
-case class Conditional_Registration(pos:Position, _attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
+case class Conditional_Registration(_attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * registering properties for a mode
  */
-case class Property_Registration(_props:Properties, _block:Block) extends Registrations with Subitem
+case class Property_Registration(_props:Properties, _block:Block) extends Registrations
 
+case class Scheme(idnr: Int, spelling:String, nr:Int) extends TopOrDeclarationLevel
+
+case class Loci_Declaration(_qualSegms:Qualified_Segments, _conds:Option[Conditions]) extends DeclarationLevel
+case class Assumption(_ass:Assumptions) extends DeclarationLevel
+sealed trait Assumptions extends DeclarationLevel
+case class Single_Assumption(_prop:Proposition) extends Assumptions
+case class Collective_Assumption(_cond:Conditions) extends Assumptions
+case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
+
+case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel
+case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends DeclarationLevel
+case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends DeclarationLevel
 /**
  * Well-definedness conditions that need to be proven along with definitions
  */
-sealed trait CorrectnessConditions extends DeclarationLevel
+sealed abstract class CorrectnessConditions(_sort: String) extends DeclarationLevel {
+  def sort = _sort
+}
 /**
  * non-emptyness of non-expandable types (modes) or clustered_types in registrations of attributes
  */
-case class existence() extends CorrectnessConditions
+case class existence() extends CorrectnessConditions("existence")
 /**
  * uniqueness for functors
  */
-case class uniqueness() extends CorrectnessConditions
+case class uniqueness() extends CorrectnessConditions("uniqueness")
 /**
  * can define functor using means or equals
  * if defined using equals need coherence to correct type
  */
-case class coherence() extends CorrectnessConditions
+case class coherence() extends CorrectnessConditions("coherence")
 /**
  * reduce x * 1.L to x
  * reducibility by Def6
  */
-case class reducibility() extends CorrectnessConditions
-case class compatibility() extends CorrectnessConditions
+case class reducibility() extends CorrectnessConditions("reducibility")
+case class compatibility() extends CorrectnessConditions("compatibility")
 /**
  * for overlap of case-by-case (complex) defns
  */
-case class consistency() extends CorrectnessConditions
+case class consistency() extends CorrectnessConditions("consistency")
 /*/**
  * conjunction of all necessary correctness conditions, doesn't appear in esx files
  */
 case class correctness() extends CorrectnessConditions*/
-
-sealed trait Pragmas extends DeclarationLevel
-case class Unknown(pos:Position, inscription:String) extends Pragmas
-case class Notion_Name(pos:Position, inscription:String) extends Pragmas
-case class Canceled(MmlId:MMLId, amount:Int, kind:String, position:Position) extends Pragmas
-
-case class Scheme(idNr: Int, spelling:String, nr:Int) extends DeclarationLevel
-case class Reservation_Segment(pos: Position, _vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends DeclarationLevel
-
-sealed trait Segments extends DeclarationLevel {
-  def _vars: Variables
-  def _tpList: Type_List
-  def _tpSpec: Option[Type_Specification]
+//telling Mizar to remember these properties for proofs later
+case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
+  def matchProperty() : MizarProperty = _props.matchProperty(_just)
 }
-case class Functor_Segment(pos:Position, _vars:Variables, _tpList:Type_List, _tpSpec:Option[Type_Specification]) extends Segments
-case class Predicate_Segment(pos:Position, _vars:Variables, _tpList:Type_List) extends Segments {
-  override def _tpSpec: Option[Type_Specification] = None
-}
+/**
+ * Corresponds to a case distinction in a proof
+ * Only occurs within proofs
+ * @param _just the remaining Proof, starting with the distinguished cases (as Case_Blocks)
+ */
+case class Per_Cases(_just:Justification) extends ProofLevel
+/**
+ * A single case in a case distinction
+ * @param _block
+ */
+case class Case_Block(_block:Block) extends ProofLevel
+
+case class Exemplification(_exams: List[Exemplifications]) extends ProofLevel
+/**
+ * Fix variables that are universally quantified over in a proof
+ * @param _qual variable segments containing the variables
+ * @param _conds
+ */
+case class Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
+/**
+ * Fix variables in a proof
+ * @param _qual variable segments conatining the variables
+ * @param _conds
+ */
+case class Default_Generalization(_qual:Qualified_Segments, _conds:Option[Claim]) extends ProofLevel
+case class Reduction(_tm:MizTerm, _tm2:MizTerm) extends ProofLevel

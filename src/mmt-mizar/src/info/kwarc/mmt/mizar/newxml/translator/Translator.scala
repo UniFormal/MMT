@@ -2,12 +2,8 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.utils.FilePath
-import symbols.{Constant, Declaration, DerivedDeclaration}
+import symbols.{Constant, Declaration, DerivedDeclaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPatternInstance
 import info.kwarc.mmt.mizar.newxml.syntax._
 
 
@@ -21,58 +17,58 @@ import subitemTranslator._
 object itemTranslator {
   // Adds the corresponding content to the TranslationController
   def translateItem(item: Item) = {
-    val sourceReg = item.pos.sourceRegion()
     item.checkKind()
+    implicit val defCtx = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
-    (item._subitem match {
-      case subitem: MMLIdSubitem => subitem match {
-        case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item)
-        case theorem_Item: Theorem_Item => statementTranslator.translate_Theorem_Item(theorem_Item)
-        case attrDef: Attribute_Definition => definitionTranslator.translate_Attribute_Definition(attrDef)
-        case funcDef: Functor_Definition => definitionTranslator.translate_Functor_Definition(funcDef)
-        case pd: Predicate_Definition => definitionTranslator.translate_Predicate_Definition(pd)
-      }
-      case res: Reservation => translate_Reservation(res)
-      case defIt: Definition_Item => translate_Definition_Item(defIt)
-      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma)
-      case pr: Pragma => translate_Pragma(pr)
+    def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
+    item._subitem match {
+      case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
+      case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
+      case theorem_Item: Theorem_Item => add (statementTranslator.translate_Theorem_Item(theorem_Item))
+      case res: Reservation => translate_Reservation(res) foreach add
+      case defIt: Definition_Item => translate_Definition_Item(defIt) foreach add
+      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
+      case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
-      case cl: Cluster => clusterTranslator.translate_Cluster(cl)
-      case correctness: Correctness => translate_Correctness(correctness)
-      case correctness_Condition: Correctness_Condition => translate_Correctness_Condition(correctness_Condition)
-      case exemplification: Exemplification => translate_Exemplification(exemplification)
-      case assumption: Assumption => translate_Assumption(assumption)
-      case identify: Identify => translate_Identify(identify)
-      case generalization: Generalization => translate_Generalization(generalization)
-      case reduction: Reduction => translate_Reduction(reduction)
-      case head: Heads => headTranslator.translate_Head(head)
-      case nym: Nyms => nymTranslator.translate_Nym(nym)
-      case st: Statement => statementTranslator.translate_Statement(st)
-      case defn: Definition => definitionTranslator.translate_Definition(defn)
-      case otherSubit => throw DeclarationTranslationError("This should never occur on toplevel. ", otherSubit)
-    }).foreach({TranslationController.add(_)})
-    /*translatedSubitem map {
-      //Currently probably the only case that actually occurs in practise
-      case decl: Declaration =>
-        val name = decl.name
-        TranslationController.add(decl)
-      case mod: info.kwarc.mmt.api.modules.Module => TranslationController.add(mod)
-      case nar: NarrativeElement => TranslationController.add(nar)
-    }*/
+      case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
+      case identify: Identify => add (translate_Identify(identify))
+      case head: Heads => headTranslator.translate_Head(head) foreach add
+      case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
+      case st: Statement with TopLevel => add (statementTranslator.translate_Statement(st))
+      case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
+    }
   }
 }
 
 import TranslationController._
 class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
-  def inExts = List("esx1")
+  def inExts = List("esx")
 
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
     val parser = makeParser
+    val startParsingTime = System.nanoTime()
+    def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+      val diffTime = math.round(nanoDiff / 1e9d)
+      val seconds = diffTime % 60
+      val minutes = (diffTime - seconds) / 60
+      println(prefix+minutes.toString+" minutes and "+seconds.toString+" seconds. ")
+    }
+
     val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
+
+
+    printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
+    val startTranslationTime = System.nanoTime()
+
     val doc = translate(text_Proper, bf)
 
+    printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
+    val startAddingTime = System.nanoTime()
+
     index(doc)
+    printTimeDiff(System.nanoTime() - startParsingTime, "The adding took ")
+
     //archives.BuildResult.empty
     archives.BuildResult.fromImportedDocument(doc)
   }
@@ -82,7 +78,7 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.controller = controller
     TranslationController.currentAid = aid
     TranslationController.currentOutputBase = bf.narrationDPath.^!
-
+    
     val doc = TranslationController.makeDocument()
     val thy = TranslationController.makeTheory()
 
@@ -98,8 +94,10 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    log("The translated article " + bf.narrationDPath.last + ": ")
+    //typecheckContent(TranslationController.currentThy, Some(this.report))
 
+    /*
+    log("The translated article " + bf.narrationDPath.last + ": ")
     doc.getModules(TranslationController.controller.globalLookup) foreach {
       case mpath: MPath => TranslationController.controller.getModule(mpath) match {
         case th: Theory => log("theory " + th.name)
@@ -116,11 +114,15 @@ class MizarXMLImporter extends archives.Importer {
             }
         }
       }
-    }
+    }*/
     val unres = TranslationController.getUnresolvedDependencies()
     if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
     val deps = TranslationController.getDependencies()
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+
+    println (TranslationController.notationStatistics)
+
+    println(TranslationController.articleStatistics.makeArticleStatistics)
     TranslationController.currentDoc
   }
 }
