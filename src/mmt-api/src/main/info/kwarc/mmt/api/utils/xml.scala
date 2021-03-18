@@ -207,6 +207,8 @@ object xml {
          case "xhtml" => "http://www.w3.org/1999/xhtml"
          case "html" => "http://www.w3.org/1999/xhtml"
          case "mathml" => "http://www.w3.org/1998/Math/MathML"
+         case "jobad" => "http://www.mathhub.info/jobad" // TODO: Not sure which one this is!
+         case _ => throw new Exception("Unknown XML Namespace " + ns)
       }
    }
 }
