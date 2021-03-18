@@ -108,10 +108,10 @@ object justificationTranslator {
             translateSubitems(tail)
           case _: Reduction => translateSubitems(tail) //TODO: translate this to something
           case _: Identify => translateSubitems(tail)
-          case _@ Default_Generalization(_qual, _) =>
+          case Default_Generalization(_qual, _) =>
             _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach (defContext.addLocalBindingVar)
             translateSubitems(tail)
-          case _@ Generalization(_qual, _) =>
+          case Generalization(_qual, _) =>
             _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach (defContext.addLocalBindingVar)
             translateSubitems(tail)
           case prDef: PrivateDefinition =>

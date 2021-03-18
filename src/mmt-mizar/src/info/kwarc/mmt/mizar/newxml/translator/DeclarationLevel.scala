@@ -264,7 +264,7 @@ object patternTranslator {
     assert (! fstDel.isEmpty)
     //val fstDel = if (spl != "") spl else name.toString
     val fixity = pattern match {
-      case InfixFunctor_Pattern(rightargsbracketedO, orgExtPatAttr, _loci, _locis) =>
+      case InfixFunctor_Pattern(rightargsbracketedO, _) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
         PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>

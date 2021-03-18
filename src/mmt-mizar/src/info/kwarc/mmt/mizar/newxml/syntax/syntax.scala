@@ -194,28 +194,28 @@ case class ConstrPatAttr(patAttr:PatternAttrs, absoluteconstrMMLId: String) exte
 }
 /**
  * Common attribute and children for ConstrPatterns in mizar
- * @param extPatAttr
+ * @param constrPatAttr
  * @param _locis
  */
-case class ConstrPatDef(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends PatDefs {
-  override def patAttr: PatternAttrs = extPatAttr.patAttr
+case class ConstrPatDef(constrPatAttr: ConstrPatAttr, _locis:List[Loci]) extends PatDefs {
+  override def patAttr: PatternAttrs = constrPatAttr.patAttr
 }
 /**
  * Common attributes for RedefinablePatterns in mizar
- * @param extPatAttr
+ * @param constrPatAttr
  * @param globalOrgAttrs
  */
-case class RedefinablePatAttr(extPatAttr:ConstrPatAttr, globalOrgAttrs: GlobalOrgAttrs) extends Group {
-  def globalReDefAttrs = GlobalReDefAttrs(extPatAttr.globalDefAttrs, globalOrgAttrs)
+case class RedefinablePatAttr(constrPatAttr:ConstrPatAttr, globalOrgAttrs: GlobalOrgAttrs) extends Group {
+  def globalReDefAttrs = GlobalReDefAttrs(constrPatAttr.globalDefAttrs, globalOrgAttrs)
 }
 /**
  * Common attributes and children for RedefinablePatterns i mizar
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _loci
  * @param _locis
  */
-case class RedefinablePatDef(orgExtPatAttr: RedefinablePatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
-  override def patAttr = orgExtPatAttr.extPatAttr.patAttr
+case class RedefinablePatDef(redefPatAttr: RedefinablePatAttr, _loci:List[Locus], _locis:List[Loci]) extends PatDefs {
+  override def patAttr = redefPatAttr.constrPatAttr.patAttr
 }
 
 /**

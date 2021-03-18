@@ -521,57 +521,57 @@ case class Mode_Pattern(patternAttrs: PatternAttrs, _locis: List[Loci]) extends 
  * Patterns for definitions that define both a pattern and a constr
  */
 sealed trait ConstrPattern extends Patterns with GloballyReferencingDefAttrs {
-  def extPatAttr: ConstrPatAttr
-  def _locis:List[Loci]
-  def extPatDef: ConstrPatDef = ConstrPatDef(extPatAttr, _locis)
-  override def patternAttrs: PatternAttrs = extPatDef.extPatAttr.patAttr
-  override def globalDefAttrs: GlobalDefAttrs = extPatAttr.globalDefAttrs
+  def constrPatDef: ConstrPatDef
+  def _locis:List[Loci] = constrPatDef._locis
+  def constrPatAttr: ConstrPatAttr = constrPatDef.constrPatAttr
+  override def patternAttrs: PatternAttrs = constrPatDef.constrPatAttr.patAttr
+  override def globalDefAttrs: GlobalDefAttrs = constrPatAttr.globalDefAttrs
 }
 /**
  * Patterns for redefinable definitions defining both pattern and constr
  */
 sealed trait RedefinablePatterns extends ConstrPattern with GloballyReferencingReDefAttrs {
-  def orgExtPatAttr: RedefinablePatAttr
-  def _loci: List[Locus]
-  def orgPatDef: RedefinablePatDef = RedefinablePatDef(orgExtPatAttr, _loci, _locis)
-  override def extPatAttr: ConstrPatAttr = orgExtPatAttr.extPatAttr
-  override def globalReDefAttrs = orgExtPatAttr.globalReDefAttrs
+  def redefPatDef: RedefinablePatDef
+  def _loci: List[Locus] = redefPatDef._loci
+  def redefPatAttr: RedefinablePatAttr = redefPatDef.redefPatAttr
+  override def _locis: List[Loci] = redefPatDef._locis
+  override def constrPatDef: ConstrPatDef = ConstrPatDef(redefPatAttr.constrPatAttr, _locis)
+  override def globalReDefAttrs = redefPatAttr.globalReDefAttrs
   def hasOrigRefs = globalReDefAttrs.hasOrigRefs
 }
 /**
  * a pattern of a structure definition
- * @param extPatAttr
+ * @param constrPatAttr
  * @param _locis
  */
-case class Structure_Pattern(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends ConstrPattern {
-  override def extPatDef = ConstrPatDef(extPatAttr, _locis)
+case class Structure_Pattern(constrPatDef: ConstrPatDef) extends ConstrPattern {
   override def patKind = Utils.StructureKind()
 }
 /**
  * a pattern of an attribute definition
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _loci
  * @param _locis
  */
-case class Attribute_Pattern(orgExtPatAttr: RedefinablePatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns {
+case class Attribute_Pattern(redefPatDef: RedefinablePatDef) extends RedefinablePatterns {
   override def patKind = Utils.AttributeKind()
 }
 /**
  * a pattern of a predicate definition
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _loci
  * @param _locis
  */
-case class Predicate_Pattern(orgExtPatAttr: RedefinablePatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns {
+case class Predicate_Pattern(redefPatDef: RedefinablePatDef) extends RedefinablePatterns {
   override def patKind = Utils.PredicateKind()
 }
 /**
  * provides notation and pattern to reference, for a strict declaration of a structure definition
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _loci
  * @param _locis
  */
-case class Strict_Pattern(orgExtPatAttr: RedefinablePatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinablePatterns {
+case class Strict_Pattern(redefPatDef: RedefinablePatDef) extends RedefinablePatterns {
   override def patKind: Utils.PatternKinds = Utils.StrictKind()
 }
 /**
@@ -580,26 +580,26 @@ case class Strict_Pattern(orgExtPatAttr: RedefinablePatAttr, _loci: List[Locus],
 sealed trait Functor_Patterns extends Patterns with ConstrPattern
 /**
  * a pattern of the introduction declaration of a structure
- * @param extPatAttr
+ * @param constrPatAttr
  * @param _locis
  */
-case class AggregateFunctor_Pattern(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends Functor_Patterns {
+case class AggregateFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
   override def patKind: Utils.PatternKinds = Utils.AggregateKind()
 }
 /**
  * pattern of the (forgetful) projection from a structure to a (not necessarily proper) substructure
- * @param extPatAttr
+ * @param constrPatAttr
  * @param _locis
  */
-case class ForgetfulFunctor_Pattern(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends Functor_Patterns {
+case class ForgetfulFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
   override def patKind: Utils.PatternKinds = Utils.ForgetfulKind()
 }
 /**
  * pattern of a selector (field) declaration of a structure
- * @param extPatAttr
+ * @param constrPatAttr
  * @param _locis
  */
-case class SelectorFunctor_Pattern(extPatAttr: ConstrPatAttr, _locis:List[Loci]) extends Functor_Patterns {
+case class SelectorFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
   override def patKind: Utils.PatternKinds = Utils.SelectorKind()
 }
 /**
@@ -611,19 +611,21 @@ sealed trait RedefinableFunctor_Patterns extends Functor_Patterns with Redefinab
 /**
  * pattern of a functor definition with infix notation
  * @param rightargsbracketed
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _loci
  * @param _locis
  */
-case class InfixFunctor_Pattern(rightargsbracketed: Option[Boolean], orgExtPatAttr: RedefinablePatAttr, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
+case class InfixFunctor_Pattern(rightargsbracketed: Option[Boolean], redefPatDef: RedefinablePatDef) extends RedefinableFunctor_Patterns
 /**
  * pattern of a functor definition with circumfix notation
- * @param orgExtPatAttr
+ * @param redefPatAttr
  * @param _right_Circumflex_Symbol
  * @param _loci
  * @param _locis
  */
-case class CircumfixFunctor_Pattern(orgExtPatAttr: RedefinablePatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, _loci: List[Locus], _locis:List[Loci]) extends RedefinableFunctor_Patterns
+case class CircumfixFunctor_Pattern(override val redefPatAttr: RedefinablePatAttr, _right_Circumflex_Symbol: Right_Circumflex_Symbol, override val _loci: List[Locus], override val _locis:List[Loci]) extends RedefinableFunctor_Patterns {
+  override def redefPatDef: RedefinablePatDef = RedefinablePatDef(redefPatAttr, _loci, _locis)
+}
 
 /**
  * a traits for exemplification (existance proofs by giving an example)
