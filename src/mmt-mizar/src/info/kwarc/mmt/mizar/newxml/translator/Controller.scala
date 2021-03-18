@@ -205,7 +205,7 @@ object TranslationController {
           if (shouldWork) e else throw ge
         case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
-      //if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
+      if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
       controller.add(eC)
     } catch {
       case ae: AddError =>

@@ -94,7 +94,7 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    //typecheckContent(TranslationController.currentThy, Some(this.report))
+    typecheckContent(TranslationController.currentThy, Some(this.report))
 
     /*
     log("The translated article " + bf.narrationDPath.last + ": ")

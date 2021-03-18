@@ -170,10 +170,10 @@ case class DirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Ter
 case class IndirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], completenessProof: Option[Term] = None) extends CompleteCaseByCaseDefinien with IndirectCaseByCaseDefinien
 
 object definiensTranslator {
-  def translate_Definiens(defs:Definiens, just: Option[Justification] = None)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
-    translate_CaseBasedExpr(defs._expr)
+  def translate_Definiens(defs:Definiens, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
+    translate_CaseBasedExpr(defs._expr, isModeDef)
   }
-  def translate_CaseBasedExpr(defn:CaseBasedExpr)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
+  def translate_CaseBasedExpr(defn:CaseBasedExpr, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
     defn.check()
     if (defn.isSingleCase()) {
       val defRes = translate_Expression(defn.singleCasedExpr._expr.get)
@@ -183,10 +183,10 @@ object definiensTranslator {
         DirectPartialCaseByCaseDefinien(defRes)
       }
     } else {
-      translate_Cased_Expression(defn.partialCasedExpr)
+      translate_Cased_Expression(defn.partialCasedExpr, isModeDef)
     }
   }
-  def translate_Cased_Expression(partDef:PartialDef)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
+  def translate_Cased_Expression(partDef:PartialDef, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
     assert(partDef._partDefs.isDefined)
     partDef.check()
     val defRes = partDef._otherwise.get._expr map translate_Expression
@@ -199,7 +199,7 @@ object definiensTranslator {
         (caseCond, caseRes)
     }
     val (cases, indCaseRes) = complCases unzip
-    val caseRes = indCaseRes map(Lam("it", any, _))
+    val caseRes = indCaseRes map(Lam("it", (if (isModeDef) Arrow(any, prop) else any), _))
     val res : CaseByCaseDefinien = if (isIndirect) {
       if (defRes.isDefined) {
         IndirectPartialCaseByCaseDefinien(cases, caseRes, Lam("it", any, defRes.get))
@@ -543,7 +543,7 @@ object definitionTranslator {
       case stm @ Standard_Mode(_tpSpec, _def) =>
         val name = declarationPath.name
         val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
-        val defnO = _def map(translate_Definiens(_))
+        val defnO = _def map(translate_Definiens(_, true))
 
         if (defnO.isEmpty) {
           if (_tpSpec.isDefined) {

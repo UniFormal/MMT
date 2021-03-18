@@ -134,7 +134,7 @@ case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) exte
 
 /**
  * Definitions which have a label and may get redefined
- * @precondition _def.isEmpty => (redefinition <=> _pat.hasOrgiRefs && redefinition => mmlIdO.isEmpty)
+ * @precondition _def.isEmpty => redefinition
  */
 sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
   def mmlIdO: Option[MMLId]
@@ -143,7 +143,7 @@ sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
   def _def: Option[Definiens]
   def redefinition = _redef.occurs
   def check: Unit = {
-    if (! (_def.isDefined || (redefinition == _pat.hasOrigRefs && (!redefinition || mmlIdO.isEmpty)))) {
+    if (! (_def.isDefined || redefinition)) {
       throw ImplementationError("Wrong parsing assumption. ")
     }
   }

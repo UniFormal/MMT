@@ -12,7 +12,8 @@ import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import translator.{TranslationController, TranslatorUtils}
 object PatternUtils {
-  def argsVarName = "argumentSequence"
+  def argsVarName = "x"//"argumentSequence"
+  def argsWellTypedName = "p"
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
   def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
   def structureStrictDeclName(implicit parentTerm: GlobalName) = pseudoSlash(parentTerm.name, LocalName("strictDef"))
@@ -75,17 +76,26 @@ object StructureInstance {
 }
 
 object MizarPatternInstance {
-  def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
-    val home : Term = OMMOD(TranslationController.currentTheoryPath)
+  def apply(name: LocalName, pat: String, args: List[Term])(implicit notC: NotationContainer): DerivedDeclaration = {
+    val home: Term = OMMOD(TranslationController.currentTheoryPath)
     val pattern = MizarPatternsTh ? LocalName(pat)
     MizInstance.apply(home, name, pattern, args, notC)
   }
-  private[mmtwrapper] def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
+
+  private[mmtwrapper] def apply(name: LocalName, pat: String, argNumI: Int, argumentsUnbound: List[Term], furtherParams: List[Term])(implicit notC: NotationContainer): DerivedDeclaration = {
     val argNum = OMI(argNumI)
     implicit val args = argumentsUnbound.map(lambdaBindArgs(_)(argumentsUnbound))
     assert(args.length == argNumI)
-    val parameters: List[Term] = argNum::Sequence(args)::furtherParams
+    val parameters: List[Term] = argNum :: Sequence(args) :: furtherParams
     apply(name, pat, parameters)
+  }
+
+  def argsWellTyped(body: Term)(implicit args: List[Term]) = {
+    val argNumI = args.length
+    val x = OMV(argsVarName)
+    Lambda(x.name, nTerms(argNumI), Lambda(LocalName(argsWellTypedName), Sequence((0 until argNumI).toList.map({ ind: Int =>
+      proof(is(Index(x, OMI(ind)), Apply(Index(Sequence(args map (lambdaBindArgs(_)(args))), OMI(ind)), x)))
+    })), body))
   }
   /**
    * Lambda-binds the passed parameters of all kinds over the argument
@@ -127,11 +137,9 @@ object MizarPatternInstance {
     val casesTp = Rep(Arrow(nTerms(argNumI), prop), caseNum)
     val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
 
-    def argsWellTyped(body: Term) = Pi(x.name, nTerms(argNumI), Pi(LocalName("argsWellTyped"), Sequence((0 until argNumI).toList.map({ind: Int =>
-      proof(is(Index(x, OMI(ind)), Apply(Index(Sequence(args map(lambdaBindArgs(_)(args))), OMI(ind)), x)))})), body))
-    val consistencyProof = argsWellTyped(Pi(LocalName("cases"), casesTp, Pi(LocalName("caseRes"), caseResTp, consistencyProofU)))
+    val consistencyProof = argsWellTyped(consistencyProofU)
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
-    val furtherParameters: List[Term] = ret ::: motherType ::: caseNum::cases::caseRes::consistencyProof::defRes:::furtherProofs
+    val furtherParameters: List[Term] = ret ::: motherType ::: caseNum::cases::caseRes::consistencyProof::defRes:::(furtherProofs map argsWellTyped)
     apply(name, pat, argNumI, arguments, furtherParameters)
   }
   /**

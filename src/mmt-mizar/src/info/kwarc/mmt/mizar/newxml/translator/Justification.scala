@@ -3,8 +3,9 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt._
 import api._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.PiOrEmpty
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
-import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.{translate_new_Variable}
+import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_new_Variable
 import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
 import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
@@ -90,9 +91,9 @@ object justificationTranslator {
               case it: Iterative_Equality if (j == None) =>
                 val And(clms) = translate_Claim(it)(defContext)
                 val justs = it._just :: it._iterSteps.map(_._just)
-                clms ::: justs.flatMap(usedInJustification(_)(defContext))
+                clms.map(PiOrEmpty(defContext.getLocalBindingVars, _)) ::: justs.flatMap(usedInJustification(_)(defContext))
               case claim =>
-                translate_Claim(claim)(defContext) :: (j map (usedInJustification(_)(defContext)) getOrElse Nil)
+                PiOrEmpty(defContext.getLocalBindingVars, translate_Claim(claim)(defContext)) :: (j map (usedInJustification(_)(defContext)) getOrElse Nil)
             }
             defContext.exitProof
             trIt ::: translateSubitems(tail)
@@ -120,7 +121,7 @@ object justificationTranslator {
           case _ => Nil
         }
       }
-      translateSubitems(_items map (_._subitem))
+      Nil //translateSubitems(_items map (_._subitem))
     case Scheme_Justification(_, _, _, _, _refs) => globalReferences(_refs)
   }
 }
