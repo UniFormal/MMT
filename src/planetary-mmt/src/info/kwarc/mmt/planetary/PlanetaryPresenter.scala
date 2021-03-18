@@ -15,7 +15,7 @@ import utils.xml._
 import info.kwarc.mmt.api.opaque.OpaqueElement
 
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil)
-  extends presentation.MathMLPresenter {
+  extends presentation.PresentationMathMLPresenter {
   controller = contr
   report = controller.report
   override def getNotations(path: GlobalName): List[TextNotation] = {
@@ -30,7 +30,7 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
          case None => Nil
          case Some(vd) => List(HTMLAttributes.varref -> vd.declpos.toString)
       }
-      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: jobadattribs, n.toString)
+      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: mathmlattribs, n.toString)
       pc.out(mi)
    }
   //TODO duplicate code found also in informal presenter, to fix
@@ -44,7 +44,7 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
   }
 }
 
-class InformalMathMLPresenter extends presentation.MathMLPresenter {
+class InformalMathMLPresenter extends presentation.PresentationMathMLPresenter {
    def doTermApplication(f : Term, args : List[Term])(implicit pc: PresentationContext) : Int = {
      doDefault(f)
      doBracketedGroup {
@@ -110,7 +110,7 @@ class InformalMathMLPresenter extends presentation.MathMLPresenter {
       body
       pc.out(closeTag("mrow"))
       pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-      pc.out(o.toCML.toString)
+      pc.out(ContentMathMLPresenter(o).toString)
       pc.out(closeTag("annotation-xml"))
       pc.out(closeTag("semantics"))
       pc.out(closeTag("math"))

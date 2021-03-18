@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import frontend._
 import backend._
 import documents._
+import presentation.ContentMathMLPresenter
 import info.kwarc.mmt.api.utils.{MMTSystem, MMT_TODO, URI}
 
 import scala.xml._
@@ -194,7 +195,7 @@ class Server(val port: Int, val host: String, controller: Controller) extends Ti
           case _ => new scala.xml.Elem(n.prefix, n.label, n.attributes, n.scope, true, n.child.map(x => genQVars(x)): _*)
         }
 
-        val processedQuery = genQVars(tm.toCML)
+        val processedQuery = genQVars(ContentMathMLPresenter(tm))
         (<mws:expr>
           {processedQuery}
         </mws:expr>, Nil)
