@@ -18,7 +18,6 @@ case class XMLNode(obj: scala.xml.Node) extends SemiFormalObject {
    def toNode = <om:node>{obj}</om:node>
    override def toString = obj.toString
    def freeVars : List[LocalName] = Nil
-   def toCMLQVars(implicit qvars: Context) = obj
 }
 case class Formal(obj: Term) extends SemiFormalObject {
    def toNode = obj.toNode
