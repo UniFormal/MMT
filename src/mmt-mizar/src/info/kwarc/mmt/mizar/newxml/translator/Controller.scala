@@ -30,7 +30,11 @@ object TranslationController {
   }
   private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
   private def structureSimplifier = controller.simplifier
-  private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new ErrorContainer(logger)
+  private def errFilter(err: Error): Boolean = {
+      val badStrings = List("ill-formed constant reference", "INHABITABLE", "is not imported into current context")
+    !badStrings.exists(err.toStringLong.contains(_))
+  }
+  private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new FilteringErrorHandler(new ErrorContainer(logger), errFilter(_))
   private def checkingEnvironment(logger: Option[frontend.Report]) = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler(logger), checking.RelationHandler.ignore, MMTTask.generic)
   def typecheckContent(e: StructuralElement, logger: Option[frontend.Report] = None) = structChecker(e)(checkingEnvironment(logger))
 
@@ -60,6 +64,10 @@ object TranslationController {
   private var identifyCount = 0
   def incrementAndGetIdentifyCount() = {identifyCount += 1; identifyCount}
   def getIdentifyCount() = identifyCount
+
+  private var reduceCount = 0
+  def incrementAndGetReduceCount() = {reduceCount += 1; reduceCount}
+  def getReduceCount() = reduceCount
 
   object articleStatistics {
     def totalNumDefinitions: Int = functorDefinitions + predicateDefinitions + attributeDefinitions + modeDefinitions + schemeDefinitions + structureDefinitions
@@ -154,14 +162,16 @@ object TranslationController {
   def endMake() = {
     includeDependencies()
     controller.endAdd(currentThy)
+    currentDoc.add(MRef(currentDoc.path, currentThy.path))
+    controller.endAdd(currentDoc)
     try {
       controller.simplifier(currentThy)
     } catch {
       case ge: GeneralError =>
-        throw ge
+        //throw ge
+      case e: Throwable =>
+        //throw e
     }
-    currentDoc.add(MRef(currentDoc.path, currentThy.path))
-    controller.endAdd(currentDoc)
   }
 
   def add(e: NarrativeElement) : Unit = {
@@ -205,7 +215,7 @@ object TranslationController {
           if (shouldWork) e else throw ge
         case parseError: ParseError => println(info+"\n"+parseError.shortMsg); e//; throw parseError
       }
-      if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
+//      if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
       controller.add(eC)
     } catch {
       case ae: AddError =>
@@ -236,7 +246,7 @@ object TranslationController {
     val args = unboundArgs.map(vd => vd.copy(tp = vd.tp map (lambdaBindArgs(_)(unboundArgs map (_.toTerm)))))
     makeConstant(n, tO map(PiOrEmpty(args, _)), dO map(LambdaOrEmpty(args, _)))
   }
-  def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext = DefinitionContext.empty()): Constant =
+  def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext): Constant =
     makeConstantInContext(n, tO, dO, defContext.args)
 
   def simplifyTerm(tm:Term): Term = {

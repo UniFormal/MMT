@@ -7,7 +7,7 @@ object Utils {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
 
-  def MizarRedVarName(idnr: Int): LocalName = LocalName("idNr_"+idnr.toString)
+  def MizarRedVarName(idnr: Int): LocalName = LocalName("idNr_"+idnr)
   def MizarVariableName(spelling: String, kind: String, idnr: Int): LocalName = {
     LocalName(spelling) / LocalName(kind) / MizarRedVarName(idnr)
   }

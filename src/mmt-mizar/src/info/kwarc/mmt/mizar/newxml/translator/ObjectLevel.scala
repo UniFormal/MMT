@@ -31,9 +31,11 @@ object termTranslator {
   def translate_Term(tm:syntax.MizTerm)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : Term = tm match {
     case Simple_Term(locVarAttr) =>
       val refTm = LocalName(locVarAttr.toIdentifier)
+      lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
       if (TranslationController.currentThy.declares(refTm)) {
         OMS(TranslationController.currentTheoryPath ? refTm)
-      } else OMV(refTm) ^ namedDefArgsSubstition()
+      } else
+        if (defContext.withinProof) defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue else defaultValue
     case at@Aggregate_Term(tpAttrs, _args) =>
       val gn = computeGlobalName(at)
       val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
@@ -64,7 +66,7 @@ object termTranslator {
     case Global_Choice_Term(sort, _tp) =>
       val tp = translate_Type(_tp)
       Apply(constant("choice"), tp)
-    case Placeholder_Term(redObjAttr) => OMV("placeholder_"+redObjAttr.nr.toString)
+    case Placeholder_Term(redObjAttr) => OMV("placeholder_"+redObjAttr.nr)
     case Private_Functor_Term(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), idnr))
       val f = if (TranslationController.currentThy.declares(ln)) {
@@ -309,6 +311,7 @@ object claimTranslator {
       val cond = translate_Claim(_cond)
       translate_Existential_Quantifier_Formula(args, cond, None)(defContext)
     case Single_Assumption(_prop) => translate_Claim(_prop)
+    case Suppose_Head(_ass) => translate_Assumption_Claim(_ass)
   }
 }
 

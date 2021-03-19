@@ -72,7 +72,7 @@ case class RedObjAttr(nr: Int, spelling:String, sort:String) extends Group
 /**
  * common trait for ConstrObjAttrs and ReDefObjAttrs, which define common attributes for globally referencing objects
  */
-trait ReferencingConstrObjAttrs {
+trait ReferencingConstrObjAttrs extends Group {
   def sort: String
   def spelling: String
   def globalDefAttrs: GlobalDefAttrs
@@ -159,13 +159,13 @@ case class ConstrObjAttrs(spelling:String, sort:String, globalDefAttrs: GlobalDe
  * @param spelling
  * @param globalReDefAttrs
  */
-case class ReDefObjAttrs(spelling:String, sort:String, globalReDefAttrs: GlobalReDefAttrs) extends ReferencingConstrObjAttrs with Group {
+case class ReDefObjAttrs(spelling:String, sort:String, globalReDefAttrs: GlobalReDefAttrs) extends ReferencingConstrObjAttrs {
   override def globalDefAttrs: GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
 }
 /**
  * common attribute and children for patterns in mizar
  */
-sealed trait PatDefs {
+sealed trait PatDefs extends Group {
   def patAttr: PatternAttrs
   def _locis: List[Loci]
   def globalObjAttrs: GlobalObjAttrs = patAttr.globalObjAttrs
@@ -305,8 +305,4 @@ case class Text_Proper(articleid: String, articleext: String, _items: List[Item]
  * @param kind the kind of the subitem
  * @param _subitem the subitem with the content
  */
-case class Item(kind: String, _subitem:Subitem) {
-  def checkKind() = {
-    assert(_subitem.kind == Utils.fullClassName(kind))
-  }
-}
+case class Item(kind: String, _subitem:Subitem)

@@ -437,7 +437,7 @@ case class Thesis() extends TypeUnchangingClaim
 case class Diffuse_Statement(_label:Label) extends TypeUnchangingClaim
 /**
  * Making several claims at once, semantically this is equivalent to a conjunction
- * this is used especially within assumptions
+ * this is used especially within assumptions or choice_statements
  * @param _props
  */
 case class Conditions(_props:List[Proposition]) extends TypeUnchangingClaim
@@ -490,7 +490,7 @@ case class Block(kind: String, _items:List[Item]) extends Justification
  * @param _refs
  */
 case class Scheme_Justification(nr: Int, idnr:Int, schnr:Int, spelling:String, _refs:List[ProvenFactReference]) extends Justification {
-  def referencedScheme = MMLId(spelling+":"+idnr).globalName("Scheme-Block-Item")
+  def referencedScheme = MMLId(spelling+":"+idnr).globalName("Scheme")
 }
 
 /** Notations */
@@ -660,7 +660,7 @@ case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications {
 /**
  * common trait for various kinds of (local or global) references
  */
-sealed trait Reference extends ObjectLevel
+sealed trait Reference
 /**
  * reference to a proven fact
  */
@@ -673,7 +673,7 @@ trait ProvenFactReference extends Reference {
  * @param idnr
  * @param labelnr
  */
-case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends ProvenFactReference {
+case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends ProvenFactReference with ObjectLevel {
   def referencedLabel = TranslationController.currentTheoryPath ? LocalName(spelling)
 }
 /**
@@ -682,21 +682,21 @@ case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends Prov
  * @param spelling
  * @param number
  */
-case class Definition_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference {
+case class Definition_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference with ObjectLevel {
   def referencedLabel = TranslationController.getTheoryPath(spelling) ? LocalName("Def"+number)
 }
 /**
  * I don't really understand the semantics of a link, so far they seem to not have any meaning at all
  * @param labelnr
  */
-case class Link(labelnr:Int) extends Reference
+case class Link(labelnr:Int) extends Reference with ObjectLevel
 /**
  * global reference to a theorem
  * @param nr
  * @param spelling
  * @param number
  */
-case class Theorem_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference {
+case class Theorem_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference with ObjectLevel {
   override def referencedLabel: GlobalName = {
     TranslationController.getTheoryPath(spelling) ? LocalName("Theorem-Item"+number)
   }
@@ -848,7 +848,6 @@ case class Structure_Patterns_Rendering(_aggrFuncPat:AggregateFunctor_Pattern, _
  * @param _children
  */
 case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends ObjectLevel
-
 /**
  * There are two kinds of Properties tags in Mizar esx files (unfortunately of same name):
  * 1) within Property-Registrations
@@ -857,10 +856,9 @@ case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends Objec
  * In the second case exactly property and _just (a proof of it) are given
  * @param sort
  * @param property
- * @param _cond
  * @param _tp
  */
-case class Properties(sort: String, property: String, _cond:List[Properties], _tp:Option[Type]) extends ObjectLevel {
+case class Properties(sort: String, property: String, _tp:Option[Type]) extends ObjectLevel {//, _cond:List[Properties]
   def matchProperty(_just: Option[Justification] = None ): Utils.MizarProperty = (sort, property) match {
     case (sort, _) if (sort.nonEmpty) => Utils.matchProperty(sort, _just, _tp)
     case (_, prop) if (prop.nonEmpty) => Utils.matchProperty(prop, _just, _tp)
@@ -944,7 +942,6 @@ case class Partial_Definiens(_expr:Expression, _form:Formula) extends ObjectLeve
  * @param _expr
  */
 case class Otherwise(_expr:Option[Expression]) extends ObjectLevel
-
 
 /**
  * a (functor or predicate) segment within a scheme definition

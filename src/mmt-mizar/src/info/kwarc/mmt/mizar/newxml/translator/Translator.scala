@@ -1,14 +1,14 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
-import documents.{Document, MRef}
-import symbols.{Constant, Declaration, DerivedDeclaration, HasDefiniens, HasNotation, HasType}
+import documents.Document
+import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
 
 
 object articleTranslator {
-  def translateArticle(text_Proper: Text_Proper) = {
+  def translateArticle(text_Proper: Text_Proper): Unit = {
     val items = text_Proper._items map itemTranslator.translateItem
   }
 }
@@ -16,9 +16,8 @@ object articleTranslator {
 import subitemTranslator._
 object itemTranslator {
   // Adds the corresponding content to the TranslationController
-  def translateItem(item: Item) = {
-    item.checkKind()
-    implicit val defCtx = DefinitionContext.empty()
+  def translateItem(item: Item): Unit = {
+    implicit val defCtx: DefinitionContext = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
     def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
     item._subitem match {
@@ -32,10 +31,10 @@ object itemTranslator {
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
       case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
       case identify: Identify => add (translate_Identify(identify))
-      case head: Heads => headTranslator.translate_Head(head) foreach add
       case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
       case st: Statement with TopLevel => add (statementTranslator.translate_Statement(st))
       case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
+      case notTopLevel: ProofLevel => throw subitemTranslator.notToplevel
     }
   }
 }
@@ -85,7 +84,7 @@ class MizarXMLImporter extends archives.Importer {
     try {
       articleTranslator.translateArticle(text_Proper)
     } catch {
-      case GetError(s) if (s.startsWith("no backend applicable to "+TranslationController.currentOutputBase.toString)) =>
+      case GetError(s) if s.startsWith("no backend applicable to "+TranslationController.currentOutputBase.toString) =>
         val Array(dpath, name) = s.stripPrefix("no backend applicable to ").split('?')
         val mpath = DPath(utils.URI(dpath)) ? name
         println("GetError since we require the dependency theory "+mpath+" of the translated theory "+currentThy.name+" to be already translated: \n"+
@@ -94,7 +93,7 @@ class MizarXMLImporter extends archives.Importer {
     }
     log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     TranslationController.endMake()
-    typecheckContent(TranslationController.currentThy, Some(this.report))
+    //typecheckContent(TranslationController.currentThy, Some(this.report))
 
     /*
     log("The translated article " + bf.narrationDPath.last + ": ")

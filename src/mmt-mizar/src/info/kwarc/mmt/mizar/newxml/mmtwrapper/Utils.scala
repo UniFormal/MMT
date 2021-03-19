@@ -145,36 +145,14 @@ object MizarPrimitiveConcepts {
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
-  /*def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
-    val suffix = if (direct) "Dir" else "Indir" + resKind
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
-  }
-  def modeExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term], direct: Boolean) = {
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existence"+(if (direct) "Dir" else "Indir")+(if (defRes.isDefined) "Part" else "Compl")+"ModeDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
-  }
-  def functExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existence"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
-  }
-  def functUniquenessTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("uniqueness"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil))
-  }
-  def functUniqueExistenceTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = List(functExistenceTp(argTps, ret, cases, caseRes, defRes), functUniquenessTp(argTps, ret, cases, caseRes, defRes))
-  def coherenceFuncDefTp(argTps: List[Term], ret: Term, cases: List[Term], caseRes: List[Term], defRes: Option[Term]) = {
-    List(ApplyGeneral(OMS(MizarPatternsTh ? LocalName("coherence"+(if (defRes.isDefined) "Part" else "Compl")+"FuncDef")), OMI(argTps.length)::Sequence(argTps)::ret::OMI(cases.length)::Sequence(cases)::Sequence(caseRes)::defRes.map(List(_)).getOrElse(Nil)))
-  }
-  def existentialRegExistenceTp(argTps: List[Term], t: Term, attrs: List[Term]) = {
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("existenceReg")), List(OMI(argTps.length), Sequence(argTps), t, OMI(attrs.length), Sequence(attrs)))
-  }*/
   def correctnessCondClaim(correctnessCondition: CorrectnessConditions, pattern: String): Term = {
     OMS(MizarPatternsTh ? LocalName(correctnessCondition.sort+pattern.capitalize))
   }
 
-  def attr(t : Term) = apply(constant("attr"), t)
-  def adjective(cluster : Term, typ : Term) = apply(constant("adjective"), typ, cluster)
-  def cluster(a1 : Term, a2 : Term) = apply(constant("cluster"), a1, a2)
-  def choice(tp : Term) = apply(constant("choice"), tp)
-  def fraenkel(v : String, t : Term, p : Term, f : Term) =
-    apply(constant("fraenkel"), t, Lambda(LocalName(v), any, p), Lambda(LocalName(v), any, f))
+  def attr(t : Term) = Apply(constant("attr"), t)
+  def adjective(cluster : Term, typ : Term) = ApplyGeneral(constant("adjective"), List(typ, cluster))
+  def cluster(a1 : Term, a2 : Term) = ApplyGeneral(constant("cluster"), List(a1, a2))
+  def choice(tp : Term) = Apply(constant("choice"), tp)
 
   /**
    * invoking specification axiom for sets
@@ -191,12 +169,12 @@ object MizarPrimitiveConcepts {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val cond = info.kwarc.mmt.lf.Pi(argsCont, condition)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(constant("fraenkelTerm"), List(universe,OMI(args.length),cond,expr):_*)
+    ApplyGeneral(constant("fraenkelTerm"), List(universe,OMI(args.length),expr,cond))
   }
   def simpleFraenkelTerm(expression: Term, args: List[OMV], universe:Term) = {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(constant("simpleFraenkelTerm"), List(universe,OMI(args.length),expr):_*)
+    ApplyGeneral(constant("simpleFraenkelTerm"), List(universe,OMI(args.length),expr))
   }
 
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
@@ -215,10 +193,9 @@ object MizarPrimitiveConcepts {
   object depTypedAttrAppl {
     def apply(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
       val m = attrs.length
-      val attributes = MMTUtils.flatten(attrs)
       val attrApplSym = constant("attr_appl")
       val (nTm, mTm) = (OMI(n), OMI(m))
-      ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
+      ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, Sequence(attrs)))
     }
     def unapply(tm: Term) : Option[(Int, Term, List[Term])] = tm match {
       case ApplyGeneral(constant("attr_appl"), List(nTm, mTm, nArgsDepType, attributes)) =>
@@ -239,9 +216,4 @@ object MMTUtils {
 
   def freeVarContext(varTps:List[Term]): Context =
     varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName("x_"+i)) % tp }
-  def freeVars(varTps:List[Term], nm:Option[String]=None): Context =
-  varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % MizarPrimitiveConcepts.any }
-  def freeAlternatingVars(varTps:List[Term], nm:List[String]): List[OMV] =
-    varTps.zipWithIndex.flatMap {case (tp:Term,i:Int) => nm map {s => OMV(LocalName(s+i))} }
-  def flatten(tms:List[Term]) : Term = MizSeq.Sequence.apply(tms:_*)
 }
