@@ -12,21 +12,30 @@ class LaTeXToHTML extends TraversingBuildTarget {
   val inDim = source
   val outDim = Dim("xhtml")
   override val outExt = "xhtml"
+  private var stexserver : STeXServer = null
 
   override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
 
   override def start(args: List[String]): Unit = {
     super.start(args)
     LaTeXML.initializeIfNecessary(controller)
+    controller.extman.get(classOf[STeXServer]) match {
+      case Nil =>
+        stexserver = new STeXServer
+        controller.extman.addExtension(stexserver)
+      case a :: _ =>
+        stexserver = a
+    }
   }
 
   override def buildFile(bf: BuildTask): BuildResult = {
+    val extensions = stexserver.extensions
+    implicit val xhtmlrules = XHTML.Rules.defaultrules ::: extensions.flatMap(_.xhtmlRules)
     log("building " + bf.inFile)
     LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
       case (i,ls) =>
         bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
     }
-    import XHTML.Rules._
     if (bf.outFile.exists()) {
       val doc = XHTML.parse(bf.outFile).head
       doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
@@ -35,6 +44,7 @@ class LaTeXToHTML extends TraversingBuildTarget {
       File.write(bf.outFile, doc.toString)
     } else throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
     log("Finished: " + bf.inFile)
+    // TODO extract content
     BuildResult.empty
   }
 }

@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Typed}
 import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.XHTMLTerm
+import info.kwarc.mmt.stex.xhtml.XHTMLOMDoc
 
 object MitM {
   import DemoContent._
@@ -91,24 +91,24 @@ object MitM {
 
 object DemoContent {
   lazy val th_set = Theory(STeX.set.doc,STeX.set.module.name,None)
-  lazy val c_set = Constant(th_set.toTerm,STeX.set.name,Nil,None,None,None,XHTMLTerm.notation("\\set","Set"))
+  lazy val c_set = Constant(th_set.toTerm,STeX.set.name,Nil,None,None,None,XHTMLOMDoc.notation("\\set","Set"))
   lazy val th_nat = Theory(STeX.nat.doc,STeX.nat.module.name,None)
-  lazy val c_nat = Constant(th_nat.toTerm,STeX.nat.name,Nil,Some(c_set.toTerm),None,None,XHTMLTerm.notation("\\NaturalNumbers","ℕ"))
+  lazy val c_nat = Constant(th_nat.toTerm,STeX.nat.name,Nil,Some(c_set.toTerm),None,None,XHTMLOMDoc.notation("\\NaturalNumbers","ℕ"))
   lazy val th_prop = Theory(STeX.prop.doc,STeX.prop.module.name,None)
-  lazy val c_prop = Constant(th_prop.toTerm,STeX.prop.name,Nil,Some(c_set.toTerm),None,None,XHTMLTerm.notation("\\prop","prop"))
+  lazy val c_prop = Constant(th_prop.toTerm,STeX.prop.name,Nil,Some(c_set.toTerm),None,None,XHTMLOMDoc.notation("\\prop","prop"))
   lazy val th_fun = Theory(STeX.funtype.doc,STeX.funtype.module.name,None)
-  lazy val c_fun = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None,XHTMLTerm.notation("\\funtype{ 1 }","1⟶… prec -9990"))
+  lazy val c_fun = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None,XHTMLOMDoc.notation("\\funtype{ 1 }","1⟶… prec -9990"))
   lazy val th_impl = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "logic",LocalName("Implication"),None)
-  lazy val c_impl = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None,XHTMLTerm.notation("\\implication{ 1 }{ 2 }","1 ⟹ 2 prec 10"))
+  lazy val c_impl = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None,XHTMLOMDoc.notation("\\implication{ 1 }{ 2 }","1 ⟹ 2 prec 10"))
   lazy val th_div = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Divisibility"),None)
-  lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_prop.toTerm))),None,None,XHTMLTerm.notation("\\even{ 1 }","even( 1 ) prec 50"))
+  lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_prop.toTerm))),None,None,XHTMLOMDoc.notation("\\even{ 1 }","even( 1 ) prec 50"))
   lazy val th_exp = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Exponentiation"),None)
-  lazy val c_natexp = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None,XHTMLTerm.notation("\\natpow{ 1 }{ 2 }","1 ^ 2 prec 70"))
+  lazy val c_natexp = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None,XHTMLOMDoc.notation("\\natpow{ 1 }{ 2 }","1 ^ 2 prec 70"))
 
   lazy val th_forall = Theory(STeX.Forall.path.module.parent,STeX.Forall.path.module.name,None)
-  lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sforall{ V1 }{ 2 }","∀ V1,… . 2 prec -20"))
+  lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLOMDoc.notation("\\sforall{ V1 }{ 2 }","∀ V1,… . 2 prec -20"))
   lazy val th_exists = Theory(STeX.Exists.path.module.parent,STeX.Exists.path.module.name,None)
-  lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLTerm.notation("\\sexists{ V1 }{ 2 }","∃ V1,… . 2 prec -20"))
+  lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLOMDoc.notation("\\sexists{ V1 }{ 2 }","∃ V1,… . 2 prec -20"))
 
   def add(controller:Controller): Unit = {
     controller.add(th_set)

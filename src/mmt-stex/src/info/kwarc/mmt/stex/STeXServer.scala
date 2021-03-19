@@ -7,16 +7,22 @@ import info.kwarc.mmt.api.refactoring.AcrossLibraryTranslator
 import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.odk.Sage.{Sage, SageSystem}
+import info.kwarc.mmt.stex.Extensions.{BasicExtension, DemoExtension, STeXExtension, Translator}
 import info.kwarc.mmt.stex.translations.DemoContent
 import info.kwarc.mmt.stex.xhtml._
 
-case class Translator(language : String,translator : AcrossLibraryTranslator, meta : Option[MPath])
 
 class STeXServer extends ServerExtension("fomid") {
   private var initialized = false
   def initialize = if (!initialized) {
-    DemoContent.add(controller)
+    initialized = true
+    if (!extensions.contains(BasicExtension))
+      controller.extman.addExtension(BasicExtension)
+    if (!extensions.contains(DemoExtension))
+      controller.extman.addExtension(DemoExtension)
   }
+
+  def extensions = controller.extman.get(classOf[STeXExtension])
 
   override def start(args: List[String]): Unit = {
     super.start(args)
@@ -67,59 +73,37 @@ class STeXServer extends ServerExtension("fomid") {
             ???
         }
         val trl = request.body.params.get("target") match {
-          case Some(s) => Translators.getTranslators.find(_.language == s) match {
-            case None =>
-              ???
-            case Some(trl) => trl
-          }
+          case Some(s) =>
+            val translators = extensions.flatMap(_.translators)
+            translators.find(_.language == s) match {
+              case None =>
+                ???
+              case Some(trl) => trl
+            }
           case _ =>
             ???
         }
         doTranslation(Obj.parseTerm(XHTML.applyString(xml)(XHTML.Rules.defaultrules).head.node,NamespaceMap.empty),trl)
-      case _ => MMTSystem.getResourceAsString("/mmt-web/stex/demo/index.html")
+      case _ =>
+        extensions.foreach(_.serverReturn(request) match {
+          case Some(rsp) => return rsp
+          case _ =>
+        })
     }
     ServerResponse(ret.toString, "html")
   } catch {
     case t : Throwable =>
-      print("")
       throw t
   }
 
   def doDocument(uri : String) = {
-    import info.kwarc.mmt.stex.xhtml.XHTMLTerm._
-
+    val exts = extensions
+    implicit val xhtmlrules = XHTML.Rules.defaultrules ::: exts.flatMap(_.xhtmlRules)
     val filecontent = XHTML.applyString(getDocument(uri)).head
     doMainHeader(filecontent)
-
-    filecontent.iterate {
-      case thm: XHTMLTheory =>
-        thm.toModule(controller)
-        thm.children.headOption match {
-          case Some(h) =>
-            thm.addBefore(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)),h)
-          case _ =>
-            thm.add(XHTMLSidebar(thm.path.toString, scala.xml.Text("Theory: " + thm.name.toString)))
-        }
-      case thm: XHTMLTheorem =>
-        val c = thm.toDeclaration
-        controller add c
-        val sb = <div>{scala.xml.Text("Theorem " + thm.name.toString + ":\n")}{termLink(c.df.get, Some(c.path $ DefComponent))}</div>
-        thm.add(XHTMLSidebar(thm.path.toString, sb: _*))
-      case v: XHTMLVarDecl =>
-        val decl = v.toDeclaration
-        controller add decl
-        val is = List(if ((v.universal contains true) || v.universal.isEmpty) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)"))
-        val seq = scala.xml.Text("Variable ") :: presenter.asXML(v.vardecl, None) :: is
-        v.parent.foreach(_.addBefore(XHTMLSidebar(v.name.toString, seq: _*), v))
-      case _ =>
-    }
-    filecontent.iterate {
-      case t: HasHeadSymbol =>
-        t.addOverlay("/:" + this.pathPrefix + "/fragment?" + t.head.toString)
-      case v : XHTMLOMV =>
-        v.addOverlay("/:" + this.pathPrefix + "/fragment?" + v.path)
-      case _ =>
-    }
+    val docrules = extensions.flatMap(_.documentRules)
+    def doE(e : XHTMLNode) : Unit = docrules.foreach(r => r.unapply((e,xhtmlrules,doE)))
+    filecontent.iterate(doE)
     filecontent
   }
 
@@ -144,7 +128,7 @@ class STeXServer extends ServerExtension("fomid") {
     doHeader(filecontent)
     stripMargins(filecontent)
     val doc = filecontent.get("div")(("", "class", "ltx_page_main")).head
-    val border = new XHTMLElem(<div style="font-size:small">{decl.map(_.node)}{ if (!default) <hr/>}</div>,None)
+    val border = XHTML(<div style="font-size:small">{decl.map(_.node)}{ if (!default) <hr/>}</div>)(Nil).head
     doc.children.foreach {c =>
       c.delete
       border.add(c)
@@ -193,7 +177,7 @@ class STeXServer extends ServerExtension("fomid") {
           case _ => space
         }
       case _ =>
-        body.add(<b>{scala.xml.Text("Symbol")}</b>)
+        body.add(XHTML(<b>{scala.xml.Text("Symbol")}</b>)(Nil).head)
         space
     }
     body.add(space)
@@ -240,8 +224,9 @@ class STeXServer extends ServerExtension("fomid") {
     body.add(<code><pre>{scala.xml.Text(toLaTeX(o))}</pre></code>)
     body.add(<hr/>)
     body.add("Translations: ")
+    val translators = extensions.flatMap(_.translators)
     val translations = <table><tr>
-      {Translators.getTranslators.map {t =>
+      {translators.map {t =>
         <td><form method="post" action={"/:" + this.pathPrefix + "/translate"} class="inline" target="_self">
           <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
           <button type="submit" name="target" value={t.language}>
@@ -260,7 +245,7 @@ class STeXServer extends ServerExtension("fomid") {
     body.add(presenter.asXML(tmI,None))
     body.add(<hr/>)
 
-    trl.translator.translate(tmI) match {
+    trl.translate(tmI) match {
       case (tm,Nil) =>
         body.add("Translated to " + trl.language + ": ")
         body.add(presenter.asXML(tm,None))
@@ -316,25 +301,14 @@ class STeXServer extends ServerExtension("fomid") {
       case Some(s) if s.startsWith("ltx-") => e.attributes(("","href")) = "/stex/latexml/" + s
       case _ =>
     })
-    head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>)
+    head.add(XHTML(<link rel="stylesheet" href="/stex/latex-css/style.css"/>)(Nil).head)
     head
   }
 
-  def termLink(o : Obj, comp : Option[CPath]) = { // TODO should be POST
-    <form method="post" action={"/:" + this.pathPrefix + "/expression"} class="inline" onsubmit="this.target='stexoverlayinner'" target="stexoverlayinner">
-      <input type="hidden" name="openmath" value={o.toNode.toString().replace("\n","").replace("\n","")}/>
-      <button type="submit" name="component" value={comp.map(_.toString).getOrElse("None")}>
-        {presenter.asXML(o, comp)}
-      </button>
-    </form>
-    //   <a href ={"/:" + this.pathPrefix + "/expression/???"}  target="_blank">{presenter.asXML(o, comp)}</a>
-  }
-
   def emptydoc = {
-    val dummynode = <div></div>
-    val doc = new XHTMLDocument(dummynode)(XHTML.Rules.defaultrules)
-    doc.add(<head><meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/></head>)
-    doc.add(<body><div class="ltx_page_main"><div class="ltx_page_content"><div class="ltx_document"></div></div></div></body>)
+    val doc = new XHTMLDocument
+    doc.add(XHTML(<head><meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8"/></head>)(Nil).head)
+    doc.add(XHTML(<body><div class="ltx_page_main"><div class="ltx_page_content"><div class="ltx_document"></div></div></div></body>)(Nil).head)
     (doc,doc.get("div")(("","class","ltx_document")).head)
   }
 
@@ -348,7 +322,8 @@ class STeXServer extends ServerExtension("fomid") {
           ???
       }
       toLaTeX(v)
-    case SimpArg(i,_) => toLaTeX(args(i-1))
+    case SimpArg(i,_) =>
+      toLaTeX(args(i-1))
     case _ =>
       ???
   }.mkString("")
@@ -381,21 +356,6 @@ class STeXServer extends ServerExtension("fomid") {
     case _ =>
       print("")
       ???
-  }
-
-  private object Translators {
-    lazy val mitm_translator = Translator("MitM",translations.MitM.getTranslator(controller),
-      Some(Path.parseM("http://mathhub.info/MitM/Foundation?Logic")))
-    private lazy val sagesys = controller.extman.get(classOf[SageSystem]) match {
-      case ss :: _ => ss
-      case _ =>
-        val ss = new SageSystem
-        controller.extman.addExtension(ss)
-        ss.warmup()
-        ss
-    }
-    lazy val sage_translator = Translator("Sage",sagesys.translator_to,Some(Sage.theory))
-    def getTranslators = List(mitm_translator,sage_translator)
   }
 
   lazy val presenter = controller.extman.get(classOf[MMTInformalPresenter]) match {
