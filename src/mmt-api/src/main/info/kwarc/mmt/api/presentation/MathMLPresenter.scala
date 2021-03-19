@@ -327,6 +327,39 @@ object ContentMathMLPresenter {
 
 }
 
+/** presents objects as Parallel Markup (Content + Presentation) MathML */
+class ParallelMathMLPresenter extends PresentationMathMLPresenter {
+  override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
+    val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
+    val mmtAtts = pc.owner match {
+      case None => Nil
+      case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
+    }
+    val idAtt = ( "id" -> o.hashCode.toString)
+    // <mstyle displaystyle="true">
+    pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
+    pc.out(openTag("semantics", Nil))
+    body
+    pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
+    pc.out(ContentMathMLPresenter.applyContext(o)(MathMLContext.forPresentation(pc)).toString)
+    pc.out(closeTag("annotation-xml"))
+    pc.out(closeTag("semantics"))
+    pc.out(closeTag("math"))
+  }
+
+  override def mathmlattribs(implicit pc: PresentationContext): List[(String, String)] = {
+    var ret = super.mathmlattribs
+
+    // add id and xref attributes, if we have an origin
+    pc.owner.foreach(o => {
+      ret ::= "id" -> MathMLContext.presentationID(o, pc.pos)
+      ret ::= "xref" -> MathMLContext.contentID(o, pc.pos)
+    })
+
+    ret
+  }
+}
+
 /**
   * A MathML Context is a context used for exporting objects as MathML
   *
