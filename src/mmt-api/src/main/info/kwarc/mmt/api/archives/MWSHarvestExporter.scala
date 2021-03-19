@@ -8,36 +8,63 @@ import utils._
 import documents._
 import uom._
 import presentation._
-import utils.xml._
 
-class MWSHarvestExporter extends Exporter {
-  val key = "mws"
-  override val outExt = "harvest"
+import scala.xml.Utility
 
-  private lazy val exporter = controller.extman.get(classOf[IDMathMLPresenter]).headOption.getOrElse({
-    val e = new IDMathMLPresenter
+abstract class MWSExporter extends Exporter {
+  private lazy val pmmml = controller.extman.get(classOf[ParallelMathMLPresenter]).headOption.getOrElse({
+    val e = new ParallelMathMLPresenter
     controller.extman.addExtension(e)
     e
   })
 
-
-
   def exportTheory(t: Theory, bf: BuildTask) {
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
+    rh(xml.header)
+
+    rh(xml.openTag("mws:harvest", List(("xmlns:mws", xml.namespace("mws")), ("xmlns:m", xml.namespace("mathml")))) + "\n")
+
+    val data_id = "1"
+    rh(xml.openTag("mws:data", List(("mws:data_id", data_id))))
+
+    // id is the MMT URI
+    rh(<id>{t.path.toPath}</id>.toString + "\n")
+
+    // TODO: add "text" inside the theory, perhaps comments or other things?
+    rh(<text></text>.toString + "\n")
+    rh(<metadata></metadata>.toString + "\n")
 
     t.getDeclarations foreach {d =>
       d.getComponents.foreach {
         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
           tc.get.foreach {t =>
             val url = CPath(d.path,comp)
-            val mathml = exporter.asXML(t, Some(url))
-            val node = <mws:expr url={url.toPath}>{mathml}</mws:expr>
-            rh(node.toString + "\n")
+            val mathml = pmmml.asXML(t, Some(url))
+
+            rh(xml.openTag("math", List(("local_id", url.toPath))) + "\n")
+            rh(Utility.escape(mathml.toString) + "\n")
+            rh(xml.closeTag("math"))
           }
         case _ =>
       }
     }
+
+    rh(xml.closeTag("mws:data") + "\n")
+
+    t.getDeclarations foreach {d =>
+      d.getComponents.foreach {
+        case DeclarationComponent(comp, tc: AbstractTermContainer) =>
+          tc.get.foreach {t =>
+            val url = CPath(d.path,comp)
+
+            rh(xml.openTag("mws:expr", List(("url", url.toPath), ("mws:data_id", data_id))))
+            rh(ContentMathMLPresenter(t).toString)
+            rh(xml.closeTag("mws:expr"))
+            rh("\n")
+          }
+        case _ =>
+      }
+    }
+
     rh("</mws:harvest>\n")
   }
 
@@ -55,88 +82,25 @@ class MWSHarvestExporter extends Exporter {
   }
 }
 
+class MWSHarvestExporter extends MWSExporter {
+  val key = "mws"
+  override val outExt = "harvest"
+}
 
-
-
-class FlatteningMWSExporter extends Exporter {
+class FlatteningMWSExporter extends MWSExporter {
   override val outDim = Dim("export", "mws-flat")
   val key = "mws-flat-harvest"
   override val outExt = "harvest"
   lazy val mf = controller.simplifier
-  def exportTheory(t : Theory, bd : BuildTask) {
+
+  override def exportTheory(t: Theory, bf: BuildTask): Unit = {
     mf(t)
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    t.getDeclarations foreach {
-      case d => d.getComponents.foreach {
-        case DeclarationComponent(comp, tc: AbstractTermContainer) =>
-          tc.get.foreach {t =>
-            // TODO MWS interface requires mws:data node, for which we can probably put dummy nodes here
-            val node = <mws:expr url={CPath(d.path,comp).toPath}>{ContentMathMLPresenter.apply(t)}</mws:expr>
-            rh(node.toString + "\n")
-          }
-        case _ =>
-      }
-    }
-    rh("</mws:harvest>\n")
-
-  }
-  def exportView(v: View, bd: BuildTask) {
-    //excluding expressions from views for now
-  }
-
-  def exportNamespace(dpath: DPath, bd: BuildTask, namespaces: List[BuildTask], modules: List[BuildTask]) {
-    //Nothing to do - MathML in namespaces
-  }
-
-  def exportDocument(doc : Document, bt: BuildTask) {
-    rh("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n")
-    rh("<mws:harvest xmlns:mws=\"http://search.mathweb.org/ns\" xmlns:m=\"http://www.w3.org/1998/Math/MathML\">\n")
-    try {
-      doc.getModules(controller.globalLookup) collect {
-        case _ =>
-      }
-    } catch {
-      case e : GetError => //doc not found, can ignore
-    }
-    rh("</mws:harvest>\n")
-  }
-
-}
-
-class IDMathMLPresenter extends PresentationMathMLPresenter {
-  override def doToplevel(o: Obj)(body: => Unit)(implicit pc: PresentationContext) {
-    val nsAtts = List("xmlns" -> namespace("mathml"), "xmlns:jobad" -> namespace("jobad"))
-    val mmtAtts = pc.owner match {
-      case None => Nil
-      case Some(cp) => List("jobad:owner" -> cp.parent.toPath, "jobad:component" -> cp.component.toString, "jobad:mmtref" -> "")
-    }
-    val idAtt = ( "id" -> o.hashCode.toString)
-    // <mstyle displaystyle="true">
-    pc.out(openTag("math",  idAtt :: nsAtts ::: mmtAtts))
-    pc.out(openTag("semantics", Nil))
-    body
-    pc.out(openTag("annotation-xml", List("encoding" -> "MathML-Content")))
-    pc.out(ContentMathMLPresenter.applyContext(o)(MathMLContext.forPresentation(pc)).toString)
-    pc.out(closeTag("annotation-xml"))
-    pc.out(closeTag("semantics"))
-    pc.out(closeTag("math"))
-  }
-
-  override def mathmlattribs(implicit pc: PresentationContext): List[(String, String)] = {
-    var ret = super.mathmlattribs
-
-      // add id and xref attributes, if we have an origin
-      pc.owner.foreach(o => {
-        ret ::= "id" -> MathMLContext.presentationID(o, pc.pos)
-        ret ::= "xref" -> MathMLContext.contentID(o, pc.pos)
-      })
-
-      ret
+    super.exportTheory(t, bf)
   }
 }
 
-class FlatteningPresenter extends Presenter(new IDMathMLPresenter) {
+
+class FlatteningPresenter extends Presenter(new ParallelMathMLPresenter) {
   def key: String = "flatmws"
   override val outExt = "html"
   lazy val mf = controller.extman.get(classOf[ElaborationBasedSimplifier]).head
