@@ -161,16 +161,19 @@ object TranslationController {
   }
   def endMake() = {
     includeDependencies()
+    controller.simplifier(currentThy)
     controller.endAdd(currentThy)
+    controller.simplifier(currentThy)
     currentDoc.add(MRef(currentDoc.path, currentThy.path))
     controller.endAdd(currentDoc)
     try {
       controller.simplifier(currentThy)
+      controller.simplifier(currentDoc)
     } catch {
       case ge: GeneralError =>
-        //throw ge
+        throw ge
       case e: Throwable =>
-        //throw e
+        throw e
     }
   }
 

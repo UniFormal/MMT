@@ -113,9 +113,11 @@ object MizarStructure {
           restr::restrSelProps
         case tm => throw ImplementationError("Expected an OMS referencing the type declaration of a substructure, but instead found the term "+tm._1.toStr(true))
     }
-    val fstRestr = symbols.Constant(OMMOD(parentTerm.module), substrRestr.head.name, Nil, substrRestr.head.tp, substrRestr.head.df, None, notCons.last)
-    val furtherDecls = substrRestr.tail++List(strict, strictProp) map (_.toConstant(parentTerm.module,Context.empty))
-    (recordElabDecls ::: fstRestr::furtherDecls) map tr
+    val furtherDecls = substrRestr match {
+      case Nil => Nil
+      case head::tail => symbols.Constant(OMMOD(parentTerm.module), head.name, Nil, head.tp, head.df, None, notCons.last)::(tail:::List(strict, strictProp) map (_.toConstant(parentTerm.module,Context.empty)))
+    }
+    (recordElabDecls ::: furtherDecls) map tr
   }
 }
 
