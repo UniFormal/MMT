@@ -12,14 +12,14 @@ import objects._
 import mizar.newxml.syntax._
 
 object JustificationTranslator {
-  def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext): objects.Term = just match {
+  def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): objects.Term = just match {
     case Straightforward_Justification(_refs) => lambdaBindDefCtxArgs(uses(claim, globalReferences(_refs)))
     case _: Block =>
       defContext.enterProof
       val usedFacts: List[Term] = usedInJustification(just)
       defContext.exitProof
       //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
-      lambdaBindArgs(uses(claim, usedFacts))(defContext.args.map(_.toTerm))
+      lambdaBindDefCtxArgs(uses(claim, usedFacts))
     case sj: Scheme_Justification => lambdaBindDefCtxArgs(uses(claim, globalReferences(sj._refs)))//translate_Scheme_Justification(sj)
   }
   def globalReferences(refs: List[Reference]): List[Term] = refs flatMap {
@@ -42,8 +42,8 @@ object JustificationTranslator {
       ProofByExample(exemTp, exemTm)
     }
   }
-  private def lambdaBindDefCtxArgs(tm: Term)(implicit defContext: DefinitionContext): Term = {
-    if (defContext.args.nonEmpty) lambdaBindArgs(tm)(defContext.args.map(_.toTerm)) else tm
+  private def lambdaBindDefCtxArgs(tm: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): Term = {
+    if (defContext.args.nonEmpty && bindArgs) lambdaBindArgs(tm)(defContext.args.map(_.toTerm)) else tm
   }
   def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Term) = {
     val claim = provedClaim._claim match {

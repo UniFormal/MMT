@@ -333,7 +333,9 @@ case class Existential_Registration(_adjClust:Adjective_Cluster, _tp:Type) exten
  */
 case class Conditional_Registration(_attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
 /**
- * Registering properties for a mode
+ * Registering sethood property (with _tp given) for a mode
+ * @param _props the property to register (currently always sethood)
+ * @param _block the proof of the property
  */
 case class Property_Registration(_props:Properties, _block:Block) extends Registrations
 /**
@@ -376,22 +378,26 @@ case class Collective_Assumption(_cond:Conditions) extends Assumptions
  */
 case class Existential_Assumption(_qualSegm:Qualified_Segments, _cond:Conditions) extends Assumptions
 /**
+ * Common trait for correctness conditions and properties following a declaration
+ */
+abstract class Property_or_Correctness_Condition(is_correctness_condition: Boolean) extends DeclarationLevel
+/**
  * All correctness conditions for the preceding definition or registration
  * @param _correctnessCond the correctness conditions
  * @param _just the justification for them
  */
-case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends DeclarationLevel
+case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justification) extends Property_or_Correctness_Condition(true)
 /**
- * Several correctness conditions
+ * Several correctness conditions (which need to contain their own proofs)
  * @param _cond the correctness conditions
  */
-case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends DeclarationLevel
+case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Property_or_Correctness_Condition(true)
 /**
  * A single correctness condition with its justification
  * @param _cond the correctness condition
  * @param _just its justification
  */
-case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends DeclarationLevel
+case class Correctness_Condition(_cond:CorrectnessConditions, _just:Option[Justification]) extends Property_or_Correctness_Condition(true)
 /**
  * Well-definedness conditions that need to be proven along with definitions
  */
@@ -428,8 +434,8 @@ case class consistency() extends CorrectnessConditions("consistency")
  * @param _props the property
  * @param _just
  */
-case class Property(_props:Properties, _just:Option[Justification]) extends DeclarationLevel {
-  def matchProperty() : MizarProperty = _props.matchProperty(_just)
+case class Property(_props:Properties, _just:Option[Justification]) extends Property_or_Correctness_Condition(false) {
+  def matchProperty : MizarProperty = _props.matchProperty(_just)
 }
 /**
  * Corresponds to a case distinction in a proof

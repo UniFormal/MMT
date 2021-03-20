@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.{GlobalName, LocalName}
+import info.kwarc.mmt.api.LocalName
 
 object Utils {
   def fullClassName(s: String) = {
@@ -75,8 +75,12 @@ object Utils {
    * @param _just (optional) the proof of the property
    */
   case class Connectedness(_just:Option[Justification]) extends MizarProperty("connectedness", _just:Option[Justification])
-  //for modes and existential_registrations
-  //only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
+  /**
+   * For modes and existential_registrations
+   * only those modes (and subtypes, expanded into) can be used as types in fraenkel_terms
+   * @param _just (optional) the proof of the property
+   * @param _tp the type whose sethood to show
+   */
   case class Sethood(_just:Option[Justification], _tp: Option[Type]) extends MizarProperty("sethood", _just:Option[Justification])
   def matchProperty(prop: String, _just:Option[Justification], _tp:Option[Type] = None) = prop match {
     case "commutativity" => Commutativity(_just)

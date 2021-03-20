@@ -852,7 +852,7 @@ case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends Objec
  * There are two kinds of Properties tags in Mizar esx files (unfortunately of same name):
  * 1) within Property-Registrations
  * 2) within definitions
- * In the first case the parameters sort (which within the entire MML is always sethood) and _tp are given
+ * In the first case exactly the parameters sort (which within the entire MML is always sethood) and _tp are given
  * In the second case exactly property and _just (a proof of it) are given
  * @param sort
  * @param property
