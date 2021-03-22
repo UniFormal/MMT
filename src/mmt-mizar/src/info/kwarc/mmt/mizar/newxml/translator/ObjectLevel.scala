@@ -10,6 +10,7 @@ import mmtwrapper._
 import MizarPrimitiveConcepts._
 import MizSeq.{Index, OMI}
 import PatternUtils._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarStructure.getSelectorValues
 import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalLookup
 import translator.attributeTranslator.translate_Attribute
 import translator.claimTranslator.translate_Claim
@@ -38,14 +39,14 @@ object termTranslator {
         if (defContext.withinProof) defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue else defaultValue
     case at@Aggregate_Term(tpAttrs, _args) =>
       val gn = computeGlobalName(at)
-      val aggrDecl = referenceExtDecl(gn,RecordUtil.makeName)
+      val aggrDecl = structureMakePath(gn)
       val args = translateArguments(_args)
-      ApplyGeneral(aggrDecl, args)
+      ApplyGeneral(OMS(aggrDecl), args)
     case st@Selector_Term(tpAttrs, _arg) =>
       val strGn = computeGlobalName(st)
-      val sel = referenceExtDecl(strGn, tpAttrs.spelling)
+      val sel = structureSelectorPath(LocalName(tpAttrs.spelling))(strGn)
       val argument = translate_Term (_arg)
-      Apply(sel, argument)
+      Apply(OMS(sel), argument)
     case ct@Circumfix_Term(tpAttrs, _symbol, _args) =>
       assert(tpAttrs.sort == "Functor-Term")
       val gn = globalLookup(ct)
@@ -90,15 +91,12 @@ object termTranslator {
       //TODO: do the required checks
       translate_Term(_tm)
     case fft@Forgetful_Functor_Term(_, _tm) =>
-      val structGn = computeGlobalName(fft)
-      val substructs = MizarStructure.getTransitiveAncestors(structGn)
+      val forgetfulFunctorGn = computeGlobalName(fft)
       val structTm = translate_Term(_tm)
       val structTp = TranslationController.inferType(structTm)
-      val substruct = substructs.find(_ == structTp).get
-      val ApplyGeneral(OMS(substrTpPath), substrTpArgs) = substruct
-      val strPath = structGn.module ? structGn.name.steps.init
-      val restr = referenceExtDecl(strPath.module ? strPath.name.init, structureDefRestrName(substrTpPath.name.toString)(strPath).toString)
-      ApplyGeneral(restr, substrTpArgs:+structTm)
+      val ApplyGeneral(OMS(strTpPath), params) = structTp
+      val argsTyped = getSelectorValues(structTm, params)(strTpPath.module ? strTpPath.name.init)
+      ApplyGeneral(OMS(forgetfulFunctorGn), params++argsTyped:+structTm)
   }
 }
 
@@ -118,9 +116,9 @@ object typeTranslator {
         ApplyGeneral(tp,args)
       case st@Struct_Type(_, _args) =>
         val gn = computeGlobalName(st)
-        val typeDecl = referenceExtDecl(gn,RecordUtil.recTypeName)
+        val typeDecl = structureTypePath(gn)
         val args = translateArguments(_args)
-        ApplyGeneral(typeDecl, args)
+        ApplyGeneral(OMS(typeDecl), args)
     }
    }
 

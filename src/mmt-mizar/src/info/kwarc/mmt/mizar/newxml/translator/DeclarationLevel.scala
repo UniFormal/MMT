@@ -20,7 +20,7 @@ import claimTranslator._
 import definitionTranslator._
 import blockTranslator._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, argsVarName, lambdaBindArgs}
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, argsVarName, lambdaBindArgs, structureSelectorPath}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import clusterTranslator._
 import definiensTranslator._
@@ -447,14 +447,12 @@ object definitionTranslator {
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
     val l = defContext.args.length
     implicit var selectors: List[(Int, VarDecl)] = Nil
-    val substrTps: List[Term] = strDef._ancestors._structTypes.map(translate_Type)
+    val ancestorTps: List[Term] = strDef._ancestors._structTypes.map(translate_Type)
     val Structure_Patterns_Rendering(_aggrFuncPat, _forgetfulFuncPat, _strFuncPat, Selectors_List(_selectorFuncPat)) = strDef._rendering
-    val substrs = (substrTps :+ ApplyGeneral(OMS(computeGlobalName(_strFuncPat)), defContext.args map (_.toTerm))) flatMap(MizarStructure.getTransitiveAncestors(_))
-    val n = substrs.length
+    val n = ancestorTps.length
     var substitutions : List[Sub] = Nil
-    val declarationPath = strDef._strPat.globalPatternName
-    val forgNot = translate_Pattern(_forgetfulFuncPat)._3
-    val nots@strNot::aggrNot::selNots  = _strFuncPat::_aggrFuncPat::_selectorFuncPat map(translate_Pattern(_)) map(t=> (t._1, t._3))
+    implicit val declarationPath = strDef._strPat.globalPatternName
+    val nots@strNot::aggrNot::forgNot::strictNot::selNots = strDef._strPat::_aggrFuncPat::_forgetfulFuncPat::_strFuncPat::_selectorFuncPat map(translate_Pattern(_)) map(t=> (t._1, t._3))
     def translate_Field_Segments(field_Segments: Field_Segments)(implicit defContext: DefinitionContext) : List[VarDecl] = field_Segments._fieldSegments flatMap {
       field_Segment: Field_Segment =>
 			val tp = translate_Type(field_Segment._tp)
@@ -462,7 +460,7 @@ object definitionTranslator {
         val selName = OMV(selector.spelling)//translate_Locus(selector._loci)
         val sel = (selector.nr, selName % tp)
         selectors ::= sel
-        substitutions ::= selName / PatternUtils.referenceExtDecl(declarationPath, selName.name.toString)
+        substitutions ::= selName / OMS(structureSelectorPath(selName.name))
         (sel._2 ^ substitutions).copy(not = selNots.find(_._1 == sel._2.name).map(_._2.getAllNotations.head))
       }
     }
@@ -470,7 +468,7 @@ object definitionTranslator {
     val m = fieldDecls.length
 
     TranslationController.articleStatistics.incrementStatisticsCounter("struct")
-    StructureInstance(declarationPath, l, defContext.args, n, substrs, m, Context.list2context(fieldDecls) ^ namedDefArgsSubstition(), nots.map(_._2) :+ forgNot)
+    StructureInstance(l, defContext.args, n, ancestorTps, m, Context.list2context(fieldDecls) ^ namedDefArgsSubstition(), nots.map(_._2))
   }
   private def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: => DefinitionContext): List[Constant] = {
     constant_Definition._children map { eq =>

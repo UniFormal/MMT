@@ -9,20 +9,22 @@ import info.kwarc.mmt.mizar.newxml._
 import MizarPrimitiveConcepts._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recName, recTypeName}
 import translator.TranslationController
 object PatternUtils {
   def argsVarName: String = "x"//"argumentSequence"
   def argsWellTypedName: String = "p"
-  def pseudoSlash(a: LocalName, b: LocalName) : LocalName = LocalName(a.toString+"_"+b.toString)
-  def pseudoSlash(a: LocalName, b: String) : LocalName = pseudoSlash(a, LocalName(b))
-  def structureStrictDeclName(implicit parentTerm: GlobalName): LocalName = pseudoSlash(parentTerm.name, LocalName("strictDef"))
-  def structureStrictPropName(implicit parentTerm: GlobalName): LocalName = pseudoSlash(parentTerm.name, LocalName("strictProp"))
-  def structureDefRestrName(substrName:String)(implicit parentTerm: GlobalName): LocalName = pseudoSlash(LocalName("restr"), substrName)
-  def structureDefSubstrSelPropName(restrName:LocalName, sel: LocalName)(implicit parentTerm: GlobalName): LocalName = pseudoSlash(pseudoSlash(LocalName(restrName), "selProp"), sel)
-  def referenceExtDecl(substrPath:GlobalName, nm: String): Term = OMS(substrPath.module ? pseudoSlash(substrPath.name, LocalName(nm)))
+  def pseudoSlash(a: LocalName, b: LocalName) : LocalName = a / b //LocalName(a.toString+"_"+b.toString)
+  private def referenceExtDecl(strPath:GlobalName, nm: LocalName): GlobalName = strPath.module ? pseudoSlash(strPath.name, LocalName(nm))
+  def structureStrictDeclPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName("strictDef"))
+  def structureForgetfulFunctorPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName("forgetfulFunctor"))
+  def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(recTypeName))
+  def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(makeName))
+  def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName)
+  def structureAncestorSubtypingPath(ancestorName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, ancestorName)
   def referenceIntSel(strName: String, nm: String): Term = {
     val strPath = TranslationController.currentTheoryPath ? strName
-    referenceExtDecl(strPath, nm)
+    OMS(referenceExtDecl(strPath, LocalName(nm)))
   }
 
   //effectively copied from InternalDeclarationUtil
@@ -59,18 +61,18 @@ object StructureInstance {
    * @param l The number of arguments to the structure instance
    * @param argNameTps The names and types of the arguments to the structure instance
    * @param n The number of structure instances it extends
-   * @param substr A list of OMMOD(p), where p is the mpath of a derived declaration dd
-   *               of another Mizar structure instance
+   * @param substr A list of ApplyGeneral(OMS(p), args), where p is the path of the struct type
+   *               of another Mizar structure instance and args are values for its arguments
    * @param m the number of field declarations (selectors in Mizar)
    * @param fieldDecls The field declarations (selectors) of the structure,
    *                   inherited selectors must be repeated here
    */
-  def apply(declarationPath:GlobalName, l:Int, argNameTps:Context, n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl], notCons: List[NotationContainer]): List[symbols.Constant] = {
-    MizarStructure.elaborateAsMizarStructure(argNameTps,fieldDecls,substr,TranslationController.controller, notCons, Some(pseudoSlash(_, _)))(declarationPath)
+  def apply(l:Int, argNameTps:Context, n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl], notCons: List[NotationContainer])(implicit declarationPath: GlobalName): List[symbols.Constant] = {
+    MizarStructure.elaborateAsMizarStructure(argNameTps, fieldDecls, substr, TranslationController.controller, notCons, Some(pseudoSlash(_, _)))
   }
-  def withUnnamedArgs(declarationPath:GlobalName, l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl]): List[symbols.Declaration] = {
+  def withUnnamedArgs(l:Int, argTps:List[Term], n:Int, substr:List[Term], m:Int, fieldDecls:List[VarDecl])(implicit declarationPath: GlobalName): List[symbols.Declaration] = {
     val argNameTps = argTps.zipWithIndex.map {case (tp, ind) => OMV("arg"+ind) % tp}
-    StructureInstance(declarationPath:GlobalName, l, argNameTps, n, substr, m, fieldDecls, NotationContainer.empty()::Nil)
+    StructureInstance(l, argNameTps, n, substr, m, fieldDecls, NotationContainer.empty()::Nil)
   }
 }
 
@@ -127,7 +129,7 @@ object MizarPatternInstance {
       case (_, Some(pf)) => pf
       case (m, _) => uses(And((0 until m).toList map (i => implies(
         Index(Apply(OMV("cases"), OMI(i)), x), And((i until m).toList map(j => implies(
-          Index(Apply(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.eq(
+          Index(Apply(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.equal(
             Apply(Index(OMV("caseRes"), OMI(i)), x),
             Apply(Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
       case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")

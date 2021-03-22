@@ -121,7 +121,7 @@ object MizarPrimitiveConcepts {
   object iff extends BinaryLFConstantScala(MizarTh, "iff")
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
-  object eq extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
+  object equal extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
   def neqCon = constantName("neq")
   object neq extends BinaryLFConstantScala(neqCon.module, neqCon.name.toString)
   def thesis = constantName("thesis")

@@ -161,20 +161,11 @@ object TranslationController {
   }
   def endMake() = {
     includeDependencies()
-    controller.simplifier(currentThy)
     controller.endAdd(currentThy)
-    controller.simplifier(currentThy)
+    //controller.simplifier(currentThy)
     currentDoc.add(MRef(currentDoc.path, currentThy.path))
-    controller.endAdd(currentDoc)
-    try {
-      controller.simplifier(currentThy)
-      controller.simplifier(currentDoc)
-    } catch {
-      case ge: GeneralError =>
-        throw ge
-      case e: Throwable =>
-        throw e
-    }
+    controller.simplifier(currentThy)
+    controller.simplifier(currentDoc)
   }
 
   def add(e: NarrativeElement) : Unit = {
@@ -212,7 +203,7 @@ object TranslationController {
         res
       } catch {
         case ge: GeneralError =>
-          //println("Uncomplified:"+controller.presenter.asString(e))
+          println("Uncomplified:"+controller.presenter.asString(e))
           var shouldWork = false
           try {controller.presenter.asString(e); shouldWork = true} catch {case _ : Throwable =>}
           if (shouldWork) e else throw ge

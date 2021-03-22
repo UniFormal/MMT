@@ -271,11 +271,11 @@ case class Qualification_Term(sort: String, _tm:MizTerm, _tp:Type) extends Compl
  * writing in Mizar
  * the S of t
  * returns an instance of S with same selectors and arguments of the corresponding arguments and selectors of t
- * @param objAttr
- * @param _tm
+ * @param objAttr references the structure type declaration of the S
+ * @param _tm the instance t
  */
 case class Forgetful_Functor_Term(objAttr: ConstrObjAttrs, _tm:MizTerm) extends globalDefAttrsComplexTerm {
-  override def globalKind: Char = Utils.shortKind(Utils.StructureKind())
+  override def globalKind: Char = Utils.shortKind(Utils.ForgetfulKind())
 }
 
 /**
