@@ -39,7 +39,7 @@ case class MMLId(MMLId:String) extends Group {
    */
   def globalName(kind: String): GlobalName = {
     val Array(aid, ln) = MMLId.split(":")
-    TranslationController.getTheoryPath(aid) ? LocalName(kind+ln)
+    makeGlobalName(aid, kind, ln)
   }
 }
 /**
@@ -90,7 +90,7 @@ trait GloballyReferencingObjAttrs {
       case other =>
         throw ImplementationError("")
     }
-    TranslationController.getTheoryPath(aid) ? LocalName(globalKind.toString+ln)
+    makeGlobalKindName(aid, globalKind, ln)
   }
   def globalPatternName: GlobalName = absoluteName(globalObjAttrs.absolutepatternMMLId)
 }
@@ -107,7 +107,7 @@ trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
 
   def globalConstrName : GlobalName = absoluteName(globalDefAttrs.absoluteconstrMMLId)
-  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = p.module ? LocalName(p.name.toString + c.name.toString)
+  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = p.module ? LocalName(p.name.toString + LocalName(c.name.tail).toString)
   def globalPatConstrName: GlobalName = absolutePatConstrName(globalPatternName, globalConstrName)
 }
 /**

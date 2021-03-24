@@ -68,10 +68,9 @@ object MizarPrimitiveConcepts {
     }
   }
   object constant {
-    def apply(name: String): OMID = OMID(constantName(name))
-
+    def apply(name: String): OMID = OMS(constantName(name))
     def unapply(tm: Term) = tm match {
-      case OMID(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
+      case OMS(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
       case _ => None
     }
   }
@@ -151,7 +150,6 @@ object MizarPrimitiveConcepts {
 
   def attr(t : Term) = Apply(constant("attr"), t)
   def adjective(cluster : Term, typ : Term) = ApplyGeneral(constant("adjective"), List(typ, cluster))
-  def cluster(a1 : Term, a2 : Term) = ApplyGeneral(constant("cluster"), List(a1, a2))
   def choice(tp : Term) = Apply(constant("choice"), tp)
 
   /**
@@ -183,7 +181,7 @@ object MizarPrimitiveConcepts {
   object SimpleTypedAttrAppl {
     def apply(baseTp: Term, attrs: List[Term]) = {
       val attrApplSym = constant("adjective")
-      attrs.foldRight[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+      attrs.foldLeft[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
     }
     def unapply(tm: Term) : Option[(Term, List[Term])] = tm match {
       case ApplyGeneral(constant("adjective"), tp::attr) => Some((tp, attr))

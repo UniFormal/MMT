@@ -10,7 +10,7 @@ import MizarPrimitiveConcepts._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recName, recTypeName}
-import translator.TranslationController
+import translator.{DefinitionContext, TranslationController}
 object PatternUtils {
   def argsVarName: String = "x"//"argumentSequence"
   def argsWellTypedName: String = "p"
@@ -47,8 +47,17 @@ object PatternUtils {
       case t => (Context.empty, t)
     })
   }
-  def lambdaBindArgs(tm: Term)(implicit args: List[Term]): Term = {
-    Lam(argsVarName, nTerms(args.length), tm)
+  def lambdaBindArgs(tm: Term, bindEmpty: Boolean = false)(implicit args: List[Term]): Term = {
+    if (args.nonEmpty) Lam(argsVarName, nTerms(args.length), tm) else tm
+  }
+  def lambdaBindContext(tm: Term, bindEmpty: Boolean = false)(implicit defContext: DefinitionContext): Term = {
+    lambdaBindArgs(tm)(defContext.args.map(_.toTerm))
+  }
+  def piBindArgs(tm: Term, bindEmpty: Boolean = false)(implicit args: List[Term]): Term = {
+    if (args.nonEmpty) Pi(LocalName(argsVarName), nTerms(args.length), tm) else tm
+  }
+  def piBindContext(tm: Term, bindEmpty: Boolean = false)(implicit defContext: DefinitionContext): Term = {
+    piBindArgs(tm)(defContext.args.map(_.toTerm))
   }
 }
 
@@ -121,8 +130,8 @@ object MizarPatternInstance {
     implicit val args = arguments
     val ret = retO map(List(_)) getOrElse Nil
     val motherType = motherTpUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
-    val cases = Sequence(casesUnbound map lambdaBindArgs)
-    val caseRes = Sequence(caseResUnbound map lambdaBindArgs)
+    val cases = Sequence(casesUnbound map (lambdaBindArgs(_, true)))
+    val caseRes = Sequence(caseResUnbound map (lambdaBindArgs(_, true)))
     val x = OMV(argsVarName)
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => zeroAryAndPropCon
@@ -158,7 +167,7 @@ object MizarPatternInstance {
   def apply(name: LocalName, pat: String, argNumI: Int, arguments: List[Term], assNumI: Option[Int], ass: List[Term], pred: Term, proofU: Option[Term])(implicit notC: NotationContainer) : DerivedDeclaration = {
     if (assNumI.isDefined) {assert(assNumI.get == ass.length)}
     implicit val args = arguments
-    val assumptions = assNumI map(tm => List(OMI(tm), Sequence(ass map lambdaBindArgs))) getOrElse Nil
+    val assumptions = assNumI map(tm => List(OMI(tm), Sequence(ass map(lambdaBindArgs(_, true))))) getOrElse Nil
     val v = lambdaBindArgs(pred)
     val proof = proofU map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val furtherParameters: List[Term] = assumptions:::v::proof
@@ -182,9 +191,9 @@ object MizarPatternInstance {
     val attrAssNum = OMI(attrAssU.length)
     val tp = lambdaBindArgs(tpU)
     val tm = tmO map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
-    val attrAss = Sequence(attrAssU map lambdaBindArgs)
+    val attrAss = Sequence(attrAssU map (lambdaBindArgs(_, true)))
     val attrConcl = if (attrConclU.isEmpty) Nil else {
-      List(OMI(attrConclU.length), Sequence(attrConclU map lambdaBindArgs))}
+      List(OMI(attrConclU.length), Sequence(attrConclU map (lambdaBindArgs(_, true))))}
 
     val furtherParameters: List[Term] = attrAssNum::tp::tm:::attrAss::attrConcl.:+(corCondProof)
     apply(name, pat, argNumI, arguments, furtherParameters)
@@ -227,7 +236,7 @@ object DirectFunctorDefinition extends FunctorDefinitionInstance {
 }
 object IndirectFunctorDefinition extends FunctorDefinitionInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], ret: Term, caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Term, existenceProof: Term, uniquenessProof: Term)(implicit notC: NotationContainer): DerivedDeclaration = {
-    MizarPatternInstance(name, "directFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, Some(consistencyProof), defRes, List(existenceProof, uniquenessProof))
+    MizarPatternInstance(name, "indirectFuncDef", argNum, argTypes, Some(ret), None, caseNum, cases, caseRes, Some(consistencyProof), defRes, List(existenceProof, uniquenessProof))
   }
   def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Term, Int, List[Term], List[Term], Some[Term], Term)] = dd match {
     case MizarPatternInstance(name, "indirectFuncDef", List(OMI(argNum), Sequence(argTypes), ret, OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof, defRes, _, _)) =>
@@ -238,15 +247,15 @@ object IndirectFunctorDefinition extends FunctorDefinitionInstance {
 
 trait PredicateDefinitionInstance
 object PredicateDefinitionInstance {
-  def unapply(dd: DerivedDeclaration): Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = DirectModeDefinition.unapply(dd)
+  def unapply(dd: DerivedDeclaration): Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = DirectPredicateDef.unapply(dd)
 }
 object DirectPredicateDef extends PredicateDefinitionInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], defRes:Term, consistencyProof: Term)(implicit notC: NotationContainer) = {
     MizarPatternInstance(name, "directPredDef", argNum, argTypes, None, None, caseNum, cases, caseRes, Some(consistencyProof), defRes)
     }
-  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term, Term)] = dd match {
+  def unapply(dd: DerivedDeclaration) : Option[(LocalName, Int, List[Term], Int, List[Term], List[Term], Term)] = dd match {
     case MizarPatternInstance(name, "directPredDef", List(OMI(argNum), Sequence(argTypes), OMI(caseNum), Sequence(cases),Sequence(caseRes), consistencyProof, defRes)) =>
-      Some((name, argNum, argTypes, caseNum, cases, caseRes, consistencyProof, defRes))
+      Some((name, argNum, argTypes, caseNum, cases, caseRes, defRes))
     case _ => None
   }
 }
@@ -341,8 +350,8 @@ object Identify extends RegistrationInstance {
     val eqnNum = OMI(eqns.length)
     val fstExpr = lambdaBindArgs(expr1)
     val sndExpr = lambdaBindArgs(expr2)
-    val as = Sequence(asU map lambdaBindArgs)
-    val bs = Sequence(bsU map lambdaBindArgs)
+    val as = Sequence(asU map (lambdaBindArgs(_, true)))
+    val bs = Sequence(bsU map (lambdaBindArgs(_, true)))
 
     val furtherParameters: List[Term] = List(eqnNum, as, bs, fstExpr, sndExpr, compatibility)
     MizarPatternInstance(name, "identify", argNumI, argTypes, furtherParameters)
@@ -360,9 +369,10 @@ object Reduction extends RegistrationInstance {
 }
 
 trait NotationInstance
-class NymicNotation(key:String) extends NotationInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer) = {
-    MizarPatternInstance(name, key, argNum, argTypes, List(v))
+class NymicNotation(nymic:String) extends NotationInstance {
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer, kind: String) = {
+    val fullPatternName = nymic+(if (kind == "func")  "Functor" else if (kind == "pred") "Predicate" else "")+"Notation"
+    MizarPatternInstance(name, fullPatternName, argNum, argTypes, List(v))
   }
 }
 object NymicNotation {
@@ -371,13 +381,13 @@ object NymicNotation {
     case _ => None
   }
 }
-object SynonymicNotation extends NymicNotation("synonymicNotation") {
+object SynonymicNotation extends NymicNotation("synonymic") {
   def unapply(dd: DerivedDeclaration): Option[(LocalName, String, Int, List[Term], Term)] = dd match {
     case NymicNotation(name, "synonymicNotation", n, argTypes, v) => Some((name, "synonymicNotation", n, argTypes, v))
     case _ => None
   }
 }
-object AntonymicNotation extends NymicNotation("antonymicNotation") {
+object AntonymicNotation extends NymicNotation("antonymic") {
   def unapply(dd: DerivedDeclaration): Option[(LocalName, String, Int, List[Term], Term)] = dd match {
     case NymicNotation(name, "antonymicNotation", n, argTypes, v) => Some((name, "antonymicNotation", n, argTypes, v))
     case _ => None

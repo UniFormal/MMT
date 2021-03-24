@@ -25,7 +25,7 @@ object MizarStructure {
     selectorNames map (mod.get(_).toTerm) map (ApplyGeneral(_, params:+structTm))
   }
   def ancestorSubtypingDecls(params: Context, ancestorTps: List[Term])(implicit parentTerm: GlobalName) = ancestorTps map {
-    case ancestorTp@ApplyGeneral(OMS(ancestorTpPath), ancestorTpParams) =>
+    case ancestorTp@ApplyGeneral(OMS(ancestorTpPath), _) =>
       val ancestorTpName = ancestorTpPath.module.name / ancestorTpPath.name.head.toString
       val tp = PiOrEmpty(params, forall(OMV("s"), ancestorTp, is(OMV("s"), ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm)))))
       Constant(OMMOD(parentTerm.module), structureAncestorSubtypingPath(ancestorTpName).name, Nil,
@@ -37,7 +37,7 @@ object MizarStructure {
       new OutgoingTermLevel(path, Nil, vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
-    elaborateContent(params, fieldDecls, ancestorTps, controller, notCons, slashFunction)
+    elaborateContent(params, fieldDecls, ancestorTps, controller, notCons)
   }
 
   /**
@@ -50,14 +50,10 @@ object MizarStructure {
    * @param parentTerm (implicit) the path to this derived declaration
    * @return The list of constants forming the elaboration
    */
-  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], ancestorTps: List[Term], controller: Controller, notCons: List[NotationContainer], slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName): List[Constant] = {
+  def elaborateContent(params: Context, origDecls: List[InternalDeclaration], ancestorTps: List[Term], controller: Controller, notCons: List[NotationContainer])(implicit parentTerm: GlobalName): List[Constant] = {
     val recordElabDeclsNoNot = structuralfeatures.Records.elaborateContent(params, origDecls, controller)
-    def pseudoSlash1: (LocalName, LocalName) => LocalName = slashFunction getOrElse {(a:LocalName, b:LocalName) => a / b}
-    def replaceSlashesLN(n: LocalName) = n.steps.tail.foldLeft(LocalName(List(n.steps.head)))((nm, step) => pseudoSlash1(nm, LocalName(step)))
-    def replaceSlashes(gn: GlobalName) = {
-      OMS(gn.module ? replaceSlashesLN(gn.name))
-    }
-    val rep = OMSReplacer(gn => Some(replaceSlashes(gn)))
+    def replaceSlashesLN(n: LocalName) = n.steps.tail.foldLeft(LocalName(List(n.steps.head)))((nm, step) => PatternUtils.pseudoSlash(nm, LocalName(step)))
+    val rep = OMSReplacer(gn => Some(OMS(gn.module ? replaceSlashesLN(gn.name))))
     val tr = {
       c: Constant =>
         val List(tpO: Option[Term], dfO: Option[Term]) = List(c.tp, c.df).map(_.map(rep.toTranslator()(Context.empty, _)))

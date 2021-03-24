@@ -810,7 +810,12 @@ case class Loci(_loci:List[Locus]) extends ObjectLevel
  * in this case we only parse the given notation of the parent pattern and will not try to translate this
  */
 case class Locus(varidkind:String, idnr: Int, spelling:Option[String], kind:String) extends ObjectLevel {
-  def toIdentifier: LocalName = MizarVariableName(spelling getOrElse "It", kind, idnr)
+  def toIdentifier: LocalName = {
+    val spell = spelling getOrElse {
+      "ItSpell"
+    }
+    MizarVariableName(spell, kind, idnr)
+  }
 }
 /**
  * contains the field segments containing the selectors of a structure

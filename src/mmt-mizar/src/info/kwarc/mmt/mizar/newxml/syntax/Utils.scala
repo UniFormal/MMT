@@ -1,12 +1,15 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
 import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object Utils {
   def fullClassName(s: String) = {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
 
+  def makeGlobalName(aid: String, kind: String, ln: String) = TranslationController.getTheoryPath(aid) ? (LocalName(aid) / kind+ln)
+  def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
   def MizarRedVarName(idnr: Int): LocalName = LocalName("idNr_"+idnr)
   def MizarVariableName(spelling: String, kind: String, idnr: Int): LocalName = {
     LocalName(spelling) / LocalName(kind) / MizarRedVarName(idnr)

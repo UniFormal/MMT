@@ -49,11 +49,22 @@ sealed trait Registrations extends RegistrationSubitems
 /**
  * A definition
  */
-sealed trait Definition extends BlockSubitem
+sealed trait Definition extends BlockSubitem {
+  def pat: Option[Patterns]
+}
+/**
+ * A Definition which is not a private definition and consequently has a pattern
+ */
+trait PublicDefinition extends Definition {
+  def _pat: Patterns
+  override def pat: Option[Patterns] = Some(_pat)
+}
 /**
  * A local (functor or predicate) definition
  */
-sealed trait PrivateDefinition extends Definition
+sealed trait PrivateDefinition extends Definition {
+  override def pat: Option[Patterns] = None
+}
 /**
  * A subitem containing a definitional, registration or notation block
  * @param _block the definition, registration or notation block
@@ -133,47 +144,44 @@ case class Case_Head(_ass:Assumptions) extends ProofLevel
 /**
  * Common trait for both synonyms and antonyms
  */
-abstract class Nyms(isAntonym: Boolean) extends BlockSubitem {
+abstract class Nyms(isAntonym: Boolean, kind: String) extends BlockSubitem {
   def _patNew: Patterns
   def _patRefOld: Pattern_Shaped_Expression
   def antonymic: Boolean = isAntonym
+  def defKind = kind
 }
 /**
  * A synonym (a new notation for an existing notion)
  */
-abstract class Synonym extends Nyms(false)
+abstract class Synonym(kind: String) extends Nyms(false, kind)
 /**
  * An antonym (a new notation for the negation of an existing notion)
  */
-abstract class Antonym extends Nyms(true)
+abstract class Antonym(kind: String) extends Nyms(true, kind)
 /**
  * A predicate synonym
  */
-case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
+case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym("pred")
 /**
  * A predicate antonym
  */
-case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
+case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym("pred")
 /**
  * An attribute synonym
  */
-case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym("attr")
 /**
  * An attribute antonym
  */
-case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym("attr")
 /**
  * A functor synonym
  */
-case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
-/**
- * A functor antonym
- */
-case class Func_Antonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym("func")
 /**
  * A mode synonym
  */
-case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym("mode")
 
 /**
  * a proven claim
@@ -222,7 +230,7 @@ case class Choice_Statement(_qual:Qualified_Segments, prfClaim:ProvedClaim) exte
  * Definitions which have a label and may get redefined
  * @precondition _def.isEmpty => redefinition
  */
-sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
+sealed trait RedefinableLabeledDefinition extends PublicDefinition with MMLIdSubitem {
   def mmlIdO: Option[MMLId]
   def _redef: Redefine
   def _pat: RedefinablePatterns
@@ -242,9 +250,10 @@ sealed trait RedefinableLabeledDefinition extends Definition with MMLIdSubitem {
   }
   override def globalName: GlobalName = {
     val Array(aid, ln) = mmlId.MMLId.split(":")
-    TranslationController.getTheoryPath(aid) ? LocalName(defKind.toString+ln)
+    makeGlobalKindName(aid, defKind, ln)
   }
 }
+
 /**
  * An attribute definition
  * @param mmlIdO (optional) the mmlid to reference this attribute definition by
@@ -280,23 +289,23 @@ case class Predicate_Definition(mmlIdO:Option[MMLId], _redef:Redefine, _pat:Pred
  * a selector is a field of the structure (or an inherited one)
  * finally there is a Structure_Patterns_Rendering defining the new notations (namely introducing the selectors)
  * @param _ancestors a list of structures (whoose selectors') to import
- * @param _strPat the structure pattern
+ * @param _pat the structure pattern
  * @param _fieldSegms a list of field segments containing the selectors (fields) of the structure
  * @param _rendering contains patterns with notations for the selectors, the restriction
  */
-case class Structure_Definition(_ancestors:Ancestors, _strPat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends Definition
-/**
- * Local definition of a constant variable
- * @param _children the variable and its value
- */
-case class Constant_Definition(_children:List[Equating]) extends PrivateDefinition
+case class Structure_Definition(_ancestors:Ancestors, _pat:Structure_Pattern, _fieldSegms:Field_Segments, _rendering:Structure_Patterns_Rendering) extends PublicDefinition
 /**
  * A mode definition
  * @param _redef whether it is a redefinition
  * @param _pat the mode pattern giving name and notation
  * @param _mode the definien
  */
-case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _mode:Modes) extends Definition
+case class Mode_Definition(_redef:Redefine, _pat:Mode_Pattern, _mode:Modes) extends PublicDefinition
+/**
+ * Local definition of a constant variable
+ * @param _children the variable and its value
+ */
+case class Constant_Definition(_children:List[Equating]) extends PrivateDefinition
 /**
  * Corresponds to a deffunc definition, its uses are private_functor_terms
  * used as shortcut and visible within its block
