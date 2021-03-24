@@ -10,9 +10,19 @@ object Utils {
 
   def makeGlobalName(aid: String, kind: String, ln: String) = TranslationController.getTheoryPath(aid) ? (LocalName(aid) / kind+ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
-  def MizarRedVarName(idnr: Int): LocalName = LocalName("idNr_"+idnr)
-  def MizarVariableName(spelling: String, kind: String, idnr: Int): LocalName = {
-    LocalName(spelling) / LocalName(kind) / MizarRedVarName(idnr)
+  private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
+  private def mapKind(kind: String): String = kind match {
+    case "BoundVar" => "BV"
+    case "Bound" => "B"
+    case "Constant" => "C"
+    case "ReservedVar" => "R"
+    case "Scheme-Functor" => "SF"
+    case "Scheme-Predicate" => "SP"
+    case "Private-Predicate" => "PP"
+    case "Private-Functor" => "PF"
+  }
+  def MizarVariableName(spelling: String, kind: String, serialnr: Int): LocalName = {
+    LocalName(spelling) / LocalName(mapKind(kind)) / MizarRedVarName(serialnr)
   }
 
   /**

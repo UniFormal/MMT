@@ -2,6 +2,7 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt._
 import api._
+import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
@@ -111,7 +112,7 @@ object JustificationTranslator {
             translateSubitems(tail)
           case prDef: PrivateDefinition =>
             // This will add the definition as to the list of local definitions inside the definition context
-            translate_Definition(prDef)(defContext)
+            translate_Definition(prDef)({d: Declaration with HasType with HasDefiniens with HasNotation => }, defContext)
             translateSubitems(tail)
           case _ => Nil
         }

@@ -33,10 +33,16 @@ object TranslationController {
   private def errFilter(err: Error): Boolean = {
       val badStrings = List(
         "INHABITABLE"
-        , "ill-formed constant reference"
-        , "is not imported into current context"
-      )
-    !badStrings.exists(err.toStringLong.contains(_))
+        , "a declaration for the name "
+      )++(if (! checkConstants) List(
+      "ill-formed constant reference"
+    , "is not imported into current context"
+    ) else Nil)
+
+    val badTypes: List[String] = List(
+      "AddError"
+    )
+    !(badStrings.exists(err.toStringLong.contains(_)) || badTypes.exists(err.getClass.toString.contains(_)))
   }
   private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new FilteringErrorHandler(new ErrorContainer(logger), errFilter(_))
   private def checkingEnvironment(logger: Option[frontend.Report]) = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler(logger), checking.RelationHandler.ignore, MMTTask.generic)
@@ -51,7 +57,11 @@ object TranslationController {
   var currentDoc : Document = null
   var currentThy : Theory = null
   var currentOutputBase : DPath = null
-
+  /**
+   *   whether to typecheck constants or just to check the entire theory at the end
+   */
+  private var checkConstants: Boolean = false
+  def setCheckConstants(value: Boolean): Unit = { checkConstants = value }
 
   private var unresolvedDependencies : List[MPath] = Nil
   def addUnresolvedDependency(dep: MPath) = if (unresolvedDependencies.contains(dep)) {} else {unresolvedDependencies +:= dep}
@@ -157,9 +167,10 @@ object TranslationController {
       }
     }
   }
-  def endMake() = {
+  def endMake(report: Option[frontend.Report] = None) = {
     controller.endAdd(currentThy)
     currentDoc.add(MRef(currentDoc.path, currentThy.path))
+    if (! checkConstants) typecheckContent(currentThy, report)
   }
 
   def add(e: NarrativeElement) : Unit = {
@@ -177,64 +188,26 @@ object TranslationController {
   private def withoutNotationProper = withoutNotation - articleStatistics.numRegistrs - articleStatistics.totalNumTheorems
   def notationStatistics = "We translated "+withNotation.toString+" declarations with notation and "+withoutNotation.toString+" declarations without, "+withoutNotationProper.toString+" of which aren't theorems and registrations (which are expected to have no notation)."
 
-  def add(e : Declaration with HasType with HasDefiniens with HasNotation) : Unit = {
+  def add(e: Declaration with HasType with HasDefiniens with HasNotation) : Unit = {
     try {
-      var complificationSucessful = false
-      val info = e.toString + "\nwith notations: " + (e.notC.getNotations(dim = Some(1)).map(f => f.toText))
-
-      val eC: Declaration = try {
-        //val s = controller.presenter.asString(e)
-        val res = complify(e)
-        complificationSucessful = true
-        if (!e.notC.isDefined) {
-          withoutNotation += 1
-        } else {
-          withNotation += 1
-        }
-        res
-      } catch {
-        case ge: GeneralError =>
-          println("Uncomplified:" + controller.presenter.asString(e))
-          var shouldWork = false
-          try {
-            controller.presenter.asString(e);
-            shouldWork = true
-          } catch {
-            case _: Throwable =>
-          }
-          if (shouldWork) e else throw ge
-        case parseError: ParseError => println(info + "\n" + parseError.shortMsg); e //; throw parseError
-      }
-      //      if (complificationSucessful) println("Complified: "+controller.presenter.asString(eC))
       addDependencies(e)
-      controller.add(eC)
+      controller.add(e)
+      if (!e.notC.isDefined) { withoutNotation += 1 } else { withNotation += 1 }
     } catch {
       case e: AddError => throw e
-  }
+    }
     try {
       if (e.feature == "instance") controller.simplifier(e)
-      typecheckContent(e)
+      if (checkConstants) typecheckContent(e)
     } catch {
-      case ae: AddError =>
+      case _: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
       case ge: GeneralError =>
+        println("General error while typechecking: "+e.toString)
+        try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => }
         throw ge
     }
   }
-  private def complify(d: Declaration) = {
-    val rules = RuleSet.collectRules(controller, Context(MizarPatternsTh))
-    foundations.IntroductionRule.allRules.foreach {rules.declares(_)}
-    val complifier = controller.complifier(rules).toTranslator()
-    try {
-      d.translate(complifier,Context.empty)
-    } catch {case e: Exception =>
-      println("error while complifying instance " + d.path+": ")
-      println(d.name.toString+": "+(d match {case c: Constant => c.tp.map(_.toStr(true)).getOrElse("") case _ => ""})+"\n = "+(d match {case c: Constant => c.df.map(_.toStr(true)).getOrElse("") case _ => ""}))
-      //println(controller.presenter.asString(d))
-      throw e
-    }
-  }
-
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), role: Option[String] = None) : Constant = {
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None, notC)

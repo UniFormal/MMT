@@ -252,30 +252,12 @@ object patternTranslator {
    * @param pse the pattern shaped expression to dereference
    * @return
    */
-  def translate_Referencing_Pattern(pse: Pattern_Shaped_Expression)(implicit defContext: DefinitionContext): (LocalName, List[Term], Term, NotationContainer, List[Term]) = {
+  def translate_Referencing_Pattern(pse: Pattern_Shaped_Expression)(implicit defContext: DefinitionContext): (LocalName, Term, NotationContainer, List[Term]) = {
     val pat: Patterns = pse._pat
     val params = pat._locis.flatMap(_._loci map translate_Locus)
     val (name, gn, notC) = translate_Pattern(pat, true)
-    val (mainDecl, addArgsTps): (Term, List[Term]) = TranslationController.controller.getO(gn) match {
-      case Some(c: Constant) =>
-        val FunType(addArgsTps, _) = c.tp.getOrElse(
-          throw new ObjectLevelTranslationError("Trying to retrieve type of looked up declaration " + c.name + " referenced by pattern: " + pat + ", but declaration has not type defined. ", pat))
-        (c.toTerm, addArgsTps.map(_._2))
-      case Some(dd: symbols.DerivedDeclaration) =>
-        val addArgTps = dd match {
-          case AttributeDefinitionInstance(_, _, addArgTps, _, _, _, _, _) => addArgTps
-          case FunctorDefinitionInstance(_, _, addArgTps, _, _, _, _, _, _) => addArgTps
-          case ModeDefinitionInstance(_, _, addArgTps, _, _, _, _) => addArgTps
-          case PredicateDefinitionInstance(_, _, addArgTps, _, _, _, _) => addArgTps
-          case NymicNotation(_, _, _, addArgTps, _) => addArgTps
-          case other =>
-            throw PatternTranslationError("Expected reference to original declaration of same kind in redefinition, but instead found "+other.feature+" at referenced location "+other.path+"\nReferenced by the pattern: "+pat+". \nFull description of the referenced declaration: "+other.toString+". \n", pat)
-        }
-        (OMS(globalLookup(pat)), addArgTps)
-      case _ =>
-        throw PatternTranslationError("this should never happen: "+pat.toString+" could not be dereferenced. ", pse._pat)
-    }
-    (name, addArgsTps, mainDecl, notC, params)
+    val mainDecl = OMS(globalLookup(pat))
+    (name, mainDecl, notC, params)
   }
 }
 
@@ -300,7 +282,7 @@ object propertyTranslator {
 object subitemTranslator {
   def notToplevel = new TranslatingError("This kind of declaration should not occur on toplevel. ")
   def translate_Reservation(reservation: Reservation) = { Nil }
-  def translate_Definition_Item(definition_Item: Definition_Item): List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Definition_Item(definition_Item: Definition_Item)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit): Unit = {
     definition_Item.blockKind() match {
       case "Definitional-Block" => translate_Definitional_Block(definition_Item._block)
       case "Registration-Block" => translate_Registration_Block(definition_Item._block)
@@ -326,19 +308,14 @@ object subitemTranslator {
 }
 
 object nymTranslator {
-  def translate_Nym(nym:Nyms)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Nym(nym:Nyms)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val oldPatRef = nym._patRefOld
     val newPat: Patterns = nym._patNew
     val (name, newName, notC) = translate_Pattern(newPat)
-    try {
-      val (_, addArgsTps, mainDecl, _, _) = translate_Referencing_Pattern(oldPatRef)
-      val allArgs = defContext.args.map(_.tp.get)// ++ addArgsTps
-      val res  = SynonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)(notC, nym.defKind)
-      incrementStatisticsCounter("nym")
-      List(res)
-    } catch {
-      case e: ObjectLevelTranslationError => Nil
-    }
+    val (_, mainDecl, _, _) = translate_Referencing_Pattern(oldPatRef)
+    val allArgs = defContext.args.map(_.tp.get)
+    incrementStatisticsCounter("nym")
+    SynonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)(notC, nym.defKind)
   }
 }
 
@@ -380,7 +357,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition)(implicit defContext: => DefinitionContext) : List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Definition(defn:Definition)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit, defContext: => DefinitionContext): Unit = {
     val translatedDecls: List[Declaration with HasType with HasDefiniens with HasNotation] = defn match {
       case d: Structure_Definition => translate_Structure_Definition(d)(defContext)
       case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
@@ -392,7 +369,7 @@ object definitionTranslator {
     val declRef = Some(translatedDecls.head.path)
     lazy val justProps = defContext.props.map(translate_JustifiedProperty(_, declRef, defn.pat map (_.patternAttrs.spelling))(defContext))
     if (defContext.withinProof) justProps map (d => defContext.addUsedFact(d.tp.get, d.df.get))
-    translatedDecls ++ (if (!defContext.withinProof) justProps else Nil)
+    (translatedDecls:::(if (!defContext.withinProof) justProps else Nil)) foreach add
   }
   private def translate_Redefinable_Labelled_Definition(redefinableLabeledDefinition: RedefinableLabeledDefinition)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
     redefinableLabeledDefinition.check
@@ -529,7 +506,7 @@ object definitionTranslator {
    */
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_Variable(private_Functor_Definition._var)(defContext)
-    val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.idnr)
+    val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.serialnr)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
     val tp = PiOrEmpty(args, any)
@@ -547,7 +524,7 @@ object definitionTranslator {
    */
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_Variable(private_Predicate_Definition._var)(defContext)
-    val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.idnr)
+    val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.serialnr)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
     val tp = PiOrEmpty(args, prop)
@@ -577,17 +554,17 @@ object definitionTranslator {
         //We have extra arguments and would have to match the types
         makeConstant(ln, tp, None)(notC)
       }
-    }
+  }
 }
 
 object clusterTranslator {
-  def translate_Registration_Subitem(reg: RegistrationSubitems)(implicit definitionContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = reg match {
+  def translate_Registration_Subitem(reg: RegistrationSubitems)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit, definitionContext: DefinitionContext): Unit = reg match {
     case cluster: Cluster => translate_Cluster(cluster)
-    case rg: Registrations => List(translate_Registration(rg))
-    case identfy: Identify => List(translate_Identify(identfy))
-    case reduct: Reduction => List(translate_Reduction(reduct))
+    case rg: Registrations => translate_Registration(rg)
+    case identfy: Identify => add (translate_Identify(identfy))
+    case reduct: Reduction => add (translate_Reduction(reduct))
   }
-  def translate_Registration(reg: Registrations)(implicit definitionContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
+  def translate_Registration(reg: Registrations)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit, definitionContext: DefinitionContext): Unit = {
     incrementStatisticsCounter("registr")
     reg match {
       case Conditional_Registration(_attrs, _at, _tp) =>
@@ -597,7 +574,7 @@ object clusterTranslator {
         val name = makeNewGlobalName("condReg", numRegistrs).name
         val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         val coherenceProof = translate_reg_correctness_condition(coherenceCond._just, "condRegistration", adjs.length, Some(tp), None, Some(adjs), Some(ats), None)
-        ConditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats, coherenceProof)
+        add (ConditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats, coherenceProof))
       case Existential_Registration(_adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
@@ -605,7 +582,7 @@ object clusterTranslator {
         val name = makeNewGlobalName("existReg", numRegistrs).name
         val existenceCond = definitionContext.corr_conds.find(_._cond == syntax.existence()) getOrElse Correctness_Condition(existence(), None)
         val existenceProof = translate_reg_correctness_condition(existenceCond._just, "existRegistration", adjs.length, Some(tp), None, Some(adjs), None, None)
-        ExistentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, existenceProof)
+        add (ExistentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, existenceProof))
       case Functorial_Registration(_aggrTerm, _adjCl, _tp) =>
         val tm = translate_Term(_aggrTerm)
         val adjs = attributeTranslator.translateAttributes(_adjCl)
@@ -615,11 +592,11 @@ object clusterTranslator {
         val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         def coherenceProof(kind: String) = translate_reg_correctness_condition(coherenceCond._just, kind+"FuncRegistration", adjs.length, Some(tp), Some(tm), Some(adjs), None, None)
         if (isQualified) {
-          QualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs, coherenceProof("qual"))
+          add (QualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs, coherenceProof("qual")))
         } else {
-          UnqualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs, coherenceProof("unqual"))
+          add (UnqualifiedFunctorRegistration(name, definitionContext.args map(_.tp.get), tp, tm, adjs, coherenceProof("unqual")))
         }
-      case Property_Registration(_props, _just) => translate_JustifiedProperty(_props.matchProperty(Some(_just)), None)(definitionContext)
+      case Property_Registration(_props, _just) => add (translate_JustifiedProperty(_props.matchProperty(Some(_just)), None)(definitionContext))
     }
   }
   def translate_Identify(identify: syntax.Identify)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = identify match {
@@ -629,8 +606,8 @@ object clusterTranslator {
       }
       val num = incrementAndGetIdentifyCount()
       val name = LocalName("identify"+num)
-      val (_, _, f, _, fparams) = translate_Referencing_Pattern(_firstPat)
-      val (_, _, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
+      val (_, f, _, fparams) = translate_Referencing_Pattern(_firstPat)
+      val (_, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
       val (c, d) = (ApplyGeneral(f, fparams), ApplyGeneral(g, gparams))
       val compatibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.compatibility().kind).map({comp: Correctness_Condition =>
         val (aL, bL) = translatedLociEqns.unzip
@@ -651,9 +628,9 @@ object clusterTranslator {
       }).get
       mmtwrapper.Reduction(name, defContext.args map(_.tp.get), predecessor, successor, reducibility)
   }
-  def translate_Cluster(cl:Cluster)(implicit definitionContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Cluster(cl:Cluster)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit, definitionContext: DefinitionContext): Unit = {
     //TODO: Also translate the proofs of the correctness conditions
-    cl._registrs map translate_Registration
+    cl._registrs foreach translate_Registration
   }
 }
 object blockTranslator {
@@ -698,22 +675,16 @@ object blockTranslator {
       }
       recurse (items map (_._subitem))
   }
-  def translate_Definitional_Block(block:Block):List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Definitional_Block(block:Block)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit): Unit = {
     val definitionItems = collectSubitems[Definition](classOf[Definition], block)
-    definitionItems flatMap {
-      case (defn: Definition, defContext: DefinitionContext) =>
-        translate_Definition(defn)(defContext)
-    }
+    definitionItems foreach  (dd => translate_Definition(dd._1)(add, dd._2))
   }
-  def translate_Registration_Block(block: Block) : List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Registration_Block(block: Block)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit): Unit = {
     val clusterItems = collectSubitems[RegistrationSubitems](classOf[RegistrationSubitems], block)
-    clusterItems flatMap (r => translate_Registration_Subitem(r._1)(r._2))
+    clusterItems foreach (rd => translate_Registration_Subitem(rd._1)(add, rd._2))
   }
-  def translate_Notation_Block(block: Block): List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  def translate_Notation_Block(block: Block)(implicit add: Declaration with HasType with HasDefiniens with HasNotation => Unit): Unit = {
     val notationItems = collectSubitems[Nyms](classOf[Nyms], block)
-    notationItems flatMap {
-      case (nym: Nyms, defContext: DefinitionContext) =>
-        translate_Nym(nym)(defContext)
-    }
+    notationItems foreach (nd => add (translate_Nym(nd._1)(nd._2)))
   }
 }

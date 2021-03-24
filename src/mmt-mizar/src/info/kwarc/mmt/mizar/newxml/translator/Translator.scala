@@ -41,15 +41,15 @@ object itemTranslator {
   def translateItem(item: Item): Unit = {
     implicit val defCtx: DefinitionContext = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
-    def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
+    implicit def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
     item._subitem match {
-      case defn: Definition => definitionTranslator.translate_Definition(defn) foreach add
+      case defn: Definition => definitionTranslator.translate_Definition(defn)
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
       case theorem_Item: Theorem_Item => add (statementTranslator.translate_Theorem_Item(theorem_Item))
       case res: Reservation => translate_Reservation(res) foreach add
       case defIt: Definition_Item =>
         try {
-          translate_Definition_Item(defIt) foreach add
+          translate_Definition_Item(defIt)
         } catch {
           case e: Throwable =>
             throw e
@@ -57,9 +57,9 @@ object itemTranslator {
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
       case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
-      case cl: Cluster => clusterTranslator.translate_Cluster(cl) foreach add
+      case cl: Cluster => clusterTranslator.translate_Cluster(cl)
       case identify: Identify => add (translate_Identify(identify))
-      case nym: Nyms => nymTranslator.translate_Nym(nym) foreach add
+      case nym: Nyms => add (nymTranslator.translate_Nym(nym))
       case st: Statement with TopLevel => add (statementTranslator.translate_Statement(st))
       case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
       case notTopLevel: ProofLevel => throw subitemTranslator.notToplevel
@@ -87,12 +87,12 @@ class MizarXMLImporter extends archives.Importer {
     TranslationController.controller = controller
     def isBuild(aid: String) = controller.getO(getTheoryPath(aid)) flatMap {case t: Theory => Some (t.domain.length > 0) case _ => None} getOrElse false
 
-    /*if (isBuild (currentAid)) {
-      val rep = TranslationController.controller.report
-      val rs = TranslationController.controller.depstore
-      val query = Transitive (+Includes)
-      val included = rs.querySet(currentTheoryPath, query) map (_.last)
+    lazy val rep = TranslationController.controller.report
+    lazy val rs = TranslationController.controller.depstore
+    lazy val query = Transitive (+Includes)
+    val included = try  {rs.querySet(currentTheoryPath, query) map (_.last)} catch {case _ => println("error resolving relational dependency data"); Set[String]()}
 
+    if (included.nonEmpty) {
       def getBf (aid: String): archives.BuildTask = {
         val oldAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
         val inPath = bf.inPath.copy(segments = bf.inPath.segments.map(_.replace(oldAid, aid)))
@@ -102,8 +102,9 @@ class MizarXMLImporter extends archives.Importer {
       included filterNot isBuild foreach {aid =>
         importDocument(getBf(aid), index)
       }
-      included flatMap(s=> TranslationController.controller.getO(getTheoryPath(s))) foreach(TranslationController.controller.simplifier(_))
-    }*/
+      //should be unnecessary
+      //included flatMap(s=> TranslationController.controller.getO(getTheoryPath(s))) foreach(TranslationController.controller.simplifier(_))
+    }
 
     val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
     printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
@@ -126,12 +127,12 @@ class MizarXMLImporter extends archives.Importer {
     makeDocument()
     makeTheory()
 
+    setCheckConstants(true)
     articleTranslator.translateArticle(text_Proper)
-    log("INDEXING ARTICLE: " + bf.narrationDPath.last)
-    endMake()
-    //typecheckContent(currentThy, Some(this.report))
+    endMake(Some(this.report))
 
     /*
+    log("INDEXING ARTICLE: " + bf.narrationDPath.last)
     log("The translated article " + bf.narrationDPath.last + ": ")
     doc.getModules(TranslationController.controller.globalLookup) foreach {
       case mpath: MPath => TranslationController.controller.getModule(mpath) match {
