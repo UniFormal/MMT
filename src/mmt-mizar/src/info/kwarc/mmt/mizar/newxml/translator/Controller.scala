@@ -26,6 +26,8 @@ object TranslationController {
     val c = new frontend.Controller
     c
   }
+  //set during translation
+  var outputBase: DPath = null
 
   private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
 
@@ -47,7 +49,9 @@ object TranslationController {
   def setProcessDependency(processDependency: String => Unit): Unit = {
     this.processDependency = processDependency
   }
-  def processDependencyTheory(mpath: MPath) = processDependency (mpath.name.toString.toLowerCase)
+  def processDependencyTheory(mpath: MPath) = {
+    if (mpath.doc.^! == outputBase) processDependency (mpath.name.toString.toLowerCase)
+  }
   private def errFilter(err: Error): Boolean = {
     val badStrings = List(
       "INHABITABLE"
@@ -74,7 +78,6 @@ object TranslationController {
     var currentAid: String = null
     var currentDoc: Document = null
     var currentThy: Theory = null
-    var currentOutputBase: DPath = null
 
     private var unresolvedDependencies: List[MPath] = Nil
 
@@ -182,7 +185,6 @@ object TranslationController {
       var currentAid = data.currentAid
       var currentDoc = data.currentDoc
       var currentThy = data.currentThy
-      var currentOutputBase = data.currentOutputBase
       unresolvedDependencies = data.unresolvedDependencies++this.unresolvedDependencies
       withNotation = data.withNotation
       withoutNotation = data.withoutNotation
@@ -198,10 +200,10 @@ object TranslationController {
   def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+MizarPatternsTh.name.toString+".mmt")
   def localPath : LocalName = LocalName(currentAid)
-  def currentThyBase : DPath = currentOutputBase / localPath
+  def currentThyBase : DPath = outputBase / localPath
     //DPath(utils.URI(TranslationController.currentOutputBase.toString + localPath.toString))
   def currentTheoryPath : MPath = currentThyBase ? localPath
-  def getTheoryPath(aid: String) = (currentOutputBase / aid.toLowerCase()) ? aid.toLowerCase()
+  def getTheoryPath(aid: String) = (outputBase / aid.toLowerCase()) ? aid.toLowerCase()
   def currentSource : String = mathHubBase + "/source/" + currentAid + ".miz"
 
   def makeDocument() = {
@@ -214,7 +216,7 @@ object TranslationController {
     controller.add(currentThy)
   }
   def getDependencies(decl: Declaration with HasType with HasDefiniens) = {
-    def isDependency(p: String) = p contains currentOutputBase.toString
+    def isDependency(p: String) = p contains outputBase.toString
     def getDependencies(tm: Term): Set[MPath] = tm match {
       case OMS(p) => if (isDependency(p.toString)) Set(p.module) else Set()
       case OMBINDC(binder, context, scopes) => (binder::context.flatMap(_.tp):::scopes).toSet flatMap getDependencies
@@ -233,7 +235,9 @@ object TranslationController {
       dependencies
     } else Nil
   }
-  def isBuild(aid: String) = controller.getO(getTheoryPath(aid)) flatMap {case t: Theory => Some (t.domain.length > 0) case _ => None} getOrElse false
+  def isBuild(aid: String) = controller.getO(getTheoryPath(aid)) flatMap {
+    case t: Theory => Some (t.domain.exists(_.lastOption map (_.toString) map (List("funct", "pred", "attribute", "mode").contains(_)) getOrElse false))
+  case _ => None} getOrElse false
   def addDependencies(decl: Declaration with HasType with HasDefiniens): Unit = {
     val deps = getDependencies(decl)
     val includes = deps map(PlainInclude(_, currentTheoryPath))

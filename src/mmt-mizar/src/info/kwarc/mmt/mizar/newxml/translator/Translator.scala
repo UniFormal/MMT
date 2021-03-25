@@ -23,7 +23,7 @@ object articleTranslator {
       try {
         itemTranslator.translateItem(it)
       } catch {
-        case GetError(s) if s.startsWith("no backend applicable to "+currentOutputBase.toString) =>
+        case GetError(s) if s.startsWith("no backend applicable to "+outputBase.toString) =>
           val Array(dpath, name) = s.stripPrefix("no backend applicable to ").split('?')
           val mpath = DPath(utils.URI(dpath)) ? name
           println("GetError since we require the dependency theory "+mpath+" of the translated theory "+currentThy.name+" to be already translated: \n"+
@@ -89,7 +89,7 @@ class MizarXMLImporter extends archives.Importer {
     }
 
     currentAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
-    currentOutputBase = bf.narrationDPath.^!
+    outputBase = bf.narrationDPath.^!
     TranslationController.controller = controller
 
     def processDependency(dependencyAid: String): Unit = {
