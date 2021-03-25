@@ -2,6 +2,7 @@ package info.kwarc.mmt.mathhub.library.Context.Builders.Special
 
 import info.kwarc.mmt.api.archives.MathHub
 import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.mathhub.library.{IHubReference, ISourceReference}
 
 class SmglomTree(
                 controller: Controller,
@@ -70,6 +71,20 @@ trait STeXReader { this: SmglomTree =>
     listModuleFiles(archive)
       .filter(f => f.startsWith(module + ".") || f == module)
       .map(f => if (f == module) "" else f.drop(module.length + 1)) // drop the module prefix
+  }
+
+  def sourceRef(archive: IHubReference, path: List[String]): Option[ISourceReference] = {
+    val (module, part) = path match {
+      case List(module) => (module, "")
+      case List(module, part) => (module, part)
+      case _ => return None
+    }
+    val filename = part match {
+      case "" => module + "." + extension
+      case s => module + "." + s + "." + extension
+    }
+
+    Some(ISourceReference(archive, None,  Some(extension + "/" + filename)))
   }
 
   private def loadXML(archive: String, module: String, part: String): Option[scala.xml.Elem] = {
