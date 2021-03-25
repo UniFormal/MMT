@@ -70,7 +70,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
               try {
                 traverse(t,initState, context)
               } catch {case e: Exception =>
-                // this should never happen; but if there is a bug, it's easier to locate this way 
+                // this should never happen; but if there is a bug, it's easier to locate this way
                 throw GeneralError("error while simplifying " + controller.presenter.asString(obj) + "\n" + obj.toStr(true)).setCausedBy(e)
               }
             tS

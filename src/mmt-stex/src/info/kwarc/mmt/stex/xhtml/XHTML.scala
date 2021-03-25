@@ -21,13 +21,6 @@ object XHTML {
       new PrefixedAttribute(p,k,v,e)
   }
 
-  def overlayHeader: List[XHTMLNode] = {
-    val full = applyString(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))(Rules.defaultrules)
-    val ret = full.head.get("head")().head.children
-    ret.foreach(_.delete)
-    ret
-  }
-
   object Rules {
     implicit val defaultrules : List[PartialFunction[Node,XHTMLNode]] = List(
       {case e : Elem if e.label == "html" => new XHTMLDocument},
@@ -62,6 +55,7 @@ object XHTML {
       case Some(r) =>
         val ret = r(node)
         node.child.flatMap(apply).foreach(ret.add)
+        ret.children.foreach(_.cleanup)
         List(ret)
       case _ => node match {
         case t : scala.xml.Text =>
@@ -74,6 +68,7 @@ object XHTML {
         case e : Elem =>
           val ret = new XHTMLNode(Some(node)) {}
           node.child.flatMap(apply).foreach(ret.add)
+          ret.children.foreach(_.cleanup)
           List(ret)
         case _ =>
           ???
@@ -84,10 +79,17 @@ object XHTML {
 }
 
 abstract class XHTMLNode(initial_node : Option[Node] = None) {
+  def cleanup : Unit = {}
   protected var _parent : Option[XHTMLNode] = None
   def parent = _parent
-
-  var ismath = false
+  protected def ancestors : List[XHTMLNode] = if (_parent.isDefined) _parent.get :: _parent.get.ancestors else Nil
+  def ismath = {
+    if (label == "mtext") false
+    else ancestors.collectFirst {
+      case _ : XMHTMLMath => true
+      case n : XHTMLNode if n.label == "mtext" => false
+    }.getOrElse(false)
+  }
 
   def top : XHTMLNode = _parent match {
     case None => this
@@ -123,10 +125,6 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
   def add(n : Node) : Unit = add(XHTML(n)(Nil).head)
   def add(e : XHTMLNode) : Unit = {
     e._parent = Some(this)
-    if (ismath) {
-      e.ismath = true
-      e.get()().foreach(_.ismath = true)
-    }
     _children = _children ::: List(e)
   }
 
@@ -183,7 +181,6 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
   }
   protected def get(matches : XHTMLNode => Boolean) : List[XHTMLNode] = _children.filter(matches) ::: _children.flatMap(_.get(matches))
 
-  var overlayset = false
 
   private var _id = 0
   def generateId = {
@@ -195,22 +192,6 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
 
   def addOverlay(url:String): Unit = {
     val t = this.top
-    if (!t.overlayset) {
-      t.overlayset = true
-      val h = t.getHead
-      XHTML.overlayHeader.foreach(h.add)
-      val body = t.get("body")().head
-      body.add(XHTML.apply(
-        <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid;position:fixed;top:10px">
-          <table style="width:80ch;height:100%">
-            <tr style="height:28px"><td style="text-align:right"><button onclick="stexOverlayOff('stexMainOverlay')">X</button></td></tr>
-            <tr width="100%" height="100%"><td><iframe id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();}" width="100%" height="100%"
-                                                       style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">{XHTML.empty}</iframe>
-            </td></tr>
-          </table>
-        </div>)(Nil).head
-      )
-    }
     attributes(("","class")) = attributes.get(("","class")) match {
       case Some(s) => s + " stexoverlaycontainer"
       case _ => "stexoverlaycontainer"
@@ -242,35 +223,13 @@ class XHTMLText(init : String) extends XHTMLNode() {
 
   override def node: scala.xml.Text = scala.xml.Text(text)
 
-  override def isEmpty: Boolean = text.trim.isEmpty
+  override def isEmpty: Boolean = {
+    val trimmed = text.replace('\u2061',' ').trim
+    trimmed.isEmpty
+  }
 
   override def addOverlay(url:String): Unit = {
     val t = this.top
-    if (!t.overlayset) {
-      t.overlayset = true
-      val h = t.getHead
-      XHTML.overlayHeader.foreach(h.add)
-      val body = t.get("body")().head
-      body.add(XHTML.apply(
-        <div class="stexoverlay" id="stexMainOverlay" style="border-style:solid">
-          <table style="width:80ch;height:100%">
-            <tr style="height:28px">
-              <td style="text-align:right">
-                <button onclick="stexOverlayOff('stexMainOverlay')">X</button>
-              </td>
-            </tr>
-            <tr width="100%" height="100%">
-              <td>
-                <iframe id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();}" width="100%" height="100%"
-                        style="margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">
-                  {XHTML.empty}
-                </iframe>
-              </td>
-            </tr>
-          </table>
-        </div>
-      )(Nil).head)
-    }
     val id = t.generateId
     val newthis = XHTML.apply(
       <span class="stexoverlaycontainer"
@@ -296,7 +255,7 @@ class XHTMLText(init : String) extends XHTMLNode() {
 
 class XMHTMLMath(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
   override def node: Node = <math xmlnd="http://www.w3.org/1998/Math/MathML">{children.map(_.node)}</math>
-  ismath = true
+  override val ismath = true
 }
 
 class XHTMLDocument(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {

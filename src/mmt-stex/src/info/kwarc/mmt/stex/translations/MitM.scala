@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Typed}
 import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.XHTMLOMDoc
+import info.kwarc.mmt.stex.xhtml.{PreElement, XHTMLOMDoc}
 
 object MitM {
   import DemoContent._
@@ -90,45 +90,85 @@ object MitM {
 }
 
 object DemoContent {
-  lazy val th_set = Theory(STeX.set.doc,STeX.set.module.name,None)
-  lazy val c_set = Constant(th_set.toTerm,STeX.set.name,Nil,None,None,None,XHTMLOMDoc.notation("\\set","Set"))
-  lazy val th_nat = Theory(STeX.nat.doc,STeX.nat.module.name,None)
-  lazy val c_nat = Constant(th_nat.toTerm,STeX.nat.name,Nil,Some(c_set.toTerm),None,None,XHTMLOMDoc.notation("\\NaturalNumbers","ℕ"))
-  lazy val th_prop = Theory(STeX.prop.doc,STeX.prop.module.name,None)
-  lazy val c_prop = Constant(th_prop.toTerm,STeX.prop.name,Nil,Some(c_set.toTerm),None,None,XHTMLOMDoc.notation("\\prop","prop"))
-  lazy val th_fun = Theory(STeX.funtype.doc,STeX.funtype.module.name,None)
-  lazy val c_fun = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None,XHTMLOMDoc.notation("\\funtype{ 1 }","1⟶… prec -9990"))
-  lazy val th_impl = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "logic",LocalName("Implication"),None)
-  lazy val c_impl = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None,XHTMLOMDoc.notation("\\implication{ 1 }{ 2 }","1 ⟹ 2 prec 10"))
-  lazy val th_div = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Divisibility"),None)
-  lazy val c_even = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_prop.toTerm))),None,None,XHTMLOMDoc.notation("\\even{ 1 }","even( 1 ) prec 50"))
-  lazy val th_exp = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Exponentiation"),None)
-  lazy val c_natexp = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None,XHTMLOMDoc.notation("\\natpow{ 1 }{ 2 }","1 ^ 2 prec 70"))
+  import scala.xml._
+  lazy val th_set = Theory(STeX.set.doc,STeX.set.module.name,Some(STeX.meta))
+  lazy val c_set = {
+    val c = Constant(th_set.toTerm,STeX.set.name,Nil,None,None,None)
+    PreElement.addMacroName(c,"set")
+    PreElement.addNotations(c,("",{<mi data-mmt-symref={c.path.toString}>Set</mi>}))
+    c
+  }
+  lazy val th_nat = Theory(STeX.core / "arithmetics" / "natural_numbers",LocalName("NaturalNumbers"),Some(STeX.meta))
+  lazy val c_nat = {
+    val c = Constant(th_nat.toTerm,LocalName("NaturalNumbers"),Nil,Some(c_set.toTerm),Some(OMS(STeX.nat)),None)
+    PreElement.addMacroName(c,"NaturalNumbers")
+    PreElement.addNotations(c,("",{<mi data-mmt-symref={c.path.toString}>ℕ</mi>}))
+    c
+  }
+  lazy val th_fun = Theory(STeX.funtype.doc,STeX.funtype.module.name,Some(STeX.meta))
+  lazy val c_fun = {
+    val c = Constant(th_fun.toTerm,STeX.funtype.name,Nil,None,None,None) // TODO prec -9990
+    PreElement.addMacroName(c,"funtype")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("ai"))
+    PreElement.addNotations(c,("",{<mrow><mrow><mtext>##1a</mtext><mo data-mmt-symref={c.path.toString}>×</mo><mtext>##1b</mtext></mrow><mo data-mmt-symref={c.path.toString}>⟶</mo><mrow><mtext>#2</mtext></mrow></mrow>}))
+    c
+  }
+  lazy val th_impl = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "logic",LocalName("Implication"),Some(STeX.meta))
+  lazy val c_impl = {
+    val c = Constant(th_impl.toTerm,LocalName("Implication"),Nil,Some(OMA(c_fun.toTerm,List(c_set.toTerm,c_set.toTerm,c_set.toTerm))),None,None) // TODO prec 10
+    PreElement.addMacroName(c,"implication")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("ii"))
+    PreElement.addNotations(c,("",{<mrow><mtext>#1</mtext><mo data-mmt-symref={c.path.toString}>⟹</mo><mtext>#2</mtext></mrow>}))
+    c
+  }
+  lazy val th_div = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Divisibility"),Some(STeX.meta))
+  lazy val c_even = {
+    val c = Constant(th_div.toTerm,LocalName("even"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,OMS(STeX.prop)))),None,None) // TODO prec 50
+    PreElement.addMacroName(c,"even")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("i"))
+    PreElement.addNotations(c,("",{<mrow><mo data-mmt-symref={c.path.toString}>even</mo><mo stretchy="true" data-mmt-symref={c.path.toString}>(</mo><mtext>#1</mtext><mo stretchy="true" data-mmt-symref={c.path.toString}>)</mo></mrow>}))
+    c
+  }
+  lazy val th_exp = Theory(DPath(URI.http colon "mathhub.info") / "smglom" / "arithmetics" / "natural_numbers",LocalName("Exponentiation"),Some(STeX.meta))
+  lazy val c_natexp = {
+    val c = Constant(th_exp.toTerm,LocalName("natexp"),Nil,Some(OMA(c_fun.toTerm,List(c_nat.toTerm,c_nat.toTerm))),None,None) // TODO prec 70
+    PreElement.addMacroName(c,"natpow")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("ii"))
+    PreElement.addNotations(c,("",{<mrow><msup><mtext>#1</mtext><mtext>#2</mtext></msup></mrow>}))
+    c
+  }
 
-  lazy val th_forall = Theory(STeX.Forall.path.module.parent,STeX.Forall.path.module.name,None)
-  lazy val c_forall = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None,XHTMLOMDoc.notation("\\sforall{ V1 }{ 2 }","∀ V1,… . 2 prec -20"))
-  lazy val th_exists = Theory(STeX.Exists.path.module.parent,STeX.Exists.path.module.name,None)
-  lazy val c_exists = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None,XHTMLOMDoc.notation("\\sexists{ V1 }{ 2 }","∃ V1,… . 2 prec -20"))
+  lazy val th_forall = Theory(STeX.Forall.path.module.parent,STeX.Forall.path.module.name,Some(STeX.meta))
+  lazy val c_forall = {
+    val c = Constant(th_forall.toTerm,STeX.Forall.path.name,Nil,None,None,None) // TODO prec -20
+    PreElement.addMacroName(c,"sforall")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("bi"))
+    PreElement.addNotations(c,("",{<mrow><mo data-mmt-symref={c.path.toString}>∀</mo><mtext>#1</mtext><mo data-mmt-symref={c.path.toString}>.</mo><mtext>#2</mtext></mrow>}))
+    c
+  }
+  lazy val th_exists = Theory(STeX.Exists.path.module.parent,STeX.Exists.path.module.name,Some(STeX.meta))
+  lazy val c_exists = {
+    val c = Constant(th_exists.toTerm,STeX.Exists.path.name,Nil,None,None,None) // TODO prec -20
+    PreElement.addMacroName(c,"sexists")
+    c.metadata.update(STeX.meta_arity,STeX.StringLiterals("bi"))
+    PreElement.addNotations(c,("",{<mrow><mo data-mmt-symref={c.path.toString}>∃</mo><mtext>#1</mtext><mo data-mmt-symref={c.path.toString}>.</mo><mtext>#2</mtext></mrow>}))
+    c
+  }
 
-  def add(controller:Controller): Unit = {
+  def add(controller:Controller): Unit = try {
     controller.add(th_set)
     controller.add(c_set)
     controller.add(th_nat)
     controller.add(PlainInclude(th_set.path,th_nat.path))
     controller.add(c_nat)
-    controller.add(th_prop)
-    controller.add(PlainInclude(th_set.path,th_prop.path))
-    controller.add(c_prop)
     controller.add(th_fun)
     controller.add(PlainInclude(th_set.path,th_fun.path))
     controller.add(c_fun)
     controller.add(th_impl)
     controller.add(PlainInclude(th_fun.path,th_impl.path))
-    controller.add(PlainInclude(th_prop.path,th_impl.path))
     controller.add(c_impl)
     controller.add(th_div)
     controller.add(PlainInclude(th_fun.path,th_div.path))
-    controller.add(PlainInclude(th_prop.path,th_div.path))
     controller.add(PlainInclude(th_nat.path,th_div.path))
     controller.add(c_even)
     controller.add(th_exp)
@@ -136,10 +176,11 @@ object DemoContent {
     controller.add(PlainInclude(th_nat.path,th_exp.path))
     controller.add(c_natexp)
     controller.add(th_forall)
-    controller.add(PlainInclude(th_prop.path,th_forall.path))
     controller.add(c_forall)
     controller.add(th_exists)
-    controller.add(PlainInclude(th_prop.path,th_exists.path))
     controller.add(c_exists)
+  } catch {
+    case t : Throwable =>
+      print("")
   }
 }

@@ -49,6 +49,18 @@ object STeXLookupError {
   }
 }
 
+class STeXContentError(val msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends STeXError(msg, extraMsg, severity)
+
+object STeXContentError {
+  def from(e: Error, msg: String, severity: Option[Level.Level]): STeXContentError = {
+    val err = new STeXContentError(msg, Some(e.shortMsg), severity)
+    err.setStackTrace(e.getStackTrace)
+    err
+  }
+}
+
+// TODO deprecate/reimplement rest:
+
 //COmmon OMDoc functionality that is not specific to the sTeX importer
 object OMDoc {
 
