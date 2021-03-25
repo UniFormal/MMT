@@ -112,7 +112,7 @@ object JustificationTranslator {
             translateSubitems(tail)
           case prDef: PrivateDefinition =>
             // This will add the definition as to the list of local definitions inside the definition context
-            translate_Definition(prDef)({d: Declaration with HasType with HasDefiniens with HasNotation => }, defContext)
+            translate_Definition(prDef)(defContext)
             translateSubitems(tail)
           case _ => Nil
         }

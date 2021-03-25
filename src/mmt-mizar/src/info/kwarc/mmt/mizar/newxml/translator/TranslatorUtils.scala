@@ -2,9 +2,9 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
 import info.kwarc.mmt.api.{objects, _}
-import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.articleSpecificData._
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
@@ -40,7 +40,7 @@ object TranslatorUtils {
     val constrGN = makeGlobalName(constrAid, kind, constrNr)
     constrGN.copy(name = LocalName(patGN.name.toString + constrGN.name.toString))
   }
-  def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
+  def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(currentAid, kind, nr)
 
   def computeGlobalName(pat: GloballyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
     case p: RedefinablePatterns => if (orgVersion) p.globalOrgPatConstrName else p.globalPatConstrName
@@ -48,11 +48,6 @@ object TranslatorUtils {
     case objAttrs: GloballyReferencingReDefAttrs => objAttrs.globalPatConstrName
     case objAttrs: GloballyReferencingDefAttrs => objAttrs.globalPatConstrName
     case objAttrs => objAttrs.globalPatternName
-  }
-  def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
-    val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
-    val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
-    TranslationController.add(const)
   }
   def negatedFormula(form:Claim) = Negated_Formula(form)
   def emptyCondition() = negatedFormula(Contradiction())

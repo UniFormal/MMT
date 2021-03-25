@@ -10,18 +10,21 @@ import frontend.Controller
 import info.kwarc.mmt.lf._
 import StructuralFeatureUtil._
 import structuralfeatures._
-import RecordUtil._
-import StructuralFeatureUtils.{Eq, parseInternalDeclarations}
+import StructuralFeatureUtils.parseInternalDeclarations
 import PatternUtils._
 import info.kwarc.mmt.mizar.newxml._
-import translator.{DeclarationTranslationError, ExpectedTheoryAt, TranslatingError, TranslationController}
+import translator._
+import TranslationController.articleSpecificData._
 import MMTUtils._
 import MizarPrimitiveConcepts._
 
 object MizarStructure {
   def getSelectorValues(structTm: Term, params: List[Term])(implicit parentTerm: GlobalName): List[Term] = {
-    val mod = if (parentTerm.module == TranslationController.currentTheoryPath) TranslationController.currentThy else TranslationController.controller.getModule(parentTerm.module)
-    val selectorNames = mod.domain.filter(_.head == parentTerm.name.head) filterNot (List(structureMakePath, structureTypePath, structureForgetfulFunctorPath, structureStrictDeclPath).map(_.name) contains(_)) map (_.tail) map (LocalName(_))
+    TranslationController.processDependencyTheory(parentTerm.module)
+    val mod = if (parentTerm.module == TranslationController.currentTheoryPath) currentThy else TranslationController.controller.getModule(parentTerm.module)
+    val selectorNames = mod.domain.filter(_.headOption == parentTerm.name.headOption)
+      .filterNot(List(structureMakePath, structureTypePath, structureForgetfulFunctorPath, structureStrictDeclPath).map(_.name) contains(_))
+      .map(_.steps).flatMap({case _::tl => Some(tl) case _ => None}).map(LocalName(_))
     selectorNames map (mod.get(_).toTerm) map (ApplyGeneral(_, params:+structTm))
   }
   def ancestorSubtypingDecls(params: Context, ancestorTps: List[Term])(implicit parentTerm: GlobalName) = ancestorTps map {

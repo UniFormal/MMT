@@ -809,11 +809,9 @@ case class Loci(_loci:List[Locus]) extends ObjectLevel
  * @precondition whenever spelling is empty, varidkind="It" and we are within a pattern in a structure patterns rendering,
  * in this case we only parse the given notation of the parent pattern and will not try to translate this
  */
-case class Locus(varidkind:String, serialnr: Int, spelling:Option[String], kind:String) extends ObjectLevel {
+case class Locus(varidkind:String, serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
   def toIdentifier: LocalName = {
-    val spell = spelling getOrElse {
-      "ItSpell"
-    }
+    val spell = if (spelling.nonEmpty) spelling else varidkind
     MizarVariableName(spell, kind, serialnr)
   }
 }

@@ -8,11 +8,14 @@ import info.kwarc.mmt.api.ontology.{Includes, Transitive}
 import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController.{currentAid, _}
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
+import articleSpecificData._
 
 
 object articleTranslator {
-  def translateArticle(text_Proper: Text_Proper): Unit = {
+  def translateArticle(text_Proper: Text_Proper, processDependency: String => Unit, checkConstants: Boolean = true, typecheckContent: Boolean = true): Unit = {
+    setCheckConstants(checkConstants, typecheckContent)
+    setProcessDependency (processDependency)
     var errCounter = 0
     def printTrace = errCounter < 5
     def printErr = errCounter < 30
@@ -37,11 +40,12 @@ object articleTranslator {
 
 import subitemTranslator._
 object itemTranslator {
+  def add(d: Declaration with HasType with HasDefiniens with HasNotation)(implicit defContext: DefinitionContext): Unit =
+    TranslationController.addDeclaration(TranslatorUtils.hiddenRefTranslator(d))(defContext)
   // Adds the corresponding content to the TranslationController
   def translateItem(item: Item): Unit = {
     implicit val defCtx: DefinitionContext = DefinitionContext.empty()
     //val translatedSubitem : List[info.kwarc.mmt.api.ContentElement] =
-    implicit def add(d: Declaration with HasType with HasDefiniens with HasNotation): Unit = TranslationController.add(TranslatorUtils.hiddenRefTranslator(d))
     item._subitem match {
       case defn: Definition => definitionTranslator.translate_Definition(defn)
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
@@ -57,10 +61,12 @@ object itemTranslator {
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
       case pr: Pragma => translate_Pragma(pr) foreach add
       case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
-      case cl: Cluster => clusterTranslator.translate_Cluster(cl)
+      case cl: Cluster => clusterTranslator.translate_Cluster(cl)(DefinitionContext.empty())
       case identify: Identify => add (translate_Identify(identify))
       case nym: Nyms => add (nymTranslator.translate_Nym(nym))
-      case st: Statement with TopLevel => add (statementTranslator.translate_Statement(st))
+      case st: Statement with TopLevel =>
+        val statement = statementTranslator.translate_Statement(st)
+        add (statement)
       case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
       case notTopLevel: ProofLevel => throw subitemTranslator.notToplevel
     }
@@ -85,33 +91,29 @@ class MizarXMLImporter extends archives.Importer {
     currentAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
     currentOutputBase = bf.narrationDPath.^!
     TranslationController.controller = controller
-    def isBuild(aid: String) = controller.getO(getTheoryPath(aid)) flatMap {case t: Theory => Some (t.domain.length > 0) case _ => None} getOrElse false
 
-    lazy val rep = TranslationController.controller.report
-    lazy val rs = TranslationController.controller.depstore
-    lazy val query = Transitive (+Includes)
-    val included = try  {rs.querySet(currentTheoryPath, query) map (_.last)} catch {case _ => println("error resolving relational dependency data"); Set[String]()}
-
-    if (included.nonEmpty) {
+    def processDependency(dependencyAid: String): Unit = {
+      lazy val currentData = articleSpecificData
       def getBf (aid: String): archives.BuildTask = {
         val oldAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
-        val inPath = bf.inPath.copy(segments = bf.inPath.segments.map(_.replace(oldAid, aid)))
+        val ext = bf.inFile.getExtension map ("."+_) getOrElse ""
+        val inPath = utils.FilePath(List(aid+ext))
+        val inPathFull = utils.FilePath(bf.inFile.toFilePath.segments.init :+ aid+ext)
         val outPath = bf.outFile.toFilePath.copy(segments = bf.outFile.toFilePath.segments.map(_.replace(oldAid, aid)))
-        new BuildTask(bf.key, bf.archive, inPath.toFile, None, inPath, outPath.toFile, bf.errorCont)
+        new BuildTask(bf.key, bf.archive, inPathFull.toFile, None, inPath, outPath.toFile, bf.errorCont)
       }
-      included filterNot isBuild foreach {aid =>
-        importDocument(getBf(aid), index)
+      if (! TranslationController.isBuild(dependencyAid)) {
+        println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". ")
+        importDocument(getBf(dependencyAid), index)
+        setData(currentData)
       }
-      //should be unnecessary
-      //included flatMap(s=> TranslationController.controller.getO(getTheoryPath(s))) foreach(TranslationController.controller.simplifier(_))
     }
-
     val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
     printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
 
     val startTranslationTime = System.nanoTime()
 
-    val doc = translate(text_Proper, bf)
+    val doc = translate(text_Proper, bf, processDependency(_))
 
     printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
 
@@ -122,13 +124,13 @@ class MizarXMLImporter extends archives.Importer {
     archives.BuildResult.fromImportedDocument(doc)
   }
 
-  def translate(text_Proper: Text_Proper, bf:archives.BuildTask) : Document = {
-    currentAid = text_Proper.articleid.toLowerCase().takeWhile(_ != '.')
+  def translate(text_Proper: Text_Proper, bf:archives.BuildTask, processDependency: String => Unit) : Document = {
+    ////shouldn't be necessary and proabably isn't (filenames and aids should always agree)
+    //currentAid = text_Proper.articleid.toLowerCase().takeWhile(_ != '.')
     makeDocument()
     makeTheory()
 
-    setCheckConstants(true)
-    articleTranslator.translateArticle(text_Proper)
+    articleTranslator.translateArticle(text_Proper, processDependency, checkConstants = true, typecheckContent = true)
     endMake(Some(this.report))
 
     /*
@@ -153,10 +155,8 @@ class MizarXMLImporter extends archives.Importer {
     }*/
     val unres = getUnresolvedDependencies()
     if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
-    val deps = getDependencies
+    val deps = articleSpecificData.getDependencies
     if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
-
-    //println (TranslationController.notationStatistics)
 
     println(articleStatistics.makeArticleStatistics)
     currentDoc

@@ -19,6 +19,8 @@ import translator.termTranslator.translate_Term
 import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
+import TranslationController._
+import articleSpecificData._
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
@@ -33,8 +35,8 @@ object termTranslator {
     case Simple_Term(locVarAttr) =>
       val refTm = LocalName(locVarAttr.toIdentifier)
       lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
-      if (TranslationController.currentThy.declares(refTm)) {
-        OMS(TranslationController.currentTheoryPath ? refTm)
+      if (currentThy.domain.contains(refTm)) {
+        OMS(currentTheoryPath ? refTm)
       } else
         if (defContext.withinProof) defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue else defaultValue
     case at@Aggregate_Term(tpAttrs, _args) =>
@@ -70,7 +72,7 @@ object termTranslator {
     case Placeholder_Term(redObjAttr) => OMV("placeholder_"+redObjAttr.nr)
     case Private_Functor_Term(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), idnr))
-      val f = if (TranslationController.currentThy.declares(ln)) {
+      val f = if (currentThy.declares(ln)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ namedDefArgsSubstition()
@@ -166,7 +168,7 @@ object formulaTranslator {
     case Qualifying_Formula(_tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
     case Private_Predicate_Formula(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), idnr))
-      val p = if (TranslationController.currentThy.declares(ln)) {
+      val p = if (currentThy.declares(ln)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)
@@ -266,6 +268,7 @@ object contextTranslator {
 	}
   def translate_Context_Segment(con: ContextSegments)(implicit defContext: DefinitionContext): Context = con._children flatMap translate_Context
 }
+
 
 object claimTranslator {
   def translate_Type_Unchanging_Claim(claim: TypeUnchangingClaim)(implicit defContext: DefinitionContext): Term = claim match {

@@ -8,7 +8,7 @@ object Utils {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
 
-  def makeGlobalName(aid: String, kind: String, ln: String) = TranslationController.getTheoryPath(aid) ? (LocalName(aid) / kind+ln)
+  def makeGlobalName(aid: String, kind: String, ln: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+kind+ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
   private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
   private def mapKind(kind: String): String = kind match {
@@ -20,6 +20,7 @@ object Utils {
     case "Scheme-Predicate" => "SP"
     case "Private-Predicate" => "PP"
     case "Private-Functor" => "PF"
+    case "DefConstant" => "C"
   }
   def MizarVariableName(spelling: String, kind: String, serialnr: Int): LocalName = {
     LocalName(spelling) / LocalName(mapKind(kind)) / MizarRedVarName(serialnr)
