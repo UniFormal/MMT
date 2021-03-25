@@ -1,6 +1,6 @@
 package info.kwarc.mmt.mathhub.library.Context.Builders.Special
 
-import info.kwarc.mmt.api.archives.{ MathHub}
+import info.kwarc.mmt.api.archives.MathHub
 import info.kwarc.mmt.api.frontend.Controller
 
 class SmglomTree(
@@ -72,29 +72,41 @@ trait STeXReader { this: SmglomTree =>
       .map(f => if (f == module) "" else f.drop(module.length + 1)) // drop the module prefix
   }
 
-  protected def readModulePartName(archive: String, module: String, part: String): String = {
-    if(part == "") {
-      "Signature"
-    } else {
-      "Language " + part
-    }
-  }
-
-  protected def readModulePartHTML(archive: String, module: String, part: String): String = {
-    val root = controller.backend.getArchive(archive).getOrElse(return "").root / extension
+  private def loadXML(archive: String, module: String, part: String): Option[scala.xml.Elem] = {
+    val root = controller.backend.getArchive(archive).getOrElse(return None).root / extension
     val filename = part match {
       case "" => module + "." + extension
       case s => module + "." + s + "." + extension
     }
+    Some(scala.xml.XML.loadFile(root / filename))
+  }
 
-    val documentNode = scala.xml.XML.loadFile(root / filename)
-    val contentNodes = findNode(documentNode, "class", "ltx_page_main")
-    val content = contentNodes.headOption.getOrElse(return "No content found in document")
+  protected def readModulePartName(archive: String, module: String, part: String): String = {
+    val kind = if (part == "") { "Signature" } else { "Language " + part }
+    val title = readModulePartNameTitle(archive, module, part).map(List(_)).getOrElse(Nil)
+
+    (module :: kind :: title).mkString(" | ")
+  }
+
+  private def readModulePartNameTitle(archive: String, module: String, part: String): Option[String] = {
+    val documentNode = loadXML(archive, module, part).getOrElse(return None)
+    val titleNode = findNodeByTag(documentNode, "title").getOrElse(return None)
+    val title = titleNode.text
+    if (title != "") Some(title) else None
+  }
+
+  protected def readModulePartHTML(archive: String, module: String, part: String): String = {
+    val documentNode = loadXML(archive, module, part).getOrElse(return "")
+    val contentNodes = findNodeByAttr(documentNode, "class", "ltx_page_main")
+    val content = contentNodes.getOrElse(return "No content found in document")
     content.toString
   }
 
-  private def findNode(element: scala.xml.Elem, attribute: String, value: String): scala.xml.NodeSeq = {
+  private def findNodeByTag(element: scala.xml.Elem, tag: String): Option[scala.xml.Node] = {
+    element \\ tag headOption
+  }
+  private def findNodeByAttr(element: scala.xml.Elem, attribute: String, value: String): Option[scala.xml.Node] = {
     def attrEqual(n: scala.xml.Node, a: String, v: String) =  (n \ ("@" + a)).text == value
-    element \\ "_" filter { n => attrEqual(n, attribute, value) }
+    element \\ "_" find { n => attrEqual(n, attribute, value) }
   }
 }
