@@ -122,9 +122,9 @@ case class GlobalDefAttrs(absolutepatternMMLId: String, absoluteconstrMMLId: Str
  * @param absoluteorigpatternMMLId
  * @param absoluteorigconstrMMLId
  */
-case class GlobalOrgAttrs(absoluteorigpatternMMLId: Option[String], absoluteorigconstrMMLId: Option[String]) extends Group {
-  def isDefinedPat = absoluteorigpatternMMLId.isDefined
-  def isDefinedConstr = absoluteorigconstrMMLId.isDefined
+case class GlobalOrgAttrs(absoluteorigpatternMMLId: String, absoluteorigconstrMMLId: String) extends Group {
+  def isDefinedPat = absoluteorigpatternMMLId.nonEmpty
+  def isDefinedConstr = absoluteorigconstrMMLId.nonEmpty
 }
 /**
  * trait for objects globally referencing redefinable definitions
@@ -133,8 +133,8 @@ trait GloballyReferencingReDefAttrs extends GloballyReferencingDefAttrs {
   def globalReDefAttrs : GlobalReDefAttrs
   override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
 
-  def globalOrgPatternName : GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedPat) globalReDefAttrs.globalOrgAttrs.absoluteorigpatternMMLId.get else globalDefAttrs.absolutepatternMMLId)
-  def globalOrgConstrName: GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedConstr) globalReDefAttrs.globalOrgAttrs.absoluteorigconstrMMLId.get else globalDefAttrs.absoluteconstrMMLId)
+  def globalOrgPatternName : GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedPat) globalReDefAttrs.globalOrgAttrs.absoluteorigpatternMMLId else globalDefAttrs.absolutepatternMMLId)
+  def globalOrgConstrName: GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedConstr) globalReDefAttrs.globalOrgAttrs.absoluteorigconstrMMLId else globalDefAttrs.absoluteconstrMMLId)
   def globalOrgPatConstrName: GlobalName = absolutePatConstrName(globalOrgPatternName, globalOrgConstrName)
 }
 /**

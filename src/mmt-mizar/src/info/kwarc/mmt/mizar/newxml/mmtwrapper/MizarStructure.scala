@@ -14,14 +14,13 @@ import StructuralFeatureUtils.parseInternalDeclarations
 import PatternUtils._
 import info.kwarc.mmt.mizar.newxml._
 import translator._
-import TranslationController.articleSpecificData._
 import MMTUtils._
 import MizarPrimitiveConcepts._
 
 object MizarStructure {
   def getSelectorValues(structTm: Term, params: List[Term])(implicit parentTerm: GlobalName): List[Term] = {
     TranslationController.processDependencyTheory(parentTerm.module)
-    val mod = if (parentTerm.module == TranslationController.currentTheoryPath) currentThy else TranslationController.controller.getModule(parentTerm.module)
+    val mod = if (parentTerm.module == TranslationController.currentTheoryPath) TranslationController.currentTheory else TranslationController.controller.getModule(parentTerm.module)
     val selectorNames = mod.domain.filter(_.headOption == parentTerm.name.headOption)
       .filterNot(List(structureMakePath, structureTypePath, structureForgetfulFunctorPath, structureStrictDeclPath).map(_.name) contains(_))
       .map(_.steps).flatMap({case _::tl => Some(tl) case _ => None}).map(LocalName(_))
@@ -63,9 +62,8 @@ object MizarStructure {
         Constant(c.home, replaceSlashesLN(c.name), c.alias, tpO, dfO, c.rl, c.notC)
     }
     val strNot::aggrNot::forgNot::strictNot::selNots = notCons
-    val recordElabDecls = (recordElabDeclsNoNot zip strNot::aggrNot::selNots map {
-      case (d: Constant, n:NotationContainer) => Constant(d.home, d.name, d.alias, d.tp, d.df, d.rl, n)
-      case (d, _) => d
+    val recordElabDecls = ((recordElabDeclsNoNot zip strNot::aggrNot::selNots) zip structureTypePath::structureMakePath::recordElabDeclsNoNot.drop(2).map(d => structureSelectorPath(d.name)) map {
+      case ((d: Constant, n:NotationContainer), gn) => Constant(OMMOD(gn.module), gn.name, d.alias, d.tp, d.df, d.rl, n)
     })
 
     val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)

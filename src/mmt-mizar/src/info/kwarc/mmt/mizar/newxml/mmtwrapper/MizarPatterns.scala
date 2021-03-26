@@ -22,10 +22,6 @@ object PatternUtils {
   def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(makeName))
   def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName)
   def structureAncestorSubtypingPath(ancestorName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, ancestorName)
-  def referenceIntSel(strName: String, nm: String): Term = {
-    val strPath = TranslationController.currentTheoryPath ? strName
-    OMS(referenceExtDecl(strPath, LocalName(nm)))
-  }
 
   //effectively copied from InternalDeclarationUtil
   //TODO: Make it accessible and usable at one central location

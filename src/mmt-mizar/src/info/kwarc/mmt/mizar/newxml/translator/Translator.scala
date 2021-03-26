@@ -1,7 +1,7 @@
 package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api._
-import documents.Document
+import documents.{Document, MRef}
 import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.ontology.{Includes, Transitive}
@@ -9,7 +9,6 @@ import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.Main.makeParser
 import info.kwarc.mmt.mizar.newxml.syntax._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
-import articleSpecificData._
 
 
 object articleTranslator {
@@ -26,11 +25,11 @@ object articleTranslator {
         case GetError(s) if s.startsWith("no backend applicable to "+outputBase.toString) =>
           val Array(dpath, name) = s.stripPrefix("no backend applicable to ").split('?')
           val mpath = DPath(utils.URI(dpath)) ? name
-          println("GetError since we require the dependency theory "+mpath+" of the translated theory "+currentThy.name+" to be already translated: \n"+
+          println("GetError since we require the dependency theory "+mpath+" of the translated theory "+currentTheory.name+" to be already translated: \n"+
             "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
-          addUnresolvedDependency(mpath)
+          articleData.addUnresolvedDependency(mpath)
         case e: Throwable =>
-          if (printErr) println (e.getMessage)
+          if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+": "+it.toString))
           if (printTrace) e.printStackTrace()
           errCounter += 1
       }
@@ -78,49 +77,62 @@ class MizarXMLImporter extends archives.Importer {
   val key = "mizarxml-omdoc"
   def inExts = List("esx")
 
-  def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
-    val parser = makeParser
-    val startParsingTime = System.nanoTime()
-    def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
-      val diffTime = math.round(nanoDiff / 1e9d)
-      val seconds = diffTime % 60
-      val minutes = (diffTime - seconds) / 60
-      println(prefix+minutes.toString+" minutes and "+seconds.toString+" seconds. ")
+  def processDependency(dependencyAid: String, bf: archives.BuildTask, index: documents.Document => Unit): Unit = {
+    def getBf (aid: String): archives.BuildTask = {
+      val oldAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
+      val ext = bf.inFile.getExtension map ("."+_) getOrElse ""
+      val inPath = utils.FilePath(List(aid+ext))
+      val inPathFull = utils.FilePath(bf.inFile.toFilePath.segments.init :+ aid+ext)
+      val outPath = bf.outFile.toFilePath.copy(segments = bf.outFile.toFilePath.segments.map(_.replace(oldAid, aid)))
+      new BuildTask(bf.key, bf.archive, inPathFull.toFile, None, inPath, outPath.toFile, bf.errorCont)
     }
-
-    currentAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
+    if (! TranslationController.isBuild(dependencyAid)) {
+      println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". "
+        +(if (articleDependencyParents.length > 1) "\nThe article at the end of the dependency chain is "+articleDependencyParents.last else ""))
+      addBuildDependency(getTheoryPath(dependencyAid))
+      val currentData = getArticleData
+      resetArticleData
+      importDocument(getBf(dependencyAid), index)
+      setArticleData(currentData)
+    }
+  }
+  def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
+    articleData.currentAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
     outputBase = bf.narrationDPath.^!
     TranslationController.controller = controller
+    setReport(this.report)
+    articleDependencyParents ::= currentTheoryPath
+    def buildIt(): Document = {
+      val parser = makeParser
+      val startParsingTime = System.nanoTime()
 
-    def processDependency(dependencyAid: String): Unit = {
-      lazy val currentData = articleSpecificData
-      def getBf (aid: String): archives.BuildTask = {
-        val oldAid = bf.inFile.segments.last.toLowerCase().takeWhile(_ != '.')
-        val ext = bf.inFile.getExtension map ("."+_) getOrElse ""
-        val inPath = utils.FilePath(List(aid+ext))
-        val inPathFull = utils.FilePath(bf.inFile.toFilePath.segments.init :+ aid+ext)
-        val outPath = bf.outFile.toFilePath.copy(segments = bf.outFile.toFilePath.segments.map(_.replace(oldAid, aid)))
-        new BuildTask(bf.key, bf.archive, inPathFull.toFile, None, inPath, outPath.toFile, bf.errorCont)
+      def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+        val diffTime = math.round(nanoDiff / 1e9d)
+        val seconds = diffTime % 60
+        val minutes = (diffTime - seconds) / 60
+        println(prefix + minutes.toString + " minutes and " + seconds.toString + " seconds. ")
       }
-      if (! TranslationController.isBuild(dependencyAid)) {
-        println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". ")
-        importDocument(getBf(dependencyAid), index)
-        setData(currentData)
+
+      val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
+      printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
+
+      val startTranslationTime = System.nanoTime()
+      val doc = translate(text_Proper, bf, processDependency(_, bf, index))
+      printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
+
+      val startAddingTime = System.nanoTime()
+      index(doc)
+      printTimeDiff(System.nanoTime() - startParsingTime, "The adding took ")
+      doc
+    }
+    val doc = if (!isBuild(currentAid)) {
+      buildIt()
+    } else {
+      controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_)) match {
+        case Some(d: Document) => d
+        case _ => buildIt()
       }
     }
-    val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
-    printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
-
-    val startTranslationTime = System.nanoTime()
-
-    val doc = translate(text_Proper, bf, processDependency(_))
-
-    printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
-
-    val startAddingTime = System.nanoTime()
-    index(doc)
-    printTimeDiff(System.nanoTime() - startParsingTime, "The adding took ")
-
     archives.BuildResult.fromImportedDocument(doc)
   }
 
@@ -131,34 +143,14 @@ class MizarXMLImporter extends archives.Importer {
     makeTheory()
 
     articleTranslator.translateArticle(text_Proper, processDependency, checkConstants = true, typecheckContent = true)
-    endMake(Some(this.report))
+    endMake()
 
-    /*
-    log("INDEXING ARTICLE: " + bf.narrationDPath.last)
-    log("The translated article " + bf.narrationDPath.last + ": ")
-    doc.getModules(TranslationController.controller.globalLookup) foreach {
-      case mpath: MPath => TranslationController.controller.getModule(mpath) match {
-        case th: Theory => log("theory " + th.name)
-        th.getDeclarations foreach {
-          case decl: Declaration =>
-            try {
-              log(TranslationController.controller.presenter.asString(decl))
-            } catch {
-              case e: GetError =>
-              case e: GeneralError =>
-                println("General error while presenting the declaration: " + decl.toString + ": ")
-                println(e.toStringLong)
-                throw e
-            }
-        }
-      }
-    }*/
-    val unres = getUnresolvedDependencies()
-    if (unres.nonEmpty) {println("Unresolved dependencies: "+unres.map(_.name))}
-    val deps = articleSpecificData.getDependencies
-    if (deps.nonEmpty) {println("Resolved dependencies: "+deps.map(_.name))}
+    val unres = articleData.getUnresolvedDependencies
+    if (unres.nonEmpty) {println ("Unresolved dependencies: "+unres.map(_.name))}
+    val deps = articleData.getDependencies
+    if (deps.nonEmpty) {log ("Resolved dependencies: "+deps.map(_.name))}
 
-    println(articleStatistics.makeArticleStatistics)
-    currentDoc
+    println(articleData.articleStatistics.makeArticleStatistics)
+    articleData.currentDoc
   }
 }

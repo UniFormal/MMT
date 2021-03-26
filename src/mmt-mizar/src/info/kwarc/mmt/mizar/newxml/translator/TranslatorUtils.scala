@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasTy
 import info.kwarc.mmt.api.{objects, _}
 import objects._
 import info.kwarc.mmt.mizar.newxml._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController.articleSpecificData._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.currentAid
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
@@ -31,10 +31,7 @@ object ExpectedTheoryAt {
 }
 
 object TranslatorUtils {
-  def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
-    val ln = LocalName(kind+nr)
-    TranslationController.getTheoryPath(aid) ? ln
-  }
+  def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = Utils.makeGlobalName(aid, kind, nr.toString)
   def makeGlobalPatConstrName(patAid: String, constrAid: String, kind: String, patNr: Int, constrNr: Int) : info.kwarc.mmt.api.GlobalName = {
     val patGN = makeGlobalName(patAid, kind, patNr)
     val constrGN = makeGlobalName(constrAid, kind, constrNr)
@@ -90,10 +87,9 @@ object TranslatorUtils {
   def resolveHiddenReferences(gn: GlobalName) = {
     //This mess is necessary because eq and neq have same constrnr and new patternnrs can be defined for either in certain redefinitions
     val neqPats = List("R2")
-    val eqPats = List("R1", "R4")
+    val eqPats = List("R1")
     gn match {
       case GlobalName(module, name) if (module == hiddenArt) => name.toString match {
-        //TODO: Also translate content of tarski, tarksi_a?
         case str if (str.endsWith("M1")) => Some(any)
         case str if (str.endsWith("M2")) => Some(set)
         case str if (str.endsWith("R1") && neqPats.exists(str.endsWith(_))) => Some(neq.term)

@@ -8,14 +8,15 @@ object Utils {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
 
-  def makeGlobalName(aid: String, kind: String, ln: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+kind+ln)
+  def makeSimpleGlobalName(aid: String, name: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+name)
+  def makeGlobalName(aid: String, kind: String, ln: String) = makeSimpleGlobalName(aid, kind+ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
   private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
   private def mapKind(kind: String): String = kind match {
     case "BoundVar" => "BV"
     case "Bound" => "B"
     case "Constant" => "C"
-    case "ReservedVar" => "R"
+    case "ReservedVar" => "C"//"R"
     case "Scheme-Functor" => "SF"
     case "Scheme-Predicate" => "SP"
     case "Private-Predicate" => "PP"
@@ -125,9 +126,9 @@ object Utils {
     case FunctorKind() => 'K'
     case AttributeKind() => 'V'
     case PredicateKind() => 'R'
-    case StrictKind() => 'V'
-    case AggregateKind() => 'G'
-    case SelectorKind() => 'J'
-    case ForgetfulKind() => 'U'
+    case StrictKind() => shortKind(StructureKind())//'V'
+    case AggregateKind() => shortKind(StructureKind())//'G'
+    case SelectorKind() => shortKind(StructureKind())//'J'
+    case ForgetfulKind() => shortKind(StructureKind())//'U'
   }
 }

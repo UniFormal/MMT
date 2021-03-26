@@ -55,7 +55,7 @@ sealed trait Definition extends BlockSubitem {
 /**
  * A Definition which is not a private definition and consequently has a pattern
  */
-trait PublicDefinition extends Definition {
+sealed trait PublicDefinition extends Definition {
   def _pat: Patterns
   override def pat: Option[Patterns] = Some(_pat)
 }
@@ -400,7 +400,7 @@ case class Correctness(_correctnessCond:Correctness_Conditions, _just:Justificat
  * Several correctness conditions (which need to contain their own proofs)
  * @param _cond the correctness conditions
  */
-case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends Property_or_Correctness_Condition(true)
+case class Correctness_Conditions(_cond:List[CorrectnessConditions]) extends DeclarationLevel//Property_or_Correctness_Condition(true)
 /**
  * A single correctness condition with its justification
  * @param _cond the correctness condition

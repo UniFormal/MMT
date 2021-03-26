@@ -412,7 +412,7 @@ case class RightSideOf_Relation_Formula(defAttrs: ReDefObjAttrs, antonymic:Optio
  * @param _thesis
  */
 case class Proposition(_label:Label, _thesis:Claim) extends TypeUnchangingClaim with ProvenFactReference {
-  def referencedLabel = TranslationController.currentTheoryPath ? LocalName(_label.spelling)
+  def referencedLabel = Utils.makeSimpleGlobalName(TranslationController.currentAid, _label.spelling)
 }
 /**
 whatever still remains to be proven in a proof

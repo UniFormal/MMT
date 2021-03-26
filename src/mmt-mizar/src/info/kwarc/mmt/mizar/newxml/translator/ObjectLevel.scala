@@ -3,12 +3,10 @@ package info.kwarc.mmt.mizar.newxml.translator
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, Sub, Term, VarDecl}
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.lf.structuralfeatures.RecordUtil
 import info.kwarc.mmt.mizar.newxml._
 import syntax._
 import mmtwrapper._
 import MizarPrimitiveConcepts._
-import MizSeq.{Index, OMI}
 import PatternUtils._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarStructure.getSelectorValues
 import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalLookup
@@ -20,7 +18,6 @@ import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
 import TranslationController._
-import articleSpecificData._
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
@@ -35,7 +32,7 @@ object termTranslator {
     case Simple_Term(locVarAttr) =>
       val refTm = LocalName(locVarAttr.toIdentifier)
       lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
-      if (currentThy.domain.contains(refTm)) {
+      if (currentTheory.domain.contains(refTm)) {
         OMS(currentTheoryPath ? refTm)
       } else
         if (defContext.withinProof) defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue else defaultValue
@@ -72,7 +69,7 @@ object termTranslator {
     case Placeholder_Term(redObjAttr) => OMV("placeholder_"+redObjAttr.nr)
     case Private_Functor_Term(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), idnr))
-      val f = if (currentThy.declares(ln)) {
+      val f = if (currentTheory.declares(ln)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ namedDefArgsSubstition()
@@ -168,7 +165,7 @@ object formulaTranslator {
     case Qualifying_Formula(_tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
     case Private_Predicate_Formula(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), idnr))
-      val p = if (currentThy.declares(ln)) {
+      val p = if (currentTheory.declares(ln)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)
@@ -263,9 +260,8 @@ object contextTranslator {
       val tp = Arrow(argTypes, ret)
       segm._vars._vars.map (translate_new_Variable(_) % tp)
   }
-	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = {
-    OMV(loc.toIdentifier) ^ namedDefArgsSubstition()
-	}
+	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = OMV(loc.toIdentifier) ^ namedDefArgsSubstition()
+  def translateLocisWithoutSubstitution(loc:Loci)(implicit defContext: DefinitionContext) : List[Term] = loc._loci map (l=>OMV(l.toIdentifier))
   def translate_Context_Segment(con: ContextSegments)(implicit defContext: DefinitionContext): Context = con._children flatMap translate_Context
 }
 

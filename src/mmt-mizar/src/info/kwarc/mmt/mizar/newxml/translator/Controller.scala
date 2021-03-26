@@ -7,11 +7,10 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.presentation._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
-import foundations._
 import info.kwarc.mmt.api.checking.CheckingEnvironment
+import info.kwarc.mmt.api.frontend.Report
 import info.kwarc.mmt.lf.{ApplyGeneral, FunType}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs, piBindArgs}
 import mmtwrapper.MizarPrimitiveConcepts._
@@ -20,7 +19,8 @@ import mmtwrapper.{MizarPatternInstance, PatternUtils}
 import java.io.PrintStream
 import scala.collection._
 
-object TranslationController {
+object TranslationController extends frontend.Logger {
+  def logPrefix: String = "mizarxml-omdoc"
 
   var controller = {
     val c = new frontend.Controller
@@ -28,10 +28,13 @@ object TranslationController {
   }
   //set during translation
   var outputBase: DPath = null
-
+  private var translatorReport: frontend.Report = null
+  def setReport (report: frontend.Report): Unit = { this.translatorReport = report }
+  override def report: Report = this.translatorReport
   private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
-
   private def structureSimplifier = controller.simplifier
+  var buildDependencies: immutable.Set[MPath] = immutable.Set()
+  def addBuildDependency(mpath: MPath): Unit = { buildDependencies += mpath }
 
   /**
    * whether to typecheck translated content
@@ -46,34 +49,47 @@ object TranslationController {
   }
 
   private var processDependency: String => Unit = { m: String => }
-  def setProcessDependency(processDependency: String => Unit): Unit = {
-    this.processDependency = processDependency
-  }
+  def setProcessDependency(processDependency: String => Unit): Unit = { this.processDependency = processDependency }
   def processDependencyTheory(mpath: MPath) = {
-    if (mpath.doc.^! == outputBase) processDependency (mpath.name.toString.toLowerCase)
+    lazy val aid = mpath.name.toString.toLowerCase
+    if (mpath.doc.^! == outputBase) {
+      if (! TranslationController.isBuild(aid)) processDependency (aid)
+    }
   }
   private def errFilter(err: Error): Boolean = {
     val badStrings = List(
       "INHABITABLE"
-      , "a declaration for the name "
+      , "is not imported into current context"
     ) ++ (if (!checkConstants) List(
       "ill-formed constant reference"
-      , "is not imported into current context"
+      , "a declaration for the name "
     ) else Nil)
-
-    val badTypes: List[String] = List(
-      "AddError"
-    )
-    !(badStrings.exists(err.toStringLong.contains(_)) || badTypes.exists(err.getClass.toString.contains(_)))
+    def filterTypes(error: Error): Boolean = error match {
+      case _: InvalidUnit => true
+      case _: InvalidObject => true
+      case _: AddError => ! checkConstants
+      case _ => false
+    }
+    !(badStrings.exists(err.toStringLong.contains(_)) || filterTypes(err))
+  }
+  def showErrorInformation(e: Throwable, whileDoingWhat: String): String = {
+    val errType = e.getClass.toString.split('.').last
+    val cause: String = e.getCause match {
+      case c if c == e => ""
+      case null => ""
+      case e => "\ncaused by: \n"+showErrorInformation(e, "")
+    }
+    errType+whileDoingWhat+cause
   }
 
-  private def typeCheckingErrHandler(logger: Option[frontend.Report]): ErrorHandler = new FilteringErrorHandler(new ErrorContainer(logger), errFilter(_))
+  private def typeCheckingErrHandler: ErrorHandler = new FilteringErrorHandler(new ErrorContainer(Some(this.translatorReport)), errFilter(_))
 
-  private def checkingEnvironment(logger: Option[frontend.Report]) = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler(logger), checking.RelationHandler.ignore, MMTTask.generic)
+  private def checkingEnvironment = new CheckingEnvironment(TranslationController.structureSimplifier, typeCheckingErrHandler, checking.RelationHandler.ignore, MMTTask.generic)
 
-  def typecheckContent(e: StructuralElement, logger: Option[frontend.Report] = None) = structChecker(e)(checkingEnvironment(logger))
+  def typecheckContent(e: StructuralElement) = structChecker(e)(checkingEnvironment)
 
-  object articleSpecificData {
+  var articleDependencyParents = List[MPath]()
+  class ArticleSpecificData {
     //set during translation
     var currentAid: String = null
     var currentDoc: Document = null
@@ -85,7 +101,7 @@ object TranslationController {
       unresolvedDependencies +:= dep
     }
 
-    def getUnresolvedDependencies() = unresolvedDependencies
+    def getUnresolvedDependencies = unresolvedDependencies
 
     private var withNotation = 0
     private var withoutNotation = 0
@@ -129,12 +145,11 @@ object TranslationController {
 
     def getReduceCount() = reduceCount
 
-    private var resolvedDependencies: Set[MPath] = Set()
+    private var resolvedDependencies: immutable.Set[MPath] = immutable.Set()
 
     def getDependencies = resolvedDependencies
-    def addDependencies(additionalDependencies: Set[MPath]): Unit = {
-      resolvedDependencies ++= additionalDependencies
-    }
+    def addDependencies(additionalDependencies: immutable.Set[MPath]): Unit = resolvedDependencies ++= additionalDependencies
+    def resetDependencies: Unit = {resolvedDependencies = immutable.Set(currentTheoryPath, TranslatorUtils.hiddenArt)}
 
     object articleStatistics {
       def totalNumDefinitions: Int = functorDefinitions + predicateDefinitions + attributeDefinitions + modeDefinitions + schemeDefinitions + structureDefinitions
@@ -158,9 +173,9 @@ object TranslationController {
       def makeArticleStatistics: String = "Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
-        case "func" => functorDefinitions += 1
+        case "funct" => functorDefinitions += 1
         case "pred" => predicateDefinitions += 1
-        case "attr" => attributeDefinitions += 1
+        case "attribute" => attributeDefinitions += 1
         case "mode" => modeDefinitions += 1
         case "scheme" => schemeDefinitions += 1
         case "struct" => structureDefinitions += 1
@@ -169,89 +184,89 @@ object TranslationController {
         case "thm" => theorems += 1
         case _ => throw new TranslatingError("unrecognised statistics counter to increment: " + kind)
       }
-      def setData(data: this.type): Unit = {
-        functorDefinitions = data.functorDefinitions
-        predicateDefinitions = data.predicateDefinitions
-        attributeDefinitions = data.attributeDefinitions
-        modeDefinitions = data.modeDefinitions
-        schemeDefinitions = data.schemeDefinitions
-        structureDefinitions = data.structureDefinitions
-        nyms = data.nyms
-        registrations = data.registrations
-        theorems = data.theorems
-      }
-    }
-    def setData(data: this.type): Unit = {
-      var currentAid = data.currentAid
-      var currentDoc = data.currentDoc
-      var currentThy = data.currentThy
-      unresolvedDependencies = data.unresolvedDependencies++this.unresolvedDependencies
-      withNotation = data.withNotation
-      withoutNotation = data.withoutNotation
-      anonymousTheoremCount = data.anonymousTheoremCount
-      anonymousSchemeCount = data.anonymousSchemeCount
-      identifyCount = data.identifyCount
-      reduceCount = data.reduceCount
-      resolvedDependencies = data.resolvedDependencies
     }
   }
+  private[newxml] var articleData = new ArticleSpecificData
+  def getArticleData = articleData
+  def resetArticleData: Unit = {articleData = new ArticleSpecificData}
+  def setArticleData(articleSpecificData: ArticleSpecificData): Unit = {
+    articleData = articleSpecificData
+  }
+  def currentTheory = articleData.currentThy
+  def currentAid = articleData.currentAid
 
-  import articleSpecificData._
   def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+MizarPatternsTh.name.toString+".mmt")
-  def localPath : LocalName = LocalName(currentAid)
+  def localPath : LocalName = LocalName(articleData.currentAid)
   def currentThyBase : DPath = outputBase / localPath
     //DPath(utils.URI(TranslationController.currentOutputBase.toString + localPath.toString))
   def currentTheoryPath : MPath = currentThyBase ? localPath
-  def getTheoryPath(aid: String) = (outputBase / aid.toLowerCase()) ? aid.toLowerCase()
-  def currentSource : String = mathHubBase + "/source/" + currentAid + ".miz"
+  def getTheoryPath(aid: String): MPath = (outputBase / aid.toLowerCase()) ? aid.toLowerCase()
+  def currentSource : String = mathHubBase + "/source/" + articleData.currentAid + ".miz"
 
   def makeDocument() = {
-    currentDoc = new Document(currentThyBase)
-    controller.add(currentDoc)
+    articleData.currentDoc = new Document(currentThyBase)
+    controller.add(articleData.currentDoc)
   }
   def makeTheory() = {
-    currentThy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
-    articleSpecificData.addDependencies(Set(currentTheoryPath, TranslatorUtils.hiddenArt))
-    controller.add(currentThy)
+    articleData.currentThy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
+    articleData.resetDependencies
+    Set(currentTheoryPath, TranslatorUtils.hiddenArt) foreach addBuildDependency
+    controller.add(articleData.currentThy)
   }
   def getDependencies(decl: Declaration with HasType with HasDefiniens) = {
-    def isDependency(p: String) = p contains outputBase.toString
-    def getDependencies(tm: Term): Set[MPath] = tm match {
-      case OMS(p) => if (isDependency(p.toString)) Set(p.module) else Set()
+    def isDependency(p: String) =
+      p contains outputBase.toString
+    def getDependencies(tm: Term): immutable.Set[MPath] = tm match {
+      case OMS(p) => if (isDependency(p.toString)) immutable.Set(p.module) else immutable.Set()
       case OMBINDC(binder, context, scopes) => (binder::context.flatMap(_.tp):::scopes).toSet flatMap getDependencies
       case OMA(fun, args) => (fun::args).toSet flatMap getDependencies
-      case OML(_, tp, df, _, _) => Set(tp, df).flatMap(_ map getDependencies getOrElse Set())
-      case _ => Set()
+      case OML(_, tp, df, _, _) => immutable.Set(tp, df).flatMap(_ map getDependencies getOrElse immutable.Set())
+      case _ => immutable.Set()
     }
     if (isDependency(decl.toString())) {
-      val dependencies = (decl match {
+      val preDependencies = (decl match {
         case MizarPatternInstance(_, _, args) =>
           args flatMap getDependencies
         case c: Constant => List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)).flatMap(getDependencies)
         case _ => Nil
-      }).filterNot (articleSpecificData.getDependencies contains _).toSet
-      articleSpecificData.addDependencies(dependencies)
+      })
+      val dependencies = preDependencies.filterNot (articleData.getDependencies contains _).toSet
+      articleData.addDependencies(dependencies)
       dependencies
     } else Nil
   }
-  def isBuild(aid: String) = controller.getO(getTheoryPath(aid)) flatMap {
-    case t: Theory => Some (t.domain.exists(_.lastOption map (_.toString) map (List("funct", "pred", "attribute", "mode").contains(_)) getOrElse false))
-  case _ => None} getOrElse false
+  def isBuild(aid: String) = {
+    val theoryPath = getTheoryPath(aid)
+    if (buildDependencies.contains(theoryPath)) true else {
+      val res = controller.getO(theoryPath) match {
+        case Some(t: Theory) =>
+          ((controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_))) match {case Some(_:Document) => true case _ => false}) && t.domain.exists {n=>
+            if (List("funct", "pred", "attribute", "mode").contains(n.steps.last.toString)) {
+              t.domain.contains(n.init)
+            } else false
+          }
+        case _ => false
+      }
+      if (res) addBuildDependency(theoryPath)
+      res
+    }
+  }
   def addDependencies(decl: Declaration with HasType with HasDefiniens): Unit = {
     val deps = getDependencies(decl)
     val includes = deps map(PlainInclude(_, currentTheoryPath))
     includes zip deps foreach {case (inc, dep) =>
       try {
-        addFront(inc)
+        addFront (inc)
         processDependencyTheory (dep)
+        structureSimplifier (inc)
       } catch {
         case e: GetError =>
-          addUnresolvedDependency(dep)
+          articleData.addUnresolvedDependency(dep)
           throw new TranslatingError("GetError while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
             "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
         case er: Throwable =>
-          addUnresolvedDependency(dep)
+          articleData.addUnresolvedDependency(dep)
           val errClass = er.getClass.toString.split('.').last
           throw new TranslatingError(errClass+" while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
           er.getMessage+
@@ -259,10 +274,12 @@ object TranslationController {
       }
     }
   }
-  def endMake(report: Option[frontend.Report] = None) = {
-    controller.endAdd(currentThy)
-    currentDoc.add(MRef(currentDoc.path, currentThy.path))
-    if (typecheckContent && ! checkConstants) typecheckContent(currentThy, report)
+  def endMake() = {
+    controller.endAdd(articleData.currentThy)
+    articleData.currentDoc.add(MRef(articleData.currentDoc.path, articleData.currentThy.path))
+    controller.endAdd(articleData.currentDoc)
+    if (typecheckContent && ! checkConstants) typecheckContent(articleData.currentThy)
+    articleDependencyParents = articleDependencyParents.tail
   }
 
   def add(e: NarrativeElement) : Unit = {
@@ -279,30 +296,36 @@ object TranslationController {
     val hasNotation = e.notC.isDefined
     try {
       addDependencies(e)
-      controller.add(e)
-      incrementNotationCounter (hasNotation)
+      if (! articleData.currentThy.domain.contains(e.name))
+        controller.add(e)
+      articleData.incrementNotationCounter (hasNotation)
     } catch {
-      case e: AddError => throw e
+      case e: AddError =>
+        throw e
       case er: Throwable =>
         val errClass = er.getClass.toString.split('.').last
         throw new TranslatingError(errClass+" while processing the dependencies of the declaration "+e.path.toPath+":\n"+er.getMessage)
     }
     try {
-      if (typecheckContent && checkConstants) typecheckContent(e)
       if (e.feature == "instance") {
         controller.simplifier(e)
+        val externalDecls = currentTheory.domain.filter(_.init == e.name)
+        if (externalDecls.isEmpty) {
+          throw new TranslatingError("No external declarations for the instance "+e.path+" even after calling the simplifier on it. \n"
+          +"Subsequent references of them will therefore fail. ")
+        }
         // build the notations
-        currentThy.domain.filter(_.init == e.name)
-          .filterNot(d => e.not.map(_.toText.contains(d.toString)).getOrElse(true))
-          .filter(currentThy.get(_).asInstanceOf[Constant].not == e.not).map({
+        externalDecls.filterNot(d => e.not.forall(_.toText.contains(d.toString)))
+          .filter(currentTheory.get(_).asInstanceOf[Constant].not == e.not).map({
           n =>
             val toPresent = ApplyGeneral(OMS(currentTheoryPath ? n), defContext.args.map(_.toTerm))
             val not = controller.presenter.asString(toPresent)
             if (not.contains(n.toString)) {
-              println("notation for constant "+(currentTheoryPath ? n).toString+" cannot be used.")
+              log ("notation for constant "+(currentTheoryPath ? n).toString+" cannot be used.")
             }
         })
       }
+      if (typecheckContent && checkConstants) typecheckContent(e)
     } catch {
       case _: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
@@ -334,7 +357,7 @@ object TranslationController {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println("Variable not declared in context. ")
+        println("Lookup error trying to infer a type: Variable not declared in context: \n"+e.shortMsg)
         throw e
     }
   }
