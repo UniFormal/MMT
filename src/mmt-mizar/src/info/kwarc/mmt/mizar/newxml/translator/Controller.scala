@@ -89,11 +89,38 @@ object TranslationController extends frontend.Logger {
   def typecheckContent(e: StructuralElement) = structChecker(e)(checkingEnvironment)
 
   var articleDependencyParents = List[MPath]()
+
+  val beginningTime: Long = System.nanoTime()
+  var globalParsingTime: Long = 0
+  var globalTranslatingTime: Long = 0
+  var globalAddingTime: Long = 0
+  def timeSince(beginning: Long): Long = System.nanoTime() - beginning
+  def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+    val diffTime = math.round(nanoDiff / 1e9d)
+    val seconds = diffTime % 60
+    val minutesAll = (diffTime - seconds) / 60
+    val minutes = minutesAll % 60
+    val hours = (minutesAll - minutes) / 60
+    println(prefix + (if (hours >0) hours.toString+" hours " else "")+minutes.toString + " minutes and " + seconds.toString + " seconds. ")
+  }
+  def globalTotalTime: Long = timeSince(beginningTime)
+  def unaccountedTotalTime: Long = globalTotalTime - globalParsingTime - globalTranslatingTime - globalAddingTime
+  def printGlobalStatistics(): Unit = {
+    printTimeDiff (globalTotalTime, "Overall the entire import took ")
+    printTimeDiff (globalParsingTime, "The parsing took ")
+    printTimeDiff (globalTranslatingTime, "The translating took ")
+    printTimeDiff (globalAddingTime, "The adding took ")
+    printTimeDiff (unaccountedTotalTime, "Switching between files to import and between dependencies took ")
+    println ("Overall we translated "+globalTranslatedDeclsCount+" declarations. ")
+  }
+  var globalTranslatedDeclsCount = 0
   class ArticleSpecificData {
     //set during translation
     var currentAid: String = null
     var currentDoc: Document = null
     var currentThy: Theory = null
+    var currentTranslatingTime: Long = 0
+    var currentTranslatingTimeBegin = System.nanoTime()
 
     private var unresolvedDependencies: List[MPath] = Nil
 
@@ -188,7 +215,10 @@ object TranslationController extends frontend.Logger {
   }
   private[newxml] var articleData = new ArticleSpecificData
   def getArticleData = articleData
-  def resetArticleData: Unit = {articleData = new ArticleSpecificData}
+  def resetArticleData: Unit = {
+    articleData = new ArticleSpecificData
+    articleData.currentTranslatingTimeBegin = System.nanoTime()
+  }
   def setArticleData(articleSpecificData: ArticleSpecificData): Unit = {
     articleData = articleSpecificData
   }
@@ -205,12 +235,12 @@ object TranslationController extends frontend.Logger {
   def currentSource : String = mathHubBase + "/source/" + articleData.currentAid + ".miz"
 
   def makeDocument() = {
+    articleData.resetDependencies
     articleData.currentDoc = new Document(currentThyBase)
     controller.add(articleData.currentDoc)
   }
   def makeTheory() = {
     articleData.currentThy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
-    articleData.resetDependencies
     Set(currentTheoryPath, TranslatorUtils.hiddenArt) foreach addBuildDependency
     controller.add(articleData.currentThy)
   }
@@ -279,7 +309,6 @@ object TranslationController extends frontend.Logger {
     articleData.currentDoc.add(MRef(articleData.currentDoc.path, articleData.currentThy.path))
     controller.endAdd(articleData.currentDoc)
     if (typecheckContent && ! checkConstants) typecheckContent(articleData.currentThy)
-    articleDependencyParents = articleDependencyParents.tail
   }
 
   def add(e: NarrativeElement) : Unit = {
@@ -303,8 +332,8 @@ object TranslationController extends frontend.Logger {
       case e: AddError =>
         throw e
       case er: Throwable =>
-        val errClass = er.getClass.toString.split('.').last
-        throw new TranslatingError(errClass+" while processing the dependencies of the declaration "+e.path.toPath+":\n"+er.getMessage)
+        val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
+        throw new TranslatingError(mes)
     }
     try {
       if (e.feature == "instance") {
@@ -357,8 +386,9 @@ object TranslationController extends frontend.Logger {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println("Lookup error trying to infer a type: Variable not declared in context: \n"+e.shortMsg)
+        println("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args++defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
+      case e : Throwable => throw e
     }
   }
 }

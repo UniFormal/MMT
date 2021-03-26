@@ -90,10 +90,12 @@ class MizarXMLImporter extends archives.Importer {
       println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". "
         +(if (articleDependencyParents.length > 1) "\nThe article at the end of the dependency chain is "+articleDependencyParents.last else ""))
       addBuildDependency(getTheoryPath(dependencyAid))
+      articleData.currentTranslatingTime += timeSince(articleData.currentTranslatingTimeBegin)
       val currentData = getArticleData
       resetArticleData
       importDocument(getBf(dependencyAid), index)
       setArticleData(currentData)
+      articleData.currentTranslatingTimeBegin = System.nanoTime()
     }
   }
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
@@ -101,34 +103,35 @@ class MizarXMLImporter extends archives.Importer {
     outputBase = bf.narrationDPath.^!
     TranslationController.controller = controller
     setReport(this.report)
-    articleDependencyParents ::= currentTheoryPath
     def buildIt(): Document = {
+      articleDependencyParents ::= currentTheoryPath
       val parser = makeParser
       val startParsingTime = System.nanoTime()
 
-      def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
-        val diffTime = math.round(nanoDiff / 1e9d)
-        val seconds = diffTime % 60
-        val minutes = (diffTime - seconds) / 60
-        println(prefix + minutes.toString + " minutes and " + seconds.toString + " seconds. ")
-      }
-
       val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
-      printTimeDiff(System.nanoTime() - startParsingTime, "The parsing took ")
+      val parsingTime = timeSince(startParsingTime)
+      printTimeDiff(parsingTime, "The parsing took ")
+      globalParsingTime += parsingTime
 
-      val startTranslationTime = System.nanoTime()
       val doc = translate(text_Proper, bf, processDependency(_, bf, index))
-      printTimeDiff(System.nanoTime() - startTranslationTime, "The translation took ")
+      articleData.currentTranslatingTime += timeSince(articleData.currentTranslatingTimeBegin)
+      printTimeDiff(articleData.currentTranslatingTime, "The translation took ")
+      globalTranslatingTime += articleData.currentTranslatingTime
 
       val startAddingTime = System.nanoTime()
       index(doc)
-      printTimeDiff(System.nanoTime() - startParsingTime, "The adding took ")
+      val addingTime = timeSince(startAddingTime)
+      printTimeDiff(addingTime, "The adding took ")
+      globalAddingTime += addingTime
+      articleDependencyParents = articleDependencyParents.tail
+      globalTranslatedDeclsCount += articleData.articleStatistics.totalNumDefinitions
+      if (articleDependencyParents.length == 0) printGlobalStatistics()
       doc
     }
     val doc = if (!isBuild(currentAid)) {
       buildIt()
     } else {
-      controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_)) match {
+      controller.getO(currentTheoryPath) flatMap(_.asInstanceOf[Theory].parentDoc) flatMap (controller.getO(_)) match {
         case Some(d: Document) => d
         case _ => buildIt()
       }

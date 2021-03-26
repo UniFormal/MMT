@@ -18,14 +18,6 @@ import MMTUtils._
 import MizarPrimitiveConcepts._
 
 object MizarStructure {
-  def getSelectorValues(structTm: Term, params: List[Term])(implicit parentTerm: GlobalName): List[Term] = {
-    TranslationController.processDependencyTheory(parentTerm.module)
-    val mod = if (parentTerm.module == TranslationController.currentTheoryPath) TranslationController.currentTheory else TranslationController.controller.getModule(parentTerm.module)
-    val selectorNames = mod.domain.filter(_.headOption == parentTerm.name.headOption)
-      .filterNot(List(structureMakePath, structureTypePath, structureForgetfulFunctorPath, structureStrictDeclPath).map(_.name) contains(_))
-      .map(_.steps).flatMap({case _::tl => Some(tl) case _ => None}).map(LocalName(_))
-    selectorNames map (mod.get(_).toTerm) map (ApplyGeneral(_, params:+structTm))
-  }
   def ancestorSubtypingDecls(params: Context, ancestorTps: List[Term])(implicit parentTerm: GlobalName) = ancestorTps map {
     case ancestorTp@ApplyGeneral(OMS(ancestorTpPath), _) =>
       val ancestorTpName = ancestorTpPath.module.name / ancestorTpPath.name.head.toString
@@ -75,8 +67,7 @@ object MizarStructure {
       Some(PiOrEmpty(params, Pi(LocalName("s"), structTpx, prop))), Some(LambdaOrEmpty(params,
         Lam("s", structTpx, equal(OMV("s"), Apply(OMS(structureForgetfulFunctorPath), OMV("s")))))), None, strictNot)
     val forgetfulFunctorDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorPath.name, Nil,
-      Some(PiOrEmpty(params++argsTyped, Arrow(structTpx, structTpx))), Some(LambdaOrEmpty(params++argsTyped,
-        Lam("s", structTpx, ApplyGeneral(OMS(structureMakePath), params++argsTyped map (_.toTerm))))), None, forgNot)
+      Some(Arrow(structTpx, structTpx)), None, None, forgNot)
     val furtherDecls = forgetfulFunctorDecl::strictDecl::ancestorSubtypingDecls(params, ancestorTps)
     (recordElabDecls ::: furtherDecls) map tr
   }

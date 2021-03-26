@@ -555,16 +555,16 @@ object definitionTranslator {
       case _ if origGn.module == HiddenTh => Some(List(any, any))
       case _ => None
     }
-    origArgTpsO flatMap {
+    origArgTpsO map {
       origArgTps: List[Term] =>
         val origLength = origArgTps.length
-        val addArgsLength = argNum - origLength
-        if (addArgsLength < 0) {
+        val addArgsLength = origLength - argNum
+        if (addArgsLength > 0) {
           println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+addArgsLength+" more arguments than this one (which should never happen). \nFor now, we record this definition without definien. ")
-          None
+          makeConstant(ln / LocalName(kind), tp, None)(notC)
         } else {
           val df = Pi(LocalName(argsVarName), nTerms(argNum), ApplyGeneral(OMS(origGn), (addArgsLength until argNum).toList map (i => Index(OMV(argsVarName),  OMI(i)))))
-          Some (makeConstant(ln / LocalName(kind), tp, Some(df))(notC))
+          makeConstant(ln / LocalName(kind), tp, Some(df))(notC)
         }} getOrElse {
         //Failure to lookup the original definition, then we should at least record this declaration without its definien
         println ("Error: failure looking up original definition to redefine (without new definien), hence recording definition without definien. ")

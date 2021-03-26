@@ -8,7 +8,6 @@ import syntax._
 import mmtwrapper._
 import MizarPrimitiveConcepts._
 import PatternUtils._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarStructure.getSelectorValues
 import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalLookup
 import translator.attributeTranslator.translate_Attribute
 import translator.claimTranslator.translate_Claim
@@ -92,10 +91,7 @@ object termTranslator {
     case fft@Forgetful_Functor_Term(_, _tm) =>
       val forgetfulFunctorGn = computeGlobalName(fft)
       val structTm = translate_Term(_tm)
-      val structTp = TranslationController.inferType(structTm)
-      val ApplyGeneral(OMS(strTpPath), params) = structTp
-      val argsTyped = getSelectorValues(structTm, params)(strTpPath.module ? strTpPath.name.init)
-      ApplyGeneral(OMS(forgetfulFunctorGn), params++argsTyped:+structTm)
+      Apply(OMS(forgetfulFunctorGn), structTm)
   }
 }
 
