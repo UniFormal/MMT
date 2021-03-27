@@ -17,6 +17,7 @@ import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
 import TranslationController._
+import info.kwarc.mmt.mizar.newxml.syntax.Utils.makeSimpleGlobalName
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
@@ -68,11 +69,14 @@ object termTranslator {
     case Placeholder_Term(redObjAttr) => OMV("placeholder_"+redObjAttr.nr)
     case Private_Functor_Term(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), idnr))
-      val f = if (currentTheory.declares(ln)) {
+      val name = makeSimpleGlobalName(currentAid, ln.toString).name
+      val f = if (currentTheory.domain.contains(name)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ namedDefArgsSubstition()
-      } else OMV(ln) ^ namedDefArgsSubstition()
+      } else {
+        OMV(ln) ^ namedDefArgsSubstition()
+      }
       ApplyGeneral(f, translateArguments(_args))
     case Fraenkel_Term(_, _varSegms, _tm, _form) =>
       val universe = translate_Type(_varSegms._children.head._tp())
@@ -161,11 +165,14 @@ object formulaTranslator {
     case Qualifying_Formula(_tm, _tp) => is(translate_Term(_tm), translate_Type(_tp))
     case Private_Predicate_Formula(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), idnr))
-      val p = if (currentTheory.declares(ln)) {
+      val name = makeSimpleGlobalName(currentAid, ln.toString).name
+      val p = if (currentTheory.domain.contains(name)) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)
-      } else OMV(ln) ^ namedDefArgsSubstition()
+      } else {
+        OMV(ln) ^ namedDefArgsSubstition()
+      }
       ApplyGeneral(p, translateArguments(_args))
     case FlexaryDisjunctive_Formula(_formulae) =>
       val formulae = _formulae map translate_Claim

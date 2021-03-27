@@ -508,7 +508,7 @@ object definitionTranslator {
    * @return the translated functor definition
    */
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
-    val v = translate_Variable(private_Functor_Definition._var)(defContext)
+    val v = translate_new_Variable(private_Functor_Definition._var)
     val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.serialnr)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
@@ -516,7 +516,8 @@ object definitionTranslator {
     val dfBody = translate_Term(private_Functor_Definition._tm)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
     if (defContext.withinProof) defContext.addLocalDefinitionInContext(gn.name, df)
-    makeConstantInContext(gn.name, Some(tp), Some(df))(defContext = defContext)
+    val name = makeSimpleGlobalName(currentAid, v.name.toString).name
+    makeConstantInContext(name, Some(tp), Some(df))(defContext = defContext)
   }
   /**
    * translates a private predicate definition
@@ -526,7 +527,7 @@ object definitionTranslator {
    * @return the translated predicate definition
    */
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
-    val v = translate_Variable(private_Predicate_Definition._var)(defContext)
+    val v = translate_new_Variable(private_Predicate_Definition._var)
     val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.serialnr)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
@@ -534,7 +535,8 @@ object definitionTranslator {
     val dfBody = translate_Formula(private_Predicate_Definition._form)(defContext)
     val df = LambdaOrEmpty(args, dfBody)
     if (defContext.withinProof) defContext.addLocalDefinitionInContext(gn.name, df)
-    makeConstantInContext(gn.name, Some(tp), Some(df))(defContext = defContext)
+    val name = makeSimpleGlobalName(currentAid, v.name.toString).name
+    makeConstantInContext(name, Some(tp), Some(df))(defContext = defContext)
   }
   def translate_Redefine(p: Patterns, ln: LocalName, ret: Option[Term], defn: Option[CaseByCaseDefinien], argNum: Int, argTps: List[Term])(implicit kind: String, notC: NotationContainer) = {
     val origGn = globalLookup(p, true)
@@ -558,9 +560,9 @@ object definitionTranslator {
     origArgTpsO map {
       origArgTps: List[Term] =>
         val origLength = origArgTps.length
-        val addArgsLength = origLength - argNum
-        if (addArgsLength > 0) {
-          println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+addArgsLength+" more arguments than this one (which should never happen). \nFor now, we record this definition without definien. ")
+        val addArgsLength = argNum - origLength
+        if (addArgsLength < 0) {
+          println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments than this one (which should never happen). \nFor now, we record this definition without definien. ")
           makeConstant(ln / LocalName(kind), tp, None)(notC)
         } else {
           val df = Pi(LocalName(argsVarName), nTerms(argNum), ApplyGeneral(OMS(origGn), (addArgsLength until argNum).toList map (i => Index(OMV(argsVarName),  OMI(i)))))

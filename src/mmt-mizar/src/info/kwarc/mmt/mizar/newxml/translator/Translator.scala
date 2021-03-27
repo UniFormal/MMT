@@ -110,21 +110,22 @@ class MizarXMLImporter extends archives.Importer {
 
       val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
       val parsingTime = timeSince(startParsingTime)
-      printTimeDiff(parsingTime, "The parsing took ")
+      //printTimeDiff(parsingTime, "The parsing took ")
       globalParsingTime += parsingTime
 
+      articleData.currentTranslatingTimeBegin = System.nanoTime()
       val doc = translate(text_Proper, bf, processDependency(_, bf, index))
       articleData.currentTranslatingTime += timeSince(articleData.currentTranslatingTimeBegin)
-      printTimeDiff(articleData.currentTranslatingTime, "The translation took ")
+      //printTimeDiff(articleData.currentTranslatingTime, "The translation took ")
       globalTranslatingTime += articleData.currentTranslatingTime
 
       val startAddingTime = System.nanoTime()
       index(doc)
       val addingTime = timeSince(startAddingTime)
-      printTimeDiff(addingTime, "The adding took ")
+      //printTimeDiff(addingTime, "The adding took ")
       globalAddingTime += addingTime
       articleDependencyParents = articleDependencyParents.tail
-      globalTranslatedDeclsCount += articleData.articleStatistics.totalNumDefinitions
+      globalTranslatedDeclsCount += articleData.articleStatistics.grandTotal
       if (articleDependencyParents.length == 0) printGlobalStatistics()
       doc
     }

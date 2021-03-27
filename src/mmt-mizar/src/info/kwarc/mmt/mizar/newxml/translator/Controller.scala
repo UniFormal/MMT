@@ -107,10 +107,10 @@ object TranslationController extends frontend.Logger {
   def unaccountedTotalTime: Long = globalTotalTime - globalParsingTime - globalTranslatingTime - globalAddingTime
   def printGlobalStatistics(): Unit = {
     printTimeDiff (globalTotalTime, "Overall the entire import took ")
-    printTimeDiff (globalParsingTime, "The parsing took ")
+    /*printTimeDiff (globalParsingTime, "The parsing took ")
     printTimeDiff (globalTranslatingTime, "The translating took ")
     printTimeDiff (globalAddingTime, "The adding took ")
-    printTimeDiff (unaccountedTotalTime, "Switching between files to import and between dependencies took ")
+    printTimeDiff (unaccountedTotalTime, "Switching between files to import and between dependencies took ")*/
     println ("Overall we translated "+globalTranslatedDeclsCount+" declarations. ")
   }
   var globalTranslatedDeclsCount = 0
@@ -180,7 +180,7 @@ object TranslationController extends frontend.Logger {
 
     object articleStatistics {
       def totalNumDefinitions: Int = functorDefinitions + predicateDefinitions + attributeDefinitions + modeDefinitions + schemeDefinitions + structureDefinitions
-
+      def grandTotal: Int = totalNumDefinitions + totalNumTheorems + numRegistrs
       def totalNumTheorems: Int = theorems + anonymousTheorems
 
       def numRegistrs: Int = registrations
