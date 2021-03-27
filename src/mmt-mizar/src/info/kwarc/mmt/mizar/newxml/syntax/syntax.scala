@@ -219,28 +219,6 @@ case class RedefinablePatDef(redefPatAttr: RedefinablePatAttr, _loci:List[Locus]
 }
 
 /**
- * Common attributes for (local) reference to a term
- * @param serialnr
- * @param spelling
- * @param sort
- */
-case class LocalConstAttr(serialnr: Int, spelling:String, sort:String) extends Group {
-  def toIdentifier : LocalName = MizarVariableName(spelling, sort, serialnr)
-}
-/**
- * Common attributes for (local) variables
- * @param spelling
- * @param kind
- * @param serialnr
- */
-case class VarAttrs(serialnr: Int, varnr: Int, spelling:String, kind:String) extends Group {
-  /**
-   * compute the string value of corresponding omv
-   */
-  def toIdentifier: LocalName = MizarVariableName(spelling, kind, serialnr)
-}
-
-/**
  * A single case definien consisting of a single expression
  * The expression is optional, since in any instance a single case expression may be left out in favor of a case-by-case definition
  * @param _expr (optional) the expression

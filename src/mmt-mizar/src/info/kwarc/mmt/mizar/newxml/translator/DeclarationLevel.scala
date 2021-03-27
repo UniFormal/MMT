@@ -295,18 +295,20 @@ object subitemTranslator {
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { Nil }
   def translate_Identify(identify: Identify)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = { clusterTranslator.translate_Identify(identify) }
-  def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item)(implicit defContext: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
+  def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item)(implicit defCtx: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
     case sbi @ Scheme_Block_Item(_, _block) =>
       val gn = sbi.globalName
       val provenSentence = sbi.provenSentence
       val Scheme_Head(_sch, _vars, _form, _provForm) = sbi.scheme_head
-      val spelling = _sch.spelling match { case "" => "AnonymousScheme_"+articleData.incrementAndGetAnonymousSchemeCount().toString case str => str }
-      _vars._segms foreach (segm => translateBindingVariables(segm)(defContext))
-      val ass : List[Term] = _provForm.map(_._props map(translate_Claim(_)(defContext))) getOrElse Nil
-      implicit val notC = makeNotationCont(spelling, 0, defContext.args.length, true)
-      val (p, prf) = translate_Proved_Claim(provenSentence)(defContext)
-      articleData.articleStatistics.incrementStatisticsCounter("scheme")
-      List(SchemeDefinitionInstance(gn.name, defContext.args map (_.tp.get), ass, p, prf))
+      _vars._segms foreach (segm => translateBindingVariables(segm)(defCtx))
+      val ass : List[Term] = _provForm.map(_._props map(translate_Claim(_)(defCtx))) getOrElse Nil
+      implicit val kind = "scheme"
+      implicit val notC = makeNotationCont(_sch.name, 0, defCtx.args.length, true)
+      val (p, prf) = translate_Proved_Claim(provenSentence)(defCtx)
+      articleData.articleStatistics.incrementStatisticsCounter
+      val schemeDef = SchemeDefinitionInstance(gn.name, defCtx.args map (_.tp.get), ass, p, prf)
+      val localRef = sbi.notationBasedReference.map(refGn => List(makeReferencingConstant(refGn.name, gn)(kind, notC, defCtx))) getOrElse Nil
+      schemeDef::localRef
   }
 }
 
@@ -326,7 +328,7 @@ object statementTranslator {
   def translate_Statement(st:Statement with TopLevel)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = st match {
     case choice_Statement: Choice_Statement =>
       val (addArgs, (claim, proof)) = translate_Choice_Statement(choice_Statement)
-      val gn = makeNewGlobalName("Choice_Statement", articleData.incrementAndGetAnonymousTheoremCount())
+      val gn = makeNewGlobalName("Choice_Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
       implicit val defCtx = defContext.copy(args = defContext.args ++ addArgs, assumptions = defContext.assumptions :+ claim)
       val theoremDecl = makeConstantInContext(gn.name, Some(claim), Some(proof))(defContext = defCtx)
       theoremDecl
@@ -336,12 +338,12 @@ object statementTranslator {
   }
   def translate_Conclusion(conclusion: Conclusion) = { Nil }
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement)(implicit defContext: => DefinitionContext) : Declaration with HasType with HasDefiniens with HasNotation = {
-    val gn = makeNewGlobalName("Type_Changing_Statement", articleData.incrementAndGetAnonymousTheoremCount())
+    val gn = makeNewGlobalName("Type_Changing_Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
     val (claim, proof) = translate_Proved_Claim(type_Changing_Statement.prfClaim)(defContext)
     makeConstantInContext(gn.name, Some(claim), Some(proof))(defContext = defContext)
   }
   def translate_Theorem_Item(theorem_Item: Theorem_Item)(implicit defContext: DefinitionContext) = {
-    implicit val gn = theorem_Item.referencedLabel
+    implicit val gn = theorem_Item.referenceableLabel
     val (claim, proof) = translate_Proved_Claim(theorem_Item.prfClaim)
     articleData.articleStatistics.incrementStatisticsCounter("thm")
     makeConstantInContext(gn.name, Some(claim), Some(proof))
@@ -352,7 +354,7 @@ object statementTranslator {
     (vars, facts)
   }
   def translate_Regular_Statement(regular_Statement: Regular_Statement)(implicit defContext: DefinitionContext) = {
-    val gn = makeNewGlobalName("Regular-Statement", articleData.incrementAndGetAnonymousTheoremCount())
+    val gn = makeNewGlobalName("Regular-Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
     val (claim, proof) = translate_Proved_Claim(regular_Statement.prfClaim)
     val theoremDecl = makeConstantInContext(gn.name, Some(claim), Some(proof))
     theoremDecl
@@ -427,7 +429,7 @@ object definitionTranslator {
           }
       }
     }
-    firstRes :: (label map(_ => makeConstantInContext(redefinableLabeledDefinition.globalName.name, None, Some(OMS(gn)))) map(List(_)) getOrElse Nil)
+    firstRes :: (label map(_ => makeReferencingConstant(redefinableLabeledDefinition.globalName.name, gn)) map(List(_)) getOrElse Nil)
   }
   def translate_Structure_Definition(strDef: Structure_Definition)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
     val l = defContext.args.length
@@ -457,14 +459,14 @@ object definitionTranslator {
   }
   private def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: => DefinitionContext): List[Constant] = {
     constant_Definition._children map { eq =>
-      val name = LocalName(eq._var.varAttr.copy(kind = "Constant").toIdentifier)
+      val name = LocalName(eq._var.toIdentifier)
       val dfU = translate_Term(eq._tm)(defContext)
       val argsContext = defContext.getLocalBindingVars filter (dfU.freeVars contains _.name)
       val df = LambdaOrEmpty(defContext.args++argsContext, dfU ^ namedDefArgsSubstition()(defContext))
       if (defContext.withinProof) {
         defContext.addLocalDefinitionInContext(name, df)
       }
-      val notC = makeNotationCont(eq._var.varAttr.spelling, 0, 0)
+      val notC = makeNotationCont(eq._var.spelling, 0, 0)
       makeConstantInContext(name, None, Some(df))(notC, defContext)
     }
   }
@@ -509,7 +511,7 @@ object definitionTranslator {
    */
   def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_new_Variable(private_Functor_Definition._var)
-    val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.varAttr.serialnr)
+    val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.serialnr.toString)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Functor_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
     val tp = PiOrEmpty(args, any)
@@ -528,7 +530,7 @@ object definitionTranslator {
    */
   def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_new_Variable(private_Predicate_Definition._var)
-    val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.varAttr.serialnr)
+    val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.serialnr.toString)
     //placeholder terms are numbered starting at 1
     val args: Context = private_Predicate_Definition._tpList._tps.map(translate_Type(_)(defContext)).zipWithIndex map {case (tp, i) => OMV("placeholder_"+(i+1)) % tp}
     val tp = PiOrEmpty(args, prop)
@@ -562,7 +564,10 @@ object definitionTranslator {
         val origLength = origArgTps.length
         val addArgsLength = argNum - origLength
         if (addArgsLength < 0) {
-          println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments than this one (which should never happen). \nFor now, we record this definition without definien. ")
+          println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments ("+origLength+") than this one ("+argNum+"), which should never happen. \n"+
+            "The original arguments have types: "+origArgTps+"\n"+
+            "The current arguments have types: "+argTps+"\n"+
+            "For now, we record this definition without definien. ")
           makeConstant(ln / LocalName(kind), tp, None)(notC)
         } else {
           val df = Pi(LocalName(argsVarName), nTerms(argNum), ApplyGeneral(OMS(origGn), (addArgsLength until argNum).toList map (i => Index(OMV(argsVarName),  OMI(i)))))
@@ -589,7 +594,7 @@ object clusterTranslator {
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_attrs)
         val ats = attributeTranslator.translateAttributes(_at)
-        val name = makeNewGlobalName("condReg", articleData.articleStatistics.numRegistrs).name
+        val name = makeNewGlobalName("condReg", articleData.articleStatistics.numRegistrs.toString).name
         val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         val coherenceProof = translate_reg_correctness_condition(coherenceCond._just, "condRegistration", adjs.length, Some(tp), None, Some(adjs), Some(ats), None)
         add (ConditionalRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, ats, coherenceProof))
@@ -597,7 +602,7 @@ object clusterTranslator {
         val tp = translate_Type(_tp)
         val adjs = attributeTranslator.translateAttributes(_adjClust)
         //TODO:
-        val name = makeNewGlobalName("existReg", articleData.articleStatistics.numRegistrs).name
+        val name = makeNewGlobalName("existReg", articleData.articleStatistics.numRegistrs.toString).name
         val existenceCond = definitionContext.corr_conds.find(_._cond == syntax.existence()) getOrElse Correctness_Condition(existence(), None)
         val existenceProof = translate_reg_correctness_condition(existenceCond._just, "existRegistration", adjs.length, Some(tp), None, Some(adjs), None, None)
         add (ExistentialRegistration(name, definitionContext.args map(_.tp.get), tp, adjs, existenceProof))
@@ -606,7 +611,7 @@ object clusterTranslator {
         val adjs = attributeTranslator.translateAttributes(_adjCl)
         val isQualified = _tp.isDefined
         val tp = _tp map translate_Type getOrElse inferType(tm)
-        val name = makeNewGlobalName("funcReg", articleData.articleStatistics.numRegistrs).name
+        val name = makeNewGlobalName("funcReg", articleData.articleStatistics.numRegistrs.toString).name
         val coherenceCond = definitionContext.corr_conds.find(_._cond == syntax.coherence()) getOrElse Correctness_Condition(coherence(), None)
         def coherenceProof(kind: String) = translate_reg_correctness_condition(coherenceCond._just, kind+"FuncRegistration", adjs.length, Some(tp), Some(tm), Some(adjs), None, None)
         if (isQualified) {
@@ -623,7 +628,7 @@ object clusterTranslator {
         case Loci_Equality(_fstLoc, _sndLoc) => (translate_Locus(_fstLoc)(defContext), translate_Locus(_sndLoc)(defContext))
       }
       val num = articleData.incrementAndGetIdentifyCount()
-      val name = LocalName("identify"+num)
+      val name = makeNewGlobalName("identify", num.toString).name
       val (_, f, _, fparams) = translate_Referencing_Pattern(_firstPat)
       val (_, g, _, gparams) = translate_Referencing_Pattern(_sndPat)
       val (c, d) = (ApplyGeneral(f, fparams), ApplyGeneral(g, gparams))
@@ -638,7 +643,7 @@ object clusterTranslator {
     case syntax.Reduction(_predecessor, _successor) =>
 
       val num = articleData.incrementAndGetReduceCount()
-      val name = makeNewGlobalName("reduce", num).name
+      val name = makeNewGlobalName("reduce", num.toString).name
       val predecessor = translate_Term(_predecessor)
       val successor = translate_Term(_successor)
       val reducibility: Term = defContext.corr_conds.find(_._cond.kind == syntax.reducibility().kind).map({comp: Correctness_Condition =>

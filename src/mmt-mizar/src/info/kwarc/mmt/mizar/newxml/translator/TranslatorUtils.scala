@@ -37,7 +37,6 @@ object TranslatorUtils {
     val constrGN = makeGlobalName(constrAid, kind, constrNr)
     constrGN.copy(name = LocalName(patGN.name.toString + constrGN.name.toString))
   }
-  def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(currentAid, kind, nr)
 
   def computeGlobalName(pat: GloballyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
     case p: RedefinablePatterns => if (orgVersion) p.globalOrgPatConstrName else p.globalPatConstrName

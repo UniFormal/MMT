@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
 import info.kwarc.mmt.api.{GlobalName, LocalName}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.MizarVariableName
-import info.kwarc.mmt.mizar.newxml.translator.{TranslationController, TranslatorUtils}
+import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 /**
  * trait for any object level mizar content, e.g. expressions, claims, patterns and variables
@@ -127,10 +127,12 @@ sealed trait MizTerm extends Expression {
 /**
  * A constant term
  * usually local within some block (e.g. an argument to a definition)
- * @param varAttr
+ * @param serialnr the serialnr of the term
+ * @param spelling the spelling of the term (name in case of a variable)
+ * @param sort the sort of the term,
  */
-case class Simple_Term(varAttr:LocalConstAttr) extends MizTerm {
-  override def sort: String = varAttr.sort
+case class Simple_Term(serialnr: Int, spelling:String, sort:String) extends MizTerm {
+ def toIdentifier : LocalName = MizarVariableName(spelling, sort, serialnr)
 }
 
 /**
@@ -218,7 +220,7 @@ case class Infix_Term(objAttr:ReDefObjAttrs, infixedArgs: InfixedArgs) extends g
  */
 case class Global_Choice_Term(sort: String, _tp:Type) extends ComplexTerm
 /**
- * Reference to the objAttr.nr-th argument in a local definition
+ * reference to the objAttr.nr-th argument in a local definition
  * @param objAttr
  */
 case class Placeholder_Term(objAttr: RedObjAttr) extends ObjAttrsComplexTerm
@@ -411,8 +413,8 @@ case class RightSideOf_Relation_Formula(defAttrs: ReDefObjAttrs, antonymic:Optio
  * @param _label
  * @param _thesis
  */
-case class Proposition(_label:Label, _thesis:Claim) extends TypeUnchangingClaim with ProvenFactReference {
-  def referencedLabel = Utils.makeSimpleGlobalName(TranslationController.currentAid, _label.spelling)
+case class Proposition(_label:Label, _thesis:Claim) extends TypeUnchangingClaim {
+  def referenceableLabel = Utils.makeNewSimpleGlobalName(_label.spelling)
 }
 /**
 whatever still remains to be proven in a proof
@@ -489,8 +491,13 @@ case class Block(kind: String, _items:List[Item]) extends Justification
  * @param spelling
  * @param _refs
  */
-case class Scheme_Justification(nr: Int, idnr:Int, schnr:Int, spelling:String, _refs:List[ProvenFactReference]) extends Justification {
-  def referencedScheme = MMLId(spelling+":"+idnr).globalName("Scheme")
+case class Scheme_Justification(nr: Int, idnr:Int, schnr:Int, spelling:String, _refs:List[Reference]) extends Justification {
+  def referencedScheme = {
+    val localReference = makeNewGlobalName("Scheme", spelling)
+    val locallyReferenced = TranslationController.locallyDeclared(localReference)
+    val referencedAid = if (locallyReferenced) TranslationController.currentAid else spelling
+    MMLId(referencedAid+":"+idnr).globalName("Scheme")
+  }
 }
 
 /** Notations */
@@ -660,12 +667,9 @@ case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications {
 /**
  * common trait for various kinds of (local or global) references
  */
-sealed trait Reference
-/**
- * reference to a proven fact
- */
-trait ProvenFactReference extends Reference {
+sealed trait Reference extends ObjectLevel {
   def referencedLabel: GlobalName
+  def referencedItem = info.kwarc.mmt.api.objects.OMS(referencedLabel)
 }
 /**
  * a local reference to a proven fact from within the same proof
@@ -673,8 +677,24 @@ trait ProvenFactReference extends Reference {
  * @param idnr
  * @param labelnr
  */
-case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends ProvenFactReference with ObjectLevel {
-  def referencedLabel = TranslationController.currentTheoryPath ? LocalName(spelling)
+case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends Reference {
+  override def referencedLabel = TranslationController.currentTheoryPath ? LocalName(spelling)
+}
+/**
+ * I don't really understand the semantics of a link, but they don't seem to be important for translation
+ * @param labelnr
+ */
+case class Link(labelnr:Int) extends Reference {
+  override def referencedLabel: GlobalName = ???
+}
+/**
+ * A global (i.e. visible outside of the article in which it is declared) reference
+ */
+sealed trait GlobalReference extends Reference {
+  def number: Int
+  def kind: String
+  def spelling: String
+  override def referencedLabel: GlobalName = TranslationController.getTheoryPath(spelling) ? LocalName(kind+number)
 }
 /**
  * a global definition reference
@@ -682,24 +702,17 @@ case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends Prov
  * @param spelling
  * @param number
  */
-case class Definition_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference with ObjectLevel {
-  def referencedLabel = TranslationController.getTheoryPath(spelling) ? LocalName("Def"+number)
+case class Definition_Reference(nr: Int, spelling:String, number:Int) extends GlobalReference {
+  override def kind = "Def"
 }
-/**
- * I don't really understand the semantics of a link, so far they seem to not have any meaning at all
- * @param labelnr
- */
-case class Link(labelnr:Int) extends Reference with ObjectLevel
 /**
  * global reference to a theorem
  * @param nr
  * @param spelling
  * @param number
  */
-case class Theorem_Reference(nr: Int, spelling:String, number:Int) extends ProvenFactReference with ObjectLevel {
-  override def referencedLabel: GlobalName = {
-    TranslationController.getTheoryPath(spelling) ? LocalName("Theorem-Item"+number)
-  }
+case class Theorem_Reference(nr: Int, spelling:String, number:Int) extends GlobalReference {
+  override def kind = "Theorem-Item"
 }
 
 /**
@@ -756,9 +769,13 @@ case class Schematic_Variables(_segms:List[Segments]) extends ObjectLevel
 case class Variables(_vars:List[Variable]) extends ObjectLevel
 /**
  * a single (local) variable
- * @param varAttr
+ * @param serialnr the number by which the variable (combined with its spelling and kind) can be referenced
+ * @param spelling the name of the variable
+ * @param kind the kind of the variable
  */
-case class Variable(varAttr:VarAttrs) extends ObjectLevel
+case class Variable(serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
+  def toIdentifier: LocalName = MizarVariableName(spelling, kind, serialnr)
+}
 case class Substitutions(_childs:List[Substitution]) extends ObjectLevel
 case class Substitution(freevarnr:Int, kind:String, varnr:Int) extends ObjectLevel
 /**

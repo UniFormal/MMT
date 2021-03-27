@@ -9,7 +9,9 @@ object Utils {
   }
 
   def makeSimpleGlobalName(aid: String, name: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+name)
+  def makeNewSimpleGlobalName(name: String) = makeSimpleGlobalName(TranslationController.currentAid, name)
   def makeGlobalName(aid: String, kind: String, ln: String) = makeSimpleGlobalName(aid, kind+ln)
+  def makeNewGlobalName(kind: String, ln: String) = makeGlobalName(TranslationController.currentAid, kind, ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
   private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
   private def mapKind(kind: String): String = kind match {

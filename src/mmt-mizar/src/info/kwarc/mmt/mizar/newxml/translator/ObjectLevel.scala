@@ -29,8 +29,8 @@ object expressionTranslator {
 
 object termTranslator {
   def translate_Term(tm:syntax.MizTerm)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : Term = tm match {
-    case Simple_Term(locVarAttr) =>
-      val refTm = LocalName(locVarAttr.toIdentifier)
+    case st: Simple_Term =>
+      val refTm = LocalName(st.toIdentifier)
       lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
       if (currentTheory.domain.contains(refTm)) {
         OMS(currentTheoryPath ? refTm)
@@ -219,7 +219,7 @@ object contextTranslator {
    * @param variable
    * @return
    */
-  def translate_new_Variable(variable:Variable) : OMV = OMV(variable.varAttr.toIdentifier)
+  def translate_new_Variable(variable:Variable) : OMV = OMV(variable.toIdentifier)
   /**
    * translate a new variable within a binder,
    * i.e. adds the variable to the arguments in the definition context

@@ -74,11 +74,15 @@ object TranslationController extends frontend.Logger {
   }
   def showErrorInformation(e: Throwable, whileDoingWhat: String): String = {
     val errType = e.getClass.toString.split('.').last
-    val cause: String = e.getCause match {
-      case c if c == e => ""
-      case null => ""
-      case e => "\ncaused by: \n"+showErrorInformation(e, "")
+    val causeO = e match {
+      case er: Error => er.getCausedBy
+      case _ if e.getCause == null => None
+      case _ if e.getCause == e => None
+      case _ => Some(e.getCause)
     }
+    val cause: String = causeO map {
+      case e => "\ncaused by: \n"+showErrorInformation(e, "")
+    } getOrElse ""
     errType+whileDoingWhat+cause
   }
 
@@ -148,14 +152,6 @@ object TranslationController extends frontend.Logger {
 
     def getAnonymousTheoremCount() = anonymousTheoremCount
 
-    private var anonymousSchemeCount = 0
-
-    def incrementAndGetAnonymousSchemeCount() = {
-      anonymousSchemeCount += 1; anonymousSchemeCount
-    }
-
-    def getAnonymousSchemeCount() = anonymousSchemeCount
-
     private var identifyCount = 0
 
     def incrementAndGetIdentifyCount() = {
@@ -223,6 +219,8 @@ object TranslationController extends frontend.Logger {
     articleData = articleSpecificData
   }
   def currentTheory = articleData.currentThy
+  def locallyDeclared(ln: LocalName): Boolean = currentTheory.domain.contains(ln)
+  def locallyDeclared(gn: GlobalName): Boolean = currentTheory.domain.contains(gn.name)
   def currentAid = articleData.currentAid
 
   def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
@@ -289,18 +287,20 @@ object TranslationController extends frontend.Logger {
       try {
         addFront (inc)
         processDependencyTheory (dep)
-        structureSimplifier (inc)
       } catch {
         case e: GetError =>
           articleData.addUnresolvedDependency(dep)
           throw new TranslatingError("GetError while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
             "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
-        case er: Throwable =>
+        case er: Error =>
           articleData.addUnresolvedDependency(dep)
           val errClass = er.getClass.toString.split('.').last
           throw new TranslatingError(errClass+" while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
-          er.getMessage+
-          (er.getCause() match { case null => "" case th: Throwable => "\nCaused by "+th.getMessage}))
+            er.getMessage+
+            (er.getCause() match { case null => "" case th: Throwable => "\nCaused by "+th.getMessage}))
+        case er: Throwable =>
+          articleData.addUnresolvedDependency(dep)
+          throw new TranslatingError(showErrorInformation(er, " while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated"))
       }
     }
   }
@@ -365,6 +365,7 @@ object TranslationController extends frontend.Logger {
     }
   }
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
+  def makeReferencingConstant(n: LocalName, gn: GlobalName)(implicit kind: String, notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext) = makeConstantInContext(n, None, Some(OMS(gn / kind)))
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), role: Option[String] = None) : Constant = {
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None, notC)
   }

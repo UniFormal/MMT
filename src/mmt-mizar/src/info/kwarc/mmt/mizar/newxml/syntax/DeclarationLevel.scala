@@ -113,6 +113,7 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
       case _ => throw ImplementationError("Scheme head expected as first item in Scheme-Block-Item. ")
     }
   }
+  def notationBasedReference: Option[GlobalName] = if (scheme_head._sch.spelling.nonEmpty) Some(scheme_head._sch.globalName) else None
   /**
    * Statement and proof of the scheme
    * @return
@@ -215,10 +216,10 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement with TopOrD
  * @param _prop the claim
  * @param _just its justification
  */
-case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem with ProvenFactReference {
+case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  override def referencedLabel: GlobalName = if (labelled) _prop.referencedLabel else globalName
+  def referenceableLabel: GlobalName = if (labelled) _prop.referenceableLabel else globalName
 }
 /**
  * Statement that variables satisfying certain conditions exist
@@ -348,12 +349,13 @@ case class Conditional_Registration(_attrs:Adjective_Cluster, _at: Adjective_Clu
  */
 case class Property_Registration(_props:Properties, _block:Block) extends Registrations
 /**
- * A scheme, containing a nr allowing to reference it (however, it is redundant as the scheme-block-item already contains the same information)
+ * A scheme, containing a nr allowing to reference it by its name withing the same article
  * @param spelling the spelling of the scheme
  * @param nr the number to reference the scheme by
  */
 case class Scheme(spelling:String, nr:Int) extends DeclarationLevel {
-  def globalName(aid: String) = MMLId(aid+":"+nr).globalName("Scheme")
+  def name = if (spelling.nonEmpty) spelling else "AnonymousScheme_"+nr.toString
+  def globalName = makeNewGlobalName("Scheme", spelling)
 }
 /**
  * Argument list in the beginning of a definition-, notation- or registration-block
