@@ -19,6 +19,8 @@ abstract class MWSExporter extends Exporter {
   })
 
   def exportTheory(t: Theory, bf: BuildTask) {
+    try {controller.simplifier(t)} catch { case _ => /* am besten alles */ }
+
     rh(xml.header)
 
     rh(xml.openTag("mws:harvest", List(("xmlns:mws", xml.namespace("mws")), ("xmlns:m", xml.namespace("mathml")))) + "\n")
