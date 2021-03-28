@@ -22,6 +22,7 @@ import scala.collection._
 object TranslationController extends frontend.Logger {
   def logPrefix: String = "mizarxml-omdoc"
 
+  def logString(message: String) = { log (message) }
   var controller = {
     val c = new frontend.Controller
     c
@@ -100,13 +101,16 @@ object TranslationController extends frontend.Logger {
   var globalTranslatingTime: Long = 0
   var globalAddingTime: Long = 0
   def timeSince(beginning: Long): Long = System.nanoTime() - beginning
-  def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+  def showTimeDiff(nanoDiff: Long): String = {
     val diffTime = math.round(nanoDiff / 1e9d)
     val seconds = diffTime % 60
     val minutesAll = (diffTime - seconds) / 60
     val minutes = minutesAll % 60
     val hours = (minutesAll - minutes) / 60
-    println(prefix + (if (hours >0) hours.toString+" hours " else "")+minutes.toString + " minutes and " + seconds.toString + " seconds. ")
+    (if (hours >0) hours.toString+" hours " else "")+minutes.toString + " minutes and " + seconds.toString + " seconds. "
+  }
+  def printTimeDiff(nanoDiff: Long, prefix: String = "It took "): Unit = {
+    println(prefix + showTimeDiff(nanoDiff))
   }
   def globalTotalTime: Long = timeSince(beginningTime)
   def unaccountedTotalTime: Long = globalTotalTime - globalParsingTime - globalTranslatingTime - globalAddingTime
@@ -197,7 +201,13 @@ object TranslationController extends frontend.Logger {
 
       private def anonymousTheorems = anonymousTheoremCount
 
-      def makeArticleStatistics: String = "Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."+(if (numLegitimateTypingIssues > 0) "\nThere were "+numLegitimateTypingIssues+" legitimate typing issues found. " else "")
+      def makeArticleStatistics: String = {
+        ("Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."
+        +(if (numLegitimateTypingIssues > 0) "\nThere were "+numLegitimateTypingIssues+" legitimate typing issues found. " else "")
+        +(if (globalTranslatedArticlesCount % 10 == 0) "\nEstimated percentage translated: "+(100.0*globalTranslatedDeclsCount / 3500000.0).toString+"%. " else "")
+        +(if (globalTranslatedArticlesCount % 10 == 0 && globalTranslatedDeclsCount > 0) "\nEstimated time remaining for tranlation: "+showTimeDiff(globalTotalTime*3500000 / globalTranslatedDeclsCount-globalTotalTime)+"\n" else "")
+        )}
+
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
         case "funct" => functorDefinitions += 1

@@ -564,7 +564,7 @@ object definitionTranslator {
         val origLength = origArgTps.length
         val addArgsLength = argNum - origLength
         if (addArgsLength < 0) {
-          println ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments ("+origLength+") than this one ("+argNum+"), which should never happen. \n"+
+          TranslationController.logString ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments ("+origLength+") than this one ("+argNum+"), which should never happen. \n"+
             "The original arguments have types: "+origArgTps+"\n"+
             "The current arguments have types: "+argTps+"\n"+
             "For now, we record this definition without definien. ")
