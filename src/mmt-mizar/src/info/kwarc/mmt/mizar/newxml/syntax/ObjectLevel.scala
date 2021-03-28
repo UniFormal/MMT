@@ -961,7 +961,7 @@ case class Partial_Definiens(_expr:Expression, _form:Formula) extends ObjectLeve
  * the default case in a partial definien
  * @param _expr
  */
-case class Otherwise(_expr:Option[Expression]) extends ObjectLevel
+case class Otherwise(_expr:Expression) extends ObjectLevel
 
 /**
  * a (functor or predicate) segment within a scheme definition

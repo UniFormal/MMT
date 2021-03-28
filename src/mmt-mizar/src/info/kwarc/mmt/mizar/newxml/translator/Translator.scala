@@ -30,7 +30,7 @@ object articleTranslator {
           articleData.addUnresolvedDependency(mpath)
         case e: Throwable =>
           if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+". "))//+it.toString))
-          if (printTrace) e.printStackTrace()
+          if (printTrace && (e.isInstanceOf[GeneralError] || e.isInstanceOf[LookupError])) e.printStackTrace()
           errCounter += 1
       }
     }
@@ -150,7 +150,7 @@ class MizarXMLImporter extends archives.Importer {
     endMake()
 
     val unres = articleData.getUnresolvedDependencies
-    if (unres.nonEmpty) {println ("Unresolved dependencies so far: "+unres.map(_.name))}
+    if (unres.nonEmpty && articleDependencyParents.length == 0) {println ("Unresolved dependencies so far: "+unres.map(_.name))}
     val deps = articleData.getDependencies
     if (deps.nonEmpty) {log ("Resolved dependencies: "+deps.map(_.name))}
 

@@ -167,7 +167,7 @@ object definiensTranslator {
   def translate_Cased_Expression(partDef:PartialDef, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
     assert(partDef._partDefs.isDefined)
     partDef.check()
-    val defRes = partDef._otherwise.get._expr map translate_Expression
+    val defRes = translate_Expression (partDef._otherwise.get._expr)
     var isIndirect = false
     val complCases = partDef._partDefs.get._partDef map {
       case Partial_Definiens(_expr, _form) =>
@@ -179,9 +179,9 @@ object definiensTranslator {
     val (cases, indCaseRes) = complCases unzip
     val caseRes = indCaseRes map(Lam("it", if (isModeDef) Arrow(any, prop) else any, _))
     val res : CaseByCaseDefinien = if (isIndirect) {
-      IndirectCaseByCaseDefinien(cases, caseRes, Lam("it", any, defRes.get))
+      IndirectCaseByCaseDefinien(cases, caseRes, Lam("it", any, defRes))
     } else {
-      DirectCaseByCaseDefinien(cases, caseRes, defRes.get)
+      DirectCaseByCaseDefinien(cases, caseRes, defRes)
     }
     res
   }
@@ -307,7 +307,7 @@ object subitemTranslator {
       val (p, prf) = translate_Proved_Claim(provenSentence)(defCtx)
       articleData.articleStatistics.incrementStatisticsCounter
       val schemeDef = SchemeDefinitionInstance(gn.name, defCtx.args map (_.tp.get), ass, p, prf)
-      val localRef = sbi.notationBasedReference.map(refGn => List(makeReferencingConstant(refGn.name, gn)(kind, notC, defCtx))) getOrElse Nil
+      val localRef = sbi.notationBasedReference.map(refGn => List(makeReferencingConstant(refGn.name, gn))) getOrElse Nil
       schemeDef::localRef
   }
 }

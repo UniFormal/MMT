@@ -11,10 +11,10 @@ import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import info.kwarc.mmt.api.checking.CheckingEnvironment
 import info.kwarc.mmt.api.frontend.Report
-import info.kwarc.mmt.lf.{ApplyGeneral, FunType}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{LambdaOrEmpty, PiOrEmpty, lambdaBindArgs, piBindArgs}
-import mmtwrapper.MizarPrimitiveConcepts._
-import mmtwrapper.{MizarPatternInstance, PatternUtils}
+import info.kwarc.mmt.lf._
+import mmtwrapper._
+import PatternUtils._
+import MizarPrimitiveConcepts._
 
 import java.io.PrintStream
 import scala.collection._
@@ -325,8 +325,11 @@ object TranslationController extends frontend.Logger {
     val hasNotation = e.notC.isDefined
     try {
       addDependencies(e)
-      if (! articleData.currentThy.domain.contains(e.name))
+      if (! locallyDeclared(e.name)) {
         controller.add(e)
+      } else {
+        println ("Trying to add a declaration twice. ")
+      }
       articleData.incrementNotationCounter (hasNotation)
     } catch {
       case e: AddError =>
@@ -337,7 +340,7 @@ object TranslationController extends frontend.Logger {
     }
     try {
       if (e.feature == "instance") {
-        controller.simplifier(e)
+        structureSimplifier(e)
         val externalDecls = currentTheory.domain.filter(_.init == e.name)
         if (externalDecls.isEmpty) {
           throw new TranslatingError("No external declarations for the instance "+e.path+" even after calling the simplifier on it. \n"
@@ -358,6 +361,10 @@ object TranslationController extends frontend.Logger {
     } catch {
       case _: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
+      case er: MatchError if er.toString == "scala.MatchError: (http://cds.omdoc.org/urtheories?LambdaPi?arrow latin:/?Terms?term) (of class info.kwarc.mmt.api.objects.OMA)" =>
+        //we called one of the pattern without any arguments and the typechecker gets confused about the type of the main declaration
+        // being term^0 -> ...
+        //this is the legitimate translation and shouldn't be considered an error
       case er: Throwable =>
         println("Error while typechecking: "+e.toString)
         try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => }
@@ -365,7 +372,8 @@ object TranslationController extends frontend.Logger {
     }
   }
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
-  def makeReferencingConstant(n: LocalName, gn: GlobalName)(implicit kind: String, notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext) = makeConstantInContext(n, None, Some(OMS(gn / kind)))
+  def makeReferencingConstant(n: LocalName, gn: GlobalName)(implicit kind: String, notC:NotationContainer = NotationContainer.empty()) = makeConstant(n, None,
+    Some(OMS(gn / kind)))
   def makeConstant(n: LocalName, tO: Option[Term], dO: Option[Term])(implicit notC:NotationContainer = NotationContainer.empty(), role: Option[String] = None) : Constant = {
     Constant(OMMOD(currentTheoryPath), n, Nil, tO, dO, None, notC)
   }
@@ -387,7 +395,7 @@ object TranslationController extends frontend.Logger {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args++defContext.getLocalBindingVars+"\n"+e.shortMsg)
+        println("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
       case e : Throwable => throw e
     }

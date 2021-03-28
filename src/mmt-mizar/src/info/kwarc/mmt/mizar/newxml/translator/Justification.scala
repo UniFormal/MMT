@@ -63,7 +63,7 @@ object JustificationTranslator {
         case st: Statement =>
           val usedInJust = (st.prfClaim._claim, st.prfClaim._just) match {
             case (it:Iterative_Equality, None) => it._iterSteps.map(_._just) flatMap(usedInJustification(_)(defContext))
-            case (_: Claim, Some(j: Justification)) => usedInJustification(j)(defContext)
+            case (_: Claim, jO) => usedInJustification(jO.get)(defContext)
           }
           (if (proofSteps) {
             List(st match {

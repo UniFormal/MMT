@@ -24,6 +24,12 @@ object MizarStructure {
       val tp = PiOrEmpty(params, forall(OMV("s"), ancestorTp, is(OMV("s"), ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm)))))
       Constant(OMMOD(parentTerm.module), structureAncestorSubtypingPath(ancestorTpName).name, Nil,
         Some(tp), None, None)
+    case ancestorTp@OMS(ancestorTpPath) =>
+      val ancestorTpName = ancestorTpPath.module.name / ancestorTpPath.name.head.toString
+      val tp = PiOrEmpty(params, forall(OMV("s"), ancestorTp, is(OMV("s"), ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm)))))
+      Constant(OMMOD(parentTerm.module), structureAncestorSubtypingPath(ancestorTpName).name, Nil,
+        Some(tp), None, None)
+    case _ => throw ImplementationError("This can never happen since all term and types are build using lf.apply and omses. ")
   }
   def elaborateAsMizarStructure(args: Context, fields: Context, ancestorTps: List[Term], controller: Controller, notCons: List[NotationContainer], slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
