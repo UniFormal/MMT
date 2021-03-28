@@ -126,6 +126,7 @@ class MizarXMLImporter extends archives.Importer {
       globalAddingTime += addingTime
       articleDependencyParents = articleDependencyParents.tail
       globalTranslatedDeclsCount += articleData.articleStatistics.grandTotal
+      globalTranslatedArticlesCount += 1
       if (articleDependencyParents.length == 0) printGlobalStatistics()
       doc
     }

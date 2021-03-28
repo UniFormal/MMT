@@ -14,7 +14,7 @@ object Utils {
   def makeNewGlobalName(kind: String, ln: String) = makeGlobalName(TranslationController.currentAid, kind, ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
   private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
-  private def mapKind(kind: String): String = kind match {
+  def mapKind(kind: String): String = kind match {
     case "BoundVar" => "BV"
     case "Bound" => "B"
     case "Constant" => "C"

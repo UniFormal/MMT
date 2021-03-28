@@ -17,7 +17,7 @@ import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
 import TranslationController._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.makeSimpleGlobalName
+import info.kwarc.mmt.mizar.newxml.syntax.Utils.{makeSimpleGlobalName, mapKind}
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
@@ -70,7 +70,7 @@ object termTranslator {
     case Private_Functor_Term(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Term"), idnr))
       val name = makeSimpleGlobalName(currentAid, ln.toString).name
-      val f = if (currentTheory.domain.contains(name)) {
+      val f = if (ln.steps.tail.head.toString == mapKind("Private-Functor")) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ namedDefArgsSubstition()
@@ -166,7 +166,7 @@ object formulaTranslator {
     case Private_Predicate_Formula(redObjAttr, idnr, _args) =>
       val ln = LocalName(Utils.MizarVariableName(redObjAttr.spelling, redObjAttr.sort.stripSuffix("-Formula"), idnr))
       val name = makeSimpleGlobalName(currentAid, ln.toString).name
-      val p = if (currentTheory.domain.contains(name)) {
+      val p = if (ln.steps.tail.head.toString == mapKind("Private-Predicate")) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)

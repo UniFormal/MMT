@@ -16,7 +16,7 @@ import mmtwrapper._
 import PatternUtils._
 import MizarPrimitiveConcepts._
 
-import java.io.PrintStream
+import java.io.{EOFException, PrintStream}
 import scala.collection._
 
 object TranslationController extends frontend.Logger {
@@ -40,6 +40,7 @@ object TranslationController extends frontend.Logger {
    * whether to typecheck translated content
    */
   private var typecheckContent: Boolean = true
+  private val recurseOnlyWhenNeeded = true
   /**
    * whether to typecheck constants or just to check the entire theory at the end
    */
@@ -83,7 +84,7 @@ object TranslationController extends frontend.Logger {
     val cause: String = causeO map {
       case e => "\ncaused by: \n"+showErrorInformation(e, "")
     } getOrElse ""
-    errType+whileDoingWhat+cause
+    ("Error of type "+errType+whileDoingWhat+":\n"+e.getMessage+cause)
   }
 
   private def typeCheckingErrHandler: ErrorHandler = new FilteringErrorHandler(new ErrorContainer(Some(this.translatorReport)), errFilter(_))
@@ -110,14 +111,15 @@ object TranslationController extends frontend.Logger {
   def globalTotalTime: Long = timeSince(beginningTime)
   def unaccountedTotalTime: Long = globalTotalTime - globalParsingTime - globalTranslatingTime - globalAddingTime
   def printGlobalStatistics(): Unit = {
-    printTimeDiff (globalTotalTime, "Overall the entire import took ")
     /*printTimeDiff (globalParsingTime, "The parsing took ")
     printTimeDiff (globalTranslatingTime, "The translating took ")
     printTimeDiff (globalAddingTime, "The adding took ")
     printTimeDiff (unaccountedTotalTime, "Switching between files to import and between dependencies took ")*/
-    println ("Overall we translated "+globalTranslatedDeclsCount+" declarations. ")
+    printTimeDiff (globalTotalTime, "Overall the entire import took ")
+    println ("Overall we translated "+globalTranslatedDeclsCount+" declarations from "+globalTranslatedArticlesCount+" articles so far.")
   }
   var globalTranslatedDeclsCount = 0
+  var globalTranslatedArticlesCount = 0
   class ArticleSpecificData {
     //set during translation
     var currentAid: String = null
@@ -175,6 +177,8 @@ object TranslationController extends frontend.Logger {
     def resetDependencies: Unit = {resolvedDependencies = immutable.Set(currentTheoryPath, TranslatorUtils.hiddenArt)}
 
     object articleStatistics {
+      private var numLegitimateTypingIssues = 0
+      def incrementNumLegitimateTypingIssues = { numLegitimateTypingIssues += 1 }
       def totalNumDefinitions: Int = functorDefinitions + predicateDefinitions + attributeDefinitions + modeDefinitions + schemeDefinitions + structureDefinitions
       def grandTotal: Int = totalNumDefinitions + totalNumTheorems + numRegistrs
       def totalNumTheorems: Int = theorems + anonymousTheorems
@@ -193,7 +197,7 @@ object TranslationController extends frontend.Logger {
 
       private def anonymousTheorems = anonymousTheoremCount
 
-      def makeArticleStatistics: String = "Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."
+      def makeArticleStatistics: String = "Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."+(if (numLegitimateTypingIssues > 0) "\nThere were "+numLegitimateTypingIssues+" legitimate typing issues found. " else "")
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
         case "funct" => functorDefinitions += 1
@@ -240,7 +244,7 @@ object TranslationController extends frontend.Logger {
   def makeTheory() = {
     articleData.currentThy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
     Set(currentTheoryPath, TranslatorUtils.hiddenArt) foreach addBuildDependency
-    controller.add(articleData.currentThy)
+    controller.add(currentTheory)
   }
   def getDependencies(decl: Declaration with HasType with HasDefiniens) = {
     def isDependency(p: String) =
@@ -286,7 +290,7 @@ object TranslationController extends frontend.Logger {
     includes zip deps foreach {case (inc, dep) =>
       try {
         addFront (inc)
-        processDependencyTheory (dep)
+        if (! recurseOnlyWhenNeeded) processDependencyTheory (dep)
       } catch {
         case e: GetError =>
           articleData.addUnresolvedDependency(dep)
@@ -328,7 +332,7 @@ object TranslationController extends frontend.Logger {
       if (! locallyDeclared(e.name)) {
         controller.add(e)
       } else {
-        println ("Trying to add a declaration twice. ")
+        log ("Trying to add a declaration twice. ")
       }
       articleData.incrementNotationCounter (hasNotation)
     } catch {
@@ -361,14 +365,20 @@ object TranslationController extends frontend.Logger {
     } catch {
       case _: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
-      case er: MatchError if er.toString == "scala.MatchError: (http://cds.omdoc.org/urtheories?LambdaPi?arrow latin:/?Terms?term) (of class info.kwarc.mmt.api.objects.OMA)" =>
-        //we called one of the pattern without any arguments and the typechecker gets confused about the type of the main declaration
-        // being term^0 -> ...
-        //this is the legitimate translation and shouldn't be considered an error
+      case er: MatchError if er.toString contains "scala.MatchError: (http://cds.omdoc.org/urtheories?LambdaPi?arrow " =>
+        //we called one of the pattern without any arguments and the typechecker gets confused about the type of the main declaration, which is
+        // term^0 -> ...
+        //however this is the legitimate translation and shouldn't be considered an error
+      case eofe: EOFException =>
+        val mes = showErrorInformation(eofe, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
+        println (eofe)
+      case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
+        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
+        println (er)
       case er: Throwable =>
-        println("Error while typechecking: "+e.toString)
-        try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => }
-        throw er
+        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
+        articleData.articleStatistics.incrementNumLegitimateTypingIssues
+        println (mes)
     }
   }
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)

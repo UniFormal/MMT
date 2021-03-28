@@ -31,9 +31,9 @@ object JustificationTranslator {
   def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): objects.Term = just match {
     case sj: Scheme_Justification if (proofSteps) => translate_Scheme_Justification(sj)
     case _: Justification =>
-      defContext.enterProof
+      if (proofSteps) defContext.enterProof
       val usedFacts: List[Term] = usedInJustification(just)
-      defContext.exitProof
+      if (proofSteps) defContext.exitProof
       lambdaBindDefCtxArgs(uses(claim, usedFacts))
   }
   def globalReferences(refs: List[Reference]): List[Term] = refs.filter(_.isInstanceOf[Theorem_Reference]).map(_.referencedItem)
@@ -58,7 +58,7 @@ object JustificationTranslator {
   def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
     case Straightforward_Justification(_refs) => globalReferences(_refs)
     case Block(_, _items) =>
-      defContext.enterProof
+      if (proofSteps) defContext.enterProof
       def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
         case st: Statement =>
           val usedInJust = (st.prfClaim._claim, st.prfClaim._just) match {
@@ -95,7 +95,7 @@ object JustificationTranslator {
         case _ => Nil
       }
       val subitems = translateSubitems(_items map (_._subitem))
-      defContext.exitProof
+      if (proofSteps) defContext.exitProof
       subitems
     case sj: Scheme_Justification => if (proofSteps) List(translate_Scheme_Justification(sj)) else OMS(sj.referencedScheme)::globalReferences(sj._refs)
   }
