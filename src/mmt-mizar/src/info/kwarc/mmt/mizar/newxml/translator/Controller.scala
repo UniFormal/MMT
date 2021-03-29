@@ -7,7 +7,6 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.mizar.newxml._
 import info.kwarc.mmt.api.checking.CheckingEnvironment
 import info.kwarc.mmt.api.frontend.Report
@@ -15,6 +14,7 @@ import info.kwarc.mmt.lf._
 import mmtwrapper._
 import PatternUtils._
 import MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.printTimeDiff
 
 import java.io.{EOFException, PrintStream}
 import scala.collection._
@@ -34,8 +34,9 @@ object TranslationController extends frontend.Logger {
   override def report: Report = this.translatorReport
   private def structChecker = controller.extman.get(classOf[checking.Checker], "mmt").get
   private def structureSimplifier = controller.simplifier
-  var buildDependencies: immutable.Set[MPath] = immutable.Set()
-  def addBuildDependency(mpath: MPath): Unit = { buildDependencies += mpath }
+  private var buildArticles: immutable.Set[MPath] = immutable.Set()
+  def addBuildArticles(mpath: MPath): Unit = { buildArticles += mpath }
+  def getBuildArticles = buildArticles
 
   /**
    * whether to typecheck translated content
@@ -55,7 +56,7 @@ object TranslationController extends frontend.Logger {
   def processDependencyTheory(mpath: MPath) = {
     lazy val aid = mpath.name.toString.toLowerCase
     if (mpath.doc.^! == outputBase) {
-      if (! TranslationController.isBuild(aid)) processDependency (aid)
+      if (! (TranslationController.isBuild(aid) || mpath == currentTheoryPath)) processDependency (aid)
     }
   }
   private def errFilter(err: Error): Boolean = {
@@ -98,8 +99,7 @@ object TranslationController extends frontend.Logger {
 
   val beginningTime: Long = System.nanoTime()
   var globalParsingTime: Long = 0
-  var globalTranslatingTime: Long = 0
-  var globalAddingTime: Long = 0
+  private var globalTranslatingTime: Long = 0
   def timeSince(beginning: Long): Long = System.nanoTime() - beginning
   def showTimeDiff(nanoDiff: Long): String = {
     val diffTime = math.round(nanoDiff / 1e9d)
@@ -113,24 +113,28 @@ object TranslationController extends frontend.Logger {
     println(prefix + showTimeDiff(nanoDiff))
   }
   def globalTotalTime: Long = timeSince(beginningTime)
-  def unaccountedTotalTime: Long = globalTotalTime - globalParsingTime - globalTranslatingTime - globalAddingTime
-  def printGlobalStatistics(): Unit = {
-    /*printTimeDiff (globalParsingTime, "The parsing took ")
-    printTimeDiff (globalTranslatingTime, "The translating took ")
-    printTimeDiff (globalAddingTime, "The adding took ")
-    printTimeDiff (unaccountedTotalTime, "Switching between files to import and between dependencies took ")*/
-    printTimeDiff (globalTotalTime, "Overall the entire import took ")
-    println ("Overall we translated "+globalTranslatedDeclsCount+" declarations from "+globalTranslatedArticlesCount+" articles so far.")
-  }
+  def unaccountedTotalTime: Long = globalTotalTime - (globalParsingTime + globalTranslatingTime)
   var globalTranslatedDeclsCount = 0
-  var globalTranslatedArticlesCount = 0
+  // the -1 is because of hiddenArt being included here
+  def globalTranslatedArticlesCount = buildArticles.size
   class ArticleSpecificData {
     //set during translation
     var currentAid: String = null
     var currentDoc: Document = null
     var currentThy: Theory = null
-    var currentTranslatingTime: Long = 0
-    var currentTranslatingTimeBegin = System.nanoTime()
+    private var currentTranslatingTime: Long = 0
+    def getCurrentTranslatingTime = currentTranslatingTime
+    private var currentTranslatingTimeBegin = System.nanoTime()
+    def resetCurrenTranslatingTimeBegin = { currentTranslatingTimeBegin = System.nanoTime() }
+    def addCurrenTranslatingTime = {
+      currentTranslatingTime += timeSince(currentTranslatingTimeBegin)
+      resetCurrenTranslatingTimeBegin
+    }
+    def addCurrentToGlobalTranslatingTime = {
+      globalTranslatingTime += articleData.getCurrentTranslatingTime
+      articleData.resetCurrenTranslatingTimeBegin
+      currentTranslatingTime = 0
+    }
 
     private var unresolvedDependencies: List[MPath] = Nil
 
@@ -181,6 +185,7 @@ object TranslationController extends frontend.Logger {
     def resetDependencies: Unit = {resolvedDependencies = immutable.Set(currentTheoryPath, TranslatorUtils.hiddenArt)}
 
     object articleStatistics {
+      private val showProgress = true
       private var numLegitimateTypingIssues = 0
       def incrementNumLegitimateTypingIssues = { numLegitimateTypingIssues += 1 }
       def totalNumDefinitions: Int = functorDefinitions + predicateDefinitions + attributeDefinitions + modeDefinitions + schemeDefinitions + structureDefinitions
@@ -201,13 +206,26 @@ object TranslationController extends frontend.Logger {
 
       private def anonymousTheorems = anonymousTheoremCount
 
+      private def showTime(timeDiff: Long, whatFor: String) = whatFor+showTimeDiff (timeDiff)+"\n"
+      private def makeFinalStatistics: String = {
+        (showTime (globalParsingTime, "The parsing overall took ")
+        +showTime (globalTranslatingTime, "The translating overall took ")
+        +showTime (unaccountedTotalTime, "Time spend on anything other than parsing and translating "))
+      }
       def makeArticleStatistics: String = {
-        ("Overall we translated " + totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements from this article."
+        val numTotalDecls: Long = 22100000
+        val numTotalArticles = 1391
+        def ratioTranslated = globalTranslatedDeclsCount / numTotalDecls.toDouble
+        ("From this article, we translated " + grandTotal + " declarations, namely "+ totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements.\n"
+        +showTime (globalTotalTime, "Overall the entire import took ")
+        +"Overall we translated "+globalTranslatedDeclsCount+" declarations from "+globalTranslatedArticlesCount+" articles so far."
         +(if (numLegitimateTypingIssues > 0) "\nThere were "+numLegitimateTypingIssues+" legitimate typing issues found. " else "")
-        +(if (globalTranslatedArticlesCount % 10 == 0) "\nEstimated percentage translated: "+(100.0*globalTranslatedDeclsCount / 3500000.0).toString+"%. " else "")
-        +(if (globalTranslatedArticlesCount % 10 == 0 && globalTranslatedDeclsCount > 0) "\nEstimated time remaining for tranlation: "+showTimeDiff(globalTotalTime*3500000 / globalTranslatedDeclsCount-globalTotalTime)+"\n" else "")
-        )}
-
+        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress) "\nEstimated percentage translated: "+(100.0*ratioTranslated).toString+"%. " else "")
+        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress && globalTranslatedDeclsCount > 0) "\nEstimated time remaining for the import: "+showTimeDiff(globalTotalTime*(1/ratioTranslated - 1).round) else "")
+        +(if (globalTranslatedArticlesCount % 10 ==  0) "\n"+makeFinalStatistics else "")
+        +(if (globalTranslatedArticlesCount == numTotalArticles ) "\n\n"+makeFinalStatistics else "")
+        )
+      }
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
         case "funct" => functorDefinitions += 1
@@ -224,17 +242,15 @@ object TranslationController extends frontend.Logger {
     }
   }
   private[newxml] var articleData = new ArticleSpecificData
-  def getArticleData = articleData
-  def resetArticleData: Unit = {
-    articleData = new ArticleSpecificData
-    articleData.currentTranslatingTimeBegin = System.nanoTime()
-  }
+  def getArticleData = { articleData.addCurrenTranslatingTime; articleData }
+  def resetArticleData: Unit = { articleData = new ArticleSpecificData }
   def setArticleData(articleSpecificData: ArticleSpecificData): Unit = {
     articleData = articleSpecificData
+    articleData.resetCurrenTranslatingTimeBegin
   }
   def currentTheory = articleData.currentThy
-  def locallyDeclared(ln: LocalName): Boolean = currentTheory.domain.contains(ln)
-  def locallyDeclared(gn: GlobalName): Boolean = currentTheory.domain.contains(gn.name)
+  def locallyDeclared(ln: LocalName): Boolean = currentTheory.declares(ln)
+  def locallyDeclared(gn: GlobalName): Boolean = locallyDeclared(gn.name)
   def currentAid = articleData.currentAid
 
   def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
@@ -253,45 +269,38 @@ object TranslationController extends frontend.Logger {
   }
   def makeTheory() = {
     articleData.currentThy = new Theory(currentThyBase, localPath, currentBaseThy, Theory.noParams, Theory.noBase)
-    Set(currentTheoryPath, TranslatorUtils.hiddenArt) foreach addBuildDependency
     controller.add(currentTheory)
   }
   def getDependencies(decl: Declaration with HasType with HasDefiniens) = {
-    def isDependency(p: String) =
+    def isPotentialDependency(p: String) =
       p contains outputBase.toString
     def getDependencies(tm: Term): immutable.Set[MPath] = tm match {
-      case OMS(p) => if (isDependency(p.toString)) immutable.Set(p.module) else immutable.Set()
+      case OMS(p) => if (isPotentialDependency(p.toString)) immutable.Set(p.module) else immutable.Set()
       case OMBINDC(binder, context, scopes) => (binder::context.flatMap(_.tp):::scopes).toSet flatMap getDependencies
       case OMA(fun, args) => (fun::args).toSet flatMap getDependencies
       case OML(_, tp, df, _, _) => immutable.Set(tp, df).flatMap(_ map getDependencies getOrElse immutable.Set())
       case _ => immutable.Set()
     }
-    if (isDependency(decl.toString())) {
-      val preDependencies = (decl match {
-        case MizarPatternInstance(_, _, args) =>
-          args flatMap getDependencies
-        case c: Constant => List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)).flatMap(getDependencies)
-        case _ => Nil
-      })
-      val dependencies = preDependencies.filterNot (articleData.getDependencies contains _).toSet
-      articleData.addDependencies(dependencies)
-      dependencies
-    } else Nil
+    val preDependencies = (decl match {
+      case MizarPatternInstance(_, _, args) =>
+        args flatMap getDependencies
+      case c: Constant => List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)).flatMap(getDependencies)
+      case _ => Nil
+    })
+    val dependencies = preDependencies.filterNot (articleData.getDependencies contains _).toSet
+    articleData.addDependencies(dependencies)
+    dependencies
   }
   def isBuild(aid: String) = {
-    val theoryPath = getTheoryPath(aid)
-    if (buildDependencies.contains(theoryPath)) true else {
-      val res = controller.getO(theoryPath) match {
-        case Some(t: Theory) =>
-          ((controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_))) match {case Some(_:Document) => true case _ => false}) && t.domain.exists {n=>
-            if (List("funct", "pred", "attribute", "mode").contains(n.steps.last.toString)) {
-              t.domain.contains(n.init)
-            } else false
-          }
-        case _ => false
-      }
-      if (res) addBuildDependency(theoryPath)
-      res
+    val mpath = getTheoryPath(aid)
+    if (getBuildArticles.contains(mpath)) true else controller.getO(mpath) match {
+      case Some(t: Theory) =>
+        ((controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_))) match {case Some(_:Document) => true case _ => false}) && t.domain.exists {n=>
+          if (List("funct", "pred", "attribute", "mode").contains(n.steps.last.toString)) {
+            t.domain.contains(n.init)
+          } else false
+        }
+      case _ => false
     }
   }
   def addDependencies(decl: Declaration with HasType with HasDefiniens): Unit = {
@@ -302,19 +311,14 @@ object TranslationController extends frontend.Logger {
         addFront (inc)
         if (! recurseOnlyWhenNeeded) processDependencyTheory (dep)
       } catch {
-        case e: GetError =>
+        case er: GetError =>
           articleData.addUnresolvedDependency(dep)
-          throw new TranslatingError("GetError while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
-            "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
-        case er: Error =>
-          articleData.addUnresolvedDependency(dep)
-          val errClass = er.getClass.toString.split('.').last
-          throw new TranslatingError(errClass+" while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: \n"+
-            er.getMessage+
-            (er.getCause() match { case null => "" case th: Throwable => "\nCaused by "+th.getMessage}))
+          val mes = showErrorInformation(er, " while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: ")
+          throw new TranslatingError(mes)
         case er: Throwable =>
           articleData.addUnresolvedDependency(dep)
-          throw new TranslatingError(showErrorInformation(er, " while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated"))
+          val mes = showErrorInformation(er, " while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated:")
+          throw new TranslatingError(mes)
       }
     }
   }
@@ -339,6 +343,9 @@ object TranslationController extends frontend.Logger {
     val hasNotation = e.notC.isDefined
     try {
       addDependencies(e)
+      //should be (and probably is unnecessary)
+      if (currentAid != currentTheory.name.toString)
+        articleData.currentAid = TranslationController.currentTheory.name.toString.toLowerCase
       if (! locallyDeclared(e.name)) {
         controller.add(e)
       } else {
@@ -346,8 +353,9 @@ object TranslationController extends frontend.Logger {
       }
       articleData.incrementNotationCounter (hasNotation)
     } catch {
-      case e: AddError =>
-        throw e
+      case er: AddError =>
+        val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
+        throw new TranslatingError(mes)
       case er: Throwable =>
         val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
         throw new TranslatingError(mes)
@@ -380,13 +388,16 @@ object TranslationController extends frontend.Logger {
         // term^0 -> ...
         //however this is the legitimate translation and shouldn't be considered an error
       case eofe: EOFException =>
-        val mes = showErrorInformation(eofe, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
+        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
         println (eofe)
       case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
-        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
-        println (er)
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        println (mes)
+      case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("external declaration")) =>
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        println (mes)
       case er: Throwable =>
-        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => ""}))
+        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
         articleData.articleStatistics.incrementNumLegitimateTypingIssues
         println (mes)
     }
@@ -404,12 +415,6 @@ object TranslationController extends frontend.Logger {
   def makeConstantInContext(n: LocalName, tO: Option[Term], dO: Option[Term] = None)(implicit notC:NotationContainer = NotationContainer.empty(), defContext: DefinitionContext): Constant =
     makeConstantInContext(n, tO, dO, defContext.args)
 
-  def simplifyTerm(tm:Term): Term = {
-    val su = SimplificationUnit(Context.empty,true,false)
-    val rules = RuleSet.collectRules(controller, su.context)
-    controller.simplifier.objectLevel(tm,su, rules)
-  }
-
   def inferType(tm:Term)(implicit defContext: DefinitionContext): Term = {
     try {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
@@ -417,7 +422,11 @@ object TranslationController extends frontend.Logger {
       case e: LookupError =>
         println("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
-      case e : Throwable => throw e
+      case e: GeneralError =>
+        val mes = showErrorInformation(e, " while trying to infer a type in the context of "+(defContext.args++defContext.getLocalBindingVars).toStr(true))
+        throw new TranslatingError(mes)
+      case e : Throwable =>
+        throw e
     }
   }
 }

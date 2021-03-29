@@ -65,7 +65,7 @@ object itemTranslator {
       case nym: Nyms => add (nymTranslator.translate_Nym(nym))
       case st: Statement with TopLevel =>
         val statement = statementTranslator.translate_Statement(st)
-        add (statement)
+        statement map add
       case notTopLevel: DeclarationLevel => throw subitemTranslator.notToplevel
       case notTopLevel: ProofLevel => throw subitemTranslator.notToplevel
     }
@@ -89,13 +89,11 @@ class MizarXMLImporter extends archives.Importer {
     if (! TranslationController.isBuild(dependencyAid)) {
       println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". "
         +(if (articleDependencyParents.length > 1) "\nThe article at the end of the dependency chain is "+articleDependencyParents.last else ""))
-      addBuildDependency(getTheoryPath(dependencyAid))
-      articleData.currentTranslatingTime += timeSince(articleData.currentTranslatingTimeBegin)
       val currentData = getArticleData
       resetArticleData
       importDocument(getBf(dependencyAid), index)
+      addBuildArticles (currentTheoryPath)
       setArticleData(currentData)
-      articleData.currentTranslatingTimeBegin = System.nanoTime()
     }
   }
   def importDocument(bf: archives.BuildTask, index: documents.Document => Unit): archives.BuildResult = {
@@ -105,29 +103,28 @@ class MizarXMLImporter extends archives.Importer {
     setReport(this.report)
     def buildIt(): Document = {
       articleDependencyParents ::= currentTheoryPath
-      val parser = makeParser
       val startParsingTime = System.nanoTime()
-
+      val parser = makeParser
       val text_Proper = parser.apply(bf.inFile).asInstanceOf[Text_Proper]
       val parsingTime = timeSince(startParsingTime)
       //printTimeDiff(parsingTime, "The parsing took ")
       globalParsingTime += parsingTime
 
-      articleData.currentTranslatingTimeBegin = System.nanoTime()
+      articleData.resetCurrenTranslatingTimeBegin
       val doc = translate(text_Proper, bf, processDependency(_, bf, index))
-      articleData.currentTranslatingTime += timeSince(articleData.currentTranslatingTimeBegin)
+      articleData.addCurrenTranslatingTime
       //printTimeDiff(articleData.currentTranslatingTime, "The translation took ")
-      globalTranslatingTime += articleData.currentTranslatingTime
+      articleData.addCurrentToGlobalTranslatingTime
 
-      val startAddingTime = System.nanoTime()
       index(doc)
-      val addingTime = timeSince(startAddingTime)
       //printTimeDiff(addingTime, "The adding took ")
-      globalAddingTime += addingTime
       articleDependencyParents = articleDependencyParents.tail
-      globalTranslatedDeclsCount += articleData.articleStatistics.grandTotal
-      globalTranslatedArticlesCount += 1
-      if (articleDependencyParents.length == 0) printGlobalStatistics()
+      if (! getBuildArticles.contains(currentTheoryPath)) {
+        globalTranslatedDeclsCount += articleData.articleStatistics.grandTotal
+      }
+      addBuildArticles (currentTheoryPath)
+      if (articleDependencyParents.length == 0)
+        println(articleData.articleStatistics.makeArticleStatistics)
       doc
     }
     val doc = if (!isBuild(currentAid)) {
@@ -143,7 +140,7 @@ class MizarXMLImporter extends archives.Importer {
 
   def translate(text_Proper: Text_Proper, bf:archives.BuildTask, processDependency: String => Unit) : Document = {
     ////shouldn't be necessary and proabably isn't (filenames and aids should always agree)
-    //currentAid = text_Proper.articleid.toLowerCase().takeWhile(_ != '.')
+    //TranslationController.articleData.currentAid = text_Proper.articleid.toLowerCase().takeWhile(_ != '.')
     makeDocument()
     makeTheory()
 
@@ -155,7 +152,6 @@ class MizarXMLImporter extends archives.Importer {
     val deps = articleData.getDependencies
     if (deps.nonEmpty) {log ("Resolved dependencies: "+deps.map(_.name))}
 
-    println(articleData.articleStatistics.makeArticleStatistics)
     articleData.currentDoc
   }
 }

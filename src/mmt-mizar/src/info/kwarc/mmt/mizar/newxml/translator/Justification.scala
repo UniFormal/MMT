@@ -68,7 +68,7 @@ object JustificationTranslator {
           (if (proofSteps) {
             List(st match {
               case cs: Choice_Statement =>
-                val (addArgs, (claim, _)) = translate_Choice_Statement(cs)(defContext)
+                val (addArgs, (claim, _), _) = translate_Choice_Statement(cs)(defContext)
                 defContext.addArguments(addArgs)
                 claim
               case ds: Diffuse_Statement => translate_Diffuse_Statement_Claim(ds, st.prfClaim._just)(defContext)

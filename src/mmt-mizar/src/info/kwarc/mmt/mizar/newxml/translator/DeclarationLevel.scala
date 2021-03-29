@@ -75,7 +75,7 @@ object correctnessConditionTranslator {
   }
 }
 
-case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Term)] = Nil, corr_conds: List[Correctness_Condition] = Nil, props: List[MizarProperty] = Nil) {
+case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Term)] = Nil, corr_conds: List[Correctness_Condition] = Nil, props: List[MizarProperty] = Nil, topLevel: Boolean = true) {
   // nested proof level, 0 if not within a proof
   private var proofLevel = 0
   private var localDefinitions: List[List[(LocalName, Term)]] = Nil
@@ -94,7 +94,7 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
    * Add a binding variable with scope the current proof
    * @param vd the binding variable
    */
-  def addLocalBindingVar(vd: VarDecl): Unit = { localBindingVars = localBindingVars.head ++ vd  :: localBindingVars.tail }
+  def addLocalBindingVar(vd: VarDecl): Unit = if (!getLocalBindingVars.contains(vd)) { localBindingVars = localBindingVars.head ++ vd  :: localBindingVars.tail }
   def getLocalBindingVars: Context = localBindingVars flatMap(_.variables)
   def addArguments(arguments: Context): Unit = { args ++= arguments }
   /**
@@ -127,7 +127,7 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   private def notWithinProofError = new TranslatingError("Trying to access thesis (seemingly) outside of a proof. ")
 }
 object DefinitionContext {
-  def empty() = DefinitionContext()
+  def empty()(implicit toplevel: Boolean = true) = DefinitionContext(topLevel = toplevel)
 }
 
 sealed abstract class CaseByCaseDefinien(isDirect: Boolean) {
@@ -325,16 +325,22 @@ object nymTranslator {
 }
 
 object statementTranslator {
-  def translate_Statement(st:Statement with TopLevel)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = st match {
-    case choice_Statement: Choice_Statement =>
-      val (addArgs, (claim, proof)) = translate_Choice_Statement(choice_Statement)
-      val gn = makeNewGlobalName("Choice_Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
-      implicit val defCtx = defContext.copy(args = defContext.args ++ addArgs, assumptions = defContext.assumptions :+ claim)
-      val theoremDecl = makeConstantInContext(gn.name, Some(claim), Some(proof))(defContext = defCtx)
-      theoremDecl
-    case type_Changing_Statement: Type_Changing_Statement => translate_Type_Changing_Statement(type_Changing_Statement)
-    case theorem_Item: Theorem_Item => translate_Theorem_Item(theorem_Item)
-    case regular_Statement: Regular_Statement => translate_Regular_Statement(regular_Statement)
+  /**
+   * translates the statement to usually a single declaration
+   *
+   * only in case of a choice statement on toplevel we first generate the declaration declaring the new chosen objects,
+   * then we append the translated statement applied to those declarations (with the corresponding variable substituted by the references)
+   *
+   * in either case, the last declaration, is the translated statement
+   * @param st the statement to translate
+   * @param defContext the definition context of the statement
+   * @return
+   */
+  def translate_Statement(st:Statement with TopLevel)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = st match {
+    case choice_Statement: Choice_Statement => translate_Choice_Statement(choice_Statement)._3
+    case type_Changing_Statement: Type_Changing_Statement => List(translate_Type_Changing_Statement(type_Changing_Statement))
+    case theorem_Item: Theorem_Item => List(translate_Theorem_Item(theorem_Item))
+    case regular_Statement: Regular_Statement => List(translate_Regular_Statement(regular_Statement))
   }
   def translate_Conclusion(conclusion: Conclusion) = { Nil }
   def translate_Type_Changing_Statement(type_Changing_Statement: Type_Changing_Statement)(implicit defContext: => DefinitionContext) : Declaration with HasType with HasDefiniens with HasNotation = {
@@ -348,10 +354,24 @@ object statementTranslator {
     articleData.articleStatistics.incrementStatisticsCounter("thm")
     makeConstantInContext(gn.name, Some(claim), Some(proof))
   }
-  def translate_Choice_Statement(choice_Statement: Choice_Statement)(implicit defContext: DefinitionContext): (Context, (Term, Term)) = {
+  def translate_Choice_Statement(choice_Statement: Choice_Statement)(implicit defContext: DefinitionContext): (Context, (Term, Term), List[Constant]) = {
     val vars: Context = choice_Statement._qual._children.flatMap(translate_Context(_))
-    val facts = translate_Proved_Claim(choice_Statement.prfClaim)
-    (vars, facts)
+    vars foreach defContext.addLocalBindingVar
+    val (claimFreeVars, proofFreeVars) = translate_Proved_Claim(choice_Statement.prfClaim)
+
+    val chosenObjectDecls = vars.map {vd: VarDecl =>
+      val name = makeNewSimpleGlobalName(vd.name.toString).name
+      implicit val notC = makeNotationCont(vd.name.head.toString, 0, 0)
+      makeConstantInContext(name, vd.tp, None)
+    }
+
+    val gn = makeNewGlobalName("Choice_Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
+    val sub = if (defContext.topLevel) vars zip chosenObjectDecls map {
+      case (vd, df) => vd.toTerm / df.toTerm
+    } else Nil
+    val List(claim, proof) = List(claimFreeVars, proofFreeVars) map (_ ^ sub)
+    val theoremDecl = makeConstantInContext(gn.name, Some(claim), Some(proof))
+    (vars, (claim, proof), chosenObjectDecls:+theoremDecl)
   }
   def translate_Regular_Statement(regular_Statement: Regular_Statement)(implicit defContext: DefinitionContext) = {
     val gn = makeNewGlobalName("Regular-Statement", articleData.incrementAndGetAnonymousTheoremCount().toString)
@@ -459,7 +479,7 @@ object definitionTranslator {
   }
   private def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: => DefinitionContext): List[Constant] = {
     constant_Definition._children map { eq =>
-      val name = LocalName(eq._var.toIdentifier)
+      val name = makeNewSimpleGlobalName(eq._var.toIdentifier.toString).name
       val dfU = translate_Term(eq._tm)(defContext)
       val argsContext = defContext.getLocalBindingVars filter (dfU.freeVars contains _.name)
       val df = LambdaOrEmpty(defContext.args++argsContext, dfU ^ namedDefArgsSubstition()(defContext))
@@ -659,7 +679,7 @@ object clusterTranslator {
 object blockTranslator {
   def collectSubitems[mainSort <: BlockSubitem](cls: Class[mainSort], block: Block) : List[(mainSort, DefinitionContext)] = {
     val items = block._items
-    implicit var defContext = DefinitionContext.empty()
+    implicit var defContext = DefinitionContext.empty()(false)
 
     def recurse(remainingItems: List[Subitem]):List[(mainSort, DefinitionContext)] = remainingItems match {
       case Nil => Nil
@@ -674,7 +694,7 @@ object blockTranslator {
         case Assumption(ass)::tl => defContext.addAssumption(translate_Assumption_Claim(ass))
           recurse (tl)
         case (choice_Statement: Choice_Statement)::tl =>
-          val (addArgs, addFacts) = translate_Choice_Statement(choice_Statement)
+          val (addArgs, addFacts, _) = translate_Choice_Statement(choice_Statement)
           defContext.addArguments(addArgs)
           defContext.addUsedFact(addFacts)
           recurse (tl)

@@ -17,7 +17,7 @@ import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
 import TranslationController._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.{makeSimpleGlobalName, mapKind}
+import info.kwarc.mmt.mizar.newxml.syntax.Utils.{makeNewSimpleGlobalName, makeSimpleGlobalName, mapKind}
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
@@ -30,12 +30,14 @@ object expressionTranslator {
 object termTranslator {
   def translate_Term(tm:syntax.MizTerm)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : Term = tm match {
     case st: Simple_Term =>
-      val refTm = LocalName(st.toIdentifier)
+      val refTm = st.toIdentifier
+      val gn = makeNewSimpleGlobalName(refTm.toString)
       lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
-      if (currentTheory.domain.contains(refTm)) {
-        OMS(currentTheoryPath ? refTm)
-      } else
-        if (defContext.withinProof) defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue else defaultValue
+      if (locallyDeclared(gn)) {
+        OMS(gn)
+      } else if (defContext.withinProof) {
+        defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue
+      } else defaultValue
     case at@Aggregate_Term(tpAttrs, _args) =>
       val gn = computeGlobalName(at)
       val aggrDecl = structureMakePath(gn)
@@ -126,6 +128,7 @@ object formulaTranslator {
     case Scope(_expr) => translate_Claim(_expr)
     case Existential_Quantifier_Formula(_vars, _restrict, _expression) =>
       val vars: Context = translate_Context_Segment(_vars)
+      vars foreach defContext.addLocalBindingVar
       val expr = translate_Claim(_expression)
       val assumptions = translate_Restriction(_restrict)
       translate_Existential_Quantifier_Formula(vars, expr, assumptions)
@@ -136,6 +139,7 @@ object formulaTranslator {
       if (antonymic getOrElse false) not(form) else form
     case Universal_Quantifier_Formula(_vars, _restrict, _expression) =>
       val vars = translate_Context_Segment(_vars)
+      vars foreach defContext.addLocalBindingVar
       val expr = translate_Claim(_expression)
       val assumptions = translate_Restriction(_restrict)
       translate_Universal_Quantifier_Formula(vars, expr, assumptions)
