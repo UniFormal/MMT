@@ -19,6 +19,8 @@ abstract class MWSExporter extends Exporter {
   })
 
   def exportTheory(t: Theory, bf: BuildTask) {
+    try {controller.simplifier(t)} catch { case _ => /* am besten alles */ }
+
     rh(xml.header)
 
     rh(xml.openTag("mws:harvest", List(("xmlns:mws", xml.namespace("mws")), ("xmlns:m", xml.namespace("mathml")))) + "\n")
@@ -33,7 +35,7 @@ abstract class MWSExporter extends Exporter {
     rh(<text></text>.toString + "\n")
     rh(<metadata></metadata>.toString + "\n")
 
-    t.getDeclarations foreach {d =>
+    t.getDeclarationsElaborated foreach {d =>
       d.getComponents.foreach {
         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
           tc.get.foreach {t =>
@@ -50,7 +52,7 @@ abstract class MWSExporter extends Exporter {
 
     rh(xml.closeTag("mws:data") + "\n")
 
-    t.getDeclarations foreach {d =>
+    t.getDeclarationsElaborated foreach {d =>
       d.getComponents.foreach {
         case DeclarationComponent(comp, tc: AbstractTermContainer) =>
           tc.get.foreach {t =>
