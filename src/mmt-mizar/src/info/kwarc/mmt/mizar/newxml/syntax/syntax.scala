@@ -107,7 +107,11 @@ trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
 
   def globalConstrName : GlobalName = absoluteName(globalDefAttrs.absoluteconstrMMLId)
-  protected def absolutePatConstrName(p: GlobalName, c: GlobalName) = p.module ? LocalName(p.name.toString + LocalName(c.name.tail).toString)
+  protected def absolutePatConstrName(p: GlobalName, c: GlobalName): GlobalName = (p, c) match {
+    case (SimpleGlobalName(pAid, pName), SimpleGlobalName(_, cName)) =>
+      SimpleGlobalName(pAid, pName+cName)
+    case _ => throw ImplementationError("Error constructing the name from the identifier "+p+" and "+c)
+  }
   def globalPatConstrName: GlobalName = absolutePatConstrName(globalPatternName, globalConstrName)
 }
 /**

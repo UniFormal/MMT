@@ -144,7 +144,7 @@ class MizarXMLImporter extends archives.Importer {
     makeDocument()
     makeTheory()
 
-    articleTranslator.translateArticle(text_Proper, processDependency, checkConstants = true, typecheckContent = true)
+    articleTranslator.translateArticle(text_Proper, processDependency, checkConstants = true, typecheckContent = false)
     endMake()
 
     val unres = articleData.getUnresolvedDependencies

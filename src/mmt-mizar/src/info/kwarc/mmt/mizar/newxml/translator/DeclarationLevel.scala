@@ -13,7 +13,7 @@ import syntax._
 import expressionTranslator._
 import termTranslator._
 import typeTranslator._
-import contextTranslator._
+import contextTranslator.{translateLocisWithoutSubstitution, _}
 import formulaTranslator._
 import TranslatorUtils._
 import claimTranslator._
@@ -81,6 +81,9 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   private var localDefinitions: List[List[(LocalName, Term)]] = Nil
   // binding variables (of new binders) within the current proof (and its parents)
   private var localBindingVars: List[Context] = List(Context.empty)
+  //arguments from the definition block only usable in the non-public part of a definition (i.e. proofs)
+  //make into regular arguments when entering a proof
+  private var proofArgs: Context = Context.empty
   private def addLocalDefinition(n: LocalName, defn: Term) = {
     assert (withinProof)
     val toAdd = (n, defn)
@@ -95,6 +98,8 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
    * @param vd the binding variable
    */
   def addLocalBindingVar(vd: VarDecl): Unit = if (!getLocalBindingVars.contains(vd)) { localBindingVars = localBindingVars.head ++ vd  :: localBindingVars.tail }
+  def addLocalBindingVars(ctx: Context): Unit = ctx foreach addLocalBindingVar
+  def addProofArg(vd: VarDecl): Unit = if (!proofArgs.contains(vd)) { proofArgs ++=  vd }
   def getLocalBindingVars: Context = localBindingVars flatMap(_.variables)
   def addArguments(arguments: Context): Unit = { args ++= arguments }
   /**
@@ -117,6 +122,10 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
     proofLevel += 1
     localBindingVars ::= Nil
     localDefinitions ::= Nil
+    if (proofLevel == 1) {
+      args ++= proofArgs
+      proofArgs = Context.empty
+    }
   }
   def exitProof = {
     proofLevel -= 1
@@ -193,13 +202,13 @@ object patternTranslator {
     val List(pre, int, suf) = interior.split(Array('(', ')')).toList map(_.toInt)
     (pre, int, suf)
   }
-  private def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false) = {
+  private def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false, impl: Int = 0) = {
     assert (del.nonEmpty, "Encountered empty delimiter in PrePostFix. ")
-    PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum)
+    PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum, rightArgsBracketed, impl)
   }
-  private def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int) = {
+  private def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int, impl: Int = 0) = {
     assert (leftDel.nonEmpty && rightDel.nonEmpty, "Encountered empty delimiter in CircumMarkers.\nThe delimiters are \""+leftDel+"\" and \""+rightDel+"\".")
-    Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr)
+    Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr, impl)
   }
   private def makeNotCont(fixity: Fixity): NotationContainer = {
     NotationContainer(TextNotation(fixity = fixity, precedence = Precedence.integer(ones = 20), meta = None))
@@ -225,24 +234,27 @@ object patternTranslator {
       case _ => gn
     }
   }
-  def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false) : (LocalName, GlobalName, NotationContainer) = {
+  def translate_Pattern(pattern:Patterns, orgVersion: Boolean = false)(implicit defContext: DefinitionContext) : (LocalName, GlobalName, NotationContainer) = {
     val gn = if (orgVersion) globalLookup(pattern, true) else computeGlobalName(pattern)
     val name = gn.name
 
     val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
     val fstDel = pattern.patternAttrs.spelling
     assert (fstDel.nonEmpty)
-    //val fstDel = if (spl != "") spl else name.toString
+    val explArg = pattern._locis .flatMap(translateLocisWithoutSubstitution)
+    assert (explArg forall (defContext.args.map(_.toTerm).contains(_)))
+    val expl = explArg.length
+    val impl = defContext.args.length - expl
     val fixity = pattern match {
       case InfixFunctor_Pattern(rightargsbracketedO, _) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
-        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed, impl)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
         val sndDel = _right_Circumflex_Symbol.spelling
         assert (sndDel.nonEmpty)
-        CircumfixMarkers(fstDel, sndDel, circumfixArgNr)
+        CircumfixMarkers(fstDel, sndDel, circumfixArgNr, impl)
       case pat: Patterns =>
-        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, false, impl)
     }
     (name, gn, makeNotCont(fixity))
   }
@@ -356,7 +368,7 @@ object statementTranslator {
   }
   def translate_Choice_Statement(choice_Statement: Choice_Statement)(implicit defContext: DefinitionContext): (Context, (Term, Term), List[Constant]) = {
     val vars: Context = choice_Statement._qual._children.flatMap(translate_Context(_))
-    vars foreach defContext.addLocalBindingVar
+    defContext.addLocalBindingVars(vars)
     val (claimFreeVars, proofFreeVars) = translate_Proved_Claim(choice_Statement.prfClaim)
 
     val chosenObjectDecls = vars.map {vd: VarDecl =>
@@ -579,7 +591,7 @@ object definitionTranslator {
       case _ if origGn.module == HiddenTh => Some(List(any, any))
       case _ => None
     }
-    origArgTpsO map {
+    origArgTpsO  map {
       origArgTps: List[Term] =>
         val origLength = origArgTps.length
         val addArgsLength = argNum - origLength
@@ -695,7 +707,7 @@ object blockTranslator {
           recurse (tl)
         case (choice_Statement: Choice_Statement)::tl =>
           val (addArgs, addFacts, _) = translate_Choice_Statement(choice_Statement)
-          defContext.addArguments(addArgs)
+          addArgs foreach defContext.addProofArg
           defContext.addUsedFact(addFacts)
           recurse (tl)
         case (statement: Regular_Statement)::tl =>

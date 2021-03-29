@@ -268,7 +268,7 @@ object contextTranslator {
       segm._vars._vars.map (translate_new_Variable(_) % tp)
   }
 	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = OMV(loc.toIdentifier) ^ namedDefArgsSubstition()
-  def translateLocisWithoutSubstitution(loc:Loci)(implicit defContext: DefinitionContext) : List[Term] = loc._loci map (l=>OMV(l.toIdentifier))
+  def translateLocisWithoutSubstitution(loc:Loci)(implicit defContext: DefinitionContext) : List[OMV] = loc._loci map (l=>OMV(l.toIdentifier))
   def translate_Context_Segment(con: ContextSegments)(implicit defContext: DefinitionContext): Context = con._children flatMap translate_Context
 }
 

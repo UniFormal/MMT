@@ -1,14 +1,23 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.LocalName
+import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object Utils {
   def fullClassName(s: String) = {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
-
-  def makeSimpleGlobalName(aid: String, name: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+name)
+  object SimpleGlobalName {
+    def apply(aid: String, name: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+name)
+    def unapply(gn: GlobalName): Option[(String, String)] = {
+      val aid = gn.module.name.toString
+      gn.name.toString.split(":") match {
+        case Array(artId, name) if (artId == aid && gn.module == TranslationController.getTheoryPath(aid)) => Some (aid, name)
+        case _ => None
+      }
+    }
+  }
+  def makeSimpleGlobalName(aid: String, name: String) = SimpleGlobalName(aid, name)
   def makeNewSimpleGlobalName(name: String) = makeSimpleGlobalName(TranslationController.currentAid, name)
   def makeGlobalName(aid: String, kind: String, ln: String) = makeSimpleGlobalName(aid, kind+ln)
   def makeNewGlobalName(kind: String, ln: String) = makeGlobalName(TranslationController.currentAid, kind, ln)

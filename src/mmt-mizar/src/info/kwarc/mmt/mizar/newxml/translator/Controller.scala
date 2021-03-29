@@ -42,7 +42,7 @@ object TranslationController extends frontend.Logger {
    * whether to typecheck translated content
    */
   private var typecheckContent: Boolean = true
-  private val recurseOnlyWhenNeeded = true
+  private val recurseOnlyWhenNeeded = false//true
   /**
    * whether to typecheck constants or just to check the entire theory at the end
    */
@@ -394,6 +394,9 @@ object TranslationController extends frontend.Logger {
         val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("external declaration")) =>
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        println (mes)
+      case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
         val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: Throwable =>
