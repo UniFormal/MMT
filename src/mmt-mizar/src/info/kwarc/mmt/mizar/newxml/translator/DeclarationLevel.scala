@@ -85,7 +85,7 @@ case class DefinitionContext(var args: Context = Context.empty, var assumptions:
   //make into regular arguments when entering a proof
   private var proofArgs: Context = Context.empty
   private def addLocalDefinition(n: LocalName, defn: Term) = {
-    assert (withinProof)
+    assert (withinProof, "trying to add local definitions outside of a proof. ")
     val toAdd = (n, defn)
     localDefinitions = localDefinitions.head.:+(toAdd) :: localDefinitions.tail
   }
@@ -240,9 +240,11 @@ object patternTranslator {
 
     val (infixArgNr, circumfixArgNr, suffixArgNr) = parseFormatDesc(pattern.patternAttrs.formatdes)
     val fstDel = pattern.patternAttrs.spelling
-    assert (fstDel.nonEmpty)
+    assert (fstDel.nonEmpty, "Encountered empty first delimiter while trying to build notation. ")
     val explArg = pattern._locis .flatMap(translateLocisWithoutSubstitution)
-    assert (explArg forall (defContext.args.map(_.toTerm).contains(_)))
+    if (!(explArg forall (defContext.args.map(_.toTerm).contains(_)))) {
+      println ("Not all arguments mentioned in the "+pattern.patKind.getClass.toString.split(".").last+" are found in the definition context: "+defContext.args+". ")
+    }
     val expl = explArg.length
     val impl = defContext.args.length - expl
     val fixity = pattern match {
@@ -251,7 +253,7 @@ object patternTranslator {
         PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed, impl)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
         val sndDel = _right_Circumflex_Symbol.spelling
-        assert (sndDel.nonEmpty)
+        assert (sndDel.nonEmpty, "Encountered empty second delimiter while trying to build notation. ")
         CircumfixMarkers(fstDel, sndDel, circumfixArgNr, impl)
       case pat: Patterns =>
         PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, false, impl)
@@ -518,7 +520,7 @@ object definitionTranslator {
             makeConstantInContext(name, Some(Pi(LocalName(argsVarName), nTerms(argNum), Arrow(any, prop))),
               Some(Lam(argsVarName, nTerms(argNum), translate_Type(_tpSpec.get._types))))
           } else {
-            assert(mode_Definition._redef.occurs)
+            assert(mode_Definition._redef.occurs, "No type specification is given in mode definition, but not a redefinition. ")
             translate_Redefine(mode_Definition._pat, name, None, None, argNum, argTps)("mode", notC)
           }
         } else {
@@ -726,7 +728,9 @@ object blockTranslator {
           val correspondingDefContext = defContext.copy(corr_conds = corr_conds, props = props)
           (defn, correspondingDefContext)::recurse(remaining)
         case (prag: Pragma)::tl => recurse (tl)
-        case defIt::tl => throw DeclarationTranslationError("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz", defIt)
+        case defIt::tl =>
+          println ("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz")
+          throw DeclarationTranslationError("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz", defIt)
       }
       recurse (items map (_._subitem))
   }

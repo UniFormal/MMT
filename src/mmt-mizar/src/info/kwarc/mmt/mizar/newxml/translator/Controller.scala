@@ -275,19 +275,20 @@ object TranslationController extends frontend.Logger {
     def isPotentialDependency(p: String) =
       p contains outputBase.toString
     def getDependencies(tm: Term): immutable.Set[MPath] = tm match {
-      case OMS(p) => if (isPotentialDependency(p.toString)) immutable.Set(p.module) else immutable.Set()
+      case OMS(GlobalName(mod, _)) =>
+        val aid = mod.name.toString
+        if (getTheoryPath(aid) == mod && !(articleData.getDependencies contains mod)) immutable.Set(mod) else immutable.Set()
       case OMBINDC(binder, context, scopes) => (binder::context.flatMap(_.tp):::scopes).toSet flatMap getDependencies
       case OMA(fun, args) => (fun::args).toSet flatMap getDependencies
       case OML(_, tp, df, _, _) => immutable.Set(tp, df).flatMap(_ map getDependencies getOrElse immutable.Set())
       case _ => immutable.Set()
     }
-    val preDependencies = (decl match {
+    val dependencies: immutable.Set[MPath] = (decl match {
       case MizarPatternInstance(_, _, args) =>
-        args flatMap getDependencies
-      case c: Constant => List(c.tp, c.df).flatMap(_ map(List(_)) getOrElse(Nil)).flatMap(getDependencies)
-      case _ => Nil
+        args.toSet flatMap getDependencies
+      case c: Constant => immutable.Set(c.tp, c.df).flatMap(_ map(immutable.Set(_)) getOrElse(Nil)).flatMap(getDependencies)
+      case _ => immutable.Set()
     })
-    val dependencies = preDependencies.filterNot (articleData.getDependencies contains _).toSet
     articleData.addDependencies(dependencies)
     dependencies
   }
@@ -388,19 +389,19 @@ object TranslationController extends frontend.Logger {
         // term^0 -> ...
         //however this is the legitimate translation and shouldn't be considered an error
       case eofe: EOFException =>
-        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (eofe)
       case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("external declaration")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: Throwable =>
-        val mes = showErrorInformation(er, "while typechecking: "+(try{ println(controller.presenter.asString(e)) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, "while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         articleData.articleStatistics.incrementNumLegitimateTypingIssues
         println (mes)
     }

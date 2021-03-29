@@ -33,6 +33,8 @@ object Utils {
     case "Private-Predicate" => "PP"
     case "Private-Functor" => "PF"
     case "DefConstant" => "C"
+    case "Selector" => "S"
+    case s => println ("unexpected kind in syntax.Utils.mapKind: "+s); s.filter(_.isUpper)
   }
   def MizarVariableName(spelling: String, kind: String, serialnr: Int): LocalName = {
     LocalName(spelling) / LocalName(mapKind(kind)) / MizarRedVarName(serialnr)
