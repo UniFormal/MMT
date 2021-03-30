@@ -202,13 +202,13 @@ object patternTranslator {
     val List(pre, int, suf) = interior.split(Array('(', ')')).toList map(_.toInt)
     (pre, int, suf)
   }
-  private def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false, impl: Int = 0) = {
+  private def PrePostFixMarkers(del: String, infixArgNum: Int, suffixArgNum: Int, rightArgsBracketed: Boolean = false, implArgInds: List[Int] = Nil) = {
     assert (del.nonEmpty, "Encountered empty delimiter in PrePostFix. ")
-    PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum, rightArgsBracketed, impl)
+    PrePostfix(Delim(del), infixArgNum, infixArgNum+suffixArgNum+implArgInds.length, rightArgsBracketed, implArgInds)
   }
-  private def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int, impl: Int = 0) = {
-    assert (leftDel.nonEmpty && rightDel.nonEmpty, "Encountered empty delimiter in CircumMarkers.\nThe delimiters are \""+leftDel+"\" and \""+rightDel+"\".")
-    Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr, impl)
+  private def CircumfixMarkers(leftDel: String, rightDel: String, circumfixArgNr: Int, implArgInds: List[Int] = Nil) = {
+    assert (leftDel.nonEmpty && rightDel.nonEmpty, "Encountered empty delimiter in CircumfixMarkers.\nThe delimiters are \""+leftDel+"\" and \""+rightDel+"\".")
+    Circumfix(Delim(leftDel), Delim(rightDel), circumfixArgNr+implArgInds.length, implArgInds)
   }
   private def makeNotCont(fixity: Fixity): NotationContainer = {
     NotationContainer(TextNotation(fixity = fixity, precedence = Precedence.integer(ones = 20), meta = None))
@@ -246,17 +246,17 @@ object patternTranslator {
       println ("Not all arguments mentioned in the "+pattern.patKind.getClass.toString.split(".").last+" are found in the definition context: "+defContext.args+". ")
     }
     val expl = explArg.length
-    val impl = defContext.args.length - expl
+    val implArgInds = defContext.args.zipWithIndex.filterNot(argInd => explArg.map(_.name).contains(argInd._1.name)).map(_._2)
     val fixity = pattern match {
       case InfixFunctor_Pattern(rightargsbracketedO, _) =>
         val rightArgsBracketed = rightargsbracketedO.getOrElse(false)
-        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed, impl)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, rightArgsBracketed, implArgInds)
       case CircumfixFunctor_Pattern(orgExtPatAttr, _right_Circumflex_Symbol, _loci, _locis) =>
         val sndDel = _right_Circumflex_Symbol.spelling
         assert (sndDel.nonEmpty, "Encountered empty second delimiter while trying to build notation. ")
-        CircumfixMarkers(fstDel, sndDel, circumfixArgNr, impl)
+        CircumfixMarkers(fstDel, sndDel, circumfixArgNr, implArgInds)
       case pat: Patterns =>
-        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, false, impl)
+        PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, false, implArgInds)
     }
     (name, gn, makeNotCont(fixity))
   }

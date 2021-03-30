@@ -366,7 +366,7 @@ object TranslationController extends frontend.Logger {
         structureSimplifier(e)
         val externalDecls = currentTheory.domain.filter(_.init == e.name)
         if (externalDecls.isEmpty) {
-          throw new TranslatingError("No external declarations for the instance "+e.path+" even after calling the simplifier on it. \n"
+          println ("No external declarations for the instance "+e.path+" even after calling the simplifier on it. \n"
           +"Subsequent references of them will therefore fail. ")
         }
         // build the notations
