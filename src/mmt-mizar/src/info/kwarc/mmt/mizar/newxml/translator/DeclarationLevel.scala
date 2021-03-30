@@ -48,7 +48,7 @@ object correctnessConditionTranslator {
     val caseNum = OMI(defn.caseNum)
     val cases = Sequence(defn.cases map (lambdaBindArgs(_, true)))
     val caseRes = Sequence(defn.caseRes map (lambdaBindArgs(_, true)))
-    val defRes = List(lambdaBindArgs(defn.defRes))
+    val defRes = defn.defResult map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
     val claim = ApplyGeneral(correctnessCondClaim(cor_cond, defn.prefixes+pattern), argNum::Sequence(args)::ret:::caseNum::cases::caseRes::defRes)
     just map(translate_Justification(_, claim)) getOrElse uses(claim, Nil)
   }
@@ -139,22 +139,45 @@ object DefinitionContext {
   def empty()(implicit toplevel: Boolean = true) = DefinitionContext(topLevel = toplevel)
 }
 
-sealed abstract class CaseByCaseDefinien(isDirect: Boolean) {
+sealed abstract class CaseByCaseDefinien {
   def cases: List[Term]
   def caseRes: List[Term]
   def caseNum = cases.length
+  def defResult: Option[Term]
+  /**
+   * Used to do inference on, mainly
+   * @return
+   */
+  def someCase: Term = defResult getOrElse caseRes.head
+  def direct: Boolean
+  def partial: Boolean
+  def prefixes = (if (direct) "direct" else "indirect")+(if (partial) "Part" else "Compl")
+}
+sealed trait DirectCaseByCaseDefinien extends CaseByCaseDefinien {
+  override def direct: Boolean = true
+}
+sealed trait IndirectCaseByCaseDefinien extends CaseByCaseDefinien {
+  override def direct: Boolean = false
+}
+sealed abstract class PartialCaseByCaseDefinien extends CaseByCaseDefinien {
   def defRes: Term
-  def direct: Boolean = isDirect
-  def prefixes = if (direct) "direct" else "indirect"
+  override def defResult = Some(defRes)
+  override def partial: Boolean = true
 }
-case class DirectCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien(true)
-object DirectCaseByCaseDefinien {
-  def apply(tm: Term): DirectCaseByCaseDefinien = DirectCaseByCaseDefinien(Nil, Nil, tm)
+sealed abstract class CompleteCaseByCaseDefinien extends CaseByCaseDefinien {
+  override def defResult = None
+  override def partial: Boolean = true
 }
-case class IndirectCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends CaseByCaseDefinien(false)
-object IndirectCaseByCaseDefinien {
-  def apply(tm: Term): IndirectCaseByCaseDefinien = IndirectCaseByCaseDefinien(Nil, Nil, Lam("it", any, tm))
+case class DirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends PartialCaseByCaseDefinien with DirectCaseByCaseDefinien
+object DirectPartialCaseByCaseDefinien {
+  def apply(tm: Term): DirectPartialCaseByCaseDefinien = DirectPartialCaseByCaseDefinien(Nil, Nil, tm)
 }
+case class IndirectPartialCaseByCaseDefinien(cases: List[Term], caseRes: List[Term], defRes: Term) extends PartialCaseByCaseDefinien with IndirectCaseByCaseDefinien
+object IndirectPartialCaseByCaseDefinien {
+  def apply(tm: Term): IndirectPartialCaseByCaseDefinien = IndirectPartialCaseByCaseDefinien(Nil, Nil, Lam("it", any, tm))
+}
+case class DirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term]) extends CompleteCaseByCaseDefinien with DirectCaseByCaseDefinien
+case class IndirectCompleteCaseByCaseDefinien(cases: List[Term], caseRes: List[Term]) extends CompleteCaseByCaseDefinien with IndirectCaseByCaseDefinien
 
 object definiensTranslator {
   def translate_Definiens(defs:Definiens, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
@@ -165,9 +188,9 @@ object definiensTranslator {
     if (defn.isSingleCase()) {
       val defRes = translate_Expression(defn.singleCasedExpr._expr.get)
       if (defRes.freeVars.contains(LocalName("it"))) {
-        IndirectCaseByCaseDefinien(defRes)
+        IndirectPartialCaseByCaseDefinien(defRes)
       } else {
-        DirectCaseByCaseDefinien(defRes)
+        DirectPartialCaseByCaseDefinien(defRes)
       }
     } else {
       translate_Cased_Expression(defn.partialCasedExpr, isModeDef)
@@ -176,7 +199,7 @@ object definiensTranslator {
   def translate_Cased_Expression(partDef:PartialDef, isModeDef: Boolean = false)(implicit defContext: DefinitionContext): CaseByCaseDefinien = {
     assert(partDef._partDefs.isDefined)
     partDef.check()
-    val defRes = translate_Expression (partDef._otherwise.get._expr)
+    val defRes = partDef._otherwise.get._expr map translate_Expression
     var isIndirect = false
     val complCases = partDef._partDefs.get._partDef map {
       case Partial_Definiens(_expr, _form) =>
@@ -188,9 +211,17 @@ object definiensTranslator {
     val (cases, indCaseRes) = complCases unzip
     val caseRes = indCaseRes map(Lam("it", if (isModeDef) Arrow(any, prop) else any, _))
     val res : CaseByCaseDefinien = if (isIndirect) {
-      IndirectCaseByCaseDefinien(cases, caseRes, Lam("it", any, defRes))
+      if (defRes.isDefined) {
+        IndirectPartialCaseByCaseDefinien(cases, caseRes, Lam("it", any, defRes.get))
+      } else {
+        IndirectCompleteCaseByCaseDefinien(cases, caseRes)
+      }
     } else {
-      DirectCaseByCaseDefinien(cases, caseRes, defRes)
+      if (defRes.isDefined) {
+        DirectPartialCaseByCaseDefinien(cases, caseRes, defRes.get)
+      } else {
+        DirectCompleteCaseByCaseDefinien(cases, caseRes)
+      }
     }
     res
   }
@@ -421,7 +452,7 @@ object definitionTranslator {
     lazy val (argNum, argTps) = (defContext.args.length, defContext.args.map(_.tp.get))
     implicit lazy val (kind: String, ret: Option[Term]) = redefinableLabeledDefinition match {
       case ad: Attribute_Definition => ("attribute", None)
-      case fd: Functor_Definition => ("funct", fd._tpSpec map (tpSpec => translate_Type(tpSpec._types)) orElse defn.map(d => inferType(d.defRes)) map(lambdaBindArgs(_)(defContext.args map(_.toTerm))))
+      case fd: Functor_Definition => ("funct", fd._tpSpec map (tpSpec => translate_Type(tpSpec._types)) orElse defn.map(d => inferType(d.someCase)).map(lambdaBindArgs(_)(defContext.args map(_.toTerm))))
       case pd :Predicate_Definition => ("pred", None)
     }
     val firstRes = if (redefinableLabeledDefinition.redefinition && defn.isEmpty) {
@@ -441,24 +472,34 @@ object definitionTranslator {
           val motherTp = argTps.last
           articleData.articleStatistics.incrementStatisticsCounter
           defn.get match {
-            case DirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              DirectAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
-            case IndirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              IndirectAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
+            case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              DirectPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
+            case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              IndirectPartialAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
+            case DirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              DirectCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, consistencyProof)
+            case IndirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              IndirectCompleteAttributeDefinition(name, argNum, argTps, motherTp, defn.get.caseNum, cases, caseRes, consistencyProof)
           }
         case "funct" =>
           articleData.articleStatistics.incrementStatisticsCounter
           defn.get match {
-            case DirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              DirectFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistencyProof, coherenceProof)
-            case IndirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              IndirectFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistencyProof, existenceProof, uniquenessProof)
+            case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              DirectPartialFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistencyProof, coherenceProof)
+            case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              IndirectPartialFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, defRes, consistencyProof, existenceProof, uniquenessProof)
+            case DirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              DirectCompleteFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, consistencyProof, coherenceProof)
+            case IndirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              IndirectCompleteFunctorDefinition(name, argNum, argTps, ret.get, defn.get.caseNum, cases, caseRes, existenceProof, consistencyProof, uniquenessProof)
           }
         case "pred" =>
           articleData.articleStatistics.incrementStatisticsCounter
           defn.get match {
-            case DirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              DirectPredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
+            case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              DirectPartialPredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, defRes, consistencyProof)
+            case DirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              DirectCompletePredicateDef(name, argNum, argTps, defn.get.caseNum, cases, caseRes, consistencyProof)
             case _ => throw new TranslatingError("Predicate definition can't be indirect. ")
           }
       }
@@ -525,13 +566,20 @@ object definitionTranslator {
           }
         } else {
           val defn = defnO.get
-          articleData.articleStatistics.incrementStatisticsCounter("mode")
-          lazy val corrConds = defContext.corr_conds.map(jcc => translate_def_correctness_condition(jcc._cond, jcc._just, defn, "mode"))
+          implicit val kind = "mode"
+          articleData.articleStatistics.incrementStatisticsCounter
+          lazy val corrConds = defContext.corr_conds.map(jcc => (jcc._cond, translate_def_correctness_condition(jcc._cond, jcc._just, defn, "mode")))
+          def getCorrCord(cc: CorrectnessConditions) = corrConds.find(_._1 == cc).map(_._2) getOrElse translate_def_correctness_condition(cc, None, defn, kind, None)
+          val (consistencyProof, existenceProof) = (getCorrCord(consistency()), getCorrCord(existence()))
           defn match {
-            case DirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              DirectModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, defRes, corrConds head, corrConds.last)
-            case IndirectCaseByCaseDefinien(cases, caseRes, defRes) =>
-              IndirectModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, defRes, corrConds head, corrConds.last)
+            case DirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              DirectPartialModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, defRes, consistencyProof, existenceProof)
+            case IndirectPartialCaseByCaseDefinien(cases, caseRes, defRes) =>
+              IndirectPartialModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, defRes, consistencyProof, existenceProof)
+            case DirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              DirectCompleteModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, consistencyProof, existenceProof)
+            case IndirectCompleteCaseByCaseDefinien(cases, caseRes) =>
+              IndirectCompleteModeDefinition(ln, argNum, argTps, defn.caseNum, cases, caseRes, consistencyProof, existenceProof)
           }
         }
     }
@@ -586,7 +634,7 @@ object definitionTranslator {
     val origArgTpsO = origDD match {
       case Some(AttributeDefinitionInstance(_, _, origArgTps, _, _, _, _, _)) if kind == "attribute" => Some(origArgTps)
       case Some(PredicateDefinitionInstance(_, _, origArgTps, _, _, _, _)) if kind == "pred" => Some(origArgTps)
-      case Some(FunctorDefinitionInstance(_, _, origArgTps, _, _, _, _, _, _)) if kind == "funct" => Some(origArgTps)
+      case Some(FunctorDefinitionInstance(_, _, origArgTps, _, _, _, _, _)) if kind == "funct" => Some(origArgTps)
       case Some(ModeDefinitionInstance(_, _, origArgTps, _, _, _, _)) if kind == "mode" => Some(origArgTps)
       case Some(NymicNotation(_, _, _, origArgTps, _)) => Some(origArgTps)
       //the only predicates (there are no functors or attributes) in hidden take two terms as arguments
