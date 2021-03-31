@@ -131,20 +131,18 @@ object Utils {
   case class AttributeKind() extends DeclarationKinds
   case class PredicateKind() extends DeclarationKinds
   sealed abstract class PatternKinds
-  case class StrictKind() extends PatternKinds
-  case class AggregateKind() extends PatternKinds
-  case class SelectorKind() extends PatternKinds
-  case class ForgetfulKind() extends PatternKinds
+  sealed abstract class StructurePatternKinds extends PatternKinds
+  case class StrictKind() extends StructurePatternKinds
+  case class AggregateKind() extends StructurePatternKinds
+  case class SelectorKind() extends StructurePatternKinds
+  case class ForgetfulKind() extends StructurePatternKinds
   def shortKind(kind: PatternKinds): Char = kind match {
     case ModeKind() => 'M'
     case StructureKind() => 'L'
     case FunctorKind() => 'K'
     case AttributeKind() => 'V'
     case PredicateKind() => 'R'
-    case StrictKind() => shortKind(StructureKind())//'V'
-    case AggregateKind() => shortKind(StructureKind())//'G'
-    case SelectorKind() => shortKind(StructureKind())//'J'
-    case ForgetfulKind() => shortKind(StructureKind())//'U'
+    case _: StructurePatternKinds => shortKind(StructureKind())//'V'
   }
   def longKind(kind: PatternKinds): String = kind match {
     case ModeKind() => "mode"

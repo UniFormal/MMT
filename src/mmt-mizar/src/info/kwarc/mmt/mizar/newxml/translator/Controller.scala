@@ -230,7 +230,6 @@ object TranslationController extends frontend.Logger {
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
         case "scheme" => schemeDefinitions += 1
-        case "struct" => structureDefinitions += 1
         case "nym" => nyms += 1
         case "registr" => registrations += 1
         case "thm" => theorems += 1
@@ -238,13 +237,15 @@ object TranslationController extends frontend.Logger {
         case s if (longKind(PredicateKind()) == s) => incrementDefinitionStatisticsCounter(PredicateKind())
         case s if (longKind(AttributeKind()) == s) => incrementDefinitionStatisticsCounter(AttributeKind())
         case s if (longKind(ModeKind()) == s) => incrementDefinitionStatisticsCounter(ModeKind())
-        case _ => throw new TranslatingError("unrecognised statistics counter to increment: " + kind)
+        case s if (longKind(StructureKind()) == s) => incrementDefinitionStatisticsCounter(StructureKind())
+        case _ => throw ImplementationError ("unrecognised statistics counter to increment: " + kind)
       }
-      def incrementDefinitionStatisticsCounter(implicit kind: PatternKinds): Unit = kind match {
+      def incrementDefinitionStatisticsCounter(implicit kind: DeclarationKinds): Unit = kind match {
         case FunctorKind() => functorDefinitions += 1
         case PredicateKind() => predicateDefinitions += 1
         case AttributeKind() => attributeDefinitions += 1
         case ModeKind() => modeDefinitions += 1
+        case StructureKind() => structureDefinitions += 1
       }
     }
   }
@@ -323,9 +324,9 @@ object TranslationController extends frontend.Logger {
           articleData.addUnresolvedDependency(dep)
           val mes = showErrorInformation(er, " while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: ")
           throw new TranslatingError(mes)
-        case er: Throwable =>
+        case er: Throwable if (!er.isInstanceOf[ImplementationError]) =>
           articleData.addUnresolvedDependency(dep)
-          val mes = showErrorInformation(er, " while trying to simplify the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated:")
+          val mes = showErrorInformation(er, " while trying to translate the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated:")
           throw new TranslatingError(mes)
       }
     }
@@ -364,7 +365,7 @@ object TranslationController extends frontend.Logger {
       case er: AddError =>
         val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
         throw new TranslatingError(mes)
-      case er: Throwable =>
+      case er: Throwable if (!er.isInstanceOf[ImplementationError]) =>
         val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
         throw new TranslatingError(mes)
     }
@@ -397,20 +398,20 @@ object TranslationController extends frontend.Logger {
         //however this is the legitimate translation and shouldn't be considered an error
       case eofe: EOFException =>
         val mes = showErrorInformation(eofe, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        println ("This usually means that corrupted translated content files are present. Try deleting them and build again. ")
         println (eofe)
       case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
-        println (mes)
-      case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("external declaration")) =>
         val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
         val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
+        println ("Not sure what causes these kind of issues. ")
       case er: Throwable =>
         val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         articleData.articleStatistics.incrementNumLegitimateTypingIssues
         println (mes)
+        println ("This seems to be a genuine typing issue. ")
     }
   }
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
@@ -431,12 +432,13 @@ object TranslationController extends frontend.Logger {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
+        println ("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
       case e: GeneralError =>
         val mes = showErrorInformation(e, " while trying to infer a type in the context of "+(defContext.args++defContext.getLocalBindingVars).toStr(true))
+        println (mes)
         throw new TranslatingError(mes)
-      case e : Throwable =>
+      case e : Throwable if (!e.isInstanceOf[ImplementationError]) =>
         throw e
     }
   }

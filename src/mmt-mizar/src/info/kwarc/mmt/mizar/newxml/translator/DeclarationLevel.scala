@@ -273,7 +273,7 @@ object patternTranslator {
     val fstDel = pattern.patternAttrs.spelling
     assert (fstDel.nonEmpty, "Encountered empty first delimiter while trying to build notation. ")
     val explArg = pattern._locis .flatMap(translateLocisWithoutSubstitution)
-    if (!(explArg forall (defContext.args.map(_.toTerm).contains(_)))) {
+    if (pattern.patKind.isInstanceOf[DeclarationKinds] && pattern.patKind == StructureKind()) if (!(explArg forall (defContext.args.map(_.toTerm).contains(_)))) {
       println ("Not all arguments mentioned in the "+longKind(pattern.patKind)+" are found in the definition context: "+defContext.args+". ")
     }
     val implArgInds = defContext.args.zipWithIndex.filterNot(argInd => explArg.map(_.name).contains(argInd._1.name)).map(_._2)
@@ -327,9 +327,9 @@ object propertyTranslator {
 }
 
 object subitemTranslator {
-  def notToplevel = new TranslatingError("This kind of declaration should not occur on toplevel. ")
+  def notToplevel = ImplementationError("This kind of declaration should not occur on toplevel. ")
   def translate_Reservation(reservation: Reservation) = { Nil }
-  def translate_Definition_Item(definition_Item: Definition_Item): Unit = {
+  def translate_Definition_Item(definition_Item: => Definition_Item): Unit = {
     definition_Item.blockKind() match {
       case "Definitional-Block" => translate_Definitional_Block(definition_Item._block)
       case "Registration-Block" => translate_Registration_Block(definition_Item._block)
@@ -338,8 +338,8 @@ object subitemTranslator {
   }
   def translate_Section_Pragma(section_Pragma: Section_Pragma) = { Nil }
   def translate_Pragma(pragma: Pragma) = { Nil }
-  def translate_Identify(identify: Identify)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = { clusterTranslator.translate_Identify(identify) }
-  def translate_Scheme_Block_Item(scheme_Block_Item: Scheme_Block_Item)(implicit defCtx: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
+  def translate_Identify(identify: => Identify)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = { clusterTranslator.translate_Identify(identify) }
+  def translate_Scheme_Block_Item(scheme_Block_Item: => Scheme_Block_Item)(implicit defCtx: => DefinitionContext = DefinitionContext.empty()) = scheme_Block_Item match {
     case sbi @ Scheme_Block_Item(_, _block) =>
       val gn = sbi.globalName
       val provenSentence = sbi.provenSentence
@@ -426,7 +426,7 @@ object statementTranslator {
 }
 
 object definitionTranslator {
-  def translate_Definition(defn:Definition)(implicit defContext: => DefinitionContext): Unit = {
+  def translate_Definition(defn: =>Definition)(implicit defContext: => DefinitionContext): Unit = {
     val translatedDecls: List[Declaration with HasType with HasDefiniens with HasNotation] = defn match {
       case d: Structure_Definition => translate_Structure_Definition(d)(defContext)
       case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
@@ -440,11 +440,11 @@ object definitionTranslator {
     if (defContext.withinProof) justProps map (d => defContext.addUsedFact(d.tp.get, d.df.get))
     (translatedDecls:::(if (!defContext.withinProof) justProps else Nil)) foreach (itemTranslator.add(_)(defContext))
   }
-  private def getCorrCond(cc: CorrectnessConditions)(implicit defContext: DefinitionContext, kind: PatternKinds, defn: CaseByCaseDefinien) = {
+  private def getCorrCond(cc: CorrectnessConditions)(implicit defContext: DefinitionContext, kind: DeclarationKinds, defn: CaseByCaseDefinien) = {
     val corrConds = defContext.corr_conds.map(jcc => (jcc._cond, translate_def_correctness_condition(jcc._cond, jcc._just, defn, kind)))
     corrConds.find(_._1 == cc).map(_._2) getOrElse translate_def_correctness_condition(cc, None, defn, kind, None)
   }
-  private def translate_Redefinable_Labelled_Definition(redefinableLabeledDefinition: RedefinableLabeledDefinition)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
+  private def translate_Redefinable_Labelled_Definition(redefinableLabeledDefinition: => RedefinableLabeledDefinition)(implicit defContext: DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = {
     redefinableLabeledDefinition.check
     val (pat, _defn, label) = (redefinableLabeledDefinition._pat, redefinableLabeledDefinition._def, redefinableLabeledDefinition.mmlIdO)
     val (ln, gn, notC) = translate_Pattern(pat)
@@ -502,7 +502,7 @@ object definitionTranslator {
               DirectPartialPredicateDef(name, argNum, argTps, defn.caseNum, cases, caseRes, defRes, consistencyProof)
             case DirectCompleteCaseByCaseDefinien(cases, caseRes) =>
               DirectCompletePredicateDef(name, argNum, argTps, defn.caseNum, cases, caseRes, consistencyProof)
-            case _ => throw new TranslatingError("Predicate definition can't be indirect. ")
+            case _ => throw ImplementationError("Predicate definition can't be indirect. ")
           }
       }
     }
@@ -531,10 +531,10 @@ object definitionTranslator {
     val fieldDecls = translate_Field_Segments(strDef._fieldSegms)
     val m = fieldDecls.length
 
-    articleData.articleStatistics.incrementStatisticsCounter("struct")
+    articleData.articleStatistics.incrementDefinitionStatisticsCounter(strDef._pat.patKind)
     StructureInstance(l, defContext.args, n, ancestorTps, m, Context.list2context(fieldDecls) ^ namedDefArgsSubstition(), nots.map(_._2))
   }
-  private def translate_Constant_Definition(constant_Definition: Constant_Definition)(implicit defContext: => DefinitionContext): List[Constant] = {
+  private def translate_Constant_Definition(constant_Definition: =>Constant_Definition)(implicit defContext: => DefinitionContext): List[Constant] = {
     constant_Definition._children map { eq =>
       val name = makeNewSimpleGlobalName(eq._var.toIdentifier.toString).name
       val dfU = translate_Term(eq._tm)(defContext)
@@ -547,7 +547,7 @@ object definitionTranslator {
       makeConstantInContext(name, None, Some(df))(notC, defContext)
     }
   }
-  def translate_Mode_Definition(mode_Definition: Mode_Definition)(implicit defContext: DefinitionContext) = {
+  def translate_Mode_Definition(mode_Definition: =>Mode_Definition)(implicit defContext: DefinitionContext) = {
     val (ln, declarationPath, notC) = translate_Pattern(mode_Definition._pat)
     implicit val kind = ModeKind()
     val name = ln / longKind(kind)
@@ -591,7 +591,7 @@ object definitionTranslator {
    * @effect if within a proof add the translated functor definition to the lists of local definitions
    * @return the translated functor definition
    */
-  def translate_Private_Functor_Definition(private_Functor_Definition: Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
+  def translate_Private_Functor_Definition(private_Functor_Definition: => Private_Functor_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_new_Variable(private_Functor_Definition._var)
     val gn = makeNewGlobalName("Private-Functor", private_Functor_Definition._var.serialnr.toString)
     //placeholder terms are numbered starting at 1
@@ -610,7 +610,7 @@ object definitionTranslator {
    * @effect if within a proof add the translated predicate definition to the lists of local definitions
    * @return the translated predicate definition
    */
-  def translate_Private_Predicate_Definition(private_Predicate_Definition: Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
+  def translate_Private_Predicate_Definition(private_Predicate_Definition: => Private_Predicate_Definition)(implicit defContext: => DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = {
     val v = translate_new_Variable(private_Predicate_Definition._var)
     val gn = makeNewGlobalName("Private-Predicate", private_Predicate_Definition._var.serialnr.toString)
     //placeholder terms are numbered starting at 1
@@ -622,7 +622,7 @@ object definitionTranslator {
     val name = makeSimpleGlobalName(currentAid, v.name.toString).name
     makeConstantInContext(name, Some(tp), Some(df))(defContext = defContext)
   }
-  def translate_Redefine(p: Patterns, ln: LocalName, ret: Option[Term], defn: Option[CaseByCaseDefinien], argNum: Int, argTps: List[Term])(implicit kind: PatternKinds, notC: NotationContainer) = {
+  def translate_Redefine(p: Patterns, ln: LocalName, ret: Option[Term], defn: Option[CaseByCaseDefinien], argNum: Int, argTps: List[Term])(implicit kind: DeclarationKinds, notC: NotationContainer) = {
     val origGn = globalReference(p, true)
     TranslationController.processDependencyTheory(origGn.module)
     val origDD = TranslationController.controller.getO(origGn)
@@ -741,11 +741,11 @@ object clusterTranslator {
   }
 }
 object blockTranslator {
-  def collectSubitems[mainSort <: BlockSubitem](cls: Class[mainSort], block: Block) : List[(mainSort, DefinitionContext)] = {
+  def collectSubitems[mainSort <: BlockSubitem](cls: Class[mainSort], block: => Block) : List[(mainSort, DefinitionContext)] = {
     val items = block._items
     implicit var defContext = DefinitionContext.empty()(false)
 
-    def recurse(remainingItems: List[Subitem]):List[(mainSort, DefinitionContext)] = remainingItems match {
+    def recurse(remainingItems: => List[Subitem]):List[(mainSort, DefinitionContext)] = remainingItems match {
       case Nil => Nil
       case (declIt: DeclarationLevel)::tl => declIt::tl match {
         case Loci_Declaration(_qualSegms, _conds) :: tl =>
@@ -783,30 +783,25 @@ object blockTranslator {
         case (prag: Pragma) :: tl => recurse(tl)
         case defIt::tl =>
           println ("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz")
-          throw DeclarationTranslationError("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz", defIt)
+          //throw DeclarationTranslationError("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz", defIt)
+          recurse(tl)
       }
-      case it::tl => throw DeclarationTranslationError("Unexpected item of type " + it.shortKind+" found, in "+block.kind+" in article "+currentAid+"\nInstead expected a declaration item. ", it)
+      case it::tl =>
+        val mes = "Unexpected item of type " + it.shortKind+" found, in "+block.kind+" in article "+currentAid+"\nInstead expected a declaration item. "
+        println (mes)
+        throw ImplementationError (mes)
     }
     recurse (items map (_._subitem))
   }
-  def translate_Definitional_Block(block:Block): Unit = {
+  def translate_Definitional_Block(block: => Block): Unit = {
     val definitionItems = collectSubitems[Definition](classOf[Definition], block)
-    definitionItems foreach  (dd =>
-      try {
-        translate_Definition(dd._1)(dd._2)
-      } catch {
-        case e: Error =>
-          val mes = showErrorInformation(e, " while translating (or adding) the "+dd._1.kind+": ")
-          println (mes)
-          e.printStackTrace()
-          throw e
-      })
+    definitionItems foreach  (dd => translate_Definition(dd._1)(dd._2))
   }
-  def translate_Registration_Block(block: Block): Unit = {
+  def translate_Registration_Block(block: => Block): Unit = {
     val clusterItems = collectSubitems[RegistrationSubitems](classOf[RegistrationSubitems], block)
     clusterItems foreach (rd => translate_Registration_Subitem(rd._1)(rd._2))
   }
-  def translate_Notation_Block(block: Block): Unit = {
+  def translate_Notation_Block(block: => Block): Unit = {
     val notationItems = collectSubitems[Nyms](classOf[Nyms], block)
     notationItems foreach (nd => add (translate_Nym(nd._1)(nd._2))(nd._2))
   }

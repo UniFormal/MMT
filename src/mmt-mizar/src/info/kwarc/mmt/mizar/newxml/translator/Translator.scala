@@ -28,7 +28,7 @@ object articleTranslator {
           println("GetError since we require the dependency theory "+mpath+" of the translated theory "+currentTheory.name+" to be already translated: \n"+
             "Please make sure the theory is translated (build with mizarxml-omdoc build target) and try again. ")
           articleData.addUnresolvedDependency(mpath)
-        case e: Throwable =>
+        case e: Throwable if (!e.isInstanceOf[ImplementationError]) =>
           if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+". "))//+it.toString))
           if (printTrace) e.printStackTrace()
           errCounter += 1
@@ -50,17 +50,10 @@ object itemTranslator {
       case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
       case theorem_Item: Theorem_Item => add (statementTranslator.translate_Theorem_Item(theorem_Item))
       case res: Reservation => translate_Reservation(res) foreach add
-      case defIt: Definition_Item =>
-        try {
-          translate_Definition_Item(defIt)
-        } catch {
-          case e: Throwable =>
-            println (showErrorInformation(e, " while translating the definition item "))
-            throw e
-        }
+      case defIt: Definition_Item => translate_Definition_Item(defIt)
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
       case pr: Pragma => translate_Pragma(pr) foreach add
-      case lociDecl: Loci_Declaration => throw new DeclarationLevelTranslationError("Unexpected Loci-Declaration on Top-Level.", lociDecl)
+      case lociDecl: Loci_Declaration => throw ImplementationError ("Unexpected Loci-Declaration on Top-Level.")
       case cl: Cluster => clusterTranslator.translate_Cluster(cl)(DefinitionContext.empty())
       case identify: Identify => add (translate_Identify(identify))
       case nym: Nyms => add (nymTranslator.translate_Nym(nym))

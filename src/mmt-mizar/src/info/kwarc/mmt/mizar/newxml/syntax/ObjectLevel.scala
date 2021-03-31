@@ -531,7 +531,7 @@ case class Pattern_Shaped_Expression(_pat: Patterns) extends ObjectLevel
  * @param _locis
  */
 case class Mode_Pattern(patternAttrs: PatternAttrs, _locis: List[Loci]) extends Patterns {
-  override def patKind: Utils.PatternKinds = Utils.ModeKind()
+  override def patKind: Utils.DeclarationKinds = Utils.ModeKind()
 }
 /**
  * Patterns for definitions that define both a pattern and a constr
@@ -554,6 +554,7 @@ sealed trait RedefinablePatterns extends ConstrPattern with GloballyReferencingR
   override def constrPatDef: ConstrPatDef = ConstrPatDef(redefPatAttr.constrPatAttr, _locis)
   override def globalReDefAttrs = redefPatAttr.globalReDefAttrs
   def hasOrigRefs = globalReDefAttrs.hasOrigRefs
+  override def patKind: DeclarationKinds
 }
 /**
  * a pattern of a structure definition
@@ -587,8 +588,9 @@ case class Predicate_Pattern(redefPatDef: RedefinablePatDef) extends Redefinable
  * @param _loci
  * @param _locis
  */
-case class Strict_Pattern(redefPatDef: RedefinablePatDef) extends RedefinablePatterns {
+case class Strict_Pattern(redefPatDef: RedefinablePatDef) extends ConstrPattern {
   override def patKind: Utils.PatternKinds = Utils.StrictKind()
+  override def constrPatDef: ConstrPatDef = ConstrPatDef(redefPatDef.redefPatAttr.constrPatAttr, redefPatDef._locis)
 }
 /**
  * ConstrPatterns of functor definitions and functor like declarations of structure definitions
@@ -600,7 +602,7 @@ sealed trait Functor_Patterns extends Patterns with ConstrPattern
  * @param _locis
  */
 case class AggregateFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
-  override def patKind: Utils.PatternKinds = Utils.AggregateKind()
+  override def patKind: Utils.StructurePatternKinds = Utils.AggregateKind()
 }
 /**
  * pattern of the (forgetful) projection from a structure to a (not necessarily proper) substructure
@@ -608,7 +610,7 @@ case class AggregateFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_
  * @param _locis
  */
 case class ForgetfulFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
-  override def patKind: Utils.PatternKinds = Utils.ForgetfulKind()
+  override def patKind: Utils.StructurePatternKinds = Utils.ForgetfulKind()
 }
 /**
  * pattern of a selector (field) declaration of a structure
@@ -616,13 +618,13 @@ case class ForgetfulFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_
  * @param _locis
  */
 case class SelectorFunctor_Pattern(constrPatDef: ConstrPatDef) extends Functor_Patterns {
-  override def patKind: Utils.PatternKinds = Utils.SelectorKind()
+  override def patKind: Utils.StructurePatternKinds = Utils.SelectorKind()
 }
 /**
  * patterns which are both functor patterns and redefinable patterns
  */
 sealed trait RedefinableFunctor_Patterns extends Functor_Patterns with RedefinablePatterns {
-  override def patKind: Utils.PatternKinds = Utils.FunctorKind()
+  override def patKind = Utils.FunctorKind()
 }
 /**
  * pattern of a functor definition with infix notation
