@@ -484,6 +484,15 @@ case class Straightforward_Justification(_refs:List[Reference]) extends Justific
  */
 case class Block(kind: String, _items:List[Item]) extends Justification
 /**
+ * A scheme, containing a nr allowing to reference it by its name withing the same article
+ * @param spelling the spelling of the scheme
+ * @param nr the number to reference the scheme by
+ */
+case class Scheme(spelling:String, nr:Int) extends ObjectLevel {
+  def name = if (spelling.nonEmpty) spelling else "AnonymousScheme_"+nr.toString
+  def globalName = makeNewGlobalName("Scheme", spelling)
+}
+/**
  * A Justification using a referenced scheme applied to some referenced facts
  * @param nr
  * @param idnr
@@ -995,4 +1004,10 @@ case class Unknown(inscription:String) extends Pragmas
 case class Notion_Name(inscription:String) extends Pragmas
 case class Canceled(MmlId:MMLId, amount:Int, kind:String) extends Pragmas
 
+/**
+ * the variable for which to reserve a type and their types, doesn't need to be translated as explained in the comment for Reservations
+ * @param _vars
+ * @param _varSegm
+ * @param _tp
+ */
 case class Reservation_Segment(_vars:Variables, _varSegm:Variable_Segments, _tp:Type) extends ObjectLevel

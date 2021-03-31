@@ -14,6 +14,7 @@ import info.kwarc.mmt.lf._
 import mmtwrapper._
 import PatternUtils._
 import MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController.printTimeDiff
 
 import java.io.{EOFException, PrintStream}
@@ -228,16 +229,22 @@ object TranslationController extends frontend.Logger {
       }
 
       def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
-        case "funct" => functorDefinitions += 1
-        case "pred" => predicateDefinitions += 1
-        case "attribute" => attributeDefinitions += 1
-        case "mode" => modeDefinitions += 1
         case "scheme" => schemeDefinitions += 1
         case "struct" => structureDefinitions += 1
         case "nym" => nyms += 1
         case "registr" => registrations += 1
         case "thm" => theorems += 1
+        case s if (longKind(FunctorKind()) == s) => incrementDefinitionStatisticsCounter(FunctorKind())
+        case s if (longKind(PredicateKind()) == s) => incrementDefinitionStatisticsCounter(PredicateKind())
+        case s if (longKind(AttributeKind()) == s) => incrementDefinitionStatisticsCounter(AttributeKind())
+        case s if (longKind(ModeKind()) == s) => incrementDefinitionStatisticsCounter(ModeKind())
         case _ => throw new TranslatingError("unrecognised statistics counter to increment: " + kind)
+      }
+      def incrementDefinitionStatisticsCounter(implicit kind: PatternKinds): Unit = kind match {
+        case FunctorKind() => functorDefinitions += 1
+        case PredicateKind() => predicateDefinitions += 1
+        case AttributeKind() => attributeDefinitions += 1
+        case ModeKind() => modeDefinitions += 1
       }
     }
   }
@@ -363,6 +370,7 @@ object TranslationController extends frontend.Logger {
     }
     try {
       if (e.feature == "instance") {
+        if (typecheckContent && checkConstants) typecheckContent(e)
         structureSimplifier(e)
         val externalDecls = currentTheory.domain.filter(_.init == e.name)
         if (externalDecls.isEmpty) {
@@ -380,7 +388,6 @@ object TranslationController extends frontend.Logger {
             }
         })
       }
-      if (typecheckContent && checkConstants) typecheckContent(e)
     } catch {
       case _: AddError =>
         throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
@@ -401,7 +408,7 @@ object TranslationController extends frontend.Logger {
         val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: Throwable =>
-        val mes = showErrorInformation(er, "while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
         articleData.articleStatistics.incrementNumLegitimateTypingIssues
         println (mes)
     }

@@ -30,7 +30,7 @@ object articleTranslator {
           articleData.addUnresolvedDependency(mpath)
         case e: Throwable =>
           if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+". "))//+it.toString))
-          if (printTrace && (e.isInstanceOf[GeneralError] || e.isInstanceOf[LookupError])) e.printStackTrace()
+          if (printTrace) e.printStackTrace()
           errCounter += 1
       }
     }
@@ -55,6 +55,7 @@ object itemTranslator {
           translate_Definition_Item(defIt)
         } catch {
           case e: Throwable =>
+            println (showErrorInformation(e, " while translating the definition item "))
             throw e
         }
       case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add

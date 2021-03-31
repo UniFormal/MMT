@@ -10,16 +10,17 @@ import MizarPrimitiveConcepts._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recName, recTypeName}
+import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import translator.{DefinitionContext, TranslationController}
 object PatternUtils {
   def argsVarName: String = "x"//"argumentSequence"
   def argsWellTypedName: String = "p"
   def pseudoSlash(a: LocalName, b: LocalName) : LocalName = a / b //LocalName(a.toString+"_"+b.toString)
   private def referenceExtDecl(strPath:GlobalName, nm: LocalName): GlobalName = strPath.module ? pseudoSlash(strPath.name, LocalName(nm))
-  def structureStrictDeclPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName("strictDef"))
-  def structureForgetfulFunctorPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName("forgetfulFunctor"))
-  def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(recTypeName))
-  def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(makeName))
+  def structureStrictDeclPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
+  def structureForgetfulFunctorPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(ForgetfulKind())))
+  def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
+  def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(AggregateKind())))
   def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName)
   def structureAncestorSubtypingPath(ancestorName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, ancestorName)
 

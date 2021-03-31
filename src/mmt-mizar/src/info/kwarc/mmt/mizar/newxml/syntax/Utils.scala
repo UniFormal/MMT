@@ -1,6 +1,8 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
 import info.kwarc.mmt.api.{GlobalName, LocalName}
+import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recTypeName}
+import info.kwarc.mmt.mizar.newxml.syntax.Utils.shortKind
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object Utils {
@@ -143,5 +145,16 @@ object Utils {
     case AggregateKind() => shortKind(StructureKind())//'G'
     case SelectorKind() => shortKind(StructureKind())//'J'
     case ForgetfulKind() => shortKind(StructureKind())//'U'
+  }
+  def longKind(kind: PatternKinds): String = kind match {
+    case ModeKind() => "mode"
+    case StructureKind() => recTypeName
+    case FunctorKind() => "funct"
+    case AttributeKind() => "attribute"
+    case PredicateKind() => "pred"
+    case StrictKind() => "strictDef"
+    case AggregateKind() => makeName
+    case SelectorKind() => longKind(StructureKind())//'J'
+    case ForgetfulKind() => longKind(StructureKind())//'U'
   }
 }
