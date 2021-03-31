@@ -4,7 +4,8 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, RenderingHandler}
 import info.kwarc.mmt.api.{CPath, ContentPath, StructuralElement}
 import info.kwarc.mmt.stex
-import info.kwarc.mmt.stex.xhtml.{PreElement, XHTMLNode}
+import info.kwarc.mmt.stex.STeX.StringLiterals
+import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
 
 case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : XHTMLNode, fragment: String, arity : String, allnotations : List[(String,XHTMLNode)])
 
@@ -26,13 +27,15 @@ trait STeXPresenter extends ObjectPresenter {
       val macroname = PreElement.getMacroName(c) match {
         case Some(n) => n
         case _ =>
-          return None
+          "???"
       }
       val arity = c.metadata.getValues(STeX.meta_arity) match {
         case List(STeX.StringLiterals(s)) => s
         case _ => ""
       }
       Some(stex.STeXNotation(tm,cp,macroname,notation,notationFragment,arity,notations))
+    case None =>
+      None
   }
 
 }
@@ -53,6 +56,9 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
   }
 
   override def recurse(obj: Obj)(implicit pc: PresentationContext): Int = {
+    lazy val default = {
+      super.recurse(obj)
+    }
     obj match {
       case ctx : Context =>
         if (ctx.length == 0) 0
@@ -72,18 +78,31 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           case _ => pc.out({<mi>{vd.name}</mi>}.toString())
         }
         0
+      case STeX.informal(node) =>
+        node.attributes(("","mathbackground")) = "#ff0000"
+        pc.out(node.toString)
+        0
+      case OMA(OMS(STeX.informal.opsym),StringLiterals(label) :: args) =>
+        pc.out("<" + label + " mathbackground=\"#ff0000\"" + ">")
+        args.foreach(recurse(_))
+        pc.out("</" + label + ">")
+        0
       case tm@OMS(gn) =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
+        val comps = getComponents(gn,tm).getOrElse{
+          return default
+        }
         pc.out(comps.notation_used.toString)
         0
       case tm@OMA(OMS(gn),args) =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
+        val comps = getComponents(gn,tm).getOrElse{
+          return default
+        }
         val br = 0 // TODO
         var ret = comps.notation_used.toString
         var doarg : List[Unit => Unit] = Nil
         var i = 0
         comps.arity.toList.zipWithIndex.foreach {
-          case ('i', _) =>
+          case ('i', _) | ('b', _) =>
             val j = i
             doarg ::= { _: Unit =>
               recurse(args(j))
@@ -116,6 +135,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
               (1 until retargs.length).foreach(_ => pc.out(end))
             }
           case _ =>
+            ???
         }
         doarg = doarg.reverse
         while (ret.nonEmpty) {
@@ -131,7 +151,9 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
               assert(ret.startsWith("</mtext>"))
               ret = ret.drop(8)
               // TODO downwardsprec
-              assert(doarg.isDefinedAt(argnum-1))
+              if (!doarg.isDefinedAt(argnum-1)) {
+                assert(doarg.isDefinedAt(argnum - 1))
+              }
               doarg(argnum-1)(())
             case _ =>
               ???
@@ -139,7 +161,9 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         }
         br
       case tm@OMBIND(OMS(gn),ctx,arg) if ctx.length == 1 =>
-        val comps = getComponents(gn,tm).getOrElse{return super.recurse(obj)}
+        val comps = getComponents(gn,tm).getOrElse{
+          return default
+        }
         val br = 0 // TODO
         var ret = comps.notation_used.toString
         while (ret.nonEmpty) {
@@ -168,7 +192,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
         br
       case tm@OMBIND(OMS(gn),ctx,arg) if ctx.length > 1 => recurse(OMBIND(OMS(gn),Context(ctx.variables.head),OMBIND(OMS(gn),Context(ctx.variables.tail:_*),arg)))
       case _ =>
-        super.recurse(obj)
+        return default
     }
   }
 }

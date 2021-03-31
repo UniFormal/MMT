@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.xhtml
 
+import info.kwarc.mmt.api
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
@@ -19,6 +20,12 @@ import scala.xml.Node
 object PreElement {
   def extract(elem : XHTMLNode)(implicit controller : Controller) = {
     var top : Option[PreDocument] = None
+    var missing : List[Path] = Nil
+    def simplify(e : StructuralElement) =
+      try { controller.simplifier(e) } catch {
+        case GetError(s) if s.startsWith("no backend applicable to ") =>
+          missing ::= Path.parse(s.drop("no backend applicable to ".length))
+      }
     def extractInner(elem : XHTMLNode,parent: Option[PreParent]) : Unit = {
       def recurse(p: => Option[PreParent]) = elem.children.map(extractInner(_, p))
       val nextparent = (parent,top) match {
@@ -37,10 +44,8 @@ object PreElement {
               }
               recurse(Some(el))
             case Some(el : PreParent) =>
-              nextparent.foreach(_.add(el))
               recurse(Some(el))
             case Some(el) =>
-              nextparent.foreach(_.add(el))
               recurse(nextparent)
             case _ =>
               recurse(nextparent)
@@ -52,7 +57,7 @@ object PreElement {
     extractInner(elem,top)
     implicit val transformer = new Transformer
     def convert(pe : PreElement, parent : StructuralElement) : Unit = {
-      val ne = pe.getElement
+      val ne = transformer(pe.getElement)
       controller add ne
       (parent,ne) match {
         case (d : Document,t:Theory) =>
@@ -62,16 +67,16 @@ object PreElement {
       pe match {
         case pp : PreParent =>
           pp.children.reverse.foreach(convert(_,ne))
-          controller.simplifier(ne)
+          simplify(ne)
         case _ =>
       }
     }
     top match {
       case Some(pd) =>
-        val doc = pd.getElement
+        val doc = transformer(pd.getElement)
         controller add doc
         pd.children.reverse.foreach(convert(_,doc))
-        doc
+        (doc,missing.distinct)
       case _ =>
         ???
     }
@@ -112,6 +117,7 @@ object PreElement {
 
 class Transformer {
   private var _transforms : List[PartialFunction[Term,Term]] = Nil
+  private var _setransforms : List[PartialFunction[StructuralElement,StructuralElement]] = Nil
   def add(pf : PartialFunction[Term,Term]) = _transforms ::= pf
   private val traverser = new StatelessTraverser {
     override def traverse(t: Term)(implicit con: Context, state: State): Term = {
@@ -120,6 +126,7 @@ class Transformer {
     }
   }
   def apply(tm : Term) : Term = traverser(tm,())
+  def apply[A <: StructuralElement](se : A) = _setransforms.collectFirst{case r if r.isDefinedAt(se) => r(se) }.getOrElse(se).asInstanceOf[A]
 }
 
 abstract class PreElement {
@@ -166,7 +173,7 @@ trait PreParent extends PreElement {
 class PreDocument(val namespace : String) extends PreParent {
   var level : Int = 0
   type A = Document
-  val path = Path.parseD(namespace.trim,NamespaceMap.empty)
+  val path = Path.parseD(namespace.trim + ".omdoc",NamespaceMap.empty)
   // TODO Sections
   override def getElementI(implicit transformer : Transformer): Document = new Document(path)
 }
@@ -210,30 +217,32 @@ class PreTheory(val path : MPath, val parent : PreParent) extends PreElement wit
   parent.add(this)
   override val _parent = Some(parent)
   private var _params : List[Term] = Nil
-  var metatheory : Option[MPath] = Some(STeX.meta)
+  protected var metatheory : Option[MPath] = Some(STeX.meta)
+  def addMeta(mt : Option[MPath]) = {
+    languagemodule.foreach(_.metatheory = mt)
+    signaturemodule.foreach(_.metatheory = mt)
+  }
+  var export = true
+  var languagemodule : Option[PreTheory] = Some(this)
+  var signaturemodule : Option[PreTheory] = Some(this)
 
   // TODO metatheory, parameters
   type A = Theory
   override def getElementI(implicit transformer : Transformer): Theory = Theory(path.doc,path.name,metatheory)
 }
 
-class PreStructure(val domain : String, val parent : PreParent, val _name : String = "") extends PreElement with PreParent {
+class PreStructure(val domain : String, val parent : PreTheory, val _name : String = "") extends PreElement with PreParent {
   parent.add(this)
   override val _parent = Some(parent)
-  val name = if (_name.nonEmpty) LocalName(_name) else parent.newName(domain)
+  lazy val name = if (_name.nonEmpty) LocalName(_name) else parent.newName(domain)
   var _nonEmpty = false
   def empty = (!_nonEmpty && _children.isEmpty)
-  val parentpath = parent.path match {
-    case mp : MPath => mp
-    case gn : GlobalName =>
-      gn.module.parent ? (gn.module.name / gn.name)
-  }
-  val path = parentpath ? LocalName(name)
+  lazy val path = parent.path ? LocalName(name)
 
   type A = Structure
   // TODO structures, views, ...
   override def getElementI(implicit transformer : Transformer) =
-    if (empty) PlainInclude(Path.parseM(domain,NamespaceMap.empty),parentpath) else {
+    if (empty) PlainInclude(Path.parseM(domain,NamespaceMap.empty),parent.path) else {
       ???
     }
 }
@@ -246,4 +255,13 @@ class PreFeature(val path : GlobalName, val feature: String,val parent : PrePare
   // TODO everything
   override def getElementI(implicit transformer : Transformer): DerivedDeclaration =
     new DerivedDeclaration(OMID(path.module),LocalName(path.name + "_feature"),feature,TermContainer.empty(),NotationContainer.empty())
+}
+
+class PreTerm(val tm : Term,val parent : PreParent,val path : ContentPath) extends PreElement {
+  parent.add(this)
+  type A = Constant
+  def getElementI(implicit transformer : Transformer) = {
+    val c = Constant(OMID(path.module),path.name,Nil,None,Some(transformer(tm)),Some("commentary"))
+    c
+  }
 }

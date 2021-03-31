@@ -7,12 +7,18 @@ import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 import org.xml.sax.InputSource
 
 import java.io.StringReader
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.xml._
 import scala.xml.parsing.NoBindingFactoryAdapter
 
 object XHTML {
   def text(s : String) = new XHTMLText(s)
+
+  def unescape(s : String) : String = {
+    val s1 = XMLEscaping.unapply(s)
+    if (s1 == s) s else unescape(s1)
+  }
 
   def makeAttributes(ls : ((String,String),String)*) = ls.foldLeft(scala.xml.Null : MetaData){
     case (e,(("",k),v)) =>
@@ -23,13 +29,14 @@ object XHTML {
 
   object Rules {
     implicit val defaultrules : List[PartialFunction[Node,XHTMLNode]] = List(
-      {case e : Elem if e.label == "html" => new XHTMLDocument},
-      {case e : Elem if e.label == "math" => new XMHTMLMath},
+      {case e : Elem if e.label == "html" => new XHTMLDocument(Some(e))},
+      {case e : Elem if e.label == "math" => new XHTMLMath(Some(e))},
       {case e : Elem if e.label == "svg" =>
         val ne = new XHTMLNode(Some(e)) {}
         ne.attributes(("","xmlns")) = "http://www.w3.org/2000/svg"
         ne
-      }
+      },
+      {case e : Elem if List("mrow","mi","mo","msub","msup","mtext","mfrac","mspace","munderover","merror").contains(e.label) => new XMathML(Some(e))}
     )
   }
   private lazy val parserFactory = {
@@ -51,7 +58,7 @@ object XHTML {
   }
 
   def apply(node : Node)(implicit rules : List[PartialFunction[Node,XHTMLNode]]) : List[XHTMLNode] = {
-    (Rules.defaultrules ::: rules).find(_.isDefinedAt(node)) match {
+    (rules ::: Rules.defaultrules).find(_.isDefinedAt(node)) match {
       case Some(r) =>
         val ret = r(node)
         node.child.flatMap(apply).foreach(ret.add)
@@ -65,11 +72,15 @@ object XHTML {
           List(init,content,end).filterNot(_.isEmpty).map(s => new XHTMLText(s))
         case a : Atom[String] =>
           List(new XHTMLText(a.data))
+        case e : Elem if (e.label == "mi" || e.label == "mo") && e.child.isEmpty =>
+          Nil
         case e : Elem =>
-          val ret = new XHTMLNode(Some(node)) {}
+          val ret = new XHTMLNode(Some(node))
           node.child.flatMap(apply).foreach(ret.add)
           ret.children.foreach(_.cleanup)
           List(ret)
+        case null =>
+          Nil
         case _ =>
           ???
       }
@@ -78,15 +89,30 @@ object XHTML {
   val empty = scala.xml.Text("\u200E")
 }
 
-abstract class XHTMLNode(initial_node : Option[Node] = None) {
+class XHTMLNode(initial_node : Option[Node] = None) {
   def cleanup : Unit = {}
+  def strip : Node = {
+    val attrs = attributes.toList.filter{
+      case (("","property"),_) => false
+      case (("","resource"),_) => false
+      case (("","class"),_) => false
+      case (("stex","arg"),_) => false
+      case _ =>
+        true
+    }
+    Elem(null,_label,XHTML.makeAttributes(attrs:_*),scope,true,children.map(_.strip):_*)
+  }
+  def inscript : Boolean = _label == "script" || (_parent match {
+    case Some(p) => p.inscript
+    case _ => false
+  })
   protected var _parent : Option[XHTMLNode] = None
   def parent = _parent
   protected def ancestors : List[XHTMLNode] = if (_parent.isDefined) _parent.get :: _parent.get.ancestors else Nil
   def ismath = {
     if (label == "mtext") false
     else ancestors.collectFirst {
-      case _ : XMHTMLMath => true
+      case _ : XHTMLMath => true
       case n : XHTMLNode if n.label == "mtext" => false
     }.getOrElse(false)
   }
@@ -119,7 +145,7 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
   }
   initial_node.foreach(n => fill(n.attributes))
 
-  def node : Node = Elem(prefix,_label,XHTML.makeAttributes(attributes.toSeq:_*),scope,true,children.map(_.node) :_*)
+  def node : Node = Elem(prefix,_label,XHTML.makeAttributes(attributes.toSeq.reverse:_*),scope,true,children.map(_.node) :_*)
 
   def add(s : String) : Unit = add(XHTML.text(s))
   def add(n : Node) : Unit = add(XHTML(n)(Nil).head)
@@ -128,12 +154,6 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
     _children = _children ::: List(e)
   }
 
-  def addBefore(e : XHTMLNode,before : XHTMLNode) : Unit = _children.indexOf(before) match {
-    case -1 => _children = _children ::: List(e)
-      e._parent = Some(this)
-    case i => _children = _children.take(i) ::: e :: _children.drop(i)
-      e._parent = Some(this)
-  }
   def addAfter(e : XHTMLNode,after : XHTMLNode) : Unit = _children.indexOf(after) match {
     case -1 => _children = _children ::: List(e)
       e._parent = Some(this)
@@ -146,9 +166,28 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
 
   override def toString: String = node.toString()
 
-  def iterate(f : XHTMLNode => Unit) : Unit = {
+  @tailrec
+  final def iterate(f : XHTMLNode => Unit) : Unit = {
     f(this)
-    _children.foreach(_.iterate(f))
+    children match {
+      case a :: _ => a.iterate(f)
+      case _ => successor match {
+        case Some(s) => s.iterate(f)
+        case _ =>
+      }
+    }
+  }
+
+  @tailrec
+  final def successor : Option[XHTMLNode] = parent match {
+      case Some(p) =>
+        val ch = p.children
+        ch.drop(ch.indexOf(this)).tail.headOption match {
+          case Some(h) => Some(h)
+          case None =>
+            p.successor
+        }
+      case _ => None
   }
 
   def get[A <: XHTMLNode](cls : Class[A]) : List[A] = { // You'd think this would be easier, but apparently it isn't
@@ -190,31 +229,7 @@ abstract class XHTMLNode(initial_node : Option[Node] = None) {
 
   def isEmpty : Boolean = _children.isEmpty || _children.forall(_.isEmpty)
 
-  def addOverlay(url:String): Unit = {
-    val t = this.top
-    attributes(("","class")) = attributes.get(("","class")) match {
-      case Some(s) => s + " stexoverlaycontainer"
-      case _ => "stexoverlaycontainer"
-    }
-    val id = t.generateId
-    attributes(("","onmouseover")) = "stexOverlayOn('"+id+"','"+url+"')"
-    attributes(("","onmouseout")) = "stexOverlayOff('"+id+"')"
-    attributes(("","onmouseclick")) = "alert('" + url + "')"
-    val overlay = XHTML.apply(<span style="position:relative">
-      <iframe src=" " class="stexoverlay" id={id}>{XHTML.empty}</iframe>
-    </span>)(Nil).head
-    if (!ismath) {
-      val p = parent.get
-      p.addAfter(overlay,this)
-      print("")
-    } else {
-      val tm = getTopMath
-      tm.parent.foreach(_.addAfter(overlay,tm))
-      print("")
-    }
-  }
-
-  private def getTopMath : XHTMLNode = if (!parent.get.ismath) this else parent.get.getTopMath
+  def getTopMath : XHTMLNode = if (!parent.get.ismath) this else parent.get.getTopMath
 }
 
 class XHTMLText(init : String) extends XHTMLNode() {
@@ -222,40 +237,12 @@ class XHTMLText(init : String) extends XHTMLNode() {
   def text = _text
 
   override def node: scala.xml.Text = scala.xml.Text(text)
+  override def strip: scala.xml.Text = node
 
   override def isEmpty: Boolean = {
     val trimmed = text.replace('\u2061',' ').trim
     trimmed.isEmpty
   }
-
-  override def addOverlay(url:String): Unit = {
-    val t = this.top
-    val id = t.generateId
-    val newthis = XHTML.apply(
-      <span class="stexoverlaycontainer"
-            onmouseover={"stexOverlayOn('" + id + "','" + url + "')"}
-            onmouseout={"stexOverlayOff('" + id + "')"}
-            onmouseclick={"alert('" + url + "')"}
-      ></span>
-    )(Nil).head
-    val overlay = XHTML.apply(
-      <span style="position:relative">
-        <iframe src=" " class="stexoverlay" id={id}>
-          {XHTML.empty}
-        </iframe>
-      </span>
-    )(Nil).head
-    val p = parent.get
-    p.addBefore(overlay, this)
-    this.delete
-    p.addBefore(newthis,overlay)
-    newthis.add(this)
-  }
-}
-
-class XMHTMLMath(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
-  override def node: Node = <math xmlnd="http://www.w3.org/1998/Math/MathML">{children.map(_.node)}</math>
-  override val ismath = true
 }
 
 class XHTMLDocument(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
@@ -269,10 +256,4 @@ class XHTMLDocument(initial_node : Option[Node] = None) extends XHTMLNode(initia
     >{children.map(_.node)}</html>
 
   override def toString: String = doc_prefix + super.toString
-}
-
-
-case class XHTMLSidebar(id:String,ls:Node*) extends XHTMLNode() {
-  override def node: Node = Elem(null,"span",XHTML.makeAttributes(),scala.xml.TopScope,true,
-    (<label for={id} class="sidenote-toggle">{XHTML.empty}</label><input type="checkbox" id={id} class="sidenote-toggle"/><span class="sidenote">{ls}</span>) :_*)
 }

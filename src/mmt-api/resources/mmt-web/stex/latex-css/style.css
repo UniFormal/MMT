@@ -132,9 +132,8 @@ body {
   line-height: 1.8;
 
   max-width: 80ch;
-  min-height: 100vh;
   overflow-x: hidden;
-  margin: 0 auto;
+  /* margin: 0 auto; */
   padding: 2rem 1.25rem;
 
   counter-reset: theorem;
@@ -382,7 +381,7 @@ dl dd {
   clear: right;
   width: 18vw;
   margin-right: -20vw;
-  margin-bottom: 1em;
+  /*margin-bottom: 1em;*/
 }
 
 .sidenote.left {
@@ -444,7 +443,7 @@ input.sidenote-toggle {
   display: none;
 }
 
-@media (max-width: 1050px) {
+@media (max-width: 750px) {
   label.sidenote-toggle:not(.sidenote-number) {
     display: inline;
   }

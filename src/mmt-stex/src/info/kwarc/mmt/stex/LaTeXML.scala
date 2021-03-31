@@ -29,7 +29,7 @@ object LaTeXML {
   // private var nopost: Boolean = false
 
   def latexmlc(in: File, out: File, log_out : Option[String => Unit] = None,log_err : Option[String => Unit] = None) = {
-    var args = List("--dest=" + out.toString, in.toString,"--pmml")
+    var args = List("--dest=" + out.toString, in.toString)
     if (expire != 0) args ::= "--expire=" + expire.toString
     if (port != 0) args ::= "--port=" + port.toString
     preloads.foreach(args ::= "--preload=" + _)

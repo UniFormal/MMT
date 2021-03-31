@@ -1,7 +1,7 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{ErrorHandler, ExtensionError, Level, StructuralElement}
+import info.kwarc.mmt.api.{ErrorHandler, ExtensionError, GetError, Level, StructuralElement}
 import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
 import info.kwarc.mmt.api.checking.{CheckingResult, Interpreter}
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
@@ -47,9 +47,10 @@ class LaTeXToHTML extends Importer {
   }
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
-    bt.inPath
-    val (html,extensions) = buildFileActually(bt)
-    index(PreElement.extract(html)(controller))
+    val (doc,missing) = buildFileActually(bt)
+    missing.foreach(m => bt.errorCont(GetError("no backend applicable to " + m)))
+    index(doc)
+
     BuildResult.empty
   }
 /*
@@ -84,7 +85,7 @@ class LaTeXToHTML extends Importer {
 
   def buildFileActually(bf: BuildTask) = {
     val extensions = stexserver.extensions
-    implicit val xhtmlrules = XHTML.Rules.defaultrules ::: extensions.flatMap(_.xhtmlRules)
+    implicit val xhtmlrules = extensions.flatMap(_.xhtmlRules)
     log("building " + bf.inFile)
     LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
       case (i,ls) if i > Level.Warning =>
@@ -92,15 +93,17 @@ class LaTeXToHTML extends Importer {
       case _ =>
     }
     if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
+    log("postprocessing " + bf.inFile)
     val doc = XHTML.parse(bf.outFile).head
     doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
     doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
-    val head = doc.get("head")().head
-    head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
-    head.add(XHTML(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{XHTML.empty}</script>)(Nil).head)
+    //val head = doc.get("head")().head
+    //head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
+    //head.add(XHTML(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{XHTML.empty}</script>)(Nil).head)
+    val (mmtdoc,missing) = PreElement.extract(doc)(controller)
     File.write(bf.outFile, doc.toString)
     log("Finished: " + bf.inFile)
-    (doc,extensions)
+    (mmtdoc,missing)
   }
 }
 
