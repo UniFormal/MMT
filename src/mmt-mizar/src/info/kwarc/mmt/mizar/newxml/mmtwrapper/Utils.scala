@@ -178,6 +178,7 @@ object MizarPrimitiveConcepts {
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
   def num(i: Int) = numRT(i)
 
+  def dummyTerm(tp: Term) = Apply(constant("dummyTerm"), tp)
   object SimpleTypedAttrAppl {
     def apply(baseTp: Term, attrs: List[Term]) = {
       attrs.foldLeft[Term](baseTp)((tp:Term, attr:Term) => Apply(attr, tp))

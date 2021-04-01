@@ -19,6 +19,7 @@ object PatternUtils {
   private def referenceExtDecl(strPath:GlobalName, nm: LocalName): GlobalName = strPath.module ? pseudoSlash(strPath.name, LocalName(nm))
   def structureStrictDeclPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
   def structureForgetfulFunctorPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(ForgetfulKind())))
+  def structureForgetfulFunctorProperPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(ForgetfulKind())+"_proper"))
   def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
   def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(AggregateKind())))
   def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName)

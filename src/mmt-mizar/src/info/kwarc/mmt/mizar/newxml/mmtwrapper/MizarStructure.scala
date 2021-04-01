@@ -69,12 +69,20 @@ object MizarStructure {
     val argsTyped = MMTUtils.freeVarContext(argTps map(_.toTerm))
 
     val structTpx = ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm))
+    val dummyParams = params.variables.toList.map(_.tp.get).map(dummyTerm)
+    val dummyArgsTyped = argsTyped.variables.toList.map(_.tp.get).map(dummyTerm)
+    val structTpDummys = ApplyGeneral(OMS(structureTypePath), dummyParams)
     val strictDecl = Constant(OMMOD(parentTerm.module), structureStrictDeclPath.name, Nil,
       Some(PiOrEmpty(params, Pi(LocalName("s"), structTpx, prop))), Some(LambdaOrEmpty(params,
         Lam("s", structTpx, equal(OMV("s"), Apply(OMS(structureForgetfulFunctorPath), OMV("s")))))), None, strictNot)
-    val forgetfulFunctorDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorPath.name, Nil,
-      Some(Arrow(structTpx, structTpx)), None, None, forgNot)
-    val furtherDecls = forgetfulFunctorDecl::strictDecl::ancestorSubtypingDecls(params, ancestorTps)
+    val forgetFulFunctorDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorProperPath.name, Nil,
+      Some(PiOrEmpty(params++argsTyped, Arrow(structTpx, Apply(strictDecl.toTerm, structTpx)))), Some(LambdaOrEmpty(params++argsTyped,
+        Lam("s", structTpx, ApplyGeneral(OMS(structureMakePath), params++argsTyped map (_.toTerm))))), None)
+    val forgetfulFunctorConvenienceDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorPath.name, Nil,
+      Some(Arrow(structTpDummys, structTpDummys)),
+      Some(Lam("s", structTpDummys, ApplyGeneral(forgetFulFunctorDecl.toTerm, dummyParams++dummyArgsTyped))),
+      None, forgNot)
+    val furtherDecls = forgetfulFunctorConvenienceDecl::strictDecl::ancestorSubtypingDecls(params, ancestorTps)
     (recordElabDecls ::: furtherDecls) map tr
   }
 }
