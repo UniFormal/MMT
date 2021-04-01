@@ -96,7 +96,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   val library = memory.content
 
   /** convenience for getting the default text-based presenter (for error messages, logging, etc.) */
-  def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").get
+  def presenter: Presenter = extman.get(classOf[Presenter], "present-text-notations").getOrElse(extman.get(classOf[Presenter], "present-text-notations-flat").get)
 
   /** convenience for getting the default simplifier */
   def simplifier: Simplifier = extman.get(classOf[Simplifier]).head
