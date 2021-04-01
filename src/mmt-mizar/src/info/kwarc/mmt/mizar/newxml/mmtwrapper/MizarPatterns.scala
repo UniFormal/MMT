@@ -133,25 +133,7 @@ object MizarPatternInstance {
     val consistencyProofU = (caseNumI, consistencyProofUnbound) match {
       case (0, _) => zeroAryAndPropCon
       case (_, pf) => pf
-      /*case (m, _) => uses(And((0 until m).toList map (i => implies(
-        Index(Apply(OMV("cases"), OMI(i)), x), And((i until m).toList map(j => implies(
-          Index(Apply(OMV("cases"), OMI(j)), x), MizarPrimitiveConcepts.equal(
-            Apply(Index(OMV("caseRes"), OMI(i)), x),
-            Apply(Index(OMV("caseRes"), OMI(j)), x)))))))), Nil)
-      case _ => throw ImplementationError("consistency correctness condition expected, but none given for "+pat+". ")*/
     }
-    def caseResSingleTp(n: Int) = pat match {
-      case s if s.contains("Func") && s.contains ("dir") => Arrow(nTerms(n), any)
-      case s if s.contains("Func") && s.contains ("indir") => Arrow(nTerms(n+1), any)
-      case s if s.contains("Pred") && s.contains ("dir") => Arrow(nTerms(n), prop)
-      case s if s.contains("Pred") && s.contains ("indir") => Arrow(nTerms(n+1), prop)
-      case s if s.contains("Attr") && s.contains ("dir") => Arrow(nTerms(n), prop)
-      case s if s.contains("Attr") && s.contains ("indir") => Arrow(nTerms(n+1), prop)
-      case s if s.contains("Mode") && s.contains ("dir") => Arrow(nTerms(n), Arrow(any, prop))
-      case s if s.contains("Mode") && s.contains ("indir") => Arrow(nTerms(n), Arrow(Arrow(any, prop), prop))
-    }
-    val casesTp = Rep(Arrow(nTerms(argNumI), prop), caseNum)
-    val caseResTp = Rep(caseResSingleTp(caseNumI), caseNum)
 
     val consistencyProof = argsWellTyped(consistencyProofU)
     val defRes = defResUnbound map(tm => List(lambdaBindArgs(tm))) getOrElse Nil
@@ -448,8 +430,8 @@ object Reduction extends RegistrationInstance {
 
 trait NotationInstance
 class NymicNotation(nymic:String) extends NotationInstance {
-  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer, kind: String) = {
-    val fullPatternName = nymic+(if (kind == "func")  "Functor" else if (kind == "pred") "Predicate" else "")+"Notation"
+  def apply(name: LocalName, argNum: Int, argTypes: List[Term], v: Term)(implicit notC: NotationContainer, kind: PatternKinds) = {
+    val fullPatternName = nymic+longKind(kind).capitalize+"Notation"
     MizarPatternInstance(name, fullPatternName, argNum, argTypes, List(v))
   }
 }

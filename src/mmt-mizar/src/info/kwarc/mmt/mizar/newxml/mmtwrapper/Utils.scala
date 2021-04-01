@@ -149,7 +149,7 @@ object MizarPrimitiveConcepts {
   }
 
   def attr(t : Term) = Apply(constant("attr"), t)
-  def adjective(cluster : Term, typ : Term) = ApplyGeneral(constant("adjective"), List(typ, cluster))
+  def adjective(cluster : Term, typ : Term) = Apply (cluster, typ)
   def choice(tp : Term) = Apply(constant("choice"), tp)
 
   /**
@@ -180,11 +180,10 @@ object MizarPrimitiveConcepts {
 
   object SimpleTypedAttrAppl {
     def apply(baseTp: Term, attrs: List[Term]) = {
-      val attrApplSym = constant("adjective")
-      attrs.foldLeft[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+      attrs.foldLeft[Term](baseTp)((tp:Term, attr:Term) => Apply(attr, tp))
     }
     def unapply(tm: Term) : Option[(Term, List[Term])] = tm match {
-      case ApplyGeneral(constant("adjective"), tp::attr) => Some((tp, attr))
+      case ApplyGeneral(OMS(gn), attr) if (gn.name.lastOption.getOrElse(gn.name).toString == "adjective") => Some((tp, attr))
       case _ => None
     }
   }

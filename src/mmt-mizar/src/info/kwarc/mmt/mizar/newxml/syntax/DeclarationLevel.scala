@@ -287,44 +287,44 @@ case class Property(_props:Properties, _just:Option[Justification]) extends Prop
 /**
  * Common trait for both synonyms and antonyms
  */
-abstract class Nyms(isAntonym: Boolean, kind: String) extends BlockSubitem {
+abstract class Nyms(isAntonym: Boolean) extends BlockSubitem {
   def _patNew: Patterns
   def _patRefOld: Pattern_Shaped_Expression
   def antonymic: Boolean = isAntonym
-  def defKind = kind
+  def nymKind = _patNew.patKind
 }
 /**
  * A synonym (a new notation for an existing notion)
  */
-abstract class Synonym(kind: String) extends Nyms(false, kind)
+abstract class Synonym extends Nyms(false)
 /**
  * An antonym (a new notation for the negation of an existing notion)
  */
-abstract class Antonym(kind: String) extends Nyms(true, kind)
+abstract class Antonym extends Nyms(true)
 /**
  * A predicate synonym
  */
-case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym("pred")
+case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
 /**
  * A predicate antonym
  */
-case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym("pred")
+case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
 /**
  * An attribute synonym
  */
-case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym("attr")
+case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 /**
  * An attribute antonym
  */
-case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym("attr")
+case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
 /**
  * A functor synonym
  */
-case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym("func")
+case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 /**
  * A mode synonym
  */
-case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym("mode")
+case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 
 /**
  * A cluster containing several registrations

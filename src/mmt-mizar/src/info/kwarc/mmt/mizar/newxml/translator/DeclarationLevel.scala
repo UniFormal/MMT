@@ -300,8 +300,7 @@ object patternTranslator {
     val pat: Patterns = pse._pat
     val params = pat._locis.flatMap(_._loci map translate_Locus)
     val (name, gn, notC) = translate_Pattern(pat, true)
-    val mainDecl = OMS(globalReference(pat))
-    (name, mainDecl, notC, params)
+    (name, OMS(gn), notC, params)
   }
 }
 
@@ -312,7 +311,7 @@ object propertyTranslator {
       val claim = constant("sethood")(tp)
       val just = _just map (translate_Justification(_, claim))
       val backsubstitutedType = tp ^ definitionContext.args.zipWithIndex.map({case (vd, ind) => OMV(LocalName(argsVarName) / ind.toString) / vd.toTerm})
-      val name = Utils.makeGlobalName(currentAid, "sethood_of_", TranslationController.controller.presenter.asString(backsubstitutedType)).name
+      val name = Utils.makeGlobalName(currentAid, "sethood_of_", TranslationController.presenter.asString(backsubstitutedType)).name
       makeConstant(name, Some(piBindContext(proof(claim))), just)
     case (p: MizarProperty, Some(defRef)) =>
       val claim =constant(p.property)(defRef())
@@ -364,7 +363,7 @@ object nymTranslator {
     val (_, mainDecl, _, _) = translate_Referencing_Pattern(oldPatRef)
     val allArgs = defContext.args.map(_.tp.get)
     articleData.articleStatistics.incrementStatisticsCounter("nym")
-    SynonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)(notC, nym.defKind)
+    SynonymicNotation(newName.name, allArgs.length, allArgs, mainDecl)(notC, nym.nymKind)
   }
 }
 
@@ -725,7 +724,6 @@ object clusterTranslator {
   }
   def translate_Reduction(reduction: syntax.Reduction)(implicit defContext: DefinitionContext): Declaration with HasType with HasDefiniens with HasNotation = reduction match {
     case syntax.Reduction(_predecessor, _successor) =>
-
       val num = articleData.incrementAndGetReduceCount()
       val name = makeNewGlobalName("reduce", num.toString).name
       val predecessor = translate_Term(_predecessor)

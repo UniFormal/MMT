@@ -14,6 +14,7 @@ import info.kwarc.mmt.lf._
 import mmtwrapper._
 import PatternUtils._
 import MizarPrimitiveConcepts._
+import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController.printTimeDiff
 
@@ -97,6 +98,7 @@ object TranslationController extends frontend.Logger {
   def typecheckContent(e: StructuralElement) = structChecker(e)(checkingEnvironment)
 
   var articleDependencyParents = List[MPath]()
+  def presenter = controller.presenter//controller.extman.get(classOf[MMTSyntaxPresenter]).find(_.key.startsWith("present-text-notations")).get
 
   val beginningTime: Long = System.nanoTime()
   var globalParsingTime: Long = 0
@@ -379,13 +381,21 @@ object TranslationController extends frontend.Logger {
           +"Subsequent references of them will therefore fail. ")
         }
         // build the notations
-        externalDecls.filterNot(d => e.not.forall(_.toText.contains(d.toString)))
-          .filter(currentTheory.get(_).asInstanceOf[Constant].not == e.not).map({
+        val mainDecls = externalDecls.filterNot(d => e.not.forall(_.toText.contains(d.toString)))
+          .filter(currentTheory.get(_).asInstanceOf[Constant].not == e.not)
+        lazy val allowedWithoutNotation = List("identify", "reduce", "Reg")
+        if (mainDecls.isEmpty && !allowedWithoutNotation.exists(s => e.name.toStr(true).contains(s))) {
+          if (externalDecls.map(currentTheory.get(_)).find(_.asInstanceOf[Constant].rl == Some ("mainDecl")).isEmpty)
+            println ("no main Declaration found for " + e.path.toPath)
+        }
+        mainDecls map({
           n =>
             val toPresent = ApplyGeneral(OMS(currentTheoryPath ? n), defContext.args.map(_.toTerm))
-            val not = controller.presenter.asString(toPresent)
-            if (not.contains(n.toString)) {
-              log ("notation for constant "+(currentTheoryPath ? n).toString+" cannot be used.")
+            val not = presenter.asString(toPresent)
+            if (not.contains(n.toString) && !n.toStr(true).contains(shortKind(AttributeKind()))) {
+              println ("The notation for constant "+(currentTheoryPath ? n).toString+" cannot be used.")
+              println ("The constant applied to its argument is instead presented as: "+not)
+              println ("As opposed to using the given notation: "+e.not)
             }
         })
       }
@@ -397,18 +407,18 @@ object TranslationController extends frontend.Logger {
         // term^0 -> ...
         //however this is the legitimate translation and shouldn't be considered an error
       case eofe: EOFException =>
-        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println ("This usually means that corrupted translated content files are present. Try deleting them and build again. ")
         println (eofe)
       case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
       case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
         println (mes)
         println ("Not sure what causes these kind of issues. ")
       case er: Throwable =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ controller.presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
         articleData.articleStatistics.incrementNumLegitimateTypingIssues
         println (mes)
         println ("This seems to be a genuine typing issue. ")

@@ -97,7 +97,7 @@ object termTranslator {
     case fft@Forgetful_Functor_Term(_, _tm) =>
       val forgetfulFunctorGn = computeGlobalName(fft)
       val structTm = translate_Term(_tm)
-      Apply(OMS(forgetfulFunctorGn), structTm)
+      Apply (OMS(forgetfulFunctorGn), structTm)
   }
 }
 

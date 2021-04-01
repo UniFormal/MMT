@@ -82,7 +82,8 @@ class MizarXMLImporter extends archives.Importer {
     }
     if (! TranslationController.isBuild(dependencyAid)) {
       println("Building the dependency article "+dependencyAid+" before continuing with translation of the current article "+currentAid+". "
-        +(if (articleDependencyParents.length > 1) "\nThe article at the end of the dependency chain is "+articleDependencyParents.last else ""))
+        //+(if (articleDependencyParents.length > 1) "\nThe article at the end of the dependency chain is "+articleDependencyParents.last else "")
+      )
       val currentData = getArticleData
       resetArticleData
       importDocument(getBf(dependencyAid), index)
