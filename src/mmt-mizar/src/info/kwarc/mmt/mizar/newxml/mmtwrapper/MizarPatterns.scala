@@ -266,10 +266,10 @@ object DirectPartialPredicateDef extends PredicateDefinitionInstance {
 }
 object DirectCompletePredicateDef extends PredicateDefinitionInstance {
   def apply(name: LocalName, argNum: Int, argTypes: List[Term], caseNum:Int, cases:List[Term], caseRes: List[Term], consistencyProof: Term)(implicit notC: NotationContainer): DerivedDeclaration = {
-    MizarPatternInstance(name, "directComplPredicateDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, None)
+    MizarPatternInstance(name, "directComplPredDef", argNum, argTypes, None, None, caseNum, cases, caseRes, consistencyProof, None)
   }
   def unapply(dd: DerivedDeclaration) = dd match {
-    case MizarPatternInstance(name, "directComplPredicateDef", List(OMI(argNum), Sequence(argTypes), OMI(caseNum), Sequence(cases),Sequence(caseRes), _)) =>
+    case MizarPatternInstance(name, "directComplPredDef", List(OMI(argNum), Sequence(argTypes), OMI(caseNum), Sequence(cases),Sequence(caseRes), _)) =>
       Some((name, argNum, argTypes, caseNum, cases, caseRes, None))
     case _ => None
   }
