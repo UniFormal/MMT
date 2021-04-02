@@ -20,9 +20,9 @@ object PatternUtils {
   def structureStrictDeclPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
   def structureForgetfulFunctorPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(ForgetfulKind())))
   def structureForgetfulFunctorProperPath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(ForgetfulKind())+"_proper"))
-  def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StrictKind())))
+  def structureTypePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(StructureKind())))
   def structureMakePath(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, LocalName(longKind(AggregateKind())))
-  def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName)
+  def structureSelectorPath(selName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, selName.last.unary_!)
   def structureAncestorSubtypingPath(ancestorName: LocalName)(implicit parentTerm: GlobalName): GlobalName = referenceExtDecl(parentTerm, ancestorName)
 
   //effectively copied from InternalDeclarationUtil

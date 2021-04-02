@@ -60,15 +60,19 @@ object MizarStructure {
         Constant(c.home, replaceSlashesLN(c.name), c.alias, tpO, dfO, c.rl, c.notC)
     }
     val strNot::aggrNot::forgNot::strictNot::selNots = notCons
-    val recordElabDecls = ((recordElabDeclsNoNot zip strNot::aggrNot::selNots) zip structureTypePath::structureMakePath::recordElabDeclsNoNot.drop(2).map(d => structureSelectorPath(d.name)) map {
+    val (recordElabDeclsWithNot, recordElabDeclsWithoutNot) = recordElabDeclsNoNot.splitAt((strNot::aggrNot::selNots).length)
+    val recordSelectorPaths = recordElabDeclsWithNot.drop(2).map(d => structureSelectorPath(d.name))
+    val recordElabDecls = ((recordElabDeclsWithNot zip strNot::aggrNot::selNots) zip structureTypePath::structureMakePath::recordSelectorPaths map {
       case ((d: Constant, n:NotationContainer), gn) => Constant(OMMOD(gn.module), gn.name, d.alias, d.tp, d.df, d.rl, n)
-    })
+    }):::recordElabDeclsWithoutNot
 
+    //In case the structural feature is used, when translating content from mizar this is always empty
     val argTps = origDecls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
     val l = argTps.length
     val argsTyped = MMTUtils.freeVarContext(argTps map(_.toTerm))
 
     val structTpx = ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm))
+    def selectorValues(tm: Term) = recordSelectorPaths.map(gn => ApplyGeneral(OMS(gn), (params++argsTyped) .map(_.toTerm).:+(tm)))
     val dummyParams = params.variables.toList.map(_.tp.get).map(dummyTerm)
     val dummyArgsTyped = argsTyped.variables.toList.map(_.tp.get).map(dummyTerm)
     val structTpDummys = ApplyGeneral(OMS(structureTypePath), dummyParams)
@@ -77,12 +81,12 @@ object MizarStructure {
         Lam("s", structTpx, equal(OMV("s"), Apply(OMS(structureForgetfulFunctorPath), OMV("s")))))), None, strictNot)
     val forgetFulFunctorDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorProperPath.name, Nil,
       Some(PiOrEmpty(params++argsTyped, Arrow(structTpx, Apply(strictDecl.toTerm, structTpx)))), Some(LambdaOrEmpty(params++argsTyped,
-        Lam("s", structTpx, ApplyGeneral(OMS(structureMakePath), params++argsTyped map (_.toTerm))))), None)
+        Lam("s", structTpx, ApplyGeneral(OMS(structureMakePath), (params++argsTyped) .map(_.toTerm) ++ selectorValues(OMV("s")))))), None)
     val forgetfulFunctorConvenienceDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorPath.name, Nil,
       Some(Arrow(structTpDummys, structTpDummys)),
       Some(Lam("s", structTpDummys, ApplyGeneral(forgetFulFunctorDecl.toTerm, dummyParams++dummyArgsTyped))),
       None, forgNot)
-    val furtherDecls = forgetfulFunctorConvenienceDecl::strictDecl::ancestorSubtypingDecls(params, ancestorTps)
+    val furtherDecls = ancestorSubtypingDecls(params, ancestorTps):::strictDecl::forgetFulFunctorDecl::forgetfulFunctorConvenienceDecl::Nil
     (recordElabDecls ::: furtherDecls) map tr
   }
 }

@@ -27,7 +27,7 @@ import definiensTranslator._
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Index, OMI, Sequence, nTerms}
 import info.kwarc.mmt.mizar.newxml.translator.correctnessConditionTranslator._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
-import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
+import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.{translate_Choice_Statement, translate_Type_Changing_Statement}
 import JustificationTranslator._
 import propertyTranslator._
 import nymTranslator._
@@ -285,6 +285,7 @@ object patternTranslator {
         val sndDel = _right_Circumflex_Symbol.spelling
         assert (sndDel.nonEmpty, "Encountered empty second delimiter while trying to build notation. ")
         CircumfixMarkers(fstDel, sndDel, circumfixArgNr, implArgInds)
+      case strctPat: Strict_Pattern => PrePostFixMarkers(fstDel, 0, 1, false, implArgInds)
       case pat: Patterns =>
         PrePostFixMarkers(fstDel, infixArgNr, suffixArgNr, false, implArgInds)
     }
@@ -760,6 +761,10 @@ object blockTranslator {
           val (addArgs, addFacts, _) = translate_Choice_Statement(choice_Statement)
           addArgs foreach defContext.addProofArg
           defContext.addUsedFact(addFacts)
+          recurse(tl)
+        case (tcs: Type_Changing_Statement) :: tl =>
+          //add the new variables or change the variables with changed type
+          translate_Type_Changing_Statement(tcs)(defContext)
           recurse(tl)
         case (statement: Regular_Statement) :: tl =>
           defContext.addUsedFact(translate_Proved_Claim(statement.prfClaim))

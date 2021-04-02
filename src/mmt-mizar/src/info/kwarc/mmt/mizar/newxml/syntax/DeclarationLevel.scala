@@ -424,7 +424,7 @@ case class Conclusion(prfClaim:ProvedClaim) extends Statement with ProofLevel
  *
  * this statement states that an argument has certain type, the changed type is used afterwards
  */
-case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement with TopLevel with ProofLevel {
+case class Type_Changing_Statement(_eqList:Equalities_List, _tp:Type, _just:Justification) extends Statement with TopOrDeclarationLevel with ProofLevel {
   def claim: Claim = Type_Changing_Claim(_eqList, _tp)
   override def prfClaim: ProvedClaim = ProvedClaim(claim, Some(_just))
 }

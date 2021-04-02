@@ -152,7 +152,7 @@ object Utils {
     case PredicateKind() => "pred"
     case StrictKind() => "strictDef"
     case AggregateKind() => makeName
-    case SelectorKind() => longKind(StructureKind())//'J'
-    case ForgetfulKind() => longKind(StructureKind())//'U'
+    case SelectorKind() => "selector"//'J'
+    case ForgetfulKind() => "forgetfulFunctor"//'U'
   }
 }

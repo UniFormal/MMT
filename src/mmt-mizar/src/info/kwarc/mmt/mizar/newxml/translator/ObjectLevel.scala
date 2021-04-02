@@ -291,22 +291,23 @@ object claimTranslator {
         .map { case (x, y) => ApplyGeneral(relat, List(x, y)) }
       And(eqClaims)
   }
-  def translate_Claim(claim:Claim)(implicit definContext: => DefinitionContext) : Term =  claim match {
+  def translate_Claim(claim:Claim)(implicit defContext: => DefinitionContext) : Term =  claim match {
     //Only here we might change definContext
     case Type_Changing_Claim(_eqList, _tp) =>
-      val tp = translate_Type(_tp)(definContext)
+      val tp = translate_Type(_tp)(defContext)
       val reconsideringVars = _eqList._eqns map { case eq =>
-        val v = VarDecl(translate_new_Variable(eq._var).name, tp, translate_Term(eq._tm)(definContext))
+        val v = VarDecl(translate_new_Variable(eq._var).name, tp, translate_Term(eq._tm)(defContext))
         //adjust known variables in the context
         eq match {
-          case Equality(_, _) => definContext.addArguments(v)
-          case Equality_To_Itself(_, _) => definContext.replaceArguments(v)
+          case Equality(_, _) =>
+            if (defContext.topLevel || defContext.withinProof) defContext.addArguments(v) else defContext.addProofArg(v)
+          case Equality_To_Itself(_, _) => defContext.replaceArguments(v)
         }
         v
       }
       val typingClaims = reconsideringVars.map(_.df.get) map(is(_, tp))
       And(typingClaims)
-    case claim: TypeUnchangingClaim => translate_Type_Unchanging_Claim(claim)(definContext)
+    case claim: TypeUnchangingClaim => translate_Type_Unchanging_Claim(claim)(defContext)
   }
   def translate_Assumption_Claim(ass: Assumptions)(implicit defContext: DefinitionContext) : Term = ass match {
     case Collective_Assumption(_cond) => translate_Claim(_cond)

@@ -122,10 +122,10 @@ class MizarXMLImporter extends archives.Importer {
         println(articleData.articleStatistics.makeArticleStatistics)
       doc
     }
-    val doc = if (!isBuild(currentAid)) {
+    val doc = if (!(isBuild(currentAid) || currentAid == "hidden")) {
       buildIt()
     } else {
-      controller.getO(currentTheoryPath) flatMap(_.asInstanceOf[Theory].parentDoc) flatMap (controller.getO(_)) match {
+      (try {controller.getO(currentTheoryPath) flatMap(_.asInstanceOf[Theory].parentDoc) flatMap (controller.getO(_))} catch {case _ => None}) match {
         case Some(d: Document) => d
         case _ => buildIt()
       }

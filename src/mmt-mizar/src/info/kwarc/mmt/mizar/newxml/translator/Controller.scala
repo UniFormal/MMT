@@ -217,7 +217,7 @@ object TranslationController extends frontend.Logger {
       }
       def makeArticleStatistics: String = {
         val numTotalDecls: Long = 22100000
-        val numTotalArticles = 1391
+        val numTotalArticles = 1390
         def ratioTranslated = globalTranslatedDeclsCount / numTotalDecls.toDouble
         ("From this article, we translated " + grandTotal + " declarations, namely "+ totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements.\n"
         +showTime (globalTotalTime, "Overall the entire import took ")
@@ -304,13 +304,17 @@ object TranslationController extends frontend.Logger {
   }
   def isBuild(aid: String) = {
     val mpath = getTheoryPath(aid)
-    if (getBuildArticles.contains(mpath)) true else controller.getO(mpath) match {
+    try {
+      if (getBuildArticles.contains(mpath)) true else controller.getO(mpath) match {
       case Some(t: Theory) =>
         ((controller.getTheory(currentTheoryPath).parentDoc map (controller.getDocument(_))) match {case Some(_:Document) => true case _ => false}) && t.domain.exists {n=>
           if (List("funct", "pred", "attribute", "mode").contains(n.steps.last.toString)) {
             t.domain.contains(n.init)
           } else false
         }
+      case _ => false
+    }} catch {
+      //in case that the lookups lead to parsing of malformed xml content we have to rebuild
       case _ => false
     }
   }
@@ -388,16 +392,6 @@ object TranslationController extends frontend.Logger {
           if (externalDecls.map(currentTheory.get(_)).find(_.asInstanceOf[Constant].rl == Some ("mainDecl")).isEmpty)
             println ("no main Declaration found for " + e.path.toPath)
         }
-        mainDecls map({
-          n =>
-            val toPresent = ApplyGeneral(OMS(currentTheoryPath ? n), defContext.args.map(_.toTerm))
-            val not = presenter.asString(toPresent)
-            if (not.contains(n.toString) && !n.toStr(true).contains(shortKind(AttributeKind()))) {
-              println ("The notation for constant "+(currentTheoryPath ? n).toString+" cannot be used.")
-              println ("The constant applied to its argument is instead presented as: "+not)
-              println ("As opposed to using the given notation: "+e.not)
-            }
-        })
       }
     } catch {
       case _: AddError =>
