@@ -73,18 +73,19 @@ object MizarStructure {
 
     val structTpx = ApplyGeneral(OMS(structureTypePath), params.variables.toList.map(_.toTerm))
     def selectorValues(tm: Term) = recordSelectorPaths.map(gn => ApplyGeneral(OMS(gn), (params++argsTyped) .map(_.toTerm).:+(tm)))
+    def makexs(s: String) = ApplyGeneral(OMS(structureMakePath), (params++argsTyped) .map(_.toTerm) ++ selectorValues(OMV("s")))
     val dummyParams = params.variables.toList.map(_.tp.get).map(dummyTerm)
     val dummyArgsTyped = argsTyped.variables.toList.map(_.tp.get).map(dummyTerm)
     val structTpDummys = ApplyGeneral(OMS(structureTypePath), dummyParams)
     val strictDecl = Constant(OMMOD(parentTerm.module), structureStrictDeclPath.name, Nil,
-      Some(PiOrEmpty(params, Pi(LocalName("s"), structTpx, prop))), Some(LambdaOrEmpty(params,
-        Lam("s", structTpx, equal(OMV("s"), Apply(OMS(structureForgetfulFunctorPath), OMV("s")))))), None, strictNot)
+      Some(PiOrEmpty(params++argsTyped, Pi(LocalName("s"), structTpx, prop))), Some(LambdaOrEmpty(params++argsTyped,
+        Lam("s", structTpx, equal(OMV("s"), makexs("s"))))), None, strictNot)
     val forgetFulFunctorDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorProperPath.name, Nil,
-      Some(PiOrEmpty(params++argsTyped, Arrow(structTpx, Apply(strictDecl.toTerm, structTpx)))), Some(LambdaOrEmpty(params++argsTyped,
-        Lam("s", structTpx, ApplyGeneral(OMS(structureMakePath), (params++argsTyped) .map(_.toTerm) ++ selectorValues(OMV("s")))))), None)
+      Some(PiOrEmpty(params++argsTyped, Arrow(structTpx, structTpx))), Some(LambdaOrEmpty(params++argsTyped,
+        Lam("s", structTpx, makexs("s")))), None)
     val forgetfulFunctorConvenienceDecl = Constant(OMMOD(parentTerm.module), structureForgetfulFunctorPath.name, Nil,
       Some(Arrow(structTpDummys, structTpDummys)),
-      Some(Lam("s", structTpDummys, ApplyGeneral(forgetFulFunctorDecl.toTerm, dummyParams++dummyArgsTyped))),
+      Some(Lam("s", structTpDummys, ApplyGeneral(forgetFulFunctorDecl.toTerm, dummyParams++dummyArgsTyped:+(OMV("s"))))),
       None, forgNot)
     val furtherDecls = ancestorSubtypingDecls(params, ancestorTps):::strictDecl::forgetFulFunctorDecl::forgetfulFunctorConvenienceDecl::Nil
     (recordElabDecls ::: furtherDecls) map tr
