@@ -35,9 +35,7 @@ object termTranslator {
       lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
       if (locallyDeclared(gn)) {
         OMS(gn)
-      } else if (defContext.withinProof) {
-        defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue
-      } else defaultValue
+      } else defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue
     case at@Aggregate_Term(tpAttrs, _args) =>
       val gn = computeGlobalName(at)
       val aggrDecl = structureMakePath(gn)

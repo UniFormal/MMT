@@ -78,18 +78,19 @@ object correctnessConditionTranslator {
 case class DefinitionContext(var args: Context = Context.empty, var assumptions: List[Term] = Nil, var usedFacts: List[(Term, Term)] = Nil, corr_conds: List[Correctness_Condition] = Nil, props: List[MizarProperty] = Nil, topLevel: Boolean = true) {
   // nested proof level, 0 if not within a proof
   private var proofLevel = 0
-  private var localDefinitions: List[List[(LocalName, Term)]] = Nil
+  private var localDefinitions: List[List[(LocalName, Term)]] = List(Nil)
   // binding variables (of new binders) within the current proof (and its parents)
   private var localBindingVars: List[Context] = List(Context.empty)
   //arguments from the definition block only usable in the non-public part of a definition (i.e. proofs)
   //make into regular arguments when entering a proof
   private var proofArgs: Context = Context.empty
   private def addLocalDefinition(n: LocalName, defn: Term) = {
-    assert (withinProof, "trying to add local definitions outside of a proof. ")
+    //assert (withinProof, "trying to add local definitions outside of a proof. ")
     val toAdd = (n, defn)
     localDefinitions = localDefinitions.head.:+(toAdd) :: localDefinitions.tail
   }
   def addLocalDefinitionInContext(n: LocalName, defn: Term) = addLocalDefinition(n, lambdaBindContext(defn)(this))
+  def addLocalDeclaration(c: Declaration with HasDefiniens) = addLocalDefinition(c.name, c.df.get)
   def lookupLocalDefinitionWithinSameProof(n: LocalName): Option[Term] = {
     if (withinProof) localDefinitions.flatMap(_.find(_._1 == n)).headOption.map(_._2) else None
   }
@@ -429,16 +430,19 @@ object definitionTranslator {
   def translate_Definition(defn: =>Definition)(implicit defContext: => DefinitionContext): Unit = {
     val translatedDecls: List[Declaration with HasType with HasDefiniens with HasNotation] = defn match {
       case d: Structure_Definition => translate_Structure_Definition(d)(defContext)
-      case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
       case rld: RedefinableLabeledDefinition => translate_Redefinable_Labelled_Definition(rld)(defContext)
-      case d: Private_Functor_Definition => List(translate_Private_Functor_Definition(d)(defContext))
-      case d: Private_Predicate_Definition => List(translate_Private_Predicate_Definition(d)(defContext))
       case md: Mode_Definition => List(translate_Mode_Definition(md)(defContext))
+      case pd: PrivateDefinition => translate_Private_Definition(pd)(defContext)
     }
     val declRef = Some(translatedDecls.head.path)
     lazy val justProps = defContext.props.map(translate_JustifiedProperty(_, declRef, defn.pat map (_.patternAttrs.spelling))(defContext))
     if (defContext.withinProof) justProps map (d => defContext.addUsedFact(d.tp.get, d.df.get))
     (translatedDecls:::(if (!defContext.withinProof) justProps else Nil)) foreach (itemTranslator.add(_)(defContext))
+  }
+  def translate_Private_Definition(pd: => PrivateDefinition)(implicit defContext: => DefinitionContext): List[Declaration with HasType with HasDefiniens with HasNotation] = pd match {
+    case cd: Constant_Definition => translate_Constant_Definition(cd)(defContext)
+    case d: Private_Functor_Definition => List(translate_Private_Functor_Definition(d)(defContext))
+    case d: Private_Predicate_Definition => List(translate_Private_Predicate_Definition(d)(defContext))
   }
   private def getCorrCond(cc: CorrectnessConditions)(implicit defContext: DefinitionContext, kind: DeclarationKinds, defn: CaseByCaseDefinien) = {
     val corrConds = defContext.corr_conds.map(jcc => (jcc._cond, translate_def_correctness_condition(jcc._cond, jcc._just, defn, kind)))
@@ -783,6 +787,9 @@ object blockTranslator {
           }
           val correspondingDefContext = defContext.copy(corr_conds = corr_conds, props = props)
           (defn, correspondingDefContext) :: recurse(remaining)
+        case (pd: PrivateDefinition) :: tl =>
+          translate_Private_Definition(pd)(defContext) foreach (defContext.addLocalDeclaration)
+          recurse (tl)
         case (prag: Pragma) :: tl => recurse(tl)
         case defIt::tl =>
           println ("Unexpected item of type " + defIt.shortKind+" found, in "+block.kind+" in file "+currentAid+".miz")
