@@ -21,12 +21,9 @@ package info.kwarc.mmt.mizar.newxml.syntax
  * the ones corresponding to object-level content are defined in the ObjectLevel file
  */
 
-import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
+import info.kwarc.mmt.api.{ImplementationError}
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, ObjectLevelTranslationError, TranslationController, TranslatorUtils}
-import info.kwarc.mmt.mizar.objects.{SourceRef, SourceRegion}
 /**
  * A label that can later be referenced
  * @param MMLId the label, typically the article followed by a running counter of id of the same type
@@ -37,7 +34,7 @@ case class MMLId(MMLId:String) extends Group {
    * @param kind said kind
    * @return the identifier
    */
-  def globalName(kind: String): GlobalName = {
+  def globalName(kind: String) = {
     val Array(aid, ln) = MMLId.split(":")
     makeGlobalName(aid, kind, ln)
   }
@@ -84,7 +81,7 @@ trait GloballyReferencingObjAttrs {
   def globalObjAttrs : GlobalObjAttrs
   def globalKind: Char
 
-  protected def absoluteName(str: String) : GlobalName = {
+  protected def absoluteName(str: String)  = {
     val Array(aid, ln) = str.split(":") match {
       case Array(a, b) if (! (a.isEmpty || b.isEmpty)) => Array(a, b)
       case other =>
@@ -92,7 +89,7 @@ trait GloballyReferencingObjAttrs {
     }
     makeGlobalKindName(aid, globalKind, ln)
   }
-  def globalPatternName: GlobalName = absoluteName(globalObjAttrs.absolutepatternMMLId)
+  def globalPatternName = absoluteName(globalObjAttrs.absolutepatternMMLId)
 }
 /**
  * A global reference to a pattern of a (re)-definition in mizar
@@ -106,13 +103,13 @@ trait GloballyReferencingDefAttrs extends GloballyReferencingObjAttrs {
   def globalDefAttrs : GlobalDefAttrs
   override def globalObjAttrs: GlobalObjAttrs = GlobalObjAttrs(globalDefAttrs.absolutepatternMMLId)
 
-  def globalConstrName : GlobalName = absoluteName(globalDefAttrs.absoluteconstrMMLId)
-  protected def absolutePatConstrName(p: GlobalName, c: GlobalName): GlobalName = (p, c) match {
+  def globalConstrName  = absoluteName(globalDefAttrs.absoluteconstrMMLId)
+  protected def absolutePatConstrName[T](p: T, c: T) = (p, c) match {
     case (SimpleGlobalName(pAid, pName), SimpleGlobalName(_, cName)) =>
       SimpleGlobalName(pAid, pName+cName)
     case _ => throw ImplementationError("Error constructing the name from the identifier "+p+" and "+c)
   }
-  def globalPatConstrName: GlobalName = absolutePatConstrName(globalPatternName, globalConstrName)
+  def globalPatConstrName = absolutePatConstrName (globalPatternName, globalConstrName)
 }
 /**
  * global references to both a pattern and the corresponding constructor of a (re)-definition in mizar
@@ -126,7 +123,7 @@ case class GlobalDefAttrs(absolutepatternMMLId: String, absoluteconstrMMLId: Str
  * @param absoluteorigpatternMMLId
  * @param absoluteorigconstrMMLId
  */
-case class GlobalOrgAttrs(absoluteorigpatternMMLId: String, absoluteorigconstrMMLId: String) extends Group {
+case class GlobalOrgAttrs(absoluteorigpatternMMLId: Option[String], absoluteorigconstrMMLId: Option[String], superfluous: Option[Int]) extends Group {
   def isDefinedPat = absoluteorigpatternMMLId.nonEmpty
   def isDefinedConstr = absoluteorigconstrMMLId.nonEmpty
 }
@@ -137,9 +134,9 @@ trait GloballyReferencingReDefAttrs extends GloballyReferencingDefAttrs {
   def globalReDefAttrs : GlobalReDefAttrs
   override def globalDefAttrs : GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
 
-  def globalOrgPatternName : GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedPat) globalReDefAttrs.globalOrgAttrs.absoluteorigpatternMMLId else globalDefAttrs.absolutepatternMMLId)
-  def globalOrgConstrName: GlobalName = absoluteName(if (globalReDefAttrs.globalOrgAttrs.isDefinedConstr) globalReDefAttrs.globalOrgAttrs.absoluteorigconstrMMLId else globalDefAttrs.absoluteconstrMMLId)
-  def globalOrgPatConstrName: GlobalName = absolutePatConstrName(globalOrgPatternName, globalOrgConstrName)
+  def globalOrgPatternName  = absoluteName (globalReDefAttrs.globalOrgAttrs.absoluteorigpatternMMLId.getOrElse(globalDefAttrs.absolutepatternMMLId))
+  def globalOrgConstrName = absoluteName (globalReDefAttrs.globalOrgAttrs.absoluteorigconstrMMLId.getOrElse(globalDefAttrs.absoluteconstrMMLId))
+  def globalOrgPatConstrName = absolutePatConstrName (globalOrgPatternName, globalOrgConstrName)
 }
 /**
  * A global reference to a pattern and constructor in mizar, as well as references to the initial pattern and constructor

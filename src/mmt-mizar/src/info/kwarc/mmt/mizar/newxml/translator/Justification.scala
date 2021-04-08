@@ -36,14 +36,15 @@ object JustificationTranslator {
       if (proofSteps) defContext.exitProof
       lambdaBindDefCtxArgs(uses(claim, usedFacts))
   }
-  def globalReferences(refs: List[Reference]): List[Term] = refs.filter(_.isInstanceOf[Theorem_Reference]).map(_.referencedItem)
-  private def translate_Scheme_Justification(sj:Scheme_Justification) = lf.ApplyGeneral(OMS(sj.referencedScheme), sj._refs.map(_.referencedLabel) map (OMS(_)))
+  def globalReferences(refs: List[Reference]): List[Term] = refs.filter(_.isInstanceOf[Theorem_Reference]).map(_.asInstanceOf[GlobalReference].referencedItem)
+  private def translate_Scheme_Justification(sj:Scheme_Justification) = lf.ApplyGeneral(OMS(sj.referencedScheme),
+    sj._refs.map(_.referencedLabel.asInstanceOf[GlobalName]).map(OMS(_)))
   private def lambdaBindDefCtxArgs(tm: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): Term = {
     if (defContext.args.nonEmpty && bindArgs) lambdaBindArgs(tm)(defContext.args.map(_.toTerm)) else tm
   }
   private def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
     val claim = translate_Claim(it)
-    val usedFacts: List[Term] = it._just::it._iterSteps.map(_._just) flatMap usedInJustification
+    val usedFacts: List[Term] = it._just::it._iterSteps._iterSteps.map(_._just) flatMap usedInJustification
     //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
     lambdaBindDefCtxArgs(uses(claim, usedFacts))
   }
@@ -62,7 +63,7 @@ object JustificationTranslator {
       def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
         case st: Statement =>
           val usedInJust = (st.prfClaim._claim, st.prfClaim._just) match {
-            case (it:Iterative_Equality, None) => it._iterSteps.map(_._just) flatMap(usedInJustification(_)(defContext))
+            case (it:Iterative_Equality, None) => it._iterSteps._iterSteps.map(_._just) flatMap(usedInJustification(_)(defContext))
             case (_: Claim, jO) => usedInJustification(jO.get)(defContext)
           }
           (if (proofSteps) {

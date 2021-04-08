@@ -1,6 +1,5 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
@@ -84,7 +83,7 @@ sealed trait Type extends Expression
  * @param _subs
  * @param _tp
  */
-case class ReservedDscr_Type(serialnr: Int, nr: Int, sort: String, _subs:Substitutions, _tp:Type) extends Type
+case class ReservedDscr_Type(_subs:Substitutions, _tp:Type) extends Type
 /**
  * predicate subtypes
  * @param srt
@@ -92,7 +91,7 @@ case class ReservedDscr_Type(serialnr: Int, nr: Int, sort: String, _subs:Substit
  * @param _adjClust
  * @param _tp
  */
-case class Clustered_Type(sort: String, _adjClust:Adjective_Cluster, _tp:Type) extends Type
+case class Clustered_Type(_adjClust:Adjective_Cluster, _tp:Type) extends Type
 sealed trait objRefAttrs extends GloballyReferencingObjAttrs with ObjectLevel {
   def objAttrs: ObjectAttrs
   def globalObjAttrs: GlobalObjAttrs
@@ -132,7 +131,7 @@ sealed trait MizTerm extends Expression {
  * @param sort the sort of the term,
  */
 case class Simple_Term(serialnr: Int, spelling:String, sort:String) extends MizTerm {
- def toIdentifier : LocalName = MizarVariableName(spelling, sort, serialnr)
+ def toIdentifier = MizarVariableName(spelling, sort, serialnr)
 }
 
 /**
@@ -451,7 +450,12 @@ case class Conditions(_props:List[Proposition]) extends TypeUnchangingClaim
  * @param _just the proof for the first equality
  * @param _iterSteps the remaining equalities and their proofs
  */
-case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps:List[Iterative_Step]) extends TypeUnchangingClaim
+case class Iterative_Equality(_label:Label, _formula:Relation_Formula, _just:Justification, _iterSteps: Iterative_Steps_List) extends TypeUnchangingClaim
+/**
+ * a list of one or several iterative steps
+ * @param _iterSteps
+ */
+case class Iterative_Steps_List(_iterSteps:List[Iterative_Step]) extends ObjectLevel
 /**
  * one additional equality with proof within an iterative equality
  * @param _tm
@@ -488,9 +492,10 @@ case class Block(kind: String, _items:List[Item]) extends Justification
  * @param spelling the spelling of the scheme
  * @param nr the number to reference the scheme by
  */
-case class Scheme(spelling:String, nr:Int) extends ObjectLevel {
-  def name = if (spelling.nonEmpty) spelling else "AnonymousScheme_"+nr.toString
-  def globalName = makeNewGlobalName("Scheme", spelling)
+case class Scheme(spelling:Option[String], nr:Int) extends ObjectLevel {
+  def name = globalName.name.toString
+  def globalNameO = spelling map (makeNewGlobalName("Scheme", _))
+  def globalName = globalNameO getOrElse(makeNewGlobalName("AnonymousScheme", nr.toString))
 }
 /**
  * A Justification using a referenced scheme applied to some referenced facts
@@ -679,8 +684,7 @@ case class Example(_var:Variable, _tm:MizTerm) extends Exemplifications {
  * common trait for various kinds of (local or global) references
  */
 sealed trait Reference extends ObjectLevel {
-  def referencedLabel: GlobalName
-  def referencedItem = info.kwarc.mmt.api.objects.OMS(referencedLabel)
+  def referencedLabel: Object
 }
 /**
  * a local reference to a proven fact from within the same proof
@@ -689,14 +693,14 @@ sealed trait Reference extends ObjectLevel {
  * @param labelnr
  */
 case class Local_Reference(spelling:String, idnr: Int, labelnr:Int) extends Reference {
-  override def referencedLabel = TranslationController.currentTheoryPath ? LocalName(spelling)
+  override def referencedLabel = TranslationController.getLocalPath(spelling)
 }
 /**
  * I don't really understand the semantics of a link, but they don't seem to be important for translation
  * @param labelnr
  */
 case class Link(labelnr:Int) extends Reference {
-  override def referencedLabel: GlobalName = ???
+  override def referencedLabel = ???
 }
 /**
  * A global (i.e. visible outside of the article in which it is declared) reference
@@ -705,7 +709,8 @@ sealed trait GlobalReference extends Reference {
   def number: Int
   def kind: String
   def spelling: String
-  override def referencedLabel: GlobalName = TranslationController.getTheoryPath(spelling) ? LocalName(kind+number)
+  override def referencedLabel = TranslationController.getPath(spelling, kind+number.toInt)
+  def referencedItem = info.kwarc.mmt.api.objects.OMS(referencedLabel)
 }
 /**
  * a global definition reference
@@ -785,7 +790,7 @@ case class Variables(_vars:List[Variable]) extends ObjectLevel
  * @param kind the kind of the variable
  */
 case class Variable(serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
-  def toIdentifier: LocalName = MizarVariableName(spelling, kind, serialnr)
+  def toIdentifier = MizarVariableName(spelling, kind, serialnr)
 }
 case class Substitutions(_childs:List[Substitution]) extends ObjectLevel
 case class Substitution(freevarnr:Int, kind:String, varnr:Int) extends ObjectLevel
@@ -837,9 +842,9 @@ case class Loci(_loci:List[Locus]) extends ObjectLevel
  * @precondition whenever spelling is empty, varidkind="It" and we are within a pattern in a structure patterns rendering,
  * in this case we only parse the given notation of the parent pattern and will not try to translate this
  */
-case class Locus(varidkind:String, serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
-  def toIdentifier: LocalName = {
-    val spell = if (spelling.nonEmpty) spelling else varidkind
+case class Locus(varidkind:String, serialnr: Int, spelling: Option[String], kind:String) extends ObjectLevel {
+  def toIdentifier = {
+    val spell = if (spelling.nonEmpty) spelling.get else varidkind
     MizarVariableName(spell, kind, serialnr)
   }
 }
@@ -885,15 +890,12 @@ case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends Objec
  * 2) within definitions
  * In the first case exactly the parameters sort (which within the entire MML is always sethood) and _tp are given
  * In the second case exactly property and _just (a proof of it) are given
- * @param sort
- * @param property
+ * @param sort (optional)
+ * @param property (optional) the property
  * @param _tp
  */
-case class Properties(sort: String, property: String, _tp:Option[Type]) extends ObjectLevel {//, _cond:List[Properties]
-  def matchProperty(_just: Option[Justification] = None ): Utils.MizarProperty = (sort, property) match {
-    case (sort, _) if (sort.nonEmpty) => Utils.matchProperty(sort, _just, _tp)
-    case (_, prop) if (prop.nonEmpty) => Utils.matchProperty(prop, _just, _tp)
-  }
+case class Properties(sort: Option[String], property: Option[String], _tp:Option[Type]) extends ObjectLevel {//, _cond:List[Properties]
+  def matchProperty(_just: Option[Justification] = None ) = Utils.matchProperty(property.getOrElse(sort.get), _just, _tp)
 }
 /**
  * whether a redefinable definition is a redefinition

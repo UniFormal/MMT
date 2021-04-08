@@ -102,8 +102,8 @@ object termTranslator {
 object typeTranslator {
   def translate_Type_Specification(tp: Type_Specification)(implicit defContext: DefinitionContext) = translate_Type(tp._types)
   def translate_Type(tp:Type)(implicit defContext: DefinitionContext, selectors: List[(Int, VarDecl)] = Nil) : Term = tp match {
-      case ReservedDscr_Type(_, _, _, _subs, _tp) => translate_Type(_tp)
-      case Clustered_Type(_, _adjClust, _tp) =>
+      case ReservedDscr_Type(_subs, _tp) => translate_Type(_tp)
+      case Clustered_Type(_adjClust, _tp) =>
         val tp = translate_Type(_tp)
         val adjectives = _adjClust._attrs map translate_Attribute
         SimpleTypedAttrAppl(tp, adjectives)
@@ -284,7 +284,7 @@ object claimTranslator {
         case not(f) => f
         case f => f
       }
-      val otherTms = _iterSteps.map(_._tm).map(translate_Term)
+      val otherTms = _iterSteps._iterSteps.map(_._tm).map(translate_Term)
       val eqClaims = sndTm :: otherTms.init.zip(otherTms)
         .map { case (x, y) => ApplyGeneral(relat, List(x, y)) }
       And(eqClaims)

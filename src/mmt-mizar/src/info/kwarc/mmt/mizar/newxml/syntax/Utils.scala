@@ -2,7 +2,6 @@ package info.kwarc.mmt.mizar.newxml.syntax
 
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recTypeName}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.shortKind
 import info.kwarc.mmt.mizar.newxml.translator.TranslationController
 
 object Utils {
@@ -10,7 +9,7 @@ object Utils {
     "info.kwarc.mmt.mizar.newxml.syntax."+s.replace("-", "_")
   }
   object SimpleGlobalName {
-    def apply(aid: String, name: String) = TranslationController.getTheoryPath(aid.toLowerCase) ? LocalName(aid.toLowerCase+":"+name)
+    def apply(aid: String, name: String) = TranslationController.getPath(aid, aid.toLowerCase+":"+name)
     def unapply(gn: GlobalName): Option[(String, String)] = {
       val aid = gn.module.name.toString
       gn.name.toString.split(":") match {
@@ -24,7 +23,6 @@ object Utils {
   def makeGlobalName(aid: String, kind: String, ln: String) = makeSimpleGlobalName(aid, kind+ln)
   def makeNewGlobalName(kind: String, ln: String) = makeGlobalName(TranslationController.currentAid, kind, ln)
   def makeGlobalKindName(aid: String, globalKind: Char, ln: String) = makeGlobalName(aid, globalKind.toString, ln)
-  private def MizarRedVarName(serialnr: Int): LocalName = LocalName(serialnr.toString)
   def mapKind(kind: String): String = kind match {
     case "BoundVar" => "BV"
     case "Bound" => "B"
@@ -38,8 +36,8 @@ object Utils {
     case "Selector" => "S"
     case s => println ("unexpected kind in syntax.Utils.mapKind: "+s); s.filter(_.isUpper)
   }
-  def MizarVariableName(spelling: String, kind: String, serialnr: Int): LocalName = {
-    LocalName(spelling) / LocalName(mapKind(kind)) / MizarRedVarName(serialnr)
+  def MizarVariableName(spelling: String, kind: String, serialnr: Int) = {
+    LocalName(spelling) / mapKind(kind) / serialnr.toString
   }
 
   /**

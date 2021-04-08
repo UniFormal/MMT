@@ -1,8 +1,8 @@
 package info.kwarc.mmt.mizar.newxml.syntax
 
-import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName}
+import info.kwarc.mmt.api.{ImplementationError}
 import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError, TranslationController}
+import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError}
 
 // any subitem of an item, be it TopLevel, DeclarationLevel or ProofLevel
 sealed trait Subitem {
@@ -33,7 +33,7 @@ sealed trait ProofLevel extends Subitem
  */
 sealed trait MMLIdSubitem extends TopLevel {
   def mmlId: MMLId
-  def globalName: GlobalName = mmlId.globalName(this.shortKind)
+  def globalName = mmlId.globalName(this.shortKind)
 }
 /**
  * A main subitem that can occur within a definitional-block, registration-block or notation-block (inside a definition-item)
@@ -151,7 +151,7 @@ sealed trait RedefinableLabeledDefinition extends PublicDefinition with MMLIdSub
     case fd: Functor_Definition => Utils.shortKind(Utils.FunctorKind())
     case pd: Predicate_Definition => Utils.shortKind(Utils.PredicateKind())
   }
-  override def globalName: GlobalName = {
+  override def globalName = {
     val Array(aid, ln) = mmlId.MMLId.split(":")
     makeGlobalKindName(aid, defKind, ln)
   }
@@ -388,7 +388,7 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
       case _ => throw ImplementationError("Scheme head expected as first item in Scheme-Block-Item. ")
     }
   }
-  def notationBasedReference: Option[GlobalName] = if (scheme_head._sch.spelling.nonEmpty) Some(scheme_head._sch.globalName) else None
+  def notationBasedReference = scheme_head._sch.globalNameO
   /**
    * Statement and proof of the scheme
    * @return
@@ -442,7 +442,7 @@ case class Regular_Statement(prfClaim:ProvedClaim) extends Statement with TopOrD
 case class Theorem_Item(mmlId:MMLId, _prop: Proposition, _just: Justification) extends Statement with MMLIdSubitem {
   override def prfClaim: ProvedClaim = ProvedClaim(_prop, Some(_just))
   def labelled: Boolean = _prop._label.spelling != ""
-  def referenceableLabel: GlobalName = if (labelled) _prop.referenceableLabel else globalName
+  def referenceableLabel = if (labelled) _prop.referenceableLabel else globalName
 }
 /**
  * Statement that variables satisfying certain conditions exist

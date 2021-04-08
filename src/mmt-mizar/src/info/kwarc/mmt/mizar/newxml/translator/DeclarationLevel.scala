@@ -628,41 +628,19 @@ object definitionTranslator {
   }
   def translate_Redefine(p: Patterns, ln: LocalName, ret: Option[Term], defn: Option[CaseByCaseDefinien], argNum: Int, argTps: List[Term])(implicit kind: DeclarationKinds, notC: NotationContainer) = {
     val origGn = globalReference(p, true)
-    TranslationController.processDependencyTheory(origGn.module)
-    val origDD = TranslationController.controller.getO(origGn)
+    val numSuperfluous = p match {
+      case pattern: RedefinablePatterns => pattern.globalReDefAttrs.globalOrgAttrs.superfluous getOrElse 0
+      case _ => 0
+    }
     lazy val tp = kind match {
       case FunctorKind() => ret map (r => Pi(LocalName(argsVarName), nTerms(argNum), r))
       case AttributeKind() | ModeKind() => Some(Pi(LocalName(argsVarName), nTerms(argNum), Arrow(any, prop)))
       case PredicateKind() => Some(Pi(LocalName(argsVarName), nTerms(argNum), prop))
     }
-    val origArgTpsO = origDD match {
-      case Some(AttributeDefinitionInstance(_, _, origArgTps, _, _, _, _, _)) if kind == AttributeKind() => Some(origArgTps)
-      case Some(PredicateDefinitionInstance(_, _, origArgTps, _, _, _, _)) if kind == PredicateKind() => Some(origArgTps)
-      case Some(FunctorDefinitionInstance(_, _, origArgTps, _, _, _, _, _)) if kind == FunctorKind() => Some(origArgTps)
-      case Some(ModeDefinitionInstance(_, _, origArgTps, _, _, _, _)) if kind == ModeKind() => Some(origArgTps)
-      case Some(NymicNotation(_, _, _, origArgTps, _)) => Some(origArgTps)
-      //the only predicates (there are no functors or attributes) in hidden take two terms as arguments
-      case _ if origGn.module == HiddenTh => Some(List(any, any))
-      case _ => None
-    }
-    origArgTpsO  map {
-      origArgTps: List[Term] =>
-        val origLength = origArgTps.length
-        val addArgsLength = argNum - origLength
-        if (addArgsLength < 0) {
-          TranslationController.logString ("Error: The looked up original "+kind+" definition to redefine (without new definien) seems to have "+(-addArgsLength)+" more arguments ("+origLength+") than this one ("+argNum+"), which should never happen. \n"+
-            "The original arguments have types: "+origArgTps+"\n"+
-            "The current arguments have types: "+argTps+"\n"+
-            "For now, we record this definition without definien. ")
-          makeConstant(ln / LocalName(longKind(kind)), tp, None)(notC)
-        } else {
-          val df = Pi(LocalName(argsVarName), nTerms(argNum), ApplyGeneral(OMS(origGn), (addArgsLength until argNum).toList map (i => Index(OMV(argsVarName),  OMI(i)))))
-          makeConstant(ln / LocalName(longKind(kind)), tp, Some(df))(notC)
-        }} getOrElse {
-        //Failure to lookup the original definition, then we should at least record this declaration without its definien
-        println ("Error: failure looking up original definition to redefine (without new definien), hence recording definition without definien. ")
-        makeConstant(ln / LocalName(longKind(kind)), tp, None)(notC)
-      }
+    val origLength = argNum - numSuperfluous
+    val addArgsLength = argNum - origLength
+    val df = Pi(LocalName(argsVarName), nTerms(argNum), ApplyGeneral(OMS(origGn), (addArgsLength until argNum).toList map (i => Index(OMV(argsVarName),  OMI(i)))))
+      makeConstant(ln / LocalName(longKind(kind)), tp, Some(df))(notC)
   }
 }
 

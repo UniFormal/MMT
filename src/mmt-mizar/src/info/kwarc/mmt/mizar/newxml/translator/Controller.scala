@@ -265,11 +265,13 @@ object TranslationController extends frontend.Logger {
 
   def currentBaseThy : Option[MPath] = Some(MizarPatternsTh)
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+MizarPatternsTh.name.toString+".mmt")
-  def localPath : LocalName = LocalName(articleData.currentAid)
+  def localPath = LocalName(articleData.currentAid)
   def currentThyBase : DPath = outputBase / localPath
     //DPath(utils.URI(TranslationController.currentOutputBase.toString + localPath.toString))
   def currentTheoryPath : MPath = currentThyBase ? localPath
   def getTheoryPath(aid: String): MPath = (outputBase / aid.toLowerCase()) ? aid.toLowerCase()
+  def getPath(aid: String, name: String): GlobalName = getTheoryPath(aid) ? name
+  def getLocalPath(name: String): GlobalName = currentTheoryPath ? name
   def currentSource : String = mathHubBase + "/source/" + articleData.currentAid + ".miz"
 
   def makeDocument() = {
