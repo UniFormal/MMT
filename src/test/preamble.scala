@@ -176,6 +176,6 @@ abstract class MagicTest(prefixes: String*) extends Test(
   }
 
   final protected def space(): Unit = {
-    print("\n".repeat(5))
+    (1 to 5).foreach(_ => print("\n"))
   }
 }

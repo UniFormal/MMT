@@ -2,18 +2,13 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
 import info.kwarc.mmt.api.{objects, _}
-import info.kwarc.mmt.lf.elpi.ELPI.Lambda
-import info.kwarc.mmt.lf.{Pi, Univ}
-import notations.NotationContainer
 import objects._
 import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar.newxml.translator.TranslationController.currentAid
 import mmtwrapper.MizarPrimitiveConcepts._
-import mmtwrapper.MMTUtils.Lam
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
 import syntax._
-import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.translate_Variable
 import termTranslator._
 
 sealed class TranslatingError(str: String) extends Exception(str)
@@ -31,18 +26,17 @@ case class PatternTranslationError(str: String, pat: Patterns) extends ObjectLev
   "\nPatternClaimTranslationError while translating the pattern with spelling "+pat.patternAttrs.spelling+": "+pat.toString, pat)
 case class ExpressionTranslationError(str: String, expr: Expression) extends ObjectLevelTranslationError(str+
   "\nExpressionTranslationError while translating the expression "+expr.ThisType()+": "+expr.toString, expr)
+object ExpectedTheoryAt {
+  def apply(mpath: MPath) = new TranslatingError("Error looking up the theory at: "+mpath.toString)
+}
 
 object TranslatorUtils {
-  def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = {
-    val ln = LocalName(kind+nr)
-    TranslationController.getTheoryPath(aid) ? ln
-  }
+  def makeGlobalName(aid: String, kind: String, nr: Int) : info.kwarc.mmt.api.GlobalName = Utils.makeGlobalName(aid, kind, nr.toString)
   def makeGlobalPatConstrName(patAid: String, constrAid: String, kind: String, patNr: Int, constrNr: Int) : info.kwarc.mmt.api.GlobalName = {
     val patGN = makeGlobalName(patAid, kind, patNr)
     val constrGN = makeGlobalName(constrAid, kind, constrNr)
     constrGN.copy(name = LocalName(patGN.name.toString + constrGN.name.toString))
   }
-  def makeNewGlobalName(kind: String, nr: Int) = makeGlobalName(TranslationController.currentAid, kind, nr)
 
   def computeGlobalName(pat: GloballyReferencingObjAttrs, orgVersion: Boolean = false) = pat match {
     case p: RedefinablePatterns => if (orgVersion) p.globalOrgPatConstrName else p.globalPatConstrName
@@ -51,18 +45,8 @@ object TranslatorUtils {
     case objAttrs: GloballyReferencingDefAttrs => objAttrs.globalPatConstrName
     case objAttrs => objAttrs.globalPatternName
   }
-  def addConstant(gn:info.kwarc.mmt.api.GlobalName, notC:NotationContainer, df: Option[Term], tp:Option[Term] = None) = {
-    val hm : Term= OMMOD(gn.module).asInstanceOf[Term]
-    val const = info.kwarc.mmt.api.symbols.Constant(OMMOD(gn.module), gn.name, Nil, tp, df, None, notC)
-    TranslationController.add(const)
-  }
-  def emptyPosition() = syntax.Position("translation internal")
-  def negatedFormula(form:Claim) = Negated_Formula(emptyPosition(), form)
-  def emptyCondition() = negatedFormula(Contradiction(emptyPosition()))
-
-  def getVariables(varSegms: Variable_Segments) : List[Variable] = varSegms._vars.flatMap {
-    case segm: VariableSegments => segm._vars()
-  }
+  def negatedFormula(form:Claim) = Negated_Formula(form)
+  def emptyCondition() = negatedFormula(Contradiction())
 
   private def namedDefArgsSubstition(args: Context, varName: LocalName): objects.Substitution = {
     val (argNum, argTps) = (args.length, args map (_.toTerm))
@@ -102,14 +86,13 @@ object TranslatorUtils {
   def resolveHiddenReferences(gn: GlobalName) = {
     //This mess is necessary because eq and neq have same constrnr and new patternnrs can be defined for either in certain redefinitions
     val neqPats = List("R2")
-    val eqPats = List("R1", "R4")
+    val eqPats = List("R1")
     gn match {
       case GlobalName(module, name) if (module == hiddenArt) => name.toString match {
-        //TODO: Also translate content of tarski, tarksi_a?
         case str if (str.endsWith("M1")) => Some(any)
         case str if (str.endsWith("M2")) => Some(set)
         case str if (str.endsWith("R1") && neqPats.exists(str.endsWith(_))) => Some(neq.term)
-        case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(MizarPrimitiveConcepts.eq.term)
+        case str if (str.endsWith("R1") && eqPats.exists(str.endsWith(_))) => Some(MizarPrimitiveConcepts.equal.term)
         case str if (str.endsWith("R2") || str.endsWith("R3")) => Some(in)
         case _ =>
           throw new ImplementationError("Failure to translate the reference to a declaration in hidden of name "+name.toString)

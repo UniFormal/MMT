@@ -3,12 +3,11 @@ package info.kwarc.mmt.mizar.test
 import info.kwarc.mmt.mizar.reader._
 import info.kwarc.mmt.mizar.translator._
 import info.kwarc.mmt.mizar.mmtwrappers._
-
 import info.kwarc.mmt.api._
 import objects._
 import backend._
+import presentation._
 
-import java.net.HttpURLConnection;
 import java.net._
 import java.io._
 
@@ -116,16 +115,16 @@ class MwsService() extends QueryTransformer {
        case "Not" | "And" | "For" | "Pred" | "PrivPred" | "Is" | "Verum" | "Exists"  =>
          val mizq = PropositionParser.parseFormula(p)
          val mmtq = PropositionTranslator.translateFormula(mizq)
-         mmtq.toCML
+         ContentMathMLPresenter(mmtq)
        case "Typ" =>
          val mizq = TypeParser.parseTyp(p)
          val mmtq = TypeTranslator.translateTyp(mizq)
-         mmtq.toCML
+         ContentMathMLPresenter(mmtq)
 
        case _ =>
          val mizq = TypeParser.parseTerm(p)
          val mmtq = TypeTranslator.translateTerm(mizq)
-         mmtq.toCML
+         ContentMathMLPresenter(mmtq)
     }
     TranslationController.clearVarContext()
     val q = makeQVars(removeLFApp(cml), Nil, Nil)
