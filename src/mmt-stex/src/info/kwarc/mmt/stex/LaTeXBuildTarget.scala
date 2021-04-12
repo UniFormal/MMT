@@ -1,22 +1,115 @@
 package info.kwarc.mmt.stex
 
-/**
-  * Created by maeder on 11.11.15.
-  */
+import info.kwarc.mmt.api.Level.Level
+import info.kwarc.mmt.api.{ErrorHandler, ExtensionError, Level, StructuralElement}
+import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
+import info.kwarc.mmt.api.checking.{CheckingResult, Interpreter}
+import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit}
+import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
+import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg}
+import info.kwarc.mmt.stex.Extensions.STeXExtension
+import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
 
+import scala.tools.nsc.transform.patmat.MatchTreeMaking
+
+class LaTeXToHTML extends Importer {
+  def format = "stex"
+  override val key = "stex-xhtml"
+  override val inExts = List("tex")
+  override val outDim = Dim("xhtml")
+  override val outExt = "xhtml"
+  private var stexserver : STeXServer = null
+
+  def apply(pu: ParsingUnit)(implicit errorCont: ErrorHandler): CheckingResult = {
+    ???
+  }
+  def apply(ps: ParsingStream)(implicit errorCont: ErrorHandler): StructuralElement = {
+    ???
+  }
+
+  override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+
+  override def start(args: List[String]): Unit = try {
+    super.start(args)
+    LaTeXML.initializeIfNecessary(controller)
+    controller.extman.get(classOf[STeXServer]) match {
+      case Nil =>
+        stexserver = new STeXServer
+        controller.extman.addExtension(stexserver)
+      case a :: _ =>
+        stexserver = a
+    }
+  } catch {
+    case t : Throwable =>
+      throw t
+  }
+
+  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+    bt.inPath
+    val (html,extensions) = buildFileActually(bt)
+    index(PreElement.extract(html)(controller))
+    BuildResult.empty
+  }
+/*
+  override def buildFile(bf: BuildTask): BuildResult = {
+    val (html,extensions) = buildFileActually(bf)
+    val doc = PreElement.extract(html,extensions)(controller)
+    var dl = doc
+    while (dl.path.^.uri != bf.base) {
+      val nd = controller.getO(dl.path.^) match {
+        case Some(d : Document) =>
+          d
+        case _ =>
+          val ndi = new Document(dl.path.^,FolderLevel)
+          controller add ndi
+          ndi
+      }
+      controller add DRef(nd.path,dl.path)
+      dl = nd
+    }
+    controller.getO(dl.path.^) match {
+      case Some(d : Document) =>
+        controller add DRef(d.path,dl.path)
+      case _ =>
+        val ndi = new Document(dl.path.^,FolderLevel)
+        controller add ndi
+        controller add DRef(ndi.path,dl.path)
+    }
+    BuildResult.empty
+  }
+
+ */
+
+  def buildFileActually(bf: BuildTask) = {
+    val extensions = stexserver.extensions
+    implicit val xhtmlrules = XHTML.Rules.defaultrules ::: extensions.flatMap(_.xhtmlRules)
+    log("building " + bf.inFile)
+    LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
+      case (i,ls) if i > Level.Warning =>
+        bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
+      case _ =>
+    }
+    if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
+    val doc = XHTML.parse(bf.outFile).head
+    doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
+    doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
+    val head = doc.get("head")().head
+    head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
+    head.add(XHTML(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{XHTML.empty}</script>)(Nil).head)
+    File.write(bf.outFile, doc.toString)
+    log("Finished: " + bf.inFile)
+    (doc,extensions)
+  }
+}
+
+import STeXUtils._
 import java.util.regex.PatternSyntaxException
-
-import info.kwarc.mmt.api.Level._
-import info.kwarc.mmt.api.archives._
-import info.kwarc.mmt.api.utils.AnaArgs._
-import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, _}
-import info.kwarc.mmt.api.{ExtensionError, Level}
-import info.kwarc.mmt.stex.STeXUtils._
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.sys.process.{ProcessBuilder, ProcessLogger}
+import scala.sys.process.{ProcessBuilder,ProcessLogger}
 
 /** common code for sms, latexml und pdf generation */
 abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis with BuildTargetArguments
@@ -168,7 +261,7 @@ abstract class LaTeXBuildTarget extends TraversingBuildTarget with STeXAnalysis 
     val proc = pb.run(log)
     val fut = Future(blocking(proc.exitValue()))
     try {
-      Await.result(fut, timeoutVal.seconds)
+      Await.result(fut,Duration(timeoutVal,duration.SECONDS))
     } catch {
       case e: TimeoutException =>
         proc.destroy()

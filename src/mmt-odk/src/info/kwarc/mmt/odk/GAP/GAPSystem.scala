@@ -151,7 +151,7 @@ class GAPSystem extends VREWithAlignmentAndSCSCP("GAP", MitMSystems.gapsym, GAP.
   override val fromTranslations: List[AcrossLibraryTranslation] = fromPolynomials :: super.fromTranslations
   override val toTranslations: List[AcrossLibraryTranslation] = toPolyOrbit :: toDihedralGroup :: toPolynomials :: super.toTranslations
   
-  override protected lazy val translator_to = translator(new TranslationTarget {
+  override lazy val translator_to = translator(new TranslationTarget {
     override def inTarget(path: GlobalName, controller: Controller): Boolean = GAP._base <= path
   },toTranslations)
 

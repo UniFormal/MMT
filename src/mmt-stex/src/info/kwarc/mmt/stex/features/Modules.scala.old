@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.features
-
+/*
 import info.kwarc.mmt.api._
 import modules._
 import objects._
@@ -198,3 +198,6 @@ object RealmFeature extends StructuralFeature("Realm") {
      }
    }
 }
+
+
+ */

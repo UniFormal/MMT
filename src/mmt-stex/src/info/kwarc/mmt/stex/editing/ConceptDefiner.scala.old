@@ -1,5 +1,5 @@
 package info.kwarc.mmt.stex.editing
-
+/*
 import info.kwarc.mmt.api._
 import web._
 import utils._
@@ -49,3 +49,6 @@ class ConceptDefiner extends ServerExtension("define") {
      ServerResponse.JsonResponse(json)
   }
 }
+
+
+ */
