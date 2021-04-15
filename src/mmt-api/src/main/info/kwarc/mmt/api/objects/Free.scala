@@ -16,6 +16,7 @@ object Free {
 
 /** always matches, possibly with empty context */
 object FreeOrAny {
+  def apply(context: List[LocalName], tm: Term): Term = apply(context.map(VarDecl(_)), tm)
   def apply(context: Context, t: Term) = if (context.isEmpty) t else Free(context, t)
   def unapply(t: Term): Option[(Context,Term)] = Free.unapply(t) orElse Some((Context.empty,t))
 }

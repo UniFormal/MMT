@@ -19,46 +19,8 @@ import scala.annotation.tailrec
 import scala.util.Try
 import scala.xml.{Elem, NamespaceBinding, Node}
 
-abstract class STeXError(msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends Error(msg) {
 
-  override val extraMessage : String = extraMsg.getOrElse("")
-  override def level : Level = severity.getOrElse(super.level)
-}
-
-class STeXParseError(val msg: String, extraMsg: Option[String], val sref: Option[SourceRef], val severity: Option[Level.Level])
-  extends STeXError(msg, extraMsg, severity) {
-  private def srefS = sref.fold("")(_.region.toString)
-
-  override def toNode : Elem = <error type={this.getClass.toString} shortMsg={this.shortMsg} level={level.toString} sref={srefS}>
-    {if (extraMessage.isEmpty) Nil else extraMessage}{Stacktrace.asNode(this)}
-  </error>
-}
-
-object STeXParseError {
-  def from(e: Exception, msg: String, preMsg: Option[String], sref: Option[SourceRef] = None, severity: Option[Level.Level] = None): STeXParseError = {
-    val pre = preMsg.map(_ + ": \n").getOrElse("")
-    val extraMsg = pre + {
-      e match {
-        case er: Error => er.shortMsg
-        case ex: Exception => ex.getMessage
-      }
-    }
-    val err = new STeXParseError(msg, Some(extraMsg), sref, severity)
-    err.setStackTrace(e.getStackTrace)
-    err
-  }
-}
-
-class STeXLookupError(val msg: String, extraMsg: Option[String], severity: Option[Level.Level]) extends STeXError(msg, extraMsg, severity)
-
-object STeXLookupError {
-  def from(e: Error, msg: String, severity: Option[Level.Level]): STeXLookupError = {
-    val err = new STeXLookupError(msg, Some(e.shortMsg), severity)
-    err.setStackTrace(e.getStackTrace)
-    err
-  }
-}
-
+/*
 class STeXImporter extends Importer {
   val key: String = "stex-omdoc"
   override val logPrefix = "steximporter"
@@ -1112,3 +1074,5 @@ class DocumentImporter(bt:BuildTask,importer:STeXImporter) {
     spath
   }
 }
+
+ */
