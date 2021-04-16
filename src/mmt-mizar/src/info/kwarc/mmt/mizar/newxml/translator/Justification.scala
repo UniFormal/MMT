@@ -14,7 +14,7 @@ import objects._
 import mizar.newxml.syntax._
 
 object JustificationTranslator {
-  //whether to also translate proof steps or only references to used statements
+  /** whether to also translate proof steps or only references to used statements */
   val proofSteps = false
   def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Term) = {
     val claim = provedClaim._claim match {
@@ -29,7 +29,7 @@ object JustificationTranslator {
     (proof(claim), prf)
   }
   def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): objects.Term = just match {
-    case sj: Scheme_Justification if (proofSteps) => translate_Scheme_Justification(sj)
+    case sj: Scheme_Justification if proofSteps => translate_Scheme_Justification(sj)
     case _: Justification =>
       if (proofSteps) defContext.enterProof
       val usedFacts: List[Term] = usedInJustification(just)
@@ -45,7 +45,6 @@ object JustificationTranslator {
   private def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
     val claim = translate_Claim(it)
     val usedFacts: List[Term] = it._just::it._iterSteps._iterSteps.map(_._just) flatMap usedInJustification
-    //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
     lambdaBindDefCtxArgs(uses(claim, usedFacts))
   }
   private def translate_Exemplification(exemplification: Exemplification)(implicit defContext: => DefinitionContext): List[objects.Term] = {

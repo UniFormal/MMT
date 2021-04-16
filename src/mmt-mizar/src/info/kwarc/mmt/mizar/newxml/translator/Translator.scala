@@ -53,7 +53,7 @@ object itemTranslator {
       case identify: Identify => add (translate_Identify(identify))
       case nym: Nyms => add (nymTranslator.translate_Nym(nym))
       case st: Statement with TopLevel => statementTranslator.translate_Statement(st) foreach add
-      case notTopLevel  => if (! notTopLevel.isInstanceOf[TopLevel]) throw subitemTranslator.notToplevel else throw ImplementationError("This is impossible.")
+      case notTopLevel  => if (! notTopLevel.isInstanceOf[TopLevel]) throw subitemTranslator.notToplevel(Some(notTopLevel.shortKind)) else throw ImplementationError("This is impossible.")
     }
   }
 }
@@ -98,7 +98,6 @@ class MizarXMLImporter extends archives.Importer {
 
       articleData.resetCurrenTranslatingTimeBegin
       val doc = translate(text_Proper, bf, processDependency(_, bf, index))
-      articleData.addCurrenTranslatingTime
       articleData.addCurrentToGlobalTranslatingTime
 
       index(doc)
@@ -129,8 +128,6 @@ class MizarXMLImporter extends archives.Importer {
     articleTranslator.translateArticle(text_Proper, processDependency, typecheckContent = true)
     endMake()
 
-    val unres = articleData.getUnresolvedDependencies
-    if (unres.nonEmpty && articleDependencyParents.length == 0) {println ("Unresolved dependencies so far: "+unres.map(_.name))}
     val deps = articleData.getDependencies
     if (deps.nonEmpty) {log ("Resolved dependencies: "+deps.map(_.name))}
 

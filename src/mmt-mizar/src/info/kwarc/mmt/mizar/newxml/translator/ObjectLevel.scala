@@ -32,7 +32,7 @@ object termTranslator {
     case st: Simple_Term =>
       val refTm = st.toIdentifier
       val gn = makeNewSimpleGlobalName(refTm.toString)
-      lazy val defaultValue = OMV(refTm) ^ namedDefArgsSubstition()
+      lazy val defaultValue = OMV(refTm) ^ implicitNamedDefArgsSubstition()
       if (locallyDeclared(gn)) {
         OMS(gn)
       } else defContext.lookupLocalDefinitionWithinSameProof(refTm) getOrElse defaultValue
@@ -73,9 +73,9 @@ object termTranslator {
       val f = if (ln.steps.tail.head.toString == mapKind("Private-Functor")) {
         OMS(TranslationController.currentTheoryPath ? ln)
       } else if (defContext.withinProof) {
-        defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ namedDefArgsSubstition()
+        defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln) ^ implicitNamedDefArgsSubstition()
       } else {
-        OMV(ln) ^ namedDefArgsSubstition()
+        OMV(ln) ^ implicitNamedDefArgsSubstition()
       }
       ApplyGeneral(f, translateArguments(_args))
     case Fraenkel_Term(_, _varSegms, _tm, _form) =>
@@ -173,7 +173,7 @@ object formulaTranslator {
       } else if (defContext.withinProof) {
         defContext.lookupLocalDefinitionWithinSameProof(ln) getOrElse OMV(ln)
       } else {
-        OMV(ln) ^ namedDefArgsSubstition()
+        OMV(ln) ^ implicitNamedDefArgsSubstition()
       }
       ApplyGeneral(p, translateArguments(_args))
     case FlexaryDisjunctive_Formula(_formulae) =>
@@ -214,7 +214,7 @@ object formulaTranslator {
 
 object contextTranslator {
   def translate_Variable(variable:Variable)(implicit defContext: DefinitionContext) : Term = {
-    translate_new_Variable(variable) ^ namedDefArgsSubstition()
+    translate_new_Variable(variable) ^ implicitNamedDefArgsSubstition()
   }
   /**
    * translate a new variable to the corrensponding OMV
@@ -265,7 +265,7 @@ object contextTranslator {
       val tp = Arrow(argTypes, ret)
       segm._vars._vars.map (translate_new_Variable(_) % tp)
   }
-	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = OMV(loc.toIdentifier) ^ namedDefArgsSubstition()
+	def translate_Locus(loc:Locus)(implicit defContext: DefinitionContext) : Term = OMV(loc.toIdentifier) ^ implicitNamedDefArgsSubstition()
   def translateLocisWithoutSubstitution(loc:Loci)(implicit defContext: DefinitionContext) : List[OMV] = loc._loci map (l=>OMV(l.toIdentifier))
   def translate_Context_Segment(con: ContextSegments)(implicit defContext: DefinitionContext): Context = con._children flatMap translate_Context
 }
@@ -276,7 +276,7 @@ object claimTranslator {
     case form: Formula => translate_Formula(form)
     case Proposition(_label, _thesis) => translate_Claim(_thesis)
     case Thesis() => thesis()
-    case Diffuse_Statement(_label) => throw ImplementationError("This should never be called.")
+    case Diffuse_Statement(_label) => throw ImplementationError("This should never get called, diffuse statement are treated separately in the justification translator.")
     case Conditions(_props) => And(_props map translate_Claim)
     case Iterative_Equality(_label, _formula, _just, _iterSteps) =>
       val fstRelat = translate_Formula(_formula)
