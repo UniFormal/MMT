@@ -279,7 +279,7 @@ abstract class LNStep {
    def /(n: LocalName) = LocalName(this) / n
    def /(n: LNStep) = LocalName(this) / n
    override def toString = toStr(false)
-   def toStr(implicit shortURIs: Boolean): String  
+   def toStr(implicit shortURIs: Boolean): String
 }
 
 object LNStep {

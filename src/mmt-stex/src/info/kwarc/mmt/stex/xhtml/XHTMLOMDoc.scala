@@ -1,19 +1,26 @@
 package info.kwarc.mmt.stex.xhtml
 
+import info.kwarc.mmt.api.documents.Document
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.informal.Informal
+import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
-import info.kwarc.mmt.api.{ContentPath, GlobalName, LocalName, MPath, NamespaceMap, Path}
+import info.kwarc.mmt.api.{ContentPath, DPath, GlobalName, LocalName, MPath, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.api.objects.{Context, OMA, OMID, OMMOD, OMS, OMV, Obj, Term, VarDecl}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude, Structure}
 import info.kwarc.mmt.api.uom.Scala.Opaque
-import info.kwarc.mmt.api.utils.XMLEscaping
-import info.kwarc.mmt.odk.{IntegerLiterals, NatLiterals, PosLiterals}
-import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.api.utils.{File, URI, XMLEscaping}
+import info.kwarc.mmt.odk.{IntegerLiterals, LFX, NatLiterals, PosLiterals}
+import info.kwarc.mmt.sequences.Sequences
+import info.kwarc.mmt.stex.Extensions.NotationExtractor
+import info.kwarc.mmt.stex.{STeX, SemanticParsingState}
 
+import scala.collection.mutable
 import scala.util.Try
 import scala.xml.{Elem, Node}
+
 
 object XHTMLOMDoc {
   def notation(parse : String = "", present : String = "", verbalize : String = "") = {
@@ -24,118 +31,382 @@ object XHTMLOMDoc {
     nc
   }
 
-  def toRule(property : String => Boolean, resource : Option[String => Boolean] = None)(f : Node => XHTMLNode) : PartialFunction[Node,XHTMLNode] = {
-    case n if n.label.startsWith("stex:") && property(n.label)
-      && resource.forall(r => n.attributes.asAttrMap.get("resource").exists(r)) => f(n)
-    case n if n.attributes.asAttrMap.get("property").exists(property)
-      && resource.forall(r => n.attributes.asAttrMap.get("resource").exists(r)) => f(n)
-    case n if {
-       val clsstr = n.attributes.asAttrMap.get("class")
-        val cls = clsstr.map(_.split('_').toList).getOrElse(Nil)
-        cls.length == 2 &&
-          property(cls.head) && resource.forall(_(cls(1)))
-      } => f(n)
+  def toRule(property : String, resource : Option[String => Boolean] = None)(f : (XHTMLNode,XHTMLParsingState) => Unit) : PartialFunction[(XHTMLNode,XHTMLParsingState), Unit] = {
+    case (n,s) if n.prefix + ":" + n.label == property && resource.forall(r => n.attributes.get(("","resource")).exists(r)) => f(n,s)
+    case (n,s) if n.label == property && resource.forall(r => n.attributes.get(("","resource")).exists(r)) => f(n,s)
+    case (n,s) if n.attributes.get(("","property")).contains(property) && resource.forall(r => n.attributes.get(("","resource")).exists(r)) => f(n,s)
+    case (n,s) if n.classes.exists(_.startsWith(property)) =>
+      val cls = n.classes.find(_.startsWith(property)).get
+      n.removeClass(cls)
+      cls.split('_') match {
+        case Array(p,r) =>
+          n.attributes(("","property")) = p
+          n.attributes(("","resource")) = r
+          f(n,s)
+        case Array(p) =>
+          n.attributes(("","property")) = p
+          f(n,s)
+        case _ =>
+          print("")
+      }
+    case _ =>
   }
 }
 
-abstract class XHTMLOMDoc(initial_node : Option[Node] = None) extends XHTMLNode(initial_node) {
-  override def isEmpty: Boolean = false
-  protected def semanticChildrenI(e : XHTMLNode) : List[XHTMLNode] = e match {
-    case element: XHTMLOMDoc => List(element)
-    case o if o.attributes.contains(("stex","arg")) => List(o)
-    case o => o.children.flatMap(semanticChildrenI)
+class OMDocAnnotation(node : XHTMLNode) extends XHTMLAnnotation(node) {
+  import node._
+  val (property,resource) =  if (label.startsWith("stex"))
+    (label,attributes.getOrElse(("","resource"),""))
+  else (attributes.getOrElse(("","property"),""),attributes.getOrElse(("","resource"),""))
+}
+
+trait PreElement {
+  type A <: PreElement
+  def getElement(implicit state : SemanticParsingState) : List[StructuralElement]
+  def subelements : List[A] = List(this.asInstanceOf[A])
+  //def path : Path
+  protected var _parent : Option[PreParent] = None
+  val metadata = mutable.Map.empty[GlobalName,Obj]
+  metadata(STeX.meta_source) = STeX.StringLiterals("sTeX")
+  protected def findUp(pe : PreElement => Boolean) : Option[PreElement] = if (pe(this)) Some(this) else _parent.flatMap(_.findUp(pe))
+  def find(pe : PreElement => Boolean) : Option[PreElement] = findUp(pe)
+  def open(state : SemanticParsingState) : Unit = state.getParent match {
+    case p : PreParent =>
+      p.add(this)
+      _parent = Some(p)
+    case _ =>
   }
-  def semanticChildren = children.flatMap(semanticChildrenI)
+  def close(state : SemanticParsingState) : Unit = {}
+}
 
-  lazy val (property,resource) = initial_node match {
-    case Some(n) if n.label.startsWith("stex") =>
-      (n.label,n.attributes.asAttrMap.getOrElse("resource",""))
-    case Some(n) if n.attributes.asAttrMap.get("class").exists(_.contains("stex:")) =>
-      val cls = n.attributes.asAttrMap.get("class").map(_.split('_').toList).getOrElse(Nil)
-      if(cls.length == 2) {
-        (cls.head,cls(1))
-      } else ("","")
-    case Some(n) =>
-      val am = n.attributes.asAttrMap
-      (am.getOrElse("property",""),am.getOrElse("resource",""))
-    case _ => ("","")
+object PreElement {
+
+  def makeMacroName(macroname : String) = {
+    (STeX.meta_macro,STeX.StringLiterals(macroname))
   }
 
-  def getPreElem(parent : Option[PreParent]) : Option[PreElement] = None
+  def getMacroName(se : StructuralElement) = se.metadata.getValues(STeX.meta_macro).collectFirst {
+    case STeX.StringLiterals(mn) => mn
+  }
 
-  private def cond(a : XHTMLNode) = a.getClass == classOf[XHTMLNode] || a.getClass == classOf[XMathML]
-
-  override def cleanup: Unit = {
-    val prop = property
-    val res = resource
-    if (ismath) _children = children.filter{
-      case o if o.isEmpty => false
-      case _ => true
+  def getNotations(se : StructuralElement,controller : Controller) = {
+    controller.depstore.queryList(se.path,NotationExtractor.notation).map(controller.getO).map {
+      case Some(c : Constant) =>
+        val arity = c.tp match {
+          case Some(STeX.notation.tp(_,a)) => a
+          case _ =>
+            print("")
+            ???
+        }
+        val (fragment,node) = c.df match {
+          case Some(STeX.notation(n,f)) => (f,n)
+          case _ =>
+            print("")
+            ???
+        }
+        (fragment,arity,XHTML.applyString(node))
     }
-    children.filter{
-      case o if o.isEmpty => false
-      case _ => true
-    } match {
-      case List(a) if cond(a) =>
-        _label = a.label
-        attributes.clear()
-        a.attributes.foreach(p =>attributes(p._1) = p._2)
-        attributes(("","property")) = prop
-        attributes(("","resource")) = res
-        a.children.reverse.foreach(addAfter(_,a))
-        a.delete
-        print("")
+  }
+}
+
+
+
+trait PreParent extends PreElement {
+/*
+  override def find(pe: PreElement => Boolean): Option[PreElement] = if (pe(this)) Some(this) else {
+    _children.find(_.find(pe).isDefined) match {
+      case Some(c) => Some(c)
       case _ =>
+        _parent.flatMap(_.findUp(pe))
     }
+  }
+ */
+
+  protected var _children : List[PreElement] = Nil
+  def children = _children.reverse
+  def add(child : PreElement) = _children ::= child
+  private var structnames : List[LocalName] = Nil
+  def newName(s : String,i : Int =0) : LocalName = if (structnames.contains(LocalName(s))) {
+    if (structnames.contains(LocalName(s + i.toString))) newName(s,i+1) else {
+      structnames ::= LocalName(s + i.toString)
+      LocalName(s + i.toString)
+    }
+  } else {
+    structnames ::= LocalName(s)
+    LocalName(s)
   }
 }
 
-abstract class XHTMLModule(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) {
+object SourceRefAnnotation {
+  def toOffset(f : File, line : Int, col : Int) : SourcePosition = {
+    var (o,l,c) = (0,1,0)
+    File.read(f).foreach {
+      case _ if l > line =>
+        return SourcePosition(o,line,col)
+      case _ if l == line && col == c =>
+        return SourcePosition(o,line,col)
+      case '\n' =>
+        c = 0
+        l += 1
+        o += 1
+      case _ =>
+        o += 1
+        c += 1
+    }
+    SourcePosition(-1,line,col)
+  }
+  def toSourceRef(controller : Controller,sra : SourceRefAnnotation) = {
+    val file = controller.backend.resolvePhysical(File(sra.file)).map { case (archive, path) =>
+      path.foldLeft(archive.narrationBase)((u, s) => u / s)
+    }.getOrElse {
+      URI(File(sra.file).toURI)
+    }
+    SourceRef(file, SourceRegion(toOffset(File(sra.file), sra.from._1, sra.from._2), toOffset(File(sra.file), sra.to._1, sra.to._2)))
+  }
+}
+
+class SourceRefAnnotation(node: XHTMLNode) extends XHTMLAnnotation(node) {
+  var file : String = ""
+  var from : (Int,Int) = (0,0)
+  var to : (Int,Int) = (0,0)
+  def setvars = {
+    val str = if (node.attributes.get(("","property")).contains("srcref")) {
+      node.attributes(("","resource"))
+    } else if (node.attributes.contains(("stex","srcref"))) {node.attributes(("stex","srcref"))}
+    else ""
+    str.split('#') match {
+      case Array(f,r) =>
+        file = f
+        r.drop(1).dropRight(1).split(')') match {
+          case Array(b,e) =>
+            b.split(';') match {
+              case Array(l,c) =>
+                from = (l.toInt,c.toInt)
+              case _ =>
+                print("")
+                ???
+            }
+            e.drop(1).split(';') match {
+              case Array(l,c) =>
+                to = (l.toInt,c.toInt)
+              case _ =>
+                print("")
+                ???
+            }
+          case _ =>
+            print("")
+            ???
+        }
+      case _ =>
+        print("")
+        ???
+    }
+  }
+  override def afterPopulating(s : XHTMLParsingState): Unit = if (node.attributes.get(("","property")).contains("srcref")) {
+    node.delete
+    node.parent.foreach {p =>
+      p.addAnnotation(this)
+      p.attributes(("stex","srcref")) = node.attributes.getOrElse(("","resource"),"")
+      val n = new SourceRefAnnotation(p)
+      n.setvars
+    }
+  } else setvars
+}
+
+object InScript {
+  def apply(node : XHTMLNode) = node.collectFirstAncestor{case n if n.getAnnotations.exists(_.isInstanceOf[ToScript]) => n}.isDefined
+}
+
+trait Plain extends OMDocAnnotation {
+  override def afterPopulating(s : XHTMLParsingState): Unit = {
+    super.afterPopulating(s)
+    node.children.foreach(_.delete)
+    if (node.label == "span") node.add(XHTML.empty)
+  }
+}
+
+abstract class ModuleAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with PreParent {
   def path = Path.parseM(resource,NamespaceMap.empty)
   def name = path.name
   def dpath = path.parent
 }
 
-trait ToScript extends XHTMLOMDoc {
-  override def inscript = true
-  override def cleanup: Unit = {
-    super.cleanup
-    _label = "script"
-    val prop = property
-    val res = resource
-    attributes.clear()
-    attributes(("","type")) = "application/xml+stex"
-    attributes(("","property")) = property
-    attributes(("","resource")) = resource
-    get()().foreach {_.cleanup}
-    _children = _children.filterNot(_.isEmpty)
-    if (children.isEmpty) add(XHTML.empty)
+class TheoryAnnotation(node : XHTMLNode) extends ModuleAnnotation(node) {
+  private val top = this
+
+  override type A = PreTheory
+  val pt = new PreTheory(node,path)
+  def addMeta(mt : Option[MPath]) = {
+    languagemodule.foreach(_.metatheory = mt)
+    signaturemodule.foreach(_.metatheory = mt)
   }
-  override def node = {
-    super.node
-  }
-  // override def node = <script type="application/xml+stex" property={property} resource={resource}>{children.map(_.node)}</script>
+  var languagemodule : Option[PreTheory] = Some(pt)
+  var signaturemodule : Option[PreTheory] = Some(pt)
+
+  override final def subelements: List[A] = List(signaturemodule.toList,languagemodule.toList).flatten.distinct
+
+  override def add(child: PreElement): Unit = pt.add(child)
+
+  // TODO parameters
+  override def getElement(implicit state : SemanticParsingState): List[Theory] = {
+    ???
+  }//state.applySE(Theory(path.doc,path.name,metatheory))
 }
 
+class PreTheory(node : XHTMLNode, override val path : MPath) extends ModuleAnnotation(node) {
+  private[xhtml] var metatheory : Option[MPath] = Some(STeX.meta)
+  var language = ""
 
-abstract class XHTMLDecl(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) with ToScript {
+  override def open(state: SemanticParsingState): Unit = {}
+  override def close(state: SemanticParsingState): Unit = {}
+
+  override def getElement(implicit state : SemanticParsingState): List[Theory] = {
+    if (language != "") metadata(STeX.meta_language) = OMS(STeX.language(language))
+    List(Theory(path.doc,path.name,metatheory))
+  } //state.applySE(Theory(path.doc,path.name,metatheory))
+  override def init: Unit = {}
+}
+
+trait ToScript extends OMDocAnnotation {
+  import node._
+  private val srcref = attributes.get(("stex","srcref"))
+  attributes.clear()
+  label = "script"
+  attributes(("","type")) = "application/xml"
+  attributes(("","property")) = property
+  attributes(("","resource")) = resource
+  srcref.foreach{attributes(("stex","srcref")) = _}
+  classes.foreach(removeClass)
+
+  override def afterPopulating(s : XHTMLParsingState): Unit = {
+    super.afterPopulating(s)
+    if (children.isEmpty) add(XHTML.empty)
+    get()()().flatMap(_.getAnnotations).foreach {
+      case cmp : ComponentAnnotation => cmp.makeScript
+      case _ =>
+    }
+  }
+}
+
+abstract class DeclarationAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with PreElement {
+  override type A = DeclarationAnnotation
+  /*
   def path = Path.parseS(resource,NamespaceMap.empty)
   def module = path.module
   def name = path.name
   def dpath = module.parent
+   */
 }
 
-abstract class XHTMLComponent(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) {
-  override def cleanup: Unit = if (inscript && !ismath) {
-    val prop = property
-    val res = resource
-    attributes.clear()
-    _label = prop
-    _children = _children.filterNot(_.isEmpty)
+trait HasNotation {
+  protected var _notations : List[(String,String,Node)] = Nil
+  def addNotation(frag : String, prec : String, node : Node) = _notations ::= (frag,prec,node)
+  var arity : String = ""
+  var fragment : String = ""
+  var precedence : String = ""
+}
+
+trait HasType {
+  protected var _types : List[Term] = Nil
+  def addType(t : Term) = _types ::= t
+}
+
+trait HasDefiniens {
+  protected var _definientia : List[Term] = Nil
+  def addDefiniens(t : Term) = _definientia ::= t
+}
+
+trait HasTermArgs {
+  protected var _terms : List[Term] = Nil
+  def addArg(t : Term) = _terms ::= t
+  def getArgs = _terms.reverse
+}
+
+class ConstantAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) with HasNotation with HasType with HasDefiniens {
+  def path = Path.parseS(resource,NamespaceMap.empty)
+
+  private var _roles : List[String] = Nil
+  private var _macronames : List[String] = Nil
+  def addMacro(s : String) = _macronames ::= s
+  def addRole(s : String) = _roles ::= s
+  def getElement(implicit state : SemanticParsingState) = {
+    val c = Constant(OMID(path.module),path.name,Nil,
+      _types.headOption.map(state.applyTerm),
+      _definientia.headOption.map(state.applyTerm),
+      _roles.headOption,NotationContainer.empty())
+    _macronames.headOption.foreach{ m =>
+      val (k,v) = PreElement.makeMacroName(m)
+      metadata(k) = v
+    }
+    metadata(STeX.meta_arity) = STeX.StringLiterals(arity)
+    List(c)
+  }
+}
+
+class StructureAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) with PreParent {
+  var _name : String = ""
+  lazy val domain = Path.parseM(resource)
+  lazy val name = if (_name.nonEmpty) LocalName(_name) else LocalName(domain)
+  var _nonEmpty = false
+  def empty = (!_nonEmpty && _children.isEmpty)
+  lazy val path = _parent match {
+    case Some(p : ModuleAnnotation) => p.path ? name
+    case _ =>
+      print("")
+      ???
+  }
+
+
+  // TODO structures, views, ...
+  override def getElement(implicit state : SemanticParsingState) = List(
+    if (empty) PlainInclude(domain,path.module) else {
+      ???
+    }
+  )
+}
+
+class ComponentAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with PreElement {
+  import node._
+  def makeScript = {
+    attributes.clear
+    label = property
     attributes(("","resource")) = resource
   }
-  // override def node = Elem(null,property,XHTML.makeAttributes((("","resource"),resource)),scala.xml.TopScope,false,children.map(_.node):_*)
+
+  override def getElement(implicit state: SemanticParsingState): List[StructuralElement] = ???
 }
+
+object TermComponentA {
+  def clean(node : XHTMLNode) = node.get()()().collectFirst{
+    case n if n.label == "math" =>
+      n.children.foreach{case c if c.isEmpty => c.delete case _ =>}
+      node.children.foreach(_.delete)
+      n.children.headOption.foreach(node.add)
+      n
+  }.getOrElse {
+    node.children.foreach{
+      case n if !n.getAnnotations.exists(_.isInstanceOf[TermAnnotation]) => n.delete
+      case _ =>
+    }
+    print("")
+  }
+}
+
+class TermComponentA(node : XHTMLNode) extends ComponentAnnotation(node : XHTMLNode) {
+  override def makeScript: Unit = {
+    super.makeScript
+    TermComponentA.clean(node)
+  }
+  def getTerm : Term = node.children match {
+    case List(t) if XHTMLTerm.is(t) =>
+      t.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm}.get
+    case _ =>
+      print("")
+      ???
+  }
+}
+
+/*
 
 abstract class XHTMLTermComponent(initial_node : Option[Node] = None) extends XHTMLComponent(initial_node) {
   override def cleanup: Unit = {
@@ -159,115 +430,306 @@ abstract class XHTMLTermComponent(initial_node : Option[Node] = None) extends XH
     Elem(null,property,XHTML.makeAttributes((("","resource"),resource)),scope,false,children.map(_.strip):_*)
   }else super.node
 }
-class XHTMLTypeComponent(initial_node : Option[Node] = None) extends XHTMLTermComponent(initial_node)
-class XHTMLDefComponent(initial_node : Option[Node] = None) extends XHTMLTermComponent(initial_node)
-class XHTMLArityComponent(initial_node : Option[Node] = None) extends XHTMLComponent(initial_node) {
+
+ */
+
+class TypeComponentA(node : XHTMLNode) extends TermComponentA(node) {
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    if (node.children.nonEmpty) {
+      state.getParent match {
+        case c: HasType =>
+          c.addType(getTerm)
+        case _ =>
+          print("")
+          ???
+      }
+    }
+  }
+}
+class DefComponentA(node : XHTMLNode) extends TermComponentA(node) {
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    if (node.children.nonEmpty) {
+      state.getParent match {
+        case c: HasDefiniens =>
+          c.addDefiniens(getTerm)
+        case _ =>
+          print("")
+          ???
+      }
+    }
+  }
+}
+class ArityComponentA(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
   def arity = resource
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    state.getParent match {
+      case c : HasNotation =>
+        c.arity = arity
+      case _ =>
+        print("")
+        ???
+    }
+  }
 }
-class XHTMLNotationFragment(initial_node : Option[Node] = None) extends XHTMLComponent(initial_node) {
+class NotationFragmentComponentA(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
   def fragment = resource
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    state.getParent match {
+      case c : HasNotation =>
+        c.fragment = fragment
+      case _ =>
+        print("")
+        ???
+    }
+  }
 }
-class XHTMLPrecedence(initial_node : Option[Node] = None) extends XHTMLComponent(initial_node) {
+class PrecedenceComponentA(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
   def prec = resource
+
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    state.getParent match {
+      case c : HasNotation =>
+        c.precedence = prec
+      case _ =>
+        print("")
+        ???
+    }
+  }
 }
-class XHTMLNotationComponent(initial_node : Option[Node] = None) extends XHTMLTermComponent(initial_node) {
-  def notation(path : ContentPath) : Node = children match {
-    case List(t) => t.strip
+
+class NotationComponentA(node : XHTMLNode) extends TermComponentA(node) {
+  override def afterPopulating(s : XHTMLParsingState): Unit = {
+    TermComponentA.clean(node)
+    super.afterPopulating(s)
+    node.children match {
+      case List(a) =>
+        a.strip
+        print("")
+      case _ =>
+        print("")
+        ???
+    }
+  }
+
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    state.getParent match {
+      case c : HasNotation =>
+        c.addNotation(c.fragment,c.precedence,node.children match {case List(a) => a.node case _ =>
+          print("")
+            ???
+        })
+      case _ =>
+        print("")
+        ???
+    }
+  }
+}
+
+class MacronameComponentA(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
+  def macroname = resource
+
+  override def close(state: SemanticParsingState): Unit = {
+    super.close(state)
+    state.getParent match {
+      case c : ConstantAnnotation =>
+        c.addMacro(macroname)
+      case _ =>
+        print("")
+        ???
+    }
+  }
+}
+
+class ArgumentAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) {
+  import node._
+  override val priority: Int = 5
+  val num = if (attributes.get(("","property")).contains("stex:arg")) {
+    attributes.remove(("","property"))
+    val argstr = attributes.getOrElse(("","resource"),{
+      print("")
+      ???
+    })
+    attributes.remove(("","resource"))
+    argstr.toInt
+  } else if (classes.exists(_.startsWith("stex:arg"))) classes.collectFirst {
+    case s if s.startsWith("stex:arg_") =>
+      removeClass(s)
+      val argstr = s.drop(9)
+      argstr.toInt
+  }.getOrElse {
+    print("")
+    ???
+  } else if (attributes.contains(("stex","arg"))) attributes(("stex","arg")).toInt
+  else {
+    print("")
+    ???
+  }
+  attributes(("stex","arg")) = num.toString
+
+  override def afterPopulating(s : XHTMLParsingState): Unit = {
+    super.afterPopulating(s)
+    if (label == "span" && InScript(node)) {
+      TermComponentA.clean(node)
+      label = "math"
+    }
+  }
+
+  def toTerm = node.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm}.getOrElse(XHTMLTerm(node))
+}
+
+
+trait TermAnnotation extends XHTMLAnnotation with PreElement {
+  def toTerm : Term = XHTMLTerm(node)
+  def isTop = node.collectFirstAncestor{case a if XHTMLTerm.is(a) => false}.getOrElse(true)
+
+  override def open(state: SemanticParsingState): Unit = {
+    state.getParent match {
+      case t : PreParent =>
+        super.open(state)
+      case t : HasTermArgs =>
+        super.open(state)
+      case _ =>
+        print("")
+    }
+  }
+
+  override def close(state : SemanticParsingState) = {
+    state.getParent match {
+      case tp : HasTermArgs =>
+        val t = toTerm
+        tp.addArg(t)
+      case p : PreParent =>
+        print("") // TODO add to language module
+      case _ =>
+        print("")
+    }
+  }
+
+  override def getElement(implicit state: SemanticParsingState): List[StructuralElement] = {
+    print("")
+    ???
+  }
+}
+
+trait HasHeadSymbol extends OMDocAnnotation with TermAnnotation {
+  lazy val (head,arity,fragment) = resource.split('#') match {
+    case Array(p,a,f) => (Path.parseMS(p,NamespaceMap.empty),a,f)
+    case Array(l) => (Path.parseMS(l,NamespaceMap.empty),"","")
+    case Array(p,a) => (Path.parseMS(p,NamespaceMap.empty),a,"")
     case _ =>
+      println(resource.split('#').mkString("Array(",",",")"))
       ???
   }
 }
-class XHTMLMacroNameComponent(initial_node : Option[Node] = None) extends XHTMLComponent(initial_node) {
-  def macroname = resource
+
+class MathMLAnnotation(override val node : XHTMLNode) extends XHTMLAnnotation(node) with TermAnnotation {
+  override def toTerm: Term = XHTMLTerm(node)
 }
 
-class XHTMLStexArg(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) {
-  lazy val number = resource.toInt
-  private var term : Option[XHTMLNode] = None
-  private def clean(n : XHTMLNode) : Unit = n.children.filterNot(_.isEmpty) match {
-      case List(s : XHTMLText) =>
-        val num = number
-        n.attributes.clear
-        n.attributes(("stex","arg")) = num.toString
-      case List(a : XHTMLOMDoc) =>
-        children.foreach(_.delete)
-        a.attributes(("stex","arg")) = number.toString
-        term = Some(a)
-        add(a)
-      case List(a) =>
-        children.foreach(_.delete)
-        a.attributes(("stex","arg")) = number.toString
-        term = Some(a)
-        add(a)
-        clean(a)
-      case _ =>
-    }
-
-  override def cleanup = clean(this)
-
-  override def node: Node = term match {
-    case Some(t) =>
-      t.node
-    case _ =>
-      super.node
-  }
-}
-
-object STeXArg {
-  def unapply(xh : XHTMLNode) = xh match {
-    case a : XHTMLStexArg =>
-      a.children match {
-        case List(t: XHTMLTerm) => Some(a.number,t.toTerm)
-        case List(c : XHTMLText) =>
-          Some(a.number,XMathML.toTermI(a))
-        case List(c) =>
-          Some(a.number,XMathML.toTermI(c))
+case class MathMLLiteral(override val node : XHTMLNode) extends MathMLAnnotation(node) {
+  override def toTerm: Term = node.children.filterNot(_.isEmpty) match {
+    case (t : XHTMLText) :: Nil =>
+      t.text.toDoubleOption match {
+        case Some(db) if db.isValidInt && db>0 => STeX.PosLiterals(BigInt(db.toInt))
+        case Some(db) if db.isValidInt && db>=0 => STeX.NatLiterals(BigInt(db.toInt))
+        case Some(db) if db.isValidInt => STeX.IntLiterals(BigInt(db.toInt))
+        case Some(db) => STeX.RealLiterals(db)
         case _ =>
-          Some(a.number,XMathML.toTermI(a))
+          ???
       }
-    case o : XHTMLTerm if o.attributes.contains(("stex","arg")) =>
-      Some(o.attributes(("stex","arg")).toInt,o.toTerm)
-    case o if o.attributes.contains(("stex","arg")) =>
-      Some(o.attributes(("stex","arg")).toInt,XMathML.toTermI(o))
     case _ =>
-      None
+      print("")
+      ???
   }
 }
 
+class OMIDAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with TermAnnotation with HasHeadSymbol {
+  override val priority = 3
 
-abstract class XHTMLTerm(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) {
-  var used = false
-  def toTerm : Term = {
-    used = true
-    get()().foreach {
-      case t : XHTMLTerm => t.used = true
-      case _ =>
-    }
-    toTermI
+  override def toTerm: Term = {
+    val tm = OMID(head)
+    if (fragment != "") tm.metadata.update(STeX.meta_notation,STeX.StringLiterals(fragment))
+    tm
   }
-  def toTermI : Term
-  def isTop = !used
+}
 
-  override def getPreElem(parent: Option[PreParent]): Option[PreElement] = parent match {
-    case Some(p : PreTheory) if isTop =>
-      p.languagemodule.map{m =>
-        toTerm match {
-          case OMID(_) =>
-            return None
-          case t =>
-            val name = m.newName("term")
-            attributes(("stex","constant")) = (m.path ? name).toString
-            new PreTerm(t,m,m.path ? name)
+trait ComplexTerm extends OMDocAnnotation with TermAnnotation with HasHeadSymbol {
+  private def getargs(n : XHTMLNode) : List[(Int,Term)] = n.getAnnotations.collectFirst {
+    case a : ArgumentAnnotation => List((a.num,a.toTerm))
+  }.getOrElse(n.children.flatMap(getargs))
+
+  def sortArgs = {
+    val args = if (node.getAnnotations.exists(_.isInstanceOf[ArgumentAnnotation]))
+      node.children.flatMap(getargs)
+    else getargs(node)
+    arity.zipWithIndex.map {
+      case ('i',i) =>
+        args.filter(_._1 == i+1) match {
+          case List(t) =>
+            t._2
+          case _ =>
+            print("")
+            ???
         }
-      }
-    case _ =>
-      None
+      case ('a',i) =>
+       STeX.flatseq(args.filter(_._1 == i+1).map(_._2):_*)
+      case ('b',i) =>
+        // TODO
+        ???
+    }.toList
   }
 }
-trait HasHeadSymbol extends XHTMLOMDoc {
-  def head : ContentPath
+
+class OMAAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with ComplexTerm {
+  override val priority = 3
+
+  override def toTerm: Term = {
+    val tm = OMA(OMID(head),sortArgs)
+    if (fragment != "") tm.metadata.update(STeX.meta_notation,STeX.StringLiterals(fragment))
+    tm
+  }
+}
+class OMBINDAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with ComplexTerm {
+  override val priority = 3
+
+  override def toTerm = {
+    // TODO
+    ???
+  }
 }
 
+object XHTMLTerm {
+  def is(node : XHTMLNode) = node.getAnnotations.exists(_.isInstanceOf[TermAnnotation])
+
+  def apply(xn : XHTMLNode) : Term = xn.children.filterNot(_.isEmpty) match {
+    case List(a) if is(a) =>
+      a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm}.get
+    case _ =>
+      val args = xn.children.flatMap({
+        case c if c.isEmpty => None
+        case a if is(a) =>
+          a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm}
+        case t: XHTMLText if xn.children == List(t) =>
+          xn.strip
+          return (STeX.informal.applySimple(xn.node))
+        case t: XHTMLText =>
+          t.strip
+          Some(STeX.informal.applySimple(<mi>{t.node}</mi>))
+        case _ =>
+          ???
+      })
+      STeX.informal.applyOp(xn.label, args)
+  }
+
+}
+
+/*
 
 class XHTMLMath(initial_node : Option[Node] = None) extends XHTMLTerm(initial_node) {
   private def cond(n : XHTMLNode) = n.getClass == classOf[XHTMLNode]
@@ -445,3 +907,5 @@ class XMathML(initial_node : Option[Node] = None) extends XHTMLTerm(initial_node
 class XHTMLTref(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) with HasHeadSymbol {
   var head = Path.parseMS(resource,NamespaceMap.empty)
 }
+
+ */

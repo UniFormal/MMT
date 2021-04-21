@@ -2,14 +2,14 @@ package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.{CPath, ContentPath, NamespaceMap, Path, StructuralElement, TypeComponent}
-import info.kwarc.mmt.api.objects.{OMS, Obj, Term}
+import info.kwarc.mmt.api.objects.{OMID, OMS, Obj, Term}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
 import info.kwarc.mmt.api.utils.MMTSystem
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.OMDocExtension.{XHTMLLanguage, server}
-import info.kwarc.mmt.stex.{STeX, translations}
-import info.kwarc.mmt.stex.xhtml.{PreConstant, PreElement, PreParent, PreTheory, XHTML, XHTMLNode, XHTMLOMDoc}
+import info.kwarc.mmt.stex.Extensions.OMDocExtension.{HasLanguage, controller}
+import info.kwarc.mmt.stex.{STeX, SemanticParsingState, translations}
+import info.kwarc.mmt.stex.xhtml.{DeclarationAnnotation, OMDocAnnotation, PreElement, PreParent, PreTheory, TheoryAnnotation, XHTML, XHTMLNode, XHTMLOMDoc}
 
 import scala.xml.Node
 
@@ -40,37 +40,33 @@ object FragmentExtension extends STeXExtension {
   }
 
 
-  class XHTMLSymbolDoc(initial_node : Option[Node] = None) extends XHTMLOMDoc(initial_node) {
-    override def cleanup: Unit = {
-      get()().collectFirst {
-        case lang : XHTMLLanguage =>
-          lang.delete
-          attributes(("","language")) = lang.resource
-          children.foreach{
-            case n if n.isEmpty =>
-              n.delete
-            case _ =>
-          }
-      }.getOrElse("")
-    }
+  class SymbolDocAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) with HasLanguage {
     lazy val symbol = Path.parseMS(resource,NamespaceMap.empty)
-    def language = attributes.getOrElse(("","language"),"")
-    override def getPreElem(parent: Option[PreParent]): Option[PreElement] = parent match {
-      case Some(p : PreTheory) =>
-        p.languagemodule.foreach { m =>
-          val c = new PreConstant(m.path ? m.newName("symboldoc"), m)
-          c.addDefiniens(STeX.symboldoc(symbol, language, this.children))
-          c.addType(OMS(STeX.symboldoc.tp))
-          c.addRole("symboldoc")
+
+    override def open(state: SemanticParsingState): Unit = state.getParent match {
+      case t : TheoryAnnotation =>
+        t.languagemodule.foreach {p =>
+          p.add(this)
+          _parent = Some(p)
         }
-        None
+      case p : PreParent =>
+        p.add(this)
+        _parent = Some(p)
       case _ =>
-        None
+    }
+
+    override def getElement(implicit state: SemanticParsingState): List[StructuralElement] = _parent match {
+      case Some(p : PreTheory) =>
+        List(Constant(OMID(p.path),p.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(symbol,language,node.children)),Some("symboldoc")))
     }
   }
 
   override lazy val xhtmlRules = List(
-    XHTMLOMDoc.toRule(_ == "stex:symboldoc")(n => new XHTMLSymbolDoc(Some(n)))
+    XHTMLOMDoc.toRule("stex:symboldoc")((n,s) => new SymbolDocAnnotation(n))
+  )
+
+  override def checkingRules: List[PartialFunction[(StructuralElement, SemanticParsingState), StructuralElement]] = List(
+    {case (c : Constant,s) if c.rl.contains("symboldoc") => controller add c; c}
   )
 
   def doFragment(path : Path) = {
@@ -79,7 +75,7 @@ object FragmentExtension extends STeXExtension {
         val (doc,body) = server.emptydoc
         body.attributes(("","style")) = "background-color:white"
         stripMargins(doc)
-        val border = XHTML(<div style="font-size:small"/>)(Nil).head
+        val border = XHTML(<div style="font-size:small"/>)
         body.add(border)
         border.add(<font size="+2">{" ☞ "}</font>)
         border.add(<code>{elem.path.toString}</code>)
@@ -114,7 +110,7 @@ object FragmentExtension extends STeXExtension {
     ret.flatMap(controller.getO).headOption match {
       case Some(c : Constant) => c.df match {
         case Some(STeX.symboldoc(_,"en",str)) => // TODO language
-          return XHTML.applyString(XHTML.unescape(str))(Nil).head
+          return XHTML.applyString(XHTML.unescape(str))
         case _ =>
       }
       case _ =>
@@ -124,27 +120,25 @@ object FragmentExtension extends STeXExtension {
         val macroname = PreElement.getMacroName(c)
         XHTML(<table>
           <tr><td><b>Type</b></td><td>{c.tp.map(server.xhtmlPresenter.asXML(_,Some(c.path $ TypeComponent))).getOrElse(text("None"))}</td></tr>
-          {macroname.foreach{name => PreElement.getNotations(c).map{
-            case ("",n) =>
+          {macroname.foreach{name => PreElement.getNotations(c,controller).map{
+            case ("",_,n) =>
               <tr><td>{"\\"+name}</td><td>{n.node}</td></tr>
-            case (p,n) =>
+            case (p,_,n) =>
               <tr><td>{"\\"+name+"[" + p + "]"}</td><td>{n.node}</td></tr>
           }}}
-        </table>)(Nil).head
+        </table>)
       case _ =>
         ???
     }
   }
 
   def stripMargins(ltx : XHTMLNode) = {
-    val body = ltx.get("body")().head
+    val body = ltx.get("body")()().head
     body.attributes(("", "style")) = "margin:0;padding:0;"
-    val doc = body.get("div")(("", "class", "ltx_page_main")).head
+    val doc = body.get("div")()("ltx_page_main").head
     doc.attributes(("", "style")) = "margin:0;padding:0.1em 0.5em 0.5em 0.5em;"
-    doc.get("div")().foreach { e =>
-      if (e.attributes.get(("", "class")).exists(_.contains("ltx_theorem"))) {
-        e.attributes(("", "style")) = "margin:0;"
-      }
+    doc.get("div")()("ltx_theorem").foreach { e =>
+      e.attributes(("", "style")) = "margin:0;"
     }
   }
 
@@ -154,10 +148,11 @@ object FragmentExtension extends STeXExtension {
     ("openmath",o.toNode.toString().replace("\n","").replace("\n","")),
     ("component",comp.map(_.toString).getOrElse("None"))
   )
+
 }
 
 
-object SymdocRelational extends RelationalExtractor {
+object SymdocRelational extends RelationalExtractor with STeXExtension {
   val documents = CustomBinary("documents","documents","has documentation")
   override val allBinary: List[Binary] = List(
     documents

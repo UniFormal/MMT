@@ -269,9 +269,11 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar")
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).

@@ -1,9 +1,9 @@
 package info.kwarc.mmt.stex.features
 
-import info.kwarc.mmt.api.checking.{History, InhabitableRule, Solver, UniverseRule}
+import info.kwarc.mmt.api.checking.{History, InhabitableRule, SingleTermBasedCheckingRule, Solver, UniverseRule}
 import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, ParseError, Rule, RuleSet}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{ComplexTheory, Context, OMA, OMID, OMMOD, OMS, OMV, Stack, Substitution, Term}
+import info.kwarc.mmt.api.objects.{ComplexTheory, Context, OMA, OMBIND, OMBINDC, OMID, OMMOD, OMS, OMV, Stack, Substitution, Term}
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
 import info.kwarc.mmt.api.uom.{RealizedType, RealizedValue, SemanticOperator, SemanticType, SemanticValue}
 import info.kwarc.mmt.lf.FunType
@@ -36,6 +36,9 @@ object Rules {
             })
           case _ => None
         }
+      case _ =>
+        print("")
+        None
     }
     def unapply(tm : Term) = {
       recurse(tm,original)(Context.empty) match {
@@ -55,15 +58,21 @@ object Rules {
   }
 }
 
-object Universe extends ParametricRule {
-  case class UnivRule(pattern : Rules.Pattern,hhead : GlobalName) extends UniverseRule(hhead) {
-    override def applicable(t: Term): Boolean = t match {
-      case pattern(_) => true
-      case _ => false
-    }
-
-    override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
+trait UsesPatterns extends SingleTermBasedCheckingRule {
+  protected val pattern : Rules.Pattern
+  override def applicable(t: Term): Boolean = t match {
+    case pattern(_) => true
+    case _ => false
   }
+}
+
+case class UnivRule(pattern : Rules.Pattern,hhead : GlobalName) extends UniverseRule(hhead) with UsesPatterns {
+
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
+}
+
+object Universe extends ParametricRule {
+
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
     case List(tm) =>
       val pattern = new Rules.Pattern(tm)
@@ -71,21 +80,19 @@ object Universe extends ParametricRule {
         case Some(gn : GlobalName) => gn
         case _ => STeX.informal.sym
       }
-      UnivRule(pattern,head)
+      RuleSet(UnivRule(pattern,head),InhabRule(pattern,head))
     case _ =>
       ???
   }
 }
 
-object Inhabitable extends ParametricRule {
-  case class InhabRule(pattern : Rules.Pattern,hhead : GlobalName) extends InhabitableRule(hhead) {
-    override def applicable(t: Term): Boolean = t match {
-      case pattern(_) => true
-      case _ => false
-    }
 
-    override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
-  }
+case class InhabRule(pattern : Rules.Pattern,hhead : GlobalName) extends InhabitableRule(hhead) with UsesPatterns {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = Some(true) // by applicability
+}
+
+object Inhabitable extends ParametricRule {
+
   override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
     case List(tm) =>
       val pattern = new Rules.Pattern(tm)
@@ -99,21 +106,31 @@ object Inhabitable extends ParametricRule {
   }
 }
 
-object Realize extends ParametricRule {
-/*
-  /** finds the semantic type that was previously declared to realized a syntactic type */
-  private def getSemanticType(controller: Controller, home: Term, synTp: Term): SemanticType = {
-    controller.globalLookup.forDeclarationsInScope(home) {
-      case (_,m,rc: RuleConstant) => rc.df match {
-        // TODO translate rt along m
-        case Some(rt: RealizedType) if rt.synType == synTp => return rt.semType
-        case _ =>
-      }
-      case _ =>
-    }
-    throw ParseError("no realized type known: " + synTp)
+import info.kwarc.mmt.api.objects.Conversions._
+
+case class BinderRule(pattern : Rules.Pattern,head : GlobalName) extends  UsesPatterns {
+  def apply(tm : Term) = tm match {
+    case OMA(OMS(sym),pattern((_,OMV(x)) :: (_,tp) :: Nil) :: rest) =>
+      Some(OMBINDC(OMS(sym),Context(x % tp),rest)) // TODO sequences
+    case OMA(OMS(sym),pattern((_,STeX.informal(node)) :: (_,tp) :: Nil) :: rest) =>
+      Some(OMBINDC(OMS(sym),Context(LocalName(node.toString) % tp),rest)) // TODO sequences
+    case _ => None
   }
-  */
+}
+
+object Binder extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]) = {
+    if (args.length != 1) throw ParseError("one argument expected")
+    val pattern = new Rules.Pattern(args.head)
+    val head = pattern.body.head match {
+      case Some(gn : GlobalName) => gn
+      case _ => STeX.informal.sym
+    }
+    BinderRule(pattern,head)
+  }
+}
+
+object Realize extends ParametricRule {
 
   //TODO checks are called even when an .omdoc file is read
   def apply(controller: Controller, home: Term, args: List[Term]) = {
@@ -148,3 +165,37 @@ object Realize extends ParametricRule {
     }
   }
 }
+
+object SeqTypeInhabitable extends InhabitableRule(STeX.flatseq.tp.sym) {
+  override def applicable(t: Term): Boolean = t match {
+    case OMA(OMS(STeX.flatseq.tp.sym),List(_)) => true
+    case _ => false
+  }
+
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = {
+    val OMA(OMS(STeX.flatseq.tp.sym),List(tp)) = term
+    Some(solver.check(info.kwarc.mmt.api.objects.Inhabitable(stack,tp)))
+  }
+}
+
+case class FunctionSpaceInhabitable(hhead : GlobalName) extends InhabitableRule(hhead) {
+  override def apply(solver: Solver)(term: Term)(implicit stack: Stack, history: History): Option[Boolean] = term match {
+    case OMA(OMS(`hhead`),List(STeX.flatseq(doms),codom)) =>
+      (codom :: doms).foreach {t =>
+        solver.check(info.kwarc.mmt.api.objects.Inhabitable(stack,t))
+      }
+      Some(true)
+    case _ =>
+      None
+  }
+}
+
+object FunctionSpaceLike extends ParametricRule {
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(head)) =>
+      FunctionSpaceInhabitable(head)
+    case _ =>
+      throw ParseError("one OMID argument expected")
+  }
+}
+

@@ -26,6 +26,7 @@ object EditorExtension extends STeXExtension {
       server.resolveDocumentQuery(request.query) match {
         case (_,Some(archive),path) =>
           controller.buildArchive(List(archive.id),"stex-xhtml",Build,path.setExtension("tex"))
+          controller.buildArchive(List(archive.id),"xhtml-omdoc",Build,path.setExtension("xhtml"))
       }
       Some(ServerResponse.TextResponse("OK."))
     case _ => None

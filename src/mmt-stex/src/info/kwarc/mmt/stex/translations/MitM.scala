@@ -12,7 +12,7 @@ import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.xhtml.{PreElement, XHTMLOMDoc}
 
-object MitM {
+object MitM { /*
   import DemoContent._
   import info.kwarc.mmt.MitM.{MitM => OMitM}
 
@@ -87,9 +87,10 @@ object MitM {
     }
   }
   lazy val translations = List(trl_nat,trl_impl,trl_even,trl_square,trl_forall,trl_exists)
+  */
 }
 
-object DemoContent {
+object DemoContent { /*
   import scala.xml._
   lazy val th_set = Theory(STeX.set.doc,STeX.set.module.name,Some(STeX.meta))
   lazy val c_set = {
@@ -182,5 +183,5 @@ object DemoContent {
   } catch {
     case t : Throwable =>
       print("")
-  }
+  } */
 }

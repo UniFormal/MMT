@@ -1,22 +1,233 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{ErrorHandler, ExtensionError, GetError, Level, StructuralElement}
+import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, StructuralElement}
 import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
-import info.kwarc.mmt.api.checking.{CheckingResult, Interpreter}
+import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingResult, ExtendedCheckingEnvironment, Interpreter, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
-import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit}
+import info.kwarc.mmt.api.frontend.Controller
+import info.kwarc.mmt.api.metadata.MetaDatum
+import info.kwarc.mmt.api.modules.{Link, Module, Theory}
+import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
-import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg}
+import info.kwarc.mmt.api.utils.FilePath.filePathToList
+import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
-import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
+import info.kwarc.mmt.stex.xhtml.{ConstantAnnotation, DeclarationAnnotation, ModuleAnnotation, PreElement, PreParent, PreTheory, SourceRefAnnotation, StructureAnnotation, TheoryAnnotation, XHTML, XHTMLAnnotation, XHTMLNode, XHTMLParsingState}
+import info.kwarc.mmt.api.symbols.Constant
 
-import scala.tools.nsc.transform.patmat.MatchTreeMaking
+trait XHTMLParser extends TraversingBuildTarget {
 
+  var stexserver : STeXServer = null
+
+  override def start(args: List[String]): Unit = try {
+    super.start(args)
+    LaTeXML.initializeIfNecessary(controller)
+    controller.extman.get(classOf[STeXServer]) match {
+      case Nil =>
+        stexserver = new STeXServer
+        controller.extman.addExtension(stexserver)
+      case a :: _ =>
+        stexserver = a
+    }
+  } catch {
+    case t : Throwable =>
+      throw t
+  }
+
+  def buildFileActually(bf: BuildTask, state : XHTMLParsingState) = {
+    log("building " + bf.inFile)
+    LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
+      case (i,ls) if i > Level.Warning =>
+        bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
+      case _ =>
+    }
+    if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
+    log("postprocessing " + bf.inFile)
+    val doc = XHTML.parse(bf.outFile,Some(state))
+    doc.get("div")()("ltx_page_logo").foreach(_.delete)
+    doc.get("div")()("ltx_page_footer").foreach(f => if (f.isEmpty) f.delete)
+    //val (mmtdoc,missing) = PreElement.extract(doc)(controller)
+    File.write(bf.outFile, doc.toString)
+    bf.outFile.up.children.foreach {
+      case f if f.getExtension.contains("css") => f.delete()
+      case _ =>
+    }
+    log("Finished: " + bf.inFile)
+    //(mmtdoc,missing)
+    doc
+  }
+
+}
+
+class LaTeXToHTML extends XHTMLParser {
+  val key = "stex-xhtml"
+  val outDim = Dim("xhtml")
+  val inDim = info.kwarc.mmt.api.archives.source
+  def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+
+  override def buildFile(bf: BuildTask): BuildResult = {
+    val extensions = stexserver.extensions
+    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
+    val state = new XHTMLParsingState(xhtmlrules,bf.errorCont)
+    buildFileActually(bf,state)
+    BuildResult.empty
+  }
+}
+
+
+class PreDocument(val path : DPath) extends PreParent {
+  var level : Int = 0
+  // TODO Sections
+  val document = new Document(path)
+  override def getElement(implicit state : SemanticParsingState) : List[Document] = List(document)
+}
+
+class SemanticParsingState(rules : List[PartialFunction[(XHTMLNode,XHTMLParsingState), Unit]],eh : ErrorHandler, val dpath : DPath, controller : Controller)
+  extends XHTMLParsingState(rules,eh) {
+  val maindoc = new PreDocument(dpath)
+  private var _transforms: List[PartialFunction[Term, Term]] = Nil
+  private var _setransforms: List[PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]] = Nil
+
+  def addTransform(pf: PartialFunction[Term, Term]) = _transforms ::= pf
+  def addTransformSE(pf: PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]) = _setransforms ::= pf
+
+  private val traverser = new StatelessTraverser {
+    override def traverse(t: Term)(implicit con: Context, state: State): Term = {
+      val ret = _transforms.foldLeft(t)((it, f) => f.unapply(it).getOrElse(it))
+      Traverser(this, ret)
+    }
+  }
+
+  def applyTerm(tm: Term): Term = traverser(tm, ())
+
+  lazy val checker = controller.extman.get(classOf[MMTStructureChecker]).head
+
+  lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
+
+  def checkDefault[A <: StructuralElement](se : A) : A = {
+    se match {
+      case c : Constant =>
+        controller add c
+        (c.tp,c.df) match {
+          case (None,None) => return se
+          case (None,Some(OMS(_))) => return se
+          case _ =>
+        }
+        checker.apply(c)(ce)
+        se
+      case _ =>
+        controller add se
+        checker.apply(se)(ce)
+        se
+    }
+  }
+
+  def applySE[A <: StructuralElement](se: A, pe : PreElement) = {
+    pe.metadata.toList.foreach(p => se.metadata.add(MetaDatum(p._1, p._2)))
+    pe match {
+      case a : XHTMLAnnotation =>
+        a.node.getAnnotations.collectFirst{
+          case sr : SourceRefAnnotation =>
+            SourceRef.update(se,SourceRefAnnotation.toSourceRef(controller,sr))
+        }
+      case _ =>
+    }
+    _setransforms.collectFirst { case r if r.isDefinedAt(se,this) => r(se,this) }.getOrElse(checkDefault(se)).asInstanceOf[A]
+  }
+
+  def build = {
+    val doc = new Document(dpath)
+    controller add doc
+    maindoc.children.foreach {
+      case t : TheoryAnnotation =>
+        t.subelements.foreach{t =>
+          buildTheory(doc,t)
+        }
+      case _ =>
+    }
+    doc
+  }
+  private def buildTheory(parent : Document,th : PreTheory) = th.getElement(this).foreach { tI =>
+    val t = applySE(tI, th)
+    controller.getO(th.path.parent) match {
+      case Some(d: Document) =>
+      case _ => controller.add(new Document(th.path.parent))
+    }
+    controller add MRef(parent.path, t.path)
+    th.children.foreach {
+      case d: DeclarationAnnotation =>
+        d.subelements.foreach(buildDeclaration(t, _))
+      case _ =>
+    }
+    val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
+    checker.applyElementEnd(t)(ce)
+  }
+  private def buildDeclaration(parent : Module, da : DeclarationAnnotation) = da.getElement(this).foreach{dI =>
+    val d = applySE(dI,da)
+    d match {
+      case l : Link if l.isImplicit =>
+        controller.library.endAdd(l)
+      case _ =>
+    }
+  }
+
+  private var elems: List[PreElement] = List(maindoc)
+
+  def getParent = elems.head
+
+  override def open(node: XHTMLNode): Unit = {
+    super.open(node)
+    node.getAnnotations.collect {
+      case e: PreElement =>
+        e.open(this)
+        elems ::= e
+    }
+  }
+
+  override def close(node: XHTMLNode): Unit = {
+    super.close(node)
+    node.getAnnotations.reverse.collect {
+      case e : PreElement =>
+        elems.headOption match {
+          case Some(`e`) =>
+            elems = elems.tail
+            e.close(this)
+          case _ =>
+            print("")
+            ???
+        }
+    }
+  }
+
+}
+
+class HTMLToOMDoc extends Importer with XHTMLParser {
+  val key = "xhtml-omdoc"
+  val inExts = List("xhtml")
+  override val inDim = Dim("xhtml")
+
+  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+    log("postprocessing " + bt.inFile)
+    val dpath = bt.narrationDPath // / LocalName(filePathToList(bt.inPath.setExtension("omdoc")):_*)
+    val extensions = stexserver.extensions
+    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
+    val trules = extensions.flatMap(_.checkingRules)
+    implicit val state = new SemanticParsingState(xhtmlrules,bt.errorCont,dpath,controller)
+    trules.foreach(state.addTransformSE)
+    XHTML.parse(bt.inFile,Some(state))
+    //index(state.maindoc.getElement)
+    val doc = state.build
+    index(doc)
+    log("Finished: " + bt.inFile)
+    BuildResult.empty
+  }
+}
+
+/*
 class LaTeXToHTML extends Importer {
   def format = "stex"
-  override val key = "stex-xhtml"
   override val inExts = List("tex")
   override val outDim = Dim("xhtml")
   override val outExt = "xhtml"
@@ -49,7 +260,7 @@ class LaTeXToHTML extends Importer {
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     val (doc,missing) = buildFileActually(bt)
     missing.foreach(m => bt.errorCont(GetError("no backend applicable to " + m)))
-    index(doc)
+    //index(doc)
 
     BuildResult.empty
   }
@@ -85,7 +296,8 @@ class LaTeXToHTML extends Importer {
 
   def buildFileActually(bf: BuildTask) = {
     val extensions = stexserver.extensions
-    implicit val xhtmlrules = extensions.flatMap(_.xhtmlRules)
+    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
+    val state = new XHTMLParsingState(xhtmlrules)
     log("building " + bf.inFile)
     LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
       case (i,ls) if i > Level.Warning =>
@@ -94,18 +306,18 @@ class LaTeXToHTML extends Importer {
     }
     if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
     log("postprocessing " + bf.inFile)
-    val doc = XHTML.parse(bf.outFile).head
+    val doc = XHTML.parse(bf.outFile,Some(state))
     doc.get("div")(("", "class", "ltx_page_logo")).foreach(_.delete)
     doc.get("div")(("", "class", "ltx_page_footer")).foreach(f => if (f.isEmpty) f.delete)
-    //val head = doc.get("head")().head
-    //head.add(<link rel="stylesheet" href="https://latex.now.sh/style.css"/>)
-    //head.add(XHTML(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{XHTML.empty}</script>)(Nil).head)
-    val (mmtdoc,missing) = PreElement.extract(doc)(controller)
+    //val (mmtdoc,missing) = PreElement.extract(doc)(controller)
     File.write(bf.outFile, doc.toString)
     log("Finished: " + bf.inFile)
-    (mmtdoc,missing)
+    //(mmtdoc,missing)
+    (doc,Nil)
   }
 }
+
+ */
 
 import STeXUtils._
 import java.util.regex.PatternSyntaxException

@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.odk.Sage.SageSystem
 import info.kwarc.mmt.stex.translations
 import info.kwarc.mmt.stex.translations.DemoContent
+/*
 import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
 
 object DemoExtension extends FragmentExtension {
@@ -15,7 +16,7 @@ object DemoExtension extends FragmentExtension {
     super.start(args)
     DemoContent.add(controller)
     implicit val xhtmlrules = OMDocExtension.xhtmlRules
-    val filecontent = XHTML.applyString(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml")).head
+    val filecontent = XHTML.applyString(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml"))
     PreElement.extract(filecontent)(controller)
   } catch {
     case t : Throwable =>
@@ -61,5 +62,7 @@ object DemoExtension extends FragmentExtension {
     case p if p == translations.DemoContent.c_natexp.path =>
       "/stex/demo/exponentiation.en.xhtml"
     case _ => return None
-  })))(Nil).head)
+  }))))
 }
+
+ */

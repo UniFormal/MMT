@@ -124,7 +124,7 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
          case ComplexTerm(op,subs,cont,args) => logGroup {
           //log("state is" + init.t + " at " + init.path.toString)
           var recPosComp: CannotSimplify = Simplifiability.NoRecurse
-          val cb = callback(state)
+          val cb = state.unit.solverO.getOrElse(callback(state))
           state.compRules.foreach {rule =>
             if (rule.applicable(t)) {
               val ret = rule(cb)(t, true)(Stack(context), NoHistory)
@@ -290,7 +290,12 @@ class RuleBasedSimplifier extends ObjectSimplifier {self =>
   private def callback(state: SimplifierState) = new CheckingCallback {
     def check(j: Judgement)(implicit history: History) = j match {
       case j: Equality =>
-        apply(j.tm1, state.unit++j.context, state.rules) == apply(j.tm2, state.unit++j.context, state.rules)
+        val tm1 = apply(j.tm1, state.unit++j.context, state.rules)
+        val tm2 = apply(j.tm2, state.unit++j.context, state.rules)
+        (tm1,tm2) match {
+          case (OMLIT(v1,_),OMLIT(v2,_)) => v1 == v2
+          case _ => tm1 == tm2
+        }
       case j: EqualityContext =>
         apply(j.context1, state.unit++j.context, state.rules) == apply(j.context2, state.unit++j.context, state.rules)
       case _ => false

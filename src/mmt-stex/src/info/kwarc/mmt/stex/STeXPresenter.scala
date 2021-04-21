@@ -7,18 +7,18 @@ import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.STeX.StringLiterals
 import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
 
-case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : XHTMLNode, fragment: String, arity : String, allnotations : List[(String,XHTMLNode)])
+case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : XHTMLNode, fragment: String, arity : String, allnotations : List[(String,String,XHTMLNode)])
 
 trait STeXPresenter extends ObjectPresenter {
   protected def getComponents(cp : ContentPath, tm : Term) : Option[STeXNotation] = controller.getO(cp) match {
     case Some(c: StructuralElement) =>
-      val notations = PreElement.getNotations(c)
+      val notations = PreElement.getNotations(c,controller)
       val notationFragment = tm.metadata.getValues(STeX.meta_notation).headOption match {
         case Some(STeX.StringLiterals(s)) => s
         case _ => ""
       }
       // TODO withnotations
-      val notation = notations.collectFirst { case (s, n) if s == notationFragment => n } match {
+      val notation = notations.collectFirst { case (s,p, n) if s == notationFragment => n } match {
         case Some(n) =>
           n
         case _ =>
@@ -109,7 +109,7 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
             }
             i += 1
           case ('a', j) =>
-            val n = comps.notation_used.get("mrow")().reverse.collectFirst {
+            val n = comps.notation_used.get("mrow")()().reverse.collectFirst {
               case n if n.toString.contains("<mtext>##" + (i + 1) + "a</mtext>") && n.toString.contains("<mtext>##" + (i + 1) + "b</mtext>") =>
                 n
             }.getOrElse{

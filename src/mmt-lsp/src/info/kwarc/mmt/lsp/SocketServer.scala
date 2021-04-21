@@ -1,22 +1,29 @@
 package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
-
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, SemanticHighlightingServerCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensLegend, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensWithRegistrationOptions, SemanticTokensWorkspaceCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
-import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
-import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
+import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher, MessageConsumer, RemoteEndpoint}
+import org.eclipse.lsp4j.jsonrpc.messages.{Message, Either => JEither}
+
 import java.io.{BufferedWriter, FileWriter, InputStream, OutputStream, PrintWriter}
-import java.net.ServerSocket
+import java.net.{ServerSocket, Socket}
 import java.util
 import java.util.concurrent.ExecutionException
 import java.util.logging.LogManager
 import java.util.logging.Logger
-
 import info.kwarc.mmt.api.frontend.{Controller, Extension, MMTConfig, ReportHandler, Run}
 import info.kwarc.mmt.api.utils.File
-import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+import org.eclipse.jetty.server.{Server, ServerConnector}
+import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
+import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
+import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
+import org.eclipse.lsp4j.jsonrpc.services.{GenericEndpoint, JsonNotification, JsonRequest, ServiceEndpoints}
+import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
+import javax.websocket
+import javax.websocket.server.{ServerApplicationConfig, ServerEndpointConfig}
 import scala.collection.JavaConverters._
 
 object Local {
@@ -42,9 +49,62 @@ object Local {
   }
 }
 
-class Server extends Extension {
+class LanguageServerEndpoint extends WebSocketEndpoint[MMTClient] {
+  import WebSocketServer._
+  override def configure(builder: Launcher.Builder[MMTClient]): Unit = {
+    val server = new ServerEndpoint
+    controller.extman.addExtension(server,Nil)
+    builder.setLocalService(server).setRemoteInterface(classOf[MMTClient])
+  }
+
+  override def connect(localServices: util.Collection[AnyRef], remoteProxy: MMTClient): Unit = {
+    localServices.asScala.collect{case lca : LanguageClientAware => lca}.foreach(_.connect(remoteProxy))
+    log("connected.")
+  }
+}
+
+object WebSocketServer {
+  var controller : Controller = null
+  var log : String => Unit = null
+}
+
+class WebSocketServer extends Extension {
+  override def logPrefix: String = "lsp-web"
+  var port = 5008
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    args match {
+      case "port"::nr::_ =>
+        port = nr.toInt
+      case _ =>
+    }
+
+    WebSocketServer.controller = controller
+    WebSocketServer.log = s => log(s)
+
+    val server = new Server()
+    val connector = new ServerConnector(server)
+    connector.setPort(port)
+    connector.setHost("localhost")
+    server.setConnectors(Array(connector))
+
+    val context = new ServletContextHandler
+    context.setContextPath("/")
+    server.setHandler(context)
+
+    val container = WebSocketServerContainerInitializer.initialize(context)
+    val endpointConfig = ServerEndpointConfig.Builder.create(classOf[LanguageServerEndpoint], "/").build
+    container.addEndpoint(endpointConfig)
+
+    server.start()
+
+  }
+
+}
+
+class SocketServer extends Extension {
   override def logPrefix: String = "lsp"
-  private var port = 5007
+  var port = 5007
   lazy val ss = new ServerSocket(port)
 
   override def start(args: List[String]): Unit = {
@@ -70,8 +130,6 @@ class Server extends Extension {
         controller.extman.addExtension(end,Nil)
         val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(classOf[MMTClient]).setInput(conn.getInputStream).
           setOutput(conn.getOutputStream).validateMessages(true).traceMessages(wr).create()
-
-        // val launcher = LSPLauncher.createServerLauncher(server,conn.getInputStream,conn.getOutputStream,true,wr)
         end.connect(launcher.getRemoteProxy)
         launcher.startListening()
       }
@@ -121,9 +179,11 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
       completion.setTriggerCharacters(List("j").asJava)
       result.getCapabilities.setCompletionProvider(completion)
 
-      val sh = new SemanticHighlightingServerCapabilities()
-      sh.setScopes(Colors.scopes)
-      result.getCapabilities.setSemanticHighlighting(sh)
+      val sh = new SemanticTokensWithRegistrationOptions(new SemanticTokensLegend(Colors.scopes,Nil.asJava))
+      //sh.setScopes(Colors.scopes)
+      sh.setFull(true)
+      result.getCapabilities.setSemanticTokensProvider(sh)
+
 
       result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
 
@@ -304,6 +364,16 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = a_TD.foldingRange(params)
 
+  @JsonRequest(value = "textDocument/semanticTokens/full")
+  def semanticTokensFull(params: SemanticTokensParams) = a_TD.semanticTokensFull(params)
+
+  @JsonRequest(value = "textDocument/semanticTokens/full/delta", useSegment = false)
+  @ResponseJsonAdapter(classOf[SemanticTokensFullDeltaResponseAdapter])
+  def semanticTokensFullDelta(params: SemanticTokensDeltaParams) = a_TD.semanticTokensFullDelta(params)
+
+  @JsonRequest(value = "textDocument/semanticTokens/range", useSegment = false)
+  def semanticTokensRange(params: SemanticTokensRangeParams) = a_TD.semanticTokensRange(params)
+
 }
 
 trait MMTClient extends LanguageClient
@@ -321,12 +391,12 @@ object Colors {
   val termerrored = 9
   val notation = 10
 
-  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language","mmt.md"
+  val scopesO = List("mmt.keyword","mmt.comment","mmt.documentation","mmt.name","mmt.md"
     ,"mmt.dd"
     ,"mmt.od"
     ,"mmt.terminit"
     ,"mmt.termchecked"
     ,"mmt.termerrored"
     ,"mmt.notation")
-  val scopes = scopesO.map(_.split('.').toList.asJava).asJava
+  val scopes = scopesO.asJava//scopesO.map(_.split('.').toList.asJava).asJava
 }

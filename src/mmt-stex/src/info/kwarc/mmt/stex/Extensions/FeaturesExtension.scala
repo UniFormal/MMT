@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.{NamespaceMap, Path, TypeComponent}
 import info.kwarc.mmt.api.objects.{FreeOrAny, OMA, OMS}
 import info.kwarc.mmt.stex.STeX
 import info.kwarc.mmt.stex.features.TheoremFeature
+/*
 import info.kwarc.mmt.stex.xhtml.{PreConstant, PreElement, PreFeature, PreParent, XHTMLNode, XHTMLOMDoc, XHTMLTerm}
 
 import scala.xml.{Elem, Node}
@@ -55,3 +56,6 @@ object FeaturesExtension extends DocumentExtension {
     },
   )
 }
+
+
+ */

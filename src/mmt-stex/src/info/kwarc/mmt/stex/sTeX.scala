@@ -4,6 +4,8 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.uom.{RepresentedRealizedType, StandardDouble, StandardInt, StandardNat, StandardPositive, StandardRat, StandardString}
 import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
 import info.kwarc.mmt.lf.ApplySpine
+import info.kwarc.mmt.odk.LFX
+import info.kwarc.mmt.sequences.Sequences
 import info.kwarc.mmt.stex.xhtml.{XHTML, XHTMLNode}
 
 import scala.xml._
@@ -14,7 +16,7 @@ object STeX {
   val foundation = fomid_dpath / "foundation"
   val core = fomid_dpath / "core"
   val metadata = foundation ? "Metadata"
-  val ur = DPath(URI.http colon "cds.omdoc.org")/ "urtheories"
+  //val ur = DPath(URI.http colon "cds.omdoc.org")/ "urtheories"
   val meta = foundation ? "Meta"
 
 
@@ -28,12 +30,12 @@ object STeX {
 
 
 
-  val pos = meta ? "POS"
-  val nat = ur ? "NatSymbols" ? "NAT"
-  val int = ur ? "IntSymbols" ? "INT"
-  val rat = ur ? "RatSymbols" ? "RAT"
-  val real = ur ? "RealSymbols" ? "REAL"
-  val string = ur ? "Strings" ? "string"
+  val pos = (foundation / "literals") ? "PositiveNaturals" ? "positivenaturalliteral"
+  val nat = (foundation / "literals") ? "Naturals" ? "naturalliteral"
+  val int = (foundation / "literals") ? "Integers" ? "integerliteral"
+  val rat = (foundation / "literals") ? "Rationals" ? "rationalliteral"
+  val real = (foundation / "literals") ? "Reals" ? "realliteral"
+  val string = (foundation / "literals") ? "Strings" ? "stringliteral"
 
   object PosLiterals extends RepresentedRealizedType(OMS(pos),StandardPositive)
   object NatLiterals extends RepresentedRealizedType(OMS(nat),StandardNat)
@@ -42,7 +44,26 @@ object STeX {
   object RealLiterals extends RepresentedRealizedType(OMS(real),StandardDouble)
   object StringLiterals extends RepresentedRealizedType(OMS(string),StandardString)
 
+  val notation = new {
+    val sym = foundation ? "Notations" ? "notation"
+    val tp = new {
+      val sym = foundation ? "Notations" ? "notation-type"
+      def apply(nsym : GlobalName, arity : String) = OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity)))
 
+        def unapply(tm : Term) = tm match {
+          case OMA(OMS(`sym`),List(OMS(nsym),StringLiterals(arity))) => Some((nsym,arity))
+          case _ => None
+        }
+    }
+    def apply(node : Node, prec : String) = {
+      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(node.toString())))
+    }
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(node))) =>
+        Some((node,prec))
+      case _ => None
+    }
+  }
 
 
   val informal = new {
@@ -54,7 +75,7 @@ object STeX {
     def applySimple(n : Node) = OMA(OMS(sym),StringLiterals(n.toString()) :: Nil)
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`sym`),StringLiterals(n) :: Nil) =>
-        Some(XHTML.applyString(XHTML.unescape(n))(Nil).head)
+        Some(XHTML.applyString(XHTML.unescape(n)))
       case _ => None
     }
   }
@@ -66,10 +87,10 @@ object STeX {
     val tp = th ? "symboldoc"
     val sym = th ? "symboldocfor"
     def apply(symbol : ContentPath,lang : String,doc : List[XHTMLNode]) = {
-      ApplySpine(OMS(sym),StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals(XMLEscaping({<div>{doc.map(_.node)}</div>}.toString)))
+      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals(XMLEscaping({<div>{doc.map(_.node)}</div>}.toString))))
     }
     def unapply(tm : Term) = tm match {
-      case ApplySpine(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),StringLiterals(n))) =>
+      case OMA(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),StringLiterals(n))) =>
         Some((s,lang,n))
       case _ =>
         None
@@ -116,13 +137,30 @@ object STeX {
     }
   }
 
+  val flatseq = new {
+    val sym = foundation ? "Sequences" ? "seq"
+    def apply(tms : Term*) = OMA(OMS(sym),tms.toList)
+    def unapply(tm : Term) = tm match {
+      case OMA(OMS(`sym`),ls) => Some(ls)
+      case _ => None
+    }
+    val tp = new {
+      val sym = foundation ? "Sequences" ? "seqtype"
+      def apply(tp : Term) = OMA(OMS(sym),List(tp))
+      def unapply(tm : Term) = tm match {
+        case OMA(OMS(`sym`),List(tp)) => Some(tp)
+        case _ => None
+      }
+    }
+  }
+
+  val prop = (foundation / "foundations") ? "Foundation" ? "judgment"
+  val ded = (foundation / "foundations") ? "Foundation" ? "holds"
 
 
 
 
 
-  val prop = ur ? "Bool" ? "BOOL"
-  val ded = ur ? "Ded" ? "DED"
 
 
   val set = (core / "sets") ? "Sets" ? "Set"
