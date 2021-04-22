@@ -14,16 +14,9 @@ import java.util.logging.LogManager
 import java.util.logging.Logger
 import info.kwarc.mmt.api.frontend.{Controller, Extension, MMTConfig, ReportHandler, Run}
 import info.kwarc.mmt.api.utils.File
-import org.eclipse.jetty.server.{Server, ServerConnector}
-import org.eclipse.jetty.servlet.ServletContextHandler
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
 import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
 import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{GenericEndpoint, JsonNotification, JsonRequest, ServiceEndpoints}
-import org.eclipse.lsp4j.websocket.WebSocketEndpoint
-
-import javax.websocket
-import javax.websocket.server.{ServerApplicationConfig, ServerEndpointConfig}
 import scala.collection.JavaConverters._
 
 object Local {
@@ -47,59 +40,6 @@ object Local {
     end.connect(client)
     launcher.startListening()
   }
-}
-
-class LanguageServerEndpoint extends WebSocketEndpoint[MMTClient] {
-  import WebSocketServer._
-  override def configure(builder: Launcher.Builder[MMTClient]): Unit = {
-    val server = new ServerEndpoint
-    controller.extman.addExtension(server,Nil)
-    builder.setLocalService(server).setRemoteInterface(classOf[MMTClient])
-  }
-
-  override def connect(localServices: util.Collection[AnyRef], remoteProxy: MMTClient): Unit = {
-    localServices.asScala.collect{case lca : LanguageClientAware => lca}.foreach(_.connect(remoteProxy))
-    log("connected.")
-  }
-}
-
-object WebSocketServer {
-  var controller : Controller = null
-  var log : String => Unit = null
-}
-
-class WebSocketServer extends Extension {
-  override def logPrefix: String = "lsp-web"
-  var port = 5008
-  override def start(args: List[String]): Unit = {
-    super.start(args)
-    args match {
-      case "port"::nr::_ =>
-        port = nr.toInt
-      case _ =>
-    }
-
-    WebSocketServer.controller = controller
-    WebSocketServer.log = s => log(s)
-
-    val server = new Server()
-    val connector = new ServerConnector(server)
-    connector.setPort(port)
-    connector.setHost("localhost")
-    server.setConnectors(Array(connector))
-
-    val context = new ServletContextHandler
-    context.setContextPath("/")
-    server.setHandler(context)
-
-    val container = WebSocketServerContainerInitializer.initialize(context)
-    val endpointConfig = ServerEndpointConfig.Builder.create(classOf[LanguageServerEndpoint], "/").build
-    container.addEndpoint(endpointConfig)
-
-    server.start()
-
-  }
-
 }
 
 class SocketServer extends Extension {
