@@ -1,22 +1,30 @@
 package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
-
-import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticHighlightingParams, SemanticHighlightingServerCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensLegend, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensWithRegistrationOptions, SemanticTokensWorkspaceCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
-import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher}
-import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
+import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher, MessageConsumer, RemoteEndpoint}
+import org.eclipse.lsp4j.jsonrpc.messages.{Message, Either => JEither}
+
 import java.io.{BufferedWriter, FileWriter, InputStream, OutputStream, PrintWriter}
-import java.net.ServerSocket
+import java.net.{ServerSocket, Socket}
 import java.util
 import java.util.concurrent.ExecutionException
 import java.util.logging.LogManager
 import java.util.logging.Logger
-
 import info.kwarc.mmt.api.frontend.{Controller, Extension, MMTConfig, ReportHandler, Run}
 import info.kwarc.mmt.api.utils.File
-import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
+import org.eclipse.jetty.server.{Server, ServerConnector}
+import org.eclipse.jetty.servlet.ServletContextHandler
+import org.eclipse.jetty.websocket.api.annotations.WebSocket
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
+import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
+import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
+import org.eclipse.lsp4j.jsonrpc.services.{GenericEndpoint, JsonNotification, JsonRequest, ServiceEndpoints}
+import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
+import javax.websocket
+import javax.websocket.server.{ServerApplicationConfig, ServerEndpointConfig}
 import scala.collection.JavaConverters._
 
 object Local {
@@ -30,7 +38,7 @@ object Local {
     // startLocalServer(System.in, System.out)
 
     val controller = new Controller()
-    val end = new ServerEndpoint
+    val end = new ServerEndpoint((s,o) => println(s))
     controller.extman.addExtension(end,"local"::args.toList)
     val logFile = java.io.File.createTempFile("mmtlsp/log_","")
     val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
@@ -42,9 +50,63 @@ object Local {
   }
 }
 
-class Server extends Extension {
+class LanguageServerEndpoint extends WebSocketEndpoint[MMTClient] {
+  import WebSocketServer._
+  override def configure(builder: Launcher.Builder[MMTClient]): Unit = {
+    val server = new ServerEndpoint(WebSocketServer.log)
+    controller.extman.addExtension(server,Nil)
+    builder.setLocalService(server).setRemoteInterface(classOf[MMTClient])
+  }
+
+  override def connect(localServices: util.Collection[AnyRef], remoteProxy: MMTClient): Unit = {
+    localServices.asScala.collect{case lca : LanguageClientAware => lca}.foreach(_.connect(remoteProxy))
+    log("connected.",None)
+  }
+}
+
+object WebSocketServer {
+  var controller : Controller = null
+  var log : (String,Option[String]) => Unit = null
+}
+
+class WebSocketServer extends Extension {
+  override def logPrefix: String = "lsp-web"
+  var port = 5008
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    args match {
+      case "port"::nr::_ =>
+        port = nr.toInt
+      case _ =>
+    }
+
+    WebSocketServer.controller = controller
+    WebSocketServer.log = (s,o) => log(s,o)
+
+    val server = new Server()
+    val connector = new ServerConnector(server)
+    connector.setPort(port)
+    connector.setHost("localhost")
+    connector.setIdleTimeout(-1)
+    server.setConnectors(Array(connector))
+
+    val context = new ServletContextHandler
+    context.setContextPath("/")
+    server.setHandler(context)
+
+    val container = WebSocketServerContainerInitializer.initialize(context)
+    val endpointConfig = ServerEndpointConfig.Builder.create(classOf[LanguageServerEndpoint], "/").build
+    container.addEndpoint(endpointConfig)
+
+    server.start()
+
+  }
+
+}
+
+class SocketServer extends Extension {
   override def logPrefix: String = "lsp"
-  private var port = 5007
+  var port = 5007
   lazy val ss = new ServerSocket(port)
 
   override def start(args: List[String]): Unit = {
@@ -66,12 +128,10 @@ class Server extends Extension {
         val logFile = java.io.File.createTempFile("mmtlsp/log_","")
         val wr = new PrintWriter(new BufferedWriter(new FileWriter(logFile)))
         log(logFile.toString)
-        val end = new ServerEndpoint
+        val end = new ServerEndpoint((s,o) => log(s,o))
         controller.extman.addExtension(end,Nil)
         val launcher = new Launcher.Builder().setLocalService(end).setRemoteInterface(classOf[MMTClient]).setInput(conn.getInputStream).
           setOutput(conn.getOutputStream).validateMessages(true).traceMessages(wr).create()
-
-        // val launcher = LSPLauncher.createServerLauncher(server,conn.getInputStream,conn.getOutputStream,true,wr)
         end.connect(launcher.getRemoteProxy)
         launcher.startListening()
       }
@@ -79,7 +139,7 @@ class Server extends Extension {
   }
 }
 
-class ServerEndpoint extends LanguageClientAware with Workspace with TextDocument with Extension {
+class ServerEndpoint(oldlog : (String,Option[String]) => Unit) extends LanguageClientAware with Workspace with TextDocument with Extension {
   override def logPrefix: String = "lsp"
   private var _client : MMTClient = null
   def client = _client
@@ -94,12 +154,17 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
     }
   }
 
-  override def log(s: => String, subgroup: Option[String]): Unit = {
+  override def log(s: => String, subgroup: Option[String]): Unit = try {
     super.log(s, subgroup)
+    oldlog(s,subgroup)
     if (_client != null) {
       val msg = if (subgroup.isDefined) subgroup.get + ": " + s else s
       _client.logMessage(new MessageParams(MessageType.Log,msg))
     }
+  } catch {
+    case t : Throwable =>
+      print("")
+      throw t
   }
 
   protected object Completable {
@@ -121,9 +186,11 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
       completion.setTriggerCharacters(List("j").asJava)
       result.getCapabilities.setCompletionProvider(completion)
 
-      val sh = new SemanticHighlightingServerCapabilities()
-      sh.setScopes(Colors.scopes)
-      result.getCapabilities.setSemanticHighlighting(sh)
+      val sh = new SemanticTokensWithRegistrationOptions(new SemanticTokensLegend(Colors.scopes,Nil.asJava))
+      //sh.setScopes(Colors.scopes)
+      sh.setFull(true)
+      result.getCapabilities.setSemanticTokensProvider(sh)
+
 
       result.getCapabilities.setTextDocumentSync(TextDocumentSyncKind.Incremental)
 
@@ -153,8 +220,8 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
 
   @JsonNotification("connect")
   override def connect(clientO: LanguageClient): Unit = {
-    log("Connected: " + _client.toString,Some("methodcall"))
     _client = clientO.asInstanceOf[MMTClient]
+    log("Connected: " + _client.toString,Some("methodcall"))
     _client.logMessage(new MessageParams(MessageType.Info,"Connected to MMT!"))
   }
 
@@ -251,7 +318,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
                     ): CompletableFuture[util.List[Location]] = a_TD2.implementation(position)
 
   @JsonRequest("textDocument/hover")
-  def hover(params: TextDocumentPositionParams): CompletableFuture[Hover] = a_TD.hover(params)
+  def hover(params: HoverParams): CompletableFuture[Hover] = a_TD.hover(params)
 
   @JsonRequest("textDocument/documentHighlight")
   def documentHighlights(
@@ -270,6 +337,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
                   params: DocumentFormattingParams
                 ): CompletableFuture[util.List[TextEdit]] = a_TD2.formatting(params)
 
+
   @JsonRequest("textDocument/rename")
   def rename(
               params: RenameParams
@@ -285,7 +353,7 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
 
   @JsonRequest("textDocument/signatureHelp")
   def signatureHelp(
-                     params: TextDocumentPositionParams
+                     params: SignatureHelpParams
                    ): CompletableFuture[SignatureHelp] = a_TD.signatureHelp(params)
 
   @JsonRequest("textDocument/codeAction")
@@ -302,6 +370,16 @@ class ServerEndpoint extends LanguageClientAware with Workspace with TextDocumen
   def foldingRange(
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = a_TD.foldingRange(params)
+
+  @JsonRequest(value = "textDocument/semanticTokens/full")
+  def semanticTokensFull(params: SemanticTokensParams) = a_TD.semanticTokensFull(params)
+
+  @JsonRequest(value = "textDocument/semanticTokens/full/delta", useSegment = false)
+  @ResponseJsonAdapter(classOf[SemanticTokensFullDeltaResponseAdapter])
+  def semanticTokensFullDelta(params: SemanticTokensDeltaParams) = a_TD.semanticTokensFullDelta(params)
+
+  @JsonRequest(value = "textDocument/semanticTokens/range", useSegment = false)
+  def semanticTokensRange(params: SemanticTokensRangeParams) = a_TD.semanticTokensRange(params)
 
 }
 
@@ -320,12 +398,12 @@ object Colors {
   val termerrored = 9
   val notation = 10
 
-  val scopesO = List("keyword.other","comment.block","comment.block.documentation","constant.language","mmt.md"
+  val scopesO = List("mmt.keyword","mmt.comment","mmt.documentation","mmt.name","mmt.md"
     ,"mmt.dd"
     ,"mmt.od"
     ,"mmt.terminit"
     ,"mmt.termchecked"
     ,"mmt.termerrored"
     ,"mmt.notation")
-  val scopes = scopesO.map(_.split('.').toList.asJava).asJava
+  val scopes = scopesO.asJava//scopesO.map(_.split('.').toList.asJava).asJava
 }

@@ -2,15 +2,15 @@ package info.kwarc.mmt.lsp
 
 import java.util
 import java.util.concurrent.CompletableFuture
-
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion}
 import info.kwarc.mmt.api.utils.{File, MMTSystem}
-import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SemanticHighlightingInformation, SemanticHighlightingParams, SignatureHelp, SymbolInformation, TextDocumentItem, TextDocumentPositionParams, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit}
+import org.eclipse.lsp4j
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeTextDocumentParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, FoldingRange, FoldingRangeRequestParams, Hover, Location, LocationLink, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, SignatureHelp, SymbolInformation, TextDocumentItem, TextDocumentPositionParams, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit}
 import org.eclipse.lsp4j.jsonrpc.messages.{Either => JEither}
 import org.eclipse.lsp4j.services.TextDocumentService
-import org.eclipse.lsp4j.util.SemanticHighlightingTokens
 
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
 
 
 trait TextDocument { self : ServerEndpoint =>
@@ -104,6 +104,39 @@ trait TextDocument { self : ServerEndpoint =>
         log("completion",Some("methodcall-textDocument"))
         log("context: " + position.getContext,Some("completion"))
         JEither.forRight(completionls)
+      }
+
+      override def semanticTokensFull(params: SemanticTokensParams): CompletableFuture[SemanticTokens] = Completable {
+        log("semanticTokensFull",Some("methodcall-textDocument"))
+        log("doc: " + params.getTextDocument,Some("completion"))
+
+
+        val uri = params.getTextDocument.getUri
+        // log("File: " + file,Some("didChange"))
+        val doc = documents.find(_.uri == uri).getOrElse {
+          log("Document not found: " + uri)
+          return Completable(new SemanticTokens(Nil.asJava))
+        }
+        val ls = doc.highlight.asJava.asInstanceOf[util.List[Integer]]
+        //startTimer
+        new SemanticTokens(ls)//(List(1,2,3).asJava)
+      }
+
+      private def startTimer: Unit = Future {
+        Thread.sleep(20000)
+        client.refreshSemanticTokens()
+      }(scala.concurrent.ExecutionContext.global)
+
+      override def semanticTokensFullDelta(params: SemanticTokensDeltaParams): CompletableFuture[JEither[SemanticTokens, SemanticTokensDelta]] = Completable {
+        log("semanticTokensFullDelta",Some("methodcall-textDocument"))
+        log("doc: " + params.getTextDocument,Some("completion"))
+        JEither.forRight(new SemanticTokensDelta(Nil.asJava))
+      }
+
+      override def semanticTokensRange(params: SemanticTokensRangeParams): CompletableFuture[SemanticTokens] = Completable {
+        log("semanticTokensRange",Some("methodcall-textDocument"))
+        log("doc: " + params.getTextDocument,Some("completion"))
+        new SemanticTokens(Nil.asJava)
       }
     }
 

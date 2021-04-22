@@ -269,9 +269,11 @@ lazy val lsp = (project in file("mmt-lsp")).
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jsonrpc.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "gson.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "compat.jar").
-  // settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "websocket-api.jar").
   settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "xtext.jar").
-  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar")
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "guava.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "lsp4j-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "javax-websocket.jar").
+  settings(unmanagedJars in Compile += baseDirectory.value / "lib" / "jetty-server.jar")
 
 // using MMT as a part of LaTeX. Maintainer: Florian
 lazy val latex = (project in file("latex-mmt")).
@@ -467,8 +469,13 @@ lazy val specware = (project in file("mmt-specware")).
 
 // plugin for reading stex. Originally developed by Mihnea, currently dormant but functional
 lazy val stex = (project in file("mmt-stex")).
-  dependsOn(api).
-  settings(mmtProjectsSettings("mmt-stex"): _*)
+  dependsOn(api,odk).
+  settings(
+    mmtProjectsSettings("mmt-stex"),
+    libraryDependencies ++= Seq(
+      "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
+    )
+  )
 
 // plugin for writing OpenMath CDs. Maintainer: Florian
 lazy val openmath = (project in file("mmt-openmath")).

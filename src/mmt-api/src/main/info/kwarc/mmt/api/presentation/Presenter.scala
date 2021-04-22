@@ -27,7 +27,13 @@ trait ObjectPresenter extends Extension {
    }
    def asXML(o: Obj, origin: Option[CPath] = None): scala.xml.Node = {
       val s = asString(o, origin)
-      scala.xml.XML.loadString(s)
+      try {
+         scala.xml.XML.loadString(s)
+      } catch {
+         case t : Throwable =>
+          print("")
+          throw t
+      }
    }
 }
 

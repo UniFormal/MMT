@@ -6,8 +6,7 @@ import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, StructuralElem
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.parser.{AnnotatedComment, AnnotatedCommentToken, AnnotatedKeyword, AnnotatedName, AnnotatedOpaque, AnnotatedPath, AnnotatedTermToken, AnnotatedText, DeclarationDelimiter, ErrorText, KeywordBasedParser, ModuleDelimiter, NotationBasedParser, ObjectDelimiter, ObjectParser, ParsingStream, SourceRegion, StructureParserContinuations}
 import info.kwarc.mmt.api.utils.{File, URI}
-import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, SemanticHighlightingInformation, SemanticHighlightingParams, TextDocumentItem, VersionedTextDocumentIdentifier}
-import org.eclipse.lsp4j.util.SemanticHighlightingTokens
+import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, MessageParams, MessageType, PublishDiagnosticsParams, TextDocumentItem, VersionedTextDocumentIdentifier}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.Future
@@ -18,7 +17,7 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
 
   private lazy val file = File(uri.drop(7))
 
-  object Timer {
+  /* object Timer {
     private var timer = 0
     private var timerthread: Option[Future[Unit]] = None
 
@@ -41,18 +40,18 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
             }
             synchronized { timerthread = None }
             updateNow
-            highlight
           }(scala.concurrent.ExecutionContext.global))
         }
       }
     }
-  }
+  } */
 
   private var _changes : List[(org.eclipse.lsp4j.Range,String)] = Nil
 
   def update(range: org.eclipse.lsp4j.Range ,text:String) = {
     synchronized { _changes ::= (range,text) }
-    Timer.reset
+    //Timer.reset
+    updateNow
   }
 
   private def updateNow: Unit = {
@@ -69,13 +68,14 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
         _doctext = prev + text + _doctext.drop(end)
       }
     }
+    computeHighlight
     // Timer.reset
   }
 
   def setVersion(v:Int) = version = v
 
-  private def highlight = {
-    client.publishDiagnostics(new PublishDiagnosticsParams(uri,List().asJava))
+  def computeHighlight = {
+    //client.publishDiagnostics(new PublishDiagnosticsParams(uri,List().asJava))
     parse
     var hls : List[Highlight] = Nil
     synchronized{annotated.asSequence}.foreach {
@@ -104,12 +104,18 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
         hls ::= Highlight(e.region,Colors.termerrored)
       case _ =>
     }
-    semanticHighlight(hls.reverse)
+    _highlights = semanticHighlight(hls.reverse)
+    client.logMessage(new MessageParams(MessageType.Info,"Done"))
+    client.refreshSemanticTokens()
   }
+
+  def highlight = {synchronized{_highlights}}
+
+  private var _highlights : List[Int] = Nil
 
   def init(s:String) = {
     _doctext = s
-    highlight
+    computeHighlight
   }
 
   def toRange(sr:SourceRegion) = {
@@ -149,7 +155,11 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
   }
 
   case class Highlight(line: Int,char:Int,length:Int,cls:Int) {
-    lazy val token = new SemanticHighlightingTokens.Token(char,length,cls)
+    def <=(o : Highlight) = {
+      if (line < o.line) true else if (line == o.line) {
+        char <= o.char
+      } else false
+    }
   }
 
   object Highlight {
@@ -163,12 +173,12 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
     }
   }
 
-  def semanticHighlight(ls : List[Highlight]):Unit = {
+  def semanticHighlight(ls : List[Highlight]):List[Int] = {
     val tdi = new VersionedTextDocumentIdentifier(uri,version)
     semanticHighlight(tdi,ls)
   }
 
-  def semanticHighlight(doc:VersionedTextDocumentIdentifier, highs : List[Highlight]):Unit = {
+  def semanticHighlight(doc:VersionedTextDocumentIdentifier, highs : List[Highlight]): List[Int] = {
     var lines = highs.sortBy(_.line)
     var result : List[List[Highlight]] = Nil
     while (lines.nonEmpty) {
@@ -178,12 +188,22 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
       lines = lines.drop(index)
       result ::= split.sortBy(_.char)
     }
-    val highlights = result.reverse.map(ls => new SemanticHighlightingInformation(ls.head.line,SemanticHighlightingTokens.encode(ls.map(_.token).asJava)))
+    var lastline = 0
+    var lastchar = 0
+    result.flatten.sortWith((p,q) => p<=q).flatMap {
+      case Highlight(line,char,length,cls) =>
+        val nchar = if (line == lastline) (char - lastchar) else char
+        val r = List(line-lastline,nchar,length,cls,0)
+        lastline = line
+        lastchar = char
+        r
+    }
+    //val highlights = result.reverse.map(ls => new SemanticHighlightingInformation(ls.head.line,SemanticHighlightingTokens.encode(ls.map(_.token).asJava)))
     // val highlights = new SemanticHighlightingInformation(line,SemanticHighlightingTokens.encode(ls.asJava))
-    val params = new SemanticHighlightingParams()
-    params.setTextDocument(doc)
-    params.setLines(highlights.asJava)
-    client.semanticHighlighting(params)
+    //val params = new SemanticHighlightingParams()
+    //params.setTextDocument(doc)
+    //params.setLines(highlights.asJava)
+    //client.semanticHighlighting(params)
   }
 
   lazy val nsMap = controller.getNamespaceMap
@@ -200,7 +220,15 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
   }
 
   lazy val errorCont = new ErrorHandler {
-    override protected def addError(e: api.Error): Unit = {}
+    private var errors : List[api.Error] = Nil
+    override protected def addError(e: api.Error): Unit = {
+      errors ::= e
+    }
+    def resetErrs = {
+      errors = Nil
+      this
+    }
+    def getErrors = errors
   }
 
   lazy implicit val spc = new StructureParserContinuations(errorCont) {
@@ -213,6 +241,7 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
   private var annotated : AnnotatedText = null
 
   private def parse: Unit = {
+    errorCont.resetErrs
     val ps = ParsingStream.fromString(doctext,DPath(URI(file.toJava.toURI)),"mmt",Some(nsMap))
     val d = try { parser.apply(ps) } catch {
       case t:Throwable =>
@@ -221,7 +250,7 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
     }
     d match {
       case d: Document =>
-        synchronized{ annotated = AnnotatedText.fromDocument(d,doctext)(controller) }
+        synchronized{ annotated = AnnotatedText.fromDocument(d,doctext,errorCont.getErrors)(controller) }
       case _ =>
         ???
     }
