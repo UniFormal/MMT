@@ -69,6 +69,7 @@ object Server extends TwitterServer {
   def initServerState(archiveRoot: File): ServerState = {
     implicit val ctrl: Controller = new Controller()
     ctrl.report.addHandler(ConsoleHandler)
+    ctrl.handleLine(s"log+ ${ServerState.logPrefix}")
 
     ctrl.handleLine(s"mathpath archive ${archiveRoot}")
     val frameitArchive = ctrl.backend.getArchive(FrameWorld.archiveID).getOrElse {
@@ -79,26 +80,20 @@ object Server extends TwitterServer {
     // to get meta tags on things
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
 
-    val situationTheory: SituationTheory = if (debug()) {
-      new SituationTheory(FrameWorld.debugSituationTheory)
-    } else {
-      new SituationTheory(FrameWorld.defaultSituationTheory)
-    }
-    println(s"Using situation space+theory: $situationTheory")
-
-    val state = new ServerState(situationTheory, new StandardContentValidator)
+    val situationTheory = if (debug()) Some(new SituationTheory(FrameWorld.debugSituationTheory)) else None
+    val state = new ServerState(new StandardContentValidator, situationTheory)
 
     //println(state.contentValidator.checkTheory(ctrl.getTheory(Path.parseM("http://mathhub.info/FrameIT/frameworld/integrationtests?SituationSpace"))))
     //sys.exit(0)
 
-    (if (debug()) state.contentValidator.checkTheory(situationTheory.spaceTheory) else Nil) match {
+    (if (debug()) state.check() else Nil) match {
       case Nil =>
         println("Situation space successfully set-up and typechecked (the latter only in release mode).")
         state
 
       case errors =>
         errors.foreach(System.err.println)
-        throw InvalidElement(situationTheory.spaceTheory, "Situation space does not typecheck, see stderr output for errors.")
+        throw InvalidElement(state.situationSpace, "Initial situation space does not typecheck, see stderr output for errors.")
     }
   }
 }

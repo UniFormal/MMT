@@ -7,12 +7,11 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
 import info.kwarc.mmt.api.objects.{Context, OMMOD}
 import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
-import info.kwarc.mmt.api.{AddError, InvalidUnit, LocalName, Path, presentation}
+import info.kwarc.mmt.api.{AddError, Before, InvalidUnit, LocalName, Path, presentation}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll, ScrollApplication}
-import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Utils, ViewCompletion}
+import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Pushout, Utils, ViewCompletion}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments}
-import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
 
@@ -79,7 +78,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def checkSituationSpace(state: ServerState): Endpoint[IO, List[api.Error]] = get(path("debug") :: path("space") :: path("check")) {
-    Ok(state.contentValidator.checkTheory(state.situationSpace))
+    Ok(state.check())
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("space") :: path("print")) {
@@ -112,7 +111,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def addFact_(state: ServerState, fact: SFact): Either[FactValidationException, FactReference] = {
-    val factConstant = fact.toFinalConstant(state.newFactPath())
+    val factConstant = fact.toFinalConstant(state.nextFactPath())
 
     def makeException(errors: List[api.Error]): FactValidationException = {
       FactValidationException(
@@ -183,10 +182,14 @@ object ConcreteServerEndpoints extends ServerEndpoints {
 
         try {
           if (errors.isEmpty) {
-            state.descendSituationTheory(LocalName.random("after_scroll_application"))
+            // After this line, `state.situationTheory` will be the new situation theory
+            // into which we will generate (a) the pushed out scroll solution and (b)
+            // the view into the pushout (i.e., `state.situationTheory` itself)
+            state.descendSituationTheory(state.nextSituationTheoryName())
 
-            val viewToGenerate: View = {
-              val path = state.situationTheory.path / LocalName.random("pushed_out_scroll_view")
+            val viewIntoPushout: View = {
+              // the pushout view should be analogously named to the corresponding scroll view
+              val path = state.situationTheory.path / LocalName(scrollView.name.last.toString + "_pushout")
 
               val view = View(
                 path.doc,
@@ -195,21 +198,30 @@ object ConcreteServerEndpoints extends ServerEndpoints {
                 to = state.situationTheory.toTerm,
                 isImplicit = false
               )
-              Utils.addModule(view)
 
               view
             }
 
-            NewPushoutUtils.injectPushoutAlongDirectInclusion(
+            Utils.addModule(viewIntoPushout)
+
+            Pushout.injectPushoutAlongDirectInclusion(
               state.ctrl.getTheory(scrollView.from.toMPath),
               state.ctrl.getTheory(scrollView.to.toMPath),
               state.ctrl.getTheory(scroll.ref.solutionTheory),
               state.situationTheory,
               scrollView,
-              viewToGenerate
+              viewIntoPushout,
+              addPosition = Before(viewIntoPushout.name.dropPrefix(state.situationTheory.name).get)
             )(state.ctrl)
-            Utils.endAddModule(viewToGenerate)
+
+            // finalize new modules
+            Utils.endAddModule(viewIntoPushout)
             Utils.endAddModule(state.situationTheory)
+
+            // sanity check
+            require(state.check().isEmpty, "Situation space doesn't typecheck after scroll application, " +
+              "but scroll view did (and hence should have guaranteed the situation space to remain well-typed. " +
+              "Implementation error?")
 
             Ok(SScrollApplicationResult.success(Fact
                 .findAllIn(state.situationTheory, recurseOnInclusions = false)(state.ctrl)
@@ -231,7 +243,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   private def prepScrollApplication(scrollApp: SScrollApplication)(implicit state: ServerState): (View, List[Path], List[SCheckingError]) = {
     // the scroll view and all paths (for later deletion from [[Controller]])
     val (scrollView, scrollViewPaths) = {
-      val scrollViewName = LocalName.random("scroll_view")
+      val scrollViewName = state.nextScrollViewName()
       val view = scrollApp.toView(
         target = state.situationTheory.path / scrollViewName,
         codomain = state.situationTheory.toTerm
@@ -241,6 +253,9 @@ object ConcreteServerEndpoints extends ServerEndpoints {
       (view, paths)
     }
     val errors = state.contentValidator.checkScrollView(scrollView, scrollApp.assignments)
+    if (errors.nonEmpty) {
+      state.log(state.presenter.asString(state.situationSpace))
+    }
 
     (scrollView, scrollViewPaths, errors)
   }
