@@ -15,6 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
   * An object wrapping all mutable state our server endpoints below are able to mutate.
   *
   * It serves encapsulating state to be as immutable as possible.
+  *
+  * @todo Some parts are thread-safe (e.g. to multiple requests to the server), some are not.
+  *       Current assumption is that everything is sequentially run only.
   */
 class ServerState(val contentValidator: ContentValidator, initialSituationTheory: Option[SituationTheory])(implicit val ctrl: Controller) extends Logger {
 
@@ -23,7 +26,7 @@ class ServerState(val contentValidator: ContentValidator, initialSituationTheory
   private val situationTheoryCounter = new AtomicInteger(1)
 
   var curSituationTheory: SituationTheory = initialSituationTheory.getOrElse {
-    new SituationTheory(FrameWorld.defaultSituationTheory)
+    new SituationTheory(FrameWorld.defaultRootSituationTheory).descend(nextSituationTheoryName())
   }
   println(s"Using situation space+theory: $situationSpace")
 
@@ -38,11 +41,11 @@ class ServerState(val contentValidator: ContentValidator, initialSituationTheory
   def situationTheory: Theory = curSituationTheory.theory
 
   def nextScrollViewName(): LocalName = {
-    LocalName(s"scroll_view_${scrollViewCounter.getAndAdd(1)}")
+    LocalName(s"ScrollView${scrollViewCounter.getAndAdd(1)}")
   }
 
   def nextSituationTheoryName(): LocalName = {
-    LocalName(s"situation_theory_${situationTheoryCounter.getAndAdd(1)}")
+    LocalName(s"SituationTheory${situationTheoryCounter.getAndAdd(1)}")
   }
 
   def nextFactPath(): GlobalName = {
