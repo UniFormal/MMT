@@ -15,6 +15,8 @@ import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SChec
 import info.kwarc.mmt.moduleexpressions.operators.NewPushoutUtils
 import io.finch._
 import io.finch.circe._
+
+import java.nio.charset.{Charset, StandardCharsets}
 // ^^^^^^^ END
 
 /**
@@ -55,9 +57,13 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   private def getPlaintextEndpointsForState(state: ServerState) = printSituationTheory(state)
 
   override protected def getCompiledOverallEndpoint(state: ServerState): Endpoint.Compiled[IO] = {
+    def asUTF8[T](endpoint: Endpoint[IO, T]): Endpoint[IO, T] = {
+      endpoint.transformOutput(_.map(_.withCharset(StandardCharsets.UTF_8)))
+    }
+
     Bootstrap
-      .serve[Application.Json](getJSONEndpointsForState(state))
-      .serve[Text.Plain](getPlaintextEndpointsForState(state))
+      .serve[Application.Json](asUTF8(getJSONEndpointsForState(state)))
+      .serve[Text.Plain](asUTF8(getPlaintextEndpointsForState(state)))
       .compile
   }
 
@@ -77,10 +83,7 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   }
 
   private def printSituationTheory(state: ServerState): Endpoint[IO, String] = get(path("debug") :: path("space") :: path("print")) {
-    val stringRenderer = new presentation.StringBuilder
-    state.presenter(state.situationSpace)(stringRenderer)
-
-    Ok(stringRenderer.get)
+    Ok(state.presenter.asString(state.situationSpace))
   }
   // ---------------------------------------
 
@@ -88,7 +91,6 @@ object ConcreteServerEndpoints extends ServerEndpoints {
   // --------------------------------------- (up to the end of the file)
   private def buildArchiveLight(state: ServerState): Endpoint[IO, Unit] = post(path("archive") :: path("build-light")) {
     state.ctrl.handleLine(s"build ${FrameWorld.archiveID} mmt-omdoc Scrolls")
-
     Ok(())
   }
 
