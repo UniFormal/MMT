@@ -101,8 +101,8 @@ sealed case class Fact(
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
-    lazy val simpleTp = simplify(tp)
-    lazy val simpleDf = df.map(simplify)
+    val simpleTp = simplify(tp)
+    val simpleDf = df.map(simplify)
 
     val label = simplify(meta.label).toStr(shortURIs = true)
 

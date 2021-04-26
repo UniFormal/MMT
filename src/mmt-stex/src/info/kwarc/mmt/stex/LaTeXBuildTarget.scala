@@ -8,13 +8,13 @@ import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.{Link, Module, Theory}
-import info.kwarc.mmt.api.objects.{Context, OMS, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.objects.{Context, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
 import info.kwarc.mmt.api.utils.FilePath.filePathToList
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
-import info.kwarc.mmt.stex.xhtml.{ConstantAnnotation, DeclarationAnnotation, ModuleAnnotation, PreElement, PreParent, PreTheory, SourceRefAnnotation, StructureAnnotation, TheoryAnnotation, XHTML, XHTMLAnnotation, XHTMLNode, XHTMLParsingState}
+import info.kwarc.mmt.stex.xhtml.{ConstantAnnotation, DeclarationAnnotation, ModuleAnnotation, PreElement, PreParent, PreTheory, SemanticParsingState, SourceRefAnnotation, StructureAnnotation, TheoryAnnotation, XHTML, XHTMLAnnotation, XHTMLNode, XHTMLParsingState, XHTMLText}
 import info.kwarc.mmt.api.symbols.Constant
 
 trait XHTMLParser extends TraversingBuildTarget {
@@ -82,125 +82,6 @@ class PreDocument(val path : DPath) extends PreParent {
   // TODO Sections
   val document = new Document(path)
   override def getElement(implicit state : SemanticParsingState) : List[Document] = List(document)
-}
-
-class SemanticParsingState(rules : List[PartialFunction[(XHTMLNode,XHTMLParsingState), Unit]],eh : ErrorHandler, val dpath : DPath, controller : Controller)
-  extends XHTMLParsingState(rules,eh) {
-  val maindoc = new PreDocument(dpath)
-  private var _transforms: List[PartialFunction[Term, Term]] = Nil
-  private var _setransforms: List[PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]] = Nil
-
-  def addTransform(pf: PartialFunction[Term, Term]) = _transforms ::= pf
-  def addTransformSE(pf: PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]) = _setransforms ::= pf
-
-  private val traverser = new StatelessTraverser {
-    override def traverse(t: Term)(implicit con: Context, state: State): Term = {
-      val ret = _transforms.foldLeft(t)((it, f) => f.unapply(it).getOrElse(it))
-      Traverser(this, ret)
-    }
-  }
-
-  def applyTerm(tm: Term): Term = traverser(tm, ())
-
-  lazy val checker = controller.extman.get(classOf[MMTStructureChecker]).head
-
-  lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
-
-  def checkDefault[A <: StructuralElement](se : A) : A = {
-    se match {
-      case c : Constant =>
-        controller add c
-        (c.tp,c.df) match {
-          case (None,None) => return se
-          case (None,Some(OMS(_))) => return se
-          case _ =>
-        }
-        checker.apply(c)(ce)
-        se
-      case _ =>
-        controller add se
-        checker.apply(se)(ce)
-        se
-    }
-  }
-
-  def applySE[A <: StructuralElement](se: A, pe : PreElement) = {
-    pe.metadata.toList.foreach(p => se.metadata.add(MetaDatum(p._1, p._2)))
-    pe match {
-      case a : XHTMLAnnotation =>
-        a.node.getAnnotations.collectFirst{
-          case sr : SourceRefAnnotation =>
-            SourceRef.update(se,SourceRefAnnotation.toSourceRef(controller,sr))
-        }
-      case _ =>
-    }
-    _setransforms.collectFirst { case r if r.isDefinedAt(se,this) => r(se,this) }.getOrElse(checkDefault(se)).asInstanceOf[A]
-  }
-
-  def build = {
-    val doc = new Document(dpath)
-    controller add doc
-    maindoc.children.foreach {
-      case t : TheoryAnnotation =>
-        t.subelements.foreach{t =>
-          buildTheory(doc,t)
-        }
-      case _ =>
-    }
-    doc
-  }
-  private def buildTheory(parent : Document,th : PreTheory) = th.getElement(this).foreach { tI =>
-    val t = applySE(tI, th)
-    controller.getO(th.path.parent) match {
-      case Some(d: Document) =>
-      case _ => controller.add(new Document(th.path.parent))
-    }
-    controller add MRef(parent.path, t.path)
-    th.children.foreach {
-      case d: DeclarationAnnotation =>
-        d.subelements.foreach(buildDeclaration(t, _))
-      case _ =>
-    }
-    val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
-    checker.applyElementEnd(t)(ce)
-  }
-  private def buildDeclaration(parent : Module, da : DeclarationAnnotation) = da.getElement(this).foreach{dI =>
-    val d = applySE(dI,da)
-    d match {
-      case l : Link if l.isImplicit =>
-        controller.library.endAdd(l)
-      case _ =>
-    }
-  }
-
-  private var elems: List[PreElement] = List(maindoc)
-
-  def getParent = elems.head
-
-  override def open(node: XHTMLNode): Unit = {
-    super.open(node)
-    node.getAnnotations.collect {
-      case e: PreElement =>
-        e.open(this)
-        elems ::= e
-    }
-  }
-
-  override def close(node: XHTMLNode): Unit = {
-    super.close(node)
-    node.getAnnotations.reverse.collect {
-      case e : PreElement =>
-        elems.headOption match {
-          case Some(`e`) =>
-            elems = elems.tail
-            e.close(this)
-          case _ =>
-            print("")
-            ???
-        }
-    }
-  }
-
 }
 
 class HTMLToOMDoc extends Importer with XHTMLParser {

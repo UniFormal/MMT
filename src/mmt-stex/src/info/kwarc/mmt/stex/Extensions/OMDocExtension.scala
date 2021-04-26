@@ -1,12 +1,13 @@
 package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.modules.Theory
-import info.kwarc.mmt.api.objects.{OMAorAny, OMID}
+import info.kwarc.mmt.api.objects.{OMA, OMAorAny, OMID}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, RuleConstant, RuleConstantInterpreter}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, RuleConstant, RuleConstantInterpreter}
+import info.kwarc.mmt.api.uom.AbbrevRule
 import info.kwarc.mmt.api.{MPath, Path, StructuralElement}
-import info.kwarc.mmt.stex.{STeX, SemanticParsingState}
-import info.kwarc.mmt.stex.xhtml.{ArgumentAnnotation, ArityComponentA, ComponentAnnotation, ConstantAnnotation, DeclarationAnnotation, DefComponentA, HasHeadSymbol, HasTermArgs, MacronameComponentA, NotationComponentA, NotationFragmentComponentA, OMAAnnotation, OMBINDAnnotation, OMIDAnnotation, Plain, PreElement, PreParent, PreTheory, PrecedenceComponentA, SourceRefAnnotation, StructureAnnotation, TermAnnotation, TheoryAnnotation, ToScript, TypeComponentA, XHTMLAnnotation, XHTMLDocument, XHTMLNode, XHTMLOMDoc}
+import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.stex.xhtml.{ArgumentAnnotation, ArityComponentA, ComponentAnnotation, ConstantAnnotation, DeclarationAnnotation, DefComponentA, HasHeadSymbol, HasTermArgs, MacronameComponentA, NotationComponentA, NotationFragmentComponentA, OMAAnnotation, OMBINDAnnotation, OMIDAnnotation, Plain, PreElement, PreParent, PreTheory, PrecedenceComponentA, SemanticParsingState, SourceRefAnnotation, StructureAnnotation, TermAnnotation, TheoryAnnotation, ToScript, TypeComponentA, XHTMLAnnotation, XHTMLDocument, XHTMLNode, XHTMLOMDoc}
 
 object OMDocExtension extends DocumentExtension {
 
@@ -149,6 +150,16 @@ object OMDocExtension extends DocumentExtension {
         _parent = Some(p)
       case _ =>
     }
+
+    override def getElement(implicit state: SemanticParsingState): List[Declaration] = {
+      val ls = super.getElement
+      if (_definientia.nonEmpty) {
+          ls.head.asInstanceOf[FinalConstant].df.map {df =>
+            ls ::: RuleConstant(ls.head.home,_parent.get.newName("abbrevrule"),OMA(OMID(Path.parseM("scala://features.stex.mmt.kwarc.info?AbbreviationRule")),
+              List(ls.head.toTerm,df)),Some(new AbbrevRule(ls.head.path,df))) :: Nil
+          }.getOrElse(ls)
+      } else ls
+    }
   }
 
   class NotationAnnotation(node : XHTMLNode) extends ConstantAnnotation(node) with ToScript {
@@ -239,7 +250,7 @@ object OMDocExtension extends DocumentExtension {
     },
     {case t: HasHeadSymbol => overlay(t.node,"/:" + server.pathPrefix + "/fragment?" + t.head.toString,"/:" + server.pathPrefix + "/declaration?" + t.head.toString)},
 //    {case v : XHTMLOMV => overlay(v,"/:" + server.pathPrefix + "/fragment?" + v.path,"/:" + server.pathPrefix + "/declaration?" + v.path)},
-    {case c : TermAnnotation if c.node.attributes.contains(("stex","constant")) => c.toTerm /*{
+    {case c : TermAnnotation if c.node.attributes.contains(("stex","constant")) => /* c.toTerm*/ /*{
       sidebar(c, {
         <span>{"Term:"}
           {DocumentExtension.makeButton("/:" + server.pathPrefix + "/declaration?" + c.attributes(("stex", "constant")),

@@ -8,8 +8,8 @@ import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
 import info.kwarc.mmt.api.utils.MMTSystem
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.Extensions.OMDocExtension.{HasLanguage, controller}
-import info.kwarc.mmt.stex.{STeX, SemanticParsingState, translations}
-import info.kwarc.mmt.stex.xhtml.{DeclarationAnnotation, OMDocAnnotation, PreElement, PreParent, PreTheory, TheoryAnnotation, XHTML, XHTMLNode, XHTMLOMDoc}
+import info.kwarc.mmt.stex.{STeX, translations}
+import info.kwarc.mmt.stex.xhtml.{DeclarationAnnotation, OMDocAnnotation, PreElement, PreParent, PreTheory, SemanticParsingState, TheoryAnnotation, XHTML, XHTMLNode, XHTMLOMDoc}
 
 import scala.xml.Node
 

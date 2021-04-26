@@ -1,13 +1,14 @@
 package info.kwarc.mmt.stex.features
 
-import info.kwarc.mmt.api.checking.{History, InhabitableRule, SingleTermBasedCheckingRule, Solver, UniverseRule}
+import info.kwarc.mmt.api.checking.{AbbreviationRuleGenerator, History, InhabitableRule, SingleTermBasedCheckingRule, Solver, UniverseRule}
 import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, ParseError, Rule, RuleSet}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.objects.{ComplexTheory, Context, OMA, OMBIND, OMBINDC, OMID, OMMOD, OMS, OMV, Stack, Substitution, Term}
+import info.kwarc.mmt.api.objects.{ComplexTheory, Context, OMA, OMBIND, OMBINDC, OMID, OMMOD, OMS, OMV, Stack, Substitution, Term, VarDecl}
 import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
-import info.kwarc.mmt.api.uom.{RealizedType, RealizedValue, SemanticOperator, SemanticType, SemanticValue}
+import info.kwarc.mmt.api.uom.{AbbrevRule, RealizedType, RealizedValue, SemanticOperator, SemanticType, SemanticValue}
 import info.kwarc.mmt.lf.FunType
 import info.kwarc.mmt.stex.STeX
+import info.kwarc.mmt.stex.xhtml.SemanticParsingState
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
@@ -108,28 +109,6 @@ object Inhabitable extends ParametricRule {
 
 import info.kwarc.mmt.api.objects.Conversions._
 
-case class BinderRule(pattern : Rules.Pattern,head : GlobalName) extends  UsesPatterns {
-  def apply(tm : Term) = tm match {
-    case OMA(OMS(sym),pattern((_,OMV(x)) :: (_,tp) :: Nil) :: rest) =>
-      Some(OMBINDC(OMS(sym),Context(x % tp),rest)) // TODO sequences
-    case OMA(OMS(sym),pattern((_,STeX.informal(node)) :: (_,tp) :: Nil) :: rest) =>
-      Some(OMBINDC(OMS(sym),Context(LocalName(node.toString) % tp),rest)) // TODO sequences
-    case _ => None
-  }
-}
-
-object Binder extends ParametricRule {
-  def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 1) throw ParseError("one argument expected")
-    val pattern = new Rules.Pattern(args.head)
-    val head = pattern.body.head match {
-      case Some(gn : GlobalName) => gn
-      case _ => STeX.informal.sym
-    }
-    BinderRule(pattern,head)
-  }
-}
-
 object Realize extends ParametricRule {
 
   //TODO checks are called even when an .omdoc file is read
@@ -199,3 +178,72 @@ object FunctionSpaceLike extends ParametricRule {
   }
 }
 
+object AbbreviationRule extends ParametricRule {
+  override def apply(controller: Controller, home: Term, args: List[Term]): Rule = args match {
+    case List(OMS(head),tm) =>
+      new AbbrevRule(head,tm)
+    case _ =>
+      throw ParseError("one OMID and one arbitrary argument expected")
+  }
+}
+
+trait BindingRule extends Rule {
+  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context]
+}
+
+object InformalBindingRule extends BindingRule {
+  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context] = tm match {
+    case OMV(x) => Some(Context(VarDecl(x)))
+    case _ => None
+  }
+}
+
+case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[LocalName]) extends BindingRule with UsesPatterns {
+  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context] = tm match {
+    case pattern(ls) =>
+      val (vars, tpO) = tp match {
+        case Some(tpn) =>
+          val p = ls.find(_._1 == tpn).getOrElse {
+            return None
+          }
+          (ls.filterNot(_ == p), Some(p._2))
+        case _ => (ls,None)
+      }
+      Some(vars.foldLeft(Context.empty) {
+        case (ctx, (_, OMV(ln))) =>
+          tpO match {
+            case Some(t) => ctx ++ ln % t
+            case _ => ctx ++ VarDecl(ln)
+          }
+        case (ctx, (_, ot)) =>
+          val nc = state.makeBinder(ot).variables.map {
+            case vd if vd.tp.isEmpty =>
+              tpO match {
+                case Some(t) => vd.name % t
+                case _ => vd
+              }
+            case vd => vd
+          }
+          ctx ++ nc
+      })
+  }
+}
+
+object Binder extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]) = {
+    if (args.length != 1 || args.length != 2) throw ParseError("one or two arguments expected")
+    val (pattern,ln) = args match {
+      case List(h,OMV(n)) =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h) =>
+        (new Rules.Pattern(h),None)
+      case _ =>
+        throw ParseError("second argument needs to be a variable")
+    }
+    val head = pattern.body.head match {
+      case Some(gn : GlobalName) => gn
+      case _ => STeX.informal.sym
+    }
+    BinderRule(pattern,head,ln)
+  }
+}

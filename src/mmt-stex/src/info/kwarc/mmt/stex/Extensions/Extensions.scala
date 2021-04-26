@@ -4,8 +4,8 @@ import info.kwarc.mmt.api.{GlobalName, StructuralElement}
 import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.{STeXServer, SemanticParsingState}
-import info.kwarc.mmt.stex.xhtml.{XHTMLNode, XHTMLParsingState}
+import info.kwarc.mmt.stex.STeXServer
+import info.kwarc.mmt.stex.xhtml.{SemanticParsingState, XHTMLNode, XHTMLParsingState}
 
 
 abstract class Translator(val language : String) {

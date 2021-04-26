@@ -27,6 +27,7 @@ class CheckingEnvironment(val simplifier: uom.Simplifier, val errorCont: ErrorHa
  * see also [[Checker]]
  */
 trait ObjectChecker extends Extension {
+  def lookup = controller.globalLookup
    /**
     * @param cu the checking unit to check
     * @param rules rules to use during checking

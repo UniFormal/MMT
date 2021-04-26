@@ -189,7 +189,7 @@ class XHTMLNode(initial_node : Option[Node] = None) {
 
   def isMathML = collectFirstAncestor {
       case a if a.label == "math" => true
-      case a if a.label == "mtext" => false
+      case a if a.label == "mtext" && a != this => false
     }.getOrElse(false)
 
   def top : XHTMLNode = parent match {

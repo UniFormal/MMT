@@ -244,11 +244,11 @@ table tr > th[scope='col'] {
 table tr > th[scope='row'] {
   border-right: 1.36px solid black;
 }
-table > tbody > tr:first-child > td,
+/*table > tbody > tr:first-child > td, */
 table > tbody > tr:first-child > th {
   border-top: 1.36px solid black;
 }
-table > tbody > tr:last-child > td,
+/* table > tbody > tr:last-child > td, */
 table > tbody > tr:last-child > th {
   border-bottom: 1.36px solid black;
 }

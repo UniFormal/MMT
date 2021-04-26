@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.metadata.MetaDatum
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.notations.{NotationContainer, TextNotation}
 import info.kwarc.mmt.api.{ContentPath, DPath, GlobalName, LocalName, MPath, NamespaceMap, Path, StructuralElement}
-import info.kwarc.mmt.api.objects.{Context, OMA, OMID, OMMOD, OMS, OMV, Obj, Term, VarDecl}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMBIND, OMBINDC, OMID, OMMOD, OMS, OMV, Obj, Term, VarDecl}
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, PlainInclude, Structure}
 import info.kwarc.mmt.api.uom.Scala.Opaque
@@ -15,7 +15,7 @@ import info.kwarc.mmt.api.utils.{File, URI, XMLEscaping}
 import info.kwarc.mmt.odk.{IntegerLiterals, LFX, NatLiterals, PosLiterals}
 import info.kwarc.mmt.sequences.Sequences
 import info.kwarc.mmt.stex.Extensions.NotationExtractor
-import info.kwarc.mmt.stex.{STeX, SemanticParsingState}
+import info.kwarc.mmt.stex.{STeX}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -329,7 +329,7 @@ class ConstantAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) w
   private var _macronames : List[String] = Nil
   def addMacro(s : String) = _macronames ::= s
   def addRole(s : String) = _roles ::= s
-  def getElement(implicit state : SemanticParsingState) = {
+  def getElement(implicit state : SemanticParsingState) : List[Declaration] = {
     val c = Constant(OMID(path.module),path.name,Nil,
       _types.headOption.map(state.applyTerm),
       _definientia.headOption.map(state.applyTerm),
@@ -397,9 +397,9 @@ class TermComponentA(node : XHTMLNode) extends ComponentAnnotation(node : XHTMLN
     super.makeScript
     TermComponentA.clean(node)
   }
-  def getTerm : Term = node.children match {
+  def getTerm(state : SemanticParsingState) : Term = node.children match {
     case List(t) if XHTMLTerm.is(t) =>
-      t.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm}.get
+      t.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm(state)}.get
     case _ =>
       print("")
       ???
@@ -439,7 +439,7 @@ class TypeComponentA(node : XHTMLNode) extends TermComponentA(node) {
     if (node.children.nonEmpty) {
       state.getParent match {
         case c: HasType =>
-          c.addType(getTerm)
+          c.addType(getTerm(state))
         case _ =>
           print("")
           ???
@@ -453,7 +453,7 @@ class DefComponentA(node : XHTMLNode) extends TermComponentA(node) {
     if (node.children.nonEmpty) {
       state.getParent match {
         case c: HasDefiniens =>
-          c.addDefiniens(getTerm)
+          c.addDefiniens(getTerm(state))
         case _ =>
           print("")
           ???
@@ -580,12 +580,12 @@ class ArgumentAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) {
     }
   }
 
-  def toTerm = node.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm}.getOrElse(XHTMLTerm(node))
+  def toTerm(state : SemanticParsingState) = node.getAnnotations.collectFirst{case t : TermAnnotation => t.toTerm(state)}.getOrElse(XHTMLTerm(node,state))
 }
 
 
 trait TermAnnotation extends XHTMLAnnotation with PreElement {
-  def toTerm : Term = XHTMLTerm(node)
+  def toTerm(state : SemanticParsingState) : Term = XHTMLTerm(node,state)
   def isTop = node.collectFirstAncestor{case a if XHTMLTerm.is(a) => false}.getOrElse(true)
 
   override def open(state: SemanticParsingState): Unit = {
@@ -602,7 +602,7 @@ trait TermAnnotation extends XHTMLAnnotation with PreElement {
   override def close(state : SemanticParsingState) = {
     state.getParent match {
       case tp : HasTermArgs =>
-        val t = toTerm
+        val t = toTerm(state)
         tp.addArg(t)
       case p : PreParent =>
         print("") // TODO add to language module
@@ -629,11 +629,13 @@ trait HasHeadSymbol extends OMDocAnnotation with TermAnnotation {
 }
 
 class MathMLAnnotation(override val node : XHTMLNode) extends XHTMLAnnotation(node) with TermAnnotation {
-  override def toTerm: Term = XHTMLTerm(node)
+  override def toTerm(state : SemanticParsingState): Term = XHTMLTerm(node,state)
+
+  if (!node.attributes.contains("","xmlns")) node.attributes(("","xmlns")) = "http://www.w3.org/1998/Math/MathML"
 }
 
 case class MathMLLiteral(override val node : XHTMLNode) extends MathMLAnnotation(node) {
-  override def toTerm: Term = node.children.filterNot(_.isEmpty) match {
+  override def toTerm(state : SemanticParsingState): Term = node.children.filterNot(_.isEmpty) match {
     case (t : XHTMLText) :: Nil =>
       t.text.toDoubleOption match {
         case Some(db) if db.isValidInt && db>0 => STeX.PosLiterals(BigInt(db.toInt))
@@ -652,7 +654,7 @@ case class MathMLLiteral(override val node : XHTMLNode) extends MathMLAnnotation
 class OMIDAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with TermAnnotation with HasHeadSymbol {
   override val priority = 3
 
-  override def toTerm: Term = {
+  override def toTerm(state : SemanticParsingState): Term = {
     val tm = OMID(head)
     if (fragment != "") tm.metadata.update(STeX.meta_notation,STeX.StringLiterals(fragment))
     tm
@@ -660,16 +662,16 @@ class OMIDAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with TermAn
 }
 
 trait ComplexTerm extends OMDocAnnotation with TermAnnotation with HasHeadSymbol {
-  private def getargs(n : XHTMLNode) : List[(Int,Term)] = n.getAnnotations.collectFirst {
-    case a : ArgumentAnnotation => List((a.num,a.toTerm))
-  }.getOrElse(n.children.flatMap(getargs))
+  private def getargs(n : XHTMLNode,state : SemanticParsingState) : List[(Int,Term)] = n.getAnnotations.collectFirst {
+    case a : ArgumentAnnotation => List((a.num,a.toTerm(state)))
+  }.getOrElse(n.children.flatMap(getargs(_,state)))
 
-  def sortArgs = {
+  def sortArgs(state : SemanticParsingState) = {
     val args = if (node.getAnnotations.exists(_.isInstanceOf[ArgumentAnnotation]))
-      node.children.flatMap(getargs)
-    else getargs(node)
+      node.children.flatMap(getargs(_,state))
+    else getargs(node,state)
     arity.zipWithIndex.map {
-      case ('i',i) =>
+      case ('i'|'b',i) =>
         args.filter(_._1 == i+1) match {
           case List(t) =>
             t._2
@@ -689,8 +691,8 @@ trait ComplexTerm extends OMDocAnnotation with TermAnnotation with HasHeadSymbol
 class OMAAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with ComplexTerm {
   override val priority = 3
 
-  override def toTerm: Term = {
-    val tm = OMA(OMID(head),sortArgs)
+  override def toTerm(state : SemanticParsingState): Term = {
+    val tm = OMA(OMID(head),sortArgs(state))
     if (fragment != "") tm.metadata.update(STeX.meta_notation,STeX.StringLiterals(fragment))
     tm
   }
@@ -698,26 +700,35 @@ class OMAAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with Complex
 class OMBINDAnnotation(node : XHTMLNode) extends OMDocAnnotation(node) with ComplexTerm {
   override val priority = 3
 
-  override def toTerm = {
+  override def toTerm(state : SemanticParsingState) = {
     // TODO
-    ???
+    var args : List[Term] = Nil
+    var ctx : Context = Context.empty
+    sortArgs(state).zip(arity).foreach {
+      case (tm,'b') =>
+        ctx = ctx ++ state.makeBinder(tm)
+      case (tm,_) => args ::= tm
+    }
+    val tm = OMBINDC(OMID(head),ctx,args)
+    if (fragment != "") tm.metadata.update(STeX.meta_notation,STeX.StringLiterals(fragment))
+    tm
   }
 }
 
 object XHTMLTerm {
   def is(node : XHTMLNode) = node.getAnnotations.exists(_.isInstanceOf[TermAnnotation])
 
-  def apply(xn : XHTMLNode) : Term = xn.children.filterNot(_.isEmpty) match {
+  def apply(xn : XHTMLNode,state : SemanticParsingState) : Term = xn.children.filterNot(_.isEmpty) match {
     case List(a) if is(a) =>
-      a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm}.get
+      a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm(state)}.get
+    case List(t : XHTMLText) =>
+      xn.strip
+      STeX.informal.applySimple(xn.node)
     case _ =>
       val args = xn.children.flatMap({
         case c if c.isEmpty => None
         case a if is(a) =>
-          a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm}
-        case t: XHTMLText if xn.children == List(t) =>
-          xn.strip
-          return (STeX.informal.applySimple(xn.node))
+          a.getAnnotations.collectFirst{case ta : TermAnnotation => ta.toTerm(state)}
         case t: XHTMLText =>
           t.strip
           Some(STeX.informal.applySimple(<mi>{t.node}</mi>))

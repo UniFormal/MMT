@@ -1,19 +1,47 @@
 package info.kwarc.mmt.stex.features
 
 
-import info.kwarc.mmt.api.{GlobalName, LocalName, ParametricRule, Rule}
+import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName, ParametricRule, Rule}
 import info.kwarc.mmt.api.checking.{ExtendedCheckingEnvironment, SubtypingRule}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.ModuleOrLink
-import info.kwarc.mmt.api.notations.{LabelArg, LabelInfo}
-import info.kwarc.mmt.api.objects.{Context, Free, FreeOrAny, OMA, OMBIND, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
-import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, Elaboration, StructuralFeature, StructuralFeatureRule, Structure}
+import info.kwarc.mmt.api.notations.{LabelArg, LabelInfo, Marker, SimpArg}
+import info.kwarc.mmt.api.objects.{Context, Free, FreeOrAny, OMA, OMBIND, OMID, OMMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, Elaboration, StructuralFeature, StructuralFeatureRule, Structure}
 import info.kwarc.mmt.api.uom.ExtendedSimplificationEnvironment
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
 import info.kwarc.mmt.odk.SubtypeJudgRule
 import info.kwarc.mmt.stex.STeX
 
 import scala.collection.mutable
+
+class PillarFeature extends StructuralFeature("stex:pillar") {
+  override def getHeaderNotation: List[Marker] = List(LabelArg(1, LabelInfo.none),SimpArg(1))
+
+  override def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit = {
+    dd.tp match {
+      case Some(OMA(OMID(this.mpath),List(OMMOD(p)))) =>
+        val module = env.objectChecker.lookup.getTheory(p)
+        module.getConstants.foreach {c =>
+          dd.getConstants.find(_.name == c.name) match {
+            case Some(ddc) if ddc.df.isDefined =>
+            case None =>
+              env.errorCont(InvalidElement(dd,"Missing assignment for " + c.name))
+          }
+        }
+      case _ =>
+        env.errorCont(InvalidElement(dd,"Header malformed"))
+    }
+  }
+
+  override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment]): Elaboration = new Elaboration {
+    def domain = Nil
+    override def getO(name: LocalName): Option[Declaration] = None
+  }
+
+}
+
+object Pillar extends StructuralFeatureRule(classOf[PillarFeature],"stex:pillar")
 
 class TheoremFeature extends StructuralFeature("stex:theorem") {
   def getHeaderNotation = List(LabelArg(1, LabelInfo.none))
