@@ -194,16 +194,34 @@ object Scroll {
     Utils.getAsO(classOf[Theory], ref.declaringTheory)(ctrl.globalLookup).flatMap(tryParseAsScroll)
   }
 
+  /**
+    * Finds all scrolls known to [[Controller.depstore]].
+    *
+    * Using the depstore implies that only scrolls are found and returned that are built
+    * to mmt-omdoc.
+    *
+    * @return A list of all known scrolls (no duplicates).
+    */
   def findAll()(implicit ctrl: Controller): List[Scroll] = {
     ctrl.depstore
       .getInds(IsTheory)
       .collect {
         case mpath: MPath => ctrl.getTheory(mpath)
       }
+      .distinct
       .flatMap(tryParseAsScroll(_))
       .toList
   }
 
+  /**
+    * Finds all scrolls in scope (i.e., transitively included) in `theory`.
+    * @param theory Usually the current situation theory from which you would like to infer
+    *               the accessible scrolls.
+    *               Neither this theory nor any transitively included theories need to be
+    *               built to mmt-omdoc before calling this function.
+    *               (This is in contrast to [[findAll()]].)
+    * @return A list of all scrolls in scope in `theory` (no duplicates).
+    */
   def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
     theory.getIncludesWithoutMeta.map(ctrl.getTheory).flatMap(t => tryParseAsScroll(t) match {
       case Some(scroll) => List(scroll)
