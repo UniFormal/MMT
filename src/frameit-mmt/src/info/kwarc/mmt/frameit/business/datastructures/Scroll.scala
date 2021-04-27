@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.ontology.RelationExp.Imports
 import info.kwarc.mmt.api.ontology.{HasType, IsTheory}
-import info.kwarc.mmt.api.symbols.OMSReplacer
+import info.kwarc.mmt.api.symbols.{OMSReplacer, PlainInclude}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 import info.kwarc.mmt.api.{GetError, GlobalName, LocalName, MPath, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.MetaAnnotations
@@ -205,13 +205,18 @@ object Scroll {
   }
 
   def findIncludedIn(theory: Theory)(implicit ctrl: Controller): List[Scroll] = {
-    ctrl.depstore
+    theory.getIncludesWithoutMeta.map(ctrl.getTheory).flatMap(t => tryParseAsScroll(t) match {
+      case Some(scroll) => List(scroll)
+      case None => findIncludedIn(t)
+    }).distinct
+
+    // If everything was built mmt-omdoc (and known to ctrl.depstore), we could do the above a bit more elegantly:
+    /* ctrl.depstore
       .querySet(theory.path, (Imports^*) * HasType(IsTheory))
-      .collect {
-        case mpath: MPath => ctrl.getTheory(mpath)
-      }
+      .collect { case mpath: MPath => ctrl.getTheory(mpath) }
       .flatMap(tryParseAsScroll(_))
       .toList
+    */
   }
 
   /**
