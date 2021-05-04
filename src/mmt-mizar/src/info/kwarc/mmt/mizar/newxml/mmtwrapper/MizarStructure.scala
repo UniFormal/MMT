@@ -34,7 +34,7 @@ object MizarStructure {
   def elaborateAsMizarStructure(args: Context, fields: Context, ancestorTps: List[Term], controller: Controller, notCons: List[NotationContainer], slashFunction: Option[(LocalName, LocalName) => LocalName] = None)(implicit parentTerm: GlobalName) = {
     val fieldDecls: List[OutgoingTermLevel] = fields.variables.toList map {vd =>
       val path = (parentTerm.module / parentTerm.name) ? vd.name
-      new OutgoingTermLevel(path, Nil, vd.tp.get)
+      new OutgoingTermLevel(path, args.map(vd => (Some(vd.name), vd.tp.get)), vd.tp.get)
     }
     val params = fieldDecls.head.argContext()._1
     elaborateContent(params, fieldDecls, ancestorTps, controller, notCons)

@@ -118,13 +118,13 @@ object TranslationController extends frontend.Logger {
   def globalTotalTime: Long = timeSince(beginningTime)
   def unaccountedTotalTime: Long = globalTotalTime - (globalParsingTime + globalTranslatingTime)
   var globalTranslatedDeclsCount = 0
-  // the -1 is because of hiddenArt being included here
   def globalTranslatedArticlesCount = buildArticles.size
   class ArticleSpecificData {
     //set during translation
     var currentAid: String = null
     var currentDoc: Document = null
     var currentThy: Theory = null
+
     private var currentTranslatingTime: Long = 0
     def getCurrentTranslatingTime = currentTranslatingTime
     private var currentTranslatingTimeBegin = System.nanoTime()
@@ -134,28 +134,10 @@ object TranslationController extends frontend.Logger {
       resetCurrenTranslatingTimeBegin
     }
     def addCurrentToGlobalTranslatingTime = {
-      globalTranslatingTime += articleData.getCurrentTranslatingTime
-      articleData.resetCurrenTranslatingTimeBegin
+      addCurrenTranslatingTime
+      globalTranslatingTime += currentTranslatingTime
       currentTranslatingTime = 0
     }
-
-    private var unresolvedDependencies: List[MPath] = Nil
-
-    def addUnresolvedDependency(dep: MPath) = if (unresolvedDependencies.contains(dep)) {} else {
-      unresolvedDependencies +:= dep
-    }
-
-    def getUnresolvedDependencies = unresolvedDependencies
-
-    private var withNotation = 0
-    private var withoutNotation = 0
-    def incrementNotationCounter(withNotation: Boolean): Unit = {
-      if (withNotation) this.withNotation += 1 else withoutNotation += 1
-    }
-
-    private def withoutNotationProper = withoutNotation - articleStatistics.numRegistrs - articleStatistics.totalNumTheorems
-
-    def notationStatistics = "We translated " + withNotation.toString + " declarations with notation and " + withoutNotation.toString + " declarations without, " + withoutNotationProper.toString + " of which aren't theorems and registrations (which are expected to have no notation)."
 
     private var anonymousTheoremCount = 0
 
@@ -217,29 +199,24 @@ object TranslationController extends frontend.Logger {
       }
       def makeArticleStatistics: String = {
         val numTotalDecls: Long = 22100000
-        val numTotalArticles = 1390
-        def ratioTranslated = globalTranslatedDeclsCount / numTotalDecls.toDouble
+        val numTotalArticles = 1391
+        def estimatedRatioTranslated = (globalTranslatedDeclsCount / numTotalDecls.toDouble + globalTranslatedArticlesCount / numTotalArticles.toFloat) / 2.0
         ("From this article, we translated " + grandTotal + " declarations, namely "+ totalNumDefinitions + " definitions, " + registrations + " registrations and " + totalNumTheorems + " statements.\n"
         +showTime (globalTotalTime, "Overall the entire import took ")
         +"Overall we translated "+globalTranslatedDeclsCount+" declarations from "+globalTranslatedArticlesCount+" articles so far."
         +(if (numLegitimateTypingIssues > 0) "\nThere were "+numLegitimateTypingIssues+" legitimate typing issues found. " else "")
-        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress) "\nEstimated percentage translated: "+(100.0*ratioTranslated).toString+"%. " else "")
-        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress && globalTranslatedDeclsCount > 0) "\nEstimated time remaining for the import: "+showTimeDiff(globalTotalTime*(1/ratioTranslated - 1).round) else "")
+        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress) "\nEstimated percentage translated: "+(100.0*estimatedRatioTranslated).toString+"%. " else "")
+        +(if (globalTranslatedArticlesCount % 10 == 0 && showProgress && globalTranslatedDeclsCount > 0) "\nEstimated time remaining for the import: "+showTimeDiff(globalTotalTime*(1/estimatedRatioTranslated - 1).round) else "")
         +(if (globalTranslatedArticlesCount % 10 ==  0) "\n"+makeFinalStatistics else "")
         +(if (globalTranslatedArticlesCount == numTotalArticles ) "\n\n"+makeFinalStatistics else "")
         )
       }
 
-      def incrementStatisticsCounter(implicit kind: String): Unit = kind match {
+      def incrementNonDefinitionStatisticsCounter(implicit kind: String): Unit = kind match {
         case "scheme" => schemeDefinitions += 1
         case "nym" => nyms += 1
         case "registr" => registrations += 1
         case "thm" => theorems += 1
-        case s if (longKind(FunctorKind()) == s) => incrementDefinitionStatisticsCounter(FunctorKind())
-        case s if (longKind(PredicateKind()) == s) => incrementDefinitionStatisticsCounter(PredicateKind())
-        case s if (longKind(AttributeKind()) == s) => incrementDefinitionStatisticsCounter(AttributeKind())
-        case s if (longKind(ModeKind()) == s) => incrementDefinitionStatisticsCounter(ModeKind())
-        case s if (longKind(StructureKind()) == s) => incrementDefinitionStatisticsCounter(StructureKind())
         case _ => throw ImplementationError ("unrecognised statistics counter to increment: " + kind)
       }
       def incrementDefinitionStatisticsCounter(implicit kind: DeclarationKinds): Unit = kind match {
@@ -267,7 +244,6 @@ object TranslationController extends frontend.Logger {
   def currentBaseThyFile = File("/home/user/Erlangen/MMT/content/MathHub/MMT/LATIN2/source/foundations/mizar/"+MizarPatternsTh.name.toString+".mmt")
   def localPath = LocalName(articleData.currentAid)
   def currentThyBase : DPath = outputBase / localPath
-    //DPath(utils.URI(TranslationController.currentOutputBase.toString + localPath.toString))
   def currentTheoryPath : MPath = currentThyBase ? localPath
   def getTheoryPath(aid: String): MPath = (outputBase / aid.toLowerCase()) ? aid.toLowerCase()
   def getPath(aid: String, name: String): GlobalName = getTheoryPath(aid) ? name
@@ -317,7 +293,7 @@ object TranslationController extends frontend.Logger {
       case _ => false
     }} catch {
       //in case that the lookups lead to parsing of malformed xml content we have to rebuild
-      case _ => false
+      case _: Throwable => false
     }
   }
   def addDependencies(decl: Declaration with HasType with HasDefiniens): Unit = {
@@ -329,11 +305,9 @@ object TranslationController extends frontend.Logger {
         if (! recurseOnlyWhenNeeded) processDependencyTheory (dep)
       } catch {
         case er: GetError =>
-          articleData.addUnresolvedDependency(dep)
           val mes = showErrorInformation(er, " while trying to include the dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated: ")
           throw new TranslatingError(mes)
         case er: Throwable if (!er.isInstanceOf[ImplementationError]) =>
-          articleData.addUnresolvedDependency(dep)
           val mes = showErrorInformation(er, " while trying to translate the included dependent theory "+dep+" of the theory "+inc.to.toMPath+" to be translated:")
           throw new TranslatingError(mes)
       }
@@ -357,7 +331,6 @@ object TranslationController extends frontend.Logger {
   }
 
   def addDeclaration(e: Declaration with HasType with HasDefiniens with HasNotation)(implicit defContext: DefinitionContext) : Unit = {
-    val hasNotation = e.notC.isDefined
     try {
       addDependencies(e)
       //should be (and probably is unnecessary)
@@ -368,19 +341,42 @@ object TranslationController extends frontend.Logger {
       } else {
         log ("Trying to add a declaration twice. ")
       }
-      articleData.incrementNotationCounter (hasNotation)
     } catch {
-      case er: AddError =>
-        val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
-        throw new TranslatingError(mes)
       case er: Throwable if (!er.isInstanceOf[ImplementationError]) =>
         val mes = showErrorInformation(er, " while processing the dependencies of the declaration "+e.path.toPath)
         throw new TranslatingError(mes)
     }
     try {
-      if (e.feature == "instance") {
-        if (typecheckContent && checkConstants) typecheckContent(e)
+      if (typecheckContent && checkConstants) typecheckContent(e)
+    } catch {
+      case _: AddError =>
+        throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
+      case er: MatchError if er.toString contains "scala.MatchError: (http://cds.omdoc.org/urtheories?LambdaPi?arrow " =>
+        //we called one of the pattern without any arguments and the typechecker gets confused about the type of the main declaration, which is
+        // term^0 -> ...
+        //however this is the legitimate translation and shouldn't be considered an error
+      case eofe: EOFException =>
+        val mes = showErrorInformation(eofe, " while typechecking: "+e.path.toPath)//(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        println ("This usually means that corrupted translated content files are present. Try deleting them and build again. ")
+        println (eofe)
+      case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
+        val mes = showErrorInformation(er, " while typechecking: "+e.path.toPath)//(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        println (mes)
+      case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
+        val mes = showErrorInformation(er, " while typechecking: "+e.path.toPath)//(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        println (mes)
+        println ("Not sure what causes these kind of issues, but they seem to be related to issues building theory graphs for translated dependency theories. ")
+      case er: Throwable =>
+        val mes = showErrorInformation(er, " while typechecking: "+e.path.toPath)//(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
+        articleData.articleStatistics.incrementNumLegitimateTypingIssues
+        println (mes)
+        println ("This seems to be a genuine typing issue. ")
+    }
+    if (e.feature == "instance") {
+      try {
         structureSimplifier(e)
+        /*
+        // unnecessary debugging code checking if notations are build and used correctly
         val externalDecls = currentTheory.domain.filter(_.init == e.name)
         if (externalDecls.isEmpty) {
           println ("No external declarations for the instance "+e.path+" even after calling the simplifier on it. \n"
@@ -393,32 +389,13 @@ object TranslationController extends frontend.Logger {
         if (mainDecls.isEmpty && !allowedWithoutNotation.exists(s => e.name.toStr(true).contains(s))) {
           if (externalDecls.map(currentTheory.get(_)).find(_.asInstanceOf[Constant].rl == Some ("mainDecl")).isEmpty)
             println ("no main Declaration found for " + e.path.toPath)
-        }
+        }*/
+      } catch {
+          case er: Throwable =>
+            val mes = showErrorInformation(er, " while simplifying: "+e.path.toPath)
+            throw new TranslatingError(mes)
       }
-    } catch {
-      case _: AddError =>
-        throw new TranslatingError("error adding declaration "+e.name+", since a declaration of that name is already present. ")
-      case er: MatchError if er.toString contains "scala.MatchError: (http://cds.omdoc.org/urtheories?LambdaPi?arrow " =>
-        //we called one of the pattern without any arguments and the typechecker gets confused about the type of the main declaration, which is
-        // term^0 -> ...
-        //however this is the legitimate translation and shouldn't be considered an error
-      case eofe: EOFException =>
-        val mes = showErrorInformation(eofe, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
-        println ("This usually means that corrupted translated content files are present. Try deleting them and build again. ")
-        println (eofe)
-      case er: Error if (showErrorInformation(er, "").toLowerCase.contains("geterror")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
-        println (mes)
-      case er: TranslatingError if (showErrorInformation(er, "").toLowerCase.contains("invalid state")) =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
-        println (mes)
-        println ("Not sure what causes these kind of issues. ")
-      case er: Throwable =>
-        val mes = showErrorInformation(er, " while typechecking: "+(try{ presenter.asString(e) } catch { case e: Throwable => e.toString}))
-        articleData.articleStatistics.incrementNumLegitimateTypingIssues
-        println (mes)
-        println ("This seems to be a genuine typing issue. ")
-    }
+  }
   }
   def makeConstant(n: LocalName, t: Term) : Constant = makeConstant(n, Some(t), None)
   def makeReferencingConstant(n: LocalName, gn: GlobalName)(implicit kind: String, notC:NotationContainer = NotationContainer.empty()) = makeConstant(n, None,
@@ -438,14 +415,12 @@ object TranslationController extends frontend.Logger {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println ("Lookup error trying to infer a type: Variable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
+        println ("Lookup error while trying to infer a type: \nVariable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
       case e: GeneralError =>
         val mes = showErrorInformation(e, " while trying to infer a type in the context of "+(defContext.args++defContext.getLocalBindingVars).toStr(true))
         println (mes)
         throw new TranslatingError(mes)
-      case e : Throwable if (!e.isInstanceOf[ImplementationError]) =>
-        throw e
     }
   }
 }

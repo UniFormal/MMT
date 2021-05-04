@@ -141,7 +141,7 @@ sealed trait RedefinableLabeledDefinition extends PublicDefinition with MMLIdSub
   def redefinition: Boolean = _redef.occurs
   def check: Unit = {
     if (! (_def.isDefined || redefinition)) {
-      throw ImplementationError("Wrong parsing assumption. ")
+      throw ImplementationError ("Wrong parsing assumption. ")
     }
   }
 
