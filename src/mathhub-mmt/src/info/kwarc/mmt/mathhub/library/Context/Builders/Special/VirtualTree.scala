@@ -2,7 +2,7 @@ package info.kwarc.mmt.mathhub.library.Context.Builders.Special
 
 import info.kwarc.mmt.api.archives.MathHub
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.mathhub.library.{IDocumentParentRef, IDocumentRef, INarrativeElement, IOpaqueElement, IOpaqueElementRef, IReferencable, IReference}
+import info.kwarc.mmt.mathhub.library.{IDocumentParentRef, IDocumentRef, IHubReference, INarrativeElement, IOpaqueElement, IOpaqueElementRef, IReferencable, IReference, ISourceReference}
 
 /**
   * Represents a "virtual" tree inserted directly into the root of archives.
@@ -51,6 +51,9 @@ abstract class VirtualTree(
 
   /** get the displayName of a tree node */
   def displayName(archive: String, path: List[String]): String = path.lastOption.getOrElse(displayName)
+
+  /** get the sourceReference of a node */
+  def sourceRef(archive: IHubReference, path: List[String]): Option[ISourceReference]
 
   /** checks if a node is an inner tree node (without content) or a leaf node (with content) */
   def hasContent(archive: String, path: List[String]): Boolean

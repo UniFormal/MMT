@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.objects
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.notations.TextNotation
 import info.kwarc.mmt.api.objects.Conversions._
+import info.kwarc.mmt.api.presentation.{ContentMathMLPresenter, MathMLContext}
+import info.kwarc.mmt.api.presentation.HTMLAttributes.position
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.utils.xml.addAttrOrChild
 
@@ -16,6 +18,7 @@ trait ShortURIPrinter {
    /** defaults to toStr(false) */
    override def toString = toStr(false)
 }
+
 
 /**
  * An Obj represents an MMT object. MMT objects are represented by immutable Scala objects.
@@ -36,8 +39,11 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
       val om = xml.namespace("om") // inlining this into XML literal does not work
       <om:OMOBJ xmlns:om={om}>{toNode}</om:OMOBJ>
    }
-   def toCMLQVars(implicit qvars: Context): Node
-   def toCML = toCMLQVars(Context())
+   @deprecated("use ContentMathMLPresenter instead")
+   def toCMLQVars(implicit qvars: Context): Node = ContentMathMLPresenter.applyContext(this)(MathMLContext.forContent(qvars, None))
+   @deprecated("use ContentMathMLPresenter instead")
+   def toCML = ContentMathMLPresenter(this)
+
    /**
     * generic version of substitution that does one step and recurses according to a SubstitutionApplier
     *
@@ -134,7 +140,6 @@ case class OMID(path: ContentPath) extends Term {
       case doc ? mod ?? name => <om:OMS base={doc.toPath} module={mod.toPath} name={name.toPath}>{mdNode}</om:OMS>
       //case thy % name => <om:OMS name={name.toPath}>{mdNode}{thy.toNode}</om:OMS>
    }
-   def toCMLQVars(implicit qvars: Context) = <csymbol>{path.toPath}</csymbol>
 }
 
 object OMS {
@@ -172,7 +177,6 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
    def subobjects = ComplexTerm.subobjects(this) getOrElse {
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
-   def toCMLQVars(implicit qvars: Context) = <apply>{binder.toCMLQVars}{context.map(_.toCMLQVars)}{scopes.map(_.toCMLQVars)}</apply>
 }
 
 /**
@@ -202,7 +206,6 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
-   def toCMLQVars(implicit qvars: Context) = <apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</apply>
 }
 
 /**
@@ -244,9 +247,6 @@ case class OMV(name : LocalName) extends Term {
        }
    private[objects] def freeVars_ = List(name)
    def subobjects = Nil
-   def toCMLQVars(implicit qvars: Context) =
-      if (qvars.isDeclared(name)) <mws:qvar xmlns:mws="http://www.mathweb.org/mws/ns">{name.toPath}</mws:qvar>
-      else <ci>{name.toPath}</ci>
 }
 
 /** helper object */
@@ -273,8 +273,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
       </om:OMATTR>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    def subobjects = List(arg, key, value).map(s => (Context(), s))
-   private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
-   def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMATTR</csymbol>{arg.toCMLQVars}{key.toCMLQVars}{value.toCMLQVars}</apply>
+   private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars
 }
 
 /** apply/unapply methods for a list of attributions */
@@ -299,7 +298,6 @@ sealed trait OMLITTrait extends Term {
    def head = None // synType.head is awkward because it false triggers rules
    def synTypeXML = Obj.toStringOrNode(synType)
    def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
-   def toCMLQVars(implicit qvars: Context) = addAttrOrChild(<cn encoding="mmt-literal">{toString}</cn>, "definitionURL", synTypeXML)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
@@ -309,7 +307,7 @@ sealed trait OMLITTrait extends Term {
       case (l: OMLIT, m: OMLIT) => l.rt == m.rt && l.value == m.value
       case (l: UnknownOMLIT, m: UnknownOMLIT) => l.synType == m.synType && l.valueString == m.valueString
       case (l: OMLIT, m: UnknownOMLIT) =>
-         // second conjunct is sufficient, first conjunct only acts as guard for checking the second 
+         // second conjunct is sufficient, first conjunct only acts as guard for checking the second
          (l.synType == m.synType) && l == l.rt.parse(m.valueString)
       case (l: UnknownOMLIT, m: OMLIT) => m == l
       case _ => false
@@ -354,7 +352,6 @@ case class OMFOREIGN(node : Node) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
    def subobjects = Nil
-   def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMFOREIGN</csymbol>{Node}</apply>
 }
 
 
@@ -378,7 +375,6 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       }
       subobjectsNoContext(terms)
    }
-   def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMSemiFormal</csymbol>{tokens.map(_.toCMLQVars)}</apply>
 }
 
 object OMSemiFormal {
@@ -401,7 +397,6 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
-    def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
 }
 

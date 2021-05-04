@@ -347,9 +347,12 @@ class XMLToScala(pkg: String) {
                   else childNodes.map(apply(_, elemType))
                // Option[A]
                case OptionType(elemType) =>
-                  if (omitted)
-                     None
-                  else if (childNodes.length == 1)
+                  if (omitted) {
+                    if (showRaw(elemType) == showRaw(StringType)) {
+                      val s = try {getAttributeOrChild(nS)} catch {case e: FatalExtractError => ""}
+                      if (s.nonEmpty) Some(s) else None
+                    } else None
+                  } else if (childNodes.length == 1)
                      Some(apply(childNodes.head, elemType))
                   else
                      throw wrongLength

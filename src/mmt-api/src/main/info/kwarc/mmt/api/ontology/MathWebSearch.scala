@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import parser._
 import objects._
 import Conversions._
+import presentation._
 import notations._
 
 import scala.xml.Node
@@ -12,9 +13,9 @@ import scala.xml.Node
 case class MathWebSearchQuery(pattern: TermPattern, answsize: Int = 1000, limitmin: Int = 0) {
    def toXML = {
       val queryCML = if (pattern.qvars.isEmpty)
-         pattern.query.toCML
+         ContentMathMLPresenter.apply(pattern.query)
       else
-         pattern.query.toCMLQVars(pattern.qvars)
+         ContentMathMLPresenter.applyContext(pattern.query)(MathMLContext.forContent(pattern.qvars, None))
       <mws:query xmlns:mws="http://www.mathweb.org/mws/ns" xmlns:m="http://www.w3.org/1998/Math/MathML"
              limitmin={limitmin.toString} answsize={answsize.toString} totalreq="yes" output="xml">
             <mws:expr>{queryCML}</mws:expr>

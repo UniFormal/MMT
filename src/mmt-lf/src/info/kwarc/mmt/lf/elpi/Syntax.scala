@@ -77,6 +77,10 @@ object ELPI {
     def toELPI(bracket: Boolean = true) : String = name.toString
   }
 
+  case class Constant(name : LocalName) extends Expr {
+    def toELPI(bracket: Boolean = true) : String = name.toString.toUpperCase
+  }
+
   case class Integer(value: Int) extends Expr {
     def toELPI(bracket: Boolean = true) : String = value.toString
   }
@@ -114,9 +118,9 @@ object ELPI {
   case class Apply(f: Expr, as: Expr*) extends Application(f, as:_*)
   
   /** built-in constants */
-  abstract class Constant(name: String) extends Variable(LocalName(name))
-  object True  extends Constant(name = "true")
-  object False extends Constant(name = "false")
+  abstract class BuiltInConstant(name: String) extends Variable(LocalName(name))
+  object True  extends BuiltInConstant(name = "true")
+  object False extends BuiltInConstant(name = "false")
 
   /** special case for the application of unary operators */
   case class UnaryApply(operator: UnOp, arg: Expr) extends Application(Variable(LocalName(operator.name)), arg) {

@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.opaque.OpaqueElement
 import info.kwarc.mmt.stex.InformalMathMLPresenter
 
 class NotationPresenter(contr : Controller, var notations : List[(GlobalName,TextNotation)] = Nil)
-  extends presentation.MathMLPresenter {
+  extends presentation.PresentationMathMLPresenter {
   controller = contr
   report = controller.report
   override def getNotations(path: GlobalName): List[TextNotation] = {
@@ -31,7 +31,7 @@ class NotationPresenter(contr : Controller, var notations : List[(GlobalName,Tex
          case None => Nil
          case Some(vd) => List(HTMLAttributes.varref -> vd.declpos.toString)
       }
-      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: jobadattribs, n.toString)
+      val mi = xml.element("mi", ("style" -> "color:red;") :: vdAtt ::: mathmlattribs, n.toString)
       pc.out(mi)
    }
   //TODO duplicate code found also in informal presenter, to fix

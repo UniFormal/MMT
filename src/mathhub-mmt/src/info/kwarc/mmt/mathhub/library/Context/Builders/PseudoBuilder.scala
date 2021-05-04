@@ -75,13 +75,15 @@ class PseudoBuilder(val tree: VirtualTree) {
       })
     }
 
+    val sourceRef = builder.getArchiveRef(archive).flatMap(tree.sourceRef(_, path))
+
     Some(IDocument(
       parent = ref.parent,
       id = ref.id,
       name = ref.name,
 
       tags = Nil,
-      sourceRef = None,
+      sourceRef = sourceRef,
       statistics = None,
       declarations = children,
     ))
