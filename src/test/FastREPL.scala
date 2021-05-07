@@ -19,6 +19,8 @@ import scala.util.Try
   */
 object FastREPL extends MagicTest("debug") {
   val shortcuts: List[String] = List(
+    "build MMT/LATIN2 mmt-omdoc proving/atp.mmt",
+    "build MMT/LATIN2 mmt-omdoc playground/tptp-exporter_monoid.mmt",
     "build ALMANAC/JLogic mmt-omdoc taschengeld.mmt",
     "build MMT/urtheories mmt-omdoc module-expressions.mmt",
     "build MMT/LATIN2 mmt-omdoc casestudies/itp2021/a-basic.mmt",

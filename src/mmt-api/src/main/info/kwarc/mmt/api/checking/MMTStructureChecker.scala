@@ -591,7 +591,7 @@ class MMTStructureChecker(objectChecker: ObjectChecker) extends Checker(objectCh
       case d: Document =>
         doDoc(d)
       case b: ModuleOrLink =>
-        doDoc(b.asDocument)      
+        doDoc(b.asDocument)
       case _ =>
     }
     elementChecked(e)
