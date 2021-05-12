@@ -2,15 +2,18 @@ package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.archives.RedirectableDimension
+import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.notations.{Delim, Marker, SimpArg, Var}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.refactoring.AcrossLibraryTranslator
 import info.kwarc.mmt.api.utils.{FilePath, MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerExtension, ServerRequest, ServerResponse}
 import info.kwarc.mmt.odk.Sage.{Sage, SageSystem}
+import info.kwarc.mmt.stex.Extensions.DocumentExtension.controller
 import info.kwarc.mmt.stex.Extensions.{BrowserExtension, DocumentExtension, EditorExtension, FragmentExtension, OMDocExtension, STeXExtension, Translator}
-import info.kwarc.mmt.stex.features.TheoremFeature
+import info.kwarc.mmt.stex.features.{DefinitionFeature, PillarFeature, TheoremFeature}
 import info.kwarc.mmt.stex.translations.DemoContent
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 import info.kwarc.mmt.stex.xhtml._
 
 import scala.runtime.NonLocalReturnControl
@@ -52,24 +55,29 @@ class STeXServer extends ServerExtension("fomid") {
 
   def extensions = controller.extman.get(classOf[STeXExtension])
 
+  def addExtension(ext : Extension) =
+    if (!extensions.contains(ext))
+      controller.extman.addExtension(ext)
+  def addExtension[A <: Extension](cls : Class[A]) =
+    controller.extman.get(cls) match {
+      case Nil =>
+        val n = cls.getConstructor().newInstance()
+        controller.extman.addExtension(n)
+      case _ =>
+    }
+
   override def start(args: List[String]): Unit = {
     super.start(args)
-    if (!extensions.contains(OMDocExtension))
-      controller.extman.addExtension(OMDocExtension)
-      /*
-    if (!extensions.contains(FeaturesExtension))
-      controller.extman.addExtension(FeaturesExtension)
-       */
-    if (!extensions.contains(DocumentExtension))
-      controller.extman.addExtension(DocumentExtension)
-    if (!extensions.contains(FragmentExtension))
-      controller.extman.addExtension(FragmentExtension)
-    if (!extensions.contains(BrowserExtension))
-      controller.extman.addExtension(BrowserExtension)
-    if (!extensions.contains(EditorExtension))
-      controller.extman.addExtension(EditorExtension)
-    /* if (!extensions.contains(DemoExtension))
-      controller.extman.addExtension(DemoExtension) */
+    addExtension(OMDocExtension)
+    //addExtension(FeaturesExtension)
+    addExtension(DocumentExtension)
+    addExtension(FragmentExtension)
+    addExtension(BrowserExtension)
+    addExtension(EditorExtension)
+    //addExtension(DemoExtension)
+    addExtension(classOf[PillarFeature])
+    addExtension(classOf[DefinitionFeature])
+
     controller.backend.getArchives.filter(_.id.startsWith("FoMID")).foreach(_.readRelational(Nil, controller, "rel"))
   }
 
@@ -116,14 +124,14 @@ class STeXServer extends ServerExtension("fomid") {
     def space = scala.xml.Text(" ")
     val suffix = c.rl match {
       case Some("variable") =>
-        body.add(<b>{scala.xml.Text("Variable")}</b>)
+        body.add(<b>Variable</b>)
         c.metadata.getValues(STeX.meta_quantification) match {
           case List(OMS(STeX.Forall.path)) => scala.xml.Text("(universally quantified)")
           case List(OMS(STeX.Exists.path)) => scala.xml.Text("(existentially quantified)")
           case _ => space
         }
       case _ =>
-        body.add(XHTML(<b>{scala.xml.Text("Symbol")}</b>))
+        body.add(<b>Symbol</b>)
         space
     }
     body.add(space)
@@ -131,7 +139,7 @@ class STeXServer extends ServerExtension("fomid") {
     body.add(<br/>)
     body.add(
       <table>
-        <tr><th>{scala.xml.Text("Macro")}</th><th>{scala.xml.Text("Presentation")}</th><th>{scala.xml.Text("Type")}</th><th></th></tr>
+        <tr><th>Macro</th><th>Presentation</th><th>Type</th><th></th></tr>
         <tr>
           <td>{c.notC.parsing match {
               case Some(tn) => scala.xml.Text(tn.markers.mkString(""))
@@ -151,7 +159,7 @@ class STeXServer extends ServerExtension("fomid") {
     doc
   }
 
-  def doHeader(doc : XHTMLNode) = {
+  def doHeader(doc : HTMLNode) = {
     val head = doc.get("head")()().head
     val body = doc.get("body")()().head
     head.get("link")(("","rel","stylesheet"))().foreach(e => e.attributes.get(("","href")) match {
@@ -161,13 +169,15 @@ class STeXServer extends ServerExtension("fomid") {
       case _ =>
     })
     head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>)
-    head.add(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{XHTML.empty}</script>)
+    head.add(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{HTMLParser.empty}</script>)
     extensions.foreach(_.doHeader(head,body))
     head
   }
 
   def emptydoc = {
-    val doc = new XHTMLDocument
+    val rules = extensions.flatMap(_.rules)
+    val state = new ParsingState(controller,rules)
+    val doc = HTMLParser("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1 plus MathML 2.0//EN\" \"http://www.w3.org/Math/DTD/mathml2/xhtml-math11-f.dtd\">\n<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:stex=\"http://kwarc.info/ns/sTeX\" xmlns:mml=\"http://www.w3.org/1998/Math/MathML\" lang=\"en\">")(state) //new XHTMLDocument
     doc.add(<head></head>)
     doc.add(<body><div class="ltx_page_main"><div class="ltx_page_content"><div class="ltx_document"></div></div></div></body>)
     doHeader(doc)

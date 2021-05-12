@@ -10,7 +10,7 @@ import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Typed}
 import info.kwarc.mmt.odk.{LFX, NatLiterals}
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.{PreElement, XHTMLOMDoc}
+import info.kwarc.mmt.stex.xhtml.{OMDocHTML}
 
 object MitM { /*
   import DemoContent._

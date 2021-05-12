@@ -3,12 +3,13 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.xhtml.{ArgumentAnnotation, OMDocAnnotation, ToScript, XHTML, XHTMLAnnotation, XHTMLNode, XHTMLOMDoc, XHTMLParsingState, XHTMLText}
+import info.kwarc.mmt.stex.xhtml.HTMLParser
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
 
 import scala.xml.{Elem, Node}
 
 trait DocumentExtension extends STeXExtension {
-  def documentRules : List[PartialFunction[XHTMLAnnotation,Unit]]
+  def documentRules : List[PartialFunction[HTMLNode,Unit]]
 }
 
 object DocumentExtension extends STeXExtension {
@@ -31,32 +32,31 @@ object DocumentExtension extends STeXExtension {
       case e : DocumentExtension =>
         e.documentRules
     }.flatten
-    def doE(e : XHTMLNode) : Unit = e.getAnnotations.foreach(a => docrules.foreach(r => r.unapply(a)))
+    def doE(e : HTMLNode) : Unit = docrules.foreach(r => r.unapply(e))
     filecontent.iterate(doE)
     filecontent
   }
 
-  override def doHeader(head: XHTMLNode,body: XHTMLNode): Unit = {
-    XHTML.applyString("<html><head>" + MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt") + "</head></html>").children.head.children.foreach(head.add)
-    body.add(XHTML.apply(
-      <div class="stexoverlay" id="stexMainOverlay" style="z-index:100;border-style:solid;position:fixed;top:10px;transition: width 0.2s smooth;background-color:white;">
+  override def doHeader(head: HTMLNode,body: HTMLNode): Unit = {
+    head.add(MMTSystem.getResourceAsString("mmt-web/stex/overlay.txt"))
+    body.add(<div class="stexoverlay" id="stexMainOverlay" style="z-index:100;border-style:solid;position:fixed;top:10px;transition: width 0.2s smooth;background-color:white;">
         <table style="width:80ch;height:100%">
           <tr style="height:28px"><td style="text-align:right"><button onclick="stexOverlayOff('stexMainOverlay')">X</button></td></tr>
           <tr width="100%" height="100%"><td><iframe class="stexoverlayinner" id="stexoverlayinner" name="stexoverlayinner" onLoad="if (this.contentWindow.location.href=='about:blank') {} else {stexMainOverlayFade();};this.style.height=(this.contentWindow.document.body.offsetHeight+5) + 'px';" width="100%"
-                                                     style="opacity:100; margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">{XHTML.empty}</iframe>
+                                                     style="opacity:100; margin:0%; padding:0%; display:block;background-color:hsl(210, 20%, 98%)\">{HTMLParser.empty}</iframe>
           </td></tr>
         </table>
       </div>)
-    )
   }
 
   // TODO
-  def getDocument(uri : String) : XHTMLNode = {
-    val rules = server.extensions.flatMap(_.xhtmlRules)
-    val state = new XHTMLParsingState(rules)
+  def getDocument(uri : String) : HTMLNode = {
+    val rules = server.extensions.flatMap(_.rules)
+    //val state = new ParsingState(,rules)
     uri match {
       case "http://mathhub.info/fomid/demo.xhtml" =>
-        XHTML.applyString(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml"),Some(state))
+        val state = new ParsingState(controller,rules)
+        HTMLParser(MMTSystem.getResourceAsString("mmt-web/stex/demo/test.xhtml"))(state)
       case s if s.startsWith("group=") =>
         val grp = s.drop(6)
         val doc = server.emptydoc
@@ -79,16 +79,15 @@ object DocumentExtension extends STeXExtension {
             case None =>
               bd.add(<b>{"No archive with id " + id + " found!"}</b>)
             case Some(a) =>
-              val cnt = a.properties.collectFirst {
-                case ("description",d) if (a.root / "META-INF" / d).exists() =>
-                  XHTML.applyString(File.read(a.root / "META-INF" / d),Some(state))
-                case ("description",d) if (a.root / "meta-inf" / d).exists() =>
-                  XHTML.applyString(File.read(a.root / "meta-inf" / d),Some(state))
-                case ("teaser",t) =>
-                  XHTML.applyString("<div>"+t+"</div>",Some(state))
-              }
               bd.add(<b style="text-align: center">{a.id}</b>)
-              cnt.foreach(bd.add)
+              a.properties.collectFirst {
+                case ("description",d) if (a.root / "META-INF" / d).exists() =>
+                 bd.add(File.read(a.root / "META-INF" / d))
+                case ("description",d) if (a.root / "meta-inf" / d).exists() =>
+                  bd.add(File.read(a.root / "meta-inf" / d))
+                case ("teaser",t) =>
+                  bd.add("<div>"+t+"</div>")
+              }
           }
           doc
         } else {
@@ -102,9 +101,10 @@ object DocumentExtension extends STeXExtension {
             case Some(a) =>
               val top = a / RedirectableDimension("xhtml")
               val fn = top / path
+              val state = new ParsingState(controller,rules)
               if (fn.exists() && fn.isDirectory) {
                 if ((fn / "index.xhtml").exists()) {
-                  val ret = XHTML.applyString(File.read(fn / "index.xhtml"),Some(state))
+                  val ret = HTMLParser(fn / "index.xhtml")(state)
                   server.doHeader(ret)
                   ret
                 } else {
@@ -115,7 +115,7 @@ object DocumentExtension extends STeXExtension {
                   doc
                 }
               } else if (fn.exists()) {
-                val ret = XHTML.applyString(File.read(fn),Some(state))
+                val ret = HTMLParser(fn)(state)
                 server.doHeader(ret)
                 ret
               }
@@ -133,8 +133,8 @@ object DocumentExtension extends STeXExtension {
     }
   }
 
-  def sidebar(elem : XHTMLNode, content: List[Node],atend : Boolean = false) = {
-    def pickelem(e : XHTMLNode) : Option[XHTMLNode] = {
+  def sidebar(elem : HTMLNode, content: List[Node],atend : Boolean = false) = ??? /*{
+    def pickelem(e : HTMLNode) : Option[HTMLNode] = ??? {
       e.collectFirstAncestor{case a if a.getAnnotations.exists(_.isInstanceOf[ToScript]) => a}.foreach{a => return Some(a)}
       if (atend) e.children.reverse else e.children}.collectFirst {
         case ie if !ie.isEmpty && !ie.isMathML && !ie.classes.contains("ltx_rdf") =>
@@ -142,7 +142,7 @@ object DocumentExtension extends STeXExtension {
         case ie if !ie.isMathML && !ie.classes.contains("ltx_rdf") =>
           ie
       }
-    val id = elem.top.generateId
+    val id = elem.state.generateId
     val annot = XHTML(
       <span>
         <label for={id} class="sidenote-toggle">{XHTML.empty}</label>
@@ -157,9 +157,9 @@ object DocumentExtension extends STeXExtension {
     } else {
       e.parent.foreach(p => annot.foreach(p.addAfter(_,e)))
     }
-  }
+  } */
 
-  def overlay(elem : XHTMLNode, urlshort : String,urllong : String) = {
+  def overlay(elem : HTMLNode, urlshort : String,urllong : String) = ??? /* {
     def criterion(n : XHTMLNode) = {
       n.getAnnotations.isEmpty || n.isInstanceOf[XHTMLText] || !n.getAnnotations.exists(_.isInstanceOf[OMDocAnnotation])
     } && !n.getAnnotations.exists(_.isInstanceOf[ArgumentAnnotation])
@@ -204,25 +204,25 @@ object DocumentExtension extends STeXExtension {
       val tm = after.getTopMath
       tm.parent.foreach(_.addAfter(overlay, tm))
     }
-  }
+  } */
 
-  def makeButton(target : String,elem : Node) = makesafe(XHTML(
+  def makeButton(target : String,elem : Node) = ??? /* makesafe(XHTML(
       <span class="propbtn" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
         {elem}
       </span>
-  ))
+  )) */
 
-  def makePostButton(elem : Node, target : String,data : (String,String)*) = makesafe(XHTML(
+  def makePostButton(elem : Node, target : String,data : (String,String)*) = ??? /* makesafe(XHTML(
     <form method="post" action={target} class="inline" onsubmit="this.target='stexoverlayinner'" target="stexoverlayinner" style="display:none">
       {data.map{p => <input type="hidden" name={p._1} value={p._2} class="inline"/>}}
       <span onclick="this.closest('form').submit();" type="submit" class="propbtn">
         {elem}
       </span>
-    </form>))
+    </form>)) */
 
-  def makesafe(xh : XHTMLNode) = {
+  def makesafe(xh : HTMLNode) = ??? /* {
     new XHTMLNode() {
       override def node = xh.node
     }
-  }
+  } */
 }

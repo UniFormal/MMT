@@ -8,14 +8,14 @@ import info.kwarc.mmt.api.symbols.{Constant, RuleConstant}
 import info.kwarc.mmt.api.uom.{AbbrevRule, RealizedType, RealizedValue, SemanticOperator, SemanticType, SemanticValue}
 import info.kwarc.mmt.lf.FunType
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.SemanticParsingState
+import info.kwarc.mmt.stex.xhtml.SemanticState
 
 object Rules {
   import info.kwarc.mmt.api.objects.Conversions._
   class Pattern(original : Term) {
     private val (variablesI,bodyI) = getBoundVars(original)
     val body = bodyI
-    val variables = variablesI.filter(v => original.freeVars.contains(v._1))
+    val variables = variablesI.filterNot(v => original.freeVars.contains(v._1))
     val arity = variables.length
     def apply(args : List[Term]) = if (args.length == arity) {
       body ^? Substitution(variables.indices.map(i => variables(i)._1 / args(i)):_*)
@@ -42,7 +42,7 @@ object Rules {
         None
     }
     def unapply(tm : Term) = {
-      recurse(tm,original)(Context.empty) match {
+      recurse(tm,body)(Context.empty) match {
         case Some(ls) =>
           val dist = ls.distinct
           val vns = dist.map(_._1)
@@ -188,18 +188,21 @@ object AbbreviationRule extends ParametricRule {
 }
 
 trait BindingRule extends Rule {
-  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context]
+  def apply(tm : Term)(implicit state : SemanticState) : Option[Context]
 }
 
 object InformalBindingRule extends BindingRule {
-  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context] = tm match {
-    case OMV(x) => Some(Context(VarDecl(x)))
+  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
+    case OMV(x) =>
+      val vd = VarDecl(x)
+      vd.metadata.update(STeX.meta_notation,tm)
+      Some(Context(vd))
     case _ => None
   }
 }
 
 case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[LocalName]) extends BindingRule with UsesPatterns {
-  def apply(tm : Term)(implicit state : SemanticParsingState) : Option[Context] = tm match {
+  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
     case pattern(ls) =>
       val (vars, tpO) = tp match {
         case Some(tpn) =>
@@ -225,15 +228,19 @@ case class BinderRule(pattern : Rules.Pattern,head : GlobalName,tp : Option[Loca
             case vd => vd
           }
           ctx ++ nc
-      })
+      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
+    case _ =>
+      None
   }
 }
 
 object Binder extends ParametricRule {
   def apply(controller: Controller, home: Term, args: List[Term]) = {
-    if (args.length != 1 || args.length != 2) throw ParseError("one or two arguments expected")
+    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
     val (pattern,ln) = args match {
       case List(h,OMV(n)) =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h,STeX.universal_quantifier(n,_,OMV(m))) if n == m =>
         (new Rules.Pattern(h),Some(n))
       case List(h) =>
         (new Rules.Pattern(h),None)

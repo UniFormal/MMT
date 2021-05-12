@@ -88,6 +88,10 @@ class Unparsed(input: String, error: String => Nothing) extends Reader[Char] {se
       if (test(head)) next() + takeWhile(test) else ""
    }
 
+   def takeWhileSafe(test: Char => Boolean): String = {
+      if (!empty && test(head)) next() + takeWhileSafe(test) else ""
+   }
+
    /** drops a String if possible
     *  @return true if dropped
     */

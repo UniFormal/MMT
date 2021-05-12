@@ -5,7 +5,6 @@ import info.kwarc.mmt.api.archives.{Build, BuildTargetModifier}
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.ErrorReturn
-import info.kwarc.mmt.stex.xhtml.XHTML
 
 object EditorExtension extends STeXExtension {
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.tail match {
@@ -25,8 +24,7 @@ object EditorExtension extends STeXExtension {
       File.write(f,ret)
       server.resolveDocumentQuery(request.query) match {
         case (_,Some(archive),path) =>
-          controller.buildArchive(List(archive.id),"stex-xhtml",Build,path.setExtension("tex"))
-          controller.buildArchive(List(archive.id),"xhtml-omdoc",Build,path.setExtension("xhtml"))
+          controller.buildArchive(List(archive.id),"stex-omdoc",Build,path.setExtension("tex"))
       }
       Some(ServerResponse.TextResponse("OK."))
     case _ => None

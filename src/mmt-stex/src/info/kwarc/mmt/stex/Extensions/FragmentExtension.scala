@@ -5,18 +5,18 @@ import info.kwarc.mmt.api.{CPath, ContentPath, NamespaceMap, Path, StructuralEle
 import info.kwarc.mmt.api.objects.{OMID, OMS, Obj, Term}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
-import info.kwarc.mmt.api.utils.MMTSystem
+import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.Extensions.OMDocExtension.{HasLanguage, controller}
+import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HasLanguage, OMDocHTML}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.{STeX, translations}
-import info.kwarc.mmt.stex.xhtml.{DeclarationAnnotation, OMDocAnnotation, PreElement, PreParent, PreTheory, SemanticParsingState, TheoryAnnotation, XHTML, XHTMLNode, XHTMLOMDoc}
 
 import scala.xml.Node
 
 trait FragmentExtension extends STeXExtension {
-  def doConstant(c : Constant, preview : Boolean) : Option[XHTMLNode] = None
-  def doDerivedDecl(node : XHTMLNode, c : DerivedDeclaration, preview : Boolean) : Unit = {}
-  def doExpression(node : XHTMLNode, tm : Term, component : Option[CPath], preview : Boolean) : Unit = {}
+  def doConstant(c : Constant, preview : Boolean) : Option[HTMLNode] = None
+  def doDerivedDecl(node : HTMLNode, c : DerivedDeclaration, preview : Boolean) : Unit = {}
+  def doExpression(node : HTMLNode, tm : Term, component : Option[CPath], preview : Boolean) : Unit = {}
 }
 
 object FragmentExtension extends STeXExtension {
@@ -40,9 +40,9 @@ object FragmentExtension extends STeXExtension {
   }
 
 
-  class SymbolDocAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) with HasLanguage {
+  class SymbolDoc(node : HTMLNode) extends HTMLConstant(node) with HasLanguage {
     lazy val symbol = Path.parseMS(resource,NamespaceMap.empty)
-
+/*
     override def open(state: SemanticParsingState): Unit = state.getParent match {
       case t : TheoryAnnotation =>
         t.languagemodule.foreach {p =>
@@ -59,15 +59,20 @@ object FragmentExtension extends STeXExtension {
       case Some(p : PreTheory) =>
         List(Constant(OMID(p.path),p.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(symbol,language,node.children)),Some("symboldoc")))
     }
+ */
   }
 
-  override lazy val xhtmlRules = List(
-    XHTMLOMDoc.toRule("stex:symboldoc")((n,s) => new SymbolDocAnnotation(n))
-  )
-
+  override def rules: List[HTMLRule] = List(new HTMLRule {
+    override def rule(s: HTMLParser.ParsingState): PartialFunction[HTMLNode, HTMLNode] = {
+      case n if property(n).contains("stex:symboldoc") => new SymbolDoc(n)
+    }
+  })
+/*
   override def checkingRules: List[PartialFunction[(StructuralElement, SemanticParsingState), StructuralElement]] = List(
     {case (c : Constant,s) if c.rl.contains("symboldoc") => controller add c; c}
   )
+
+ */
 
   def doFragment(path : Path) = {
     controller.getO(path) match {
@@ -75,8 +80,7 @@ object FragmentExtension extends STeXExtension {
         val (doc,body) = server.emptydoc
         body.attributes(("","style")) = "background-color:white"
         stripMargins(doc)
-        val border = XHTML(<div style="font-size:small"/>)
-        body.add(border)
+        val border = body.add(<div style="font-size:small"/>)
         border.add(<font size="+2">{" ☞ "}</font>)
         border.add(<code>{elem.path.toString}</code>)
         border.add(<hr/>)
@@ -84,7 +88,7 @@ object FragmentExtension extends STeXExtension {
         val exts = server.extensions.collect {case fe : FragmentExtension => fe}
         elem match {
           case c : Constant =>
-            var ret : Option[XHTMLNode] = None
+            var ret : Option[HTMLNode] = None
             exts.collectFirst{
               case s if {ret = s.doConstant(c,true);ret}.isDefined => ret
             }
@@ -103,36 +107,36 @@ object FragmentExtension extends STeXExtension {
   }
 
   // TODO LANGUAGE!
-  def getFragment(ce : StructuralElement) : XHTMLNode = {
+  def getFragment(ce : StructuralElement) : String = {
     def text(s : String) = scala.xml.Text(s)
     var ret : List[Path] = Nil
     controller.depstore.query(ce.path,-SymdocRelational.documents)(s => ret ::= s)
     ret.flatMap(controller.getO).headOption match {
       case Some(c : Constant) => c.df match {
         case Some(STeX.symboldoc(_,"en",str)) => // TODO language
-          return XHTML.applyString(XHTML.unescape(str))
+          return XMLEscaping.unapply(str)
         case _ =>
       }
       case _ =>
     }
     ce match {
       case c : Constant =>
-        val macroname = PreElement.getMacroName(c)
-        XHTML(<table>
+        val macroname = OMDocHTML.getMacroName(c)
+        (<table>
           <tr><td><b>Type</b></td><td>{c.tp.map(server.xhtmlPresenter.asXML(_,Some(c.path $ TypeComponent))).getOrElse(text("None"))}</td></tr>
-          {macroname.foreach{name => PreElement.getNotations(c,controller).map{
+          {macroname.foreach{name => OMDocHTML.getNotations(c,controller).map{
             case ("",_,n) =>
-              <tr><td>{"\\"+name}</td><td>{n.node}</td></tr>
+              <tr><td>{"\\"+name}</td><td>{n}</td></tr>
             case (p,_,n) =>
-              <tr><td>{"\\"+name+"[" + p + "]"}</td><td>{n.node}</td></tr>
+              <tr><td>{"\\"+name+"[" + p + "]"}</td><td>{n}</td></tr>
           }}}
-        </table>)
+        </table>).toString()
       case _ =>
         ???
     }
   }
 
-  def stripMargins(ltx : XHTMLNode) = {
+  def stripMargins(ltx : HTMLNode) = {
     val body = ltx.get("body")()().head
     body.attributes(("", "style")) = "margin:0;padding:0;"
     val doc = body.get("div")()("ltx_page_main").head

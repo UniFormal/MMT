@@ -25,15 +25,21 @@ object LaTeXML {
   private var paths: Seq[String] = Nil
   private var includestyles = true
   private var initialized = false
+  private var mathhub : File = File("")
   // private var reboot: Boolean = false
   // private var nopost: Boolean = false
 
   def latexmlc(in: File, out: File, log_out : Option[String => Unit] = None,log_err : Option[String => Unit] = None) = {
-    var args = List("--dest=" + out.toString, in.toString)
+    var args = List("--dest=" + out.toString, in.toString,"--noparse")
     if (expire != 0) args ::= "--expire=" + expire.toString
     if (port != 0) args ::= "--port=" + port.toString
     preloads.foreach(args ::= "--preload=" + _)
     if (includestyles) args ::= "--includestyles"
+    val path = mathhub / ".ltxml"
+    if ((path / "sTeX.xsl").exists()) {
+      args ::= "--path=" + path.toString
+      args ::= "--stylesheet=" + (path / "sTeX.xsl").toString
+    }
     val log = (log_out,log_err) match {
       case (None,None) => None
       case (o,e) => Some(ProcessLogger(o.getOrElse(_ => ()),e.getOrElse(_ => ())))
@@ -79,11 +85,17 @@ object LaTeXML {
 
   def initialize(controller: Controller) {
     initialized = true
+
     controller.getEnvVar("LATEXMLC") match {
       case Some(s) =>
         latexmlc_cmd = s
       case None =>
         which("latexmlc").foreach(latexmlc_cmd = _)
+    }
+    controller.getEnvVar("MATHHUB") match {
+      case Some(s) =>
+        mathhub = File(s)
+      case None =>
     }
   }
   def initializeIfNecessary(controller: Controller) = if (!initialized) initialize(controller)

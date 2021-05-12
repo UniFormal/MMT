@@ -5,14 +5,18 @@ import info.kwarc.mmt.api.presentation.{ObjectPresenter, PresentationContext, Re
 import info.kwarc.mmt.api.{CPath, ContentPath, StructuralElement}
 import info.kwarc.mmt.stex
 import info.kwarc.mmt.stex.STeX.StringLiterals
-import info.kwarc.mmt.stex.xhtml.{PreElement, XHTML, XHTMLNode}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
-case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : XHTMLNode, fragment: String, arity : String, allnotations : List[(String,String,XHTMLNode)])
+import scala.xml.Elem
+
+case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,HTMLNode)])
 
 trait STeXPresenter extends ObjectPresenter {
+  lazy val server = controller.extman.get(classOf[STeXServer]).head
   protected def getComponents(cp : ContentPath, tm : Term) : Option[STeXNotation] = controller.getO(cp) match {
     case Some(c: StructuralElement) =>
-      val notations = PreElement.getNotations(c,controller)
+      val notations = OMDocHTML.getNotations(c,controller)
       val notationFragment = tm.metadata.getValues(STeX.meta_notation).headOption match {
         case Some(STeX.StringLiterals(s)) => s
         case _ => ""
@@ -20,11 +24,11 @@ trait STeXPresenter extends ObjectPresenter {
       // TODO withnotations
       val notation = notations.collectFirst { case (s,p, n) if s == notationFragment => n } match {
         case Some(n) =>
-          n
+          HTMLParser(n.toString)(new ParsingState(controller,server.extensions.flatMap(_.rules)))
         case _ =>
           return None
       }
-      val macroname = PreElement.getMacroName(c) match {
+      val macroname = OMDocHTML.getMacroName(c) match {
         case Some(n) => n
         case _ =>
           "???"
@@ -78,7 +82,8 @@ class STeXPresenterML extends InformalMathMLPresenter with STeXPresenter {
           case _ => pc.out({<mi>{vd.name}</mi>}.toString())
         }
         0
-      case STeX.informal(node) =>
+      case STeX.informal(n) =>
+        val node = HTMLParser(n)(new ParsingState(controller,server.extensions.flatMap(_.rules)))
         node.attributes(("","mathbackground")) = "#ff0000"
         pc.out(node.toString)
         0

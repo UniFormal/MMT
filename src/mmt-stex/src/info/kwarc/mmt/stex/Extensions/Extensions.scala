@@ -5,7 +5,8 @@ import info.kwarc.mmt.api.frontend.Extension
 import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
 import info.kwarc.mmt.stex.STeXServer
-import info.kwarc.mmt.stex.xhtml.{SemanticParsingState, XHTMLNode, XHTMLParsingState}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
+import info.kwarc.mmt.stex.xhtml.HTMLRule
 
 
 abstract class Translator(val language : String) {
@@ -15,9 +16,9 @@ abstract class Translator(val language : String) {
 
 trait STeXExtension extends Extension {
   lazy val server = controller.extman.get(classOf[STeXServer]).head
-  def xhtmlRules : List[PartialFunction[(XHTMLNode,XHTMLParsingState), Unit]] = Nil
+  def rules : List[HTMLRule] = Nil
   def serverReturn(request: ServerRequest): Option[ServerResponse] = None
-  def doHeader(head : XHTMLNode,body : XHTMLNode) : Unit = {}
-  def checkingRules : List[PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]] = Nil
+  def doHeader(head : HTMLNode,body : HTMLNode) : Unit = {}
+  //def checkingRules : List[PartialFunction[(StructuralElement,SemanticParsingState), StructuralElement]] = Nil
   // def translators : List[Translator] = Nil
 }

@@ -11,11 +11,12 @@ import info.kwarc.mmt.api.modules.{Link, Module, Theory}
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
 import info.kwarc.mmt.api.parser.{ParsingStream, ParsingUnit, SourcePosition, SourceRef, SourceRegion}
 import info.kwarc.mmt.api.utils.AnaArgs.OptionDescrs
-import info.kwarc.mmt.api.utils.FilePath.filePathToList
 import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, OptionDescr, StringArg, URI}
 import info.kwarc.mmt.stex.Extensions.STeXExtension
-import info.kwarc.mmt.stex.xhtml.{ConstantAnnotation, DeclarationAnnotation, ModuleAnnotation, PreElement, PreParent, PreTheory, SemanticParsingState, SourceRefAnnotation, StructureAnnotation, TheoryAnnotation, XHTML, XHTMLAnnotation, XHTMLNode, XHTMLParsingState, XHTMLText}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
 import info.kwarc.mmt.api.symbols.Constant
+
+import scala.xml.parsing.XhtmlParser
 
 trait XHTMLParser extends TraversingBuildTarget {
 
@@ -36,25 +37,27 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
-  def buildFileActually(bf: BuildTask, state : XHTMLParsingState) = {
-    log("building " + bf.inFile)
-    LaTeXML.latexmlc(bf.inFile,bf.outFile,Some(s => log(s,Some(bf.inFile.toString))),Some(s => log(s,Some(bf.inFile.toString)))).foreach {
+  def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
+    log("building " + inFile)
+    LaTeXML.latexmlc(inFile,outFile.setExtension("shtml"),Some(s => log(s,Some(inFile.toString))),Some(s => log(s,Some(inFile.toString)))).foreach {
       case (i,ls) if i > Level.Warning =>
-        bf.errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
+        errorCont(new STeXError("LaTeXML: " + ls.head,Some(ls.tail.mkString("\n")),Some(i)))
       case _ =>
     }
-    if (!bf.outFile.exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
-    log("postprocessing " + bf.inFile)
-    val doc = XHTML.parse(bf.outFile,Some(state))
-    doc.get("div")()("ltx_page_logo").foreach(_.delete)
-    doc.get("div")()("ltx_page_footer").foreach(f => if (f.isEmpty) f.delete)
+    if (!outFile.setExtension("shtml").exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
+    //log("postprocessing " + inFile)
+    val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
+    //doc.get("div")()("ltx_page_logo").foreach(_.delete)
+    //doc.get("div")()("ltx_page_footer").foreach(f => if (f.isEmpty) f.delete)
     //val (mmtdoc,missing) = PreElement.extract(doc)(controller)
-    File.write(bf.outFile, doc.toString)
-    bf.outFile.up.children.foreach {
+    outFile.setExtension("shtml").delete()
+    File.write(outFile, doc.toString)
+    outFile.up.children.foreach {
       case f if f.getExtension.contains("css") => f.delete()
       case _ =>
     }
-    log("Finished: " + bf.inFile)
+    log("written: " + outFile)
+    //log("Finished: " + inFile)
     //(mmtdoc,missing)
     doc
   }
@@ -69,19 +72,13 @@ class LaTeXToHTML extends XHTMLParser {
 
   override def buildFile(bf: BuildTask): BuildResult = {
     val extensions = stexserver.extensions
-    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
-    val state = new XHTMLParsingState(xhtmlrules,bf.errorCont)
-    buildFileActually(bf,state)
+    val rules = extensions.flatMap(_.rules)
+    //val state = new XHTMLParsingState(xhtmlrules,bf.errorCont)
+    val state = new HTMLParser.ParsingState(controller,rules)
+    val doc = buildFileActually(bf.inFile,bf.outFile,state,bf.errorCont)
+    log("Finished: " + bf.inFile)
     BuildResult.empty
   }
-}
-
-
-class PreDocument(val path : DPath) extends PreParent {
-  var level : Int = 0
-  // TODO Sections
-  val document = new Document(path)
-  override def getElement(implicit state : SemanticParsingState) : List[Document] = List(document)
 }
 
 class HTMLToOMDoc extends Importer with XHTMLParser {
@@ -91,19 +88,42 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
 
   override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
     log("postprocessing " + bt.inFile)
-    val dpath = bt.narrationDPath // / LocalName(filePathToList(bt.inPath.setExtension("omdoc")):_*)
+    val dpath = bt.narrationDPath
     val extensions = stexserver.extensions
-    val xhtmlrules = extensions.flatMap(_.xhtmlRules)
-    val trules = extensions.flatMap(_.checkingRules)
-    implicit val state = new SemanticParsingState(xhtmlrules,bt.errorCont,dpath,controller)
-    trules.foreach(state.addTransformSE)
-    XHTML.parse(bt.inFile,Some(state))
-    //index(state.maindoc.getElement)
+    val rules = extensions.flatMap(_.rules)
+    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    //val trules = extensions.flatMap(_.checkingRules)
+    //trules.foreach(state.addTransformSE)
+    HTMLParser(bt.inFile)(state)
     val doc = state.build
     index(doc)
     log("Finished: " + bt.inFile)
     BuildResult.empty
   }
+}
+
+class STeXToOMDoc extends Importer with XHTMLParser {
+  val key = "stex-omdoc"
+  override val inDim = info.kwarc.mmt.api.archives.source
+  val inExts = List("tex")
+  override def includeFile(name: String): Boolean = name.endsWith(".tex") && !name.startsWith("all.")
+  override def importDocument(bt: BuildTask, index: Document => Unit): BuildResult = {
+    val extensions = stexserver.extensions
+    val rules = extensions.flatMap(_.rules)
+    val dpath = bt.narrationDPath
+    val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("shtml")
+    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    //val trules = extensions.flatMap(_.checkingRules)
+    //trules.foreach(state.addTransformSE)
+    outFile.up.mkdirs()
+    buildFileActually(bt.inFile,outFile,state,bt.errorCont)
+    log("postprocessing " + bt.inFile)
+    val doc = state.build
+    index(doc)
+    log("Finished: " + bt.inFile)
+    BuildResult.empty
+  }
+
 }
 
 /*

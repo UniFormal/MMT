@@ -6,7 +6,7 @@ import info.kwarc.mmt.api.utils.{URI, XMLEscaping}
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX
 import info.kwarc.mmt.sequences.Sequences
-import info.kwarc.mmt.stex.xhtml.{XHTML, XHTMLNode}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 
 import scala.xml._
 import objects._
@@ -75,7 +75,7 @@ object STeX {
     def applySimple(n : Node) = OMA(OMS(sym),StringLiterals(n.toString()) :: Nil)
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`sym`),StringLiterals(n) :: Nil) =>
-        Some(XHTML.applyString(XHTML.unescape(n)))
+        Some(XMLEscaping.unapply(n))
       case _ => None
     }
   }
@@ -86,7 +86,7 @@ object STeX {
     val th = string.module
     val tp = th ? "symboldoc"
     val sym = th ? "symboldocfor"
-    def apply(symbol : ContentPath,lang : String,doc : List[XHTMLNode]) = {
+    def apply(symbol : ContentPath,lang : String,doc : List[HTMLNode]) = {
       OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals(XMLEscaping({<div>{doc.map(_.node)}</div>}.toString))))
     }
     def unapply(tm : Term) = tm match {

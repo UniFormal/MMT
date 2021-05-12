@@ -4,7 +4,6 @@ import info.kwarc.mmt.api.{Path, archives}
 import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.utils.{FilePath, JSON, JSONArray, JSONObject, JSONString, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.xhtml.XHTML
 
 object BrowserExtension extends STeXExtension {
   override def serverReturn(request: ServerRequest): Option[ServerResponse] = request.path.lastOption match {
@@ -55,7 +54,7 @@ object BrowserExtension extends STeXExtension {
     val retls = controller.backend.getArchives.flatMap { a =>
       val tophtml = a / RedirectableDimension("xhtml")
       val toptex = a / archives.source
-      if (tophtml.exists() && tophtml.children.nonEmpty) {
+      if (a.properties.get("format").contains("stex")) {
         val (grp, name) = a.id.split('/') match {
           case Array(a, s) if !groups.contains(a) =>
             groups ::= a
