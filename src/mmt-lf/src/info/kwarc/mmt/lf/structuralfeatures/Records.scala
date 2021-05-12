@@ -84,14 +84,16 @@ object Records {
    * @param parent
    * @return
    */
-  def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context])(implicit parent : GlobalName) = {
+  def introductionDeclaration(recType: Term, decls: List[InternalDeclaration], nm: Option[String], context: Option[Context], resolveDeclsAsContext: Boolean = true)(implicit parent : GlobalName) = {
     val Ltp = () => {
       val declsCtx = decls.map(d => OMV(LocalName(d.name)) % d.internalTp)
       val declsTp = decls.filter(_.isTypeLevel).map(d => OMV(LocalName(d.name)) % d.internalTp)
       val params = context.getOrElse(Context.empty)++declsTp
-      val declsTm = decls.filterNot(_.isTypeLevel).map(d => d.internalTp)
+      val tmls = decls.filterNot(_.isTypeLevel)
+      val tr = OMSReplacer(gn => tmls.find(_.externalPath == gn).map(_.name.last.unary_!).map(OMV(_)))
+      val declsTm = tmls.map(d => OMV(d.name.last.unary_!) % (if (resolveDeclsAsContext) tr(d.internalTp, Context.empty) else d.internalTp))
       val TpTmDecls = decls.filter(_.isTypeLevel).map(d => OMV(LocalName("x_"+d.name)) % OMV(d.name))
-      PiOrEmpty(params++TpTmDecls, Arrow(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
+      PiOrEmpty(params++TpTmDecls, PiOrEmpty(declsTm, ApplyGeneral(recType, params.map(_.toTerm))))
     }
     makeConst(uniqueLN(nm getOrElse makeName), Ltp)
   }

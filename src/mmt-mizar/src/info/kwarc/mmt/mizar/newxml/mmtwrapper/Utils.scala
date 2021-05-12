@@ -5,6 +5,7 @@ import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.ConstantScala
 import info.kwarc.mmt.lf.{BinaryLFConstantScala, _}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.newxml.syntax.CorrectnessConditions
 
 object MizarPrimitiveConcepts {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"
@@ -67,10 +68,9 @@ object MizarPrimitiveConcepts {
     }
   }
   object constant {
-    def apply(name: String): OMID = OMID(constantName(name))
-
+    def apply(name: String): OMID = OMS(constantName(name))
     def unapply(tm: Term) = tm match {
-      case OMID(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
+      case OMS(gn:GlobalName) if (gn == constantName(gn.name.toString)) => Some(gn.name.toString)
       case _ => None
     }
   }
@@ -120,7 +120,7 @@ object MizarPrimitiveConcepts {
   object iff extends BinaryLFConstantScala(MizarTh, "iff")
   object not extends UnaryLFConstantScala(MizarTh, "not")
   def eqCon = constantName("eq")
-  object eq extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
+  object equal extends BinaryLFConstantScala(eqCon.module, eqCon.name.toString)
   def neqCon = constantName("neq")
   object neq extends BinaryLFConstantScala(neqCon.module, neqCon.name.toString)
   def thesis = constantName("thesis")
@@ -140,21 +140,17 @@ object MizarPrimitiveConcepts {
   object proof extends UnaryLFConstantScala(ProofsTh, "ded")
   object Uses extends TernaryLFConstantScala(MizarTh, "using")
   object ProofByExample extends BinaryLFConstantScala(MizarTh, "proof_by_example")
-  def uses(claim: Term, usedFacts: List[Term]) = Uses(claim, OMI(usedFacts.length), Sequence(usedFacts))
+  def uses(claim: Term, usedFacts: List[Term]) = Uses(OMI(usedFacts.length), Sequence(usedFacts), claim)
   def zeroAryAndPropCon = constant("0ary_and_prop")
   object oneAryAndPropCon extends UnaryLFConstantScala(MizarTh, "1ary_and_prop")
   object andInductPropCon extends TernaryLFConstantScala(MizarTh, "and_induct_prop")
-  def consistencyTp(argTps: List[Term], cases: List[Term], caseRes: List[Term], direct: Boolean, resKind: String) = {
-    val suffix = if (direct) "Dir" else "Indir" + resKind
-    ApplyGeneral(OMS(MizarPatternsTh ? LocalName("consistencyTp"+suffix )), List(OMI(argTps.length), Sequence(argTps), OMI(cases.length), Sequence(cases), Sequence(caseRes)))
+  def correctnessCondClaim(correctnessCondition: CorrectnessConditions, pattern: String): Term = {
+    OMS(MizarPatternsTh ? LocalName(correctnessCondition.sort+pattern.capitalize))
   }
 
-  def attr(t : Term) = apply(constant("attr"), t)
-  def adjective(cluster : Term, typ : Term) = apply(constant("adjective"), typ, cluster)
-  def cluster(a1 : Term, a2 : Term) = apply(constant("cluster"), a1, a2)
-  def choice(tp : Term) = apply(constant("choice"), tp)
-  def fraenkel(v : String, t : Term, p : Term, f : Term) =
-    apply(constant("fraenkel"), t, Lambda(LocalName(v), any, p), Lambda(LocalName(v), any, f))
+  def attr(t : Term) = Apply(constant("attr"), t)
+  def adjective(cluster : Term, typ : Term) = Apply (cluster, typ)
+  def choice(tp : Term) = Apply(constant("choice"), tp)
 
   /**
    * invoking specification axiom for sets
@@ -171,34 +167,33 @@ object MizarPrimitiveConcepts {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val cond = info.kwarc.mmt.lf.Pi(argsCont, condition)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(constant("fraenkelTerm"), List(universe,OMI(args.length),cond,expr):_*)
+    ApplyGeneral(constant("fraenkelTerm"), List(universe,OMI(args.length),expr,cond))
   }
   def simpleFraenkelTerm(expression: Term, args: List[OMV], universe:Term) = {
     val argsCont = Context(args.map(_.%(universe)):_*)
     val expr = info.kwarc.mmt.lf.Pi(argsCont, expression)
-    apply(constant("simpleFraenkelTerm"), List(universe,OMI(args.length),expr):_*)
+    ApplyGeneral(constant("simpleFraenkelTerm"), List(universe,OMI(args.length),expr))
   }
 
   val numRT = new uom.RepresentedRealizedType(any, uom.StandardInt)
   def num(i: Int) = numRT(i)
 
+  def dummyTerm(tp: Term) = Apply(constant("dummyTerm"), tp)
   object SimpleTypedAttrAppl {
     def apply(baseTp: Term, attrs: List[Term]) = {
-      val attrApplSym = constant("adjective")
-      attrs.foldRight[Term](baseTp)((tp:Term, attr:Term) => ApplyGeneral(attrApplSym, List(tp,attr)))
+      attrs.foldLeft[Term](baseTp)((tp:Term, attr:Term) => Apply(attr, tp))
     }
     def unapply(tm: Term) : Option[(Term, List[Term])] = tm match {
-      case ApplyGeneral(constant("adjective"), tp::attr) => Some((tp, attr))
+      case ApplyGeneral(OMS(gn), attr) if (gn.name.lastOption.getOrElse(gn.name).toString == "adjective") => Some((tp, attr))
       case _ => None
     }
   }
   object depTypedAttrAppl {
     def apply(n: Int, nArgsDepType: Term, attrs: List[Term]) = {
       val m = attrs.length
-      val attributes = MMTUtils.flatten(attrs)
       val attrApplSym = constant("attr_appl")
       val (nTm, mTm) = (OMI(n), OMI(m))
-      ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, attributes))
+      ApplyGeneral(attrApplSym, List(nTm, mTm, nArgsDepType, Sequence(attrs)))
     }
     def unapply(tm: Term) : Option[(Int, Term, List[Term])] = tm match {
       case ApplyGeneral(constant("attr_appl"), List(nTm, mTm, nArgsDepType, attributes)) =>
@@ -219,9 +214,4 @@ object MMTUtils {
 
   def freeVarContext(varTps:List[Term]): Context =
     varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName("x_"+i)) % tp }
-  def freeVars(varTps:List[Term], nm:Option[String]=None): Context =
-  varTps.zipWithIndex.map {case (tp:Term,i:Int) => OMV(LocalName(nm.getOrElse("x_")+i)) % MizarPrimitiveConcepts.any }
-  def freeAlternatingVars(varTps:List[Term], nm:List[String]): List[OMV] =
-    varTps.zipWithIndex.flatMap {case (tp:Term,i:Int) => nm map {s => OMV(LocalName(s+i))} }
-  def flatten(tms:List[Term]) : Term = MizSeq.Sequence.apply(tms:_*)
 }

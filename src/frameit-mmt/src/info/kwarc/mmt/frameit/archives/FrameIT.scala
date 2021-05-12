@@ -33,7 +33,7 @@ object FrameIT {
       LocalName("Root"),
     )
 
-    val defaultSituationTheory: SituationTheoryPath = SituationTheoryPath(
+    val defaultRootSituationTheory: SituationTheoryPath = SituationTheoryPath(
       SituationSpace(rootDocument ? "DefaultSituationSpace"),
       LocalName("Root")
     )

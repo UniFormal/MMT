@@ -2,6 +2,7 @@ package info.kwarc.mmt.lsp
 
 import java.util.concurrent.CompletableFuture
 import org.eclipse.lsp4j.{ApplyWorkspaceEditParams, ApplyWorkspaceEditResponse, CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionOptions, CompletionParams, ConfigurationParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageActionItem, MessageParams, MessageType, PublishDiagnosticsParams, ReferenceParams, RegistrationParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensLegend, SemanticTokensParams, SemanticTokensRangeParams, SemanticTokensWithRegistrationOptions, SemanticTokensWorkspaceCapabilities, ServerCapabilities, ShowMessageRequestParams, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextDocumentSyncKind, TextEdit, UnregistrationParams, WorkspaceEdit, WorkspaceFolder, WorkspaceSymbolParams}
+
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware, LanguageServer, TextDocumentService, WorkspaceService}
 import org.eclipse.lsp4j.jsonrpc.{Endpoint, Launcher, MessageConsumer, RemoteEndpoint}
 import org.eclipse.lsp4j.jsonrpc.messages.{Message, Either => JEither}

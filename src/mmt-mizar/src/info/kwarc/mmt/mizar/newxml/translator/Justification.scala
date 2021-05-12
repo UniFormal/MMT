@@ -2,125 +2,101 @@ package info.kwarc.mmt.mizar.newxml.translator
 
 import info.kwarc.mmt._
 import api._
+import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
 import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
+import info.kwarc.mmt.mizar.newxml.translator.JustificationTranslator.lambdaBindDefCtxArgs
 import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
-import info.kwarc.mmt.mizar.newxml.translator.contextTranslator.{translate_new_Variable}
 import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
 import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
 import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
 import objects._
 import mizar.newxml.syntax._
 
-object justificationTranslator {
-  def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext): Option[objects.Term] = just match {
-    case Straightforward_Justification(pos, _refs) => None
-    case _: Block =>
-      defContext.enterProof
-      val usedFacts: List[Term] = usedInJustification(just)
-      defContext.exitProof
-      //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
-      Some(uses(claim, usedFacts))
-    case Scheme_Justification(_, _, _, _, _, _refs) => Some(uses(claim, globalReferences(_refs)))
-  }
-  def globalReferences(refs: List[Reference]): List[Term] = refs flatMap {
-    case ref: Theorem_Reference => Some(ref.referencedLabel())
-    case ref: Definition_Reference => Some(ref.referencedLabel())
-    case _ => None
-  }
-  def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
-    val claim = translate_Claim(it)
-    defContext.enterProof
-    val usedFacts: List[Term] = it._just::it._iterSteps.map(_._just) flatMap(usedInJustification)
-    defContext.exitProof
-    //TODO: actually translate the proofs, may need additional arguments from the context, for instance the claim to be proven
-    uses(claim, usedFacts)
-  }
-  def translate_Exemplification(exemplification: Exemplification)(implicit defContext: => DefinitionContext): List[objects.Term] = {
-    exemplification._exams map { exam =>
-      val exemTm: Term = translate_Term(exam._tm)(defContext)
-      val exemTp: Term = TranslationController.inferType(exemTm, defContext.args++defContext.getLocalBindingVars)
-      ProofByExample(exemTp, exemTm)
-    }
-  }
-  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Option[Term]) = {
+object JustificationTranslator {
+  /** whether to also translate proof steps or only references to used statements */
+  val proofSteps = false
+  def translate_Proved_Claim(provedClaim: ProvedClaim)(implicit defContext: => DefinitionContext): (Term, Term) = {
     val claim = provedClaim._claim match {
-      case Diffuse_Statement(_) => provedClaim._just.get match {
-        case Block(_, _, _items) =>
-          val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
-          And(claims.map(translate_Claim(_)(defContext)))
-        case _ => trueCon
-      }
+      case Diffuse_Statement(_) => trueCon
       case _ => translate_Claim(provedClaim._claim)(defContext)
     }
     val prf = (provedClaim._claim, provedClaim._just) match {
       case (_, Some(just)) => translate_Justification(just, claim)(defContext)
-      case (it: Iterative_Equality, None) => Some(translate_Iterative_Equality_Proof(it)(defContext))
+      case (it: Iterative_Equality, None) => translate_Iterative_Equality_Proof(it)(defContext)
       case (_, None) => throw ProvedClaimTranslationError("No proof given for claim, which is not an iterative-equality (proving itself). ", provedClaim)
     }
     (proof(claim), prf)
   }
-  def translate_Diffuse_Statement(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext) = _just match {
-    case Some(Block(_, _, _items)) =>
-      val claims = _items.map(_._subitem match { case c: Claim => (true, Some(c)) case _ => (false, None) }).filter(_._1).map(_._2.get)
-      And(claims.map(translate_Claim(_)))
-    case _ => trueCon
+  def translate_Justification(just:Justification, claim: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): objects.Term = just match {
+    case sj: Scheme_Justification if proofSteps => translate_Scheme_Justification(sj)
+    case _: Justification =>
+      if (proofSteps) defContext.enterProof
+      val usedFacts: List[Term] = usedInJustification(just)
+      if (proofSteps) defContext.exitProof
+      lambdaBindDefCtxArgs(uses(claim, usedFacts))
   }
+  def globalReferences(refs: List[Reference]): List[Term] = refs.filter(_.isInstanceOf[Theorem_Reference]).map(_.asInstanceOf[GlobalReference].referencedItem)
+  private def translate_Scheme_Justification(sj:Scheme_Justification) = lf.ApplyGeneral(OMS(sj.referencedScheme),
+    sj._refs.map(_.referencedLabel.asInstanceOf[GlobalName]).map(OMS(_)))
+  private def lambdaBindDefCtxArgs(tm: Term)(implicit defContext: DefinitionContext, bindArgs: Boolean = true): Term = {
+    if (defContext.args.nonEmpty && bindArgs) lambdaBindArgs(tm)(defContext.args.map(_.toTerm)) else tm
+  }
+  private def translate_Iterative_Equality_Proof(it: Iterative_Equality)(implicit defContext: DefinitionContext): objects.Term = {
+    val claim = translate_Claim(it)
+    val usedFacts: List[Term] = it._just::it._iterSteps._iterSteps.map(_._just) flatMap usedInJustification
+    lambdaBindDefCtxArgs(uses(claim, usedFacts))
+  }
+  private def translate_Exemplification(exemplification: Exemplification)(implicit defContext: => DefinitionContext): List[objects.Term] = {
+    exemplification._exams map { exam =>
+      val exemTm: Term = translate_Term(exam._tm)(defContext)
+      val exemTp: Term = TranslationController.inferType(exemTm)(defContext)
+      ProofByExample(exemTp, exemTm)
+    }
+  }
+  private def translate_Diffuse_Statement_Claim(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext): Term = trueCon
   def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
-    case Straightforward_Justification(_, _refs) => globalReferences(_refs)
-    case Block(_, _, _items) =>
-      def translateSubitems(subs: List[Subitem]): List[Term] = subs match {
-        case Nil => Nil
-        case it :: tail => it match {
-          case st: Statement =>
-            val ProvedClaim(clm, j) = st.prfClaim
-            val claim = clm match {
-              case ds: Diffuse_Statement => translate_Diffuse_Statement(ds, j)(defContext)
-              case _ => translate_Claim(clm)(defContext)
-            }
-            st match {
+    case Straightforward_Justification(_refs) => globalReferences(_refs)
+    case Block(_, _items) =>
+      if (proofSteps) defContext.enterProof
+      def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
+        case st: Statement =>
+          val usedInJust = (st.prfClaim._claim, st.prfClaim._just) match {
+            case (it:Iterative_Equality, None) => it._iterSteps._iterSteps.map(_._just) flatMap(usedInJustification(_)(defContext))
+            case (_: Claim, jO) => usedInJustification(jO.get)(defContext)
+          }
+          (if (proofSteps) {
+            List(st match {
               case cs: Choice_Statement =>
-                val (addArgs, _) = translate_Choice_Statement(cs)(defContext)
+                val (addArgs, (claim, _), _) = translate_Choice_Statement(cs)(defContext)
                 defContext.addArguments(addArgs)
-              case _ =>
-            }
-            defContext.enterProof
-            val trIt = st.prfClaim._claim match {
-              case _: Diffuse_Statement => j map (usedInJustification(_)(defContext)) getOrElse Nil
-              case Proposition(_, _, Thesis(_)) => j map (usedInJustification(_)(defContext)) getOrElse Nil
-              case it: Iterative_Equality if (j == None) =>
-                val And(clms) = translate_Claim(it)(defContext)
-                val justs = it._just :: it._iterSteps.map(_._just)
-                clms ::: justs.flatMap(usedInJustification(_)(defContext))
-              case claim =>
-                translate_Claim(claim)(defContext) :: (j map (usedInJustification(_)(defContext)) getOrElse Nil)
-            }
-            defContext.exitProof
-            trIt ::: translateSubitems(tail)
-          case ex: Exemplification => translate_Exemplification(ex)(defContext) ::: translateSubitems(tail)
-          case Per_Cases(_just) =>
-            val (caseBlocks, remainingTail) = tail.span { case _: Case_Block => true case _ => false }
-            val usedInCases = caseBlocks flatMap { case just => translateSubitems(List(just)) }
-            usedInJustification(_just)(defContext):::usedInCases:::translateSubitems(remainingTail)
-          case Assumption(ass) => translateSubitems(tail)
-          case Existential_Assumption(_qual, _) =>
-            _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach (defContext.addLocalBindingVar)
-            translateSubitems(tail)
-          case _: Reduction => translateSubitems(tail) //TODO: translate this to something
-          case _: Identify => translateSubitems(tail)
-          case _@ Default_Generalization(_qual, _) =>
-            _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach (defContext.addLocalBindingVar)
-            translateSubitems(tail)
-          case _@ Generalization(_qual, _) =>
-            _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach (defContext.addLocalBindingVar)
-            translateSubitems(tail)
-          case prDef: PrivateDefinition =>
-            // This will add the definition as to the list of local definitions inside the definition context
-            translate_Definition(prDef)(defContext)
-            translateSubitems(tail)
-          case _ => Nil
-        }
+                claim
+              case ds: Diffuse_Statement => translate_Diffuse_Statement_Claim(ds, st.prfClaim._just)(defContext)
+              case _ => translate_Claim(st.prfClaim._claim)(defContext)
+            })
+          } else Nil) ::: usedInJust
+        case Per_Cases(_just) => usedInJustification(_just)(defContext)
+        case ex: Exemplification if (proofSteps) => translate_Exemplification(ex)(defContext)
+        case Existential_Assumption(_qual, _) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          Nil
+        case Default_Generalization(_qual, _conds) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          _conds foreach (cl => defContext.addAssumption(translate_Claim(cl)(defContext)))
+          Nil
+        case Generalization(_qual, _conds) if (proofSteps) =>
+          _qual._children.flatMap(contextTranslator.translate_Context(_)(defContext)) foreach defContext.addLocalBindingVar
+          _conds foreach (cl => defContext.addAssumption(translate_Claim(cl)(defContext)))
+          Nil
+        case prDef: PrivateDefinition if (proofSteps) =>
+          // This will add the definition to the list of local definitions inside the definition context
+          translate_Definition(prDef)(defContext)
+          Nil
+        case _ => Nil
       }
-      translateSubitems(_items map (_._subitem))
-    case Scheme_Justification(_, _, _, _, _, _refs) => globalReferences(_refs)
+      val subitems = translateSubitems(_items map (_._subitem))
+      if (proofSteps) defContext.exitProof
+      subitems
+    case sj: Scheme_Justification => if (proofSteps) List(translate_Scheme_Justification(sj)) else OMS(sj.referencedScheme)::globalReferences(sj._refs)
   }
 }
