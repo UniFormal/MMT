@@ -1,7 +1,9 @@
 package info.kwarc.mmt.lsp
 
+import info.kwarc.mmt.api.SourceError
+
 import java.util.concurrent.CompletableFuture
-import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageParams, MessageType, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit, WorkspaceSymbolParams}
+import org.eclipse.lsp4j.{CodeAction, CodeActionParams, CodeLens, CodeLensParams, CompletionItem, CompletionList, CompletionParams, Diagnostic, DiagnosticSeverity, DidChangeConfigurationParams, DidChangeTextDocumentParams, DidChangeWatchedFilesParams, DidCloseTextDocumentParams, DidOpenTextDocumentParams, DidSaveTextDocumentParams, DocumentFormattingParams, DocumentHighlight, DocumentSymbol, DocumentSymbolParams, ExecuteCommandParams, FoldingRange, FoldingRangeRequestParams, Hover, HoverParams, InitializeParams, InitializeResult, InitializedParams, Location, LocationLink, MessageParams, MessageType, Position, PublishDiagnosticsParams, ReferenceParams, RenameParams, SemanticTokens, SemanticTokensDelta, SemanticTokensDeltaParams, SemanticTokensParams, SemanticTokensRangeParams, ServerCapabilities, SignatureHelp, SignatureHelpParams, SymbolInformation, TextDocumentPositionParams, TextEdit, WorkspaceEdit, WorkspaceSymbolParams}
 import org.eclipse.lsp4j.services.{LanguageClient, LanguageClientAware}
 import org.eclipse.lsp4j.jsonrpc.Launcher
 import org.eclipse.lsp4j.jsonrpc.messages.{Either3, Either => JEither}
@@ -14,6 +16,7 @@ import info.kwarc.mmt.api.frontend.{Controller, Extension}
 import org.eclipse.jetty.server.{Server, ServerConnector}
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer
+import org.eclipse.lsp4j
 import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
 import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
@@ -123,6 +126,42 @@ case object LocalStyle extends RunStyle
 case object SocketStyle extends RunStyle
 case object WebSocketStyle extends RunStyle
 
+class ClientWrapper[+A <: LSPClient](val client : A) {
+  def log(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
+  def logError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
+  def documentErrors(doc : String,uri : String,errors : info.kwarc.mmt.api.Error*) = if (errors.nonEmpty) {
+    val params = new PublishDiagnosticsParams()
+    params.setUri(uri)
+    val diags = errors.map{e =>
+      val d = new Diagnostic
+      e match {
+        case SourceError(_,ref,_,_,_) =>
+          val start = ref.region.start.offset
+          val end = ref.region.end.offset + 1
+          val (sl,sc) = LSPDocument.toLC(start,doc)
+          val (el,ec) = LSPDocument.toLC(end,doc)
+          d.setRange(new lsp4j.Range(new Position(sl,sc),new Position(el,ec)))
+        case _ =>
+      }
+      import info.kwarc.mmt.api.Level
+      d.setSeverity(e.level match {
+        case Level.Info => DiagnosticSeverity.Information
+        case Level.Error => DiagnosticSeverity.Error
+        case Level.Warning => DiagnosticSeverity.Warning
+        case Level.Ignore => DiagnosticSeverity.Hint
+        case Level.Fatal => DiagnosticSeverity.Error
+        case _ =>
+          print("")
+          ???
+      })
+      d.setMessage(e.getMessage)
+      d
+    }
+    params.setDiagnostics(diags.asJava)
+    client.publishDiagnostics(params)
+  }
+}
+
 trait LSPClient extends LanguageClient
 class LSPWebsocket[ClientClass <: LSPClient, ServerClass <: LSPServer[ClientClass]](clct : Class[ClientClass],svct : Class[ServerClass]) extends WebSocketEndpoint[ClientClass] {
   override def configure(builder: Launcher.Builder[ClientClass]): Unit = {
@@ -146,22 +185,19 @@ object LSP {
 class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   private var _log : (String,Option[String]) => Unit = null
   private var _controller : Controller = null
-  private var _client : Option[LSPClient] = None
+  private var _client : Option[ClientWrapper[LSPClient]] = None
   protected def controller = _controller
   protected def log(s : String, subgroup : Option[String] = None) = _log(s,subgroup)
   def client = _client.getOrElse({
     ???
-  }).asInstanceOf[ClientType]
-
-  def logClient(s : String) = client.logMessage(new MessageParams(MessageType.Info,s))
-  def logClientError(s : String) = client.logMessage(new MessageParams(MessageType.Error,s))
+  }).asInstanceOf[ClientWrapper[ClientType]]
 
   private[lsp] def init(__log: (String,Option[String]) => Unit, ctrl : Controller) = {
     _log = __log
     _controller = ctrl
   }
   private[lsp] def connectI(cl : LSPClient) = {
-    _client = Some(cl)
+    _client = Some(new ClientWrapper(cl.asInstanceOf[ClientType]))
     connect
   }
 
@@ -318,7 +354,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonNotification("textDocument/didSave")
   def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable {
-    log("textDocument/didSave: " + params.toString,Some("methodcall"))
+    log("textDocument/didSave: " + params.getTextDocument.getUri,Some("methodcall"))
     server.didSave(params)
   }
 
@@ -357,7 +393,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
 
   @JsonRequest("textDocument/hover")
   def hover(params: HoverParams): CompletableFuture[Hover] = Completable {
-    log("textDocument/hover: " + params.toString,Some("methodcall"))
+    log("textDocument/hover: " + params.getTextDocument.getUri + ":(" + params.getPosition.getLine + "," + params.getPosition.getCharacter + ")",Some("methodcall"))
     server.hover(params)
   }
 
@@ -373,7 +409,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   def documentSymbol(
                       params: DocumentSymbolParams
                     ): CompletableFuture[JEither[util.List[DocumentSymbol], util.List[SymbolInformation]]] = Completable {
-    log("textDocument/documentSymbol: " + params.toString,Some("methodcall"))
+    log("textDocument/documentSymbol: " + params.getTextDocument.getUri,Some("methodcall"))
     toEither{
       val ret = server.documentSymbol(params)
       (ret._1,ret._2.map(_.asJava))
@@ -444,13 +480,13 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   def foldingRange(
                     params: FoldingRangeRequestParams
                   ): CompletableFuture[util.List[FoldingRange]] = Completable {
-    log("textDocument/foldingRange: " + params.toString,Some("methodcall"))
+    log("textDocument/foldingRange: " + params.getTextDocument.getUri,Some("methodcall"))
     server.foldingRange(params).asJava
   }
 
   @JsonRequest(value = "textDocument/semanticTokens/full")
   def semanticTokensFull(params: SemanticTokensParams) : CompletableFuture[SemanticTokens] = Completable {
-    log("textDocument/semanticTokens/full: " + params.toString,Some("methodcall"))
+    log("textDocument/semanticTokens/full: " + params.getTextDocument.getUri,Some("methodcall"))
     server.semanticTokensFull(params)
   }
 

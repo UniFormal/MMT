@@ -2,7 +2,7 @@ package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.utils.MMTSystem
-import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAutocomplete}
+import info.kwarc.mmt.lsp.{LSP, LSPClient, LSPServer, LSPWebsocket, LocalStyle, RunStyle, TextDocumentServer, WithAnnotations, WithAutocomplete}
 import org.eclipse.lsp4j.{CompletionItem, CompletionList, CompletionOptions, CompletionParams, InitializeParams, InitializeResult, TextDocumentSyncKind}
 
 import scala.jdk.CollectionConverters._
@@ -13,22 +13,29 @@ class MMTLSP(port : Int = 5007, webport : Int = 5008) extends LSP(classOf[MMTCli
   override def newServer(style: RunStyle): MMTLSPServer = new MMTLSPServer(style)
 }
 
-class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient]) with TextDocumentServer[MMTClient,MMTFile] with WithAutocomplete[MMTClient] {
+class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient])
+  with TextDocumentServer[MMTClient,MMTFile]
+  with WithAutocomplete[MMTClient]
+  with WithAnnotations[MMTClient,MMTFile]
+{
 
   override def controller: Controller = super.controller
+
+  lazy val parser = {
+    val p = new IterativeParser()
+    controller.extman.addExtension(p)
+    p
+  }
 
   override def newDocument(uri: String): MMTFile = new MMTFile(uri,client,this)
 
   override def initialize(params: InitializeParams, result: InitializeResult): Unit = {
     super.initialize(params,result)
-
-    //val sh = new SemanticTokensWithRegistrationOptions(new SemanticTokensLegend(Colors.scopes,Nil.asJava))
-    //sh.setScopes(Colors.scopes)
-    //sh.setFull(true)
-    //result.getCapabilities.setSemanticTokensProvider(sh)
   }
 
   override val triggerChar: Char = 'j'
+  val scopes = Colors.scopes
+  val modifiers = Colors.modifiers
 
   val completionls = {
     val pairstrings = (MMTSystem.getResourceAsString("unicode/unicode-latex-map") + "\n" +
@@ -50,7 +57,7 @@ class MMTLSPServer(style : RunStyle) extends LSPServer(classOf[MMTClient]) with 
     case _ =>
   }
 
-  override def connect: Unit = logClient("Connected to MMT!")
+  override def connect: Unit = client.log("Connected to MMT!")
 }
 
 object Colors {
@@ -65,20 +72,24 @@ object Colors {
   val uri = 8
   val term = 9
   val feature = 10
-  val terminit = 11
-  val termchecked = 12
-  val termerrored = 13
-  val termvariable = 14
-  val termconstantlocal = 15
-  val termconstantincluded = 16
-  val termconstantmeta = 17
+  val termvariable = 11
+  val termconstantlocal = 12
+  val termconstantincluded = 13
+  val termconstantmeta = 14
+  val termoml = 15
+  val termomlit = 16
 
-  val scopesO = List(
+  val mod_terminit = 0
+  val mod_termchecked = 1
+  val mod_termerrored = 2
+
+  val scopes = List(
     "mmt.keyword","mmt.comment","mmt.documentation","mmt.name",
     "mmt.md","mmt.dd","mmt.od"
     ,"mmt.notation","mmt.uri",
     "mm.term","mmt.feature",
-    "mmt.term.init","mmt.term.checked","mmt.term.errored",
-    "mmt.term.variable","mmt.term.constant.local","mmt.term.constant.included","mmt.term.constant.meta")
-  val scopes = scopesO.asJava//scopesO.map(_.split('.').toList.asJava).asJava
+    "mmt-term-variable","mmt-term-constant-local","mmt-term-constant-included","mmt-term-constant-meta","mmt-term-oml","mmt-term-omlit")
+  val modifiers = List(
+    "mmt.term.init","mmt.term.checked","mmt.term.errored"
+  )
 }

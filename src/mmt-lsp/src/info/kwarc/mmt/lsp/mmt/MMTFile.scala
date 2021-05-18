@@ -1,75 +1,39 @@
 package info.kwarc.mmt.lsp.mmt
 
 import info.kwarc.mmt.api
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, StructuralElement}
-import info.kwarc.mmt.api.documents.Document
+import info.kwarc.mmt.api.checking.Solver
+import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, GlobalName, MPath, NamespaceMap, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.documents.{Document, FixedMeta, MRef, Namespace, NamespaceImport}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.parser.{AnnotatedCommentToken, AnnotatedKeyword, AnnotatedName, AnnotatedOpaque, AnnotatedPath, AnnotatedTermToken, AnnotatedText, DeclarationDelimiter, ErrorText, KeywordBasedParser, ModuleDelimiter, NotationBasedParser, ObjectDelimiter, ParsingStream, SourceRegion, StructureParserContinuations}
+import info.kwarc.mmt.api.metadata.HasMetaData
+import info.kwarc.mmt.api.modules.Theory
+import info.kwarc.mmt.api.notations.{HOASNotation, Pragmatics}
+import info.kwarc.mmt.api.objects.{Context, OMA, OMMOD, Term, Traverser}
+import info.kwarc.mmt.api.parser.{KeywordBasedParser, NotationBasedParser, ParsingStream, SourceRef, StructureParser, StructureParserContinuations}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, NestedModule, Structure}
 import info.kwarc.mmt.api.utils.{File, URI}
-import info.kwarc.mmt.lsp.{LSPClient, LSPDocument}
-import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, MessageParams, MessageType, PublishDiagnosticsParams, VersionedTextDocumentIdentifier}
+import info.kwarc.mmt.lsp.{AnnotatedDocument, ClientWrapper, LSPClient, LSPDocument}
+import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, MessageParams, MessageType, PublishDiagnosticsParams, SymbolKind, VersionedTextDocumentIdentifier}
 
-class MMTFile(uri : String,client:MMTClient,server:MMTLSPServer) extends LSPDocument(uri, client, server) {
+import scala.util.Try
+
+class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[MMTClient,MMTLSPServer] {
   val controller = server.controller
   private lazy val file = File(uri.drop(7))
+  private lazy val docuri = if (file.exists()) DPath(URI(file.toJava.toURI)) else DPath(URI(uri))
 
-  private var _highlights : List[Int] = Nil
-  def highlight = {synchronized{_highlights}}
+  override def onUpdate(changes: List[Delta]): Unit = {
+    if (synchronized{Annotations.getAll.isEmpty}) parseTop
+    super.onUpdate(changes)
+  }
+
+  override def onChange(annotations: List[(Delta, Annotation)]): Unit = {
+    print("")
+  }
 
   //override val timercount : Int = 5
 
-  /*
-  override protected def onUpdate(deltas : List[Delta]) = computeHighlight
-
-  def computeHighlight : Unit = {
-    //client.publishDiagnostics(new PublishDiagnosticsParams(uri,List().asJava))
-    parse
-    var hls : List[Highlight] = Nil
-    synchronized{annotated.asSequence}.foreach {
-      case a:AnnotatedKeyword =>
-        hls ::= Highlight(a.region,Colors.keyword)
-      case n:AnnotatedName =>
-        hls ::= Highlight(n.region,Colors.name)
-      case c:AnnotatedOpaque =>
-        hls ::= Highlight(c.region,Colors.scomment)
-      case c:AnnotatedCommentToken =>
-        hls ::= Highlight(c.region,Colors.comment)
-      case t:AnnotatedTermToken =>
-        hls ::= Highlight(t.region,Colors.terminit)
-      case md:ModuleDelimiter =>
-        hls ::= Highlight(md.region,Colors.md)
-      case md:DeclarationDelimiter =>
-        hls ::= Highlight(md.region,Colors.dd)
-      case md:ObjectDelimiter =>
-        hls ::= Highlight(md.region,Colors.od)
-      case p:AnnotatedPath =>
-        hls ::= Highlight(p.region,Colors.termchecked)
-      case e:ErrorText =>
-        val diag = new Diagnostic(toRange(e.region),"Err0r",DiagnosticSeverity.Error,e.text)
-        val params = new PublishDiagnosticsParams(uri,List(diag).asJava)
-        client.publishDiagnostics(params)
-        hls ::= Highlight(e.region,Colors.termerrored)
-      case _ =>
-    }
-    _highlights = semanticHighlight(hls.reverse)
-    client.logMessage(new MessageParams(MessageType.Info,"Done"))
-    client.refreshSemanticTokens()
-  }
-
-   */
-
   lazy val nsMap = controller.getNamespaceMap
-
-  lazy val ojp = {
-    val np = new NotationBasedParser
-    controller.extman.addExtension(np)
-    np
-  }
-  lazy val parser = {
-    val kp = new KeywordBasedParser(ojp)
-    controller.extman.addExtension(kp)
-    kp
-  }
 
   lazy val errorCont = new ErrorHandler {
     private var errors : List[api.Error] = Nil
@@ -83,29 +47,213 @@ class MMTFile(uri : String,client:MMTClient,server:MMTLSPServer) extends LSPDocu
     def getErrors = errors
   }
 
-  lazy implicit val spc = new StructureParserContinuations(errorCont) {
-    /** to be called after parsing an element (but before parsing its body if any) */
-    override def onElement(se: StructuralElement) {}
-    /** to be called after parsing the body of a [[ContainerElement]], e.g., documents and declared modules */
-    override def onElementEnd(se: ContainerElement[_]) {}
+  private def forSource[A](e : HasMetaData)(f : (Int,Int) => A) : Option[A] = SourceRef.get(e).map { src =>
+    val start = src.region.start.offset
+    val length = src.region.end.offset - start
+    f(start,length)
   }
 
-  private var annotated : AnnotatedText = null
-
-  private def parse: Unit = {
-    errorCont.resetErrs
-    val ps = ParsingStream.fromString(doctext,DPath(URI(file.toJava.toURI)),"mmt",Some(nsMap))
-    val d = try { parser.apply(ps) } catch {
-      case t:Throwable =>
-        t.printStackTrace()
-        ???
-    }
-    d match {
-      case d: Document =>
-        synchronized{ annotated = AnnotatedText.fromDocument(d,doctext,errorCont.getErrors)(controller) }
+  private def getElems(top : StructuralElement) : Unit = top match {
+    case d : Document =>
+      forSource(d){(start,length) => Annotations.add(d,start,length,SymbolKind.Package,d.path.toString) }
+      d.getDeclarations.foreach {
+      case n : Namespace =>
+        forSource(n){(start,length) =>
+          Annotations.add(n,start,length,SymbolKind.Namespace,n.namespace.toString)
+          val urlstart = start + 10
+          val urllength = length - 10
+          val a = Annotations.add(n.namespace,urlstart,urllength)
+          a.setHover{ n.namespace.toString }
+        }
+      case n : NamespaceImport =>
+        forSource(n){(start,length) =>
+          Annotations.add(n,start,length,SymbolKind.Namespace,n.prefix)
+          val urlstart = start + 8 + n.prefix.length
+          val urllength = length - (8 + n.prefix.length)
+          val a = Annotations.add(n.namespace,urlstart,urllength)
+          a.setHover{ n.namespace.toString }
+        }
+      case n : FixedMeta =>
+        forSource(n){(start,length) =>
+          Annotations.add(n,start,length,SymbolKind.Namespace,n.meta.toString)
+          val urlstart = start + 8
+          val urllength = length - 8
+          val a = Annotations.add(n.meta,urlstart,urllength)
+          a.setHover{ n.meta.toString }
+        }
+      case mr : MRef =>
+        controller.getO(mr.target).foreach(getElems)
       case _ =>
-        ???
+        print("")
     }
+    case t : Theory =>
+      forSource(t){(start,length) => Annotations.add(t,start,length,SymbolKind.Module,t.name.toString,true)}
+      t.getPrimitiveDeclarations.foreach(getElems)
+    case d : DerivedDeclaration =>
+      forSource(d){(start,length) => Annotations.add(d,start,length,SymbolKind.Struct,d.name.toString,true)}
+      d.getPrimitiveDeclarations.foreach(getElems)
+    case s : Structure =>
+      forSource(s){(start,length) => Annotations.add(s,start,length,SymbolKind.Constant,s.from match {
+        case OMMOD(mp) => mp.toString
+        case OMA(OMMOD(mp), _) => mp.toString
+        case _ =>
+          print("")
+          ???
+      },!s.isInclude)}
+      s.getPrimitiveDeclarations.foreach(getElems)
+    case c : Constant =>
+      forSource(c){(start,length) => Annotations.add(c,start,length,SymbolKind.Constant,c.name.toString,true)}
+      val hl = new HighlightList(c)
+      c.tp.foreach(termHighlighter(_,hl))
+      c.df.foreach(termHighlighter(_,hl))
+    case nm : NestedModule =>
+      forSource(nm){(start,length) => Annotations.add(nm,start,length,SymbolKind.Module,nm.name.toString,true)}
+      nm.module.getPrimitiveDeclarations.foreach(getElems)
+    case _ =>
+      print("")
+  }
+
+  private class HighlightList(val parent : Constant) {
+    lazy val th = controller.get(parent.parent)
+    private def cmeta(se : StructuralElement) : Option[MPath] = se match {
+      case t : Theory => t.meta
+      case d : Declaration => cmeta(controller.get(d.parent))
+      case _ =>
+        print("")
+        None
+    }
+    lazy val meta = cmeta(th)
+  }
+
+  private val pragmatics = controller.extman.get(classOf[Pragmatics]).headOption
+
+  private object termHighlighter extends Traverser[HighlightList] {
+    import info.kwarc.mmt.api.objects._
+    def traverse(t: Term)(implicit con: Context, state: HighlightList): Term = {
+      /* def infer(tm : Term) = Try(Solver.infer(controller,Context(state.th.path match {
+        case mp : MPath => mp
+        case gn : GlobalName => gn.module
+      }) ++ con,tm,None)).toOption.flatten.map(i => "Type: " + controller.presenter.asString(i,None)).getOrElse("Unknown type") */
+      def headString(tm : Term) = tm.head.map(_.toString).getOrElse("No head")
+      t match {
+        case o@OMV(_) =>
+          forSource(o){(start,length) =>
+            val a = Annotations.add(o,start,length+1)
+            a.setSemanticHighlightingClass(Colors.termvariable)
+            a.setHover({ headString(o) })
+          }
+          o
+        case o : OMLITTrait =>
+          forSource(o){(start,length) =>
+            val a = Annotations.add(o,start,length+1)
+            a.setSemanticHighlightingClass(Colors.termomlit)
+            a.setHover({ headString(o) })
+          }
+          o
+        case o : OML =>
+          forSource(o){(start,length) =>
+            val a = Annotations.add(o,start,length+1)
+            a.setSemanticHighlightingClass(Colors.termoml)
+            a.setHover({ headString(o) })
+          }
+          Traverser(this,t)
+        case tm if tm.head.isDefined =>
+          lazy val pragma = pragmatics.map{pr =>
+            pr.mostPragmatic(tm)
+          }.getOrElse(tm)
+          def ret = tm match {
+            case OMID(_) => tm
+            case OMA(_,args) =>
+              args.foreach(traverse(_))
+              tm
+            case OMBINDC(_,ctx,bd) =>
+              traverseContext(ctx)
+              bd.foreach(traverse(_))
+              tm
+          }
+          state.meta.foreach { mt =>
+            controller.library.forDeclarationsInScope(OMMOD(mt)) {
+              case (_, _, d) if pragma.head.contains(d.path) =>
+                forSource(tm){(start,length) =>
+                  val a = Annotations.add(tm,start,length+1)
+                  a.setSemanticHighlightingClass(Colors.termconstantmeta)
+                  a.setHover({ headString(pragma) })
+                }
+                return ret
+              case _ =>
+            }
+          }
+          forSource(tm){(start,length) =>
+            val a = Annotations.add(tm,start,length+1)
+            a.setHover({ headString(pragma) })
+            // TODO ?
+          }
+          ret
+        case _ =>
+          Traverser(this,t)
+      }
+    }
+
+    override def traverseContext(cont: Context)(implicit con: Context, state: HighlightList): Context = {
+      cont.foreach{vd =>
+        forSource(vd){(start,_) =>
+          val a = Annotations.add(vd,start,vd.name.length)
+          a.setSemanticHighlightingClass(Colors.termvariable)
+        }
+      }
+      super.traverseContext(cont)
+    }
+  }
+
+  //private var annotated : AnnotatedText = null
+
+  //private var _highlights : List[Highlight] = Nil
+
+  //override def getHighlights: List[Highlight] = synchronized { _highlights }
+
+  private def parseTop: Unit = {
+    synchronized {
+      errorCont.resetErrs
+      val d = try {
+        server.parser.apply(errorCont, docuri, doctext, nsMap)
+      } catch {
+        case t: Throwable =>
+          t.printStackTrace()
+          ???
+      }
+      getElems(d)
+    }
+    client.documentErrors(doctext,uri,errorCont.getErrors:_*)
+    errorCont.reset
+  }
+
+}
+
+class IterativeOParser extends NotationBasedParser {}
+
+class IterativeParser(objectParser : IterativeOParser = new IterativeOParser) extends KeywordBasedParser(objectParser) {
+  override def start(args: List[String]): Unit = {
+    super.start(args)
+    controller.extman.addExtension(objectParser)
+  }
+
+  def apply(errorCont : ErrorHandler,dpath : DPath, docstring : String,nsmap : NamespaceMap = controller.getNamespaceMap.copy()) : StructuralElement = {
+    val ps = ParsingStream.fromString(docstring,dpath,"mmt",Some(nsmap))
+    implicit val spc = new StructureParserContinuations(errorCont) {
+      override def onElement(se: StructuralElement): Unit = se match {
+        case _ : Document | _ : Namespace | _ : NamespaceImport | _ : MRef | _ : Theory =>
+        case c : Constant =>
+          val sr = SourceRef.get(c).get
+          val string = docstring.slice(sr.region.start.offset,sr.region.end.offset)
+          print("")
+        case _ =>
+          print("")
+      }
+      override def onElementEnd(se: ContainerElement[_]): Unit = {
+        print("")
+      }
+    }
+    apply(ps)
   }
 
 }

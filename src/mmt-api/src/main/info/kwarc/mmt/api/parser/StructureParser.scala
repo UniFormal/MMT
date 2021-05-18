@@ -296,9 +296,9 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
    */
   def readParsedObject(context: Context, topRule: Option[ParsingRule] = None)(implicit state: ParserState): (String, SourceRegion, ParseResult) = {
     val (obj, reg) = state.reader.readObject
-    val pu = ParsingUnit(state.makeSourceRef(reg), context, obj, state.iiContext, topRule)
+    val pu = ParsingUnit(state.makeSourceRef(reg.copy(end = reg.end-1)), context, obj, state.iiContext, topRule)
     val pr = puCont(pu)
-    (obj, reg, pr)
+    (obj, reg.copy(end = reg.end-1), pr)
   }
 
   private def doComponent(tc: TermContainer, cont: Context)(implicit state: ParserState) {
