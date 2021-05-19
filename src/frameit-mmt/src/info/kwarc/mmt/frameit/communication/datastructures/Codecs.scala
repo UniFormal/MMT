@@ -5,8 +5,8 @@ import info.kwarc.mmt.api.objects.Term
 import info.kwarc.mmt.api.utils.mmt
 import info.kwarc.mmt.api.{GlobalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.frameit.business.datastructures.{FactReference, ScrollReference}
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
-import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SString, STerm}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SEquationSystemFact, SFact, SGeneralFact, SInvalidScrollAssignment, SMiscellaneousError, SNonTotalScrollApplication, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.SOMDoc.{OMDocBridge, SFloatingPoint, SInteger, SOMA, SOMS, SRawOMDoc, SRecArg, SString, STerm}
 import io.circe.Decoder.Result
 import io.circe.generic.extras.Configuration
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
@@ -91,6 +91,7 @@ private[communication] object Codecs {
         classOf[SFloatingPoint] -> "OMF",
         classOf[SString] -> "OMSTR",
         classOf[SInteger] -> "OMI",
+        classOf[SRecArg] -> "RECARG",
         classOf[SRawOMDoc] -> "RAW"
       ))
     }
@@ -120,7 +121,8 @@ private[communication] object Codecs {
       private[datastructures] object config {
         implicit val factConfig: Configuration = kindedJsonConfig(Map(
           classOf[SGeneralFact] -> "general",
-          classOf[SValueEqFact] -> "veq"
+          classOf[SValueEqFact] -> "veq",
+          classOf[SEquationSystemFact] -> "eqsys"
         ))
       }
 

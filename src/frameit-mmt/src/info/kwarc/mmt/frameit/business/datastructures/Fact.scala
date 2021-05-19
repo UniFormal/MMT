@@ -1,19 +1,19 @@
 package info.kwarc.mmt.frameit.business.datastructures
 
 import java.util.concurrent.ConcurrentHashMap
-
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, PlainInclude}
 import info.kwarc.mmt.api.uom._
-import info.kwarc.mmt.api.{GlobalName, NamespaceMap, Path, RuleSet}
+import info.kwarc.mmt.api.{GlobalName, RuleSet}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.archives.LabelVerbalizationRule
 import info.kwarc.mmt.frameit.business.InvalidFactConstant
-import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SFact, SGeneralFact, SValueEqFact}
+import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SEquationSystemFact, SFact, SGeneralFact, SValueEqFact}
 import info.kwarc.mmt.lf.ApplySpine
-import info.kwarc.mmt.odk.LFX.{Sigma, Tuple}
+import info.kwarc.mmt.odk.LFX.{LFList, ListType, Sigma, Tuple}
+
 
 /**
   * A reference to an already registered fact only -- without accompanying data.
@@ -60,7 +60,8 @@ sealed case class Fact(
     * @param ctrl A controller to perform simplifications.
     */
   def toSimple(implicit ctrl: Controller): SFact = {
-    Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
+    // Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
+    _toSimple
   }
 
   /**
@@ -83,14 +84,17 @@ sealed case class Fact(
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
-    lazy val simpleTp = simplify(tp)
-    lazy val simpleDf = df.map(simplify)
+    val simpleTp = simplify(tp)
+    val simpleDf = df.map(simplify)
 
     val label = simplify(meta.label).toStr(shortURIs = true)
 
     Fact.tryRenderSValueEqFact(ref, label, tp = tp, simpleTp = simpleTp, simpleDf = simpleDf) match {
       case Some(valueEqFact) => valueEqFact
-      case _ => SGeneralFact(Some(ref), label, tp, df)
+      case _ => Fact.tryRenderSEquationSystemFact(ref, label, tp = tp, simpleTp = simpleTp, df = df, simpleDf = simpleDf) match {
+          case Some(equationSystemFact) => equationSystemFact
+          case _ => SGeneralFact(Some(ref), label, tp, df)
+      }
     }
   }
 }
@@ -145,6 +149,30 @@ object Fact {
         }
 
         Some(SValueEqFact(Some(ref), label, lhs, valueTp = Some(tp1), value, proof))
+
+      case _ => None
+    })
+  }
+
+  private def tryRenderSEquationSystemFact(ref: FactReference, label: String, tp: Term, simpleTp: Term, df: Option[Term], simpleDf: Option[Term]): Option[SEquationSystemFact] = {
+    m[Term, SEquationSystemFact](tp, simpleTp, {
+      case ListType(
+      tp1
+      ) if tp1 == OMS(FrameWorld.prop) =>
+
+        var equations = List[(Term,Term)]()
+        simpleDf match {
+          case Some(LFList(eqs)) => eqs match {
+            case eqs:List[Term] => eqs.foreach{
+                case ApplySpine(OMS(FrameWorld.eq), List(_, lhs, rhs)) => equations = (lhs,rhs) :: equations
+                case _ => None
+            }
+            case _ => None
+          }
+          case _ => None
+        }
+
+        Some(SEquationSystemFact(Some(ref), label, tp, df, equations = List.from(equations)))
 
       case _ => None
     })

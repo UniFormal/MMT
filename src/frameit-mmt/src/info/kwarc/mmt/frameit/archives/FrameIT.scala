@@ -73,6 +73,7 @@ object FrameIT {
     val ded: GlobalName = MitM.Foundation.ded
     val string: GlobalName = MMT.urtheories.string
     val real: GlobalName = MitM.Foundation.Math.real
+    val prop: GlobalName = MitM.Foundation.Math.prop
     val StringLiterals: urtheories.StringLiterals.type = MMT.urtheories.StringLiterals
     val RealLiterals: Foundation.RealLiterals.type = MitM.Foundation.RealLiterals
 

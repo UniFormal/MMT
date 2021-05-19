@@ -2,7 +2,7 @@ package info.kwarc.mmt.frameit.communication.datastructures
 
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld.{PosOrIntLiterals, RealLiterals, StringLiterals}
 import info.kwarc.mmt.api.GlobalName
-import info.kwarc.mmt.api.objects.{OMA, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMA, OML, OMS, Term}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.lf.ApplySpine
 import info.kwarc.mmt.odk.LFX.{Product, Tuple}
@@ -40,6 +40,9 @@ object SOMDoc {
 
   @ConfiguredJsonCodec
   case class SString(string: String) extends STerm
+
+  @ConfiguredJsonCodec
+  case class SRecArg(name: String, value: STerm) extends STerm
 
   /**
     * OMDoc terms that could not be represented with other SOMDoc case classes.
@@ -89,6 +92,9 @@ object SOMDoc {
         }
       case RealLiterals(value) => SFloatingPoint(value)
       case StringLiterals(value) => SString(value)
+
+      case OML(name, _, Some(value), _, _) =>
+        SRecArg(name.toString, encode(value))
 
       case _ =>
         System.err.println(s"encountered term for which there is no SimpleOMDoc analogon: `$tm``")
