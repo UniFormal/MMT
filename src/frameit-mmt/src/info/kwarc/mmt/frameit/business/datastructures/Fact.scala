@@ -60,8 +60,7 @@ sealed case class Fact(
     * @param ctrl A controller to perform simplifications.
     */
   def toSimple(implicit ctrl: Controller): SFact = {
-    // Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
-    _toSimple
+    Fact.sfactCache.computeIfAbsent(this, (_: Fact) => _toSimple)
   }
 
   /**
@@ -84,8 +83,8 @@ sealed case class Fact(
       ctrl.simplifier(_, simplicationUnit, simplificationRules)
     }
 
-    val simpleTp = simplify(tp)
-    val simpleDf = df.map(simplify)
+    lazy val simpleTp = simplify(tp)
+    lazy val simpleDf = df.map(simplify)
 
     val label = simplify(meta.label).toStr(shortURIs = true)
 
