@@ -72,26 +72,8 @@ sealed case class Fact(
     val simplify: Term => Term = {
       val simplificationRules: RuleSet = {
         val rules = RuleSet.collectRules(ctrl, Context(ref.uri.module))
-
         rules.add(new LabelVerbalizationRule()(ctrl.globalLookup))
 
-        // Manually add the rule to compute multiplication of two reals
-        // as somehow the actually pre-existing rule in the MitM/Foundation formalization isn't picked up
-        //
-        // (I verified by means of debugging that pre-existing rule to be available in ''rules'', but somehow
-        // it still isn't picked up by the call to the simplifier below.)
-        rules.add({
-          val realTimes = Path.parseS("http://mathhub.info/MitM/Foundation?RealLiterals?times_real_lit", NamespaceMap.empty)
-
-          new SimplificationRule(realTimes) {
-            override def apply(context: Context, t: Term): Simplifiability = t match {
-              case ApplySpine(OMS(`realTimes`), List(FrameWorld.RealLiterals(x), FrameWorld.RealLiterals(y))) =>
-                Simplify(FrameWorld.RealLiterals(x * y))
-              case _ =>
-                Recurse
-            }
-          }
-        })
         rules
       }
 

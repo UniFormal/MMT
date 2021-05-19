@@ -1,10 +1,10 @@
 package info.kwarc.mmt.frameit.communication.server
 
 import java.net.InetSocketAddress
-
 import com.twitter.finagle.Http
 import com.twitter.server.TwitterServer
 import com.twitter.util.Await
+import info.kwarc.mmt.MitM.MitM
 import info.kwarc.mmt.api.frontend.{ConsoleHandler, Controller}
 import info.kwarc.mmt.api.utils.{File, FilePath}
 import info.kwarc.mmt.api.{GetError, InvalidElement, LocalName, Path}
@@ -76,9 +76,10 @@ object Server extends TwitterServer {
       throw GetError(s"Archive ${FrameWorld.archiveID} could not be found!")
     }
 
-    // force-read relational data as somewhere (TODO say where) we use the depstore
-    // to get meta tags on things
+    // force-read relational data as [[info.kwarc.mmt.frameit.business.datastructures.Scroll]] uses
+    // the depstore
     frameitArchive.readRelational(FilePath("/"), ctrl, "rel")
+    // increase performance by prefetching archive content? ctrl.backend.getArchives.foreach(_.allContent)
 
     val situationTheory = if (debug()) Some(new SituationTheory(FrameWorld.debugSituationTheory)) else None
     val state = new ServerState(new StandardContentValidator, situationTheory)

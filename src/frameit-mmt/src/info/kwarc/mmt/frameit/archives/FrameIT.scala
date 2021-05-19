@@ -66,6 +66,8 @@ object FrameIT {
 
     // Reexported symbols from other archives
     // ===============================================================
+    val LFXPath: DPath = MMT.LFX.path
+
     val sketchOperator: GlobalName = MitM.Foundation.sketchOperator
     val eq: GlobalName = MitM.Foundation.eq
     val ded: GlobalName = MitM.Foundation.ded
