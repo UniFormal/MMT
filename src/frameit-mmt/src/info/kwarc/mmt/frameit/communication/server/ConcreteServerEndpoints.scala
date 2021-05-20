@@ -5,12 +5,11 @@ import cats.effect.IO
 import info.kwarc.mmt.api
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.View
-import info.kwarc.mmt.api.objects.{Context, OMMOD}
-import info.kwarc.mmt.api.symbols.{FinalConstant, NestedModule}
-import info.kwarc.mmt.api.{AddError, Before, InvalidUnit, LocalName, Path, presentation}
+import info.kwarc.mmt.api.objects.OMMOD
+import info.kwarc.mmt.api.{AddError, Before, InvalidUnit, LocalName, Path}
 import info.kwarc.mmt.frameit.archives.FrameIT.FrameWorld
 import info.kwarc.mmt.frameit.business.datastructures.{Fact, FactReference, Scroll, ScrollApplication}
-import info.kwarc.mmt.frameit.business.{DebugUtils, InvalidScroll, Pushout, Utils, ViewCompletion}
+import info.kwarc.mmt.frameit.business.{InvalidScroll, Pushout, Utils, ViewCompletion}
 import info.kwarc.mmt.frameit.communication.datastructures.DataStructures.{SCheckingError, SDynamicScrollInfo, SFact, SScroll, SScrollApplication, SScrollApplicationResult, SScrollAssignments}
 import io.finch._
 import io.finch.circe._

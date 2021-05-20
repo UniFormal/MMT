@@ -21,6 +21,7 @@ private[archives] object MitM {
       val int: GlobalName = path ? "IntLiterals" ? "int_lit"
 
       val real: GlobalName = path ? "RealLiterals" ? "real_lit"
+      val prop: GlobalName = path ? "Logic" ? "prop"
     }
 
     object NatLiterals extends RepresentedRealizedType(OMS(Math.nat), StandardNat)
