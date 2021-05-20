@@ -4,10 +4,11 @@ import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.{CPath, ContentPath, NamespaceMap, Path, StructuralElement, TypeComponent}
 import info.kwarc.mmt.api.objects.{OMID, OMS, Obj, Term}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
+import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration}
 import info.kwarc.mmt.api.utils.{MMTSystem, XMLEscaping}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HasLanguage, OMDocHTML}
+import info.kwarc.mmt.stex.xhtml.{HTMLConstant, HTMLParser, HTMLRule, HTMLTheory, HasLanguage, OMDocHTML}
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
 import info.kwarc.mmt.stex.{STeX, translations}
 
@@ -42,6 +43,19 @@ object FragmentExtension extends STeXExtension {
 
   class SymbolDoc(node : HTMLNode) extends HTMLConstant(node) with HasLanguage {
     lazy val symbol = Path.parseMS(resource,NamespaceMap.empty)
+
+    override def onAdd: Unit = {
+      sstate.foreach { state =>
+        collectAncestor {
+          case t: HTMLTheory =>
+            t.language_theory.foreach{th =>
+              val c = Constant(OMID(th.path),state.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(symbol,language,node.children)),Some("symboldoc"))
+              sourceref.foreach(s => SourceRef.update(c,s))
+              controller.add(c)
+            }
+        }
+      }
+    }
 /*
     override def open(state: SemanticParsingState): Unit = state.getParent match {
       case t : TheoryAnnotation =>
@@ -67,12 +81,6 @@ object FragmentExtension extends STeXExtension {
       case n if property(n).contains("stex:symboldoc") => new SymbolDoc(n)
     }
   })
-/*
-  override def checkingRules: List[PartialFunction[(StructuralElement, SemanticParsingState), StructuralElement]] = List(
-    {case (c : Constant,s) if c.rl.contains("symboldoc") => controller add c; c}
-  )
-
- */
 
   def doFragment(path : Path) = {
     controller.getO(path) match {
@@ -125,10 +133,10 @@ object FragmentExtension extends STeXExtension {
         (<table>
           <tr><td><b>Type</b></td><td>{c.tp.map(server.xhtmlPresenter.asXML(_,Some(c.path $ TypeComponent))).getOrElse(text("None"))}</td></tr>
           {macroname.foreach{name => OMDocHTML.getNotations(c,controller).map{
-            case ("",_,n) =>
+            case ("",_,_,n) =>
               <tr><td>{"\\"+name}</td><td>{n}</td></tr>
-            case (p,_,n) =>
-              <tr><td>{"\\"+name+"[" + p + "]"}</td><td>{n}</td></tr>
+            case (f,_,_,n) =>
+              <tr><td>{"\\"+name+"[" + f + "]"}</td><td>{n}</td></tr>
           }}}
         </table>).toString()
       case _ =>
@@ -172,6 +180,7 @@ object SymdocRelational extends RelationalExtractor with STeXExtension {
             case Some(STeX.symboldoc(s,_,_)) =>
               val p = Path.parseMS(s,NamespaceMap.empty)
               f(documents(c.path,p))
+              controller.depstore += documents(c.path,p)
             case _ =>
           }
         case _ =>

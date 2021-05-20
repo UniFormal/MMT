@@ -2,13 +2,14 @@ package info.kwarc.mmt.stex.Extensions
 
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Context.context2list
-import info.kwarc.mmt.api.objects.{OMA, OMAorAny, OMID, OMMOD, OMV, Term}
+import info.kwarc.mmt.api.objects.{OMA, OMAorAny, OMID, OMMOD, OMV, Term, VarDecl}
 import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, RelationalExtractor, Unary}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, RuleConstant, RuleConstantInterpreter}
+import info.kwarc.mmt.api.parser.SourceRef
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, FinalConstant, RuleConstant, RuleConstantInterpreter}
 import info.kwarc.mmt.api.uom.AbbrevRule
 import info.kwarc.mmt.api.{LocalName, MPath, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.{HTMLArity, HTMLConstant, HTMLDefiniens, HTMLDerived, HTMLImport, HTMLMMTRule, HTMLMacroname, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLParser, HTMLRule, HTMLSymbol, HTMLTheory, HTMLType, HTMLUseModule, HasHeadSymbol, HasTermArgs, LanguageComponent, MathMLLiteral, MathMLTerm, MetatheoryComponent, SignatureComponent}
+import info.kwarc.mmt.stex.xhtml.{HTMLArity, HTMLConstant, HTMLDefiniens, HTMLDerived, HTMLImport, HTMLMMTRule, HTMLMacroname, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLParser, HTMLRule, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLType, HTMLUseModule, HasHeadSymbol, HasNotation, HasTermArgs, LanguageComponent, MathMLLiteral, MathMLTerm, MetatheoryComponent, OMDocParent, SemanticState, SignatureComponent}
 
 object OMDocExtension extends DocumentExtension {
 /*
@@ -28,6 +29,74 @@ object OMDocExtension extends DocumentExtension {
       controller.extman.addExtension(NotationExtractor)
   }
 
+  class HTMLVariable(orig : HTMLParser.HTMLNode) extends HTMLConstant(orig) with HasTermArgs {
+    def makeVariable(state : SemanticState, ppath : MPath, parent : OMDocParent) = {
+      val cs = getArgs.flatMap { arg =>
+        val ctx = context2list(state.makeBinder(arg))
+        ctx.map {vd =>
+          val c = Constant(OMMOD(ppath),parent.newName(resource),Nil,vd.tp,vd.df,Some("variable"))
+          SourceRef.get(arg).foreach(s => SourceRef.update(c,s))
+          c.metadata.update(STeX.meta_vardecl,STeX.StringLiterals(resource))
+          state.controller.add(c)
+          state.check(c)
+          val orig = vd.metadata.getValues(STeX.meta_notation).head.asInstanceOf[Term]
+          controller.getO(ppath) match {
+            case Some(t : Theory) =>
+              t.paramC.free = t.paramC.free ++ VarDecl(c.name,None,vd.tp,vd.df,None)
+            case Some(d : DerivedDeclaration) =>
+              // TODO needs extending innerContext/parameters in [[DerivedContentElement]]
+            case _ =>
+              print("")
+          }
+          parent.addRule({case `orig` =>
+            val omv = OMV(c.name)
+            omv.metadata.update(STeX.meta_source,c.toTerm)
+            omv
+          })
+          c
+        }
+      }
+      attributes((HTMLParser.ns_stex,"constant")) = cs.map(_.path).mkString(" ")
+    }
+    override def onAdd: Unit = sstate.foreach { state =>
+      collectAncestor {
+        case t : HTMLTheory =>
+          t.signature_theory.toList.foreach { th =>
+            makeVariable(state,th.path,t)
+          }
+        case p : HTMLDerived =>
+          makeVariable(state,p.path,p)
+        case p : OMDocParent =>
+          print("")
+      }
+    }
+  }
+
+  class HTMLTermConstant(orig : HTMLParser.HTMLNode) extends HTMLConstant(orig) with HasTermArgs {
+    def makeConstant(state : SemanticState, ppath : MPath, parent : OMDocParent) = {
+      val cs = getArgs.map { arg =>
+        val c = Constant(OMMOD(ppath),parent.newName(resource),Nil,None,Some(state.applyTerm(arg)),Some(resource))
+        SourceRef.get(arg).foreach(s => SourceRef.update(c,s))
+        state.controller.add(c)
+        state.check(c)
+        c
+      }
+      attributes((HTMLParser.ns_stex,"constant")) = cs.map(_.path).mkString(" ")
+    }
+    override def onAdd: Unit = sstate.foreach { state =>
+      collectAncestor {
+        case t : HTMLTheory =>
+          t.signature_theory.toList.foreach { th =>
+            makeConstant(state,th.path,t)
+          }
+        case p : HTMLDerived =>
+          makeConstant(state,p.path,p)
+        case p : OMDocParent =>
+          print("")
+      }
+    }
+  }
+
   override lazy val rules = List(
     new HTMLRule {
       override def rule(s: HTMLParser.ParsingState): PartialFunction[HTMLParser.HTMLNode, HTMLParser.HTMLNode] = {
@@ -39,10 +108,8 @@ object OMDocExtension extends DocumentExtension {
         case n if property(n).contains("stex:usemodule") => new HTMLUseModule(n)
         case n if property(n).exists(_.startsWith("stex:feature:")) => new HTMLDerived(n)
         case n if property(n).contains("stex:mmtrule") => new HTMLMMTRule(n)
-        case n if property(n).contains("stex:term") =>
-          ???
-        case n if property(n).contains("stex:variable") =>
-          ???
+        case n if property(n).contains("stex:term") => new HTMLTermConstant(n)
+        case n if property(n).contains("stex:variable") => new HTMLVariable(n)
             // Terms
         case n if property(n).contains("stex:OMID") => new HTMLOMID(n)
         case n if property(n).contains("stex:OMA") => new HTMLOMA(n)
@@ -52,6 +119,7 @@ object OMDocExtension extends DocumentExtension {
         case n if n.namespace == HTMLParser.ns_mml => new MathMLTerm(n)
             // Components
         case n if property(n).contains("stex:args") => new HTMLArity(n)
+        case n if property(n).contains("stex:header") => new HTMLTheoryHeader(n)
         case n if property(n).contains("stex:macroname") => new HTMLMacroname(n)
         case n if property(n).contains("stex:language") => new LanguageComponent(n)
         case n if property(n).contains("stex:signature") => new SignatureComponent(n)
@@ -322,6 +390,7 @@ object NotationExtractor extends RelationalExtractor with STeXExtension {
           c.tp match {
             case Some(STeX.notation.tp(sym,_)) =>
               f(notation(c.path,sym))
+              controller.depstore += notation(c.path,sym)
             case _ =>
               ???
           }

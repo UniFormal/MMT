@@ -38,7 +38,7 @@ object HTMLParser {
     val namespaces = mutable.Map.empty[String,String]
 
     private[HTMLParser] var _top : Option[HTMLNode] = None
-    private var _parent : Option[HTMLNode] = None
+    protected var _parent : Option[HTMLNode] = None
     private var _namespace : String = ""
     private val _rules : List[PartialFunction[HTMLNode,HTMLNode]] = rules.sortBy(-_.priority).map(_.rule(this))
     private var _id = 0
@@ -225,11 +225,14 @@ object HTMLParser {
 
     def children = _children.reverse
 
+    def isEmpty : Boolean = _children.forall(_.isEmpty)
+
     private[HTMLParser] def onAddI = onAdd
 
     private[HTMLParser] var startswithWS = false
     private[HTMLParser] var endswithWS = false
     private[HTMLParser] var _sourceref: Option[SourceRef] = None
+    def sourceref = _sourceref
 
     def addAttribute(key: String, value: String) = key.split(':') match {
       case Array(a, b) =>
@@ -251,12 +254,12 @@ object HTMLParser {
       n.attributes.foreach{case ((a,b),c) => attributes((a,b)) = c}
       state = n.state
       if (state._top contains n) state._top = Some(this)
-      _parent.get._children.splitAt(_parent.get._children.indexOf(n)) match {
+      _parent.foreach(_._children.splitAt(_parent.get._children.indexOf(n)) match {
         case (before, _ :: after) =>
           _parent.get._children = before ::: this :: after
         case _ =>
           state.error("???")
-      }
+      })
     }
 
     def ancestors: List[HTMLNode] = _parent match {
@@ -348,6 +351,7 @@ object HTMLParser {
 
   class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
     override def toString() = XMLEscaping(text)
+    override def isEmpty = toString() == "" || toString() == "&200e"
   }
 
   object HTMLNode {

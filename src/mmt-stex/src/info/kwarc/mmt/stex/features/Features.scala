@@ -7,6 +7,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.ModuleOrLink
 import info.kwarc.mmt.api.notations.{LabelArg, LabelInfo, Marker, SimpArg}
 import info.kwarc.mmt.api.objects.{Context, Free, FreeOrAny, OMA, OMBIND, OMID, OMMOD, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.parser.ParseResult
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, Elaboration, RuleConstant, StructuralFeature, StructuralFeatureRule, Structure}
 import info.kwarc.mmt.api.uom.{AbbrevRule, ExtendedSimplificationEnvironment}
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
@@ -59,7 +60,7 @@ class DefinitionFeature extends StructuralFeature("stex:definition") {
 
   override def elaborate(parent: ModuleOrLink, dd: DerivedDeclaration)(implicit env: Option[ExtendedSimplificationEnvironment]): Elaboration = new Elaboration {
     val orig = dd.tp match {
-      case Some(OMS(p)) => Some(p)
+      case Some(OMS(p)) => controller.getO(p).asInstanceOf[Option[Constant]]
       case _ => None
     }
     val vars = dd.getConstants.filter(_.rl.contains("variable")).flatMap(c => c.metadata.getValues(STeX.meta_vardecl) match {
@@ -68,20 +69,29 @@ class DefinitionFeature extends StructuralFeature("stex:definition") {
     })
     val premises = dd.getConstants.filter(_.rl.contains("premise")).flatMap(_.df)
     val body = dd.getConstants.filter(_.rl.contains("definiens")) match {
-      case List(c) => c.df
+      case List(c) => c.df match {
+        case Some(OMBIND(OMS(ParseResult.unknown),_,bd)) => Some(bd)
+        case d => d
+      }
       case _ => None
     }
-    val wprm = body.map(premises.foldLeft(_)((bd,t) => STeX.universal_quantifier(LocalName("_"),Some(OMA(OMS(STeX.ded),List(t))),bd)))
-    val df = wprm.map(vars.foldLeft(_)((bd,ln) => STeX.universal_quantifier(ln._1,ln._2,bd)))
+    val wprm = body.map(premises.foldRight(_)((t,bd) => STeX.universal_quantifier(LocalName("_"),Some(OMA(OMS(STeX.ded),List(t))),bd)))
+    val df = wprm.map(vars.foldRight(_)((ln,bd) => STeX.universal_quantifier(ln._1,ln._2,bd)))
 
     val name = LocalName(dd.name + "rule")
 
-    val domain = if (df.isDefined && orig.isDefined) List(name) else Nil
+    val domain = if (df.isDefined && orig.isDefined) orig.get.df match {
+      case None if orig.get.parent == dd.parent =>
+        controller.library.update(Constant(orig.get.home,orig.get.name,orig.get.alias,orig.get.tp,df,orig.get.rl,orig.get.notC))
+        Nil
+      case _ =>
+        List(name)
+    } else Nil
 
     override def getO(name: LocalName): Option[Declaration] = name match {
       case `name` =>
         Some(RuleConstant(dd.home,name,OMA(OMID(Path.parseM("scala://features.stex.mmt.kwarc.info?AbbreviationRule")),
-          List(OMS(orig.get),df.get)),Some(new AbbrevRule(orig.get,df.get))))
+          List(OMS(orig.get.path),df.get)),Some(new AbbrevRule(orig.get.path,df.get))))
       case _ => None
     }
   }

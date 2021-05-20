@@ -10,7 +10,7 @@ import info.kwarc.mmt.stex.xhtml.{HTMLParser, OMDocHTML}
 
 import scala.xml.Elem
 
-case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,HTMLNode)])
+case class STeXNotation(tm : Term, head : ContentPath, macroname : String, notation_used : HTMLNode, fragment: String, arity : String, allnotations : List[(String,String,String,HTMLNode)])
 
 trait STeXPresenter extends ObjectPresenter {
   lazy val server = controller.extman.get(classOf[STeXServer]).head
@@ -22,7 +22,7 @@ trait STeXPresenter extends ObjectPresenter {
         case _ => ""
       }
       // TODO withnotations
-      val notation = notations.collectFirst { case (s,p, n) if s == notationFragment => n } match {
+      val notation = notations.collectFirst { case (s,p,_, n) if s == notationFragment => n } match {
         case Some(n) =>
           HTMLParser(n.toString)(new ParsingState(controller,server.extensions.flatMap(_.rules)))
         case _ =>

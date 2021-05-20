@@ -55,12 +55,12 @@ object STeX {
           case _ => None
         }
     }
-    def apply(node : Node, prec : String) = {
-      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(node.toString())))
+    def apply(node : Node, prec : String, frag : String) = {
+      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(frag),StringLiterals(node.toString())))
     }
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(node))) =>
-        Some((node,prec))
+      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(frag),StringLiterals(node))) =>
+        Some((node,prec,frag))
       case _ => None
     }
   }

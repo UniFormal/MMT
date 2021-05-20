@@ -95,8 +95,7 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     //val trules = extensions.flatMap(_.checkingRules)
     //trules.foreach(state.addTransformSE)
     HTMLParser(bt.inFile)(state)
-    val doc = state.build
-    index(doc)
+    index(state.doc)
     log("Finished: " + bt.inFile)
     BuildResult.empty
   }
@@ -118,8 +117,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     outFile.up.mkdirs()
     buildFileActually(bt.inFile,outFile,state,bt.errorCont)
     log("postprocessing " + bt.inFile)
-    val doc = state.build
-    index(doc)
+    index(state.doc)
     log("Finished: " + bt.inFile)
     BuildResult.empty
   }
