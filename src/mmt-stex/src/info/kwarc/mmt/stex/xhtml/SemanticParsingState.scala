@@ -12,7 +12,7 @@ import info.kwarc.mmt.api.symbols.{Constant, DerivedDeclaration, RuleConstantInt
 import info.kwarc.mmt.stex.features.BindingRule
 import info.kwarc.mmt.stex.{STeX, STeXError}
 import info.kwarc.mmt.api.utils.File
-import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLText
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText}
 
 import scala.collection.mutable
 
@@ -35,7 +35,11 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
 
   lazy val rci = new RuleConstantInterpreter(controller)
 
-  override protected def onTop: Unit = maindoc = new HTMLDocument(dpath,top)
+  override protected def onTop(n : HTMLNode): Option[HTMLNode] = {
+    val nn = new HTMLDocument(dpath,n)
+    maindoc = nn
+    Some(nn)
+  }
   private val _transforms: List[PartialFunction[Term, Term]] =  List(
     {
       case STeX.informal(n) if n.startsWith("<mi") =>

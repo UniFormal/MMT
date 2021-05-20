@@ -41,7 +41,7 @@ object FragmentExtension extends STeXExtension {
   }
 
 
-  class SymbolDoc(node : HTMLNode) extends HTMLConstant(node) with HasLanguage {
+  class SymbolDoc(orig : HTMLNode) extends HTMLConstant(orig) with HasLanguage {
     lazy val symbol = Path.parseMS(resource,NamespaceMap.empty)
 
     override def onAdd: Unit = {
@@ -49,7 +49,7 @@ object FragmentExtension extends STeXExtension {
         collectAncestor {
           case t: HTMLTheory =>
             t.language_theory.foreach{th =>
-              val c = Constant(OMID(th.path),state.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(symbol,language,node.children)),Some("symboldoc"))
+              val c = Constant(OMID(th.path),state.newName("symboldoc"),Nil,None,Some(STeX.symboldoc(symbol,language,children)),Some("symboldoc"))
               sourceref.foreach(s => SourceRef.update(c,s))
               controller.add(c)
             }

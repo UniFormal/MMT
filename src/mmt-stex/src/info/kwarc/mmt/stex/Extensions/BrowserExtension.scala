@@ -14,7 +14,7 @@ object BrowserExtension extends STeXExtension {
         case "" =>
           Some(ServerResponse(MMTSystem.getResourceAsString("mmt-web/stex/browser/main.html"),"html"))
         case ps if ps.startsWith("archive=") || ps.startsWith("group=") =>
-         Some(ServerResponse(DocumentExtension.doDocument(ps).toString,"html"))
+         Some(ServerResponse(DocumentExtension.doDocument(ps).toString.trim,"html"))
         case _ =>
           ???
       }

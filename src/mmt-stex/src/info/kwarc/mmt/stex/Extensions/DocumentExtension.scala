@@ -3,9 +3,10 @@ package info.kwarc.mmt.stex.Extensions
 import info.kwarc.mmt.api.archives.RedirectableDimension
 import info.kwarc.mmt.api.utils.{File, FilePath, MMTSystem}
 import info.kwarc.mmt.api.web.{ServerRequest, ServerResponse}
-import info.kwarc.mmt.stex.xhtml.HTMLParser
-import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, ParsingState}
+import info.kwarc.mmt.stex.xhtml.{HTMLParser, MathMLTerm}
+import info.kwarc.mmt.stex.xhtml.HTMLParser.{HTMLNode, HTMLText, ParsingState}
 
+import scala.xml.parsing.XhtmlParser
 import scala.xml.{Elem, Node}
 
 trait DocumentExtension extends STeXExtension {
@@ -133,96 +134,85 @@ object DocumentExtension extends STeXExtension {
     }
   }
 
-  def sidebar(elem : HTMLNode, content: List[Node],atend : Boolean = false) = ??? /*{
-    def pickelem(e : HTMLNode) : Option[HTMLNode] = ??? {
-      e.collectFirstAncestor{case a if a.getAnnotations.exists(_.isInstanceOf[ToScript]) => a}.foreach{a => return Some(a)}
-      if (atend) e.children.reverse else e.children}.collectFirst {
-        case ie if !ie.isEmpty && !ie.isMathML && !ie.classes.contains("ltx_rdf") =>
-          pickelem(ie).getOrElse(ie)
-        case ie if !ie.isMathML && !ie.classes.contains("ltx_rdf") =>
-          ie
-      }
+  def sidebar(elem : HTMLNode, content: List[Node]) = {
     val id = elem.state.generateId
-    val annot = XHTML(
-      <span>
-        <label for={id} class="sidenote-toggle">{XHTML.empty}</label>
-        <input type="checkbox" id={id} class="sidenote-toggle"/>
-        <span class="sidenote">{content}</span>
-      </span>
-    ).children.map(makesafe)
-    val e = pickelem(elem).getOrElse(elem)
-    if (e.isMathML) {
-      val tm = e.getTopMath
-      tm.parent.foreach(p => annot.foreach(p.addAfter(_, tm)))
-    } else {
-      e.parent.foreach(p => annot.foreach(p.addAfter(_,e)))
-    }
-  } */
+    var e = if (elem.parent.exists(_.isVisible)) elem else elem.collectAncestor {
+      case a if a.parent.exists(_.isVisible) => a
+    }.getOrElse(elem)
+    if (e.isMath) e = e.collectAncestor {
+      case a if a.parent.exists(!_.isMath) => a
+    }.getOrElse(e)
+    e.parent.foreach(_.addBefore(<span>
+      <label for={id} class="sidenote-toggle">{HTMLParser.empty}</label>
+      <input type="checkbox" id={id} class="sidenote-toggle"/>
+      <span class="sidenote">{content}</span>
+    </span>,e))
+  }
 
-  def overlay(elem : HTMLNode, urlshort : String,urllong : String) = ??? /* {
-    def criterion(n : XHTMLNode) = {
-      n.getAnnotations.isEmpty || n.isInstanceOf[XHTMLText] || !n.getAnnotations.exists(_.isInstanceOf[OMDocAnnotation])
-    } && !n.getAnnotations.exists(_.isInstanceOf[ArgumentAnnotation])
-    def pickelems(e: XHTMLNode): List[XHTMLNode] = if (
-      e.get()()().forall(criterion)) List(e) else {
-      e.children.filter(criterion).flatMap(pickelems)
+  def overlay(elem : HTMLNode, urlshort : String,urllong : String) = {
+    def criterion(n : HTMLNode) = n match {
+      case t if t.attributes.isDefinedAt((HTMLParser.ns_stex,"arg")) => false
+      case _ : HTMLText => true
+      case t if t.getClass == classOf[HTMLNode] => true
+      case t if t.getClass == classOf[MathMLTerm] => true
+      case _ => false
     }
-
-    val t = elem.top
-    val id = t.generateId
-    val overlay = XHTML.apply(<span style="position:relative"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{XHTML.empty}</iframe></span>)
-    val currp = elem.parent
+    def pickelems(n : HTMLNode) : List[HTMLNode] = if (n.get()()().forall(criterion)) List(n) else
+      n.children.filter(criterion).flatMap(pickelems)
+    val id = elem.state.generateId
     val targets = pickelems(elem)
     val onhover = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.add('stexoverlaycontainerhover')").mkString(";")
     val onout = targets.indices.map(i => "document.getElementById('" + id + "_" + i + "').classList.remove('stexoverlaycontainerhover')").mkString(";")
+    val currp = elem.parent
     targets.zipWithIndex.foreach {
-      case (txt: XHTMLText,i) =>
-        val newthis = XHTML(<span class="stexoverlaycontainer"
-                                        id={id + "_" + i}
-                                        onmouseover={"stexOverlayOn('" + id + "','" + urlshort + "');" + onhover}
-                                        onmouseout={"stexOverlayOff('" + id + "');" + onout}
-                                        onclick={"stexMainOverlayOn('" + urllong + "')"}
-        ></span>)
-        txt.parent.foreach(_.addAfter(newthis,txt))
+      case (txt: HTMLText,i) =>
+        val newthis = txt.parent.map(_.addAfter(<span class="stexoverlaycontainer"
+                                            id={id + "_" + i}
+                                            onmouseover={"stexOverlayOn('" + id + "','" + urlshort + "');" + onhover}
+                                            onmouseout={"stexOverlayOff('" + id + "');" + onout}
+                                            onclick={"stexMainOverlayOn('" + urllong + "')"}
+        ></span>,txt))
         txt.delete
-        newthis.add(txt)
+        newthis.foreach(_.add(txt))
       case (e,i) =>
-        e.attributes(("", "class")) = e.attributes.get(("", "class")) match {
-          case Some(s) => s + " stexoverlaycontainer"
-          case _ => "stexoverlaycontainer"
-        }
-        e.attributes(("", "onmouseover")) = "stexOverlayOn('" + id + "','" + urlshort + "');" + onhover
-        e.attributes(("", "onmouseout")) = "stexOverlayOff('" + id + "');" + onout
-        e.attributes(("", "onclick")) = "stexMainOverlayOn('" + urllong + "')"
-        e.attributes(("","id")) = id + "_" + i
+        e.classes ::= "stexoverlaycontainer"
+        e.attributes((e.namespace, "onmouseover")) = "stexOverlayOn('" + id + "','" + urlshort + "');" + onhover
+        e.attributes((e.namespace, "onmouseout")) = "stexOverlayOff('" + id + "');" + onout
+        e.attributes((e.namespace, "onclick")) = "stexMainOverlayOn('" + urllong + "')"
+        e.attributes((e.namespace,"id")) = id + "_" + i
     }
+    val overlay = <span style="position:relative"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{HTMLParser.empty}</iframe></span>
     val after = if (elem.parent == currp) elem else elem.parent.get
-    if (!after.isMathML) {
+    if (!after.isMath) {
       val p = after.parent.get
       p.addAfter(overlay, after)
     } else {
-      val tm = after.getTopMath
-      tm.parent.foreach(_.addAfter(overlay, tm))
+      val tm = after.collectAncestor {
+        case n if n.parent.exists(!_.isMath) => n
+      }
+      tm.foreach(_.parent.foreach(_.addAfter(overlay, tm.get)))
     }
-  } */
+  }
 
-  def makeButton(target : String,elem : Node) = ??? /* makesafe(XHTML(
+  def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(
       <span class="propbtn" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
         {elem}
       </span>
-  )) */
+  //))
 
-  def makePostButton(elem : Node, target : String,data : (String,String)*) = ??? /* makesafe(XHTML(
+  def makePostButton(elem : Node, target : String,data : (String,String)*) : Node = // makesafe(XHTML(
     <form method="post" action={target} class="inline" onsubmit="this.target='stexoverlayinner'" target="stexoverlayinner" style="display:none">
       {data.map{p => <input type="hidden" name={p._1} value={p._2} class="inline"/>}}
       <span onclick="this.closest('form').submit();" type="submit" class="propbtn">
         {elem}
       </span>
-    </form>)) */
+    </form>
+  //))
 
-  def makesafe(xh : HTMLNode) = ??? /* {
-    new XHTMLNode() {
+  def makesafe(xh : HTMLNode) = {
+    new HTMLNode(xh.state,xh.namespace,xh.label) {
       override def node = xh.node
+      override def toString: String = xh.toString
     }
-  } */
+  }
 }

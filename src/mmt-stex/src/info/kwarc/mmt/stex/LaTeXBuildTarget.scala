@@ -110,7 +110,7 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
     val dpath = bt.narrationDPath
-    val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("shtml")
+    val outFile : File = (bt.archive / Dim("xhtml") / bt.inPath).setExtension("xhtml")
     val state = new SemanticState(controller,rules,bt.errorCont,dpath)
     //val trules = extensions.flatMap(_.checkingRules)
     //trules.foreach(state.addTransformSE)
