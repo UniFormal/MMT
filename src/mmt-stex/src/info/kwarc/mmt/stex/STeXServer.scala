@@ -162,10 +162,10 @@ class STeXServer extends ServerExtension("fomid") {
   def doHeader(doc : HTMLNode) = {
     val head = doc.get("head")()().head
     val body = doc.get("body")()().head
-    head.get("link")(("","rel","stylesheet"))().foreach(e => e.attributes.get(("","href")) match {
+    head.get("link")((HTMLParser.ns_html,"rel","stylesheet"))().foreach(e => e.attributes.get((HTMLParser.ns_html,"href")) match {
       case Some("https://latex.now.sh/style.css") => e.delete
-      case Some("LaTeXML.css") => e.attributes(("","href")) = "/stex/latexml/LaTeXML.css"
-      case Some(s) if s.startsWith("ltx-") => e.attributes(("","href")) = "/stex/latexml/" + s
+      case Some("LaTeXML.css") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/LaTeXML.css"
+      case Some(s) if s.startsWith("ltx-") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/" + s
       case _ =>
     })
     head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>)

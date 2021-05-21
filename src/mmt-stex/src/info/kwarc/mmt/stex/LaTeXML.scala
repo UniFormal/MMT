@@ -52,7 +52,9 @@ object LaTeXML {
         (Level.Error,s.drop(6) :: Nil) :: ls
       } else if (s.startsWith("Info:")) {
         (Level.Info,s.drop(5) :: Nil) :: ls
-      } else if (s.startsWith("\t")) ls match {
+      } else if (s.startsWith("Fatal:")) {
+        (Level.Fatal,s.drop(5) :: Nil) :: ls
+      }  else if (s.startsWith("\t")) ls match {
         case (i,err) :: rest =>
           (i, s.drop(1) :: err) :: rest
         case _ =>

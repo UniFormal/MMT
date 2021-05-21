@@ -13,6 +13,7 @@ import org.xml.sax.InputSource
 import java.io.StringReader
 import scala.annotation.tailrec
 import scala.collection.mutable
+import scala.util.Try
 import scala.xml._
 import scala.xml.parsing.NoBindingFactoryAdapter
 
@@ -495,7 +496,10 @@ object HTMLParser {
         case c =>
           var txt = c + in.takeWhileSafe(_ != '<')
           val endWS = txt.lastOption.exists(_.isWhitespace)
-          txt = XMLEscaping.unapply(txt.trim)
+          txt = Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
+            print("")
+            txt.trim
+          })
           if (txt.nonEmpty) {
             val n = new HTMLText(state, txt)
             n.startswithWS = startWS

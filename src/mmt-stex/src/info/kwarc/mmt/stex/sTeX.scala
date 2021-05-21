@@ -87,7 +87,7 @@ object STeX {
     val tp = th ? "symboldoc"
     val sym = th ? "symboldocfor"
     def apply(symbol : ContentPath,lang : String,doc : List[HTMLNode]) = {
-      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals(XMLEscaping({<div>{doc.map(_.node)}</div>}.toString))))
+      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals("<span>" + doc.map(_.toString).mkString + "</span>")))
     }
     def unapply(tm : Term) = tm match {
       case OMA(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),StringLiterals(n))) =>
