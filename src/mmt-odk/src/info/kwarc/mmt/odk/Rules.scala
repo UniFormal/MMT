@@ -106,13 +106,23 @@ object LFX {
     val th = baseURI ? "ListSymbols"
   }
 
+  object ListType {
+    val path = Lists.th ? "ListType"
+    val term = OMS(path)
+    def apply(tp : Term) : Term = OMA(this.term,List(tp))
+    def unapply(tp : Term) : Option[Term] = tp match {
+      case OMA(this.term,List(t)) => Some(t)
+      case _ => None
+    }
+  }
+
   object ListNil {
     val path = Lists.th ? "nil"
     val term = OMS(path)
   }
 
   object Append {
-    val path2 = Lists.th ? "ls"
+    val path2 = Lists.th ? "list"
     val term2 = OMS(path2)
     val path = Lists.th ? "append"
     val term = OMS(path)
@@ -127,7 +137,7 @@ object LFX {
   }
 
   object LFList {
-    val path = Lists.th ? "ls"
+    val path = Lists.th ? "list"
     val term = OMS(path)
     def apply(tms : List[Term]) : Term = OMA(this.term,tms)
     def unapply(ls : Term) : Option[List[Term]] = ls match {

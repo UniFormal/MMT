@@ -33,7 +33,7 @@ object FrameIT {
       LocalName("Root"),
     )
 
-    val defaultSituationTheory: SituationTheoryPath = SituationTheoryPath(
+    val defaultRootSituationTheory: SituationTheoryPath = SituationTheoryPath(
       SituationSpace(rootDocument ? "DefaultSituationSpace"),
       LocalName("Root")
     )
@@ -66,11 +66,14 @@ object FrameIT {
 
     // Reexported symbols from other archives
     // ===============================================================
+    val LFXPath: DPath = MMT.LFX.path
+
     val sketchOperator: GlobalName = MitM.Foundation.sketchOperator
     val eq: GlobalName = MitM.Foundation.eq
     val ded: GlobalName = MitM.Foundation.ded
     val string: GlobalName = MMT.urtheories.string
     val real: GlobalName = MitM.Foundation.Math.real
+    val prop: GlobalName = MitM.Foundation.Math.prop
     val StringLiterals: urtheories.StringLiterals.type = MMT.urtheories.StringLiterals
     val RealLiterals: Foundation.RealLiterals.type = MitM.Foundation.RealLiterals
 
