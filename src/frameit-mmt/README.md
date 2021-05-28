@@ -14,7 +14,7 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 
 **Playground.**
 The [kwarc research group](https://kwarc.info) uses [Postman](https://www.postman.com/) to collaboratively tinker with the request & response API.
-We maintain a [public Postman workspace](https://www.postman.com/kwarc-frameit/workspace/frameit-developers-workspace/overview) with sample request & response collections of the REST API.
+We maintain a [Postmean team](https://kwarc-frameit.postman.co/home) and a [public Postman workspace](https://www.postman.com/kwarc-frameit/workspace/frameit-developers-workspace/overview) with sample request & response collections of the REST API.
 To request write access, contact one of the [UFrameIT team members](https://uframeit.org/).
 Currently, [@ComFreek](https://github.com/ComFreek) and [@SESch93](https://github.com/SESch93) have and manage write access.
 (Unfortunately, in the free version of Postman, team size is limited to two people.)
