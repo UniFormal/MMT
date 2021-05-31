@@ -309,13 +309,15 @@ sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
     */
   lazy val getAllModules: Set[MPath] = modules.toSet ++ mt.map(_.getAllModules).getOrElse(Set.empty[MPath])
 
-  def hasImplicitFrom(source: MPath)(implicit lookup: Lookup): Boolean = {
-    getAllModules.exists(m => lookup.hasImplicit(source, m))
+  def hasImplicitFrom(source: Term)(implicit lookup: Lookup): Boolean = {
+    getAllModules.exists(m => lookup.hasImplicit(source, OMMOD(m)))
+  }
+  def hasImplicitTo(target: Term)(implicit lookup: Lookup): Boolean = {
+    getAllModules.exists(m => lookup.hasImplicit(OMMOD(m), target))
   }
 
-  def hasImplicitTo(target: MPath)(implicit lookup: Lookup): Boolean = {
-    getAllModules.exists(m => lookup.hasImplicit(m, target))
-  }
+  def hasImplicitFrom(source: MPath)(implicit lookup: Lookup): Boolean = hasImplicitFrom(OMMOD(source))
+  def hasImplicitTo(target: MPath)(implicit lookup: Lookup): Boolean = hasImplicitTo(OMMOD(target))
 
   def subsumes(other: Diagram)(implicit lookup: Lookup): Boolean = {
     val doesSubsume = other.mt.forall(subsumes) && other.modules.forall(hasImplicitTo)

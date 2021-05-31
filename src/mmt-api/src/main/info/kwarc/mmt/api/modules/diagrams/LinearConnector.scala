@@ -2,9 +2,10 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Include, IncludeData, Structure}
-import info.kwarc.mmt.api.{InvalidElement, MPath}
+import info.kwarc.mmt.api.notations.NotationContainer
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.{ComplexStep, GlobalName}
 
 /**
   * Linearly connects diagrams output by two [[LinearModuleTransformer]] `in` and `out` with views.
@@ -40,39 +41,14 @@ import info.kwarc.mmt.api.{InvalidElement, MPath}
   *  - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
   *    have a definiens)
   */
-trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBaseTransformer {
-  val in: RelativeBaseTransformer with ModulePathTransformer
-  val out: RelativeBaseTransformer with ModulePathTransformer
+trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
+  val in: FunctorTransformer
+  val out: FunctorTransformer
 
   // declare next two fields lazy, otherwise default initialization order entails in being null
   // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
   final override lazy val operatorDomain: Diagram = in.operatorDomain // == out.operatorDomain ideally
   final override lazy val operatorCodomain: Diagram = out.operatorCodomain // == in.operatorCodomain ideally
-
-  // doing this just in the Scala object would throw hard-to-debug "Exception at Initialization" errors
-  private var hasRunSanityCheck = false
-
-  private def sanityCheckOnce()(implicit interp: DiagramInterpreter): Unit = {
-    if (hasRunSanityCheck) {
-      return
-    }
-    hasRunSanityCheck = true
-    sanityCheck()
-  }
-
-  /**
-    * Runs a sanity check for whether [[in]] and [[out]] are actually "connectible" operators.
-    *
-    * The sanity check is only run once in the entire lifetime of ''this''.
-    *
-    * Subclasses may override and extend this method. Call ''super.sanityCheck()'' in those cases.
-    */
-  protected def sanityCheck()(implicit interp: DiagramInterpreter): Unit = {
-    if (in.operatorDomain != out.operatorDomain) {
-      // todo:
-      // throw ImplementationError(s"Can only connect between two LinearModuleTransformers with same domain, got ${in.operatorDomain} and ${out.operatorDomain} for in and out, respectively.")
-    }
-  }
 
   /**
     * Creates a new output view that serves to contain the to-be-created assignments; called by
@@ -97,7 +73,7 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     *            }
     *           }}}
     */
-  protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+  protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[View] = {
     val outPath = applyModulePath(thy.path)
 
     val outView = View(
@@ -111,18 +87,15 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     Some(outView)
   }
 
-  final override def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean = {
-    sanityCheckOnce()
+  final override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
     inContainer match {
-      // only applicable on theories and their contents
+      // connectors are only applicable on theories and their contents
       case _: View => false
 
       case inTheory: Theory =>
-        beginTheory(inTheory, state) match {
+        beginTheory(inTheory) match {
           case Some(outView) =>
-            state.diagramState.processedElements.put(inTheory.path, outView)
             interp.addToplevelResult(outView)
-            state.outContainer = outView
             true
 
           case _ => false
@@ -130,12 +103,12 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
 
       // We accept structures, but don't create a special out container for them.
       // (Arguably the asymmetry stems from MMT that makes assignments to constants from structures
-      //  be represented flat in views.)
+      //  be represented flatly in views.)
       case _: Structure =>
+        // TODO still needed?
         // to fulfill invariants of other code snippets, we have to put something
         // arbitrary into processedElements
-        state.diagramState.processedElements.put(inContainer.path, inContainer)
-        // TODO: fulfill method contract and set `state.outContainer = ???`
+        /*state.diagramState.processedElements.put(inContainer.path, inContainer)*/
         true
     }
   }
@@ -174,32 +147,38 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
     * ''include in(S) = conn(T) . in(v)'', but the latter but be somewhat self-referential in conn(T), so unsure
     * whether it works.)
     */
-  final override def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
+  final override def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
     implicit val library: Lookup = ctrl.library
-    implicit val diagramState: DiagramState = state.diagramState
+
+    // only need to connect undefined declarations
+    if (include.df.nonEmpty) {
+      return
+    }
 
     if (include.args.nonEmpty) {
       // unsure what to do
       ???
     }
 
-    val newFrom: MPath = include.from match {
-      case p if operatorDomain.hasImplicitFrom(p) =>
-        applyMetaModule(OMMOD(p)).toMPath
-
-      case from if diagramState.seenModules.contains(from) =>
-        applyModule(ctrl.getModule(from))
-        state.inherit(diagramState.getLinearState(from))
-
-        in.applyModulePath(from)
-
-      case _ =>
-        interp.errorCont(InvalidElement(container, "Cannot handle include (or structure) of " +
-          s"`${include.from}`: unbound in input diagram"))
-        return
+    def tr(t: Term): Term = t match {
+      case t if operatorDomain.hasImplicitTo(t) => applyDomain(t)
+      case OMMOD(from) =>
+        applyModule(ctrl.getModule(from)).map(m => {
+          seenDeclarations(container.path) ++= seenDeclarations(m.path)
+          m.toTerm
+        }).getOrElse(OMMOD(from)) // when applyModule is inapplicable, default to leaving include data as-is
     }
 
+    val outputInclude = Include.assignment(
+      home = OMMOD(applyModulePath(container.path.toMPath)),
+      from = tr(OMMOD(include.from)).toMPath,
+      df = None
+    )
+    interp.add(outputInclude)
+    interp.endAdd(outputInclude)
+
+    /* TODO: in case we ever desire to map defined includes, too, here's how I did in the past
     val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
       case OMMOD(v) if diagramState.seenModules.contains(v) =>
         // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
@@ -214,14 +193,16 @@ trait LinearConnectorTransformer extends LinearModuleTransformer with RelativeBa
         applyMetaModule(OMIDENT(OMMOD(p)))
 
       case _ => ???
-    }
+    }*/
+  }
 
-    val outputInclude = Include.assignment(
-      home = OMMOD(applyModulePath(container.path.toMPath)),
-      from = newFrom,
-      df = Some(newDf)
+  // some helper DSL
+  def assgn(p: GlobalName, assignment: Term): Constant = {
+    new FinalConstant(
+      home = OMMOD(applyModulePath(p.module)),
+      name = ComplexStep(p.module) / p.name, alias = Nil,
+      tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(assignment),
+      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
     )
-    interp.add(outputInclude)
-    interp.endAdd(outputInclude)
   }
 }

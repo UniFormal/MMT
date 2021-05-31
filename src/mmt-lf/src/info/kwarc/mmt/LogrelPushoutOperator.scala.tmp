@@ -38,7 +38,7 @@ private sealed case class LogrelPushoutInfo(initialLogrelInfo: ConcreteLogrel) {
     OMMOD(new LogrelPushoutLogrelConnector.PathTransformer(this).applyModulePath(m))
   }
 
-  def getPartialLogrel(theoryContext: MPath, seenModules: Set[MPath], logrelRenamer: Renamer[_])
+  def getPartialLogrel(theoryContext: MPath, seenModules: Set[MPath], logrelRenamer: SystematicRenamer[_])
                       (implicit lookup: Lookup): PartialLogrel = {
     @tailrec
     def nonUnit(t: Term): Boolean = t match {
@@ -94,7 +94,7 @@ abstract class LogrelPushoutOperator extends ParametricLinearOperator {
             List(new LogrelPushoutLogrelConnector(pushoutInfo))
           ).flatten
 
-          new InParallelLinearTransformer(transformers)
+          new ZippingTransformer(transformers)
         })
 
       case _ => None
@@ -115,10 +115,10 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
     with SimpleLinearModuleTransformer
     with OperatorDSL {
 
-  val pushoutRenamers: Array[Renamer[LinearState]] = pushoutInfo.initialLogrelType.mors.indices.map(i =>
+  val pushoutRenamers: Array[SystematicRenamer[LinearState]] = pushoutInfo.initialLogrelType.mors.indices.map(i =>
     getRenamerFor(s"_$i")
   ).toArray
-  val related: Renamer[LinearState] = getRenamerFor("_T") // "ᵀ"
+  val related: SystematicRenamer[LinearState] = getRenamerFor("_T") // "ᵀ"
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     // a lot of helper declarations follow
@@ -133,7 +133,7 @@ private final class LogrelPushoutTransformer(pushoutInfo: LogrelPushoutInfo)
       case link: Link => link.to.toMPath
     }
 
-    val logrelRenamer: Renamer[LinearState] = {
+    val logrelRenamer: SystematicRenamer[LinearState] = {
       val logrelType = pushoutInfo.getLogicalRelationTypeFor(theoryContext)
       new LogrelTransformer(_ => logrelType, Some(pushoutInfo.initialLogrelInfo))
         .logrelRenamer.coercedTo(state)
@@ -234,7 +234,7 @@ private class LogrelPushoutLogrelConnector(pushoutInfo: LogrelPushoutInfo)
     case t => t
   }
 
-  private def getRelatedRenamer(implicit state: LinearState): Renamer[LinearState] = {
+  private def getRelatedRenamer(implicit state: LinearState): SystematicRenamer[LinearState] = {
     new LogrelPushoutTransformer(pushoutInfo).related.coercedTo(state)
   }
 
@@ -272,8 +272,8 @@ private object LogrelPushoutLogrelConnector {
   */
 private class LogrelPushoutConnector(pushoutInfo: LogrelPushoutInfo, morIndex: Integer) extends LogrelPushoutConnector.PathTransformer(pushoutInfo, morIndex) with SimpleLinearConnectorTransformer with OperatorDSL {
 
-  override val in: LinearFunctorialTransformer =
-    LinearFunctorialTransformer.identity(pushoutInfo.initialLogrelType.commonMorDomain)
+  override val in: LinearFunctor =
+    LinearFunctor.identity(pushoutInfo.initialLogrelType.commonMorDomain)
   override val out: ModulePathTransformer with RelativeBaseTransformer =
     new LogrelPushoutTransformer.PathTransformer(pushoutInfo)
 
@@ -288,11 +288,11 @@ private class LogrelPushoutConnector(pushoutInfo: LogrelPushoutInfo, morIndex: I
     case x => x
   }
 
-  private def getPushoutRenamer(implicit state: LinearState): Renamer[LinearState] = {
+  private def getPushoutRenamer(implicit state: LinearState): SystematicRenamer[LinearState] = {
     new LogrelPushoutTransformer(pushoutInfo).pushoutRenamers(morIndex).coercedTo(state)
   }
 
-  private def getRelatedRenamer(implicit state: LinearState): Renamer[LinearState] = {
+  private def getRelatedRenamer(implicit state: LinearState): SystematicRenamer[LinearState] = {
     new LogrelPushoutTransformer(pushoutInfo).related.coercedTo(state)
   }
 

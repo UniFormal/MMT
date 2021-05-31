@@ -77,7 +77,7 @@ final class LogrelTransformer(
     })
   }
 
-  val logrelRenamer: Renamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
+  val logrelRenamer: SystematicRenamer[LinearState] = getRenamerFor("_r") // getRenamerFor("ʳ")
 
   override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit state: LinearState, interp: DiagramInterpreter): List[Constant] = {
     val currentLogrelType = state.inContainer match {

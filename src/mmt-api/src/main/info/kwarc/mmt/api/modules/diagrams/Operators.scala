@@ -24,36 +24,25 @@ abstract class SemanticDiagramOperator extends DiagramOperator with DiagramTrans
   }
 }
 
-abstract class LinearFunctorialOperator extends SemanticDiagramOperator with LinearFunctorialTransformer
-abstract class LinearConnector extends SemanticDiagramOperator with LinearConnectorTransformer
-
-/**
-  * A [[LinearOperator]] that works (type, definiens)-by-(type, definiens): all declarations that are
-  * not [[FinalConstant]]s (with a type) are treated appropriately and subclasses only need to implement a method
-  * receiving a [[Term]] for the type component and an ''Option[Term]'' for an optional definiens.
-  *
-  * Moreover, for convenience the linear state is fixed to be the one from [[DefaultLinearStateOperator]].
-  */
-abstract class SimpleLinearOperator extends LinearFunctorialOperator with SimpleLinearModuleTransformer
-
-abstract class SimpleLinearConnector extends LinearConnector with SimpleLinearConnectorTransformer
+abstract class NamedLinearFunctor extends SemanticDiagramOperator with LinearFunctor
+abstract class NamedLinearConnector extends SemanticDiagramOperator with LinearConnector
 
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
-abstract class SimpleInwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
-  extends SimpleLinearConnector {
-  final override val in: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(operator.operatorDomain)
-  final override val out: operator.type = operator
+abstract class NamedInwardsConnector(final override val head: GlobalName, operator: LinearFunctor)
+  extends NamedLinearConnector {
+  final override val in: LinearFunctor = LinearFunctor.identity(operator.operatorDomain)
+  final override val out: LinearFunctor = operator
 }
 
 /**
   * todo: shouldn't applyConstantSimple only output an Option[Term] here? Why name?
   */
-abstract class SimpleOutwardsConnector(final override val head: GlobalName, val operator: SimpleLinearOperator)
-  extends SimpleLinearConnector {
-  final override val in: operator.type = operator
-  final override val out: LinearFunctorialTransformer = LinearFunctorialTransformer.identity(operator.operatorDomain)
+abstract class SimpleOutwardsConnector(final override val head: GlobalName, operator: LinearFunctor)
+  extends NamedLinearConnector {
+  final override val in: LinearFunctor = operator
+  final override val out: LinearFunctor = LinearFunctor.identity(operator.operatorDomain)
 }
 
 

@@ -6,6 +6,8 @@ import objects._
 import objects.Conversions._
 import utils._
 
+import scala.collection.mutable
+
 /** convenience functions for explicitly omitting constructor arguments (default arguments tend to mask implementation errors) */
 object Theory {
   def noMeta: Option[MPath] = None
@@ -69,7 +71,7 @@ object Theory {
     * does not contain: constants from meta-theory, defined constants
     */
   def primitiveConstants(path: MPath, lup: Lookup): List[(GlobalName,Option[Term])] = {
-    var defined: List[GlobalName] = Nil
+    val defined: mutable.Set[ContentPath] = mutable.Set()
     flatDeclarations(lup, path, false, true) flatMap {
       case (c: Constant, None) =>
         c.df match {
@@ -77,7 +79,7 @@ object Theory {
             val tpE = c.tp.map(lup.ExpandDefinitions(_, defined))
             Iterator((c.path, tpE))
           case Some(_) =>
-            defined ::= c.path
+            defined += c.path
             Iterator.empty
         }
       case _ => Iterator.empty

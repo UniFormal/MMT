@@ -1,10 +1,10 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
-import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
+
+import scala.collection.mutable
 
 /**
   * Performs an action on [[ModuleOrLink]]s declaration-by-declaration ("linearly").
@@ -16,18 +16,35 @@ import info.kwarc.mmt.api.symbols._
   *
   * @see [[ModuleTransformer]] for a subtrait that in `beginContainer` creates
   *      new module for each passed module.
-  *
-  * @see [[LinearFunctorialTransformer]] for a subtrait that in `beginContainer` for
+  * @see [[LinearFunctor]] for a subtrait that in `beginContainer` for
   *      [[info.kwarc.mmt.api.modules.Theory theories]] creates new theories,
   *      for [[info.kwarc.mmt.api.modules.View views]] createss new views,
   *      and maps declarations in both declaration-by-declaration.
-  *
-  * @see [[LinearConnectorTransformer]] for a subtrait that in `beginContainer` for
+  * @see [[LinearConnector]] for a subtrait that in `beginContainer` for
   *      theories creates views, for views does no action at all,
   *      and maps declarations in theories to view assignments for the created view.
   */
-trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
+trait LinearTransformer extends DiagramTransformer {
   type Container = ModuleOrLink
+
+  protected val seenDeclarations: mutable.Map[ContentPath, mutable.ListBuffer[GlobalName]] = mutable.HashMap()
+  def registerSeenDeclaration(d: Declaration): Unit = {
+    seenDeclarations.getOrElseUpdate(d.path.module, mutable.ListBuffer()) += d.path
+  }
+
+  protected val skippedDeclarations: mutable.Map[ContentPath, mutable.Set[GlobalName]] = mutable.Map()
+  def registerSkippedDeclarations(d: Declaration): Unit = {
+    skippedDeclarations.getOrElseUpdate(d.path.module, mutable.Set()) += d.path
+  }
+
+  // override in child classes if you add more state
+  def inheritState(into: MPath, from: MPath): Unit = {
+    seenDeclarations.getOrElseUpdate(into, mutable.ListBuffer()) ++= seenDeclarations.getOrElse(from, mutable.ListBuffer())
+    skippedDeclarations.getOrElseUpdate(into, mutable.Set()) ++= skippedDeclarations.getOrElse(from, mutable.Set())
+  }
+
+  // todo: rename this to a better name
+  protected val startedContainers: mutable.ListBuffer[Path] = mutable.ListBuffer()
 
   /**
     * Hook before the declarations of a container are gone linearly through; called by
@@ -38,7 +55,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     *
     * @see [[endContainer()]]
     */
-  def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
+  def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean
 
   /**
     * Hook after all declarations of a container have been gone through; called by
@@ -48,7 +65,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     *
     * @see [[beginContainer()]]
     */
-  def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit
+  def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit
 
   /**
     * Transforms a [[Declaration]] from `container`.
@@ -74,7 +91,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     *
     * @todo should we pass also the `outContainer`?
     */
-  def applyDeclaration(decl: Declaration, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = decl match {
+  def applyDeclaration(decl: Declaration, container: Container)(implicit interp: DiagramInterpreter): Unit = decl match {
     case c: Constant => applyConstant(c, container)
     case Include(includeData) => applyIncludeData(includeData, container)
     case s: Structure => applyStructure(s, container) // must come after Include case
@@ -87,12 +104,12 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   /**
     * See [[applyDeclaration()]]; the same notes apply.
     */
-  def applyConstant(c: Constant, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
+  def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit
 
   /**
     * See [[applyDeclaration()]]; the same notes apply.
     */
-  def applyIncludeData(include: IncludeData, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit
+  def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit
 
   /**
     * Adds the elaborated constants of a [[Structure]] (which occurs in `container`) to the [[LinearState]] of
@@ -103,8 +120,8 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     *
     * @see [[applyDeclaration()]]; the same notes apply.
     */
-  def applyStructure(s: Structure, container: Container)(implicit state: LinearState, interp: DiagramInterpreter): Unit = {
-    if (applyContainer(s)(state.diagramState, interp)) {
+  def applyStructure(s: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+    if (applyContainer(s)) {
       // todo: should actually register all (also unmapped) declarations from
       //   structure's domain theory, no?
 
@@ -121,7 +138,7 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
 
       elaboratedConstantPaths
         .map(interp.ctrl.getAs(classOf[Declaration], _))
-        .foreach(state.registerDeclaration)
+        .foreach(registerSeenDeclaration)
     }
   }
 
@@ -151,24 +168,36 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
     *
     * @return true if element was processed (or already had been processed), false otherwise.
     */
-  def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
-    if (state.linearStates.contains(inContainer.path)) {
+  def applyContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
+    if (startedContainers.contains(inContainer.path)) {
       return true
     }
 
-    val inLinearState = state.initAndRegisterNewLinearState(inContainer)
+    startedContainers += inContainer.path
 
-    if (beginContainer(inContainer, inLinearState)) {
+    if (beginContainer(inContainer)) {
       inContainer.getDeclarations.foreach(decl => {
-        inLinearState.registerDeclaration(decl)
-        applyDeclaration(decl, inContainer)(inLinearState, interp)
+        registerSeenDeclaration(decl)
+        applyDeclaration(decl, inContainer)
       })
 
-      endContainer(inContainer, inLinearState)
+      endContainer(inContainer)
 
       true
     } else {
       false
+    }
+  }
+
+  object NotApplicable {
+    def apply[T](decl: Declaration, msg: String = "")(implicit interp: DiagramInterpreter): List[T] = {
+      registerSkippedDeclarations(decl)
+      interp.errorCont(InvalidElement(
+        decl,
+        s"`${LinearTransformer.this.getClass.getSimpleName}` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
+      ))
+
+      Nil
     }
   }
 }
@@ -182,8 +211,8 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   * It is left to implementations on which modules exactly they are applicable on, and if so,
   * how the type of output container relates to the type of the input container:
   *
-  *  - the subtrait [[LinearFunctorialTransformer]] transforms theories to theories, and views to views
-  *  - the subtrait [[LinearConnectorTransformer]] transforms theories to views, and views not at all
+  *  - the subtrait [[LinearFunctor]] transforms theories to theories, and views to views
+  *  - the subtrait [[LinearConnector]] transforms theories to views, and views not at all
   *
   * Implementation notes for this class and subclasses:
   *
@@ -194,16 +223,20 @@ trait LinearTransformer extends DiagramTransformer with LinearTransformerState {
   *     By contrast to the point above, here, confusing states is less of a problem.
   *     And also, it makes [[OperatorDSL]] much nicer to work with.
   */
-trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer with RelativeBaseTransformer with LinearModuleTransformerState {
-  final override def applyModule(inModule: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module] = {
+trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
+  /**
+    * invariant: value v for a key k always has same type as k
+    * e.g. modules are mapped to modules, structures to structures
+    */
+  protected val transformedContainers: mutable.Map[Container, Container] = mutable.Map()
+
+  final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
     if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
       Some(inModule)
+    } else if (applyContainer(inModule)) {
+      Some(transformedContainers(inModule).asInstanceOf[Module])
     } else {
-      applyContainer(inModule)
-      state.processedElements.get(inModule.path).map {
-        case m: Module => m
-        case _ => throw ImplementationError(s"Transformer $getClass transformed module into non-module.")
-      }
+      None
     }
   }
 
@@ -219,8 +252,6 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
 
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
     if (beginDiagram(diag)) {
-      implicit val state: DiagramState = initDiagramState(diag, interp)
-
       val newModules = diag.modules
         .map(interp.ctrl.getModule)
         .flatMap(applyModule)
@@ -234,14 +265,6 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     }
   }
 
-  override def applyContainer(inContainer: Container)(implicit state: DiagramState, interp: DiagramInterpreter): Boolean = {
-    if (state.processedElements.contains(inContainer.path)) {
-      true
-    } else {
-      super.applyContainer(inContainer)
-    }
-  }
-
   // We restate the declaration of beginContainer here even though it is already included in
   // our parent trait LinearTransformer for the sake of adding more documentation, pre-, and
   // post-conditions.
@@ -251,8 +274,8 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     * If the transformer is applicable on `inContainer`, it creates a new output container,
     * performs the post-conditions below, and returns true.
     * Transformers may choose on their own what kind of output container to create.
-    * E.g. [[LinearFunctorialTransformer]] creates theories for theories, and views for views,
-    * and [[LinearConnectorTransformer]] creates views for theories and is inapplicable on view.s
+    * E.g. [[LinearFunctor]] creates theories for theories, and views for views,
+    * and [[LinearConnector]] creates views for theories and is inapplicable on view.s
     *
     * Post-conditions:
     *
@@ -265,7 +288,7 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     *
     * @see [[endContainer()]]
     */
-  def beginContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Boolean
+  def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean
 
   /**
     * Finalizes a container.
@@ -288,12 +311,8 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
     *
     * @see [[beginContainer()]]
     */
-  override def endContainer(inContainer: Container, state: LinearState)(implicit interp: DiagramInterpreter): Unit = {
-    // be careful with accessing in processedElements
-    // in applyContainerBegin, e.g. for structures we didn't add anything to processedElements
-    state.diagramState.processedElements.get(inContainer.path).foreach {
-      case ce: ContainerElement[_] => interp.endAdd(ce)
-    }
+  override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit = {
+    transformedContainers.get(inContainer).foreach(interp.endAdd)
   }
 }
 
@@ -303,7 +322,7 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
   * As a first approximation, transformers could have a mere [[MPath]] as their domain and codomain.
   * But this trait directly generalizes this to whole [[Diagram]]s as domain and codomain.
   *
-  * So far it is only used in [[LinearFunctorialTransformer]] and [[LinearConnectorTransformer]].
+  * So far it is only used in [[LinearFunctor]] and [[LinearConnector]].
   * There, diagrams are transformed module-by-module and declaration-by-declaration, and upon
   * includes the following happens: for an `include T = t`, where `T` stems from `operatorDomain`,
   * we transform it into an `include applyMetaModule(T) = applyMetaModule(t)` (very roughly).
@@ -311,7 +330,7 @@ trait LinearModuleTransformer extends ModuleTransformer with LinearTransformer w
 trait RelativeBaseTransformer {
   def operatorDomain: Diagram
   def operatorCodomain: Diagram
-
+/*
   /**
     * Translates occurrences (e.g. includes) of theories and views from [[operatorDomain]]
     * to something over [[operatorCodomain]].
@@ -346,5 +365,5 @@ trait RelativeBaseTransformer {
     case _ => throw ImplementationError(s"Implementor ${getClass.getSimpleName} of RelativeBaseTransformer " +
       "did not override applyMetaModule, but yet had operatorDomain and/or operatorCodomain that were more " +
       "than just singletons (for which the default implementation would have provided a fallback).")
-  }
+  }*/
 }

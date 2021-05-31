@@ -21,11 +21,11 @@ object HomOperator extends SimpleLinearOperator with OperatorDSL {
   override val operatorCodomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
 
   // Hom(-) copies every input constant to two systematically renamed copies for domain and codomain of the homomorphism
-  val dom: Renamer[LinearState] = getRenamerFor("ᵈ")
-  val cod: Renamer[LinearState] = getRenamerFor("ᶜ")
+  val dom: SystematicRenamer[LinearState] = getRenamerFor("ᵈ")
+  val cod: SystematicRenamer[LinearState] = getRenamerFor("ᶜ")
 
   // and introduces for some input constants a new "homomorphism constant" accounting for a homomorphism condition
-  val hom: Renamer[LinearState] = getRenamerFor("ʰ")
+  val hom: SystematicRenamer[LinearState] = getRenamerFor("ʰ")
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom")
 
@@ -214,8 +214,8 @@ object HomIdConnector extends SimpleOutwardsConnector(
 object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
   override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_img_connector")
 
-  override val in: LinearFunctorialTransformer = SubOperator
-  override val out: LinearFunctorialTransformer = HomOperator
+  override val in: LinearFunctor = SubOperator
+  override val out: LinearFunctor = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_img")
 
@@ -307,8 +307,8 @@ object HomImgConnector extends SimpleLinearConnector with OperatorDSL {
   */
 object HomKernelConnector extends SimpleLinearConnector with OperatorDSL {
   final override val head: GlobalName = Path.parseS("latin:/algebraic/diagop-test?AlgebraicDiagOps?hom_ker_connector")
-  final override val in: LinearFunctorialTransformer = CongOperator
-  final override val out: LinearFunctorialTransformer = HomOperator
+  final override val in: LinearFunctor = CongOperator
+  final override val out: LinearFunctor = HomOperator
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_hom_ker")
 

@@ -12,6 +12,7 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.Module
+import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
 
 trait ModulePathTransformer {
   protected def applyModuleName(name: LocalName): LocalName
@@ -38,7 +39,7 @@ trait ModulePathTransformer {
   }
 }
 
-trait DiagramTransformer extends DiagramTransformerState {
+trait DiagramTransformer {
   def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean
   def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram]
 
@@ -46,30 +47,63 @@ trait DiagramTransformer extends DiagramTransformerState {
   def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit = {}
 }
 
-/**
-  * Transforms modules to modules in a diagram.
-  */
-trait ModuleTransformer extends DiagramTransformer with ModuleTransformerState with ModulePathTransformer {
+trait BaseTransformer {
+  def operatorDomain: Diagram
+  def operatorCodomain: Diagram
+
   /**
-    * Transforms a module.
-    *
-    * Invariants:
-    *
-    *  - pre-condition: m is known to `interp.ctrl`, the `Controller`.
-    *
-    *  - post-condition: if `Some(module)` is returned,
-    *
-    *    - (a) it has been added to `state.processedModules` and
-    *    - (b) it has been passed to [[DiagramInterpreter.addToplevelResult()]].
-    *
-    *  - it must be efficient to call this function multiple times on the same module; the
-    *    computation should only happen once.
-    *    We recommend overriding methods have
-    *    `state.processedModules.get(m.path).foreach(return _)` as their first line.
-    *
-    * @return The transformed module if the transformer was applicable on the input module.
-    *         In case of errors, these should be signalled via [[DiagramInterpreter.errorCont]].
-    *         In case the transformer was inapplicable, [[None]] should be returned.
+    * @see [[applyModulePath]]
     */
-  def applyModule(m: Module)(implicit state: DiagramState, interp: DiagramInterpreter): Option[Module]
+  protected def applyModuleName(name: LocalName): LocalName
+
+  /**
+    * should be fast
+    * pre-condition: applyModule on the module described by path returned true previously
+    */
+  final def applyModulePath(mpath: MPath): MPath = {
+    mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
+  }
+}
+
+trait FunctorTransformer extends BaseTransformer {
+  /**
+    * The functor from [[operatorDomain]] to [[operatorCodomain]], or rather,
+    * its base case on individual modules.
+    *
+    * The actual functor is uniquely established by homomorphic extension to
+    * [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms in [[applyDomain()]].
+    *
+    * pre-condition: there is an implicit morphism from [[operatorDomain]] to path.
+    */
+  def applyDomainModule(path: MPath): MPath
+
+  /**
+    * The functor from [[operatorDomain]] to [[operatorCodomain]] uniquely described
+    * by [[applyDomainModule()]].
+    * @param t Any module expression over [[operatorDomain]], e.g. a composition of
+    *          [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms
+    */
+  final def applyDomain(t: Term): Term = t match {
+    case OMMOD(p) => OMMOD(applyDomainModule(p))
+    case OMIDENT(t) => OMIDENT(applyDomain(t))
+    case OMCOMP(mors) => OMCOMP(mors.map(applyDomain))
+  }
+}
+
+trait NatTransTransformer extends BaseTransformer {
+  /**
+    * must output a morphism term
+    * @param thy
+    * @return
+    */
+  def applyDomainTheory(thy: MPath): Term
+
+  /**
+    * pre-condition: only applicable on theory expressions
+    * @param t
+    * @return
+    */
+  final def applyDomain(t: Term): Term = t match {
+    case OMMOD(p) /* ideally: only if p points to a theory */ => applyDomainTheory(p)
+  }
 }

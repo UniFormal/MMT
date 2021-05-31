@@ -1,67 +1,18 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName, MPath}
-import info.kwarc.mmt.api.modules.Module
-import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{Context, OMID, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, OMSReplacer, Structure, TermContainer, Visibility}
-
-// DSL
-trait OperatorDSL extends LinearModuleTransformerState with SystematicRenamingUtils {
-  object NotApplicable {
-    def apply[T](c: Declaration, msg: String = "")(implicit state: LinearState, interp: DiagramInterpreter): List[T] = {
-      state.registerSkippedDeclaration(c)
-      interp.errorCont(InvalidElement(
-        c,
-        s"`${OperatorDSL.this.getClass.getSimpleName}` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
-      ))
-
-      Nil
-    }
-  }
-
-  // note: do not make df an optional Scala argument, as then users could confuse const and assgn
-  // without getting compilation errors
-  /**
-    * Creates a constant; effectiely a wrapper around [[Constant.apply()]].
-    *
-    * Only use in [[LinearModuleTransformer]]!!
-    */
-  def const(p: GlobalName, tp: Term, df: Option[Term])(implicit state: LinearState): Constant = {
-    require(p.module == state.outContainer.path)
-
-    new FinalConstant(
-      home = OMMOD(p.module),
-      name = p.name, alias = Nil,
-      tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
-      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
-    )
-  }
-
-  /**
-    * Creates an assignment for a view represented by a [[FinalConstant]].
-    *
-    * Only use in [[LinearConnectorTransformer]]s!!
-    */
-  def assgn(p: GlobalName, assignment: Term)(implicit state: LinearState): Constant = {
-    new FinalConstant(
-      home = state.outContainer.toTerm,
-      name = ComplexStep(p.module) / p.name, alias = Nil,
-      tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(assignment),
-      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
-    )
-  }
-}
+import info.kwarc.mmt.api.objects.{Context, OMID, OMS, Term}
+import info.kwarc.mmt.api.symbols.{Constant, OMSReplacer}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, LocalName}
 
 // todo: rename this class as mmt API already features a "Renamer" class?
-trait Renamer[T] {
+trait SystematicRenamer {
   def apply(name: LocalName): LocalName
 
   /**
     * Only renames symbols already processed in `state`.
     */
-  def apply(path: GlobalName)(implicit state: T): GlobalName
-
+  def apply(path: GlobalName): GlobalName
+/*
   /**
     * Always renames the symbol referred to by `path`.
     *
@@ -69,27 +20,7 @@ trait Renamer[T] {
     * in the meantime "forgot" about it. And now in a second operator invocation, you need to rename this symbol
     * still.
     */
-  def applyAlways(path: GlobalName): GlobalName
-  def apply(term: Term)(implicit state: T): Term
-  def apply(c: Constant)(implicit state: T): OMID
-
-  /**
-    * @todo would like to have signature
-    * {{{
-    * def coercedTo[S <: SystematicRenamingUtils](implicit state: S#LinearState): Renamer[S] = {
-    * }}}
-    * but can't because LinearState is a protected type in LinerOperatorState. Change that to public?
-    **/
-  def coercedTo[S](implicit state: S): Renamer[S] = {
-    implicit val TState: T = state.asInstanceOf[T]
-    new Renamer[S] {
-      override def apply(name: LocalName): LocalName = Renamer.this(name)
-      override def apply(path: GlobalName)(implicit state: S): GlobalName = Renamer.this(path)
-      override def applyAlways(path: GlobalName): GlobalName = Renamer.this.applyAlways(path)
-      override def apply(term: Term)(implicit state: S): Term = Renamer.this(term)
-      override def apply(c: Constant)(implicit state: S): OMID = Renamer.this(c)
-    }
-  }
+  def applyAlways(path: GlobalName): GlobalName*/
 }
 
 /**
@@ -109,21 +40,11 @@ trait Renamer[T] {
   *
   * @todo add example
   */
-trait SystematicRenamingUtils extends LinearModuleTransformer {
-  protected def coerceRenamer[T](renamer: Renamer[T])(implicit state: LinearState): Renamer[LinearState] = {
-    implicit val coercedState: T = state.asInstanceOf[T]
-    new Renamer[LinearState] {
-      override def apply(name: LocalName): LocalName = renamer(name)
-      override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = renamer(path)
-      override def applyAlways(path: GlobalName): GlobalName = renamer.applyAlways(path)
-      override def apply(term: Term)(implicit state: LinearState): Term = renamer(term)
-      override def apply(c: Constant)(implicit state: LinearState): OMID = renamer(c)
-    }
-  }
+trait SystematicRenamingUtils {
+  this: LinearModuleTransformer =>
+  protected lazy val emptyRenamer: SystematicRenamer = getRenamerFor("")
 
-  protected lazy val emptyRenamer: Renamer[LinearState] = getRenamerFor("")
-
-  protected def getRenamerFor(tag: String): Renamer[LinearState] = new Renamer[LinearState] {
+  protected def getRenamerFor(tag: String): SystematicRenamer = new SystematicRenamer {
     override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
 
     /**
@@ -140,15 +61,15 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
       *          `apply(path) = applyModulePath(doc ? view) ? ([applyModulePath(doc ? thy)] / c)`.
       * @todo Possibly, this method is wrong for nested theories and views. Not tested so far.
       */
-    override def apply(path: GlobalName)(implicit state: LinearState): GlobalName = {
-      if (state.processedDeclarations.exists(_.path == path)) {
+    override def apply(path: GlobalName): GlobalName = {
+      if (seenDeclarations(path.module).contains(path)) {
         applyAlways(path)
       } else {
         path
       }
     }
 
-    override def applyAlways(path: GlobalName): GlobalName = {
+    def applyAlways(path: GlobalName): GlobalName = {
       val newModule = applyModulePath(path.module)
       val newName = path.name match {
         case LocalName(ComplexStep(domain) :: name) =>
@@ -159,35 +80,13 @@ trait SystematicRenamingUtils extends LinearModuleTransformer {
       newModule ? newName
     }
 
-    override def apply(term: Term)(implicit state: LinearState): Term = {
-      val self = this // to disambiguate this in anonymous subclassing expression below
+    def apply(term: Term): Term = {
+      val self: SystematicRenamer = this // to disambiguate this in anonymous subclassing expression below
       new OMSReplacer {
         override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
-      }.apply(term, state.outContext) // todo: is this the right context?
+      }.apply(term, Context.empty)
     }
 
-    override def apply(c: Constant)(implicit state: LinearState): OMID = OMS(apply(c.path))
-  }
-
-  trait StructureHelper {
-    def linkFor(thy: MPath): MPath
-    def apply(p: GlobalName)(implicit state: LinearState): GlobalName
-    def structure(thy: MPath): Structure
-  }
-
-  def getStructureHelper(name: LocalName, domain: MPath => MPath): StructureHelper = new StructureHelper {
-    def structure(thy: MPath): Structure = Structure(
-      home = OMMOD(applyModulePath(thy)),
-      name = name,
-      from = OMMOD(domain(thy)),
-      isImplicit = false,
-      isTotal = true // TODO: is this correct?
-    )
-
-    override def linkFor(thy: MPath): MPath = thy / name
-
-    override def apply(p: GlobalName)(implicit state: LinearState): GlobalName = {
-      (applyModulePath(p.module) / name) ? (LocalName(domain(p.module)) / p.name)
-    }
+    def apply(c: Constant): OMID = OMS(apply(c.path))
   }
 }
