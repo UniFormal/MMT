@@ -1,5 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
+import info.kwarc.mmt.api.{ContentPath, MPath}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 /**
@@ -20,6 +21,12 @@ class ZippingTransformer(transformers: List[LinearTransformer]) extends LinearTr
 
   override def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit =
     transformers.foreach(_.endDiagram(diag))
+
+  override def initState(container: Container): Unit =
+    transformers.foreach(_.initState(container))
+
+  override def inheritState(into: ContentPath, from: ContentPath): Unit =
+    transformers.foreach(_.inheritState(into, from))
 
   override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean =
     transformers.forall(_.beginContainer(inContainer))

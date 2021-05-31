@@ -1,10 +1,9 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.objects.{OMIDENT, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
-import info.kwarc.mmt.api.{GlobalName, ImplementationError, LocalName, MPath, Path}
+import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 
 object PushoutOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?pushout_operator")
@@ -27,8 +26,9 @@ object PushoutOperator extends ParametricLinearOperator {
 
     override val operatorDomain: Diagram = Diagram(List(dom))
     override val operatorCodomain: Diagram = Diagram(List(cod))
-    override def applyDomainModule(path: MPath): MPath = path match {
+    override def applyDomainModule(m: MPath): MPath = m match {
       case `dom` => cod
+      case m => m
     }
 
     def applyModuleName(name: LocalName): LocalName =
@@ -50,8 +50,8 @@ object PushoutOperator extends ParametricLinearOperator {
       def translate(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, pushoutMor)
 
       List(Constant(
-        home = OMMOD(applyModulePath(c.path.module)),
-        name = c.name,
+        home = OMMOD(equiNamer(c.path).module),
+        name = equiNamer(c.path).name,
         alias = c.alias,
         tp = c.tp.map(translate),
         df = c.df.map(translate),
@@ -69,6 +69,7 @@ object PushoutOperator extends ParametricLinearOperator {
     override val out = new PushoutTransformer(dom, cod, mor)
     override def applyDomainTheory(thy: MPath): Term = thy match {
       case `dom` => mor
+      case thy => OMMOD(thy)
     }
 
     override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): List[Constant] = {

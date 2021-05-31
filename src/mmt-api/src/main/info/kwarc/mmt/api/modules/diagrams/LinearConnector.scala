@@ -96,6 +96,7 @@ trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
         beginTheory(inTheory) match {
           case Some(outView) =>
             interp.addToplevelResult(outView)
+            transformedContainers += inTheory -> outView
             true
 
           case _ => false
@@ -161,19 +162,23 @@ trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
       ???
     }
 
-    def tr(t: Term): Term = t match {
-      case t if operatorDomain.hasImplicitTo(t) => applyDomain(t)
-      case OMMOD(from) =>
-        applyModule(ctrl.getModule(from)).map(m => {
-          seenDeclarations(container.path) ++= seenDeclarations(m.path)
-          m.toTerm
-        }).getOrElse(OMMOD(from)) // when applyModule is inapplicable, default to leaving include data as-is
+    val (newFrom, newDf) = include.from match {
+      case from if operatorDomain.hasImplicitTo(from) =>
+        (in.applyDomain(OMMOD(from)).toMPath, applyDomain(OMMOD(from)))
+
+      case from =>
+        val newDf = applyModule(ctrl.getModule(from)).map(m => {
+          inheritState(container.path, m.path)
+          m.path
+        }).getOrElse(from) // when applyModule is inapplicable, default to leaving include data as-is
+
+        (in.applyModulePath(from), OMMOD(newDf))
     }
 
     val outputInclude = Include.assignment(
       home = OMMOD(applyModulePath(container.path.toMPath)),
-      from = tr(OMMOD(include.from)).toMPath,
-      df = None
+      from = newFrom,
+      df = Some(newDf)
     )
     interp.add(outputInclude)
     interp.endAdd(outputInclude)

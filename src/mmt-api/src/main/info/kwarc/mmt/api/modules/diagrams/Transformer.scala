@@ -74,8 +74,11 @@ trait FunctorTransformer extends BaseTransformer {
     * [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms in [[applyDomain()]].
     *
     * pre-condition: there is an implicit morphism from [[operatorDomain]] to path.
+    *
+    * should be pretty conservative, i.e., not throw any match errors
+    * if in doubt, just return ''m'' (be the "identity")
     */
-  def applyDomainModule(path: MPath): MPath
+  def applyDomainModule(m: MPath): MPath
 
   /**
     * The functor from [[operatorDomain]] to [[operatorCodomain]] uniquely described
@@ -94,6 +97,10 @@ trait NatTransTransformer extends BaseTransformer {
   /**
     * must output a morphism term
     * @param thy
+    *
+    * should be pretty conservative, i.e., not throw any match errors
+    * if in doubt, just return ''OMMOD(thy)'' (be the "identity")
+    *
     * @return
     */
   def applyDomainTheory(thy: MPath): Term

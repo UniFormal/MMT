@@ -163,10 +163,13 @@ trait LinearFunctor extends LinearModuleTransformer with FunctorTransformer {
       return None
     }*/
 
-    inModule match {
+    (inModule match {
       case thy: Theory => beginTheory(thy)
       case view: View => beginView(view)
-    }
+    }).map(outContainer => {
+      transformedContainers += inModule -> outContainer
+      outContainer
+    })
   }
 
   /**
