@@ -45,6 +45,12 @@ class ZippingOperator(transformers: List[LinearOperator]) extends LinearOperator
   override def inheritState(into: ContentPath, from: ContentPath): Unit =
     transformers.foreach(_.inheritState(into, from))
 
+  override def registerSeenDeclaration(d: Declaration): Unit =
+    transformers.foreach(_.registerSeenDeclaration(d))
+
+  override def registerSkippedDeclarations(d: Declaration): Unit =
+    transformers.foreach(_.registerSkippedDeclarations(d))
+
   override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean =
     transformers.forall(_.beginContainer(inContainer))
 

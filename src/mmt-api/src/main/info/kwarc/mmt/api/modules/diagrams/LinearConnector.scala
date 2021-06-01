@@ -53,10 +53,11 @@ trait LinearConnector extends LinearModuleOperator {
     in.dom
   }
   lazy override val cod: Diagram = {
+    /* wrong, even for mere pushout:
     if (in.cod != out.cod) {
       throw ImplementationError("Codomains of in and out functors of a linear connector must match. But we got " +
         s"in.cod == `${in.cod}` and out.cod == `${out.cod}`.")
-    }
+    }*/
     in.cod
   }
 
@@ -233,11 +234,11 @@ trait LinearConnector extends LinearModuleOperator {
 }
 
 trait InwardsLinearConnector extends LinearConnector {
-  val out: Functor // restate field to be able to use it to initialize the field below
-  override val in: Functor = LinearFunctor.identity(out.dom)
+  val out: Functor
+  lazy override val in: Functor = LinearFunctor.identity(out.dom) // lazy to let first `out` initialize
 }
 
 trait OutwardsLinearConnector extends LinearConnector {
-  val in: Functor // restate field to be able to use it to initialize the field below
-  override val out: Functor = LinearFunctor.identity(in.dom)
+  val in: Functor
+  lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to let first `in` initialize
 }
