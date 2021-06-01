@@ -25,8 +25,23 @@ import scala.collection.mutable
   *      theories creates views, for views does no action at all,
   *      and maps declarations in theories to view assignments for the created view.
   */
-trait LinearTransformer extends DiagramTransformer {
+trait LinearOperator extends DiagramOperator {
   type Container = ModuleOrLink
+
+  def ::(other: LinearOperator): LinearOperator = new ZippingOperator(List(this, other))
+  /*
+  def renamedTo(): LinearOperator = a new instance, overriding applyModuleName, delegating to this
+                                    everywhere else
+
+  sketch of a use case:
+
+  // diagram X := FORCE_BIND (HOM ourDiagram) /algebra
+  // FORCE_BIND: DiagramOperator -> Namespace -> DiagramOperator
+  // FORCE_BIND(op, n) := new DiagramOperator {
+  //   def applyModulePath(mpath: MPath) = n ? op.applyModulePath(mpath)
+  //   // otherwise, delegate to op
+  // }
+   */
 
   protected val seenDeclarations: mutable.Map[ContentPath, mutable.ListBuffer[GlobalName]] = mutable.HashMap()
   def registerSeenDeclaration(d: Declaration): Unit = {
@@ -202,7 +217,7 @@ trait LinearTransformer extends DiagramTransformer {
       registerSkippedDeclarations(decl)
       interp.errorCont(InvalidElement(
         decl,
-        s"`${LinearTransformer.this.getClass.getSimpleName}` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
+        s"`${LinearOperator.this.getClass.getSimpleName}` not applicable" + (if (msg.nonEmpty) ": " + msg else "")
       ))
 
       Nil
@@ -213,7 +228,7 @@ trait LinearTransformer extends DiagramTransformer {
 /**
   * Linearly transforms [[Module]]s to modules in a diagram.
   *
-  * It does so by going through modules declaration-by-declaration (using the [[LinearTransformer]]
+  * It does so by going through modules declaration-by-declaration (using the [[LinearOperator]]
   * trait) and recursing into nested modules or structures when needed.
   *
   * It is left to implementations on which modules exactly they are applicable on, and if so,
@@ -231,7 +246,7 @@ trait LinearTransformer extends DiagramTransformer {
   *     By contrast to the point above, here, confusing states is less of a problem.
   *     And also, it makes [[OperatorDSL]] much nicer to work with.
   */
-trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
+trait LinearModuleOperator extends LinearOperator with BasedOperator {
   /**
     * invariant: value v for a key k always has same type as k
     * e.g. modules are mapped to modules, structures to structures
@@ -239,7 +254,7 @@ trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
   protected val transformedContainers: mutable.Map[Container, Container] = mutable.Map()
 
   final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
-    if (operatorDomain.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
+    if (dom.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
       Some(inModule)
     } else if (applyContainer(inModule)) {
       Some(transformedContainers(inModule).asInstanceOf[Module])
@@ -249,11 +264,11 @@ trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
   }
 
   final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
-    if (diag.mt.exists(operatorDomain.subsumes(_)(interp.ctrl.library))) {
+    if (diag.mt.exists(dom.subsumes(_)(interp.ctrl.library))) {
       true
     } else {
       interp.errorCont(InvalidObject(diag.toTerm, s"Transformer ${getClass.getSimpleName} not applicable on " +
-        s"diagram because operator domain `$operatorDomain` does not subsume meta diagram of given diagram."))
+        s"diagram because operator domain `$dom` does not subsume meta diagram of given diagram."))
       false
     }
   }
@@ -267,7 +282,7 @@ trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
 
       endDiagram(diag)
 
-      Some(Diagram(newModules, Some(operatorCodomain)))
+      Some(Diagram(newModules, Some(cod)))
     } else {
       None
     }
@@ -330,19 +345,18 @@ trait LinearModuleTransformer extends LinearTransformer with BaseTransformer {
   protected lazy val equiNamer: SystematicRenamer = getRenamerFor("")
 
   /**
-    * Utilities and DSL to systematically rename constants in [[LinearTransformer]]s.
+    * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
     *
-    * These utilities are meant to be invoked within [[LinearTransformer.applyDeclaration()]]
-    * or methods called therein; in particular [[LinearTransformer.applyConstant()]],
+    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
+    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
     * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
     * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
     *
     * Only renames constants seen so far while processing (incl. the declaration being processed
     * right now).
     * Concretely, the methods herein depend on declarations being added to
-    * `state.processedDeclarations` *before* they are passed to [[LinearTransformer.applyDeclaration()]].
-    * See also the pre-condition of [[LinearTransformer.applyDeclaration()]].
-    *
+    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
+    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
     *
     * @todo add example
     */
@@ -400,65 +414,38 @@ trait SystematicRenamer {
     * Only renames symbols already processed in `state`.
     */
   def apply(path: GlobalName): GlobalName
-  /*
-    /**
-      * Always renames the symbol referred to by `path`.
-      *
-      * Use case: your operator has once processed `path` in a previous diagram operator invocation, but
-      * in the meantime "forgot" about it. And now in a second operator invocation, you need to rename this symbol
-      * still.
-      */
-    def applyAlways(path: GlobalName): GlobalName*/
 }
+
 
 /**
-  * Base trait of transformers that have some notion of an `operatorDomain` and `operatorCodomain`.
+  * Linearly transforms things
+  * while hiding much of the complexity of their contents.
   *
-  * As a first approximation, transformers could have a mere [[MPath]] as their domain and codomain.
-  * But this trait directly generalizes this to whole [[Diagram]]s as domain and codomain.
-  *
-  * So far it is only used in [[LinearFunctor]] and [[LinearConnector]].
-  * There, diagrams are transformed module-by-module and declaration-by-declaration, and upon
-  * includes the following happens: for an `include T = t`, where `T` stems from `operatorDomain`,
-  * we transform it into an `include applyMetaModule(T) = applyMetaModule(t)` (very roughly).
+  * Implementors only need to give a ''applyConstantSimple'' method.
   */
-trait RelativeBaseTransformer {
-  def operatorDomain: Diagram
-  def operatorCodomain: Diagram
-/*
+trait SimpleLinearOperator extends LinearOperator {
   /**
-    * Translates occurrences (e.g. includes) of theories and views from [[operatorDomain]]
-    * to something over [[operatorCodomain]].
+    * Maps a constant to a list of assignments in the connecting morphism.
     *
-    *  - For [[LinearFunctorialTransformer]], this is a functor.
-    *  - For [[LinearConnectorTransformer]] (between functors [[LinearConnectorTransformer.in]] and
-    *    [[LinearConnectorTransformer.out]]), this is a natural transformation between `in` and `out`.
-    *
-    *
-    * @todo ask Florian whether this method is good, ideally we should only be forced to give the functor
-    *       on "individual morphisms" and have it homomorphically extended to OMCOMPs and so on; how to do
-    *       this?
-    *
-    * @todo this is very hacky, please completely rethink conceptually
+    * @return A list of assignments (simpleName, assignmentTerm), which is used by [[applyConstant]]
+    *         to build a [[FinalConstant]] with the right name, empty type container, and a definiens container
+    *         containing assignmentTerm.
     */
-  def applyMetaModule(t: Term)(implicit lookup: Lookup): Term = (operatorDomain.modules, operatorCodomain.modules) match {
-    case (List(domTheory), List(codTheory)) => t match {
-      case OMMOD(`domTheory`) => OMMOD(codTheory)
-      case OMIDENT(OMMOD(`domTheory`)) => OMIDENT(OMMOD(codTheory))
-      case OMMOD(m) if lookup.hasImplicit(m, domTheory) =>
-        if (lookup.hasImplicit(m, codTheory)) {
-          OMMOD(m) // a very general theory, e.g. LF
-        } else {
-          OMMOD(codTheory)
-        }
+  protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): List[Constant]
 
-      // todo: this default case probably does more harm than good
-      //       above some cases are probably missing, too
-      case t => t
-    }
+  final override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+    val curSkippedDeclarations = skippedDeclarations(c.path.module).toSet.asInstanceOf[Set[ContentPath]]
 
-    case _ => throw ImplementationError(s"Implementor ${getClass.getSimpleName} of RelativeBaseTransformer " +
-      "did not override applyMetaModule, but yet had operatorDomain and/or operatorCodomain that were more " +
-      "than just singletons (for which the default implementation would have provided a fallback).")
-  }*/
+    def expand(t: Term): Term =
+      interp.ctrl.library.ExpandDefinitions(t, curSkippedDeclarations)
+
+    val expandedTp = c.tp.map(expand).getOrElse({NotApplicable(c, "no type component"); return})
+    val expandedDf = c.df.map(expand)
+
+    val outConstants = applyConstantSimple(c, expandedTp, expandedDf)
+    outConstants.foreach(interp.add)
+  }
 }
+
+trait SimpleLinearFunctor extends LinearFunctor with SimpleLinearOperator
+trait SimpleLinearConnector extends LinearConnector with SimpleLinearOperator

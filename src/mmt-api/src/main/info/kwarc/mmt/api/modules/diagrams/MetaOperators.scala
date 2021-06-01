@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.{GeneralError, GlobalName, Path}
   *
   * All diagram operators referenced in diagOps will be applied in order left-to-right to diagram.
   */
-object SequencedDiagramOperators extends DiagramOperator {
+object SequencedDiagramOperators extends NamedDiagramOperator {
   final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
 
   final override def apply(rawDiagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = rawDiagram match {
@@ -47,7 +47,7 @@ object SequencedDiagramOperators extends DiagramOperator {
   * is based on a formalization of propositional logic PL that is also modular.
   * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
   */
-object ClosureDiagramOperator extends DiagramOperator {
+object ClosureDiagramOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?closure_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
@@ -69,7 +69,7 @@ object ClosureDiagramOperator extends DiagramOperator {
   }
 }
 
-object UnionDiagramOperator extends DiagramOperator {
+object UnionDiagramOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?union_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {

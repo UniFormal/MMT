@@ -14,7 +14,7 @@ import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName, MPath}
   *
   * Implementors must implement
   *
-  *  - `applyConstant()` (inherited as [[LinearTransformer.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
   *
   * and may override, among other methods, in particular
   *
@@ -22,7 +22,7 @@ import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName, MPath}
   *  - `beginView()`
   *  - `beginStructure()`
   */
-trait LinearFunctor extends LinearModuleTransformer with FunctorTransformer {
+trait LinearFunctor extends LinearModuleOperator with Functor {
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
     * [[beginModule()]].
@@ -65,12 +65,12 @@ trait LinearFunctor extends LinearModuleTransformer with FunctorTransformer {
   protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if operatorDomain.hasImplicitFrom(mt)(interp.ctrl.library) =>
+      case mt if dom.hasImplicitFrom(mt)(interp.ctrl.library) =>
         applyDomain(OMMOD(mt)).toMPath
       case mt =>
         if (applyModule(interp.ctrl.getModule(mt)).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
-            s"was no implicit morphism into `$operatorDomain`. Recursing into meta theory as usual " +
+            s"was no implicit morphism into `$dom`. Recursing into meta theory as usual " +
             s"failed, too; reasons are probably logged above. Keeping meta theory as-is."))
           mt
         } else {
@@ -217,7 +217,7 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
 */
     def tr(t: Term): Term = t match {
       // base cases
-      case t if operatorDomain.hasImplicitFrom(t) => applyDomain(t)
+      case t if dom.hasImplicitFrom(t) => applyDomain(t)
       case OMMOD(from) =>
         applyModule(ctrl.getModule(from)).map(m => {
           inheritState(container.modulePath, from)
@@ -262,16 +262,16 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
 
 object LinearFunctor {
   /**
-    * No-op identity [[LinearTransformer transformer]] on some diagram.
+    * No-op identity [[LinearOperator transformer]] on some diagram.
     *
     * Its purpose is to serve for the `in` or `out` field of [[LinearConnector]]s.
     */
   def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
-    override val operatorDomain: Diagram = domain
-    override val operatorCodomain: Diagram = domain
-
-    override def applyDomainModule(path: MPath): MPath = path
     override def applyModuleName(name: LocalName): LocalName = name
+
+    override val dom: Diagram = domain
+    override val cod: Diagram = domain
+    override def applyDomainModule(m: MPath): MPath = m
 
     override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {}
   }

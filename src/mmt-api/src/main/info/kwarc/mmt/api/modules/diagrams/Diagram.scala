@@ -116,7 +116,7 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
 ${this.getClass.getSimpleName} debug
 -------------------------------------
 input: $df
-operators in scope: ${rules.get(classOf[DiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
+operators in scope: ${rules.get(classOf[NamedDiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
 
 output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
         $outputDiagram
@@ -129,157 +129,6 @@ output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://local
       case None =>
         env.errorCont(InvalidElement(dm, "Diagram operator returned None"))
         Nil
-    }
-  }
-}
-
-/**
-  * A diagram operator whose main functionality is given by [[apply()]].
-  *
-  * The method [[apply()]] receives a diagram and a [[DiagramInterpreter]] instance and
-  * may then inspect the input elements in the diagram and freely add new (output)
-  * elements via calls to the [[DiagramInterpreter]].
-  *
-  * All diagram operators extend [[SyntaxDrivenRule]], i.e. are [[Rule MMT rules]] that can
-  * be loaded into MMT theories -- thus suitable for a modular approach to making diagram
-  * operators available to end users -- and they carry a [[head]] symbol identifying them.
-  *
-  * To implement a new operator:
-  *
-  *   1. create an untyped constant in some MMT theory (in surface syntax), e.g.
-  *      ''my_diag_op # MY_DIAG_OP'',
-  *
-  *   2. subclass [[DiagramOperator]] (or rather one of the many subclasses that suits you,
-  *      most likely [[LinearOperator]]) and make [[head]] point to the URI of the just created symbol,
-  *
-  *   3. and load the diagram operator via ''rule <juri>scala://...'' (e.g. directly after the symbol from
-  *      point 1).
-  *
-  * @see [[LinearOperator]]
-  */
-abstract class DiagramOperator extends SyntaxDrivenRule {
-  // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
-  override val head: GlobalName
-
-
-  /**
-    * Call [[DiagramInterpreter.apply()]] on diagram arguments before inspecting them!
-    *
-    * // need access to Controller for generative operators (i.e. most operators)
-    * // todo: upon error, are modules inconsistently added to controller? avoid that.
-    *
-    * @param diagram
-    * @param interp
-    * @param ctrl
-    * @return
-    */
-  def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term]
-}
-
-/**
-  *
-  * todo: added results/connections are buffered until commit() has been called. If operators invoke certain
-  *       controller functions on buffered modules, this can lead to errors or inconsistent results.
-  *       As long as operators don't query the controller/simplifier/... for buffered modules, it's okay.
-  *       Long-term: either drop this buffering or implement staged controllers (an idea FR once had)
-  */
-class DiagramInterpreter(private val interpreterContext: Context, private val rules: RuleSet, val ctrl: Controller, val errorCont: ErrorHandler) {
-
-  private val transientPaths: mutable.ListBuffer[Path] = mutable.ListBuffer()
-
-  // need mutable.LinkedHashMap as it guarantees to preserve insertion order (needed for commit())
-  private val transientToplevelResults : mutable.LinkedHashMap[MPath, Module] = mutable.LinkedHashMap()
-
-  def toplevelResults: List[Module] = transientToplevelResults.values.toList
-
-  private val operators: Map[GlobalName, DiagramOperator] = rules.get(classOf[DiagramOperator]).map(op =>
-    (op.head, op)
-  ).toMap
-
-  def add(elem: StructuralElement): Unit = {
-    ctrl.add(elem)
-    transientPaths += elem.path
-  }
-
-  def endAdd(elem: ContainerElement[_]): Unit = {
-    ctrl.endAdd(elem)
-  }
-
-  /**
-    * [[add()]] plus registering as a toplevel result
-    * @param m
-    */
-  def addToplevelResult(m: Module): Unit = {
-    add(m)
-    transientToplevelResults.put(m.path, m)
-  }
-
-  def hasToplevelResult(m: MPath): Boolean = transientToplevelResults.contains(m)
-
-  def get(p: MPath): Module = ctrl.getAs(classOf[Module], p)
-
-  /**
-    * Hack to remove unbound constants that MMT introduces for some reason in diagram expressions
-    *
-    * TODO: resolve this bug together with Florian
-    */
-  private val removeOmbindc: Term => Term = {
-    val traverser = new StatelessTraverser {
-      override def traverse(t: Term)(implicit con: Context, state: State): Term = t match {
-        case OMBINDC(_, _, List(scope)) => Traverser(this, scope)
-        case t => Traverser(this, t)
-      }
-    }
-
-    traverser.apply(_, Context.empty)
-  }
-
-  /**
-    * Tries to fully evaluate a diagram expression and to delegate to [[DiagramOperator]]s found
-    * in [[interpreterContext]].
-    *
-    * @param t The input diagram expression
-    */
-  def apply(t: Term): Option[Diagram] = {
-    object HasHead {
-      def unapply(t: Term): Option[ContentPath] = t.head
-    }
-
-    removeOmbindc(t) match {
-      case DiagramTermBridge(diag) => Some(diag)
-
-      case OMMOD(diagramDerivedModule) =>
-        Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.library))
-
-      case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
-        // no simplification needed at this point
-        // the called operator may still simplify arguments on its own later on
-        val matchingOp = operators(p)
-        val opResult = matchingOp(operatorExpression)(this, ctrl)
-        opResult.flatMap(apply)
-
-      case diag =>
-        val simplifiedDiag = {
-          val su = SimplificationUnit(
-            context = interpreterContext,
-            expandDefinitions = true,
-            fullRecursion = true
-          )
-
-          // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
-          // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
-          removeOmbindc(ctrl.simplifier(ctrl.library.ExpandDefinitions(diag, _ => true), su))
-        }
-
-        if (simplifiedDiag == diag) {
-          throw GeneralError(s"Cannot interpret diagram expression below, which is already fully simplified:\n" +
-            s"`$simplifiedDiag`\n" +
-            s"Is the operator you are trying to apply in-scope in the meta theory you specified for the diagram " +
-            s"structural feature (`diagram d : ?meta := ...`)? " +
-            "Does the operator (a Scala object, not class!) have the correct `head` field?")
-        }
-
-        apply(simplifiedDiag)
     }
   }
 }
@@ -402,6 +251,54 @@ object Diagram {
   def singleton(theory: MPath): Diagram = Diagram(List(theory))
 
   def union(diags: Seq[Diagram])(implicit lookup: Lookup): Diagram = diags.reduceLeft((d1, d2) => d1.union(d2))
+}
+
+sealed case class DiagramFunctor(dom: Diagram, cod: Diagram, functor: Map[MPath, Term], metaFunctor: Option[DiagramFunctor] = None) {
+  def apply(m: MPath): Term = apply(OMMOD(m))
+  def apply(t: Term): Term = t match {
+    case OMMOD(m) => functor.getOrElse(m, metaFunctor.map(_(m)).getOrElse(t)) // default to return input as-is
+    case OMIDENT(m) => OMIDENT(apply(m))
+    case OMCOMP(mors) => OMCOMP(mors.map(apply))
+  }
+}
+
+object DiagramFunctor {
+  def identity(dom: Diagram): DiagramFunctor = DiagramFunctor(
+    dom,
+    dom,
+    dom.modules.map(m => m -> OMMOD(m)).toMap
+  )
+}
+
+/**
+  *
+  * @param functor
+  * @param tx maps every theory `T` in [[functor.dom]] to a morphism from `T` to [[functor.apply() functor.apply(T)]]
+  * @param metaConnection
+  */
+sealed case class DiagramConnection(functor: DiagramFunctor, tx: Map[MPath, Term], metaConnection: Option[DiagramConnection] = None) {
+
+  val dom: Diagram = functor.dom
+  val cod: Diagram = functor.cod
+
+  /* no cases for OMIDENT, OMCOMP as apply is only applicable on theory expressions */
+  def applyTheory(thy: MPath): Term = {
+    // default to return input as-is
+    tx.getOrElse(thy, metaConnection.map(_.applyTheory(thy)).getOrElse(OMMOD(thy)))
+  }
+}
+
+object DiagramConnection {
+  def identity(dom: Diagram): DiagramConnection = DiagramConnection(
+    DiagramFunctor.identity(dom),
+    dom.modules.map(m => m -> OMIDENT(OMMOD(m))).toMap
+  )
+
+  def singleton(domTheory: MPath, codTheory: MPath, mor: Term): DiagramConnection =
+    DiagramConnection(
+      DiagramFunctor(Diagram(List(domTheory)), Diagram(List(codTheory)), Map(domTheory -> OMMOD(codTheory))),
+      Map(domTheory -> mor)
+    )
 }
 
 object DiagramTermBridge {

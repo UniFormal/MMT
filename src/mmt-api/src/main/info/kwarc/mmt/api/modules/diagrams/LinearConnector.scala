@@ -5,10 +5,10 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GlobalName}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, ImplementationError, MPath}
 
 /**
-  * Linearly connects diagrams output by two [[LinearModuleTransformer]] `in` and `out` with views.
+  * Linearly connects diagrams output by two [[LinearModuleOperator]] `in` and `out` with views.
   *
   * In categorical tonus, `in` and `out` are functors on MMT diagrams, and implementors of this trait
   * *may* be natural transformations, but do not need to be.
@@ -19,7 +19,7 @@ import info.kwarc.mmt.api.{ComplexStep, GlobalName}
   *
   * Implementors must implement/override
   *
-  *  - `applyConstant()` (inherited as [[LinearTransformer.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
   *  - `translationView()`
   *
   * and may override, among other methods, in particular
@@ -27,7 +27,7 @@ import info.kwarc.mmt.api.{ComplexStep, GlobalName}
   *  - `beginTheory()`
   *  - `beginStructure()`
   *
-  * @example In universal algebra, we can create the [[LinearModuleTransformer]] `Sub(-)`
+  * @example In universal algebra, we can create the [[LinearModuleOperator]] `Sub(-)`
   *          that maps an SFOL-theory `X` to its SFOL-theory of substructures `Sub(X)`.
   *          But we can do more: for every mapped `X` we desire a view `sub_model: X -> Sub(X)`
   *          that realizes models of `Sub(X)` (i.e. submodels of X-models) as models of `X` (i.e. models
@@ -35,20 +35,40 @@ import info.kwarc.mmt.api.{ComplexStep, GlobalName}
   *          Note that creation of the connecting view is still linear in `X`.
   *          You can use this trait to realzie exactly the creation of the `sub_model` connecting views.
   *
-  * Invariants so far:
+  *          Invariants so far:
   *
   *  - in and out have same domain/codomain
   *  - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
   *    have a definiens)
   */
-trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
-  val in: FunctorTransformer
-  val out: FunctorTransformer
+trait LinearConnector extends LinearModuleOperator {
+  val in: Functor
+  val out: Functor
 
-  // declare next two fields lazy, otherwise default initialization order entails in being null
-  // see https://docs.scala-lang.org/tutorials/FAQ/initialization-order.html
-  final override lazy val operatorDomain: Diagram = in.operatorDomain // == out.operatorDomain ideally
-  final override lazy val operatorCodomain: Diagram = out.operatorCodomain // == in.operatorCodomain ideally
+  lazy override val dom: Diagram = {
+    if (in.dom != out.dom) {
+      throw ImplementationError("Domains of in and out functors of a linear connector must match. But we got " +
+        s"in.dom == `${in.dom}` and out.dom == `${out.dom}`.")
+    }
+    in.dom
+  }
+  lazy override val cod: Diagram = {
+    if (in.cod != out.cod) {
+      throw ImplementationError("Codomains of in and out functors of a linear connector must match. But we got " +
+        s"in.cod == `${in.cod}` and out.cod == `${out.cod}`.")
+    }
+    in.cod
+  }
+
+  def applyDomainTheory(thy: MPath): Term
+  /**
+    * pre-condition: only applicable on theory expressions
+    * @param t
+    * @return
+    */
+  final def applyDomain(t: Term): Term = t match {
+    case OMMOD(p) /* ideally: only if p points to a theory */ => applyDomainTheory(p)
+  }
 
   /**
     * Creates a new output view that serves to contain the to-be-created assignments; called by
@@ -163,7 +183,7 @@ trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
     }
 
     val (newFrom, newDf) = include.from match {
-      case from if operatorDomain.hasImplicitTo(from) =>
+      case from if dom.hasImplicitTo(from) =>
         (in.applyDomain(OMMOD(from)).toMPath, applyDomain(OMMOD(from)))
 
       case from =>
@@ -210,4 +230,14 @@ trait LinearConnector extends LinearModuleTransformer with NatTransTransformer {
       rl = None, notC = NotationContainer.empty(), vs = Visibility.public
     )
   }
+}
+
+trait InwardsLinearConnector extends LinearConnector {
+  val out: Functor // restate field to be able to use it to initialize the field below
+  override val in: Functor = LinearFunctor.identity(out.dom)
+}
+
+trait OutwardsLinearConnector extends LinearConnector {
+  val in: Functor // restate field to be able to use it to initialize the field below
+  override val out: Functor = LinearFunctor.identity(in.dom)
 }

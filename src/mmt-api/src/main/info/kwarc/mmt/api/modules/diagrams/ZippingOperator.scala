@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.{ContentPath, MPath}
+import info.kwarc.mmt.api.ContentPath
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
 
 /**
@@ -15,7 +15,24 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
   *
   * TODO (WARNING): the input diagram must be ordered by dependency already due to implementation details.
   */
-class ZippingTransformer(transformers: List[LinearTransformer]) extends LinearTransformer {
+class ZippingOperator(transformers: List[LinearOperator]) extends LinearOperator {
+  override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
+    if (beginDiagram(diag)) {
+      diag.modules.map(interp.ctrl.getModule).foreach(applyContainer)
+
+      // TODO: hacky workaround here by Navid:
+      //   to collect all output diagrams, we employ the hack to call applyDiagram
+      //   on every transformer. This assumes that things are not recomputed, otherwise we're
+      //   pretty inefficient
+      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.library)
+
+      endDiagram(diag)
+      Some(outDiagram)
+    } else {
+      None
+    }
+  }
+
   override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean =
     transformers.forall(_.beginDiagram(diag))
 
@@ -42,21 +59,4 @@ class ZippingTransformer(transformers: List[LinearTransformer]) extends LinearTr
 
   override def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit =
     require(requirement = false, "unreachable")
-
-  override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
-    if (beginDiagram(diag)) {
-      diag.modules.map(interp.ctrl.getModule).foreach(applyContainer)
-
-      // TODO: hacky workaround here by Navid:
-      //   to collect all output diagrams, we employ the hack to call applyDiagram
-      //   on every transformer. This assumes that things are not recomputed, otherwise we're
-      //   pretty inefficient
-      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.library)
-
-      endDiagram(diag)
-      Some(outDiagram)
-    } else {
-      None
-    }
-  }
 }

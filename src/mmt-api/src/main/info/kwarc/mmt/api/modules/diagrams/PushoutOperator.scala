@@ -1,6 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-import info.kwarc.mmt.api.modules.{Theory, View}
+import info.kwarc.mmt.api.modules.{Link, Theory, View}
 import info.kwarc.mmt.api.objects.{OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
@@ -8,48 +8,32 @@ import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
 object PushoutOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?pushout_operator")
 
-  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearTransformer] = parameters match {
+  override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearOperator] = parameters match {
     case List(OMMOD(dom), OMMOD(cod), mor) =>
-      Some(new ZippingTransformer(List(
-        new PushoutTransformer(dom, cod, mor),
-        new PushoutConnector(dom, cod, mor)
-      )))
+      val connection = DiagramConnection.singleton(dom, cod, mor)
+      Some(new PushoutFunctor(connection) :: new PushoutConnector(connection))
 
     case _ => None
   }
 
-  private class PushoutTransformer(
-                                    dom: MPath,
-                                    cod: MPath,
-                                    mor: Term)
-      extends SimpleLinearFunctor {
+  private class PushoutFunctor(connection: DiagramConnection) extends LinearFunctor {
+    def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout")
 
-    override val operatorDomain: Diagram = Diagram(List(dom))
-    override val operatorCodomain: Diagram = Diagram(List(cod))
-    override def applyDomainModule(m: MPath): MPath = m match {
-      case `dom` => cod
-      case m => m
-    }
+    override val dom: Diagram = connection.dom
+    override val cod: Diagram = connection.cod
+    override def applyDomainModule(m: MPath): MPath = connection.functor(m).toMPath
 
-    def applyModuleName(name: LocalName): LocalName =
-      name.suffixLastSimple("_pushout_over_" + mor.toStr(shortURIs = true))
+    // lazy due to cyclic instance creation with PushoutConnector
+    private lazy val connector = new PushoutConnector(connection)
 
-    private def getMorphismIntoPushout(container: Container): Term = {
-      // The expressions in container are expressions over the theory
-      // with the following module path:
-      val exprContext: MPath = container match {
+    override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+      val translationMor: Term = OMMOD(connector.applyModulePath(container match {
         case t: Theory => t.path
-        case v: View => v.to.toMPath
-      }
+        case l: Link => l.to.toMPath
+      }))
+      def translate(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, translationMor)
 
-      OMMOD(new PushoutConnector(dom, cod, mor).applyModulePath(exprContext))
-    }
-
-    override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): List[Constant] = {
-      val pushoutMor = getMorphismIntoPushout(interp.ctrl.getModule(c.path.module))
-      def translate(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, pushoutMor)
-
-      List(Constant(
+      interp.add(Constant(
         home = OMMOD(equiNamer(c.path).module),
         name = equiNamer(c.path).name,
         alias = c.alias,
@@ -61,19 +45,14 @@ object PushoutOperator extends ParametricLinearOperator {
     }
   }
 
-  private class PushoutConnector(dom: MPath, cod: MPath, mor: Term) extends SimpleLinearConnector {
-    def applyModuleName(name: LocalName): LocalName =
-      name.suffixLastSimple("_pushout_view_over_" + mor.toStr(shortURIs = true))
+  private class PushoutConnector(connection: DiagramConnection) extends InwardsLinearConnector {
+    def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout_view")
 
-    override val in: LinearFunctor = LinearFunctor.identity(dom)
-    override val out = new PushoutTransformer(dom, cod, mor)
-    override def applyDomainTheory(thy: MPath): Term = thy match {
-      case `dom` => mor
-      case thy => OMMOD(thy)
-    }
+    override val out = new PushoutFunctor(connection)
+    override def applyDomainTheory(thy: MPath): Term = connection.applyTheory(thy)
 
-    override protected def applyConstantSimple(c: Constant, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): List[Constant] = {
-      List(assgn(c.path, OMS(out.applyModulePath(c.path.module) ? c.name)))
+    override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+      interp.add(assgn(c.path, OMS(out.applyModulePath(c.path.module) ? c.name)))
     }
   }
 }
