@@ -34,7 +34,7 @@ trait BasedOperator {
     * should be fast
     * pre-condition: applyModule on the module described by path returned true previously
     */
-  final def applyModulePath(mpath: MPath): MPath = {
+  def applyModulePath(mpath: MPath): MPath = {
     mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
   }
 }

@@ -294,11 +294,24 @@ object DiagramConnection {
     dom.modules.map(m => m -> OMIDENT(OMMOD(m))).toMap
   )
 
-  def singleton(domTheory: MPath, codTheory: MPath, mor: Term): DiagramConnection =
-    DiagramConnection(
-      DiagramFunctor(Diagram(List(domTheory)), Diagram(List(codTheory)), Map(domTheory -> OMMOD(codTheory))),
-      Map(domTheory -> mor)
-    )
+  object Singleton {
+    def apply(domTheory: MPath, codTheory: MPath, mor: Term): DiagramConnection = {
+      DiagramConnection(
+        DiagramFunctor(Diagram(List(domTheory)), Diagram(List(codTheory)), Map(domTheory -> OMMOD(codTheory))),
+        Map(domTheory -> mor)
+      )
+    }
+
+    def unapply(connection: DiagramConnection): Option[(MPath, MPath, Term)] = connection match {
+      case DiagramConnection(
+        DiagramFunctor(Diagram(List(dom), None), Diagram(List(cod), None), functor, None),
+        tx,
+        None
+      ) if functor == Map(dom -> OMMOD(cod)) && tx.size == 1 && tx.contains(dom) =>
+        Some((dom, cod, tx(dom)))
+      case _ => None
+    }
+  }
 }
 
 object DiagramTermBridge {

@@ -63,7 +63,10 @@ trait LinearConnector extends LinearModuleOperator {
 
   def applyDomainTheory(thy: MPath): Term
   /**
-    * pre-condition: only applicable on theory expressions
+    * pre-conditions:
+    *
+    *  - only applicable on theory expressions
+    *  - [[dom.hasImplicitFrom(t)]] must be true
     * @param t
     * @return
     */
@@ -184,7 +187,12 @@ trait LinearConnector extends LinearModuleOperator {
     }
 
     val (newFrom, newDf) = include.from match {
-      case from if dom.hasImplicitTo(from) =>
+      case from if dom.hasImplicitFrom(from) =>
+        // only create the actually necessary includes
+        // TODO document this case, see discussion at https://mattermost.kwarc.info/kwarc/pl/opp88dhc57g4zmhyfzr7gyqixr
+        if (library.hasImplicit(applyDomain(OMMOD(from)), OMMOD(in.applyModulePath(container.path.toMPath))))
+          return
+
         (in.applyDomain(OMMOD(from)).toMPath, applyDomain(OMMOD(from)))
 
       case from =>
