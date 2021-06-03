@@ -3,9 +3,9 @@ package info.kwarc.mmt.api.modules.diagrams
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMMOD, Term}
+import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, ImplementationError, MPath}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, ImplementationError, LocalName, MPath, SimpleStep}
 
 /**
   * Linearly connects diagrams output by two [[LinearModuleOperator]] `in` and `out` with views.
@@ -189,7 +189,7 @@ trait LinearConnector extends LinearModuleOperator {
     val (newFrom, newDf) = include.from match {
       case from if dom.hasImplicitFrom(from) =>
         // only create the actually necessary includes
-        // TODO document this case, see discussion at https://mattermost.kwarc.info/kwarc/pl/opp88dhc57g4zmhyfzr7gyqixr
+        // TODO hacky work around here, see discussion at https://mattermost.kwarc.info/kwarc/pl/opp88dhc57g4zmhyfzr7gyqixr
         if (library.hasImplicit(applyDomain(OMMOD(from)), OMMOD(in.applyModulePath(container.path.toMPath))))
           return
 

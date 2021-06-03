@@ -6,6 +6,7 @@ import info.kwarc.mmt.api.modules.{Link, Theory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.uom.SimplificationUnit
 
 sealed case class PushoutNames(viewNames: MPath => Option[MPath], pushoutNames: MPath => Option[MPath])
 object PushoutNames {
@@ -25,12 +26,16 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
   private lazy val connector = new PushoutConnector(connection, names)
 
   override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    val translationMor: Term = OMMOD(connector.applyModulePath(container match {
-      case t: Theory => t.path
-      case l: Link => l.to.toMPath
-    }))
+    val translationMor: Term = OMMOD(connector.applyModulePath(expressionContext(c).toMPath))
 
-    def translate(t: Term): Term = interp.ctrl.library.ApplyMorphs(t, translationMor)
+    val su = SimplificationUnit(
+      Context(applyModulePath(c.path.module)),
+      expandDefinitions = false,
+      fullRecursion = true
+    )
+
+    def translate(t: Term): Term =
+      interp.ctrl.simplifier.apply(interp.ctrl.library.ApplyMorphs(t, translationMor), su)
 
     interp.add(Constant(
       home = OMMOD(equiNamer(c.path).module),
@@ -73,15 +78,12 @@ object SimplePushoutOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_pushout")
 
   final override def apply(invocation: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = invocation match {
-    case OMA(OMS(`head`), List(OMMOD(thy), mor, OMID(viewName: MPath), OMID(pushoutName: MPath))) =>
-      apply(OMA(OMS(head), List(
-        Diagram(List(thy)).toTerm,
-        mor,
-        Diagram(List(viewName)).toTerm,
-        Diagram(List(pushoutName)).toTerm
-      )))
-    case OMA(OMS(`head`), List(DiagramTermBridge(inputDiagram), mor, DiagramTermBridge(viewNames), DiagramTermBridge(pushoutNames))) =>
+    case OMA(OMS(`head`), List(inputDiagramTerm, mor, viewNamesTerm, pushoutNamesTerm)) =>
       implicit val library: Library = interp.ctrl.library
+
+      val List(inputDiagram, viewNames, pushoutNames) = List(inputDiagramTerm, viewNamesTerm, pushoutNamesTerm).map(
+        interp(_).getOrElse(return None)
+      )
 
       if (List(inputDiagram, viewNames, pushoutNames).exists(_.mt.nonEmpty)) {
         interp.errorCont(InvalidObject(

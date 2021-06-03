@@ -1,11 +1,11 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.libraries.Lookup
-import info.kwarc.mmt.api.modules.{Module, Theory, View}
+import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, IncludeData, Structure, TermContainer, Visibility}
-import info.kwarc.mmt.api.{GlobalName, InvalidElement, LocalName, MPath}
+import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMIDENT, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, IncludeData, OMSReplacer, Structure, TermContainer, Visibility}
+import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName, MPath, SimpleStep}
 
 /**
   * Linearly transforms theories to theories, and views to views.
@@ -257,6 +257,85 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       tpC = TermContainer.asAnalyzed(tp), dfC = TermContainer.asAnalyzed(df),
       rl = None, notC = NotationContainer.empty(), vs = Visibility.public
     )
+  }
+
+  // TODO (NR@FR): this construct is needed because otherwise in a linear functor
+  //      doing something like ``Constant(applyModulePath(c.path.module), c.name, ...``
+  //      produces wrong constant names for c being a view assignment (namely,
+  //      the domain theory in the ComplexStep also needs to be passed through applyModulePath)
+  protected lazy val equiNamer: SystematicRenamer = getRenamerFor("")
+
+  /**
+    * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
+    *
+    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
+    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
+    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
+    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
+    *
+    * Only renames constants seen so far while processing (incl. the declaration being processed
+    * right now).
+    * Concretely, the methods herein depend on declarations being added to
+    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
+    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
+    *
+    * @todo add example
+    */
+  protected def getRenamerFor(tag: String): SystematicRenamer = new SystematicRenamer {
+    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
+
+    /**
+      * Bends a path pointing to something in `state.inContainer` to a path
+      * pointing to the systematically renamed variant in `state.outContainer`.
+      *
+      * @example Suppose `path = doc ? thy ? c` where c is a [[SimpleStep]],
+      *          then `apply(path) = applyModulePath(doc ? thy) ? apply(c)`
+      * @example Suppose we are in a view and encounter an assignment with
+      *          `path = doc ? view ? ([doc ? thy] / c)` where `[doc ? thy]`.
+      *          Here, `[doc ? thy]` is a [[ComplexStep]] encoding the domain
+      *          the constant to be assigned.
+      *          Then,
+      *          `apply(path) = applyModulePath(doc ? view) ? ([applyModulePath(doc ? thy)] / c)`.
+      * @todo Possibly, this method is wrong for nested theories and views. Not tested so far.
+      */
+    override def apply(path: GlobalName): GlobalName = {
+      if (seenDeclarations(path.module).contains(path)) {
+        applyAlways(path)
+      } else {
+        path
+      }
+    }
+
+    def applyAlways(path: GlobalName): GlobalName = {
+      val newModule = applyModulePath(path.module)
+      val newName = path.name match {
+        case LocalName(ComplexStep(domain) :: name) =>
+          LocalName(applyModulePath(domain)) / apply(name)
+        case name => apply(name)
+      }
+
+      newModule ? newName
+    }
+
+    /*override def apply(term: Term): Term = {
+      val self: SystematicRenamer = this // to disambiguate this in anonymous subclassing expression below
+      new OMSReplacer {
+        override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
+      }.apply(term, Context.empty)
+    }*/
+  }
+
+  /**
+    * usually used like ''connector.applyModulePath(expressionContext(c))'' within [[applyConstant()]].
+    * @param c
+    * @param interp
+    * @return
+    */
+  protected def expressionContext(c: Constant)(implicit interp: DiagramInterpreter): Term = {
+    interp.ctrl.getModule(c.path.module) match {
+      case t: AbstractTheory => t.toTerm
+      case l: Link => l.to
+    }
   }
 }
 

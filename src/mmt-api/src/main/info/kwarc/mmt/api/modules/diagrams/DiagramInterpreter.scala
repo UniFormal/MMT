@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.{ContainerElement, ContentPath, ErrorHandler, GeneralError, GlobalName, MPath, Path, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.Module
+import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory}
 import info.kwarc.mmt.api.objects.{Context, OMBINDC, OMMOD, StatelessTraverser, Term, Traverser}
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
@@ -79,8 +79,14 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
     }
 
     removeOmbindc(t) match {
+      // nothing to do, already an encoded diagram
       case DiagramTermBridge(diag) => Some(diag)
 
+      // coerce atomic reference to theories to single diagrams
+      case OMMOD(m) if ctrl.get(m).isInstanceOf[Theory] =>
+        Some(Diagram.singleton(m))
+
+      // otherwise try to parse module references as references to diagram DerivedModule declarations
       case OMMOD(diagramDerivedModule) =>
         Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.library))
 

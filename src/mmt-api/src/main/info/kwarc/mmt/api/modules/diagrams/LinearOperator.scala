@@ -2,10 +2,65 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
-import info.kwarc.mmt.api.objects.{Context, OMID, OMS, Term}
+import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMID, OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
 
 import scala.collection.mutable
+
+trait DiagramOperator {
+  def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean
+  def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram]
+
+  // overwrite if necessary
+  def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit = {}
+}
+
+trait BasedOperator {
+  val dom: Diagram
+  val cod: Diagram
+
+  /**
+    * @see [[applyModulePath]]
+    */
+  protected def applyModuleName(name: LocalName): LocalName
+
+  /**
+    * should be fast
+    * pre-condition: applyModule on the module described by path returned true previously
+    */
+  def applyModulePath(mpath: MPath): MPath = {
+    mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
+  }
+}
+
+trait Functor extends BasedOperator {
+  /**
+    * The functor from [[operatorDomain]] to [[operatorCodomain]], or rather,
+    * its base case on individual modules.
+    *
+    * The actual functor is uniquely established by homomorphic extension to
+    * [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms in [[applyDomain()]].
+    *
+    * pre-condition: there is an implicit morphism from [[operatorDomain]] to path.
+    *
+    * should be pretty conservative, i.e., not throw any match errors
+    * if in doubt, just return ''m'' (be the "identity")
+    */
+  def applyDomainModule(m: MPath): MPath
+
+  /**
+    * The functor from [[operatorDomain]] to [[operatorCodomain]] uniquely described
+    * by [[applyDomainModule()]].
+    * @param t Any module expression over [[operatorDomain]], e.g. a composition of
+    *          [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms
+    */
+  final def applyDomain(t: Term): Term = t match {
+    case OMMOD(p) => OMMOD(applyDomainModule(p))
+    case OMIDENT(t) => OMIDENT(applyDomain(t))
+    case OMCOMP(mors) => OMCOMP(mors.map(applyDomain))
+  }
+}
+
 
 /**
   * Performs an action on [[ModuleOrLink]]s declaration-by-declaration ("linearly").
@@ -264,7 +319,7 @@ trait LinearModuleOperator extends LinearOperator with BasedOperator {
   }
 
   final override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean = {
-    if (diag.mt.exists(dom.subsumes(_)(interp.ctrl.library))) {
+    if (diag.mt.forall(dom.subsumes(_)(interp.ctrl.library))) {
       true
     } else {
       interp.errorCont(InvalidObject(diag.toTerm, s"Transformer ${getClass.getSimpleName} not applicable on " +
@@ -337,83 +392,19 @@ trait LinearModuleOperator extends LinearOperator with BasedOperator {
   override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit = {
     transformedContainers.get(inContainer).foreach(interp.endAdd)
   }
-
-  // TODO (NR@FR): this construct is needed because otherwise in a linear functor
-  //      doing something like ``Constant(applyModulePath(c.path.module), c.name, ...``
-  //      produces wrong constant names for c being a view assignment (namely,
-  //      the domain theory in the ComplexStep also needs to be passed through applyModulePath)
-  protected lazy val equiNamer: SystematicRenamer = getRenamerFor("")
-
-  /**
-    * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
-    *
-    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
-    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
-    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
-    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
-    *
-    * Only renames constants seen so far while processing (incl. the declaration being processed
-    * right now).
-    * Concretely, the methods herein depend on declarations being added to
-    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
-    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
-    *
-    * @todo add example
-    */
-  protected def getRenamerFor(tag: String): SystematicRenamer = new SystematicRenamer {
-    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
-
-    /**
-      * Bends a path pointing to something in `state.inContainer` to a path
-      * pointing to the systematically renamed variant in `state.outContainer`.
-      *
-      * @example Suppose `path = doc ? thy ? c` where c is a [[SimpleStep]],
-      *          then `apply(path) = applyModulePath(doc ? thy) ? apply(c)`
-      * @example Suppose we are in a view and encounter an assignment with
-      *          `path = doc ? view ? ([doc ? thy] / c)` where `[doc ? thy]`.
-      *          Here, `[doc ? thy]` is a [[ComplexStep]] encoding the domain
-      *          the constant to be assigned.
-      *          Then,
-      *          `apply(path) = applyModulePath(doc ? view) ? ([applyModulePath(doc ? thy)] / c)`.
-      * @todo Possibly, this method is wrong for nested theories and views. Not tested so far.
-      */
-    override def apply(path: GlobalName): GlobalName = {
-      if (seenDeclarations(path.module).contains(path)) {
-        applyAlways(path)
-      } else {
-        path
-      }
-    }
-
-    def applyAlways(path: GlobalName): GlobalName = {
-      val newModule = applyModulePath(path.module)
-      val newName = path.name match {
-        case LocalName(ComplexStep(domain) :: name) =>
-          LocalName(applyModulePath(domain)) / apply(name)
-        case name => apply(name)
-      }
-
-      newModule ? newName
-    }
-
-    def apply(term: Term): Term = {
-      val self: SystematicRenamer = this // to disambiguate this in anonymous subclassing expression below
-      new OMSReplacer {
-        override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
-      }.apply(term, Context.empty)
-    }
-
-    def apply(c: Constant): OMID = OMS(apply(c.path))
-  }
 }
 
 trait SystematicRenamer {
+  def apply(c: Constant): OMID = OMS(apply(c.path))
   def apply(name: LocalName): LocalName
 
   /**
     * Only renames symbols already processed in `state`.
     */
   def apply(path: GlobalName): GlobalName
+  def applyAlways(path: GlobalName): GlobalName
+
+  // def apply(t: Term): Term, deprecated, use ApplyMorphs on a connector instead
 }
 
 

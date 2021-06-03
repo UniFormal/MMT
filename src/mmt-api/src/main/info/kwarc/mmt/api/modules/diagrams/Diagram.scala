@@ -148,10 +148,7 @@ output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://local
   * @param mt Meta diagram
   */
 sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
-  def toTerm: Term = mt match {
-    case Some(baseDiagram) => OMA(OMS(DiagramTermBridge.basedDiagram), baseDiagram.toTerm :: DiagramTermBridge.PathCodec(modules))
-    case None => OMA(OMS(DiagramTermBridge.rawDiagram), DiagramTermBridge.PathCodec(modules))
-  }
+  def toTerm: Term = DiagramTermBridge(this)
 
   /**
     * All modules contained in this diagram and contained in all meta diagrams.
@@ -318,7 +315,13 @@ object DiagramTermBridge {
   val rawDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?raw_diagram")
   val basedDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?based_diagram")
 
-  def apply(diag: Diagram): Term = diag.toTerm
+  def apply(diag: Diagram): Term = diag.mt match {
+    case Some(baseDiagram) => OMA(
+      OMS(DiagramTermBridge.basedDiagram),
+      baseDiagram.toTerm :: PathCodec(diag.modules)
+    )
+    case None => OMA(OMS(DiagramTermBridge.rawDiagram), DiagramTermBridge.PathCodec(diag.modules))
+  }
 
   def unapply(t: Term): Option[Diagram] = t match {
     case OMA(OMS(`rawDiagram`), PathCodec(modules)) =>
