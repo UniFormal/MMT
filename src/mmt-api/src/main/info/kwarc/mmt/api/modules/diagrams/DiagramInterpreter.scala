@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.{ContainerElement, ContentPath, ErrorHandler, GeneralE
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory}
 import info.kwarc.mmt.api.objects.{Context, OMBINDC, OMMOD, StatelessTraverser, Term, Traverser}
+import info.kwarc.mmt.api.symbols.DerivedModule
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
 import scala.collection.mutable
@@ -82,13 +83,13 @@ class DiagramInterpreter(private val interpreterContext: Context, private val ru
       // nothing to do, already an encoded diagram
       case DiagramTermBridge(diag) => Some(diag)
 
-      // coerce atomic reference to theories to single diagrams
-      case OMMOD(m) if ctrl.get(m).isInstanceOf[Theory] =>
-        Some(Diagram.singleton(m))
-
-      // otherwise try to parse module references as references to diagram DerivedModule declarations
-      case OMMOD(diagramDerivedModule) =>
+      case OMMOD(diagramDerivedModule @ m) if ctrl.getO(m).exists(_.isInstanceOf[DerivedModule]) =>
         Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.library))
+
+      // otherwise coerce atomic reference to modules to single diagrams
+      // (note: these modules do not need to even exist yet; use case is to specify names of output
+      //  diagrams for diagram operators)
+      case OMMOD(m) => Some(Diagram.singleton(m))
 
       case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
         // no simplification needed at this point

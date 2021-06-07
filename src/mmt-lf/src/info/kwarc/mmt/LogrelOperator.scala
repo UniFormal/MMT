@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, TermContainer}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}
 import info.kwarc.mmt.api.utils.UnicodeStrings
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{Beta, Strings}
@@ -57,7 +57,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
 
   private val undefinedSymbols: mutable.Set[GlobalName] = mutable.Set(config.initiallyUndefinedSymbols : _*)
 
-  override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+  override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
     implicit val ctrl: Controller = interp.ctrl
     implicit val library: Library = ctrl.library
 
@@ -110,7 +110,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
 
     if (relationConstant.isEmpty) undefinedSymbols += c.path
 
-    (copies.toList ::: relationConstant.toList).foreach(interp.add)
+    copies.toList ::: relationConstant.toList
   }
 }
 
@@ -123,7 +123,7 @@ class LogrelConnector(config: LogrelConfiguration, index: Integer) extends Inwar
   override protected def applyModuleName(name: LocalName): LocalName =
     name.suffixLastSimple(s"_logrel_view$index") // / LogrelOperator.moduleSuffixFor(config) / s"view${index}"
 
-  override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    interp.add(assgn(c.path, OMS(out.copyRenamers(index).applyAlways(c.path))))
+  override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
+    List(assgn(c.path, OMS(out.copyRenamers(index).applyAlways(c.path))))
   }
 }

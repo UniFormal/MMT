@@ -170,7 +170,8 @@ trait LinearOperator extends DiagramOperator {
     */
   def applyDeclaration(decl: Declaration, container: Container)(implicit interp: DiagramInterpreter): Unit = decl match {
     case c: Constant => applyConstant(c, container)
-    case Include(includeData) => applyIncludeData(includeData, container)
+    // TODO(NR@anyone): can we unify cases for plain includes and structures?
+    case s @ Include(includeData) => applyIncludeData(includeData, s.asInstanceOf[Structure], container)
     case s: Structure => applyStructure(s, container) // must come after Include case
     case _ =>
       interp.errorCont(InvalidElement(decl, s"Transformer `$getClass` not applicable on this kind " +
@@ -185,8 +186,10 @@ trait LinearOperator extends DiagramOperator {
 
   /**
     * See [[applyDeclaration()]]; the same notes apply.
+    *
+    * @param structure The [[Structure]] containing [[include]].
     */
-  def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit
+  def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit
 
   /**
     * Adds the elaborated constants of a [[Structure]] (which occurs in `container`) to the [[LinearState]] of
@@ -302,6 +305,8 @@ trait LinearOperator extends DiagramOperator {
   *     And also, it makes [[OperatorDSL]] much nicer to work with.
   */
 trait LinearModuleOperator extends LinearOperator with BasedOperator {
+  def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration]
+
   /**
     * invariant: value v for a key k always has same type as k
     * e.g. modules are mapped to modules, structures to structures
@@ -391,6 +396,27 @@ trait LinearModuleOperator extends LinearOperator with BasedOperator {
     */
   override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit = {
     transformedContainers.get(inContainer).foreach(interp.endAdd)
+  }
+
+  override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+    val outContainerPath = transformedContainers.get(container).map(_.path)
+
+    translateConstant(c).foreach(decl => {
+      // sanity check that all returned declarations have correct homes
+      outContainerPath.foreach(outContainerPath => {
+        if (decl.path.module != outContainerPath) {
+          throw ImplementationError(s"Linear operator ${this.getClass.getSimpleName} translated constant to container " +
+            s"${decl.path.module}` which is different than the intended one `${outContainerPath}`.")
+        }
+      })
+      decl.setOrigin(GeneratedFrom(c.path, this))
+
+      interp.add(decl)
+      decl match {
+        case ce: ContainerElement[_] => interp.endAdd(ce)
+        case _ => /* do nothing */
+      }
+    })
   }
 }
 

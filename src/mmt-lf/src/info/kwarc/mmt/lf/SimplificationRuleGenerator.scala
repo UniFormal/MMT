@@ -191,7 +191,7 @@ class SimplificationRuleGenerator extends ChangeListener {
      val ruleName = c.name / SimplifyTag
      def addSimpRule(r: Rule) {
          val ruleConst = RuleConstant(c.home, ruleName, OMS(c.path), Some(r))
-         ruleConst.setOrigin(GeneratedBy(this))
+         ruleConst.setOrigin(GeneratedFrom(c.path, this))
          controller.add(ruleConst)
          log("generated rule: " + r.toString)
      }
@@ -262,7 +262,7 @@ class SimplificationRuleGenerator extends ChangeListener {
            }
            val rule = new GeneratedSolutionRule(c, desc, names, vPosition, bfrPositions, aftPositions)
            val rc = RuleConstant(c.home, ruleName, OMS(c.path), Some(rule)) //TODO nicer type
-           rc.setOrigin(GeneratedBy(this))
+           rc.setOrigin(GeneratedFrom(c.path, this))
            controller.add(rc)
            log(desc)
         case _ =>

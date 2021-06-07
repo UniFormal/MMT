@@ -5,7 +5,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, ImplementationError, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.{ComplexStep, GeneratedFrom, GlobalName, ImplementationError, LocalName, MPath, SimpleStep}
 
 /**
   * Linearly connects diagrams output by two [[LinearModuleOperator]] `in` and `out` with views.
@@ -106,6 +106,7 @@ trait LinearConnector extends LinearModuleOperator {
       to = OMMOD(out.applyModulePath(thy.path)),
       isImplicit = false
     )
+    outView.setOrigin(GeneratedFrom(thy.path, this))
     interp.add(outView)
 
     Some(outView)
@@ -172,7 +173,7 @@ trait LinearConnector extends LinearModuleOperator {
     * ''include in(S) = conn(T) . in(v)'', but the latter but be somewhat self-referential in conn(T), so unsure
     * whether it works.)
     */
-  final override def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+  final override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl // shorthand
     implicit val library: Lookup = ctrl.library
 
@@ -209,6 +210,7 @@ trait LinearConnector extends LinearModuleOperator {
       from = newFrom,
       df = Some(newDf)
     )
+    outputInclude.setOrigin(GeneratedFrom(structure.path, this))
     interp.add(outputInclude)
     interp.endAdd(outputInclude)
 

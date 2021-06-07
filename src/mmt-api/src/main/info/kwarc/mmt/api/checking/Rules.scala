@@ -529,7 +529,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
     case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
-      ruleConst.setOrigin(GeneratedBy(this))
+      ruleConst.setOrigin(GeneratedFrom(c.path, this))
       log(c.name + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>

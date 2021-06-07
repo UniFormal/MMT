@@ -3,9 +3,11 @@ package info.kwarc.mmt.api.modules.diagrams
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMIDENT, OMMOD, OMS, Term}
-import info.kwarc.mmt.api.symbols.{Constant, FinalConstant, IncludeData, OMSReplacer, Structure, TermContainer, Visibility}
-import info.kwarc.mmt.api.{ComplexStep, GlobalName, InvalidElement, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api._
+
+// TODO: document setOrigin usage
 
 /**
   * Linearly transforms theories to theories, and views to views.
@@ -79,6 +81,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     }
 
     val outTheory = Theory.empty(outPath.doc, outPath.name, newMeta)
+    outTheory.setOrigin(GeneratedFrom(thy.path, this))
     interp.add(outTheory)
 
     Some(outTheory)
@@ -111,6 +114,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
       OMMOD(applyModulePath(view.from.toMPath)), OMMOD(applyModulePath(view.to.toMPath)),
       view.isImplicit
     )
+    outView.setOrigin(GeneratedFrom(view.path, this))
     interp.add(outView)
 
     Some(outView)
@@ -143,6 +147,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
         dfC = TermContainer.empty(),
         s.isImplicit, s.isTotal
       )
+      outStructure.setOrigin(GeneratedFrom(s.path, this))
       interp.add(outStructure)
       Some(outStructure)
     case _ => None
@@ -206,7 +211,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *   ?v                    |-> ?op(v)                   if ?v is in input diagram
     * }}}
     */
-  override def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+  override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
@@ -240,6 +245,7 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       isImplicit = if (container.isInstanceOf[Theory]) true else false,
       isTotal = include.total
     )
+    s.setOrigin(GeneratedFrom(structure.path, this))
 
     // TODO hack to prevent: "add error: a declaration for the name [...] already exists [...]"
     //      when refactoring the whole framework, we should fix this anyway in the course of doing so
@@ -352,7 +358,7 @@ object LinearFunctor {
     override val cod: Diagram = domain
     override def applyDomainModule(m: MPath): MPath = m
 
-    override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {}
+    override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = List(c)
   }
 
   def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))

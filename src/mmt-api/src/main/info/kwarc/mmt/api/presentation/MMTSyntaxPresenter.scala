@@ -232,9 +232,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
     val indentedRh = indented(rh)
     theory.getDeclarations.foreach { d =>
-      if (!d.isGenerated || presentGenerated) {
+      // if (!d.isGenerated || presentGenerated) {
+      // TODO(NR@anyone): I deactivated this because now all diagops output
+      //     is marked as generated, thus hidden
         present(d, indentedRh)
-      }
+      // }
     }
     rh("\n")
   }
@@ -252,7 +254,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
 
     val indentedRh = indented(rh)
-    val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
+    // TODO(NR@anyone): I deactived this, too
+    val declarations = /*if (presentGenerated)*/ view.getDeclarations /*else view.getPrimitiveDeclarations*/
     declarations.foreach {
       case c: Constant =>
         // We want to avoid presenting types here, hence manually call doConstant and endDecl

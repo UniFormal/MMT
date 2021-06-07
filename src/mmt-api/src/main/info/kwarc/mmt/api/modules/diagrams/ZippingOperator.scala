@@ -1,7 +1,7 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.ContentPath
-import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData}
+import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure}
 
 /**
   * Transforms a diagram by multiple linear transformers in parallel,
@@ -63,6 +63,6 @@ class ZippingOperator(transformers: List[LinearOperator]) extends LinearOperator
   override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit =
     require(requirement = false, "unreachable")
 
-  override def applyIncludeData(include: IncludeData, container: Container)(implicit interp: DiagramInterpreter): Unit =
+  override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit =
     require(requirement = false, "unreachable")
 }

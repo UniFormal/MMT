@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.modules.{Link, Theory}
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.mmt.api.symbols.{Constant, Declaration}
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
@@ -25,7 +25,7 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
   // lazy due to cyclic instance creation with PushoutConnector
   private lazy val connector = new PushoutConnector(connection, names)
 
-  override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
+  override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
     val translationMor: Term = OMMOD(connector.applyModulePath(expressionContext(c).toMPath))
 
     val su = SimplificationUnit(
@@ -37,7 +37,7 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
     def translate(t: Term): Term =
       interp.ctrl.simplifier.apply(interp.ctrl.library.ApplyMorphs(t, translationMor), su)
 
-    interp.add(Constant(
+    List(Constant(
       home = OMMOD(equiNamer(c.path).module),
       name = equiNamer(c.path).name,
       alias = c.alias,
@@ -57,8 +57,8 @@ class PushoutConnector(connection: DiagramConnection, names: PushoutNames = Push
 
   override def applyDomainTheory(thy: MPath): Term = connection.applyTheory(thy)
 
-  override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    interp.add(assgn(c.path, OMS(out.applyModulePath(c.path.module) ? c.name)))
+  override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
+    List(assgn(c.path, OMS(out.applyModulePath(c.path.module) ? c.name)))
   }
 }
 
