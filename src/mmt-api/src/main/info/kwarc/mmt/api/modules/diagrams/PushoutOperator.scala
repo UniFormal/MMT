@@ -1,11 +1,10 @@
 package info.kwarc.mmt.api.modules.diagrams
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Library
-import info.kwarc.mmt.api.modules.{Link, Theory}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.uom.SimplificationUnit
 
 sealed case class PushoutNames(viewNames: MPath => Option[MPath], pushoutNames: MPath => Option[MPath])
@@ -37,7 +36,7 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
     def translate(t: Term): Term =
       interp.ctrl.simplifier.apply(interp.ctrl.library.ApplyMorphs(t, translationMor), su)
 
-    List(Constant(
+    val pushedc = Constant(
       home = OMMOD(equiNamer(c.path).module),
       name = equiNamer(c.path).name,
       alias = c.alias,
@@ -45,13 +44,15 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
       df = c.df.map(translate),
       rl = c.rl,
       not = c.notC.copy() // probably need to tweak argument positions, no?
-    ))
+    )
+    pushedc.metadata.add(c.metadata.getAll : _*)
+    List(pushedc)
   }
 }
 
 class PushoutConnector(connection: DiagramConnection, names: PushoutNames = PushoutNames.default) extends InwardsLinearConnector {
   override def applyModulePath(mpath: MPath): MPath = names.viewNames(mpath).getOrElse(super.applyModulePath(mpath))
-  def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout_view_over" + connection.toString)
+  def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout_view")
 
   override val out = new PushoutFunctor(connection, names)
 
@@ -63,14 +64,31 @@ class PushoutConnector(connection: DiagramConnection, names: PushoutNames = Push
 }
 
 object GenericPushoutOperator extends ParametricLinearOperator {
-  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?generic_pushout_operator")
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?generic_pushout")
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearOperator] = parameters match {
-    case List(OMMOD(dom), OMMOD(cod), mor) =>
+    case List(mor) =>
+      val (dom, cod) = inferMorphismDomains(mor).getOrElse(return None)
       val connection = DiagramConnection.Singleton(dom, cod, mor)
-      Some(new PushoutFunctor(connection) :: new PushoutConnector(connection))
+      Some((new PushoutFunctor(connection) :: new PushoutConnector(connection)).withFocus(0))
 
     case _ => None
+  }
+
+  /**
+    * Tries to infer a morphism's domain and codomain as MPaths
+    */
+  private[diagrams] def inferMorphismDomains(mor: Term)(implicit interp: DiagramInterpreter): Option[(MPath, MPath)] = {
+    implicit val library: Library = interp.ctrl.library
+    (Morph.domain(mor), Morph.codomain(mor)) match {
+      case (Some(OMMOD(dom)), Some(OMMOD(cod))) => Some((dom, cod))
+      case _ =>
+        interp.errorCont(InvalidObject(
+          mor,
+          s"Cannot infer atomic domain and codomain (i.e., MPaths) from morphism passed to ${getClass.getSimpleName}`"
+        ))
+        None
+    }
   }
 }
 
@@ -92,16 +110,7 @@ object SimplePushoutOperator extends NamedDiagramOperator {
         ))
       }
 
-      // try inferring the morphism's (co)domain as MPaths
-      val (dom, cod) = (Morph.domain(mor), Morph.codomain(mor)) match {
-        case (Some(OMMOD(dom_)), Some(OMMOD(cod_))) => (dom_, cod_)
-        case _ =>
-          interp.errorCont(InvalidObject(
-            invocation,
-            s"Cannot infer atomic domain and codomain (i.e., MPaths) from morphism passed to ${getClass.getSimpleName}`"
-          ))
-          return None
-      }
+      val (dom, cod) = GenericPushoutOperator.inferMorphismDomains(mor).getOrElse(return None)
       val connection = DiagramConnection.Singleton(dom, cod, mor)
       val diagram = inputDiagram.copy(mt = Some(connection.dom))
       val names = PushoutNames(
@@ -110,7 +119,9 @@ object SimplePushoutOperator extends NamedDiagramOperator {
       )
 
       (new PushoutFunctor(connection, names) :: new PushoutConnector(connection, names))
-        .applyDiagram(diagram).map(_.toTerm)
+        .withFocus(0)
+        .applyDiagram(diagram)
+        .map(_.toTerm)
 
     case _ => None
   }

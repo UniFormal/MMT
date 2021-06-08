@@ -1,6 +1,7 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api.ContentPath
+import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure}
 
 /**
@@ -15,18 +16,35 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure
   *
   * TODO (WARNING): the input diagram must be ordered by dependency already due to implementation details.
   */
-class ZippingOperator(transformers: List[LinearOperator]) extends LinearOperator {
+class ZippingOperator(operators: List[LinearOperator], focussedOp: Option[Integer] = None) extends LinearOperator {
+  require(focussedOp.forall(idx => 0 <= idx && idx < operators.size))
+
+  def withFocus(newFocus: Integer): ZippingOperator = {
+    if (newFocus >= 0) {
+      require(0 <= newFocus && newFocus < operators.size, "new focus out of bounds")
+      new ZippingOperator(operators, Some(newFocus))
+    } else {
+      require(newFocus >= -operators.size, "new focus out of bounds")
+      withFocus(operators.size + newFocus)
+    }
+  }
+
   override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
+    implicit val library: Library = interp.ctrl.library
+
     if (beginDiagram(diag)) {
       diag.modules.map(interp.ctrl.getModule).foreach(applyContainer)
+      endDiagram(diag)
 
       // TODO: hacky workaround here by Navid:
       //   to collect all output diagrams, we employ the hack to call applyDiagram
-      //   on every transformer. This assumes that things are not recomputed, otherwise we're
+      //   on every operator. This assumes that things are not recomputed, otherwise we're
       //   pretty inefficient
-      val outDiagram = Diagram.union(transformers.flatMap(_.applyDiagram(diag)))(interp.ctrl.library)
+      val outDiagram = focussedOp match {
+        case Some(focussedOp) => operators(focussedOp).applyDiagram(diag).get
+        case _ => Diagram.union(operators.flatMap(_.applyDiagram(diag)))
+      }
 
-      endDiagram(diag)
       Some(outDiagram)
     } else {
       None
@@ -34,31 +52,31 @@ class ZippingOperator(transformers: List[LinearOperator]) extends LinearOperator
   }
 
   override def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean =
-    transformers.forall(_.beginDiagram(diag))
+    operators.forall(_.beginDiagram(diag))
 
   override def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit =
-    transformers.foreach(_.endDiagram(diag))
+    operators.foreach(_.endDiagram(diag))
 
   override def initState(container: Container): Unit =
-    transformers.foreach(_.initState(container))
+    operators.foreach(_.initState(container))
 
   override def inheritState(into: ContentPath, from: ContentPath): Unit =
-    transformers.foreach(_.inheritState(into, from))
+    operators.foreach(_.inheritState(into, from))
 
   override def registerSeenDeclaration(d: Declaration): Unit =
-    transformers.foreach(_.registerSeenDeclaration(d))
+    operators.foreach(_.registerSeenDeclaration(d))
 
   override def registerSkippedDeclarations(d: Declaration): Unit =
-    transformers.foreach(_.registerSkippedDeclarations(d))
+    operators.foreach(_.registerSkippedDeclarations(d))
 
   override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean =
-    transformers.forall(_.beginContainer(inContainer))
+    operators.forall(_.beginContainer(inContainer))
 
   override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit =
-    transformers.foreach(_.endContainer(inContainer))
+    operators.foreach(_.endContainer(inContainer))
 
   override def applyDeclaration(decl: Declaration, container: Container)(implicit interp: DiagramInterpreter): Unit =
-    transformers.foreach(_.applyDeclaration(decl, container))
+    operators.foreach(_.applyDeclaration(decl, container))
 
   override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit =
     require(requirement = false, "unreachable")

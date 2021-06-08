@@ -2,7 +2,7 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.modules.{Module, ModuleOrLink}
-import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMID, OMIDENT, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 
 import scala.collection.mutable
@@ -83,7 +83,10 @@ trait Functor extends BasedOperator {
 trait LinearOperator extends DiagramOperator {
   type Container = ModuleOrLink
 
-  def ::(other: LinearOperator): LinearOperator = new ZippingOperator(List(this, other))
+  def ::(first: LinearOperator): ZippingOperator = {
+    // seemingly switched order, but this makes `op1 :: op2` really result in List(op1, op2)
+    new ZippingOperator(List(first, this))
+  }
   /*
   def renamedTo(): LinearOperator = a new instance, overriding applyModuleName, delegating to this
                                     everywhere else
@@ -174,7 +177,7 @@ trait LinearOperator extends DiagramOperator {
     case s @ Include(includeData) => applyIncludeData(includeData, s.asInstanceOf[Structure], container)
     case s: Structure => applyStructure(s, container) // must come after Include case
     case _ =>
-      interp.errorCont(InvalidElement(decl, s"Transformer `$getClass` not applicable on this kind " +
+      interp.errorCont(InvalidElement(decl, s"Linear operator `$getClass` not applicable on this kind " +
         s"of declaration."))
   }
 
@@ -327,7 +330,7 @@ trait LinearModuleOperator extends LinearOperator with BasedOperator {
     if (diag.mt.forall(dom.subsumes(_)(interp.ctrl.library))) {
       true
     } else {
-      interp.errorCont(InvalidObject(diag.toTerm, s"Transformer ${getClass.getSimpleName} not applicable on " +
+      interp.errorCont(InvalidObject(diag.toTerm, s"Linear operator ${getClass.getSimpleName} not applicable on " +
         s"diagram because operator domain `$dom` does not subsume meta diagram of given diagram."))
       false
     }

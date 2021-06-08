@@ -179,7 +179,7 @@ object ApplySpine {
       *            ApplySpine.orSymbol(OMS(p), args : _ *)
       *          }}}
       */
-    def apply(f: Term, a: Term*): Term = if (a.isEmpty) f else apply(f, a : _*)
+    def apply(f: Term, a: Term*): Term = if (a.isEmpty) f else ApplySpine(f, a : _*)
 
     /**
       * Matches `ApplySpine(f, args)` if possible and returns `(f, args)`, otherwise

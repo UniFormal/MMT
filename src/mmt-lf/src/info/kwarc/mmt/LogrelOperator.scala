@@ -1,13 +1,12 @@
 package info.kwarc.mmt
 
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}
-import info.kwarc.mmt.api.utils.UnicodeStrings
-import info.kwarc.mmt.api._
 import info.kwarc.mmt.lf.{Beta, Strings}
 
 import scala.collection.mutable
@@ -19,6 +18,7 @@ sealed case class LogrelConfiguration(arity: Integer, initiallyUndefinedSymbols:
 object LogrelOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?logrel")
 
+  // currently unused, does not work
   def moduleSuffixFor(config: LogrelConfiguration): LocalName =
     LocalName(config.arity.toString) / config.initiallyUndefinedSymbols.map(_.toLocalName).reduce(_ / _)
 
@@ -27,12 +27,13 @@ object LogrelOperator extends ParametricLinearOperator {
       val metaDiagram = interp(metaDiagramTerm).getOrElse(return None)
       val config = LogrelConfiguration(
         Integer.parseInt(arityStr),
-        initiallyUndefinedSymbols.split(",").map(Path.parseS(_)),
+        // We trim to allow users to nicely layout the string over multiple lines in *.mmt files.
+        initiallyUndefinedSymbols.split(",").map(_.trim).map(Path.parseS(_)),
         metaDiagram
       )
-      Some(new ZippingOperator(
-        new LogrelFunctor(config) :: (0 until config.arity).map(new LogrelConnector(config, _)).toList
-      ))
+      Some(new ZippingOperator( // order is important
+        (0 until config.arity).map(new LogrelConnector(config, _)).toList :+ new LogrelFunctor(config)
+      ).withFocus(-1))
 
     case _ => None
   }
@@ -96,7 +97,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
           val df = c.df.flatMap(logrel(Context.empty, _)).map(Beta.reduce)
           require(!(c.df.nonEmpty && df.isEmpty)) // logical relations are term-total
 
-          Constant(
+          val relc = Constant(
             home = OMMOD(applyModulePath(c.path.module)),
             name = lrRenamer(c.name),
             alias = c.alias,
@@ -105,6 +106,8 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
             rl = None,
             notC = NotationContainer.empty()
           )
+          relc.metadata.add(KeepAwareHeuristic.KeepAll().toMetaDatum.getAll : _*)
+          relc
         })
     }
 
