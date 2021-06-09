@@ -8,7 +8,6 @@ import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}
-import info.kwarc.mmt.api.uom.{Simplifiability, SimplificationRule, Simplify}
 import info.kwarc.mmt.lf._
 
 import scala.collection.mutable
@@ -199,10 +198,8 @@ object KeepAwareHeuristic {
     val keepInfo: Option[KeepInfo] =
       metadata.get(Metadata.keepInfoKey).headOption.map(_.value).collect {
         case OMS(Metadata.keepAll) => KeepAll()
-        case Strings(keep) => parseSpecificString(keep)
+        case Strings(keep) => parseSpecificString(keep) // syntax abbreviating case below
         case OMA(OMS(Metadata.keepSpecific), List(Strings(keep))) => parseSpecificString(keep)
-        // TODO: due to meta values being parsed very strangely
-        case ApplySpine(OMS(Metadata.keepSpecific), List(Strings(keep))) => parseSpecificString(keep)
       }
 
     keepInfo.getOrElse(KeepAsDesired())
