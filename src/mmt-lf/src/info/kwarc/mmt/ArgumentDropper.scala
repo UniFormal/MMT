@@ -4,6 +4,7 @@ import info.kwarc.mmt.api.{ErrorHandler, GlobalName, InvalidObject, LocalName}
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.notations.{Mixfix, NotationContainer}
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, StatelessTraverser, Term, Traverser, VarDecl}
+import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.lf.{ApplySpine, Arrow, FunType, Lambda, Pi}
 
 import scala.collection.mutable
@@ -111,17 +112,20 @@ object ArgumentDropper {
     f(t, INITIAL_PATH)
   }
 
-  private def etaExpand(p: GlobalName)(implicit lookup: Lookup): Option[Term] = {
-    lookup.getConstant(p).tp.collect {
-      // can only eta-expand constants with function type component
-      case FunType(argTypes, _) =>
-        val ctx: Context = argTypes.zipWithIndex.map {
-          case ((maybeName, argType), idx) =>
-            val name = maybeName.getOrElse(LocalName(s"arg$idx"))
-            VarDecl(name, argType)
-        }
-
-        Lambda(ctx, ApplySpine(OMS(p), ctx.map(_.toTerm): _*))
+  def getArguments(c: Constant): Option[Context] = {
+    c.tp.collect {
+      case FunType(argTypes, _) => argTypes.zipWithIndex.map {
+        case ((maybeName, argType), idx) =>
+          val name = maybeName.getOrElse(LocalName(s"arg$idx"))
+          VarDecl(name, argType)
+      }
     }
+  }
+
+  // can only eta-expand constants with function type component
+  private def etaExpand(p: GlobalName)(implicit lookup: Lookup): Option[Term] = {
+    getArguments(lookup.getConstant(p)).map(ctx => {
+      Lambda(ctx, ApplySpine(OMS(p), ctx.map(_.toTerm) : _*))
+    })
   }
 }

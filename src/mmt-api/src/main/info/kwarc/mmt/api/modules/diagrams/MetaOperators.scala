@@ -80,3 +80,32 @@ object UnionDiagramOperator extends NamedDiagramOperator {
     case _ => None
   }
 }
+
+// naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
+object DifferenceOperator extends NamedDiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?difference")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), List(subtrahendTerm, minuendTerm)) =>
+      val Some((subtrahend, minuend)) = interp(subtrahendTerm) zip interp(minuendTerm)
+      Some(subtrahend.copy(
+        modules = subtrahend.modules.filterNot(minuend.modules.contains)
+      ).toTerm)
+
+    case _ => None
+  }
+}
+
+// naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
+object RebaseOperator extends NamedDiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?rebase")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), List(diagramTerm, newMetaDiagramTerm)) =>
+      val Some((diagram, newMeta)) = interp(diagramTerm) zip interp(newMetaDiagramTerm)
+
+      Some(diagram.copy(mt = Some(newMeta)).toTerm)
+
+    case _ => None
+  }
+}

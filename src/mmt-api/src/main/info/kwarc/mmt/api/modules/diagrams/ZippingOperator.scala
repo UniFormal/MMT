@@ -19,6 +19,13 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, IncludeData, Structure
 class ZippingOperator(operators: List[LinearOperator], focussedOp: Option[Integer] = None) extends LinearOperator {
   require(focussedOp.forall(idx => 0 <= idx && idx < operators.size))
 
+  // Overriding prevents nested zipping operators, which is what users expect when using :: as notation
+  // E.g., this makes `(op1 :: op2 :: op3).withFocus(2)` well-behaved and what the user expects (op3 being
+  // focussed).
+  override def ::(first: LinearOperator): ZippingOperator = {
+    new ZippingOperator(first :: operators, focussedOp.map(_ + 1))
+  }
+
   def withFocus(newFocus: Integer): ZippingOperator = {
     if (newFocus >= 0) {
       require(0 <= newFocus && newFocus < operators.size, "new focus out of bounds")

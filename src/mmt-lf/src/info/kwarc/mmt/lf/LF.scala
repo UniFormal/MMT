@@ -46,8 +46,12 @@ class LFSym(name: String) {
   */
 object Lambda extends LFSym("lambda") {
   def apply(name: LocalName, tp: Term, body: Term) = OMBIND(this.term, OMV(name) % tp, body)
-
   def apply(con: Context, body: Term) = OMBIND(this.term, con, body)
+
+  /**
+    * Behaves like [[apply(con, body)]] but returns `body` if `con` is empty.
+    */
+  def applyOrBody(con: Context, body: Term): Term = if (con.isEmpty) body else apply(con, body)
 
   def unapply(t: Term): Option[(LocalName, Term, Term)] = t match {
     case OMBIND(OMS(this.path), Context(VarDecl(n, None, Some(a), None, _), rest@_*), s) =>

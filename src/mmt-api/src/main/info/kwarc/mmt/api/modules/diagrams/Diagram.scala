@@ -45,7 +45,7 @@ import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom.{SimplificationEnvironment, SimplificationUnit}
+import info.kwarc.mmt.api.uom.{FlexaryConstantScala, SimplificationEnvironment, SimplificationUnit, UnaryConstantScala}
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
@@ -106,9 +106,12 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
     diagInterp(df) match {
       case Some(outputDiagram) =>
         InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.library)
-        val outputModules = outputDiagram.modules.map(controller.getModule)
 
-        // syntax-present output diagram for quick debugging
+        // This contains all toplevel results (instead of merely outputDiagram.modules, which
+        // potentially has less results, e.g. because of a focussed ZippingOperator)
+        val outputModules = diagInterp.toplevelResults
+
+        // syntax-present all modules for debugging
         outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
                                                                       // TODO: investigate why they differ
         println(s"""
@@ -118,8 +121,9 @@ ${this.getClass.getSimpleName} debug
 input: $df
 operators in scope: ${rules.get(classOf[NamedDiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
 
-output: see above, at ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
-        $outputDiagram
+all output    : see above
+primary output: see ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
+                $outputDiagram
 -------------------------------------
 
 """)
@@ -340,5 +344,19 @@ object DiagramTermBridge {
       case OMMOD(path) => path
       case _ => return None
     })
+  }
+}
+
+object SymbolPaths {
+  private val path = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?symbol_paths")
+
+  def apply(symbols: Seq[GlobalName]): Term = OMA(OMS(path), symbols.map(OMS(_)).toList)
+  def unapply(t: Term): Option[List[GlobalName]] = t match {
+    case OMA(OMS(`path`), symbols) =>
+      Some(symbols.map {
+        case OMS(symbol) => symbol
+        case _ => return None
+      })
+    case _ => None
   }
 }

@@ -23,12 +23,11 @@ object LogrelOperator extends ParametricLinearOperator {
     LocalName(config.arity.toString) / config.initiallyUndefinedSymbols.map(_.toLocalName).reduce(_ / _)
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearOperator] = parameters match {
-    case List(Strings(arityStr), metaDiagramTerm, Strings(initiallyUndefinedSymbols)) =>
+    case List(Strings(arityStr), metaDiagramTerm, SymbolPaths(initiallyUndefinedSymbols)) =>
       val metaDiagram = interp(metaDiagramTerm).getOrElse(return None)
       val config = LogrelConfiguration(
         Integer.parseInt(arityStr),
-        // We trim to allow users to nicely layout the string over multiple lines in *.mmt files.
-        initiallyUndefinedSymbols.split(",").map(_.trim).map(Path.parseS(_)),
+        initiallyUndefinedSymbols,
         metaDiagram
       )
       Some(new ZippingOperator( // order is important

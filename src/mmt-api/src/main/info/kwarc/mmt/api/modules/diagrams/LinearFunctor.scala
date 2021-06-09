@@ -171,9 +171,10 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     (inModule match {
       case thy: Theory => beginTheory(thy)
       case view: View => beginView(view)
-    }).map(outContainer => {
-      transformedContainers += inModule -> outContainer
-      outContainer
+    }).map(outModule => {
+      transformedContainers += inModule -> outModule
+      interp.addToplevelResult(outModule)
+      outModule
     })
   }
 

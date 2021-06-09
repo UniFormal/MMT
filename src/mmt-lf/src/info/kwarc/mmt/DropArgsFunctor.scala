@@ -8,6 +8,7 @@ import info.kwarc.mmt.api.modules.diagrams._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, TermContainer}
+import info.kwarc.mmt.api.uom.{Simplifiability, SimplificationRule, Simplify}
 import info.kwarc.mmt.lf._
 
 import scala.collection.mutable
@@ -23,7 +24,7 @@ class DropArgsFunctor(meta: Diagram, heuristic: LinearDropArgsHeuristic) extends
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cleaned")
 
-  private val dropped: ArgumentDropper.DropInfo = mutable.Map()
+  private[mmt] val dropped: ArgumentDropper.DropInfo = mutable.Map()
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
     implicit val library: Library = interp.ctrl.library
@@ -45,6 +46,7 @@ class DropArgsFunctor(meta: Diagram, heuristic: LinearDropArgsHeuristic) extends
         s"Arguments of referenced constants have been dropped, but arguments of the constant itself have been" +
         s"left intact."))
 
+      dropped(c.path) = Set.empty
       (cleanedTp, cleanedDf)
     } else {
       dropped(c.path) = argsToDrop
@@ -63,13 +65,58 @@ class DropArgsFunctor(meta: Diagram, heuristic: LinearDropArgsHeuristic) extends
   }
 }
 
+/**
+  * Creates morphisms `T -> out(meta, heuristic)(T)` that map constants `c` (of N-ary function type)
+  * to `\arg1. ... \argN. c arg_{i1} ... arg_{iM}` where (i1, ..., iM) is the sublist of (1, ..., N)
+  * specifying the indicies of the kept (i.e., not dropped) arguments positions.
+  *
+  * Actually, the assignments are computed more intelligent than sketched above: they are the shortest
+  * eta-reduced form possible (and, e.g., maps `c` to `λ_. c` instead of `λ_. λy. c y`).
+  */
+class DropArgsConnector(override val out: DropArgsFunctor) extends InwardsLinearConnector {
+  override def applyDomainTheory(thy: MPath): Term = OMMOD(thy)
+  override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_clean")
+
+  override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
+    val droppedArgs = out.dropped(c.path)
+    val outc = out.applyModulePath(c.path.module) ? c.name
+
+    // Goal: synthesize an assignment `c := λ bindingCtx. c applicationCtx`
+    //
+    // where bindingCtx specifies all variables to be bound and applicationCtx
+    // is the subset of bindingCtx to which the argument-dropped c is applied
+    // ("the remaining arguments that were not dropped").
+    //
+    // Another goal: the assignment shall be as short as possible, i.e.,
+    // we must not output things like `c := λx. c x` or `c := λ_. λy. c y`.
+    // Instead, we should output `c := c` and `c := λ_. c`.
+
+    val bindingCtx: Context = if (droppedArgs.isEmpty) Nil else {
+      (ArgumentDropper.getArguments(c).getOrElse(Nil) : Context).take(droppedArgs.max) // arguments are one-based!
+    }
+
+    val applicationCtx: Context = bindingCtx.zipWithIndex.collect {
+      case (vd, idx) if !droppedArgs.contains(idx + 1) => vd // arguments are one-based!
+    }
+
+    List(assgn(c.path, Lambda.applyOrBody(
+      bindingCtx,
+      ApplySpine.orSymbol(OMS(outc), applicationCtx.map(_.toTerm) : _*)
+    )))
+  }
+}
+
 object DefaultDropArgsOperator extends ParametricLinearOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?default_drop_args")
 
   private val heuristic = new KeepAwareHeuristic(DropNoLongerUsedArgument)
 
   override def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearOperator] = parameters match {
-    case List(DiagramTermBridge(meta)) => Some(new DropArgsFunctor(meta, heuristic))
+    case List(DiagramTermBridge(meta)) =>
+      val functor = new DropArgsFunctor(meta, heuristic)
+      val connector = new DropArgsConnector(functor)
+
+      Some((functor :: connector).withFocus(0))
     case _ => None
   }
 }
@@ -81,7 +128,7 @@ object DropFirstArgument extends LinearDropArgsHeuristic {
   override def apply(c: Constant, cleanedTp: Option[Term], cleanedDf: Option[Term], dropped: DropInfo)(implicit library: Library): Set[ArgPath] = {
     cleanedTp match {
       case Some(FunType(in, _)) if in.nonEmpty => Set(1)
-      case _ => Set()
+      case _ => Set.empty
     }
   }
 }
@@ -89,14 +136,11 @@ object DropFirstArgument extends LinearDropArgsHeuristic {
 object DropNoLongerUsedArgument extends LinearDropArgsHeuristic {
   override def apply(c: Constant, cleanedTp: Option[Term], cleanedDf: Option[Term], dropped: DropInfo)(implicit library: Library): Set[ArgPath] = {
     c.getOrigin match {
-      /*case GeneratedFrom(source: GlobalName, _) =>*/
-      case _ =>
-        val source = Path.parseS(c.path.toString.replace("TheoryNew", "TheoryOld"))
+      case GeneratedFrom(source: GlobalName, _) =>
         val oldc = util.Try(library.getConstant(source)).getOrElse(return Set())
-        val (oldTp, oldDf) = (oldc.tp, oldc.df)
 
-        (oldTp, cleanedTp) match {
-          case (Some(FunType(oldIn, _)), Some(FunType(cleanedIn, cleanedOut))) =>
+        (oldc.tp zip cleanedTp).map {
+          case (FunType(oldIn, _), FunType(cleanedIn, cleanedOut)) =>
             val previouslyNamedArgs = oldIn.map(_._1).zipWithIndex.collect {
               case (Some(argName), idx) => (argName, idx + 1) // argument positions are one-based for us
             }
@@ -110,11 +154,9 @@ object DropNoLongerUsedArgument extends LinearDropArgsHeuristic {
                 }
             }.toSet
             argsToRemove
+        }.getOrElse(Set.empty)
 
-          case _ => Set()
-        }
-
-      case _ => Set()
+      case _ => Set.empty
     }
   }
 }
