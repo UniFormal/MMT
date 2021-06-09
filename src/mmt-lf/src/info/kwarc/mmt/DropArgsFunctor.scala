@@ -107,7 +107,7 @@ class DropArgsConnector(override val out: DropArgsFunctor) extends InwardsLinear
 }
 
 object DefaultDropArgsOperator extends ParametricLinearOperator {
-  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?default_drop_args")
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?drop_args_default")
 
   private val heuristic = new KeepAwareHeuristic(DropNoLongerUsedArgument)
 
