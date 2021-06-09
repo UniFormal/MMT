@@ -277,7 +277,8 @@ class XMLReader(controller: Controller) extends Logger {
                case "" => None
                case r => Some(r)
             }
-            val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer()))
+            val c = Constant(homeTerm, name, alias, tp, df, rl, notC.getOrElse(NotationContainer.empty()))
+            md.foreach(d => c.metadata.add(d.getAll:_*))
             addDeclaration(c)
          case imp @ <import>{seq @ _*}</import> =>
             val (rest, fromO) = ReadXML.getTermFromAttributeOrChild(imp, "from", nsMap)
