@@ -386,7 +386,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       // ************ includes
       case (thy: Theory, Include(id)) =>
         // plain includes (possibly defined): copy (only) includes (i.e., transitive closure of includes), composing the definitions (if any)
-        addAfter = !id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
+        addAfter = id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         // compute all includes into thy or any of its meta-theories
         val thyMetas = TheoryExp.metas(thy.toTerm)(lup).map(p => lup.getAs(classOf[Theory], p))
