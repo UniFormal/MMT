@@ -12,7 +12,7 @@ case class ElaborationOf(source: ContentPath) extends Origin
 case object ElaborationOfDefinition extends Origin
 
 /**
-  * A knowledge item translated (generated) by some agent [[by]]
+  * A knowledge item generated (or translated) by some agent [[by]]
   * from some [[source]] knowledge item.
   *
   * @example Every linear diagram operator translates a single constant c
