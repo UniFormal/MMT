@@ -1,3 +1,4 @@
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.api.frontend.{Controller, Extension}
 
 object TPTPPlaygroundTest extends MagicTest {
@@ -7,7 +8,11 @@ object TPTPPlaygroundTest extends MagicTest {
   }
 
   def run(): Unit = {
-    loadMMTExtensionFromArchives("latin2.tptp.SFOLExporter")(controller)
+    if (!loadMMTExtensionFromArchives("latin2.tptp.TPTPExporter")(controller)) {
+      throw ImplementationError("Extension cannot be loaded from archive!")
+    }
+    controller.handleLine("build MMT/LATIN2 mmt-omdoc playground/tptp-exporter_monoid.mmt")
+    controller.handleLine("build MMT/LATIN2 tptp playground/tptp-exporter_monoid.omdoc")
   }
 
   /**
