@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.{GeneralError, GlobalName, Path}
   *
   * All diagram operators referenced in diagOps will be applied in order left-to-right to diagram.
   */
-object SequencedDiagramOperators extends DiagramOperator {
+object SequencedDiagramOperators extends NamedDiagramOperator {
   final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
 
   final override def apply(rawDiagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = rawDiagram match {
@@ -47,7 +47,7 @@ object SequencedDiagramOperators extends DiagramOperator {
   * is based on a formalization of propositional logic PL that is also modular.
   * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
   */
-object ClosureDiagramOperator extends DiagramOperator {
+object ClosureDiagramOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?closure_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
@@ -69,13 +69,42 @@ object ClosureDiagramOperator extends DiagramOperator {
   }
 }
 
-object UnionDiagramOperator extends DiagramOperator {
+object UnionDiagramOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?union_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
     case OMA(OMS(`head`), diagramTerms) =>
       val diagrams = diagramTerms.flatMap(interp.apply)
       Some(Diagram.union(diagrams)(interp.ctrl.library).toTerm)
+
+    case _ => None
+  }
+}
+
+// naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
+object DifferenceOperator extends NamedDiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?difference")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), List(subtrahendTerm, minuendTerm)) =>
+      val Some((subtrahend, minuend)) = interp(subtrahendTerm) zip interp(minuendTerm)
+      Some(subtrahend.copy(
+        modules = subtrahend.modules.filterNot(minuend.modules.contains)
+      ).toTerm)
+
+    case _ => None
+  }
+}
+
+// naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
+object RebaseOperator extends NamedDiagramOperator {
+  override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?rebase")
+
+  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+    case OMA(OMS(`head`), List(diagramTerm, newMetaDiagramTerm)) =>
+      val Some((diagram, newMeta)) = interp(diagramTerm) zip interp(newMetaDiagramTerm)
+
+      Some(diagram.copy(mt = Some(newMeta)).toTerm)
 
     case _ => None
   }

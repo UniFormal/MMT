@@ -97,6 +97,18 @@ object DataStructures {
     override protected def getMMTDefComponent: Option[Term] = df
   }
 
+  sealed case class SEquationSystemFact(
+                                  override val ref: Option[FactReference],
+                                  override val label: String,
+                                  tp: Term,
+                                  df: Option[Term],
+                                  equations: List[(Term, Term)]
+                                ) extends SFact(ref, label) {
+    override protected def getMMTTypeComponent: Term = tp
+
+    override protected def getMMTDefComponent: Option[Term] = df
+  }
+
   /**
     * Represents facts of the form
     *

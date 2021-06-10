@@ -14,10 +14,11 @@ All endpoints indicate success by a 2xx response status code and failure by any 
 
 **Playground.**
 The [kwarc research group](https://kwarc.info) uses [Postman](https://www.postman.com/) to collaboratively tinker with the request & response API.
-We maintain a [Postman team](https://kwarc-frameit.postman.co/team) (public), a [Postman workspace](https://kwarc-frameit.postman.co/workspace/FrameIT-Postman-Workspace~d9c28eb0-b28c-47b9-8403-864de6799418) (not public), and a [Postman sample request & response collection](https://kwarc-frameit.postman.co/workspace/FrameIT-Postman-Workspace~d9c28eb0-b28c-47b9-8403-864de6799418/collection/9866886-8347f2b8-c8a6-4c8b-800c-c4d3b01c9580?ctx=documentation) (not public).
-You can request read and/or write access by contacting one of the [UFrameIT team members](https://uframeit.org/).
-Technically, the Postman workspace is attributed to "`kwarc` DOT `group` AT `gmail.com`" to prevent losing access when team members fluctuate.
-Yet, as yet another counter measure, in [`./mmt-frameit-server-2021-02-17.postman_collection.json`](./mmt-frameit-server-2021-02-17.postman_collection.json) you can find an exported version of the workspace's contents.
+We maintain a [Postmean team](https://kwarc-frameit.postman.co/home) and a [public Postman workspace](https://www.postman.com/kwarc-frameit/workspace/frameit-developers-workspace/overview) with sample request & response collections of the REST API.
+To request write access, contact one of the [UFrameIT team members](https://uframeit.org/).
+Currently, [@ComFreek](https://github.com/ComFreek) and [@SESch93](https://github.com/SESch93) have and manage write access.
+(Unfortunately, in the free version of Postman, team size is limited to two people.)
+As a backup, in [`./mmt-frameit-server-2021-02-17.postman_collection.json`](./mmt-frameit-server-2021-02-17.postman_collection.json) you can find a snapshot of an exported version of the workspace's contents.
 
 ### Endpoints
 

@@ -78,7 +78,11 @@ class DerivedDeclaration(val home: Term, val name: LocalName, val feature: Strin
      val res = new DerivedDeclaration(newHome, prefix/name, feature, tpT, notC.copy, dfT)
      val icont = con ++ getInnerContext
      getDeclarations.foreach {d =>
-       res.add(d.translate(res.toTerm, LocalName.empty, tl, icont))
+       val dTranslated = d.translate(res.toTerm, LocalName.empty, tl, icont)
+       if (this.feature == patterns.Instance.feature) d match {
+         case c: Constant if (c.rl == Some("mainDecl")) => res.add(Constant(c.home, c.name, c.alias, c.tp, c.df, None, this.notC))
+       } else
+         res.add(dTranslated)
      }
      res
    }

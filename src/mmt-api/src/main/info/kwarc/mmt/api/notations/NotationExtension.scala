@@ -109,7 +109,14 @@ case class Mixfix(markers: List[Marker]) extends Fixity {
 }
 
 object Circumfix extends Fixity {
-  def apply(leftDelim: Delim, rightDelim: Delim, argNum: Int) = Mixfix(leftDelim :: (0 until argNum).toList.map(i=>SimpArg(i+1)).+:(rightDelim))
+  def apply(leftDelim: Delim, rightDelim: Delim, argNum: Int, implArgInds: List[Int]) = {
+    val explArgMarkers = (0 until argNum).filterNot(implArgInds.contains(_)).toList.map(i => SimpArg(i+1))
+    val implArgMarkers = implArgInds.map(i=>ImplicitArg(i+1))
+    Mixfix(leftDelim :: implArgMarkers:::explArgMarkers.+:(rightDelim))
+  }
+
+  def apply(leftDelim: Delim, rightDelim: Delim, argNum: Int, impl: Int = 0) =
+    Mixfix(leftDelim :: (1 until impl+1) .map(ImplicitArg(_)).toList:::(impl+1 until argNum+1) .map (SimpArg(_)).toList.+:(rightDelim))
   override def asString: (String, String) = this.asInstanceOf[Mixfix].asString
   override def markers = this.asInstanceOf[Mixfix].markers
   override def addInitialImplicits(n: Int) = this.asInstanceOf[Mixfix].addInitialImplicits(n)
@@ -127,19 +134,29 @@ object Circumfix extends Fixity {
 }
 
 object PrePostfix extends Fixity {
+  def apply(delim: Delimiter, prefixedArgsNum: Int, numArgs: Int, rightArgsBracketed: Boolean, implArgInds: List[Int]) : Mixfix = {
+    val bracketed = rightArgsBracketed && (numArgs - prefixedArgsNum - implArgInds.length > 0)
+    val explArgMarkers = (0 until numArgs).filterNot(implArgInds.contains(_)).toList.map(i => SimpArg(i+1))
+    val implArgMarkers = implArgInds.map(i=>ImplicitArg(i+1))
+    val (infixedArgMarkers, suffixedArgsMarkers) = explArgMarkers.splitAt(prefixedArgsNum)
+    val suffMarkers: List[Marker] = if (bracketed) {
+      Delim("(") :: suffixedArgsMarkers.+:(Delim(")"))
+    } else {
+      suffixedArgsMarkers
+    }
+    val markers = implArgMarkers:::infixedArgMarkers ::: delim :: suffMarkers
+    Mixfix(markers)
+  }
   def apply(delim: Delimiter, prefixedArgsNum: Int, expl: Int, rightArgsBracketed: Boolean = false, impl: Int = 0) : Mixfix = {
-    lazy val markers = if (expl != 0) {
-      val implArgs = (0 until impl).toList.map(i => ImplicitArg(i+1))
-      val infixedArgMarkers = (impl until impl + prefixedArgsNum).map(i => SimpArg(i + 1)).toList
-      val suffixedArgsMarkers = (impl + prefixedArgsNum until impl + expl).map(i => SimpArg(i + 1)).toList
-      val suffMarkers: List[Marker] = if (rightArgsBracketed) {
-        Delim("(") :: suffixedArgsMarkers.+:(Delim(")"))
-      } else {
-        suffixedArgsMarkers
-      }
-      infixedArgMarkers ++ (delim :: suffMarkers) ::: implArgs
-    } else (0 until prefixedArgsNum).toList.map(i => SimpArg(1 + impl + i)) ::: delim ::
-      (prefixedArgsNum until expl).toList.map(i => SimpArg(1 + impl + i)) ::: (0 until impl).toList.map(i => ImplicitArg(i + 1))
+    val bracketed = rightArgsBracketed && (expl - prefixedArgsNum > 0)
+    val argMarkers = (1 until impl+1).map (ImplicitArg(_)).toList ::: (impl+1 until impl+expl+1).map (SimpArg(_)).toList
+    val (infixedArgMarkers, suffixedArgsMarkers) = argMarkers.splitAt(prefixedArgsNum)
+    val suffMarkers: List[Marker] = if (bracketed) {
+      Delim("(") :: suffixedArgsMarkers.+:(Delim(")"))
+    } else {
+      suffixedArgsMarkers
+    }
+    val markers = infixedArgMarkers ::: delim :: suffMarkers
     Mixfix(markers)
   }
   override def asString: (String, String) = this.asInstanceOf[Mixfix].asString
@@ -147,8 +164,8 @@ object PrePostfix extends Fixity {
   override def addInitialImplicits(n: Int) = this.asInstanceOf[Mixfix].addInitialImplicits(n)
   def unapply(fix: Fixity) = fix match {
     case Mixfix(markers) =>
-      val prefixes = markers.takeWhile { case SimpArg(_, _) => true case _ => false }
-      val remainingMarkers = markers.drop(prefixes.length)
+      val (impls, expls) = markers.span(_.isInstanceOf[ImplicitArg])
+      val (prefixes, remainingMarkers) = expls.span(_.isInstanceOf[SimpArg])
       val (delim, suffixesP) = (remainingMarkers.head, remainingMarkers.tail)
       val rightArgsBracketed = if (suffixesP.length >= 2) {
         (suffixesP.head == Delim("(") && suffixesP.last == Delim(")"))
@@ -160,10 +177,8 @@ object PrePostfix extends Fixity {
       } else {
         suffixesP
       }
-      val suffs = suffixes.takeWhile { case SimpArg(_, _) => true case _ => false }
-      val implArgs = suffixes.drop(suffs.length)
-      ((delim, suffs, implArgs) match {
-        case (Delim(del), sufs: List[SimpArg], impls: List[ImplicitArg]) => Some((delim, prefixes.length, prefixes.length + sufs.length, rightArgsBracketed, impls.length))
+      ((delim, suffixes) match {
+        case (Delim(del), sufs: List[SimpArg]) => Some((delim, prefixes.length, prefixes.length + sufs.length, rightArgsBracketed, impls.length))
         case _ => None
       })
     case _ => None

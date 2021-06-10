@@ -74,7 +74,9 @@ sealed class SituationTheory(val path: SituationTheoryPath)(implicit ctrl: Contr
     )
 
     Utils.addModule(newSituationTheory)
-    ctrl.add(PlainInclude(path.module, newPath.module))
+    val include = PlainInclude(path.module, newPath.module)
+    ctrl.add(include)
+    ctrl.endAdd(include)
     Utils.endAddModule(newSituationTheory)
 
     new SituationTheory(newPath)

@@ -106,13 +106,23 @@ object LFX {
     val th = baseURI ? "ListSymbols"
   }
 
+  object ListType {
+    val path = Lists.th ? "ListType"
+    val term = OMS(path)
+    def apply(tp : Term) : Term = OMA(this.term,List(tp))
+    def unapply(tp : Term) : Option[Term] = tp match {
+      case OMA(this.term,List(t)) => Some(t)
+      case _ => None
+    }
+  }
+
   object ListNil {
     val path = Lists.th ? "nil"
     val term = OMS(path)
   }
 
   object Append {
-    val path2 = Lists.th ? "ls"
+    val path2 = Lists.th ? "list"
     val term2 = OMS(path2)
     val path = Lists.th ? "append"
     val term = OMS(path)
@@ -127,7 +137,7 @@ object LFX {
   }
 
   object LFList {
-    val path = Lists.th ? "ls"
+    val path = Lists.th ? "list"
     val term = OMS(path)
     def apply(tms : List[Term]) : Term = OMA(this.term,tms)
     def unapply(ls : Term) : Option[List[Term]] = ls match {
@@ -312,7 +322,7 @@ class SubtypeGenerator extends ChangeListener {
   override val logPrefix = "subtype-rule-gen"
   protected val subtypeTag = "subtype_rule"
 
-  private def rulePath(r: SubtypeJudgRule) = r.by / subtypeTag
+  private def rulePath(r: SubtypeJudgRule) = r.by.map(_ / subtypeTag)
 
   private def present(t: Term) = controller.presenter.asString(t)
 
@@ -332,15 +342,15 @@ class SubtypeGenerator extends ChangeListener {
   }
 
   override def onDelete(e: StructuralElement) {
-    getGeneratedRule(e.path).foreach { r => controller.delete(rulePath(r)) }
+    getGeneratedRule(e.path).foreach { r => rulePath(r).foreach(controller.delete) }
   }
 
   override def onCheck(e: StructuralElement): Unit = e match {
     case c: Constant if c.tpC.analyzed.isDefined => c.tp match {
       case Some(subtypeJudg(tm1,tm2)) =>
-        val rule = new SubtypeJudgRule(tm1,tm2,c.path)
+        val rule = new SubtypeJudgRule(tm1,tm2,Some(c.path))
         val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-        ruleConst.setOrigin(GeneratedBy(this))
+        ruleConst.setOrigin(GeneratedFrom(c.path, this))
         log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
         controller add ruleConst
       case _ =>
@@ -349,7 +359,7 @@ class SubtypeGenerator extends ChangeListener {
   }
 }
 
-class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
+class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : Option[GlobalName]) extends SubtypingRule {
   val head = subtypeJudg.path
   def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
   def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean] = {

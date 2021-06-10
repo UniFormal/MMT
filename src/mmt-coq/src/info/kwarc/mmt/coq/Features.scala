@@ -1,14 +1,13 @@
 package info.kwarc.mmt.coq
 
-import info.kwarc.mmt.api.{GeneratedBy, GlobalName, LocalName, MPath, NamespaceMap, Path}
 import info.kwarc.mmt.api.checking.ExtendedCheckingEnvironment
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.{AbstractTheory, ModuleOrLink, Theory, View}
-import info.kwarc.mmt.api.notations.{Delim, LabelArg, LabelInfo, NotationContainer, SimpArg}
+import info.kwarc.mmt.api.notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.coq.Modules.Replace
+import info.kwarc.mmt.api._
 import info.kwarc.mmt.coq.coqxml.TranslationState
 import info.kwarc.mmt.lf.{ApplySpine, Lambda, Pi}
 
@@ -122,7 +121,7 @@ class CoqModule extends StructuralFeature("Module") {
     val (iresult,mp) = Modules.moduleElab(parent,dd,controller)
     val result = iresult ::: {
       val inc = PlainInclude(mp,parent.modulePath)
-      // inc.setOrigin(GeneratedBy(dd))
+      // inc.setOrigin(TranslatedFrom(dd, this))
       List(inc)
     }
 

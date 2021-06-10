@@ -218,7 +218,7 @@ abstract class Lookup {self =>
       * @param expand All [[OMID]]s referencing a defined constant in this list will be definition-expanded.
       * @return The definition-expanded term.
       */
-      def apply(t: Term, expand: Seq[ContentPath]): Term = super.apply(t, expand.contains)
+      def apply(t: Term, expand: Set[ContentPath]): Term = super.apply(t, expand.contains)
 
       def traverse(t: Term)(implicit con: Context, expand: ContentPath => Boolean): Term = t match {
          case OMID(p: GlobalName) if expand(p) => getAs(classOf[Constant],p).df match {

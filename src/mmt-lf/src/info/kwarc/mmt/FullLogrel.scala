@@ -33,7 +33,7 @@ import info.kwarc.mmt.api.objects._
   *   The overall goal is to make comments human-readable and useful to give an intuition on what the
   *   code does to a human reader.
   */
-class FullLogrel(override val mors: List[Term], lr: GlobalName => Term, override val lookup: Lookup) extends Logrel {
+class FullLogrel(override val mors: Array[Term], lr: GlobalName => Term, override val lookup: Lookup) extends Logrel {
 
   private val partialLogrel = new PartialLogrel(mors, p => Some(lr(p)), lookup)
 

@@ -48,7 +48,7 @@ So what new contexts we synthesize must depend on `partOfRel(-)` applied to the 
   *   The overall goal is to make comments human-readable and useful to give an intuition on what the
   *   code does to a human reader.
   */
-class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term], override val lookup: Lookup) extends Logrel {
+class PartialLogrel(override val mors: Array[Term], lr: GlobalName => Option[Term], override val lookup: Lookup) extends Logrel {
 
   /**
     * For a term `t: A`, computes the expected type of `lr(t)`.
@@ -85,7 +85,7 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
   def apply(ctx: Context, t: Term): Option[Term] = t match {
     case OMV(x) =>
       if (ctx.get(x).tp.exists(isDefined(ctx, _))) Some(OMV(star(x)))
-      else None // TODO(NR@FR): Is returning None correct here? Previously, I thoguht about Some(OMV(x)) but that broke things.
+      else None
 
     // Cases for inhabitable t
     // =========================================================================
@@ -161,23 +161,6 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
     case _ => ???
   }
 
-  /* TODO(NR): remove this
-  def synthesize(synthesizer: GlobalName => Term, fullLr: GlobalName => Term)(ctx: Context, t: Term): Term = {
-    val fullLogrel = new FullLogrel(mors, fullLr, lookup)
-    
-    def _synthesize(ctx: Context, t: Term): Term = t match {
-      case OMBIND(OMS(Pi.path), boundCtx, retType) =>
-        Lambda(fullLogrel.apply(ctx, boundCtx), _synthesize(ctx ++ boundCtx, retType))
-
-      case t@FunType(args, _) if args.nonEmpty => _synthesize(ctx, funToPiType(t))
-      case ApplySpine(f, args) => ApplySpine(_synthesize(ctx, f), args.map(_synthesize(ctx, _)): _*)
-      case OMS(p) => lr(p).getOrElse(synthesizer(p))
-    }
-    
-    _synthesize(ctx, t)
-  }*/
-
-
   /**
     * Maps a [[Context]] `g` (in context of its context `ctx`).
     *
@@ -215,4 +198,3 @@ class PartialLogrel(override val mors: List[Term], lr: GlobalName => Option[Term
   override def applyTerm(c: Context, t: Term): List[Term] =
     applyMors(c, t) ::: apply(c, t).toList
 }
-

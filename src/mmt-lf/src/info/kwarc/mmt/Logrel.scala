@@ -13,7 +13,7 @@ import info.kwarc.mmt.api.utils.UnicodeStrings
   * @todo better name for trait
   */
 trait Logrel {
-  def mors: List[Term]
+  def mors: Array[Term]
   def lookup: Lookup
 
   def apply(ctx: Context, g: Context): Context
@@ -30,7 +30,7 @@ trait Logrel {
     * Only change in conjunction with [[suffix()]]!
     */
   def star(name: LocalName): LocalName = {
-    if (mors.size == 1) name.suffixLastSimple("ᕁ") else name
+    if (mors.length == 1) name.suffixLastSimple("ᕁ") else name
   }
 
   /**
@@ -44,7 +44,7 @@ trait Logrel {
     */
   def suffix(name: LocalName, i: Int): LocalName = {
     // i + 1 to since human-readable argument indices are usually 1-based
-    if (mors.size == 1) name else name.suffixLastSimple(UnicodeStrings.subscriptInteger(i + 1))
+    if (mors.length == 1) name else name.suffixLastSimple(UnicodeStrings.subscriptInteger(i + 1))
   }
 
   /**
