@@ -185,8 +185,8 @@ trait RealizationStorage {
 }
 
 /** loads a realization from a Java Class Loader and dynamically creates a [[uom.RealizationInScala]] for it */
-class RealizationArchive(val file: File, parent : Unit => Option[RealizationArchive]) extends Storage with RealizationStorage {
-  override def toString = "realization archive for " + file
+class RealizationArchive(val files: List[File], parent : Unit => Option[RealizationArchive]) extends Storage with RealizationStorage {
+  override def toString = "realization archive for " + files.mkString(", ")
 
   override def clear {
     resetLoader
@@ -202,14 +202,14 @@ class RealizationArchive(val file: File, parent : Unit => Option[RealizationArch
     // the class loader that loaded this class, may be null for bootstrap class loader
     optCl match {
       case None =>
-        new java.net.URLClassLoader(Array(file.toURI.toURL)) // parent defaults to bootstrap class loader
+        new java.net.URLClassLoader(files.map(_.toURI.toURL).toArray) // parent defaults to bootstrap class loader
       case Some(cl) =>
         // delegate to the class loader that loaded MMT - needed if classes to be loaded depend on MMT classes
-        new java.net.URLClassLoader(Array(file.toURI.toURL), cl)
+        new java.net.URLClassLoader(files.map(_.toURI.toURL).toArray, cl)
     }
   } catch {
     case e: Exception =>
-      throw  GeneralError("could not create class loader for " + file.toString).setCausedBy(e)
+      throw  GeneralError("could not create class loader for " + files.toString).setCausedBy(e)
   }
 
   def load(path: Path)(implicit controller: Controller) {
