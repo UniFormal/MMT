@@ -1,5 +1,6 @@
-package info.kwarc.mmt
+package info.kwarc.mmt.lf.comptrans
 
+import info.kwarc.mmt.KeepAwareHeuristic
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Library
@@ -41,7 +42,7 @@ object LogrelOperator extends ParametricLinearOperator {
 class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
   override val dom: Diagram = config.metaDiagram
   override val cod: Diagram = config.metaDiagram
-  override def applyDomainModule(m: MPath): MPath = m // unreachable anyway due to dom == Diagram.empty
+  override def applyDomainModule(m: MPath): MPath = m
 
   override protected def applyModuleName(name: LocalName): LocalName =
     name.suffixLastSimple("_logrel") // / LogrelOperator.moduleSuffixFor(config)
@@ -81,11 +82,16 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
       copy
     })
 
-    val logrel = new PartialLogrel(
+    val logrel = new CompositionalTranslation(
+      connectingMorphisms.map(new CompositionalMorphism(_)).toList,
+      p => if (undefinedSymbols.contains(p)) None else Some(OMS(lrRenamer(p)))
+    )
+
+    /*val logrel = new PartialLogrel(
       mors = connectingMorphisms,
       p => if (undefinedSymbols.contains(p)) None else Some(OMS(lrRenamer(p))),
       interp.ctrl.library
-    )
+    )*/
 
     val relationConstant: Option[Constant] = if (undefinedSymbols.contains(c.path)) None else {
       implicit val ctrl: Controller = interp.ctrl
@@ -93,7 +99,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
         .flatMap(oldTp => logrel.getExpected(Context.empty, c.toTerm, oldTp))
         .map(Beta.reduce)
         .map(tp => {
-          val df = c.df.flatMap(logrel(Context.empty, _)).map(Beta.reduce)
+          val df = c.df.flatMap(logrel(Context.empty, None, _)).map(Beta.reduce)
           require(!(c.df.nonEmpty && df.isEmpty)) // logical relations are term-total
 
           val relc = Constant(

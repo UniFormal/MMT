@@ -1,10 +1,10 @@
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.{CompositionalMorphism, CompositionalTranslation}
 import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.modules.{Theory, View}
-import info.kwarc.mmt.api.{MPath, NamespaceMap, Path}
-import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS}
-import info.kwarc.mmt.lf.{Arrow, Beta, Univ}
+import info.kwarc.mmt.api.objects.Context
+import info.kwarc.mmt.api.{NamespaceMap, Path}
+import info.kwarc.mmt.lf.Beta
+import info.kwarc.mmt.lf.comptrans.{CompositionalMorphism, CompositionalTranslation}
 
 /**
   * @author Navid
@@ -19,7 +19,7 @@ object CompTransTest extends MagicTest("debug") {
     val cod = controller.getTheory(doc ? "STyped")
     val view = controller.getModule(doc ? "v").asInstanceOf[View]
 
-    val mor = new CompositionalMorphism(view.toTerm, library)
+    val mor = new CompositionalMorphism(view.toTerm)
     val logrel = new CompositionalTranslation(List(mor), p => {
       None
     })

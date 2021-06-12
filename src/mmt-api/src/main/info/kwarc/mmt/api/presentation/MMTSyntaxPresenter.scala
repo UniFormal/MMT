@@ -378,12 +378,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
     // present all elements
 
-    // Only present last component of the name to avoid clutter.
-    //
-    // Otherwise, in particular for view assignments (which are constants after all),
-    // we have the problem that these encode the domain of the assigned symbol as a ComplexStep
-    // in the name.
-    rh(c.name.last.toString)
+    // only present a simplified (possibly ambiguous) variant of the name to remain readable for humans.
+    rh(c.name.dropComplex.toString)
 
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>

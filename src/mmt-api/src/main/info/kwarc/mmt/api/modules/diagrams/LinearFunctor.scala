@@ -3,7 +3,7 @@ package info.kwarc.mmt.api.modules.diagrams
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{AbstractTheory, Link, Module, Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{OMCOMP, OMIDENT, OMMOD, Term}
+import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 
@@ -273,23 +273,10 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
   protected lazy val equiNamer: SystematicRenamer = getRenamerFor("")
 
   /**
-    * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
-    *
-    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
-    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
-    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
-    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
-    *
-    * Only renames constants seen so far while processing (incl. the declaration being processed
-    * right now).
-    * Concretely, the methods herein depend on declarations being added to
-    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
-    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
-    *
-    * @todo add example
+    * Systematically renames according to the state of the outer [[LinearFunctor]] class.
+    * Implementors only need to give [[SystematicRenamer.apply(name: LocalName)]]
     */
-  protected def getRenamerFor(tag: String): SystematicRenamer = new SystematicRenamer {
-    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
+  trait LinearRenamer extends SystematicRenamer {
 
     /**
       * Bends a path pointing to something in `state.inContainer` to a path
@@ -306,7 +293,7 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       * @todo Possibly, this method is wrong for nested theories and views. Not tested so far.
       */
     override def apply(path: GlobalName): GlobalName = {
-      if (seenDeclarations(path.module).contains(path)) {
+      if (seenDeclarations.get(path.module).exists(_.contains(path))) {
         applyAlways(path)
       } else {
         path
@@ -324,12 +311,36 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       newModule ? newName
     }
 
-    /*override def apply(term: Term): Term = {
+    override def apply(term: Term): Term = {
       val self: SystematicRenamer = this // to disambiguate this in anonymous subclassing expression below
       new OMSReplacer {
         override def replace(p: GlobalName): Option[Term] = Some(OMS(self(p)))
       }.apply(term, Context.empty)
-    }*/
+    }
+  }
+
+  /**
+    * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
+    *
+    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
+    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
+    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
+    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
+    *
+    * Only renames constants seen so far while processing (incl. the declaration being processed
+    * right now).
+    * Concretely, the methods herein depend on declarations being added to
+    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
+    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
+    *
+    * @todo add example
+    */
+  protected def getRenamerFor(tag: String): SystematicRenamer = new LinearRenamer {
+    override def apply(name: LocalName): LocalName = name.suffixLastSimple(tag)
+  }
+
+  protected def getRenamerFor(tag: LocalName): SystematicRenamer = new LinearRenamer {
+    override def apply(name: LocalName): LocalName = name / tag
   }
 
   /**

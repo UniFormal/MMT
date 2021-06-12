@@ -1,4 +1,4 @@
-package info.kwarc.mmt
+package info.kwarc.mmt.lf.comptrans
 
 import info.kwarc.mmt.api.GlobalName
 import info.kwarc.mmt.api.libraries.Lookup

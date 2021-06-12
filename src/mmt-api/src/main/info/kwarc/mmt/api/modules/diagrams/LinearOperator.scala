@@ -433,7 +433,10 @@ trait SystematicRenamer {
   def apply(path: GlobalName): GlobalName
   def applyAlways(path: GlobalName): GlobalName
 
-  // def apply(t: Term): Term, deprecated, use ApplyMorphs on a connector instead
+  // when connectors are total, we can equivalently use ApplyMorphs instead
+  // but when connectors are partial (e.g., for CompTransOperator in general), this gets much more tricky
+  // hence this function exists
+  def apply(t: Term): Term
 }
 
 
