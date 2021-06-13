@@ -77,7 +77,7 @@ class CompTransFunctor(skeleton: AugmentedSkeleton, metaDiagram: Diagram) extend
   override def applyDomainModule(m: MPath): MPath = m
 
   override protected def applyModuleName(name: LocalName): LocalName =
-    name.suffixLastSimple("_logrel") // / LogrelOperator.moduleSuffixFor(config)
+    name.suffixLastSimple("_comptrans") // / LogrelOperator.moduleSuffixFor(config)
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
     implicit val ctrl: Controller = interp.ctrl

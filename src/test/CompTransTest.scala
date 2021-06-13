@@ -4,7 +4,7 @@ import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.objects.Context
 import info.kwarc.mmt.api.{NamespaceMap, Path}
 import info.kwarc.mmt.lf.Beta
-import info.kwarc.mmt.lf.comptrans.{CompositionalMorphism, CompositionalTranslation}
+import info.kwarc.mmt.lf.comptrans.{CompositionalTotalMorphism, CompositionalTranslation}
 
 /**
   * @author Navid
@@ -19,7 +19,7 @@ object CompTransTest extends MagicTest("debug") {
     val cod = controller.getTheory(doc ? "STyped")
     val view = controller.getModule(doc ? "v").asInstanceOf[View]
 
-    val mor = new CompositionalMorphism(view.toTerm)
+    val mor = new CompositionalTotalMorphism(view.toTerm)
     val logrel = new CompositionalTranslation(List(mor), p => {
       None
     })

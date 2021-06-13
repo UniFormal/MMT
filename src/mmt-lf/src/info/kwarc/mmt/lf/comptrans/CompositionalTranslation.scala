@@ -18,7 +18,9 @@ class CompositionalTranslation(
                                 variableSuffix: LocalName = LocalName("ᕁ")
                               ) {
 
-  override def toString: String = "[[" + baseTranslations.mkString(",") + "]] = <map not printed in toString>"
+  val isAtomic: Boolean = baseTranslations.isEmpty
+  override def toString: String =
+    (if (isAtomic) "mor" else "[[" + baseTranslations.mkString(",") + "]]") + " = <map not printed in toString>"
 
   private def listOfOptToOptOfList[T](list: List[Option[T]]): Option[List[T]] = {
     Some(list.map {
@@ -87,13 +89,24 @@ class CompositionalTranslation(
 
         // For the new target, transform `Some(List(t₁, …, tₙ))` to `Some(List(t₁ @ newBaseCtx, …, tₙ @ newBaseCtx))`
         // where `t @ newBaseCtx` applies the term `t` to all variables in `newBaseCtx`.
-        val newTarget = target.map(_.map(ApplySpine.orSymbol(_, newBaseCtx.map(_.toTerm) : _*)))
+        val newTarget = target.map(_.map(ApplySpine.orSymbol(_, newBaseCtx.map(_.toTerm): _*)))
 
         val newBody = apply(ctx ++ boundCtx, newTarget, body)
         newBody.map(OMBIND(binder, newBoundCtx, _))
 
-      // reduce function types to case for Pi types above
-      case t @ FunType(args, _) if args.nonEmpty =>
+      // Cases for arrow types _ -> _:
+      //   In theory we could simply make up names for all arguments and pass it recursively
+      //   on to the case for Pi types above.
+      //   In general, this may lead to unnecessarily named arguments in the output, particularly so
+      //   for atomic comptrans ("morphisms").
+      //   Not only becomes the output humanly unreadable, but also as of now one application* depends
+      //   on arguments not becoming named for atomic comptrans.
+      //   *) the cleanup operator for the softening paper 2021 by Florian Rabe, Navid Roux
+
+      case Arrow(arg, ret) if baseTranslations.isEmpty =>
+        apply(ctx, None, ret).map(Arrow(apply(ctx, None, arg).toList, _))
+
+      case t@FunType(args, _) if args.nonEmpty =>
         apply(ctx, target, CompositionalTranslation.funToPiType(t))
 
       case ApplySpine(f, args) =>
@@ -102,17 +115,17 @@ class CompositionalTranslation(
         // To understand the code, it is recommended to apply the definition on paper on nested applications
         // like `(f s) t` and `((f r) s) t` to see the general pattern that is codified here.
         val newTarget = args.headOption.flatMap(firstArg => {
-          listOfOptToOptOfList(baseTranslations.map(_(ctx, None, firstArg)))
+          listOfOptToOptOfList(baseTranslations.map(_ (ctx, None, firstArg)))
         })
 
-        val newArgs: List[Term] =args.headOption.flatMap(apply(ctx, None, _)).toList ::: args.tail.flatMap(arg =>
-          baseTranslations.flatMap(_(ctx, None, arg)) ::: apply(ctx, None, arg).toList
+        val newArgs: List[Term] = args.headOption.flatMap(apply(ctx, None, _)).toList ::: args.tail.flatMap(arg =>
+          baseTranslations.flatMap(_ (ctx, None, arg)) ::: apply(ctx, None, arg).toList
         ) ::: target.toList.flatten
 
-        apply(ctx, newTarget, f).map(ApplySpine.orSymbol(_, newArgs : _*))
+        apply(ctx, newTarget, f).map(ApplySpine.orSymbol(_, newArgs: _*))
 
       // this case is last as it definitely needs to come after Univ(1)
-      case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target.toList.flatten : _*))
+      case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target.toList.flatten: _*))
 
       case _ => ???
     }
@@ -143,10 +156,20 @@ class CompositionalTranslation(
   }
 }
 
-class CompositionalMorphism(mor: Term)(implicit val lookup: Library) extends CompositionalTranslation(Nil, p => {
-  Some(lookup.ApplyMorphs(OMS(p), mor)) // only for total morphisms, otherwise we get exceptions
+/**
+  * The special case of a total atomic comptrans whose mapping is specified by an MMT morphism term.
+  * @param mor A morphism term, e.g. an [[OMMOD]] to a view or a complex term.
+  * @param lookup A lookup used to apply the morphism to terms.
+  */
+class CompositionalTotalMorphism(mor: Term)(implicit val lookup: Library) extends CompositionalTranslation(Nil, p => {
+  Some(lookup.ApplyMorphs(OMS(p), mor))
 }) {
-  override def toString: String = s"mor $mor"
+  override def toString: String = s"mor ${mor.toStr(true)}"
+
+  override def apply(ctx: Context, target: Option[List[Term]], t: Term): Option[Term] = {
+    require(target.isEmpty)
+    super.apply(ctx, target, t)
+  }
 }
 
 object CompositionalTranslation {

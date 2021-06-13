@@ -83,7 +83,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
     })
 
     val logrel = new CompositionalTranslation(
-      connectingMorphisms.map(new CompositionalMorphism(_)).toList,
+      connectingMorphisms.map(new CompositionalTotalMorphism(_)).toList,
       p => if (undefinedSymbols.contains(p)) None else Some(OMS(lrRenamer(p)))
     )
 
