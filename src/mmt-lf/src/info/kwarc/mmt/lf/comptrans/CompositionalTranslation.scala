@@ -68,43 +68,21 @@ class CompositionalTranslation(
         val newBody = apply(ctx ++ boundCtx, newTarget, body)
         newBody.map(OMBIND(binder, newBoundCtx, _))
 
-      // Cases for arrow types _ -> _:
-      //   In theory we could simply make up names for all arguments and pass it recursively
-      //   on to the case for Pi types above.
-      //   In general, this may lead to unnecessarily named arguments in the output, particularly so
-      //   for atomic comptrans ("morphisms").
-      //   Not only becomes the output humanly unreadable, but also as of now one application* depends
-      //   on arguments not becoming named for atomic comptrans.
-      //   *) the cleanup operator for the softening paper 2021 by Florian Rabe, Navid Roux
-
+      // Special case arrow types for atomic comptrans ("morphisms") to prevent making up unnecessary names as
+      // the case underneath does. This is important for some applications, e.g., the cleanup operator for
+      // softening as described in the softening paper 2021 by Florian Rabe, Navid Roux.
       case Arrow(arg, ret) if baseTranslations.isEmpty =>
         apply(ctx, Nil, ret).map(Arrow(apply(ctx, Nil, arg).toList, _))
 
       case t@FunType(args, _) if args.nonEmpty =>
-        apply(ctx, target, CompositionalTranslation.funToPiType(t))
+        apply(ctx, target, CompositionalTranslation.funToPiType(t)) // make up names for unnamed arguments
 
       case ApplySpine(f, args) =>
-        // In principle, we follow the definition on paper for comptrans applied on function applications,
-        // however, it gets more involved here due to handling more than one argument at once.
-        // To understand the code, it is recommended to apply the definition on paper on nested applications
-        // like `(f s) t` and `((f r) s) t` to see the general pattern that is codified here.
-
         val newTarget = args.flatMap(arg => {
           baseTranslations.flatMap(_(ctx, Nil, arg)) ::: apply(ctx, Nil, arg).toList
         }) ::: target
 
-        apply(ctx, newTarget, f)/*
-
-
-        val newTarget = args.headOption.flatMap(firstArg => {
-          baseTranslations.map(_(ctx, Nil, firstArg))
-        })
-
-        val newArgs: List[Term] = args.headOption.flatMap(apply(ctx, None, _)).toList ::: args.tail.flatMap(arg =>
-          baseTranslations.flatMap(_ (ctx, None, arg)) ::: apply(ctx, None, arg).toList
-        ) ::: target.toList.flatten
-
-        apply(ctx, newTarget, f).map(ApplySpine.orSymbol(_, newArgs: _*))*/
+        apply(ctx, newTarget, f)
 
       case _ => ???
     }
