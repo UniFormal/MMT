@@ -99,7 +99,7 @@ class LogrelFunctor(config: LogrelConfiguration) extends LinearFunctor {
         .flatMap(oldTp => logrel.getExpected(Context.empty, c.toTerm, oldTp))
         .map(Beta.reduce)
         .map(tp => {
-          val df = c.df.flatMap(logrel(Context.empty, None, _)).map(Beta.reduce)
+          val df = c.df.flatMap(logrel(Context.empty, Nil, _)).map(Beta.reduce)
           require(!(c.df.nonEmpty && df.isEmpty)) // logical relations are term-total
 
           val relc = Constant(

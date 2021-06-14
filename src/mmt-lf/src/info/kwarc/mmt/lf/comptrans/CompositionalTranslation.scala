@@ -22,19 +22,11 @@ class CompositionalTranslation(
   override def toString: String =
     (if (isAtomic) "mor" else "[[" + baseTranslations.mkString(",") + "]]") + " = <map not printed in toString>"
 
-  private def listOfOptToOptOfList[T](list: List[Option[T]]): Option[List[T]] = {
-    Some(list.map {
-      case Some(x) => x
-      case _ => return None
-    })
-  }
-
   /**
     * For a term `t: A`, computes the expected type of `R(t)`.
     */
   def getExpected(ctx: Context, t: Term, A: Term): Option[Term] = {
-    val target = listOfOptToOptOfList(baseTranslations.map(_(ctx, None, t)))
-    apply(ctx, target, A)
+    apply(ctx, baseTranslations.flatMap(_(ctx, Nil, t)), A)
   }
 
   /**
@@ -50,46 +42,28 @@ class CompositionalTranslation(
     *         `Some((t', A'))` if defined.
     */
   def applyPair(ctx: Context, t: Term, A: Term): Option[(Term, Term)] =
-    apply(ctx, None, t) zip getExpected(ctx, t, A)
+    apply(ctx, Nil, t) zip getExpected(ctx, t, A)
 
   def star(name: LocalName): LocalName = name / variableSuffix
 
-  /**
-    * document this
-    * @param ctx
-    * @param target Note that for morphisms (i.e., baseTranslations == Nil) there is no difference between
-    * target == None and target == Some(Nil).
-    * @param t
-    * @return
-    */
-  def apply(ctx: Context, target: Option[List[Term]], t: Term): Option[Term] = {
-    require(target.forall(_.size == baseTranslations.size))
-
+  def apply(ctx: Context, target: List[Term], t: Term): Option[Term] = {
     t match {
       case OMV(x) =>
         val starXGenerated = applyVarDecl(ctx.before(x), ctx.get(x)).exists(_.name == star(x))
-        if (starXGenerated) {
-          Some(OMV(star(x)))
-        } else {
-          None
-        }
+        if (starXGenerated) Some(OMV(star(x))) else None
 
-      case Univ(1) =>
-        if (target.isDefined) {
-          Some(Arrow(target.get, Univ(1)))
-        } else {
-          Some(Univ(1))
-        }
+      case Univ(1) => Some(Arrow(target, Univ(1)))
+      // needs to come after case for Univ(1) (to prevent matching on LF's type symbol)
+      case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target: _*))
 
-      // unified case for Pi and lambda, for lambda target can be ignored
-      // case OMBIND(OMS(Pi.path), boundCtx, retType) =>
       case OMBIND(binder, boundCtx, body) =>
         val newBaseCtx = baseTranslations.flatMap(_.apply(ctx, boundCtx))
         val newBoundCtx = apply(ctx, boundCtx)
 
-        // For the new target, transform `Some(List(t₁, …, tₙ))` to `Some(List(t₁ @ newBaseCtx, …, tₙ @ newBaseCtx))`
-        // where `t @ newBaseCtx` applies the term `t` to all variables in `newBaseCtx`.
-        val newTarget = target.map(_.map(ApplySpine.orSymbol(_, newBaseCtx.map(_.toTerm): _*)))
+        // For the new target, transform `List(o₁, …, oₙ)` to `List(o₁ @ newBaseCtx, …, oₙ @ newBaseCtx))`
+        // where `Some(t) @ newBaseCtx` applies the term `t` to all variables in `newBaseCtx` and
+        // `None @ newBaseCtx` is `None`.
+        val newTarget = target.map(ApplySpine.orSymbol(_, newBaseCtx.map(_.toTerm): _*))
 
         val newBody = apply(ctx ++ boundCtx, newTarget, body)
         newBody.map(OMBIND(binder, newBoundCtx, _))
@@ -104,7 +78,7 @@ class CompositionalTranslation(
       //   *) the cleanup operator for the softening paper 2021 by Florian Rabe, Navid Roux
 
       case Arrow(arg, ret) if baseTranslations.isEmpty =>
-        apply(ctx, None, ret).map(Arrow(apply(ctx, None, arg).toList, _))
+        apply(ctx, Nil, ret).map(Arrow(apply(ctx, Nil, arg).toList, _))
 
       case t@FunType(args, _) if args.nonEmpty =>
         apply(ctx, target, CompositionalTranslation.funToPiType(t))
@@ -114,18 +88,23 @@ class CompositionalTranslation(
         // however, it gets more involved here due to handling more than one argument at once.
         // To understand the code, it is recommended to apply the definition on paper on nested applications
         // like `(f s) t` and `((f r) s) t` to see the general pattern that is codified here.
+
+        val newTarget = args.flatMap(arg => {
+          baseTranslations.flatMap(_(ctx, Nil, arg)) ::: apply(ctx, Nil, arg).toList
+        }) ::: target
+
+        apply(ctx, newTarget, f)/*
+
+
         val newTarget = args.headOption.flatMap(firstArg => {
-          listOfOptToOptOfList(baseTranslations.map(_ (ctx, None, firstArg)))
+          baseTranslations.map(_(ctx, Nil, firstArg))
         })
 
         val newArgs: List[Term] = args.headOption.flatMap(apply(ctx, None, _)).toList ::: args.tail.flatMap(arg =>
           baseTranslations.flatMap(_ (ctx, None, arg)) ::: apply(ctx, None, arg).toList
         ) ::: target.toList.flatten
 
-        apply(ctx, newTarget, f).map(ApplySpine.orSymbol(_, newArgs: _*))
-
-      // this case is last as it definitely needs to come after Univ(1)
-      case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target.toList.flatten: _*))
+        apply(ctx, newTarget, f).map(ApplySpine.orSymbol(_, newArgs: _*))*/
 
       case _ => ???
     }
@@ -145,11 +124,7 @@ class CompositionalTranslation(
     val tp = vd.tp.getOrElse(throw new UnsupportedOperationException("compositional translation on untyped variable"))
 
     val baseCtx = baseTranslations.flatMap(_.applyVarDecl(ctx, vd))
-    val newTp = if (baseTranslations.forall(_.apply(ctx, None, tp).isDefined)) {
-      apply(ctx, Some(baseCtx.map(_.toTerm)), tp)
-    } else {
-      apply(ctx, None, tp)
-    }
+    val newTp = apply(ctx, baseCtx.map(_.toTerm), tp)
     val newVd = newTp.map(VarDecl(star(vd.name), _))
 
     baseCtx ::: newVd.toList
@@ -166,10 +141,11 @@ class CompositionalTotalMorphism(mor: Term)(implicit val lookup: Library) extend
 }) {
   override def toString: String = s"mor ${mor.toStr(true)}"
 
-  override def apply(ctx: Context, target: Option[List[Term]], t: Term): Option[Term] = {
+  // with the new definition, this is superfluous and the require() even wrong
+  /*override def apply(ctx: Context, target: List[Term], t: Term): Option[Term] = {
     require(target.isEmpty)
     super.apply(ctx, target, t)
-  }
+  }*/
 }
 
 object CompositionalTranslation {

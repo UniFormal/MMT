@@ -99,7 +99,7 @@ class CompTransFunctor(skeleton: AugmentedSkeleton, metaDiagram: Diagram) extend
           .flatMap(oldTp => comptrans.getExpected(Context.empty, c.toTerm, oldTp))
           .map(Beta.reduce)
           .map(tp => {
-            val df = c.df.flatMap(comptrans(Context.empty, None, _)).map(Beta.reduce)
+            val df = c.df.flatMap(comptrans(Context.empty, Nil, _)).map(Beta.reduce)
 
             val outc = Constant(
               home = OMMOD(applyModulePath(c.path.module)),
