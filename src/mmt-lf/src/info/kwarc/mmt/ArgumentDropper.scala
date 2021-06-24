@@ -36,12 +36,13 @@ object ArgumentDropper {
 
   /**
     * Cleans notation in a copy of input notation container
+    * @todo from old code base, review it
     */
-  def cleanArgumentsInNotation(p: GlobalName, notC: NotationContainer, removedArgs: mutable.Map[GlobalName, List[ArgPath]]): NotationContainer = {
+  def cleanArgumentsInNotation(p: GlobalName, notC: NotationContainer, dropped: DropInfo): NotationContainer = {
     notC.copy().collectInPlace(not => {
       val newFixity = not.fixity match {
         case fixity: Mixfix =>
-          fixity.removeArguments(removedArgs.getOrElse(p, Nil).toSet)
+          fixity.removeArguments(dropped.getOrElse(p, Nil).toSet)
         case _ => None // not implemented yet
       }
       newFixity.map(fix => not.copy(fixity = fix))
