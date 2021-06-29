@@ -7,9 +7,11 @@ import info.kwarc.mmt.api.objects.Term
 
 /** helper object */
 object TokenList {
-  /** @return true if c is considered to be a letter */
-  def isLetter(c: Char): Boolean = c.isLetter ||
-    List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK).contains(c.getType)
+  /** @return true if c is considered to be a mark */
+  def isMark(c: Char): Boolean = List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK).contains(c.getType)
+
+  /** @return true if c is considered to be a letter or a mark */
+  def isLetter(c: Char): Boolean = c.isLetter || isMark(c)
 
   /** @return true if c is considered to be whitespace */
   def isWhitespace(c: Char): Boolean = c.isWhitespace
@@ -111,7 +113,7 @@ object TokenList {
               endToken()
               // look ahead: if a connector follows, start a multi-character Token
               // otherwise, create a single-character Token
-              if (i.offset < l - 1 && isConnector(nextChar)) {
+              if (i.offset < l - 1 && (isConnector(nextChar) || isMark(nextChar))) {
                 current += c
               } else {
                 tokens ::= Token(c.toString, i, whitespace)
