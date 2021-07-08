@@ -10,8 +10,8 @@ object TokenList {
   /** @return true if c is considered to be a mark */
   def isMark(c: Char): Boolean = List(COMBINING_SPACING_MARK, ENCLOSING_MARK, NON_SPACING_MARK).contains(c.getType)
 
-  /** @return true if c is considered to be a letter or a mark */
-  def isLetter(c: Char): Boolean = c.isLetter || isMark(c)
+  /** @return true if c is considered to be a letter */
+  def isLetter(c: Char): Boolean = c.isLetter
 
   /** @return true if c is considered to be whitespace */
   def isWhitespace(c: Char): Boolean = c.isWhitespace
@@ -89,9 +89,15 @@ object TokenList {
             case _ if connect =>
               current += c
               connect = false
-            // letters, marks, and numbers continue the Token
+            // letters and numbers continue the Token
             case _ if isLetter(c) || isNumber(c) =>
               current += c
+            // marks continue the Token, but end it as well, if the next character does not continue it as well
+            case _ if isMark(c) =>
+              current += c
+              if (i.offset < l - 1 && !(isConnector(nextChar) || isMark(nextChar))) {
+                endToken()
+              }
             // lexing URIs ?name, if name starts with a letter
             case _ if c == '?' && current == "" && i.offset < l - 1 && isLetter(nextChar) =>
               current += c
