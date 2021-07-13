@@ -56,7 +56,7 @@ class GfLexer extends RegexParsers {
   def abstract_ : Parser[ABSTRACT.type] = "abstract[ \t\r\f\n]".r ^^ (_ => ABSTRACT)
   def of_ : Parser[OF.type] = "of[ \t\r\f\n]".r ^^ (_ => OF)
   def cat_ : Parser[CAT.type] = "cat[ \t\r\f\n]".r ^^ (_ => CAT)
-  def fun_ : Parser[FUN.type] = "fun[ \t\r\f\n]".r ^^ (_ => FUN)
+  def fun_ : Parser[FUN.type] = "(fun|data)[ \t\r\f\n]".r ^^ (_ => FUN)
   def other_segment : Parser[OTHER_SEGMENT] = "flags[ \t\r\f\n]".r ^^ {str => OTHER_SEGMENT(str)}
 
   def tokens: Parser[List[GfToken]] = {
