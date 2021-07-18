@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
 /**
  * The following classes are used by an XML parser utility part of the MMT API to parse Mizar content already exported to esx files
@@ -21,9 +21,10 @@ package info.kwarc.mmt.mizar.newxml.syntax
  * the ones corresponding to object-level content are defined in the ObjectLevel file
  */
 
-import info.kwarc.mmt.api.{ImplementationError}
+import info.kwarc.mmt.api.{ImplementationError, objects}
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.syntax.Utils._
+
 /**
  * A label that can later be referenced
  * @param MMLId the label, typically the article followed by a running counter of id of the same type

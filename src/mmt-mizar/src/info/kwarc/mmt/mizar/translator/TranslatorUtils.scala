@@ -1,10 +1,10 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType, OMSReplacer}
 import info.kwarc.mmt.api.{objects, _}
 import objects._
-import info.kwarc.mmt.mizar.newxml._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController.currentAid
+import info.kwarc.mmt.mizar._
+import info.kwarc.mmt.mizar.translator.TranslationController.currentAid
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts

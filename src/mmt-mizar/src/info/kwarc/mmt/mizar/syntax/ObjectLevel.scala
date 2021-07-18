@@ -1,7 +1,7 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
+import info.kwarc.mmt.mizar.syntax.Utils._
+import info.kwarc.mmt.mizar.translator.TranslationController
 
 /**
  * trait for any object level mizar content, e.g. expressions, claims, patterns and variables
@@ -468,7 +468,7 @@ case class Iterative_Step(_tm:MizTerm, _just:Justification) extends ObjectLevel
  * @param _eqList
  * @param _tp
  */
-private[newxml] case class Type_Changing_Claim(_eqList:Equalities_List, _tp:Type) extends Claim
+private[mizar] case class Type_Changing_Claim(_eqList:Equalities_List, _tp:Type) extends Claim
 
 /**
  * A justification for a claim

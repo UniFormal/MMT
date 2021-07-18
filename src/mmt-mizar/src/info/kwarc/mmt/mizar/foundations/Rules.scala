@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.foundations
+package info.kwarc.mmt.mizar.foundations
 
 import info.kwarc.mmt._
 import api._
@@ -6,7 +6,7 @@ import objects._
 import uom._
 import sequences._
 
-import info.kwarc.mmt.mizar.newxml.mmtwrapper._
+import info.kwarc.mmt.mizar.mmtwrapper._
 import MizarPrimitiveConcepts._
 
 object IntroductionRule {

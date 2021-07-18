@@ -1,8 +1,8 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
 import info.kwarc.mmt.api.{GlobalName, LocalName}
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recTypeName}
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController
+import info.kwarc.mmt.mizar.translator.TranslationController
 
 object Utils {
   def fullClassName(s: String) = {

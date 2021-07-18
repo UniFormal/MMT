@@ -1,17 +1,17 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt._
 import api._
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
-import info.kwarc.mmt.mizar.newxml.translator.JustificationTranslator.lambdaBindDefCtxArgs
-import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
-import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
-import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
-import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
+import info.kwarc.mmt.mizar.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
+import info.kwarc.mmt.mizar.translator.JustificationTranslator.lambdaBindDefCtxArgs
+import info.kwarc.mmt.mizar.translator.claimTranslator._
+import info.kwarc.mmt.mizar.translator.definitionTranslator.translate_Definition
+import info.kwarc.mmt.mizar.translator.statementTranslator.translate_Choice_Statement
+import info.kwarc.mmt.mizar.translator.termTranslator.translate_Term
 import objects._
-import mizar.newxml.syntax._
+import mizar.syntax._
 
 object JustificationTranslator {
   /** whether to also translate proof steps or only references to used statements */

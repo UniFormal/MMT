@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
@@ -7,7 +7,7 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.notations._
-import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar._
 import info.kwarc.mmt.api.checking.CheckingEnvironment
 import info.kwarc.mmt.api.frontend.Report
 import info.kwarc.mmt.lf._
@@ -15,8 +15,8 @@ import mmtwrapper._
 import PatternUtils._
 import MizarPrimitiveConcepts._
 import info.kwarc.mmt.api.presentation.{MMTSyntaxPresenter, Presenter}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController.printTimeDiff
+import syntax.Utils._
+import translator.TranslationController.printTimeDiff
 
 import java.io.{EOFException, PrintStream}
 import scala.collection._
@@ -228,7 +228,7 @@ object TranslationController extends frontend.Logger {
       }
     }
   }
-  private[newxml] var articleData = new ArticleSpecificData
+  private[mizar] var articleData = new ArticleSpecificData
   def getArticleData = { articleData.addCurrenTranslatingTime; articleData }
   def resetArticleData: Unit = { articleData = new ArticleSpecificData }
   def setArticleData(articleSpecificData: ArticleSpecificData): Unit = {

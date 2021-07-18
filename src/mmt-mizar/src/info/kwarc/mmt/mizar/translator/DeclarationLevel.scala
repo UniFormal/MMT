@@ -1,11 +1,11 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.api._
 import notations._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar._
 import mmtwrapper._
 import MMTUtils._
 import MizarPrimitiveConcepts._
@@ -20,14 +20,14 @@ import claimTranslator._
 import definitionTranslator._
 import blockTranslator._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import mmtwrapper.PatternUtils._
+import syntax.Utils._
 import clusterTranslator._
 import definiensTranslator._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq.{Index, OMI, Sequence, nTerms}
-import info.kwarc.mmt.mizar.newxml.translator.correctnessConditionTranslator._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
-import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.{translate_Choice_Statement, translate_Type_Changing_Statement}
+import mmtwrapper.MizSeq.{Index, OMI, Sequence, nTerms}
+import translator.correctnessConditionTranslator._
+import translator.TranslationController._
+import translator.statementTranslator.{translate_Choice_Statement, translate_Type_Changing_Statement}
 import JustificationTranslator._
 import propertyTranslator._
 import nymTranslator._

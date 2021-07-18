@@ -1,8 +1,8 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
 import info.kwarc.mmt.api.{ImplementationError}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError}
+import info.kwarc.mmt.mizar.syntax.Utils._
+import info.kwarc.mmt.mizar.translator.{DeclarationLevelTranslationError}
 
 // any subitem of an item, be it TopLevel, DeclarationLevel or ProofLevel
 sealed trait Subitem {

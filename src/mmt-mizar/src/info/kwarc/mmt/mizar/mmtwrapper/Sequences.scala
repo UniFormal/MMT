@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.mmtwrapper
+package info.kwarc.mmt.mizar.mmtwrapper
 
 import info.kwarc.mmt._
 import api._

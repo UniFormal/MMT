@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
@@ -6,9 +6,9 @@ import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.ontology.{Includes, Transitive}
 import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.Main.makeParser
-import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
+import info.kwarc.mmt.mizar.Main.makeParser
+import info.kwarc.mmt.mizar.syntax._
+import info.kwarc.mmt.mizar.translator.TranslationController._
 
 
 object articleTranslator {

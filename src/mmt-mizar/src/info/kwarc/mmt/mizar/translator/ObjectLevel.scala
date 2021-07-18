@@ -1,14 +1,14 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects.{Context, OMS, OMV, Sub, Term, VarDecl}
 import info.kwarc.mmt.lf._
-import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar._
 import syntax._
 import mmtwrapper._
 import MizarPrimitiveConcepts._
 import PatternUtils._
-import info.kwarc.mmt.mizar.newxml.translator.patternTranslator.globalReference
+import info.kwarc.mmt.mizar.translator.patternTranslator.globalReference
 import translator.attributeTranslator.translate_Attribute
 import translator.claimTranslator.translate_Claim
 import translator.typeTranslator.translate_Type
@@ -17,7 +17,7 @@ import translator.TranslatorUtils._
 import translator.contextTranslator._
 import translator.formulaTranslator._
 import TranslationController._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils.{makeNewSimpleGlobalName, makeSimpleGlobalName, mapKind}
+import info.kwarc.mmt.mizar.syntax.Utils.{makeNewSimpleGlobalName, makeSimpleGlobalName, mapKind}
 
 object expressionTranslator {
   def translate_Expression(expr:Expression)(implicit defContent: DefinitionContext): Term = expr match {
