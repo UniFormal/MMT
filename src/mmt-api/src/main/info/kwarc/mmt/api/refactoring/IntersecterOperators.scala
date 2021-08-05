@@ -7,11 +7,11 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.{GlobalName, InvalidElement, InvalidObject, Path}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, DiagramOperator}
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, NamedDiagramOperator}
 import info.kwarc.mmt.api.modules.{Module, View}
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, OMS, Term}
 
-private abstract class IntersecterOperator extends DiagramOperator {
+private abstract class IntersecterOperator extends NamedDiagramOperator {
   protected def getIntersecter(ctrl: Controller): Intersecter
 
   override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
@@ -40,7 +40,7 @@ private abstract class IntersecterOperator extends DiagramOperator {
 }
 
 /**
-  * Exposes [[UnaryIntersecter]] as a [[DiagramOperator]].
+  * Exposes [[UnaryIntersecter]] as a [[NamedDiagramOperator]].
   *
   * Usage: `[notation for head symbol] ?intersectionView`.
   */
@@ -58,7 +58,7 @@ private object UnaryIntersecterOperator extends IntersecterOperator {
 }
 
 /**
-  * Exposes [[BinaryIntersecter]] as a [[DiagramOperator]].
+  * Exposes [[BinaryIntersecter]] as a [[NamedDiagramOperator]].
   *
   * Usage: `[notation for head symbol] ?intersectionView`.
   */

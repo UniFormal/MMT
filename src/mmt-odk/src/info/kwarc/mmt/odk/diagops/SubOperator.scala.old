@@ -17,8 +17,8 @@ object SubOperator extends SimpleLinearOperator with OperatorDSL {
   override val operatorDomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
   override val operatorCodomain: Diagram = Diagram.singleton(SFOL.sfoleqnd)
 
-  val par: Renamer[LinearState] = getRenamerFor("ᵖ") // parent symbol copy
-  val sub: Renamer[LinearState] = getRenamerFor("ˢ") // substructure symbol/condition
+  val par: SystematicRenamer[LinearState] = getRenamerFor("ᵖ") // parent symbol copy
+  val sub: SystematicRenamer[LinearState] = getRenamerFor("ˢ") // substructure symbol/condition
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_sub")
 

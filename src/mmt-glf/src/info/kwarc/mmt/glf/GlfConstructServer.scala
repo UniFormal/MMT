@@ -13,6 +13,12 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 /*
+  Future TODO: Remove protocol version 1.
+  This should only be done when the GLIF reimplementation is well-established
+  and the original implementation has been retired.
+ */
+
+/*
   Technically, the GlfConstructServer simply applies a view to particular terms.
   This is used to apply the semantics construction (a view) to a GF parse tree (which can be seen as an LF term).
  */
@@ -23,20 +29,20 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
 
     val view: Option[View] = query.semanticsView.map(controller.getO(_) match {
       case Some(v: View) => controller.simplifier.apply(v); v
-      case None => return errorResponse("Could not find view " + query.semanticsView)
-      case _ => return errorResponse(query.semanticsView + " does not appear to be a view")
+      case None => return errorResponse("Could not find view " + query.semanticsView, query.version > 1)
+      case _ => return errorResponse(query.semanticsView + " does not appear to be a view", query.version > 1)
     })
 
     val langTheo = if (query.languageTheory.isEmpty) {
-      view.getOrElse(return errorResponse("Neither language theory nor semantics view provided")).from.toMPath
+      view.getOrElse(return errorResponse("Neither language theory nor semantics view provided", query.version > 1)).from.toMPath
     } else {
       query.languageTheory.get
     }
 
     val theory: Theory = controller.getO(langTheo) match {
       case Some(th: Theory) => th
-      case None => return errorResponse("Could not find theory " + langTheo)
-      case _ => return errorResponse(langTheo + " does not appear to be a theory")
+      case None => return errorResponse("Could not find theory " + langTheo, query.version > 1)
+      case _ => return errorResponse(langTheo + " does not appear to be a theory", query.version > 1)
     }
 
     val theoryMap: mutable.Map[String, Constant] = mutable.Map()
@@ -56,7 +62,7 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
     try {
       fillTheoryMap(theory.toTerm.toMPath)
     } catch {
-      case ex: Exception => return errorResponse(ex.getMessage)
+      case ex: Exception => return errorResponse(ex.getMessage, query.version > 1)
     }
 
     val trees = query.asts
@@ -71,26 +77,36 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
       .map(t => removeFakeLambdas(t, Set()))
       .distinct
 
-    val result = if (query.toElpi) {
-                   JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
-                 } else {
-                   JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
-                 }
+    val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
+    val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
     if (query.version == 1) {
-      ServerResponse.JsonResponse(result)
+      if (query.toElpi)
+        ServerResponse.JsonResponse(elpiresult)
+      else
+        ServerResponse.JsonResponse(mmtresult)
     } else {
       ServerResponse.JsonResponse(JSONObject(
         ("isSuccessful", JSONBoolean(true)),
-        ("result", result),
+        ("result", JSONObject(
+          ("elpi", elpiresult),
+          ("mmt", mmtresult),
+        )),
         ("errors", JSONArray()),
       ))
     }
   }
 
-  private def errorResponse(message: String): ServerResponse = {
-    ServerResponse.JsonResponse(
-      JSONArray(JSONString(message))
-    )
+  private def errorResponse(message: String, newresponse: Boolean): ServerResponse = {
+    if (newresponse) {
+      ServerResponse.JsonResponse(JSONObject(
+        ("isSuccessful", JSONBoolean(false)),
+        ("errors", JSONArray(JSONString(message))),
+      ))
+    } else {
+      ServerResponse.JsonResponse(
+        JSONArray(JSONString(message))
+      )
+    }
   }
 
   private def removeFakeLambdas(t: Term, bound : Set[String]): Term = {

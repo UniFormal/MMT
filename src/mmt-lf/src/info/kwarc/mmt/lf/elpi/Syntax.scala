@@ -140,7 +140,7 @@ object ELPI {
   /** special case for the application of binary operators */
   case class BinaryApply(operator: BinOp, left: Expr, right: Expr) extends Application(Variable(LocalName(operator.name)), left, right) {
      override def toELPI(bracket: Boolean = true) : String = {
-       val leftS = left.toELPI((! left.isAtomic) || (operator.name == "=>" && left.isInstanceOf[BinaryApply]))   // TODO: properly capture case "a, b => c"
+       val leftS = left.toELPI((! left.isAtomic) || ((operator.name == "=>" | operator.name == "->") && left.isInstanceOf[BinaryApply]))   // TODO: properly capture case "a, b => c"
        val rightS = right.toELPI(! right.isAtomic)
        Bracket(bracket)(s"$leftS ${operator.name} $rightS")
      }

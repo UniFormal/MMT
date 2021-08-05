@@ -614,3 +614,18 @@ object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
       case _ => Simplifiability.NoRecurse
    }
 }
+
+/**
+  * Removes unnecessary occurrences of [[Pi]]s.
+  * E.g., over the signature `{A: type, B: type}`, the [[Pi]] in `Πx: A. B`
+  * is unnecessary and can be replaced by an [[Arrow]] `A -> B`.
+  */
+object RemoveUnusedPi extends SimplificationRule(Pi.path) {
+  override def apply(context: Context, t: Term): Simplifiability = t match {
+    case Pi(name, tp, body) =>
+      if (body.freeVars.contains(name)) Simplifiability.NoRecurse
+      else Simplify(Arrow(tp, body))
+
+    case _ => Simplifiability.NoRecurse
+  }
+}

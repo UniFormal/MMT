@@ -55,7 +55,7 @@ class ImplementsRuleGenerator extends ChangeListener {
            throw LocalError("could not obtain virtual theory for " + schemaThy.path)
          }
          val ruleConst = RuleConstant(dbThy.toTerm, ruleName, OMS(c.path), Some(rule)) //TODO better type
-         ruleConst.setOrigin(GeneratedBy(this))
+         ruleConst.setOrigin(GeneratedFrom(c.path, this))
          log("generated rule " + rule + " for " + c.path + ", added to " + dbThy.path)
          controller.add(ruleConst)
        case _ =>

@@ -1,7 +1,7 @@
 package info.kwarc.mmt.odk.diagops
 
 import info.kwarc.mmt.api.modules._
-import info.kwarc.mmt.api.modules.diagrams.{DiagramInterpreter, Diagram, OperatorDSL, Renamer, SimpleInwardsConnector, SimpleLinearOperator}
+import info.kwarc.mmt.api.modules.diagrams.{DiagramInterpreter, Diagram, OperatorDSL, SystematicRenamer, SimpleInwardsConnector, SimpleLinearOperator}
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.Constant
 import info.kwarc.mmt.api.{GlobalName, LocalName, MPath, Path}
@@ -22,8 +22,8 @@ object CongOperator extends SimpleLinearOperator with OperatorDSL {
 
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_cong")
 
-  val par : Renamer[LinearState] = getRenamerFor("ᵖ")
-  val quot : Renamer[LinearState] = getRenamerFor("_q")
+  val par : SystematicRenamer[LinearState] = getRenamerFor("ᵖ")
+  val quot : SystematicRenamer[LinearState] = getRenamerFor("_q")
 
   object ClosureCreator extends ModRelClosureCreator[LinearState] {
     // Although the QuotOperator only works on one model (the "parent model"),
