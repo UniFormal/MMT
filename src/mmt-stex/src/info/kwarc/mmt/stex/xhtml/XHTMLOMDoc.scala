@@ -355,6 +355,10 @@ class HTMLMMTRule(orig : HTMLParser.HTMLNode) extends HTMLDeclaration(orig) {
   private def getargs(top : HTMLNode) : List[(Int,Term)] = top match {
     case n if n.attributes.contains((HTMLParser.ns_stex,"arg")) =>
       List((n.attributes((HTMLParser.ns_stex,"arg")).toInt,HTMLTerm(n)))
+    case n if n.attributes.contains((n.namespace,"property")) && n.attributes((n.namespace,"property")) == "stex:arg" =>
+      if(n.children.length == 1 && !n.children.head.isInstanceOf[HTMLText])
+        List((n.attributes((n.namespace,"resource")).toInt,HTMLTerm(n.children.head)))
+      else List((n.attributes((n.namespace,"resource")).toInt,HTMLTerm(n)))
     case n : MathMLTerm =>
       n.children.flatMap(getargs)
     case n : HTMLTerm =>
@@ -362,8 +366,7 @@ class HTMLMMTRule(orig : HTMLParser.HTMLNode) extends HTMLDeclaration(orig) {
     case t : HTMLText =>
       Nil
     case _ =>
-      print("")
-      ???
+      Nil
   }
   override protected def onAdd: Unit = sstate.foreach { state =>
     collectAncestor {
@@ -480,8 +483,8 @@ object HTMLTerm {
         case List(t : HTMLText) =>
           STeX.informal.applySimple(ml.node)
         case _ =>
-          print("")
-          ???
+          val args = ml.children.map(apply)
+          STeX.informal.applyOp(ml.label,args)
       }
     case t : HTMLTerm =>
       t.toTerm
@@ -612,6 +615,10 @@ trait ComplexTerm extends HTMLTerm with HasHeadSymbol {
   private def getargs(top : HTMLNode) : List[(Int,Term)] = top match {
     case n if n.attributes.contains((HTMLParser.ns_stex,"arg")) =>
       List((n.attributes((HTMLParser.ns_stex,"arg")).toInt,HTMLTerm(n)))
+    case n if n.attributes.contains((n.namespace,"property")) && n.attributes((n.namespace,"property")) == "stex:arg" =>
+      if(n.children.length == 1 && !n.children.head.isInstanceOf[HTMLText])
+        List((n.attributes((n.namespace,"resource")).toInt,HTMLTerm(n.children.head)))
+      else List((n.attributes((n.namespace,"resource")).toInt,HTMLTerm(n)))
     case n : MathMLTerm =>
       n.children.flatMap(getargs)
     case n : HTMLTerm =>
@@ -619,8 +626,7 @@ trait ComplexTerm extends HTMLTerm with HasHeadSymbol {
     case t : HTMLText =>
       Nil
     case _ =>
-      print("")
-      ???
+      Nil
   }
 }
 

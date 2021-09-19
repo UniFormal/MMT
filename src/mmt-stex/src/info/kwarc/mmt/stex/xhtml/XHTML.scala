@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.xhtml
 
+import com.jazzpirate.latex.stomach.html.HTMLParser.ns_scalatex
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -157,6 +158,15 @@ object HTMLParser {
           nn.attributes.remove((ns_stex,"sourceref"))
           nn._sourceref = Some(SourceRef.fromURI(URI(s)))
       }
+      nn.attributes.get((ns_scalatex,"sourceref")) match {
+        case Some(s) if s.contains("#(") =>
+          nn.attributes.remove((ns_scalatex,"sourceref"))
+          nn._sourceref = Some(SourceReferences.doSourceRef(s))
+        case None =>
+        case Some(s) =>
+          nn.attributes.remove((ns_scalatex,"sourceref"))
+          nn._sourceref = Some(SourceRef.fromURI(URI(s)))
+      }
       if (nn._sourceref.isEmpty && _parent.exists(_._sourceref.isDefined)) nn._sourceref = _parent.get._sourceref
       val newn = _rules.collectFirst{ case r if r.isDefinedAt(n) => r(nn)}.getOrElse(nn)
       newn
@@ -240,8 +250,8 @@ object HTMLParser {
 
     private[HTMLParser] def onAddI = onAdd
 
-    private[HTMLParser] var startswithWS = false
-    private[HTMLParser] var endswithWS = false
+    var startswithWS = false
+    var endswithWS = false
     private[HTMLParser] var _sourceref: Option[SourceRef] = None
     def sourceref = _sourceref
 
@@ -367,7 +377,7 @@ object HTMLParser {
       n._parent.foreach(p => p._children = p._children.filterNot(_ == n))
       n._parent = Some(this)
       n.state = this.state
-      _children = _children.take(_children.indexOf(after)-1) ::: n :: _children.drop(_children.indexOf(after)-1)
+      _children = _children.take(_children.indexOf(after)+1) ::: n :: _children.drop(_children.indexOf(after)+1)
     }
     def addBefore(n : Node, before : HTMLNode) : HTMLNode = addBefore(n.toString(),before)
     def addBefore(s : String,before : HTMLNode) : HTMLNode = state.withParent(this){
@@ -388,8 +398,8 @@ object HTMLParser {
   }
 
   class HTMLText(state : ParsingState, val text : String) extends HTMLNode(state,"","") {
-    override def toString() = XMLEscaping(text)
-    override def isEmpty = toString() == "" || toString() == "&200e"
+    override def toString() = text//XMLEscaping(text)
+    override def isEmpty = toString() == "" || toString() == empty.toString
   }
 
   object HTMLNode {
@@ -496,7 +506,7 @@ object HTMLParser {
         case c =>
           var txt = c + in.takeWhileSafe(_ != '<')
           val endWS = txt.lastOption.exists(_.isWhitespace)
-          txt = Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
+          txt = if (txt.trim == empty.toString) empty.toString else Try(XMLEscaping.unapply(txt.trim)).toOption.getOrElse({
             print("")
             txt.trim
           })

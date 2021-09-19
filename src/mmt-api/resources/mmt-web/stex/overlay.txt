@@ -15,6 +15,7 @@
   transition: opacity 0.2s ease-in-out;
 }
 .stexoverlaycontainer {
+  display: inline;
   pointer-events: auto;
   cursor: pointer;
 }
@@ -71,7 +72,7 @@
 		elem.classList.add('activatemouse');
 		elem.src = url;
 		elem.style.opacity = 1;
-		elem.style.width = "60ch";
+		elem.style.width = "100ch";
 	}
 	function stexOverlayOff(id) {
 		var elem = document.getElementById(id);

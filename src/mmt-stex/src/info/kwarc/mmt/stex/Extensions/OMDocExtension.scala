@@ -133,245 +133,31 @@ object OMDocExtension extends DocumentExtension {
     }
   )
 
-
-  /*
-  class LanguageComponent(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
-    print("")
-    def language = resource
-
-    override def open(state: SemanticParsingState): Unit = {
-      state.getParent match {
-        case t : TheoryAnnotation if language != "" =>
-          if (language != "" && t.signaturemodule.exists(s => s.language != "" && s.language != language)) {
-            t.signaturemodule = None
-          }
-          t.languagemodule = Some({
-            val nt = new PreTheory(t.node,t.path.toDPath ? language)
-            nt.language = language
-            nt.add(this)
-            val n = new ImportAnnotation(node) {
-              override lazy val domain: MPath = t.path
-              _parent = Some(nt)
-            }
-            node.deleteAnnotation(n)
-            nt.add(n)
-            nt
-          })
-        case t : HasLanguage =>
-          super.open(state)
-          t.language = language
-        case _ =>
-          super.open(state)
-      }
-    }
-  }
-  class SignatureComponent(node : XHTMLNode) extends ComponentAnnotation(node) with Plain {
-    def sig = resource
-    override def open(state: SemanticParsingState): Unit = {
-      super.open(state)
-      _parent match {
-        case Some(t : TheoryAnnotation) if sig != "" =>
-          if (t.languagemodule.exists(s => s.language != "" && s.language != sig)) {
-            t.signaturemodule = None
-          } else {
-            t.signaturemodule = Some({
-              val nt = new PreTheory(t.node,t.path)
-              nt.language = sig
-              nt
-            })
-          }
-        case _ =>
-      }
-    }
-  }
-
-  class ImportAnnotation(node : XHTMLNode) extends StructureAnnotation(node) with Plain {
-    override def open(state: SemanticParsingState): Unit = state.getParent match {
-      case p : TheoryAnnotation =>
-        p.signaturemodule.foreach { p =>
-          _parent = Some(p)
-          p.add(this)
-        }
-      case _ =>
-        super.open(state)
-    }
-
-    override def close(state: SemanticParsingState): Unit = state.getParent match {
-      case p : MetatheoryComponent =>
-        p._metatheory = resource
-      case _ =>
-        super.close(state)
-    }
-  }
-
-  class UseModuleAnnotation(node : XHTMLNode) extends StructureAnnotation(node) with Plain {
-    override def open(state: SemanticParsingState): Unit = state.getParent match {
-      case p : TheoryAnnotation =>
-        p.languagemodule.foreach { p =>
-          _parent = Some(p)
-          p.add(this)
-        }
-      case _ =>
-        super.open(state)
-    }
-  }
-
-  /*
-  class RuleAnnotation(node : XHTMLNode) extends DeclarationAnnotation(node) with ToScript {
-    // TODO
-  }
-
- */
-
-  class SymdeclAnnotation(node : XHTMLNode) extends ConstantAnnotation(node) with ToScript {
-    override def open(state: SemanticParsingState): Unit = state.getParent match {
-      case p : TheoryAnnotation if p.signaturemodule.isDefined =>
-        p.signaturemodule.foreach { p =>
-          p.add(this)
-          _parent = Some(p)
-        }
-      case p : TheoryAnnotation =>
-        p.languagemodule.foreach { p =>
-          p.add(this)
-          _parent = Some(p)
-        }
-      case p : PreParent =>
-        p.add(this)
-        _parent = Some(p)
-      case _ =>
-    }
-
-    /* override def getElement(implicit state: SemanticParsingState): List[Declaration] = {
-      val ls = super.getElement
-      if (_definientia.nonEmpty) {
-          ls.head.asInstanceOf[FinalConstant].df.map {df =>
-            ls ::: RuleConstant(ls.head.home,_parent.get.newName("abbrevrule"),OMA(OMID(Path.parseM("scala://features.stex.mmt.kwarc.info?AbbreviationRule")),
-              List(ls.head.toTerm,df)),Some(new AbbrevRule(ls.head.path,df))) :: Nil
-          }.getOrElse(ls)
-      } else ls
-    } */
-  }
-
-  class NotationAnnotation(node : XHTMLNode) extends ConstantAnnotation(node) with ToScript {
-    override def open(state: SemanticParsingState): Unit = state.getParent match {
-      case p: TheoryAnnotation if p.signaturemodule.isDefined =>
-        p.signaturemodule.foreach { p =>
-          p.add(this)
-          _parent = Some(p)
-        }
-      case p: TheoryAnnotation =>
-        p.languagemodule.foreach { p =>
-          p.add(this)
-          _parent = Some(p)
-        }
-      case p: PreParent =>
-        p.add(this)
-        _parent = Some(p)
-      case _ =>
-    }
-
-    override def getElement(implicit state: SemanticParsingState): List[FinalConstant] = _parent match {
-      case Some(p: PreTheory) =>
-        List(Constant(OMID(p.path), _parent.get.newName("notation"), Nil,
-          Some(STeX.notation.tp(Path.parseS(resource), arity)),
-          Some(STeX.notation(_notations.head._3, precedence)), Some("notation")))
-      case _ =>
-        Nil
-    }
-  }
-
-
-
-  class RuleAnnotation(node: XHTMLNode) extends DeclarationAnnotation(node) with ToScript with HasTermArgs {
-    override def getElement(implicit state: SemanticParsingState): List[RuleConstant] = _parent match {
-      case Some(pt : TheoryAnnotation) =>
-        List(rci(pt.path,OMAorAny(OMID(Path.parseM(resource)),getArgs.map(state.applyTopLevelTerm)),true))
-    }
-  }
-
-  class TermConstantAnnotation(node: XHTMLNode) extends DeclarationAnnotation(node) with HasTermArgs {
-    override def getElement(implicit state: SemanticParsingState): List[StructuralElement] = _parent match {
-      case Some(p : ModuleAnnotation) =>
-        _terms match {
-          case List(tm) =>
-            Constant(OMMOD(p.path),p.newName(resource),Nil,None,Some(state.applyTopLevelTerm(tm)),Some(resource)) :: Nil
-          case _ =>
-            ???
-        }
-      case _ =>
-        ???
-    }
-  }
-
-  class VariableAnnotation(node: XHTMLNode) extends DeclarationAnnotation(node) with HasTermArgs {
-    override def getElement(implicit state: SemanticParsingState): List[Constant] = _parent match {
-      case Some(p : ModuleAnnotation) =>
-        _terms match {
-          case List(vd) =>
-            var constants : List[String] = Nil
-            val cs = context2list(state.makeBinder(vd)).map {vd =>
-              val ret = Constant(OMMOD(p.path),p.newName(resource),Nil,vd.tp,vd.df,Some("variable"))
-              ret.metadata.update(STeX.meta_vardecl,STeX.StringLiterals(resource))
-              constants ::= ret.path.toString
-              val orig = vd.metadata.getValues(STeX.meta_notation).head.asInstanceOf[Term]
-              state.addTransform({case `orig` =>
-                val omv = OMV(LocalName(resource))
-                omv.metadata.update(STeX.meta_source,ret.toTerm)
-                omv
-              })
-              ret
-            }
-            node.attributes(("","stex:constant")) = constants.mkString(" ")
-            cs
-          case _ =>
-            ???
-        }
-      case _ =>
-        ???
-    }
-  }
-
-   */
-
   import DocumentExtension._
 
   override lazy val documentRules = List(
     {case thm: HTMLTheory =>
       sidebar(thm, (<b style="font-size: larger">Theory: {thm.name.toString}</b>) :: Nil)
     },
- /*   {case v: XHTMLVarDecl =>
-      val is = List(if ((v.universal contains true) || v.universal.isEmpty) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)"))
-      val seq = scala.xml.Text("Variable ") :: server.xhtmlPresenter.asXML(v.vardecl, None) :: is
+    {case v: HTMLVariable =>
+      val is = List(if (true) scala.xml.Text(" (universal)") else scala.xml.Text(" (existential)")) // TODO !
+      val seq = scala.xml.Text("Variable ") :: /* server.xhtmlPresenter.asXML(v.path, None) :: */ is // TODO
       sidebar(v, seq)
-    }, */
+    },
     {case s: HTMLSymbol =>
       controller.getO(s.path) match {
         case Some(c : Constant) =>
-          sidebar(s,{<span>Constant {makeButton("/:" + server.pathPrefix + "/declaration?" + c.path,scala.xml.Text(c.name.toString)
-          )}<code>(\\{s.macroname})</code></span>} :: Nil)
+          sidebar(s,{<span style="display:inline">Constant {makeButton("/:" + server.pathPrefix + "/declaration?" + c.path,scala.xml.Text(c.name.toString)
+          )}<code>(\{s.macroname})</code></span>} :: Nil)
         case _ =>
 
       }
     },
     {case s: HTMLImport =>
-      sidebar(s,{<span>Include {makeButton("/:" + server.pathPrefix + "/theory?" + s.domain,scala.xml.Text(s.name.toString))}</span>} :: Nil)
+      sidebar(s,{<span style="display:inline">Include {makeButton("/:" + server.pathPrefix + "/theory?" + s.domain,scala.xml.Text(s.name.toString))}</span>} :: Nil)
     },
-    {case t: HasHeadSymbol => overlay(t,"/:" + server.pathPrefix + "/fragment?" + t.head.toString,"/:" + server.pathPrefix + "/declaration?" + t.head.toString)},
-//    {case v : XHTMLOMV => overlay(v,"/:" + server.pathPrefix + "/fragment?" + v.path,"/:" + server.pathPrefix + "/declaration?" + v.path)},
-/*    {case c : TermAnnotation if c.node.attributes.contains(("stex","constant")) => /* c.toTerm*/ /*{
-      sidebar(c, {
-        <span>{"Term:"}
-          {DocumentExtension.makeButton("/:" + server.pathPrefix + "/declaration?" + c.attributes(("stex", "constant")),
-            server.xhtmlPresenter.asXML(c.toTerm, None)).node}
-        </span>
-      }:: Nil)
-    }*/}, */
-/*    {case c : TermAnnotation if c.isTop && !c.toTerm.isInstanceOf[OMID] =>
-      c.toTerm match {
-        case OMS(_) =>
-        case _ =>
-      }
-    } */
+    {case t: HasHeadSymbol =>
+      overlay(t,"/:" + server.pathPrefix + "/fragment?" + t.head.toString,"/:" + server.pathPrefix + "/declaration?" + t.head.toString)},
   )
 
 }

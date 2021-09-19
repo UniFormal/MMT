@@ -121,8 +121,8 @@ object FragmentExtension extends STeXExtension {
     controller.depstore.query(ce.path,-SymdocRelational.documents)(s => ret ::= s)
     ret.flatMap(controller.getO).headOption match {
       case Some(c : Constant) => c.df match {
-        case Some(STeX.symboldoc(_,"en",str)) => // TODO language
-          return XMLEscaping.unapply(str)
+        case Some(STeX.symboldoc(_,_,str)) if str.trim.nonEmpty => // TODO language
+          return str//XMLEscaping.unapply(str)
         case _ =>
       }
       case _ =>

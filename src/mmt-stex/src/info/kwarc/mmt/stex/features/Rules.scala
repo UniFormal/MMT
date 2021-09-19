@@ -254,3 +254,57 @@ object Binder extends ParametricRule {
     BinderRule(pattern,head,ln)
   }
 }
+
+case class LetBinderRule(pattern : Rules.Pattern,head : GlobalName,df : Option[LocalName]) extends BindingRule with UsesPatterns {
+  def apply(tm : Term)(implicit state : SemanticState) : Option[Context] = tm match {
+    case pattern(ls) =>
+      val (vars, dfO) = df match {
+        case Some(dfn) =>
+          val p = ls.find(_._1 == dfn).getOrElse {
+            return None
+          }
+          (ls.filterNot(_ == p), Some(p._2))
+        case _ => (ls,None)
+      }
+      Some(vars.foldLeft(Context.empty) {
+        case (ctx, (_, OMV(ln))) =>
+          dfO match {
+            case Some(t) => ctx ++ VarDecl(ln,None,None,Some(t),None)
+            case _ => ctx ++ VarDecl(ln)
+          }
+        case (ctx, (_, ot)) =>
+          val nc = state.makeBinder(ot).variables.map {
+            case vd if vd.df.isEmpty =>
+              dfO match {
+                case Some(t) => VarDecl(vd.name,None,vd.tp,Some(t),None)
+                case _ => vd
+              }
+            case vd => vd
+          }
+          ctx ++ nc
+      }.map{vd => vd.metadata.update(STeX.meta_notation,tm);vd})
+    case _ =>
+      None
+  }
+}
+
+object LetBinder extends ParametricRule {
+  def apply(controller: Controller, home: Term, args: List[Term]) = {
+    if (args.length != 1 && args.length != 2) throw ParseError("one or two arguments expected")
+    val (pattern,ln) = args match {
+      case List(h,OMV(n)) =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h,STeX.universal_quantifier(n,_,OMV(m))) if n == m =>
+        (new Rules.Pattern(h),Some(n))
+      case List(h) =>
+        (new Rules.Pattern(h),None)
+      case _ =>
+        throw ParseError("second argument needs to be a variable")
+    }
+    val head = pattern.body.head match {
+      case Some(gn : GlobalName) => gn
+      case _ => STeX.informal.sym
+    }
+    LetBinderRule(pattern,head,ln)
+  }
+}

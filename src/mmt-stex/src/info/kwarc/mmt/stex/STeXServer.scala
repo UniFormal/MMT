@@ -162,14 +162,19 @@ class STeXServer extends ServerExtension("fomid") {
   def doHeader(doc : HTMLNode) = {
     val head = doc.get("head")()().head
     val body = doc.get("body")()().head
+    head.add(<meta charset="UTF-8"/>)
+    var addcss = true
     head.get("link")((HTMLParser.ns_html,"rel","stylesheet"))().foreach(e => e.attributes.get((HTMLParser.ns_html,"href")) match {
       case Some("https://latex.now.sh/style.css") => e.delete
       case Some("LaTeXML.css") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/LaTeXML.css"
       case Some(s) if s.startsWith("ltx-") => e.attributes((HTMLParser.ns_html,"href")) = "/stex/latexml/" + s
+      case Some("htmlstomach.css") =>
+        e.attributes((HTMLParser.ns_html,"href")) = "/stex/htmlstomach.css"
+        addcss = false
       case _ =>
     })
-    head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>)
-    head.add(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{HTMLParser.empty}</script>)
+    if (addcss) head.add(<link rel="stylesheet" href="/stex/latex-css/style.css"/>) else head.add(<link rel="stylesheet" href="/stex/sidenotes.css"/>)
+    //head.add(<script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/mml-chtml.js">{HTMLParser.empty}</script>)
     extensions.foreach(_.doHeader(head,body))
     head
   }

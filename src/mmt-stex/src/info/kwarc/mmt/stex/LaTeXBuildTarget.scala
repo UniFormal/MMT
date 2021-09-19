@@ -37,7 +37,20 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
+  import com.jazzpirate.latex._
+  import parsing.Parser
+  Parser.defaultState
+
   def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
+
+    log("building " + inFile)
+    val (_,html) = LaTeX.asHTML(inFile.toString)
+    File.write(outFile.setExtension("shtml"),html.toString)
+    val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
+    File.write(outFile, doc.toString)
+    doc
+
+    /*
     log("building " + inFile)
     LaTeXML.latexmlc(inFile,outFile.setExtension("shtml"),Some(s => log(s,Some(inFile.toString))),Some(s => log(s,Some(inFile.toString)))).foreach {
       case (i,ls) if i > Level.Warning =>
@@ -45,11 +58,7 @@ trait XHTMLParser extends TraversingBuildTarget {
       case _ =>
     }
     if (!outFile.setExtension("shtml").exists()) throw new STeXError("LaTeXML failed: No .xhtml generated",None,Some(Level.Error))
-    //log("postprocessing " + inFile)
-    val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
-    //doc.get("div")()("ltx_page_logo").foreach(_.delete)
-    //doc.get("div")()("ltx_page_footer").foreach(f => if (f.isEmpty) f.delete)
-    //val (mmtdoc,missing) = PreElement.extract(doc)(controller)
+    val doc = HTMLParser(outFile.setExtension("shtml"))(state)
     outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
     outFile.up.children.foreach {
@@ -57,9 +66,8 @@ trait XHTMLParser extends TraversingBuildTarget {
       case _ =>
     }
     log("written: " + outFile)
-    //log("Finished: " + inFile)
-    //(mmtdoc,missing)
     doc
+    */
   }
 
 }

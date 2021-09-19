@@ -142,14 +142,14 @@ object DocumentExtension extends STeXExtension {
     if (e.isMath) e = e.collectAncestor {
       case a if a.parent.exists(!_.isMath) => a
     }.getOrElse(e)
-    e.parent.foreach(_.addBefore(<span>
+    e.parent.foreach(_.addBefore(<span style="display:inline">
       <label for={id} class="sidenote-toggle">{HTMLParser.empty}</label>
       <input type="checkbox" id={id} class="sidenote-toggle"/>
-      <span class="sidenote">{content}</span>
+      <span class="sidenote" style="display:inline">{content}</span>
     </span>,e))
   }
 
-  def overlay(elem : HTMLNode, urlshort : String,urllong : String) = {
+  def overlay(elem : HTMLNode, urlshort : String,urllong : String) : Unit = {
     def criterion(n : HTMLNode) = n match {
       case t if t.attributes.isDefinedAt((HTMLParser.ns_stex,"arg")) => false
       case _ : HTMLText => true
@@ -157,6 +157,8 @@ object DocumentExtension extends STeXExtension {
       case t if t.getClass == classOf[MathMLTerm] => true
       case _ => false
     }
+    if (elem.classes.contains("hasoverlay")) return
+    elem.classes = "hasoverlay" :: elem.classes
     def pickelems(n : HTMLNode) : List[HTMLNode] = if (n.get()()().forall(criterion)) List(n) else
       n.children.filter(criterion).flatMap(pickelems)
     val id = elem.state.generateId
@@ -166,14 +168,19 @@ object DocumentExtension extends STeXExtension {
     val currp = elem.parent
     targets.zipWithIndex.foreach {
       case (txt: HTMLText,i) =>
-        val newthis = txt.parent.map(_.addAfter(<span class="stexoverlaycontainer"
+        val newthis = txt.parent.map(_.addAfter(<span class="stexoverlaycontainer" style="display:inline"
                                             id={id + "_" + i}
                                             onmouseover={"stexOverlayOn('" + id + "','" + urlshort + "');" + onhover}
                                             onmouseout={"stexOverlayOff('" + id + "');" + onout}
                                             onclick={"stexMainOverlayOn('" + urllong + "')"}
         ></span>,txt))
         txt.delete
-        newthis.foreach(_.add(txt))
+        newthis.foreach(_.add({
+          if (txt.endswithWS && txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text + "&nbsp;")
+          else if (txt.endswithWS) new HTMLText(txt.state,txt.text + "&nbsp;")
+          else if (txt.startswithWS) new HTMLText(txt.state,"&nbsp;" + txt.text)
+          else txt
+        }))
       case (e,i) =>
         e.classes ::= "stexoverlaycontainer"
         e.attributes((e.namespace, "onmouseover")) = "stexOverlayOn('" + id + "','" + urlshort + "');" + onhover
@@ -181,7 +188,7 @@ object DocumentExtension extends STeXExtension {
         e.attributes((e.namespace, "onclick")) = "stexMainOverlayOn('" + urllong + "')"
         e.attributes((e.namespace,"id")) = id + "_" + i
     }
-    val overlay = <span style="position:relative"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{HTMLParser.empty}</iframe></span>
+    val overlay = <span style="position:relative;display:inline"><iframe src=" " class="stexoverlay" id={id} onLoad='this.style.height=(this.contentWindow.document.body.offsetHeight+5) + "px";'>{HTMLParser.empty}</iframe></span>
     val after = if (elem.parent == currp) elem else elem.parent.get
     if (!after.isMath) {
       val p = after.parent.get
@@ -195,7 +202,7 @@ object DocumentExtension extends STeXExtension {
   }
 
   def makeButton(target : String,elem : Node) : Node =  // makesafe(XHTML(
-      <span class="propbtn" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
+      <span class="propbtn" style="display:inline" target="stexoverlayinner" onclick={"stexMainOverlayOn('" + target + "')"}>
         {elem}
       </span>
   //))
@@ -203,7 +210,7 @@ object DocumentExtension extends STeXExtension {
   def makePostButton(elem : Node, target : String,data : (String,String)*) : Node = // makesafe(XHTML(
     <form method="post" action={target} class="inline" onsubmit="this.target='stexoverlayinner'" target="stexoverlayinner" style="display:none">
       {data.map{p => <input type="hidden" name={p._1} value={p._2} class="inline"/>}}
-      <span onclick="this.closest('form').submit();" type="submit" class="propbtn">
+      <span onclick="this.closest('form').submit();" type="submit" class="propbtn" style="display:inline">
         {elem}
       </span>
     </form>
