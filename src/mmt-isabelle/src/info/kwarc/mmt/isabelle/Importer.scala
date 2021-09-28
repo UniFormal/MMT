@@ -5,8 +5,8 @@ import scala.util.matching.Regex
 import info.kwarc.mmt.lf
 import info.kwarc.mmt.api._
 import frontend.{Controller, ReportHandler}
-import archives.{Archive, NonTraversingImporter}
-import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import archives.{Archive, NonTraversingImporter, Update}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRegion, SourceRef}
 import notations._
 import symbols._
 import modules._
@@ -750,7 +750,17 @@ object Importer
     val (controller, archives) =
       init_environment(options, progress = progress, archive_dirs = archive_dirs, init_archive = true)
 
-    object MMT_Importer extends NonTraversingImporter { val key = "isabelle-omdoc" }
+    object MMT_Importer extends NonTraversingImporter {
+      val key = "isabelle-omdoc"
+
+      //these methods are called by MMT if the importer is called from MMT
+      def build(a: Archive, up: Update, in: FilePath) : Unit = {
+        throw LocalError("not implemented")
+      }
+      def clean(a: Archive, in: FilePath): Unit = {
+        throw LocalError("not implemented")
+      }
+    }
     controller.extman.addExtension(MMT_Importer, Nil)
 
     val proof_terms_enabled = options.bool("mmt_proof_terms")
