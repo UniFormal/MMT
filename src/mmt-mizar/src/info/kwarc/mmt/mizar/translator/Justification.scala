@@ -57,7 +57,7 @@ object JustificationTranslator {
   private def translate_Diffuse_Statement_Claim(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext): Term = trueCon
   def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
     case Straightforward_Justification(_refs) => globalReferences(_refs)
-    case Block(_, _items) =>
+    case Block(pos, _, _items) =>
       if (proofSteps) defContext.enterProof
       def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
         case st: Statement =>
@@ -90,7 +90,7 @@ object JustificationTranslator {
           Nil
         case prDef: PrivateDefinition if (proofSteps) =>
           // This will add the definition to the list of local definitions inside the definition context
-          translate_Definition(prDef)(defContext)
+          translate_Definition(prDef, None)(defContext)
           Nil
         case _ => Nil
       }

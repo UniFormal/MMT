@@ -4,7 +4,6 @@ import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasTy
 import info.kwarc.mmt.api.{objects, _}
 import objects._
 import info.kwarc.mmt.mizar._
-import info.kwarc.mmt.mizar.translator.TranslationController.currentAid
 import mmtwrapper.MizarPrimitiveConcepts._
 import mmtwrapper.MizSeq._
 import mmtwrapper.MizarPrimitiveConcepts
@@ -83,8 +82,8 @@ object TranslatorUtils {
    * @return
    */
   def resolveHiddenReferences(gn: GlobalName) = {
-    def modeKind(p: Int) = Utils.shortKind(Utils.ModeKind())+p.toString
-    def predKind(p: Int, c: Int) = Utils.shortKind(Utils.PredicateKind())+p.toString+Utils.shortKind(Utils.PredicateKind())+c.toString
+    def modeKind(p: Int) = Utils.shortKind(Utils.ModeKind()).toString+p.toString
+    def predKind(p: Int, c: Int) = Utils.shortKind(Utils.PredicateKind()).toString+p.toString+Utils.shortKind(Utils.PredicateKind())+c.toString
     gn match {
       case Utils.SimpleGlobalName(aid, name) if (gn.module == hiddenArt) => name match {
         case str if str == modeKind(1) => Some(any)

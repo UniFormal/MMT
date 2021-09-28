@@ -4,6 +4,7 @@ import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.documents._
 import info.kwarc.mmt.api.utils._
 import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.parser.{SourceRef, SourceRegion}
 import info.kwarc.mmt.api.modules._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.notations._
@@ -249,6 +250,7 @@ object TranslationController extends frontend.Logger {
   def getPath(aid: String, name: String): GlobalName = getTheoryPath(aid) ? name
   def getLocalPath(name: String): GlobalName = currentTheoryPath ? name
   def currentSource : String = mathHubBase + "/source/" + articleData.currentAid + ".miz"
+  def currentSourceUri: URI = URI(currentSource)
 
   def makeDocument() = {
     articleData.resetDependencies
@@ -330,7 +332,7 @@ object TranslationController extends frontend.Logger {
     controller.add(inc, AtBegin)
   }
 
-  def addDeclaration(e: Declaration with HasType with HasDefiniens with HasNotation)(implicit defContext: DefinitionContext) : Unit = {
+  def addDeclaration(e: Declaration with HasType with HasDefiniens with HasNotation, sourceRegion: Option[SourceRegion])(implicit defContext: DefinitionContext) : Unit = {
     try {
       addDependencies(e)
       //should be (and probably is unnecessary)
@@ -338,6 +340,9 @@ object TranslationController extends frontend.Logger {
         articleData.currentAid = TranslationController.currentTheory.name.toString.toLowerCase
       if (! locallyDeclared(e.name)) {
         controller.add(e)
+        sourceRegion foreach {
+          sr => e.metadata.update(e.path, SourceRef(currentSourceUri, sr).toURI)
+        }
       } else {
         log ("Trying to add a declaration twice. ")
       }
@@ -415,7 +420,7 @@ object TranslationController extends frontend.Logger {
       checking.Solver.infer(controller, defContext.args++defContext.getLocalBindingVars, tm, None).getOrElse(any)
     } catch {
       case e: LookupError =>
-        println ("Lookup error while trying to infer a type: \nVariable not declared in context: "+defContext.args.toStr(true)++defContext.getLocalBindingVars+"\n"+e.shortMsg)
+        println ("Lookup error while trying to infer a type: \nVariable not declared in context: "+defContext.args.toStr(true)+defContext.getLocalBindingVars+"\n"+e.shortMsg)
         throw e
       case e: GeneralError =>
         val mes = showErrorInformation(e, " while trying to infer a type in the context of "+(defContext.args++defContext.getLocalBindingVars).toStr(true))

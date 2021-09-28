@@ -1,5 +1,6 @@
 package info.kwarc.mmt.mizar.syntax
 
+import info.kwarc.mmt.api.parser.SourcePosition
 import info.kwarc.mmt.mizar.syntax.Utils._
 import info.kwarc.mmt.mizar.translator.TranslationController
 
@@ -486,7 +487,7 @@ case class Straightforward_Justification(_refs:List[Reference]) extends Justific
  * @param kind
  * @param _items
  */
-case class Block(kind: String, _items:List[Item]) extends Justification
+case class Block(pos: Positions, kind: String, _items:List[Item]) extends Justification
 /**
  * A scheme, containing a nr allowing to reference it by its name withing the same article
  * @param spelling the spelling of the scheme
@@ -785,11 +786,12 @@ case class Schematic_Variables(_segms:List[Segments]) extends ObjectLevel
 case class Variables(_vars:List[Variable]) extends ObjectLevel
 /**
  * a single (local) variable
+ * @param pos the position in corresponding Mizar source file
  * @param serialnr the number by which the variable (combined with its spelling and kind) can be referenced
  * @param spelling the name of the variable
  * @param kind the kind of the variable
  */
-case class Variable(serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
+case class Variable(pos: Position, serialnr: Int, spelling:String, kind:String) extends ObjectLevel {
   def toIdentifier = MizarVariableName(spelling, kind, serialnr)
 }
 case class Substitutions(_childs:List[Substitution]) extends ObjectLevel
@@ -895,7 +897,7 @@ case class Selectors_List(_children:List[SelectorFunctor_Pattern]) extends Objec
  * @param _tp
  */
 case class Properties(sort: Option[String], property: Option[String], _tp:Option[Type]) extends ObjectLevel {//, _cond:List[Properties]
-  def matchProperty(_just: Option[Justification] = None ) = Utils.matchProperty(property.getOrElse(sort.get), _just, _tp)
+  def matchProperty(pos: SourcePosition, _just: Option[Justification] = None ) = Utils.matchProperty(pos, property.getOrElse(sort.get), _just, _tp)
 }
 /**
  * whether a redefinable definition is a redefinition
