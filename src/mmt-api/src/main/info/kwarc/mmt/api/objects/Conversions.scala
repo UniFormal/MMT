@@ -1,5 +1,4 @@
 package info.kwarc.mmt.api.objects
-//import info.kwarc.mmt.api.patterns._
 import info.kwarc.mmt.api._
 /** Stores all implicit conversions related to MMT objects
  * This is imported in all source files that use conversions */

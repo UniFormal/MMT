@@ -21,7 +21,6 @@ import utils._
 object Importer
 {
   /** MMT system environment **/
-
   def init_environment(
     options: isabelle.Options,
     progress: isabelle.Progress = isabelle.No_Progress,

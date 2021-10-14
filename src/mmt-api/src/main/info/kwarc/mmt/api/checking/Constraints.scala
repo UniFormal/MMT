@@ -55,7 +55,7 @@ case class Comment(text: () => String) extends HistoryEntry {
  * The most import History's are those ending in an error message.
  * See [[Solver.getErrors]]
  *
- * @param the nodes of the branch, from leaf to root
+ * @param e nodes of the branch, from leaf to root
  */
 case class IndentedHistoryEntry(e : HistoryEntry, level: Int) extends HistoryEntry {
    def present(implicit cont: Obj => String): String = indentation(level) + e.present

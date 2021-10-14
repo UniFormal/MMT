@@ -75,26 +75,15 @@ class UnmatchedList(val tl: TokenList, ruleTableInit: NotationRuleTable, parsing
   /** the number of Token's before the left-most ActiveNotation */
   private var numCurrentTokens = 0
 
-  // these could be moved into a separate class
-  /** the number of Token's picked since the last resetPicker */
-  private var picked = 0
-
-  /** reset picked */
-  private def resetPicker() {
-    picked = 0
-  }
-
-  /** obtain picked */
-  private def getPicked = picked
-
   /** pick some of Token's from the end of the shifted and not-yet-picked Token's
+    * @param first the first token to pick (within the list of numCurrentTokens)
     * @param length the number of Token's to pick
     * @return the TokenSlice representing the picked Token's
     */
-  private[parser] def pick(length: Int): TokenSlice = {
-    val sl = TokenSlice(tl, currentIndex - picked - length, currentIndex - picked)
-    picked += length
-    log("picking " + length + " tokens (" + picked + " in total so far): " + sl)
+  private[parser] def pick(first: Int, length: Int): TokenSlice = {
+    val from = currentIndex - active.head.numCurrentTokens + first
+    val sl = TokenSlice(tl, from, from+length)
+    log("picking " + length + " tokens: " + sl)
     sl
   }
 
@@ -169,16 +158,15 @@ class UnmatchedList(val tl: TokenList, ruleTableInit: NotationRuleTable, parsing
       assert(app == Applicable) // catch subtle implementation errors
     }
     log(s"applying current notation at $currentToken, found so far: $an, shifted tokens: $numCurrentTokens")
-    resetPicker()
     val toClose = an.apply(currentIndex)
     // we count how much active.head picked and
     // give the remaining Tokens back to the surrounding group
     if (leftOpen) {
       active.tail match {
         case Nil =>
-          numCurrentTokens = an.numCurrentTokens - getPicked + 1
+          numCurrentTokens = an.numCurrentTokens - an.getPicked + 1
         case hd :: _ =>
-          hd.numCurrentTokens = an.numCurrentTokens - getPicked + 1
+          hd.numCurrentTokens = an.numCurrentTokens - an.getPicked + 1
       }
     }
     an.numCurrentTokens = 0
@@ -193,7 +181,6 @@ class UnmatchedList(val tl: TokenList, ruleTableInit: NotationRuleTable, parsing
     log("closing current notation")
     val an = active.head
     if (rightOpen) {
-      resetPicker()
       an.close
     }
     active = active.tail

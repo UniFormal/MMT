@@ -40,6 +40,8 @@ case class VarDecl(name: LocalName, feature: Option[String], tp: Option[Term], d
     _.freeVars_
   }).getOrElse(Nil)
 
+  private[objects] def declaredVars_ = List(this)
+
   def subobjects = subobjectsNoContext(tp.toList ::: df.toList)
 
   def head = tp.flatMap(_.head)
@@ -369,6 +371,9 @@ case class Context(variables: VarDecl*) extends Obj with ElementContainer[VarDec
     }
   }
 
+  private[objects] def declaredVars_ = this.getDeclarations
+  override lazy val declaredVars = this
+
   def subobjects = mapVarDecls { case (con, vd) => (con, vd) }
 
   /** returns this as a substitutions using those variables that have a definiens */
@@ -422,6 +427,7 @@ case class Sub(name: LocalName, target: Term) extends Obj {
   def map(f: Term => Term) = Sub(name, f(target))
 
   private[objects] def freeVars_ = target.freeVars_
+  private[objects] def declaredVars_ = Nil
 
   def subobjects = subobjectsNoContext(List(target))
 
@@ -477,6 +483,7 @@ case class Substitution(subs: Sub*) extends Obj {
   private[objects] def freeVars_ = (this flatMap {
     _.freeVars_
   })
+  private[objects] def declaredVars_ = Nil
 
   def subobjects = subobjectsNoContext(subs.toList)
 

@@ -1029,6 +1029,7 @@ case class Success[A](result: A) extends DryRunResult {
 
 
 /** experimental backtracking support in [[Solver]] */
+// TODO variable bounds are missing
 class Branchpoint(val parent: Option[Branchpoint], val delayed: List[DelayedConstraint], val depLength: Int, val solution: Context) {
   def isRoot = parent.isEmpty
   /** @return true if this branch contains anc */

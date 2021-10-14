@@ -86,21 +86,29 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
       val prepicked = delim.text.substring(token.word.length).toList.map(c => Delim(c.toString))
       left = prepicked ::: left
    }
-   /** pick all available Token's as a FoundSimpArg */
-   private def PickAll(m: ChildMarker) = {
-      val ts = scanner.pick(numCurrentTokens)
-      FoundSimp(ts, m)
-   }
    /** pick exactly ms.length available Tokens, each as as FoundSimp */
    private def PickSingles(ms: List[ChildMarker]) {
-      val fs = ms reverseMap {m =>
-         FoundSimp(scanner.pick(1), m)
-      }
-      found = fs ::: found
+    val fs = ms map {m =>
+      val f = FoundSimp(scanner.pick(firstPickedToken+numPickedTokens, 1), m)
+      numPickedTokens += 1
+      f
+    }
+    found = fs.reverse ::: found
+   }
+   /** pick all available Token's and returns the FoundSimp without changing local state*/
+   private def PickRemainingAux(m: ChildMarker) = {
+      val first = firstPickedToken+numPickedTokens
+      val ts = scanner.pick(first, numCurrentTokens-first)
+      numPickedTokens += numCurrentTokens
+      FoundSimp(ts, m)
+   }
+   /** pick all available Token's */
+   private def PickRemaining(m: ChildMarker) {
+     found ::= PickRemainingAux(m)
    }
    /** like pickAll, but appends to a previously started sequence or starts a new sequence */
-   private def PickAllSeq(m: ChildMarker) {
-      val f = PickAll(m)
+   private def PickRemainingSeq(m: ChildMarker) {
+      val f = PickRemainingAux(m)
       (found.headOption, m) match {
          case (Some(FoundSeq(s, args)), m) if s.number == m.number =>
             found = FoundSeq(s, args ::: List(f)) :: found.tail
@@ -124,6 +132,11 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
     *  only well-defined after applicable or closable returned true
     */
    private var remember : Int => Unit = null
+   /** during apply/close, keeps track of how many tokens have been picked */
+   private var numPickedTokens = 0
+   /** during apply/close, keeps track of where picking started */
+   private var firstPickedToken = 0
+   private[parser] def getPicked = numPickedTokens
 
    /** stores an operation in remember for later execution */
    private def onApply(act: => Unit): Applicability = {
@@ -173,7 +186,7 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
               // create a single arg with all available tokens
               case List(n) if numCurrentTokens > 0 =>
                  onApplyI {currentIndex =>
-                    found ::= PickAll(n)
+                    PickRemaining(n)
                     delete(1)
                     deleteDelim(currentIndex)
                  }
@@ -185,13 +198,13 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
                        delete(numCurrentTokens)
                        deleteDelim(currentIndex)
                     }
-                 } else if (ns.length > numCurrentTokens) {
+                 } else if (ns.length < numCurrentTokens) {
                     // if more tokens available than needed, merge all remaining tokens into the last argument
-                    //TODO use matched tokens as delimiters, merge in between them
+                    //TODO use matched tokens as delimiters, merge in between them?
                     onApplyI {currentIndex =>
                        PickSingles(ns.init)
-                       PickAll(ns.last)
-                       delete(numCurrentTokens)
+                       PickRemaining(ns.last)
+                       delete(ns.length)
                        deleteDelim(currentIndex)
                     }
                  } else {
@@ -201,7 +214,7 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
         // the notation expects a sequence whose separator is the current token: all previously shifted tokens become the first element, and we start the sequence
         case (Nil, (cm: ChildMarker) :: _) if cm.isSequenceVia.exists(s => matches(s.text)) =>
            onApply {
-              PickAllSeq(cm)
+              PickRemainingSeq(cm)
               addPrepickedDelims(cm.isSequenceVia.get,currentToken)
            }
         // the notation expects a sequence followed by the current token: end the (possibly empty) sequence
@@ -209,7 +222,7 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
            if (numCurrentTokens > 0) {
               //picks the last element of the sequence (possibly the only one)
               onApplyI {currentIndex =>
-                 PickAllSeq(cm)
+                 PickRemainingSeq(cm)
                  delete(1)
                  deleteDelim(currentIndex)
               }
@@ -232,8 +245,12 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
      * @param currentIndex the index of currentToken
      * @return true iff the notation is fully applied, i.e., no further arguments or delimiters can be matched
      */
-  //currentIndex must be passed here because it is not known yet when applicable is called (because other notations may be closed in between)
+   //currentIndex must be passed here because it is not known yet when applicable is called (because other notations may be closed in between)
    def apply(currentIndex: Int): Boolean = {
+      // setting this to 0 means we always take all token available to the left,
+      // for the left-open arguments, one might extend this to only take some of the tokens, e.g., as many as we need without merging the remaining ones
+      firstPickedToken = 0
+      numPickedTokens = 0
       remember(currentIndex)
       if (left.isEmpty) {
          true
@@ -248,34 +265,47 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
    def closable : Applicability = {
       splitOffSimples(left) match {
          // the notation expects a sequence
+         case (Nil,Nil) => onApply {}
          case (Nil, (m: ChildMarker) :: Nil) if m.isSequence =>
-              if (numCurrentTokens > 0) {
-                 // the available tokens are the last (possibly only) element
-                 onApply {
-                    PickAllSeq(m)
-                    delete(1)
-                 }
-              } else if (!inSeq(m)) {
-                  // no tokens available and the sequence has not been started yet: empty sequence
-                  onApply {
-                    SeqDone(m)
-                    delete(1)
-                  }
-              } else
-                 NotApplicable
-         case (List(m), Nil) if numCurrentTokens > 0 =>
-            // one argument taking all available Token's
-            onApply {
-               found ::= PickAll(m)
-               delete(1)
-            }
-            // as many arguments as there are Token's
-            // should we abort immediately if the numbers do not match up?
-         case (ns, Nil) if numCurrentTokens == ns.length =>
-             onApply {
+           if (numCurrentTokens > 0) {
+              // the available tokens are the last (possibly only) element
+              onApply {
+                 PickRemainingSeq(m)
+                 delete(1)
+              }
+           } else if (!inSeq(m)) {
+               // no tokens available and the sequence has not been started yet: empty sequence
+               onApply {
+                 SeqDone(m)
+                 delete(1)
+               }
+           } else
+              NotApplicable
+         // as many arguments as there are Token's
+         // should we abort immediately if the numbers do not match up?
+         case (ns, Nil) =>
+            if (numCurrentTokens == ns.length) {
+               onApply {
+                  PickSingles(ns)
+                  delete(ns.length)
+               }
+            } else if (numCurrentTokens > ns.length) {
+              // if last marker is for single token only: do not merge
+              val mergeRemaining = ns.last match {
+                 case a:SimpArg => !a.singleTokenOnly
+                 case _ => true
+              }
+              if (mergeRemaining) onApply {
+                PickSingles(ns.init)
+                PickRemaining(ns.last)
+                delete(ns.length)
+              } else onApply {
                 PickSingles(ns)
                 delete(ns.length)
-             }
+              }
+            } else {
+              NotApplicable
+            }
          case _ => NotApplicable
       }
    }
@@ -284,6 +314,10 @@ class ActiveNotation(scanner: UnmatchedList,val rules: List[NotationRule],val ba
     * terminate the current argument(s)
     */
    def close {
+      // setting this to 0 means we start picking right-open arguments from the left
+      // if there are more tokens than we pick, they are left for other notations
+      firstPickedToken = 0
+      numPickedTokens = 0
       remember(-13) // dummy value because closable never uses the currentIndex argument
    }
 }

@@ -22,6 +22,8 @@ case class ExtendedCheckingEnvironment(ce: CheckingEnvironment, objectChecker: O
   def errorCont(e: Error) {
     ce.errorCont(e)
   }
+
+  def extSimpEnv = new uom.ExtendedSimplificationEnvironment(ce.simpEnv, ce.simplifier.objectLevel, rules)
 }
 
 /** auxiliary class for the [[MMTStructureChecker]] to store expectations about a constant */

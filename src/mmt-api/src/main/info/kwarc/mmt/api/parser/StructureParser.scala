@@ -5,7 +5,6 @@ import documents._
 import libraries._
 import archives.{LogicalDependency, BuildSuccess, BuildTask, BuildResult}
 import checking.Interpreter
-import frontend.Controller
 import modules._
 import notations._
 import objects._
@@ -13,8 +12,6 @@ import opaque._
 import patterns._
 import symbols._
 import utils._
-
-import scala.util.Try
 
 /**
  * This class bundles all state that is maintained by a [[StructureParser]]
@@ -526,14 +523,6 @@ class KeywordBasedParser(objectParser: ObjectParser) extends Parser(objectParser
           addDeclaration(c)
         //Include
         case "include" | "realize" =>
-          // FR: unifying includes in theories and links; this code is kept as a reference for the original behavior in case of theories and to be removed eventually
-          /*mod match {
-            case thy: Theory =>
-              val (fromRef, from, args) = readMPathWithParameters(thy.path,context)
-              val incl = Include(thy.toTerm,from,args)
-              SourceRef.update(incl.from, fromRef) //TODO awkward, same problem for metatheory
-              addDeclaration(incl)
-            case link: Link => */
               // either `include df` or `include tp US = df`
               val tc = new TermContainer // first term, i.e., tp or df
               doComponent(tc, context)

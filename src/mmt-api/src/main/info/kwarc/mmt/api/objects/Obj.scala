@@ -64,6 +64,16 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
    lazy val freeVars : List[LocalName] = freeVars_.distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */
    private[objects] def freeVars_ : List[LocalName]
+   /** the variables declared by this objects, in syntax order
+     * if the same variable is declared multiple times
+     * - in the same way, that later ones are dropped
+     * - in different ways, it is an error that is not checked here though (similar to how references to undeclared variables are not checked in this class)
+     */
+   lazy val declaredVars = Context(declaredVars_.distinct :_*)
+   /** helper function for declaredVars that computes the declared variables without eliminating repetitions */
+   private[objects] def declaredVars_ : List[VarDecl]
+   /** names of declaredVars */
+   def declaredNames = declaredVars.map(_.name)
    /** all direct subobjects of this object with their context (excluding any outer context of this object) */
    def subobjects: List[(Context,Obj)]
    /** auxiliary function for subobjects in the absence of binding */
@@ -127,6 +137,7 @@ case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def declaredVars_ = Nil
    def subobjects = Nil
    override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
@@ -169,6 +180,7 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
       OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))
+   private[objects] def declaredVars_ = Nil
    def subobjects = ComplexTerm.subobjects(this) getOrElse {
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
@@ -201,6 +213,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       </om:OMA>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
+   private[objects] lazy val declaredVars_ = fun.declaredVars_ ::: args.flatMap(_.declaredVars_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
    def toCMLQVars(implicit qvars: Context) = <apply>{fun.toCMLQVars}{args.map(_.toCMLQVars)}</apply>
 }
@@ -243,6 +256,7 @@ case class OMV(name : LocalName) extends Term {
            case None => this
        }
    private[objects] def freeVars_ = List(name)
+   private[objects] def declaredVars_ = Nil
    def subobjects = Nil
    def toCMLQVars(implicit qvars: Context) =
       if (qvars.isDeclared(name)) <mws:qvar xmlns:mws="http://www.mathweb.org/mws/ns">{name.toPath}</mws:qvar>
@@ -274,6 +288,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    def subobjects = List(arg, key, value).map(s => (Context(), s))
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars_
+   private[objects] def declaredVars_ = arg.declaredVars_ ::: value.declaredVars_
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMATTR</csymbol>{arg.toCMLQVars}{key.toCMLQVars}{value.toCMLQVars}</apply>
 }
 
@@ -302,6 +317,7 @@ sealed trait OMLITTrait extends Term {
    def toCMLQVars(implicit qvars: Context) = addAttrOrChild(<cn encoding="mmt-literal">{toString}</cn>, "definitionURL", synTypeXML)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def declaredVars_ = Nil
    def subobjects = Nil
 
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
@@ -335,7 +351,7 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
  *
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
- *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
+ *  UnknownOMLITs are replaced with OMLITs in the [[checking.MMTStructureChecker]].
  *
  *  @param synType the type of the this literal
  */
@@ -353,6 +369,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def declaredVars_ = Nil
    def subobjects = Nil
    def toCMLQVars(implicit qvars: Context) = <apply><csymbol>OMFOREIGN</csymbol>{Node}</apply>
 }
@@ -371,6 +388,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
+   private[objects] def declaredVars_ = tokens.flatMap(_.declaredVars)
    def subobjects = {
       val terms = tokens.flatMap {
          case Formal(t) => List(t)
@@ -398,11 +416,63 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
      */
     def vd = VarDecl(name, featureOpt, tp, df, nt).from(this)
     private[objects] def freeVars_ = vd.freeVars
+    private[objects] def declaredVars_ = List(vd)
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
     def toCMLQVars(implicit qvars: Context) = <label>{vd.toCMLQVars}</label>
     def toNode = vd.toNode.copy(label = "OML")
+}
+
+/**
+ * complex terms
+ */
+case class OMC(properties: OMCProperties, op: GlobalName, children: List[Term]) extends Term {
+   def head = Some(op)
+   /** free variables of each child except for those declared by previous children */
+   private[objects] def freeVars_ = {
+      var free: List[LocalName] = Nil
+      var declared: List[LocalName] = Nil
+      children.foreach {t =>
+         free = free ::: (t.freeVars_ diff declared)
+         declared = declared ::: t.declaredNames
+      }
+      free
+   }
+   /** if binding: none; otherwise, those of the children in syntax order */
+   private[objects] def declaredVars_ = if (properties.binding) Nil else children.flatMap(_.declaredVars_)
+   def subobjects = {
+     var decls : List[VarDecl] = Nil
+     children.map {t =>
+       val so = (Context(decls:_*), t)
+       decls = decls ::: t.declaredVars
+       so
+     }
+   }
+   /** substitute in each child, for later children extend substitution with identity maps for declared vars */
+   def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = {
+     var subChild = sub
+     val childrenS = children.map {t =>
+        // TODO alpha-renaming
+        val tS = t.substitute(subChild)
+        subChild = subChild ++ t.declaredVars.id
+        tS
+     }
+     OMC(properties, op, childrenS)
+   }
+   def toStr(implicit shortURIs: Boolean) = OMS(op).toStr + "(" + children.map(_.toStr).mkString(", ") + ")"
+   def toNode = <OMC>{(OMS(op) :: children).map(_.toNode)}</OMC>
+   def toCMLQVars(implicit qvars: Context) = <apply>{(OMS(op)::children).map(_.toCMLQVars)}</apply>
+}
+
+case class OMChild(term: Term, closed: Boolean)
+
+/**
+ * @param alpha None: non-binding; Some(true): alpha-renamable binding; Some(false): non-alpha-renamable binding
+ * @param replaceContext declarations made in this term, replace the context rather than extending it
+ */
+case class OMCProperties(alpha: Option[Boolean], replaceContext: Boolean) {
+  def binding = alpha.isDefined
 }
 
 object OML {

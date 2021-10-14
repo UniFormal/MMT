@@ -26,8 +26,8 @@ case class File(toJava: java.io.File) {
   /** makes a file relative to this one */
   def relativize(f: File): File = {
     val relURI = FileURI(this).relativize(FileURI(f))
-    File(relURI.toString()) // java URIs need to be sbolute in Files. Previous variant as well as any other
-      //threw java errors
+    val FileURI(rel) = relURI
+    rel
   }
 
 
@@ -178,18 +178,16 @@ object FileURI {
     URI(Some("file"), None, if (ss.headOption.contains("")) ss.tail else ss, f.isAbsolute)
   }
 
-  def unapply(u: URI): Option[File] =
-  {
+  def unapply(u: URI): Option[File] = {
     /* In contrast to RFC 8089 (https://tools.ietf.org/html/rfc8089), we allow for empty schemes for
        "File URI References" that, like URIs, allow omitting stuff from the left. */
     val valid_scheme    : Boolean = u.scheme.isEmpty || u.scheme.contains("file")
-
     // empty authority makes some Java versions throw errors
     val valid_authority : Boolean = u.authority.isEmpty || u.authority.contains("") || u.authority.contains("localhost")
-
     // We set authority to None because it's ignored later, anyway. No use to distinguish.
     if (valid_scheme && valid_authority) {
-      Some(File(new java.io.File(u.copy(scheme = Some("file"), authority = None))))
+      val uR = u.copy(scheme = None, authority = None)
+      Some(File(uR.toString)) // one would expect File(new java.io.File(uR)) here but that constructor cannot handle relative paths in a URI
     } else None
   }
 }

@@ -1171,6 +1171,7 @@ class Library(extman: ExtensionManager, val report: Report, previous: Option[Lib
     modules.clear
     implicitGraph.clear
     documents.clear
+    previous.map(_.clear)
   }
 }
 

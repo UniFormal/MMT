@@ -19,6 +19,8 @@ object Theory {
 
   def empty(doc: DPath,n: LocalName,mt: Option[MPath]) = apply(doc,n,mt)
 
+  import scala.collection.mutable.HashSet
+
   /** if this theory is flattened already, an iterator over all constants is a set of theories
     *
     * @param paths        the theories and the morphisms via which they are visible (if not direct)
@@ -26,9 +28,6 @@ object Theory {
     * @param withIncludes if false, only local declarations; if true, also included declarations
     * @param seen         theories to exclude (used by recursive implementation)
     */
-
-  import scala.collection.mutable.HashSet
-
   private def flatDeclarations(lup: Lookup,from: MPath,via: Option[Term],withMeta: Boolean,withIncludes: Boolean,seen: HashSet[MPath]): List[(Declaration,Option[Term])] = {
     if (seen.contains(from)) return Nil
     seen += from

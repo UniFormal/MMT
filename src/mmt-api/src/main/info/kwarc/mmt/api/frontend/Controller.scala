@@ -505,7 +505,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     * Adds a knowledge item (a [[StructuralElement]]).
     *
     * If the element is a [[ContainerElement]] (incl. [[Structure]]s and [[PlainInclude]]s!),
-    * you *must* to call [[endAdd()]] sometime after calling this [[add()]] method.
+    * you *must* to call [[endAdd()]] some time after calling this [[add()]] method.
     * Otherwise, you risk an inconsistent state of MMT.
     *
     * If the element is a [[Module]] (e.g. a [[Theory]] or [[View]]) whose name indicates
@@ -513,7 +513,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
     * *before* with a [[NestedModule]] declaration. Otherwise, an exception is thrown.
     *
     * @param at the position where it should be added (only inside modules, documents)
-   */
+    */
   def add(nw: StructuralElement, at: AddPosition = AtEnd) {
     iterate {
           localLookup.getO(nw.path) match {
@@ -676,6 +676,7 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   def clear {
     memory.clear
     backend.clear
+    extman.clear
     notifyListeners.onClear
   }
 

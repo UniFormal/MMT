@@ -164,7 +164,7 @@ class BuildQueue extends ServerExtension("queue") with BuildManager {
   private var stopOnEmpty: Boolean = false
 
   // clears the queue
-  private def clear() {
+  override def clear() {
     queued.clear()
     alreadyBuilt.clear()
     alreadyQueued.clear()

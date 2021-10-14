@@ -47,7 +47,7 @@ class OpenMathScalaExporter extends FoundedExporter(OpenMath._path, Scala._path)
     "import ConstantScala._\n"
 
    private def arityToScala(arity: Arity) : List[(String,String)] = arity.components.map {
-      case SimpArg(n,_) => ("x" + n.abs, "Term")
+      case SimpArg(n,_,_) => ("x" + n.abs, "Term")
       case LabelArg(n,_,_) => ("x" + n.abs, "OML")
       case ImplicitArg(n,_) => ("x" + n.abs, "Term")
       case SimpSeqArg(n,_,_) => ("xs" + n.abs, "List[Term]")

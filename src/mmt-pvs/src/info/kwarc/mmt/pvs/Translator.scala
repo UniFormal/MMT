@@ -58,7 +58,6 @@ class ImportState(bt:BuildTask, val th : TheoryState, val isPrelude : Boolean) e
 
   val path = th.path
 
-
   def getLocal(ln : LocalName) : Term = if (th.parameters.exists(v => v.name==ln || inductive.contains(path ? ln))) OMV(ln)
   else OMS(path ? ln)
 

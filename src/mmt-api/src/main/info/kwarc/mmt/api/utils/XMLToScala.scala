@@ -1,6 +1,5 @@
 package info.kwarc.mmt.api.utils
 
-import scala.util.Success
 import scala.xml._
 import scala.reflect.runtime.universe._
 

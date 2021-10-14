@@ -247,7 +247,7 @@ class GenericScalaExporter extends Exporter {
 
   private def arityToScala(markers: List[ArityComponent]): ArgumentList = {
     val as = markers.map {
-      case SimpArg(n, _) => ("x" + n.abs, "Term", false)
+      case SimpArg(n, _,_) => ("x" + n.abs, "Term", false)
       case LabelArg(n,_,_) => ("x" + n.abs, "OML", false)
       case ImplicitArg(n, _) => ("x" + n.abs, "Term", false)
       case SimpSeqArg(n, _, _) => ("xs" + n.abs, "List[Term]", true)

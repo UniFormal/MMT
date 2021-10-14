@@ -192,16 +192,6 @@ class TokenList(private var tokens: List[TokenListElem]) {
         newTokens ::= (fa, List(doFoundSimp(fa)))
       case fsa : FoundSeq =>
         newTokens ::= (fsa, fsa.args map doFoundSimp)
-/*      case fv: FoundVar =>  DELETE after testing 2020-07-07
-        val toks = fv.getVars flatMap {
-          case SingleFoundVar(_, _, tpOpt) =>
-            tpOpt match {
-              case Some(fa) => List(doFoundSimp(fa))
-              case None => Nil
-            }
-        }
-        newTokens ::= (fv, toks)
- */
     }
     val (from, to) = an.fromTo
     checkIndex(from, "active notation is " + an.toString)

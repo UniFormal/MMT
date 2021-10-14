@@ -464,6 +464,7 @@ abstract class TypeSolutionRule(val head: GlobalName) extends SolutionRule {
  * This is legal if all terms of that type are equal.
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+  override def priority = -10 // make sure we don't shadow other equality rules
 
   /** if this type is proof-irrelevant, this returns the unique term of this type
    *

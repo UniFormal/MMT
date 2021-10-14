@@ -94,8 +94,7 @@ object ELPI {
       }
     }
   }
-  
-  
+
   abstract class Application(val fun: Expr, val args: Expr*) extends Expr {
    /* precedence rules: applications binds more strongly than lambda, except for last argument
        f (x \ x) (x \ x)  can be written as f (x \ x) x \ x
