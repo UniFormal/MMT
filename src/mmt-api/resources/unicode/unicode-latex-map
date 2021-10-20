@@ -3,6 +3,7 @@ jDD|❙
 jOD|❘
 jsharp|♯
 jflat|♭
+jnatural|♮
 jra|→
 jla|←
 jlra|↔
@@ -67,6 +68,10 @@ jupfish|⥾
 jdownfish|⥿
 jleftfish|⥼
 jrightfish|⥽
+jhollowup|⇧
+jhollowdown|⇩
+jhollowleft|⇦
+jhollowright|⇨
 jcontra|↯
 jcheck|✓
 jast|∗
@@ -75,6 +80,7 @@ jcdot|⋅
 jcirc|∘
 jbullet|∙
 jtimes|×
+jbigtimes|⨯
 jpm|±
 jmp|∓
 jdiv|÷
@@ -217,6 +223,7 @@ jemptyset|∅
 jaleph|א
 jbet|ב
 jgimel|ג
+jdalet|ד
 jinfty|∞
 jsum|∑
 jprod|∏
@@ -314,7 +321,9 @@ jalpha|α
 jbeta|β
 jgamma|γ
 jdelta|δ
-jepsilon|ε
+// This is the way LaTeX does the epsilons. Same for the phis below.
+jepsilon|ϵ
+jvarepsilon|ε
 jzeta|ζ
 jeta|η
 jtheta|ϑ
@@ -330,7 +339,8 @@ jrho|ρ
 jsigma|σ
 jtau|τ
 jupsilon|υ
-jphi|φ
+jphi|ϕ
+jvarphi|φ
 jchi|χ
 jpsi|ψ
 jomega|ω
@@ -477,6 +487,16 @@ jbbW|𝕎
 jbbX|𝕏
 jbbY|𝕐
 jbbZ|ℤ
+jbb0|𝟘
+jbb1|𝟙
+jbb2|𝟚
+jbb3|𝟛
+jbb4|𝟜
+jbb5|𝟝
+jbb6|𝟞
+jbb7|𝟟
+jbb8|𝟠
+jbb9|𝟡
 jturnedampersand|⅋
 jcomba|ͣ
 jcombc|ͨ
@@ -492,3 +512,6 @@ jcombu|ͧ
 jcombv|ͮ
 jcombx|ͯ
 jcombbolt|͛
+jprime|′
+jprime2|″
+jprime3|‴
