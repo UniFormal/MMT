@@ -1,17 +1,17 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt._
 import api._
 import info.kwarc.mmt.api.symbols.{Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
-import info.kwarc.mmt.mizar.newxml.translator.JustificationTranslator.lambdaBindDefCtxArgs
-import info.kwarc.mmt.mizar.newxml.translator.claimTranslator._
-import info.kwarc.mmt.mizar.newxml.translator.definitionTranslator.translate_Definition
-import info.kwarc.mmt.mizar.newxml.translator.statementTranslator.translate_Choice_Statement
-import info.kwarc.mmt.mizar.newxml.translator.termTranslator.translate_Term
+import info.kwarc.mmt.mizar.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.mmtwrapper.PatternUtils.{PiOrEmpty, lambdaBindArgs}
+import info.kwarc.mmt.mizar.translator.JustificationTranslator.lambdaBindDefCtxArgs
+import info.kwarc.mmt.mizar.translator.claimTranslator._
+import info.kwarc.mmt.mizar.translator.definitionTranslator.translate_Definition
+import info.kwarc.mmt.mizar.translator.statementTranslator.translate_Choice_Statement
+import info.kwarc.mmt.mizar.translator.termTranslator.translate_Term
 import objects._
-import mizar.newxml.syntax._
+import mizar.syntax._
 
 object JustificationTranslator {
   /** whether to also translate proof steps or only references to used statements */
@@ -57,7 +57,7 @@ object JustificationTranslator {
   private def translate_Diffuse_Statement_Claim(ds: Diffuse_Statement, _just: Option[Justification])(implicit defContext: DefinitionContext): Term = trueCon
   def usedInJustification(just: Justification)(implicit defContext: => DefinitionContext): List[Term] = just match {
     case Straightforward_Justification(_refs) => globalReferences(_refs)
-    case Block(_, _items) =>
+    case Block(pos, _, _items) =>
       if (proofSteps) defContext.enterProof
       def translateSubitems(subs: List[Subitem]): List[Term] = subs.flatMap {
         case st: Statement =>
@@ -90,7 +90,7 @@ object JustificationTranslator {
           Nil
         case prDef: PrivateDefinition if (proofSteps) =>
           // This will add the definition to the list of local definitions inside the definition context
-          translate_Definition(prDef)(defContext)
+          translate_Definition(prDef, None)(defContext)
           Nil
         case _ => Nil
       }

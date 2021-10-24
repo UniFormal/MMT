@@ -1,8 +1,8 @@
-package info.kwarc.mmt.mizar.newxml.mmtwrapper
+package info.kwarc.mmt.mizar.mmtwrapper
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.patterns.Instance.Type
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.mmtwrapper.MizarPrimitiveConcepts._
 import objects._
 import notations._
 import symbols._

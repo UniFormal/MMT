@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
 /**
  * The following classes are used by an XML parser utility part of the MMT API to parse Mizar content already exported to esx files
@@ -21,9 +21,45 @@ package info.kwarc.mmt.mizar.newxml.syntax
  * the ones corresponding to object-level content are defined in the ObjectLevel file
  */
 
-import info.kwarc.mmt.api.{ImplementationError}
+import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
+import info.kwarc.mmt.api.ImplementationError
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.syntax.Utils._
+import info.kwarc.mmt.mizar.translator.TranslationController
+
+/**
+ * A position in a Mizar source file
+ * @param position A string specifying the position in the line\\column format
+ */
+case class Position(position:String) extends Group  {
+  def parsePosition() : SourcePosition = {
+    val poss = position.split('\\')
+    assert(poss.length == 2 , "Expected position argument of the form line \\ column, but found argument: "+position)
+    val List(line, col) = poss.toList.map(_.toInt)
+    SourcePosition(-1, line, col)
+  }
+}
+
+/**
+ * Contains the start and end position for an item or a block in a Mizar source file
+ * @param position the start position
+ * @param endposition the end position in the line\\column format
+ */
+case class Positions(position: Position, endposition: String) extends Group {
+  def startPosition() : SourcePosition = {
+    position.parsePosition()
+  }
+  def endPosition() : SourcePosition = {
+    Position(endposition).parsePosition()
+  }
+  def sourceRegion() : SourceRegion = {
+    SourceRegion(startPosition(), endPosition())
+  }
+  def sourceRef(): SourceRef = {
+    val container = URI(TranslationController.currentSource)
+    SourceRef.apply(container, sourceRegion())
+  }
+}
 /**
  * A label that can later be referenced
  * @param MMLId the label, typically the article followed by a running counter of id of the same type
@@ -61,17 +97,19 @@ case class ObjectAttrs(spelling:String, sort:String) extends Group
 /**
  * A minimal list of common attributes for objects containing only spelling, sort and nr
  * used for local objects locally referencing something with the nr, e.g. Placeholder terms or Internal selector terms
+ * @param pos the corresponding position in the Mizar source file
  * @param nr the nr
  * @param spelling the spelling of the object
  * @param sort the sort of the object
  */
-case class RedObjAttr(nr: Int, spelling:String, sort:String) extends Group
+case class RedObjAttr(pos: Position, nr: Int, spelling:String, sort:String) extends Group
 /**
  * common trait for ConstrObjAttrs and ReDefObjAttrs, which define common attributes for globally referencing objects
  */
 trait ReferencingConstrObjAttrs extends Group {
   def sort: String
   def spelling: String
+  def pos: Position
   def globalDefAttrs: GlobalDefAttrs
 }
 /**
@@ -149,18 +187,20 @@ case class GlobalReDefAttrs(globalDefAttrs: GlobalDefAttrs, globalOrgAttrs: Glob
 }
 /**
  * common attributes for objects globally referencing definitions
- * @param sort
- * @param spelling
+ * @param sort the sort of the object
+ * @param spelling the presentation of the object
+ * @param pos the corresponding position in the Mizar source file
  * @param globalDefAttrs
  */
-case class ConstrObjAttrs(spelling:String, sort:String, globalDefAttrs: GlobalDefAttrs) extends ReferencingConstrObjAttrs
+case class ConstrObjAttrs(spelling:String, sort:String, pos: Position, globalDefAttrs: GlobalDefAttrs) extends ReferencingConstrObjAttrs
 /**
  * common attributes for objects globally referencing a (re)-definitions
- * @param sort
- * @param spelling
+ * @param sort The sort of object
+ * @param spelling the presentation of the object
+ * @param pos the corresponding position in the Mizar source file
  * @param globalReDefAttrs
  */
-case class ReDefObjAttrs(spelling:String, sort:String, globalReDefAttrs: GlobalReDefAttrs) extends ReferencingConstrObjAttrs {
+case class ReDefObjAttrs(spelling:String, sort:String, pos: Position, globalReDefAttrs: GlobalReDefAttrs) extends ReferencingConstrObjAttrs {
   override def globalDefAttrs: GlobalDefAttrs = globalReDefAttrs.globalDefAttrs
 }
 /**
@@ -176,9 +216,10 @@ sealed trait PatDefs extends Group {
  * Common attributes for patterns in mizar
  * @param formatdes
  * @param spelling
+ * @param pos the corresponding position in the Mizar source file
  * @param globalObjAttrs
  */
-case class PatternAttrs(formatdes:String, spelling:String, globalObjAttrs: GlobalObjAttrs) extends Group
+case class PatternAttrs(formatdes:String, spelling:String, pos: Position, globalObjAttrs: GlobalObjAttrs) extends Group
 /**
  * A minimal list of attributes and children for patterns in mizar
  * @param patAttr
@@ -281,7 +322,8 @@ case class Text_Proper(articleid: String, articleext: String, _items: List[Item]
 }
 /**
  * A self-contained toplevel, declarationlevel or even prooflevel item containing a single subitem with mizar content
+ * @param pos the source region in the corresponding Mizar source file
  * @param kind the kind of the subitem
  * @param _subitem the subitem with the content
  */
-case class Item(kind: String, _subitem:Subitem)
+case class Item(pos: Positions, kind: String, _subitem:Subitem)

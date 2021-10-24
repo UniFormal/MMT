@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.translator
+package info.kwarc.mmt.mizar.translator
 
 import info.kwarc.mmt.api._
 import documents.{Document, MRef}
@@ -6,9 +6,9 @@ import info.kwarc.mmt.api.archives.BuildTask
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.ontology.{Includes, Transitive}
 import symbols.{Declaration, HasDefiniens, HasNotation, HasType}
-import info.kwarc.mmt.mizar.newxml.Main.makeParser
-import info.kwarc.mmt.mizar.newxml.syntax._
-import info.kwarc.mmt.mizar.newxml.translator.TranslationController._
+import info.kwarc.mmt.mizar.Main.makeParser
+import info.kwarc.mmt.mizar.syntax._
+import info.kwarc.mmt.mizar.translator.TranslationController._
 
 
 object articleTranslator {
@@ -26,7 +26,7 @@ object articleTranslator {
           println ("ImplementationError while translating the "+it._subitem.shortKind+". " )
           throw implEr
         case e: Throwable if (!e.isInstanceOf[ImplementationError]) =>
-          if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+". "))//+it.toString))
+          if (printErr) println (TranslationController.showErrorInformation(e, " while translating the "+it._subitem.shortKind+": \n"+it._subitem.toString))
           if (printTrace) e.printStackTrace()
           errCounter += 1
       }
@@ -36,23 +36,25 @@ object articleTranslator {
 
 import subitemTranslator._
 object itemTranslator {
-  def add(d: Declaration with HasType with HasDefiniens with HasNotation)(implicit defContext: DefinitionContext): Unit =
-    TranslationController.addDeclaration(TranslatorUtils.hiddenRefTranslator(d))(defContext)
+  def add(d: Declaration with HasType with HasDefiniens with HasNotation, sourceRegion: Option[parser.SourceRegion])(implicit defContext: DefinitionContext): Unit =
+    TranslationController.addDeclaration(TranslatorUtils.hiddenRefTranslator(d), sourceRegion)(defContext)
   // Adds the corresponding content to the TranslationController
   def translateItem(item: Item): Unit = {
     implicit val defCtx: DefinitionContext = DefinitionContext.empty()
+    def addItem(d: Declaration with HasType with HasDefiniens with HasNotation): Unit =
+      TranslationController.addDeclaration(TranslatorUtils.hiddenRefTranslator(d), Some(item.pos.sourceRegion()))
     item._subitem match {
-      case defn: Definition => definitionTranslator.translate_Definition(defn)
-      case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach add
-      case theorem_Item: Theorem_Item => add (statementTranslator.translate_Theorem_Item(theorem_Item))
-      case res: Reservation => translate_Reservation(res) foreach add
+      case defn: Definition => definitionTranslator.translate_Definition(defn, Some(item.pos.sourceRegion()))
+      case scheme_Block_Item: Scheme_Block_Item => translate_Scheme_Block_Item(scheme_Block_Item) foreach addItem
+      case theorem_Item: Theorem_Item => addItem (statementTranslator.translate_Theorem_Item(theorem_Item))
+      case res: Reservation => translate_Reservation(res) foreach addItem
       case defIt: Definition_Item => translate_Definition_Item(defIt)
-      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach add
-      case pr: Pragma => translate_Pragma(pr) foreach add
+      case sectPragma: Section_Pragma => translate_Section_Pragma(sectPragma) foreach addItem
+      case pr: Pragma => translate_Pragma(pr) foreach addItem
       case cl: Cluster => clusterTranslator.translate_Cluster(cl)(DefinitionContext.empty())
-      case identify: Identify => add (translate_Identify(identify))
-      case nym: Nyms => add (nymTranslator.translate_Nym(nym))
-      case st: Statement with TopLevel => statementTranslator.translate_Statement(st) foreach add
+      case identify: Identify => addItem (translate_Identify(identify))
+      case nym: Nyms => addItem (nymTranslator.translate_Nym(nym))
+      case st: Statement with TopLevel => statementTranslator.translate_Statement(st) foreach addItem
       case notTopLevel  => if (! notTopLevel.isInstanceOf[TopLevel]) throw subitemTranslator.notToplevel(Some(notTopLevel.shortKind)) else throw ImplementationError("This is impossible.")
     }
   }

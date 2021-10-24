@@ -1,4 +1,4 @@
-package info.kwarc.mmt.mizar.newxml.mmtwrapper
+package info.kwarc.mmt.mizar.mmtwrapper
 
 import info.kwarc.mmt.api._
 import objects._
@@ -12,7 +12,7 @@ import StructuralFeatureUtil._
 import structuralfeatures._
 import StructuralFeatureUtils.parseInternalDeclarations
 import PatternUtils._
-import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar._
 import translator._
 import MMTUtils._
 import MizarPrimitiveConcepts._

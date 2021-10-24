@@ -1,13 +1,13 @@
-package info.kwarc.mmt.mizar.newxml
+package info.kwarc.mmt.mizar
 
 import info.kwarc.mmt.api.{DPath, MPath}
 import info.kwarc.mmt.api.utils._
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizarPrimitiveConcepts._
-import info.kwarc.mmt.mizar.newxml.syntax.Text_Proper
-import info.kwarc.mmt.mizar.newxml.translator.{MizarXMLImporter, TranslationController}
+import info.kwarc.mmt.mizar.mmtwrapper.MizarPrimitiveConcepts._
+import info.kwarc.mmt.mizar.syntax.Text_Proper
+import info.kwarc.mmt.mizar.translator.{MizarXMLImporter, TranslationController}
 
 object Main {
-  def makeParser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.mizar.newxml.syntax")
+  def makeParser = new info.kwarc.mmt.api.utils.XMLToScala("info.kwarc.mmt.mizar.syntax")
 
   def main(args: Array[String]) : Unit = {
     val parser = makeParser

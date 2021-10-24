@@ -1,8 +1,9 @@
-package info.kwarc.mmt.mizar.newxml.syntax
+package info.kwarc.mmt.mizar.syntax
 
-import info.kwarc.mmt.api.{ImplementationError}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
-import info.kwarc.mmt.mizar.newxml.translator.{DeclarationLevelTranslationError}
+import info.kwarc.mmt.api.ImplementationError
+import info.kwarc.mmt.api.parser.SourceRegion
+import info.kwarc.mmt.mizar.syntax.Utils._
+import info.kwarc.mmt.mizar.translator.DeclarationLevelTranslationError
 
 // any subitem of an item, be it TopLevel, DeclarationLevel or ProofLevel
 sealed trait Subitem {
@@ -281,13 +282,15 @@ case class consistency() extends CorrectnessConditions("consistency")
  * @param _just
  */
 case class Property(_props:Properties, _just:Option[Justification]) extends Property_or_Correctness_Condition(false) {
-  def matchProperty : MizarProperty = _props.matchProperty(_just)
+  def matchProperty(pos: Position) : MizarProperty = _props.matchProperty(pos.parsePosition(), _just)
 }
 
 /**
  * Common trait for both synonyms and antonyms
  */
 abstract class Nyms(isAntonym: Boolean) extends BlockSubitem {
+  def reg: Positions
+
   def _patNew: Patterns
   def _patRefOld: Pattern_Shaped_Expression
   def antonymic: Boolean = isAntonym
@@ -304,27 +307,27 @@ abstract class Antonym extends Nyms(true)
 /**
  * A predicate synonym
  */
-case class Pred_Synonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
+case class Pred_Synonym(reg: Positions, _patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Synonym
 /**
  * A predicate antonym
  */
-case class Pred_Antonym(_patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
+case class Pred_Antonym(reg: Positions, _patNew:Predicate_Pattern, _patRefOld: Pattern_Shaped_Expression) extends Antonym
 /**
  * An attribute synonym
  */
-case class Attr_Synonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Attr_Synonym(reg: Positions, _patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 /**
  * An attribute antonym
  */
-case class Attr_Antonym(_patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
+case class Attr_Antonym(reg: Positions, _patNew:Attribute_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Antonym
 /**
  * A functor synonym
  */
-case class Func_Synonym(_patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Func_Synonym(reg: Positions, _patNew:Functor_Patterns, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 /**
  * A mode synonym
  */
-case class Mode_Synonym(_patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
+case class Mode_Synonym(reg: Positions, _patNew:Mode_Pattern, _patRefOld:Pattern_Shaped_Expression) extends Synonym
 
 /**
  * A cluster containing several registrations
@@ -337,20 +340,20 @@ case class Cluster(_registrs:List[Registrations]) extends RegistrationSubitems
  * @param _adjCl its properties
  * @param _tp (optional) qualifies
  */
-case class Functorial_Registration(_aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
+case class Functorial_Registration(pos: Position, _aggrTerm:MizTerm, _adjCl:Adjective_Cluster, _tp:Option[Type]) extends Registrations
 /**
  * States that there is an element for which some attributes hold on a type
  * @param _adjClust the cluster containing the attributes
  * @param _tp the type they are applied to
  */
-case class Existential_Registration(_adjClust:Adjective_Cluster, _tp:Type) extends Registrations
+case class Existential_Registration(pos: Position, _adjClust:Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * States that some attributes attrs implies another attribute at
  * @param _attrs the attributes attrs
  * @param _at the implied attribute
  * @param _tp the type the attributes are applied to
  */
-case class Conditional_Registration(_attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
+case class Conditional_Registration(pos: Position, _attrs:Adjective_Cluster, _at: Adjective_Cluster, _tp:Type) extends Registrations
 /**
  * Registering sethood property (with _tp given) for a mode
  * @param _props the property to register (currently always sethood)
@@ -377,7 +380,7 @@ case class Reduction(_predecessor:MizTerm, _successor:MizTerm) extends Registrat
  * @param mmlId the mmlId of the contained scheme
  * @param _block a block containing the scheme
  */
-case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
+case class Scheme_Block_Item(pos: Positions, mmlId: MMLId, _block:Block) extends MMLIdSubitem {
   override def kind: String = "Scheme"
   def scheme_head: Scheme_Head = {
     assert(_block.kind == "Scheme-Block")
@@ -395,7 +398,7 @@ case class Scheme_Block_Item(mmlId: MMLId, _block:Block) extends MMLIdSubitem {
    */
   def provenSentence: ProvedClaim = {
     val justItems = _block._items.tail
-    ProvedClaim(scheme_head._sentence, Some(Block("Proof", justItems)))
+    ProvedClaim(scheme_head._sentence, Some(Block(pos, "Proof", justItems)))
   }
 }
 /**

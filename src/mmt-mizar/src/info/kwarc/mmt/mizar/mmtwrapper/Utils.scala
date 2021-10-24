@@ -1,11 +1,11 @@
-package info.kwarc.mmt.mizar.newxml.mmtwrapper
+package info.kwarc.mmt.mizar.mmtwrapper
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.uom.ConstantScala
 import info.kwarc.mmt.lf.{BinaryLFConstantScala, _}
-import info.kwarc.mmt.mizar.newxml.mmtwrapper.MizSeq._
-import info.kwarc.mmt.mizar.newxml.syntax.CorrectnessConditions
+import info.kwarc.mmt.mizar.mmtwrapper.MizSeq._
+import info.kwarc.mmt.mizar.syntax.CorrectnessConditions
 
 object MizarPrimitiveConcepts {
   val mmlBase = utils.URI("http", "oaff.mathweb.org") / "MML"

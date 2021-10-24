@@ -103,7 +103,7 @@ trait GeneralImporter extends Extension {
  *
  * Importers that handle each source file individually should subclass [[Importer]] instead, which is also a build target.
  */
-abstract class NonTraversingImporter extends GeneralImporter {
+abstract class NonTraversingImporter extends BuildTarget with GeneralImporter {
   /**
    * The main method to be called on every document.
    * doc.path must be of the form a.narrationBase/sourcePath  

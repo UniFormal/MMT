@@ -1,16 +1,16 @@
-package info.kwarc.mmt.mizar.newxml.mmtwrapper
+package info.kwarc.mmt.mizar.mmtwrapper
 
 import info.kwarc.mmt.api._
 import symbols.DerivedDeclaration
 import objects.{Term, _}
 import info.kwarc.mmt.lf._
 import MizSeq.{Index, OMI, Rep, Sequence, nTerms}
-import info.kwarc.mmt.mizar.newxml._
+import info.kwarc.mmt.mizar._
 import MizarPrimitiveConcepts._
 import MMTUtils._
 import info.kwarc.mmt.api.notations.NotationContainer
 import info.kwarc.mmt.lf.structuralfeatures.RecordUtil.{makeName, recName, recTypeName}
-import info.kwarc.mmt.mizar.newxml.syntax.Utils._
+import info.kwarc.mmt.mizar.syntax.Utils._
 import translator.{DefinitionContext, TranslationController}
 object PatternUtils {
   def argsVarName: String = "x"//"argumentSequence"
