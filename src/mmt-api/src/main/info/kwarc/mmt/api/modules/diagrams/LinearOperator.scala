@@ -317,6 +317,10 @@ trait LinearModuleOperator extends LinearOperator with BasedOperator {
   protected val transformedContainers: mutable.Map[Container, Container] = mutable.Map()
 
   final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
+    // force elaboration on input module (among other things, this makes sure the implicit graph
+    // related to inModule gets constructed)
+    interp.ctrl.simplifier(inModule)
+
     if (dom.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
       Some(inModule)
     } else if (applyContainer(inModule)) {
