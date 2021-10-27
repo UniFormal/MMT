@@ -50,7 +50,7 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
   def toplevelResults: List[Module] = transientToplevelResults.values.toList
 
-  private val operators: Map[GlobalName, NamedDiagramOperator] =
+  val operators: Map[GlobalName, NamedDiagramOperator] =
     RuleSet
       .collectRules(ctrl, interpreterContext).get(classOf[NamedDiagramOperator])
       .map(op => (op.head, op))

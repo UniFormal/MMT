@@ -118,7 +118,7 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
 ${this.getClass.getSimpleName} debug
 -------------------------------------
 input: $df
-operators in scope: ${rules.get(classOf[NamedDiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
+operators in scope: ${diagInterp.operators.map(_.getClass.getSimpleName).mkString(", ")}
 
 all output    : see above
 primary output: see ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
