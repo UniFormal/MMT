@@ -3,6 +3,8 @@ package info.kwarc.mmt.api.modules.diagrams
 /**
   * Evaluation of diagrams, both top-level (with the [[InstallDiagram]] derived module
   * declaration) and on terms (with the [[DiagramInterpreter]]).
+  *
+  * See [[DiagramInterpreter.apply()]] for the syntax of diagram expressions.
   */
 
 import info.kwarc.mmt.api.frontend.Controller
@@ -130,7 +132,8 @@ object InstallDiagram {
 /**
   * Evaluator that fully evaluates diagram expressions to [[Diagram Diagrams]], i.e.,
   * effectively lists of [[MPath module paths]].
-  * The main method for evaluation is [[apply()]].
+  * The main method for evaluation is [[apply()]] and it accept a [[Term]]. The syntax
+  * of terms that are valid diagram expression is documented at [[apply()]].
   *
   * By design, evaluation of diagram expressions is not side-effect free. Instead,
   * it is standard for such evaluations to add new [[Module]]s to the [[Controller]].
@@ -199,6 +202,18 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
   /**
     * Fully evaluates a diagram expression and returns a [[Diagram]] of [[MPath module paths]] upon success.
+    *
+    * Syntax of terms that represent valid diagram expressions:
+    *
+    * - the [[Term]] representation of a [[Diagram]] (see [[Diagram.toTerm]] and [[DiagramTermBridge]]);
+    *   evaluated as the diagram itself
+    * - an [[OMMOD]] referencing a diagram module (of the [[InstallDiagram]] structural feature)
+    *   that has already been elaborated; evaluated as the output stored in it (see [[InstallDiagram.parseOutput()]])
+    * - an [[OMMOD]] referencing any other kind of module; evaluated as a singleton diagram of that module
+    * - `OMA(... OMA( ... (OMA(diagop, arg1), ... ), argn)` where `diagop` references a constant
+    *   for which there is a corresponding [[NamedDiagramOperator]] rule in [[interpreterContext]] (see [[operators]]);
+    *   evaluated as [[NamedDiagramOperator.apply()]] called with the whole term
+    * - any other [[Term]] is simplified and tried again for the above cases.
     */
   def apply(t: Term): Option[Diagram] = {
     object HasHead {
