@@ -100,8 +100,7 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
     val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
 
     // shadow rule parameter as [[ElaborationBasedSimplifier.applyElementEnd()]] always passes None so far
-    val rules = RuleSet.collectRules(controller, dm.getInnerContext)
-    val diagInterp = new DiagramInterpreter(dm.getInnerContext, rules, controller, env.errorCont)
+    val diagInterp = new DiagramInterpreter(controller, dm.getInnerContext, env.errorCont)
 
     diagInterp(df) match {
       case Some(outputDiagram) =>
