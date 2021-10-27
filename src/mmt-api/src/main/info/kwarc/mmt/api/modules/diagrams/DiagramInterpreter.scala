@@ -1,13 +1,131 @@
 package info.kwarc.mmt.api.modules.diagrams
 
+/**
+  * Evaluation of diagrams, both top-level (with the [[InstallDiagram]] derived module
+  * declaration) and on terms (with the [[DiagramInterpreter]]).
+  */
+
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols.DerivedModule
-import info.kwarc.mmt.api.uom.SimplificationUnit
+import info.kwarc.mmt.api.symbols.{DerivedModule, ModuleLevelFeature}
+import info.kwarc.mmt.api.uom.{SimplificationEnvironment, SimplificationUnit}
 import info.kwarc.mmt.api._
+import info.kwarc.mmt.api.checking.ExtendedCheckingEnvironment
+import info.kwarc.mmt.api.libraries.Lookup
+import info.kwarc.mmt.api.notations.Marker
+import info.kwarc.mmt.api.presentation.ConsoleWriter
+import info.kwarc.mmt.api.utils.URI
+import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 import scala.collection.mutable
+
+/**
+  * Module-level structural feature for (i) [[DiagramInterpreter evaluating diagram expressions]]
+  * and for (ii) saving resulting diagram.
+  *
+  * Usage in MMT surface syntax is as below. There, `diagexpr` is evaluated using [[DiagramInterpreter]]
+  * in context `?meta` and after elaboration the output [[Diagram]] (or [[Diagram.empty]] on failure)
+  * is stored in `diag.dfC.normalized.`
+  * See also [[InstallDiagram.saveOutput]] and [[InstallDiagram.parseOutput]].
+  *
+  * '''
+  * diagram diag : ?meta = diagexpr
+  * '''
+  *
+  * For debugging, all elaborations of this structural feature print to stdout the syntax presentation of
+  * the diagram that resulted from evaluation on stdout.
+  * If needed, this feature may be hidden under a log flag in the future; but note this feature proved
+  * to be tremendously helpful in the past.
+  */
+class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
+  override def getHeaderNotation: List[Marker] = Nil
+  // checking in advance doesn't make sense here -- we need to evaluate (in [[modules()]]) anyway to
+  // detect all errors
+  def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
+
+  override def modules(dm: DerivedModule, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = {
+    val df = dm.dfC.normalized.getOrElse {
+      env.errorCont(InvalidElement(dm, "definiens required, did you perhaps type = instead of :=?)"))
+      return Nil
+    }
+
+    val diagInterp = new DiagramInterpreter(controller, dm.getInnerContext, env.errorCont)
+
+    diagInterp(df) match {
+      case Some(outputDiagram) =>
+        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.library)
+
+        // This contains all toplevel results (instead of merely outputDiagram.modules, which
+        // potentially has less results, e.g. because of a focussed ZippingOperator)
+        val outputModules = diagInterp.toplevelResults
+
+        // syntax-present all modules for debugging
+        outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
+        // TODO: investigate why they differ
+        println(s"""
+
+${this.getClass.getSimpleName} debug
+-------------------------------------
+input: $df
+operators in scope: ${diagInterp.operators.map(_.getClass.getSimpleName).mkString(", ")}
+
+all output    : see above
+primary output: see ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
+                $outputDiagram
+-------------------------------------
+
+""")
+
+        outputModules
+
+      case None =>
+        InstallDiagram.saveOutput(dm.path, Diagram.empty)(controller.library)
+        env.errorCont(InvalidElement(dm, "could not evaluate diagram expressions, see errors above"))
+        Nil
+    }
+  }
+}
+
+object InstallDiagram {
+  val feature: String = "diagram"
+
+  /**
+    * Saves a diagram into a diagram module.
+    * @param dm Path to the diagram module (i.e., an instance of the [[InstallDiagram]] structural feature)
+    */
+  def saveOutput(dm: MPath, diagram: Diagram)(implicit library: Lookup): Unit = {
+    library.getModule(dm).dfC.normalized = Some(diagram.toTerm)
+  }
+
+  /**
+    * Parses the stored output of a previously elaborated [[InstallDiagram]] structural feature.
+    *
+    * @throws GetError if the module referenced by `diagPath` cannot be found
+    * @throws InvalidElement if the module doesn't correspond to a usage of the [[InstallDiagram]] structural feature
+    * @throws InvalidElement if the module hasn't been elaborated before
+    * @return All module entries of the output diagram (as were the result of elaboration before).
+    */
+  def parseOutput(dm: MPath)(implicit library: Lookup): Diagram = {
+    val diagModule = library.get(dm) match {
+      case diagModule: DerivedModule if diagModule.feature == InstallDiagram.feature => diagModule
+      case s => throw InvalidElement(s, s"referenced module `$s` is not an instance of the " +
+        s"${InstallDiagram.feature} structural feature")
+    }
+
+    diagModule.dfC.normalized match {
+      case Some(DiagramTermBridge(diag)) => diag
+      case Some(t) => throw InvalidObject(t, s"not a valid output in dfC of ${InstallDiagram.feature} structural feature")
+
+      case None =>
+        throw InvalidElement(diagModule, s"module `$dm` references an instance of the ${InstallDiagram.feature} " +
+          s"structural feature but `.dfC.normalized` is empty. The most likely error is that elaboration hasn't been " +
+          s"run on that module yet. Have you typechecked the file containing the module yet? " +
+          s"You need to typecheck/elaborate ${InstallDiagram.feature} structural features in every new MMT session " +
+          s"because their output isn't persisted to OMDoc yet.")
+    }
+  }
+}
 
 /**
   * Evaluator that fully evaluates diagram expressions to [[Diagram Diagrams]], i.e.,
@@ -19,8 +137,8 @@ import scala.collection.mutable
   *
   * Instances of this class are mainly used in
   *
-  *  - [[InstallDiagram]]: used to evaluate diagram expressions occurring "top-level" in
-  *    derived module declarations for diagrams)
+  *  - [[InstallDiagram]]: used to evaluate diagram expressions occurring top-level as the definiens
+  *    of a diagram module (see the [[InstallDiagram]] structural feature)
   *  - as arguments passed throughout interfaces of [[DiagramOperator]] and [[LinearFunctor]]s for these reasons:
   *    - to allow diagram operators to add modules (via [[add()]] and [[endAdd()]])
   *    - to allow diagram operators to access the [[Controller]] for reasons besides adding modules (via [[ctrl]])
@@ -35,6 +153,8 @@ import scala.collection.mutable
   *
   * @param errorCont Error handler used by diagram operators to report any errors (incl.
   *                  being undefined, i.e., not applicable, on certain diagrams, modules, or constants)
+  *
+  * @todo maybe rename to DiagramEvaluator? any every `interp: DiagramInterpreter` to `eval: DiagramEvaluator`?
   *
   * todo: added results/connections are buffered until commit() has been called. If operators invoke certain
   *       controller functions on buffered modules, this can lead to errors or inconsistent results.

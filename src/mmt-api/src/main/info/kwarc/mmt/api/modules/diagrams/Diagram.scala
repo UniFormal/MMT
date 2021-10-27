@@ -38,103 +38,19 @@ package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
 import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.Module
 import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom.{FlexaryConstantScala, SimplificationEnvironment, SimplificationUnit, UnaryConstantScala}
+import info.kwarc.mmt.api.uom.SimplificationEnvironment
 import info.kwarc.mmt.api.utils.URI
 import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 import scala.collection.mutable
 
-object InstallDiagram {
-  val feature: String = "diagram"
 
-  def saveOutput(diagFeaturePath: MPath, diagram: Diagram)(implicit library: Lookup): Unit = {
-    library.getModule(diagFeaturePath).dfC.normalized = Some(diagram.toTerm)
-  }
-
-  /**
-    * Parses the output of a previously elaborated [[InstallDiagram]] structural feature.
-    *
-    * @throws GetError if the module referenced by diagramModulePath cannot be found
-    * @throws InvalidElement if the module doesn't correspond to a usage of the Diagram structural feature
-    * @throws InvalidElement if the module hasn't been elaborated before
-    * @return All module entries of the output diagram (as were the result of elaboration before).
-    */
-  def parseOutput(diagPath: MPath)(implicit library: Lookup): Diagram = {
-    val diagModule = library.get(diagPath) match {
-      case diagModule: DerivedModule if diagModule.feature == InstallDiagram.feature =>
-        diagModule
-
-      case s => throw InvalidElement(s, s"referenced diagram DerivedModule `$s` not a derived module or doesn't have diagram feature")
-    }
-
-    diagModule.dfC.normalized match {
-      case Some(DiagramTermBridge(diag)) => diag
-
-      case Some(t) =>
-        throw InvalidObject(t, "not a valid output in dfC of diagram structural feature")
-
-      case None =>
-        throw InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Have you run the Elaborator on it? In case the diagram is given in a file, have you built the file? (note that diagrams aren't written to OMDoc yet, so you always need to rebuild upon runtime.")
-    }
-  }
-}
-
-/**
-  * Module-level structural feature for installing diagrams into the ambient theory graph.
-  *
-  * @todo Navid: add example
-  */
-class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
-  override def getHeaderNotation: List[Marker] = Nil
-  /** */
-  def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
-
-  override def modules(dm: DerivedModule, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = {
-    val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
-
-    // shadow rule parameter as [[ElaborationBasedSimplifier.applyElementEnd()]] always passes None so far
-    val diagInterp = new DiagramInterpreter(controller, dm.getInnerContext, env.errorCont)
-
-    diagInterp(df) match {
-      case Some(outputDiagram) =>
-        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.library)
-
-        // This contains all toplevel results (instead of merely outputDiagram.modules, which
-        // potentially has less results, e.g. because of a focussed ZippingOperator)
-        val outputModules = diagInterp.toplevelResults
-
-        // syntax-present all modules for debugging
-        outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
-                                                                      // TODO: investigate why they differ
-        println(s"""
-
-${this.getClass.getSimpleName} debug
--------------------------------------
-input: $df
-operators in scope: ${diagInterp.operators.map(_.getClass.getSimpleName).mkString(", ")}
-
-all output    : see above
-primary output: see ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
-                $outputDiagram
--------------------------------------
-
-""")
-
-        outputModules
-
-      case None =>
-        env.errorCont(InvalidElement(dm, "Diagram operator returned None"))
-        Nil
-    }
-  }
-}
 
 /**
   * A diagram of MMT [[Module]]s over some optional meta diagram.
