@@ -73,7 +73,7 @@ class DropArgsFunctor(meta: Diagram, heuristic: LinearDropArgsHeuristic) extends
   * eta-reduced form possible (and, e.g., maps `c` to `λ_. c` instead of `λ_. λy. c y`).
   */
 class DropArgsConnector(override val out: DropArgsFunctor) extends InwardsLinearConnector {
-  override def applyDomainTheory(thy: MPath): Term = OMMOD(thy)
+  override def applyDomainModule(thy: MPath): MPath = thy
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_clean")
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {

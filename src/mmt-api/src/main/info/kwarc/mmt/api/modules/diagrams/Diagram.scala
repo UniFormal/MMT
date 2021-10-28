@@ -138,6 +138,7 @@ sealed case class DiagramFunctor(dom: Diagram, cod: Diagram, functor: Map[MPath,
     case OMMOD(m) => functor.getOrElse(m, metaFunctor.map(_(m)).getOrElse(t)) // default to return input as-is
     case OMIDENT(m) => OMIDENT(apply(m))
     case OMCOMP(mors) => OMCOMP(mors.map(apply))
+    case _ => ???
   }
 }
 

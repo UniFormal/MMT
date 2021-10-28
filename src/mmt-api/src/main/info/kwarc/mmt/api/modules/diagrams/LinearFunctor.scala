@@ -12,7 +12,7 @@ import info.kwarc.mmt.api._
 /**
   * A functor that linearly maps theories to theories and views to views.
   *
-  * Concretely, it maps diagrams over [[BasedOperator.dom]] to diagrams over [[BasedOperator.cod]]
+  * Concretely, it maps diagrams over [[ModuleOperator.dom]] to diagrams over [[ModuleOperator.cod]]
   * (both inherited fields) in an include- and structure-preserving way, declaration-by-declaration.
   *
   * Implementors must implement
@@ -234,6 +234,8 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       // complex cases
       case OMCOMP(mors) => OMCOMP(mors.map(tr))
       case OMIDENT(t) => OMIDENT(tr(t))
+
+      case _ => ???
     }
 
     val newFrom = tr(OMMOD(include.from))

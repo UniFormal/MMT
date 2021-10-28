@@ -56,7 +56,7 @@ class PushoutConnector(connection: DiagramConnection, names: PushoutNames = Push
 
   override val out = new PushoutFunctor(connection, names)
 
-  override def applyDomainTheory(thy: MPath): Term = connection.applyTheory(thy)
+  override def applyDomainModule(thy: MPath): MPath = connection.applyTheory(thy).toMPath
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
     List(assgn(c.path, OMS(out.applyModulePath(c.path.module) ? c.name)))
@@ -95,7 +95,7 @@ object GenericPushoutOperator extends ParametricLinearOperator {
 object SimplePushoutOperator extends NamedDiagramOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_pushout")
 
-  final override def apply(invocation: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = invocation match {
+  final override def apply(invocation: Term)(implicit interp: DiagramInterpreter): Option[Term] = invocation match {
     case OMA(OMS(`head`), List(inputDiagramTerm, mor, viewNamesTerm, pushoutNamesTerm)) =>
       implicit val library: Library = interp.ctrl.library
 

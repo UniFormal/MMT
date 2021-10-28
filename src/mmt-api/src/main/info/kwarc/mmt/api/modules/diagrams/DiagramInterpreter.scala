@@ -252,7 +252,7 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
       case operatorExpression @ HasHead(p: GlobalName) if operators.contains(p) =>
         // Beware that we do not simplify the input term; in particular diagram operators are expected
         // to simplify their own arguments if needed.
-        val opResult = operators(p)(operatorExpression)(this, ctrl)
+        val opResult = operators(p)(operatorExpression)(this)
         opResult.flatMap(apply)
 
       // if everything else fails, run simplification and try again (via recursion)

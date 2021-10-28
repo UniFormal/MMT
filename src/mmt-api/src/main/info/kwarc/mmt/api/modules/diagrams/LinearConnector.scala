@@ -46,7 +46,6 @@ trait LinearConnector extends LinearModuleOperator {
     in.cod
   }
 
-  def applyDomainTheory(thy: MPath): Term
   /**
     * pre-conditions:
     *
@@ -56,7 +55,8 @@ trait LinearConnector extends LinearModuleOperator {
     * @return
     */
   final def applyDomain(t: Term): Term = t match {
-    case OMMOD(p) /* ideally: only if p points to a theory */ => applyDomainTheory(p)
+    case OMMOD(p) /* ideally: only if p points to a theory */ => OMMOD(applyDomainModule(p))
+    case _ => ???
   }
 
   /**

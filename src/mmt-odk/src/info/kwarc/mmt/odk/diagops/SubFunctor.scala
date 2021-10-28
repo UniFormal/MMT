@@ -150,7 +150,7 @@ object FullyNamedFunType {
 
 object SubParentConnector extends InwardsLinearConnector {
   override val out: Functor = SubFunctor
-  override def applyDomainTheory(thy: MPath): Term = OMMOD(thy)
+  override def applyDomainModule(thy: MPath): MPath = thy
   override protected def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_SubParent")
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] =

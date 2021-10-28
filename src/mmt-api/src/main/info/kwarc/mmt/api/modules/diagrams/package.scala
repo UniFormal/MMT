@@ -1,6 +1,15 @@
 package info.kwarc.mmt.api.modules
 
-/*
+/**
+  * - DiagramOperator defines the basic notions
+  *   [[info.kwarc.mmt.api.modules.diagrams.DiagramOperator DiagramOperator]],
+  *   [[info.kwarc.mmt.api.modules.diagrams.ModuleOperator ModuleOperator]],
+  *   [[info.kwarc.mmt.api.modules.diagrams.LinearModuleOperator LinearModuleOperator]],
+  *
+  * - On top, `LinearFunctor.scala` and `LinearConnector.scala` define
+  *   [[info.kwarc.mmt.api.modules.diagrams.LinearFunctor]] and
+  *   [[info.kwarc.mmt.api.modules.diagrams.LinearConnector]]
+  *
    TODO rewrite/organize/remove this
 
   * Diagram operators implementation:

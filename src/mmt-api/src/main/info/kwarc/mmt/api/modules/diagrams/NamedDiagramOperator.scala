@@ -9,10 +9,9 @@ package info.kwarc.mmt.api.modules.diagrams
   * @see LinearTransformer.scala for anonymous functorial operators
   */
 
-import info.kwarc.mmt.api.{GlobalName, Rule, SyntaxDrivenRule}
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.symbols._
+import info.kwarc.mmt.api.{GlobalName, Rule, SyntaxDrivenRule}
 
 
 /**
@@ -43,24 +42,25 @@ abstract class NamedDiagramOperator extends SyntaxDrivenRule {
   // make parent class' head function a mere field, needed to include it in pattern matching patterns (otherwise: "stable identifier required, but got head [a function!]")
   override val head: GlobalName
 
-
   /**
-    * Call [[DiagramInterpreter.apply()]] on diagram arguments before inspecting them!
+    * Applies the diagram operator on some diagram.
     *
-    * // need access to Controller for generative operators (i.e. most operators)
-    * // todo: upon error, are modules inconsistently added to controller? avoid that.
-    *
-    * @param diagram
-    * @param interp
-    * @param ctrl
-    * @return
+    * @param diagram Some arbitrary term whose head is `head`; which terms are valid must be specified by implementors.
+    *                Many diagram operators (e.g., [[NamedLinearFunctor]]s) accept
+    *                [[DiagramInterpreter diagram expression]] only. But some meta-level operators
+    *                (e.g., [[SequencedDiagramOperators]]) encode additional things in this input term.
+    * @param interp An evaluator for diagram expressions. Most diagram operators choose to run this evaluator
+    *               on `diagram`, and choose to use this evaluator to produce side effects (e.g., to add modules
+    *               to the theory graph known to MMT).
+    * @return Some result [[DiagramInterpreter diagram expression]] upon success, [[None]] otherwise.
+    * @todo upon error, are modules inconsistently added to controller? avoid that.
     */
-  def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term]
+  def apply(diagram: Term)(implicit interp: DiagramInterpreter): Option[Term]
 }
 
 // TODO: rework this part of the class hierarchy, DiagramTransformer should correspond (and be named like) to SemanticDiagramOperator
 abstract class SemanticDiagramOperator extends NamedDiagramOperator with DiagramOperator {
-  override def apply(t: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = t match {
+  override def apply(t: Term)(implicit interp: DiagramInterpreter): Option[Term] = t match {
     case OMA(OMS(`head`), List(diag)) =>
       interp(diag).flatMap(applyDiagram).map(_.toTerm)
 
@@ -85,7 +85,7 @@ abstract class ParametricLinearOperator extends NamedDiagramOperator {
   // todo: we need a way in instantiate to report InvalidObjects to interp.errorCont!
   def instantiate(parameters: List[Term])(implicit interp: DiagramInterpreter): Option[LinearOperator]
 
-  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
+  final override def apply(diagram: Term)(implicit interp: DiagramInterpreter): Option[Term] = diagram match {
     case OMA(OMS(`head`), parameters :+ actualDiagram) =>
       instantiate(parameters)
         .flatMap(tx => interp(actualDiagram).flatMap(tx.applyDiagram))

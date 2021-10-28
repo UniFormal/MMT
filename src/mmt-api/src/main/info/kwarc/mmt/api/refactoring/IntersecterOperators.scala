@@ -14,9 +14,9 @@ import info.kwarc.mmt.api.objects.{OMA, OMMOD, OMS, Term}
 private abstract class IntersecterOperator extends NamedDiagramOperator {
   protected def getIntersecter(ctrl: Controller): Intersecter
 
-  override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
+  override def apply(diagram: Term)(implicit interp: DiagramInterpreter): Option[Term] = diagram match {
     case OMA(OMS(`head`), List(OMMOD(intersectionViewPath))) =>
-      val intersectionView = ctrl.getO(intersectionViewPath) match {
+      val intersectionView = interp.ctrl.getO(intersectionViewPath) match {
         case Some(v: View) => v
         case Some(e) =>
           interp.errorCont(InvalidElement(e, s"Path given to Intersecter does not resolve to a View, but instead to `$e`"))
