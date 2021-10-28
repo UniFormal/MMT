@@ -10,15 +10,16 @@ import info.kwarc.mmt.api._
 // TODO: document setOrigin usage
 
 /**
-  * Linearly transforms theories to theories, and views to views.
-  * A functor on diagrams, which acts include-preservingly and declaration-by-declaration in theories
-  * and views.
+  * A functor that linearly maps theories to theories and views to views.
+  *
+  * Concretely, it maps diagrams over [[BasedOperator.dom]] to diagrams over [[BasedOperator.cod]]
+  * (both inherited fields) in an include- and structure-preserving way, declaration-by-declaration.
   *
   * Implementors must implement
   *
   *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
   *
-  * and may override, among other methods, in particular
+  * and may override, among other methods, for reasons of preprocessing in particular
   *
   *  - `beginTheory()`
   *  - `beginView()`
@@ -359,9 +360,9 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
 
 object LinearFunctor {
   /**
-    * No-op identity [[LinearOperator transformer]] on some diagram.
+    * The no-op identity linear functor for a given domain/codomain diagram.
     *
-    * Its purpose is to serve for the `in` or `out` field of [[LinearConnector]]s.
+    * This method comes in handy when overriding the `in` or `out` field of [[LinearConnector]] implementations.
     */
   def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
     override def applyModuleName(name: LocalName): LocalName = name

@@ -3,15 +3,14 @@ package info.kwarc.mmt.api.modules.diagrams
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GeneratedFrom, GlobalName, ImplementationError, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api._
 
 /**
-  * Linearly connects diagrams output by two [[LinearModuleOperator]] `in` and `out` with views.
+  * A natural transformation between two [[LinearFunctor]]s that linearly maps theories to views ("connections") and views not at all.
   *
-  * In categorical tonus, `in` and `out` are functors on MMT diagrams, and implementors of this trait
-  * *may* be natural transformations, but do not need to be.
+  * Concretely, it maps theories in diagrams in an include- and structure-preserving way to views, declaration-by-declaration.
   *
   * For every theory `X`, the view `v: in(X) -> out(X)` is created include-preservingly and
   * declaration-by-declaration.
@@ -22,7 +21,7 @@ import info.kwarc.mmt.api.{ComplexStep, GeneratedFrom, GlobalName, Implementatio
   *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
   *  - `translationView()`
   *
-  * and may override, among other methods, in particular
+  * and may override, among other methods, for reasons of preprocessing in particular
   *
   *  - `beginTheory()`
   *  - `beginStructure()`
@@ -243,12 +242,18 @@ trait LinearConnector extends LinearModuleOperator {
   }
 }
 
+/**
+  * A [[LinearConnector]] from the identity functor to a given functor [[InwardsLinearConnector.out]].
+  */
 trait InwardsLinearConnector extends LinearConnector {
   val out: Functor
-  lazy override val in: Functor = LinearFunctor.identity(out.dom) // lazy to let first `out` initialize
+  lazy override val in: Functor = LinearFunctor.identity(out.dom) // lazy to allow implementors to first initialize `out`
 }
 
+/**
+  * A [[LinearConnector]] from a given functor [[OutwardsLinearConnector.in]] to the identity functor.
+  */
 trait OutwardsLinearConnector extends LinearConnector {
   val in: Functor
-  lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to let first `in` initialize
+  lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to allow implementors to first initialize `in`
 }

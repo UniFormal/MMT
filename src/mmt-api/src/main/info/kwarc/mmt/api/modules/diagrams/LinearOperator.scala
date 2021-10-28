@@ -63,22 +63,21 @@ trait Functor extends BasedOperator {
 
 
 /**
-  * Performs an action on [[ModuleOrLink]]s declaration-by-declaration ("linearly").
+  * A diagram operator that acts linearly on diagrams:
+  * module-by-module (in dependency order) and declaration-by-declaration ("linearly").
+  * No assumptions are made on what action is done (if any at all) on traversing through modules or declarations.
   *
-  * It offers methods `beginContainer`, `endContainer`, `applyDeclaration`, `applyConstant`, among others.
-  * What action is performed in those methods, is left up to the implementation.
+  * More precisely, we even go through [[ModuleOrLink]]s declaration-by-declaration.
+  * (The applicability on [[info.kwarc.mmt.api.modules.Link Link]]s is necessary, e.g., when recursing into
+  *  [[Structure]]s contained in [[info.kwarc.mmt.api.modules.Theory theories]].)
+  * For brevity, we refer to [[ModuleOrLink]]s simply as *containers* in this trait and all subtraits.
   *
-  * To have a handier name, we call [[ModuleOrLink]]s "containers" in this trait.
+  * Implementors in particular need to implement methods `beginContainer`, `endContainer` (for pre-/postprocessing),
+  * and `applyDeclaration`, `applyConstant`.
   *
-  * @see [[ModuleTransformer]] for a subtrait that in `beginContainer` creates
-  *      new module for each passed module.
-  * @see [[LinearFunctor]] for a subtrait that in `beginContainer` for
-  *      [[info.kwarc.mmt.api.modules.Theory theories]] creates new theories,
-  *      for [[info.kwarc.mmt.api.modules.View views]] createss new views,
-  *      and maps declarations in both declaration-by-declaration.
-  * @see [[LinearConnector]] for a subtrait that in `beginContainer` for
-  *      theories creates views, for views does no action at all,
-  *      and maps declarations in theories to view assignments for the created view.
+  * @see [[LinearModuleOperator]] for a subtrait that upon every input module creates (some kind of) output module
+  * @see [[LinearFunctor]] for a [[LinearModuleOperator]] that maps theories to theories and views to views
+  * @see [[LinearConnector]] for [[LinearModuleOperator]] that maps theories to views and views not at all
   */
 trait LinearOperator extends DiagramOperator {
   type Container = ModuleOrLink
@@ -287,25 +286,12 @@ trait LinearOperator extends DiagramOperator {
 }
 
 /**
-  * Linearly transforms [[Module]]s to modules in a diagram.
+  * Linearly maps [[Module]]s to modules in a diagram.
   *
-  * It does so by going through modules declaration-by-declaration (using the [[LinearOperator]]
-  * trait) and recursing into nested modules or structures when needed.
+  * It is left to implementors to decide on what kind of module input modules are mapped to:
   *
-  * It is left to implementations on which modules exactly they are applicable on, and if so,
-  * how the type of output container relates to the type of the input container:
-  *
-  *  - the subtrait [[LinearFunctor]] transforms theories to theories, and views to views
-  *  - the subtrait [[LinearConnector]] transforms theories to views, and views not at all
-  *
-  * Implementation notes for this class and subclasses:
-  *
-  *   - if a method takes a `LinearState`, it shouldn't take a DiagramState on top
-  *   - methods working on containers should take a `LinearState` as a normal parameter
-  *     (not an implicit parameter)
-  *   - methods working on declarations should take a `LinearState` as an implicit parameter
-  *     By contrast to the point above, here, confusing states is less of a problem.
-  *     And also, it makes [[OperatorDSL]] much nicer to work with.
+  * @see [[LinearFunctor]] for a subtrait that maps theories to theories and views to views
+  * @see [[LinearConnector]] for a subtrait that maps theories to views and views not at all
   */
 trait LinearModuleOperator extends LinearOperator with BasedOperator {
   def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration]
