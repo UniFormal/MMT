@@ -8,13 +8,11 @@ import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 
 /**
-  * A natural transformation between two [[LinearFunctor]]s that linearly maps theories to views ("connections") and views not at all.
+  * A natural transformation betweeen two [[LinearFunctor]]s `in` and `out` that linearly maps theories to views ("connections") and views not at all.
   *
-  * Concretely, it maps theories in diagrams in an include- and structure-preserving way to views, declaration-by-declaration.
-  *
-  * For every theory `X`, the view `v: in(X) -> out(X)` is created include-preservingly and
-  * declaration-by-declaration.
-  * Views are not mapped at all.
+  * Concretely, it maps theories `X` in diagrams in an include- and structure-preserving way to views
+  * `v: in(X) -> out(X)`, where declaration-by-declaration every declaration of `X` is mapped to an assignment
+  * in `v` by means of `applyConstant()`.
   *
   * Implementors must implement/override
   *
@@ -26,19 +24,7 @@ import info.kwarc.mmt.api._
   *  - `beginTheory()`
   *  - `beginStructure()`
   *
-  * @example In universal algebra, we can create the [[LinearModuleOperator]] `Sub(-)`
-  *          that maps an SFOL-theory `X` to its SFOL-theory of substructures `Sub(X)`.
-  *          But we can do more: for every mapped `X` we desire a view `sub_model: X -> Sub(X)`
-  *          that realizes models of `Sub(X)` (i.e. submodels of X-models) as models of `X` (i.e. models
-  *          of `X`) via predicate subtypes.
-  *          Note that creation of the connecting view is still linear in `X`.
-  *          You can use this trait to realzie exactly the creation of the `sub_model` connecting views.
-  *
-  *          Invariants so far:
-  *
-  *  - in and out have same domain/codomain
-  *  - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
-  *    have a definiens)
+  * A crucial requirement onto implementors is that both functors have the same domain: `in.dom == out.dom`.
   */
 trait LinearConnector extends LinearModuleOperator {
   val in: Functor
