@@ -7,8 +7,6 @@ import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 
-// TODO: document setOrigin usage
-
 /**
   * A functor that linearly maps theories to theories and views to views.
   *
@@ -30,19 +28,19 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
     * [[beginModule()]].
     *
-    * You may override this method to do additional action.
+    * You may override this method to implement additional action.
     *
     * @return The output theory. If `Some(outTheory)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outTheory`.
+    *         [[DiagramInterpreter.add()]] on `outTheory`. todo what does this mean?
     *
-    * @example Some transformers need to add includes at the beginning of every theory, and
-    *          correspondingly an include assignment at the beginning of every view.
+    * @example Some functors choose to add includes at the beginning of every ouput theory, and
+    *          correspondingly an include assignment at the beginning of every output view.
     *
-    *          The transformers can override [[beginTheory()]] and [[beginView()]] as follows:
+    *          Those functors can override [[beginTheory()]] and [[beginView()]] as follows:
     *          {{{
     *            val additionalTheory: MPath
     *
-    *            override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     *              super.beginTheory(thy, state).map(outTheory => {
     *                val include = PlainInclude(additionalTheory, outTheory.path)
     *                interp.add(include)
@@ -51,7 +49,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *              })
     *            }
     *
-    *            override protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+    *            override protected def beginView(view: View)(implicit interp: DiagramInterpreter): Option[View] = {
     *              super.beginView(view, state).map(outView => {
     *                val include = Include.assignment(
     *                  outView.toTerm,
@@ -68,9 +66,9 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
   protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if dom.hasImplicitFrom(mt)(interp.ctrl.library) =>
+      case mt if dom.hasImplicitFrom(mt)(interp.ctrl.library) => // meta theory is subsumed by functor's domain
         applyDomain(OMMOD(mt)).toMPath
-      case mt =>
+      case mt => // otherwise, recurse into meta theory
         if (applyModule(interp.ctrl.getModule(mt)).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
             s"was no implicit morphism into `$dom`. Recursing into meta theory as usual " +
@@ -95,9 +93,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     * @return The output view. If `Some(outView)` is returned, you must have called
     *         [[DiagramInterpreter.add()]] on `outView`.
     *
-    * You may override this method to do additional action.
-    *
-    * @see [[beginTheory()]] for an example
+    * You may override this method to implement additional action, see documentation at [[beginTheory()]].
     */
   protected def beginView(view: View)(implicit interp: DiagramInterpreter): Option[View] = {
     if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
@@ -128,7 +124,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     * @return The output structure. If `Some(outStructure)` is returned, you must have called
     *         [[DiagramInterpreter.add()]] on `outStructure`.
     *
-    * You may override this method to do additional action.
+    * You may override this method to implement additional action, see documentation at [[beginTheory()]].
     *
     * @see [[beginTheory()]], [[beginView()]]
     */
