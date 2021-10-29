@@ -28,7 +28,7 @@ trait ModuleOperator extends DiagramOperator {
   /**
     * Maps modules contained in `dom` to modules contained in `cod`.
     *
-    * @see [[applyDomain()]] for the functor's action on possibly complex module expressions.
+    * @see [[applyDomain]] for the functor's action on possibly complex module expressions.
     *
     * pre-condition: there is an implicit morphism from [[dom]] to `m`. (todo: what does this mean for views?)
     *
@@ -39,7 +39,7 @@ trait ModuleOperator extends DiagramOperator {
 
   /**
     * Maps module expressions over `dom` to module expressions over `cod`.
-    * The atomic case for [[MPath module paths]] is given by [[applyDomainModule()]].
+    * The atomic case for [[MPath module paths]] is given by [[applyDomainModule]].
     *
     * (E.g., for [[Functor]]s the map on complex cases described by this method is determined by functoriality
     *  from the atomic case alone.)
@@ -77,7 +77,7 @@ trait ModuleOperator extends DiagramOperator {
 trait Functor extends ModuleOperator {
   /**
     * Maps module expressions by the functor.
-    * The atomic case for [[MPath module paths]] is given by [[applyDomainModule()]] and the complex cases are
+    * The atomic case for [[MPath module paths]] is given by [[applyDomainModule]] and the complex cases are
     * determined by functoriality.
     *
     * @param t Any module expression over [[dom]], e.g., a composition of
@@ -155,22 +155,22 @@ trait LinearOperator extends DiagramOperator {
 
   /**
     * Hook before the declarations of a container are gone linearly through; called by
-    * [[applyContainer()]].
+    * [[applyContainer]].
     *
     * @return `true` if the transformer is applicable on the container, `false` otherwise.
     *         If `false` is returned, the declarations within the container aren't processed.
     *
-    * @see [[endContainer()]]
+    * @see [[endContainer]]
     */
   def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean
 
   /**
     * Hook after all declarations of a container have been gone through; called by
-    * [[applyContainer()]].
+    * [[applyContainer]].
     *
-    * Only called if [[beginContainer()]] returned `true` on `inContainer`.
+    * Only called if [[beginContainer]] returned `true` on `inContainer`.
     *
-    * @see [[beginContainer()]]
+    * @see [[beginContainer]]
     */
   def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit
 
@@ -184,8 +184,8 @@ trait LinearOperator extends DiagramOperator {
     *
     * Post-condition:
     *
-    *   - The transformation results must be added via [[DiagramInterpreter.add()]] *and*,
-    *     results that are containers must also be finalized via [[DiagramInterpreter.endAdd()]].
+    *   - The transformation results must be added via [[DiagramInterpreter.add]] *and*,
+    *     results that are containers must also be finalized via [[DiagramInterpreter.endAdd]].
     *
     * You may override this method to handle more declaration cases specific to your transformer.
     * When the transformer is inapplicable on `decl`, an error should be signalled via
@@ -210,12 +210,12 @@ trait LinearOperator extends DiagramOperator {
 
 
   /**
-    * See [[applyDeclaration()]]; the same notes apply.
+    * See [[applyDeclaration]]; the same notes apply.
     */
   def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit
 
   /**
-    * See [[applyDeclaration()]]; the same notes apply.
+    * See [[applyDeclaration]]; the same notes apply.
     *
     * @param structure The [[Structure]] containing [[include]].
     */
@@ -228,7 +228,7 @@ trait LinearOperator extends DiagramOperator {
     * This ensures implementing transformers can treat theories with declarations
     * and theories with structure (inducing analogous declarations) in the same way.
     *
-    * @see [[applyDeclaration()]]; the same notes apply.
+    * @see [[applyDeclaration]]; the same notes apply.
     */
   def applyStructure(s: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     if (applyContainer(s)) {
@@ -256,7 +256,7 @@ trait LinearOperator extends DiagramOperator {
     * A cache for [[applyContainer]] to save which containers the operator was applicable on and has already been
     * applied to.
     *
-    * @see [[applyContainer()]]
+    * @see [[applyContainer]]
     */
   protected val applicableContainers: mutable.Map[ContentPath, Boolean] = mutable.Map()
 
@@ -268,11 +268,11 @@ trait LinearOperator extends DiagramOperator {
     *
     * Pre-condition: `inContainer` is known to `interp.ctrl`, the `Controller`.
     * Post-conditions: if `Some(outContainer)` is returned, you must have
-    *    - called [[DiagramInterpreter.add()]] and [[DiagramInterpreter.endAdd()]]
+    *    - called [[DiagramInterpreter.add]] and [[DiagramInterpreter.endAdd]]
     *      on `outContainer`
-    *    - if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult()]],
+    *    - if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult]],
     *      `outContainer` must be a [[Module]] and you must have called
-    *      [[DiagramInterpreter.addToplevelResult()]] on it.
+    *      [[DiagramInterpreter.addToplevelResult]] on it.
     *
     * @return True if the operator was applicable on the container and processed it (or had processed it already in
     *         the past), false if not.
@@ -321,7 +321,7 @@ trait LinearOperator extends DiagramOperator {
   * - see [[LinearConnector]] for a subtrait that maps theories to views and views not at all
   *
   * Implementors must annotate all output modules and output declarations with metadata using
-  * [[info.kwarc.mmt.api.StructuralElement.setOrigin()]] and [[GeneratedFrom `GeneratedFrom(..., this)`]].
+  * [[info.kwarc.mmt.api.StructuralElement.setOrigin]] and [[GeneratedFrom `GeneratedFrom(..., this)`]].
   */
 trait LinearModuleOperator extends LinearOperator with ModuleOperator {
   def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration]
@@ -390,7 +390,7 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
   // our parent trait LinearTransformer for the sake of adding more documentation, pre-, and
   // post-conditions.
   /**
-    * Creates a new output container as a first means to map `container`; called by [[applyContainer()]].
+    * Creates a new output container as a first means to map `container`; called by [[applyContainer]].
     *
     * If the operator is applicable on `container`, it creates a new output container,
     * performs the post-conditions below, and returns true.
@@ -403,10 +403,10 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
     *   - if `true` is returned, you must have
     *     - added an entry to `(inContainer, outContainer)` (for some container `outContainer` of your choice)
     *       to `mappedContainers`
-    *     - called [[DiagramInterpreter.add()]] on `outContainer`
-    *   - see also postconditions of [[applyContainer()]]
+    *     - called [[DiagramInterpreter.add]] on `outContainer`
+    *   - see also postconditions of [[applyContainer]]
     *
-    * @see [[endContainer()]]
+    * @see [[endContainer]]
     */
   def beginContainer(container: Container)(implicit interp: DiagramInterpreter): Boolean
 
@@ -414,20 +414,20 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
     * Finalizes a container.
     *
     * By default, this method uses [[LinearModuleOperator.mappedContainers]] to look up which container `inContainer`
-    * has been mapped to and calls [[DiagramInterpreter.endAdd()]] on it.
+    * has been mapped to and calls [[DiagramInterpreter.endAdd]] on it.
     *
-    * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
+    * Pre-condition: [[beginContainer]] must have returned true on `inContainer` before.
     *
     * Post-conditions:
     *
-    *   - the container returned by [[beginContainer()]] must have been finalized via
-    *     [[DiagramInterpreter.endAdd()]]
-    *   - see also postconditions of [[applyContainer()]]
+    *   - the container returned by [[beginContainer]] must have been finalized via
+    *     [[DiagramInterpreter.endAdd]]
+    *   - see also postconditions of [[applyContainer]]
     *
     * You may override this method. Be sure to call `super.endContainer()` last in your overridden
-    * method (to have [[DiagramInterpreter.endAdd()]] at the very end). Or know what you're doing.
+    * method (to have [[DiagramInterpreter.endAdd]] at the very end). Or know what you're doing.
     *
-    * @see [[beginContainer()]]
+    * @see [[beginContainer]]
     */
   override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit = {
     mappedContainers.get(inContainer).foreach(interp.endAdd)

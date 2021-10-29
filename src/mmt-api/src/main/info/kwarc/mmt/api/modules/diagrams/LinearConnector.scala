@@ -16,7 +16,7 @@ import info.kwarc.mmt.api._
   *
   * Implementors must implement/override
   *
-  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant]])
   *  - `translationView()`
   *
   * and may override, among other methods, for reasons of preprocessing in particular
@@ -30,14 +30,15 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
   val in: Functor
   val out: Functor
 
-  lazy override val dom: Diagram = {
+  lazy override val dom: Diagram = { // lazy such that implementors can first initialize `in` and `out`
     if (in.dom != out.dom) {
       throw ImplementationError("Domains of in and out functors of a linear connector must match. But we got " +
         s"in.dom == `${in.dom}` and out.dom == `${out.dom}`.")
     }
     in.dom
   }
-  lazy override val cod: Diagram = {
+  lazy override val cod: Diagram = { // lazy such that implementors can first initialize `in` and `out`
+    // todo what value of cod should we choose?
     /* wrong, even for mere pushout:
     if (in.cod != out.cod) {
       throw ImplementationError("Codomains of in and out functors of a linear connector must match. But we got " +
@@ -47,32 +48,41 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
   }
 
   /**
-    * pre-conditions:
+    * A natural transformation between [[in.cod]] and [[out.cod]], indexed by theory expressions over [[dom]].
     *
-    *  - only applicable on theory expressions
-    *  - [[dom.hasImplicitFrom(t)]] must be true
-    *
-    * @param t
-    * @return
+    * @param t A theory expression over [[dom]], i.e., [[dom.hasImplicitFrom(t)]] is true.
+    * @return A morphism expression [[in.applyDomain(t)]] -> [[out.applyDomain(t)]].
+    * @see [[applyDomainModule]] for the base case of [[OMMOD]]s referencing [[MPath theory paths]].
     */
-  final def applyDomain(t: Term): Term = t match {
+  final override def applyDomain(t: Term): Term = t match {
     case OMMOD(p) /* ideally: only if p points to a theory */ => OMMOD(applyDomainModule(p))
     case _ => ???
   }
 
+  // restate `applyDomainModule()` without implementing to refine superclass' documentation
+  /**
+    * A natural transformation between [[in.cod]] and [[out.cod]], indexed by [[MPath theory paths]] over [[dom]].
+    *
+    * The induced transformation indexed by *theory expressions* is given by [[applyDomain]].
+    *
+    * @param m A theory path over [[dom]], i.e., [[dom.hasImplicitFrom(m)]] is true.
+    * @return A path to a view [[in.applyDomainModule(m)]] -> [[out.applyDomainModule(m)]].
+    */
+  override def applyDomainModule(m: MPath): MPath
+
   /**
     * Creates a new output view that serves to contain the to-be-created assignments; called by
-    * [[beginContainer()]].
+    * [[beginContainer]].
     *
-    * You may override this method to do additional action.
+    * You may override this method to implement additional action.
     *
-    * @return The output view. If `Some(outView)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outView`.
-    * @example Some transformers need to add includes. They should
-    *          override the method as follows:
-    * {{{
-    *            override protected def beginTheory(...): Option[View] = {
-    *              super.beginTheory(...).map(view => {
+    * @return The output view if the connector is applicable on `thy`. If it was and `Some(outView)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add]] on `outView` before returning.
+    * @example Some connectors choose to add includes at the beginning of every output view.
+    *          Those connectors can override [[beginTheory]] as follows:
+    *          {{{
+    *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[View] = {
+    *              super.beginTheory(thy).map(view => {
     *                val include: Structure = /* ... */
     *                interp.add(include)
     *                interp.endAdd(include) // don't forget!
@@ -115,12 +125,7 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
       // We accept structures, but don't create a special out container for them.
       // (Arguably the asymmetry stems from MMT that makes assignments to constants from structures
       //  be represented flatly in views.)
-      case _: Structure =>
-        // TODO still needed?
-        // to fulfill invariants of other code snippets, we have to put something
-        // arbitrary into processedElements
-        /*state.diagramState.processedElements.put(inContainer.path, inContainer)*/
-        true
+      case _: Structure => true
     }
   }
 
@@ -219,20 +224,6 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
   }
 }
 
-trait LinearConnectorDSL {
-  this: LinearModuleOperator =>
-
-  // some helper DSL
-  def assgn(p: GlobalName, assignment: Term): Constant = {
-    new FinalConstant(
-      home = OMMOD(applyModulePath(p.module)),
-      name = ComplexStep(p.module) / p.name, alias = Nil,
-      tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(assignment),
-      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
-    )
-  }
-}
-
 /**
   * A [[LinearConnector]] from the identity functor to a given functor [[InwardsLinearConnector.out]].
   */
@@ -247,4 +238,18 @@ trait InwardsLinearConnector extends LinearConnector {
 trait OutwardsLinearConnector extends LinearConnector {
   val in: Functor
   lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to allow implementors to first initialize `in`
+}
+
+trait LinearConnectorDSL {
+  this: LinearModuleOperator =>
+
+  // some helper DSL
+  def assgn(p: GlobalName, assignment: Term): Constant = {
+    new FinalConstant(
+      home = OMMOD(applyModulePath(p.module)),
+      name = ComplexStep(p.module) / p.name, alias = Nil,
+      tpC = TermContainer.empty(), dfC = TermContainer.asAnalyzed(assignment),
+      rl = None, notC = NotationContainer.empty(), vs = Visibility.public
+    )
+  }
 }

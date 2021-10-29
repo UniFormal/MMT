@@ -15,7 +15,7 @@ import info.kwarc.mmt.api._
   *
   * Implementors must implement
   *
-  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant]])
   *
   * and may override, among other methods, for reasons of preprocessing in particular
   *
@@ -26,17 +26,17 @@ import info.kwarc.mmt.api._
 trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctorDSL {
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
     * You may override this method to implement additional action.
     *
-    * @return The output theory. If `Some(outTheory)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outTheory`. todo what does this mean?
-    * @example Some functors choose to add includes at the beginning of every ouput theory, and
+    * @return The output theory if the functor is applicable on `thy`. If it was and `Some(outTheory)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add]] on `outTheory` before returning.
+    * @example Some functors choose to add includes at the beginning of every output theory, and
     *          correspondingly an include assignment at the beginning of every output view.
     *
-    *          Those functors can override [[beginTheory()]] and [[beginView()]] as follows:
-    * {{{
+    *          Those functors can override [[beginTheory]] and [[beginView]] as follows:
+    *          {{{
     *            val additionalTheory: MPath
     *
     *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
@@ -87,12 +87,12 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
 
   /**
     * Creates a new output view that serves to contain the to-be-mapped assignments; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
-    * @return The output view. If `Some(outView)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outView`.
+    * @return The output view if the functor was applicable on `view`. If it was and `Some(outView)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add `interp.add(outView)`]] before returning.
     *
-    * You may override this method to implement additional action, see documentation at [[beginTheory()]].
+    * You may override this method to implement additional action, see documentation at [[beginTheory]].
     */
   protected def beginView(view: View)(implicit interp: DiagramInterpreter): Option[View] = {
     if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
@@ -118,13 +118,13 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
 
   /**
     * Creates a new output structure that serves to contain the to-be-mapped assignments; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
     * @return The output structure. If `Some(outStructure)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outStructure`.
+    *         [[DiagramInterpreter.add]] on `outStructure`.
     *
-    * You may override this method to implement additional action, see documentation at [[beginTheory()]].
-    * @see [[beginTheory()]], [[beginView()]]
+    * You may override this method to implement additional action, see documentation at [[beginTheory]].
+    * @see [[beginTheory]], [[beginView]]
     */
   protected def beginStructure(s: Structure)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
@@ -150,9 +150,9 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
 
   /**
     * Creates a new output module that serves to contain the to-be-mapped assignments; called by
-    * [[beginContainer()]].
+    * [[beginContainer]].
     *
-    * @see [[beginTheory()]], [[beginView()]], [[beginStructure()]].
+    * @see [[beginTheory]], [[beginView]], [[beginStructure]].
     */
   private def beginModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
     (inModule match {
@@ -165,7 +165,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
   }
 
   /**
-    * @inheritdoc [[LinearModuleOperator.beginContainer()]]
+    * @inheritdoc [[LinearModuleOperator.beginContainer]]
     */
   final override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
     val outContainer = inContainer match {
@@ -202,36 +202,37 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
     val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
-    if (include.args.nonEmpty) ???
+    if (include.args.nonEmpty)
+      throw new NotImplementedError("Parametric includes not supported by linear diagram operators yet")
 /*
 
 TODO: problem: unbound includes cannot be noticed anymore since we have no information of what the current input diagram is
 */
-    def tr(t: Term): Term = t match {
-      // base cases
-      case t if dom.hasImplicitFrom(t) => applyDomain(t)
-      case OMMOD(from) =>
+    def handleFrom(from: MPath): Term = {
+      if (dom.hasImplicitFrom(from)) applyDomain(OMMOD(from))
+      else {
         applyModule(ctrl.getModule(from)).map(m => {
           inheritState(container.modulePath, from)
           m.toTerm
         }).getOrElse(OMMOD(from)) // when applyModule is inapplicable, default to leaving include data as-is
+      }
+    }
 
-      // complex cases
-      case OMCOMP(mors) => OMCOMP(mors.map(tr))
-      case OMIDENT(t) => OMIDENT(tr(t))
-
+    def handleDf(t: Term): Term = t match {
+      case OMCOMP(mors) => OMCOMP(mors.map(handleDf))
+      case OMIDENT(t) => OMIDENT(handleDf(t))
       case _ => ???
     }
 
-    val newFrom = tr(OMMOD(include.from))
-    val newDf = include.df.map(tr)
+    val newFrom = handleFrom(include.from)
+    val newDf = include.df.map(handleDf)
 
     val s = Structure(
       home = OMMOD(applyModulePath(container.modulePath)),
       name = LocalName(newFrom.toMPath), // TODO NR@FR: does this `name` make sense?
       from = newFrom,
       df = newDf,
-      isImplicit = if (container.isInstanceOf[Theory]) true else false,
+      isImplicit = if (container.isInstanceOf[Theory]) true else false, // theory includes are always implicit
       isTotal = include.total
     )
     s.setOrigin(GeneratedFrom(structure.path, this))
@@ -243,6 +244,25 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       interp.endAdd(s)
     }
   }
+}
+
+object LinearFunctor {
+  /**
+    * The no-op identity linear functor for a given domain/codomain diagram.
+    *
+    * This method comes in handy when overriding the `in` or `out` field of [[LinearConnector]] implementations.
+    */
+  def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
+    override def applyModuleName(name: LocalName): LocalName = name
+
+    override val dom: Diagram = domain
+    override val cod: Diagram = domain
+    override def applyDomainModule(m: MPath): MPath = m
+
+    override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = List(c)
+  }
+
+  def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))
 }
 
 trait LinearFunctorDSL {
@@ -314,16 +334,16 @@ trait LinearFunctorDSL {
   /**
     * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
     *
-    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
-    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
-    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
-    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
+    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration]]
+    * or methods called therein; in particular [[LinearOperator.applyConstant]],
+    * [[SimpleLinearModuleTransformer.applyConstantSimple]], and
+    * [[SimpleLinearConnectorTransformer.applyConstantSimple]].
     *
     * Only renames constants seen so far while processing (incl. the declaration being processed
     * right now).
     * Concretely, the methods herein depend on declarations being added to
-    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
-    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
+    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration]].
+    * See also the pre-condition of [[LinearOperator.applyDeclaration]].
     *
     * @todo add example
     */
@@ -336,7 +356,7 @@ trait LinearFunctorDSL {
   }
 
   /**
-    * usually used like ''connector.applyModulePath(expressionContext(c))'' within [[applyConstant()]].
+    * usually used like ''connector.applyModulePath(expressionContext(c))'' within [[applyConstant]].
     * @param c
     * @param interp
     * @return
@@ -347,23 +367,4 @@ trait LinearFunctorDSL {
       case l: Link => l.to
     }
   }
-}
-
-object LinearFunctor {
-  /**
-    * The no-op identity linear functor for a given domain/codomain diagram.
-    *
-    * This method comes in handy when overriding the `in` or `out` field of [[LinearConnector]] implementations.
-    */
-  def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
-    override def applyModuleName(name: LocalName): LocalName = name
-
-    override val dom: Diagram = domain
-    override val cod: Diagram = domain
-    override def applyDomainModule(m: MPath): MPath = m
-
-    override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = List(c)
-  }
-
-  def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))
 }
