@@ -1,24 +1,33 @@
 package info.kwarc.mmt.api.modules
 
 /**
-  * - DiagramOperator defines the basic notions
-  *   [[info.kwarc.mmt.api.modules.diagrams.DiagramOperator DiagramOperator]],
-  *   [[info.kwarc.mmt.api.modules.diagrams.ModuleOperator ModuleOperator]],
-  *   [[info.kwarc.mmt.api.modules.diagrams.LinearModuleOperator LinearModuleOperator]],
+  * [[DiagramOperator]]s perform operations on entire [[Diagram diagrams]] of MMT [[Theory theories]] and [[View views]].
+  * An important special case is given by [[LinearModuleOperator]]s: these map diagrams to diagrams, module-by-module,
+  * and declaration-by-declaration.
+  * The most important [[LinearModuleOperator]]s are the following two:
   *
-  * - On top, `LinearFunctor.scala` and `LinearConnector.scala` define
-  *   [[info.kwarc.mmt.api.modules.diagrams.LinearFunctor]] and
-  *   [[info.kwarc.mmt.api.modules.diagrams.LinearConnector]]
+  *  - [[info.kwarc.mmt.api.modules.diagrams.LinearFunctor LinearFunctor]]s `F` map theories `T` to theories `F(T)`
+  *    and views `v: S -> T` to views `F(v): F(S) -> F(T)`.
+  *  - [[info.kwarc.mmt.api.modules.diagrams.LinearConnector LinearConnector]]s `C` between two [[LinearFunctor]]s
+  *    `F` and `G` map theories `T` to views `C(T): F(T) -> G(T)`.
+  *
+  * Implementations of both functors and connectors effectively only need to give a single method
+  * [[LinearModuleOperator.applyConstant applyConstant]] that describes their action on constants. Everything else,
+  * i.e., the induced translation on [[info.kwarc.mmt.api.symbols.IncludeData includes]],
+  * [[info.kwarc.mmt.api.symbols.Structure structure]]s, [[Theory theories]], [[View views]],
+  * [[info.kwarc.mmt.api.symbols.NestedModule nested theories and views]], and [[Diagram diagram]]s is given automatically.
+  *
+  * Functors and connectors can be exposed to MMT surface syntax by using the extended interfaces
+  * [[NamedLinearFunctor]] and [[NamedLinearConnector]], which are
+  * [[info.kwarc.mmt.api.SyntaxDrivenRule SyntaxDrivenRule]]s that are loaded via the `rule` keyword in surface
+  * syntax and then bind to an (untyped) constant making the diagram operator accessible in surface syntax.
+  * 
+  * TODO rewrite/organize/remove this
+  *
+  * * global invariant: diagrams are closed under includes (included thy is either in diagram itself or in meta diagram), otherwise maybe unexpected/partial behavior only
   *
   *
-  * global invariant: diagrams are closed under includes (included thy is either in diagram itself or in meta diagram), otherwise maybe unexpected/partial behavior only
-  *
-   TODO rewrite/organize/remove this
-
-  * Diagram operators implementation:
-  *
-  * in mmt-api, it consists of files {Diagram, DiagramState, DiagramTransformer, FunctorialOperator, StandardOperators}.scala.
-  *
+  * See [[DiagramInterpreter.apply]] for the syntax of diagram expressions.
   *
   * Design decisions
   * ====================
@@ -48,10 +57,6 @@ package info.kwarc.mmt.api.modules
   *   - we should throw the states away after processing ''diagram'' declarations
   *     => if later another ''diagram'' declaration appears that necessitates some of the thrown away
   *     states, we just recompute
-  */
-
-/**
-  * See [[DiagramInterpreter.apply()]] for the syntax of diagram expressions.
   */
 package object diagrams {
 }
