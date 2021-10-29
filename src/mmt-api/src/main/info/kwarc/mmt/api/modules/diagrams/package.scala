@@ -12,8 +12,8 @@ package info.kwarc.mmt.api.modules
   *    `F` and `G` map theories `T` to views `C(T): F(T) -> G(T)`.
   *
   * Implementations of both functors and connectors effectively only need to give a single method
-  * [[LinearModuleOperator.applyConstant applyConstant]] that describes their action on constants. Everything else,
-  * i.e., the induced translation on [[info.kwarc.mmt.api.symbols.IncludeData includes]],
+  * [[LinearModuleOperator.applyConstant applyConstant]] that describes their action on constants (in a given context).
+  * Everything else, i.e., the induced translation on [[info.kwarc.mmt.api.symbols.IncludeData includes]],
   * [[info.kwarc.mmt.api.symbols.Structure structure]]s, [[Theory theories]], [[View views]],
   * [[info.kwarc.mmt.api.symbols.NestedModule nested theories and views]], and [[Diagram diagram]]s is given automatically.
   *
@@ -21,7 +21,11 @@ package info.kwarc.mmt.api.modules
   * [[NamedLinearFunctor]] and [[NamedLinearConnector]], which are
   * [[info.kwarc.mmt.api.SyntaxDrivenRule SyntaxDrivenRule]]s that are loaded via the `rule` keyword in surface
   * syntax and then bind to an (untyped) constant making the diagram operator accessible in surface syntax.
-  * 
+  *
+  * While we should think about functors and connectors as pure functions, they are implemented as mutating classes
+  * to keep the codebase simple. (In fact, in a previous iteration we tried extracting the mutating bits into a
+  * dedicated state class. But this, and guaranteeing type safety across state classes for different operators,
+  * complicated the codebase tremendously and was unbearable.)
   * TODO rewrite/organize/remove this
   *
   * * global invariant: diagrams are closed under includes (included thy is either in diagram itself or in meta diagram), otherwise maybe unexpected/partial behavior only
