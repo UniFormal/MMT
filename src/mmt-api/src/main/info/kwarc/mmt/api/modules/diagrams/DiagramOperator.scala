@@ -153,9 +153,6 @@ trait LinearOperator extends DiagramOperator {
     skippedDeclarations(into) ++= skippedDeclarations.getOrElse(from, mutable.Set())
   }
 
-  // todo: rename this to a better name
-  protected val startedContainers: mutable.ListBuffer[ContentPath] = mutable.ListBuffer()
-
   /**
     * Hook before the declarations of a container are gone linearly through; called by
     * [[applyContainer()]].
@@ -256,37 +253,34 @@ trait LinearOperator extends DiagramOperator {
   }
 
   /**
-    * Transforms a container (i.e. a [[ModuleOrLink]]).
+    * A cache for [[applyContainer]] to save which containers the operator was applicable on and has already been
+    * applied to.
     *
-    * Invariants:
+    * @see [[applyContainer()]]
+    */
+  protected val applicableContainers: mutable.Map[ContentPath, Boolean] = mutable.Map()
+
+  /**
+    * Acts on a container (i.e. a [[ModuleOrLink]]).
     *
-    *  - pre-condition: `inContainer` is known to `interp.ctrl`, the `Controller`.
+    * This method must be an efficient idempotence: whenever called a second time for the same input container, it must
+    * (i) return the same output container as before and (ii) do so efficiently (e.g., by caching).
     *
-    *  - post-conditions: if `Some(outContainer)` is returned, you must have
+    * Pre-condition: `inContainer` is known to `interp.ctrl`, the `Controller`.
+    * Post-conditions: if `Some(outContainer)` is returned, you must have
+    *    - called [[DiagramInterpreter.add()]] and [[DiagramInterpreter.endAdd()]]
+    *      on `outContainer`
+    *    - if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult()]],
+    *      `outContainer` must be a [[Module]] and you must have called
+    *      [[DiagramInterpreter.addToplevelResult()]] on it.
     *
-    *    - (a) added `(inContainer, outContainer)` `state.processedElements`
-    *    - (b) called [[DiagramInterpreter.add()]] and [[DiagramInterpreter.endAdd()]]
-    *          on `outContainer`
-    *    - (c) if `inContainer` fulfills [[DiagramInterpreter.hasToplevelResult()]],
-    *          `outContainer` must be a [[Module]] and you must have called
-    *          [[DiagramInterpreter.addToplevelResult()]] on it.
-    *
-    *  - it must be efficient to call this function multiple times on the same container; the
-    *    computation should only happen once.
-    *
-    * @return The transformed container if the transformer was applicable on the input container.
-    *         In case of errors, these should be signalled via [[DiagramInterpreter.errorCont]].
-    *         In case the transformer was inapplicable, [[None]] should be returned.
-    *
-    *
-    * @return true if element was processed (or already had been processed), false otherwise.
+    * @return True if the operator was applicable on the container and processed it (or had processed it already in
+    *         the past), false if not.
+    *         Possible errors should be logged via [[DiagramInterpreter.errorCont]].
     */
   def applyContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
-    if (startedContainers.contains(inContainer.path)) {
-      return true
-    }
+    applicableContainers.get(inContainer.path).foreach(return _)
 
-    startedContainers += inContainer.path
     initState(inContainer)
 
     if (beginContainer(inContainer)) {
@@ -297,8 +291,10 @@ trait LinearOperator extends DiagramOperator {
 
       endContainer(inContainer)
 
+      applicableContainers += inContainer.path -> true
       true
     } else {
+      applicableContainers += inContainer.path -> false
       false
     }
   }
@@ -331,20 +327,32 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
   def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration]
 
   /**
-    * invariant: value v for a key k always has same type as k
-    * e.g. modules are mapped to modules, structures to structures
+    * Saves the containers that have been mapped so far.
+    *
+    * Invariant: [[Module]]s are only mapped to other modules (possibly of different kind, e.g.,
+    * theories to views) and [[Structure]]s are only mapped to [[Structure]]s.
     */
-  protected val transformedContainers: mutable.Map[Container, Container] = mutable.Map()
+  protected val mappedContainers: mutable.Map[Container, Container] = mutable.Map()
 
-  final def applyModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
+  /**
+    * Linearly maps a module.
+    *
+    * This method must be an efficient idempotence: whenever called a second time for the same input module, it must
+    * (i) return the same output module as before and (ii) do so efficiently (e.g., by caching).
+    *
+    * @return In case of success, some output module is returned. In case of failure (e.g., because the operator
+    *         was partial on that specific module), errors are logged to [[DiagramInterpreter.errorCont]] and None is
+    *         returned.
+    */
+  final def applyModule(module: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
     // force elaboration on input module (among other things, this makes sure the implicit graph
     // related to inModule gets constructed)
-    interp.ctrl.simplifier(inModule)
+    interp.ctrl.simplifier(module)
 
-    if (dom.hasImplicitFrom(inModule.path)(interp.ctrl.library)) {
-      Some(inModule)
-    } else if (applyContainer(inModule)) {
-      Some(transformedContainers(inModule).asInstanceOf[Module])
+    if (dom.hasImplicitFrom(module.path)(interp.ctrl.library)) {
+      interp.ctrl.getAsO(classOf[Module], applyDomainModule(module.path))
+    } else if (applyContainer(module)) {
+      Some(mappedContainers(module).asInstanceOf[Module])
     } else {
       None
     }
@@ -362,6 +370,9 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
 
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
     if (beginDiagram(diag)) {
+      // We naively call `applyModule` on all modules.
+      // This is fine even when implementors recurse upon includes in `applyModule` (and transitively called methods,
+      // e.g. `applyContainer`) because `applyModule` is an efficient idempotence by its method contract.
       val newModules = diag.modules
         .map(interp.ctrl.getModule)
         .flatMap(applyModule)
@@ -379,32 +390,31 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
   // our parent trait LinearTransformer for the sake of adding more documentation, pre-, and
   // post-conditions.
   /**
-    * Creates a new output container as a first means to map `inContainer`; called by [[applyContainer()]].
+    * Creates a new output container as a first means to map `container`; called by [[applyContainer()]].
     *
-    * If the transformer is applicable on `inContainer`, it creates a new output container,
+    * If the operator is applicable on `container`, it creates a new output container,
     * performs the post-conditions below, and returns true.
-    * Transformers may choose on their own what kind of output container to create.
-    * E.g. [[LinearFunctor]] creates theories for theories, and views for views,
-    * and [[LinearConnector]] creates views for theories and is inapplicable on view.s
+    * Operators may choose on their own what kind of output container to create: e.g. [[LinearFunctor]]s create
+    * theories for theories and views for views, while [[LinearConnector]]s create views for theories and are
+    * inapplicable on views.
     *
     * Post-conditions:
     *
     *   - if `true` is returned, you must have
-    *
-    *     - [[DiagramInterpreter.add()]] on `outContainer`
-    *     - added `(inContainer, outContainer)` to `transformedContainers`
-    *     - set `state.outContainer = outContainer`
+    *     - added an entry to `(inContainer, outContainer)` (for some container `outContainer` of your choice)
+    *       to `mappedContainers`
+    *     - called [[DiagramInterpreter.add()]] on `outContainer`
     *   - see also postconditions of [[applyContainer()]]
     *
     * @see [[endContainer()]]
     */
-  def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean
+  def beginContainer(container: Container)(implicit interp: DiagramInterpreter): Boolean
 
   /**
     * Finalizes a container.
     *
-    * By default, this method uses `DiagramState.processedElements` to lookup to which container
-    * `inContainer` has been mapped to, and calls [[DiagramInterpreter.endAdd()]] on the latter.
+    * By default, this method uses [[LinearModuleOperator.mappedContainers]] to look up which container `inContainer`
+    * has been mapped to and calls [[DiagramInterpreter.endAdd()]] on it.
     *
     * Pre-condition: [[beginContainer()]] must have returned true on `inContainer` before.
     *
@@ -412,8 +422,6 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
     *
     *   - the container returned by [[beginContainer()]] must have been finalized via
     *     [[DiagramInterpreter.endAdd()]]
-    *     (You can access that container via `state.diagramState.processedElements`,
-    *      see post-conditions of [[beginContainer()]].)
     *   - see also postconditions of [[applyContainer()]]
     *
     * You may override this method. Be sure to call `super.endContainer()` last in your overridden
@@ -422,23 +430,22 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
     * @see [[beginContainer()]]
     */
   override def endContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Unit = {
-    transformedContainers.get(inContainer).foreach(interp.endAdd)
+    mappedContainers.get(inContainer).foreach(interp.endAdd)
   }
 
   override def applyConstant(c: Constant, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    val outContainerPath = transformedContainers.get(container).map(_.path)
+    val outContainerPath = mappedContainers(container).path
 
     translateConstant(c).foreach(decl => {
       // sanity check that all returned declarations have correct homes
-      outContainerPath.foreach(outContainerPath => {
-        if (decl.path.module != outContainerPath) {
-          throw ImplementationError(s"Linear operator ${this.getClass.getSimpleName} translated constant to container " +
-            s"${decl.path.module}` which is different than the intended one `${outContainerPath}`.")
-        }
-      })
+      if (decl.path.module != outContainerPath) {
+        throw ImplementationError(s"Linear operator ${this.getClass.getSimpleName} translated constant to container " +
+          s"${decl.path.module}` which is different than the intended one `$outContainerPath`.")
+      }
       decl.setOrigin(GeneratedFrom(c.path, this))
 
       interp.add(decl)
+      // call endAdd where applicable (esp. important when decl is a structure or include)
       decl match {
         case ce: ContainerElement[_] => interp.endAdd(ce)
         case _ => /* do nothing */

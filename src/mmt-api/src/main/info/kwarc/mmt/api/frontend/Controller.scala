@@ -339,18 +339,37 @@ class Controller(report_ : Report = new Report) extends ROController with Action
   /** convenience for global lookup */
   def get(path: Path): StructuralElement = globalLookup.get(path)
 
-  /** like get */
-  def getO(path: Path) = try {
+  /**
+    * Tries to retrieve an element.
+    * Like [[get]] but returns None in case no element could be found for `path`.
+    **/
+  def getO(path: Path): Option[StructuralElement] = try {
     Some(get(path))
   } catch {
     case _: GetError => None
     case _: BackendError => None
   }
 
+  /**
+    * @see [[getAsO]]
+    */
   def getAs[E <: StructuralElement](cls : Class[E], path: Path): E = getO(path) match {
     case Some(e : E@unchecked) if cls.isInstance(e) => e
     case Some(r) => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
     case None => throw GetError("Element doesn't exist: " + path)
+  }
+
+  /**
+    * Tries to retrieve an element of a specific class.
+    *
+    * @return Some element in case an element is found for `path` (and that is an instance of `E`), or None if
+    *         no element could be found for `path`.
+    * @throws GetError in case the element exists, but is not an instance of `E`.
+    * @see [[getAs]]
+    */
+  def getAsO[E <: StructuralElement](cls : Class[E], path: Path): Option[E] = getO(path).map {
+    case e : E@unchecked if cls.isInstance(e) => e
+    case r => throw GetError("Element exists but is not a " + cls + ": " + path + " is " + r.getClass)
   }
 
   def getConstant(path: GlobalName): Constant = getAs(classOf[Constant], path)

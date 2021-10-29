@@ -26,7 +26,7 @@ import info.kwarc.mmt.api._
   *
   * A crucial requirement onto implementors is that both functors have the same domain: `in.dom == out.dom`.
   */
-trait LinearConnector extends LinearModuleOperator {
+trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
   val in: Functor
   val out: Functor
 
@@ -51,6 +51,7 @@ trait LinearConnector extends LinearModuleOperator {
     *
     *  - only applicable on theory expressions
     *  - [[dom.hasImplicitFrom(t)]] must be true
+    *
     * @param t
     * @return
     */
@@ -67,10 +68,9 @@ trait LinearConnector extends LinearModuleOperator {
     *
     * @return The output view. If `Some(outView)` is returned, you must have called
     *         [[DiagramInterpreter.add()]] on `outView`.
-    *
     * @example Some transformers need to add includes. They should
     *          override the method as follows:
-    *          {{{
+    * {{{
     *            override protected def beginTheory(...): Option[View] = {
     *              super.beginTheory(...).map(view => {
     *                val include: Structure = /* ... */
@@ -106,7 +106,7 @@ trait LinearConnector extends LinearModuleOperator {
         beginTheory(inTheory) match {
           case Some(outView) =>
             interp.addToplevelResult(outView)
-            transformedContainers += inTheory -> outView
+            mappedContainers += inTheory -> outView
             true
 
           case _ => false
@@ -133,7 +133,7 @@ trait LinearConnector extends LinearModuleOperator {
     *   include ?S = ?v  |-> include in(?S) = out(?v) . conn(?S)  if ?S, ?v are both in input diagram
     * }}}
     *
-    * (In the last line, one path from the square of the commutativity of the natural transformation con -)
+    * (In the last line, one path from the square of the commutativity of the natural transformation c  -)
     *  is chosen. The other path could have been chosen as well.)
     *
     * We can handle the last two cases in a unified way as follows:
@@ -214,8 +214,13 @@ trait LinearConnector extends LinearModuleOperator {
         applyMetaModule(OMIDENT(OMMOD(p)))
 
       case _ => ???
-    }*/
+
+ }*/
   }
+}
+
+trait LinearConnectorDSL {
+  this: LinearModuleOperator =>
 
   // some helper DSL
   def assgn(p: GlobalName, assignment: Term): Constant = {

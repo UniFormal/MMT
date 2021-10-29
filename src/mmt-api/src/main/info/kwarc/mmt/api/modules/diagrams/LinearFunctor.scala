@@ -23,7 +23,7 @@ import info.kwarc.mmt.api._
   *  - `beginView()`
   *  - `beginStructure()`
   */
-trait LinearFunctor extends LinearModuleOperator with Functor {
+trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctorDSL {
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
     * [[beginModule()]].
@@ -32,12 +32,11 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *
     * @return The output theory. If `Some(outTheory)` is returned, you must have called
     *         [[DiagramInterpreter.add()]] on `outTheory`. todo what does this mean?
-    *
     * @example Some functors choose to add includes at the beginning of every ouput theory, and
     *          correspondingly an include assignment at the beginning of every output view.
     *
     *          Those functors can override [[beginTheory()]] and [[beginView()]] as follows:
-    *          {{{
+    * {{{
     *            val additionalTheory: MPath
     *
     *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
@@ -61,7 +60,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *
     *                outView
     *              })
-    *          }}}
+    *           }}}
     */
   protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
@@ -125,7 +124,6 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *         [[DiagramInterpreter.add()]] on `outStructure`.
     *
     * You may override this method to implement additional action, see documentation at [[beginTheory()]].
-    *
     * @see [[beginTheory()]], [[beginView()]]
     */
   protected def beginStructure(s: Structure)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
@@ -157,26 +155,17 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     * @see [[beginTheory()]], [[beginView()]], [[beginStructure()]].
     */
   private def beginModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
-    /* TODO if (!diagramState.seenModules.contains(inModule.path)) {
-      interp.errorCont(InvalidElement(
-        inModule,
-        "unbound module not in input diagram"
-      ))
-      return None
-    }*/
-
     (inModule match {
       case thy: Theory => beginTheory(thy)
       case view: View => beginView(view)
     }).map(outModule => {
-      transformedContainers += inModule -> outModule
       interp.addToplevelResult(outModule)
       outModule
     })
   }
 
   /**
-    * See superclass documentation, or [[beginContainer()]].
+    * @inheritdoc [[LinearModuleOperator.beginContainer()]]
     */
   final override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
     val outContainer = inContainer match {
@@ -186,7 +175,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
 
     outContainer match {
       case Some(outContainer) =>
-        transformedContainers += inContainer -> outContainer
+        mappedContainers += inContainer -> outContainer
         true
 
       case _ => false
@@ -254,6 +243,10 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       interp.endAdd(s)
     }
   }
+}
+
+trait LinearFunctorDSL {
+  this: LinearModuleOperator =>
 
   // some helper DSL
   def const(p: GlobalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): Constant = {
