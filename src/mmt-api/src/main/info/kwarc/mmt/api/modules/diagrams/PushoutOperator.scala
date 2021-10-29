@@ -1,7 +1,6 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Library
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.symbols.{Constant, Declaration}
@@ -25,16 +24,15 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
   private lazy val connector = new PushoutConnector(connection, names)
 
   override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = {
-    val translationMor: Term = OMMOD(connector.applyModulePath(expressionContext(c).toMPath))
+    val translationMor = connector.applyModuleExpression(expressionContext(c))
 
     val su = SimplificationUnit(
-      Context(applyModulePath(c.path.module)),
+      Context(applyModuleExpression(expressionContext(c)).toMPath),
       expandDefinitions = false,
       fullRecursion = true
     )
 
-    def translate(t: Term): Term =
-      interp.ctrl.simplifier.apply(interp.ctrl.library.ApplyMorphs(t, translationMor), su)
+    def translate(t: Term): Term = interp.ctrl.simplifier(interp.ctrl.library.ApplyMorphs(t, translationMor), su)
 
     val pushedc = Constant(
       home = OMMOD(equiNamer(c.path).module),
@@ -43,7 +41,7 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
       tp = c.tp.map(translate),
       df = c.df.map(translate),
       rl = c.rl,
-      not = c.notC.copy() // probably need to tweak argument positions, no?
+      not = c.notC.copy() // todo(diagops,pushout): probably need to tweak argument positions, no?
     )
     pushedc.metadata.add(c.metadata.getAll : _*)
     List(pushedc)
@@ -80,8 +78,8 @@ object GenericPushoutOperator extends ParametricLinearOperator {
     */
   private[diagrams] def inferMorphismDomains(mor: Term)(implicit interp: DiagramInterpreter): Option[(MPath, MPath)] = {
     implicit val library: Library = interp.ctrl.library
-    (Morph.domain(mor), Morph.codomain(mor)) match {
-      case (Some(OMMOD(dom)), Some(OMMOD(cod))) => Some((dom, cod))
+    Morph.domain(mor) zip Morph.codomain(mor) match {
+      case Some((OMMOD(dom), OMMOD(cod))) => Some((dom, cod))
       case _ =>
         interp.errorCont(InvalidObject(
           mor,

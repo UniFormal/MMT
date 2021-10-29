@@ -182,32 +182,13 @@ trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctor
     }
   }
 
-  /**
-    *
-    * {{{
-    *   include ?opDom [= E]  |-> include ?opCod [= E']
-    *   include ?S [= E]      |-> include ?S [= E']         if there is an implicit morphism ?S -> ?opDom (case probably wrong)
-    *   include ?S [= E]      |-> include ?op(S) [= E']     if ?S is in input diagram
-    * }}}
-    *
-    * and E via
-    * {{{
-    *   OMIDENT(?opDom)       |-> OMIDENT(?opCod)
-    *   OMIDENT(?S)           |-> OMIDENT(?S)              if there is an implicit morphisim ?S -> ?opDom (case probably wrong)
-    *   OMIDENT(?S)           |-> OMIDENT(?op(S))          if ?T is in input diagram
-    *   ?v                    |-> ?op(v)                   if ?v is in input diagram
-    * }}}
-    */
   override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
     if (include.args.nonEmpty)
       throw new NotImplementedError("Parametric includes not supported by linear diagram operators yet")
-/*
 
-TODO: problem: unbound includes cannot be noticed anymore since we have no information of what the current input diagram is
-*/
     def handleFrom(from: MPath): Term = {
       if (dom.hasImplicitFrom(from)) applyDomain(OMMOD(from))
       else {
@@ -229,7 +210,7 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
 
     val s = Structure(
       home = OMMOD(applyModulePath(container.modulePath)),
-      name = LocalName(newFrom.toMPath), // TODO NR@FR: does this `name` make sense?
+      name = LocalName(newFrom.toMPath), // TODO NR@FR: does this `name` make sense? esp. for views?
       from = newFrom,
       df = newDf,
       isImplicit = if (container.isInstanceOf[Theory]) true else false, // theory includes are always implicit
@@ -265,6 +246,7 @@ object LinearFunctor {
   def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))
 }
 
+// todo(NR,FR) review this together
 trait LinearFunctorDSL {
   this: LinearModuleOperator =>
 

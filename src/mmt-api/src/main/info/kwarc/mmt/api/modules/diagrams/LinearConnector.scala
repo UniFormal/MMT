@@ -55,7 +55,12 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
     * @see [[applyDomainModule]] for the base case of [[OMMOD]]s referencing [[MPath theory paths]].
     */
   final override def applyDomain(t: Term): Term = t match {
-    case OMMOD(p) /* ideally: only if p points to a theory */ => OMMOD(applyDomainModule(p))
+    case OMMOD(m) /* ideally: only if m points to a theory */ => OMMOD(applyDomainModule(m))
+    case _ => ???
+  }
+
+  final override def applyModuleExpression(m: Term): Term = m match {
+    case OMMOD(m) => OMMOD(applyModulePath(m))
     case _ => ???
   }
 
@@ -164,18 +169,14 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
     * whether it works.)
     */
   final override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    val ctrl = interp.ctrl // shorthand
+    val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
-    // only need to connect undefined declarations
-    if (include.df.nonEmpty) {
+    if (include.df.nonEmpty) // nothing to do
       return
-    }
 
-    if (include.args.nonEmpty) {
-      // unsure what to do
-      ???
-    }
+    if (include.args.nonEmpty)
+      throw new NotImplementedError("Parametric includes not supported by linear diagram operators yet")
 
     val (newFrom, newDf) = include.from match {
       case from if dom.hasImplicitFrom(from) =>
@@ -184,7 +185,7 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
         if (library.hasImplicit(applyDomain(OMMOD(from)), OMMOD(in.applyModulePath(container.path.toMPath))))
           return
 
-        (in.applyDomain(OMMOD(from)).toMPath, applyDomain(OMMOD(from)))
+        (in.applyDomainModule(from), applyDomain(OMMOD(from)))
 
       case from =>
         val newDf = applyModule(ctrl.getModule(from)).map(m => {
@@ -203,24 +204,6 @@ trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
     outputInclude.setOrigin(GeneratedFrom(structure.path, this))
     interp.add(outputInclude)
     interp.endAdd(outputInclude)
-
-    /* TODO: in case we ever desire to map defined includes, too, here's how I did in the past
-    val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
-      case OMMOD(v) if diagramState.seenModules.contains(v) =>
-        // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
-        applyModule(ctrl.getModule(v))
-        // todo: in which order does OMCOMP take its arguments? (Document this, too!)
-        OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
-
-      case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) =>
-        OMMOD(applyModulePath(include.from))
-
-      case OMIDENT(OMMOD(p)) if in.operatorDomain.hasImplicitFrom(p) =>
-        applyMetaModule(OMIDENT(OMMOD(p)))
-
-      case _ => ???
-
- }*/
   }
 }
 
@@ -240,6 +223,7 @@ trait OutwardsLinearConnector extends LinearConnector {
   lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to allow implementors to first initialize `in`
 }
 
+// todo(NR,FR) review this together
 trait LinearConnectorDSL {
   this: LinearModuleOperator =>
 

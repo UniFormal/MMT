@@ -10,6 +10,9 @@ package info.kwarc.mmt.api.modules
   *   [[info.kwarc.mmt.api.modules.diagrams.LinearFunctor]] and
   *   [[info.kwarc.mmt.api.modules.diagrams.LinearConnector]]
   *
+  *
+  * global invariant: diagrams are closed under includes (included thy is either in diagram itself or in meta diagram), otherwise maybe unexpected/partial behavior only
+  *
    TODO rewrite/organize/remove this
 
   * Diagram operators implementation:

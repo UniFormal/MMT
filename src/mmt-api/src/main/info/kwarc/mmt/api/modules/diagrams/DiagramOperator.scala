@@ -61,6 +61,8 @@ trait ModuleOperator extends DiagramOperator {
   def applyModulePath(mpath: MPath): MPath = {
     mpath.doc ? applyModuleName(LocalName(mpath.name.head)) / mpath.name.tail
   }
+
+  def applyModuleExpression(m: Term): Term
 }
 
 /**
@@ -75,6 +77,16 @@ trait ModuleOperator extends DiagramOperator {
   * @see [[LinearFunctor]] for a functor that works declaration-by-declaration on theories and views.
   */
 trait Functor extends ModuleOperator {
+  /** Extends a function on [[MPath module paths]] to module expressions in a functorial way. */
+  private def functorialify(f: MPath => MPath): Term => Term = {
+    def tr(t: Term): Term = t match {
+      case OMMOD(m) => OMMOD(f(m))
+      case OMIDENT(m) => OMIDENT(tr(m))
+      case OMCOMP(mors) => OMCOMP(mors.map(tr))
+    }
+    tr
+  }
+
   /**
     * Maps module expressions by the functor.
     * The atomic case for [[MPath module paths]] is given by [[applyDomainModule]] and the complex cases are
@@ -83,12 +95,8 @@ trait Functor extends ModuleOperator {
     * @param t Any module expression over [[dom]], e.g., a composition of
     *          [[OMMOD]], [[OMIDENT]], and [[OMCOMP]] terms.
     */
-  final override def applyDomain(t: Term): Term = t match {
-    case OMMOD(p) => OMMOD(applyDomainModule(p))
-    case OMIDENT(t) => OMIDENT(applyDomain(t))
-    case OMCOMP(mors) => OMCOMP(mors.map(applyDomain))
-    case _ => ???
-  }
+  final override def applyDomain(t: Term): Term = functorialify(applyDomainModule)(t)
+  final override def applyModuleExpression(m: Term): Term = functorialify(applyModulePath)(m)
 }
 
 
@@ -324,6 +332,18 @@ trait LinearOperator extends DiagramOperator {
   * [[info.kwarc.mmt.api.StructuralElement.setOrigin]] and [[GeneratedFrom `GeneratedFrom(..., this)`]].
   */
 trait LinearModuleOperator extends LinearOperator with ModuleOperator {
+  /**
+    * Maps a constant to a list of output [[Declaration]]s.
+    *
+    * Implementations are advised to be as structure-preserving of `c`'s data as possible:
+    * try translating the type, definiens, alias, role, notation, and the metadata, and whatever else the [[Constant]]
+    * interface offers.
+    *
+    * @return A list of output declarations, possibly Nil. If the operator is inapplicable on `c`,
+    *         `Nil` is returned and an [[InvalidElement]] reported to
+    *         [[DiagramInterpreter.errorCont `interp.errorCont`]]. You can use the [[NotApplicable]] convenience
+    *         object for that.
+    */
   def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration]
 
   /**
