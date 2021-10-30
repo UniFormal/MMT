@@ -10,16 +10,24 @@ import scala.collection.mutable
 
 /**
   * A diagram of MMT [[Module]]s given by [[MPath module paths]] -- an atomic [[DiagramInterpreter diagram expression]].
-  * In most cases, the diagram consists of [[info.kwarc.mmt.api.modules.Theory theories]] and [[info.kwarc.mmt.api.modules.View views]].
+  * In most cases, the diagram consists of [[info.kwarc.mmt.api.modules.Theory theories]] and
+  * [[info.kwarc.mmt.api.modules.View views]].
   *
   * Diagrams serve as inputs and outputs of [[DiagramOperator]]s.
   * [[LinearFunctor]]s furthermore use diagrams to specify their domain and codomain;
   * upon application, they translate diagrams *over* their domain diagram to diagrams *over* their codomain diagram.
   * For this reason, diagrams may have meta diagrams (by the parameter `mt`).
   *
+  * Diagrams should be closed in the sense that all modules that are referenced from modules contained in this diagram
+  * should also be contained in this diagram or in the meta diagram `mt`.
+  * This is not a strict requirement, e.g., [[LinearFunctor]]s also work on unclosed diagrams, but their behavior might
+  * be unexpected (e.g., because functors are applied to modules [by recursing into module references] that had never
+  * been specified in the input diagram).
+  *
   * In the future, diagrams might also contain commutativity assertions.
   *
-  * @param modules The contained [[Module]]s as referenced via their paths.
+  * @param modules The contained [[Module]]s given by their paths.
+  *                All module references occurring in `modules` should be
   * @param mt Optional meta diagram. Diagrams to which [[LinearFunctor]]s are applied are usually expected to have
   *           meta diagrams. Otherwise, inapplicability will be signaled in one way or another, see
   *           [[LinearFunctor.applyDiagram()]].

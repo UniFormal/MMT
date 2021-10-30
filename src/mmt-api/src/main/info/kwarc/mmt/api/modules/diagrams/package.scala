@@ -17,50 +17,49 @@ package info.kwarc.mmt.api.modules
   * [[info.kwarc.mmt.api.symbols.Structure structure]]s, [[Theory theories]], [[View views]],
   * [[info.kwarc.mmt.api.symbols.NestedModule nested theories and views]], and [[Diagram diagram]]s is given automatically.
   *
-  * Functors and connectors can be exposed to MMT surface syntax by using the extended interfaces
+  * Functors and connectors are exposed to MMT surface syntax by additionally implementing the interfaces
   * [[NamedLinearFunctor]] and [[NamedLinearConnector]], which are
   * [[info.kwarc.mmt.api.SyntaxDrivenRule SyntaxDrivenRule]]s that are loaded via the `rule` keyword in surface
   * syntax and then bind to an (untyped) constant making the diagram operator accessible in surface syntax.
   *
-  * While we should think about functors and connectors as pure functions, they are implemented as mutating classes
-  * to keep the codebase simple. (In fact, in a previous iteration we tried extracting the mutating bits into a
-  * dedicated state class. But this, and guaranteeing type safety across state classes for different operators,
-  * complicated the codebase tremendously and was unbearable.)
-  * TODO rewrite/organize/remove this
+  * Named diagram operators can then be used to compose [[DiagramInterpreter diagram expressions]] that are interpreted
+  * and installed to the ambient theory graph using the [[InstallDiagram]] structural feature.
   *
-  * * global invariant: diagrams are closed under includes (included thy is either in diagram itself or in meta diagram), otherwise maybe unexpected/partial behavior only
+  * Intuitively, we should think about functors and connectors as pure functions (no side effects and constants in the
+  * same context are always translated the same way).
+  * However, in practice [[LinearFunctor]] and [[LinearConnector]] are designed specifically for operators that are
+  * pure modulo maintain a "linear state" for efficiency reasons. A linear state means that when translating constants,
+  * say, in a theory `T`, these operators have access to a state that only depends on all theories transitively included
+  * into `T`. For example, operators may choose to maintain the linear state of "have I seen a constant of this and that
+  * form yet?". In principle, such state can entirely be avoided (yielding a clean specification of the operator on
+  * paper), but in practice such state is necessary for efficiency reasons.
+  * Since linear states are for efficiency reasons only, it is fine to throw them away, e.g., between two MMT sessions.
   *
+  * Design Decisions
   *
-  * See [[DiagramInterpreter.apply]] for the syntax of diagram expressions.
+  *  - separate interfaces for anonymous diagram operators and named ones that are bound to an MMT symbol
+  *    This is useful to support named parametric operators that create anonymous (parametrized operators at runtime.
+  *    Moreover, we expect operators to also be repeatedly called programmatically in the future (in contrast to solely
+  *    being invoked from surface syntax).<br><br>
+  *    Note that parametric operators differ from [[info.kwarc.mmt.api.ParametricRule ParametricRule]]s in that
+  *    for the former we want to make the parametric operator accessible once in a theory (using the `rule` keyword)
+  *    to be able to invoke it subsequently many times, possibly with many different parametrizations.
+  *    In contrast, parametric rules have so far been used such that the set of parametrizations occurring in practice
+  *    is very small. This makes it feasible to implement parametrization of parametric rules by the `rule` keyword.
+  *    For parametric operators this way is infeasible as users would need to use the `rule` keyword too many times.
   *
-  * Design decisions
-  * ====================
-  *
-  * - separation into named and anonymous operators in Operators.scala and LinearTransformer.scala,
-  *   respectively.
-  *
-  *   Named operators are associated to an MMT symbol and inherit SyntaxDrivenRule.
-  *
-  * - use cases of anonymous operators so far:
-  *
-  *   - named parametric operators that create anonymous (parametrized!) operators on-the-fly at runtime
-  *
-  * - Parametric operators *cannot* be implemented by ParametricRules:
-  *
-  *   For parametric operators, you'd like to load them once via ''rule scala://...ParametricOperator''
-  *   and to be able to use them afterwards with *arbitrary* parameters.
-  *   If they were ParametricRules, you'd have to have a ''rule'' declaration every time you'd like
-  *   to use the operator with a different set of parameters.
-  *
-  * - DiagramState is complicated because you'd like every operator to be able to carry its own state
-  *   (which might be more than the default state) while ensuring type safety.
-  *
-  * - Invariant of operator states:
-  *
-  *   - operator states are a mathematical function of the context (i.e. pure)
-  *   - we should throw the states away after processing ''diagram'' declarations
-  *     => if later another ''diagram'' declaration appears that necessitates some of the thrown away
-  *     states, we just recompute
+  *  - operators are objects, invocations of operators are method calls on that objects, and state is maintained in
+  *    those objects (in particular, this means across invocations of one and the same operator, possibly on different
+  *    diagrams)<br><br>
+  *    This requires operators to be particularly cautious about what they save into and load from their state.
+  *    In theory, a cleaner solution would be to create a dedicated "state object" `st` before invoking a diagram
+  *    operator on a given diagram, say, via `op.apply(diag, st)`. And the operator's `apply` method would forward
+  *    that state object to all internally called methods, incl. the method that translates constants one-by-one.
+  *    We were unable to implement this "cleaner" solution in a way that keeps the code base simple and type safe.
+  *    Concretely, different operators may need to maintain different state, thus every operator should be able to
+  *    dictate its own state interface. Now to keep things type safe, the `apply` method sketched above must take a
+  *    generic type parameter for the state interface. And this carries through the entire code base, making things
+  *    unbearable.
   */
 package object diagrams {
 }
