@@ -1,17 +1,11 @@
 package info.kwarc.mmt.api.modules.diagrams
 
 /**
-  * Classes for named functorial operators, i.e., operators bound to an MMT symbol.
-  *
-  * All of these classes are minor; almost all of the logic lies in the mixed in traits
-  * from LinearTransformer.scala for anonymous functorial operators.
-  *
-  * @see LinearTransformer.scala for anonymous functorial operators
+  * Diagram operators that are bound to an MMT symbol and thus can be invoked from surface syntax.
   */
 
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.{GlobalName, Rule, SyntaxDrivenRule}
+import info.kwarc.mmt.api.{GlobalName, SyntaxDrivenRule}
 
 
 /**
