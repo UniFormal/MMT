@@ -9,9 +9,9 @@ import info.kwarc.mmt.api.{GlobalName, SyntaxDrivenRule}
 
 
 /**
-  * A diagram operator whose main functionality is given by [[apply()]].
+  * A diagram operator whose main functionality is given by [[apply]].
   *
-  * The method [[apply()]] receives a diagram and a [[DiagramInterpreter]] instance and
+  * The [[apply]] method receives a diagram and a [[DiagramInterpreter]] instance and
   * may then inspect the input elements in the diagram and freely add new (output)
   * elements via calls to the [[DiagramInterpreter]].
   *

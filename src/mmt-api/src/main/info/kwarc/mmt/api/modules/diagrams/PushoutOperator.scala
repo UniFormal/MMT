@@ -13,7 +13,7 @@ object PushoutNames {
 
 class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = PushoutNames.default) extends LinearFunctor {
   override def applyModulePath(mpath: MPath): MPath = names.pushoutNames(mpath).getOrElse(super.applyModulePath(mpath))
-  def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout")
+  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout")
 
   override val dom: Diagram = connection.dom
   override val cod: Diagram = connection.cod
@@ -50,7 +50,7 @@ class PushoutFunctor(connection: DiagramConnection, names: PushoutNames = Pushou
 
 class PushoutConnector(connection: DiagramConnection, names: PushoutNames = PushoutNames.default) extends InwardsLinearConnector {
   override def applyModulePath(mpath: MPath): MPath = names.viewNames(mpath).getOrElse(super.applyModulePath(mpath))
-  def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout_view")
+  override def applyModuleName(name: LocalName): LocalName = name.suffixLastSimple("_pushout_view")
 
   override val out = new PushoutFunctor(connection, names)
 
