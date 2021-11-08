@@ -16,7 +16,7 @@ import info.kwarc.mmt.api.{GeneralError, GlobalName, Path}
   *
   * All diagram operators referenced in diagOps will be applied in order left-to-right to diagram.
   */
-object SequencedDiagramOperators extends NamedDiagramOperator {
+object SequencedDiagramOperators extends NamedOperator {
   final override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?sequence_diagram_operators")
 
   final override def apply(rawDiagram: Term)(implicit interp: DiagramInterpreter): Option[Term] = rawDiagram match {
@@ -47,7 +47,7 @@ object SequencedDiagramOperators extends NamedDiagramOperator {
   * is based on a formalization of propositional logic PL that is also modular.
   * We can close the singleton diagram FOL wrt. PL to get all FOL theories, but not PL.
   */
-object ClosureDiagramOperator extends NamedDiagramOperator {
+object ClosureDiagramOperator extends NamedOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?closure_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter): Option[Term] = t match {
@@ -69,7 +69,7 @@ object ClosureDiagramOperator extends NamedDiagramOperator {
   }
 }
 
-object UnionDiagramOperator extends NamedDiagramOperator {
+object UnionDiagramOperator extends NamedOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?union_operator")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter): Option[Term] = t match {
@@ -82,7 +82,7 @@ object UnionDiagramOperator extends NamedDiagramOperator {
 }
 
 // naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
-object DifferenceOperator extends NamedDiagramOperator {
+object DifferenceOperator extends NamedOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?difference")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter): Option[Term] = t match {
@@ -97,7 +97,7 @@ object DifferenceOperator extends NamedDiagramOperator {
 }
 
 // naive implementation, no error reporting on diagram meta inconsistencies between subtrahend, minuend
-object RebaseOperator extends NamedDiagramOperator {
+object RebaseOperator extends NamedOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?rebase")
 
   override def apply(t: Term)(implicit interp: DiagramInterpreter): Option[Term] = t match {

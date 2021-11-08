@@ -90,7 +90,7 @@ object GenericPushoutOperator extends ParametricLinearOperator {
   }
 }
 
-object SimplePushoutOperator extends NamedDiagramOperator {
+object SimplePushoutOperator extends NamedOperator {
   override val head: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?simple_pushout")
 
   final override def apply(invocation: Term)(implicit interp: DiagramInterpreter): Option[Term] = invocation match {

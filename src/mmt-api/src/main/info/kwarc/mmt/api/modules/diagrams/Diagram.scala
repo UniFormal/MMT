@@ -13,7 +13,7 @@ import scala.collection.mutable
   * In most cases, the diagram consists of [[info.kwarc.mmt.api.modules.Theory theories]] and
   * [[info.kwarc.mmt.api.modules.View views]].
   *
-  * Diagrams serve as inputs and outputs of [[DiagramOperator]]s.
+  * Diagrams serve as inputs and outputs of [[UnaryOperator]]s.
   * [[LinearFunctor]]s furthermore use diagrams to specify their domain and codomain;
   * upon application, they translate diagrams *over* their domain diagram to diagrams *over* their codomain diagram.
   * For this reason, diagrams may have meta diagrams (by the parameter `mt`).
@@ -30,11 +30,15 @@ import scala.collection.mutable
   *                All module references occurring in `modules` should be
   * @param mt Optional meta diagram. Diagrams to which [[LinearFunctor]]s are applied are usually expected to have
   *           meta diagrams. Otherwise, inapplicability will be signaled in one way or another, see
-  *           [[LinearFunctor.applyDiagram()]].
+  *           [[LinearFunctor.applyDiagram]].
   */
 sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
-  /** The term representation; short-hand for [[DiagramTermBridge.apply()]]. */
+  /** The term representation; short-hand for [[DiagramTermBridge.apply]]. */
   def toTerm: Term = DiagramTermBridge(this)
+
+  // TODO: specify which includes are part of the diagram
+  //       e.g. if diagram contains theories S and T and T includes S, is the include
+  //       contained in the diagram, too? Maybe compare with Hets and Specware.
 
   /**
     * All modules contained in the diagram and (recursively) in the meta diagram.

@@ -1,7 +1,8 @@
 package info.kwarc.mmt.api.modules
-
+// TODO: document why anonymous diagrams were inferior
+// TODO: decoupling connectors from functors has advantages (flexibility, e.g., where not all connectors are needed, e.g., between two functors, these are only desired if both functors are used anyway) and disadvantages (functors and connectors that are mutually recursive)
 /**
-  * [[DiagramOperator]]s perform operations on entire [[Diagram diagrams]] of MMT [[Theory theories]] and [[View views]].
+  * [[UnaryOperator]]s perform operations on entire [[Diagram diagrams]] of MMT [[Theory theories]] and [[View views]].
   * An important special case is given by [[LinearModuleOperator]]s: these map diagrams to diagrams, module-by-module,
   * and declaration-by-declaration.
   * The most important [[LinearModuleOperator]]s are the following two:

@@ -42,7 +42,7 @@ import scala.collection.mutable
   */
 class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
   override def getHeaderNotation: List[Marker] = Nil
-  // checking in advance doesn't make sense here -- we need to evaluate (in [[modules()]]) anyway to
+  // checking in advance doesn't make sense here -- we need to evaluate (in [[modules]]) anyway to
   // detect all errors
   def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
 
@@ -65,6 +65,7 @@ class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
         // syntax-present all modules for debugging
         outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
         // TODO: investigate why they differ
+        // TODO: use log instead of println and ConsoleWriter here
         println(s"""
 
 ${this.getClass.getSimpleName} debug
@@ -142,21 +143,19 @@ object InstallDiagram {
   *
   *  - [[InstallDiagram]]: used to evaluate diagram expressions occurring top-level as the definiens
   *    of a diagram module (see the [[InstallDiagram]] structural feature)
-  *  - as arguments passed throughout interfaces of [[DiagramOperator]] and [[LinearFunctor]]s for these reasons:
+  *  - as arguments passed throughout interfaces of [[UnaryOperator]] and [[LinearFunctor]]s for these reasons:
   *    - to allow diagram operators to add modules (via [[add()]] and [[endAdd()]])
   *    - to allow diagram operators to access the [[Controller]] for reasons besides adding modules (via [[ctrl]])
   *    - to report errors (via [[errorCont]]) and to evaluate sub-diagram expressions (needed for some higher-order
   *    diagram operators)
   *
   * @param interpreterContext The context in which the evaluation should run. In particular,
-  *                           the set of [[NamedDiagramOperator]]s that can be evaluated in diagram
+  *                           the set of [[NamedOperator]]s that can be evaluated in diagram
   *                           expressions is effectively taken from this context.
-  *                           (NB: recall that [[NamedDiagramOperator]]s are rules, after all,
-  *                            thus can appear in contexts)
-  *
+  *                           (NB: recall that [[NamedOperator]]s are rules, after all,
+  *                           thus can appear in contexts)
   * @param errorCont Error handler used by diagram operators to report any errors (incl.
   *                  being undefined, i.e., not applicable, on certain diagrams, modules, or constants)
-  *
   * @todo maybe rename to DiagramEvaluator? any every `interp: DiagramInterpreter` to `eval: DiagramEvaluator`?
   *
   * todo: added results/connections are buffered until commit() has been called. If operators invoke certain
@@ -173,9 +172,9 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
   def toplevelResults: List[Module] = transientToplevelResults.values.toList
 
-  val operators: Map[GlobalName, NamedDiagramOperator] =
+  val operators: Map[GlobalName, NamedOperator] =
     RuleSet
-      .collectRules(ctrl, interpreterContext).get(classOf[NamedDiagramOperator])
+      .collectRules(ctrl, interpreterContext).get(classOf[NamedOperator])
       .map(op => (op.head, op))
       .toMap
 
@@ -211,8 +210,8 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
     *   that has already been elaborated; evaluated as the output stored in it (see [[InstallDiagram.parseOutput()]])
     * - an [[OMMOD]] referencing any other kind of module; evaluated as a singleton diagram of that module
     * - `OMA(... OMA( ... (OMA(diagop, arg1), ... ), argn)` where `diagop` references a constant
-    *   for which there is a corresponding [[NamedDiagramOperator]] rule in [[interpreterContext]] (see [[operators]]);
-    *   evaluated as [[NamedDiagramOperator.apply()]] called with the whole term
+    *   for which there is a corresponding [[NamedOperator]] rule in [[interpreterContext]] (see [[operators]]);
+    *   evaluated as [[NamedOperator.apply]] called with the whole term
     * - any other [[Term]] is simplified and tried again for the above cases.
     */
   def apply(t: Term): Option[Diagram] = {
@@ -233,14 +232,14 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
       traverser.apply(t, Context.empty)
     }
-
+    // TODO debug whether usage of removeOmbindc is really necessary
     removeOmbindc(t) match {
-      // already a fully evaluated diagram
+      // already a fully evaluated diagram, atomic diagram
       case DiagramTermBridge(diag) => Some(diag)
 
       // a reference to top-level diagram declaration (that hopefully has already been evaluated and whose
       // output stored)
-      case OMMOD(diagramDerivedModule @ m) if ctrl.getO(m).exists(_.isInstanceOf[DerivedModule]) =>
+      case OMMOD(diagramDerivedModule) if ctrl.getAsO(classOf[DerivedModule], diagramDerivedModule).isDefined =>
         Some(InstallDiagram.parseOutput(diagramDerivedModule)(ctrl.library))
 
       // evaluate remaining references to modules as singleton diagrams
@@ -266,6 +265,7 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
 
           // first expand all definitions as simplifier doesn't seem to definition-expand in cases like
           // t = OMA(OMS(?s), args) // here ?s doesn't get definition-expanded
+          // TODO: resolve ombindc usage
           removeOmbindc(ctrl.simplifier(ctrl.library.ExpandDefinitions(diag, _ => true), su))
         }
 

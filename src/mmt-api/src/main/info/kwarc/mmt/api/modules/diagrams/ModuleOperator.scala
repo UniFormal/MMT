@@ -7,13 +7,11 @@ import info.kwarc.mmt.api.symbols.{Constant, Declaration, FinalConstant, Include
 
 import scala.collection.mutable
 
-trait DiagramOperator {
-  def beginDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Boolean
-  def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram]
-
-  // overwrite if necessary
-  def endDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Unit = {}
-}
+/**
+  * Anonymous [[UnaryOperator]]s that map [[Module]]s to [[Module]]s.
+  *
+  * @see [[LinearFunctor]] and [[LinearConnector]] for the most common special cases.
+  */
 
 /**
   * A diagram operator that maps modules (over some domain diagram `dom`) to modules (over some codomain diagram `cod`).
@@ -21,7 +19,7 @@ trait DiagramOperator {
   * @see [[Diagram]] for what "diagrams over other diagrams" means
   * @see [[LinearModuleOperator]] for a [[ModuleOperator]] that works declaration-by-declaration on modules.
   */
-trait ModuleOperator extends DiagramOperator {
+trait ModuleOperator extends UnaryOperator {
   val dom: Diagram
   val cod: Diagram
 
@@ -118,7 +116,7 @@ trait Functor extends ModuleOperator {
   * @see [[LinearConnector]] for [[LinearModuleOperator]] that maps theories to views and views not at all
   * @see [[ZippingOperator]] for a subtrait that bundles multiple [[LinearOperator]]s in parallel
   */
-trait LinearOperator extends DiagramOperator {
+trait LinearOperator extends UnaryOperator {
   type Container = ModuleOrLink
 
   def ::(first: LinearOperator): ZippingOperator = {
@@ -387,7 +385,7 @@ trait LinearModuleOperator extends LinearOperator with ModuleOperator {
       false
     }
   }
-
+  // TODO (Florian's intuition): applyDiagram creates module stubs, translateConstant fills those modules (and returns nothing)
   final override def applyDiagram(diag: Diagram)(implicit interp: DiagramInterpreter): Option[Diagram] = {
     if (beginDiagram(diag)) {
       // We naively call `applyModule` on all modules.
