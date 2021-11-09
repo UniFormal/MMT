@@ -31,14 +31,14 @@ import scala.collection.mutable
   * @param mt Optional meta diagram. Diagrams to which [[LinearFunctor]]s are applied are usually expected to have
   *           meta diagrams. Otherwise, inapplicability will be signaled in one way or another, see
   *           [[LinearFunctor.applyDiagram]].
+  *
+  * @todo Specify which includes are part of the diagram, e.g. if a diagram contains theories S and T and T includes S,
+  *       must the diagram also contain the include? Some systems (Hets or Specware, not sure) allow to suppress such
+  *       includes in diagrams, which has an effect of applied operations (e.g., diagram operators, colimits).
   */
 sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
   /** The term representation; short-hand for [[DiagramTermBridge.apply]]. */
   def toTerm: Term = DiagramTermBridge(this)
-
-  // TODO: specify which includes are part of the diagram
-  //       e.g. if diagram contains theories S and T and T includes S, is the include
-  //       contained in the diagram, too? Maybe compare with Hets and Specware.
 
   /**
     * All modules contained in the diagram and (recursively) in the meta diagram.

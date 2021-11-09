@@ -144,7 +144,7 @@ object InstallDiagram {
   *  - [[InstallDiagram]]: used to evaluate diagram expressions occurring top-level as the definiens
   *    of a diagram module (see the [[InstallDiagram]] structural feature)
   *  - as arguments passed throughout interfaces of [[UnaryOperator]] and [[LinearFunctor]]s for these reasons:
-  *    - to allow diagram operators to add modules (via [[add()]] and [[endAdd()]])
+  *    - to allow diagram operators to add modules (via [[add]] and [[endAdd]])
   *    - to allow diagram operators to access the [[Controller]] for reasons besides adding modules (via [[ctrl]])
   *    - to report errors (via [[errorCont]]) and to evaluate sub-diagram expressions (needed for some higher-order
   *    diagram operators)
@@ -188,7 +188,7 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
   }
 
   /**
-    * [[add()]] plus registering as a toplevel result
+    * [[add]] plus registering as a toplevel result
     */
   def addToplevelResult(m: Module): Unit = {
     add(m)
@@ -207,7 +207,7 @@ class DiagramInterpreter(val ctrl: Controller, private val interpreterContext: C
     * - the [[Term]] representation of a [[Diagram]] (see [[Diagram.toTerm]] and [[DiagramTermBridge]]);
     *   evaluated as the diagram itself
     * - an [[OMMOD]] referencing a diagram module (of the [[InstallDiagram]] structural feature)
-    *   that has already been elaborated; evaluated as the output stored in it (see [[InstallDiagram.parseOutput()]])
+    *   that has already been elaborated; evaluated as the output stored in it (see [[InstallDiagram.parseOutput]])
     * - an [[OMMOD]] referencing any other kind of module; evaluated as a singleton diagram of that module
     * - `OMA(... OMA( ... (OMA(diagop, arg1), ... ), argn)` where `diagop` references a constant
     *   for which there is a corresponding [[NamedOperator]] rule in [[interpreterContext]] (see [[operators]]);
