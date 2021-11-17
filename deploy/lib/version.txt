@@ -10,3 +10,10 @@ Scala modules:
  parallel-collections: 1.0.0
 
 xz: 1.8
+
+
+------------
+
+tested with
+IntelliJ Community edition 2021.2.3
+sbt 1.3.13 (auto-downloaded by IntelliJ)
