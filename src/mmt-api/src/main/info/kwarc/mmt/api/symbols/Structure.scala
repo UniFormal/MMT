@@ -119,6 +119,10 @@ object SimpleStructure {
   *
   * they do not carry assignments
   * their name is LocalName(from)
+  *
+  * Note that because they are a special case of [[Structure]],
+  * it is necessary to call the endAdd-style methods in controller, parser, checker, simplifiers
+  * even though includes have an empty body.
   */
 /* an include can be constitutive/definitional (typical include) or postulated (= realizations)
  * in the latter case, we set the implicit flag to false; this is awkward but works for now

@@ -333,7 +333,7 @@ case class OMLIT(value: Any, rt: uom.RealizedType) extends Term with OMLITTrait 
 /** degenerate case of OMLIT when no RealizedType was known to parse a literal
  *
  *  This class is awkward but necessary to permit a lookup-free parser, which delays parsing of literals to a later phase.
- *  UnknownOMLITs are replaced with OMLITs in the [[libraries.StructureChecker]].
+ *  UnknownOMLITs are replaced with OMLITs in the [[checking.MMTStructureChecker]].
  *
  *  @param synType the type of the this literal
  */

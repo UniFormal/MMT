@@ -83,7 +83,11 @@ jtimes|×
 jbigtimes|⨯
 jpm|±
 jmp|∓
-jdiv|÷
+jdivide|÷
+jdiv|∕
+jbackdiv|⧵
+jbigdiv|⧸
+jbigbackdiv|⧹
 jwedge|∧
 jvee|∨
 jcap|∩

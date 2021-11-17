@@ -9,8 +9,8 @@ import utils.xml.addAttrOrChild
   *
   * @param doc the namespace/parent document
   * @param name the name of the view
-  * @param from the domain theory
-  * @param to the codomain theory
+  * @param fromC the domain theory
+  * @param toC the codomain theory
   * @param isImplicit true iff the link is implicit
   */
 class View(doc : DPath, name : LocalName, val fromC : TermContainer, val toC : TermContainer, val dfC: TermContainer, val isImplicit : Boolean)

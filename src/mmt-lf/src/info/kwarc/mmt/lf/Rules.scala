@@ -127,7 +127,7 @@ object StandardArgumentChecker extends ArgumentChecker {
  *
  * This rule works for B:U for any universe U
  *
- * This rule implements currying and all arguments at once
+ * This rule implements currying and checks all arguments at once
  */
 class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule(Apply.path, OfType.path) {
    def apply(solver: Solver, tm: Term, tpO: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) : (Option[Term], Option[Boolean]) = {
