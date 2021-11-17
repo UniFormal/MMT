@@ -3,56 +3,42 @@ package info.kwarc.mmt.api.modules.diagrams
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.{Theory, View}
 import info.kwarc.mmt.api.notations.NotationContainer
-import info.kwarc.mmt.api.objects.{Context, OMMOD, OMS, Term}
+import info.kwarc.mmt.api.objects.{OMMOD, Term}
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.{ComplexStep, GeneratedFrom, GlobalName, ImplementationError, LocalName, MPath, SimpleStep}
+import info.kwarc.mmt.api._
 
 /**
-  * Linearly connects diagrams output by two [[LinearModuleOperator]] `in` and `out` with views.
+  * A natural transformation betweeen two [[LinearFunctor]]s `in` and `out` that linearly maps theories to views ("connections") and views not at all.
   *
-  * In categorical tonus, `in` and `out` are functors on MMT diagrams, and implementors of this trait
-  * *may* be natural transformations, but do not need to be.
-  *
-  * For every theory `X`, the view `v: in(X) -> out(X)` is created include-preservingly and
-  * declaration-by-declaration.
-  * Views are not mapped at all.
+  * Concretely, it maps theories `X` in diagrams in an include- and structure-preserving way to views
+  * `v: in(X) -> out(X)`, where declaration-by-declaration every declaration of `X` is mapped to an assignment
+  * in `v` by means of `applyConstant()`.
   *
   * Implementors must implement/override
   *
-  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant]])
   *  - `translationView()`
   *
-  * and may override, among other methods, in particular
+  * and may override, among other methods, for reasons of preprocessing in particular
   *
   *  - `beginTheory()`
   *  - `beginStructure()`
   *
-  * @example In universal algebra, we can create the [[LinearModuleOperator]] `Sub(-)`
-  *          that maps an SFOL-theory `X` to its SFOL-theory of substructures `Sub(X)`.
-  *          But we can do more: for every mapped `X` we desire a view `sub_model: X -> Sub(X)`
-  *          that realizes models of `Sub(X)` (i.e. submodels of X-models) as models of `X` (i.e. models
-  *          of `X`) via predicate subtypes.
-  *          Note that creation of the connecting view is still linear in `X`.
-  *          You can use this trait to realzie exactly the creation of the `sub_model` connecting views.
-  *
-  *          Invariants so far:
-  *
-  *  - in and out have same domain/codomain
-  *  - applyDeclaration outputs declarations valid in a view (esp. for output FinalConstants that means they
-  *    have a definiens)
+  * A crucial requirement onto implementors is that both functors have the same domain: `in.dom == out.dom`.
   */
-trait LinearConnector extends LinearModuleOperator {
+trait LinearConnector extends LinearModuleOperator with LinearConnectorDSL {
   val in: Functor
   val out: Functor
 
-  lazy override val dom: Diagram = {
+  lazy override val dom: Diagram = { // lazy such that implementors can first initialize `in` and `out`
     if (in.dom != out.dom) {
       throw ImplementationError("Domains of in and out functors of a linear connector must match. But we got " +
         s"in.dom == `${in.dom}` and out.dom == `${out.dom}`.")
     }
     in.dom
   }
-  lazy override val cod: Diagram = {
+  lazy override val cod: Diagram = { // lazy such that implementors can first initialize `in` and `out`
+    // todo what value of cod should we choose?
     /* wrong, even for mere pushout:
     if (in.cod != out.cod) {
       throw ImplementationError("Codomains of in and out functors of a linear connector must match. But we got " +
@@ -61,33 +47,47 @@ trait LinearConnector extends LinearModuleOperator {
     in.cod
   }
 
-  def applyDomainTheory(thy: MPath): Term
   /**
-    * pre-conditions:
+    * A natural transformation between [[in.cod]] and [[out.cod]], indexed by theory expressions over [[dom]].
     *
-    *  - only applicable on theory expressions
-    *  - [[dom.hasImplicitFrom(t)]] must be true
-    * @param t
-    * @return
+    * @param t A theory expression over [[dom]], i.e., [[dom.hasImplicitFrom(t)]] is true.
+    * @return A morphism expression [[in.applyDomain(t)]] -> [[out.applyDomain(t)]].
+    * @see [[applyDomainModule]] for the base case of [[OMMOD]]s referencing [[MPath theory paths]].
     */
-  final def applyDomain(t: Term): Term = t match {
-    case OMMOD(p) /* ideally: only if p points to a theory */ => applyDomainTheory(p)
+  final override def applyDomain(t: Term): Term = t match {
+    case OMMOD(m) /* ideally: only if m points to a theory */ => OMMOD(applyDomainModule(m))
+    case _ => ???
   }
+
+  final override def applyModuleExpression(m: Term): Term = m match {
+    case OMMOD(m) => OMMOD(applyModulePath(m))
+    case _ => ???
+  }
+
+  // restate `applyDomainModule()` without implementing to refine superclass' documentation
+  /**
+    * A natural transformation between [[in.cod]] and [[out.cod]], indexed by [[MPath theory paths]] over [[dom]].
+    *
+    * The induced transformation indexed by *theory expressions* is given by [[applyDomain]].
+    *
+    * @param m A theory path over [[dom]], i.e., [[dom.hasImplicitFrom(m)]] is true.
+    * @return A path to a view [[in.applyDomainModule(m)]] -> [[out.applyDomainModule(m)]].
+    */
+  override def applyDomainModule(m: MPath): MPath
 
   /**
     * Creates a new output view that serves to contain the to-be-created assignments; called by
-    * [[beginContainer()]].
+    * [[beginContainer]].
     *
-    * You may override this method to do additional action.
+    * You may override this method to implement additional action.
     *
-    * @return The output view. If `Some(outView)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outView`.
-    *
-    * @example Some transformers need to add includes. They should
-    *          override the method as follows:
+    * @return The output view if the connector is applicable on `thy`. If it was and `Some(outView)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add]] on `outView` before returning.
+    * @example Some connectors choose to add includes at the beginning of every output view.
+    *          Those connectors can override [[beginTheory]] as follows:
     *          {{{
-    *            override protected def beginTheory(...): Option[View] = {
-    *              super.beginTheory(...).map(view => {
+    *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[View] = {
+    *              super.beginTheory(thy).map(view => {
     *                val include: Structure = /* ... */
     *                interp.add(include)
     *                interp.endAdd(include) // don't forget!
@@ -121,7 +121,7 @@ trait LinearConnector extends LinearModuleOperator {
         beginTheory(inTheory) match {
           case Some(outView) =>
             interp.addToplevelResult(outView)
-            transformedContainers += inTheory -> outView
+            mappedContainers += inTheory -> outView
             true
 
           case _ => false
@@ -130,12 +130,7 @@ trait LinearConnector extends LinearModuleOperator {
       // We accept structures, but don't create a special out container for them.
       // (Arguably the asymmetry stems from MMT that makes assignments to constants from structures
       //  be represented flatly in views.)
-      case _: Structure =>
-        // TODO still needed?
-        // to fulfill invariants of other code snippets, we have to put something
-        // arbitrary into processedElements
-        /*state.diagramState.processedElements.put(inContainer.path, inContainer)*/
-        true
+      case _: Structure => true
     }
   }
 
@@ -148,7 +143,7 @@ trait LinearConnector extends LinearModuleOperator {
     *   include ?S = ?v  |-> include in(?S) = out(?v) . conn(?S)  if ?S, ?v are both in input diagram
     * }}}
     *
-    * (In the last line, one path from the square of the commutativity of the natural transformation con -)
+    * (In the last line, one path from the square of the commutativity of the natural transformation c  -)
     *  is chosen. The other path could have been chosen as well.)
     *
     * We can handle the last two cases in a unified way as follows:
@@ -174,18 +169,14 @@ trait LinearConnector extends LinearModuleOperator {
     * whether it works.)
     */
   final override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
-    val ctrl = interp.ctrl // shorthand
+    val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
-    // only need to connect undefined declarations
-    if (include.df.nonEmpty) {
+    if (include.df.nonEmpty) // nothing to do
       return
-    }
 
-    if (include.args.nonEmpty) {
-      // unsure what to do
-      ???
-    }
+    if (include.args.nonEmpty)
+      throw new NotImplementedError("Parametric includes not supported by linear diagram operators yet")
 
     val (newFrom, newDf) = include.from match {
       case from if dom.hasImplicitFrom(from) =>
@@ -194,7 +185,7 @@ trait LinearConnector extends LinearModuleOperator {
         if (library.hasImplicit(applyDomain(OMMOD(from)), OMMOD(in.applyModulePath(container.path.toMPath))))
           return
 
-        (in.applyDomain(OMMOD(from)).toMPath, applyDomain(OMMOD(from)))
+        (in.applyDomainModule(from), applyDomain(OMMOD(from)))
 
       case from =>
         val newDf = applyModule(ctrl.getModule(from)).map(m => {
@@ -213,24 +204,28 @@ trait LinearConnector extends LinearModuleOperator {
     outputInclude.setOrigin(GeneratedFrom(structure.path, this))
     interp.add(outputInclude)
     interp.endAdd(outputInclude)
-
-    /* TODO: in case we ever desire to map defined includes, too, here's how I did in the past
-    val newDf: Term = include.df.getOrElse(OMIDENT(OMMOD(include.from))) match {
-      case OMMOD(v) if diagramState.seenModules.contains(v) =>
-        // even though we, as a connector, don't act on views, for consistency, we call applyModule nonetheless
-        applyModule(ctrl.getModule(v))
-        // todo: in which order does OMCOMP take its arguments? (Document this, too!)
-        OMCOMP(OMMOD(out.applyModulePath(v)), OMMOD(applyModulePath(include.from)))
-
-      case OMIDENT(OMMOD(thy)) if diagramState.seenModules.contains(thy) =>
-        OMMOD(applyModulePath(include.from))
-
-      case OMIDENT(OMMOD(p)) if in.operatorDomain.hasImplicitFrom(p) =>
-        applyMetaModule(OMIDENT(OMMOD(p)))
-
-      case _ => ???
-    }*/
   }
+}
+
+/**
+  * A [[LinearConnector]] from the identity functor to a given functor [[InwardsLinearConnector.out]].
+  */
+trait InwardsLinearConnector extends LinearConnector {
+  val out: Functor
+  lazy override val in: Functor = LinearFunctor.identity(out.dom) // lazy to allow implementors to first initialize `out`
+}
+
+/**
+  * A [[LinearConnector]] from a given functor [[OutwardsLinearConnector.in]] to the identity functor.
+  */
+trait OutwardsLinearConnector extends LinearConnector {
+  val in: Functor
+  lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to allow implementors to first initialize `in`
+}
+
+// todo(NR,FR) review this together
+trait LinearConnectorDSL {
+  this: LinearModuleOperator =>
 
   // some helper DSL
   def assgn(p: GlobalName, assignment: Term): Constant = {
@@ -241,14 +236,4 @@ trait LinearConnector extends LinearModuleOperator {
       rl = None, notC = NotationContainer.empty(), vs = Visibility.public
     )
   }
-}
-
-trait InwardsLinearConnector extends LinearConnector {
-  val out: Functor
-  lazy override val in: Functor = LinearFunctor.identity(out.dom) // lazy to let first `out` initialize
-}
-
-trait OutwardsLinearConnector extends LinearConnector {
-  val in: Functor
-  lazy override val out: Functor = LinearFunctor.identity(in.dom) // lazy to let first `in` initialize
 }

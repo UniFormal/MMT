@@ -53,7 +53,7 @@ class CompositionalTranslation(
         if (starXGenerated) Some(OMV(star(x))) else None
 
       case Univ(1) => Some(Arrow(target, Univ(1)))
-      // needs to come after case for Univ(1) (to prevent matching on LF's type symbol)
+      // needs to come after case for Univ(1) (to prevent matching on LF's `type` symbol)
       case OMS(p) => map(p).map(ApplySpine.orSymbol(_, target: _*))
 
       case OMBIND(binder, boundCtx, body) =>
@@ -84,7 +84,7 @@ class CompositionalTranslation(
 
         apply(ctx, newTarget, f)
 
-      case _ => ???
+      case _ => None
     }
   }
 

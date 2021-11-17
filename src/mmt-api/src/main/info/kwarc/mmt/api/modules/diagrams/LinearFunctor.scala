@@ -7,41 +7,39 @@ import info.kwarc.mmt.api.objects.{Context, OMCOMP, OMIDENT, OMMOD, OMS, Term}
 import info.kwarc.mmt.api.symbols._
 import info.kwarc.mmt.api._
 
-// TODO: document setOrigin usage
-
 /**
-  * Linearly transforms theories to theories, and views to views.
-  * A functor on diagrams, which acts include-preservingly and declaration-by-declaration in theories
-  * and views.
+  * A functor that linearly maps theories to theories and views to views.
+  *
+  * Concretely, it maps diagrams over [[ModuleOperator.dom]] to diagrams over [[ModuleOperator.cod]]
+  * (both inherited fields) in an include- and structure-preserving way, declaration-by-declaration.
   *
   * Implementors must implement
   *
-  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant()]])
+  *  - `applyConstant()` (inherited as [[LinearOperator.applyConstant]])
   *
-  * and may override, among other methods, in particular
+  * and may override, among other methods, for reasons of preprocessing in particular
   *
   *  - `beginTheory()`
   *  - `beginView()`
   *  - `beginStructure()`
   */
-trait LinearFunctor extends LinearModuleOperator with Functor {
+trait LinearFunctor extends LinearModuleOperator with Functor with LinearFunctorDSL {
   /**
     * Creates a new output theory that serves to contain the to-be-mapped declarations; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
-    * You may override this method to do additional action.
+    * You may override this method to implement additional action.
     *
-    * @return The output theory. If `Some(outTheory)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outTheory`.
+    * @return The output theory if the functor is applicable on `thy`. If it was and `Some(outTheory)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add]] on `outTheory` before returning.
+    * @example Some functors choose to add includes at the beginning of every output theory, and
+    *          correspondingly an include assignment at the beginning of every output view.
     *
-    * @example Some transformers need to add includes at the beginning of every theory, and
-    *          correspondingly an include assignment at the beginning of every view.
-    *
-    *          The transformers can override [[beginTheory()]] and [[beginView()]] as follows:
+    *          Those functors can override [[beginTheory]] and [[beginView]] as follows:
     *          {{{
     *            val additionalTheory: MPath
     *
-    *            override protected def beginTheory(thy: Theory, state: LinearState)(implicit interp: DiagramInterpreter): Option[Theory] = {
+    *            override protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     *              super.beginTheory(thy, state).map(outTheory => {
     *                val include = PlainInclude(additionalTheory, outTheory.path)
     *                interp.add(include)
@@ -50,7 +48,7 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *              })
     *            }
     *
-    *            override protected def beginView(view: View, state: LinearState)(implicit interp: DiagramInterpreter): Option[View] = {
+    *            override protected def beginView(view: View)(implicit interp: DiagramInterpreter): Option[View] = {
     *              super.beginView(view, state).map(outView => {
     *                val include = Include.assignment(
     *                  outView.toTerm,
@@ -62,14 +60,14 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
     *
     *                outView
     *              })
-    *          }}}
+    *           }}}
     */
   protected def beginTheory(thy: Theory)(implicit interp: DiagramInterpreter): Option[Theory] = {
     val outPath = applyModulePath(thy.path)
     val newMeta = thy.meta.map {
-      case mt if dom.hasImplicitFrom(mt)(interp.ctrl.library) =>
+      case mt if dom.hasImplicitFrom(mt)(interp.ctrl.library) => // meta theory is subsumed by functor's domain
         applyDomain(OMMOD(mt)).toMPath
-      case mt =>
+      case mt => // otherwise, recurse into meta theory
         if (applyModule(interp.ctrl.getModule(mt)).isEmpty) {
           interp.errorCont(InvalidElement(thy, s"Theory had meta theory `$mt` for which there " +
             s"was no implicit morphism into `$dom`. Recursing into meta theory as usual " +
@@ -89,14 +87,12 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
 
   /**
     * Creates a new output view that serves to contain the to-be-mapped assignments; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
-    * @return The output view. If `Some(outView)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outView`.
+    * @return The output view if the functor was applicable on `view`. If it was and `Some(outView)` is returned, then
+    *         this method must have called [[DiagramInterpreter.add `interp.add(outView)`]] before returning.
     *
-    * You may override this method to do additional action.
-    *
-    * @see [[beginTheory()]] for an example
+    * You may override this method to implement additional action, see documentation at [[beginTheory]].
     */
   protected def beginView(view: View)(implicit interp: DiagramInterpreter): Option[View] = {
     if (applyModule(interp.ctrl.getModule(view.from.toMPath)).isEmpty) {
@@ -122,14 +118,13 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
 
   /**
     * Creates a new output structure that serves to contain the to-be-mapped assignments; called by
-    * [[beginModule()]].
+    * [[beginModule]].
     *
     * @return The output structure. If `Some(outStructure)` is returned, you must have called
-    *         [[DiagramInterpreter.add()]] on `outStructure`.
+    *         [[DiagramInterpreter.add]] on `outStructure`.
     *
-    * You may override this method to do additional action.
-    *
-    * @see [[beginTheory()]], [[beginView()]]
+    * You may override this method to implement additional action, see documentation at [[beginTheory]].
+    * @see [[beginTheory]], [[beginView]]
     */
   protected def beginStructure(s: Structure)(implicit interp: DiagramInterpreter): Option[Structure] = s.tp.flatMap {
     case OMMOD(structureDomain) =>
@@ -155,31 +150,22 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
 
   /**
     * Creates a new output module that serves to contain the to-be-mapped assignments; called by
-    * [[beginContainer()]].
+    * [[beginContainer]].
     *
-    * @see [[beginTheory()]], [[beginView()]], [[beginStructure()]].
+    * @see [[beginTheory]], [[beginView]], [[beginStructure]].
     */
   private def beginModule(inModule: Module)(implicit interp: DiagramInterpreter): Option[Module] = {
-    /* TODO if (!diagramState.seenModules.contains(inModule.path)) {
-      interp.errorCont(InvalidElement(
-        inModule,
-        "unbound module not in input diagram"
-      ))
-      return None
-    }*/
-
     (inModule match {
       case thy: Theory => beginTheory(thy)
       case view: View => beginView(view)
     }).map(outModule => {
-      transformedContainers += inModule -> outModule
       interp.addToplevelResult(outModule)
       outModule
     })
   }
 
   /**
-    * See superclass documentation, or [[beginContainer()]].
+    * @inheritdoc [[LinearModuleOperator.beginContainer]]
     */
   final override def beginContainer(inContainer: Container)(implicit interp: DiagramInterpreter): Boolean = {
     val outContainer = inContainer match {
@@ -189,61 +175,45 @@ trait LinearFunctor extends LinearModuleOperator with Functor {
 
     outContainer match {
       case Some(outContainer) =>
-        transformedContainers += inContainer -> outContainer
+        mappedContainers += inContainer -> outContainer
         true
 
       case _ => false
     }
   }
 
-  /**
-    *
-    * {{{
-    *   include ?opDom [= E]  |-> include ?opCod [= E']
-    *   include ?S [= E]      |-> include ?S [= E']         if there is an implicit morphism ?S -> ?opDom (case probably wrong)
-    *   include ?S [= E]      |-> include ?op(S) [= E']     if ?S is in input diagram
-    * }}}
-    *
-    * and E via
-    * {{{
-    *   OMIDENT(?opDom)       |-> OMIDENT(?opCod)
-    *   OMIDENT(?S)           |-> OMIDENT(?S)              if there is an implicit morphisim ?S -> ?opDom (case probably wrong)
-    *   OMIDENT(?S)           |-> OMIDENT(?op(S))          if ?T is in input diagram
-    *   ?v                    |-> ?op(v)                   if ?v is in input diagram
-    * }}}
-    */
   override def applyIncludeData(include: IncludeData, structure: Structure, container: Container)(implicit interp: DiagramInterpreter): Unit = {
     val ctrl = interp.ctrl
     implicit val library: Lookup = ctrl.library
 
-    if (include.args.nonEmpty) ???
-/*
+    if (include.args.nonEmpty)
+      throw new NotImplementedError("Parametric includes not supported by linear diagram operators yet")
 
-TODO: problem: unbound includes cannot be noticed anymore since we have no information of what the current input diagram is
-*/
-    def tr(t: Term): Term = t match {
-      // base cases
-      case t if dom.hasImplicitFrom(t) => applyDomain(t)
-      case OMMOD(from) =>
+    def handleFrom(from: MPath): Term = {
+      if (dom.hasImplicitFrom(from)) applyDomain(OMMOD(from))
+      else {
         applyModule(ctrl.getModule(from)).map(m => {
           inheritState(container.modulePath, from)
           m.toTerm
         }).getOrElse(OMMOD(from)) // when applyModule is inapplicable, default to leaving include data as-is
-
-      // complex cases
-      case OMCOMP(mors) => OMCOMP(mors.map(tr))
-      case OMIDENT(t) => OMIDENT(tr(t))
+      }
     }
 
-    val newFrom = tr(OMMOD(include.from))
-    val newDf = include.df.map(tr)
+    def handleDf(t: Term): Term = t match {
+      case OMCOMP(mors) => OMCOMP(mors.map(handleDf))
+      case OMIDENT(t) => OMIDENT(handleDf(t))
+      case _ => ???
+    }
+
+    val newFrom = handleFrom(include.from)
+    val newDf = include.df.map(handleDf)
 
     val s = Structure(
       home = OMMOD(applyModulePath(container.modulePath)),
-      name = LocalName(newFrom.toMPath), // TODO NR@FR: does this `name` make sense?
+      name = LocalName(newFrom.toMPath), // TODO NR@FR: does this `name` make sense? esp. for views?
       from = newFrom,
       df = newDf,
-      isImplicit = if (container.isInstanceOf[Theory]) true else false,
+      isImplicit = if (container.isInstanceOf[Theory]) true else false, // theory includes are always implicit
       isTotal = include.total
     )
     s.setOrigin(GeneratedFrom(structure.path, this))
@@ -255,6 +225,30 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       interp.endAdd(s)
     }
   }
+}
+
+object LinearFunctor {
+  /**
+    * The no-op identity linear functor for a given domain/codomain diagram.
+    *
+    * This method comes in handy when overriding the `in` or `out` field of [[LinearConnector]] implementations.
+    */
+  def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
+    override def applyModuleName(name: LocalName): LocalName = name
+
+    override val dom: Diagram = domain
+    override val cod: Diagram = domain
+    override def applyDomainModule(m: MPath): MPath = m
+
+    override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = List(c)
+  }
+
+  def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))
+}
+
+// todo(NR,FR) review this together
+trait LinearFunctorDSL {
+  this: LinearModuleOperator =>
 
   // some helper DSL
   def const(p: GlobalName, tp: Term, df: Option[Term])(implicit interp: DiagramInterpreter): Constant = {
@@ -322,16 +316,16 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
   /**
     * Utilities and DSL to systematically rename constants in [[LinearOperator]]s.
     *
-    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration()]]
-    * or methods called therein; in particular [[LinearOperator.applyConstant()]],
-    * [[SimpleLinearModuleTransformer.applyConstantSimple()]], and
-    * [[SimpleLinearConnectorTransformer.applyConstantSimple()]].
+    * These utilities are meant to be invoked within [[LinearOperator.applyDeclaration]]
+    * or methods called therein; in particular [[LinearOperator.applyConstant]],
+    * [[SimpleLinearModuleTransformer.applyConstantSimple]], and
+    * [[SimpleLinearConnectorTransformer.applyConstantSimple]].
     *
     * Only renames constants seen so far while processing (incl. the declaration being processed
     * right now).
     * Concretely, the methods herein depend on declarations being added to
-    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration()]].
-    * See also the pre-condition of [[LinearOperator.applyDeclaration()]].
+    * `state.processedDeclarations` *before* they are passed to [[LinearOperator.applyDeclaration]].
+    * See also the pre-condition of [[LinearOperator.applyDeclaration]].
     *
     * @todo add example
     */
@@ -344,7 +338,7 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
   }
 
   /**
-    * usually used like ''connector.applyModulePath(expressionContext(c))'' within [[applyConstant()]].
+    * usually used like ''connector.applyModulePath(expressionContext(c))'' within [[applyConstant]].
     * @param c
     * @param interp
     * @return
@@ -355,23 +349,4 @@ TODO: problem: unbound includes cannot be noticed anymore since we have no infor
       case l: Link => l.to
     }
   }
-}
-
-object LinearFunctor {
-  /**
-    * No-op identity [[LinearOperator transformer]] on some diagram.
-    *
-    * Its purpose is to serve for the `in` or `out` field of [[LinearConnector]]s.
-    */
-  def identity(domain: Diagram): LinearFunctor = new LinearFunctor {
-    override def applyModuleName(name: LocalName): LocalName = name
-
-    override val dom: Diagram = domain
-    override val cod: Diagram = domain
-    override def applyDomainModule(m: MPath): MPath = m
-
-    override def translateConstant(c: Constant)(implicit interp: DiagramInterpreter): List[Declaration] = List(c)
-  }
-
-  def identity(domainTheory: MPath): LinearFunctor = identity(Diagram(List(domainTheory), None))
 }

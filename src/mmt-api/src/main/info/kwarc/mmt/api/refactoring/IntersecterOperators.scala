@@ -7,16 +7,16 @@ package info.kwarc.mmt.api.refactoring
 
 import info.kwarc.mmt.api.{GlobalName, InvalidElement, InvalidObject, Path}
 import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, NamedDiagramOperator}
+import info.kwarc.mmt.api.modules.diagrams.{Diagram, DiagramInterpreter, NamedOperator}
 import info.kwarc.mmt.api.modules.{Module, View}
 import info.kwarc.mmt.api.objects.{OMA, OMMOD, OMS, Term}
 
-private abstract class IntersecterOperator extends NamedDiagramOperator {
+private abstract class IntersecterOperator extends NamedOperator {
   protected def getIntersecter(ctrl: Controller): Intersecter
 
-  override def apply(diagram: Term)(implicit interp: DiagramInterpreter, ctrl: Controller): Option[Term] = diagram match {
+  override def apply(diagram: Term)(implicit interp: DiagramInterpreter): Option[Term] = diagram match {
     case OMA(OMS(`head`), List(OMMOD(intersectionViewPath))) =>
-      val intersectionView = ctrl.getO(intersectionViewPath) match {
+      val intersectionView = interp.ctrl.getO(intersectionViewPath) match {
         case Some(v: View) => v
         case Some(e) =>
           interp.errorCont(InvalidElement(e, s"Path given to Intersecter does not resolve to a View, but instead to `$e`"))
@@ -40,7 +40,7 @@ private abstract class IntersecterOperator extends NamedDiagramOperator {
 }
 
 /**
-  * Exposes [[UnaryIntersecter]] as a [[NamedDiagramOperator]].
+  * Exposes [[UnaryIntersecter]] as a [[NamedOperator]].
   *
   * Usage: `[notation for head symbol] ?intersectionView`.
   */
@@ -58,7 +58,7 @@ private object UnaryIntersecterOperator extends IntersecterOperator {
 }
 
 /**
-  * Exposes [[BinaryIntersecter]] as a [[NamedDiagramOperator]].
+  * Exposes [[BinaryIntersecter]] as a [[NamedOperator]].
   *
   * Usage: `[notation for head symbol] ?intersectionView`.
   */

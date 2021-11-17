@@ -1,172 +1,58 @@
 package info.kwarc.mmt.api.modules.diagrams
 
-/*
-  * Diagram operators implementation:
-  *
-  * in mmt-api, it consists of files {Diagram, DiagramState, DiagramTransformer, FunctorialOperator, StandardOperators}.scala.
-  *
-  *
-  * Design decisions
-  * ====================
-  *
-  * - separation into named and anonymous operators in Operators.scala and LinearTransformer.scala,
-  *   respectively.
-  *
-  *   Named operators are associated to an MMT symbol and inherit SyntaxDrivenRule.
-  *
-  * - use cases of anonymous operators so far:
-  *
-  *   - named parametric operators that create anonymous (parametrized!) operators on-the-fly at runtime
-  *
-  * - Parametric operators *cannot* be implemented by ParametricRules:
-  *
-  *   For parametric operators, you'd like to load them once via ''rule scala://...ParametricOperator''
-  *   and to be able to use them afterwards with *arbitrary* parameters.
-  *   If they were ParametricRules, you'd have to have a ''rule'' declaration every time you'd like
-  *   to use the operator with a different set of parameters.
-  *
-  * - DiagramState is complicated because you'd like every operator to be able to carry its own state
-  *   (which might be more than the default state) while ensuring type safety.
-  *
-  * - Invariant of operator states:
-  *
-  *   - operator states are a mathematical function of the context (i.e. pure)
-  *   - we should throw the states away after processing ''diagram'' declarations
-  *     => if later another ''diagram'' declaration appears that necessitates some of the thrown away
-  *     states, we just recompute
-  */
-
 import info.kwarc.mmt.api._
-import info.kwarc.mmt.api.checking._
-import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.libraries.Lookup
 import info.kwarc.mmt.api.modules.Module
-import info.kwarc.mmt.api.notations.Marker
 import info.kwarc.mmt.api.objects._
-import info.kwarc.mmt.api.presentation.ConsoleWriter
 import info.kwarc.mmt.api.symbols._
-import info.kwarc.mmt.api.uom.{FlexaryConstantScala, SimplificationEnvironment, SimplificationUnit, UnaryConstantScala}
-import info.kwarc.mmt.api.utils.URI
-import info.kwarc.mmt.api.web.SyntaxPresenterServer
 
 import scala.collection.mutable
 
-object InstallDiagram {
-  val feature: String = "diagram"
-
-  def saveOutput(diagFeaturePath: MPath, diagram: Diagram)(implicit library: Lookup): Unit = {
-    library.getModule(diagFeaturePath).dfC.normalized = Some(diagram.toTerm)
-  }
-
-  /**
-    * Parses the output of a previously elaborated [[InstallDiagram]] structural feature.
-    *
-    * @throws GetError if the module referenced by diagramModulePath cannot be found
-    * @throws InvalidElement if the module doesn't correspond to a usage of the Diagram structural feature
-    * @throws InvalidElement if the module hasn't been elaborated before
-    * @return All module entries of the output diagram (as were the result of elaboration before).
-    */
-  def parseOutput(diagPath: MPath)(implicit library: Lookup): Diagram = {
-    val diagModule = library.get(diagPath) match {
-      case diagModule: DerivedModule if diagModule.feature == InstallDiagram.feature =>
-        diagModule
-
-      case s => throw InvalidElement(s, s"referenced diagram DerivedModule `$s` not a derived module or doesn't have diagram feature")
-    }
-
-    diagModule.dfC.normalized match {
-      case Some(DiagramTermBridge(diag)) => diag
-
-      case Some(t) =>
-        throw InvalidObject(t, "not a valid output in dfC of diagram structural feature")
-
-      case None =>
-        throw InvalidElement(diagModule, "referenced diagram DerivedModule doesn't have definiens. Have you run the Elaborator on it? In case the diagram is given in a file, have you built the file? (note that diagrams aren't written to OMDoc yet, so you always need to rebuild upon runtime.")
-    }
-  }
-}
-
 /**
-  * Module-level structural feature for installing diagrams into the ambient theory graph.
+  * A diagram of MMT [[Module]]s given by [[MPath module paths]] -- an atomic [[DiagramInterpreter diagram expression]].
+  * In most cases, the diagram consists of [[info.kwarc.mmt.api.modules.Theory theories]] and
+  * [[info.kwarc.mmt.api.modules.View views]].
   *
-  * @todo Navid: add example
-  */
-class InstallDiagram extends ModuleLevelFeature(InstallDiagram.feature) {
-  override def getHeaderNotation: List[Marker] = Nil
-  /** */
-  def check(dm: DerivedModule)(implicit env: ExtendedCheckingEnvironment): Unit = {}
-
-  override def modules(dm: DerivedModule, rules: Option[RuleSet], env: SimplificationEnvironment): List[Module] = {
-    val df = dm.dfC.normalized.getOrElse(throw LocalError(s"diagram structural feature requires definiens (did you perhaps type = instead of :=?)"))
-
-    // shadow rule parameter as [[ElaborationBasedSimplifier.applyElementEnd()]] always passes None so far
-    val rules = RuleSet.collectRules(controller, dm.getInnerContext)
-    val diagInterp = new DiagramInterpreter(dm.getInnerContext, rules, controller, env.errorCont)
-
-    diagInterp(df) match {
-      case Some(outputDiagram) =>
-        InstallDiagram.saveOutput(dm.path, outputDiagram)(controller.library)
-
-        // This contains all toplevel results (instead of merely outputDiagram.modules, which
-        // potentially has less results, e.g. because of a focussed ZippingOperator)
-        val outputModules = diagInterp.toplevelResults
-
-        // syntax-present all modules for debugging
-        outputModules.foreach(controller.presenter(_)(ConsoleWriter)) // use outputModules here, not diagInterp.toplevelResults
-                                                                      // TODO: investigate why they differ
-        println(s"""
-
-${this.getClass.getSimpleName} debug
--------------------------------------
-input: $df
-operators in scope: ${rules.get(classOf[NamedDiagramOperator]).map(op => op.getClass.getSimpleName).mkString(", ")}
-
-all output    : see above
-primary output: see ${SyntaxPresenterServer.getURIForDiagram(URI("http://localhost:8080"), dm.path)}, or here:
-                $outputDiagram
--------------------------------------
-
-""")
-
-        outputModules
-
-      case None =>
-        env.errorCont(InvalidElement(dm, "Diagram operator returned None"))
-        Nil
-    }
-  }
-}
-
-/**
-  * A diagram of MMT [[Module]]s over some optional meta diagram.
+  * Diagrams serve as inputs and outputs of [[UnaryOperator]]s.
+  * [[LinearFunctor]]s furthermore use diagrams to specify their domain and codomain;
+  * upon application, they translate diagrams *over* their domain diagram to diagrams *over* their codomain diagram.
+  * For this reason, diagrams may have meta diagrams (by the parameter `mt`).
   *
-  * Among other uses, diagrams serve as the domain and codomain of most diagram operators, see
-  * [[RelativeBaseTransformer]] as the most general trait fleshing this out.
-  * If a diagram operator has domain `Dom`, then you may apply the operator to all diagrams
-  * `D` "that are over `Dom`". Concretely, the operator is applicable iff.
-  * `D.mt.exists(Dom.subsumes(_))`.
+  * Diagrams should be closed in the sense that all modules that are referenced from modules contained in this diagram
+  * should also be contained in this diagram or in the meta diagram `mt`.
+  * This is not a strict requirement, e.g., [[LinearFunctor]]s also work on unclosed diagrams, but their behavior might
+  * be unexpected (e.g., because functors are applied to modules [by recursing into module references] that had never
+  * been specified in the input diagram).
   *
-  * FUTURE WORK: diagrams may also contain commutativity assertions.
+  * In the future, diagrams might also contain commutativity assertions.
   *
-  * @param modules The contained [[Module]]s as referenced via their paths.
-  * @param mt Meta diagram
+  * @param modules The contained [[Module]]s given by their paths.
+  *                All module references occurring in `modules` should be
+  * @param mt Optional meta diagram. Diagrams to which [[LinearFunctor]]s are applied are usually expected to have
+  *           meta diagrams. Otherwise, inapplicability will be signaled in one way or another, see
+  *           [[LinearFunctor.applyDiagram]].
+  *
+  * @todo Specify which includes are part of the diagram, e.g. if a diagram contains theories S and T and T includes S,
+  *       must the diagram also contain the include? Some systems (Hets or Specware, not sure) allow to suppress such
+  *       includes in diagrams, which has an effect of applied operations (e.g., diagram operators, colimits).
   */
 sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
+  /** The term representation; short-hand for [[DiagramTermBridge.apply]]. */
   def toTerm: Term = DiagramTermBridge(this)
 
   /**
-    * All modules contained in this diagram and contained in all meta diagrams.
+    * All modules contained in the diagram and (recursively) in the meta diagram.
     */
   lazy val getAllModules: Set[MPath] = modules.toSet ++ mt.map(_.getAllModules).getOrElse(Set.empty[MPath])
 
   def hasImplicitFrom(source: Term)(implicit lookup: Lookup): Boolean = {
     getAllModules.exists(m => lookup.hasImplicit(source, OMMOD(m)))
   }
+  def hasImplicitFrom(source: MPath)(implicit lookup: Lookup): Boolean = hasImplicitFrom(OMMOD(source))
+
   def hasImplicitTo(target: Term)(implicit lookup: Lookup): Boolean = {
     getAllModules.exists(m => lookup.hasImplicit(OMMOD(m), target))
   }
-
-  def hasImplicitFrom(source: MPath)(implicit lookup: Lookup): Boolean = hasImplicitFrom(OMMOD(source))
   def hasImplicitTo(target: MPath)(implicit lookup: Lookup): Boolean = hasImplicitTo(OMMOD(target))
 
   def subsumes(other: Diagram)(implicit lookup: Lookup): Boolean = {
@@ -175,7 +61,7 @@ sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
   }
 
   /**
-    * Computes naive union, probably not what we want for long-term
+    * Computes the union by distinctly-unioning module paths and recursively unioning the meta diagrams.
     */
   def union(other: Diagram)(implicit lookup: Lookup): Diagram = {
     val newModules = (modules ++ other.modules).distinct
@@ -248,21 +134,27 @@ sealed case class Diagram(modules: List[MPath], mt: Option[Diagram] = None) {
 }
 
 object Diagram {
+  /** The empty diagram with no meta diagram. */
   val empty: Diagram = Diagram(List())
+  /** The singleton diagram of exactly one [[info.kwarc.mmt.api.modules.Theory theory]] with no meta diagram. */
   def singleton(theory: MPath): Diagram = Diagram(List(theory))
 
+  /** The union of multiple diagrams; equivalent to chaining the diagrams with [[Diagram.union()]]. */
   def union(diags: Seq[Diagram])(implicit lookup: Lookup): Diagram = diags.reduceLeft((d1, d2) => d1.union(d2))
 }
 
+// todo needed anyway?
 sealed case class DiagramFunctor(dom: Diagram, cod: Diagram, functor: Map[MPath, Term], metaFunctor: Option[DiagramFunctor] = None) {
   def apply(m: MPath): Term = apply(OMMOD(m))
   def apply(t: Term): Term = t match {
     case OMMOD(m) => functor.getOrElse(m, metaFunctor.map(_(m)).getOrElse(t)) // default to return input as-is
     case OMIDENT(m) => OMIDENT(apply(m))
     case OMCOMP(mors) => OMCOMP(mors.map(apply))
+    case _ => ???
   }
 }
 
+// todo needed anyway?
 object DiagramFunctor {
   def identity(dom: Diagram): DiagramFunctor = DiagramFunctor(
     dom,
@@ -272,7 +164,7 @@ object DiagramFunctor {
 }
 
 /**
-  *
+  * todo needed anyway?
   * @param functor
   * @param tx maps every theory `T` in [[functor.dom]] to a morphism from `T` to [[functor.apply() functor.apply(T)]]
   * @param metaConnection
@@ -289,6 +181,7 @@ sealed case class DiagramConnection(functor: DiagramFunctor, tx: Map[MPath, Term
   }
 }
 
+// todo needed anyway?
 object DiagramConnection {
   def identity(dom: Diagram): DiagramConnection = DiagramConnection(
     DiagramFunctor.identity(dom),
@@ -315,6 +208,15 @@ object DiagramConnection {
   }
 }
 
+/**
+  * Bridge with apply/unapply methods between [[Diagram]]s and [[Term]]s.
+  *
+  * Diagrams containing module paths `m1, ..., mn`
+  *
+  *  - without meta diagram are encoded as `OMA([[DiagramTermBridge.rawDiagram]], OMMMOD(m1), ..., OMMOD(mn))`.
+  *  - with meta diagram mt are encoded as `OMA([[DiagramTermBridge.basedDiagram]], |mt|, OMMOD(m1), ..., OMMOD(mn))`
+  *    where |mt| is the encoding of mt
+  */
 object DiagramTermBridge {
   val rawDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?raw_diagram")
   val basedDiagram: GlobalName = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?based_diagram")
@@ -330,10 +232,8 @@ object DiagramTermBridge {
   def unapply(t: Term): Option[Diagram] = t match {
     case OMA(OMS(`rawDiagram`), PathCodec(modules)) =>
       Some(Diagram(modules, None))
-
     case OMA(OMS(`basedDiagram`), DiagramTermBridge(baseDiagram) :: PathCodec(modules)) =>
       Some(Diagram(modules, Some(baseDiagram)))
-
     case _ => None
   }
 
@@ -347,6 +247,7 @@ object DiagramTermBridge {
   }
 }
 
+// todo move somewhere else
 object SymbolPaths {
   private val path = Path.parseS("http://cds.omdoc.org/urtheories?DiagramOperators?symbol_paths")
 

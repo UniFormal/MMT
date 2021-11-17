@@ -126,7 +126,7 @@ class LogrelConnector(config: LogrelConfiguration, index: Integer) extends Inwar
   require(0 <= index && index < config.arity)
 
   lazy override val out: LogrelFunctor = new LogrelFunctor(config)
-  override def applyDomainTheory(thy: MPath): Term = OMMOD(thy)
+  override def applyDomainModule(thy: MPath): MPath = thy
 
   override protected def applyModuleName(name: LocalName): LocalName =
     name.suffixLastSimple(s"_logrel_view$index") // / LogrelOperator.moduleSuffixFor(config) / s"view${index}"
