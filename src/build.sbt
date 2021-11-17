@@ -535,10 +535,12 @@ lazy val lfcatalog = (project in file("lfcatalog")).
 // =================================
 // experimental projects that are not part of the build file: 
 //
+// mmt-leo: obsolete
+// mmt-reflection: obsolete (but worth keeping until it is superseded by foundations that handle it properly)
+
+// The following were deleted from the devel branch 2021-11-17
 // hets-mmt: Aivaras's work for integrating with Hets, owned by DFKI but has become obsolete.
 // marpa-mmt:
 // mmt-guidedTours: obsolete
-// mmt-leo: obsolete
 // mmt-lfs: obsolete (has been merged into mmt-lf)
-// mmt-reflection: obsolete (but worth keeping until it is superseded by foundations that handle it properly)
 // =================================
