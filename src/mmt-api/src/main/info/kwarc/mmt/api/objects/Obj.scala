@@ -68,8 +68,14 @@ abstract class Obj extends Content with ontology.BaseType with ShortURIPrinter w
 
    /** the free variables of this object in any order */
    lazy val freeVars : List[LocalName] = freeVars_.distinct
+   /** the bound variables of this object in any order */
+   lazy val boundVars : List[LocalName] = boundVars_.distinct
+   /** all variables (free or bound) of this object in any order */
+   lazy val allVars : List[LocalName] = (freeVars_ ::: boundVars_).distinct
    /** helper function for freeVars that computes the free variables without eliminating repetitions */
    private[objects] def freeVars_ : List[LocalName]
+   /** helper function for boundVars that computes the bound variables without eliminating repetitions */
+   private[objects] def boundVars_ : List[LocalName]
    /** all direct subobjects of this object with their context (excluding any outer context of this object) */
    def subobjects: List[(Context,Obj)]
    /** auxiliary function for subobjects in the absence of binding */
@@ -133,6 +139,7 @@ case class OMID(path: ContentPath) extends Term {
    def head = Some(path)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def boundVars_ = Nil
    def subobjects = Nil
    override def toStr(implicit shortURIs: Boolean) = if (shortURIs) path.name.toStr else path.toString
    def toNode = path match {
@@ -174,6 +181,8 @@ case class OMBINDC(binder : Term, context : Context, scopes: List[Term]) extends
       OMBINDC(binder ^^ sub, newCon ^^ sub, scopes.map(_ ^^ subN)).from(this)
    }
    private[objects] lazy val freeVars_ = binder.freeVars_ ::: context.freeVars_ ::: scopes.flatMap(_.freeVars_).filterNot(x => context.isDeclared(x))
+   private[objects] lazy val boundVars_ = binder.boundVars_ ::: context.boundVars_ ::: context.variables.map(_.name).toList ::: scopes.flatMap(_.boundVars_)
+
    def subobjects = ComplexTerm.subobjects(this) getOrElse {
      (Context(), binder) :: context.subobjects ::: scopes.map(s => (context, s))
    }
@@ -205,6 +214,7 @@ case class OMA(fun : Term, args : List[Term]) extends Term {
       </om:OMA>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMA(fun ^^ sub, args.map(_ ^^ sub)).from(this)
    private[objects] lazy val freeVars_ = fun.freeVars_ ::: args.flatMap(_.freeVars_)
+   private[objects] lazy val boundVars_ = fun.boundVars_ ::: args.flatMap(_.boundVars_)
    def subobjects = ComplexTerm.subobjects(this) getOrElse subobjectsNoContext(fun :: args)
 }
 
@@ -246,6 +256,7 @@ case class OMV(name : LocalName) extends Term {
            case None => this
        }
    private[objects] def freeVars_ = List(name)
+   private[objects] def boundVars_ = Nil
    def subobjects = Nil
 }
 
@@ -274,6 +285,7 @@ case class OMATTR(arg : Term, key : OMID, value : Term) extends Term {
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = OMATTR(arg ^^ sub, key, value ^^ sub).from(this)
    def subobjects = List(arg, key, value).map(s => (Context(), s))
    private[objects] def freeVars_ = arg.freeVars_ ::: value.freeVars
+   private[objects] def boundVars_ = arg.boundVars_ ::: value.boundVars
 }
 
 /** apply/unapply methods for a list of attributions */
@@ -300,6 +312,7 @@ sealed trait OMLITTrait extends Term {
    def toNode = addAttrOrChild(<om:OMLIT value={toString}/>, "type", synTypeXML)
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def boundVars_ = Nil
    def subobjects = Nil
 
    /** checks equality, including the case [[OMLIT]] =?= [[UnknownOMLIT]] */
@@ -351,6 +364,7 @@ case class OMFOREIGN(node : Node) extends Term {
    def toNode = <om:OMFOREIGN>{node}</om:OMFOREIGN>
    def substitute(sub : Substitution)(implicit sa: SubstitutionApplier) = this
    private[objects] def freeVars_ = Nil
+   private[objects] def boundVars_ = Nil
    def subobjects = Nil
 }
 
@@ -368,6 +382,7 @@ case class OMSemiFormal(tokens: List[SemiFormalObject]) extends Term with SemiFo
       OMSemiFormal(newtokens).from(this)
    }
    private[objects] def freeVars_ = tokens.flatMap(_.freeVars)
+   private[objects] def boundVars_ = tokens.flatMap(_.boundVars)
    def subobjects = {
       val terms = tokens.flatMap {
          case Formal(t) => List(t)
@@ -393,7 +408,8 @@ case class OML(name: LocalName, tp: Option[Term], df: Option[Term], nt: Option[T
      * Get a [[VarDecl]] representation of this OML, e.g. for insertion into a [[Context]].
      */
     def vd = VarDecl(name, featureOpt, tp, df, nt).from(this)
-    private[objects] def freeVars_ = vd.freeVars
+   private[objects] def freeVars_ = vd.freeVars
+   private[objects] def boundVars_ = vd.boundVars
     def head = None
     def subobjects = subobjectsNoContext(vd.tp.toList ::: vd.df.toList)
     def substitute(sub: Substitution)(implicit sa: SubstitutionApplier) = OML(name, tp map (_ ^^ sub), df map (_ ^^ sub),nt,featureOpt)
