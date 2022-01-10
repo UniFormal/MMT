@@ -127,7 +127,7 @@ object StandardArgumentChecker extends ArgumentChecker {
  *
  * This rule works for B:U for any universe U
  *
- * This rule implements currying and all arguments at once
+ * This rule implements currying and checks all arguments at once
  */
 class GenericApplyTerm(conforms: ArgumentChecker) extends InferenceAndTypingRule(Apply.path, OfType.path) {
    def apply(solver: Solver, tm: Term, tpO: Option[Term], covered: Boolean)(implicit stack: Stack, history: History) : (Option[Term], Option[Boolean]) = {
@@ -613,4 +613,19 @@ object TheoryTypeWithLF extends ComputationRule(ModExp.theorytype) {
          if (params.isEmpty) Recurse else Simplify(Pi(params, TheoryType(Nil)))
       case _ => Simplifiability.NoRecurse
    }
+}
+
+/**
+  * Removes unnecessary occurrences of [[Pi]]s.
+  * E.g., over the signature `{A: type, B: type}`, the [[Pi]] in `Πx: A. B`
+  * is unnecessary and can be replaced by an [[Arrow]] `A -> B`.
+  */
+object RemoveUnusedPi extends SimplificationRule(Pi.path) {
+  override def apply(context: Context, t: Term): Simplifiability = t match {
+    case Pi(name, tp, body) =>
+      if (body.freeVars.contains(name)) Simplifiability.NoRecurse
+      else Simplify(Arrow(tp, body))
+
+    case _ => Simplifiability.NoRecurse
+  }
 }

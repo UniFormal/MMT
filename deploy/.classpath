@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<classpath>
-	<classpathentry exported="true" kind="lib" path="lib/tiscaf.jar"/>
-	<classpathentry kind="con" path="org.scala-ide.sdt.launching.SCALA_CONTAINER"/>
-	<classpathentry exported="true" kind="lib" path="lib/scala-parser-combinators.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/scala-xml.jar"/>
-	<classpathentry kind="output" path="bin"/>
-</classpath>

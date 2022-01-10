@@ -88,6 +88,9 @@ trait Extension extends Logger {
   /** extension-specific initialization (override as needed, empty by default) */
   def start(args: List[String]) {}
 
+  /** called when the controller is cleared; extensions must still be operational after processing this call */
+  def clear {}
+
   /** extension-specific cleanup (override as needed, empty by default)
     *
     * Extensions may create persistent data structures and threads,
@@ -346,6 +349,10 @@ class ExtensionManager(controller: Controller) extends Logger {
     ).foreach{e => addExtension(e)}
     // This **must** be at the end, to act as a default for stuff
     addExtension(GetActionCompanion)
+  }
+
+  def clear {
+    extensions.foreach(_.clear)
   }
 
   def cleanup {

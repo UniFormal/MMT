@@ -40,7 +40,6 @@ object SyntaxPresenterServer {
   *
   * (NB: if you are running the MMT server at another address/port, read ''localhost:8080'' in your mind accordingly.)
   *
-  * @author ComFreek
   * @example Suppose you have ''theory T = c: type ❙❚'' in one of your MMT files with namespace
   *          ''https://example.com''.
   *          Then, after loading the containing archive, you can access
@@ -49,6 +48,7 @@ object SyntaxPresenterServer {
   *          [[http://localhost:8080/:syntax?element=https://example.com?T?c]].
   *          In general, this server works for arbitrary MMT [[Path]]s
   *          to view all the outputs added by the diagram feature to the ambient theory graph.
+  * @author ComFreek
   */
 class SyntaxPresenterServer extends ServerExtension(SyntaxPresenterServer.pathPrefix) {
   final override val logPrefix = pathPrefix

@@ -232,9 +232,11 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
     val indentedRh = indented(rh)
     theory.getDeclarations.foreach { d =>
-      if (!d.isGenerated || presentGenerated) {
+      // if (!d.isGenerated || presentGenerated) {
+      // TODO(NR@anyone): I deactivated this because now all diagops output
+      //     is marked as generated, thus hidden
         present(d, indentedRh)
-      }
+      // }
     }
     rh("\n")
   }
@@ -252,7 +254,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
     rh(" \n")
 
     val indentedRh = indented(rh)
-    val declarations = if (presentGenerated) view.getDeclarations else view.getPrimitiveDeclarations
+    // TODO(NR@anyone): I deactived this, too
+    val declarations = /*if (presentGenerated)*/ view.getDeclarations /*else view.getPrimitiveDeclarations*/
     declarations.foreach {
       case c: Constant =>
         // We want to avoid presenting types here, hence manually call doConstant and endDecl
@@ -375,12 +378,8 @@ class MMTSyntaxPresenter(objectPresenter: ObjectPresenter = new NotationBasedPre
 
     // present all elements
 
-    // Only present last component of the name to avoid clutter.
-    //
-    // Otherwise, in particular for view assignments (which are constants after all),
-    // we have the problem that these encode the domain of the assigned symbol as a ComplexStep
-    // in the name.
-    rh(c.name.last.toString)
+    // only present a simplified (possibly ambiguous) variant of the name to remain readable for humans.
+    rh(c.name.dropComplex.toString)
 
     val indentedRh = indented(rh)
     elements.zipWithIndex.foreach { case (renderFunction, index) =>

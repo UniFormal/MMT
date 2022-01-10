@@ -12,9 +12,13 @@ case class Ambiguous(notations: List[ParsingRule]) extends {
 
 import info.kwarc.mmt.api.parser.ActiveNotation._
 
-/** scans a TokenList against some notations
-  * @param tl the TokenList to scan
-  *           matched notations are applied to tl, i.e., tl always holds the current TokenList
+/**
+  * An UnmatchedList represents a subterm that has not been matched against a rule (in particular: notations) yet
+  * It is defined by a token list and holds parsing rules that can be used to scan that list against those rules.
+  * It arises in particular when notations matched against the parent term and determine that a certain list of tokens must eventually produce a single subterm.
+  * @param tl the TokenList to scan, its content will change during the scanning as this term is graudally parsed
+  * @param ruleTableInit the rules to use
+  * @param parsingUnitOpt the parsing unit that gave rise to this
   */
 class Scanner(val tl: TokenList, parsingUnitOpt: Option[ParsingUnit], ruleTableInit: ParsingRuleTable, val report: frontend.Report) extends frontend.Logger {
   val logPrefix = "scanner"

@@ -60,7 +60,7 @@ class InstanceElaborator extends ChangeListener {
                expandTheory(tp) foreach {case (cont, subss) =>
                   cont foreach {vd =>
                      val lc = new ElaboratedConstant(c, vd, subss)
-                     lc.setOrigin(GeneratedBy(this))
+                     lc.setOrigin(GeneratedFrom(c.path, this))
                      controller.add(lc)
                   }
                }

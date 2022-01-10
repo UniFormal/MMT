@@ -106,6 +106,16 @@ object LFX {
     val th = baseURI ? "ListSymbols"
   }
 
+  object ListType {
+    val path = Lists.th ? "ListType"
+    val term = OMS(path)
+    def apply(tp : Term) : Term = OMA(this.term,List(tp))
+    def unapply(tp : Term) : Option[Term] = tp match {
+      case OMA(this.term,List(t)) => Some(t)
+      case _ => None
+    }
+  }
+
   object ListNil {
     val path = Lists.th ? "nil"
     val term = OMS(path)
@@ -349,7 +359,7 @@ class SubtypeGenerator extends ChangeListener {
       case Some(subtypeJudg(tm1,tm2)) =>
         val rule = new SubtypeJudgRule(tm1,tm2,Some(c.path))
         val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
-        ruleConst.setOrigin(GeneratedBy(this))
+        ruleConst.setOrigin(GeneratedFrom(c.path, this))
         log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
         controller add ruleConst
       case _ =>

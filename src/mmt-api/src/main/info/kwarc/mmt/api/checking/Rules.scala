@@ -467,6 +467,7 @@ abstract class TypeSolutionRule(val head: GlobalName) extends SolutionRule {
  * This is legal if all terms of that type are equal.
  */
 abstract class TypeBasedSolutionRule(under: List[GlobalName], head: GlobalName) extends TypeBasedEqualityRule(under,head) {
+  override def priority = -10 // make sure we don't shadow other equality rules
 
   /** if this type is proof-irrelevant, this returns the unique term of this type
    *
@@ -529,7 +530,7 @@ class AbbreviationRuleGenerator extends ChangeListener {
     case c : Constant if (c.rl contains abbreviationTag) && c.dfC.analyzed.isDefined =>
       val rule = new AbbrevRule(c.path,c.df.get)//GeneratedAbbreviationRule(c)
       val ruleConst = RuleConstant(c.home, c.name / abbreviationTag, OMS(c.path), Some(rule))
-      ruleConst.setOrigin(GeneratedBy(this))
+      ruleConst.setOrigin(GeneratedFrom(c.path, this))
       log(c.name + " ~~> " + present(c.df.get))
       controller add ruleConst
     case _ =>

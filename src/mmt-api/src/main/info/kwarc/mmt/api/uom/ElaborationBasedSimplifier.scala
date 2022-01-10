@@ -344,40 +344,54 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
               Nil
         }
         // the composed include is only postulated if ID is, i.e., it can only be used as a morphism once mod is closed
-        // if id is also a realization, this will produce a defined realization
+        // if id is defined or a realization, this will produce a defined realization
         val newPost = ID.isRealization
-        val idID = Include(parent.toTerm, id.from, newArgs, newDf, newPost)
-        ElaboratedElement.setFully(idID) // recursive elaboration already handled by recursively elaborating fromThy
-        // if an include for id.from already exists in mod, we have to check equality
-        alreadyIncluded.find(_.from == id.from) match {
+        val idID = IncludeData(parent.toTerm, id.from, newArgs, newDf, newPost)
+        val idIDDecl = idID.toStructure
+        ElaboratedElement.setFully(idIDDecl) // recursive elaboration already handled by recursively elaborating fromThy
+        // if an include for id.from already exists in mod, idID is only allowed if it is redundant
+        // i.e., it is either dropped or an error
+        alreadyIncluded.find(_.from == idID.from) match {
           case Some(exid) =>
-            // if the new include has a definiens, we have to check equality
-            // either way, it is subsumed by the existing include
-            /* TODO However, if id.df.isEmpty && exid.isRealization, the implicit morphism will be generated (by composition)
+            /* TODO if id.df.isEmpty && exid.isRealization, the implicit morphism will be generated (by composition)
              * even if we id here. That will lead to an AlreadyDefined error when the realization is finally checked at the end of the theory.
              * That makes sense: a realization may only be used (e.g. here: to absorb an include) if it has been checked.
              * But it's unclear what the best design is to check the totality of the realization in time
              * (i.e., right now before the generated includes are added to the implicit-graph).
              */
-            newDf foreach {dfMor => 
-              val existingMor = exid.asMorphism
-              val existingMorN = oS(existingMor, SimplificationUnit(innerCont, false, true), rules)
-              val eq = Morph.equal(existingMorN,dfMor, OMMOD(exid.from), target)(lup)
-              if (!eq) {
-                // otherwise, it is an error
-                val List(newStr, exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
-                val msg = if (inTheory) {
-                  "theory included twice with different definitions or parameters"
-                } else {
-                  "two unequal morphisms included for the same theory"
+            idID.df match {
+              case Some(dfMor) =>
+                // if idID has a definiens, we have to check equality with the existing include
+                val existingMor = exid.asMorphism
+                val existingMorN = oS(existingMor,SimplificationUnit(innerCont,false,true),rules)
+                val eq = Morph.equal(existingMorN,dfMor,OMMOD(exid.from),target)(lup)
+                if (!eq) {
+                  // otherwise, it is an error
+                  val List(newStr,exStr) = List(existingMorN,newMorN) map {m => controller.presenter.asString(m)}
+                  val msg = if (inTheory) {
+                    "theory included twice with different definitions or parameters"
+                  } else {
+                    "two unequal morphisms included for the same theory"
+                  }
+                  env.errorCont(InvalidElement(dOrig,s"$msg: $newStr != $exStr are the morphisms"))
                 }
-                env.errorCont(InvalidElement(dOrig, s"$msg: $newStr != $exStr are the morphisms"))
-              }
+              case None =>
+                // if idID has no definiens, we have almost nothing to check:
+                // - idID is an include: idID is redundant because a more specific version of id.from has already been included
+                // - idID is a realization: idID is redundant because it is already satisfied because of exid
+                // The only exception is if exid is a realization (which may or may not be total at this point) and idID is not.
+                // In that case, exid may not be used yet to justify dropping idID.
+                // Otherwise, it  could lead to a cycle because later declarations in ID.from may have already used as of yet unrealized declarations of id.from.
+                if (exid.isRealization && !idID.isRealization) {
+                  val msg = s"conflict between plain include from ${idID.from}, which has previously been declared as a realization" +
+                    " (If the realization is not total at this point, this could lead to a dependency cycle. If the realization is already total, this error can be avoided by closing the theory and including it into a new one.)"
+                  env.errorCont(InvalidElement(dOrig,msg))
+                }
             }
             Nil
           // otherwise, we add the new include
           case None =>
-            List(idID)
+            List(idIDDecl)
         }
       }
     }
@@ -386,7 +400,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
       // ************ includes
       case (thy: Theory, Include(id)) =>
         // plain includes (possibly defined): copy (only) includes (i.e., transitive closure of includes), composing the definitions (if any)
-        addAfter = !id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
+        addAfter = id.isRealization // generated includes are placed before the generating include so that they occur in dependency order
         // from.meta is treated like any other include into from (in particular: skipped if from.meta included into thy.meta)
         // compute all includes into thy or any of its meta-theories
         val thyMetas = TheoryExp.metas(thy.toTerm)(lup).map(p => lup.getAs(classOf[Theory], p))
@@ -606,7 +620,7 @@ class ElaborationBasedSimplifier(oS: uom.ObjectSimplifier) extends Simplifier(oS
   /* unclear old code of onAdd
     // if the parent was generated by a derived declaration, re-elaborate it; TODO: why would this be necessary?
     parent.getOrigin match {
-      case GeneratedBy(dp : GlobalName) =>
+      case GeneratedFrom(dp : GlobalName, _) =>
         val ddOpt = controller.getO(dp)
         ddOpt match {
           case Some(dd : DerivedDeclaration) =>
