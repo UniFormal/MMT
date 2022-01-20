@@ -65,34 +65,38 @@ class GlfConstructServer extends ServerExtension("glf-construct") {
       case ex: Exception => return errorResponse(ex.getMessage, query.version > 1)
     }
 
-    val trees = query.asts
-      .map(GfAST.parseAST)
-      .map(_.toOMDocRec(theoryMap.toMap))
-      .map(t => view match {
-        case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
-        case None => t
-      })
-      .map(t => if (query.simplify) controller.simplifier(t,
-        SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
-      .map(t => removeFakeLambdas(t, Set()))
-      .distinct
+    try {
+      val trees = query.asts
+        .map(GfAST.parseAST)
+        .map(_.toOMDocRec(theoryMap.toMap))
+        .map(t => view match {
+          case Some(v) => controller.library.ApplyMorphs(t, v.toTerm)
+          case None => t
+        })
+        .map(t => if (query.simplify) controller.simplifier(t,
+          SimplificationUnit(theory.getInnerContext, expandDefinitions = query.deltaExpansion, fullRecursion = true)) else t)
+        .map(t => removeFakeLambdas(t, Set()))
+        .distinct
 
-    val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
-    val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
-    if (query.version == 1) {
-      if (query.toElpi)
-        ServerResponse.JsonResponse(elpiresult)
-      else
-        ServerResponse.JsonResponse(mmtresult)
-    } else {
-      ServerResponse.JsonResponse(JSONObject(
-        ("isSuccessful", JSONBoolean(true)),
-        ("result", JSONObject(
-          ("elpi", elpiresult),
-          ("mmt", mmtresult),
-        )),
-        ("errors", JSONArray()),
-      ))
+      val elpiresult = JSONArray(trees.map(t => JSONString(ELPIExporter.translateTerm(t).toELPI())): _*)
+      val mmtresult = JSONArray(trees.map(t => JSONString(controller.presenter.asString(t))): _*)
+      if (query.version == 1) {
+        if (query.toElpi)
+          ServerResponse.JsonResponse(elpiresult)
+        else
+          ServerResponse.JsonResponse(mmtresult)
+      } else {
+        ServerResponse.JsonResponse(JSONObject(
+          ("isSuccessful", JSONBoolean(true)),
+          ("result", JSONObject(
+            ("elpi", elpiresult),
+            ("mmt", mmtresult),
+          )),
+          ("errors", JSONArray()),
+        ))
+      }
+    } catch {
+      case ex: LangTheoryIncomplete => return errorResponse(ex.getMessage, query.version > 1)
     }
   }
 
