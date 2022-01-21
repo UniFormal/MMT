@@ -1,5 +1,9 @@
 package info.kwarc.mmt.api.parser
 
+
+
+/*
+
 import info.kwarc.mmt.api.{ComponentContainer, DPath, DeclarationComponent, Path, SourceError, StructuralElement}
 import info.kwarc.mmt.api.documents.{Document, MRef, Namespace, NamespaceImport, SRef}
 import info.kwarc.mmt.api.frontend.Controller
@@ -571,3 +575,5 @@ object AnnotatedText {
      */
   }
 }
+
+ */

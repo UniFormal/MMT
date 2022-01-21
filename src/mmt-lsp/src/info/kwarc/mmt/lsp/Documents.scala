@@ -1,28 +1,46 @@
 package info.kwarc.mmt.lsp
+import org.eclipse.lsp4j.SymbolKind
 
-import info.kwarc.mmt.api
-import info.kwarc.mmt.api.documents.Document
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, StructuralElement}
-import info.kwarc.mmt.api.frontend.Controller
-import info.kwarc.mmt.api.parser.{AnnotatedComment, AnnotatedCommentToken, AnnotatedKeyword, AnnotatedName, AnnotatedOpaque, AnnotatedPath, AnnotatedTermToken, AnnotatedText, DeclarationDelimiter, ErrorText, KeywordBasedParser, ModuleDelimiter, NotationBasedParser, ObjectDelimiter, ObjectParser, ParsingStream, SourceRegion, StructureParserContinuations}
-import info.kwarc.mmt.api.utils.{File, URI}
-import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, TextDocumentItem, VersionedTextDocumentIdentifier}
-
-
-import scala.collection.JavaConverters._
 import scala.concurrent.Future
 
-class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
+object LSPDocument {
+  def toOffset(line:Int,col:Int,text : String) = {
+    var l = 0
+    var offset = 0
+    while (l < line && text.isDefinedAt(offset)) {
+      if (text(offset) == '\n') {
+        l += 1
+      }
+      offset += 1
+    }
+    offset + col
+  }
+
+  def toLC(offset:Int,text : String) = {
+    val before = text.take(offset)
+    var lines : List[String] = Nil
+    var curr = ""
+    before.foreach { case '\n' =>
+      lines ::= curr
+      curr = ""
+    case c => curr = curr + c
+    }
+    lines = (curr :: lines).reverse
+    (lines.length-1,lines.last.length)
+  }
+
+}
+
+class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:ClientWrapper[A],server : B) {
   private var _doctext : String = ""
-  private var version = 0
+  def doctext =  _doctext
+  val timercount : Int = 0
 
-  private lazy val file = File(uri.drop(7))
-
-  /* object Timer {
+  private object Timer {
     private var timer = 0
     private var timerthread: Option[Future[Unit]] = None
 
-    def reset = {
+    def reset = if (timercount == 0) updateNow else {
       synchronized {
         timer = 0
       }
@@ -32,7 +50,7 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
         synchronized {
           timerthread = Some(Future {
             while (synchronized {
-              timer < 5
+              timer < timercount && !busy
             }) {
               Thread.sleep(100)
               synchronized {
@@ -45,213 +63,157 @@ class LSPDocument(val uri : String,client:MMTClient,controller:Controller) {
         }
       }
     }
-  } */
+    var busy = false
+  }
 
   private var _changes : List[(org.eclipse.lsp4j.Range,String)] = Nil
 
-  def update(range: org.eclipse.lsp4j.Range ,text:String) = {
-    synchronized { _changes ::= (range,text) }
-    //Timer.reset
-    updateNow
+  case class Delta(oldStart : Int, oldEnd : Int, oldText : String, newText : String) {
+
   }
 
-  private def updateNow: Unit = {
-    val ch = synchronized {
-      val r = _changes
-      _changes = Nil
-      r.reverse
-    }
-    synchronized {
-      ch.foreach { case (range,text) =>
-        val start = toOff(range.getStart.getLine, range.getStart.getCharacter)
+  protected def updateNow: Unit = {
+    Timer.busy = true
+    val deltas = synchronized {
+      val changes = {
+        val ch = _changes
+        _changes = Nil
+        ch.reverse
+      }
+      changes.map { case (range,text) =>
+        val start = LSPDocument.toOffset(range.getStart.getLine, range.getStart.getCharacter,_doctext)
+        val end = LSPDocument.toOffset(range.getEnd.getLine, range.getEnd.getCharacter,_doctext)
         val prev = _doctext take start
-        val end = toOff(range.getEnd.getLine, range.getEnd.getCharacter)
+        val oldText = _doctext.slice(start,end)
         _doctext = prev + text + _doctext.drop(end)
+        Delta(start,end,oldText,text)
       }
     }
-    //computeHighlight
+    onUpdate(deltas)
     // Timer.reset
+    Timer.busy = false
   }
 
-  def setVersion(v:Int) = version = v
-
-  def computeHighlight = {
-    //client.publishDiagnostics(new PublishDiagnosticsParams(uri,List().asJava))
-    parse
-    var hls : List[Highlight] = Nil
-    synchronized{annotated.asSequence}.foreach {
-      case a:AnnotatedKeyword =>
-        hls ::= Highlight(a.region,Colors.keyword)
-      case n:AnnotatedName =>
-        hls ::= Highlight(n.region,Colors.name)
-      case c:AnnotatedOpaque =>
-        hls ::= Highlight(c.region,Colors.scomment)
-      case c:AnnotatedCommentToken =>
-        hls ::= Highlight(c.region,Colors.comment)
-      case t:AnnotatedTermToken =>
-        hls ::= Highlight(t.region,Colors.terminit)
-      case md:ModuleDelimiter =>
-        hls ::= Highlight(md.region,Colors.md)
-      case md:DeclarationDelimiter =>
-        hls ::= Highlight(md.region,Colors.dd)
-      case md:ObjectDelimiter =>
-        hls ::= Highlight(md.region,Colors.od)
-      case p:AnnotatedPath =>
-        hls ::= Highlight(p.region,Colors.termchecked)
-      case e:ErrorText =>
-        val diag = new Diagnostic(toRange(e.region),"Err0r",DiagnosticSeverity.Error,e.text)
-        val params = new PublishDiagnosticsParams(uri,List(diag).asJava)
-        client.publishDiagnostics(params)
-        hls ::= Highlight(e.region,Colors.termerrored)
-      case _ =>
-    }
-    _highlights = semanticHighlight(hls.reverse)
+  def update(range: org.eclipse.lsp4j.Range ,text:String) = {
+    synchronized { _changes ::= (range,text) }
+    Timer.reset
   }
 
-  def highlight = {computeHighlight; synchronized{_highlights}}
-
-  private var _highlights : List[Int] = Nil
+  protected def onUpdate(changes : List[Delta]) = {}
 
   def init(s:String) = {
     _doctext = s
-    computeHighlight
+    updateNow
   }
 
-  def toRange(sr:SourceRegion) = {
-    val start = toLC(sr.start.offset)
-    val end = toLC(sr.end.offset)
-    val st = new org.eclipse.lsp4j.Position(start._1,start._2)
-    val en = new org.eclipse.lsp4j.Position(end._1,end._2)
-    new org.eclipse.lsp4j.Range(st,en)
-  }
+}
 
-  def doctext = synchronized { _doctext }
+trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[A,B] {
 
-  def toLC(offset:Int) = {
-    val before = doctext.take(offset)
-    var lines : List[String] = Nil
-    var curr = ""
-    before.foreach { case '\n' =>
-      lines ::= curr
-        curr = ""
-    case c => curr = curr + c
+  class Annotation(__offset : Int, __length : Int, val value : Any,
+                   val symbolkind : SymbolKind = null,
+                   val symbolname : String = "",
+                   val foldable : Boolean = false) {
+    private var _offset: Int = __offset
+    private var _length = __length
+    private[AnnotatedDocument] var _semantic: Option[(Int, List[Int])] = None
+    private[AnnotatedDocument] var _hover: Option[Unit => String] = None
+    private[AnnotatedDocument] var _parent: Option[Annotation] = None
+    private[AnnotatedDocument] var _children: List[Annotation] = Nil
+    def children = _children
+
+    def remove = {
+      _parent.foreach(p => p._children = p._children.filterNot(_ == this))
+      _parent = None
     }
-    lines = (curr :: lines).reverse
-    (lines.length-1,lines.last.length)
-  }
 
-  def toOff(line:Int,col:Int) = {
-    var l = 0
-    var offset = 0
-    val doc = doctext
-    while (l < line && doc.isDefinedAt(offset)) {
-      if (doc(offset) == '\n') {
-        l += 1
+    private[AnnotatedDocument] def advance(i: Int) = _offset += i
+    private[AnnotatedDocument] def stretch(i: Int) = _length += i
+    def linechar = (LSPDocument.toLC(_offset, doctext), LSPDocument.toLC(_offset + length, doctext))
+    def setSemanticHighlightingClass(cls: Int, modifiers: List[Int] = Nil) = _semantic = Some((cls, modifiers))
+    def setHover(f : => String) = _hover = Some(_ => f)
+
+    def offset = _offset
+    def length = _length
+    def end = _offset + _length
+
+    private def getRanges : List[(Int,Int)] = {
+      var rgs = List((_offset, end))
+      _children.foreach { ch =>
+        rgs = rgs.flatMap {
+          case (a, b) if a <= ch.offset && ch.end <= b =>
+            (if (a == ch.offset) Nil else List((a, ch.offset))) :::
+              (if (b == ch.end) Nil else List((ch.end, b)))
+          case p => List(p)
+        }
       }
-      offset += 1
+      rgs
     }
-    offset + col
-  }
 
-  case class Highlight(line: Int,char:Int,length:Int,cls:Int) {
-    def <=(o : Highlight) = {
-      if (line < o.line) true else if (line == o.line) {
-        char <= o.char
-      } else false
+    private[lsp] def getHovers: List[(Int,Int,Unit => String)] = if (_hover.isEmpty) Nil else {
+      getRanges.map { case (a,b) =>
+        val f = _hover.get
+        (a,b,f)
+      }
     }
-  }
 
-  object Highlight {
-    def apply(sr:SourceRegion,cls:Int):Highlight = {
-      val (line,char) = toLC(sr.start.offset) // if (sr.start.line>=0 && sr.start.column>=0) (sr.start.line,sr.start.column) else toLC(sr.start.offset)
-      Highlight(line,char,sr.end.offset-sr.start.offset,cls)
-    }
-    def apply(offset:Int,length:Int,cls:Int):Highlight = {
-      val (line,char) = toLC(offset)
-      Highlight(line,char,length,cls)
+    private[lsp] def getHighlights: List[(Int,Int,Int,Int,List[Int])] = if (_semantic.isEmpty) Nil else {
+      getRanges.map { case (a, b) =>
+        val (line, char) = LSPDocument.toLC(a, doctext)
+        val (scope, modifiers) = _semantic.get
+        (line, char, b - a, scope, modifiers)
+      }
     }
   }
 
-  def semanticHighlight(ls : List[Highlight]):List[Int] = {
-    val tdi = new VersionedTextDocumentIdentifier(uri,version)
-    semanticHighlight(tdi,ls)
+  def onChange(annotations : List[(Delta,Annotation)]) : Unit
+
+  override protected def onUpdate(changes: List[Delta]): Unit = {
+    super.onUpdate(changes)
+    synchronized{ Annotations.update(changes) }
   }
 
-  def semanticHighlight(doc:VersionedTextDocumentIdentifier, highs : List[Highlight]): List[Int] = {
-    var lines = highs.sortBy(_.line)
-    var result : List[List[Highlight]] = Nil
-    while (lines.nonEmpty) {
-      var index = lines.indexWhere(_.line != lines.head.line)
-      if (index == -1) index = lines.length
-      val split = lines.take(index)
-      lines = lines.drop(index)
-      result ::= split.sortBy(_.char)
+  object Annotations {
+    private var _annotations : List[Annotation] = Nil
+    def getAll = _annotations
+    def add(value : Any, offset : Int, length: Int,symbolkind : SymbolKind = null, symbolname : String = "", foldable : Boolean = false) : Annotation = {
+      val a = new Annotation(offset,length,value,symbolkind,symbolname,foldable)
+      add(a)
+      a
     }
-    var lastline = 0
-    var lastchar = 0
-    result.flatten.sortWith((p,q) => p<=q).flatMap {
-      case Highlight(line,char,length,cls) =>
-        val nchar = if (line == lastline) (char - lastchar) else char
-        val r = List(line-lastline,nchar,length,cls,0)
-        lastline = line
-        lastchar = char
-        r
+    def update(deltas : List[Delta]) = {
+      deltas.foreach{d => _annotations.foreach {a =>
+        if (d.oldEnd <= a.offset) {
+          a.advance(d.newText.length - d.oldText.length)
+        } else if (d.oldStart <= a.end) {
+          a.stretch(d.newText.length - d.oldText.length)
+        }
+      }}
+      val changed = deltas.flatMap(d => _annotations.find(a =>
+        a.offset <= d.oldStart && a.end >= d.oldEnd
+      ).map((d,_))).distinct
+      onChange(changed)
     }
-    //val highlights = result.reverse.map(ls => new SemanticHighlightingInformation(ls.head.line,SemanticHighlightingTokens.encode(ls.map(_.token).asJava)))
-    // val highlights = new SemanticHighlightingInformation(line,SemanticHighlightingTokens.encode(ls.asJava))
-    //val params = new SemanticHighlightingParams()
-    //params.setTextDocument(doc)
-    //params.setLines(highlights.asJava)
-    //client.semanticHighlighting(params)
-  }
-
-  lazy val nsMap = controller.getNamespaceMap
-
-  lazy val ojp = {
-    val np = new NotationBasedParser
-    controller.extman.addExtension(np)
-    np
-  }
-  lazy val parser = {
-    val kp = new KeywordBasedParser(ojp)
-    controller.extman.addExtension(kp)
-    kp
-  }
-
-  lazy val errorCont = new ErrorHandler {
-    private var errors : List[api.Error] = Nil
-    override protected def addError(e: api.Error): Unit = {
-      errors ::= e
-    }
-    def resetErrs = {
-      errors = Nil
-      this
-    }
-    def getErrors = errors
-  }
-
-  lazy implicit val spc = new StructureParserContinuations(errorCont) {
-    /** to be called after parsing an element (but before parsing its body if any) */
-    override def onElement(se: StructuralElement) {}
-    /** to be called after parsing the body of a [[ContainerElement]], e.g., documents and declared modules */
-    override def onElementEnd(se: ContainerElement[_]) {}
-  }
-
-  private var annotated : AnnotatedText = null
-
-  private def parse: Unit = {
-    errorCont.resetErrs
-    val ps = ParsingStream.fromString(doctext,DPath(URI(file.toJava.toURI)),"mmt",Some(nsMap))
-    val d = try { parser.apply(ps) } catch {
-      case t:Throwable =>
-        t.printStackTrace()
-        ???
-    }
-    d match {
-      case d: Document =>
-        synchronized{ annotated = AnnotatedText.fromDocument(d,doctext,errorCont.getErrors)(controller) }
-      case _ =>
-        ???
+    def add(annotation : Annotation) : Unit = {
+      _annotations.filter(a =>
+        a.offset <= annotation.offset && a.end >= annotation.end
+      ).sortBy(_.length).headOption match {
+        case Some(p) =>
+          p._children ::= annotation
+          annotation._parent = Some(p)
+        case _ =>
+      }
+      _annotations.filter{ a =>
+        annotation.offset <= a.offset && a.end >= annotation.end &&
+          !a._children.contains(annotation)
+      }.foreach {a =>
+        a.remove
+        a._parent = Some(annotation)
+        annotation._children ::= a
+      }
+      _annotations ::= annotation
+      _annotations = _annotations.sortWith((a,b) => a.offset < b.offset || (a.offset == b.offset && a.length > b.length))
+>>>>>>> LSP
     }
   }
 }
