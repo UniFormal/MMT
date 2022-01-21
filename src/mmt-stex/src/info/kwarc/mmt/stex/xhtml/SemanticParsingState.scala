@@ -1,6 +1,6 @@
 package info.kwarc.mmt.stex.xhtml
 
-import info.kwarc.mmt.api.{DPath, ErrorHandler, LocalName, MMTTask, RuleSet, StructuralElement}
+import info.kwarc.mmt.api.{DPath, ErrorHandler, GetError, LocalName, MMTTask, MPath, Path, RuleSet, StructuralElement}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, MMTStructureChecker, RelationHandler}
 import info.kwarc.mmt.api.documents.{Document, MRef}
 import info.kwarc.mmt.api.frontend.Controller
@@ -20,6 +20,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   override def error(s: String): Unit = eh(new STeXError(s,None,None))
   private var maindoc : HTMLDocument = null
   def doc = maindoc.doc
+  var missings : List[MPath] = Nil
 
   private val names = mutable.HashMap.empty[String,Int]
 
@@ -43,7 +44,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
   private val _transforms: List[PartialFunction[Term, Term]] =  List(
     {
       case STeX.informal(n) if n.startsWith("<mi") =>
-        val node = HTMLParser.apply(n)(simpleState)
+        val node = HTMLParser.apply(n.toString())(simpleState)
         val ln = node.children.head.asInstanceOf[HTMLText].text
         OMV(LocalName(ln))
     }
@@ -83,7 +84,7 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
     getRules.get(classOf[BindingRule]).collectFirst{case rl if rl(ntm)(this).isDefined => return rl(ntm)(this).get}
     ntm match {
       case STeX.informal(n) =>
-       HTMLParser.apply(n)(simpleState) match {
+       HTMLParser.apply(n.toString())(simpleState) match {
           case n if n.label == "mi" =>
             n.children.filterNot(_.isEmpty) match {
               case List(t : HTMLText) =>
@@ -109,7 +110,14 @@ class SemanticState(controller : Controller, rules : List[HTMLRule],eh : ErrorHa
 
   private lazy val ce = new CheckingEnvironment(controller.simplifier, eh, RelationHandler.ignore,new MMTTask {})
 
-  def check(se : StructuralElement) = checker(se)(ce)
+  def check(se : StructuralElement) = try {
+    checker(se)(ce)
+  } catch {
+    case g@GetError(s) =>
+      eh(g)
+      val path = Path.parseM(s.drop("no backend applicable to ".length))
+      this.missings ::= path
+  }
 }
 
 

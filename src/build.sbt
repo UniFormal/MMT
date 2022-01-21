@@ -472,9 +472,10 @@ lazy val stex = (project in file("mmt-stex")).
   dependsOn(api,odk).
   settings(
     mmtProjectsSettings("mmt-stex"),
-    libraryDependencies ++= Seq(
+    /*libraryDependencies ++= Seq(
       "org.ccil.cowan.tagsoup" % "tagsoup" % "1.2"
-    )
+    ),*/
+    unmanagedJars in Compile += baseDirectory.value / "lib" / "RusTeX.jar"
   )
 
 // plugin for writing OpenMath CDs. Maintainer: Florian

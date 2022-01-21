@@ -147,15 +147,6 @@ object LFX {
       case _ => None
     }
   }
-  object ListType {
-    val path = Lists.th ? "ListType"
-    val term = OMS(path)
-    def apply(tp : Term) : Term = OMA(this.term,List(tp))
-    def unapply(tp : Term) : Option[Term] = tp match {
-      case OMA(this.term,List(t)) => Some(t)
-      case _ => None
-    }
-  }
 
   object Map {
     val path = Lists.th ? "map"

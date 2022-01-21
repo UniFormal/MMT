@@ -1,8 +1,8 @@
 package info.kwarc.mmt.stex
 
 import info.kwarc.mmt.api.Level.Level
-import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, StructuralElement}
-import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
+import info.kwarc.mmt.api.{ContainerElement, DPath, ErrorHandler, ExtensionError, GetError, LNStep, Level, LocalName, MMTTask, Path, StructuralElement}
+import info.kwarc.mmt.api.archives.{Archive, ArchiveDimension, BuildEmpty, BuildFailure, BuildResult, BuildSuccess, BuildTargetArguments, BuildTask, Current, Dependency, Dim, FileBuildDependency, Importer, LogicalDependency, MissingDependency, PhysicalDependency, TraverseMode, TraversingBuildTarget, Update, `export`, source}
 import info.kwarc.mmt.api.checking.{CheckingEnvironment, CheckingResult, ExtendedCheckingEnvironment, Interpreter, MMTStructureChecker, RelationHandler, Solver}
 import info.kwarc.mmt.api.documents.{DRef, Document, FolderLevel, MRef}
 import info.kwarc.mmt.api.frontend.Controller
@@ -15,6 +15,7 @@ import info.kwarc.mmt.api.utils.{EmptyPath, File, FilePath, IntArg, NoArg, Optio
 import info.kwarc.mmt.stex.Extensions.STeXExtension
 import info.kwarc.mmt.stex.xhtml.{HTMLParser, SemanticState}
 import info.kwarc.mmt.api.symbols.Constant
+import info.kwarc.rustex.Params
 
 import scala.xml.parsing.XhtmlParser
 
@@ -37,16 +38,43 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
-  import com.jazzpirate.latex._
-  import parsing.Parser
-  Parser.defaultState
+  import info.kwarc.rustex.{Bridge => RusTeX}
+
+  private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
+
+  private def initializeBridge(): Unit = {
+    if (!RusTeX.initialized()) {
+      val path = sys.env.get("MATHHUB") match {
+        case Some(v) =>
+          File(v) / ".rustex"
+        case _ => ???
+      }
+      val file = path / RusTeX.library_filename()
+      if (!file.exists()) {
+        File.download(URI(github_rustex_prefix + RusTeX.library_filename()),file)
+      }
+      RusTeX.initialize(path.toString)
+    }
+  }
 
   def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
-
+    initializeBridge() // c_stex_module_
     log("building " + inFile)
-    val (_,html) = LaTeX.asHTML(inFile.toString)
-    File.write(outFile.setExtension("shtml"),html.toString)
+    val self = this
+    val params = new Params {
+      override def log(s: String): Unit = self.log(s,Some("rustex-log"))
+      override def write_16(s: String): Unit = self.log(s,Some("rustex-16"))
+      override def write_17(s: String): Unit = self.log(s,Some("rustex-17"))
+      override def write_18(s: String): Unit = self.log(s,Some("rustex-18"))
+      override def write_neg_1(s: String): Unit = self.log(s,Some("rustex-neg1"))
+      override def write_other(s: String): Unit = self.log(s,Some("rustex-other"))
+      override def message(s: String): Unit = self.log(s,Some("rustex-msg"))
+      override def file_clopen(s: String): Unit = self.log(s,Some("rustex"))
+    }
+    val html = RusTeX.parse(inFile.toString,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)
+    File.write(outFile.setExtension("shtml"),html)
     val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
+    outFile.setExtension("shtml").delete()
     File.write(outFile, doc.toString)
     doc
 
@@ -99,13 +127,20 @@ class HTMLToOMDoc extends Importer with XHTMLParser {
     val dpath = bt.narrationDPath
     val extensions = stexserver.extensions
     val rules = extensions.flatMap(_.rules)
-    val state = new SemanticState(controller,rules,bt.errorCont,dpath)
+    val state = new SemanticState(controller, rules, bt.errorCont, dpath)
     //val trules = extensions.flatMap(_.checkingRules)
     //trules.foreach(state.addTransformSE)
     HTMLParser(bt.inFile)(state)
     index(state.doc)
     log("Finished: " + bt.inFile)
-    BuildResult.empty
+    val results = state.doc.getDeclarations.collect {
+      case mr:MRef =>
+        LogicalDependency(mr.target)
+    }
+    state.missings match {
+      case Nil => BuildSuccess(Nil,results)
+      case o => MissingDependency(o.map(LogicalDependency),results,Nil)
+    }
   }
 }
 
@@ -123,11 +158,18 @@ class STeXToOMDoc extends Importer with XHTMLParser {
     //val trules = extensions.flatMap(_.checkingRules)
     //trules.foreach(state.addTransformSE)
     outFile.up.mkdirs()
-    buildFileActually(bt.inFile,outFile,state,bt.errorCont)
+    buildFileActually(bt.inFile, outFile, state, bt.errorCont)
     log("postprocessing " + bt.inFile)
     index(state.doc)
     log("Finished: " + bt.inFile)
-    BuildResult.empty
+    val results = state.doc.getDeclarations.collect {
+      case mr:MRef =>
+        LogicalDependency(mr.target)
+    }
+    state.missings match {
+      case Nil => BuildSuccess(Nil,results)
+      case o => MissingDependency(o.map(LogicalDependency),results,Nil)
+    }
   }
 
 }

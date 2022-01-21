@@ -1,5 +1,6 @@
 package info.kwarc.mmt.stex.Extensions
 
+import info.kwarc.mmt.api.documents.DRef
 import info.kwarc.mmt.api.modules.Theory
 import info.kwarc.mmt.api.objects.Context.context2list
 import info.kwarc.mmt.api.objects.{OMA, OMAorAny, OMID, OMMOD, OMV, Term, VarDecl}
@@ -7,9 +8,9 @@ import info.kwarc.mmt.api.ontology.{Binary, CustomBinary, RelationalElement, Rel
 import info.kwarc.mmt.api.parser.SourceRef
 import info.kwarc.mmt.api.symbols.{Constant, Declaration, DerivedDeclaration, FinalConstant, RuleConstant, RuleConstantInterpreter}
 import info.kwarc.mmt.api.uom.AbbrevRule
-import info.kwarc.mmt.api.{LocalName, MPath, Path, StructuralElement}
+import info.kwarc.mmt.api.{DPath, LocalName, MPath, NamespaceMap, Path, StructuralElement}
 import info.kwarc.mmt.stex.STeX
-import info.kwarc.mmt.stex.xhtml.{HTMLArity, HTMLConstant, HTMLDefiniens, HTMLDerived, HTMLImport, HTMLMMTRule, HTMLMacroname, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLParser, HTMLRule, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLType, HTMLUseModule, HasHeadSymbol, HasNotation, HasTermArgs, LanguageComponent, MathMLLiteral, MathMLTerm, MetatheoryComponent, OMDocParent, SemanticState, SignatureComponent}
+import info.kwarc.mmt.stex.xhtml.{HTMLArity, HTMLConstant, HTMLDefiniens, HTMLDerived, HTMLImport, HTMLMMTRule, HTMLMacroname, HTMLNotation, HTMLNotationComponent, HTMLNotationFragment, HTMLNotationPrec, HTMLOMA, HTMLOMBIND, HTMLOMID, HTMLParser, HTMLRule, HTMLSymbol, HTMLTheory, HTMLTheoryHeader, HTMLType, HTMLUseModule, HasHeadSymbol, HasNotation, HasTermArgs, LanguageComponent, MathMLLiteral, MathMLTerm, MetatheoryComponent, OMDocHTML, OMDocParent, SemanticState, SignatureComponent}
 
 object OMDocExtension extends DocumentExtension {
 /*
@@ -97,6 +98,15 @@ object OMDocExtension extends DocumentExtension {
     }
   }
 
+  class Inputref(orig : HTMLParser.HTMLNode) extends OMDocHTML(orig) {
+    override protected def onAdd: Unit = {
+      sstate.foreach {state =>
+        val dref = DRef(state.doc.path,Path.parseD(resource,NamespaceMap.empty))
+        controller.add(dref)
+      }
+    }
+  }
+
   override lazy val rules = List(
     new HTMLRule {
       override def rule(s: HTMLParser.ParsingState): PartialFunction[HTMLParser.HTMLNode, HTMLParser.HTMLNode] = {
@@ -129,6 +139,7 @@ object OMDocExtension extends DocumentExtension {
         case n if property(n).contains("stex:metatheory") => new MetatheoryComponent(n)
         case n if property(n).contains("stex:type") => new HTMLType(n)
         case n if property(n).contains("stex:definiens") => new HTMLDefiniens(n)
+        case n if property(n).contains("stex:inputref") => new Inputref(n)
       }
     }
   )
@@ -156,6 +167,9 @@ object OMDocExtension extends DocumentExtension {
     {case s: HTMLImport =>
       sidebar(s,{<span style="display:inline">Include {makeButton("/:" + server.pathPrefix + "/theory?" + s.domain,scala.xml.Text(s.name.toString))}</span>} :: Nil)
     },
+    /*{case ir : Inputref =>
+
+    },*/
     {case t: HasHeadSymbol =>
       overlay(t,"/:" + server.pathPrefix + "/fragment?" + t.head.toString,"/:" + server.pathPrefix + "/declaration?" + t.head.toString)},
   )

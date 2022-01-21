@@ -48,7 +48,7 @@ object OMDocHTML {
             print("")
             ???
         }
-        (fragment,prec,arity,HTMLParser(node)(new ParsingState(controller,server.extensions.flatMap(_.rules))))
+        (fragment,prec,arity,HTMLParser(node.toString())(new ParsingState(controller,server.extensions.flatMap(_.rules))))
     }
   }
 }

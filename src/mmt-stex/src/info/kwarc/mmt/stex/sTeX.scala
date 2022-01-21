@@ -56,10 +56,10 @@ object STeX {
         }
     }
     def apply(node : Node, prec : String, frag : String) = {
-      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(frag),StringLiterals(node.toString())))
+      OMA(OMS(sym),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node)))
     }
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(frag),StringLiterals(node))) =>
+      case OMA(OMS(`sym`),List(StringLiterals(prec),StringLiterals(frag),OMFOREIGN(node))) =>
         Some((node,prec,frag))
       case _ => None
     }
@@ -72,10 +72,10 @@ object STeX {
     def applyOp(label : String,args : List[Term]) = {
       OMA(OMS(opsym),StringLiterals(label) :: args)
     }
-    def applySimple(n : Node) = OMA(OMS(sym),StringLiterals(n.toString()) :: Nil)
+    def applySimple(n : Node) = OMA(OMS(sym),OMFOREIGN(n) :: Nil)
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),StringLiterals(n) :: Nil) =>
-        Some(XMLEscaping.unapply(n))
+      case OMA(OMS(`sym`),OMFOREIGN(n) :: Nil) =>
+        Some(n)
       case _ => None
     }
   }
@@ -87,11 +87,11 @@ object STeX {
     val tp = th ? "symboldoc"
     val sym = th ? "symboldocfor"
     def apply(symbol : ContentPath,lang : String,doc : List[HTMLNode]) = {
-      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),StringLiterals("<span>" + doc.map(_.toString).mkString + "</span>")))
+      OMA(OMS(sym),List(StringLiterals(symbol.toString),StringLiterals(lang),OMFOREIGN(<span>{doc.map(_.node)}</span>))) // OMFOREIGN
     }
     def unapply(tm : Term) = tm match {
-      case OMA(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),StringLiterals(n))) =>
-        Some((s,lang,n))
+      case OMA(OMS(`sym`),List(StringLiterals(s),StringLiterals(lang),OMFOREIGN(n))) =>
+        Some((s,lang,n.child.toList))
       case _ =>
         None
     }

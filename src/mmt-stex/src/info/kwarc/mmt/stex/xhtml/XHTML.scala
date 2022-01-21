@@ -1,6 +1,5 @@
 package info.kwarc.mmt.stex.xhtml
 
-import com.jazzpirate.latex.stomach.html.HTMLParser.ns_scalatex
 import info.kwarc.mmt.api.frontend.Controller
 import info.kwarc.mmt.api.objects._
 import info.kwarc.mmt.api.parser.{SourcePosition, SourceRef, SourceRegion}
@@ -8,7 +7,6 @@ import info.kwarc.mmt.api.utils.{File, MMTSystem, URI, Unparsed, XMLEscaping}
 import info.kwarc.mmt.api.{DPath, Error, ErrorHandler, ErrorThrower, LocalName, NamespaceMap, OpenCloseHandler, ParseError, Path}
 import info.kwarc.mmt.stex.STeXError
 import info.kwarc.mmt.stex.xhtml.HTMLParser.HTMLNode
-import org.ccil.cowan.tagsoup.jaxp.SAXFactoryImpl
 import org.xml.sax.InputSource
 
 import java.io.StringReader
@@ -34,6 +32,7 @@ object HTMLParser {
   val ns_html = "http://www.w3.org/1999/xhtml"
   val ns_mml = "http://www.w3.org/1998/Math/MathML"
   val ns_stex = "http://kwarc.info/ns/sTeX"
+  val ns_rustex = "http://kwarc.info/ns/RusTeX"
   val empty = '\u200E'
 
   class ParsingState(val controller : Controller, rules : List[HTMLRule]) {
@@ -158,13 +157,13 @@ object HTMLParser {
           nn.attributes.remove((ns_stex,"sourceref"))
           nn._sourceref = Some(SourceRef.fromURI(URI(s)))
       }
-      nn.attributes.get((ns_scalatex,"sourceref")) match {
+      nn.attributes.get((ns_rustex,"sourceref")) match {
         case Some(s) if s.contains("#(") =>
-          nn.attributes.remove((ns_scalatex,"sourceref"))
+          nn.attributes.remove((ns_rustex,"sourceref"))
           nn._sourceref = Some(SourceReferences.doSourceRef(s))
         case None =>
         case Some(s) =>
-          nn.attributes.remove((ns_scalatex,"sourceref"))
+          nn.attributes.remove((ns_rustex,"sourceref"))
           nn._sourceref = Some(SourceRef.fromURI(URI(s)))
       }
       if (nn._sourceref.isEmpty && _parent.exists(_._sourceref.isDefined)) nn._sourceref = _parent.get._sourceref
@@ -393,7 +392,13 @@ object HTMLParser {
       _children = _children.take(_children.indexOf(before)) ::: n :: _children.drop(_children.indexOf(before))
     }
 
-    def node = XML.loadString(this.toString)
+    def node = try {
+      XML.loadString(this.toString)
+    } catch {
+      case o =>
+        println(o.toString)
+        throw o
+    }
 
   }
 
