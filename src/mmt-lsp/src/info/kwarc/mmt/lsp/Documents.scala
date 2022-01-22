@@ -1,4 +1,5 @@
 package info.kwarc.mmt.lsp
+import info.kwarc.mmt.api.utils.File
 import org.eclipse.lsp4j.SymbolKind
 
 import scala.concurrent.Future
@@ -35,6 +36,10 @@ class LSPDocument[+A <: LSPClient,+B <: LSPServer[A]](val uri : String,client:Cl
   private var _doctext : String = ""
   def doctext =  _doctext
   val timercount : Int = 0
+  lazy val file : Option[File] = {
+    val f = File(uri.drop(7))
+    if (f.exists()) Some(f) else None
+  }
 
   private object Timer {
     private var timer = 0
@@ -213,7 +218,6 @@ trait AnnotatedDocument[+A <: LSPClient,+B <: LSPServer[A]] extends LSPDocument[
       }
       _annotations ::= annotation
       _annotations = _annotations.sortWith((a,b) => a.offset < b.offset || (a.offset == b.offset && a.length > b.length))
->>>>>>> LSP
     }
   }
 }

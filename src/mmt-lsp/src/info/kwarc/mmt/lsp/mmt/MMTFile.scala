@@ -19,8 +19,10 @@ import scala.util.Try
 
 class MMTFile(uri : String,client:ClientWrapper[MMTClient],server:MMTLSPServer) extends LSPDocument(uri, client, server) with AnnotatedDocument[MMTClient,MMTLSPServer] {
   val controller = server.controller
-  private lazy val file = File(uri.drop(7))
-  private lazy val docuri = if (file.exists()) DPath(URI(file.toJava.toURI)) else DPath(URI(uri))
+  private lazy val docuri = this.file match {
+    case Some(f) => DPath(URI(f.toJava.toURI))
+    case _ => DPath(URI(uri))
+  }
 
   override def onUpdate(changes: List[Delta]): Unit = {
     if (synchronized{Annotations.getAll.isEmpty}) parseTop

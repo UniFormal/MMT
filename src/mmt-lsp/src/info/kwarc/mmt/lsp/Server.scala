@@ -20,12 +20,10 @@ import org.eclipse.lsp4j
 import org.eclipse.lsp4j.adapters.SemanticTokensFullDeltaResponseAdapter
 import org.eclipse.lsp4j.jsonrpc.json.ResponseJsonAdapter
 import org.eclipse.lsp4j.jsonrpc.services.{JsonNotification, JsonRequest}
-import org.eclipse.lsp4j.websocket.{WebSocketEndpoint, WebSocketLauncherBuilder}
+import org.eclipse.lsp4j.websocket.WebSocketEndpoint
 
-import javax.websocket.{EndpointConfig, Session}
 import javax.websocket.server.ServerEndpointConfig
 import scala.jdk.CollectionConverters._
-import scala.reflect.ClassTag
 
 /** To implement an LSP, extend the following four (abstract) classes, that work in tandem:
  * 1. trait ExampleClient extends [[LSPClient]] - can be a spurious extension, if you only need a server implementation
@@ -205,14 +203,14 @@ class LSPServer[+ClientType <: LSPClient](clct : Class[ClientType]) {
   def shutdown : Any = {}
   def exit : Unit = {}
   def initialized(params: InitializedParams): Unit = {}
-  def didChangeConfiguration(params: DidChangeConfigurationParams): Unit = {}
+  def didChangeConfiguration(params: List[(String,List[(String,String)])]): Unit = {}
   def didChangeWatchedFiles(params: DidChangeWatchedFilesParams): Unit = {}
   def workspaceSymbol(params: WorkspaceSymbolParams): List[SymbolInformation] = Nil
   def executeCommand(params: ExecuteCommandParams): Any = {}
   def didOpen(params: DidOpenTextDocumentParams) : Unit = {}
   def didChange(params: DidChangeTextDocumentParams): Unit = {}
   def didClose(params: DidCloseTextDocumentParams): Unit = {}
-  def didSave(params: DidSaveTextDocumentParams): Unit = {}
+  def didSave(docuri:String): Unit = {}
   def definition(position: TextDocumentPositionParams): (Option[List[Location]],Option[List[LocationLink]]) = (None,None)
   def typeDefinition(position: TextDocumentPositionParams): (Option[List[Location]],Option[List[LocationLink]]) = (None,None)
   def implementation(position: TextDocumentPositionParams): List[Location] = Nil
@@ -300,7 +298,23 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
                               params: DidChangeConfigurationParams
                             ): CompletableFuture[Unit] = {
     log("workspace/didChangeConfiguration: " + params.toString,Some("methodcall"))
-    Completable{ server.didChangeConfiguration(params) }
+    params.getSettings match {
+      case o: com.google.gson.JsonObject =>
+        val ret = o.entrySet().asScala.toList.map {e =>
+          (e.getKey,e.getValue match {
+            case o: com.google.gson.JsonObject =>
+              o.entrySet().asScala.toList.map {e =>
+                (e.getKey,e.getValue match {
+                  case o: com.google.gson.JsonPrimitive if o.isString => o.getAsString
+                  case _ => ???
+                })
+              }
+            case  _ => ???
+          })
+        }
+        Completable{ server.didChangeConfiguration(ret) }
+      case _ => ???
+    }
   }
 
   @JsonNotification("workspace/didChangeWatchedFiles")
@@ -355,7 +369,7 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   @JsonNotification("textDocument/didSave")
   def didSave(params: DidSaveTextDocumentParams): CompletableFuture[Unit] = Completable {
     log("textDocument/didSave: " + params.getTextDocument.getUri,Some("methodcall"))
-    server.didSave(params)
+    server.didSave(params.getTextDocument.getUri)
   }
 
 
@@ -485,7 +499,6 @@ class AbstractLSPServer[A <: LSPClient, B <: LSPServer[A], C <: LSPWebsocket[A,B
   }
 
   @JsonRequest(value = "textDocument/semanticTokens/full")
-
   def semanticTokensFull(params: SemanticTokensParams) : CompletableFuture[SemanticTokens] = Completable {
     log("textDocument/semanticTokens/full: " + params.getTextDocument.getUri,Some("methodcall"))
     server.semanticTokensFull(params)

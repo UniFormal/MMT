@@ -469,7 +469,7 @@ lazy val specware = (project in file("mmt-specware")).
 
 // plugin for reading stex. Originally developed by Mihnea, currently dormant but functional
 lazy val stex = (project in file("mmt-stex")).
-  dependsOn(api,odk).
+  dependsOn(api,odk,lsp).
   settings(
     mmtProjectsSettings("mmt-stex"),
     /*libraryDependencies ++= Seq(

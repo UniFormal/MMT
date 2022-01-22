@@ -19,6 +19,24 @@ import info.kwarc.rustex.Params
 
 import scala.xml.parsing.XhtmlParser
 
+object RusTeX {
+  import info.kwarc.rustex.Bridge
+  private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
+
+  def initializeBridge(f : => File): Unit = {
+    if (!Bridge.initialized()) {
+      val path = f
+      val file = path / Bridge.library_filename()
+      if (!file.exists()) {
+        File.download(URI(github_rustex_prefix + Bridge.library_filename()),file)
+      }
+      Bridge.initialize(path.toString)
+    }
+  }
+  def parse(f : File,p:Params,memories:List[String] = Nil) = Bridge.parse(f.toString,p,memories)
+
+}
+
 trait XHTMLParser extends TraversingBuildTarget {
 
   var stexserver : STeXServer = null
@@ -38,27 +56,14 @@ trait XHTMLParser extends TraversingBuildTarget {
       throw t
   }
 
-  import info.kwarc.rustex.{Bridge => RusTeX}
-
-  private val github_rustex_prefix = "https://github.com/slatex/RusTeX/releases/download/latest/"
-
-  private def initializeBridge(): Unit = {
-    if (!RusTeX.initialized()) {
-      val path = sys.env.get("MATHHUB") match {
+  def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
+    RusTeX.initializeBridge{
+      sys.env.get("MATHHUB") match {
         case Some(v) =>
           File(v) / ".rustex"
         case _ => ???
       }
-      val file = path / RusTeX.library_filename()
-      if (!file.exists()) {
-        File.download(URI(github_rustex_prefix + RusTeX.library_filename()),file)
-      }
-      RusTeX.initialize(path.toString)
-    }
-  }
-
-  def buildFileActually(inFile : File,outFile : File ,state : HTMLParser.ParsingState,errorCont : ErrorHandler) = {
-    initializeBridge() // c_stex_module_
+    } // c_stex_module_
     log("building " + inFile)
     val self = this
     val params = new Params {
@@ -71,7 +76,7 @@ trait XHTMLParser extends TraversingBuildTarget {
       override def message(s: String): Unit = self.log(s,Some("rustex-msg"))
       override def file_clopen(s: String): Unit = self.log(s,Some("rustex"))
     }
-    val html = RusTeX.parse(inFile.toString,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)
+    val html = RusTeX.parse(inFile,params,Nil)//,List("c_stex_module_"))//LaTeX.asHTML(inFile.toString)
     File.write(outFile.setExtension("shtml"),html)
     val doc = HTMLParser(outFile.setExtension("shtml"))(state)//XHTML.parse(outFile,Some(state))
     outFile.setExtension("shtml").delete()
